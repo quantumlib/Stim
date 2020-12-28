@@ -32,11 +32,9 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
         cnt = _mm256_sub_epi16(cnt, popcnt16(b));
     }
 
-    alignas(256) uint16_t words[16];
-    _mm256_store_si256((__m256i *) words, cnt);
     uint8_t s = 0;
-    for (auto w : words) {
-        s += w;
+    for (auto w : cnt.m256i_u16) {
+        s += (uint8_t)w;
     }
     return s & 3;
 }
@@ -48,7 +46,7 @@ std::string PauliStringPtr::str() const {
 }
 
 bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
-    if (size != other.size || sign != other.sign) {
+    if (size != other.size || *sign != *other.sign) {
         return false;
     }
     __m256i acc;
@@ -74,7 +72,7 @@ bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
-    out << (ps.sign ? '-' : '+');
+    out << (*ps.sign ? '-' : '+');
     for (size_t i = 0; i < ps.size; i += 256) {
         auto xs = m256i_to_bits(ps._x[i / 256]);
         auto ys = m256i_to_bits(ps._y[i / 256]);
@@ -132,5 +130,22 @@ PauliStringStorage PauliStringStorage::from_str(const char *text) {
 }
 
 PauliStringPtr PauliStringStorage::ptr() {
-    return PauliStringPtr {sign, size, x.data(), y.data()};
+    return PauliStringPtr {size, &sign, x.data(), y.data()};
+}
+
+PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
+    uint8_t log_i;
+    inplace_times_with_scalar_output(rhs, &log_i);
+    assert((log_i & 1) == 0);
+    *sign ^= (log_i & 2) >> 1;
+    return *this;
+}
+
+void PauliStringPtr::inplace_times_with_scalar_output(const PauliStringPtr& rhs, uint8_t *out_log_i) const {
+    *out_log_i = log_i_scalar_byproduct(rhs);
+    *sign ^= *rhs.sign;
+    for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
+        _x[i] = _mm256_xor_si256(_x[i], rhs._x[i]);
+        _y[i] = _mm256_xor_si256(_y[i], rhs._y[i]);
+    }
 }

@@ -86,3 +86,21 @@ TEST(pauli_string, equality) {
     ASSERT_EQ(all_x1.ptr(), all_x2.ptr());
     ASSERT_NE(all_x1.ptr(), all_z.ptr());
 }
+
+TEST(pauli_string, multiplication) {
+    auto x = PauliStringStorage::from_str("X");
+    auto y = PauliStringStorage::from_str("Y");
+    auto z = PauliStringStorage::from_str("Z");
+
+    auto lhs = x;
+    auto rhs = y;
+    uint8_t log_i = 0;
+    lhs.ptr().inplace_times_with_scalar_output(rhs.ptr(), &log_i);
+    ASSERT_EQ(log_i, 1);
+    ASSERT_EQ(lhs.ptr(), z.ptr());
+
+    auto xxi = PauliStringStorage::from_str("XXI");
+    auto yyy = PauliStringStorage::from_str("YYY");
+    xxi.ptr() *= yyy.ptr();
+    ASSERT_EQ(xxi.ptr(), PauliStringStorage::from_str("-ZZY").ptr());
+}

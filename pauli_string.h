@@ -10,8 +10,8 @@
 #include "simd_util.h"
 
 struct PauliStringPtr {
-    bool sign;
     size_t size;
+    bool *sign;
     __m256i *_x;
     __m256i *_y;
 
@@ -30,13 +30,15 @@ struct PauliStringPtr {
 
     bool operator==(const PauliStringPtr &other) const;
     bool operator!=(const PauliStringPtr &other) const;
+    PauliStringPtr& operator*=(const PauliStringPtr& rhs);
+    void inplace_times_with_scalar_output(const PauliStringPtr& rhs, uint8_t *out_log_i) const;
 };
 
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
 
 struct PauliStringStorage {
-    bool sign;
     size_t size;
+    bool sign;
     std::vector<__m256i> x;
     std::vector<__m256i> y;
 
