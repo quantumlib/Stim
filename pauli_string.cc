@@ -6,7 +6,7 @@
 #include "simd_util.h"
 #include "pauli_string.h"
 
-uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) const {
+uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
     assert(size == other.size);
     __m256i cnt = _mm256_set1_epi16(0);
     for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
@@ -39,14 +39,14 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
     return s & 3;
 }
 
-std::string PauliStringPtr::str() const {
+std::string PauliString::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
 }
 
-bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
-    if (size != other.size || *sign != *other.sign) {
+bool PauliString::operator==(const PauliString &other) const {
+    if (size != other.size || _sign != other._sign) {
         return false;
     }
     __m256i acc;
@@ -67,12 +67,12 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
     return true;
 }
 
-bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
+bool PauliString::operator!=(const PauliString &other) const {
     return !(*this == other);
 }
 
-std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
-    out << (*ps.sign ? '-' : '+');
+std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
+    out << (ps._sign ? '-' : '+');
     for (size_t i = 0; i < ps.size; i += 256) {
         auto xs = m256i_to_bits(ps._x[i / 256]);
         auto ys = m256i_to_bits(ps._y[i / 256]);
@@ -83,10 +83,12 @@ std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
     return out;
 }
 
-PauliStringStorage PauliStringStorage::from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func) {
-    PauliStringStorage result {};
-    result.sign = sign;
+PauliString PauliString::from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func) {
+    PauliString result {};
     result.size = size;
+    result._sign = sign;
+    result._x.reserve((size + 255) / 256);
+    result._y.reserve((size + 255) / 256);
     std::vector<bool> xs;
     std::vector<bool> ys;
     for (size_t i = 0; i < result.size; i++) {
@@ -107,43 +109,49 @@ PauliStringStorage PauliStringStorage::from_pattern(bool sign, size_t size, cons
             throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
         }
         if (xs.size() == 256) {
-            result.x.push_back(bits_to_m256i(xs));
-            result.y.push_back(bits_to_m256i(ys));
+            result._x.push_back(bits_to_m256i(xs));
+            result._y.push_back(bits_to_m256i(ys));
             xs.clear();
             ys.clear();
         }
     }
     if (!xs.empty()) {
-        result.x.push_back(bits_to_m256i(xs));
-        result.y.push_back(bits_to_m256i(ys));
+        result._x.push_back(bits_to_m256i(xs));
+        result._y.push_back(bits_to_m256i(ys));
     }
     return result;
 }
 
-PauliStringStorage PauliStringStorage::from_str(const char *text) {
-    PauliStringStorage result {};
+PauliString PauliString::from_str(const char *text) {
+    PauliString result {};
     auto sign = text[0] == '-';
     if (text[0] == '+' || text[0] == '-') {
         text++;
     }
-    return PauliStringStorage::from_pattern(sign, strlen(text), [&](size_t i){ return text[i]; });
+    return PauliString::from_pattern(sign, strlen(text), [&](size_t i){ return text[i]; });
 }
 
-PauliStringPtr PauliStringStorage::ptr() {
-    return PauliStringPtr {size, &sign, x.data(), y.data()};
+PauliString PauliString::identity(size_t size) {
+    size_t words = (size + 255) / 256;
+    PauliString result {};
+    result.size = size;
+    result._sign = false;
+    result._x.resize(words, {});
+    result._y.resize(words, {});
+    return result;
 }
 
-PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
+PauliString& PauliString::operator*=(const PauliString& rhs) {
     uint8_t log_i;
     inplace_times_with_scalar_output(rhs, &log_i);
     assert((log_i & 1) == 0);
-    *sign ^= (log_i & 2) >> 1;
+    _sign ^= (log_i & 2) == 2;
     return *this;
 }
 
-void PauliStringPtr::inplace_times_with_scalar_output(const PauliStringPtr& rhs, uint8_t *out_log_i) const {
+void PauliString::inplace_times_with_scalar_output(const PauliString& rhs, uint8_t *out_log_i) {
     *out_log_i = log_i_scalar_byproduct(rhs);
-    *sign ^= *rhs.sign;
+    _sign ^= rhs._sign;
     for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
         _x[i] = _mm256_xor_si256(_x[i], rhs._x[i]);
         _y[i] = _mm256_xor_si256(_y[i], rhs._y[i]);

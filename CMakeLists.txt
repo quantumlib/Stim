@@ -6,10 +6,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 set(SOURCE_FILES_NO_MAIN
         pauli_string.cc
         simd_util.cc
+        tableau.cc
         )
 set(TEST_FILES
         pauli_string.test.cc
         simd_util.test.cc
+        tableau.test.cc
         )
 
 add_executable(stim main.cc ${SOURCE_FILES_NO_MAIN})

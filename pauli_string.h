@@ -9,11 +9,11 @@
 #include <functional>
 #include "simd_util.h"
 
-struct PauliStringPtr {
+struct PauliString {
     size_t size;
-    bool *sign;
-    __m256i *_x;
-    __m256i *_y;
+    bool _sign;
+    std::vector<__m256i> _x;
+    std::vector<__m256i> _y;
 
     // Computes the scalar term created when multiplying two Pauli strings together.
     // For example, in XZ = iY, the scalar byproduct is i.
@@ -24,27 +24,20 @@ struct PauliStringPtr {
     //     1 if the scalar byproduct is i.
     //     2 if the scalar byproduct is -1.
     //     3 if the scalar byproduct is -i.
-    uint8_t log_i_scalar_byproduct(const PauliStringPtr &other) const;
+    uint8_t log_i_scalar_byproduct(const PauliString &other) const;
 
     std::string str() const;
 
-    bool operator==(const PauliStringPtr &other) const;
-    bool operator!=(const PauliStringPtr &other) const;
-    PauliStringPtr& operator*=(const PauliStringPtr& rhs);
-    void inplace_times_with_scalar_output(const PauliStringPtr& rhs, uint8_t *out_log_i) const;
+    bool operator==(const PauliString &other) const;
+    bool operator!=(const PauliString &other) const;
+    PauliString& operator*=(const PauliString& rhs);
+    void inplace_times_with_scalar_output(const PauliString& rhs, uint8_t *out_log_i);
+
+    static PauliString from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func);
+    static PauliString from_str(const char *text);
+    static PauliString identity(size_t size);
 };
 
-std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
-
-struct PauliStringStorage {
-    size_t size;
-    bool sign;
-    std::vector<__m256i> x;
-    std::vector<__m256i> y;
-
-    static PauliStringStorage from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func);
-    static PauliStringStorage from_str(const char *text);
-    PauliStringPtr ptr();
-};
+std::ostream &operator<<(std::ostream &out, const PauliString &ps);
 
 #endif
