@@ -4,9 +4,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
+        pauli_string.cc
         simd_util.cc
         )
 set(TEST_FILES
+        pauli_string.test.cc
         simd_util.test.cc
         )
 

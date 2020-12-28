@@ -1,26 +1,70 @@
 #include "gtest/gtest.h"
 #include "simd_util.h"
 
-__m256i pack16(std::vector<uint16_t> r) {
-    std::vector<uint16_t> result;
-    alignas(256) uint16_t tmp[16] = {};
-    for (size_t i = 0; i < r.size(); i++) {
-        tmp[i] = r[i];
-    }
-    return _mm256_load_si256((__m256i*)tmp);
+TEST(simd_util, hex256) {
+    ASSERT_EQ(
+            hex256(_mm256_set1_epi8(1)),
+            ".1.1.1.1.1.1.1.1"
+            " .1.1.1.1.1.1.1.1"
+            " .1.1.1.1.1.1.1.1"
+            " .1.1.1.1.1.1.1.1");
+    ASSERT_EQ(
+            hex256(_mm256_set1_epi16(1)),
+            "...1...1...1...1 "
+            "...1...1...1...1 "
+            "...1...1...1...1 "
+            "...1...1...1...1");
+    ASSERT_EQ(
+            hex256(_mm256_set1_epi32(1)),
+            ".......1.......1"
+            " .......1.......1"
+            " .......1.......1"
+            " .......1.......1");
+    ASSERT_EQ(
+            hex256(_mm256_set_epi32(1, 2, -1, 4, 5, 255, 7, 8)),
+            ".......7.......8"
+            " .......5......FF"
+            " FFFFFFFF.......4"
+            " .......1.......2");
 }
 
-std::vector<uint16_t> unpack16(__m256i r) {
-    std::vector<uint16_t> result;
-    alignas(256) uint16_t tmp[16];
-    _mm256_store_si256((__m256i*)tmp, r);
-    for (auto e : tmp) {
-        result.push_back(e);
+TEST(simd_util, pack256_1) {
+    std::vector<bool> bits(256);
+    for (size_t i = 0; i < 16; i++) {
+        bits[i*i] = true;
     }
-    return result;
+    auto m = bits_to_m256i(bits);
+    ASSERT_EQ(bits, m256i_to_bits(m));
+    ASSERT_EQ(hex256(m),
+              "...2..1..2.1.213 "
+              ".2....1....2...1 "
+              ".....2.....1.... "
+              ".......2......1.");
 }
 
-TEST(popcnt, popcnt16) {
-    ASSERT_EQ(unpack16(popcnt16(pack16({0, 1, 2, 3, 0xFFFF, 0x1111}))),
-              (std::vector<uint16_t>{0, 1, 1, 2, 16, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+TEST(simd_util, popcnt) {
+    __m256i m {};
+    m.m256i_u16[1] = 1;
+    m.m256i_u16[2] = 2;
+    m.m256i_u16[4] = 3;
+    m.m256i_u16[6] = 0xFFFF;
+    m.m256i_u16[10] = 0x1111;
+    m.m256i_u16[11] = 0x1113;
+    __m256i s = popcnt16(m);
+    ASSERT_EQ(s.m256i_u16[0], 0);
+    ASSERT_EQ(s.m256i_u16[1], 1);
+    ASSERT_EQ(s.m256i_u16[2], 1);
+    ASSERT_EQ(s.m256i_u16[3], 0);
+    ASSERT_EQ(s.m256i_u16[4], 2);
+    ASSERT_EQ(s.m256i_u16[5], 0);
+    ASSERT_EQ(s.m256i_u16[6], 16);
+    ASSERT_EQ(s.m256i_u16[7], 0);
+    ASSERT_EQ(s.m256i_u16[8], 0);
+    ASSERT_EQ(s.m256i_u16[9], 0);
+    ASSERT_EQ(s.m256i_u16[10], 4);
+    ASSERT_EQ(s.m256i_u16[11], 5);
+    ASSERT_EQ(s.m256i_u16[12], 0);
+    ASSERT_EQ(s.m256i_u16[13], 0);
+    ASSERT_EQ(s.m256i_u16[14], 0);
+    ASSERT_EQ(s.m256i_u16[15], 0);
 }
