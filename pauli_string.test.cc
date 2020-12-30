@@ -94,7 +94,7 @@ TEST(pauli_string, multiplication) {
 
     auto lhs = x;
     uint8_t log_i = 0;
-    lhs.inplace_times_with_scalar_output(y, &log_i);
+    lhs.inplace_right_mul_with_scalar_output(y, &log_i);
     ASSERT_EQ(log_i, 1);
     ASSERT_EQ(lhs, z);
 

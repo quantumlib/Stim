@@ -49,6 +49,77 @@ std::string Tableau::str() const {
     return ss.str();
 }
 
+void Tableau::inplace_append(const Tableau &operation, const size_t *target_qubits) {
+    for (auto &q : qubits) {
+        operation.apply_within(q.x, target_qubits);
+        operation.apply_within(q.y, target_qubits);
+    }
+}
+
+void Tableau::inplace_prepend(const Tableau &operation, const size_t *target_qubits) {
+    std::vector<TableauQubit> new_qubits;
+    new_qubits.reserve(operation.qubits.size());
+    for (const auto &q : operation.qubits) {
+        new_qubits.push_back({
+            scatter_eval(q.x, target_qubits),
+            scatter_eval(q.y, target_qubits),
+        });
+    }
+    for (size_t i = 0; i < operation.qubits.size(); i++) {
+        qubits[target_qubits[i]] = std::move(new_qubits[i]);
+    }
+}
+
+
+PauliString Tableau::scatter_eval(const PauliString &gathered_input, const size_t *scattered_indices) const {
+    auto result = PauliString::identity(qubits.size());
+    result._sign = gathered_input._sign;
+    for (size_t k_gathered = 0; k_gathered < gathered_input.size; k_gathered++) {
+        size_t k_scattered = scattered_indices[k_gathered];
+        auto x = gathered_input.get_x_bit(k_gathered);
+        auto y = gathered_input.get_y_bit(k_gathered);
+        if (x) {
+            if (y) {
+                // Build Z from i*X*Y.
+                uint8_t log_i_1;
+                uint8_t log_i_2;
+                result.inplace_right_mul_with_scalar_output(qubits[k_scattered].x, &log_i_1);
+                result.inplace_right_mul_with_scalar_output(qubits[k_scattered].y, &log_i_2);
+                uint8_t log_i = log_i_1 + log_i_2 + 1;
+                assert((log_i & 1) == 0);
+                result._sign ^= (log_i & 2) != 0;
+            } else {
+                result *= qubits[k_scattered].x;
+            }
+        } else if (y) {
+            result *= qubits[k_scattered].y;
+        }
+    }
+    return result;
+}
+
+void Tableau::apply_within(PauliString &target, const size_t *target_qubits) const {
+    auto sub = PauliString::identity(qubits.size());
+//    target.gather_into(sub, target_qubits);
+//    apply_within()
+//    self.call2(sub).scatter_into(targets, target)
+    /*
+        if self.sign:
+            target.sign = not target.sign
+        for k_in, k_out in enumerate(indices):
+            i0 = k_in // 64
+            i1 = np.uint64(k_in & 63)
+            j0 = k_out // 64
+            j1 = np.uint64(k_out & 63)
+            x = (self.x[i0] >> i1) & np.uint64(1)
+            z = (self.z[i0] >> i1) & np.uint64(1)
+            target.x[j0] &= ~(np.uint64(1) << j1)
+            target.z[j0] &= ~(np.uint64(1) << j1)
+            target.x[j0] |= x << j1
+            target.z[j0] |= z << j1
+     */
+}
+
 const std::map<std::string, const Tableau> GATE_TABLEAUS {
     {"I", Tableau::gate1("+X", "+Y")},
     // Pauli gates.

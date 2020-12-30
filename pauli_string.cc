@@ -143,17 +143,69 @@ PauliString PauliString::identity(size_t size) {
 
 PauliString& PauliString::operator*=(const PauliString& rhs) {
     uint8_t log_i;
-    inplace_times_with_scalar_output(rhs, &log_i);
+    inplace_right_mul_with_scalar_output(rhs, &log_i);
     assert((log_i & 1) == 0);
     _sign ^= (log_i & 2) == 2;
     return *this;
 }
 
-void PauliString::inplace_times_with_scalar_output(const PauliString& rhs, uint8_t *out_log_i) {
+void PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs, uint8_t *out_log_i) {
     *out_log_i = log_i_scalar_byproduct(rhs);
     _sign ^= rhs._sign;
     for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
         _x[i] = _mm256_xor_si256(_x[i], rhs._x[i]);
         _y[i] = _mm256_xor_si256(_y[i], rhs._y[i]);
+    }
+}
+
+bool PauliString::get_x_bit(size_t k) const {
+    size_t i0 = k >> 8;
+    size_t i1 = (k & 255) >> 6;
+    size_t i2 = k & 63;
+    return ((_x[i0].m256i_u64[i1] >> i2) & 1) != 0;
+}
+
+bool PauliString::get_y_bit(size_t k) const {
+    size_t i0 = k >> 8;
+    size_t i1 = (k & 255) >> 6;
+    size_t i2 = k & 63;
+    return ((_y[i0].m256i_u64[i1] >> i2) & 1) != 0;
+}
+
+void PauliString::toggle_x_bit(size_t k) {
+    size_t i0 = k >> 8;
+    size_t i1 = (k & 255) >> 6;
+    size_t i2 = k & 63;
+    _x[i0].m256i_u64[i1] ^= 1ull << i2;
+}
+
+void PauliString::toggle_y_bit(size_t k) {
+    size_t i0 = k >> 8;
+    size_t i1 = (k & 255) >> 6;
+    size_t i2 = k & 63;
+    _y[i0].m256i_u64[i1] ^= 1ull << i2;
+}
+
+void PauliString::gather_into(PauliString &out, const size_t *in_indices) const {
+    for (size_t k_out = 0; k_out < out.size; k_out++) {
+        size_t k_in = in_indices[k_out];
+        if (get_x_bit(k_in)) {
+            out.toggle_x_bit(k_out);
+        }
+        if (get_y_bit(k_in)) {
+            out.toggle_y_bit(k_out);
+        }
+    }
+}
+
+void PauliString::scatter_into(PauliString &out, const size_t *out_indices) const {
+    for (size_t k_in = 0; k_in < size; k_in++) {
+        size_t k_out = out_indices[k_in];
+        if (get_x_bit(k_in)) {
+            out.toggle_x_bit(k_out);
+        }
+        if (get_y_bit(k_in)) {
+            out.toggle_y_bit(k_out);
+        }
     }
 }
