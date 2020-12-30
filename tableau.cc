@@ -66,7 +66,19 @@ void Tableau::inplace_prepend(const Tableau &operation, const size_t *target_qub
         });
     }
     for (size_t i = 0; i < operation.qubits.size(); i++) {
-        qubits[target_qubits[i]] = std::move(new_qubits[i]);
+        auto &t = qubits[target_qubits[i]];
+        auto &q = new_qubits[i];
+        t.x._sign = q.x._sign;
+        t.y._sign = q.y._sign;
+        t.x._x = q.x._x;
+        t.x._y = q.x._y;
+        t.y._x = q.y._x;
+        t.y._y = q.y._y;
+        q.x._x = nullptr;
+        q.x._y = nullptr;
+        q.y._x = nullptr;
+        q.y._y = nullptr;
+//        qubits[target_qubits[i]] = std::move(new_qubits[i]);
     }
 }
 

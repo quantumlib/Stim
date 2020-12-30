@@ -34,7 +34,8 @@ __m256i popcnt16(__m256i r) {
 
 std::vector<bool> m256i_to_bits(__m256i r) {
     std::vector<bool> result;
-    for (auto e : r.m256i_u64) {
+    for (size_t k = 0; k < 4; k++) {
+        auto e = m256i_u64(r)[k];
         for (size_t i = 0; i < 64; i++) {
             result.push_back((e >> i) & 1);
         }
@@ -42,10 +43,22 @@ std::vector<bool> m256i_to_bits(__m256i r) {
     return result;
 }
 
+const uint64_t *m256i_u64(const __m256i &result) {
+    return (uint64_t *)&result;
+}
+
+uint64_t *m256i_u64(__m256i &result) {
+    return (uint64_t *)&result;
+}
+
+uint16_t *m256i_u16(__m256i &result) {
+    return (uint16_t *)&result;
+}
+
 __m256i bits_to_m256i(std::vector<bool> data) {
     __m256i result {};
     for (size_t i = 0; i < data.size(); i++) {
-        result.m256i_u64[i >> 6] |= (uint64_t)data[i] << (i & 63);
+        m256i_u64(result)[i >> 6] |= (uint64_t)data[i] << (i & 63);
     }
     return result;
 }
@@ -57,7 +70,7 @@ std::ostream &operator<<(std::ostream &out, __m256i data) {
             out << " ";
         }
         for (size_t i = 64; i > 0; i -= 4) {
-            out << chars[(data.m256i_u64[w] >> (i - 4)) & 0xF];
+            out << chars[(m256i_u64(data)[w] >> (i - 4)) & 0xF];
         }
     }
     return out;

@@ -25,4 +25,10 @@ std::ostream &operator<<(std::ostream &out, __m256i data);
 
 std::string hex256(__m256i data);
 
+const uint64_t *m256i_u64(const __m256i &result);
+
+uint64_t *m256i_u64(__m256i &result);
+
+uint16_t *m256i_u16(__m256i &result);
+
 #endif

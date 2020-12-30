@@ -10,10 +10,15 @@
 #include "simd_util.h"
 
 struct PauliString {
-    size_t size;
-    bool _sign;
-    std::vector<__m256i> _x;
-    std::vector<__m256i> _y;
+    size_t size = 0;
+    bool _sign = false;
+    __m256i* _x = nullptr;
+    __m256i* _y = nullptr;
+
+    ~PauliString();
+    explicit PauliString(size_t size);
+    PauliString(const PauliString &other);
+    PauliString(PauliString &&other) noexcept;
 
     // Computes the scalar term created when multiplying two Pauli strings together.
     // For example, in XZ = iY, the scalar byproduct is i.

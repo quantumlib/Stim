@@ -5,6 +5,49 @@
 #include <sstream>
 #include "simd_util.h"
 #include "pauli_string.h"
+#include <cstring>
+#include <cstdlib>
+
+PauliString::~PauliString() {
+    if (_x != nullptr) {
+        _mm_free(_x);
+        _x = nullptr;
+    }
+    if (_y != nullptr) {
+        _mm_free(_y);
+        _y = nullptr;
+    }
+}
+
+PauliString::PauliString(const PauliString &other) {
+    _sign = other._sign;
+    size = other.size;
+    size_t words = (size + 255) / 256;
+    _x = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
+    _y = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
+    memcpy(_x, other._x, sizeof(__m256i) * words);
+    memcpy(_y, other._y, sizeof(__m256i) * words);
+}
+
+PauliString::PauliString(size_t n_size) {
+    size = n_size;
+    _sign = false;
+    size_t words = (size + 255) / 256;
+    _x = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
+    _y = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
+    memset(_x, 0, sizeof(__m256i) * words);
+    memset(_y, 0, sizeof(__m256i) * words);
+}
+
+PauliString::PauliString(PauliString &&other) noexcept {
+    _sign = other._sign;
+    size = other.size;
+    size_t words = (size + 255) / 256;
+    _x = other._x;
+    _y = other._y;
+    other._x = nullptr;
+    other._y = nullptr;
+}
 
 uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
     assert(size == other.size);
@@ -33,8 +76,8 @@ uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
     }
 
     uint8_t s = 0;
-    for (auto w : cnt.m256i_u16) {
-        s += (uint8_t)w;
+    for (size_t k = 0; k < 16; k++) {
+        s += (uint8_t)m256i_u16(cnt)[k];
     }
     return s & 3;
 }
@@ -50,8 +93,8 @@ bool PauliString::operator==(const PauliString &other) const {
         return false;
     }
     __m256i acc;
-    for (uint64_t &i : acc.m256i_u64) {
-        i = UINT64_MAX;
+    for (size_t k = 0; k < 4; k++) {
+        m256i_u64(acc)[k] = UINT64_MAX;
     }
     for (size_t i = 0; i*256 < size; i++) {
         auto dx = _mm256_xor_si256(_x[i], other._x[i]);
@@ -59,8 +102,8 @@ bool PauliString::operator==(const PauliString &other) const {
         auto dy = _mm256_xor_si256(_y[i], other._y[i]);
         acc = _mm256_andnot_si256(dy, acc);
     }
-    for (auto e : acc.m256i_u64) {
-        if (e != UINT64_MAX) {
+    for (size_t k = 0; k < 4; k++) {
+        if (m256i_u64(acc)[k] != UINT64_MAX) {
             return false;
         }
     }
@@ -84,13 +127,12 @@ std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
 }
 
 PauliString PauliString::from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func) {
-    PauliString result {};
-    result.size = size;
+    PauliString result(size);
     result._sign = sign;
-    result._x.reserve((size + 255) / 256);
-    result._y.reserve((size + 255) / 256);
     std::vector<bool> xs;
     std::vector<bool> ys;
+    auto xx = result._x;
+    auto yy = result._y;
     for (size_t i = 0; i < result.size; i++) {
         char c = func(i);
         if (c == 'X') {
@@ -109,21 +151,20 @@ PauliString PauliString::from_pattern(bool sign, size_t size, const std::functio
             throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
         }
         if (xs.size() == 256) {
-            result._x.push_back(bits_to_m256i(xs));
-            result._y.push_back(bits_to_m256i(ys));
+            *xx++ = bits_to_m256i(xs);
+            *yy++ = bits_to_m256i(ys);
             xs.clear();
             ys.clear();
         }
     }
     if (!xs.empty()) {
-        result._x.push_back(bits_to_m256i(xs));
-        result._y.push_back(bits_to_m256i(ys));
+        *xx++ = bits_to_m256i(xs);
+        *yy++ = bits_to_m256i(ys);
     }
     return result;
 }
 
 PauliString PauliString::from_str(const char *text) {
-    PauliString result {};
     auto sign = text[0] == '-';
     if (text[0] == '+' || text[0] == '-') {
         text++;
@@ -132,13 +173,7 @@ PauliString PauliString::from_str(const char *text) {
 }
 
 PauliString PauliString::identity(size_t size) {
-    size_t words = (size + 255) / 256;
-    PauliString result {};
-    result.size = size;
-    result._sign = false;
-    result._x.resize(words, {});
-    result._y.resize(words, {});
-    return result;
+    return PauliString(size);
 }
 
 PauliString& PauliString::operator*=(const PauliString& rhs) {
@@ -162,28 +197,28 @@ bool PauliString::get_x_bit(size_t k) const {
     size_t i0 = k >> 8;
     size_t i1 = (k & 255) >> 6;
     size_t i2 = k & 63;
-    return ((_x[i0].m256i_u64[i1] >> i2) & 1) != 0;
+    return ((m256i_u64(_x[i0])[i1] >> i2) & 1) != 0;
 }
 
 bool PauliString::get_y_bit(size_t k) const {
     size_t i0 = k >> 8;
     size_t i1 = (k & 255) >> 6;
     size_t i2 = k & 63;
-    return ((_y[i0].m256i_u64[i1] >> i2) & 1) != 0;
+    return ((m256i_u64(_y[i0])[i1] >> i2) & 1) != 0;
 }
 
 void PauliString::toggle_x_bit(size_t k) {
     size_t i0 = k >> 8;
     size_t i1 = (k & 255) >> 6;
     size_t i2 = k & 63;
-    _x[i0].m256i_u64[i1] ^= 1ull << i2;
+    m256i_u64(_x[i0])[i1] ^= 1ull << i2;
 }
 
 void PauliString::toggle_y_bit(size_t k) {
     size_t i0 = k >> 8;
     size_t i1 = (k & 255) >> 6;
     size_t i2 = k & 63;
-    _y[i0].m256i_u64[i1] ^= 1ull << i2;
+    m256i_u64(_y[i0])[i1] ^= 1ull << i2;
 }
 
 void PauliString::gather_into(PauliString &out, const size_t *in_indices) const {
