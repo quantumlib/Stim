@@ -39,7 +39,14 @@ uint64_t *m256i_u64(__m256i &result);
 
 uint16_t *m256i_u16(__m256i &result);
 
-/// Transposes a 256 x 256 bit packed boolean matrix from row major order to column major order.
-void transpose256(BitsPtr matrix);
+/// Transposes a bit packed square boolean matrix from row major order to column major order.
+///
+/// Args:
+///     bit_width: Must be a multiple of 256. The number of bits in a row of the matrix.
+///         Also the number of bits in a column, since the matrix must be square.
+///     matrix: Must be aligned on a 32 byte boundary. Pointer to the matrix data.
+///         The storage order is such that the bit at column c row r is toggled by
+///         performing `matrix[(r*bit_width + c) / 64] ^= 1 << (c & 63)`.
+void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 
 #endif

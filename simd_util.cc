@@ -1,5 +1,6 @@
 #include "simd_util.h"
 #include <sstream>
+#include <cassert>
 
 __m256i popcnt2(__m256i r) {
     auto m = _mm256_set1_epi16(0x5555);
@@ -91,12 +92,22 @@ std::string bin(__m256i data) {
     return out.str();
 }
 
+/// Permutes a bit-packed matrix block to swap a column address bit for a row address bit.
+///
+/// Args:
+///    h: Must be a power of two. The weight of the address bit to swap.
+///    matrix: Pointer into the matrix bit data.
+///    row_stride_256: The distance (in 256 bit words) between rows of the matrix.
+///    mask: Precomputed bit pattern for h. The pattern should be
+///        0b...11110000111100001111 where you alternate between 1 and 0 every
+///        h'th bit.
 template <uint8_t h>
-void transpose256_helper(BitsPtr matrix, __m256i mask) {
-    for (size_t i = 0; i < 256; i += h << 1) {
-        for (size_t j = i; j < i + h; j++) {
-            auto &a = matrix.u256[j];
-            auto &b = matrix.u256[j + h];
+void avx_transpose_pass(uint64_t *matrix, size_t row_stride_256, __m256i mask) noexcept {
+    auto u256 = (__m256i *) matrix;
+    for (size_t col = 0; col < 256; col += h << 1) {
+        for (size_t row = col; row < col + h; row++) {
+            auto &a = u256[row * row_stride_256];
+            auto &b = u256[(row + h) * row_stride_256];
             auto a1 = _mm256_andnot_si256(mask, a);
             auto b0 = _mm256_and_si256(mask, b);
             a = _mm256_and_si256(mask, a);
@@ -107,21 +118,58 @@ void transpose256_helper(BitsPtr matrix, __m256i mask) {
     }
 }
 
-void transpose256(BitsPtr matrix) {
-    transpose256_helper<1>(matrix, _mm256_set1_epi8(0x55));
-    transpose256_helper<2>(matrix, _mm256_set1_epi8(0x33));
-    transpose256_helper<4>(matrix, _mm256_set1_epi8(0xF));
-    transpose256_helper<8>(matrix, _mm256_set1_epi16(0xFF));
-    transpose256_helper<16>(matrix, _mm256_set1_epi32(0xFFFF));
-    transpose256_helper<32>(matrix, _mm256_set1_epi64x(0xFFFFFFFF));
-    for (size_t s0 = 0; s0 < 4; s0++) {
-        for (size_t s1 = s0 + 1; s1 < 4; s1++) {
-            size_t i0 = s0 | (s1 << 8);
-            size_t i1 = s1 | (s0 << 8);
-            for (size_t m = 0; m < 256; m += 4) {
-                size_t j0 = i0 | m;
-                size_t j1 = i1 | m;
-                std::swap(matrix.u64[j0], matrix.u64[j1]);
+/// Transposes within the 64x64 bit blocks of a 256x256 block subset of a boolean matrix.
+///
+/// For example, if we were transposing 2x2 blocks inside a 4x4 matrix, the order would go from:
+///
+///     aA bB cC dD
+///     eE fF gG hH
+///
+///     iI jJ kK lL
+///     mM nN oO pP
+///
+/// To:
+///
+///     ae bf cg dh
+///     AE BF CG DH
+///
+///     im jn ko lp
+///     IM JN KO LP
+///
+/// Args:
+///     matrix: Pointer to the matrix data to transpose.
+///     row_stride_256: Distance, in 256 bit words, between matrix rows.
+void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept {
+    avx_transpose_pass<1>(matrix, row_stride_256, _mm256_set1_epi8(0x55));
+    avx_transpose_pass<2>(matrix, row_stride_256, _mm256_set1_epi8(0x33));
+    avx_transpose_pass<4>(matrix, row_stride_256, _mm256_set1_epi8(0xF));
+    avx_transpose_pass<8>(matrix, row_stride_256, _mm256_set1_epi16(0xFF));
+    avx_transpose_pass<16>(matrix, row_stride_256, _mm256_set1_epi32(0xFFFF));
+    avx_transpose_pass<32>(matrix, row_stride_256, _mm256_set1_epi64x(0xFFFFFFFF));
+}
+
+void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
+    assert((bit_width & 255) == 0);
+
+    // Transpose bits inside each 64x64 bit block.
+    size_t stride = bit_width >> 8;
+    for (size_t col = 0; col < bit_width; col += 256) {
+        for (size_t row = 0; row < bit_width; row += 256) {
+            avx_transpose_64x64s_within_256x256(
+                    matrix + ((col + row * bit_width) >> 6),
+                    stride);
+        }
+    }
+
+    // Transpose between 64x64 bit blocks.
+    size_t u64_width = bit_width >> 6;
+    size_t u64_block = u64_width << 6;
+    for (size_t block_row = 0; block_row < bit_width; block_row += 64) {
+        for (size_t block_col = block_row + 64; block_col < bit_width; block_col += 64) {
+            size_t w0 = (block_row * bit_width + block_col) >> 6;
+            size_t w1 = (block_col * bit_width + block_row) >> 6;
+            for (size_t k = 0; k < u64_block; k += u64_width) {
+                std::swap(matrix[w0 + k], matrix[w1 + k]);
             }
         }
     }
