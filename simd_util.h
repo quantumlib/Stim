@@ -5,6 +5,15 @@
 #include <vector>
 #include <iostream>
 
+union BitsPtr {
+    __m256i *u256;
+    __m128i *u128;
+    uint64_t *u64;
+    uint32_t *u32;
+    uint16_t *u16;
+    uint8_t *u8;
+};
+
 /// For each 2 bit subgroup, performs x -> popcnt(x).
 __m256i popcnt2(__m256i r);
 
@@ -21,14 +30,16 @@ __m256i bits_to_m256i(std::vector<bool> data);
 
 std::vector<bool> m256i_to_bits(__m256i data);
 
-std::ostream &operator<<(std::ostream &out, __m256i data);
-
-std::string hex256(__m256i data);
+std::string hex(__m256i data);
+std::string bin(__m256i data);
 
 const uint64_t *m256i_u64(const __m256i &result);
 
 uint64_t *m256i_u64(__m256i &result);
 
 uint16_t *m256i_u16(__m256i &result);
+
+/// Transposes a 256 x 256 bit packed boolean matrix from row major order to column major order.
+void transpose256(BitsPtr matrix);
 
 #endif
