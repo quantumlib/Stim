@@ -3,13 +3,13 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
-Tableau Tableau::identity(size_t size) {
+Tableau Tableau::identity(size_t num_qubits) {
     Tableau result;
-    result.qubits.reserve(size);
-    for (size_t i = 0; i < size; i++) {
+    result.qubits.reserve(num_qubits);
+    for (size_t i = 0; i < num_qubits; i++) {
         TableauQubit q {
-                PauliString::identity(size),
-                PauliString::identity(size),
+                PauliString::identity(num_qubits),
+                PauliString::identity(num_qubits),
         };
         size_t i0 = i >> 6;
         size_t i1 = i & 63;

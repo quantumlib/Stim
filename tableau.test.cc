@@ -22,53 +22,67 @@ TEST(tableau, identity) {
                        "}");
 }
 
-bool tableau_agrees_with_unitary(const Tableau &tab, const std::vector<std::vector<std::complex<float>>> &unitary) {
-    auto n = tab.qubits.size();
+bool tableau_agrees_with_unitary(const Tableau &tableau,
+                                 const std::vector<std::vector<std::complex<float>>> &unitary) {
+    auto n = tableau.qubits.size();
     assert(unitary.size() == 1 << n);
-    for (size_t xb = 0; xb < 2; xb++) {
-        for (size_t k = 0; k < n; k++) {
-            PauliString pre = PauliString::identity(n);
-            const PauliString &post = xb ? tab.qubits[k].x : tab.qubits[k].y;
-            if (xb) {
-                pre.toggle_x_bit(k);
-            } else {
-                pre.toggle_y_bit(k);
-            }
-            VectorSim sim(n*2);
-            for (size_t q = 0; q < n; q++) {
-                sim.apply("H", q);
-                sim.apply("CNOT", q, q + n);
-            }
-            sim.apply(pre, n);
-            std::vector<size_t> qs;
-            for (size_t q = 0; q < n; q++) {
-                qs.push_back(q + n);
-            }
-            sim.apply(unitary, {qs});
-            sim.apply(post, n);
 
-            auto scale = powf(0.5f, 0.5f * n);
-            for (size_t row = 0; row < 1u << n; row++) {
-                for (size_t col = 0; col < 1u << n; col++) {
-                    auto a = sim.state[(row << n) | col];
-                    auto b = unitary[row][col] * scale;
-                    if (complex_distance(a, b) > 1e-4) {
-                        return false;
-                    }
+    std::vector<PauliString> basis;
+    for (size_t x = 0; x < 2; x++) {
+        for (size_t k = 0; k < n; k++) {
+            basis.emplace_back(std::move(PauliString::identity(n)));
+            if (x) {
+                basis.back().toggle_x_bit(k);
+            } else {
+                basis.back().toggle_y_bit(k);
+            }
+        }
+    }
+
+    for (const auto &input_side_obs : basis) {
+        VectorSim sim(n*2);
+        // Create EPR pairs to test all possible inputs via state channel duality.
+        for (size_t q = 0; q < n; q++) {
+            sim.apply("H", q);
+            sim.apply("CNOT", q, q + n);
+        }
+        // Apply input-side observable.
+        sim.apply(input_side_obs, n);
+        // Apply operation's unitary.
+        std::vector<size_t> qs;
+        for (size_t q = 0; q < n; q++) {
+            qs.push_back(q + n);
+        }
+        sim.apply(unitary, {qs});
+        // Apply output-side observable, which should cancel input-side.
+        sim.apply(tableau(input_side_obs), n);
+
+        // Verify that the state encodes the unitary matrix, with the
+        // input-side and output-side observables having perfectly cancelled out.
+        auto scale = powf(0.5f, 0.5f * n);
+        for (size_t row = 0; row < 1u << n; row++) {
+            for (size_t col = 0; col < 1u << n; col++) {
+                auto a = sim.state[(row << n) | col];
+                auto b = unitary[row][col] * scale;
+                if (complex_distance(a, b) > 1e-4) {
+                    return false;
                 }
             }
         }
     }
+
     return true;
 }
 
-TEST(tableau, gate_data) {
+TEST(tableau, str) {
     ASSERT_EQ(GATE_TABLEAUS.at("H").str(),
               "Tableau {\n"
               "  qubit 0_x: +Z\n"
               "  qubit 0_y: -Y\n"
               "}");
+}
 
+TEST(tableau, gate_tableau_data_vs_unitary_data) {
     for (const auto &kv : GATE_TABLEAUS) {
         const auto &name = kv.first;
         const auto &tab = kv.second;
