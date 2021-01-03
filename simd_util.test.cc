@@ -104,3 +104,40 @@ TEST(simd_util, transpose_bit_matrix) {
         ASSERT_EQ(data[i], expected[i]);
     }
 }
+
+TEST(simd_util, block_transpose_bit_matrix) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<unsigned long long> dis(
+            std::numeric_limits<std::uint64_t>::min(),
+            std::numeric_limits<std::uint64_t>::max());
+    constexpr size_t bit_width = 256 * 3;
+    constexpr size_t words = bit_width*bit_width/64;
+    alignas(64) uint64_t data[words];
+    for (auto &e : data) {
+        e = dis(gen);
+    }
+
+    uint64_t expected[words] {};
+    for (size_t i = 0; i < bit_width; i++) {
+        for (size_t j = 0; j < bit_width; j++) {
+            size_t i0 = i & 255;
+            size_t i1 = i >> 8;
+            size_t j0 = j & 255;
+            size_t j1 = j >> 8;
+            auto a = i0 + (j0 << 8) + (i1 << 16) + j1 * (bit_width << 8);
+            auto b = j0 + (i0 << 8) + (i1 << 16) + j1 * (bit_width << 8);
+            auto a0 = a & 63;
+            auto a1 = a >> 6;
+            auto b0 = b & 63;
+            auto b1 = b >> 6;
+            uint64_t bit = (data[a1] >> a0) & 1;
+            expected[b1] |= bit << b0;
+        }
+    }
+
+    transpose_bit_matrix_256x256blocks(data, bit_width);
+    for (size_t i = 0; i < words; i++) {
+        ASSERT_EQ(data[i], expected[i]);
+    }
+}

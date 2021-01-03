@@ -30,4 +30,12 @@ int main() {
     auto end = std::chrono::steady_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
     std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+
+    start = std::chrono::steady_clock::now();
+    for (size_t i = 0; i < n; i++) {
+        transpose_bit_matrix_256x256blocks(data, w);
+    }
+    end = std::chrono::steady_clock::now();
+    dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
+    std::cout << n / dt << " block transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
 }

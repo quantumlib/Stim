@@ -22,7 +22,7 @@ std::vector<std::complex<float>> mat_vec_mul(const std::vector<std::vector<std::
 }
 
 void VectorSim::apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
-    auto n = 1 << qubits.size();
+    size_t n = 1 << qubits.size();
     assert(matrix.size() == n);
     std::vector<size_t> masks;
     for (size_t k = 0; k < n; k++) {

@@ -166,3 +166,48 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
         }
     }
 }
+
+template <uint8_t h>
+void transpose_bit_matrix_256x256_helper(__m256i *matrix256x256, __m256i mask) noexcept {
+    for (size_t i = 0; i < 256; i += h << 1) {
+        for (size_t j = i; j < i + h; j++) {
+            auto &a = matrix256x256[j];
+            auto &b = matrix256x256[j + h];
+            auto a1 = _mm256_andnot_si256(mask, a);
+            auto b0 = _mm256_and_si256(mask, b);
+            a = _mm256_and_si256(mask, a);
+            b = _mm256_andnot_si256(mask, b);
+            a = _mm256_or_si256(a, _mm256_slli_epi64(b0, h));
+            b = _mm256_or_si256(_mm256_srli_epi64(a1, h), b);
+        }
+    }
+}
+
+void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
+    transpose_bit_matrix_256x256_helper<1>(matrix256x256, _mm256_set1_epi8(0x55));
+    transpose_bit_matrix_256x256_helper<2>(matrix256x256, _mm256_set1_epi8(0x33));
+    transpose_bit_matrix_256x256_helper<4>(matrix256x256, _mm256_set1_epi8(0xF));
+    transpose_bit_matrix_256x256_helper<8>(matrix256x256, _mm256_set1_epi16(0xFF));
+    transpose_bit_matrix_256x256_helper<16>(matrix256x256, _mm256_set1_epi32(0xFFFF));
+    transpose_bit_matrix_256x256_helper<32>(matrix256x256, _mm256_set1_epi64x(0xFFFFFFFF));
+    auto u64 = (uint64_t *)matrix256x256;
+    for (size_t s0 = 0; s0 < 4; s0++) {
+        for (size_t s1 = s0 + 1; s1 < 4; s1++) {
+            size_t i0 = s0 | (s1 << 8);
+            size_t i1 = s1 | (s0 << 8);
+            for (size_t m = 0; m < 256; m += 4) {
+                size_t j0 = i0 | m;
+                size_t j1 = i1 | m;
+                std::swap(u64[j0], u64[j1]);
+            }
+        }
+    }
+}
+
+void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noexcept {
+    auto blocks = (__m256i *)matrix;
+    auto area = bit_width * bit_width;
+    for (size_t k = 0; k < area; k += 1 << 16) {
+        transpose_bit_matrix_256x256(blocks + (k >> 8));
+    }
+}

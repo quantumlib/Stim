@@ -34,4 +34,28 @@ std::string bin(__m256i data);
 ///         performing `matrix[(r*bit_width + c) / 64] ^= 1 << (c & 63)`.
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 
+/// Transposes the 256x256 blocks of a block bit packed square boolean matrix.
+///
+/// Data Format:
+///     The matrix data storage order is such that the bit at column c row r is toggled by
+///     performing:
+///
+///        ```
+///        auto block_col = col >> 8;
+///        auto inner_col = col & 0xFF;
+///        auto block_row = row >> 8;
+///        auto inner_row = row & 0xFF;
+///        auto bit = inner_col + (inner_row << 8) + (block_col << 16) + block_row * (bit_width << 8)
+///        matrix[bit / 64] ^= 1 << (bit & 63)`.
+///        ```
+///
+///     The block transpose operation swaps the roles inner_col and inner_row while leaving block_col
+///     and block_row unchanged.
+///
+/// Args:
+///     bit_width: Must be a multiple of 256. The number of bits in a row of the matrix.
+///         Also the number of bits in a column, since the matrix must be square.
+///     matrix: Must be aligned on a 32 byte boundary. Pointer to the matrix data.
+void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noexcept;
+
 #endif
