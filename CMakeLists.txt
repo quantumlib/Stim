@@ -7,11 +7,13 @@ set(SOURCE_FILES_NO_MAIN
         pauli_string.cc
         simd_util.cc
         tableau.cc
+        vector_sim.cc
         )
 set(TEST_FILES
         pauli_string.test.cc
         simd_util.test.cc
         tableau.test.cc
+        vector_sim.test.cc
         )
 
 add_executable(stim main.cc ${SOURCE_FILES_NO_MAIN})

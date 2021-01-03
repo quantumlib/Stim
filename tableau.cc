@@ -11,11 +11,10 @@ Tableau Tableau::identity(size_t size) {
                 PauliString::identity(size),
                 PauliString::identity(size),
         };
-        size_t i0 = i / 256;
-        size_t i1 = (i & 255) / 64;
-        size_t i2 = i & 63;
-        q.x._x[i0].m256i_u64[i1] |= 1ull << i2;
-        q.y._y[i0].m256i_u64[i1] |= 1ull << i2;
+        size_t i0 = i >> 6;
+        size_t i1 = i & 63;
+        q.x._x[i0] |= 1ull << i1;
+        q.y._y[i0] |= 1ull << i1;
         result.qubits.emplace_back(q);
     }
     return result;

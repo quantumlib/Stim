@@ -12,8 +12,8 @@
 struct PauliString {
     size_t size = 0;
     bool _sign = false;
-    __m256i* _x = nullptr;
-    __m256i* _y = nullptr;
+    uint64_t *_x = nullptr;
+    uint64_t *_y = nullptr;
 
     ~PauliString();
     explicit PauliString(size_t size);

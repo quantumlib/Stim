@@ -23,8 +23,8 @@ PauliString::PauliString(const PauliString &other) {
     _sign = other._sign;
     size = other.size;
     size_t words = (size + 255) / 256;
-    _x = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
-    _y = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
+    _x = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
+    _y = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
     memcpy(_x, other._x, sizeof(__m256i) * words);
     memcpy(_y, other._y, sizeof(__m256i) * words);
 }
@@ -33,8 +33,8 @@ PauliString::PauliString(size_t n_size) {
     size = n_size;
     _sign = false;
     size_t words = (size + 255) / 256;
-    _x = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
-    _y = (__m256i*)_mm_malloc(sizeof(__m256i) * words, 32);
+    _x = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
+    _y = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
     memset(_x, 0, sizeof(__m256i) * words);
     memset(_y, 0, sizeof(__m256i) * words);
 }
@@ -50,16 +50,21 @@ PauliString::PauliString(PauliString &&other) noexcept {
 }
 
 uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
+    auto x256 = (__m256i *)_x;
+    auto y256 = (__m256i *)_y;
+    auto ox256 = (__m256i *)other._x;
+    auto oy256 = (__m256i *)other._y;
+
     assert(size == other.size);
     __m256i cnt = _mm256_set1_epi16(0);
     for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
-        auto x0 = _mm256_andnot_si256(_y[i], _x[i]);
-        auto y0 = _mm256_andnot_si256(_x[i], _y[i]);
-        auto z0 = _mm256_and_si256(_x[i], _y[i]);
+        auto x0 = _mm256_andnot_si256(y256[i], x256[i]);
+        auto y0 = _mm256_andnot_si256(x256[i], y256[i]);
+        auto z0 = _mm256_and_si256(x256[i], y256[i]);
 
-        auto x1 = _mm256_andnot_si256(other._y[i], other._x[i]);
-        auto y1 = _mm256_andnot_si256(other._x[i], other._y[i]);
-        auto z1 = _mm256_and_si256(other._x[i], other._y[i]);
+        auto x1 = _mm256_andnot_si256(oy256[i], ox256[i]);
+        auto y1 = _mm256_andnot_si256(ox256[i], oy256[i]);
+        auto z1 = _mm256_and_si256(ox256[i], oy256[i]);
 
         auto f1 = _mm256_and_si256(x0, y1);
         auto f2 = _mm256_and_si256(y0, z1);
@@ -98,10 +103,14 @@ bool PauliString::operator==(const PauliString &other) const {
     for (size_t k = 0; k < 4; k++) {
         acc64[k] = UINT64_MAX;
     }
+    auto x256 = (__m256i *)_x;
+    auto y256 = (__m256i *)_y;
+    auto ox256 = (__m256i *)other._x;
+    auto oy256 = (__m256i *)other._y;
     for (size_t i = 0; i*256 < size; i++) {
-        auto dx = _mm256_xor_si256(_x[i], other._x[i]);
+        auto dx = _mm256_xor_si256(x256[i], ox256[i]);
         acc = _mm256_andnot_si256(dx, acc);
-        auto dy = _mm256_xor_si256(_y[i], other._y[i]);
+        auto dy = _mm256_xor_si256(y256[i], oy256[i]);
         acc = _mm256_andnot_si256(dy, acc);
     }
     for (size_t k = 0; k < 4; k++) {
@@ -118,9 +127,11 @@ bool PauliString::operator!=(const PauliString &other) const {
 
 std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
     out << (ps._sign ? '-' : '+');
+    auto x256 = (__m256i *)ps._x;
+    auto y256 = (__m256i *)ps._y;
     for (size_t i = 0; i < ps.size; i += 256) {
-        auto xs = m256i_to_bits(ps._x[i / 256]);
-        auto ys = m256i_to_bits(ps._y[i / 256]);
+        auto xs = m256i_to_bits(x256[i / 256]);
+        auto ys = m256i_to_bits(y256[i / 256]);
         for (int j = 0; j < 256 && i + j < ps.size; j++) {
             out << "_XYZ"[xs[j] + 2 * ys[j]];
         }
@@ -133,8 +144,8 @@ PauliString PauliString::from_pattern(bool sign, size_t size, const std::functio
     result._sign = sign;
     std::vector<bool> xs;
     std::vector<bool> ys;
-    auto xx = result._x;
-    auto yy = result._y;
+    auto xx = (__m256i *)result._x;
+    auto yy = (__m256i *)result._y;
     for (size_t i = 0; i < result.size; i++) {
         char c = func(i);
         if (c == 'X') {
@@ -189,38 +200,38 @@ PauliString& PauliString::operator*=(const PauliString& rhs) {
 void PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs, uint8_t *out_log_i) {
     *out_log_i = log_i_scalar_byproduct(rhs);
     _sign ^= rhs._sign;
+    auto x256 = (__m256i *)_x;
+    auto y256 = (__m256i *)_y;
+    auto ox256 = (__m256i *)rhs._x;
+    auto oy256 = (__m256i *)rhs._y;
     for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
-        _x[i] = _mm256_xor_si256(_x[i], rhs._x[i]);
-        _y[i] = _mm256_xor_si256(_y[i], rhs._y[i]);
+        x256[i] = _mm256_xor_si256(x256[i], ox256[i]);
+        y256[i] = _mm256_xor_si256(y256[i], oy256[i]);
     }
 }
 
 bool PauliString::get_x_bit(size_t k) const {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
-    auto x64 = (uint64_t *)&_x;
-    return ((x64[i0] >> i1) & 1) != 0;
+    return ((_x[i0] >> i1) & 1) != 0;
 }
 
 bool PauliString::get_y_bit(size_t k) const {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
-    auto y64 = (uint64_t *)&_y;
-    return ((y64[i0] >> i1) & 1) != 0;
+    return ((_y[i0] >> i1) & 1) != 0;
 }
 
 void PauliString::toggle_x_bit(size_t k) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
-    auto x64 = (uint64_t *)&_x;
-    x64[i0] ^= 1ull << i1;
+    _x[i0] ^= 1ull << i1;
 }
 
 void PauliString::toggle_y_bit(size_t k) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
-    auto y64 = (uint64_t *)&_y;
-    y64[i0] ^= 1ull << i1;
+    _y[i0] ^= 1ull << i1;
 }
 
 void PauliString::gather_into(PauliString &out, const size_t *in_indices) const {
