@@ -118,9 +118,42 @@ TEST(tableau, equality) {
     ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("SQRT_X"));
 }
 
-TEST(tableau, compose) {
-    auto t = Tableau::identity(1);
-    const auto &s = GATE_TABLEAUS.at("S");
-    t.inplace_scatter_append(s, {0});
-    ASSERT_EQ(t, s);
+TEST(tableau, inplace_scatter_append) {
+    auto t1 = Tableau::identity(1);
+    t1.inplace_scatter_append(GATE_TABLEAUS.at("S"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("S"));
+    t1.inplace_scatter_append(GATE_TABLEAUS.at("S"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("Z"));
+    t1.inplace_scatter_append(GATE_TABLEAUS.at("S"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("S_DAG"));
+
+    // Test swap decomposition into exp(i pi/2 (XX + YY + ZZ)).
+    auto t2 = Tableau::identity(2);
+    // ZZ^0.5
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("CZ"), {0, 1});
+    // YY^0.5
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Y"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Y"), {1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("CY"), {0, 1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), {0});
+    // XX^0.5
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("CX"), {0, 1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
+    ASSERT_EQ(t2, GATE_TABLEAUS.at("SWAP"));
+
+    // Test order dependence.
+    auto t3 = Tableau::identity(2);
+    t3.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
+    t3.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {1});
+    t3.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {0, 1});
+    ASSERT_EQ(t3(PauliString::from_str("XI")), PauliString::from_str("ZI"));
+    ASSERT_EQ(t3(PauliString::from_str("ZI")), PauliString::from_str("XX"));
+    ASSERT_EQ(t3(PauliString::from_str("IX")), PauliString::from_str("IX"));
+    ASSERT_EQ(t3(PauliString::from_str("IZ")), PauliString::from_str("-ZY"));
 }

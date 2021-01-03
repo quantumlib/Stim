@@ -165,6 +165,8 @@ const std::map<std::string, const Tableau> GATE_TABLEAUS {
     {"S_DAG", Tableau::gate1("-Y", "+X")},
     // Two qubit gates.
     {"CNOT", Tableau::gate2("+XX", "+YX", "+IX", "+ZY")},
+    {"CX", Tableau::gate2("+XX", "+YX", "+IX", "+ZY")},
+    {"CY", Tableau::gate2("+XY", "+YY", "+ZX", "+IY")},
     {"CZ", Tableau::gate2("+XZ", "+YZ", "+ZX", "+ZY")},
     {"SWAP", Tableau::gate2("+IX", "+IY", "+XI", "+YI")},
 };
