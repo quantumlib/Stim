@@ -76,3 +76,51 @@ TEST(tableau, gate_data) {
         ASSERT_TRUE(tableau_agrees_with_unitary(tab, u)) << name;
     }
 }
+
+TEST(tableau, eval) {
+    const auto &cnot = GATE_TABLEAUS.at("CNOT");
+    ASSERT_EQ(cnot(PauliString::from_str("-XX")), PauliString::from_str("-XI"));
+    ASSERT_EQ(cnot(PauliString::from_str("+XX")), PauliString::from_str("+XI"));
+    ASSERT_EQ(cnot(PauliString::from_str("+ZZ")), PauliString::from_str("+IZ"));
+    ASSERT_EQ(cnot(PauliString::from_str("+IY")), PauliString::from_str("+ZY"));
+    ASSERT_EQ(cnot(PauliString::from_str("+YI")), PauliString::from_str("+YX"));
+    ASSERT_EQ(cnot(PauliString::from_str("+YY")), PauliString::from_str("-XZ"));
+
+    const auto &x2 = GATE_TABLEAUS.at("SQRT_X");
+    ASSERT_EQ(x2(PauliString::from_str("+X")), PauliString::from_str("+X"));
+    ASSERT_EQ(x2(PauliString::from_str("+Y")), PauliString::from_str("+Z"));
+    ASSERT_EQ(x2(PauliString::from_str("+Z")), PauliString::from_str("-Y"));
+
+    const auto &s = GATE_TABLEAUS.at("S");
+    ASSERT_EQ(s(PauliString::from_str("+X")), PauliString::from_str("+Y"));
+    ASSERT_EQ(s(PauliString::from_str("+Y")), PauliString::from_str("-X"));
+    ASSERT_EQ(s(PauliString::from_str("+Z")), PauliString::from_str("+Z"));
+}
+
+TEST(tableau, apply_within) {
+    const auto &cnot = GATE_TABLEAUS.at("CNOT");
+
+    auto p1 = PauliString::from_str("-XX");
+    cnot.apply_within(p1, {0, 1});
+    ASSERT_EQ(p1, PauliString::from_str("-XI"));
+
+    auto p2 = PauliString::from_str("+XX");
+    cnot.apply_within(p2, {0, 1});
+    ASSERT_EQ(p2, PauliString::from_str("+XI"));
+}
+
+TEST(tableau, equality) {
+    ASSERT_TRUE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("SQRT_Z"));
+    ASSERT_FALSE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("SQRT_Z"));
+    ASSERT_FALSE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("CNOT"));
+    ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("CNOT"));
+    ASSERT_FALSE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("SQRT_X"));
+    ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("SQRT_X"));
+}
+
+TEST(tableau, compose) {
+    auto t = Tableau::identity(1);
+    const auto &s = GATE_TABLEAUS.at("S");
+    t.inplace_scatter_append(s, {0});
+    ASSERT_EQ(t, s);
+}

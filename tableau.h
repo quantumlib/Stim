@@ -22,16 +22,29 @@ struct Tableau {
                          const char *x2,
                          const char *y2);
 
+    bool operator==(const Tableau &other) const;
+    bool operator!=(const Tableau &other) const;
+
     std::string str() const;
 
+    /// Returns the result of applying the tableau to the given Pauli string.
+    ///
+    /// Args:
+    ///     p: The input-side Pauli string.
+    ///
+    /// Returns:
+    ///     The output-side Pauli string.
+    ///     Algebraically: $c p c^{-1}$ where $c$ is the tableau's Clifford operation.
+    PauliString operator()(const PauliString &p) const;
+
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
-    PauliString scatter_eval(const PauliString &gathered_input, const size_t *scattered_indices) const;
+    PauliString scatter_eval(const PauliString &gathered_input, const std::vector<size_t> &scattered_indices) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
-    void apply_within(PauliString &target, const size_t *target_qubits) const;
+    void apply_within(PauliString &target, const std::vector<size_t> &target_qubits) const;
 
-    void inplace_append(const Tableau &after, const size_t *target_qubits);
-    void inplace_prepend(const Tableau &operation, const size_t *target_qubits);
+    void inplace_scatter_append(const Tableau &operation, const std::vector<size_t> &target_qubits);
+    void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);

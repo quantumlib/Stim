@@ -93,8 +93,7 @@ TEST(pauli_string, multiplication) {
     auto z = PauliString::from_str("Z");
 
     auto lhs = x;
-    uint8_t log_i = 0;
-    lhs.inplace_right_mul_with_scalar_output(y, &log_i);
+    uint8_t log_i = lhs.inplace_right_mul_with_scalar_output(y);
     ASSERT_EQ(log_i, 1);
     ASSERT_EQ(lhs, z);
 
@@ -106,4 +105,27 @@ TEST(pauli_string, multiplication) {
 
 TEST(pauli_string, identity) {
     ASSERT_EQ(PauliString::identity(5).str(), "+_____");
+}
+
+TEST(pauli_string, gather) {
+    auto p = PauliString::from_str("-____XXXXYYYYZZZZ");
+    auto p2 = PauliString::identity(4);
+    p.gather_into(p2, {0, 1, 2, 3});
+    ASSERT_EQ(p2, PauliString::from_str("+IIII"));
+    p.gather_into(p2, {4, 7, 8, 9});
+    ASSERT_EQ(p2, PauliString::from_str("+XXYY"));
+}
+
+TEST(pauli_string, scatter) {
+    auto s1 = PauliString::from_str("-_XYZ");
+    auto s2 = PauliString::from_str("+XXZZ");
+    auto p = PauliString::identity(8);
+    s1.scatter_into(p, {1, 3, 5, 7});
+    ASSERT_EQ(p, PauliString::from_str("-___X_Y_Z"));
+    s1.scatter_into(p, {1, 3, 5, 7});
+    ASSERT_EQ(p, PauliString::from_str("+___X_Y_Z"));
+    s2.scatter_into(p, {1, 3, 5, 7});
+    ASSERT_EQ(p, PauliString::from_str("+_X_X_Z_Z"));
+    s2.scatter_into(p, {4, 5, 6, 7});
+    ASSERT_EQ(p, PauliString::from_str("+_X_XXXZZ"));
 }

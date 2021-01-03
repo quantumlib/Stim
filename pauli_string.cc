@@ -190,15 +190,14 @@ PauliString PauliString::identity(size_t size) {
 }
 
 PauliString& PauliString::operator*=(const PauliString& rhs) {
-    uint8_t log_i;
-    inplace_right_mul_with_scalar_output(rhs, &log_i);
+    uint8_t log_i = inplace_right_mul_with_scalar_output(rhs);
     assert((log_i & 1) == 0);
     _sign ^= (log_i & 2) == 2;
     return *this;
 }
 
-void PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs, uint8_t *out_log_i) {
-    *out_log_i = log_i_scalar_byproduct(rhs);
+uint8_t PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs) {
+    uint8_t result = log_i_scalar_byproduct(rhs);
     _sign ^= rhs._sign;
     auto x256 = (__m256i *)_x;
     auto y256 = (__m256i *)_y;
@@ -208,6 +207,7 @@ void PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs, u
         x256[i] = _mm256_xor_si256(x256[i], ox256[i]);
         y256[i] = _mm256_xor_si256(y256[i], oy256[i]);
     }
+    return result;
 }
 
 bool PauliString::get_x_bit(size_t k) const {
@@ -234,26 +234,35 @@ void PauliString::toggle_y_bit(size_t k) {
     _y[i0] ^= 1ull << i1;
 }
 
-void PauliString::gather_into(PauliString &out, const size_t *in_indices) const {
+void PauliString::set_x_bit(size_t k, bool val) {
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    _x[i0] &= ~(1ull << i1);
+    _x[i0] ^= (uint64_t)val << i1;
+}
+
+void PauliString::set_y_bit(size_t k, bool val) {
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    _y[i0] &= ~(1ull << i1);
+    _y[i0] ^= (uint64_t)val << i1;
+}
+
+void PauliString::gather_into(PauliString &out, const std::vector<size_t> &in_indices) const {
+    assert(in_indices.size() == out.size);
     for (size_t k_out = 0; k_out < out.size; k_out++) {
         size_t k_in = in_indices[k_out];
-        if (get_x_bit(k_in)) {
-            out.toggle_x_bit(k_out);
-        }
-        if (get_y_bit(k_in)) {
-            out.toggle_y_bit(k_out);
-        }
+        out.set_x_bit(k_out, get_x_bit(k_in));
+        out.set_y_bit(k_out, get_y_bit(k_in));
     }
 }
 
-void PauliString::scatter_into(PauliString &out, const size_t *out_indices) const {
+void PauliString::scatter_into(PauliString &out, const std::vector<size_t> &out_indices) const {
+    assert(size == out_indices.size());
     for (size_t k_in = 0; k_in < size; k_in++) {
         size_t k_out = out_indices[k_in];
-        if (get_x_bit(k_in)) {
-            out.toggle_x_bit(k_out);
-        }
-        if (get_y_bit(k_in)) {
-            out.toggle_y_bit(k_out);
-        }
+        out.set_x_bit(k_out, get_x_bit(k_in));
+        out.set_y_bit(k_out, get_y_bit(k_in));
     }
+    out._sign ^= _sign;
 }
