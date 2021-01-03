@@ -1,6 +1,8 @@
 #include "simd_util.h"
 #include <sstream>
 #include <cassert>
+#include <thread>
+#include <algorithm>
 
 __m256i popcnt2(__m256i r) {
     auto m = _mm256_set1_epi16(0x5555);
@@ -191,23 +193,42 @@ void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
     transpose_bit_matrix_256x256_helper<16>(matrix256x256, _mm256_set1_epi32(0xFFFF));
     transpose_bit_matrix_256x256_helper<32>(matrix256x256, _mm256_set1_epi64x(0xFFFFFFFF));
     auto u64 = (uint64_t *)matrix256x256;
-    for (size_t s0 = 0; s0 < 4; s0++) {
-        for (size_t s1 = s0 + 1; s1 < 4; s1++) {
-            size_t i0 = s0 | (s1 << 8);
-            size_t i1 = s1 | (s0 << 8);
-            for (size_t m = 0; m < 256; m += 4) {
-                size_t j0 = i0 | m;
-                size_t j1 = i1 | m;
-                std::swap(u64[j0], u64[j1]);
-            }
-        }
+    for (size_t m = 0; m < 256; m += 4) {
+        std::swap(u64[m | 0x100], u64[m | 1]);
+        std::swap(u64[m | 0x200], u64[m | 2]);
+        std::swap(u64[m | 0x300], u64[m | 3]);
+        std::swap(u64[m | 0x201], u64[m | 0x102]);
+        std::swap(u64[m | 0x301], u64[m | 0x103]);
+        std::swap(u64[m | 0x302], u64[m | 0x203]);
+    }
+}
+
+void transpose_bit_matrix_thread_body(uint64_t *matrix, size_t area) noexcept {
+    auto m256 = (__m256i *)matrix;
+    for (size_t k = 0; k < area; k += 1 << 16) {
+        transpose_bit_matrix_256x256(m256 + (k >> 8));
+    }
+}
+
+void transpose_bit_matrix_threaded(uint64_t *matrix, size_t area, size_t thread_count) noexcept {
+    std::vector<std::thread> threads;
+    size_t chunk_area = (((area >> 16) + thread_count - 1) / thread_count) << 16;
+    for (size_t k = chunk_area; k < area - chunk_area; k += chunk_area) {
+        size_t n = std::min(chunk_area, area - k);
+        uint64_t *start = matrix + (k >> 6);
+        threads.emplace_back([=]() { transpose_bit_matrix_thread_body(start, n); });
+    }
+    transpose_bit_matrix_thread_body(matrix, chunk_area);
+    for (auto &t : threads) {
+        t.join();
     }
 }
 
 void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noexcept {
-    auto blocks = (__m256i *)matrix;
     auto area = bit_width * bit_width;
-    for (size_t k = 0; k < area; k += 1 << 16) {
-        transpose_bit_matrix_256x256(blocks + (k >> 8));
+    if (bit_width < 256 * 16) {
+        transpose_bit_matrix_thread_body(matrix, area);
+    } else {
+        transpose_bit_matrix_threaded(matrix, area, 4);
     }
 }
