@@ -42,7 +42,6 @@ PauliString::PauliString(size_t n_size) {
 PauliString::PauliString(PauliString &&other) noexcept {
     _sign = other._sign;
     size = other.size;
-    size_t words = (size + 255) / 256;
     _x = other._x;
     _y = other._y;
     other._x = nullptr;

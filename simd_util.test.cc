@@ -78,14 +78,15 @@ TEST(simd_util, transpose_bit_matrix) {
     std::uniform_int_distribution<unsigned long long> dis(
             std::numeric_limits<std::uint64_t>::min(),
             std::numeric_limits<std::uint64_t>::max());
-    constexpr size_t bit_width = 256 * 3;
-    constexpr size_t words = bit_width*bit_width/64;
-    alignas(64) uint64_t data[words];
-    for (auto &e : data) {
-        e = dis(gen);
-    }
+    size_t bit_width = 256 * 3;
+    size_t words = bit_width*bit_width/64;
+    auto data = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
+    auto expected = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
+    memset(expected, 0, words * sizeof(uint64_t));
 
-    uint64_t expected[words] {};
+    for (size_t k = 0; k < words; k++) {
+        data[k] = dis(gen);
+    }
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
             size_t k1 = i*bit_width + j;
@@ -103,6 +104,8 @@ TEST(simd_util, transpose_bit_matrix) {
     for (size_t i = 0; i < words; i++) {
         ASSERT_EQ(data[i], expected[i]);
     }
+    _mm_free(expected);
+    _mm_free(data);
 }
 
 TEST(simd_util, block_transpose_bit_matrix) {
@@ -111,14 +114,15 @@ TEST(simd_util, block_transpose_bit_matrix) {
     std::uniform_int_distribution<unsigned long long> dis(
             std::numeric_limits<std::uint64_t>::min(),
             std::numeric_limits<std::uint64_t>::max());
-    constexpr size_t bit_width = 256 * 3;
-    constexpr size_t words = bit_width*bit_width/64;
-    alignas(64) uint64_t data[words];
-    for (auto &e : data) {
-        e = dis(gen);
-    }
+    size_t bit_width = 256 * 3;
+    size_t words = bit_width*bit_width/64;
+    auto data = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
+    auto expected = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
+    memset(expected, 0, words * sizeof(uint64_t));
 
-    uint64_t expected[words] {};
+    for (size_t k = 0; k < words; k++) {
+        data[k] = dis(gen);
+    }
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
             size_t i0 = i & 255;
@@ -140,4 +144,6 @@ TEST(simd_util, block_transpose_bit_matrix) {
     for (size_t i = 0; i < words; i++) {
         ASSERT_EQ(data[i], expected[i]);
     }
+    _mm_free(expected);
+    _mm_free(data);
 }

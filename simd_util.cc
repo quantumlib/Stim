@@ -213,7 +213,7 @@ void transpose_bit_matrix_thread_body(uint64_t *matrix, size_t area) noexcept {
 void transpose_bit_matrix_threaded(uint64_t *matrix, size_t area, size_t thread_count) noexcept {
     std::vector<std::thread> threads;
     size_t chunk_area = (((area >> 16) + thread_count - 1) / thread_count) << 16;
-    for (size_t k = chunk_area; k < area - chunk_area; k += chunk_area) {
+    for (size_t k = chunk_area; k < area; k += chunk_area) {
         size_t n = std::min(chunk_area, area - k);
         uint64_t *start = matrix + (k >> 6);
         threads.emplace_back([=]() { transpose_bit_matrix_thread_body(start, n); });
