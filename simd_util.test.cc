@@ -45,29 +45,31 @@ TEST(simd_util, pack256_1) {
 
 TEST(simd_util, popcnt) {
     __m256i m {};
-    m256i_u16(m)[1] = 1;
-    m256i_u16(m)[2] = 2;
-    m256i_u16(m)[4] = 3;
-    m256i_u16(m)[6] = 0xFFFF;
-    m256i_u16(m)[10] = 0x1111;
-    m256i_u16(m)[11] = 0x1113;
+    auto u16 = (uint16_t *)&m;
+    u16[1] = 1;
+    u16[2] = 2;
+    u16[4] = 3;
+    u16[6] = 0xFFFF;
+    u16[10] = 0x1111;
+    u16[11] = 0x1113;
     __m256i s = popcnt16(m);
-    ASSERT_EQ(m256i_u16(s)[0], 0);
-    ASSERT_EQ(m256i_u16(s)[1], 1);
-    ASSERT_EQ(m256i_u16(s)[2], 1);
-    ASSERT_EQ(m256i_u16(s)[3], 0);
-    ASSERT_EQ(m256i_u16(s)[4], 2);
-    ASSERT_EQ(m256i_u16(s)[5], 0);
-    ASSERT_EQ(m256i_u16(s)[6], 16);
-    ASSERT_EQ(m256i_u16(s)[7], 0);
-    ASSERT_EQ(m256i_u16(s)[8], 0);
-    ASSERT_EQ(m256i_u16(s)[9], 0);
-    ASSERT_EQ(m256i_u16(s)[10], 4);
-    ASSERT_EQ(m256i_u16(s)[11], 5);
-    ASSERT_EQ(m256i_u16(s)[12], 0);
-    ASSERT_EQ(m256i_u16(s)[13], 0);
-    ASSERT_EQ(m256i_u16(s)[14], 0);
-    ASSERT_EQ(m256i_u16(s)[15], 0);
+    auto s16 = (uint16_t *)&s;
+    ASSERT_EQ(s16[0], 0);
+    ASSERT_EQ(s16[1], 1);
+    ASSERT_EQ(s16[2], 1);
+    ASSERT_EQ(s16[3], 0);
+    ASSERT_EQ(s16[4], 2);
+    ASSERT_EQ(s16[5], 0);
+    ASSERT_EQ(s16[6], 16);
+    ASSERT_EQ(s16[7], 0);
+    ASSERT_EQ(s16[8], 0);
+    ASSERT_EQ(s16[9], 0);
+    ASSERT_EQ(s16[10], 4);
+    ASSERT_EQ(s16[11], 5);
+    ASSERT_EQ(s16[12], 0);
+    ASSERT_EQ(s16[13], 0);
+    ASSERT_EQ(s16[14], 0);
+    ASSERT_EQ(s16[15], 0);
 }
 
 TEST(simd_util, transpose_bit_matrix) {

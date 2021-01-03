@@ -35,8 +35,9 @@ __m256i popcnt16(__m256i r) {
 
 std::vector<bool> m256i_to_bits(__m256i r) {
     std::vector<bool> result;
+    auto u64 = (uint64_t *)&r;
     for (size_t k = 0; k < 4; k++) {
-        auto e = m256i_u64(r)[k];
+        auto e = u64[k];
         for (size_t i = 0; i < 64; i++) {
             result.push_back((e >> i) & 1);
         }
@@ -44,22 +45,11 @@ std::vector<bool> m256i_to_bits(__m256i r) {
     return result;
 }
 
-const uint64_t *m256i_u64(const __m256i &result) {
-    return (uint64_t *)&result;
-}
-
-uint64_t *m256i_u64(__m256i &result) {
-    return (uint64_t *)&result;
-}
-
-uint16_t *m256i_u16(__m256i &result) {
-    return (uint16_t *)&result;
-}
-
 __m256i bits_to_m256i(std::vector<bool> data) {
     __m256i result {};
+    auto u64 = (uint64_t *)&result;
     for (size_t i = 0; i < data.size(); i++) {
-        m256i_u64(result)[i >> 6] |= (uint64_t)data[i] << (i & 63);
+        u64[i >> 6] |= (uint64_t)data[i] << (i & 63);
     }
     return result;
 }
@@ -67,12 +57,13 @@ __m256i bits_to_m256i(std::vector<bool> data) {
 std::string hex(__m256i data) {
     std::stringstream out;
     auto chars = ".123456789ABCDEF";
+    auto u64 = (uint64_t *)&data;
     for (size_t w = 0; w < 4; w++) {
         if (w) {
             out << " ";
         }
         for (size_t i = 64; i > 0; i -= 4) {
-            out << chars[(m256i_u64(data)[w] >> (i - 4)) & 0xF];
+            out << chars[(u64[w] >> (i - 4)) & 0xF];
         }
     }
     return out.str();
@@ -81,12 +72,13 @@ std::string hex(__m256i data) {
 std::string bin(__m256i data) {
     std::stringstream out;
     auto chars = "01";
+    auto u64 = (uint64_t *)&data;
     for (size_t w = 0; w < 4; w++) {
         if (w) {
             out << " ";
         }
         for (size_t i = 64; i > 0; i--) {
-            out << chars[(m256i_u64(data)[w] >> (i - 1)) & 0x1];
+            out << chars[(u64[w] >> (i - 1)) & 0x1];
         }
     }
     return out.str();

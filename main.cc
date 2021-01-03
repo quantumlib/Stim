@@ -29,5 +29,5 @@ int main() {
     }
     auto end = std::chrono::steady_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 22) << " MiB\n";
+    std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
 }

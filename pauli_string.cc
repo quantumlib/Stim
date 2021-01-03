@@ -76,8 +76,9 @@ uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
     }
 
     uint8_t s = 0;
+    auto cnt16 = (uint16_t *)&cnt;
     for (size_t k = 0; k < 16; k++) {
-        s += (uint8_t)m256i_u16(cnt)[k];
+        s += (uint8_t)cnt16[k];
     }
     return s & 3;
 }
@@ -93,8 +94,9 @@ bool PauliString::operator==(const PauliString &other) const {
         return false;
     }
     __m256i acc;
+    auto acc64 = (uint64_t *)&acc;
     for (size_t k = 0; k < 4; k++) {
-        m256i_u64(acc)[k] = UINT64_MAX;
+        acc64[k] = UINT64_MAX;
     }
     for (size_t i = 0; i*256 < size; i++) {
         auto dx = _mm256_xor_si256(_x[i], other._x[i]);
@@ -103,7 +105,7 @@ bool PauliString::operator==(const PauliString &other) const {
         acc = _mm256_andnot_si256(dy, acc);
     }
     for (size_t k = 0; k < 4; k++) {
-        if (m256i_u64(acc)[k] != UINT64_MAX) {
+        if (acc64[k] != UINT64_MAX) {
             return false;
         }
     }
@@ -194,31 +196,31 @@ void PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs, u
 }
 
 bool PauliString::get_x_bit(size_t k) const {
-    size_t i0 = k >> 8;
-    size_t i1 = (k & 255) >> 6;
-    size_t i2 = k & 63;
-    return ((m256i_u64(_x[i0])[i1] >> i2) & 1) != 0;
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    auto x64 = (uint64_t *)&_x;
+    return ((x64[i0] >> i1) & 1) != 0;
 }
 
 bool PauliString::get_y_bit(size_t k) const {
-    size_t i0 = k >> 8;
-    size_t i1 = (k & 255) >> 6;
-    size_t i2 = k & 63;
-    return ((m256i_u64(_y[i0])[i1] >> i2) & 1) != 0;
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    auto y64 = (uint64_t *)&_y;
+    return ((y64[i0] >> i1) & 1) != 0;
 }
 
 void PauliString::toggle_x_bit(size_t k) {
-    size_t i0 = k >> 8;
-    size_t i1 = (k & 255) >> 6;
-    size_t i2 = k & 63;
-    m256i_u64(_x[i0])[i1] ^= 1ull << i2;
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    auto x64 = (uint64_t *)&_x;
+    x64[i0] ^= 1ull << i1;
 }
 
 void PauliString::toggle_y_bit(size_t k) {
-    size_t i0 = k >> 8;
-    size_t i1 = (k & 255) >> 6;
-    size_t i2 = k & 63;
-    m256i_u64(_y[i0])[i1] ^= 1ull << i2;
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    auto y64 = (uint64_t *)&_y;
+    y64[i0] ^= 1ull << i1;
 }
 
 void PauliString::gather_into(PauliString &out, const size_t *in_indices) const {
