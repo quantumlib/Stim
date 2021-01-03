@@ -211,3 +211,13 @@ TEST(tableau, inplace_scatter_prepend) {
     ASSERT_EQ(t3(PauliString::from_str("IX")), PauliString::from_str("IX"));
     ASSERT_EQ(t3(PauliString::from_str("IZ")), PauliString::from_str("-XY"));
 }
+
+TEST(tableau, eval_z) {
+    ASSERT_EQ(GATE_TABLEAUS.at("H").qubits[0].eval_z(), PauliString::from_str("+X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("S").qubits[0].eval_z(), PauliString::from_str("+Z"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").qubits[0].eval_z(), PauliString::from_str("+Y"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").qubits[0].eval_z(), PauliString::from_str("X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").qubits[0].eval_z(), PauliString::from_str("-X"));
+
+    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").qubits[1].eval_z(), PauliString::from_str("ZZ"));
+}

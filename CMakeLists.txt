@@ -4,12 +4,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
+        chp_sim.cc
         pauli_string.cc
         simd_util.cc
         tableau.cc
         vector_sim.cc
         )
 set(TEST_FILES
+        chp_sim.test.cc
         pauli_string.test.cc
         simd_util.test.cc
         tableau.test.cc

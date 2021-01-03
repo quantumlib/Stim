@@ -9,6 +9,17 @@
 struct TableauQubit {
     PauliString x;
     PauliString y;
+
+    PauliString eval_z() const {
+        PauliString result = x;
+        uint8_t log_i = result.inplace_right_mul_with_scalar_output(y);
+        log_i -= 1;
+        assert((log_i & 1) == 0);
+        if (log_i & 2) {
+            result._sign ^= true;
+        }
+        return result;
+    }
 };
 
 struct Tableau {
