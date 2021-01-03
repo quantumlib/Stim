@@ -39,7 +39,7 @@ struct PauliString {
     bool operator==(const PauliString &other) const;
     bool operator!=(const PauliString &other) const;
     PauliString& operator*=(const PauliString& rhs);
-    uint8_t PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs);
+    uint8_t inplace_right_mul_with_scalar_output(const PauliString& rhs);
 
     bool get_x_bit(size_t k) const;
     bool get_y_bit(size_t k) const;

@@ -6,7 +6,7 @@ static float complex_distance(std::complex<float> a, std::complex<float> b) {
     return sqrtf(d.real()*d.real() + d.imag()*d.imag());
 }
 
-#define ASSERT_NEAR_C(a, b) ASSERT_LE(complex_distance(a, b), 1e-4);
+#define ASSERT_NEAR_C(a, b) ASSERT_LE(complex_distance(a, b), 1e-4)
 
 TEST(vector_sim, qubit_order) {
     VectorSim sim(2);

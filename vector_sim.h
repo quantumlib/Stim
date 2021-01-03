@@ -1,3 +1,6 @@
+#ifndef VECTOR_SIM_H
+#define VECTOR_SIM_H
+
 #include <iostream>
 #include <map>
 #include <complex>
@@ -13,3 +16,5 @@ struct VectorSim {
 };
 
 extern const std::map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
+
+#endif
