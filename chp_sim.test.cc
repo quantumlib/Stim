@@ -114,7 +114,6 @@ TEST(ChpSim, kickback_vs_stabilizer) {
 
 TEST(ChpSim, s_state_distillation_low_depth) {
     for (size_t reps = 0; reps < 10; reps++) {
-        std::cerr << reps << " rep\n";
         auto sim = ChpSim(9);
 
         std::vector<std::vector<uint8_t>> stabilizers = {
@@ -185,123 +184,52 @@ TEST(ChpSim, s_state_distillation_low_depth) {
     }
 }
 
-/*
 TEST(ChpSim, s_state_distillation_low_space) {
-    for xx in range(10):
-        sim = ChpSim(5)
+    for (size_t rep = 0; rep < 10; rep++) {
+        auto sim = ChpSim(5);
 
-        phasors = [
-            (0,),
-            (1,),
-            (2,),
-            (0, 1, 2),
-            (0, 1, 3),
-            (0, 2, 3),
-            (1, 2, 3),
-        ]
+        std::vector<std::vector<uint8_t>> phasors = {
+                {0,},
+                {1,},
+                {2,},
+                {0, 1, 2},
+                {0, 1, 3},
+                {0, 2, 3},
+                {1, 2, 3},
+        };
 
-        anc = 4
-        for phasor in phasors:
-            sim.hadamard(anc)
-            for k in phasor:
-                sim.cnot(anc, k)
-            sim.hadamard(anc)
-            sim.phase(anc)
-            sim.hadamard(anc)
-            v = sim.measure(anc)
-            ASSERT_EQ(not v.determined
-            if v.value:
-                for k in phasor + (anc,):
-                    sim.hadamard(k)
-                    sim.phase(k)
-                    sim.phase(k)
-                    sim.hadamard(k)
+        size_t anc = 4;
+        for (const auto &phasor : phasors) {
+            sim.hadamard(anc);
+            for (const auto &k : phasor) {
+                sim.cnot(anc, k);
+            }
+            sim.hadamard(anc);
+            sim.phase(anc);
+            sim.hadamard(anc);
+            ASSERT_EQ(sim.is_deterministic(anc), false);
+            auto v = sim.measure(anc);
+            if (v) {
+                for (const auto &k : phasor) {
+                    sim.hadamard(k);
+                    sim.phase(k);
+                    sim.phase(k);
+                    sim.hadamard(k);
+                }
+                sim.hadamard(anc);
+                sim.phase(anc);
+                sim.phase(anc);
+                sim.hadamard(anc);
+            }
+        }
 
-        for k in range(3):
-            ASSERT_EQ(sim.measure(k) == MeasureResult(value=False, determined=True)
-        sim.phase(3)
-        sim.hadamard(3)
-        ASSERT_EQ(sim.measure(3) == MeasureResult(value=True, determined=True)
-
-
-TEST(ChpSim, count_s_state_distillation_failure_cases) {
-    def distill(errors: Set[int]) -> str:
-        sim = ChpSim(5)
-
-        phasors = [
-            (0,),
-            (1,),
-            (2,),
-            (0, 1, 2),
-            (0, 1, 3),
-            (0, 2, 3),
-            (1, 2, 3),
-        ]
-
-        anc = 4
-        for e, phasor in enumerate(phasors):
-            for k in phasor:
-                sim.hadamard(anc)
-                sim.cnot(anc, k)
-                sim.hadamard(anc)
-            sim.phase(anc)
-
-            if e in errors:
-                sim.phase(anc)
-                sim.phase(anc)
-
-            sim.hadamard(anc)
-            v = sim.measure(anc)
-            if v.value:
-                sim.hadamard(anc)
-                sim.phase(anc)
-                sim.phase(anc)
-                sim.hadamard(anc)
-            ASSERT_EQ(not v.determined
-            if v.value:
-                for k in phasor:
-                    sim.hadamard(k)
-                    sim.phase(k)
-                    sim.phase(k)
-                    sim.hadamard(k)
-
-        sim.phase(3)
-        sim.phase(3)
-        sim.phase(3)
-        sim.hadamard(3)
-        result = sim.measure(3)
-        sim.hadamard(3)
-        sim.phase(3)
-        checks = [sim.measure(k) for k in range(3)]
-        ASSERT_EQ(result.determined
-        ASSERT_EQ(all(e.determined for e in checks)
-        good_result = result.value is False
-        checks_passed = not any(e.value for e in checks)
-        if checks_passed:
-            if good_result:
-                return 'good'
-            else:
-                return 'ERROR'
-        else:
-            if good_result:
-                return 'victim'
-            else:
-                return 'caught'
-
-    def classify(errs) -> collections.Counter:
-        result = collections.Counter()
-        for err in errs:
-            result[distill(err)] += 1
-        return result
-
-    nones = list(itertools.combinations(range(7), 0))
-    singles = list(itertools.combinations(range(7), 1))
-    doubles = list(itertools.combinations(range(7), 2))
-    triples = list(itertools.combinations(range(7), 3))
-
-    ASSERT_EQ(classify(nones) == {'good': 1}
-    ASSERT_EQ(classify(singles) == {'caught': 3, 'victim': 4}
-    ASSERT_EQ(classify(doubles) == {'caught': 12, 'victim': 9}
-    ASSERT_EQ(classify(triples) == {'caught': 12, 'victim': 16, 'ERROR': 7}
-
- */
+        for (size_t k = 0; k < 3; k++) {
+            ASSERT_EQ(sim.is_deterministic(k), true);
+            ASSERT_EQ(sim.measure(k), false);
+        }
+        sim.phase(3);
+        sim.hadamard(3);
+        ASSERT_EQ(sim.is_deterministic(3), true);
+        ASSERT_EQ(sim.measure(3), true);
+    }
+}

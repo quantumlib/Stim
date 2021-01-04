@@ -9,7 +9,6 @@ ChpSim::ChpSim(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rn
 bool ChpSim::is_deterministic(size_t target) const {
     size_t n = inv_state.qubits.size();
     auto z_at_beginning = inv_state.qubits[target].eval_z();
-    size_t pivot = UINT32_MAX;
     for (size_t q = 0; q < n; q++) {
         if (z_at_beginning.get_x_bit(q) ^ z_at_beginning.get_y_bit(q)) {
             return false;
@@ -46,7 +45,7 @@ bool ChpSim::measure(size_t target, float bias) {
     }
 
     // Collapse the state.
-    if (z_at_beginning.get_x_bit(pivot)) {
+    if (inv_state.qubits[target].eval_z().get_x_bit(pivot)) {
         inv_state.inplace_scatter_append(
                 GATE_TABLEAUS.at("H_XZ"),
                 {pivot});
