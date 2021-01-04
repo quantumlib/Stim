@@ -1,6 +1,3 @@
-#include <iostream>
-#include <map>
-#include "pauli_string.h"
 #include "chp_sim.h"
 
 ChpSim::ChpSim(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rng((std::random_device {})()) {
@@ -8,9 +5,9 @@ ChpSim::ChpSim(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rn
 
 bool ChpSim::is_deterministic(size_t target) const {
     size_t n = inv_state.qubits.size();
-    auto z_at_beginning = inv_state.qubits[target].eval_z();
+    const auto &z_at_beginning = inv_state.qubits[target].z;
     for (size_t q = 0; q < n; q++) {
-        if (z_at_beginning.get_x_bit(q) ^ z_at_beginning.get_y_bit(q)) {
+        if (z_at_beginning.get_x_bit(q)) {
             return false;
         }
     }
@@ -19,12 +16,12 @@ bool ChpSim::is_deterministic(size_t target) const {
 
 bool ChpSim::measure(size_t target, float bias) {
     size_t n = inv_state.qubits.size();
-    auto z_at_beginning = inv_state.qubits[target].eval_z();
+    const auto &z_obs = inv_state.qubits[target].z;
 
     // X or Y observable indicates random result.
     size_t pivot = UINT32_MAX;
     for (size_t q = 0; q < n; q++) {
-        if (z_at_beginning.get_x_bit(q) ^ z_at_beginning.get_y_bit(q)) {
+        if (z_obs.get_x_bit(q)) {
             pivot = q;
             break;
         }
@@ -32,12 +29,12 @@ bool ChpSim::measure(size_t target, float bias) {
 
     if (pivot == UINT32_MAX) {
         // Deterministic result.
-        return z_at_beginning._sign;
+        return z_obs._sign;
     }
 
     // Cancel out other X / Y components.
     for (size_t q = pivot + 1; q < n; q++) {
-        if (z_at_beginning.get_x_bit(q) ^ z_at_beginning.get_y_bit(q)) {
+        if (z_obs.get_x_bit(q)) {
             inv_state.inplace_scatter_append(
                     GATE_TABLEAUS.at("CNOT"),
                     {pivot, q});
@@ -45,19 +42,18 @@ bool ChpSim::measure(size_t target, float bias) {
     }
 
     // Collapse the state.
-    if (inv_state.qubits[target].eval_z().get_x_bit(pivot)) {
+    if (z_obs.get_z_bit(pivot)) {
         inv_state.inplace_scatter_append(
-                GATE_TABLEAUS.at("H_XZ"),
+                GATE_TABLEAUS.at("H_YZ"),
                 {pivot});
     } else {
         inv_state.inplace_scatter_append(
-                GATE_TABLEAUS.at("H_YZ"),
+                GATE_TABLEAUS.at("H_XZ"),
                 {pivot});
     }
 
     auto coin_flip = std::bernoulli_distribution(bias)(rng);
-    auto z_at_beginning2 = inv_state.qubits[target].eval_z();
-    if (z_at_beginning2._sign != coin_flip) {
+    if (z_obs._sign != coin_flip) {
         inv_state.inplace_scatter_append(
                 GATE_TABLEAUS.at("X"),
                 {pivot});

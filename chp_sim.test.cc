@@ -104,11 +104,11 @@ TEST(ChpSim, kickback_vs_stabilizer) {
     ASSERT_EQ(sim.inv_state.str(),
               "Tableau {\n"
               "  qubit 0_x: +Z_X\n"
-              "  qubit 0_y: -X__\n"
+              "  qubit 0_z: -Y_X\n"
               "  qubit 1_x: +_ZX\n"
-              "  qubit 1_y: -_X_\n"
+              "  qubit 1_z: -_YX\n"
               "  qubit 2_x: +__X\n"
-              "  qubit 2_y: +XXY\n"
+              "  qubit 2_z: +XXZ\n"
               "}");
 }
 

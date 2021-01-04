@@ -67,14 +67,14 @@ void VectorSim::apply(const PauliString &gate, size_t qubit_offset) {
     }
     for (size_t k = 0; k < gate.size; k++) {
         bool x = gate.get_x_bit(k);
-        bool y = gate.get_y_bit(k);
+        bool z = gate.get_z_bit(k);
         size_t q = qubit_offset + k;
-        if (x && y) {
-            apply("Z", q);
+        if (x && z) {
+            apply("Y", q);
         } else if (x) {
             apply("X", q);
-        } else if (y) {
-            apply("Y", q);
+        } else if (z) {
+            apply("Z", q);
         }
     }
 }

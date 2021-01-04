@@ -129,3 +129,21 @@ TEST(pauli_string, scatter) {
     s2.scatter_into(p, {4, 5, 6, 7});
     ASSERT_EQ(p, PauliString::from_str("+_X_XXXZZ"));
 }
+
+TEST(pauli_string, move_copy_assignment) {
+    PauliString x = PauliString::from_str("XYZ");
+
+    // Move.
+    x = std::move(PauliString::from_str("XXY"));
+    ASSERT_EQ(x, PauliString::from_str("XXY"));
+    x = std::move(PauliString::from_str("-IIX"));
+    ASSERT_EQ(x, PauliString::from_str("-IIX"));
+
+    // Copy.
+    auto y = PauliString::from_str("ZZZ");
+    x = y;
+    ASSERT_EQ(x, PauliString::from_str("ZZZ"));
+    y = PauliString::from_str("-ZZZ");
+    x = y;
+    ASSERT_EQ(x, PauliString::from_str("-ZZZ"));
+}

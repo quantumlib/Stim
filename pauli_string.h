@@ -13,7 +13,7 @@ struct PauliString {
     size_t size = 0;
     bool _sign = false;
     uint64_t *_x = nullptr;
-    uint64_t *_y = nullptr;
+    uint64_t *_z = nullptr;
 
     ~PauliString();
     explicit PauliString(size_t size);
@@ -40,13 +40,15 @@ struct PauliString {
     bool operator!=(const PauliString &other) const;
     PauliString& operator*=(const PauliString& rhs);
     uint8_t inplace_right_mul_with_scalar_output(const PauliString& rhs);
+    PauliString& operator=(PauliString &&) noexcept;
+    PauliString& operator=(const PauliString &) noexcept;
 
     bool get_x_bit(size_t k) const;
-    bool get_y_bit(size_t k) const;
+    bool get_z_bit(size_t k) const;
     void set_x_bit(size_t k, bool b);
-    void set_y_bit(size_t k, bool b);
+    void set_z_bit(size_t k, bool b);
     void toggle_x_bit(size_t k);
-    void toggle_y_bit(size_t k);
+    void toggle_z_bit(size_t k);
 
     static PauliString from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func);
     static PauliString from_str(const char *text);

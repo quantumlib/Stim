@@ -9,18 +9,9 @@
 
 struct TableauQubit {
     PauliString x;
-    PauliString y;
+    PauliString z;
 
-    PauliString eval_z() const {
-        PauliString result = x;
-        uint8_t log_i = result.inplace_right_mul_with_scalar_output(y);
-        log_i -= 1;
-        assert((log_i & 1) == 0);
-        if (log_i & 2) {
-            result._sign ^= true;
-        }
-        return result;
-    }
+    PauliString eval_y() const;
 };
 
 struct Tableau {
@@ -39,9 +30,9 @@ struct Tableau {
     ///
     /// Args:
     ///    x: The output-side observable that the input-side X observable gets mapped to.
-    ///    y: The output-side observable that the input-side Y observable gets mapped to.
+    ///    z: The output-side observable that the input-side Y observable gets mapped to.
     static Tableau gate1(const char *x,
-                         const char *y);
+                         const char *z);
 
     /// Creates a Tableau representing a two qubit gate.
     ///
@@ -50,13 +41,13 @@ struct Tableau {
     ///
     /// Args:
     ///    x1: The output-side observable that the input-side XI observable gets mapped to.
-    ///    y1: The output-side observable that the input-side YI observable gets mapped to.
+    ///    z1: The output-side observable that the input-side YI observable gets mapped to.
     ///    x2: The output-side observable that the input-side IX observable gets mapped to.
-    ///    y2: The output-side observable that the input-side IY observable gets mapped to.
+    ///    z2: The output-side observable that the input-side IY observable gets mapped to.
     static Tableau gate2(const char *x1,
-                         const char *y1,
+                         const char *z1,
                          const char *x2,
-                         const char *y2);
+                         const char *z2);
 
     /// Returns the result of applying the tableau to the given Pauli string.
     ///
