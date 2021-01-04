@@ -2,7 +2,7 @@
 #define VECTOR_SIM_H
 
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <complex>
 #include "pauli_string.h"
 
@@ -27,6 +27,6 @@ struct VectorSim {
 };
 
 /// Unitary matrices for common gates, keyed by name.
-extern const std::map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
+extern const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
 
 #endif

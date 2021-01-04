@@ -2,6 +2,7 @@
 #define TABLEAU_H
 
 #include <iostream>
+#include <unordered_map>
 #include <immintrin.h>
 #include "simd_util.h"
 #include "pauli_string.h"
@@ -97,6 +98,6 @@ struct Tableau {
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
 /// Tableaus for common gates, keyed by name.
-extern const std::map<std::string, const Tableau> GATE_TABLEAUS;
+extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
 
 #endif

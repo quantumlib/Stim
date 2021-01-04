@@ -81,7 +81,7 @@ void VectorSim::apply(const PauliString &gate, size_t qubit_offset) {
 
 constexpr std::complex<float> i = std::complex<float>(0, 1);
 constexpr std::complex<float> s = 0.7071067811865475244f;
-const std::map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES {
+const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES {
     {"I", {{1, 0}, {0, 1}}},
     // Pauli gates.
     {"X", {{0, 1}, {1, 0}}},

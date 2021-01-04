@@ -143,7 +143,7 @@ void Tableau::apply_within(PauliString &target, const std::vector<size_t> &targe
     out.scatter_into(target, target_qubits);
 }
 
-const std::map<std::string, const Tableau> GATE_TABLEAUS {
+const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
     {"I", Tableau::gate1("+X", "+Y")},
     // Pauli gates.
     {"X", Tableau::gate1("+X", "-Y")},
