@@ -114,13 +114,13 @@ void time_transpose() {
     std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
 }
 
-void time_transpose_blockwise() {
+void time_transpose_blockwise(size_t block_diameter) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<unsigned long long> dis(
             std::numeric_limits<std::uint64_t>::min(),
             std::numeric_limits<std::uint64_t>::max());
-    constexpr size_t w = 256 * 64;
+    size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
     size_t num_u64 = num_bits / 64;
     auto data = aligned_bits256(num_bits);
@@ -159,8 +159,8 @@ void time_pauli_multiplication(size_t reps, size_t num_qubits) {
 }
 
 int main() {
-    time_pauli_multiplication(100000, 100000);
+//    time_pauli_multiplication(100000, 100000);
 //    time_clifford_sim(1, 25);
 //    time_transpose();
-//    time_transpose_blockwise();
+    time_transpose_blockwise(200);
 }

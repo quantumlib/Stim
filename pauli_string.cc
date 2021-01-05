@@ -64,7 +64,8 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
 
     assert(size == other.size);
     __m256i cnt = _mm256_set1_epi16(0);
-    for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
+    auto n = (size + 0xFF) >> 8;
+    for (size_t i = 0; i < n; i++) {
         auto x0 = _mm256_andnot_si256(z256[i], x256[i]);
         auto y0 = _mm256_and_si256(x256[i], z256[i]);
         auto z0 = _mm256_andnot_si256(x256[i], z256[i]);

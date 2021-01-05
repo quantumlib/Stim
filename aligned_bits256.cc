@@ -64,3 +64,39 @@ aligned_bits256& aligned_bits256::operator=(const aligned_bits256& other) {
     new(this) aligned_bits256(other);
     return *this;
 }
+
+bool aligned_bits256::get_bit(size_t k) const {
+    return ((data[k >> 6] >> (k & 63)) & 1) != 0;
+}
+
+void aligned_bits256::set_bit(size_t k, bool value) {
+    if (value) {
+        data[k >> 6] |= (uint64_t)1 << (k & 63);
+    } else {
+        data[k >> 6] &= ~((uint64_t)1 << (k & 63));
+    }
+}
+
+bool aligned_bits256::operator==(const aligned_bits256 &other) const {
+    if (num_bits != other.num_bits) {
+        return false;
+    }
+    __m256i acc = _mm256_set1_epi32(-1);
+    auto a = (__m256i *)data;
+    auto b = (__m256i *)other.data;
+    size_t n = num_bits >> 8;
+    for (size_t i = 0; i < n; i++) {
+        acc = _mm256_andnot_si256(_mm256_xor_si256(a[i], b[i]), acc);
+    }
+    auto acc64 = (uint64_t *)&acc;
+    for (size_t k = 0; k < 4; k++) {
+        if (acc64[k] != UINT64_MAX) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool aligned_bits256::operator!=(const aligned_bits256 &other) const {
+    return !(*this == other);
+}

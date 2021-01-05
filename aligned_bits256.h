@@ -14,6 +14,12 @@ struct aligned_bits256 {
     aligned_bits256(const aligned_bits256& other);
     aligned_bits256& operator=(aligned_bits256&& other) noexcept;
     aligned_bits256& operator=(const aligned_bits256& other);
+
+    bool get_bit(size_t k) const;
+    void set_bit(size_t k, bool value);
+
+    bool operator==(const aligned_bits256 &other) const;
+    bool operator!=(const aligned_bits256 &other) const;
 };
 
 #endif

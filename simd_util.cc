@@ -3,6 +3,8 @@
 #include <cassert>
 #include <thread>
 #include <algorithm>
+#include <cstring>
+#include <bitset>
 
 __m256i popcnt2(__m256i r) {
     auto m = _mm256_set1_epi16(0x5555);
@@ -192,29 +194,13 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
     }
 }
 
-template <uint8_t h>
-void transpose_bit_matrix_256x256_helper(__m256i *matrix256x256, __m256i mask) noexcept {
-    for (size_t i = 0; i < 256; i += h << 1) {
-        for (size_t j = i; j < i + h; j++) {
-            auto &a = matrix256x256[j];
-            auto &b = matrix256x256[j + h];
-            auto a1 = _mm256_andnot_si256(mask, a);
-            auto b0 = _mm256_and_si256(mask, b);
-            a = _mm256_and_si256(mask, a);
-            b = _mm256_andnot_si256(mask, b);
-            a = _mm256_or_si256(a, _mm256_slli_epi64(b0, h));
-            b = _mm256_or_si256(_mm256_srli_epi64(a1, h), b);
-        }
-    }
-}
-
 void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
-    transpose_bit_matrix_256x256_helper<1>(matrix256x256, _mm256_set1_epi8(0x55));
-    transpose_bit_matrix_256x256_helper<2>(matrix256x256, _mm256_set1_epi8(0x33));
-    transpose_bit_matrix_256x256_helper<4>(matrix256x256, _mm256_set1_epi8(0xF));
-    transpose_bit_matrix_256x256_helper<8>(matrix256x256, _mm256_set1_epi16(0xFF));
-    transpose_bit_matrix_256x256_helper<16>(matrix256x256, _mm256_set1_epi32(0xFFFF));
-    transpose_bit_matrix_256x256_helper<32>(matrix256x256, _mm256_set1_epi64x(0xFFFFFFFF));
+    mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
+    mat256_permute_address_swap_ck_rk<2>(matrix256x256, _mm256_set1_epi8(0x33));
+    mat256_permute_address_swap_ck_rk<4>(matrix256x256, _mm256_set1_epi8(0xF));
+    mat256_permute_address_swap_ck_rk<8>(matrix256x256, _mm256_set1_epi16(0xFF));
+    mat256_permute_address_swap_ck_rk<16>(matrix256x256, _mm256_set1_epi32(0xFFFF));
+    mat256_permute_address_swap_ck_rk<32>(matrix256x256, _mm256_set1_epi64x(0xFFFFFFFF));
     auto u64 = (uint64_t *)matrix256x256;
     for (size_t m = 0; m < 256; m += 4) {
         std::swap(u64[m | 0x100], u64[m | 1]);
@@ -223,6 +209,21 @@ void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
         std::swap(u64[m | 0x201], u64[m | 0x102]);
         std::swap(u64[m | 0x301], u64[m | 0x103]);
         std::swap(u64[m | 0x302], u64[m | 0x203]);
+    }
+//    mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
+//    mat256_permute_address_swap_ck_rk<2>(matrix256x256, _mm256_set1_epi8(0x33));
+//    mat256_permute_address_swap_ck_rk<4>(matrix256x256, _mm256_set1_epi8(0xF));
+//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<64>(matrix256x256);
+//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<32>(matrix256x256);
+//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<16>(matrix256x256);
+//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<8>(matrix256x256);
+//    mat256_permute_address_swap_c7_r7(matrix256x256);
+}
+
+void mat256_permute_address_swap_c7_r7(__m256i *matrix256x256) noexcept {
+    auto u128 = (__m128i *)matrix256x256;
+    for (size_t m = 0; m < 256; m += 2) {
+        std::swap(u128[m | 0x100], u128[m | 1]);
     }
 }
 

@@ -61,4 +61,37 @@ void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noex
 /// Performs `acc + plus - minus` in parallel across every 2 bit word.
 __m256i acc_plus_minus_epi2(__m256i acc, __m256i plus, __m256i minus);
 
+void mat256_permute_address_swap_c7_r7(__m256i *matrix256x256) noexcept;
+
+template <uint8_t bit_val>
+void mat256_permute_address_swap_ck_rk(__m256i *matrix256x256, __m256i mask) noexcept {
+    for (size_t i = 0; i < 256; i += bit_val << 1) {
+        for (size_t j = i; j < i + bit_val; j++) {
+            auto &a = matrix256x256[j];
+            auto &b = matrix256x256[j + bit_val];
+            auto a1 = _mm256_andnot_si256(mask, a);
+            auto b0 = _mm256_and_si256(mask, b);
+            a = _mm256_and_si256(mask, a);
+            b = _mm256_andnot_si256(mask, b);
+            a = _mm256_or_si256(a, _mm256_slli_epi64(b0, bit_val));
+            b = _mm256_or_si256(_mm256_srli_epi64(a1, bit_val), b);
+        }
+    }
+}
+
+void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept;
+
+template <uint8_t row_bit_val>
+void mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk(__m256i *matrix256x256) noexcept {
+    for (size_t i = 0; i < 256; i += row_bit_val << 1) {
+        for (size_t j = i; j < i + row_bit_val; j++) {
+            auto &a = matrix256x256[j];
+            auto &b = matrix256x256[j + row_bit_val];
+            auto t = _mm256_unpackhi_epi8(a, b);
+            a = _mm256_unpacklo_epi8(a, b);
+            b = t;
+        }
+    }
+}
+
 #endif
