@@ -93,36 +93,55 @@ void time_clifford_sim(size_t reps, size_t distance) {
     std::cout << dt / reps << " sec/eval " << distance << "\n";
 }
 
-int main() {
-//    std::random_device rd;
-//    std::mt19937 gen(rd());
-//    std::uniform_int_distribution<unsigned long long> dis(
-//            std::numeric_limits<std::uint64_t>::min(),
-//            std::numeric_limits<std::uint64_t>::max());
-//    constexpr size_t w = 256 * 64;
-//    size_t num_bits = w * w;
-//    size_t num_u64 = num_bits / 64;
-//    auto data = (uint64_t *) _mm_malloc(num_u64 * sizeof(uint64_t), 32);
-//    for (size_t k = 0; k < num_u64; k++) {
-//        data[k] = dis(gen);
-//    }
-//
-//    auto start = std::chrono::steady_clock::now();
-//    size_t n = 10;
-//    for (size_t i = 0; i < n; i++) {
-//        transpose_bit_matrix(data, w);
-//    }
-//    auto end = std::chrono::steady_clock::now();
-//    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-//    std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
-//
-//    start = std::chrono::steady_clock::now();
-//    for (size_t i = 0; i < n; i++) {
-//        transpose_bit_matrix_256x256blocks(data, w);
-//    }
-//    end = std::chrono::steady_clock::now();
-//    dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-//    std::cout << n / dt << " block transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+void time_transpose() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<unsigned long long> dis(
+            std::numeric_limits<std::uint64_t>::min(),
+            std::numeric_limits<std::uint64_t>::max());
+    constexpr size_t w = 256 * 64;
+    size_t num_bits = w * w;
+    size_t num_u64 = num_bits / 64;
+    auto data = aligned_bits256(num_bits);
+    for (size_t k = 0; k < num_u64; k++) {
+        data.data[k] = dis(gen);
+    }
 
-    time_clifford_sim(1, 25);
+    auto start = std::chrono::steady_clock::now();
+    size_t n = 10;
+    for (size_t i = 0; i < n; i++) {
+        transpose_bit_matrix(data.data, w);
+    }
+    auto end = std::chrono::steady_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
+    std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+}
+
+void time_transpose_blockwise() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<unsigned long long> dis(
+            std::numeric_limits<std::uint64_t>::min(),
+            std::numeric_limits<std::uint64_t>::max());
+    constexpr size_t w = 256 * 64;
+    size_t num_bits = w * w;
+    size_t num_u64 = num_bits / 64;
+    auto data = aligned_bits256(num_bits);
+    for (size_t k = 0; k < num_u64; k++) {
+        data.data[k] = dis(gen);
+    }
+
+    size_t n = 10;
+    auto start = std::chrono::steady_clock::now();
+    for (size_t i = 0; i < n; i++) {
+        transpose_bit_matrix_256x256blocks(data.data, w);
+    }
+    auto end = std::chrono::steady_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
+    std::cout << n / dt << " block transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+}
+int main() {
+    time_clifford_sim(1, 15);
+    time_transpose();
+    time_transpose_blockwise();
 }

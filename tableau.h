@@ -7,17 +7,19 @@
 #include "simd_util.h"
 #include "pauli_string.h"
 
-struct TableauQubit {
-    PauliString x;
-    PauliString z;
-
-    PauliString eval_y() const;
-};
-
 struct Tableau {
-    std::vector<TableauQubit> qubits;
+    size_t num_qubits;
+    aligned_bits256 data;
+    std::vector<char> signs;
+
+    explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
     bool operator!=(const Tableau &other) const;
+
+    PauliStringPtr x_obs_ptr(size_t qubit) const;
+    PauliStringVal eval_y_obs(size_t qubit) const;
+    PauliStringPtr z_obs_ptr(size_t qubit) const;
+
     std::string str() const;
 
     /// Creates a Tableau representing the identity operation.
@@ -25,7 +27,7 @@ struct Tableau {
 
     /// Creates a Tableau representing a single qubit gate.
     ///
-    /// All observables specified using the string format accepted by `PauliString::from_str`.
+    /// All observables specified using the string format accepted by `PauliStringVal::from_str`.
     /// For example: "-X" or "+Y".
     ///
     /// Args:
@@ -36,7 +38,7 @@ struct Tableau {
 
     /// Creates a Tableau representing a two qubit gate.
     ///
-    /// All observables specified using the string format accepted by `PauliString::from_str`.
+    /// All observables specified using the string format accepted by `PauliStringVal::from_str`.
     /// For example: "-IX" or "+YZ".
     ///
     /// Args:
@@ -57,13 +59,13 @@ struct Tableau {
     /// Returns:
     ///     The output-side Pauli string.
     ///     Algebraically: $c p c^{-1}$ where $c$ is the tableau's Clifford operation.
-    PauliString operator()(const PauliString &p) const;
+    PauliStringVal operator()(const PauliStringPtr &p) const;
 
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
-    PauliString scatter_eval(const PauliString &gathered_input, const std::vector<size_t> &scattered_indices) const;
+    PauliStringVal scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
-    void apply_within(PauliString &target, const std::vector<size_t> &target_qubits) const;
+    void apply_within(PauliStringPtr &target, const std::vector<size_t> &target_qubits) const;
 
     /// Appends a smaller operation into this tableau's operation.
     ///

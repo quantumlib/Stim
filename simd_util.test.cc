@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "simd_util.h"
 #include <random>
+#include "aligned_bits256.h"
 
 TEST(simd_util, hex) {
     ASSERT_EQ(
@@ -79,13 +80,13 @@ TEST(simd_util, transpose_bit_matrix) {
             std::numeric_limits<std::uint64_t>::min(),
             std::numeric_limits<std::uint64_t>::max());
     size_t bit_width = 256 * 3;
-    size_t words = bit_width*bit_width/64;
-    auto data = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
-    auto expected = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
-    memset(expected, 0, words * sizeof(uint64_t));
+    size_t num_bits = bit_width * bit_width;
+    size_t words = num_bits / 64;
+    auto data = aligned_bits256(bit_width * bit_width);
+    auto expected = aligned_bits256(bit_width * bit_width);
 
     for (size_t k = 0; k < words; k++) {
-        data[k] = dis(gen);
+        data.data[k] = dis(gen);
     }
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
@@ -95,17 +96,15 @@ TEST(simd_util, transpose_bit_matrix) {
             size_t i1 = k1 & 63;
             size_t j0 = k2 / 64;
             size_t j1 = k2 & 63;
-            uint64_t bit = (data[i0] >> i1) & 1;
-            expected[j0] |= bit << j1;
+            uint64_t bit = (data.data[i0] >> i1) & 1;
+            expected.data[j0] |= bit << j1;
         }
     }
 
-    transpose_bit_matrix(data, bit_width);
+    transpose_bit_matrix(data.data, bit_width);
     for (size_t i = 0; i < words; i++) {
-        ASSERT_EQ(data[i], expected[i]);
+        ASSERT_EQ(data.data[i], expected.data[i]);
     }
-    _mm_free(expected);
-    _mm_free(data);
 }
 
 TEST(simd_util, block_transpose_bit_matrix) {
@@ -115,13 +114,13 @@ TEST(simd_util, block_transpose_bit_matrix) {
             std::numeric_limits<std::uint64_t>::min(),
             std::numeric_limits<std::uint64_t>::max());
     size_t bit_width = 256 * 3;
-    size_t words = bit_width*bit_width/64;
-    auto data = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
-    auto expected = (uint64_t *) _mm_malloc(words * sizeof(uint64_t), 32);
-    memset(expected, 0, words * sizeof(uint64_t));
+    size_t num_bits = bit_width * bit_width;
+    size_t words = num_bits / 64;
+    auto data = aligned_bits256(bit_width * bit_width);
+    auto expected = aligned_bits256(bit_width * bit_width);
 
     for (size_t k = 0; k < words; k++) {
-        data[k] = dis(gen);
+        data.data[k] = dis(gen);
     }
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
@@ -135,15 +134,13 @@ TEST(simd_util, block_transpose_bit_matrix) {
             auto a1 = a >> 6;
             auto b0 = b & 63;
             auto b1 = b >> 6;
-            uint64_t bit = (data[a1] >> a0) & 1;
-            expected[b1] |= bit << b0;
+            uint64_t bit = (data.data[a1] >> a0) & 1;
+            expected.data[b1] |= bit << b0;
         }
     }
 
-    transpose_bit_matrix_256x256blocks(data, bit_width);
+    transpose_bit_matrix_256x256blocks(data.data, bit_width);
     for (size_t i = 0; i < words; i++) {
-        ASSERT_EQ(data[i], expected[i]);
+        ASSERT_EQ(data.data[i], expected.data[i]);
     }
-    _mm_free(expected);
-    _mm_free(data);
 }

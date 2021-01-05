@@ -7,18 +7,24 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
+#include "aligned_bits256.h"
 #include "simd_util.h"
 
-struct PauliString {
-    size_t size = 0;
-    bool _sign = false;
-    uint64_t *_x = nullptr;
-    uint64_t *_z = nullptr;
+struct PauliStringVal;
 
-    ~PauliString();
-    explicit PauliString(size_t size);
-    PauliString(const PauliString &other);
-    PauliString(PauliString &&other) noexcept;
+struct PauliStringPtr {
+    size_t size;
+    bool *ptr_sign;
+    uint64_t *_x;
+    uint64_t *_z;
+
+    PauliStringPtr(size_t size, bool *sign_ptr, uint64_t *x, uint64_t *z);
+    PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
+
+    bool operator==(const PauliStringPtr &other) const;
+    bool operator!=(const PauliStringPtr &other) const;
+
+    void overwrite_with(const PauliStringPtr &other);
 
     // Computes the scalar term created when multiplying two Pauli strings together.
     // For example, in XZ = iY, the scalar byproduct is i.
@@ -29,19 +35,15 @@ struct PauliString {
     //     1 if the scalar byproduct is i.
     //     2 if the scalar byproduct is -1.
     //     3 if the scalar byproduct is -i.
-    uint8_t log_i_scalar_byproduct(const PauliString &other) const;
+    uint8_t log_i_scalar_byproduct(const PauliStringPtr &other) const;
 
-    void gather_into(PauliString &out, const std::vector<size_t> &in_indices) const;
-    void scatter_into(PauliString &out, const std::vector<size_t> &out_indices) const;
+    void gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const;
+    void scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const;
 
     std::string str() const;
 
-    bool operator==(const PauliString &other) const;
-    bool operator!=(const PauliString &other) const;
-    PauliString& operator*=(const PauliString& rhs);
-    uint8_t inplace_right_mul_with_scalar_output(const PauliString& rhs);
-    PauliString& operator=(PauliString &&) noexcept;
-    PauliString& operator=(const PauliString &) noexcept;
+    PauliStringPtr& operator*=(const PauliStringPtr &rhs);
+    uint8_t inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs);
 
     bool get_x_bit(size_t k) const;
     bool get_z_bit(size_t k) const;
@@ -49,12 +51,29 @@ struct PauliString {
     void set_z_bit(size_t k, bool b);
     void toggle_x_bit(size_t k);
     void toggle_z_bit(size_t k);
-
-    static PauliString from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func);
-    static PauliString from_str(const char *text);
-    static PauliString identity(size_t size);
 };
 
-std::ostream &operator<<(std::ostream &out, const PauliString &ps);
+struct PauliStringVal {
+    bool val_sign;
+    aligned_bits256 x_data;
+    aligned_bits256 z_data;
+
+    explicit PauliStringVal(size_t size);
+    PauliStringVal(const PauliStringPtr &other); // NOLINT(google-explicit-constructor)
+    PauliStringVal& operator=(const PauliStringPtr &other) noexcept;
+
+    bool operator==(const PauliStringPtr &other) const;
+    bool operator!=(const PauliStringPtr &other) const;
+
+    static PauliStringVal from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func);
+    static PauliStringVal from_str(const char *text);
+    static PauliStringVal identity(size_t size);
+    PauliStringPtr ptr() const;
+
+    std::string str() const;
+};
+
+std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
+std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
 
 #endif

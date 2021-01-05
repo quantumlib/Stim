@@ -3,51 +3,81 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
-PauliString TableauQubit::eval_y() const {
-    PauliString result = x;
-    uint8_t log_i = result.inplace_right_mul_with_scalar_output(z);
+size_t table_words_per_obs(size_t num_qubits) {
+    return ((num_qubits + 255) / 256) * (256 / 64);
+}
+
+size_t table_buffer_bits(size_t num_qubits) {
+    return table_words_per_obs(num_qubits) * 64 * 4 * num_qubits;
+}
+
+PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
+    auto step = table_words_per_obs(num_qubits);
+    return PauliStringPtr(
+            num_qubits,
+            (bool *)&signs[qubit*2],
+            &data.data[step * (4*qubit + 0)],
+            &data.data[step * (4*qubit + 1)]);
+}
+
+PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
+    auto step = table_words_per_obs(num_qubits);
+    return PauliStringPtr(
+            num_qubits,
+            (bool *)&signs[qubit*2 + 1],
+            &data.data[step * (4*qubit + 2)],
+            &data.data[step * (4*qubit + 3)]);
+}
+
+PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
+    PauliStringVal result(x_obs_ptr(qubit));
+    uint8_t log_i = result.ptr().inplace_right_mul_with_scalar_output(z_obs_ptr(qubit));
     log_i++;
     assert((log_i & 1) == 0);
     if (log_i & 2) {
-        result._sign ^= true;
+        result.val_sign ^= true;
     }
     return result;
+}
+
+Tableau::Tableau(size_t num_qubits) :
+        num_qubits(num_qubits),
+        data(table_buffer_bits(num_qubits)),
+        signs(num_qubits * 2, false) {
+    for (size_t q = 0; q < num_qubits; q++) {
+        x_obs_ptr(q).set_x_bit(q, true);
+        z_obs_ptr(q).set_z_bit(q, true);
+    }
 }
 
 Tableau Tableau::identity(size_t num_qubits) {
-    Tableau result;
-    result.qubits.reserve(num_qubits);
-    for (size_t i = 0; i < num_qubits; i++) {
-        TableauQubit q {
-                PauliString::identity(num_qubits),
-                PauliString::identity(num_qubits),
-        };
-        size_t i0 = i >> 6;
-        size_t i1 = i & 63;
-        q.x._x[i0] |= 1ull << i1;
-        q.z._z[i0] |= 1ull << i1;
-        result.qubits.emplace_back(q);
-    }
-    return result;
+    return Tableau(num_qubits);
 }
 
 Tableau Tableau::gate1(const char *x, const char *z) {
-    return Tableau{{{{PauliString::from_str(x), PauliString::from_str(z)}}}};
+    Tableau result(1);
+    result.x_obs_ptr(0).overwrite_with(PauliStringVal::from_str(x));
+    result.z_obs_ptr(0).overwrite_with(PauliStringVal::from_str(z));
+    return result;
 }
 
 Tableau Tableau::gate2(const char *x1,
-                     const char *z1,
-                     const char *x2,
-                     const char *z2) {
-    return Tableau{{{{PauliString::from_str(x1), PauliString::from_str(z1)},
-                     {PauliString::from_str(x2), PauliString::from_str(z2)}}}};
+                       const char *z1,
+                       const char *x2,
+                       const char *z2) {
+    Tableau result(2);
+    result.x_obs_ptr(0).overwrite_with(PauliStringVal::from_str(x1));
+    result.z_obs_ptr(0).overwrite_with(PauliStringVal::from_str(z1));
+    result.x_obs_ptr(1).overwrite_with(PauliStringVal::from_str(x2));
+    result.z_obs_ptr(1).overwrite_with(PauliStringVal::from_str(z2));
+    return result;
 }
 
 std::ostream &operator<<(std::ostream &out, const Tableau &t) {
     out << "Tableau {\n";
-    for (size_t i = 0; i < t.qubits.size(); i++) {
-        out << "  qubit " << i << "_x: " << t.qubits[i].x << "\n";
-        out << "  qubit " << i << "_z: " << t.qubits[i].z << "\n";
+    for (size_t i = 0; i < t.num_qubits; i++) {
+        out << "  qubit " << i << "_x: " << t.x_obs_ptr(i) << "\n";
+        out << "  qubit " << i << "_z: " << t.z_obs_ptr(i) << "\n";
     }
     out << "}";
     return out;
@@ -60,19 +90,21 @@ std::string Tableau::str() const {
 }
 
 void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector<size_t> &target_qubits) {
-    assert(operation.qubits.size() == target_qubits.size());
-    for (auto &q : qubits) {
-        operation.apply_within(q.x, target_qubits);
-        operation.apply_within(q.z, target_qubits);
+    assert(operation.num_qubits == target_qubits.size());
+    for (size_t q = 0; q < num_qubits; q++) {
+        auto x = x_obs_ptr(q);
+        auto z = z_obs_ptr(q);
+        operation.apply_within(x, target_qubits);
+        operation.apply_within(z, target_qubits);
     }
 }
 
 bool Tableau::operator==(const Tableau &other) const {
-    if (qubits.size() != other.qubits.size()) {
+    if (num_qubits != other.num_qubits) {
         return false;
     }
-    for (size_t k = 0; k < qubits.size(); k++) {
-        if (qubits[k].x != other.qubits[k].x || qubits[k].z != other.qubits[k].z) {
+    for (size_t k = 0; k < num_qubits; k++) {
+        if (x_obs_ptr(k) != other.x_obs_ptr(k) || z_obs_ptr(k) != other.z_obs_ptr(k)) {
             return false;
         }
     }
@@ -84,27 +116,25 @@ bool Tableau::operator!=(const Tableau &other) const {
 }
 
 void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits) {
-    assert(operation.qubits.size() == target_qubits.size());
-    std::vector<TableauQubit> new_qubits;
-    new_qubits.reserve(operation.qubits.size());
-    for (const auto &q : operation.qubits) {
-        new_qubits.push_back({
-            scatter_eval(q.x, target_qubits),
-            scatter_eval(q.z, target_qubits),
-        });
+    assert(operation.num_qubits == target_qubits.size());
+    std::vector<PauliStringVal> new_x;
+    std::vector<PauliStringVal> new_z;
+    new_x.reserve(operation.num_qubits);
+    new_z.reserve(operation.num_qubits);
+    for (size_t q = 0; q < operation.num_qubits; q++) {
+        new_x.emplace_back(std::move(scatter_eval(operation.x_obs_ptr(q), target_qubits)));
+        new_z.emplace_back(std::move(scatter_eval(operation.z_obs_ptr(q), target_qubits)));
     }
-    for (size_t i = 0; i < operation.qubits.size(); i++) {
-        auto &t = qubits[target_qubits[i]];
-        auto &q = new_qubits[i];
-        qubits[target_qubits[i]] = std::move(new_qubits[i]);
+    for (size_t q = 0; q < operation.num_qubits; q++) {
+        x_obs_ptr(target_qubits[q]).overwrite_with(new_x[q]);
+        z_obs_ptr(target_qubits[q]).overwrite_with(new_z[q]);
     }
 }
 
-
-PauliString Tableau::scatter_eval(const PauliString &gathered_input, const std::vector<size_t> &scattered_indices) const {
+PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {
     assert(gathered_input.size == scattered_indices.size());
-    auto result = PauliString::identity(qubits.size());
-    result._sign = gathered_input._sign;
+    auto result = PauliStringVal::identity(num_qubits);
+    result.val_sign = *gathered_input.ptr_sign;
     for (size_t k_gathered = 0; k_gathered < gathered_input.size; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
         auto x = gathered_input.get_x_bit(k_gathered);
@@ -113,22 +143,22 @@ PauliString Tableau::scatter_eval(const PauliString &gathered_input, const std::
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
                 uint8_t log_i = 1;
-                log_i += result.inplace_right_mul_with_scalar_output(qubits[k_scattered].x);
-                log_i += result.inplace_right_mul_with_scalar_output(qubits[k_scattered].z);
+                log_i += result.ptr().inplace_right_mul_with_scalar_output(x_obs_ptr(k_scattered));
+                log_i += result.ptr().inplace_right_mul_with_scalar_output(z_obs_ptr(k_scattered));
                 assert((log_i & 1) == 0);
-                result._sign ^= (log_i & 2) != 0;
+                result.val_sign ^= (log_i & 2) != 0;
             } else {
-                result *= qubits[k_scattered].x;
+                result.ptr() *= x_obs_ptr(k_scattered);
             }
         } else if (z) {
-            result *= qubits[k_scattered].z;
+            result.ptr() *= z_obs_ptr(k_scattered);
         }
     }
     return result;
 }
 
-PauliString Tableau::operator()(const PauliString &p) const {
-    assert(p.size == qubits.size());
+PauliStringVal Tableau::operator()(const PauliStringPtr &p) const {
+    assert(p.size == num_qubits);
     std::vector<size_t> indices;
     for (size_t k = 0; k < p.size; k++) {
         indices.push_back(k);
@@ -136,12 +166,13 @@ PauliString Tableau::operator()(const PauliString &p) const {
     return scatter_eval(p, indices);
 }
 
-void Tableau::apply_within(PauliString &target, const std::vector<size_t> &target_qubits) const {
-    assert(qubits.size() == target_qubits.size());
-    auto inp = PauliString::identity(qubits.size());
-    target.gather_into(inp, target_qubits);
+void Tableau::apply_within(PauliStringPtr &target, const std::vector<size_t> &target_qubits) const {
+    assert(num_qubits == target_qubits.size());
+    auto inp = PauliStringVal::identity(num_qubits);
+    PauliStringPtr inp_ptr = inp;
+    target.gather_into(inp_ptr, target_qubits);
     auto out = (*this)(inp);
-    out.scatter_into(target, target_qubits);
+    out.ptr().scatter_into(target, target_qubits);
 }
 
 const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {

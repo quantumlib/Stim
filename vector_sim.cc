@@ -59,8 +59,8 @@ void VectorSim::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
     apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
 }
 
-void VectorSim::apply(const PauliString &gate, size_t qubit_offset) {
-    if (gate._sign) {
+void VectorSim::apply(const PauliStringPtr &gate, size_t qubit_offset) {
+    if (*gate.ptr_sign) {
         for (auto &e : state) {
             e *= -1;
         }

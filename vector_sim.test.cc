@@ -63,49 +63,49 @@ TEST(vector_sim, state_channel_duality_y) {
 TEST(vector_sim, apply_pauli) {
     VectorSim sim(2);
 
-    sim.apply(PauliString::from_str("+II"), 0);
+    sim.apply(PauliStringVal::from_str("+II"), 0);
     ASSERT_NEAR_C(sim.state[0], 1);
     ASSERT_NEAR_C(sim.state[1], 0);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], 0);
 
-    sim.apply(PauliString::from_str("-II"), 0);
+    sim.apply(PauliStringVal::from_str("-II"), 0);
     ASSERT_NEAR_C(sim.state[0], -1);
     ASSERT_NEAR_C(sim.state[1], 0);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], 0);
 
-    sim.apply(PauliString::from_str("+XI"), 0);
+    sim.apply(PauliStringVal::from_str("+XI"), 0);
     ASSERT_NEAR_C(sim.state[0], 0);
     ASSERT_NEAR_C(sim.state[1], -1);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], 0);
 
-    sim.apply(PauliString::from_str("+IZ"), 0);
+    sim.apply(PauliStringVal::from_str("+IZ"), 0);
     ASSERT_NEAR_C(sim.state[0], 0);
     ASSERT_NEAR_C(sim.state[1], -1);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], 0);
 
-    sim.apply(PauliString::from_str("+ZI"), 0);
+    sim.apply(PauliStringVal::from_str("+ZI"), 0);
     ASSERT_NEAR_C(sim.state[0], 0);
     ASSERT_NEAR_C(sim.state[1], 1);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], 0);
 
-    sim.apply(PauliString::from_str("+IY"), 0);
+    sim.apply(PauliStringVal::from_str("+IY"), 0);
     ASSERT_NEAR_C(sim.state[0], 0);
     ASSERT_NEAR_C(sim.state[1], 0);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], std::complex<float>(0, 1));
 
-    sim.apply(PauliString::from_str("+XX"), 0);
+    sim.apply(PauliStringVal::from_str("+XX"), 0);
     ASSERT_NEAR_C(sim.state[0], std::complex<float>(0, 1));
     ASSERT_NEAR_C(sim.state[1], 0);
     ASSERT_NEAR_C(sim.state[2], 0);
     ASSERT_NEAR_C(sim.state[3], 0);
 
-    sim.apply(PauliString::from_str("+X"), 1);
+    sim.apply(PauliStringVal::from_str("+X"), 1);
     ASSERT_NEAR_C(sim.state[0], 0);
     ASSERT_NEAR_C(sim.state[1], 0);
     ASSERT_NEAR_C(sim.state[2], std::complex<float>(0, 1));

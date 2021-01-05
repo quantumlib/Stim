@@ -8,68 +8,61 @@
 #include <cstring>
 #include <cstdlib>
 
-PauliString::~PauliString() {
-    if (_x != nullptr) {
-        _mm_free(_x);
-        _x = nullptr;
-    }
-    if (_z != nullptr) {
-        _mm_free(_z);
-        _z = nullptr;
-    }
+PauliStringPtr::PauliStringPtr(size_t init_size, bool *init_sign, uint64_t *init_x, uint64_t *init_z) :
+        size(init_size),
+        ptr_sign(init_sign),
+        _x(init_x),
+        _z(init_z) {
 }
 
-PauliString::PauliString(const PauliString &other) {
-    _sign = other._sign;
-    size = other.size;
+PauliStringVal::PauliStringVal(size_t init_size) :
+        val_sign(false),
+        x_data(init_size),
+        z_data(init_size) {
+}
+
+PauliStringVal::PauliStringVal(const PauliStringPtr &other) :
+        val_sign(*other.ptr_sign),
+        x_data(other.size, other._x),
+        z_data(other.size, other._z) {
+}
+
+PauliStringPtr PauliStringVal::ptr() const {
+    return PauliStringPtr(*this);
+}
+
+std::string PauliStringVal::str() const {
+    return ptr().str();
+}
+
+void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
+    assert(size == other.size);
     size_t words = (size + 255) / 256;
-    _x = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
-    _z = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
+    *ptr_sign = *other.ptr_sign;
     memcpy(_x, other._x, sizeof(__m256i) * words);
     memcpy(_z, other._z, sizeof(__m256i) * words);
 }
 
-PauliString::PauliString(size_t n_size) {
-    size = n_size;
-    _sign = false;
-    size_t words = (size + 255) / 256;
-    _x = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
-    _z = (uint64_t *)_mm_malloc(sizeof(__m256i) * words, 32);
-    memset(_x, 0, sizeof(__m256i) * words);
-    memset(_z, 0, sizeof(__m256i) * words);
-}
-
-PauliString::PauliString(PauliString &&other) noexcept {
-    _sign = other._sign;
-    size = other.size;
-    _x = other._x;
-    _z = other._z;
-    other._x = nullptr;
-    other._z = nullptr;
-}
-
-PauliString& PauliString::operator=(const PauliString &other) noexcept {
-    size_t words = (size + 255) / 256;
-    size_t other_words = (other.size + 255) / 256;
-    if (words != other_words) {
-        (*this).~PauliString();
-        new(this) PauliString(other);
-    } else {
-        _sign = other._sign;
-        size = other.size;
-        memcpy(_x, other._x, sizeof(__m256i) * words);
-        memcpy(_z, other._z, sizeof(__m256i) * words);
-    }
+PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept {
+    (*this).~PauliStringVal();
+    new(this) PauliStringVal(other);
     return *this;
 }
 
-PauliString& PauliString::operator=(PauliString &&other) noexcept {
-    (*this).~PauliString();
-    new(this) PauliString(other);
-    return *this;
+//PauliStringVal& PauliStringVal::operator=(PauliStringVal &&other) noexcept {
+//    (*this).~PauliStringVal();
+//    new(this) PauliStringVal(other);
+//    return *this;
+//}
+
+PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
+        size(other.x_data.num_bits),
+        ptr_sign((bool *)&other.val_sign),
+        _x(other.x_data.data),
+        _z(other.z_data.data) {
 }
 
-uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
+uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) const {
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
@@ -108,14 +101,14 @@ uint8_t PauliString::log_i_scalar_byproduct(const PauliString &other) const {
     return s & 3;
 }
 
-std::string PauliString::str() const {
+std::string PauliStringPtr::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
 }
 
-bool PauliString::operator==(const PauliString &other) const {
-    if (size != other.size || _sign != other._sign) {
+bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
+    if (size != other.size || *ptr_sign != *other.ptr_sign) {
         return false;
     }
     __m256i acc;
@@ -141,12 +134,15 @@ bool PauliString::operator==(const PauliString &other) const {
     return true;
 }
 
-bool PauliString::operator!=(const PauliString &other) const {
+bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
     return !(*this == other);
 }
 
-std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
-    out << (ps._sign ? '-' : '+');
+std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
+    return out << ps.ptr();
+}
+std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
+    out << (*ps.ptr_sign ? '-' : '+');
     auto x256 = (__m256i *)ps._x;
     auto z256 = (__m256i *)ps._z;
     for (size_t i = 0; i < ps.size; i += 256) {
@@ -159,66 +155,56 @@ std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
     return out;
 }
 
-PauliString PauliString::from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func) {
-    PauliString result(size);
-    result._sign = sign;
-    std::vector<bool> xs;
-    std::vector<bool> zs;
-    auto xx = (__m256i *)result._x;
-    auto zz = (__m256i *)result._z;
-    for (size_t i = 0; i < result.size; i++) {
+PauliStringVal PauliStringVal::from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func) {
+    PauliStringVal result(size);
+    result.val_sign = sign;
+    for (size_t i = 0; i < size; i++) {
         char c = func(i);
+        bool x;
+        bool z;
         if (c == 'X') {
-            xs.push_back(true);
-            zs.push_back(false);
+            x = true;
+            z = false;
         } else if (c == 'Y') {
-            xs.push_back(true);
-            zs.push_back(true);
+            x = true;
+            z = true;
         } else if (c == 'Z') {
-            xs.push_back(false);
-            zs.push_back(true);
+            x = false;
+            z = true;
         } else if (c == '_' || c == 'I') {
-            xs.push_back(false);
-            zs.push_back(false);
+            x = false;
+            z = false;
         } else {
             throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
         }
-        if (xs.size() == 256) {
-            *xx++ = bits_to_m256i(xs);
-            *zz++ = bits_to_m256i(zs);
-            xs.clear();
-            zs.clear();
-        }
-    }
-    if (!xs.empty()) {
-        *xx++ = bits_to_m256i(xs);
-        *zz++ = bits_to_m256i(zs);
+        result.x_data.data[i / 64] ^= (uint64_t)x << (i & 63);
+        result.z_data.data[i / 64] ^= (uint64_t)z << (i & 63);
     }
     return result;
 }
 
-PauliString PauliString::from_str(const char *text) {
+PauliStringVal PauliStringVal::from_str(const char *text) {
     auto sign = text[0] == '-';
     if (text[0] == '+' || text[0] == '-') {
         text++;
     }
-    return PauliString::from_pattern(sign, strlen(text), [&](size_t i){ return text[i]; });
+    return PauliStringVal::from_pattern(sign, strlen(text), [&](size_t i){ return text[i]; });
 }
 
-PauliString PauliString::identity(size_t size) {
-    return PauliString(size);
+PauliStringVal PauliStringVal::identity(size_t size) {
+    return PauliStringVal(size);
 }
 
-PauliString& PauliString::operator*=(const PauliString& rhs) {
+PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
     uint8_t log_i = inplace_right_mul_with_scalar_output(rhs);
     assert((log_i & 1) == 0);
-    _sign ^= (log_i & 2) == 2;
+    *ptr_sign ^= (log_i & 2) == 2;
     return *this;
 }
 
-uint8_t PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs) {
+uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs) {
     uint8_t result = log_i_scalar_byproduct(rhs);
-    _sign ^= rhs._sign;
+    *ptr_sign ^= *rhs.ptr_sign;
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)rhs._x;
@@ -230,45 +216,45 @@ uint8_t PauliString::inplace_right_mul_with_scalar_output(const PauliString& rhs
     return result;
 }
 
-bool PauliString::get_x_bit(size_t k) const {
+bool PauliStringPtr::get_x_bit(size_t k) const {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     return ((_x[i0] >> i1) & 1) != 0;
 }
 
-bool PauliString::get_z_bit(size_t k) const {
+bool PauliStringPtr::get_z_bit(size_t k) const {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     return ((_z[i0] >> i1) & 1) != 0;
 }
 
-void PauliString::toggle_x_bit(size_t k) {
+void PauliStringPtr::toggle_x_bit(size_t k) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _x[i0] ^= 1ull << i1;
 }
 
-void PauliString::toggle_z_bit(size_t k) {
+void PauliStringPtr::toggle_z_bit(size_t k) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _z[i0] ^= 1ull << i1;
 }
 
-void PauliString::set_x_bit(size_t k, bool val) {
+void PauliStringPtr::set_x_bit(size_t k, bool val) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _x[i0] &= ~(1ull << i1);
     _x[i0] ^= (uint64_t)val << i1;
 }
 
-void PauliString::set_z_bit(size_t k, bool val) {
+void PauliStringPtr::set_z_bit(size_t k, bool val) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _z[i0] &= ~(1ull << i1);
     _z[i0] ^= (uint64_t)val << i1;
 }
 
-void PauliString::gather_into(PauliString &out, const std::vector<size_t> &in_indices) const {
+void PauliStringPtr::gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const {
     assert(in_indices.size() == out.size);
     for (size_t k_out = 0; k_out < out.size; k_out++) {
         size_t k_in = in_indices[k_out];
@@ -277,12 +263,19 @@ void PauliString::gather_into(PauliString &out, const std::vector<size_t> &in_in
     }
 }
 
-void PauliString::scatter_into(PauliString &out, const std::vector<size_t> &out_indices) const {
+void PauliStringPtr::scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const {
     assert(size == out_indices.size());
     for (size_t k_in = 0; k_in < size; k_in++) {
         size_t k_out = out_indices[k_in];
         out.set_x_bit(k_out, get_x_bit(k_in));
         out.set_z_bit(k_out, get_z_bit(k_in));
     }
-    out._sign ^= _sign;
+    *out.ptr_sign ^= *ptr_sign;
+}
+
+bool PauliStringVal::operator==(const PauliStringPtr &other) const {
+    return ptr() == other;
+}
+bool PauliStringVal::operator!=(const PauliStringPtr &other) const {
+    return ptr() != other;
 }

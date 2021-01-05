@@ -8,6 +8,7 @@ set(SOURCE_FILES_NO_MAIN
         pauli_string.cc
         simd_util.cc
         tableau.cc
+        aligned_bits256.cc
         vector_sim.cc
         )
 set(TEST_FILES
@@ -15,6 +16,7 @@ set(TEST_FILES
         pauli_string.test.cc
         simd_util.test.cc
         tableau.test.cc
+        aligned_bits256.test.cc
         vector_sim.test.cc
         )
 

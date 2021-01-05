@@ -23,7 +23,7 @@ struct VectorSim {
     /// Helper method for applying named two qubit gates.
     void apply(const std::string &gate, size_t qubit1, size_t qubit2);
     /// Helper method for applying the gates in a Pauli string.
-    void apply(const PauliString &gate, size_t qubit_offset);
+    void apply(const PauliStringPtr &gate, size_t qubit_offset);
 };
 
 /// Unitary matrices for common gates, keyed by name.
