@@ -89,39 +89,51 @@ void time_clifford_sim(size_t reps, size_t distance) {
     std::cout << dt / reps << " sec/eval " << distance << "\n";
 }
 
-void time_transpose() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
-    constexpr size_t w = 256 * 64;
+void time_transpose(size_t block_diameter, size_t reps) {
+    size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
     auto data = aligned_bits256::random(num_bits);
-
     auto start = std::chrono::steady_clock::now();
-    size_t n = 10;
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < reps; i++) {
         transpose_bit_matrix(data.data, w);
     }
     auto end = std::chrono::steady_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << n / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+    std::cout << reps / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
 }
 
-void time_transpose_blockwise(size_t block_diameter) {
+void time_mike_transpose(size_t block_diameter, size_t reps) {
+    size_t w = 256 * block_diameter;
+    size_t num_bits = w * w;
+    auto data = aligned_bits256::random(num_bits);
+    auto out = aligned_bits256(num_bits);
+    auto start = std::chrono::steady_clock::now();
+    for (size_t i = 0; i < reps; i++) {
+        mike_transpose_bit_matrix(data.data, out.data, w);
+    }
+    auto end = std::chrono::steady_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
+    std::cout << reps / dt << " mike transposes/sec ("
+        << w << "x"
+        << w << ", "
+        << (num_bits >> 23) << " MiB, reps "
+        << reps << ", dt=" << dt << "s)\n";
+}
+
+void time_transpose_blockwise(size_t block_diameter, size_t reps) {
     size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
     auto data = aligned_bits256::random(num_bits);
 
-    size_t n = 10;
     auto start = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < reps; i++) {
         transpose_bit_matrix_256x256blocks(data.data, w);
     }
     auto end = std::chrono::steady_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << n * block_diameter * block_diameter / dt / 1000 << "K basic block (256x256) transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB, " << dt << "s)\n";
+    auto transposes_ps = reps / dt;
+    auto kblocks_ps = (size_t)(transposes_ps * block_diameter * block_diameter / 1000);
+    std::cout << transposes_ps << " blockwise transposes/s, " << kblocks_ps << "K basic block (256x256) transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB, " << dt << "s)\n";
 }
 
 void time_pauli_multiplication(size_t reps, size_t num_qubits) {
@@ -148,5 +160,9 @@ int main() {
 //    time_pauli_multiplication(100000, 100000);
 //    time_clifford_sim(1, 25);
 //    time_transpose();
-    time_transpose_blockwise(200);
+    size_t block_diam = 512;
+    size_t reps = 1;
+    time_transpose_blockwise(block_diam, reps);
+    time_mike_transpose(block_diam, reps);
+    time_transpose(block_diam, reps);
 }

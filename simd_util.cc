@@ -194,6 +194,24 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
     }
 }
 
+void mike_transpose_bit_matrix(uint64_t* matrix, uint64_t* out, size_t bit_width) noexcept {
+    union { uint8_t arr[32]; __m256i reg; } simd_vec;
+
+    uint8_t* byte_matrix = (uint8_t*)matrix;
+    uint8_t* byte_out = (uint8_t*)out;
+    for (int i = 0; i < bit_width; i += 32){
+        for (int j = 0; j < bit_width; j += 8) {
+            for (int k = 0; k < 32; k++){
+                simd_vec.arr[k] = byte_matrix[((i + k) * bit_width  + j) >> 3];
+            }
+            for (int k = 7; k>=0; k--){
+                *reinterpret_cast<uint32_t*>(&byte_out[((j + k) * bit_width + i) >> 3]) = _mm256_movemask_epi8(simd_vec.reg);
+                simd_vec.reg = _mm256_slli_epi64(simd_vec.reg, 1);
+            }
+        }
+    }
+}
+
 void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
     mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
     mat256_permute_address_swap_ck_rk<2>(matrix256x256, _mm256_set1_epi8(0x33));

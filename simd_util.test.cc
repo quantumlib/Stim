@@ -236,3 +236,12 @@ TEST(simd_util, acc_plus_minus_epi2) {
         }
     }
 }
+
+TEST(simd_util, mike_transpose) {
+    size_t bit_width = 256 * 3;
+    auto data = aligned_bits256::random(bit_width * bit_width);
+    auto expected = reference_transpose_of(bit_width, data);
+    auto out = aligned_bits256(bit_width * bit_width);
+    mike_transpose_bit_matrix(data.data, out.data, bit_width);
+    ASSERT_EQ(out, expected);
+}

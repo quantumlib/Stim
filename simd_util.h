@@ -33,6 +33,7 @@ std::string bin(__m256i data);
 ///         The storage order is such that the bit at column c row r is toggled by
 ///         performing `matrix[(r*bit_width + c) / 64] ^= 1 << (c & 63)`.
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
+void mike_transpose_bit_matrix(uint64_t *matrix, uint64_t* out, size_t bit_width) noexcept;
 
 /// Transposes the 256x256 blocks of a block bit packed square boolean matrix.
 ///
