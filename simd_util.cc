@@ -198,26 +198,11 @@ void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
     mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
     mat256_permute_address_swap_ck_rk<2>(matrix256x256, _mm256_set1_epi8(0x33));
     mat256_permute_address_swap_ck_rk<4>(matrix256x256, _mm256_set1_epi8(0xF));
-    mat256_permute_address_swap_ck_rk<8>(matrix256x256, _mm256_set1_epi16(0xFF));
-    mat256_permute_address_swap_ck_rk<16>(matrix256x256, _mm256_set1_epi32(0xFFFF));
-    mat256_permute_address_swap_ck_rk<32>(matrix256x256, _mm256_set1_epi64x(0xFFFFFFFF));
-    auto u64 = (uint64_t *)matrix256x256;
-    for (size_t m = 0; m < 256; m += 4) {
-        std::swap(u64[m | 0x100], u64[m | 1]);
-        std::swap(u64[m | 0x200], u64[m | 2]);
-        std::swap(u64[m | 0x300], u64[m | 3]);
-        std::swap(u64[m | 0x201], u64[m | 0x102]);
-        std::swap(u64[m | 0x301], u64[m | 0x103]);
-        std::swap(u64[m | 0x302], u64[m | 0x203]);
-    }
-//    mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
-//    mat256_permute_address_swap_ck_rk<2>(matrix256x256, _mm256_set1_epi8(0x33));
-//    mat256_permute_address_swap_ck_rk<4>(matrix256x256, _mm256_set1_epi8(0xF));
-//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<64>(matrix256x256);
-//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<32>(matrix256x256);
-//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<16>(matrix256x256);
-//    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<8>(matrix256x256);
-//    mat256_permute_address_swap_c7_r7(matrix256x256);
+    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<64>(matrix256x256);
+    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<32>(matrix256x256);
+    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<16>(matrix256x256);
+    mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<8>(matrix256x256);
+    mat256_permute_address_swap_c7_r7(matrix256x256);
 }
 
 void mat256_permute_address_swap_c7_r7(__m256i *matrix256x256) noexcept {

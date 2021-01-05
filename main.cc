@@ -135,7 +135,7 @@ void time_transpose_blockwise(size_t block_diameter) {
     }
     auto end = std::chrono::steady_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << n / dt << " block transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+    std::cout << n * block_diameter * block_diameter / dt / 1000 << "K basic block (256x256) transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB, " << dt << "s)\n";
 }
 
 void time_pauli_multiplication(size_t reps, size_t num_qubits) {
