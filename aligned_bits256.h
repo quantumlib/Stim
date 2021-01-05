@@ -15,7 +15,9 @@ struct aligned_bits256 {
     aligned_bits256& operator=(aligned_bits256&& other) noexcept;
     aligned_bits256& operator=(const aligned_bits256& other);
 
-    bool get_bit(size_t k) const;
+    static aligned_bits256 random(size_t num_bits);
+
+    [[nodiscard]] bool get_bit(size_t k) const;
     void set_bit(size_t k, bool value);
 
     bool operator==(const aligned_bits256 &other) const;

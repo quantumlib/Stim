@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 #include "pauli_string.h"
-#include <random>
 
 TEST(pauli_string, str) {
     auto p1 = PauliStringVal::from_str("+IXYZ");
@@ -157,15 +156,7 @@ TEST(pauli_string, move_copy_assignment) {
 
 TEST(pauli_string, foreign_memory) {
     size_t bits = 2048;
-    auto buffer = aligned_bits256(bits);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
-    for (size_t k = 0; k < (bits / 64); k++) {
-        buffer.data[k] = dis(gen);
-    }
+    auto buffer = aligned_bits256::random(bits);
     bool sign1 = false;
     bool sign2 = false;
 

@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 #include "simd_util.h"
-#include <random>
 #include "aligned_bits256.h"
 
 TEST(simd_util, hex) {
@@ -73,55 +72,18 @@ TEST(simd_util, popcnt) {
     ASSERT_EQ(s16[15], 0);
 }
 
-TEST(simd_util, transpose_bit_matrix) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
-    size_t bit_width = 256 * 3;
-    size_t num_bits = bit_width * bit_width;
-    size_t words = num_bits / 64;
-    auto data = aligned_bits256(bit_width * bit_width);
-    auto expected = aligned_bits256(bit_width * bit_width);
-
-    for (size_t k = 0; k < words; k++) {
-        data.data[k] = dis(gen);
-    }
+aligned_bits256 reference_transpose_of(size_t bit_width, const aligned_bits256 &data) {
+    auto expected = aligned_bits256(data.num_bits);
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
-            size_t k1 = i*bit_width + j;
-            size_t k2 = j*bit_width + i;
-            size_t i0 = k1 / 64;
-            size_t i1 = k1 & 63;
-            size_t j0 = k2 / 64;
-            size_t j1 = k2 & 63;
-            uint64_t bit = (data.data[i0] >> i1) & 1;
-            expected.data[j0] |= bit << j1;
+            expected.set_bit(i*bit_width + j, data.get_bit(j*bit_width + i));
         }
     }
-
-    transpose_bit_matrix(data.data, bit_width);
-    for (size_t i = 0; i < words; i++) {
-        ASSERT_EQ(data.data[i], expected.data[i]);
-    }
+    return expected;
 }
 
-TEST(simd_util, block_transpose_bit_matrix) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
-    size_t bit_width = 256 * 3;
-    size_t num_bits = bit_width * bit_width;
-    size_t words = num_bits / 64;
-    auto data = aligned_bits256(bit_width * bit_width);
-    auto expected = aligned_bits256(bit_width * bit_width);
-
-    for (size_t k = 0; k < words; k++) {
-        data.data[k] = dis(gen);
-    }
+aligned_bits256 reference_blockwise_transpose_of(size_t bit_width, const aligned_bits256 &data) {
+    auto expected = aligned_bits256(data.num_bits);
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
             size_t i0 = i & 255;
@@ -130,19 +92,26 @@ TEST(simd_util, block_transpose_bit_matrix) {
             size_t j1 = j >> 8;
             auto a = i0 + (j0 << 8) + (i1 << 16) + j1 * (bit_width << 8);
             auto b = j0 + (i0 << 8) + (i1 << 16) + j1 * (bit_width << 8);
-            auto a0 = a & 63;
-            auto a1 = a >> 6;
-            auto b0 = b & 63;
-            auto b1 = b >> 6;
-            uint64_t bit = (data.data[a1] >> a0) & 1;
-            expected.data[b1] |= bit << b0;
+            expected.set_bit(a, data.get_bit(b));
         }
     }
+    return expected;
+}
 
+TEST(simd_util, transpose_bit_matrix) {
+    size_t bit_width = 256 * 3;
+    auto data = aligned_bits256::random(bit_width * bit_width);
+    auto expected = reference_transpose_of(bit_width, data);
+    transpose_bit_matrix(data.data, bit_width);
+    ASSERT_EQ(data, expected);
+}
+
+TEST(simd_util, block_transpose_bit_matrix) {
+    size_t bit_width = 256 * 3;
+    auto data = aligned_bits256::random(bit_width * bit_width);
+    auto expected = reference_blockwise_transpose_of(bit_width, data);
     transpose_bit_matrix_256x256blocks(data.data, bit_width);
-    for (size_t i = 0; i < words; i++) {
-        ASSERT_EQ(data.data[i], expected.data[i]);
-    }
+    ASSERT_EQ(data, expected);
 }
 
 uint8_t determine_permutation_bit(const std::function<void(__m256i *)> &func, uint8_t bit) {
@@ -169,19 +138,10 @@ uint8_t determine_permutation_bit(const std::function<void(__m256i *)> &func, ui
 bool mat256_function_performs_address_bit_permutation(
         const std::function<void(__m256i *)> &func,
         const std::vector<uint8_t> &bit_permutation) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
     size_t area = 256 * 256;
-    size_t words = area / 64;
-    auto data = aligned_bits256(area);
+    auto data = aligned_bits256::random(area);
     auto expected = aligned_bits256(area);
 
-    for (size_t k = 0; k < words; k++) {
-        data.data[k] = dis(gen);
-    }
     for (size_t k_in = 0; k_in < area; k_in++) {
         size_t k_out = 0;
         for (size_t j = 0; j < 16; j++) {

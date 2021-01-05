@@ -7,7 +7,6 @@
 #include "pauli_string.h"
 #include "chp_sim.h"
 #include <chrono>
-#include <random>
 #include <complex>
 
 void run_surface_code_sim(size_t distance) {
@@ -98,11 +97,7 @@ void time_transpose() {
             std::numeric_limits<std::uint64_t>::max());
     constexpr size_t w = 256 * 64;
     size_t num_bits = w * w;
-    size_t num_u64 = num_bits / 64;
-    auto data = aligned_bits256(num_bits);
-    for (size_t k = 0; k < num_u64; k++) {
-        data.data[k] = dis(gen);
-    }
+    auto data = aligned_bits256::random(num_bits);
 
     auto start = std::chrono::steady_clock::now();
     size_t n = 10;
@@ -115,18 +110,9 @@ void time_transpose() {
 }
 
 void time_transpose_blockwise(size_t block_diameter) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
     size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
-    size_t num_u64 = num_bits / 64;
-    auto data = aligned_bits256(num_bits);
-    for (size_t k = 0; k < num_u64; k++) {
-        data.data[k] = dis(gen);
-    }
+    auto data = aligned_bits256::random(num_bits);
 
     size_t n = 10;
     auto start = std::chrono::steady_clock::now();

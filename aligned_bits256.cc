@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstring>
 #include <immintrin.h>
+#include <random>
 
 #include "aligned_bits256.h"
 
@@ -99,4 +100,21 @@ bool aligned_bits256::operator==(const aligned_bits256 &other) const {
 
 bool aligned_bits256::operator!=(const aligned_bits256 &other) const {
     return !(*this == other);
+}
+
+aligned_bits256 aligned_bits256::random(size_t num_bits) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<unsigned long long> dis(
+            std::numeric_limits<std::uint64_t>::min(),
+            std::numeric_limits<std::uint64_t>::max());
+    size_t num_u64 = (num_bits + 63) / 64;
+    auto data = aligned_bits256(num_bits);
+    for (size_t k = 0; k < num_u64; k++) {
+        data.data[k] = dis(gen);
+    }
+    if (num_bits & 63) {
+      data.data[num_u64 - 1] &= (1 << (num_bits & 63)) - 1;
+    }
+    return data;
 }
