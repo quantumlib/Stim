@@ -27,6 +27,29 @@ __m256i popcnt8(__m256i r) {
     return _mm256_add_epi16(low, high);
 }
 
+__m256i acc_plus_minus_epi2(__m256i acc, __m256i plus, __m256i minus) {
+    // This method is based on the 2 bit reversible inplace addition circuit:
+    //
+    // off1 --@--@---- off1
+    // off2 --|--|-@-- off2
+    // acc1 --@--X-|-- acc1'
+    // acc2 --X----X-- acc2'
+    //
+    // Take that circuit, reverse it to get the minus circuit, put the minus
+    // part before the addition part, and fuse the Toffoli gates together
+    // (i.e. combine the carry handling).
+    acc = _mm256_xor_si256(acc, minus);
+    auto carries = _mm256_slli_epi16(
+            _mm256_and_si256(
+                _mm256_set1_epi8(0b01010101),
+                _mm256_and_si256(
+                    _mm256_xor_si256(plus, minus),
+                    acc)),
+            1);
+    acc = _mm256_xor_si256(acc, carries);
+    return _mm256_xor_si256(acc, plus);
+}
+
 __m256i popcnt16(__m256i r) {
     r = popcnt8(r);
     auto m = _mm256_set1_epi16(0x00FF);

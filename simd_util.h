@@ -58,4 +58,7 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 ///     matrix: Must be aligned on a 32 byte boundary. Pointer to the matrix data.
 void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noexcept;
 
+/// Performs `acc + plus - minus` in parallel across every 2 bit word.
+__m256i acc_plus_minus_epi2(__m256i acc, __m256i plus, __m256i minus);
+
 #endif

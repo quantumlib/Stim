@@ -144,3 +144,19 @@ TEST(simd_util, block_transpose_bit_matrix) {
         ASSERT_EQ(data.data[i], expected.data[i]);
     }
 }
+
+TEST(simd_util, acc_plus_minus_epi2) {
+    for (uint8_t a = 0; a < 4; a++) {
+        for (uint8_t b = 0; b < 4; b++) {
+            for (uint8_t c = 0; c < 4; c++) {
+                uint8_t e = (a + b - c) & 3;
+                __m256i ma = _mm256_set1_epi8(a);
+                __m256i mb = _mm256_set1_epi8(b);
+                __m256i mc = _mm256_set1_epi8(c);
+                __m256i me = _mm256_set1_epi8(e);
+                __m256i actual = acc_plus_minus_epi2(ma, mb, mc);
+                ASSERT_EQ(*(uint64_t *)&me, *(uint64_t *)&actual);
+            }
+        }
+    }
+}

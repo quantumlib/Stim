@@ -83,14 +83,17 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
         auto b3 = _mm256_and_si256(z0, y1);
         auto b = _mm256_or_si256(b1, _mm256_or_si256(b2, b3));
 
-        cnt = _mm256_add_epi16(cnt, popcnt16(f));
-        cnt = _mm256_sub_epi16(cnt, popcnt16(b));
+        f = popcnt2(f);
+        b = popcnt2(b);
+        cnt = acc_plus_minus_epi2(cnt, f, b);
     }
 
     uint8_t s = 0;
-    auto cnt16 = (uint16_t *)&cnt;
-    for (size_t k = 0; k < 16; k++) {
-        s += (uint8_t)cnt16[k];
+    auto cnt64 = (uint64_t *)&cnt;
+    for (size_t k = 0; k < 4; k++) {
+        for (size_t b = 0; b < 64; b += 2) {
+            s += (uint8_t) (cnt64[k] >> b);
+        }
     }
     return s & 3;
 }
