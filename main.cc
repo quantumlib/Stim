@@ -45,7 +45,6 @@ void run_surface_code_sim(size_t distance) {
         for (const auto &x : xs) {
             sim.hadamard(qubit(x));
         }
-        std::cerr << "cnots " << round << "\n";
         for (const auto &d : dirs) {
             for (const auto &z : zs) {
                 auto p = z + d;
@@ -60,12 +59,10 @@ void run_surface_code_sim(size_t distance) {
                 }
             }
         }
-        std::cerr << "z measure " << round << "\n";
         for (const auto &z : zs) {
             assert(sim.is_deterministic(qubit(z)));
             sim.measure(qubit(z));
         }
-        std::cerr << "x measure " << round << "\n";
         for (const auto &x : xs) {
             sim.hadamard(qubit(x));
         }
@@ -140,8 +137,30 @@ void time_transpose_blockwise() {
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
     std::cout << n / dt << " block transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
 }
+
+void time_pauli_multiplication(size_t reps, size_t num_qubits) {
+    auto p1 = PauliStringVal::from_pattern(
+            false,
+            num_qubits,
+            [](size_t i) { return "_XYZX"[i % 5]; });
+    auto p2 = PauliStringVal::from_pattern(
+            true,
+            num_qubits,
+            [](size_t i) { return "_XZYZZX"[i % 7]; });
+    PauliStringPtr p1_ptr = p1;
+    PauliStringPtr p2_ptr = p2;
+    auto start = std::chrono::steady_clock::now();
+    for (size_t i = 0; i < reps; i++) {
+        p1_ptr.inplace_right_mul_with_scalar_output(p2_ptr);
+    }
+    auto end = std::chrono::steady_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
+    std::cout << (num_qubits * reps) / dt / 1000.0 / 1000.0 / 1000.0 << " GigaPauliMuls/sec (q=" << num_qubits << ",r=" << reps << ",dt=" << dt << "s)\n";
+}
+
 int main() {
-    time_clifford_sim(1, 15);
-    time_transpose();
-    time_transpose_blockwise();
+    time_pauli_multiplication(100000, 100000);
+//    time_clifford_sim(1, 25);
+//    time_transpose();
+//    time_transpose_blockwise();
 }

@@ -49,12 +49,6 @@ PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept 
     return *this;
 }
 
-//PauliStringVal& PauliStringVal::operator=(PauliStringVal &&other) noexcept {
-//    (*this).~PauliStringVal();
-//    new(this) PauliStringVal(other);
-//    return *this;
-//}
-
 PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         size(other.x_data.num_bits),
         ptr_sign((bool *)&other.val_sign),
