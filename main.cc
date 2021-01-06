@@ -1,15 +1,16 @@
-#include <iostream>
-#include <immintrin.h>
-#include <new>
 #include <cassert>
-#include <sstream>
-#include "simd_util.h"
-#include "pauli_string.h"
-#include "chp_sim.h"
 #include <chrono>
 #include <complex>
+#include <immintrin.h>
+#include <iostream>
+#include <new>
+#include <sstream>
+#include "chp_sim.h"
+#include "pauli_string.h"
+#include "perf.h"
+#include "simd_util.h"
 
-void run_surface_code_sim(size_t distance) {
+void run_surface_code_sim(size_t distance, bool progress = false) {
     size_t diam = distance * 2 - 1;
     auto qubit = [&](std::complex<float> c){
         return (size_t)(c.real() * diam + c.imag());
@@ -40,7 +41,9 @@ void run_surface_code_sim(size_t distance) {
             {-1, 0},
     };
     for (size_t round = 0; round < distance; round++) {
-        std::cerr << "round " << round << "\n";
+        if (progress) {
+            std::cerr << "round " << round << "\n";
+        }
         for (const auto &x : xs) {
             sim.hadamard(qubit(x));
         }
@@ -66,7 +69,7 @@ void run_surface_code_sim(size_t distance) {
             sim.hadamard(qubit(x));
         }
         for (const auto &x : xs) {
-            if (round == 0) {
+            if (progress && round == 0) {
                 std::cerr << "x measure " << x << "," << round << "\n";
             }
             assert(sim.is_deterministic(qubit(x)) == round > 0);
@@ -74,69 +77,64 @@ void run_surface_code_sim(size_t distance) {
         }
     }
     for (auto d : data) {
-        std::cerr << "data measure " << d << "\n";
+        if (progress) {
+            std::cerr << "data measure " << d << "\n";
+        }
         sim.measure(qubit(d));
     }
 }
 
-void time_clifford_sim(size_t reps, size_t distance) {
-    auto start = std::chrono::steady_clock::now();
-    for (size_t rep = 0; rep < reps; rep++) {
-        run_surface_code_sim(distance);
-    }
-    auto end = std::chrono::steady_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << dt / reps << " sec/eval " << distance << "\n";
+void time_clifford_sim(size_t distance, bool progress = false) {
+    std::cerr << "run_surface_code_sim(distance=" << distance << ")\n";
+    auto f = PerfResult::time([&]() { run_surface_code_sim(distance, progress); });
+    std::cerr << f;
+    std::cerr << "\n";
 }
 
-void time_transpose(size_t block_diameter, size_t reps) {
+void time_transpose(size_t block_diameter) {
     size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
     auto data = aligned_bits256::random(num_bits);
-    auto start = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < reps; i++) {
+    std::cerr << "transpose_bit_matrix(block_diameter=" << block_diameter << "; ";
+    std::cerr << (block_diameter * block_diameter * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
+    std::cerr << PerfResult::time([&](){
         transpose_bit_matrix(data.data, w);
-    }
-    auto end = std::chrono::steady_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << reps / dt << " transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB)\n";
+    });
+    std::cerr << "\n";
 }
 
-void time_mike_transpose(size_t block_diameter, size_t reps) {
+void time_mike_transpose(size_t block_diameter) {
+    std::cerr << "mike_transpose_bit_matrix(block_diameter=" << block_diameter << "; ";
+    std::cerr << (block_diameter * block_diameter * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
+
     size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
     auto data = aligned_bits256::random(num_bits);
     auto out = aligned_bits256(num_bits);
-    auto start = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < reps; i++) {
+    std::cerr << PerfResult::time([&](){
         mike_transpose_bit_matrix(data.data, out.data, w);
-    }
-    auto end = std::chrono::steady_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << reps / dt << " mike transposes/sec ("
-        << w << "x"
-        << w << ", "
-        << (num_bits >> 23) << " MiB, reps "
-        << reps << ", dt=" << dt << "s)\n";
+    });
+    std::cerr << "\n";
 }
 
-void time_transpose_blockwise(size_t block_diameter, size_t reps) {
+void time_transpose_blockwise(size_t block_diameter) {
+    std::cerr << "transpose_bit_matrix_256x256blocks(block_diameter=" << block_diameter << "; ";
+    std::cerr << (block_diameter * block_diameter * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
+
     size_t w = 256 * block_diameter;
     size_t num_bits = w * w;
     auto data = aligned_bits256::random(num_bits);
-
-    auto start = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < reps; i++) {
+    auto f = PerfResult::time([&](){
         transpose_bit_matrix_256x256blocks(data.data, w);
-    }
-    auto end = std::chrono::steady_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    auto transposes_ps = reps / dt;
-    auto kblocks_ps = (size_t)(transposes_ps * block_diameter * block_diameter / 1000);
-    std::cout << transposes_ps << " blockwise transposes/s, " << kblocks_ps << "K basic block (256x256) transposes/sec (" << w << "x" << w << ", " << (num_bits >> 23) << " MiB, " << dt << "s)\n";
+    });
+    std::cerr << f;
+    std::cerr << " (" << f.rate() * block_diameter * block_diameter / 1000.0 / 1000.0 << " MegaBlocks/s)";
+    std::cerr << "\n";
 }
 
-void time_pauli_multiplication(size_t reps, size_t num_qubits) {
+void time_pauli_multiplication(size_t num_qubits) {
+    std::cerr << "pauli multiplication(n=" << num_qubits << ")\n";
+
     auto p1 = PauliStringVal::from_pattern(
             false,
             num_qubits,
@@ -147,22 +145,20 @@ void time_pauli_multiplication(size_t reps, size_t num_qubits) {
             [](size_t i) { return "_XZYZZX"[i % 7]; });
     PauliStringPtr p1_ptr = p1;
     PauliStringPtr p2_ptr = p2;
-    auto start = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < reps; i++) {
+    auto f = PerfResult::time([&](){
         p1_ptr.inplace_right_mul_with_scalar_output(p2_ptr);
-    }
-    auto end = std::chrono::steady_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.0 / 1000.0;
-    std::cout << (num_qubits * reps) / dt / 1000.0 / 1000.0 / 1000.0 << " GigaPauliMuls/sec (q=" << num_qubits << ",r=" << reps << ",dt=" << dt << "s)\n";
+    });
+    std::cerr << f;
+    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliMuls/s)";
+    std::cerr << "\n";
 }
 
 int main() {
-//    time_pauli_multiplication(100000, 100000);
-//    time_clifford_sim(1, 25);
-//    time_transpose();
-    size_t block_diam = 512;
-    size_t reps = 1;
-    time_transpose_blockwise(block_diam, reps);
-    time_mike_transpose(block_diam, reps);
-    time_transpose(block_diam, reps);
+    size_t block_diam = 100;
+    time_transpose_blockwise(block_diam);
+    time_mike_transpose(block_diam);
+    time_transpose(block_diam);
+
+    time_pauli_multiplication(100000);
+    time_clifford_sim(15);
 }

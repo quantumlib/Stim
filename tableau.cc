@@ -17,7 +17,8 @@ PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
             num_qubits,
             (bool *)&signs[qubit*2],
             &data.data[step * (4*qubit + 0)],
-            &data.data[step * (4*qubit + 1)]);
+            &data.data[step * (4*qubit + 1)],
+            1);
 }
 
 PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
@@ -26,7 +27,8 @@ PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
             num_qubits,
             (bool *)&signs[qubit*2 + 1],
             &data.data[step * (4*qubit + 2)],
-            &data.data[step * (4*qubit + 3)]);
+            &data.data[step * (4*qubit + 3)],
+            1);
 }
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {

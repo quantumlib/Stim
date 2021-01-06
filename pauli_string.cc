@@ -8,11 +8,17 @@
 #include <cstring>
 #include <cstdlib>
 
-PauliStringPtr::PauliStringPtr(size_t init_size, bool *init_sign, uint64_t *init_x, uint64_t *init_z) :
+PauliStringPtr::PauliStringPtr(
+            size_t init_size,
+            bool *init_sign,
+            uint64_t *init_x,
+            uint64_t *init_z,
+            size_t init_stride256) :
         size(init_size),
         ptr_sign(init_sign),
         _x(init_x),
-        _z(init_z) {
+        _z(init_z),
+        stride256(init_stride256) {
 }
 
 PauliStringVal::PauliStringVal(size_t init_size) :
@@ -37,10 +43,20 @@ std::string PauliStringVal::str() const {
 
 void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
     assert(size == other.size);
-    size_t words = (size + 255) / 256;
     *ptr_sign = *other.ptr_sign;
-    memcpy(_x, other._x, sizeof(__m256i) * words);
-    memcpy(_z, other._z, sizeof(__m256i) * words);
+    auto x256 = (__m256i *)_x;
+    auto z256 = (__m256i *)_z;
+    auto ox256 = (__m256i *)other._x;
+    auto oz256 = (__m256i *)other._z;
+    auto end = &x256[num_words256() * stride256];
+    while (x256 != end) {
+        *x256 = *ox256;
+        *z256 = *oz256;
+        x256 += stride256;
+        z256 += stride256;
+        ox256 += other.stride256;
+        oz256 += other.stride256;
+    }
 }
 
 PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept {
@@ -53,26 +69,27 @@ PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         size(other.x_data.num_bits),
         ptr_sign((bool *)&other.val_sign),
         _x(other.x_data.data),
-        _z(other.z_data.data) {
+        _z(other.z_data.data),
+        stride256(1) {
 }
 
 uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) const {
+    assert(size == other.size);
+    __m256i cnt = _mm256_set1_epi16(0);
+
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
     auto oz256 = (__m256i *)other._z;
+    auto end = &x256[num_words256() * stride256];
+    while (x256 != end) {
+        auto x0 = _mm256_andnot_si256(*z256, *x256);
+        auto y0 = _mm256_and_si256(*x256, *z256);
+        auto z0 = _mm256_andnot_si256(*x256, *z256);
 
-    assert(size == other.size);
-    __m256i cnt = _mm256_set1_epi16(0);
-    auto n = (size + 0xFF) >> 8;
-    for (size_t i = 0; i < n; i++) {
-        auto x0 = _mm256_andnot_si256(z256[i], x256[i]);
-        auto y0 = _mm256_and_si256(x256[i], z256[i]);
-        auto z0 = _mm256_andnot_si256(x256[i], z256[i]);
-
-        auto x1 = _mm256_andnot_si256(oz256[i], ox256[i]);
-        auto y1 = _mm256_and_si256(ox256[i], oz256[i]);
-        auto z1 = _mm256_andnot_si256(ox256[i], oz256[i]);
+        auto x1 = _mm256_andnot_si256(*oz256, *ox256);
+        auto y1 = _mm256_and_si256(*ox256, *oz256);
+        auto z1 = _mm256_andnot_si256(*ox256, *oz256);
 
         auto f1 = _mm256_and_si256(x0, y1);
         auto f2 = _mm256_and_si256(y0, z1);
@@ -87,6 +104,11 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
         f = popcnt2(f);
         b = popcnt2(b);
         cnt = acc_plus_minus_epi2(cnt, f, b);
+
+        x256 += stride256;
+        z256 += stride256;
+        ox256 += other.stride256;
+        oz256 += other.stride256;
     }
 
     uint8_t s = 0;
@@ -109,26 +131,30 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
     if (size != other.size || *ptr_sign != *other.ptr_sign) {
         return false;
     }
-    __m256i acc;
-    auto acc64 = (uint64_t *)&acc;
-    for (size_t k = 0; k < 4; k++) {
-        acc64[k] = UINT64_MAX;
-    }
+    __m256i acc = _mm256_set1_epi32(-1);
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
     auto oz256 = (__m256i *)other._z;
-    for (size_t i = 0; i*256 < size; i++) {
-        auto dx = _mm256_xor_si256(x256[i], ox256[i]);
+    auto end = &x256[num_words256() * stride256];
+    while (x256 != end) {
+        auto dx = _mm256_xor_si256(*x256, *ox256);
         acc = _mm256_andnot_si256(dx, acc);
-        auto dz = _mm256_xor_si256(z256[i], oz256[i]);
+        auto dz = _mm256_xor_si256(*z256, *oz256);
         acc = _mm256_andnot_si256(dz, acc);
+        x256 += stride256;
+        z256 += stride256;
+        ox256 += other.stride256;
+        oz256 += other.stride256;
     }
+
+    auto acc64 = (uint64_t *)&acc;
     for (size_t k = 0; k < 4; k++) {
         if (acc64[k] != UINT64_MAX) {
             return false;
         }
     }
+
     return true;
 }
 
@@ -139,16 +165,26 @@ bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
     return out << ps.ptr();
 }
+
+size_t PauliStringPtr::num_words256() const {
+    return (size + 0xFF) >> 8;
+}
+
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
     out << (*ps.ptr_sign ? '-' : '+');
     auto x256 = (__m256i *)ps._x;
     auto z256 = (__m256i *)ps._z;
-    for (size_t i = 0; i < ps.size; i += 256) {
-        auto xs = m256i_to_bits(x256[i / 256]);
-        auto zs = m256i_to_bits(z256[i / 256]);
-        for (int j = 0; j < 256 && i + j < ps.size; j++) {
+    auto end = &x256[ps.num_words256() * ps.stride256];
+    size_t remaining = ps.size;
+    while (x256 != end) {
+        auto xs = m256i_to_bits(*x256);
+        auto zs = m256i_to_bits(*z256);
+        for (int j = 0; j < 256 && remaining; j++) {
             out << "_XZY"[xs[j] + 2 * zs[j]];
+            remaining--;
         }
+        x256 += ps.stride256;
+        z256 += ps.stride256;
     }
     return out;
 }
@@ -207,9 +243,14 @@ uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPt
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)rhs._x;
     auto oz256 = (__m256i *)rhs._z;
-    for (size_t i = 0; i < (size + 0xFF) >> 8; i++) {
-        x256[i] = _mm256_xor_si256(x256[i], ox256[i]);
-        z256[i] = _mm256_xor_si256(z256[i], oz256[i]);
+    auto end = &x256[num_words256() * stride256];
+    while (x256 != end) {
+        *x256 = _mm256_xor_si256(*x256, *ox256);
+        *z256 = _mm256_xor_si256(*z256, *oz256);
+        x256 += stride256;
+        z256 += stride256;
+        ox256 += rhs.stride256;
+        oz256 += rhs.stride256;
     }
     return result;
 }

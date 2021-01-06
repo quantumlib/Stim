@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 3.12)
 project(stim)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
-add_compile_options(-march=native)
-add_link_options(-pthread)
+add_compile_options(-march=native -O3)
+add_link_options(-pthread -O3)
 
 set(SOURCE_FILES_NO_MAIN
         chp_sim.cc
         pauli_string.cc
+        perf.cc
         simd_util.cc
         tableau.cc
         aligned_bits256.cc

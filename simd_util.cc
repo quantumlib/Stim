@@ -73,12 +73,11 @@ std::vector<bool> m256i_to_bits(__m256i r) {
 }
 
 __m256i bits_to_m256i(std::vector<bool> data) {
-    __m256i result {};
-    auto u64 = (uint64_t *)&result;
+    union {__m256i m256; uint64_t u64[4];} result {};
     for (size_t i = 0; i < data.size(); i++) {
-        u64[i >> 6] |= (uint64_t)data[i] << (i & 63);
+        result.u64[i >> 6] |= (uint64_t)data[i] << (i & 63);
     }
-    return result;
+    return result.m256;
 }
 
 std::string hex(__m256i data) {
@@ -212,7 +211,7 @@ void mike_transpose_bit_matrix(uint64_t* matrix, uint64_t* out, size_t bit_width
     }
 }
 
-void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
+void transpose_bit_matrix_256x256(uint64_t *matrix256x256) noexcept {
     mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
     mat256_permute_address_swap_ck_rk<2>(matrix256x256, _mm256_set1_epi8(0x33));
     mat256_permute_address_swap_ck_rk<4>(matrix256x256, _mm256_set1_epi8(0xF));
@@ -223,7 +222,7 @@ void transpose_bit_matrix_256x256(__m256i *matrix256x256) noexcept {
     mat256_permute_address_swap_c7_r7(matrix256x256);
 }
 
-void mat256_permute_address_swap_c7_r7(__m256i *matrix256x256) noexcept {
+void mat256_permute_address_swap_c7_r7(uint64_t *matrix256x256) noexcept {
     auto u128 = (__m128i *)matrix256x256;
     for (size_t m = 0; m < 256; m += 2) {
         std::swap(u128[m | 0x100], u128[m | 1]);
@@ -231,9 +230,8 @@ void mat256_permute_address_swap_c7_r7(__m256i *matrix256x256) noexcept {
 }
 
 void transpose_bit_matrix_thread_body(uint64_t *matrix, size_t area) noexcept {
-    auto m256 = (__m256i *)matrix;
     for (size_t k = 0; k < area; k += 1 << 16) {
-        transpose_bit_matrix_256x256(m256 + (k >> 8));
+        transpose_bit_matrix_256x256(matrix + (k >> 6));
     }
 }
 

@@ -17,8 +17,9 @@ struct PauliStringPtr {
     bool *ptr_sign;
     uint64_t *_x;
     uint64_t *_z;
+    size_t stride256;
 
-    PauliStringPtr(size_t size, bool *sign_ptr, uint64_t *x, uint64_t *z);
+    PauliStringPtr(size_t size, bool *sign_ptr, uint64_t *x, uint64_t *z, size_t stride256);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
     bool operator==(const PauliStringPtr &other) const;
@@ -44,6 +45,7 @@ struct PauliStringPtr {
 
     PauliStringPtr& operator*=(const PauliStringPtr &rhs);
     uint8_t inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs);
+    size_t num_words256() const;
 
     bool get_x_bit(size_t k) const;
     bool get_z_bit(size_t k) const;
