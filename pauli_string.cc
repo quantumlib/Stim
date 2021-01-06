@@ -41,6 +41,24 @@ std::string PauliStringVal::str() const {
     return ptr().str();
 }
 
+void PauliStringPtr::swap_with(const PauliStringPtr &other) {
+    assert(size == other.size);
+    std::swap(*ptr_sign, *other.ptr_sign);
+    auto x256 = (__m256i *)_x;
+    auto z256 = (__m256i *)_z;
+    auto ox256 = (__m256i *)other._x;
+    auto oz256 = (__m256i *)other._z;
+    auto end = &x256[num_words256() * stride256];
+    while (x256 != end) {
+        std::swap(*x256, *ox256);
+        std::swap(*z256, *oz256);
+        x256 += stride256;
+        z256 += stride256;
+        ox256 += other.stride256;
+        oz256 += other.stride256;
+    }
+}
+
 void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
     assert(size == other.size);
     *ptr_sign = *other.ptr_sign;

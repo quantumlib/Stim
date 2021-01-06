@@ -86,6 +86,8 @@ struct Tableau {
     ///     operation: The smaller operation to prepend into this tableau.
     ///     target_qubits: The qubits being acted on by `operation`.
     void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
+
+    void inplace_scatter_prepend_H(size_t q);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);

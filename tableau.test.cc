@@ -238,3 +238,60 @@ TEST(tableau, eval_y) {
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X_DAG").eval_y_obs(0), PauliStringVal::from_str("-Z"));
     ASSERT_EQ(GATE_TABLEAUS.at("CNOT").eval_y_obs(1), PauliStringVal::from_str("ZY"));
 }
+
+bool are_tableau_mutations_equivalent(
+        size_t n,
+        const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation1,
+        const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation2) {
+    auto t = Tableau::identity(2*n);
+    std::vector<size_t> targets1;
+    std::vector<size_t> targets2;
+    std::vector<size_t> targets3;
+    for (size_t k = 0; k < n; k++) {
+        t.inplace_scatter_append(GATE_TABLEAUS.at("H"), {k});
+        t.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {k, k + n});
+        targets1.push_back(k);
+        targets2.push_back(k + n);
+        targets3.push_back(k + (k % 2 == 0 ? 0 : n));
+    }
+
+    std::vector<std::vector<size_t>> cases {targets1, targets2, targets3};
+    for (const auto &targets : cases) {
+        auto t1 = t;
+        auto t2 = t;
+        mutation1(t1, targets);
+        mutation2(t2, targets);
+        if (t1 != t2) {
+            return false;
+        }
+    }
+    return true;
+}
+
+TEST(tableau, specialized_operations) {
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), targets); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        2,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CX"), targets); }
+    ));
+    ASSERT_FALSE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), targets); }
+    ));
+    ASSERT_FALSE(are_tableau_mutations_equivalent(
+        2,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CZ"), targets); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_H(targets[0]); }
+    ));
+}

@@ -26,6 +26,7 @@ struct PauliStringPtr {
     bool operator!=(const PauliStringPtr &other) const;
 
     void overwrite_with(const PauliStringPtr &other);
+    void swap_with(const PauliStringPtr &other);
 
     // Computes the scalar term created when multiplying two Pauli strings together.
     // For example, in XZ = iY, the scalar byproduct is i.

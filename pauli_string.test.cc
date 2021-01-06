@@ -121,6 +121,22 @@ TEST(pauli_string, gather) {
     ASSERT_EQ(p2, PauliStringVal::from_str("+XXYY"));
 }
 
+TEST(pauli_string, swap_with_overwrite_with) {
+    auto a = PauliStringVal::from_pattern(false, 500, [](size_t k){ return "XYZIX"[k % 5]; });
+    auto b = PauliStringVal::from_pattern(false, 500, [](size_t k){ return "ZZYIXXY"[k % 7]; });
+    auto a2 = a;
+    auto b2 = b;
+
+    a2.ptr().swap_with(b2);
+    ASSERT_EQ(a2, b);
+    ASSERT_EQ(b2, a);
+
+    a2.ptr().overwrite_with(b2);
+    ASSERT_EQ(a2, a);
+    ASSERT_EQ(b2, a);
+}
+
+
 TEST(pauli_string, scatter) {
     auto s1 = PauliStringVal::from_str("-_XYZ");
     auto s2 = PauliStringVal::from_str("+XXZZ");

@@ -63,7 +63,7 @@ bool ChpSim::measure(size_t target, float bias) {
 }
 
 void ChpSim::hadamard(size_t q) {
-    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), {q});
+    inv_state.inplace_scatter_prepend_H(q);
 }
 
 void ChpSim::phase(size_t q) {

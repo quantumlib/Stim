@@ -102,15 +102,7 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 }
 
 bool Tableau::operator==(const Tableau &other) const {
-    if (num_qubits != other.num_qubits) {
-        return false;
-    }
-    for (size_t k = 0; k < num_qubits; k++) {
-        if (x_obs_ptr(k) != other.x_obs_ptr(k) || z_obs_ptr(k) != other.z_obs_ptr(k)) {
-            return false;
-        }
-    }
-    return true;
+    return num_qubits == other.num_qubits && data == other.data && signs == other.signs;
 }
 
 bool Tableau::operator!=(const Tableau &other) const {
@@ -131,6 +123,10 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
         x_obs_ptr(target_qubits[q]).overwrite_with(new_x[q]);
         z_obs_ptr(target_qubits[q]).overwrite_with(new_z[q]);
     }
+}
+
+void Tableau::inplace_scatter_prepend_H(const size_t q) {
+    x_obs_ptr(q).swap_with(z_obs_ptr(q));
 }
 
 PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {
