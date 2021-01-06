@@ -51,13 +51,13 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
             for (const auto &z : zs) {
                 auto p = z + d;
                 if (in_range(p)) {
-                    sim.CNOT(qubit(p), qubit(z));
+                    sim.CX(qubit(p), qubit(z));
                 }
             }
             for (const auto &x : xs) {
                 auto p = x + d;
                 if (in_range(p)) {
-                    sim.CNOT(qubit(x), qubit(p));
+                    sim.CX(qubit(x), qubit(p));
                 }
             }
         }

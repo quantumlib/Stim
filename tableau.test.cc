@@ -303,6 +303,18 @@ TEST(tableau, specialized_operations) {
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("H_YZ"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_H_YZ(targets[0]); }
+    ));
+
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("H_XY"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_H_XY(targets[0]); }
+    ));
+
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("X"), targets); },
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_X(targets[0]); }
     ));
@@ -321,13 +333,50 @@ TEST(tableau, specialized_operations) {
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_CNOT(targets[0], targets[1]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CX"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_CX(targets[0], targets[1]); }
+    ));
+
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        2,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CY"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_CY(targets[0], targets[1]); }
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CZ"), targets); },
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_CZ(targets[0], targets[1]); }
+    ));
+
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_X"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_X(targets[0]); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_X_DAG"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_X_DAG(targets[0]); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_Y(targets[0]); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y_DAG"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_Y_DAG(targets[0]); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_Z(targets[0]); }
+    ));
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z_DAG"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_Z_DAG(targets[0]); }
     ));
 }

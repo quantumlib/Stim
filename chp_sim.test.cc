@@ -9,8 +9,8 @@ TEST(ChpSim, identity) {
 TEST(ChpSim, bit_flip) {
     auto s = ChpSim(1);
     s.H(0);
-    s.S(0);
-    s.S(0);
+    s.SQRT_Z(0);
+    s.SQRT_Z(0);
     s.H(0);
     ASSERT_EQ(s.measure(0), true);
     s.X(0);
@@ -26,8 +26,8 @@ TEST(ChpSim, identity2) {
 TEST(ChpSim, bit_flip_2) {
     auto s = ChpSim(2);
     s.H(0);
-    s.S(0);
-    s.S(0);
+    s.SQRT_Z(0);
+    s.SQRT_Z(0);
     s.H(0);
     ASSERT_EQ(s.measure(0), true);
     ASSERT_EQ(s.measure(1), false);
@@ -36,7 +36,7 @@ TEST(ChpSim, bit_flip_2) {
 TEST(ChpSim, epr) {
     auto s = ChpSim(2);
     s.H(0);
-    s.CNOT(0, 1);
+    s.CX(0, 1);
     ASSERT_EQ(s.is_deterministic(0), false);
     ASSERT_EQ(s.is_deterministic(1), false);
     auto v1 = s.measure(0);
@@ -50,16 +50,16 @@ TEST(ChpSim, phase_kickback_consume_s_state) {
     for (size_t k = 0; k < 8; k++) {
         auto s = ChpSim(2);
         s.H(1);
-        s.S(1);
+        s.SQRT_Z(1);
         s.H(0);
-        s.CNOT(0, 1);
+        s.CX(0, 1);
         ASSERT_EQ(s.is_deterministic(1), false);
         auto v1 = s.measure(1);
         if (v1) {
-            s.S(0);
-            s.S(0);
+            s.SQRT_Z(0);
+            s.SQRT_Z(0);
         }
-        s.S(0);
+        s.SQRT_Z(0);
         s.H(0);
         ASSERT_EQ(s.is_deterministic(0), true);
         ASSERT_EQ(s.measure(0), true);
@@ -71,23 +71,23 @@ TEST(ChpSim, phase_kickback_preserve_s_state) {
 
     // Prepare S state.
     s.H(1);
-    s.S(1);
+    s.SQRT_Z(1);
 
     // Prepare test input.
     s.H(0);
 
     // Kickback.
-    s.CNOT(0, 1);
+    s.CX(0, 1);
     s.H(1);
-    s.CNOT(0, 1);
+    s.CX(0, 1);
     s.H(1);
 
     // Check.
-    s.S(0);
+    s.SQRT_Z(0);
     s.H(0);
     ASSERT_EQ(s.is_deterministic(0), true);
     ASSERT_EQ(s.measure(0), true);
-    s.S(1);
+    s.SQRT_Z(1);
     s.H(1);
     ASSERT_EQ(s.is_deterministic(1), true);
     ASSERT_EQ(s.measure(1), true);
@@ -96,10 +96,10 @@ TEST(ChpSim, phase_kickback_preserve_s_state) {
 TEST(ChpSim, kickback_vs_stabilizer) {
     auto sim = ChpSim(3);
     sim.H(2);
-    sim.CNOT(2, 0);
-    sim.CNOT(2, 1);
-    sim.S(0);
-    sim.S(1);
+    sim.CX(2, 0);
+    sim.CX(2, 1);
+    sim.SQRT_Z(0);
+    sim.SQRT_Z(1);
     sim.H(0);
     sim.H(1);
     sim.H(2);
@@ -135,7 +135,7 @@ TEST(ChpSim, s_state_distillation_low_depth) {
         for (const auto &stabilizer : stabilizers) {
             sim.H(anc);
             for (const auto &k : stabilizer) {
-                sim.CNOT(anc, k);
+                sim.CX(anc, k);
             }
             sim.H(anc);
             ASSERT_EQ(sim.is_deterministic(anc), false);
@@ -148,7 +148,7 @@ TEST(ChpSim, s_state_distillation_low_depth) {
 
         std::vector<bool> qubit_measurements;
         for (size_t k = 0; k < 7; k++) {
-            sim.S(k);
+            sim.SQRT_Z(k);
             sim.H(k);
             qubit_measurements.push_back(sim.measure(k));
         }
@@ -164,7 +164,7 @@ TEST(ChpSim, s_state_distillation_low_depth) {
             sim.Z(7);
         }
 
-        sim.S(7);
+        sim.SQRT_Z(7);
         sim.H(7);
         ASSERT_EQ(sim.is_deterministic(7), true);
         ASSERT_EQ(sim.measure(7), false);
@@ -200,10 +200,10 @@ TEST(ChpSim, s_state_distillation_low_space) {
         for (const auto &phasor : phasors) {
             sim.H(anc);
             for (const auto &k : phasor) {
-                sim.CNOT(anc, k);
+                sim.CX(anc, k);
             }
             sim.H(anc);
-            sim.S(anc);
+            sim.SQRT_Z(anc);
             sim.H(anc);
             ASSERT_EQ(sim.is_deterministic(anc), false);
             auto v = sim.measure(anc);
@@ -219,7 +219,7 @@ TEST(ChpSim, s_state_distillation_low_space) {
             ASSERT_EQ(sim.is_deterministic(k), true);
             ASSERT_EQ(sim.measure(k), false);
         }
-        sim.S(3);
+        sim.SQRT_Z(3);
         sim.H(3);
         ASSERT_EQ(sim.is_deterministic(3), true);
         ASSERT_EQ(sim.measure(3), true);

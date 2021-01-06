@@ -125,9 +125,59 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     }
 }
 
-void Tableau::inplace_scatter_prepend_CNOT(size_t control, size_t target) {
+void Tableau::inplace_scatter_prepend_SQRT_X(size_t q) {
+    auto z = z_obs_ptr(q);
+    uint8_t m = 1 + z.inplace_right_mul_with_scalar_output(x_obs_ptr(q));
+    if (m & 2) {
+        *z.ptr_sign ^= true;
+    }
+}
+
+void Tableau::inplace_scatter_prepend_SQRT_X_DAG(size_t q) {
+    auto z = z_obs_ptr(q);
+    uint8_t m = 3 + z.inplace_right_mul_with_scalar_output(x_obs_ptr(q));
+    if (m & 2) {
+        *z.ptr_sign ^= true;
+    }
+}
+
+void Tableau::inplace_scatter_prepend_SQRT_Y(size_t q) {
+    auto z = z_obs_ptr(q);
+    *z.ptr_sign ^= true;
+    x_obs_ptr(q).swap_with(z);
+}
+
+void Tableau::inplace_scatter_prepend_SQRT_Y_DAG(size_t q) {
+    auto z = z_obs_ptr(q);
+    x_obs_ptr(q).swap_with(z);
+    *z.ptr_sign ^= true;
+}
+
+void Tableau::inplace_scatter_prepend_SQRT_Z(size_t q) {
+    auto x = x_obs_ptr(q);
+    uint8_t m = 1 + x.inplace_right_mul_with_scalar_output(z_obs_ptr(q));
+    if (m & 2) {
+        *x.ptr_sign ^= true;
+    }
+}
+
+void Tableau::inplace_scatter_prepend_SQRT_Z_DAG(size_t q) {
+    auto x = x_obs_ptr(q);
+    uint8_t m = 3 + x.inplace_right_mul_with_scalar_output(z_obs_ptr(q));
+    if (m & 2) {
+        *x.ptr_sign ^= true;
+    }
+}
+
+void Tableau::inplace_scatter_prepend_CX(size_t control, size_t target) {
     z_obs_ptr(target) *= z_obs_ptr(control);
     x_obs_ptr(control) *= x_obs_ptr(target);
+}
+
+void Tableau::inplace_scatter_prepend_CY(size_t control, size_t target) {
+    inplace_scatter_prepend_H_YZ(target);
+    inplace_scatter_prepend_CZ(control, target);
+    inplace_scatter_prepend_H_YZ(target);
 }
 
 void Tableau::inplace_scatter_prepend_CZ(size_t control, size_t target) {
@@ -137,6 +187,26 @@ void Tableau::inplace_scatter_prepend_CZ(size_t control, size_t target) {
 
 void Tableau::inplace_scatter_prepend_H(const size_t q) {
     x_obs_ptr(q).swap_with(z_obs_ptr(q));
+}
+
+void Tableau::inplace_scatter_prepend_H_YZ(const size_t q) {
+    auto x = x_obs_ptr(q);
+    auto z = z_obs_ptr(q);
+    uint8_t m = 3 + z.inplace_right_mul_with_scalar_output(x);
+    *x.ptr_sign ^= true;
+    if (m & 2) {
+        *z.ptr_sign ^= true;
+    }
+}
+
+void Tableau::inplace_scatter_prepend_H_XY(const size_t q) {
+    auto x = x_obs_ptr(q);
+    auto z = z_obs_ptr(q);
+    uint8_t m = 1 + x.inplace_right_mul_with_scalar_output(z);
+    *z.ptr_sign ^= true;
+    if (m & 2) {
+        *x.ptr_sign ^= true;
+    }
 }
 
 void Tableau::inplace_scatter_prepend_X(size_t q) {

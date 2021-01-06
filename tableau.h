@@ -91,7 +91,16 @@ struct Tableau {
     void inplace_scatter_prepend_Y(size_t q);
     void inplace_scatter_prepend_Z(size_t q);
     void inplace_scatter_prepend_H(size_t q);
-    void inplace_scatter_prepend_CNOT(size_t control, size_t target);
+    void inplace_scatter_prepend_H_YZ(size_t q);
+    void inplace_scatter_prepend_H_XY(size_t q);
+    void inplace_scatter_prepend_SQRT_X(size_t q);
+    void inplace_scatter_prepend_SQRT_X_DAG(size_t q);
+    void inplace_scatter_prepend_SQRT_Y(size_t q);
+    void inplace_scatter_prepend_SQRT_Y_DAG(size_t q);
+    void inplace_scatter_prepend_SQRT_Z(size_t q);
+    void inplace_scatter_prepend_SQRT_Z_DAG(size_t q);
+    void inplace_scatter_prepend_CX(size_t control, size_t target);
+    void inplace_scatter_prepend_CY(size_t control, size_t target);
     void inplace_scatter_prepend_CZ(size_t control, size_t target);
 };
 

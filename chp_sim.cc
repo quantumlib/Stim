@@ -66,12 +66,50 @@ void ChpSim::H(size_t q) {
     inv_state.inplace_scatter_prepend_H(q);
 }
 
-void ChpSim::S(size_t q) {
-    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at("S_DAG"), {q});
+void ChpSim::H_XY(size_t q) {
+    inv_state.inplace_scatter_prepend_H_XY(q);
 }
 
-void ChpSim::CNOT(size_t c, size_t t) {
-    inv_state.inplace_scatter_prepend_CNOT(c, t);
+void ChpSim::H_YZ(size_t q) {
+    inv_state.inplace_scatter_prepend_H_YZ(q);
+}
+
+void ChpSim::SQRT_Z(size_t q) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.inplace_scatter_prepend_SQRT_Z_DAG(q);
+}
+
+void ChpSim::SQRT_Z_DAG(size_t q) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.inplace_scatter_prepend_SQRT_Z(q);
+}
+
+void ChpSim::SQRT_X(size_t q) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.inplace_scatter_prepend_SQRT_X_DAG(q);
+}
+
+void ChpSim::SQRT_X_DAG(size_t q) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.inplace_scatter_prepend_SQRT_X(q);
+}
+
+void ChpSim::SQRT_Y(size_t q) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.inplace_scatter_prepend_SQRT_Y_DAG(q);
+}
+
+void ChpSim::SQRT_Y_DAG(size_t q) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.inplace_scatter_prepend_SQRT_Y(q);
+}
+
+void ChpSim::CX(size_t c, size_t t) {
+    inv_state.inplace_scatter_prepend_CX(c, t);
+}
+
+void ChpSim::CY(size_t c, size_t t) {
+    inv_state.inplace_scatter_prepend_CY(c, t);
 }
 
 void ChpSim::CZ(size_t c, size_t t) {
@@ -88,4 +126,8 @@ void ChpSim::Y(size_t q) {
 
 void ChpSim::Z(size_t q) {
     inv_state.inplace_scatter_prepend_Z(q);
+}
+
+void ChpSim::op(const std::string &name, const std::vector<size_t> &targets) {
+    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(name), targets);
 }
