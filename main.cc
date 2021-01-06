@@ -45,19 +45,19 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
             std::cerr << "round " << round << "\n";
         }
         for (const auto &x : xs) {
-            sim.hadamard(qubit(x));
+            sim.H(qubit(x));
         }
         for (const auto &d : dirs) {
             for (const auto &z : zs) {
                 auto p = z + d;
                 if (in_range(p)) {
-                    sim.cnot(qubit(p), qubit(z));
+                    sim.CNOT(qubit(p), qubit(z));
                 }
             }
             for (const auto &x : xs) {
                 auto p = x + d;
                 if (in_range(p)) {
-                    sim.cnot(qubit(x), qubit(p));
+                    sim.CNOT(qubit(x), qubit(p));
                 }
             }
         }
@@ -66,7 +66,7 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
             sim.measure(qubit(z));
         }
         for (const auto &x : xs) {
-            sim.hadamard(qubit(x));
+            sim.H(qubit(x));
         }
         for (const auto &x : xs) {
             if (progress && round == 0) {

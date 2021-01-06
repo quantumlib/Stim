@@ -62,14 +62,30 @@ bool ChpSim::measure(size_t target, float bias) {
     return coin_flip;
 }
 
-void ChpSim::hadamard(size_t q) {
+void ChpSim::H(size_t q) {
     inv_state.inplace_scatter_prepend_H(q);
 }
 
-void ChpSim::phase(size_t q) {
+void ChpSim::S(size_t q) {
     inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at("S_DAG"), {q});
 }
 
-void ChpSim::cnot(size_t c, size_t t) {
-    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), {c, t});
+void ChpSim::CNOT(size_t c, size_t t) {
+    inv_state.inplace_scatter_prepend_CNOT(c, t);
+}
+
+void ChpSim::CZ(size_t c, size_t t) {
+    inv_state.inplace_scatter_prepend_CZ(c, t);
+}
+
+void ChpSim::X(size_t q) {
+    inv_state.inplace_scatter_prepend_X(q);
+}
+
+void ChpSim::Y(size_t q) {
+    inv_state.inplace_scatter_prepend_Y(q);
+}
+
+void ChpSim::Z(size_t q) {
+    inv_state.inplace_scatter_prepend_Z(q);
 }

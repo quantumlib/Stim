@@ -87,7 +87,12 @@ struct Tableau {
     ///     target_qubits: The qubits being acted on by `operation`.
     void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
 
+    void inplace_scatter_prepend_X(size_t q);
+    void inplace_scatter_prepend_Y(size_t q);
+    void inplace_scatter_prepend_Z(size_t q);
     void inplace_scatter_prepend_H(size_t q);
+    void inplace_scatter_prepend_CNOT(size_t control, size_t target);
+    void inplace_scatter_prepend_CZ(size_t control, size_t target);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);

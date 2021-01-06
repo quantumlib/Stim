@@ -125,8 +125,31 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     }
 }
 
+void Tableau::inplace_scatter_prepend_CNOT(size_t control, size_t target) {
+    z_obs_ptr(target) *= z_obs_ptr(control);
+    x_obs_ptr(control) *= x_obs_ptr(target);
+}
+
+void Tableau::inplace_scatter_prepend_CZ(size_t control, size_t target) {
+    x_obs_ptr(target) *= z_obs_ptr(control);
+    x_obs_ptr(control) *= z_obs_ptr(target);
+}
+
 void Tableau::inplace_scatter_prepend_H(const size_t q) {
     x_obs_ptr(q).swap_with(z_obs_ptr(q));
+}
+
+void Tableau::inplace_scatter_prepend_X(size_t q) {
+    *z_obs_ptr(q).ptr_sign ^= true;
+}
+
+void Tableau::inplace_scatter_prepend_Y(size_t q) {
+    *x_obs_ptr(q).ptr_sign ^= true;
+    *z_obs_ptr(q).ptr_sign ^= true;
+}
+
+void Tableau::inplace_scatter_prepend_Z(size_t q) {
+    *x_obs_ptr(q).ptr_sign ^= true;
 }
 
 PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {

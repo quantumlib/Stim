@@ -18,9 +18,13 @@ struct ChpSim {
 
     bool is_deterministic(size_t target) const;
     bool measure(size_t q, float bias = 0.5);
-    void hadamard(size_t q);
-    void phase(size_t q);
-    void cnot(size_t c, size_t t);
+    void H(size_t q);
+    void S(size_t q);
+    void CNOT(size_t c, size_t t);
+    void CZ(size_t c, size_t t);
+    void X(size_t q);
+    void Y(size_t q);
+    void Z(size_t q);
 };
 
 #endif
