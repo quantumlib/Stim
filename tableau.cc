@@ -165,7 +165,7 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
     }
 }
 
-void Tableau::inplace_scatter_append_CX(size_t control, size_t target) {
+void Tableau::append_CX(size_t control, size_t target) {
     for (size_t t = 0; t < 2; t++) {
         PauliStringPtr pc = t == 0 ? transposed_col_x_obs_ptr(control) : transposed_col_z_obs_ptr(control);
         PauliStringPtr pt = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
@@ -188,7 +188,7 @@ void Tableau::inplace_scatter_append_CX(size_t control, size_t target) {
     }
 }
 
-void Tableau::inplace_scatter_append_H_YZ(size_t target) {
+void Tableau::append_H_YZ(size_t target) {
     for (size_t t = 0; t < 2; t++) {
         PauliStringPtr p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
         auto x256 = (__m256i *) p._x;
@@ -205,7 +205,7 @@ void Tableau::inplace_scatter_append_H_YZ(size_t target) {
     }
 }
 
-void Tableau::inplace_scatter_append_H(size_t target) {
+void Tableau::append_H(size_t target) {
     for (size_t t = 0; t < 2; t++) {
         PauliStringPtr p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
         auto x256 = (__m256i *) p._x;
@@ -222,7 +222,7 @@ void Tableau::inplace_scatter_append_H(size_t target) {
     }
 }
 
-void Tableau::inplace_scatter_append_X(size_t target) {
+void Tableau::append_X(size_t target) {
     for (size_t t = 0; t < 2; t++) {
         PauliStringPtr p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
         auto z256 = (__m256i *) p._z;
@@ -268,7 +268,7 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     }
 }
 
-void Tableau::inplace_scatter_prepend_SQRT_X(size_t q) {
+void Tableau::prepend_SQRT_X(size_t q) {
     auto z = z_obs_ptr(q);
     uint8_t m = 1 + z.inplace_right_mul_returning_log_i_scalar(x_obs_ptr(q));
     if (m & 2) {
@@ -276,7 +276,7 @@ void Tableau::inplace_scatter_prepend_SQRT_X(size_t q) {
     }
 }
 
-void Tableau::inplace_scatter_prepend_SQRT_X_DAG(size_t q) {
+void Tableau::prepend_SQRT_X_DAG(size_t q) {
     auto z = z_obs_ptr(q);
     uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x_obs_ptr(q));
     if (m & 2) {
@@ -284,19 +284,19 @@ void Tableau::inplace_scatter_prepend_SQRT_X_DAG(size_t q) {
     }
 }
 
-void Tableau::inplace_scatter_prepend_SQRT_Y(size_t q) {
+void Tableau::prepend_SQRT_Y(size_t q) {
     auto z = z_obs_ptr(q);
     z.bit_ptr_sign.toggle();
     x_obs_ptr(q).swap_with(z);
 }
 
-void Tableau::inplace_scatter_prepend_SQRT_Y_DAG(size_t q) {
+void Tableau::prepend_SQRT_Y_DAG(size_t q) {
     auto z = z_obs_ptr(q);
     x_obs_ptr(q).swap_with(z);
     z.bit_ptr_sign.toggle();
 }
 
-void Tableau::inplace_scatter_prepend_SQRT_Z(size_t q) {
+void Tableau::prepend_SQRT_Z(size_t q) {
     auto x = x_obs_ptr(q);
     uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z_obs_ptr(q));
     if (m & 2) {
@@ -304,7 +304,7 @@ void Tableau::inplace_scatter_prepend_SQRT_Z(size_t q) {
     }
 }
 
-void Tableau::inplace_scatter_prepend_SQRT_Z_DAG(size_t q) {
+void Tableau::prepend_SQRT_Z_DAG(size_t q) {
     auto x = x_obs_ptr(q);
     uint8_t m = 3 + x.inplace_right_mul_returning_log_i_scalar(z_obs_ptr(q));
     if (m & 2) {
@@ -312,28 +312,28 @@ void Tableau::inplace_scatter_prepend_SQRT_Z_DAG(size_t q) {
     }
 }
 
-void Tableau::inplace_scatter_prepend_CX(size_t control, size_t target) {
+void Tableau::prepend_CX(size_t control, size_t target) {
     z_obs_ptr(target) *= z_obs_ptr(control);
     x_obs_ptr(control) *= x_obs_ptr(target);
 }
 
-void Tableau::inplace_scatter_prepend_CY(size_t control, size_t target) {
-    inplace_scatter_prepend_H_YZ(target);
-    inplace_scatter_prepend_CZ(control, target);
-    inplace_scatter_prepend_H_YZ(target);
+void Tableau::prepend_CY(size_t control, size_t target) {
+    prepend_H_YZ(target);
+    prepend_CZ(control, target);
+    prepend_H_YZ(target);
 }
 
-void Tableau::inplace_scatter_prepend_CZ(size_t control, size_t target) {
+void Tableau::prepend_CZ(size_t control, size_t target) {
     x_obs_ptr(target) *= z_obs_ptr(control);
     x_obs_ptr(control) *= z_obs_ptr(target);
 }
 
-void Tableau::inplace_scatter_prepend_H(const size_t q) {
+void Tableau::prepend_H(const size_t q) {
     auto z = z_obs_ptr(q);
     x_obs_ptr(q).swap_with(z);
 }
 
-void Tableau::inplace_scatter_prepend_H_YZ(const size_t q) {
+void Tableau::prepend_H_YZ(const size_t q) {
     auto x = x_obs_ptr(q);
     auto z = z_obs_ptr(q);
     uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x);
@@ -343,7 +343,7 @@ void Tableau::inplace_scatter_prepend_H_YZ(const size_t q) {
     }
 }
 
-void Tableau::inplace_scatter_prepend_H_XY(const size_t q) {
+void Tableau::prepend_H_XY(const size_t q) {
     auto x = x_obs_ptr(q);
     auto z = z_obs_ptr(q);
     uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z);
@@ -353,16 +353,16 @@ void Tableau::inplace_scatter_prepend_H_XY(const size_t q) {
     }
 }
 
-void Tableau::inplace_scatter_prepend_X(size_t q) {
+void Tableau::prepend_X(size_t q) {
     z_obs_ptr(q).bit_ptr_sign.toggle();
 }
 
-void Tableau::inplace_scatter_prepend_Y(size_t q) {
+void Tableau::prepend_Y(size_t q) {
     x_obs_ptr(q).bit_ptr_sign.toggle();
     z_obs_ptr(q).bit_ptr_sign.toggle();
 }
 
-void Tableau::inplace_scatter_prepend_Z(size_t q) {
+void Tableau::prepend_Z(size_t q) {
     x_obs_ptr(q).bit_ptr_sign.toggle();
 }
 

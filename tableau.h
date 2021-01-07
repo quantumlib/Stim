@@ -96,26 +96,26 @@ struct Tableau {
     ///     target_qubits: The qubits being acted on by `operation`.
     void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
 
-    void inplace_scatter_prepend_X(size_t q);
-    void inplace_scatter_prepend_Y(size_t q);
-    void inplace_scatter_prepend_Z(size_t q);
-    void inplace_scatter_prepend_H(size_t q);
-    void inplace_scatter_prepend_H_YZ(size_t q);
-    void inplace_scatter_prepend_H_XY(size_t q);
-    void inplace_scatter_prepend_SQRT_X(size_t q);
-    void inplace_scatter_prepend_SQRT_X_DAG(size_t q);
-    void inplace_scatter_prepend_SQRT_Y(size_t q);
-    void inplace_scatter_prepend_SQRT_Y_DAG(size_t q);
-    void inplace_scatter_prepend_SQRT_Z(size_t q);
-    void inplace_scatter_prepend_SQRT_Z_DAG(size_t q);
-    void inplace_scatter_prepend_CX(size_t control, size_t target);
-    void inplace_scatter_prepend_CY(size_t control, size_t target);
-    void inplace_scatter_prepend_CZ(size_t control, size_t target);
+    void prepend_X(size_t q);
+    void prepend_Y(size_t q);
+    void prepend_Z(size_t q);
+    void prepend_H(size_t q);
+    void prepend_H_YZ(size_t q);
+    void prepend_H_XY(size_t q);
+    void prepend_SQRT_X(size_t q);
+    void prepend_SQRT_X_DAG(size_t q);
+    void prepend_SQRT_Y(size_t q);
+    void prepend_SQRT_Y_DAG(size_t q);
+    void prepend_SQRT_Z(size_t q);
+    void prepend_SQRT_Z_DAG(size_t q);
+    void prepend_CX(size_t control, size_t target);
+    void prepend_CY(size_t control, size_t target);
+    void prepend_CZ(size_t control, size_t target);
 
-    void inplace_scatter_append_H(size_t q);
-    void inplace_scatter_append_H_YZ(size_t q);
-    void inplace_scatter_append_CX(size_t control, size_t target);
-    void inplace_scatter_append_X(size_t q);
+    void append_H(size_t q);
+    void append_H_YZ(size_t q);
+    void append_CX(size_t control, size_t target);
+    void append_X(size_t q);
 
     bool x_sign(size_t a) const;
     bool z_sign(size_t a) const;
