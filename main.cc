@@ -182,7 +182,7 @@ int main() {
 //    time_mike_transpose(block_diam);
 //    time_transpose(block_diam);
 //
-//    time_pauli_multiplication(100000);
-    time_clifford_sim(31);
+    time_pauli_multiplication(100000);
+//    time_clifford_sim(51);
 //    time_pauli_swap(100000);
 }
