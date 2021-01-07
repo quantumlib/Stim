@@ -102,19 +102,38 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 }
 
 void Tableau::inplace_scatter_append_CX(size_t control, size_t target) {
-    std::vector<size_t> target_qubits {control, target};
-    const auto &cnot = GATE_TABLEAUS.at("CX");
-    auto inp = PauliStringVal::identity(2);
     for (size_t q = 0; q < num_qubits; q++) {
-        auto x = x_obs_ptr(q);
-        x.bit_ptr_sign.toggle_if(x.get_x_bit(control) && x.get_z_bit(target) && (x.get_z_bit(control) == x.get_x_bit(target)));
-        x.set_z_bit(control, x.get_z_bit(control) ^ x.get_z_bit(target));
-        x.set_x_bit(target, x.get_x_bit(control) ^ x.get_x_bit(target));
+        for (size_t t = 0; t < 2; t++) {
+            auto p = t == 0 ? x_obs_ptr(q) : z_obs_ptr(q);
+            p.bit_ptr_sign.toggle_if(p.get_x_bit(control) && p.get_z_bit(target) && (p.get_z_bit(control) == p.get_x_bit(target)));
+            p.set_z_bit(control, p.get_z_bit(control) ^ p.get_z_bit(target));
+            p.set_x_bit(target, p.get_x_bit(control) ^ p.get_x_bit(target));
+        }
+    }
+}
 
-        auto z = z_obs_ptr(q);
-        z.bit_ptr_sign.toggle_if(z.get_x_bit(control) && z.get_z_bit(target) && (z.get_z_bit(control) == z.get_x_bit(target)));
-        z.set_z_bit(control, z.get_z_bit(control) ^ z.get_z_bit(target));
-        z.set_x_bit(target, z.get_x_bit(control) ^ z.get_x_bit(target));
+void Tableau::inplace_scatter_append_H_YZ(size_t target) {
+    for (size_t q = 0; q < num_qubits; q++) {
+        for (size_t t = 0; t < 2; t++) {
+            auto p = t == 0 ? x_obs_ptr(q) : z_obs_ptr(q);
+            auto bx = p.get_x_bit(target);
+            auto bz = p.get_z_bit(target);
+            p.set_x_bit(target, bx ^ bz);
+            p.bit_ptr_sign.toggle_if(bx && !bz);
+        }
+    }
+}
+
+void Tableau::inplace_scatter_append_H(size_t target) {
+    for (size_t q = 0; q < num_qubits; q++) {
+        for (size_t t = 0; t < 2; t++) {
+            auto p = t == 0 ? x_obs_ptr(q) : z_obs_ptr(q);
+            auto bx = p.get_x_bit(target);
+            auto bz = p.get_z_bit(target);
+            p.set_x_bit(target, bz);
+            p.set_z_bit(target, bx);
+            p.bit_ptr_sign.toggle_if(bx && bz);
+        }
     }
 }
 

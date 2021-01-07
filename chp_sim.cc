@@ -41,13 +41,9 @@ bool ChpSim::measure(size_t target, float bias) {
 
     // Collapse the state.
     if (z_obs.get_z_bit(pivot)) {
-        inv_state.inplace_scatter_append(
-                GATE_TABLEAUS.at("H_YZ"),
-                {pivot});
+        inv_state.inplace_scatter_append_H_YZ(pivot);
     } else {
-        inv_state.inplace_scatter_append(
-                GATE_TABLEAUS.at("H_XZ"),
-                {pivot});
+        inv_state.inplace_scatter_append_H(pivot);
     }
 
     auto coin_flip = std::bernoulli_distribution(bias)(rng);

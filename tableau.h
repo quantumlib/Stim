@@ -103,6 +103,8 @@ struct Tableau {
     void inplace_scatter_prepend_CY(size_t control, size_t target);
     void inplace_scatter_prepend_CZ(size_t control, size_t target);
 
+    void inplace_scatter_append_H(size_t q);
+    void inplace_scatter_append_H_YZ(size_t q);
     void inplace_scatter_append_CX(size_t control, size_t target);
 };
 
