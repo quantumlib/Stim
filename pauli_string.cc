@@ -7,6 +7,7 @@
 #include "pauli_string.h"
 #include <cstring>
 #include <cstdlib>
+#include <bit>
 
 PauliStringPtr::PauliStringPtr(
             size_t init_size,
@@ -93,7 +94,8 @@ PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
 
 uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) const {
     assert(size == other.size);
-    __m256i cnt = _mm256_set1_epi16(0);
+    union {__m256i u256; uint64_t u64[4]; } cnt1 {};
+    union {__m256i u256; uint64_t u64[4]; } cnt2 {};
 
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
@@ -101,40 +103,26 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
     auto oz256 = (__m256i *)other._z;
     auto end = &x256[num_words256() * stride256];
     while (x256 != end) {
-        auto x0 = _mm256_andnot_si256(*z256, *x256);
-        auto y0 = _mm256_and_si256(*x256, *z256);
-        auto z0 = _mm256_andnot_si256(*x256, *z256);
-
-        auto x1 = _mm256_andnot_si256(*oz256, *ox256);
-        auto y1 = _mm256_and_si256(*ox256, *oz256);
-        auto z1 = _mm256_andnot_si256(*ox256, *oz256);
-
-        auto f1 = _mm256_and_si256(x0, y1);
-        auto f2 = _mm256_and_si256(y0, z1);
-        auto f3 = _mm256_and_si256(z0, x1);
-        auto f = _mm256_or_si256(f1, _mm256_or_si256(f2, f3));
-
-        auto b1 = _mm256_and_si256(x0, z1);
-        auto b2 = _mm256_and_si256(y0, x1);
-        auto b3 = _mm256_and_si256(z0, y1);
-        auto b = _mm256_or_si256(b1, _mm256_or_si256(b2, b3));
-
-        f = popcnt2(f);
-        b = popcnt2(b);
-        cnt = acc_plus_minus_epi2(cnt, f, b);
-
+        auto y0 = *x256 & *z256;
+        auto x0 = y0 ^ *x256;
+        auto z0 = y0 ^ *z256;
+        auto y1 = *ox256 & *oz256;
+        auto x1 = y1 ^ *ox256;
+        auto z1 = y1 ^ *oz256;
+        auto f = (x0 & y1) | (y0 & z1) | (z0 & x1);
+        auto b = (x0 & z1) | (y0 & x1) | (z0 & y1);
+        cnt1.u256 ^= b;
+        cnt2.u256 ^= cnt1.u256 & (f ^ b);
+        cnt1.u256 ^= f;
         x256 += stride256;
         z256 += stride256;
         ox256 += other.stride256;
         oz256 += other.stride256;
     }
-
-    uint8_t s = 0;
-    auto cnt64 = (uint64_t *)&cnt;
+    size_t s = 0;
     for (size_t k = 0; k < 4; k++) {
-        for (size_t b = 0; b < 64; b += 2) {
-            s += (uint8_t) (cnt64[k] >> b);
-        }
+        s += (uint8_t) std::popcount(cnt1.u64[k]);
+        s ^= (uint8_t) std::popcount(cnt2.u64[k]) << 1;
     }
     return s & 3;
 }
@@ -149,17 +137,15 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
     if (size != other.size || bit_ptr_sign.get() != other.bit_ptr_sign.get()) {
         return false;
     }
-    __m256i acc = _mm256_set1_epi32(-1);
+    __m256i acc {};
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
     auto oz256 = (__m256i *)other._z;
     auto end = &x256[num_words256() * stride256];
     while (x256 != end) {
-        auto dx = _mm256_xor_si256(*x256, *ox256);
-        acc = _mm256_andnot_si256(dx, acc);
-        auto dz = _mm256_xor_si256(*z256, *oz256);
-        acc = _mm256_andnot_si256(dz, acc);
+        acc |= *x256 ^ *ox256;
+        acc |= *z256 ^ *oz256;
         x256 += stride256;
         z256 += stride256;
         ox256 += other.stride256;
@@ -168,7 +154,7 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
 
     auto acc64 = (uint64_t *)&acc;
     for (size_t k = 0; k < 4; k++) {
-        if (acc64[k] != UINT64_MAX) {
+        if (acc64[k]) {
             return false;
         }
     }
@@ -263,8 +249,8 @@ uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPt
     auto oz256 = (__m256i *)rhs._z;
     auto end = &x256[num_words256() * stride256];
     while (x256 != end) {
-        *x256 = _mm256_xor_si256(*x256, *ox256);
-        *z256 = _mm256_xor_si256(*z256, *oz256);
+        *x256 ^= *ox256;
+        *z256 ^= *oz256;
         x256 += stride256;
         z256 += stride256;
         ox256 += rhs.stride256;

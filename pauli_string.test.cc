@@ -70,7 +70,7 @@ TEST(pauli_string, log_i_scalar_byproduct) {
     for (size_t n : std::vector<size_t>{1, 499, 4999, 5000}) {
         auto all_x = PauliStringVal::from_pattern(false, n, [](size_t i) { return 'X'; });
         auto all_z = PauliStringVal::from_pattern(false, n, [](size_t i) { return 'Z'; });
-        ASSERT_EQ(all_x.ptr().log_i_scalar_byproduct(all_z), -(int) n & 3);
+        ASSERT_EQ(all_x.ptr().log_i_scalar_byproduct(all_z), (-(int) n) & 3);
     }
 }
 

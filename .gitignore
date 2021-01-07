@@ -1,3 +1,5 @@
 .idea/*
 cmake-build-debug/*
 a.out
+perf.data
+perf.data.old
