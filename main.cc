@@ -148,7 +148,7 @@ void time_pauli_multiplication(size_t num_qubits) {
     PauliStringPtr p1_ptr = p1;
     PauliStringPtr p2_ptr = p2;
     auto f = PerfResult::time([&](){
-        p1_ptr.inplace_right_mul_with_scalar_output(p2_ptr);
+        p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliMuls/s)";

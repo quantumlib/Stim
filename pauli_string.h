@@ -29,24 +29,35 @@ struct PauliStringPtr {
     void overwrite_with(const PauliStringPtr &other);
     void swap_with(PauliStringPtr &other);
 
-    // Computes the scalar term created when multiplying two Pauli strings together.
-    // For example, in XZ = iY, the scalar byproduct is i.
-    //
-    // Returns:
-    //     The logarithm, base i, of the scalar byproduct.
-    //     0 if the scalar byproduct is 1.
-    //     1 if the scalar byproduct is i.
-    //     2 if the scalar byproduct is -1.
-    //     3 if the scalar byproduct is -i.
-    uint8_t log_i_scalar_byproduct(const PauliStringPtr &other) const;
-
     void gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const;
     void scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const;
 
     std::string str() const;
 
-    PauliStringPtr& operator*=(const PauliStringPtr &rhs);
-    uint8_t inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs);
+    // Multiplies a commuting Pauli string into this one.
+    //
+    // ASSERTS:
+    //     The given Pauli strings have the same size.
+    //     The given Pauli strings commute.
+    PauliStringPtr& operator*=(const PauliStringPtr &commuting_rhs);
+
+    // A more general version  of `*this *= rhs` which works for anti-commuting Paulis.
+    //
+    // Instead of updating the sign of `*this`, the base i logarithm of a scalar factor that still needs to be included
+    // into the result is returned. For example, when multiplying XZ to get iY, the left hand side would become `Y`
+    // and the returned value would be `1` (meaning a factor of `i**1 = i` is missing from the `Y`).
+    //
+    // Returns:
+    //     The logarithm, base i, of a scalar byproduct from the multiplication.
+    //     0 if the scalar byproduct is 1.
+    //     1 if the scalar byproduct is i.
+    //     2 if the scalar byproduct is -1.
+    //     3 if the scalar byproduct is -i.
+    //
+    // ASSERTS:
+    //     The given Pauli strings have the same size.
+    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringPtr& rhs) noexcept;
+
     size_t num_words256() const;
 
     bool get_x_bit(size_t k) const;

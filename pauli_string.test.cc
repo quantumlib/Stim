@@ -41,36 +41,37 @@ TEST(pauli_string, log_i_scalar_byproduct) {
     PauliStringPtr y = y_val;
     PauliStringPtr z = z_val;
 
-    ASSERT_EQ(id.log_i_scalar_byproduct(id), 0);
-    ASSERT_EQ(id.log_i_scalar_byproduct(x), 0);
-    ASSERT_EQ(id.log_i_scalar_byproduct(y), 0);
-    ASSERT_EQ(id.log_i_scalar_byproduct(z), 0);
+    auto f = [](PauliStringVal a, PauliStringPtr b){
+        return a.ptr().inplace_right_mul_returning_log_i_scalar(b);
+    };
 
-    ASSERT_EQ(x.log_i_scalar_byproduct(id), 0);
-    ASSERT_EQ(x.log_i_scalar_byproduct(x), 0);
-    ASSERT_EQ(x.log_i_scalar_byproduct(y), 1);
-    ASSERT_EQ(x.log_i_scalar_byproduct(z), 3);
+    ASSERT_EQ(f(id, id), 0);
+    ASSERT_EQ(f(id, x), 0);
+    ASSERT_EQ(f(id, y), 0);
+    ASSERT_EQ(f(id, z), 0);
 
-    ASSERT_EQ(y.log_i_scalar_byproduct(id), 0);
-    ASSERT_EQ(y.log_i_scalar_byproduct(x), 3);
-    ASSERT_EQ(y.log_i_scalar_byproduct(y), 0);
-    ASSERT_EQ(y.log_i_scalar_byproduct(z), 1);
+    ASSERT_EQ(f(x, id), 0);
+    ASSERT_EQ(f(x, x), 0);
+    ASSERT_EQ(f(x, y), 1);
+    ASSERT_EQ(f(x, z), 3);
 
-    ASSERT_EQ(z.log_i_scalar_byproduct(id), 0);
-    ASSERT_EQ(z.log_i_scalar_byproduct(x), 1);
-    ASSERT_EQ(z.log_i_scalar_byproduct(y), 3);
-    ASSERT_EQ(z.log_i_scalar_byproduct(z), 0);
+    ASSERT_EQ(f(y, id), 0);
+    ASSERT_EQ(f(y, x), 3);
+    ASSERT_EQ(f(y, y), 0);
+    ASSERT_EQ(f(y, z), 1);
 
-    ASSERT_EQ(PauliStringVal::from_str("XX").ptr().log_i_scalar_byproduct(
-            PauliStringVal::from_str("XY")), 1);
-    ASSERT_EQ(PauliStringVal::from_str("XX").ptr().log_i_scalar_byproduct(
-            PauliStringVal::from_str("ZY")), 0);
-    ASSERT_EQ(PauliStringVal::from_str("XX").ptr().log_i_scalar_byproduct(
-            PauliStringVal::from_str("YY")), 2);
+    ASSERT_EQ(f(z, id), 0);
+    ASSERT_EQ(f(z, x), 1);
+    ASSERT_EQ(f(z, y), 3);
+    ASSERT_EQ(f(z, z), 0);
+
+    ASSERT_EQ(f(PauliStringVal::from_str("XX"), PauliStringVal::from_str("XY")), 1);
+    ASSERT_EQ(f(PauliStringVal::from_str("XX"), PauliStringVal::from_str("ZY")), 0);
+    ASSERT_EQ(f(PauliStringVal::from_str("XX"), PauliStringVal::from_str("YY")), 2);
     for (size_t n : std::vector<size_t>{1, 499, 4999, 5000}) {
         auto all_x = PauliStringVal::from_pattern(false, n, [](size_t i) { return 'X'; });
         auto all_z = PauliStringVal::from_pattern(false, n, [](size_t i) { return 'Z'; });
-        ASSERT_EQ(all_x.ptr().log_i_scalar_byproduct(all_z), (-(int) n) & 3);
+        ASSERT_EQ(f(all_x, all_z), (-(int) n) & 3);
     }
 }
 
@@ -97,7 +98,7 @@ TEST(pauli_string, multiplication) {
     auto z = PauliStringVal::from_str("Z");
 
     auto lhs = x;
-    uint8_t log_i = lhs.ptr().inplace_right_mul_with_scalar_output(y);
+    uint8_t log_i = lhs.ptr().inplace_right_mul_returning_log_i_scalar(y);
     ASSERT_EQ(log_i, 1);
     ASSERT_EQ(lhs, z);
 
@@ -184,7 +185,7 @@ TEST(pauli_string, foreign_memory) {
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);
     ASSERT_EQ(p1, copy_p1);
-    p1.inplace_right_mul_with_scalar_output(p2);
+    p1.inplace_right_mul_returning_log_i_scalar(p2);
     ASSERT_EQ(p1, *p1b);
     ASSERT_NE(p1, copy_p1);
     // Deleting p1b shouldn't delete the backing buffer. So p1 survives.

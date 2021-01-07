@@ -93,7 +93,7 @@ PauliStringPtr Tableau::transposed_col_z_obs_ptr(size_t qubit) const {
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
     PauliStringVal result(x_obs_ptr(qubit));
-    uint8_t log_i = result.ptr().inplace_right_mul_with_scalar_output(z_obs_ptr(qubit));
+    uint8_t log_i = result.ptr().inplace_right_mul_returning_log_i_scalar(z_obs_ptr(qubit));
     log_i++;
     assert((log_i & 1) == 0);
     if (log_i & 2) {
@@ -270,7 +270,7 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
 
 void Tableau::inplace_scatter_prepend_SQRT_X(size_t q) {
     auto z = z_obs_ptr(q);
-    uint8_t m = 1 + z.inplace_right_mul_with_scalar_output(x_obs_ptr(q));
+    uint8_t m = 1 + z.inplace_right_mul_returning_log_i_scalar(x_obs_ptr(q));
     if (m & 2) {
         z.bit_ptr_sign.toggle();
     }
@@ -278,7 +278,7 @@ void Tableau::inplace_scatter_prepend_SQRT_X(size_t q) {
 
 void Tableau::inplace_scatter_prepend_SQRT_X_DAG(size_t q) {
     auto z = z_obs_ptr(q);
-    uint8_t m = 3 + z.inplace_right_mul_with_scalar_output(x_obs_ptr(q));
+    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x_obs_ptr(q));
     if (m & 2) {
         z.bit_ptr_sign.toggle();
     }
@@ -298,7 +298,7 @@ void Tableau::inplace_scatter_prepend_SQRT_Y_DAG(size_t q) {
 
 void Tableau::inplace_scatter_prepend_SQRT_Z(size_t q) {
     auto x = x_obs_ptr(q);
-    uint8_t m = 1 + x.inplace_right_mul_with_scalar_output(z_obs_ptr(q));
+    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z_obs_ptr(q));
     if (m & 2) {
         x.bit_ptr_sign.toggle();
     }
@@ -306,7 +306,7 @@ void Tableau::inplace_scatter_prepend_SQRT_Z(size_t q) {
 
 void Tableau::inplace_scatter_prepend_SQRT_Z_DAG(size_t q) {
     auto x = x_obs_ptr(q);
-    uint8_t m = 3 + x.inplace_right_mul_with_scalar_output(z_obs_ptr(q));
+    uint8_t m = 3 + x.inplace_right_mul_returning_log_i_scalar(z_obs_ptr(q));
     if (m & 2) {
         x.bit_ptr_sign.toggle();
     }
@@ -336,7 +336,7 @@ void Tableau::inplace_scatter_prepend_H(const size_t q) {
 void Tableau::inplace_scatter_prepend_H_YZ(const size_t q) {
     auto x = x_obs_ptr(q);
     auto z = z_obs_ptr(q);
-    uint8_t m = 3 + z.inplace_right_mul_with_scalar_output(x);
+    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x);
     x.bit_ptr_sign.toggle();
     if (m & 2) {
         z.bit_ptr_sign.toggle();
@@ -346,7 +346,7 @@ void Tableau::inplace_scatter_prepend_H_YZ(const size_t q) {
 void Tableau::inplace_scatter_prepend_H_XY(const size_t q) {
     auto x = x_obs_ptr(q);
     auto z = z_obs_ptr(q);
-    uint8_t m = 1 + x.inplace_right_mul_with_scalar_output(z);
+    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z);
     z.bit_ptr_sign.toggle();
     if (m & 2) {
         x.bit_ptr_sign.toggle();
@@ -378,8 +378,8 @@ PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
                 uint8_t log_i = 1;
-                log_i += result.ptr().inplace_right_mul_with_scalar_output(x_obs_ptr(k_scattered));
-                log_i += result.ptr().inplace_right_mul_with_scalar_output(z_obs_ptr(k_scattered));
+                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(x_obs_ptr(k_scattered));
+                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(z_obs_ptr(k_scattered));
                 assert((log_i & 1) == 0);
                 result.val_sign ^= (log_i & 2) != 0;
             } else {

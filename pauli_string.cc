@@ -92,48 +92,6 @@ PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         stride256(1) {
 }
 
-uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) const {
-    assert(size == other.size);
-    union {__m256i u256; uint64_t u64[4]; } cnt1 {};
-    union {__m256i u256; uint64_t u64[4]; } cnt2 {};
-    auto x256 = (__m256i *)_x;
-    auto z256 = (__m256i *)_z;
-    auto ox256 = (__m256i *)other._x;
-    auto oz256 = (__m256i *)other._z;
-    auto end = &x256[num_words256() * stride256];
-    while (x256 != end) {
-        // Load into registers.
-        auto x1 = *x256;
-        auto z2 = *oz256;
-        auto z1 = *z256;
-        auto x2 = *ox256;
-
-        auto t1 = x1 & z2;
-        auto t2 = x2 & z1;
-        // At each bit position: do the Paulis anti-commute?
-        auto a = t1 ^ t2;
-        // At each bit position: do the Paulis anti-commute and produce a -i instead of a +i?
-        auto b = ((x1 ^ z2) & t2) ^ _mm256_andnot_si256(z1, _mm256_andnot_si256(x2, t1));
-        // At each bit position: `count += forward - backward` where `backward=b`, `forward=a^b`, `count=cnt1 + 2*cnt2`.
-        cnt2.u256 ^= (cnt1.u256 ^ b) & a;
-        cnt1.u256 ^= a;
-
-        // Move along.
-        x256 += stride256;
-        z256 += stride256;
-        ox256 += other.stride256;
-        oz256 += other.stride256;
-    }
-
-    // Combine final anti-commutation phase tally (mod 4).
-    size_t s = 0;
-    for (size_t k = 0; k < 4; k++) {
-        s += (uint8_t) std::popcount(cnt1.u64[k]);
-        s ^= (uint8_t) std::popcount(cnt2.u64[k]) << 1;
-    }
-    return s & 3;
-}
-
 std::string PauliStringPtr::str() const {
     std::stringstream ss;
     ss << *this;
@@ -241,32 +199,56 @@ PauliStringVal PauliStringVal::identity(size_t size) {
 }
 
 PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
-    uint8_t log_i = inplace_right_mul_with_scalar_output(rhs);
+    uint8_t log_i = inplace_right_mul_returning_log_i_scalar(rhs);
     assert((log_i & 1) == 0);
     bit_ptr_sign.toggle_if(log_i & 2);
     return *this;
 }
 
-uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs) {
-    uint8_t result = log_i_scalar_byproduct(rhs);
-    result ^= (uint8_t)rhs.bit_ptr_sign.get() << 1;
+uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStringPtr& rhs) noexcept {
+    assert(size == rhs.size);
+    union {__m256i u256; uint64_t u64[4]; } cnt1 {};
+    union {__m256i u256; uint64_t u64[4]; } cnt2 {};
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)rhs._x;
     auto oz256 = (__m256i *)rhs._z;
     auto end = &x256[num_words256() * stride256];
     while (x256 != end) {
+        // Load into registers.
+        auto x1 = *x256;
+        auto z2 = *oz256;
+        auto z1 = *z256;
+        auto x2 = *ox256;
+
+        auto t1 = x1 & z2;
+        auto t2 = x2 & z1;
+        // At each bit position: do the Paulis anti-commute?
+        auto a = t1 ^ t2;
+        // At each bit position: do the Paulis anti-commute and produce a -i instead of a +i?
+        auto b = ((x1 ^ z2) & t2) ^ _mm256_andnot_si256(z1, _mm256_andnot_si256(x2, t1));
+        // At each bit position: `count += forward - backward` where `backward=b`, `forward=a^b`, `count=cnt1 + 2*cnt2`.
+        cnt2.u256 ^= (cnt1.u256 ^ b) & a;
+        cnt1.u256 ^= a;
+        // Update the left hand side Paulis.
         *x256 ^= *ox256;
-        x256 += stride256;
-        ox256 += rhs.stride256;
-    }
-    end = &z256[num_words256() * stride256];
-    while (z256 != end) {
         *z256 ^= *oz256;
+
+        // Move along.
+        x256 += stride256;
         z256 += stride256;
+        ox256 += rhs.stride256;
         oz256 += rhs.stride256;
     }
-    return result;
+
+    // Combine final anti-commutation phase tally (mod 4).
+    size_t s = 0;
+    for (size_t k = 0; k < 4; k++) {
+        s += (uint8_t) std::popcount(cnt1.u64[k]);
+        s ^= (uint8_t) std::popcount(cnt2.u64[k]) << 1;
+    }
+    s ^= (uint8_t)rhs.bit_ptr_sign.get() << 1;
+    return s & 3;
 }
 
 bool PauliStringPtr::get_x_bit(size_t k) const {
