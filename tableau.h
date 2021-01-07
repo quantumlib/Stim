@@ -9,12 +9,8 @@
 
 struct Tableau {
     size_t num_qubits;
-    aligned_bits256 data_x2x;
-    aligned_bits256 data_x2z;
-    aligned_bits256 data_z2x;
-    aligned_bits256 data_z2z;
-    aligned_bits256 data_sign_x;
-    aligned_bits256 data_sign_z;
+    aligned_bits256 data_x2x_z2x_x2z_z2z;
+    aligned_bits256 data_sign_x_z;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
@@ -111,8 +107,8 @@ struct Tableau {
 };
 
 struct TransposedPauliStringPtr {
-    __m256i *_x;
-    __m256i *_z;
+    __m256i *x;
+    __m256i *z;
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
@@ -130,8 +126,7 @@ struct BlockTransposedTableau {
     BlockTransposedTableau(const BlockTransposedTableau &) = delete;
     BlockTransposedTableau(BlockTransposedTableau &&) = delete;
 
-    TransposedPauliStringPtr transposed_col_x_obs_ptr(size_t qubit) const;
-    TransposedPauliStringPtr transposed_col_z_obs_ptr(size_t qubit) const;
+    TransposedPauliStringPtr transposed_double_col_obs_ptr(size_t qubit) const;
 
     bool z_sign(size_t a) const;
     bool z_obs_x_bit(size_t a, size_t b) const;

@@ -94,12 +94,11 @@ void transpose_bit_matrix_threaded(uint64_t *matrix, size_t area, size_t thread_
     }
 }
 
-void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noexcept {
-    auto area = bit_width * bit_width;
-    if (bit_width < 256 * 16) {
-        transpose_bit_matrix_thread_body(matrix, area);
+void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_area) noexcept {
+    if (bit_area < 1 << 24) {
+        transpose_bit_matrix_thread_body(matrix, bit_area);
     } else {
-        transpose_bit_matrix_threaded(matrix, area, 4);
+        transpose_bit_matrix_threaded(matrix, bit_area, 4);
     }
 }
 
@@ -108,10 +107,9 @@ size_t ceil256(size_t n) {
 }
 
 bool any_non_zero(const __m256i *data, size_t n, size_t stride) {
-    union {__m256i m256; uint64_t u64[4]; } acc;
-    acc.m256 = _mm256_set1_epi32(0);
+    union {__m256i m256; uint64_t u64[4]; } acc {};
     for (size_t i = 0; i < n; i++) {
-        acc.m256 = _mm256_or_si256(acc.m256, data[i*stride]);
+        acc.m256 |= data[i*stride];
     }
     for (size_t k = 0; k < 4; k++) {
         if (acc.u64[k]) {

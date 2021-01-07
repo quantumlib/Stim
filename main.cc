@@ -93,18 +93,17 @@ void time_clifford_sim(size_t distance, bool progress = false) {
     std::cerr << "\n";
 }
 
-void time_transpose_blockwise(size_t block_diameter) {
-    std::cerr << "transpose_bit_matrix_256x256blocks(block_diameter=" << block_diameter << "; ";
-    std::cerr << (block_diameter * block_diameter * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
+void time_transpose_blockwise(size_t blocks) {
+    std::cerr << "transpose_bit_matrix_256x256blocks(blocks=" << blocks << "; ";
+    std::cerr << (blocks * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
 
-    size_t w = 256 * block_diameter;
-    size_t num_bits = w * w;
+    size_t num_bits = blocks << 16;
     auto data = aligned_bits256::random(num_bits);
     auto f = PerfResult::time([&](){
-        transpose_bit_matrix_256x256blocks(data.u64, w);
+        transpose_bit_matrix_256x256blocks(data.u64, num_bits);
     });
     std::cerr << f;
-    std::cerr << " (" << f.rate() * block_diameter * block_diameter / 1000.0 / 1000.0 << " MegaBlocks/s)";
+    std::cerr << " (" << f.rate() * blocks / 1000.0 / 1000.0 << " MegaBlocks/s)";
     std::cerr << "\n";
 }
 
@@ -153,6 +152,6 @@ void time_pauli_swap(size_t num_qubits) {
 int main() {
 //    time_transpose_blockwise(100);
 //    time_pauli_multiplication(100000);
-    time_clifford_sim(61);
+    time_clifford_sim(31);
 //    time_pauli_swap(100000);
 }

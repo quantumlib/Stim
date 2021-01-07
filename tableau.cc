@@ -3,8 +3,6 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
-#define BLOCK_TRANSPOSED_PAULI_STRING_STRIDE 256
-
 size_t table_row_length_bits(size_t num_qubits) {
     return ceil256(num_qubits);
 }
@@ -14,6 +12,13 @@ size_t table_quadrant_bits(size_t num_qubits) {
     return diam * diam;
 }
 
+size_t row_stride256(size_t num_qubits) {
+    return 256;
+}
+
+size_t column_stride256(size_t num_qubits) {
+    return table_row_length_bits(num_qubits);
+}
 
 BlockTransposedTableau::BlockTransposedTableau(Tableau &tableau) : tableau(tableau) {
     blockwise_transpose();
@@ -24,135 +29,117 @@ BlockTransposedTableau::~BlockTransposedTableau() {
 }
 
 void BlockTransposedTableau::blockwise_transpose() {
-    size_t n = ceil256(tableau.num_qubits);
-    transpose_bit_matrix_256x256blocks(tableau.data_x2x.u64, n);
-    transpose_bit_matrix_256x256blocks(tableau.data_x2z.u64, n);
-    transpose_bit_matrix_256x256blocks(tableau.data_z2x.u64, n);
-    transpose_bit_matrix_256x256blocks(tableau.data_z2z.u64, n);
+    transpose_bit_matrix_256x256blocks(tableau.data_x2x_z2x_x2z_z2z.u64, tableau.data_x2x_z2x_x2z_z2z.num_bits);
 }
 
-TransposedPauliStringPtr BlockTransposedTableau::transposed_col_x_obs_ptr(size_t qubit) const {
+TransposedPauliStringPtr BlockTransposedTableau::transposed_double_col_obs_ptr(size_t qubit) const {
     size_t col_start = ((table_row_length_bits(tableau.num_qubits) >> 8) * (qubit & ~0xFF)) | (qubit & 0xFF);
     return TransposedPauliStringPtr {
-        &tableau.data_x2x.u256[col_start],
-        &tableau.data_x2z.u256[col_start],
-    };
-}
-
-TransposedPauliStringPtr BlockTransposedTableau::transposed_col_z_obs_ptr(size_t qubit) const {
-    size_t col_start = ((table_row_length_bits(tableau.num_qubits) >> 8) * (qubit & ~0xFF)) | (qubit & 0xFF);
-    return TransposedPauliStringPtr {
-        &tableau.data_z2x.u256[col_start],
-        &tableau.data_z2z.u256[col_start],
+        &tableau.data_x2x_z2x_x2z_z2z.u256[col_start],
+        &tableau.data_x2x_z2x_x2z_z2z.u256[col_start + (table_quadrant_bits(tableau.num_qubits) >> 7)],
     };
 }
 
 void BlockTransposedTableau::append_CX(size_t control, size_t target) {
-    size_t words256 = ceil256(tableau.num_qubits) >> 8;
-    for (size_t t = 0; t < 2; t++) {
-        auto pc = t == 0 ? transposed_col_x_obs_ptr(control) : transposed_col_z_obs_ptr(control);
-        auto pt = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
-        auto s256 = t == 0 ? tableau.data_sign_x.u256 : tableau.data_sign_z.u256;
-        auto end = &pc._x[words256 * BLOCK_TRANSPOSED_PAULI_STRING_STRIDE];
-        while (pc._x != end) {
-            *s256 ^= _mm256_andnot_si256(*pc._z ^ *pt._x, *pc._x & *pt._z);
-            *pc._z ^= *pt._z;
-            *pt._x ^= *pc._x;
-            pc._x += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            pc._z += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            pt._x += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            pt._z += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            s256 += 1;
-        }
+    auto pc = transposed_double_col_obs_ptr(control);
+    auto pt = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        *s ^= _mm256_andnot_si256(*pc.z ^ *pt.x, *pc.x & *pt.z);
+        *pc.z ^= *pt.z;
+        *pt.x ^= *pc.x;
+        pc.x += stride256;
+        pc.z += stride256;
+        pt.x += stride256;
+        pt.z += stride256;
+        s++;
     }
 }
 
 void BlockTransposedTableau::append_H_YZ(size_t target) {
-    size_t words256 = ceil256(tableau.num_qubits) >> 8;
-    for (size_t t = 0; t < 2; t++) {
-        auto p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
-        auto s256 = t == 0 ? tableau.data_sign_x.u256 : tableau.data_sign_z.u256;
-        auto end = &p._x[words256 * BLOCK_TRANSPOSED_PAULI_STRING_STRIDE];
-        while (p._x != end) {
-            *s256 ^= _mm256_andnot_si256(*p._z, *p._x);
-            *p._x ^= *p._z;
-            p._x += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            p._z += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            s256 += 1;
-        }
+    auto p = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        *s ^= _mm256_andnot_si256(*p.z, *p.x);
+        *p.x ^= *p.z;
+        p.x += stride256;
+        p.z += stride256;
+        s++;
     }
 }
 
 void BlockTransposedTableau::append_H(size_t target) {
-    size_t words256 = ceil256(tableau.num_qubits) >> 8;
-    for (size_t t = 0; t < 2; t++) {
-        auto p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
-        auto s256 = t == 0 ? tableau.data_sign_x.u256 : tableau.data_sign_z.u256;
-        auto end = &p._x[words256 * BLOCK_TRANSPOSED_PAULI_STRING_STRIDE];
-        while (p._x != end) {
-            std::swap(*p._x, *p._z);
-            *s256 ^= *p._x & *p._z;
-            p._x += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            p._z += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            s256 += 1;
-        }
+    auto p = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        std::swap(*p.x, *p.z);
+        *s ^= *p.x & *p.z;
+        p.x += stride256;
+        p.z += stride256;
+        s++;
     }
 }
 
 void BlockTransposedTableau::append_X(size_t target) {
-    size_t words256 = ceil256(tableau.num_qubits) >> 8;
-    for (size_t t = 0; t < 2; t++) {
-        auto p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
-        auto s256 = t == 0 ? tableau.data_sign_x.u256 : tableau.data_sign_z.u256;
-        auto end = &p._z[words256 * BLOCK_TRANSPOSED_PAULI_STRING_STRIDE];
-        while (p._z != end) {
-            *s256 ^= *p._z;
-            p._z += BLOCK_TRANSPOSED_PAULI_STRING_STRIDE;
-            s256 += 1;
-        }
+    auto p = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        *s ^= *p.z;
+        p.z += stride256;
+        s++;
     }
 }
 
 PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
-    auto stride256 = table_row_length_bits(num_qubits);
+    size_t quadrant = table_quadrant_bits(num_qubits) >> 6;
     return PauliStringPtr(
             num_qubits,
-            BitPtr(data_sign_x.u64, qubit),
-            &data_x2x.u64[4*qubit],
-            &data_x2z.u64[4*qubit],
-            stride256);
+            BitPtr(data_sign_x_z.u64, qubit),
+            &data_x2x_z2x_x2z_z2z.u64[4*qubit],
+            &data_x2x_z2x_x2z_z2z.u64[4*qubit + quadrant*2],
+            row_stride256(num_qubits));
 }
 
 PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
-    auto stride256 = table_row_length_bits(num_qubits);
+    size_t quadrant = table_quadrant_bits(num_qubits) >> 6;
     return PauliStringPtr(
             num_qubits,
-            BitPtr(data_sign_z.u64, qubit),
-            &data_z2x.u64[4*qubit],
-            &data_z2z.u64[4*qubit],
-            stride256);
+            BitPtr(data_sign_x_z.u64, ceil256(num_qubits) + qubit),
+            &data_x2x_z2x_x2z_z2z.u64[4*qubit + quadrant],
+            &data_x2x_z2x_x2z_z2z.u64[4*qubit + 3*quadrant],
+            row_stride256(num_qubits));
 }
 
 bool Tableau::z_sign(size_t a) const {
-    return data_sign_z.get_bit(a);
+    return data_sign_x_z.get_bit(a + table_row_length_bits(num_qubits));
 }
 
 bool BlockTransposedTableau::z_sign(size_t a) const {
-    return tableau.data_sign_z.get_bit(a);
+    return tableau.z_sign(a);
 }
 
 bool BlockTransposedTableau::z_obs_x_bit(size_t a, size_t b) const {
     size_t col_start = ((table_row_length_bits(tableau.num_qubits) >> 8) * (b & ~0xFF)) | (b & 0xFF);
-    a = ((a & ~0xFF)*BLOCK_TRANSPOSED_PAULI_STRING_STRIDE) | (a & 0xFF);
+    a = ((a & ~0xFF) * column_stride256(tableau.num_qubits)) | (a & 0xFF);
     a += col_start << 8;
-    return tableau.data_z2x.get_bit(a);
+    auto quadrant = table_quadrant_bits(tableau.num_qubits);
+    return tableau.data_x2x_z2x_x2z_z2z.get_bit(a + quadrant);
 }
 
 bool BlockTransposedTableau::z_obs_z_bit(size_t a, size_t b) const {
     size_t col_start = ((table_row_length_bits(tableau.num_qubits) >> 8) * (b & ~0xFF)) | (b & 0xFF);
-    a = ((a & ~0xFF)*BLOCK_TRANSPOSED_PAULI_STRING_STRIDE) | (a & 0xFF);
+    a = ((a & ~0xFF) * column_stride256(tableau.num_qubits)) | (a & 0xFF);
     a += col_start << 8;
-    return tableau.data_z2z.get_bit(a);
+    auto quadrant = table_quadrant_bits(tableau.num_qubits);
+    return tableau.data_x2x_z2x_x2z_z2z.get_bit(a + 3 * quadrant);
 }
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
@@ -168,12 +155,8 @@ PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
 
 Tableau::Tableau(size_t num_qubits) :
         num_qubits(num_qubits),
-        data_x2x(table_quadrant_bits(num_qubits)),
-        data_x2z(table_quadrant_bits(num_qubits)),
-        data_z2x(table_quadrant_bits(num_qubits)),
-        data_z2z(table_quadrant_bits(num_qubits)),
-        data_sign_x(table_row_length_bits(num_qubits)),
-        data_sign_z(table_row_length_bits(num_qubits)){
+        data_x2x_z2x_x2z_z2z(table_quadrant_bits(num_qubits) << 2),
+        data_sign_x_z(table_row_length_bits(num_qubits) << 1) {
     for (size_t q = 0; q < num_qubits; q++) {
         x_obs_ptr(q).set_x_bit(q, true);
         z_obs_ptr(q).set_z_bit(q, true);
@@ -231,12 +214,8 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 
 bool Tableau::operator==(const Tableau &other) const {
     return num_qubits == other.num_qubits
-        && data_x2x == other.data_x2x
-        && data_x2z == other.data_x2z
-        && data_z2x == other.data_z2x
-        && data_z2z == other.data_z2z
-        && data_sign_x == other.data_sign_x
-        && data_sign_z == other.data_sign_z;
+        && data_x2x_z2x_x2z_z2z == other.data_x2x_z2x_x2z_z2z
+        && data_sign_x_z == other.data_sign_x_z;
 }
 
 bool Tableau::operator!=(const Tableau &other) const {

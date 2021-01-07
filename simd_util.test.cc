@@ -44,27 +44,25 @@ TEST(simd_util, pack256_1) {
     ASSERT_EQ(bits, m256i_to_bits(m));
 }
 
-aligned_bits256 reference_blockwise_transpose_of(size_t bit_width, const aligned_bits256 &data) {
+aligned_bits256 reference_blockwise_transpose_of(size_t bit_area, const aligned_bits256 &data) {
     auto expected = aligned_bits256(data.num_bits);
-    for (size_t i = 0; i < bit_width; i++) {
-        for (size_t j = 0; j < bit_width; j++) {
-            size_t i0 = i & 255;
-            size_t i1 = i >> 8;
-            size_t j0 = j & 255;
-            size_t j1 = j >> 8;
-            auto a = i0 + (j0 << 8) + (i1 << 16) + j1 * (bit_width << 8);
-            auto b = j0 + (i0 << 8) + (i1 << 16) + j1 * (bit_width << 8);
-            expected.set_bit(a, data.get_bit(b));
+    for (size_t block = 0; block < bit_area; block += 1 << 16) {
+        for (size_t i = 0; i < 256; i++) {
+            for (size_t j = 0; j < 256; j++) {
+                auto a = i + (j << 8) + block;
+                auto b = j + (i << 8) + block;
+                expected.set_bit(a, data.get_bit(b));
+            }
         }
     }
     return expected;
 }
 
 TEST(simd_util, block_transpose_bit_matrix) {
-    size_t bit_width = 256 * 3;
-    auto data = aligned_bits256::random(bit_width * bit_width);
-    auto expected = reference_blockwise_transpose_of(bit_width, data);
-    transpose_bit_matrix_256x256blocks(data.u64, bit_width);
+    size_t bit_area = 9 << 16;
+    auto data = aligned_bits256::random(bit_area);
+    auto expected = reference_blockwise_transpose_of(bit_area, data);
+    transpose_bit_matrix_256x256blocks(data.u64, bit_area);
     ASSERT_EQ(data, expected);
 }
 
