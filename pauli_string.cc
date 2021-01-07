@@ -221,6 +221,11 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
         auto z1 = *z256;
         auto x2 = *ox256;
 
+        // Update the left hand side Paulis.
+        *x256 = x1 ^ x2;
+        *z256 = z1 ^ z2;
+
+        // Useful intermediate values for efficient implementation.
         auto t1 = x1 & z2;
         auto t2 = x2 & z1;
         // At each bit position: do the Paulis anti-commute?
@@ -230,9 +235,6 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
         // At each bit position: `count += forward - backward` where `backward=b`, `forward=a^b`, `count=cnt1 + 2*cnt2`.
         cnt2.u256 ^= (cnt1.u256 ^ b) & a;
         cnt1.u256 ^= a;
-        // Update the left hand side Paulis.
-        *x256 ^= *ox256;
-        *z256 ^= *oz256;
 
         // Move along.
         x256 += stride256;
