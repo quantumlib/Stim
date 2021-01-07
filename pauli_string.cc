@@ -96,24 +96,23 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
     assert(size == other.size);
     union {__m256i u256; uint64_t u64[4]; } cnt1 {};
     union {__m256i u256; uint64_t u64[4]; } cnt2 {};
-
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
     auto oz256 = (__m256i *)other._z;
     auto end = &x256[num_words256() * stride256];
     while (x256 != end) {
-        auto y0 = *x256 & *z256;
-        auto x0 = y0 ^ *x256;
-        auto z0 = y0 ^ *z256;
-        auto y1 = *ox256 & *oz256;
-        auto x1 = y1 ^ *ox256;
-        auto z1 = y1 ^ *oz256;
-        auto f = (x0 & y1) | (y0 & z1) | (z0 & x1);
-        auto b = (x0 & z1) | (y0 & x1) | (z0 & y1);
+        auto x1 = *x256;
+        auto z2 = *oz256;
+        auto z1 = *z256;
+        auto x2 = *ox256;
+        auto t1 = x1 & z2;
+        auto t2 = x2 & z1;
+        auto f = t1 ^ t2;
+        auto b = ((x1 ^ z2) & t2) ^ _mm256_andnot_si256(z1, _mm256_andnot_si256(x2, t1));
         cnt1.u256 ^= b;
-        cnt2.u256 ^= cnt1.u256 & (f ^ b);
-        cnt1.u256 ^= f;
+        cnt2.u256 ^= cnt1.u256 & f;
+        cnt1.u256 ^= f ^ b;
         x256 += stride256;
         z256 += stride256;
         ox256 += other.stride256;
