@@ -3,14 +3,14 @@
 
 TEST(aligned_bits256, move) {
     auto a = aligned_bits256(512);
-    auto ptr = a.data;
+    auto ptr = a.u64;
     aligned_bits256 b = std::move(a);
-    ASSERT_EQ(b.data, ptr);
+    ASSERT_EQ(b.u64, ptr);
 }
 
 TEST(aligned_bits256, small_copy) {
     auto a = aligned_bits256(3);
-    a.data[0] = 1;
+    a.u64[0] = 1;
     auto b = a;
-    ASSERT_EQ(b.data[0], 1);
+    ASSERT_EQ(b.u64[0], 1);
 }

@@ -3,31 +3,32 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
-size_t table_words_per_obs(size_t num_qubits) {
-    return ((num_qubits + 255) / 256) * (256 / 64);
+size_t table_row_length_bits(size_t num_qubits) {
+    return ceil256(num_qubits);
 }
 
-size_t table_buffer_bits(size_t num_qubits) {
-    return table_words_per_obs(num_qubits) * 64 * 4 * num_qubits;
+size_t table_quadrant_bits(size_t num_qubits) {
+    auto diam = table_row_length_bits(num_qubits);
+    return diam * diam;
 }
 
 PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
-    auto step = table_words_per_obs(num_qubits);
+    auto row_step = table_row_length_bits(num_qubits) >> 6;
     return PauliStringPtr(
             num_qubits,
-            BitPtr(sign_data.data, qubit),
-            &data.data[step * (4*qubit + 0)],
-            &data.data[step * (4*qubit + 1)],
+            BitPtr(data_sign_x.u64, qubit),
+            &data_x2x.u64[row_step * qubit],
+            &data_x2z.u64[row_step * qubit],
             1);
 }
 
 PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
-    auto step = table_words_per_obs(num_qubits);
+    auto row_step = table_row_length_bits(num_qubits) >> 6;
     return PauliStringPtr(
             num_qubits,
-            BitPtr(sign_data.data, num_qubits + qubit),
-            &data.data[step * (4*qubit + 2)],
-            &data.data[step * (4*qubit + 3)],
+            BitPtr(data_sign_z.u64, qubit),
+            &data_z2x.u64[row_step * qubit],
+            &data_z2z.u64[row_step * qubit],
             1);
 }
 
@@ -44,8 +45,12 @@ PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
 
 Tableau::Tableau(size_t num_qubits) :
         num_qubits(num_qubits),
-        data(table_buffer_bits(num_qubits)),
-        sign_data(num_qubits * 2) {
+        data_x2x(table_quadrant_bits(num_qubits)),
+        data_x2z(table_quadrant_bits(num_qubits)),
+        data_z2x(table_quadrant_bits(num_qubits)),
+        data_z2z(table_quadrant_bits(num_qubits)),
+        data_sign_x(table_row_length_bits(num_qubits)),
+        data_sign_z(table_row_length_bits(num_qubits)){
     for (size_t q = 0; q < num_qubits; q++) {
         x_obs_ptr(q).set_x_bit(q, true);
         z_obs_ptr(q).set_z_bit(q, true);
@@ -138,7 +143,13 @@ void Tableau::inplace_scatter_append_H(size_t target) {
 }
 
 bool Tableau::operator==(const Tableau &other) const {
-    return num_qubits == other.num_qubits && data == other.data && sign_data == other.sign_data;
+    return num_qubits == other.num_qubits
+        && data_x2x == other.data_x2x
+        && data_x2z == other.data_x2z
+        && data_z2x == other.data_z2x
+        && data_z2z == other.data_z2z
+        && data_sign_x == other.data_sign_x
+        && data_sign_z == other.data_sign_z;
 }
 
 bool Tableau::operator!=(const Tableau &other) const {

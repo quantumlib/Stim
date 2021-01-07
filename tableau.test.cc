@@ -257,7 +257,8 @@ bool are_tableau_mutations_equivalent(
     }
 
     auto test_tableau_random = Tableau::identity(n * 2);
-    test_tableau_random.sign_data = aligned_bits256::random(test_tableau_random.sign_data.num_bits);
+    test_tableau_random.data_sign_x = aligned_bits256::random(test_tableau_random.data_sign_x.num_bits);
+    test_tableau_random.data_sign_z = aligned_bits256::random(test_tableau_random.data_sign_z.num_bits);
     std::random_device rng;
     std::mt19937 gen(rng());
     std::uniform_int_distribution<unsigned long long> rand_n(0, 2*n-1);

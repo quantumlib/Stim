@@ -97,4 +97,6 @@ void mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk(uint64_t *matrix256x25
     }
 }
 
+size_t ceil256(size_t n);
+
 #endif

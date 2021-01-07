@@ -257,3 +257,7 @@ void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noex
         transpose_bit_matrix_threaded(matrix, area, 4);
     }
 }
+
+size_t ceil256(size_t n) {
+    return (n + 0xFF) & ~0xFF;
+}

@@ -9,8 +9,12 @@
 
 struct Tableau {
     size_t num_qubits;
-    aligned_bits256 data;
-    aligned_bits256 sign_data;
+    aligned_bits256 data_x2x;
+    aligned_bits256 data_x2z;
+    aligned_bits256 data_z2x;
+    aligned_bits256 data_z2z;
+    aligned_bits256 data_sign_x;
+    aligned_bits256 data_sign_z;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;

@@ -86,8 +86,8 @@ PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept 
 PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         size(other.x_data.num_bits),
         bit_ptr_sign(BitPtr((void *)&other.val_sign, 0)),
-        _x(other.x_data.data),
-        _z(other.z_data.data),
+        _x(other.x_data.u64),
+        _z(other.z_data.u64),
         stride256(1) {
 }
 
@@ -185,7 +185,7 @@ std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
 }
 
 size_t PauliStringPtr::num_words256() const {
-    return (size + 0xFF) >> 8;
+    return ceil256(size) >> 8;
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
@@ -229,8 +229,8 @@ PauliStringVal PauliStringVal::from_pattern(bool sign, size_t size, const std::f
         } else {
             throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
         }
-        result.x_data.data[i / 64] ^= (uint64_t)x << (i & 63);
-        result.z_data.data[i / 64] ^= (uint64_t)z << (i & 63);
+        result.x_data.u64[i / 64] ^= (uint64_t)x << (i & 63);
+        result.z_data.u64[i / 64] ^= (uint64_t)z << (i & 63);
     }
     return result;
 }

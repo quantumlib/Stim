@@ -103,7 +103,7 @@ TEST(simd_util, transpose_bit_matrix) {
     size_t bit_width = 256 * 3;
     auto data = aligned_bits256::random(bit_width * bit_width);
     auto expected = reference_transpose_of(bit_width, data);
-    transpose_bit_matrix(data.data, bit_width);
+    transpose_bit_matrix(data.u64, bit_width);
     ASSERT_EQ(data, expected);
 }
 
@@ -111,14 +111,14 @@ TEST(simd_util, block_transpose_bit_matrix) {
     size_t bit_width = 256 * 3;
     auto data = aligned_bits256::random(bit_width * bit_width);
     auto expected = reference_blockwise_transpose_of(bit_width, data);
-    transpose_bit_matrix_256x256blocks(data.data, bit_width);
+    transpose_bit_matrix_256x256blocks(data.u64, bit_width);
     ASSERT_EQ(data, expected);
 }
 
 uint8_t determine_permutation_bit(const std::function<void(uint64_t *)> &func, uint8_t bit) {
     auto data = aligned_bits256(256 * 256);
     data.set_bit(1 << bit, true);
-    func(data.data);
+    func(data.u64);
     uint32_t seen = 0;
     for (size_t k = 0; k < 1 << 16; k++) {
         if (data.get_bit(k)) {
@@ -152,7 +152,7 @@ bool mat256_function_performs_address_bit_permutation(
         }
         expected.set_bit(k_out, data.get_bit(k_in));
     }
-    func(data.data);
+    func(data.u64);
     bool result = data == expected;
     if (!result) {
         std::cerr << "actual permutation:";
@@ -243,6 +243,18 @@ TEST(simd_util, mike_transpose) {
     auto data = aligned_bits256::random(bit_width * bit_width);
     auto expected = reference_transpose_of(bit_width, data);
     auto out = aligned_bits256(bit_width * bit_width);
-    mike_transpose_bit_matrix(data.data, out.data, bit_width);
+    mike_transpose_bit_matrix(data.u64, out.u64, bit_width);
     ASSERT_EQ(out, expected);
+}
+
+TEST(simd_util, ceil256) {
+    ASSERT_EQ(ceil256(0), 0);
+    ASSERT_EQ(ceil256(1), 256);
+    ASSERT_EQ(ceil256(100), 256);
+    ASSERT_EQ(ceil256(255), 256);
+    ASSERT_EQ(ceil256(256), 256);
+    ASSERT_EQ(ceil256(257), 512);
+    ASSERT_EQ(ceil256((1 << 30) - 1), 1 << 30);
+    ASSERT_EQ(ceil256(1 << 30), 1 << 30);
+    ASSERT_EQ(ceil256((1 << 30) + 1), (1 << 30) + 256);
 }

@@ -177,9 +177,9 @@ TEST(pauli_string, foreign_memory) {
     auto buffer = aligned_bits256::random(bits);
     bool signs = false;
 
-    auto p1 = PauliStringPtr(500, BitPtr(&signs, 0), &buffer.data[0], &buffer.data[16], 1);
-    auto p1b = new PauliStringPtr(500, BitPtr(&signs, 0), &buffer.data[0], &buffer.data[16], 1);
-    auto p2 = PauliStringPtr(500, BitPtr(&signs, 1), &buffer.data[32], &buffer.data[64], 1);
+    auto p1 = PauliStringPtr(500, BitPtr(&signs, 0), &buffer.u64[0], &buffer.u64[16], 1);
+    auto p1b = new PauliStringPtr(500, BitPtr(&signs, 0), &buffer.u64[0], &buffer.u64[16], 1);
+    auto p2 = PauliStringPtr(500, BitPtr(&signs, 1), &buffer.u64[32], &buffer.u64[64], 1);
     PauliStringVal copy_p1 = p1;
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);
@@ -198,19 +198,19 @@ TEST(pauli_string, strided) {
     auto buffer = aligned_bits256(2048);
     bool signs = false;
     for (size_t k = 0; k < 2048 / 64; k += 16) {
-        buffer.data[k + 0] = UINT64_MAX;
-        buffer.data[k + 1] = UINT64_MAX;
-        buffer.data[k + 2] = UINT64_MAX;
-        buffer.data[k + 3] = UINT64_MAX;
+        buffer.u64[k + 0] = UINT64_MAX;
+        buffer.u64[k + 1] = UINT64_MAX;
+        buffer.u64[k + 2] = UINT64_MAX;
+        buffer.u64[k + 3] = UINT64_MAX;
     }
 
     auto all_x = PauliStringVal::from_pattern(false, 512, [](size_t k){ return 'X'; });
     auto all_i = PauliStringVal::from_pattern(false, 512, [](size_t k){ return 'I'; });
-    auto p1 = PauliStringPtr(512, BitPtr(&signs, 0), &buffer.data[0], &buffer.data[8], 4);
+    auto p1 = PauliStringPtr(512, BitPtr(&signs, 0), &buffer.u64[0], &buffer.u64[8], 4);
     ASSERT_EQ(p1, all_x);
     ASSERT_EQ(p1.str(), all_x.str());
 
-    auto p2 = PauliStringPtr(512, BitPtr(&signs, 1), &buffer.data[4], &buffer.data[12], 4);
+    auto p2 = PauliStringPtr(512, BitPtr(&signs, 1), &buffer.u64[4], &buffer.u64[12], 4);
     ASSERT_EQ(p2, PauliStringVal::from_pattern(false, 512, [](size_t k){ return 'I'; }));
     ASSERT_EQ(p2.str(), all_i.str());
     p2 *= p1;

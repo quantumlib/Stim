@@ -17,35 +17,35 @@ uint64_t *alloc_aligned_bits(size_t num_bits) {
 }
 
 aligned_bits256::~aligned_bits256() {
-    if (data != nullptr) {
-        _mm_free(data);
-        data = nullptr;
+    if (u64 != nullptr) {
+        _mm_free(u64);
+        u64 = nullptr;
         num_bits = 0;
     }
 }
 
 aligned_bits256::aligned_bits256(size_t init_num_bits) :
-    num_bits(init_num_bits),
-    data(alloc_aligned_bits(init_num_bits)) {
+        num_bits(init_num_bits),
+        u64(alloc_aligned_bits(init_num_bits)) {
 }
 
 aligned_bits256::aligned_bits256(size_t num_bits, const uint64_t *other) :
         num_bits(num_bits),
-        data(alloc_aligned_bits(num_bits)) {
-    memcpy(data, other, num_bytes(num_bits));
+        u64(alloc_aligned_bits(num_bits)) {
+    memcpy(u64, other, num_bytes(num_bits));
 }
 
 aligned_bits256::aligned_bits256(aligned_bits256&& other) noexcept :
-        data(other.data),
+        u64(other.u64),
         num_bits(other.num_bits) {
-    other.data = nullptr;
+    other.u64 = nullptr;
     other.num_bits = 0;
 }
 
 aligned_bits256::aligned_bits256(const aligned_bits256& other) :
         num_bits(other.num_bits),
-        data(alloc_aligned_bits(other.num_bits)) {
-    memcpy(data, other.data, num_bytes(num_bits));
+        u64(alloc_aligned_bits(other.num_bits)) {
+    memcpy(u64, other.u64, num_bytes(num_bits));
 }
 
 aligned_bits256& aligned_bits256::operator=(aligned_bits256&& other) noexcept {
@@ -57,7 +57,7 @@ aligned_bits256& aligned_bits256::operator=(aligned_bits256&& other) noexcept {
 aligned_bits256& aligned_bits256::operator=(const aligned_bits256& other) {
     // Avoid re-allocating if already the same size.
     if (this->num_bits == other.num_bits) {
-        memcpy(data, other.data, num_bytes(num_bits));
+        memcpy(u64, other.u64, num_bytes(num_bits));
         return *this;
     }
 
@@ -67,14 +67,14 @@ aligned_bits256& aligned_bits256::operator=(const aligned_bits256& other) {
 }
 
 bool aligned_bits256::get_bit(size_t k) const {
-    return ((data[k >> 6] >> (k & 63)) & 1) != 0;
+    return ((u64[k >> 6] >> (k & 63)) & 1) != 0;
 }
 
 void aligned_bits256::set_bit(size_t k, bool value) {
     if (value) {
-        data[k >> 6] |= (uint64_t)1 << (k & 63);
+        u64[k >> 6] |= (uint64_t)1 << (k & 63);
     } else {
-        data[k >> 6] &= ~((uint64_t)1 << (k & 63));
+        u64[k >> 6] &= ~((uint64_t)1 << (k & 63));
     }
 }
 
@@ -84,8 +84,8 @@ bool aligned_bits256::operator==(const aligned_bits256 &other) const {
     }
     union {__m256i m256; uint64_t u64[4]; } acc;
     acc.m256 = _mm256_set1_epi32(-1);
-    auto a = (__m256i *)data;
-    auto b = (__m256i *)other.data;
+    auto a = (__m256i *)u64;
+    auto b = (__m256i *)other.u64;
     size_t n = (num_bits + 0xFF) >> 8;
     for (size_t i = 0; i < n; i++) {
         acc.m256 = _mm256_andnot_si256(_mm256_xor_si256(a[i], b[i]), acc.m256);
@@ -111,10 +111,10 @@ aligned_bits256 aligned_bits256::random(size_t num_bits) {
     size_t num_u64 = (num_bits + 63) / 64;
     auto data = aligned_bits256(num_bits);
     for (size_t k = 0; k < num_u64; k++) {
-        data.data[k] = dis(gen);
+        data.u64[k] = dis(gen);
     }
     if (num_bits & 63) {
-      data.data[num_u64 - 1] &= (1 << (num_bits & 63)) - 1;
+      data.u64[num_u64 - 1] &= (1 << (num_bits & 63)) - 1;
     }
     return data;
 }

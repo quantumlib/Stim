@@ -98,7 +98,7 @@ void time_transpose(size_t block_diameter) {
     std::cerr << "transpose_bit_matrix(block_diameter=" << block_diameter << "; ";
     std::cerr << (block_diameter * block_diameter * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
     std::cerr << PerfResult::time([&](){
-        transpose_bit_matrix(data.data, w);
+        transpose_bit_matrix(data.u64, w);
     });
     std::cerr << "\n";
 }
@@ -112,7 +112,7 @@ void time_mike_transpose(size_t block_diameter) {
     auto data = aligned_bits256::random(num_bits);
     auto out = aligned_bits256(num_bits);
     std::cerr << PerfResult::time([&](){
-        mike_transpose_bit_matrix(data.data, out.data, w);
+        mike_transpose_bit_matrix(data.u64, out.u64, w);
     });
     std::cerr << "\n";
 }
@@ -125,7 +125,7 @@ void time_transpose_blockwise(size_t block_diameter) {
     size_t num_bits = w * w;
     auto data = aligned_bits256::random(num_bits);
     auto f = PerfResult::time([&](){
-        transpose_bit_matrix_256x256blocks(data.data, w);
+        transpose_bit_matrix_256x256blocks(data.u64, w);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * block_diameter * block_diameter / 1000.0 / 1000.0 << " MegaBlocks/s)";

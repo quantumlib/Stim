@@ -4,7 +4,7 @@
 #include <cstdint>
 
 struct aligned_bits256 {
-    uint64_t *data;
+    uint64_t *u64;
     size_t num_bits;
 
     ~aligned_bits256();
