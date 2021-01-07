@@ -241,7 +241,7 @@ PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
 
 uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs) {
     uint8_t result = log_i_scalar_byproduct(rhs);
-    bit_ptr_sign.toggle_if(rhs.bit_ptr_sign.get());
+    result ^= (uint8_t)rhs.bit_ptr_sign.get() << 1;
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)rhs._x;
@@ -249,10 +249,13 @@ uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPt
     auto end = &x256[num_words256() * stride256];
     while (x256 != end) {
         *x256 ^= *ox256;
-        *z256 ^= *oz256;
         x256 += stride256;
-        z256 += stride256;
         ox256 += rhs.stride256;
+    }
+    end = &z256[num_words256() * stride256];
+    while (z256 != end) {
+        *z256 ^= *oz256;
+        z256 += stride256;
         oz256 += rhs.stride256;
     }
     return result;
