@@ -274,30 +274,35 @@ uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPt
 }
 
 bool PauliStringPtr::get_x_bit(size_t k) const {
+    k = (k & ~0xFF)*stride256 | (k & 0xFF);
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     return ((_x[i0] >> i1) & 1) != 0;
 }
 
 bool PauliStringPtr::get_z_bit(size_t k) const {
+    k = (k & ~0xFF)*stride256 | (k & 0xFF);
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     return ((_z[i0] >> i1) & 1) != 0;
 }
 
 void PauliStringPtr::toggle_x_bit(size_t k) {
+    k = (k & ~0xFF)*stride256 | (k & 0xFF);
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _x[i0] ^= 1ull << i1;
 }
 
 void PauliStringPtr::toggle_z_bit(size_t k) {
+    k = (k & ~0xFF)*stride256 | (k & 0xFF);
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _z[i0] ^= 1ull << i1;
 }
 
 void PauliStringPtr::set_x_bit(size_t k, bool val) {
+    k = (k & ~0xFF)*stride256 | (k & 0xFF);
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _x[i0] &= ~(1ull << i1);
@@ -305,6 +310,7 @@ void PauliStringPtr::set_x_bit(size_t k, bool val) {
 }
 
 void PauliStringPtr::set_z_bit(size_t k, bool val) {
+    k = (k & ~0xFF)*stride256 | (k & 0xFF);
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _z[i0] &= ~(1ull << i1);

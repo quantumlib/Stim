@@ -12,24 +12,83 @@ size_t table_quadrant_bits(size_t num_qubits) {
     return diam * diam;
 }
 
+void Tableau::ensure_transposed(bool want_transposed) const {
+    if (want_transposed == is_block_transposed) {
+        return;
+    }
+    *(bool *)&is_block_transposed = want_transposed;
+    transpose_bit_matrix_256x256blocks(data_x2x.u64, ceil256(num_qubits));
+    transpose_bit_matrix_256x256blocks(data_x2z.u64, ceil256(num_qubits));
+    transpose_bit_matrix_256x256blocks(data_z2x.u64, ceil256(num_qubits));
+    transpose_bit_matrix_256x256blocks(data_z2z.u64, ceil256(num_qubits));
+}
+
 PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
-    auto row_step = table_row_length_bits(num_qubits) >> 6;
+    ensure_transposed(false);
+    auto stride256 = table_row_length_bits(num_qubits);
     return PauliStringPtr(
             num_qubits,
             BitPtr(data_sign_x.u64, qubit),
-            &data_x2x.u64[row_step * qubit],
-            &data_x2z.u64[row_step * qubit],
-            1);
+            &data_x2x.u64[4*qubit],
+            &data_x2z.u64[4*qubit],
+            stride256);
 }
 
 PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
-    auto row_step = table_row_length_bits(num_qubits) >> 6;
+    ensure_transposed(false);
+    auto stride256 = table_row_length_bits(num_qubits);
     return PauliStringPtr(
             num_qubits,
             BitPtr(data_sign_z.u64, qubit),
-            &data_z2x.u64[row_step * qubit],
-            &data_z2z.u64[row_step * qubit],
-            1);
+            &data_z2x.u64[4*qubit],
+            &data_z2z.u64[4*qubit],
+            stride256);
+}
+
+bool Tableau::x_sign(size_t a) const {
+    return data_sign_x.get_bit(a);
+}
+
+bool Tableau::z_sign(size_t a) const {
+    return data_sign_z.get_bit(a);
+}
+
+bool Tableau::z_obs_x_bit(size_t a, size_t b) const {
+    if (is_block_transposed) {
+        return transposed_col_z_obs_ptr(b).get_x_bit(a);
+    } else {
+        return z_obs_ptr(a).get_x_bit(b);
+    }
+}
+
+bool Tableau::z_obs_z_bit(size_t a, size_t b) const {
+    if (is_block_transposed) {
+        return transposed_col_z_obs_ptr(b).get_z_bit(a);
+    } else {
+        return z_obs_ptr(a).get_z_bit(b);
+    }
+}
+
+PauliStringPtr Tableau::transposed_col_x_obs_ptr(size_t qubit) const {
+    ensure_transposed(true);
+    size_t col_start = ((table_row_length_bits(num_qubits) >> 8) * (qubit & ~0xFF)) | (qubit & 0xFF);
+    return PauliStringPtr(
+            num_qubits,
+            BitPtr(data_sign_x.u64, qubit),
+            &data_x2x.u64[4*col_start],
+            &data_x2z.u64[4*col_start],
+            256);
+}
+
+PauliStringPtr Tableau::transposed_col_z_obs_ptr(size_t qubit) const {
+    ensure_transposed(true);
+    size_t col_start = ((table_row_length_bits(num_qubits) >> 8) * (qubit & ~0xFF)) | (qubit & 0xFF);
+    return PauliStringPtr(
+            num_qubits,
+            BitPtr(data_sign_z.u64, qubit),
+            &data_z2x.u64[4*col_start],
+            &data_z2z.u64[4*col_start],
+            256);
 }
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
@@ -107,42 +166,79 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 }
 
 void Tableau::inplace_scatter_append_CX(size_t control, size_t target) {
-    for (size_t q = 0; q < num_qubits; q++) {
-        for (size_t t = 0; t < 2; t++) {
-            auto p = t == 0 ? x_obs_ptr(q) : z_obs_ptr(q);
-            p.bit_ptr_sign.toggle_if(p.get_x_bit(control) && p.get_z_bit(target) && (p.get_z_bit(control) == p.get_x_bit(target)));
-            p.set_z_bit(control, p.get_z_bit(control) ^ p.get_z_bit(target));
-            p.set_x_bit(target, p.get_x_bit(control) ^ p.get_x_bit(target));
+    for (size_t t = 0; t < 2; t++) {
+        PauliStringPtr pc = t == 0 ? transposed_col_x_obs_ptr(control) : transposed_col_z_obs_ptr(control);
+        PauliStringPtr pt = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
+        auto xc256 = (__m256i *) pc._x;
+        auto zc256 = (__m256i *) pc._z;
+        auto xt256 = (__m256i *) pt._x;
+        auto zt256 = (__m256i *) pt._z;
+        auto s256 = (__m256i *) (t == 0 ? data_sign_x.u64 : data_sign_z.u64);
+        auto end = &xc256[pc.num_words256() * pc.stride256];
+        while (xc256 != end) {
+            *s256 = _mm256_xor_si256(*s256, _mm256_andnot_si256(_mm256_xor_si256(*zc256, *xt256), _mm256_and_si256(*xc256, *zt256)));
+            *zc256 = _mm256_xor_si256(*zc256, *zt256);
+            *xt256 = _mm256_xor_si256(*xc256, *xt256);
+            xc256 += pc.stride256;
+            zc256 += pc.stride256;
+            xt256 += pt.stride256;
+            zt256 += pt.stride256;
+            s256 += 1;
         }
     }
 }
 
 void Tableau::inplace_scatter_append_H_YZ(size_t target) {
-    for (size_t q = 0; q < num_qubits; q++) {
-        for (size_t t = 0; t < 2; t++) {
-            auto p = t == 0 ? x_obs_ptr(q) : z_obs_ptr(q);
-            auto bx = p.get_x_bit(target);
-            auto bz = p.get_z_bit(target);
-            p.set_x_bit(target, bx ^ bz);
-            p.bit_ptr_sign.toggle_if(bx && !bz);
+    for (size_t t = 0; t < 2; t++) {
+        PauliStringPtr p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
+        auto x256 = (__m256i *) p._x;
+        auto z256 = (__m256i *) p._z;
+        auto s256 = (__m256i *) (t == 0 ? data_sign_x.u64 : data_sign_z.u64);
+        auto end = &x256[p.num_words256() * p.stride256];
+        while (x256 != end) {
+            *s256 = _mm256_xor_si256(*s256, _mm256_andnot_si256(*z256, *x256));
+            *x256 = _mm256_xor_si256(*x256, *z256);
+            x256 += p.stride256;
+            z256 += p.stride256;
+            s256 += 1;
         }
     }
 }
 
 void Tableau::inplace_scatter_append_H(size_t target) {
-    for (size_t q = 0; q < num_qubits; q++) {
-        for (size_t t = 0; t < 2; t++) {
-            auto p = t == 0 ? x_obs_ptr(q) : z_obs_ptr(q);
-            auto bx = p.get_x_bit(target);
-            auto bz = p.get_z_bit(target);
-            p.set_x_bit(target, bz);
-            p.set_z_bit(target, bx);
-            p.bit_ptr_sign.toggle_if(bx && bz);
+    for (size_t t = 0; t < 2; t++) {
+        PauliStringPtr p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
+        auto x256 = (__m256i *) p._x;
+        auto z256 = (__m256i *) p._z;
+        auto s256 = (__m256i *) (t == 0 ? data_sign_x.u64 : data_sign_z.u64);
+        auto end = &x256[p.num_words256() * p.stride256];
+        while (x256 != end) {
+            std::swap(*x256, *z256);
+            *s256 = _mm256_xor_si256(*s256, _mm256_and_si256(*x256, *z256));
+            x256 += p.stride256;
+            z256 += p.stride256;
+            s256 += 1;
+        }
+    }
+}
+
+void Tableau::inplace_scatter_append_X(size_t target) {
+    for (size_t t = 0; t < 2; t++) {
+        PauliStringPtr p = t == 0 ? transposed_col_x_obs_ptr(target) : transposed_col_z_obs_ptr(target);
+        auto z256 = (__m256i *) p._z;
+        auto s256 = (__m256i *) (t == 0 ? data_sign_x.u64 : data_sign_z.u64);
+        auto end = &z256[p.num_words256() * p.stride256];
+        while (z256 != end) {
+            *s256 = _mm256_xor_si256(*s256, *z256);
+            z256 += p.stride256;
+            s256 += 1;
         }
     }
 }
 
 bool Tableau::operator==(const Tableau &other) const {
+    ensure_transposed(false);
+    other.ensure_transposed(false);
     return num_qubits == other.num_qubits
         && data_x2x == other.data_x2x
         && data_x2z == other.data_x2z

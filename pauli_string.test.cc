@@ -217,3 +217,19 @@ TEST(pauli_string, strided) {
     ASSERT_EQ(p1, all_x);
     ASSERT_EQ(p2, all_x);
 }
+
+TEST(pauli_string, strided_get) {
+    auto buffer = aligned_bits256(2048);
+    bool signs = false;
+    for (size_t k = 0; k < 2048 / 64; k += 16) {
+        buffer.u64[k + 0] = UINT64_MAX;
+        buffer.u64[k + 1] = UINT64_MAX;
+        buffer.u64[k + 2] = UINT64_MAX;
+        buffer.u64[k + 3] = UINT64_MAX;
+    }
+    auto p = PauliStringPtr(512, BitPtr(&signs, 0), &buffer.u64[0], &buffer.u64[8], 4);
+    for (size_t k = 0; k < 8; k++) {
+        ASSERT_EQ(p.get_x_bit(64*k), true);
+        ASSERT_EQ(p.get_z_bit(64*k), false);
+    }
+}

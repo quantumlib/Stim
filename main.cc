@@ -34,6 +34,17 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
             }
         }
     }
+    std::vector<size_t> zxqs;
+    std::vector<size_t> data_qs;
+    for (const auto &e : data) {
+        data_qs.push_back(qubit(e));
+    }
+    for (const auto &z : zs) {
+        zxqs.push_back(qubit(z));
+    }
+    for (const auto &x : xs) {
+        zxqs.push_back(qubit(x));
+    }
     std::vector<std::complex<float>> dirs {
             {1, 0},
             {0, 1},
@@ -61,27 +72,18 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
                 }
             }
         }
-        for (const auto &z : zs) {
-            assert(sim.is_deterministic(qubit(z)));
-            sim.measure(qubit(z));
-        }
         for (const auto &x : xs) {
             sim.H(qubit(x));
         }
+        for (const auto &z : zs) {
+            assert(sim.is_deterministic(qubit(z)));
+        }
         for (const auto &x : xs) {
-            if (progress && round == 0) {
-                std::cerr << "x measure " << x << "," << round << "\n";
-            }
             assert(sim.is_deterministic(qubit(x)) == round > 0);
-            sim.measure(qubit(x));
         }
+        sim.measure_many(zxqs);
     }
-    for (auto d : data) {
-        if (progress) {
-            std::cerr << "data measure " << d << "\n";
-        }
-        sim.measure(qubit(d));
-    }
+    sim.measure_many(data_qs);
 }
 
 void time_clifford_sim(size_t distance, bool progress = false) {
@@ -175,12 +177,12 @@ void time_pauli_swap(size_t num_qubits) {
 }
 
 int main() {
-    size_t block_diam = 100;
-    time_transpose_blockwise(block_diam);
-    time_mike_transpose(block_diam);
-    time_transpose(block_diam);
-
-    time_pauli_multiplication(100000);
-    time_clifford_sim(15);
-    time_pauli_swap(100000);
+//    size_t block_diam = 100;
+//    time_transpose_blockwise(block_diam);
+//    time_mike_transpose(block_diam);
+//    time_transpose(block_diam);
+//
+//    time_pauli_multiplication(100000);
+    time_clifford_sim(31);
+//    time_pauli_swap(100000);
 }

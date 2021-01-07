@@ -82,6 +82,18 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
     return true;
 }
 
+TEST(tableau, big_not_seeing_double) {
+    Tableau t(500);
+    auto s = t.x_obs_ptr(0).str();
+    size_t n = 0;
+    for (size_t k = 1; k < s.size(); k++) {
+        if (s[k] != '_') {
+            n += 1;
+        }
+    }
+    ASSERT_EQ(n, 1) << s;
+}
+
 TEST(tableau, str) {
     ASSERT_EQ(GATE_TABLEAUS.at("H").str(),
               "Tableau {\n"
@@ -416,5 +428,11 @@ TEST(tableau, specialized_operations) {
         1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), targets); },
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append_H_YZ(targets[0]); }
+    ));
+
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("X"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append_X(targets[0]); }
     ));
 }

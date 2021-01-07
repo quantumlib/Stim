@@ -15,14 +15,19 @@ struct Tableau {
     aligned_bits256 data_z2z;
     aligned_bits256 data_sign_x;
     aligned_bits256 data_sign_z;
+    bool is_block_transposed = false;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
     bool operator!=(const Tableau &other) const;
 
-    PauliStringPtr x_obs_ptr(size_t qubit) const;
+    void ensure_transposed(bool want_transposed) const;
+
     PauliStringVal eval_y_obs(size_t qubit) const;
+    PauliStringPtr x_obs_ptr(size_t qubit) const;
     PauliStringPtr z_obs_ptr(size_t qubit) const;
+    PauliStringPtr transposed_col_x_obs_ptr(size_t qubit) const;
+    PauliStringPtr transposed_col_z_obs_ptr(size_t qubit) const;
 
     std::string str() const;
 
@@ -110,6 +115,12 @@ struct Tableau {
     void inplace_scatter_append_H(size_t q);
     void inplace_scatter_append_H_YZ(size_t q);
     void inplace_scatter_append_CX(size_t control, size_t target);
+    void inplace_scatter_append_X(size_t q);
+
+    bool x_sign(size_t a) const;
+    bool z_sign(size_t a) const;
+    bool z_obs_x_bit(size_t a, size_t b) const;
+    bool z_obs_z_bit(size_t a, size_t b) const;
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);

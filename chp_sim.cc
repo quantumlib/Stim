@@ -5,52 +5,70 @@ ChpSim::ChpSim(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rn
 
 bool ChpSim::is_deterministic(size_t target) const {
     size_t n = inv_state.num_qubits;
-    const auto &z_at_beginning = inv_state.z_obs_ptr(target);
-    for (size_t q = 0; q < n; q++) {
-        if (z_at_beginning.get_x_bit(q)) {
-            return false;
+    auto p = inv_state.z_obs_ptr(target);
+    return !any_non_zero((__m256i *)p._x, ceil256(n) >> 8, p.stride256);
+}
+
+size_t ChpSim::find_pivot(size_t target) {
+    const auto &p = inv_state.z_obs_ptr(target);
+    for (size_t q = 0; q < p.num_words256(); q++) {
+        for (size_t k = 0; k < 4; k++) {
+            uint64_t v = p._x[q * p.stride256 * 4 + k];
+            if (v) {
+                for (size_t i = 0; i < 64; i++) {
+                    if ((v >> i) & 1) {
+                        return q*256 + k*64 + i;
+                    }
+                }
+            }
         }
     }
-    return true;
+    return SIZE_MAX;
+}
+
+std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float bias) {
+    std::vector<size_t> pivots;
+    pivots.reserve(targets.size());
+    for (size_t k = 0; k < targets.size(); k++) {
+        pivots.push_back(find_pivot(targets[k]));
+    }
+
+    std::vector<bool> results;
+    results.reserve(targets.size());
+    for (size_t k = 0; k < targets.size(); k++) {
+        results.push_back(measure_given_pivot(targets[k], pivots[k], bias));
+    }
+    return results;
 }
 
 bool ChpSim::measure(size_t target, float bias) {
+    return measure_given_pivot(target, find_pivot(target), bias);
+}
+
+bool ChpSim::measure_given_pivot(size_t target, size_t pivot, float bias) {
     size_t n = inv_state.num_qubits;
-    const auto &z_obs = inv_state.z_obs_ptr(target);
-
-    // X or Y observable indicates random result.
-    size_t pivot = UINT32_MAX;
-    for (size_t q = 0; q < n; q++) {
-        if (z_obs.get_x_bit(q)) {
-            pivot = q;
-            break;
-        }
-    }
-
-    if (pivot == UINT32_MAX) {
+    if (pivot == SIZE_MAX) {
         // Deterministic result.
-        return z_obs.bit_ptr_sign.get();
+        return inv_state.z_sign(target);
     }
 
     // Cancel out other X / Y components.
     for (size_t q = pivot + 1; q < n; q++) {
-        if (z_obs.get_x_bit(q)) {
+        if (inv_state.z_obs_x_bit(target, q)) {
             inv_state.inplace_scatter_append_CX(pivot, q);
         }
     }
 
     // Collapse the state.
-    if (z_obs.get_z_bit(pivot)) {
+    if (inv_state.z_obs_z_bit(target, pivot)) {
         inv_state.inplace_scatter_append_H_YZ(pivot);
     } else {
         inv_state.inplace_scatter_append_H(pivot);
     }
 
     auto coin_flip = std::bernoulli_distribution(bias)(rng);
-    if (z_obs.bit_ptr_sign.get() != coin_flip) {
-        inv_state.inplace_scatter_append(
-                GATE_TABLEAUS.at("X"),
-                {pivot});
+    if (inv_state.z_sign(target) != coin_flip) {
+        inv_state.inplace_scatter_append_X(pivot);
     }
 
     return coin_flip;

@@ -18,6 +18,7 @@ struct ChpSim {
 
     bool is_deterministic(size_t target) const;
     bool measure(size_t q, float bias = 0.5);
+    std::vector<bool> measure_many(const std::vector<size_t> &targets, float bias = 0.5);
 
     void H(size_t q);
     void H_YZ(size_t q);
@@ -35,6 +36,10 @@ struct ChpSim {
     void Y(size_t q);
     void Z(size_t q);
     void op(const std::string &name, const std::vector<size_t> &targets);
+
+private:
+    bool measure_given_pivot(size_t q, size_t pivot, float bias);
+    size_t find_pivot(size_t target);
 };
 
 #endif
