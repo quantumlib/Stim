@@ -115,9 +115,8 @@ uint8_t PauliStringPtr::log_i_scalar_byproduct(const PauliStringPtr &other) cons
         // At each bit position: do the Paulis anti-commute and produce a -i instead of a +i?
         auto b = ((x1 ^ z2) & t2) ^ _mm256_andnot_si256(z1, _mm256_andnot_si256(x2, t1));
         // At each bit position: `count += forward - backward` where `backward=b`, `forward=a^b`, `count=cnt1 + 2*cnt2`.
-        cnt1.u256 ^= b;
-        cnt2.u256 ^= cnt1.u256 & a;
-        cnt1.u256 ^= a ^ b;
+        cnt2.u256 ^= (cnt1.u256 ^ b) & a;
+        cnt1.u256 ^= a;
 
         // Move along.
         x256 += stride256;
