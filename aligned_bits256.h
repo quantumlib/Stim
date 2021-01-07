@@ -2,9 +2,13 @@
 #define ALIGNED_BITS256_H
 
 #include <cstdint>
+#include <immintrin.h>
 
 struct aligned_bits256 {
-    uint64_t *u64;
+    union {
+        uint64_t *u64;
+        __m256i *u256;
+    };
     size_t num_bits;
 
     ~aligned_bits256();

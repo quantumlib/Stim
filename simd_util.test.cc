@@ -44,45 +44,6 @@ TEST(simd_util, pack256_1) {
     ASSERT_EQ(bits, m256i_to_bits(m));
 }
 
-TEST(simd_util, popcnt) {
-    __m256i m {};
-    auto u16 = (uint16_t *)&m;
-    u16[1] = 1;
-    u16[2] = 2;
-    u16[4] = 3;
-    u16[6] = 0xFFFF;
-    u16[10] = 0x1111;
-    u16[11] = 0x1113;
-    __m256i s = popcnt16(m);
-    auto s16 = (uint16_t *)&s;
-    ASSERT_EQ(s16[0], 0);
-    ASSERT_EQ(s16[1], 1);
-    ASSERT_EQ(s16[2], 1);
-    ASSERT_EQ(s16[3], 0);
-    ASSERT_EQ(s16[4], 2);
-    ASSERT_EQ(s16[5], 0);
-    ASSERT_EQ(s16[6], 16);
-    ASSERT_EQ(s16[7], 0);
-    ASSERT_EQ(s16[8], 0);
-    ASSERT_EQ(s16[9], 0);
-    ASSERT_EQ(s16[10], 4);
-    ASSERT_EQ(s16[11], 5);
-    ASSERT_EQ(s16[12], 0);
-    ASSERT_EQ(s16[13], 0);
-    ASSERT_EQ(s16[14], 0);
-    ASSERT_EQ(s16[15], 0);
-}
-
-aligned_bits256 reference_transpose_of(size_t bit_width, const aligned_bits256 &data) {
-    auto expected = aligned_bits256(data.num_bits);
-    for (size_t i = 0; i < bit_width; i++) {
-        for (size_t j = 0; j < bit_width; j++) {
-            expected.set_bit(i*bit_width + j, data.get_bit(j*bit_width + i));
-        }
-    }
-    return expected;
-}
-
 aligned_bits256 reference_blockwise_transpose_of(size_t bit_width, const aligned_bits256 &data) {
     auto expected = aligned_bits256(data.num_bits);
     for (size_t i = 0; i < bit_width; i++) {
@@ -97,14 +58,6 @@ aligned_bits256 reference_blockwise_transpose_of(size_t bit_width, const aligned
         }
     }
     return expected;
-}
-
-TEST(simd_util, transpose_bit_matrix) {
-    size_t bit_width = 256 * 3;
-    auto data = aligned_bits256::random(bit_width * bit_width);
-    auto expected = reference_transpose_of(bit_width, data);
-    transpose_bit_matrix(data.u64, bit_width);
-    ASSERT_EQ(data, expected);
 }
 
 TEST(simd_util, block_transpose_bit_matrix) {
@@ -215,36 +168,11 @@ TEST(simd_util, address_permutation) {
                     8, 9, 10, 11, 12, 13, 14, 7
             }));
     ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            transpose_bit_matrix_256x256,
+            transpose_bit_block_256x256,
             {
                     8, 9, 10, 11, 12, 13, 14, 15,
                     0, 1, 2, 3, 4, 5, 6, 7,
             }));
-}
-
-TEST(simd_util, acc_plus_minus_epi2) {
-    for (uint8_t a = 0; a < 4; a++) {
-        for (uint8_t b = 0; b < 4; b++) {
-            for (uint8_t c = 0; c < 4; c++) {
-                uint8_t e = (a + b - c) & 3;
-                __m256i ma = _mm256_set1_epi8(a);
-                __m256i mb = _mm256_set1_epi8(b);
-                __m256i mc = _mm256_set1_epi8(c);
-                __m256i me = _mm256_set1_epi8(e);
-                __m256i actual = acc_plus_minus_epi2(ma, mb, mc);
-                ASSERT_EQ(*(uint64_t *)&me, *(uint64_t *)&actual);
-            }
-        }
-    }
-}
-
-TEST(simd_util, mike_transpose) {
-    size_t bit_width = 256 * 3;
-    auto data = aligned_bits256::random(bit_width * bit_width);
-    auto expected = reference_transpose_of(bit_width, data);
-    auto out = aligned_bits256(bit_width * bit_width);
-    mike_transpose_bit_matrix(data.u64, out.u64, bit_width);
-    ASSERT_EQ(out, expected);
 }
 
 TEST(simd_util, ceil256) {

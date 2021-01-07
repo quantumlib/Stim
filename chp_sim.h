@@ -38,8 +38,7 @@ struct ChpSim {
     void op(const std::string &name, const std::vector<size_t> &targets);
 
 private:
-    bool measure_given_pivot(size_t q, size_t pivot, float bias);
-    size_t find_pivot(size_t target);
+    bool measure_while_transposed(BlockTransposedTableau &transposed, size_t target, float bias);
 };
 
 #endif

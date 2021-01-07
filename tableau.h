@@ -15,19 +15,14 @@ struct Tableau {
     aligned_bits256 data_z2z;
     aligned_bits256 data_sign_x;
     aligned_bits256 data_sign_z;
-    bool is_block_transposed = false;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
     bool operator!=(const Tableau &other) const;
 
-    void ensure_transposed(bool want_transposed) const;
-
     PauliStringVal eval_y_obs(size_t qubit) const;
     PauliStringPtr x_obs_ptr(size_t qubit) const;
     PauliStringPtr z_obs_ptr(size_t qubit) const;
-    PauliStringPtr transposed_col_x_obs_ptr(size_t qubit) const;
-    PauliStringPtr transposed_col_z_obs_ptr(size_t qubit) const;
 
     std::string str() const;
 
@@ -112,20 +107,42 @@ struct Tableau {
     void prepend_CY(size_t control, size_t target);
     void prepend_CZ(size_t control, size_t target);
 
-    void append_H(size_t q);
-    void append_H_YZ(size_t q);
-    void append_CX(size_t control, size_t target);
-    void append_X(size_t q);
-
-    bool x_sign(size_t a) const;
     bool z_sign(size_t a) const;
-    bool z_obs_x_bit(size_t a, size_t b) const;
-    bool z_obs_z_bit(size_t a, size_t b) const;
+};
+
+struct TransposedPauliStringPtr {
+    __m256i *_x;
+    __m256i *_z;
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
 /// Tableaus for common gates, keyed by name.
 extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
+
+struct BlockTransposedTableau {
+    Tableau &tableau;
+
+    explicit BlockTransposedTableau(Tableau &tableau);
+    ~BlockTransposedTableau();
+
+    BlockTransposedTableau() = delete;
+    BlockTransposedTableau(const BlockTransposedTableau &) = delete;
+    BlockTransposedTableau(BlockTransposedTableau &&) = delete;
+
+    TransposedPauliStringPtr transposed_col_x_obs_ptr(size_t qubit) const;
+    TransposedPauliStringPtr transposed_col_z_obs_ptr(size_t qubit) const;
+
+    bool z_sign(size_t a) const;
+    bool z_obs_x_bit(size_t a, size_t b) const;
+    bool z_obs_z_bit(size_t a, size_t b) const;
+
+    void append_H(size_t q);
+    void append_H_YZ(size_t q);
+    void append_CX(size_t control, size_t target);
+    void append_X(size_t q);
+private:
+    void blockwise_transpose();
+};
 
 #endif
