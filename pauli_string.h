@@ -8,25 +8,26 @@
 #include <sstream>
 #include <functional>
 #include "aligned_bits256.h"
+#include "bit_ptr.h"
 #include "simd_util.h"
 
 struct PauliStringVal;
 
 struct PauliStringPtr {
     size_t size;
-    bool *ptr_sign;
+    BitPtr bit_ptr_sign;
     uint64_t *_x;
     uint64_t *_z;
     size_t stride256;
 
-    PauliStringPtr(size_t size, bool *sign_ptr, uint64_t *x, uint64_t *z, size_t stride256);
+    PauliStringPtr(size_t size, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z, size_t stride256);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
     bool operator==(const PauliStringPtr &other) const;
     bool operator!=(const PauliStringPtr &other) const;
 
     void overwrite_with(const PauliStringPtr &other);
-    void swap_with(const PauliStringPtr &other);
+    void swap_with(PauliStringPtr &other);
 
     // Computes the scalar term created when multiplying two Pauli strings together.
     // For example, in XZ = iY, the scalar byproduct is i.

@@ -29,15 +29,13 @@ bool ChpSim::measure(size_t target, float bias) {
 
     if (pivot == UINT32_MAX) {
         // Deterministic result.
-        return *z_obs.ptr_sign;
+        return z_obs.bit_ptr_sign.get();
     }
 
     // Cancel out other X / Y components.
     for (size_t q = pivot + 1; q < n; q++) {
         if (z_obs.get_x_bit(q)) {
-            inv_state.inplace_scatter_append(
-                    GATE_TABLEAUS.at("CNOT"),
-                    {pivot, q});
+            inv_state.inplace_scatter_append_CX(pivot, q);
         }
     }
 
@@ -53,7 +51,7 @@ bool ChpSim::measure(size_t target, float bias) {
     }
 
     auto coin_flip = std::bernoulli_distribution(bias)(rng);
-    if (*z_obs.ptr_sign != coin_flip) {
+    if (z_obs.bit_ptr_sign.get() != coin_flip) {
         inv_state.inplace_scatter_append(
                 GATE_TABLEAUS.at("X"),
                 {pivot});

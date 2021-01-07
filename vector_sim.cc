@@ -60,7 +60,7 @@ void VectorSim::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
 }
 
 void VectorSim::apply(const PauliStringPtr &gate, size_t qubit_offset) {
-    if (*gate.ptr_sign) {
+    if (gate.bit_ptr_sign.get()) {
         for (auto &e : state) {
             e *= -1;
         }

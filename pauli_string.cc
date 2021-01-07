@@ -10,12 +10,12 @@
 
 PauliStringPtr::PauliStringPtr(
             size_t init_size,
-            bool *init_sign,
+            BitPtr init_sign,
             uint64_t *init_x,
             uint64_t *init_z,
             size_t init_stride256) :
         size(init_size),
-        ptr_sign(init_sign),
+        bit_ptr_sign(init_sign),
         _x(init_x),
         _z(init_z),
         stride256(init_stride256) {
@@ -28,7 +28,7 @@ PauliStringVal::PauliStringVal(size_t init_size) :
 }
 
 PauliStringVal::PauliStringVal(const PauliStringPtr &other) :
-        val_sign(*other.ptr_sign),
+        val_sign(other.bit_ptr_sign.get()),
         x_data(other.size, other._x),
         z_data(other.size, other._z) {
 }
@@ -41,9 +41,9 @@ std::string PauliStringVal::str() const {
     return ptr().str();
 }
 
-void PauliStringPtr::swap_with(const PauliStringPtr &other) {
+void PauliStringPtr::swap_with(PauliStringPtr &other) {
     assert(size == other.size);
-    std::swap(*ptr_sign, *other.ptr_sign);
+    bit_ptr_sign.swap(other.bit_ptr_sign);
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
@@ -61,7 +61,7 @@ void PauliStringPtr::swap_with(const PauliStringPtr &other) {
 
 void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
     assert(size == other.size);
-    *ptr_sign = *other.ptr_sign;
+    bit_ptr_sign.set(other.bit_ptr_sign.get());
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)other._x;
@@ -85,7 +85,7 @@ PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept 
 
 PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         size(other.x_data.num_bits),
-        ptr_sign((bool *)&other.val_sign),
+        bit_ptr_sign(BitPtr((void *)&other.val_sign, 0)),
         _x(other.x_data.data),
         _z(other.z_data.data),
         stride256(1) {
@@ -146,7 +146,7 @@ std::string PauliStringPtr::str() const {
 }
 
 bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
-    if (size != other.size || *ptr_sign != *other.ptr_sign) {
+    if (size != other.size || bit_ptr_sign.get() != other.bit_ptr_sign.get()) {
         return false;
     }
     __m256i acc = _mm256_set1_epi32(-1);
@@ -189,7 +189,7 @@ size_t PauliStringPtr::num_words256() const {
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
-    out << (*ps.ptr_sign ? '-' : '+');
+    out << (ps.bit_ptr_sign.get() ? '-' : '+');
     auto x256 = (__m256i *)ps._x;
     auto z256 = (__m256i *)ps._z;
     auto end = &x256[ps.num_words256() * ps.stride256];
@@ -250,13 +250,13 @@ PauliStringVal PauliStringVal::identity(size_t size) {
 PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
     uint8_t log_i = inplace_right_mul_with_scalar_output(rhs);
     assert((log_i & 1) == 0);
-    *ptr_sign ^= (log_i & 2) == 2;
+    bit_ptr_sign.toggle_if(log_i & 2);
     return *this;
 }
 
 uint8_t PauliStringPtr::inplace_right_mul_with_scalar_output(const PauliStringPtr& rhs) {
     uint8_t result = log_i_scalar_byproduct(rhs);
-    *ptr_sign ^= *rhs.ptr_sign;
+    bit_ptr_sign.toggle_if(rhs.bit_ptr_sign.get());
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)rhs._x;
@@ -327,7 +327,7 @@ void PauliStringPtr::scatter_into(PauliStringPtr &out, const std::vector<size_t>
         out.set_x_bit(k_out, get_x_bit(k_in));
         out.set_z_bit(k_out, get_z_bit(k_in));
     }
-    *out.ptr_sign ^= *ptr_sign;
+    out.bit_ptr_sign.toggle_if(bit_ptr_sign.get());
 }
 
 bool PauliStringVal::operator==(const PauliStringPtr &other) const {

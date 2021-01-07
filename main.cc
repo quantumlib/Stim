@@ -153,6 +153,27 @@ void time_pauli_multiplication(size_t num_qubits) {
     std::cerr << "\n";
 }
 
+void time_pauli_swap(size_t num_qubits) {
+    std::cerr << "pauli swaps(n=" << num_qubits << ")\n";
+
+    auto p1 = PauliStringVal::from_pattern(
+            false,
+            num_qubits,
+            [](size_t i) { return "_XYZX"[i % 5]; });
+    auto p2 = PauliStringVal::from_pattern(
+            true,
+            num_qubits,
+            [](size_t i) { return "_XZYZZX"[i % 7]; });
+    PauliStringPtr p1_ptr = p1;
+    PauliStringPtr p2_ptr = p2;
+    auto f = PerfResult::time([&](){
+        p1_ptr.swap_with(p2_ptr);
+    });
+    std::cerr << f;
+    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliSwaps/s)";
+    std::cerr << "\n";
+}
+
 int main() {
     size_t block_diam = 100;
     time_transpose_blockwise(block_diam);
@@ -161,4 +182,5 @@ int main() {
 
     time_pauli_multiplication(100000);
     time_clifford_sim(15);
+    time_pauli_swap(100000);
 }

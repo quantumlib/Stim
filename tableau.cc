@@ -15,7 +15,7 @@ PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
     auto step = table_words_per_obs(num_qubits);
     return PauliStringPtr(
             num_qubits,
-            (bool *)&signs[qubit*2],
+            BitPtr(sign_data.data, qubit),
             &data.data[step * (4*qubit + 0)],
             &data.data[step * (4*qubit + 1)],
             1);
@@ -25,7 +25,7 @@ PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
     auto step = table_words_per_obs(num_qubits);
     return PauliStringPtr(
             num_qubits,
-            (bool *)&signs[qubit*2 + 1],
+            BitPtr(sign_data.data, num_qubits + qubit),
             &data.data[step * (4*qubit + 2)],
             &data.data[step * (4*qubit + 3)],
             1);
@@ -45,7 +45,7 @@ PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
 Tableau::Tableau(size_t num_qubits) :
         num_qubits(num_qubits),
         data(table_buffer_bits(num_qubits)),
-        signs(num_qubits * 2, false) {
+        sign_data(num_qubits * 2) {
     for (size_t q = 0; q < num_qubits; q++) {
         x_obs_ptr(q).set_x_bit(q, true);
         z_obs_ptr(q).set_z_bit(q, true);
@@ -101,8 +101,25 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
     }
 }
 
+void Tableau::inplace_scatter_append_CX(size_t control, size_t target) {
+    std::vector<size_t> target_qubits {control, target};
+    const auto &cnot = GATE_TABLEAUS.at("CX");
+    auto inp = PauliStringVal::identity(2);
+    for (size_t q = 0; q < num_qubits; q++) {
+        auto x = x_obs_ptr(q);
+        x.bit_ptr_sign.toggle_if(x.get_x_bit(control) && x.get_z_bit(target) && (x.get_z_bit(control) == x.get_x_bit(target)));
+        x.set_z_bit(control, x.get_z_bit(control) ^ x.get_z_bit(target));
+        x.set_x_bit(target, x.get_x_bit(control) ^ x.get_x_bit(target));
+
+        auto z = z_obs_ptr(q);
+        z.bit_ptr_sign.toggle_if(z.get_x_bit(control) && z.get_z_bit(target) && (z.get_z_bit(control) == z.get_x_bit(target)));
+        z.set_z_bit(control, z.get_z_bit(control) ^ z.get_z_bit(target));
+        z.set_x_bit(target, z.get_x_bit(control) ^ z.get_x_bit(target));
+    }
+}
+
 bool Tableau::operator==(const Tableau &other) const {
-    return num_qubits == other.num_qubits && data == other.data && signs == other.signs;
+    return num_qubits == other.num_qubits && data == other.data && sign_data == other.sign_data;
 }
 
 bool Tableau::operator!=(const Tableau &other) const {
@@ -129,7 +146,7 @@ void Tableau::inplace_scatter_prepend_SQRT_X(size_t q) {
     auto z = z_obs_ptr(q);
     uint8_t m = 1 + z.inplace_right_mul_with_scalar_output(x_obs_ptr(q));
     if (m & 2) {
-        *z.ptr_sign ^= true;
+        z.bit_ptr_sign.toggle();
     }
 }
 
@@ -137,27 +154,27 @@ void Tableau::inplace_scatter_prepend_SQRT_X_DAG(size_t q) {
     auto z = z_obs_ptr(q);
     uint8_t m = 3 + z.inplace_right_mul_with_scalar_output(x_obs_ptr(q));
     if (m & 2) {
-        *z.ptr_sign ^= true;
+        z.bit_ptr_sign.toggle();
     }
 }
 
 void Tableau::inplace_scatter_prepend_SQRT_Y(size_t q) {
     auto z = z_obs_ptr(q);
-    *z.ptr_sign ^= true;
+    z.bit_ptr_sign.toggle();
     x_obs_ptr(q).swap_with(z);
 }
 
 void Tableau::inplace_scatter_prepend_SQRT_Y_DAG(size_t q) {
     auto z = z_obs_ptr(q);
     x_obs_ptr(q).swap_with(z);
-    *z.ptr_sign ^= true;
+    z.bit_ptr_sign.toggle();
 }
 
 void Tableau::inplace_scatter_prepend_SQRT_Z(size_t q) {
     auto x = x_obs_ptr(q);
     uint8_t m = 1 + x.inplace_right_mul_with_scalar_output(z_obs_ptr(q));
     if (m & 2) {
-        *x.ptr_sign ^= true;
+        x.bit_ptr_sign.toggle();
     }
 }
 
@@ -165,7 +182,7 @@ void Tableau::inplace_scatter_prepend_SQRT_Z_DAG(size_t q) {
     auto x = x_obs_ptr(q);
     uint8_t m = 3 + x.inplace_right_mul_with_scalar_output(z_obs_ptr(q));
     if (m & 2) {
-        *x.ptr_sign ^= true;
+        x.bit_ptr_sign.toggle();
     }
 }
 
@@ -186,16 +203,17 @@ void Tableau::inplace_scatter_prepend_CZ(size_t control, size_t target) {
 }
 
 void Tableau::inplace_scatter_prepend_H(const size_t q) {
-    x_obs_ptr(q).swap_with(z_obs_ptr(q));
+    auto z = z_obs_ptr(q);
+    x_obs_ptr(q).swap_with(z);
 }
 
 void Tableau::inplace_scatter_prepend_H_YZ(const size_t q) {
     auto x = x_obs_ptr(q);
     auto z = z_obs_ptr(q);
     uint8_t m = 3 + z.inplace_right_mul_with_scalar_output(x);
-    *x.ptr_sign ^= true;
+    x.bit_ptr_sign.toggle();
     if (m & 2) {
-        *z.ptr_sign ^= true;
+        z.bit_ptr_sign.toggle();
     }
 }
 
@@ -203,29 +221,29 @@ void Tableau::inplace_scatter_prepend_H_XY(const size_t q) {
     auto x = x_obs_ptr(q);
     auto z = z_obs_ptr(q);
     uint8_t m = 1 + x.inplace_right_mul_with_scalar_output(z);
-    *z.ptr_sign ^= true;
+    z.bit_ptr_sign.toggle();
     if (m & 2) {
-        *x.ptr_sign ^= true;
+        x.bit_ptr_sign.toggle();
     }
 }
 
 void Tableau::inplace_scatter_prepend_X(size_t q) {
-    *z_obs_ptr(q).ptr_sign ^= true;
+    z_obs_ptr(q).bit_ptr_sign.toggle();
 }
 
 void Tableau::inplace_scatter_prepend_Y(size_t q) {
-    *x_obs_ptr(q).ptr_sign ^= true;
-    *z_obs_ptr(q).ptr_sign ^= true;
+    x_obs_ptr(q).bit_ptr_sign.toggle();
+    z_obs_ptr(q).bit_ptr_sign.toggle();
 }
 
 void Tableau::inplace_scatter_prepend_Z(size_t q) {
-    *x_obs_ptr(q).ptr_sign ^= true;
+    x_obs_ptr(q).bit_ptr_sign.toggle();
 }
 
 PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {
     assert(gathered_input.size == scattered_indices.size());
     auto result = PauliStringVal::identity(num_qubits);
-    result.val_sign = *gathered_input.ptr_sign;
+    result.val_sign = gathered_input.bit_ptr_sign.get();
     for (size_t k_gathered = 0; k_gathered < gathered_input.size; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
         auto x = gathered_input.get_x_bit(k_gathered);

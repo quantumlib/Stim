@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "tableau.h"
 #include "vector_sim.h"
+#include <random>
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;
@@ -243,26 +244,44 @@ bool are_tableau_mutations_equivalent(
         size_t n,
         const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation1,
         const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation2) {
-    auto t = Tableau::identity(2*n);
+    auto test_tableau_dual = Tableau::identity(2 * n);
     std::vector<size_t> targets1;
     std::vector<size_t> targets2;
     std::vector<size_t> targets3;
     for (size_t k = 0; k < n; k++) {
-        t.inplace_scatter_append(GATE_TABLEAUS.at("H"), {k});
-        t.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {k, k + n});
+        test_tableau_dual.inplace_scatter_append(GATE_TABLEAUS.at("H"), {k});
+        test_tableau_dual.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {k, k + n});
         targets1.push_back(k);
         targets2.push_back(k + n);
         targets3.push_back(k + (k % 2 == 0 ? 0 : n));
     }
 
-    std::vector<std::vector<size_t>> cases {targets1, targets2, targets3};
-    for (const auto &targets : cases) {
-        auto t1 = t;
-        auto t2 = t;
-        mutation1(t1, targets);
-        mutation2(t2, targets);
-        if (t1 != t2) {
-            return false;
+    auto test_tableau_random = Tableau::identity(n * 2);
+    test_tableau_random.sign_data = aligned_bits256::random(test_tableau_random.sign_data.num_bits);
+    std::random_device rng;
+    std::mt19937 gen(rng());
+    std::uniform_int_distribution<unsigned long long> rand_n(0, 2*n-1);
+    for (size_t k = 0; k < n*n + 100; k++) {
+        size_t a = rand_n(gen);
+        size_t b = rand_n(gen);
+        if (a != b) {
+            test_tableau_random.inplace_scatter_prepend_CZ(a, b);
+        }
+        test_tableau_random.inplace_scatter_prepend_H(rand_n(gen));
+        test_tableau_random.inplace_scatter_prepend_SQRT_Z(rand_n(gen));
+    }
+
+    std::vector<Tableau> tableaus{test_tableau_dual, test_tableau_random};
+    std::vector<std::vector<size_t>> cases{targets1, targets2, targets3};
+    for (const auto &t : tableaus) {
+        for (const auto &targets : cases) {
+            auto t1 = t;
+            auto t2 = t;
+            mutation1(t1, targets);
+            mutation2(t2, targets);
+            if (t1 != t2) {
+                return false;
+            }
         }
     }
     return true;
@@ -378,5 +397,11 @@ TEST(tableau, specialized_operations) {
         1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z_DAG"), targets); },
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend_SQRT_Z_DAG(targets[0]); }
+    ));
+
+    ASSERT_TRUE(are_tableau_mutations_equivalent(
+        2,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append_CX(targets[0], targets[1]); }
     ));
 }

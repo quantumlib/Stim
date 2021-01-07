@@ -82,16 +82,16 @@ bool aligned_bits256::operator==(const aligned_bits256 &other) const {
     if (num_bits != other.num_bits) {
         return false;
     }
-    __m256i acc = _mm256_set1_epi32(-1);
+    union {__m256i m256; uint64_t u64[4]; } acc;
+    acc.m256 = _mm256_set1_epi32(-1);
     auto a = (__m256i *)data;
     auto b = (__m256i *)other.data;
-    size_t n = num_bits >> 8;
+    size_t n = (num_bits + 0xFF) >> 8;
     for (size_t i = 0; i < n; i++) {
-        acc = _mm256_andnot_si256(_mm256_xor_si256(a[i], b[i]), acc);
+        acc.m256 = _mm256_andnot_si256(_mm256_xor_si256(a[i], b[i]), acc.m256);
     }
-    auto acc64 = (uint64_t *)&acc;
     for (size_t k = 0; k < 4; k++) {
-        if (acc64[k] != UINT64_MAX) {
+        if (acc.u64[k] != UINT64_MAX) {
             return false;
         }
     }

@@ -10,7 +10,7 @@
 struct Tableau {
     size_t num_qubits;
     aligned_bits256 data;
-    std::vector<char> signs;
+    aligned_bits256 sign_data;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
@@ -102,6 +102,8 @@ struct Tableau {
     void inplace_scatter_prepend_CX(size_t control, size_t target);
     void inplace_scatter_prepend_CY(size_t control, size_t target);
     void inplace_scatter_prepend_CZ(size_t control, size_t target);
+
+    void inplace_scatter_append_CX(size_t control, size_t target);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
