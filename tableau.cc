@@ -77,6 +77,44 @@ void TempBlockTransposedTableauRaii::append_CX(size_t control, size_t target) {
     }
 }
 
+void TempBlockTransposedTableauRaii::append_CY(size_t control, size_t target) {
+    auto pc = transposed_double_col_obs_ptr(control);
+    auto pt = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        *s ^= *pc.x & (*pc.z ^ *pt.x) & (*pt.z ^ *pt.x);
+        *pc.z ^= *pt.x;
+        *pc.z ^= *pt.z;
+        *pt.x ^= *pc.x;
+        *pt.z ^= *pc.x;
+        pc.x += stride256;
+        pc.z += stride256;
+        pt.x += stride256;
+        pt.z += stride256;
+        s++;
+    }
+}
+
+void TempBlockTransposedTableauRaii::append_CZ(size_t control, size_t target) {
+    auto pc = transposed_double_col_obs_ptr(control);
+    auto pt = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        *s ^= *pc.x & *pt.x & (*pc.z ^ *pt.z);
+        *pc.z ^= *pt.x;
+        *pt.z ^= *pc.x;
+        pc.x += stride256;
+        pc.z += stride256;
+        pt.x += stride256;
+        pt.z += stride256;
+        s++;
+    }
+}
+
 void TempBlockTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
     auto p1 = transposed_double_col_obs_ptr(q1);
     auto p2 = transposed_double_col_obs_ptr(q2);
@@ -89,6 +127,20 @@ void TempBlockTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
         p1.z += stride256;
         p2.x += stride256;
         p2.z += stride256;
+    }
+}
+
+void TempBlockTransposedTableauRaii::append_H_XY(size_t target) {
+    auto p = transposed_double_col_obs_ptr(target);
+    auto s = tableau.data_sign_x_z.u256;
+    auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    while (s != end) {
+        *s ^= _mm256_andnot_si256(*p.x, *p.z);
+        *p.z ^= *p.x;
+        p.x += stride256;
+        p.z += stride256;
+        s++;
     }
 }
 

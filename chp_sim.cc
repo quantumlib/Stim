@@ -48,32 +48,38 @@ bool ChpSim::measure(size_t target, float bias) {
 
 bool ChpSim::measure_while_block_transposed(TempBlockTransposedTableauRaii &block_transposed, size_t target, float bias) {
     size_t n = block_transposed.tableau.num_qubits;
-
-    for (size_t q = n - 1; q > 0; q--) {
-        size_t victim = q >> 1;
-        if (block_transposed.z_obs_x_bit(target, q)) {
-            if (block_transposed.z_obs_x_bit(target, victim)) {
-                block_transposed.append_CX(victim, q);
-            } else {
-                block_transposed.append_SWAP(victim, q);
-            }
-        }
+    size_t pivot = 0;
+    while (pivot < n && !block_transposed.z_obs_x_bit(target, pivot)) {
+        pivot++;
     }
-    if (!block_transposed.z_obs_x_bit(target, 0)) {
+    if (pivot == n) {
         // Deterministic result.
         return block_transposed.z_sign(target);
     }
 
+    // Isolate to a single qubit.
+    for (size_t victim = pivot + 1; victim < n; victim++) {
+        bool x = block_transposed.z_obs_x_bit(target, victim);
+        bool z = block_transposed.z_obs_z_bit(target, victim);
+        if (x && z) {
+            block_transposed.append_CY(pivot, victim);
+        } else if (x) {
+            block_transposed.append_CX(pivot, victim);
+        } else if (z) {
+            block_transposed.append_CZ(pivot, victim);
+        }
+    }
+
     // Collapse the state.
-    if (block_transposed.z_obs_z_bit(target, 0)) {
-        block_transposed.append_H_YZ(0);
+    if (block_transposed.z_obs_z_bit(target, pivot)) {
+        block_transposed.append_H_YZ(pivot);
     } else {
-        block_transposed.append_H(0);
+        block_transposed.append_H(pivot);
     }
 
     auto coin_flip = std::bernoulli_distribution(bias)(rng);
     if (block_transposed.z_sign(target) != coin_flip) {
-        block_transposed.append_X(0);
+        block_transposed.append_X(pivot);
     }
 
     return coin_flip;

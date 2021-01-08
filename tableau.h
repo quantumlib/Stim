@@ -243,8 +243,11 @@ struct TempBlockTransposedTableauRaii {
     bool z_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
 
     void append_H(size_t q);
+    void append_H_XY(size_t q);
     void append_H_YZ(size_t q);
     void append_CX(size_t control, size_t target);
+    void append_CY(size_t control, size_t target);
+    void append_CZ(size_t control, size_t target);
     void append_X(size_t q);
     void append_SWAP(size_t q1, size_t q2);
 private:
