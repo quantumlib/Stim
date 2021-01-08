@@ -428,9 +428,9 @@ TEST(tableau, specialized_operations) {
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
-        2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_CX(targets[0], targets[1]); }
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("X"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_X(targets[0]); }
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
@@ -446,8 +446,66 @@ TEST(tableau, specialized_operations) {
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
-        1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("X"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_X(targets[0]); }
+        2,
+        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets); },
+        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_CX(targets[0], targets[1]); }
     ));
+}
+
+TEST(tableau, bit_address) {
+    size_t n = 1500;
+    size_t quad_0 = 0;
+    size_t quad_1 = 1;
+    bool not_transposed = false;
+    bool yes_transposed = true;
+
+    ASSERT_EQ(bit_address(0, 0, n, quad_0, not_transposed), 0);
+    ASSERT_EQ(bit_address(1, 0, n, quad_0, not_transposed), 1 << 8);
+    ASSERT_EQ(bit_address(0, 1, n, quad_0, not_transposed), 1);
+    ASSERT_EQ(bit_address(256, 0, n, quad_0, not_transposed), 6 << 16);
+    ASSERT_EQ(bit_address(0, 256, n, quad_0, not_transposed), 1 << 16);
+
+    ASSERT_EQ(bit_address(0, 0, n, quad_0, yes_transposed), 0);
+    ASSERT_EQ(bit_address(1, 0, n, quad_0, yes_transposed), 1);
+    ASSERT_EQ(bit_address(0, 1, n, quad_0, yes_transposed), 1 << 8);
+    ASSERT_EQ(bit_address(256, 0, n, quad_0, yes_transposed), 6 << 16);
+    ASSERT_EQ(bit_address(0, 256, n, quad_0, yes_transposed), 1 << 16);
+
+    ASSERT_EQ(bit_address(0, 0, n, quad_1, not_transposed), ceil256(n)*ceil256(n));
+    ASSERT_EQ(bit_address(0, 0, n, quad_1, yes_transposed), ceil256(n)*ceil256(n));
+}
+
+TEST(tableau, transposed_access) {
+    size_t X2X_QUAD = 0;
+    size_t Z2X_QUAD = 1;
+    size_t X2Z_QUAD = 2;
+    size_t Z2Z_QUAD = 3;
+
+    size_t n = 1000;
+    Tableau t(n);
+    t.data_x2x_z2x_x2z_z2z = aligned_bits256::random(t.data_x2x_z2x_x2z_z2z.num_bits);
+    for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
+        for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
+            auto bxx = t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, X2X_QUAD, false));
+            auto bxz = t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, X2Z_QUAD, false));
+            auto bzx = t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, Z2X_QUAD, false));
+            auto bzz = t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, Z2Z_QUAD, false));
+
+            ASSERT_EQ(t.x_obs_ptr(inp_qubit).get_x_bit(out_qubit), bxx) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.x_obs_ptr(inp_qubit).get_z_bit(out_qubit), bxz) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.z_obs_ptr(inp_qubit).get_x_bit(out_qubit), bzx) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.z_obs_ptr(inp_qubit).get_z_bit(out_qubit), bzz) << inp_qubit << ", " << out_qubit;
+
+            {
+                BlockTransposedTableau trans(t);
+                ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, X2X_QUAD, true)), bxx);
+                ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, X2Z_QUAD, true)), bxz);
+                ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, Z2X_QUAD, true)), bzx);
+                ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, Z2Z_QUAD, true)), bzz);
+
+                ASSERT_EQ(trans.z_obs_x_bit(inp_qubit, out_qubit), bzx);
+                ASSERT_EQ(trans.z_obs_z_bit(inp_qubit, out_qubit), bzz);
+            }
+        }
+    }
 }

@@ -46,6 +46,15 @@ TEST(ChpSim, epr) {
     ASSERT_EQ(v1, v2);
 }
 
+TEST(ChpSim, big_determinism) {
+    auto s = ChpSim(1000);
+    s.H(0);
+    ASSERT_FALSE(s.is_deterministic(0));
+    for (size_t k = 1; k < 1000; k++) {
+        ASSERT_TRUE(s.is_deterministic(k));
+    }
+}
+
 TEST(ChpSim, phase_kickback_consume_s_state) {
     for (size_t k = 0; k < 8; k++) {
         auto s = ChpSim(2);

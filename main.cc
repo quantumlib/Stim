@@ -12,8 +12,11 @@
 
 void run_surface_code_sim(size_t distance, bool progress = false) {
     size_t diam = distance * 2 - 1;
+    auto sim = ChpSim(diam*diam);
     auto qubit = [&](std::complex<float> c){
-        return (size_t)(c.real() * diam + c.imag());
+        size_t q = (size_t)(c.real() * diam + c.imag());
+        assert(q < sim.inv_state.num_qubits);
+        return q;
     };
     auto in_range = [=](std::complex<float> c) {
         return c.real() >= 0 && c.real() < (float)diam
@@ -22,7 +25,6 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
     std::vector<std::complex<float>> data;
     std::vector<std::complex<float>> xs;
     std::vector<std::complex<float>> zs;
-    auto sim = ChpSim(diam*diam);
     for (size_t x = 0; x < diam; x++) {
         for (size_t y = 0; y < diam; y++) {
             if (x % 2 == 1 && y % 2 == 0) {

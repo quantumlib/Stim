@@ -184,3 +184,22 @@ TEST(simd_util, ceil256) {
     ASSERT_EQ(ceil256(1 << 30), 1 << 30);
     ASSERT_EQ(ceil256((1 << 30) + 1), (1 << 30) + 256);
 }
+
+TEST(simd_util, any_non_zero) {
+    auto d = aligned_bits256(5000);
+    ASSERT_FALSE(any_non_zero(d.u256, 1, 1));
+    ASSERT_FALSE(any_non_zero(d.u256, 2, 1));
+    ASSERT_FALSE(any_non_zero(d.u256, 2, 2));
+    d.set_bit(256, true);
+    ASSERT_FALSE(any_non_zero(d.u256, 1, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2, 1));
+    ASSERT_FALSE(any_non_zero(d.u256, 2, 2));
+    d.set_bit(257, true);
+    ASSERT_FALSE(any_non_zero(d.u256, 1, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2, 1));
+    ASSERT_FALSE(any_non_zero(d.u256, 2, 2));
+    d.set_bit(255, true);
+    ASSERT_TRUE(any_non_zero(d.u256, 1, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2, 2));
+}

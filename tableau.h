@@ -7,6 +7,76 @@
 #include "simd_util.h"
 #include "pauli_string.h"
 
+/// Layout while not transposed.
+/// Let M = ceil256(num_qubits)
+///
+/// A row starts every bit with a 256*M bit gap every 256'th bit.
+/// Row word-to-word stride is 256*256 bits long.
+/// A column starts every 256 bits.
+/// Column word-to-word stride is M*256*256 bits long.
+///
+/// X-to-X quadrant (size M x M where M = ceil256(qubits))
+///
+///         256*256 bit row stride
+///  *-------------*
+///  ___________   ___________       ___________
+/// |____00_____| |__1_00_____|     |__M-1+00___| *
+/// |____01_____| |__1_01_____|     |__M-1+01___| |
+/// |____02_____| |__1_02_____|     |__M-1+02___| |
+/// |____03_____| |__1_03_____| ... |__M-1+03___| | M*256 bit col stride
+/// |____.______| |____.______|     |____.______| |
+/// |____.______| |____.______|     |____.______| |
+/// |____FF_____| |__1_FF_____|     |__M-1+FF___| |
+///  ___________   ___________       ___________  |
+/// |__M+00_____| |__M+100____|     |_2M-1+00___| *
+/// |__M+01_____| |__M+101____|     |_2M-1+01___|
+/// |__M+02_____| |__M+102____|     |_2M-1+02___|
+/// |__M+03_____| |__M+103____| ... |_2M-1+03___|
+/// |____.______| |____.______|     |____.______|
+/// |____.______| |____.______|     |____.______|
+/// |__M+FF_____| |__M+1FF____|     |_2M-1+FF___|
+/// .
+/// .
+/// .
+/// Z-to-X quadrant
+/// X-to-Z quadrant
+/// Z-to-Z quadrant
+///
+///
+/// Layout while transposed.
+/// Let M = ceil256(num_qubits)
+///
+/// A row starts every bit with a 256*M bit gap every 256'th bit.
+/// Row word-to-word stride is 256*256 bits long.
+/// A column starts every 256 bits.
+/// Column word-to-word stride is M*256*256 bits long.
+///
+/// X-to-X quadrant (size M x M where M = ceil256(qubits))
+///
+///         256*256 bit row stride
+///  *-------------*
+///  __ __ __ __   __ __ __ __       __ __ __ __
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | *
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | |
+/// |  |  |  |  | |1 |1 |  |1 |     |M-|M-|  |M-| |
+/// |00|01|..|FF| |00|01|..|FF| ... |00|01|..|FF| | M*256 bit col stride
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | |
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | |
+/// |__|__|__|__| |__|__|__|__|     |__|__|__|__| |
+///  __ __ __ __   __ __ __ __       __ __ __ __  |
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | *
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  |
+/// |M |M |  |M | |M+|M+|M+|M+|     |2M|2M|  |2M|
+/// |00|01|..|FF| |00|01|..|FF| ... |00|01|..|FF|
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  |
+/// |  |  |  |  | |  |  |  |  |     |  |  |  |  |
+/// |__|__|__|__| |__|__|__|__|     |__|__|__|__|
+/// .
+/// .
+/// .
+/// Z-to-X quadrant
+/// X-to-Z quadrant
+/// Z-to-Z quadrant
 struct Tableau {
     size_t num_qubits;
     aligned_bits256 data_x2x_z2x_x2z_z2z;
@@ -114,6 +184,8 @@ struct TransposedPauliStringPtr {
     __m256i *z;
 };
 
+size_t bit_address(size_t input_qubit, size_t output_qubit, size_t num_qubits, size_t quadrant, bool transposed);
+
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
 /// Tableaus for common gates, keyed by name.
@@ -132,8 +204,8 @@ struct BlockTransposedTableau {
     TransposedPauliStringPtr transposed_double_col_obs_ptr(size_t qubit) const;
 
     bool z_sign(size_t a) const;
-    bool z_obs_x_bit(size_t a, size_t b) const;
-    bool z_obs_z_bit(size_t a, size_t b) const;
+    bool z_obs_x_bit(size_t input_qubit, size_t output_qubit) const;
+    bool z_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
 
     void append_H(size_t q);
     void append_H_YZ(size_t q);

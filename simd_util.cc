@@ -106,10 +106,10 @@ size_t ceil256(size_t n) {
     return (n + 0xFF) & ~0xFF;
 }
 
-bool any_non_zero(const __m256i *data, size_t n, size_t stride) {
+bool any_non_zero(const __m256i *data, size_t words256, size_t stride256) {
     union {__m256i m256; uint64_t u64[4]; } acc {};
-    for (size_t i = 0; i < n; i++) {
-        acc.m256 |= data[i*stride];
+    for (size_t i = 0; i < words256; i++) {
+        acc.m256 |= data[i * stride256];
     }
     for (size_t k = 0; k < 4; k++) {
         if (acc.u64[k]) {
