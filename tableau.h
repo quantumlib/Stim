@@ -160,6 +160,7 @@ struct Tableau {
     ///     target_qubits: The qubits being acted on by `operation`.
     void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
 
+    void prepend_SWAP(size_t q1, size_t q2);
     void prepend_X(size_t q);
     void prepend_Y(size_t q);
     void prepend_Z(size_t q);
@@ -211,6 +212,7 @@ struct BlockTransposedTableau {
     void append_H_YZ(size_t q);
     void append_CX(size_t control, size_t target);
     void append_X(size_t q);
+    void append_SWAP(size_t q1, size_t q2);
 private:
     void blockwise_transpose();
 };

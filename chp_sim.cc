@@ -29,7 +29,7 @@ std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float
         BlockTransposedTableau temp_transposed(inv_state);
         for (size_t k = 0; k < targets.size(); k++) {
             if (!finished[k]) {
-                results[k] = measure_while_transposed(temp_transposed, targets[k], bias);
+                results[k] = measure_while_block_transposed(temp_transposed, targets[k], bias);
             }
         }
     }
@@ -42,41 +42,38 @@ bool ChpSim::measure(size_t target, float bias) {
         return inv_state.z_sign(target);
     } else {
         BlockTransposedTableau temp_transposed(inv_state);
-        return measure_while_transposed(temp_transposed, target, bias);
+        return measure_while_block_transposed(temp_transposed, target, bias);
     }
 }
 
-bool ChpSim::measure_while_transposed(BlockTransposedTableau &transposed, size_t target, float bias) {
-    size_t n = transposed.tableau.num_qubits;
-    size_t pivot = SIZE_MAX;
-    for (size_t q = 0; q < n; q++) {
-        if (transposed.z_obs_x_bit(target, q)) {
-            pivot = q;
-            break;
-        }
-    }
-    if (pivot == SIZE_MAX) {
-        // Deterministic result.
-        return transposed.z_sign(target);
-    }
+bool ChpSim::measure_while_block_transposed(BlockTransposedTableau &block_transposed, size_t target, float bias) {
+    size_t n = block_transposed.tableau.num_qubits;
 
-    // Cancel out other X / Y components.
-    for (size_t q = pivot + 1; q < n; q++) {
-        if (transposed.z_obs_x_bit(target, q)) {
-            transposed.append_CX(pivot, q);
+    for (size_t q = n - 1; q > 0; q--) {
+        size_t victim = q >> 1;
+        if (block_transposed.z_obs_x_bit(target, q)) {
+            if (block_transposed.z_obs_x_bit(target, victim)) {
+                block_transposed.append_CX(victim, q);
+            } else {
+                block_transposed.append_SWAP(victim, q);
+            }
         }
+    }
+    if (!block_transposed.z_obs_x_bit(target, 0)) {
+        // Deterministic result.
+        return block_transposed.z_sign(target);
     }
 
     // Collapse the state.
-    if (transposed.z_obs_z_bit(target, pivot)) {
-        transposed.append_H_YZ(pivot);
+    if (block_transposed.z_obs_z_bit(target, 0)) {
+        block_transposed.append_H_YZ(0);
     } else {
-        transposed.append_H(pivot);
+        block_transposed.append_H(0);
     }
 
     auto coin_flip = std::bernoulli_distribution(bias)(rng);
-    if (transposed.z_sign(target) != coin_flip) {
-        transposed.append_X(pivot);
+    if (block_transposed.z_sign(target) != coin_flip) {
+        block_transposed.append_X(0);
     }
 
     return coin_flip;

@@ -38,7 +38,7 @@ struct ChpSim {
     void op(const std::string &name, const std::vector<size_t> &targets);
 
 private:
-    bool measure_while_transposed(BlockTransposedTableau &transposed, size_t target, float bias);
+    bool measure_while_block_transposed(BlockTransposedTableau &block_transposed, size_t target, float bias);
 };
 
 #endif

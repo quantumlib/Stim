@@ -77,6 +77,21 @@ void BlockTransposedTableau::append_CX(size_t control, size_t target) {
     }
 }
 
+void BlockTransposedTableau::append_SWAP(size_t q1, size_t q2) {
+    auto p1 = transposed_double_col_obs_ptr(q1);
+    auto p2 = transposed_double_col_obs_ptr(q2);
+    auto stride256 = column_stride256(tableau.num_qubits);
+    auto end = p1.x + stride256 * (tableau.data_sign_x_z.num_bits >> 8);
+    while (p1.x != end) {
+        std::swap(*p1.x, *p2.x);
+        std::swap(*p1.z, *p2.z);
+        p1.x += stride256;
+        p1.z += stride256;
+        p2.x += stride256;
+        p2.z += stride256;
+    }
+}
+
 void BlockTransposedTableau::append_H_YZ(size_t target) {
     auto p = transposed_double_col_obs_ptr(target);
     auto s = tableau.data_sign_x_z.u256;
@@ -293,6 +308,13 @@ void Tableau::prepend_SQRT_Z_DAG(size_t q) {
     if (m & 2) {
         x.bit_ptr_sign.toggle();
     }
+}
+
+void Tableau::prepend_SWAP(size_t q1, size_t q2) {
+    auto z2 = z_obs_ptr(q2);
+    auto x2 = x_obs_ptr(q2);
+    z_obs_ptr(q1).swap_with(z2);
+    x_obs_ptr(q1).swap_with(x2);
 }
 
 void Tableau::prepend_CX(size_t control, size_t target) {
