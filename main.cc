@@ -153,7 +153,7 @@ void time_pauli_swap(size_t num_qubits) {
 
 int main() {
 //    time_transpose_blockwise(100);
-//    time_pauli_multiplication(100000);
-    time_clifford_sim(31);
+    time_pauli_multiplication(100000);
+//    time_clifford_sim(31);
 //    time_pauli_swap(100000);
 }
