@@ -24,6 +24,9 @@ struct Tableau {
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
+    static Tableau random(size_t num_qubits);
+
+    bool satisfies_invariants() const;
 
     /// Creates a Tableau representing a single qubit gate.
     ///

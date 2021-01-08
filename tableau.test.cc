@@ -268,22 +268,11 @@ bool are_tableau_mutations_equivalent(
         targets3.push_back(k + (k % 2 == 0 ? 0 : n));
     }
 
-    auto test_tableau_random = Tableau::identity(n * 2);
-    test_tableau_random.data_sign_x_z = aligned_bits256::random(test_tableau_random.data_sign_x_z.num_bits);
-    std::random_device rng;
-    std::mt19937 gen(rng());
-    std::uniform_int_distribution<unsigned long long> rand_n(0, 2*n-1);
-    for (size_t k = 0; k < n*n + 100; k++) {
-        size_t a = rand_n(gen);
-        size_t b = rand_n(gen);
-        if (a != b) {
-            test_tableau_random.prepend_CZ(a, b);
-        }
-        test_tableau_random.prepend_H(rand_n(gen));
-        test_tableau_random.prepend_SQRT_Z(rand_n(gen));
-    }
-
-    std::vector<Tableau> tableaus{test_tableau_dual, test_tableau_random};
+    std::vector<Tableau> tableaus{
+        test_tableau_dual,
+        Tableau::random(n + 10),
+        Tableau::random(n + 30),
+    };
     std::vector<std::vector<size_t>> cases{targets1, targets2, targets3};
     for (const auto &t : tableaus) {
         for (const auto &targets : cases) {
@@ -297,6 +286,33 @@ bool are_tableau_mutations_equivalent(
         }
     }
     return true;
+}
+
+TEST(tableau, check_invariants) {
+    ASSERT_TRUE(Tableau::gate1("X", "Z").satisfies_invariants());
+    ASSERT_TRUE(Tableau::gate2("XI", "ZI", "IX", "IZ").satisfies_invariants());
+    ASSERT_FALSE(Tableau::gate1("X", "X").satisfies_invariants());
+    ASSERT_FALSE(Tableau::gate2("XI", "ZI", "XI", "ZI").satisfies_invariants());
+    ASSERT_FALSE(Tableau::gate2("XI", "II", "IX", "IZ").satisfies_invariants());
+}
+
+TEST(tableau, random) {
+    for (size_t k = 0; k < 20; k++) {
+        auto t = Tableau::random(1);
+        ASSERT_TRUE(t.satisfies_invariants()) << t;
+    }
+    for (size_t k = 0; k < 20; k++) {
+        auto t = Tableau::random(2);
+        ASSERT_TRUE(t.satisfies_invariants()) << t;
+    }
+    for (size_t k = 0; k < 20; k++) {
+        auto t = Tableau::random(3);
+        ASSERT_TRUE(t.satisfies_invariants()) << t;
+    }
+    for (size_t k = 0; k < 20; k++) {
+        auto t = Tableau::random(30);
+        ASSERT_TRUE(t.satisfies_invariants());
+    }
 }
 
 TEST(tableau, specialized_operations) {

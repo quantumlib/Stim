@@ -244,13 +244,35 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
     }
 
     // Combine final anti-commutation phase tally (mod 4).
-    size_t s = 0;
+    uint8_t s = 0;
     for (size_t k = 0; k < 4; k++) {
         s += (uint8_t) std::popcount(cnt1.u64[k]);
         s ^= (uint8_t) std::popcount(cnt2.u64[k]) << 1;
     }
     s ^= (uint8_t)rhs.bit_ptr_sign.get() << 1;
     return s & 3;
+}
+
+bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
+    assert(size == other.size);
+    union {__m256i u256; uint64_t u64[4]; } cnt1 {};
+    auto x256 = (__m256i *)_x;
+    auto z256 = (__m256i *)_z;
+    auto ox256 = (__m256i *)other._x;
+    auto oz256 = (__m256i *)other._z;
+    auto end = &x256[num_words256() * stride256];
+    while (x256 != end) {
+        cnt1.u256 ^= (*x256 & *oz256) ^ (*ox256 & *z256);
+        x256 += stride256;
+        z256 += stride256;
+        ox256 += other.stride256;
+        oz256 += other.stride256;
+    }
+    bool s = true;
+    for (size_t k = 0; k < 4; k++) {
+        s ^= std::popcount(cnt1.u64[k]) & 1;
+    }
+    return s;
 }
 
 bool PauliStringPtr::get_x_bit(size_t k) const {

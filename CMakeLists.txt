@@ -6,6 +6,7 @@ add_compile_options(-march=native -O3)
 add_link_options(-pthread -O3)
 
 set(SOURCE_FILES_NO_MAIN
+        bit_mat.cc
         bit_ptr.cc
         chp_sim.cc
         pauli_string.cc
@@ -16,6 +17,7 @@ set(SOURCE_FILES_NO_MAIN
         vector_sim.cc
         )
 set(TEST_FILES
+        bit_mat.test.cc
         bit_ptr.test.cc
         chp_sim.test.cc
         pauli_string.test.cc

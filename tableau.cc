@@ -1,7 +1,10 @@
 #include <iostream>
 #include <map>
+#include <random>
 #include "pauli_string.h"
 #include "tableau.h"
+#include "bit_mat.h"
+#include <cmath>
 
 size_t table_row_length_bits(size_t num_qubits) {
     return ceil256(num_qubits);
@@ -407,3 +410,160 @@ const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
     {"CZ", Tableau::gate2("+XZ", "+ZI", "+ZX", "+IZ")},
     {"SWAP", Tableau::gate2("+IX", "+IZ", "+XI", "+ZI")},
 };
+
+/// Samples a vector of bits and a permutation from a skewed distribution.
+///
+/// Reference:
+///     "Hadamard-free circuits expose the structure of the Clifford group"
+///     Sergey Bravyi, Dmitri Maslov
+///     https://arxiv.org/abs/2003.09412
+std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std::mt19937 &gen) {
+    auto uni = std::uniform_real_distribution<double>(0, 1);
+
+    std::vector<bool> hada;
+    std::vector<size_t> permutation;
+    std::vector<size_t> remaining_indices;
+    for (size_t k = 0; k < n; k++) {
+        remaining_indices.push_back(k);
+    }
+    for (size_t i = 0; i < n; i++) {
+		auto m = remaining_indices.size();
+		auto u = uni(gen);
+		auto eps = pow(4, -(int)m);
+		auto k = (size_t)-ceil(log2(u + (1 - u) * eps));
+		hada.push_back(k < m);
+		if (k >= m) {
+            k = 2 * m - k - 1;
+        }
+		permutation.push_back(remaining_indices[k]);
+		remaining_indices.erase(remaining_indices.begin() + k);
+    }
+    return {hada, permutation};
+}
+
+/// Samples a random valid stabilizer tableau.
+///
+/// Reference:
+///     "Hadamard-free circuits expose the structure of the Clifford group"
+///     Sergey Bravyi, Dmitri Maslov
+///     https://arxiv.org/abs/2003.09412
+BitMat random_stabilizer_tableau_raw(size_t n, std::mt19937 &gen) {
+    auto rand_bit = std::bernoulli_distribution(0.5);
+    auto hs_pair = sample_qmallows(n, gen);
+    const auto &hada = hs_pair.first;
+    const auto &perm = hs_pair.second;
+
+    BitMat symmetric(n);
+    for (size_t col = 0; col < n; col++) {
+        symmetric.set(col, col, rand_bit(gen));
+        for (size_t row = col + 1; row < n; row++) {
+            bool b = rand_bit(gen);
+            symmetric.set(row, col, b);
+            symmetric.set(col, row, b);
+        }
+    }
+
+    BitMat symmetric_m(n);
+    for (size_t col = 0; col < n; col++) {
+        symmetric_m.set(col, col, rand_bit(gen) && hada[col]);
+        for (size_t row = col + 1; row < n; row++) {
+            bool b = hada[row] && hada[col];
+            b |= hada[row] > hada[col] && perm[row] < perm[col];
+            b |= hada[row] < hada[col] && perm[row] > perm[col];
+            b &= rand_bit(gen);
+            symmetric_m.set(row, col, b);
+            symmetric_m.set(col, row, b);
+        }
+    }
+
+    auto lower = BitMat::identity(n);
+    for (size_t col = 0; col < n; col++) {
+        for (size_t row = col + 1; row < n; row++) {
+            lower.set(row, col, rand_bit(gen));
+        }
+    }
+
+    auto lower_m = BitMat::identity(n);
+    for (size_t col = 0; col < n; col++) {
+        for (size_t row = col + 1; row < n; row++) {
+            bool b = hada[row] < hada[col];
+            b |= hada[row] && hada[col] && perm[row] > perm[col];
+            b |= !hada[row] && !hada[col] && perm[row] < perm[col];
+            b &= rand_bit(gen);
+            lower_m.set(row, col, b);
+        }
+    }
+
+    auto prod = symmetric * lower;
+    auto prod_m = symmetric_m * lower_m;
+
+    auto inv = lower.inv_lower_triangular().transposed();
+    auto inv_m = lower_m.inv_lower_triangular().transposed();
+
+    auto fused = BitMat::from_quadrants(
+        lower, BitMat(n),
+        prod, inv);
+    auto fused_m = BitMat::from_quadrants(
+        lower_m, BitMat(n),
+        prod_m, inv_m);
+
+    BitMat u(2*n);
+
+    // Apply permutation.
+    for (size_t row = 0; row < n; row++) {
+        for (size_t col = 0; col < 2 * n; col++) {
+            u.set(row, col, fused.get(perm[row], col));
+            u.set(row + n, col, fused.get(perm[row] + n, col));
+        }
+    }
+    // Apply Hadamards.
+    for (size_t row = 0; row < n; row++) {
+        if (hada[row]) {
+            for (size_t col = 0; col < 2*n; col++) {
+                bool t = u.get(row, col);
+                u.set(row, col, u.get(row + n, col));
+                u.set(row + n, col, t);
+            }
+        }
+    }
+
+    return fused_m * u;
+}
+
+Tableau Tableau::random(size_t num_qubits) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    auto rand_bit = std::bernoulli_distribution(0.5);
+
+    auto raw = random_stabilizer_tableau_raw(num_qubits, gen);
+    Tableau result(num_qubits);
+    for (size_t row = 0; row < num_qubits; row++) {
+        for (size_t col = 0; col < num_qubits; col++) {
+            result.x_obs_ptr(row).set_x_bit(col, raw.get(row, col));
+            result.x_obs_ptr(row).set_z_bit(col, raw.get(row, col + num_qubits));
+            result.z_obs_ptr(row).set_x_bit(col, raw.get(row + num_qubits, col));
+            result.z_obs_ptr(row).set_z_bit(col, raw.get(row + num_qubits, col + num_qubits));
+        }
+        result.data_sign_x_z.set_bit(row, rand_bit(gen));
+        result.data_sign_x_z.set_bit(ceil256(num_qubits) + row, rand_bit(gen));
+    }
+    return result;
+}
+
+bool Tableau::satisfies_invariants() const {
+    for (size_t q1 = 0; q1 < num_qubits; q1++) {
+        auto x1 = x_obs_ptr(q1);
+        auto z1 = z_obs_ptr(q1);
+        if (x1.commutes(z1)) {
+            return false;
+        }
+        for (size_t q2 = q1 + 1; q2 < num_qubits; q2++) {
+            auto x2 = x_obs_ptr(q2);
+            auto z2 = z_obs_ptr(q2);
+            if (!x1.commutes(x2) || !x1.commutes(z2) || !z1.commutes(x2) || !z1.commutes(z2)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}

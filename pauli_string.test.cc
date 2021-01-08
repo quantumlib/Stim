@@ -234,3 +234,39 @@ TEST(pauli_string, strided_get) {
         ASSERT_EQ(p.get_z_bit(64*k), false);
     }
 }
+
+TEST(pauli_string, commutes) {
+    auto f = [](const char *a, const char *b) {
+        auto pa = PauliStringVal::from_str(a);
+        auto pb = PauliStringVal::from_str(b);
+        return pa.ptr().commutes(pb.ptr());
+    };
+    ASSERT_EQ(f("I", "I"), true);
+    ASSERT_EQ(f("I", "X"), true);
+    ASSERT_EQ(f("I", "Y"), true);
+    ASSERT_EQ(f("I", "Z"), true);
+    ASSERT_EQ(f("X", "I"), true);
+    ASSERT_EQ(f("X", "X"), true);
+    ASSERT_EQ(f("X", "Y"), false);
+    ASSERT_EQ(f("X", "Z"), false);
+    ASSERT_EQ(f("Y", "I"), true);
+    ASSERT_EQ(f("Y", "X"), false);
+    ASSERT_EQ(f("Y", "Y"), true);
+    ASSERT_EQ(f("Y", "Z"), false);
+    ASSERT_EQ(f("Z", "I"), true);
+    ASSERT_EQ(f("Z", "X"), false);
+    ASSERT_EQ(f("Z", "Y"), false);
+    ASSERT_EQ(f("Z", "Z"), true);
+
+    ASSERT_EQ(f("XX", "ZZ"), true);
+    ASSERT_EQ(f("-XX", "ZZ"), true);
+    ASSERT_EQ(f("XZ", "ZZ"), false);
+    ASSERT_EQ(f("-XZ", "ZZ"), false);
+
+    auto qa = PauliStringVal::from_pattern(false, 5000, [](size_t k) { return k == 0 ? 'X' : 'Z'; });
+    auto qb = PauliStringVal::from_pattern(false, 5000, [](size_t k) { return 'Z'; });
+    ASSERT_EQ(qa.ptr().commutes(qa.ptr()), true);
+    ASSERT_EQ(qb.ptr().commutes(qb.ptr()), true);
+    ASSERT_EQ(qa.ptr().commutes(qb.ptr()), false);
+    ASSERT_EQ(qb.ptr().commutes(qa.ptr()), false);
+}

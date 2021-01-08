@@ -60,6 +60,7 @@ struct PauliStringPtr {
 
     size_t num_words256() const;
 
+    bool commutes(const PauliStringPtr& other) const noexcept;
     bool get_x_bit(size_t k) const;
     bool get_z_bit(size_t k) const;
     void set_x_bit(size_t k, bool b);
