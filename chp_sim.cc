@@ -26,7 +26,7 @@ std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float
 
     // Handle remaining random measurements.
     if (any_random) {
-        BlockTransposedTableau temp_transposed(inv_state);
+        TempBlockTransposedTableauRaii temp_transposed(inv_state);
         for (size_t k = 0; k < targets.size(); k++) {
             if (!finished[k]) {
                 results[k] = measure_while_block_transposed(temp_transposed, targets[k], bias);
@@ -41,12 +41,12 @@ bool ChpSim::measure(size_t target, float bias) {
     if (is_deterministic(target)) {
         return inv_state.z_sign(target);
     } else {
-        BlockTransposedTableau temp_transposed(inv_state);
+        TempBlockTransposedTableauRaii temp_transposed(inv_state);
         return measure_while_block_transposed(temp_transposed, target, bias);
     }
 }
 
-bool ChpSim::measure_while_block_transposed(BlockTransposedTableau &block_transposed, size_t target, float bias) {
+bool ChpSim::measure_while_block_transposed(TempBlockTransposedTableauRaii &block_transposed, size_t target, float bias) {
     size_t n = block_transposed.tableau.num_qubits;
 
     for (size_t q = n - 1; q > 0; q--) {
@@ -131,6 +131,10 @@ void ChpSim::CY(size_t c, size_t t) {
 
 void ChpSim::CZ(size_t c, size_t t) {
     inv_state.prepend_CZ(c, t);
+}
+
+void ChpSim::SWAP(size_t q1, size_t q2) {
+    inv_state.prepend_SWAP(q1, q2);
 }
 
 void ChpSim::X(size_t q) {

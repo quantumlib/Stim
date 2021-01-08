@@ -436,31 +436,31 @@ TEST(tableau, specialized_operations) {
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("X"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_X(targets[0]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ TempBlockTransposedTableauRaii(t).append_X(targets[0]); }
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_H(targets[0]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ TempBlockTransposedTableauRaii(t).append_H(targets[0]); }
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_H_YZ(targets[0]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ TempBlockTransposedTableauRaii(t).append_H_YZ(targets[0]); }
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_CX(targets[0], targets[1]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ TempBlockTransposedTableauRaii(t).append_CX(targets[0], targets[1]); }
     ));
 
     ASSERT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("SWAP"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ BlockTransposedTableau(t).append_SWAP(targets[0], targets[1]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ TempBlockTransposedTableauRaii(t).append_SWAP(targets[0], targets[1]); }
     ));
 }
 
@@ -509,7 +509,7 @@ TEST(tableau, transposed_access) {
             ASSERT_EQ(t.z_obs_ptr(inp_qubit).get_z_bit(out_qubit), bzz) << inp_qubit << ", " << out_qubit;
 
             {
-                BlockTransposedTableau trans(t);
+                TempBlockTransposedTableauRaii trans(t);
                 ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, X2X_QUAD, true)), bxx);
                 ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, X2Z_QUAD, true)), bxz);
                 ASSERT_EQ(t.data_x2x_z2x_x2z_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, Z2X_QUAD, true)), bzx);

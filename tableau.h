@@ -7,6 +7,19 @@
 #include "simd_util.h"
 #include "pauli_string.h"
 
+/// A Tableau is a stabilizer tableau representation of a Clifford operation.
+/// It stores, for each X and Z observable for each qubit, what is produced when
+/// conjugating that observable by the operation. In other words, it explains how
+/// to transform "input side" Pauli products into "output side" Pauli products.
+///
+/// The memory layout of this class was carefully chosen in order to make certain
+/// operations amenable to acceleration using AVX instructions. In particular,
+/// rows and columns are interleaved in memory so that transposing the tableau
+/// enough to allow AVX instructions on the columns (instead of the rows) can be
+/// done locally on 256x256 bit blocks.
+///
+/// ------
+///
 /// Layout while not transposed.
 /// Let M = ceil256(num_qubits)
 ///
@@ -192,15 +205,36 @@ std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 /// Tableaus for common gates, keyed by name.
 extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
 
-struct BlockTransposedTableau {
+/// When this class is constructed, it blockwise transposes the tableau given to it.
+/// The blockwise transpose is undone when this class is deconstructed.
+///
+/// In particular, given the memory layout that was chosen, appending operations to
+/// the tableau (as opposed to prepending) is more efficient while transposed.
+///
+/// So, for example, in order to perform operations that are more efficient while the
+/// tableau is blockwise transposed, you would isolate them into a code block that
+/// starts by constructing this class. E.g.:
+///
+///     ```
+///     ...
+///     // tableau is not transposed yet.
+///     {
+///         TempBlockTransposedTableauRaii trans(tableau);
+///         // tableau is blockwise transposed until the end of this block.
+///         ... use trans (DO NOT USE tableau DIRECTLY) ...
+///     }
+///     // tableau is no longer transposed.
+///     ...
+///     ```
+struct TempBlockTransposedTableauRaii {
     Tableau &tableau;
 
-    explicit BlockTransposedTableau(Tableau &tableau);
-    ~BlockTransposedTableau();
+    explicit TempBlockTransposedTableauRaii(Tableau &tableau);
+    ~TempBlockTransposedTableauRaii();
 
-    BlockTransposedTableau() = delete;
-    BlockTransposedTableau(const BlockTransposedTableau &) = delete;
-    BlockTransposedTableau(BlockTransposedTableau &&) = delete;
+    TempBlockTransposedTableauRaii() = delete;
+    TempBlockTransposedTableauRaii(const TempBlockTransposedTableauRaii &) = delete;
+    TempBlockTransposedTableauRaii(TempBlockTransposedTableauRaii &&) = delete;
 
     TransposedPauliStringPtr transposed_double_col_obs_ptr(size_t qubit) const;
 

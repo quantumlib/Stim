@@ -32,13 +32,15 @@ struct ChpSim {
     void CX(size_t c, size_t t);
     void CY(size_t c, size_t t);
     void CZ(size_t c, size_t t);
+    void SWAP(size_t q1, size_t q2);
     void X(size_t q);
     void Y(size_t q);
     void Z(size_t q);
+
     void op(const std::string &name, const std::vector<size_t> &targets);
 
 private:
-    bool measure_while_block_transposed(BlockTransposedTableau &block_transposed, size_t target, float bias);
+    bool measure_while_block_transposed(TempBlockTransposedTableauRaii &block_transposed, size_t target, float bias);
 };
 
 #endif

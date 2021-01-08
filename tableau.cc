@@ -40,26 +40,26 @@ size_t bit_address(
     return bit_offset + (block_index << 16) + quadrant * m * m;
 }
 
-BlockTransposedTableau::BlockTransposedTableau(Tableau &tableau) : tableau(tableau) {
+TempBlockTransposedTableauRaii::TempBlockTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
     blockwise_transpose();
 }
 
-BlockTransposedTableau::~BlockTransposedTableau() {
+TempBlockTransposedTableauRaii::~TempBlockTransposedTableauRaii() {
     blockwise_transpose();
 }
 
-void BlockTransposedTableau::blockwise_transpose() {
+void TempBlockTransposedTableauRaii::blockwise_transpose() {
     transpose_bit_matrix_256x256blocks(tableau.data_x2x_z2x_x2z_z2z.u64, tableau.data_x2x_z2x_x2z_z2z.num_bits);
 }
 
-TransposedPauliStringPtr BlockTransposedTableau::transposed_double_col_obs_ptr(size_t qubit) const {
+TransposedPauliStringPtr TempBlockTransposedTableauRaii::transposed_double_col_obs_ptr(size_t qubit) const {
     return TransposedPauliStringPtr {
         &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, X2X_QUAD, true) >> 8],
         &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, X2Z_QUAD, true) >> 8],
     };
 }
 
-void BlockTransposedTableau::append_CX(size_t control, size_t target) {
+void TempBlockTransposedTableauRaii::append_CX(size_t control, size_t target) {
     auto pc = transposed_double_col_obs_ptr(control);
     auto pt = transposed_double_col_obs_ptr(target);
     auto s = tableau.data_sign_x_z.u256;
@@ -77,7 +77,7 @@ void BlockTransposedTableau::append_CX(size_t control, size_t target) {
     }
 }
 
-void BlockTransposedTableau::append_SWAP(size_t q1, size_t q2) {
+void TempBlockTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
     auto p1 = transposed_double_col_obs_ptr(q1);
     auto p2 = transposed_double_col_obs_ptr(q2);
     auto stride256 = column_stride256(tableau.num_qubits);
@@ -92,7 +92,7 @@ void BlockTransposedTableau::append_SWAP(size_t q1, size_t q2) {
     }
 }
 
-void BlockTransposedTableau::append_H_YZ(size_t target) {
+void TempBlockTransposedTableauRaii::append_H_YZ(size_t target) {
     auto p = transposed_double_col_obs_ptr(target);
     auto s = tableau.data_sign_x_z.u256;
     auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
@@ -106,7 +106,7 @@ void BlockTransposedTableau::append_H_YZ(size_t target) {
     }
 }
 
-void BlockTransposedTableau::append_H(size_t target) {
+void TempBlockTransposedTableauRaii::append_H(size_t target) {
     auto p = transposed_double_col_obs_ptr(target);
     auto s = tableau.data_sign_x_z.u256;
     auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
@@ -120,7 +120,7 @@ void BlockTransposedTableau::append_H(size_t target) {
     }
 }
 
-void BlockTransposedTableau::append_X(size_t target) {
+void TempBlockTransposedTableauRaii::append_X(size_t target) {
     auto p = transposed_double_col_obs_ptr(target);
     auto s = tableau.data_sign_x_z.u256;
     auto end = s + (tableau.data_sign_x_z.num_bits >> 8);
@@ -154,17 +154,17 @@ bool Tableau::z_sign(size_t a) const {
     return data_sign_x_z.get_bit(a + ceil256(num_qubits));
 }
 
-bool BlockTransposedTableau::z_sign(size_t a) const {
+bool TempBlockTransposedTableauRaii::z_sign(size_t a) const {
     return tableau.z_sign(a);
 }
 
-bool BlockTransposedTableau::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
+bool TempBlockTransposedTableauRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
     return tableau.data_x2x_z2x_x2z_z2z.get_bit(
             bit_address(input_qubit, output_qubit, tableau.num_qubits, Z2X_QUAD, true)
     );
 }
 
-bool BlockTransposedTableau::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
+bool TempBlockTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
     return tableau.data_x2x_z2x_x2z_z2z.get_bit(
             bit_address(input_qubit, output_qubit, tableau.num_qubits, Z2Z_QUAD, true)
     );
@@ -415,34 +415,6 @@ void Tableau::apply_within(PauliStringPtr &target, const std::vector<size_t> &ta
     out.ptr().scatter_into(target, target_qubits);
 }
 
-const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
-    {"I", Tableau::gate1("+X", "+Z")},
-    // Pauli gates.
-    {"X", Tableau::gate1("+X", "-Z")},
-    {"Y", Tableau::gate1("-X", "-Z")},
-    {"Z", Tableau::gate1("-X", "+Z")},
-    // Axis exchange gates.
-    {"H", Tableau::gate1("+Z", "+X")},
-    {"H_XY", Tableau::gate1("+Y", "-Z")},
-    {"H_XZ", Tableau::gate1("+Z", "+X")},
-    {"H_YZ", Tableau::gate1("-X", "+Y")},
-    // 90 degree rotation gates.
-    {"SQRT_X", Tableau::gate1("+X", "-Y")},
-    {"SQRT_X_DAG", Tableau::gate1("+X", "+Y")},
-    {"SQRT_Y", Tableau::gate1("-Z", "+X")},
-    {"SQRT_Y_DAG", Tableau::gate1("+Z", "-X")},
-    {"SQRT_Z", Tableau::gate1("+Y", "+Z")},
-    {"SQRT_Z_DAG", Tableau::gate1("-Y", "+Z")},
-    {"S", Tableau::gate1("+Y", "+Z")},
-    {"S_DAG", Tableau::gate1("-Y", "+Z")},
-    // Two qubit gates.
-    {"CNOT", Tableau::gate2("+XX", "+ZI", "+IX", "+ZZ")},
-    {"CX", Tableau::gate2("+XX", "+ZI", "+IX", "+ZZ")},
-    {"CY", Tableau::gate2("+XY", "+ZI", "+ZX", "+ZZ")},
-    {"CZ", Tableau::gate2("+XZ", "+ZI", "+ZX", "+IZ")},
-    {"SWAP", Tableau::gate2("+IX", "+IZ", "+XI", "+ZI")},
-};
-
 /// Samples a vector of bits and a permutation from a skewed distribution.
 ///
 /// Reference:
@@ -599,3 +571,38 @@ bool Tableau::satisfies_invariants() const {
     }
     return true;
 }
+
+const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
+    {"I", Tableau::gate1("+X", "+Z")},
+    // Pauli gates.
+    {"X", Tableau::gate1("+X", "-Z")},
+    {"Y", Tableau::gate1("-X", "-Z")},
+    {"Z", Tableau::gate1("-X", "+Z")},
+    // Axis exchange gates.
+    {"H", Tableau::gate1("+Z", "+X")},
+    {"H_XY", Tableau::gate1("+Y", "-Z")},
+    {"H_XZ", Tableau::gate1("+Z", "+X")},
+    {"H_YZ", Tableau::gate1("-X", "+Y")},
+    // 90 degree rotation gates.
+    {"SQRT_X", Tableau::gate1("+X", "-Y")},
+    {"SQRT_X_DAG", Tableau::gate1("+X", "+Y")},
+    {"SQRT_Y", Tableau::gate1("-Z", "+X")},
+    {"SQRT_Y_DAG", Tableau::gate1("+Z", "-X")},
+    {"SQRT_Z", Tableau::gate1("+Y", "+Z")},
+    {"SQRT_Z_DAG", Tableau::gate1("-Y", "+Z")},
+    {"S", Tableau::gate1("+Y", "+Z")},
+    {"S_DAG", Tableau::gate1("-Y", "+Z")},
+    // Two qubit gates.
+    {"SWAP", Tableau::gate2("+IX", "+IZ", "+XI", "+ZI")},
+    {"CNOT", Tableau::gate2("+XX", "+ZI", "+IX", "+ZZ")},
+    {"CX", Tableau::gate2("+XX", "+ZI", "+IX", "+ZZ")},
+    {"CY", Tableau::gate2("+XY", "+ZI", "+ZX", "+ZZ")},
+    {"CZ", Tableau::gate2("+XZ", "+ZI", "+ZX", "+IZ")},
+    // Controlled interactions in other bases.
+    {"XCX", Tableau::gate2("+XI", "+ZX", "+IX", "+XZ")},
+    {"XCY", Tableau::gate2("+XI", "+ZY", "+XX", "+XZ")},
+    {"XCZ", Tableau::gate2("+XI", "+ZZ", "+XX", "+IZ")},
+    {"YCX", Tableau::gate2("+XX", "+ZX", "+IX", "+YZ")},
+    {"YCY", Tableau::gate2("+XY", "+ZY", "+YX", "+YZ")},
+    {"YCZ", Tableau::gate2("+XZ", "+ZZ", "+YX", "+IZ")},
+};
