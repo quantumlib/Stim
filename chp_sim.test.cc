@@ -234,3 +234,58 @@ TEST(ChpSim, s_state_distillation_low_space) {
         ASSERT_EQ(sim.measure(3), true);
     }
 }
+
+TEST(ChpSim, single_qubit_gates_consistent_with_tableau_data) {
+    auto t = Tableau::random(10);
+    ChpSim sim(10);
+    ChpSim sim2(10);
+    sim.inv_state = t;
+    sim2.inv_state = t;
+    for (const auto &kv : SINGLE_QUBIT_GATE_FUNCS) {
+        const auto &name = kv.first;
+        if (name == "M" || name == "R") {
+            continue;
+        }
+        const auto &action = kv.second;
+        const auto &inverse_op_tableau = GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name));
+        action(sim, 5);
+        sim2.op(name, {5});
+        t.inplace_scatter_prepend(inverse_op_tableau, {5});
+        ASSERT_EQ(sim.inv_state, t) << name;
+        ASSERT_EQ(sim.inv_state, sim2.inv_state) << name;
+    }
+    for (const auto &kv : TWO_QUBIT_GATE_FUNCS) {
+        const auto &name = kv.first;
+        const auto &action = kv.second;
+        const auto &inverse_op_tableau = GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name));
+        action(sim, 7, 4);
+        sim2.op(name, {7, 4});
+        t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
+        ASSERT_EQ(sim.inv_state, t) << name;
+        ASSERT_EQ(sim.inv_state, sim2.inv_state) << name;
+    }
+}
+
+TEST(ChpSim, simulate) {
+    auto results = ChpSim::simulate(Circuit::from_text(
+            "H 0\n"
+            "CNOT 0 1\n"
+            "M 0\n"
+            "M 1\n"
+            "M 2\n"));
+    ASSERT_EQ(results[0], results[1]);
+    ASSERT_EQ(results[2], false);
+}
+
+TEST(ChpSim, simulate_reset) {
+    auto results = ChpSim::simulate(Circuit::from_text(
+            "X 0\n"
+            "M 0\n"
+            "R 0\n"
+            "M 0\n"
+            "R 0\n"
+            "M 0\n"));
+    ASSERT_EQ(results[0], true);
+    ASSERT_EQ(results[1], false);
+    ASSERT_EQ(results[2], false);
+}

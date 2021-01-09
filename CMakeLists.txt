@@ -9,6 +9,7 @@ set(SOURCE_FILES_NO_MAIN
         bit_mat.cc
         bit_ptr.cc
         chp_sim.cc
+        circuit.cc
         pauli_string.cc
         perf.cc
         simd_util.cc
@@ -20,6 +21,7 @@ set(TEST_FILES
         bit_mat.test.cc
         bit_ptr.test.cc
         chp_sim.test.cc
+        circuit.test.cc
         pauli_string.test.cc
         simd_util.test.cc
         tableau.test.cc

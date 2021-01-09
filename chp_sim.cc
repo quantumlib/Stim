@@ -37,6 +37,21 @@ std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float
     return results;
 }
 
+void ChpSim::reset_many(const std::vector<size_t> &targets) {
+    auto r = measure_many(targets);
+    for (size_t k = 0; k < targets.size(); k++) {
+        if (r[k]) {
+            X(targets[k]);
+        }
+    }
+}
+
+void ChpSim::reset(size_t target) {
+    if (measure(target)) {
+        X(target);
+    }
+}
+
 bool ChpSim::measure(size_t target, float bias) {
     if (is_deterministic(target)) {
         return inv_state.z_sign(target);
@@ -156,5 +171,80 @@ void ChpSim::Z(size_t q) {
 }
 
 void ChpSim::op(const std::string &name, const std::vector<size_t> &targets) {
-    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(name), targets);
+    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
 }
+
+std::vector<bool> ChpSim::simulate(const Circuit &circuit) {
+    ChpSim sim(circuit.num_qubits);
+    std::vector<bool> result;
+    for (const auto &op : circuit.operations) {
+        if (op.name == "M") {
+            for (bool b : sim.measure_many(op.targets)) {
+                result.push_back(b);
+            }
+        } else if (op.name == "R") {
+            sim.reset_many(op.targets);
+        } else if (op.targets.size() == 1) {
+            SINGLE_QUBIT_GATE_FUNCS.at(op.name)(sim, op.targets[0]);
+        } else if (op.targets.size() == 2) {
+            TWO_QUBIT_GATE_FUNCS.at(op.name)(sim, op.targets[0], op.targets[1]);
+        } else {
+            throw std::runtime_error("Unsupported operation " + op.name);
+        }
+    }
+    return result;
+}
+
+void ChpSim::simulate(FILE *in, FILE *out) {
+    std::stringstream ss;
+    while (true) {
+        auto e = getc(in);
+        if (e == EOF) {
+            break;
+        }
+        ss << (char)e;
+    }
+    for (auto e : ChpSim::simulate(Circuit::from_text(ss.str()))) {
+        putc(e ? '1' : '0', out);
+        putc('\n', out);
+    }
+}
+
+const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SINGLE_QUBIT_GATE_FUNCS{
+        {"M",          [](ChpSim &sim, size_t q) { sim.measure(q); }},
+        {"R",          &ChpSim::reset},
+        {"I",          [](ChpSim &sim, size_t q) {}},
+        // Pauli gates.
+        {"X",          &ChpSim::X},
+        {"Y",          &ChpSim::Y},
+        {"Z",          &ChpSim::Z},
+        // Axis exchange gates.
+        {"H",          &ChpSim::H},
+        {"H_XY",       &ChpSim::H_XY},
+        {"H_XZ",       &ChpSim::H},
+        {"H_YZ",       &ChpSim::H_YZ},
+        // 90 degree rotation gates.
+        {"SQRT_X",     &ChpSim::SQRT_X},
+        {"SQRT_X_DAG", &ChpSim::SQRT_X_DAG},
+        {"SQRT_Y",     &ChpSim::SQRT_Y},
+        {"SQRT_Y_DAG", &ChpSim::SQRT_Y_DAG},
+        {"SQRT_Z",     &ChpSim::SQRT_Z},
+        {"SQRT_Z_DAG", &ChpSim::SQRT_Z_DAG},
+        {"S",          &ChpSim::SQRT_Z},
+        {"S_DAG",      &ChpSim::SQRT_Z_DAG},
+};
+
+const std::unordered_map<std::string, std::function<void(ChpSim &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS {
+    {"SWAP", &ChpSim::SWAP},
+    {"CNOT", &ChpSim::CX},
+    {"CX", &ChpSim::CX},
+    {"CY", &ChpSim::CY},
+    {"CZ", &ChpSim::CZ},
+    // Controlled interactions in other bases.
+    {"XCX", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("XCX", {q1, q2}); }},
+    {"XCY", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("XCY", {q1, q2}); }},
+    {"XCZ", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("XCZ", {q1, q2}); }},
+    {"YCX", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("YCX", {q1, q2}); }},
+    {"YCY", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("YCY", {q1, q2}); }},
+    {"YCZ", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("YCZ", {q1, q2}); }},
+};

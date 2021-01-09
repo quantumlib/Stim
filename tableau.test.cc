@@ -111,6 +111,21 @@ TEST(tableau, gate_tableau_data_vs_unitary_data) {
     }
 }
 
+TEST(tableau, inverse_data) {
+    for (const auto &kv : GATE_TABLEAUS) {
+        const auto &name = kv.first;
+        Tableau tab = kv.second;
+        const auto &inverse_name = GATE_INVERSE_NAMES.at(name);
+        const auto &tab2 = GATE_TABLEAUS.at(inverse_name);
+        std::vector<size_t> targets {0};
+        while (targets.size() < tab.num_qubits) {
+            targets.push_back(targets.size());
+        }
+        tab.inplace_scatter_append(tab2, targets);
+        ASSERT_EQ(tab, Tableau::identity(tab.num_qubits)) << name << " -> " << inverse_name;
+    }
+}
+
 TEST(tableau, eval) {
     const auto &cnot = GATE_TABLEAUS.at("CNOT");
     ASSERT_EQ(cnot(PauliStringVal::from_str("-XX")), PauliStringVal::from_str("-XI"));

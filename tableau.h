@@ -204,6 +204,7 @@ std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
 /// Tableaus for common gates, keyed by name.
 extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
+extern const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES;
 
 /// When this class is constructed, it blockwise transposes the tableau given to it.
 /// The blockwise transpose is undone when this class is deconstructed.

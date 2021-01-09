@@ -624,6 +624,36 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
+const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES {
+    {"I", "I"},
+    {"X", "X"},
+    {"Y", "Y"},
+    {"Z", "Z"},
+    {"H", "H"},
+    {"H_XY", "H_XY"},
+    {"H_XZ", "H_XZ"},
+    {"H_YZ", "H_YZ"},
+    {"SQRT_X", "SQRT_X_DAG"},
+    {"SQRT_X_DAG", "SQRT_X"},
+    {"SQRT_Y", "SQRT_Y_DAG"},
+    {"SQRT_Y_DAG", "SQRT_Y"},
+    {"SQRT_Z", "SQRT_Z_DAG"},
+    {"SQRT_Z_DAG", "SQRT_Z"},
+    {"S", "S_DAG"},
+    {"S_DAG", "S"},
+    {"SWAP", "SWAP"},
+    {"CNOT", "CNOT"},
+    {"CX", "CX"},
+    {"CY", "CY"},
+    {"CZ", "CZ"},
+    {"XCX", "XCX"},
+    {"XCY", "XCY"},
+    {"XCZ", "XCZ"},
+    {"YCX", "YCX"},
+    {"YCY", "YCY"},
+    {"YCZ", "YCZ"},
+};
+
 const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
     {"I", Tableau::gate1("+X", "+Z")},
     // Pauli gates.

@@ -9,16 +9,22 @@
 #include <functional>
 #include "tableau.h"
 #include <random>
+#include "circuit.h"
 
 struct ChpSim {
     Tableau inv_state;
     std::mt19937 rng;
 
     explicit ChpSim(size_t num_qubits);
+    void ensure_large_enough_for_qubit(size_t q);
 
     bool is_deterministic(size_t target) const;
     bool measure(size_t q, float bias = 0.5);
+    void reset(size_t target);
     std::vector<bool> measure_many(const std::vector<size_t> &targets, float bias = 0.5);
+    void reset_many(const std::vector<size_t> &targets);
+    static std::vector<bool> simulate(const Circuit &circuit);
+    static void simulate(FILE *in, FILE *out);
 
     void H(size_t q);
     void H_YZ(size_t q);
@@ -42,5 +48,8 @@ struct ChpSim {
 private:
     bool measure_while_block_transposed(TempBlockTransposedTableauRaii &block_transposed, size_t target, float bias);
 };
+
+extern const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SINGLE_QUBIT_GATE_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(ChpSim &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS;
 
 #endif
