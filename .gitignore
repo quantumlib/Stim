@@ -3,3 +3,10 @@ cmake-build-debug/*
 a.out
 perf.data
 perf.data.old
+CMakeFiles/*
+CMakeCache.txt
+googletest-build/*
+googletest-download/*
+googletest-src
+cmake_install.cmake
+Makefile
