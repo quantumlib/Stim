@@ -8,7 +8,7 @@
 struct Operation {
     std::string name;
     std::vector<size_t> targets;
-    static Operation from_line(const std::string &line, size_t start, size_t end);
+    static Operation from_line(const std::string &line, size_t start, size_t end, bool validate);
 
     bool operator==(const Operation &other) const;
     bool operator!=(const Operation &other) const;
@@ -22,6 +22,17 @@ struct Circuit {
 
     bool operator==(const Circuit &other) const;
     bool operator!=(const Circuit &other) const;
+};
+
+struct CircuitReader {
+private:
+    FILE *input_file;
+    std::string line_buf;
+public:
+    std::vector<Operation> operations;
+
+    CircuitReader(FILE *file);
+    bool read_next_moment();
 };
 
 #endif

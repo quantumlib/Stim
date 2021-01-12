@@ -520,6 +520,42 @@ TEST(tableau, bit_address) {
 //    ASSERT_EQ(bit_address(0, 0, n, quad_1, yes_transposed), ceil256(n)*ceil256(n));
 }
 
+TEST(tableau, expand) {
+    auto t = Tableau::random(4);
+    auto t2 = t;
+    for (size_t n = 8; n < 500; n += 255) {
+        t2.expand(n);
+        assert(t2.num_qubits == n);
+        for (size_t k = 0; k < n; k++) {
+            if (k < 4) {
+                ASSERT_EQ(t.x_obs_ptr(k).bit_ptr_sign.get(), t2.x_obs_ptr(k).bit_ptr_sign.get());
+                ASSERT_EQ(t.z_obs_ptr(k).bit_ptr_sign.get(), t2.z_obs_ptr(k).bit_ptr_sign.get());
+            } else {
+                ASSERT_EQ(t2.x_obs_ptr(k).bit_ptr_sign.get(), false);
+                ASSERT_EQ(t2.z_obs_ptr(k).bit_ptr_sign.get(), false);
+            }
+            for (size_t k2 = 0; k2 < n; k2++) {
+                if (k < 4 && k2 < 4) {
+                    ASSERT_EQ(t.x_obs_ptr(k).get_x_bit(k2), t2.x_obs_ptr(k).get_x_bit(k2));
+                    ASSERT_EQ(t.x_obs_ptr(k).get_z_bit(k2), t2.x_obs_ptr(k).get_z_bit(k2));
+                    ASSERT_EQ(t.z_obs_ptr(k).get_x_bit(k2), t2.z_obs_ptr(k).get_x_bit(k2));
+                    ASSERT_EQ(t.z_obs_ptr(k).get_z_bit(k2), t2.z_obs_ptr(k).get_z_bit(k2));
+                } else if (k == k2) {
+                    ASSERT_EQ(t2.x_obs_ptr(k).get_x_bit(k2), true);
+                    ASSERT_EQ(t2.x_obs_ptr(k).get_z_bit(k2), false);
+                    ASSERT_EQ(t2.z_obs_ptr(k).get_x_bit(k2), false);
+                    ASSERT_EQ(t2.z_obs_ptr(k).get_z_bit(k2), true);
+                } else {
+                    ASSERT_EQ(t2.x_obs_ptr(k).get_x_bit(k2), false);
+                    ASSERT_EQ(t2.x_obs_ptr(k).get_z_bit(k2), false);
+                    ASSERT_EQ(t2.z_obs_ptr(k).get_x_bit(k2), false);
+                    ASSERT_EQ(t2.z_obs_ptr(k).get_z_bit(k2), false);
+                }
+            }
+        }
+    }
+}
+
 TEST(tableau, transposed_access) {
     size_t X2X_QUAD = 0;
     size_t Z2X_QUAD = 1;

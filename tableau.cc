@@ -5,6 +5,7 @@
 #include "tableau.h"
 #include "bit_mat.h"
 #include <cmath>
+#include <cstring>
 
 #define X2X_QUAD 0
 #define Z2X_QUAD 1
@@ -71,6 +72,34 @@ void TempBlockTransposedTableauRaii::append_CX(size_t control, size_t target) {
             pt.z++;
             s++;
         }
+    }
+}
+
+void Tableau::expand(size_t new_num_qubits) {
+    assert(new_num_qubits >= num_qubits);
+    size_t n1 = num_qubits;
+    size_t m1 = ceil256(n1);
+    size_t m2 = ceil256(new_num_qubits);
+    if (m1 == m2) {
+        for (size_t k = n1; k < new_num_qubits; k++) {
+            x_obs_ptr(k).set_x_bit(k, true);
+            z_obs_ptr(k).set_z_bit(k, true);
+        }
+        num_qubits = new_num_qubits;
+        return;
+    }
+
+    Tableau old_state = std::move(*this);
+    this->~Tableau();
+    new(this) Tableau(new_num_qubits);
+
+    memcpy(data_sign_x_z.u256, old_state.data_sign_x_z.u256, m1 >> 3);
+    memcpy(data_sign_x_z.u256 + (m2 >> 8), old_state.data_sign_x_z.u256 + (m1 >> 8), m1 >> 3);
+    for (size_t k = 0; k < n1; k++) {
+        memcpy(x_obs_ptr(k)._x, old_state.x_obs_ptr(k)._x, m1 >> 3);
+        memcpy(x_obs_ptr(k)._z, old_state.x_obs_ptr(k)._z, m1 >> 3);
+        memcpy(z_obs_ptr(k)._x, old_state.z_obs_ptr(k)._x, m1 >> 3);
+        memcpy(z_obs_ptr(k)._z, old_state.z_obs_ptr(k)._z, m1 >> 3);
     }
 }
 

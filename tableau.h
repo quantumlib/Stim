@@ -104,6 +104,7 @@ struct Tableau {
     PauliStringPtr z_obs_ptr(size_t qubit) const;
 
     std::string str() const;
+    void expand(size_t new_num_qubits);
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);

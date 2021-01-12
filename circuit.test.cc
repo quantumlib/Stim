@@ -2,7 +2,7 @@
 #include "circuit.h"
 
 TEST(circuit, operation_from_line) {
-    auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size()); };
+    auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size(), true); };
     ASSERT_EQ(f("# not an operation"), (Operation{"", {}}));
 
     ASSERT_EQ(f("H 0"), (Operation{"H", {0}}));

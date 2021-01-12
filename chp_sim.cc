@@ -190,18 +190,41 @@ std::vector<bool> ChpSim::simulate(const Circuit &circuit) {
     return result;
 }
 
-void ChpSim::simulate(FILE *in, FILE *out) {
-    std::stringstream ss;
-    while (true) {
-        auto e = getc(in);
-        if (e == EOF) {
-            break;
-        }
-        ss << (char)e;
+void ChpSim::ensure_large_enough_for_qubit(size_t q) {
+    if (q < inv_state.num_qubits) {
+        return;
     }
-    for (auto e : ChpSim::simulate(Circuit::from_text(ss.str()))) {
-        putc(e ? '1' : '0', out);
-        putc('\n', out);
+    inv_state.expand(ceil256(q + 1));
+}
+
+void ChpSim::simulate(FILE *in, FILE *out) {
+    CircuitReader reader(in);
+    size_t max_qubit = 0;
+    ChpSim sim(1);
+    while (reader.read_next_moment()) {
+        for (const auto &e : reader.operations) {
+            for (size_t q : e.targets) {
+                max_qubit = std::max(q, max_qubit);
+            }
+        }
+        sim.ensure_large_enough_for_qubit(max_qubit);
+
+        for (const auto &op : reader.operations) {
+            if (op.name == "M") {
+                for (bool b : sim.measure_many(op.targets)) {
+                    putc_unlocked(b ? '1' : '0', out);
+                    putc_unlocked('\n', out);
+                }
+            } else if (op.name == "R") {
+                sim.reset_many(op.targets);
+            } else if (op.targets.size() == 1) {
+                SINGLE_QUBIT_GATE_FUNCS.at(op.name)(sim, op.targets[0]);
+            } else if (op.targets.size() == 2) {
+                TWO_QUBIT_GATE_FUNCS.at(op.name)(sim, op.targets[0], op.targets[1]);
+            } else {
+                throw std::runtime_error("Unsupported operation " + op.name);
+            }
+        }
     }
 }
 
