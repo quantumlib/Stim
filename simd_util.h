@@ -74,6 +74,8 @@ void mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk(uint64_t *matrix256x25
 
 size_t ceil256(size_t n);
 
-bool any_non_zero(const __m256i *data, size_t words256, size_t stride256);
+bool any_non_zero(const __m256i *data, size_t words256);
+
+void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 
 #endif

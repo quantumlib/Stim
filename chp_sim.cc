@@ -6,7 +6,7 @@ ChpSim::ChpSim(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rn
 bool ChpSim::is_deterministic(size_t target) const {
     size_t n = inv_state.num_qubits;
     auto p = inv_state.z_obs_ptr(target);
-    return !any_non_zero((__m256i *)p._x, ceil256(n) >> 8, p.stride256);
+    return !any_non_zero((__m256i *)p._x, ceil256(n) >> 8);
 }
 
 std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float bias) {
@@ -75,13 +75,8 @@ bool ChpSim::measure_while_block_transposed(TempBlockTransposedTableauRaii &bloc
     // Isolate to a single qubit.
     for (size_t victim = pivot + 1; victim < n; victim++) {
         bool x = block_transposed.z_obs_x_bit(target, victim);
-        bool z = block_transposed.z_obs_z_bit(target, victim);
-        if (x && z) {
-            block_transposed.append_CY(pivot, victim);
-        } else if (x) {
+        if (x) {
             block_transposed.append_CX(pivot, victim);
-        } else if (z) {
-            block_transposed.append_CZ(pivot, victim);
         }
     }
 

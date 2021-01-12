@@ -41,8 +41,8 @@ size_t parse_size_t(const std::string &text) {
     return std::stoull(text);
 }
 
-Operation Operation::from_line(const std::string &line) {
-    auto tokens = tokenize(line, 0, line.size());
+Operation Operation::from_line(const std::string &line, size_t start, size_t end) {
+    auto tokens = tokenize(line, start, end);
     if (tokens.size() == 0) {
         return Operation{"", {}};
     }
@@ -56,8 +56,7 @@ Operation Operation::from_line(const std::string &line) {
             return Operation{"", {}};
         }
         throw std::runtime_error("Failed to parse line: '" + line + "'.");
-    }
-    if (tokens.size() == 2) {
+    } else if (tokens.size() == 2) {
         if (SINGLE_QUBIT_GATE_FUNCS.find(name) == SINGLE_QUBIT_GATE_FUNCS.end()) {
             throw std::runtime_error("Unrecognized single qubit gate " + name + " in line '" + line + "'.");
         }
@@ -68,8 +67,7 @@ Operation Operation::from_line(const std::string &line) {
         } catch (std::invalid_argument ex) {
             throw std::runtime_error("Bad qubit id " + tokens[1] + " in line '" + line + "'.");
         }
-    }
-    if (tokens.size() == 3) {
+    } else if (tokens.size() == 3) {
         if (TWO_QUBIT_GATE_FUNCS.find(name) == TWO_QUBIT_GATE_FUNCS.end()) {
             throw std::runtime_error("Unrecognized two qubit gate " + name + " in line '" + line + "'.");
         }
@@ -89,7 +87,7 @@ Circuit Circuit::from_text(const std::string &text) {
     size_t s = 0;
     for (size_t k = 0; k <= text.size(); k++) {
         if (text[k] == '\n' || text[k] == '\0') {
-            auto op = Operation::from_line(text.substr(s, k - s));
+            auto op = Operation::from_line(text, s, k);
             s = k + 1;
             if (op.targets.size()) {
                 if ((op.name == "M" || op.name == "R") && operations.size() && operations.back().name == op.name) {

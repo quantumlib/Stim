@@ -2,46 +2,47 @@
 #include "circuit.h"
 
 TEST(circuit, operation_from_line) {
-    ASSERT_EQ(Operation::from_line("# not an operation"), (Operation{"", {}}));
+    auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size()); };
+    ASSERT_EQ(f("# not an operation"), (Operation{"", {}}));
 
-    ASSERT_EQ(Operation::from_line("H 0"), (Operation{"H", {0}}));
-    ASSERT_EQ(Operation::from_line("h 0"), (Operation{"H", {0}}));
-    ASSERT_EQ(Operation::from_line("H 0     "), (Operation{"H", {0}}));
-    ASSERT_EQ(Operation::from_line("     H 0     "), (Operation{"H", {0}}));
-    ASSERT_EQ(Operation::from_line("\tH 0\t\t"), (Operation{"H", {0}}));
-    ASSERT_EQ(Operation::from_line("H 0  # comment"), (Operation{"H", {0}}));
+    ASSERT_EQ(f("H 0"), (Operation{"H", {0}}));
+    ASSERT_EQ(f("h 0"), (Operation{"H", {0}}));
+    ASSERT_EQ(f("H 0     "), (Operation{"H", {0}}));
+    ASSERT_EQ(f("     H 0     "), (Operation{"H", {0}}));
+    ASSERT_EQ(f("\tH 0\t\t"), (Operation{"H", {0}}));
+    ASSERT_EQ(f("H 0  # comment"), (Operation{"H", {0}}));
 
-    ASSERT_EQ(Operation::from_line("  \t Cnot 5 6  # comment   "), (Operation{"CNOT", {5, 6}}));
+    ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), (Operation{"CNOT", {5, 6}}));
 
     ASSERT_THROW({
-        Operation::from_line("H a");
+        f("H a");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("H 9999999999999999999999999999999999999999999");
+        f("H 9999999999999999999999999999999999999999999");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("H -1");
+        f("H -1");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("H");
+        f("H");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("H 0 1");
+        f("H 0 1");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("CNOT 0");
+        f("CNOT 0");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("CNOT 0 1 2");
+        f("CNOT 0 1 2");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("CNOT 0 a");
+        f("CNOT 0 a");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("CNOT 0 99999999999999999999999999999999");
+        f("CNOT 0 99999999999999999999999999999999");
     }, std::runtime_error);
     ASSERT_THROW({
-        Operation::from_line("CNOT 0 -1");
+        f("CNOT 0 -1");
     }, std::runtime_error);
 }
 

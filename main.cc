@@ -134,7 +134,6 @@ void time_tableau_pauli_multiplication(size_t num_qubits) {
     std::cerr << "tableau pauli multiplication(n=" << num_qubits << ")\n";
 
     Tableau t(num_qubits);
-    aligned_bits256 data(1 << 30);
     PauliStringPtr p1_ptr = t.x_obs_ptr(0);
     PauliStringPtr p2_ptr = t.x_obs_ptr(5);
     auto f = PerfResult::time([&](){
@@ -169,6 +168,7 @@ void time_pauli_swap(size_t num_qubits) {
 int main() {
 //    time_transpose_blockwise(100);
 //    time_pauli_multiplication(100000);
+//    time_tableau_pauli_multiplication(10000);
 //    time_clifford_sim(61);
 //    time_pauli_swap(100000);
     ChpSim::simulate(stdin, stdout);

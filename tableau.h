@@ -193,9 +193,27 @@ struct Tableau {
     bool z_sign(size_t a) const;
 };
 
-struct TransposedPauliStringPtr {
+struct TransposedPauliStringPairPtr {
     __m256i *x;
     __m256i *z;
+    __m256i *s;
+};
+
+struct TransposedPauliStringPtr {
+    __m256i *x1;
+    __m256i *z1;
+    __m256i *s1;
+    __m256i *x2;
+    __m256i *z2;
+    __m256i *s2;
+
+    TransposedPauliStringPairPtr get(bool k) {
+        if (k == 0) {
+            return {x1, z1, s1};
+        } else {
+            return {x2, z2, s2};
+        }
+    }
 };
 
 size_t bit_address(size_t input_qubit, size_t output_qubit, size_t num_qubits, size_t quadrant, bool transposed);
@@ -240,6 +258,7 @@ struct TempBlockTransposedTableauRaii {
     TransposedPauliStringPtr transposed_double_col_obs_ptr(size_t qubit) const;
 
     bool z_sign(size_t a) const;
+    bool x_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
     bool z_obs_x_bit(size_t input_qubit, size_t output_qubit) const;
     bool z_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
 
@@ -252,7 +271,7 @@ struct TempBlockTransposedTableauRaii {
     void append_X(size_t q);
     void append_SWAP(size_t q1, size_t q2);
 private:
-    void blockwise_transpose();
+    void bitty_transpose();
 };
 
 #endif

@@ -187,19 +187,33 @@ TEST(simd_util, ceil256) {
 
 TEST(simd_util, any_non_zero) {
     auto d = aligned_bits256(5000);
-    ASSERT_FALSE(any_non_zero(d.u256, 1, 1));
-    ASSERT_FALSE(any_non_zero(d.u256, 2, 1));
-    ASSERT_FALSE(any_non_zero(d.u256, 2, 2));
+    ASSERT_FALSE(any_non_zero(d.u256, 1));
+    ASSERT_FALSE(any_non_zero(d.u256, 2));
     d.set_bit(256, true);
-    ASSERT_FALSE(any_non_zero(d.u256, 1, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2, 1));
-    ASSERT_FALSE(any_non_zero(d.u256, 2, 2));
+    ASSERT_FALSE(any_non_zero(d.u256, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2));
     d.set_bit(257, true);
-    ASSERT_FALSE(any_non_zero(d.u256, 1, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2, 1));
-    ASSERT_FALSE(any_non_zero(d.u256, 2, 2));
+    ASSERT_FALSE(any_non_zero(d.u256, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2));
     d.set_bit(255, true);
-    ASSERT_TRUE(any_non_zero(d.u256, 1, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2, 2));
+    ASSERT_TRUE(any_non_zero(d.u256, 1));
+    ASSERT_TRUE(any_non_zero(d.u256, 2));
+}
+
+aligned_bits256 reference_transpose_of(size_t bit_width, const aligned_bits256 &data) {
+    auto expected = aligned_bits256(data.num_bits);
+    for (size_t i = 0; i < bit_width; i++) {
+        for (size_t j = 0; j < bit_width; j++) {
+            expected.set_bit(i*bit_width + j, data.get_bit(j*bit_width + i));
+        }
+    }
+    return expected;
+}
+
+TEST(simd_util, transpose_bit_matrix) {
+    size_t bit_width = 256 * 3;
+    auto data = aligned_bits256::random(bit_width * bit_width);
+    auto expected = reference_transpose_of(bit_width, data);
+    transpose_bit_matrix(data.u64, bit_width);
+    ASSERT_EQ(data, expected);
 }

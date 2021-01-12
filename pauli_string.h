@@ -18,9 +18,8 @@ struct PauliStringPtr {
     BitPtr bit_ptr_sign;
     uint64_t *_x;
     uint64_t *_z;
-    size_t stride256;
 
-    PauliStringPtr(size_t size, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z, size_t stride256);
+    PauliStringPtr(size_t size, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
     bool operator==(const PauliStringPtr &other) const;
