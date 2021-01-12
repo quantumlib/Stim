@@ -1,0 +1,127 @@
+<html lang="en">
+<head><title>Webgl2 XOR</title></head>
+<body>
+    <script>
+        let canvas /** @type {HTMLCanvasElement} */ = document.createElement('canvas');
+        let gl = canvas.getContext("webgl2");
+
+        let vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertexShader, `#version 300 es
+            in vec4 a_position;
+            void main() {
+                gl_Position = a_position;
+            }
+        `);
+        gl.compileShader(vertexShader);
+        console.assert(gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS),
+            "Fragment shader compile failed: " + gl.getShaderInfoLog(vertexShader));
+
+        let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader, `#version 300 es
+            precision highp float;
+            precision highp int;
+            precision highp isampler2D;
+
+            uniform isampler2D in1;
+            uniform isampler2D in2;
+            out ivec4 out1;
+
+            void main() {
+                ivec2 p = ivec2(gl_FragCoord);
+                // p.y = 0;
+                ivec4 i1 = texelFetch(in1, p, 0);
+                ivec4 i2 = texelFetch(in2, p, 0);
+                out1 = i1 ^ i2;
+            }
+        `);
+        gl.compileShader(fragmentShader);
+        console.assert(gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS),
+            "Fragment shader compile failed: " + gl.getShaderInfoLog(fragmentShader));
+
+        let program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        console.assert(gl.getProgramParameter(program, gl.LINK_STATUS), "Program link failed.");
+
+        let positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-3, -1, 1, 3, 1, -1]), gl.STATIC_DRAW);
+        let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+        let vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        gl.enableVertexAttribArray(positionAttributeLocation);
+        gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+        let total_reps = 100;
+        let w = 1 << 10;
+        let h = w;
+        let pixels = w*h;
+        let ints = pixels * 4;
+        let bits = ints*32;
+
+        let outputBuffer = new Int32Array(100);
+        // let d1 = new Int32Array(ints);
+        // let d2 = new Int32Array(ints);
+        // for (let i = 0; i < d1.length; i++) {
+        //     d1[i] = i;
+        //     d2[i] = i*1000;
+        // }
+
+        let datas = [null, null, null];
+        // let datas = [d1, d2, null];
+
+        let textures = [];
+        for (let d of datas) {
+            let texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32I, w, h, 0, gl.RGBA_INTEGER, gl.INT, d);
+            textures.push(texture);
+        }
+
+
+        let frameBuffers = [];
+        for (let i = 0; i < textures.length; i++) {
+            let fb = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textures[i], 0);
+            frameBuffers.push(fb);
+        }
+
+        for (let k2 = 0; k2 < 2; k2++) {
+            console.log("START GPU");
+            let t0 = Date.now();
+            gl.useProgram(program);
+            for (let reps = 0; reps < total_reps; reps++) {
+                gl.uniform1i(gl.getUniformLocation(program, "in1"), 0);
+                gl.uniform1i(gl.getUniformLocation(program, "in2"), 1);
+                gl.activeTexture(gl.TEXTURE0 + 0);
+                gl.bindTexture(gl.TEXTURE_2D, textures[0]);
+                gl.activeTexture(gl.TEXTURE0 + 1);
+                gl.bindTexture(gl.TEXTURE_2D, textures[1]);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers[2]);
+                gl.viewport(0, 0, w, h);
+                gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+                textures.push(textures.shift());
+                frameBuffers.push(frameBuffers.shift());
+            }
+
+            let t1 = Date.now();
+            console.log("WAIT GPU", (t1 - t0) / 1000);
+            gl.readPixels(0, 0, 1, 1, gl.RGBA_INTEGER, gl.INT, outputBuffer);
+            let t2 = Date.now();
+            dt = (t2 - t0) / 1000;
+            console.log("FINISH GPU",
+                dt, "s",
+                bits * total_reps / dt / 1000.0 / 1000.0 / 1000.0, "GigaBitXors/sec",
+                total_reps / dt, "layers / sec");
+            console.log(outputBuffer.slice(0, 40));
+
+            console.log("DONE");
+        }
+    </script>
+</body>
+</html>
