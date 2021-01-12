@@ -130,6 +130,21 @@ void time_pauli_multiplication(size_t num_qubits) {
     std::cerr << "\n";
 }
 
+void time_tableau_pauli_multiplication(size_t num_qubits) {
+    std::cerr << "tableau pauli multiplication(n=" << num_qubits << ")\n";
+
+    Tableau t(num_qubits);
+    aligned_bits256 data(1 << 30);
+    PauliStringPtr p1_ptr = t.x_obs_ptr(0);
+    PauliStringPtr p2_ptr = t.x_obs_ptr(5);
+    auto f = PerfResult::time([&](){
+        p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
+    });
+    std::cerr << f;
+    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliMuls/s)";
+    std::cerr << "\n";
+}
+
 void time_pauli_swap(size_t num_qubits) {
     std::cerr << "pauli swaps(n=" << num_qubits << ")\n";
 

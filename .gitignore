@@ -10,3 +10,5 @@ googletest-download/*
 googletest-src
 cmake_install.cmake
 Makefile
+lib/*
+out/*
