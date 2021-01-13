@@ -204,8 +204,11 @@ PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
 
 uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStringPtr& rhs) noexcept {
     assert(size == rhs.size);
-    union {__m256i u256; uint64_t u64[4]; } cnt1 {};
-    union {__m256i u256; uint64_t u64[4]; } cnt2 {};
+
+    // Accumulator registers for counting mod 4 in parallel across each bit position.
+    __m256i cnt1 {};
+    __m256i cnt2 {};
+
     auto x256 = (__m256i *)_x;
     auto z256 = (__m256i *)_z;
     auto ox256 = (__m256i *)rhs._x;
@@ -222,14 +225,11 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
         *x256 = x1 ^ x2;
         *z256 = z1 ^ z2;
 
+        // At each bit position: accumulate anti-commutation (+i or -i) counts.
         auto x1z2 = x1 & z2;
-        // At each bit position: do the Paulis anti-commute?
-        auto a = (x2 & z1) ^ x1z2;
-        // At each bit position: would anti-commuting Paulis produce a -i instead of a +i?
-        auto b = *x256 ^ *z256 ^ x1z2;
-        // At each bit position: `count += forward - backward` where `backward=b`, `forward=a^b`, `count=cnt1 + 2*cnt2`.
-        cnt2.u256 ^= (cnt1.u256 ^ b) & a;
-        cnt1.u256 ^= a;
+        auto anti_commutes = (x2 & z1) ^x1z2;
+        cnt2 ^= (cnt1 ^ *x256 ^ *z256 ^ x1z2) & anti_commutes;
+        cnt1 ^= anti_commutes;
 
         // Move along.
         x256++;
@@ -241,8 +241,8 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
     // Combine final anti-commutation phase tally (mod 4).
     uint8_t s = 0;
     for (size_t k = 0; k < 4; k++) {
-        s += (uint8_t) std::popcount(cnt1.u64[k]);
-        s ^= (uint8_t) std::popcount(cnt2.u64[k]) << 1;
+        s += (uint8_t) std::popcount(((uint64_t *)&cnt1)[k]);
+        s ^= (uint8_t) std::popcount(((uint64_t *)&cnt2)[k]) << 1;
     }
     s ^= (uint8_t)rhs.bit_ptr_sign.get() << 1;
     return s & 3;

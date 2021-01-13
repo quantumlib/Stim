@@ -9,6 +9,7 @@
 #include "pauli_string.h"
 #include "perf.h"
 #include "simd_util.h"
+#include <cstring>
 
 void run_surface_code_sim(size_t distance, bool progress = false) {
     size_t diam = distance * 2 - 1;
@@ -130,6 +131,19 @@ void time_pauli_multiplication(size_t num_qubits) {
     std::cerr << "\n";
 }
 
+void time_memcpy(size_t bits) {
+    std::cerr << "memcpy (bits=" << bits << ")\n";
+
+    auto d1 = aligned_bits256::random(bits);
+    auto d2 = aligned_bits256::random(bits);
+    auto f = PerfResult::time([&](){
+        memcpy(d1.u64, d2.u64, bits >> 3);
+    });
+    std::cerr << f;
+    std::cerr << " (" << f.rate() * bits / 1000 / 1000 / 1000 << " Gigabits/s)";
+    std::cerr << "\n";
+}
+
 void time_tableau_pauli_multiplication(size_t num_qubits) {
     std::cerr << "tableau pauli multiplication(n=" << num_qubits << ")\n";
 
@@ -167,9 +181,14 @@ void time_pauli_swap(size_t num_qubits) {
 
 int main() {
 //    time_transpose_blockwise(100);
-//    time_pauli_multiplication(100000);
+    time_pauli_multiplication(100000);
+    time_pauli_multiplication(1000000);
+    time_pauli_multiplication(10000000);
+    time_memcpy(100000);
+    time_memcpy(1000000);
+    time_memcpy(10000000);
 //    time_tableau_pauli_multiplication(10000);
-//    time_clifford_sim(61);
 //    time_pauli_swap(100000);
-    ChpSim::simulate(stdin, stdout);
+//    time_clifford_sim(61);
+//    ChpSim::simulate(stdin, stdout);
 }
