@@ -272,7 +272,7 @@ struct TempBlockTransposedTableauRaii {
     void append_X(size_t q);
     void append_SWAP(size_t q1, size_t q2);
 private:
-    void bitty_transpose();
+    void do_transpose();
 };
 
 #endif

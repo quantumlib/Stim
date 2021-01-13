@@ -72,10 +72,37 @@ void mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk(uint64_t *matrix256x25
     }
 }
 
+/// Permutes a bit-packed matrix block to swap a column address bit for a row address bit.
+///
+/// Args:
+///    h: Must be a power of two. The weight of the address bit to swap.
+///    matrix: Pointer into the matrix bit data.
+///    row_stride_256: The distance (in 256 bit words) between rows of the matrix.
+///    mask: Precomputed bit pattern for h. The pattern should be
+///        0b...11110000111100001111 where you alternate between 1 and 0 every
+///        h'th bit.
+template <uint8_t h>
+void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m256i mask) noexcept {
+    auto u256 = (__m256i *) matrix;
+    for (size_t col = 0; col < 256; col += h << 1) {
+        for (size_t row = col; row < col + h; row++) {
+            auto &a = u256[row * row_stride_256];
+            auto &b = u256[(row + h) * row_stride_256];
+            auto a1 = _mm256_andnot_si256(mask, a);
+            auto b0 = _mm256_and_si256(mask, b);
+            a = _mm256_and_si256(mask, a);
+            b = _mm256_andnot_si256(mask, b);
+            a = _mm256_or_si256(a, _mm256_slli_epi64(b0, h));
+            b = _mm256_or_si256(_mm256_srli_epi64(a1, h), b);
+        }
+    }
+}
+
 size_t ceil256(size_t n);
 
 bool any_non_zero(const __m256i *data, size_t words256);
 
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
+void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept;
 
 #endif

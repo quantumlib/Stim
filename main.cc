@@ -110,6 +110,18 @@ void time_transpose_blockwise(size_t blocks) {
     std::cerr << "\n";
 }
 
+void time_transpose_tableau(size_t num_qubits) {
+    std::cerr << "transpose_tableau(num_qubits=" << num_qubits << "; ";
+
+    Tableau tableau(num_qubits);
+    std::cerr << (tableau.data_x2x_z2x_x2z_z2z.num_bits / 8 / 1024 / 1024) << "MiB)\n";
+    auto f = PerfResult::time([&](){
+        TempBlockTransposedTableauRaii temp(tableau);
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
 void time_pauli_multiplication(size_t num_qubits) {
     std::cerr << "pauli multiplication(n=" << num_qubits << ")\n";
 
@@ -181,6 +193,7 @@ void time_pauli_swap(size_t num_qubits) {
 
 int main() {
 //    time_transpose_blockwise(100);
+//    time_transpose_tableau(20000);
 //    time_pauli_multiplication(100000);
 //    time_pauli_multiplication(1000000);
 //    time_pauli_multiplication(10000000);

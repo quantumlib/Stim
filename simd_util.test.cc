@@ -2,6 +2,16 @@
 #include "simd_util.h"
 #include "aligned_bits256.h"
 
+aligned_bits256 reference_transpose_of(size_t bit_width, const aligned_bits256 &data) {
+    auto expected = aligned_bits256(ceil256(bit_width) * ceil256(bit_width));
+    for (size_t i = 0; i < bit_width; i++) {
+        for (size_t j = 0; j < bit_width; j++) {
+            expected.set_bit(i*bit_width + j, data.get_bit(j*bit_width + i));
+        }
+    }
+    return expected;
+}
+
 TEST(simd_util, hex) {
     ASSERT_EQ(
             hex(_mm256_set1_epi8(1)),
@@ -66,12 +76,13 @@ TEST(simd_util, block_transpose_bit_matrix) {
     ASSERT_EQ(data, expected);
 }
 
-uint8_t determine_permutation_bit(const std::function<void(uint64_t *)> &func, uint8_t bit) {
-    auto data = aligned_bits256(256 * 256);
+template <size_t w>
+uint8_t determine_permutation_bit(const std::function<void(aligned_bits256 &)> &func, uint8_t bit) {
+    auto data = aligned_bits256(1 << w);
     data.set_bit(1 << bit, true);
-    func(data.u64);
+    func(data);
     uint32_t seen = 0;
-    for (size_t k = 0; k < 1 << 16; k++) {
+    for (size_t k = 0; k < 1 << w; k++) {
         if (data.get_bit(k)) {
             seen++;
         }
@@ -79,7 +90,7 @@ uint8_t determine_permutation_bit(const std::function<void(uint64_t *)> &func, u
     if (seen != 1) {
         throw std::runtime_error("Not a permutation.");
     }
-    for (uint8_t k = 0; k < 16; k++) {
+    for (uint8_t k = 0; k < w; k++) {
         if (data.get_bit(1 << k)) {
             return k;
         }
@@ -87,28 +98,29 @@ uint8_t determine_permutation_bit(const std::function<void(uint64_t *)> &func, u
     throw std::runtime_error("Not a permutation.");
 }
 
-bool mat256_function_performs_address_bit_permutation(
-        const std::function<void(uint64_t *)> &func,
+template <size_t w>
+bool function_performs_address_bit_permutation(
+        const std::function<void(aligned_bits256 &)> &func,
         const std::vector<uint8_t> &bit_permutation) {
-    size_t area = 256 * 256;
+    size_t area = 1 << w;
     auto data = aligned_bits256::random(area);
     auto expected = aligned_bits256(area);
 
     for (size_t k_in = 0; k_in < area; k_in++) {
         size_t k_out = 0;
-        for (size_t j = 0; j < 16; j++) {
-            if ((k_in >> j) & 1) {
-                k_out ^= 1 << bit_permutation[j];
+        for (size_t bit = 0; bit < w; bit++) {
+            if ((k_in >> bit) & 1) {
+                k_out ^= 1 << bit_permutation[bit];
             }
         }
         expected.set_bit(k_out, data.get_bit(k_in));
     }
-    func(data.u64);
+    func(data);
     bool result = data == expected;
     if (!result) {
         std::cerr << "actual permutation:";
-        for (uint8_t k = 0; k < 16; k++) {
-            std::cerr << " " << (uint32_t)determine_permutation_bit(func, k);
+        for (uint8_t k = 0; k < w; k++) {
+            std::cerr << " " << (uint32_t)determine_permutation_bit<w>(func, k) << ",";
         }
         std::cerr << "\n";
     }
@@ -117,59 +129,101 @@ bool mat256_function_performs_address_bit_permutation(
 
 
 TEST(simd_util, address_permutation) {
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            [](uint64_t *d){ mat256_permute_address_swap_ck_rk<1>(d, _mm256_set1_epi8(0x55)); },
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_swap_ck_rk<1>(d.u64, _mm256_set1_epi8(0x55)); },
             {
                     8, 1, 2, 3, 4, 5, 6, 7,
                     0, 9, 10, 11, 12, 13, 14, 15
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-        [](uint64_t *d){ mat256_permute_address_swap_ck_rk<2>(d, _mm256_set1_epi8(0x33)); },
-        {
-            0, 9, 2, 3, 4, 5, 6, 7,
-            8, 1, 10, 11, 12, 13, 14, 15
-        }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            [](uint64_t *d){ mat256_permute_address_swap_ck_rk<4>(d, _mm256_set1_epi8(0xF)); },
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_swap_ck_rk<2>(d.u64, _mm256_set1_epi8(0x33)); },
+            {
+                    0, 9, 2, 3, 4, 5, 6, 7,
+                    8, 1, 10, 11, 12, 13, 14, 15
+            }));
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_swap_ck_rk<4>(d.u64, _mm256_set1_epi8(0xF)); },
             {
                     0, 1, 10, 3, 4, 5, 6, 7,
                     8, 9, 2, 11, 12, 13, 14, 15
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<1>,
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<1>(d.u64); },
             {
                     0, 1, 2, 4, 5, 6, 8, 7,
                     3, 9, 10, 11, 12, 13, 14, 15
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<2>,
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<2>(d.u64); },
             {
                     0, 1, 2, 4, 5, 6, 9, 7,
                     8, 3, 10, 11, 12, 13, 14, 15
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<4>,
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<4>(d.u64); },
             {
                     0, 1, 2, 4, 5, 6, 10, 7,
                     8, 9, 3, 11, 12, 13, 14, 15
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<8>,
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk<8>(d.u64); },
             {
                     0, 1, 2, 4, 5, 6, 11, 7,
                     8, 9, 10, 3, 12, 13, 14, 15
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            mat256_permute_address_swap_c7_r7,
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat256_permute_address_swap_c7_r7(d.u64); },
             {
                     0, 1, 2, 3, 4, 5, 6, 15,
                     8, 9, 10, 11, 12, 13, 14, 7
             }));
-    ASSERT_TRUE(mat256_function_performs_address_bit_permutation(
-            transpose_bit_block_256x256,
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { transpose_bit_block_256x256(d.u64); },
             {
                     8, 9, 10, 11, 12, 13, 14, 15,
                     0, 1, 2, 3, 4, 5, 6, 7,
+            }));
+
+    ASSERT_TRUE(function_performs_address_bit_permutation<16>(
+            [](aligned_bits256 &d) { mat_permute_address_swap_ck_rs<1>(d.u64, 1, _mm256_set1_epi8(0x55)); },
+            {
+                    8, 1, 2, 3, 4, 5, 6, 7,
+                    0, 9, 10, 11, 12, 13, 14, 15,
+            }));
+    ASSERT_TRUE(function_performs_address_bit_permutation<20>(
+            [](aligned_bits256 &d) { d = reference_transpose_of(1024, d); },
+            {
+                    10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            }));
+    ASSERT_TRUE(function_performs_address_bit_permutation<20>(
+            [](aligned_bits256 &d) {
+                for (size_t col = 0; col < 1024; col += 256) {
+                    for (size_t row = 0; row < 1024; row += 256) {
+                        mat_permute_address_swap_ck_rs<1>(
+                                d.u64 + ((col + row * 1024) >> 6),
+                                4,
+                                _mm256_set1_epi8(0x55));
+                    }
+                }
+            },
+            {
+                    10, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                    0, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            }));
+    ASSERT_TRUE(function_performs_address_bit_permutation<20>(
+            [](aligned_bits256 &d) {
+                for (size_t col = 0; col < 1024; col += 256) {
+                    for (size_t row = 0; row < 1024; row += 256) {
+                        avx_transpose_64x64s_within_256x256(
+                                d.u64 + ((col + row * 1024) >> 6),
+                                4);
+                    }
+                }
+            },
+            {
+                    10, 11, 12, 13, 14, 15, 6, 7, 8, 9,
+                    0, 1, 2, 3, 4, 5, 16, 17, 18, 19,
             }));
 }
 
@@ -198,16 +252,6 @@ TEST(simd_util, any_non_zero) {
     d.set_bit(255, true);
     ASSERT_TRUE(any_non_zero(d.u256, 1));
     ASSERT_TRUE(any_non_zero(d.u256, 2));
-}
-
-aligned_bits256 reference_transpose_of(size_t bit_width, const aligned_bits256 &data) {
-    auto expected = aligned_bits256(data.num_bits);
-    for (size_t i = 0; i < bit_width; i++) {
-        for (size_t j = 0; j < bit_width; j++) {
-            expected.set_bit(i*bit_width + j, data.get_bit(j*bit_width + i));
-        }
-    }
-    return expected;
 }
 
 TEST(simd_util, transpose_bit_matrix) {

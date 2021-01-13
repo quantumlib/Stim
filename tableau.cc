@@ -6,6 +6,7 @@
 #include "bit_mat.h"
 #include <cmath>
 #include <cstring>
+#include <thread>
 
 #define X2X_QUAD 0
 #define Z2X_QUAD 1
@@ -27,20 +28,30 @@ size_t bit_address(
 }
 
 TempBlockTransposedTableauRaii::TempBlockTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
-    bitty_transpose();
+    do_transpose();
 }
 
 TempBlockTransposedTableauRaii::~TempBlockTransposedTableauRaii() {
-    bitty_transpose();
+    do_transpose();
 }
 
-void TempBlockTransposedTableauRaii::bitty_transpose() {
+void TempBlockTransposedTableauRaii::do_transpose() {
     size_t n = ceil256(tableau.num_qubits);
     size_t m = (n * n) >> 6;
-    transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64, n);
-    transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m, n);
-    transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 2, n);
-    transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 3, n);
+    if (n >= 1024) {
+        std::thread t1([&]() { transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64, n); });
+        std::thread t2([&]() { transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m, n); });
+        std::thread t3([&]() { transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 2, n); });
+        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 3, n);
+        t1.join();
+        t2.join();
+        t3.join();
+    } else {
+        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64, n);
+        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m, n);
+        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 2, n);
+        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 3, n);
+    }
 }
 
 TransposedPauliStringPtr TempBlockTransposedTableauRaii::transposed_double_col_obs_ptr(size_t qubit) const {

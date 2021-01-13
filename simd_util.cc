@@ -119,32 +119,6 @@ bool any_non_zero(const __m256i *data, size_t words256) {
     return false;
 }
 
-/// Permutes a bit-packed matrix block to swap a column address bit for a row address bit.
-///
-/// Args:
-///    h: Must be a power of two. The weight of the address bit to swap.
-///    matrix: Pointer into the matrix bit data.
-///    row_stride_256: The distance (in 256 bit words) between rows of the matrix.
-///    mask: Precomputed bit pattern for h. The pattern should be
-///        0b...11110000111100001111 where you alternate between 1 and 0 every
-///        h'th bit.
-template <uint8_t h>
-void avx_transpose_pass(uint64_t *matrix, size_t row_stride_256, __m256i mask) noexcept {
-    auto u256 = (__m256i *) matrix;
-    for (size_t col = 0; col < 256; col += h << 1) {
-        for (size_t row = col; row < col + h; row++) {
-            auto &a = u256[row * row_stride_256];
-            auto &b = u256[(row + h) * row_stride_256];
-            auto a1 = _mm256_andnot_si256(mask, a);
-            auto b0 = _mm256_and_si256(mask, b);
-            a = _mm256_and_si256(mask, a);
-            b = _mm256_andnot_si256(mask, b);
-            a = _mm256_or_si256(a, _mm256_slli_epi64(b0, h));
-            b = _mm256_or_si256(_mm256_srli_epi64(a1, h), b);
-        }
-    }
-}
-
 /// Transposes within the 64x64 bit blocks of a 256x256 block subset of a boolean matrix.
 ///
 /// For example, if we were transposing 2x2 blocks inside a 4x4 matrix, the order would go from:
@@ -167,12 +141,12 @@ void avx_transpose_pass(uint64_t *matrix, size_t row_stride_256, __m256i mask) n
 ///     matrix: Pointer to the matrix data to transpose.
 ///     row_stride_256: Distance, in 256 bit words, between matrix rows.
 void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept {
-    avx_transpose_pass<1>(matrix, row_stride_256, _mm256_set1_epi8(0x55));
-    avx_transpose_pass<2>(matrix, row_stride_256, _mm256_set1_epi8(0x33));
-    avx_transpose_pass<4>(matrix, row_stride_256, _mm256_set1_epi8(0xF));
-    avx_transpose_pass<8>(matrix, row_stride_256, _mm256_set1_epi16(0xFF));
-    avx_transpose_pass<16>(matrix, row_stride_256, _mm256_set1_epi32(0xFFFF));
-    avx_transpose_pass<32>(matrix, row_stride_256, _mm256_set1_epi64x(0xFFFFFFFF));
+    mat_permute_address_swap_ck_rs<1>(matrix, row_stride_256, _mm256_set1_epi8(0x55));
+    mat_permute_address_swap_ck_rs<2>(matrix, row_stride_256, _mm256_set1_epi8(0x33));
+    mat_permute_address_swap_ck_rs<4>(matrix, row_stride_256, _mm256_set1_epi8(0xF));
+    mat_permute_address_swap_ck_rs<8>(matrix, row_stride_256, _mm256_set1_epi16(0xFF));
+    mat_permute_address_swap_ck_rs<16>(matrix, row_stride_256, _mm256_set1_epi32(0xFFFF));
+    mat_permute_address_swap_ck_rs<32>(matrix, row_stride_256, _mm256_set1_epi64x(0xFFFFFFFF));
 }
 
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
