@@ -66,6 +66,14 @@ struct PauliStringPtr {
     void set_z_bit(size_t k, bool b);
     void toggle_x_bit(size_t k);
     void toggle_z_bit(size_t k);
+
+    void unsigned_conjugate_by_H(size_t q);
+    void unsigned_conjugate_by_H_XY(size_t q);
+    void unsigned_conjugate_by_H_YZ(size_t q);
+    void unsigned_conjugate_by_CX(size_t control, size_t target);
+    void unsigned_conjugate_by_CY(size_t control, size_t target);
+    void unsigned_conjugate_by_CZ(size_t control, size_t target);
+    void unsigned_conjugate_by_SWAP(size_t q1, size_t q2);
 };
 
 struct PauliStringVal {
@@ -76,6 +84,7 @@ struct PauliStringVal {
     explicit PauliStringVal(size_t size);
     PauliStringVal(const PauliStringPtr &other); // NOLINT(google-explicit-constructor)
     PauliStringVal& operator=(const PauliStringPtr &other) noexcept;
+    static PauliStringVal random(size_t num_qubits);
 
     bool operator==(const PauliStringPtr &other) const;
     bool operator!=(const PauliStringPtr &other) const;

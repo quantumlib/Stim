@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "pauli_string.h"
+#include "tableau.h"
 
 TEST(pauli_string, str) {
     auto p1 = PauliStringVal::from_str("+IXYZ");
@@ -229,4 +230,58 @@ TEST(pauli_string, commutes) {
     ASSERT_EQ(qb.ptr().commutes(qb.ptr()), true);
     ASSERT_EQ(qa.ptr().commutes(qb.ptr()), false);
     ASSERT_EQ(qb.ptr().commutes(qa.ptr()), false);
+}
+
+bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t)> func, std::string op_name) {
+    for (size_t k = 0; k < 10; k++) {
+        auto val = PauliStringVal::random(500);
+        auto val2 = val;
+        auto p1 = val.ptr();
+        auto p2 = val2.ptr();
+        func(p1, 10);
+        GATE_TABLEAUS.at(op_name).apply_within(p2, {10});
+        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
+        if (p1 != p2) {
+            return false;
+        }
+        func(p1, 301);
+        GATE_TABLEAUS.at(op_name).apply_within(p2, {301});
+        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
+        if (p1 != p2) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t, size_t)> func, std::string op_name) {
+    for (size_t k = 0; k < 10; k++) {
+        auto val = PauliStringVal::random(500);
+        auto val2 = val;
+        auto p1 = val.ptr();
+        auto p2 = val2.ptr();
+        func(p1, 10, 400);
+        GATE_TABLEAUS.at(op_name).apply_within(p2, {10, 400});
+        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
+        if (p1 != p2) {
+            return false;
+        }
+        func(p1, 301, 0);
+        GATE_TABLEAUS.at(op_name).apply_within(p2, {301, 0});
+        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
+        if (p1 != p2) {
+            return false;
+        }
+    }
+    return true;
+}
+
+TEST(PauliStringPtr, unsigned_consistency) {
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H, "H"));
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H_XY, "H_XY"));
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H_YZ, "H_YZ"));
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_CX, "CX"));
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_CY, "CY"));
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_CZ, "CZ"));
+    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_SWAP, "SWAP"));
 }

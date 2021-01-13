@@ -248,6 +248,14 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
     return s & 3;
 }
 
+PauliStringVal PauliStringVal::random(size_t num_qubits) {
+    auto result = PauliStringVal(num_qubits);
+    result.x_data = std::move(aligned_bits256::random(num_qubits));
+    result.z_data = std::move(aligned_bits256::random(num_qubits));
+    result.val_sign ^= aligned_bits256::random(1).get_bit(0);
+    return result;
+}
+
 bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
     assert(size == other.size);
     union {__m256i u256; uint64_t u64[4]; } cnt1 {};
@@ -332,4 +340,58 @@ bool PauliStringVal::operator==(const PauliStringPtr &other) const {
 }
 bool PauliStringVal::operator!=(const PauliStringPtr &other) const {
     return ptr() != other;
+}
+
+void PauliStringPtr::unsigned_conjugate_by_H(size_t q) {
+    bool x = get_x_bit(q);
+    bool z = get_z_bit(q);
+    set_x_bit(q, z);
+    set_z_bit(q, x);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_H_XY(size_t q) {
+    set_z_bit(q, get_x_bit(q) ^ get_z_bit(q));
+}
+
+void PauliStringPtr::unsigned_conjugate_by_H_YZ(size_t q) {
+    set_x_bit(q, get_x_bit(q) ^ get_z_bit(q));
+}
+
+void PauliStringPtr::unsigned_conjugate_by_CX(size_t control, size_t target) {
+    bool cx = get_x_bit(control);
+    bool cz = get_z_bit(control);
+    bool tx = get_x_bit(target);
+    bool tz = get_z_bit(target);
+    set_x_bit(target, tx ^ cx);
+    set_z_bit(control, tz ^ cz);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_CY(size_t control, size_t target) {
+    bool cx = get_x_bit(control);
+    bool cz = get_z_bit(control);
+    bool tx = get_x_bit(target);
+    bool tz = get_z_bit(target);
+    set_z_bit(control, cz ^ tz ^ tx);
+    set_x_bit(target, tx ^ cx);
+    set_z_bit(target, tz ^ cx);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_CZ(size_t control, size_t target) {
+    bool cx = get_x_bit(control);
+    bool cz = get_z_bit(control);
+    bool tx = get_x_bit(target);
+    bool tz = get_z_bit(target);
+    set_z_bit(target, tz ^ cx);
+    set_z_bit(control, cz ^ tx);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_SWAP(size_t q1, size_t q2) {
+    bool x1 = get_x_bit(q1);
+    bool z1 = get_z_bit(q1);
+    bool x2 = get_x_bit(q2);
+    bool z2 = get_z_bit(q2);
+    set_x_bit(q1, x2);
+    set_z_bit(q1, z2);
+    set_x_bit(q2, x1);
+    set_z_bit(q2, z1);
 }
