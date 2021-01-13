@@ -201,18 +201,18 @@ struct TransposedPauliStringPairPtr {
 };
 
 struct TransposedPauliStringPtr {
-    __m256i *x1;
-    __m256i *z1;
-    __m256i *s1;
-    __m256i *x2;
-    __m256i *z2;
-    __m256i *s2;
+    __m256i *x2x;
+    __m256i *x2z;
+    __m256i *x_sign;
+    __m256i *z2x;
+    __m256i *z2z;
+    __m256i *z_sign;
 
     TransposedPauliStringPairPtr get(bool k) {
         if (k == 0) {
-            return {x1, z1, s1};
+            return {x2x, x2z, x_sign};
         } else {
-            return {x2, z2, s2};
+            return {z2x, z2z, z_sign};
         }
     }
 };

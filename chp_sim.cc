@@ -10,30 +10,14 @@ bool ChpSim::is_deterministic(size_t target) const {
 }
 
 std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float bias) {
-    std::vector<bool> finished(targets.size(), false);
+    // Force all measurements to become deterministic.
+    collapse_many<uint16_t>(targets, bias);
+
+    // Report deterministic measurement results.
     std::vector<bool> results(targets.size(), false);
-
-    // Note deterministic measurements.
-    bool any_random = false;
-    for (size_t k = 0; k < targets.size(); k++) {
-        if (is_deterministic(targets[k])) {
-            finished[k] = true;
-            results[k] = inv_state.z_sign(targets[k]);
-        } else {
-            any_random = true;
-        }
+    for (size_t t = 0; t < targets.size(); t++) {
+        results[t] = inv_state.z_sign(targets[t]);
     }
-
-    // Handle remaining random measurements.
-    if (any_random) {
-        TempBlockTransposedTableauRaii temp_transposed(inv_state);
-        for (size_t k = 0; k < targets.size(); k++) {
-            if (!finished[k]) {
-                results[k] = measure_while_block_transposed(temp_transposed, targets[k], bias);
-            }
-        }
-    }
-
     return results;
 }
 
@@ -53,46 +37,7 @@ void ChpSim::reset(size_t target) {
 }
 
 bool ChpSim::measure(size_t target, float bias) {
-    if (is_deterministic(target)) {
-        return inv_state.z_sign(target);
-    } else {
-        TempBlockTransposedTableauRaii temp_transposed(inv_state);
-        return measure_while_block_transposed(temp_transposed, target, bias);
-    }
-}
-
-bool ChpSim::measure_while_block_transposed(TempBlockTransposedTableauRaii &block_transposed, size_t target, float bias) {
-    size_t n = block_transposed.tableau.num_qubits;
-    size_t pivot = 0;
-    while (pivot < n && !block_transposed.z_obs_x_bit(target, pivot)) {
-        pivot++;
-    }
-    if (pivot == n) {
-        // Deterministic result.
-        return block_transposed.z_sign(target);
-    }
-
-    // Isolate to a single qubit.
-    for (size_t victim = pivot + 1; victim < n; victim++) {
-        bool x = block_transposed.z_obs_x_bit(target, victim);
-        if (x) {
-            block_transposed.append_CX(pivot, victim);
-        }
-    }
-
-    // Collapse the state.
-    if (block_transposed.z_obs_z_bit(target, pivot)) {
-        block_transposed.append_H_YZ(pivot);
-    } else {
-        block_transposed.append_H(pivot);
-    }
-
-    auto coin_flip = std::bernoulli_distribution(bias)(rng);
-    if (block_transposed.z_sign(target) != coin_flip) {
-        block_transposed.append_X(pivot);
-    }
-
-    return coin_flip;
+    return measure_many({target}, bias)[0];
 }
 
 void ChpSim::H(size_t q) {

@@ -127,20 +127,20 @@ void time_pauli_multiplication(size_t num_qubits) {
         p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
     });
     std::cerr << f;
-    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliMuls/s)";
+    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPaulis/s)";
     std::cerr << "\n";
 }
 
 void time_memcpy(size_t bits) {
     std::cerr << "memcpy (bits=" << bits << ")\n";
 
-    auto d1 = aligned_bits256::random(bits);
-    auto d2 = aligned_bits256::random(bits);
+    auto d1 = aligned_bits256::random(bits * 2);
+    auto d2 = aligned_bits256::random(bits * 2);
     auto f = PerfResult::time([&](){
-        memcpy(d1.u64, d2.u64, bits >> 3);
+        memcpy(d1.u64, d2.u64, d1.num_bits >> 3);
     });
     std::cerr << f;
-    std::cerr << " (" << f.rate() * bits / 1000 / 1000 / 1000 << " Gigabits/s)";
+    std::cerr << " (" << f.rate() * bits / 1000 / 1000 / 1000 << " GigaPaulis/s)";
     std::cerr << "\n";
 }
 
@@ -154,7 +154,7 @@ void time_tableau_pauli_multiplication(size_t num_qubits) {
         p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
     });
     std::cerr << f;
-    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliMuls/s)";
+    std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPaulis/s)";
     std::cerr << "\n";
 }
 
@@ -181,14 +181,14 @@ void time_pauli_swap(size_t num_qubits) {
 
 int main() {
 //    time_transpose_blockwise(100);
-    time_pauli_multiplication(100000);
-    time_pauli_multiplication(1000000);
-    time_pauli_multiplication(10000000);
-    time_memcpy(100000);
-    time_memcpy(1000000);
-    time_memcpy(10000000);
+//    time_pauli_multiplication(100000);
+//    time_pauli_multiplication(1000000);
+//    time_pauli_multiplication(10000000);
+//    time_memcpy(100000);
+//    time_memcpy(1000000);
+//    time_memcpy(10000000);
 //    time_tableau_pauli_multiplication(10000);
 //    time_pauli_swap(100000);
-//    time_clifford_sim(61);
-//    ChpSim::simulate(stdin, stdout);
+//    time_clifford_sim(41);
+    ChpSim::simulate(stdin, stdout);
 }
