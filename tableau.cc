@@ -443,6 +443,20 @@ void Tableau::prepend_CZ(size_t control, size_t target) {
     x_obs_ptr(control) *= z_obs_ptr(target);
 }
 
+void Tableau::prepend_ISWAP(size_t q1, size_t q2) {
+    prepend_SWAP(q1, q2);
+    prepend_CZ(q1, q2);
+    prepend_SQRT_Z(q1);
+    prepend_SQRT_Z(q2);
+}
+
+void Tableau::prepend_ISWAP_DAG(size_t q1, size_t q2) {
+    prepend_SWAP(q1, q2);
+    prepend_CZ(q1, q2);
+    prepend_SQRT_Z_DAG(q1);
+    prepend_SQRT_Z_DAG(q2);
+}
+
 void Tableau::prepend_H(const size_t q) {
     auto z = z_obs_ptr(q);
     x_obs_ptr(q).swap_with(z);
@@ -479,6 +493,37 @@ void Tableau::prepend_Y(size_t q) {
 
 void Tableau::prepend_Z(size_t q) {
     x_obs_ptr(q).bit_ptr_sign.toggle();
+}
+
+void Tableau::prepend_XCX(size_t control, size_t target) {
+    z_obs_ptr(target) *= x_obs_ptr(control);
+    z_obs_ptr(control) *= x_obs_ptr(target);
+}
+
+void Tableau::prepend_XCY(size_t control, size_t target) {
+    prepend_H_XY(target);
+    prepend_XCX(control, target);
+    prepend_H_XY(target);
+}
+
+void Tableau::prepend_XCZ(size_t control, size_t target) {
+    prepend_CX(target, control);
+}
+
+void Tableau::prepend_YCX(size_t control, size_t target) {
+    prepend_XCY(target, control);
+}
+
+void Tableau::prepend_YCY(size_t control, size_t target) {
+    prepend_H_YZ(control);
+    prepend_H_YZ(target);
+    prepend_CZ(control, target);
+    prepend_H_YZ(target);
+    prepend_H_YZ(control);
+}
+
+void Tableau::prepend_YCZ(size_t control, size_t target) {
+    prepend_CY(target, control);
 }
 
 PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {
@@ -737,6 +782,8 @@ const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES {
     {"YCX", "YCX"},
     {"YCY", "YCY"},
     {"YCZ", "YCZ"},
+    {"ISWAP", "ISWAP_DAG"},
+    {"ISWAP_DAG", "ISWAP"},
 };
 
 const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
@@ -765,6 +812,8 @@ const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS {
     {"CX", Tableau::gate2("+XX", "+ZI", "+IX", "+ZZ")},
     {"CY", Tableau::gate2("+XY", "+ZI", "+ZX", "+ZZ")},
     {"CZ", Tableau::gate2("+XZ", "+ZI", "+ZX", "+IZ")},
+    {"ISWAP", Tableau::gate2("+ZY", "+IZ", "+YZ", "+ZI")},
+    {"ISWAP_DAG", Tableau::gate2("-ZY", "+IZ", "-YZ", "+ZI")},
     // Controlled interactions in other bases.
     {"XCX", Tableau::gate2("+XI", "+ZX", "+IX", "+XZ")},
     {"XCY", Tableau::gate2("+XI", "+ZY", "+XX", "+XZ")},

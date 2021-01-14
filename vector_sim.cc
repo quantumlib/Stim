@@ -137,6 +137,31 @@ float VectorSim::project(const PauliStringPtr &observable) {
     return mag2;
 }
 
+bool VectorSim::approximate_equals(const VectorSim &other, bool up_to_global_phase) const {
+    if (state.size() != other.state.size()) {
+        return false;
+    }
+    std::complex<float> dot = 0;
+    float mag1 = 0;
+    float mag2 = 0;
+    for (size_t k = 0; k < state.size(); k++) {
+        auto c = state[k];
+        auto c2 = other.state[k];
+        dot += c * std::conj(c2);
+        mag1 += c.real() * c.real() + c.imag() * c.imag();
+        mag2 += c2.real() * c2.real() + c2.imag() * c2.imag();
+    }
+    assert(1 - 1e-4 <= mag1 && mag1 <= 1 + 1e-4);
+    assert(1 - 1e-4 <= mag2 && mag2 <= 1 + 1e-4);
+    float f;
+    if (up_to_global_phase) {
+        f = dot.real() * dot.real() + dot.imag() * dot.imag();
+    } else {
+        f = dot.real();
+    }
+    return 1 - 1e-4 <= f && f <= 1 + 1e-4;
+}
+
 constexpr std::complex<float> i = std::complex<float>(0, 1);
 constexpr std::complex<float> s = 0.7071067811865475244f;
 const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES {
@@ -165,6 +190,8 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
     {"CY", {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}}},
     {"CZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}}},
     {"SWAP", {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}}},
+    {"ISWAP", {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}}},
+    {"ISWAP_DAG", {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}}},
     // Controlled interactions in other bases.
     {"XCX", {{0.5f, 0.5f, 0.5f, -0.5f},
              {0.5f, 0.5f, -0.5f, 0.5f},
@@ -185,28 +212,3 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
              {0.5f, i*0.5f, i*0.5f, 0.5f}}},
     {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
 };
-
-bool VectorSim::approximate_equals(const VectorSim &other, bool up_to_global_phase) const {
-    if (state.size() != other.state.size()) {
-        return false;
-    }
-    std::complex<float> dot = 0;
-    float mag1 = 0;
-    float mag2 = 0;
-    for (size_t k = 0; k < state.size(); k++) {
-        auto c = state[k];
-        auto c2 = other.state[k];
-        dot += c * std::conj(c2);
-        mag1 += c.real() * c.real() + c.imag() * c.imag();
-        mag2 += c2.real() * c2.real() + c2.imag() * c2.imag();
-    }
-    assert(1 - 1e-4 <= mag1 && mag1 <= 1 + 1e-4);
-    assert(1 - 1e-4 <= mag2 && mag2 <= 1 + 1e-4);
-    float f;
-    if (up_to_global_phase) {
-        f = dot.real() * dot.real() + dot.imag() * dot.imag();
-    } else {
-        f = dot.real();
-    }
-    return 1 - 1e-4 <= f && f <= 1 + 1e-4;
-}

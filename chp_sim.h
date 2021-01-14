@@ -44,6 +44,14 @@ struct ChpSim {
     void X(size_t q);
     void Y(size_t q);
     void Z(size_t q);
+    void ISWAP(size_t q1, size_t q2);
+    void ISWAP_DAG(size_t q1, size_t q2);
+    void XCX(size_t control, size_t target);
+    void XCY(size_t control, size_t target);
+    void XCZ(size_t control, size_t target);
+    void YCX(size_t control, size_t target);
+    void YCY(size_t control, size_t target);
+    void YCZ(size_t control, size_t target);
 
     void op(const std::string &name, const std::vector<size_t> &targets);
 

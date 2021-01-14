@@ -98,6 +98,35 @@ void ChpSim::SWAP(size_t q1, size_t q2) {
     inv_state.prepend_SWAP(q1, q2);
 }
 
+void ChpSim::ISWAP(size_t q1, size_t q2) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.prepend_ISWAP_DAG(q1, q2);
+}
+
+void ChpSim::ISWAP_DAG(size_t q1, size_t q2) {
+    // Note: inverted because we're tracking the inverse tableau.
+    inv_state.prepend_ISWAP(q1, q2);
+}
+
+void ChpSim::XCX(size_t q1, size_t q2) {
+    inv_state.prepend_XCX(q1, q2);
+}
+void ChpSim::XCY(size_t q1, size_t q2) {
+    inv_state.prepend_XCY(q1, q2);
+}
+void ChpSim::XCZ(size_t q1, size_t q2) {
+    inv_state.prepend_XCZ(q1, q2);
+}
+void ChpSim::YCX(size_t q1, size_t q2) {
+    inv_state.prepend_YCX(q1, q2);
+}
+void ChpSim::YCY(size_t q1, size_t q2) {
+    inv_state.prepend_YCY(q1, q2);
+}
+void ChpSim::YCZ(size_t q1, size_t q2) {
+    inv_state.prepend_YCZ(q1, q2);
+}
+
 void ChpSim::X(size_t q) {
     inv_state.prepend_X(q);
 }
@@ -111,6 +140,7 @@ void ChpSim::Z(size_t q) {
 }
 
 void ChpSim::op(const std::string &name, const std::vector<size_t> &targets) {
+    // Note: inverted because we're tracking the inverse tableau.
     inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
 }
 
@@ -255,15 +285,17 @@ const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SIN
 
 const std::unordered_map<std::string, std::function<void(ChpSim &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS {
     {"SWAP", &ChpSim::SWAP},
+    {"ISWAP", &ChpSim::ISWAP},
+    {"ISWAP_DAG", &ChpSim::ISWAP_DAG},
     {"CNOT", &ChpSim::CX},
     {"CX", &ChpSim::CX},
     {"CY", &ChpSim::CY},
     {"CZ", &ChpSim::CZ},
     // Controlled interactions in other bases.
-    {"XCX", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("XCX", {q1, q2}); }},
-    {"XCY", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("XCY", {q1, q2}); }},
-    {"XCZ", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("XCZ", {q1, q2}); }},
-    {"YCX", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("YCX", {q1, q2}); }},
-    {"YCY", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("YCY", {q1, q2}); }},
-    {"YCZ", [](ChpSim &sim, size_t q1, size_t q2) { sim.op("YCZ", {q1, q2}); }},
+    {"XCX", &ChpSim::XCX},
+    {"XCY", &ChpSim::XCY},
+    {"XCZ", &ChpSim::XCZ},
+    {"YCX", &ChpSim::YCX},
+    {"YCY", &ChpSim::YCY},
+    {"YCZ", &ChpSim::YCZ},
 };

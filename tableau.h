@@ -191,6 +191,14 @@ struct Tableau {
     void prepend_CX(size_t control, size_t target);
     void prepend_CY(size_t control, size_t target);
     void prepend_CZ(size_t control, size_t target);
+    void prepend_ISWAP(size_t q1, size_t q2);
+    void prepend_ISWAP_DAG(size_t q1, size_t q2);
+    void prepend_XCX(size_t control, size_t target);
+    void prepend_XCY(size_t control, size_t target);
+    void prepend_XCZ(size_t control, size_t target);
+    void prepend_YCX(size_t control, size_t target);
+    void prepend_YCY(size_t control, size_t target);
+    void prepend_YCZ(size_t control, size_t target);
 
     bool z_sign(size_t a) const;
 };
