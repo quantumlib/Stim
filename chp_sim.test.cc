@@ -319,3 +319,46 @@ TEST(ChpSim, to_vector_sim) {
     vec_sim.apply("XCX", 4, 7);
     ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
 }
+
+bool vec_sim_corroborates_measurement_process(const ChpSim &sim, std::vector<size_t> measurement_targets) {
+    ChpSim chp_sim = sim;
+    auto vec_sim = chp_sim.to_vector_sim();
+    auto results = chp_sim.measure_many(measurement_targets);
+    PauliStringVal buf(chp_sim.inv_state.num_qubits);
+    auto p = buf.ptr();
+    for (size_t k = 0; k < measurement_targets.size(); k++) {
+        p.set_z_bit(measurement_targets[k], true);
+        p.bit_ptr_sign.set(results[k]);
+        float f = vec_sim.project(p);
+        if (fabsf(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
+            return false;
+        }
+        p.set_z_bit(measurement_targets[k], false);
+    }
+    return true;
+}
+
+TEST(ChpSim, measurement_vs_vector_sim) {
+    for (size_t k = 0; k < 10; k++) {
+        ChpSim chp_sim(2);
+        chp_sim.inv_state = Tableau::random(2);
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {1}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1}));
+    }
+    for (size_t k = 0; k < 10; k++) {
+        ChpSim chp_sim(4);
+        chp_sim.inv_state = Tableau::random(4);
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {2, 1}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3}));
+    }
+    {
+        ChpSim chp_sim(12);
+        chp_sim.inv_state = Tableau::random(12);
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 10, 11}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {11, 5, 7}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
+    }
+}

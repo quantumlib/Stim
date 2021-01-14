@@ -28,7 +28,7 @@ struct VectorSim {
     /// Helper method for applying the gates in a Pauli string.
     void apply(const PauliStringPtr &gate, size_t qubit_offset);
 
-    void project(const PauliStringPtr &observable);
+    float project(const PauliStringPtr &observable);
 
     bool approximate_equals(const VectorSim &other, bool up_to_global_phase = false) const;
 };

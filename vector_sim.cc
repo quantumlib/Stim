@@ -96,7 +96,7 @@ VectorSim VectorSim::from_stabilizers(const std::vector<PauliStringPtr> stabiliz
     return result;
 }
 
-void VectorSim::project(const PauliStringPtr &observable) {
+float VectorSim::project(const PauliStringPtr &observable) {
     assert(1 << observable.size == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.size; k++) {
@@ -118,22 +118,23 @@ void VectorSim::project(const PauliStringPtr &observable) {
     }
 
     basis_change();
-    float f = 0;
+    float mag2 = 0;
     for (size_t i = 0; i < state.size(); i++) {
         bool reject = observable.bit_ptr_sign.get();
         reject ^= (std::popcount(i & mask) & 1) != 0;
         if (reject) {
             state[i] = 0;
         } else {
-            f += state[i].real()*state[i].real() + state[i].imag()*state[i].imag();
+            mag2 += state[i].real() * state[i].real() + state[i].imag() * state[i].imag();
         }
     }
-    assert(f > 1e-8);
-    f = sqrtf(f);
+    assert(mag2 > 1e-8);
+    auto w = sqrtf(mag2);
     for (size_t i = 0; i < state.size(); i++) {
-        state[i] /= f;
+        state[i] /= w;
     }
     basis_change();
+    return mag2;
 }
 
 constexpr std::complex<float> i = std::complex<float>(0, 1);

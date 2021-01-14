@@ -151,8 +151,10 @@ TEST(vector_sim, project) {
     VectorSim ref(2);
 
     sim.state = {0.5, 0.5, 0.5, 0.5};
-    sim.project(PauliStringVal::from_str("ZI"));
+    ASSERT_NEAR_C(sim.project(PauliStringVal::from_str("ZI")), 0.5);
     ref.state = {sqrtf(0.5), 0, sqrtf(0.5), 0};
+    ASSERT_TRUE(sim.approximate_equals(ref));
+    ASSERT_NEAR_C(sim.project(PauliStringVal::from_str("ZI")), 1);
     ASSERT_TRUE(sim.approximate_equals(ref));
 
     sim.state = {0.5, 0.5, 0.5, 0.5};
