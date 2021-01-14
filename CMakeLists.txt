@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.12)
 project(stim)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
-add_compile_options(-march=native -O3)
-add_link_options(-pthread -O3)
 
 set(SOURCE_FILES_NO_MAIN
         bit_mat.cc
@@ -30,6 +28,8 @@ set(TEST_FILES
         )
 
 add_executable(stim main.cc ${SOURCE_FILES_NO_MAIN})
+target_compile_options(stim PRIVATE -march=native -O3)
+target_link_options(stim PRIVATE -pthread -O3)
 
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
@@ -43,5 +43,8 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
         ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
         EXCLUDE_FROM_ALL)
 add_executable(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+
 target_link_libraries(stim_tests gtest_main)
 add_test(stim_tests stim_tests)
+target_compile_options(stim_tests PRIVATE -march=native)
+target_link_options(stim_tests PRIVATE -pthread)

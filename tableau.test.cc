@@ -10,17 +10,12 @@ static float complex_distance(std::complex<float> a, std::complex<float> b) {
 
 TEST(tableau, identity) {
     auto t = Tableau::identity(4);
-    ASSERT_EQ(t.str(), ""
-                       "Tableau {\n"
-                       "  qubit 0_x: +X___\n"
-                       "  qubit 0_z: +Z___\n"
-                       "  qubit 1_x: +_X__\n"
-                       "  qubit 1_z: +_Z__\n"
-                       "  qubit 2_x: +__X_\n"
-                       "  qubit 2_z: +__Z_\n"
-                       "  qubit 3_x: +___X\n"
-                       "  qubit 3_z: +___Z\n"
-                       "}");
+    ASSERT_EQ(t.str(), "+-xz-xz-xz-xz-\n"
+                       "| ++ ++ ++ ++\n"
+                       "| XZ __ __ __\n"
+                       "| __ XZ __ __\n"
+                       "| __ __ XZ __\n"
+                       "| __ __ __ XZ");
 }
 
 TEST(tableau, gate1) {
@@ -95,11 +90,50 @@ TEST(tableau, big_not_seeing_double) {
 }
 
 TEST(tableau, str) {
+    Tableau t(4);
+    t.prepend_H(0);
+    t.prepend_H(1);
+    t.prepend_SQRT_Z(1);
+    t.prepend_CX(0, 2);
+    t.prepend_CX(1, 3);
+    t.prepend_CX(0, 1);
+    t.prepend_CX(1, 0);
+    ASSERT_EQ(t.inverse().str(),
+            "+-xz-xz-xz-xz-\n"
+            "| ++ +- ++ ++\n"
+            "| Z_ ZY _Z _Z\n"
+            "| ZX _X _Z __\n"
+            "| _X __ XZ __\n"
+            "| __ _X __ XZ");
+    ASSERT_EQ(t.str(),
+            "+-xz-xz-xz-xz-\n"
+            "| -+ ++ ++ ++\n"
+            "| Z_ ZX _X __\n"
+            "| YX _X __ _X\n"
+            "| X_ X_ XZ __\n"
+            "| X_ __ __ XZ");
+
+    ASSERT_EQ(GATE_TABLEAUS.at("X").str(),
+            "+-xz-\n"
+            "| +-\n"
+            "| XZ");
+    ASSERT_EQ(GATE_TABLEAUS.at("S").str(),
+            "+-xz-\n"
+            "| ++\n"
+            "| YZ");
+    ASSERT_EQ(GATE_TABLEAUS.at("S_DAG").str(),
+            "+-xz-\n"
+            "| -+\n"
+            "| YZ");
     ASSERT_EQ(GATE_TABLEAUS.at("H").str(),
-              "Tableau {\n"
-              "  qubit 0_x: +Z\n"
-              "  qubit 0_z: +X\n"
-              "}");
+            "+-xz-\n"
+            "| ++\n"
+            "| ZX");
+    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").str(),
+            "+-xz-xz-\n"
+            "| ++ ++\n"
+            "| XZ _Z\n"
+            "| X_ XZ");
 }
 
 TEST(tableau, gate_tableau_data_vs_unitary_data) {

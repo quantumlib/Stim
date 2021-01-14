@@ -113,14 +113,11 @@ TEST(ChpSim, kickback_vs_stabilizer) {
     sim.H(1);
     sim.H(2);
     ASSERT_EQ(sim.inv_state.str(),
-              "Tableau {\n"
-              "  qubit 0_x: +Z_X\n"
-              "  qubit 0_z: -Y_X\n"
-              "  qubit 1_x: +_ZX\n"
-              "  qubit 1_z: -_YX\n"
-              "  qubit 2_x: +__X\n"
-              "  qubit 2_z: +XXZ\n"
-              "}");
+              "+-xz-xz-xz-\n"
+              "| +- +- ++\n"
+              "| ZY __ _X\n"
+              "| __ ZY _X\n"
+              "| XX XX XZ");
 }
 
 TEST(ChpSim, s_state_distillation_low_depth) {

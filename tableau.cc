@@ -325,12 +325,28 @@ Tableau Tableau::gate2(const char *x1,
 }
 
 std::ostream &operator<<(std::ostream &out, const Tableau &t) {
-    out << "Tableau {\n";
-    for (size_t i = 0; i < t.num_qubits; i++) {
-        out << "  qubit " << i << "_x: " << t.x_obs_ptr(i) << "\n";
-        out << "  qubit " << i << "_z: " << t.z_obs_ptr(i) << "\n";
+    out << "+-";
+    for (size_t k = 0; k < t.num_qubits; k++) {
+        out << 'x';
+        out << 'z';
+        out << '-';
     }
-    out << "}";
+    out << "\n|";
+    for (size_t k = 0; k < t.num_qubits; k++) {
+        out << ' ';
+        out << "+-"[t.x_obs_ptr(k).bit_ptr_sign.get()];
+        out << "+-"[t.z_obs_ptr(k).bit_ptr_sign.get()];
+    }
+    for (size_t q = 0; q < t.num_qubits; q++) {
+        out << "\n|";
+        for (size_t k = 0; k < t.num_qubits; k++) {
+            out << ' ';
+            auto x = t.x_obs_ptr(k);
+            auto z = t.z_obs_ptr(k);
+            out << "_XZY"[x.get_x_bit(q) + 2 * x.get_z_bit(q)];
+            out << "_XZY"[z.get_x_bit(q) + 2 * z.get_z_bit(q)];
+        }
+    }
     return out;
 }
 
