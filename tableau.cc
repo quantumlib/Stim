@@ -39,15 +39,13 @@ void do_transpose(Tableau &tableau) {
     }
 }
 
-TransposedPauliStringPtr TempTransposedTableauRaii::transposed_double_col_obs_ptr(size_t qubit) const {
-    return TransposedPauliStringPtr {
-        &tableau.data_x2x.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
-        &tableau.data_x2z.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
-        tableau.data_sx.u256,
-        &tableau.data_z2x.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
-        &tableau.data_z2z.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
-        tableau.data_sz.u256,
-    };
+TransposedTableauXZ TempTransposedTableauRaii::transposed_xz_ptr(size_t qubit) const {
+    auto x = tableau.x_obs_ptr(qubit);
+    auto z = tableau.z_obs_ptr(qubit);
+    return {{
+        {(__m256i *) x._x, (__m256i *) x._z, tableau.data_sx.u256},
+        {(__m256i *) z._x, (__m256i *) z._z, tableau.data_sz.u256}
+    }};
 }
 
 TempTransposedTableauRaii::TempTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
@@ -59,11 +57,11 @@ TempTransposedTableauRaii::~TempTransposedTableauRaii() {
 }
 
 void TempTransposedTableauRaii::append_CX(size_t control, size_t target) {
-    auto pcs = transposed_double_col_obs_ptr(control);
-    auto pts = transposed_double_col_obs_ptr(target);
+    auto pcs = transposed_xz_ptr(control);
+    auto pts = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.get(k);
-        auto pt = pts.get(k);
+        auto pc = pcs.xz[k];
+        auto pt = pts.xz[k];
         auto s = pc.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {
@@ -108,11 +106,11 @@ void Tableau::expand(size_t new_num_qubits) {
 }
 
 void TempTransposedTableauRaii::append_CY(size_t control, size_t target) {
-    auto pcs = transposed_double_col_obs_ptr(control);
-    auto pts = transposed_double_col_obs_ptr(target);
+    auto pcs = transposed_xz_ptr(control);
+    auto pts = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.get(k);
-        auto pt = pts.get(k);
+        auto pc = pcs.xz[k];
+        auto pt = pts.xz[k];
         auto s = pc.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {
@@ -131,11 +129,11 @@ void TempTransposedTableauRaii::append_CY(size_t control, size_t target) {
 }
 
 void TempTransposedTableauRaii::append_CZ(size_t control, size_t target) {
-    auto pcs = transposed_double_col_obs_ptr(control);
-    auto pts = transposed_double_col_obs_ptr(target);
+    auto pcs = transposed_xz_ptr(control);
+    auto pts = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.get(k);
-        auto pt = pts.get(k);
+        auto pc = pcs.xz[k];
+        auto pt = pts.xz[k];
         auto s = pc.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {
@@ -152,11 +150,11 @@ void TempTransposedTableauRaii::append_CZ(size_t control, size_t target) {
 }
 
 void TempTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
-    auto p1s = transposed_double_col_obs_ptr(q1);
-    auto p2s = transposed_double_col_obs_ptr(q2);
+    auto p1s = transposed_xz_ptr(q1);
+    auto p2s = transposed_xz_ptr(q2);
     for (size_t k = 0; k < 2; k++) {
-        auto p1 = p1s.get(k);
-        auto p2 = p2s.get(k);
+        auto p1 = p1s.xz[k];
+        auto p2 = p2s.xz[k];
         auto end = p1.x + (ceil256(tableau.num_qubits) >> 8);
         while (p1.x != end) {
             std::swap(*p1.x, *p2.x);
@@ -170,9 +168,9 @@ void TempTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
 }
 
 void TempTransposedTableauRaii::append_H_XY(size_t target) {
-    auto ps = transposed_double_col_obs_ptr(target);
+    auto ps = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto p = ps.get(k);
+        auto p = ps.xz[k];
         auto s = p.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {
@@ -186,9 +184,9 @@ void TempTransposedTableauRaii::append_H_XY(size_t target) {
 }
 
 void TempTransposedTableauRaii::append_H_YZ(size_t target) {
-    auto ps = transposed_double_col_obs_ptr(target);
+    auto ps = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto p = ps.get(k);
+        auto p = ps.xz[k];
         auto s = p.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {
@@ -202,9 +200,9 @@ void TempTransposedTableauRaii::append_H_YZ(size_t target) {
 }
 
 void TempTransposedTableauRaii::append_H(size_t target) {
-    auto ps = transposed_double_col_obs_ptr(target);
+    auto ps = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto p = ps.get(k);
+        auto p = ps.xz[k];
         auto s = p.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {
@@ -218,9 +216,9 @@ void TempTransposedTableauRaii::append_H(size_t target) {
 }
 
 void TempTransposedTableauRaii::append_X(size_t target) {
-    auto ps = transposed_double_col_obs_ptr(target);
+    auto ps = transposed_xz_ptr(target);
     for (size_t k = 0; k < 2; k++) {
-        auto p = ps.get(k);
+        auto p = ps.xz[k];
         auto s = p.s;
         auto end = s + (ceil256(tableau.num_qubits) >> 8);
         while (s != end) {

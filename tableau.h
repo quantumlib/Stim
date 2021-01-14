@@ -132,27 +132,14 @@ struct Tableau {
     bool z_sign(size_t a) const;
 };
 
-struct TransposedPauliStringPairPtr {
+struct TransposedPauliStringPtr {
     __m256i *x;
     __m256i *z;
     __m256i *s;
 };
 
-struct TransposedPauliStringPtr {
-    __m256i *x2x;
-    __m256i *x2z;
-    __m256i *x_sign;
-    __m256i *z2x;
-    __m256i *z2z;
-    __m256i *z_sign;
-
-    TransposedPauliStringPairPtr get(bool k) {
-        if (k == 0) {
-            return {x2x, x2z, x_sign};
-        } else {
-            return {z2x, z2z, z_sign};
-        }
-    }
+struct TransposedTableauXZ {
+    TransposedPauliStringPtr xz[2];
 };
 
 size_t bit_address(size_t input_qubit, size_t output_qubit, size_t num_qubits, bool transposed);
@@ -163,27 +150,11 @@ std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
 extern const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES;
 
-/// When this class is constructed, it blockwise transposes the tableau given to it.
-/// The blockwise transpose is undone when this class is deconstructed.
+/// When this class is constructed, it transposes the tableau given to it.
+/// The transpose is undone on deconstruction.
 ///
-/// In particular, given the memory layout that was chosen, appending operations to
-/// the tableau (as opposed to prepending) is more efficient while transposed.
-///
-/// So, for example, in order to perform operations that are more efficient while the
-/// tableau is blockwise transposed, you would isolate them into a code block that
-/// starts by constructing this class. E.g.:
-///
-///     ```
-///     ...
-///     // tableau is not transposed yet.
-///     {
-///         TempTransposedTableauRaii trans(tableau);
-///         // tableau is blockwise transposed until the end of this block.
-///         ... use trans (DO NOT USE tableau DIRECTLY) ...
-///     }
-///     // tableau is no longer transposed.
-///     ...
-///     ```
+/// This is useful when appending operations to the tableau, since otherwise
+/// the append would be working against the grain of memory.
 struct TempTransposedTableauRaii {
     Tableau &tableau;
 
@@ -194,7 +165,7 @@ struct TempTransposedTableauRaii {
     TempTransposedTableauRaii(const TempTransposedTableauRaii &) = delete;
     TempTransposedTableauRaii(TempTransposedTableauRaii &&) = delete;
 
-    TransposedPauliStringPtr transposed_double_col_obs_ptr(size_t qubit) const;
+    TransposedTableauXZ transposed_xz_ptr(size_t qubit) const;
 
     bool z_sign(size_t a) const;
     bool x_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
