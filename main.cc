@@ -202,6 +202,6 @@ int main() {
 //    time_memcpy(10000000);
 //    time_tableau_pauli_multiplication(10000);
 //    time_pauli_swap(100000);
-//    time_clifford_sim(41);
-    ChpSim::simulate(stdin, stdout);
+    time_clifford_sim(41);
+//    ChpSim::simulate(stdin, stdout);
 }

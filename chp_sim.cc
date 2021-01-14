@@ -11,7 +11,7 @@ bool ChpSim::is_deterministic(size_t target) const {
 
 std::vector<bool> ChpSim::measure_many(const std::vector<size_t> &targets, float bias) {
     // Force all measurements to become deterministic.
-    collapse_many<uint16_t>(targets, bias);
+    collapse_many(targets, bias);
 
     // Report deterministic measurement results.
     std::vector<bool> results(targets.size(), false);
@@ -180,6 +180,53 @@ VectorSim ChpSim::to_vector_sim() const {
         stabilizers.push_back(inv.z_obs_ptr(k));
     }
     return VectorSim::from_stabilizers(stabilizers);
+}
+
+void ChpSim::collapse_many(const std::vector<size_t> &targets, float bias) {
+    std::vector<size_t> collapse_targets;
+    collapse_targets.reserve(targets.size());
+    for (auto target : targets) {
+        if (!is_deterministic(target)) {
+            collapse_targets.push_back(target);
+        }
+    }
+    if (collapse_targets.empty()) {
+        return;
+    }
+    std::sort(collapse_targets.begin(), collapse_targets.end());
+
+    auto n = inv_state.num_qubits;
+    TempBlockTransposedTableauRaii temp_transposed(inv_state);
+
+    for (auto target : collapse_targets) {
+        // Find an anti-commuting part of the measurement observable's at the start of time.
+        size_t pivot = 0;
+        while (pivot < n && !temp_transposed.z_obs_x_bit(target, pivot)) {
+            pivot++;
+        }
+        if (pivot == n) {
+            // No anti-commuting part. Already collapsed.
+            continue;
+        }
+
+        // Introduce no-op CNOTs at the start of time to remove all anti-commuting parts except for one.
+        for (size_t k = pivot + 1; k < n; k++) {
+            if (temp_transposed.z_obs_x_bit(target, k)) {
+                temp_transposed.append_CX(pivot, k);
+            }
+        }
+
+        // Collapse the anti-commuting part.
+        if (temp_transposed.z_obs_z_bit(target, pivot)) {
+            temp_transposed.append_H_YZ(pivot);
+        } else {
+            temp_transposed.append_H(pivot);
+        }
+        auto coin_flip = std::bernoulli_distribution(bias)(rng);
+        if (temp_transposed.z_sign(target) != coin_flip) {
+            temp_transposed.append_X(pivot);
+        }
+    }
 }
 
 const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SINGLE_QUBIT_GATE_FUNCS{
