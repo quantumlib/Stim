@@ -191,6 +191,18 @@ void time_pauli_swap(size_t num_qubits) {
     std::cerr << "\n";
 }
 
+void time_cnot(size_t num_qubits) {
+    std::cerr << "cnot(n=" << num_qubits << ")\n";
+
+    ChpSim sim(num_qubits);
+    auto f = PerfResult::time([&](){
+        sim.CX(0, num_qubits - 1);
+    });
+    std::cerr << f;
+    std::cerr << " (" << f.rate() / 1000 / 1000 << " MegaCNOT/s)";
+    std::cerr << "\n";
+}
+
 int main() {
 //    time_transpose_blockwise(100);
 //    time_transpose_tableau(20000);
@@ -203,5 +215,6 @@ int main() {
 //    time_tableau_pauli_multiplication(10000);
 //    time_pauli_swap(100000);
 //    time_clifford_sim(41);
+//    time_cnot(10000);
     ChpSim::simulate(stdin, stdout);
 }
