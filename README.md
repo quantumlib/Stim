@@ -4,11 +4,13 @@ Stim is a fast quantum stabilizer circuit simulator.
 
 Stim uses a stabilizer tableau representation, very similar to [Scott Aaronson's CHP simulator](https://arxiv.org/abs/1601.07601),
 but with two major improvements.
+
 First, the tableau is inverted.
-It indexes how the qubit X and Z observables at the current time map to the start of time (instead of from the start of
-time to the current time).
-This means that the sign of the current-time observables is always known, instead of needing to be translated from the
-past on demand, so that deterministic measurements can be resolved in linear time instead of quadratic time.
+The tableau indexes how each qubit's X and Z observables at the current time map to compound observables at the start of time
+(instead of mapping from the start of time to the current time).
+This is done so that the sign of the current-time observables is always known.
+As a result, deterministic measurements can be resolved in linear time instead of quadratic time.
+
 Second, the tableau is operated on using 256-bit-wide SIMD instructions.
 This makes basic building block operations extremely fast.
 For example, applying a CNOT operation to a ten thousand qubit tableau takes less than a microsecond.
