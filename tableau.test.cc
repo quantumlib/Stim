@@ -28,7 +28,7 @@ TEST(tableau, gate1) {
 bool tableau_agrees_with_unitary(const Tableau &tableau,
                                  const std::vector<std::vector<std::complex<float>>> &unitary) {
     auto n = tableau.num_qubits;
-    assert(unitary.size() == 1 << n);
+    assert(unitary.size() == 1ULL << n);
 
     std::vector<PauliStringVal> basis;
     for (size_t x = 0; x < 2; x++) {

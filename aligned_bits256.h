@@ -5,11 +5,11 @@
 #include <immintrin.h>
 
 struct aligned_bits256 {
+    size_t num_bits;
     union {
         uint64_t *u64;
         __m256i *u256;
     };
-    size_t num_bits;
 
     ~aligned_bits256();
     explicit aligned_bits256(size_t num_bits);

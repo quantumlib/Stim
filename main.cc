@@ -82,7 +82,7 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
             assert(sim.is_deterministic(qubit(z)));
         }
         for (const auto &x : xs) {
-            assert(sim.is_deterministic(qubit(x)) == round > 0);
+            assert(sim.is_deterministic(qubit(x)) == (round > 0));
         }
         sim.measure_many(zxqs);
     }

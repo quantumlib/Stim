@@ -36,8 +36,8 @@ aligned_bits256::aligned_bits256(size_t num_bits, const uint64_t *other) :
 }
 
 aligned_bits256::aligned_bits256(aligned_bits256&& other) noexcept :
-        u64(other.u64),
-        num_bits(other.num_bits) {
+        num_bits(other.num_bits),
+        u64(other.u64) {
     other.u64 = nullptr;
     other.num_bits = 0;
 }

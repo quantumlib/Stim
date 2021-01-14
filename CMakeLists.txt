@@ -28,7 +28,7 @@ set(TEST_FILES
         )
 
 add_executable(stim main.cc ${SOURCE_FILES_NO_MAIN})
-target_compile_options(stim PRIVATE -march=native -O3)
+target_compile_options(stim PRIVATE -march=native -O3 -Wall -Wpedantic -Werror)
 target_link_options(stim PRIVATE -pthread -O3)
 
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
@@ -46,5 +46,5 @@ add_executable(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
 
 target_link_libraries(stim_tests gtest_main)
 add_test(stim_tests stim_tests)
-target_compile_options(stim_tests PRIVATE -march=native)
+target_compile_options(stim_tests PRIVATE -march=native -Wall -Wpedantic -Werror)
 target_link_options(stim_tests PRIVATE -pthread)

@@ -97,7 +97,7 @@ VectorSim VectorSim::from_stabilizers(const std::vector<PauliStringPtr> stabiliz
 }
 
 float VectorSim::project(const PauliStringPtr &observable) {
-    assert(1 << observable.size == state.size());
+    assert(1ULL << observable.size == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.size; k++) {
             if (observable.get_x_bit(k)) {

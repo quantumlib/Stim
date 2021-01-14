@@ -56,9 +56,9 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
         for (size_t k = 1; k < tokens.size(); k++) {
             op.targets.push_back(parse_size_t(tokens[k]));
         }
-    } catch (std::out_of_range ex) {
+    } catch (const std::out_of_range &ex) {
         throw std::runtime_error("Bad qubit id in line '" + line + "'.");
-    } catch (std::invalid_argument ex) {
+    } catch (const std::invalid_argument &ex) {
         throw std::runtime_error("Bad qubit id in line '" + line + "'.");
     }
     if (validate_operations) {

@@ -4,7 +4,7 @@
 #include "bit_mat.h"
 #include "simd_util.h"
 
-BitMat::BitMat(size_t n) : data(ceil256(n) * ceil256(n)), n(n) {
+BitMat::BitMat(size_t n) : n(n), data(ceil256(n) * ceil256(n)) {
 }
 
 BitMat BitMat::zero(size_t n) {
