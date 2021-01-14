@@ -2,6 +2,7 @@
 #include <map>
 #include "pauli_string.h"
 #include "vector_sim.h"
+#include <bit>
 
 VectorSim::VectorSim(size_t num_qubits) {
     state.resize(1 << num_qubits, 0.0f);
@@ -79,6 +80,46 @@ void VectorSim::apply(const PauliStringPtr &gate, size_t qubit_offset) {
     }
 }
 
+void VectorSim::project(const PauliStringPtr &observable) {
+    assert(1 << observable.size == state.size());
+    auto basis_change = [&]() {
+        for (size_t k = 0; k < observable.size; k++) {
+            if (observable.get_x_bit(k)) {
+                if (observable.get_z_bit(k)) {
+                    apply("H_YZ", k);
+                } else {
+                    apply("H", k);
+                }
+            }
+        }
+    };
+
+    uint64_t mask = 0;
+    for (size_t k = 0; k < observable.size; k++) {
+        if (observable.get_x_bit(k) | observable.get_z_bit(k)) {
+            mask |= 1 << k;
+        }
+    }
+
+    basis_change();
+    float f = 0;
+    for (size_t i = 0; i < state.size(); i++) {
+        bool reject = observable.bit_ptr_sign.get();
+        reject ^= (std::popcount(i & mask) & 1) != 0;
+        if (reject) {
+            state[i] = 0;
+        } else {
+            f += state[i].real()*state[i].real() + state[i].imag()*state[i].imag();
+        }
+    }
+    assert(f > 1e-8);
+    f = sqrtf(f);
+    for (size_t i = 0; i < state.size(); i++) {
+        state[i] /= f;
+    }
+    basis_change();
+}
+
 constexpr std::complex<float> i = std::complex<float>(0, 1);
 constexpr std::complex<float> s = 0.7071067811865475244f;
 const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES {
@@ -127,3 +168,22 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
              {0.5f, i*0.5f, i*0.5f, 0.5f}}},
     {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
 };
+
+bool VectorSim::approximate_equals(const VectorSim &other) const {
+    if (state.size() != other.state.size()) {
+        return false;
+    }
+    std::complex<float> dot = 0;
+    float mag1 = 0;
+    float mag2 = 0;
+    for (size_t k = 0; k < state.size(); k++) {
+        auto c = state[k];
+        auto c2 = other.state[k];
+        dot += c * std::conj(c2);
+        mag1 += c.real() * c.real() + c.imag() * c.imag();
+        mag2 += c2.real() * c2.real() + c2.imag() * c2.imag();
+    }
+    assert(1 - 1e-6 <= mag1 && mag1 <= 1 + 1e-6);
+    assert(1 - 1e-6 <= mag2 && mag2 <= 1 + 1e-6);
+    return 1 - 1e-6 <= dot.real() && dot.real() <= 1 + 1e-6;
+}

@@ -27,15 +27,7 @@ size_t bit_address(
     return bit_offset + quadrant * m * m;
 }
 
-TempBlockTransposedTableauRaii::TempBlockTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
-    do_transpose();
-}
-
-TempBlockTransposedTableauRaii::~TempBlockTransposedTableauRaii() {
-    do_transpose();
-}
-
-void TempBlockTransposedTableauRaii::do_transpose() {
+void do_transpose(Tableau &tableau) {
     size_t n = ceil256(tableau.num_qubits);
     size_t m = (n * n) >> 6;
     if (n >= 1024) {
@@ -63,6 +55,14 @@ TransposedPauliStringPtr TempBlockTransposedTableauRaii::transposed_double_col_o
         &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, Z2Z_QUAD, true) >> 8],
         tableau.data_sign_x_z.u256 + (ceil256(tableau.num_qubits) >> 8),
     };
+}
+
+TempBlockTransposedTableauRaii::TempBlockTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
+    do_transpose(tableau);
+}
+
+TempBlockTransposedTableauRaii::~TempBlockTransposedTableauRaii() {
+    do_transpose(tableau);
 }
 
 void TempBlockTransposedTableauRaii::append_CX(size_t control, size_t target) {
@@ -680,6 +680,33 @@ bool Tableau::satisfies_invariants() const {
         }
     }
     return true;
+}
+
+Tableau Tableau::inverse() {
+    Tableau inv(num_qubits);
+    auto dn = ceil256(num_qubits);
+    dn *= dn;
+
+    // Transpose data with xx zz swap tweak.
+    memcpy(inv.data_x2x_z2x_x2z_z2z.u256, data_x2x_z2x_x2z_z2z.u256 + 3 * (dn >> 8), dn >> 3);
+    memcpy(inv.data_x2x_z2x_x2z_z2z.u256 + (dn >> 8), data_x2x_z2x_x2z_z2z.u256 + (dn >> 8), 2 * (dn >> 3));
+    memcpy(inv.data_x2x_z2x_x2z_z2z.u256 + 3 * (dn >> 8), data_x2x_z2x_x2z_z2z.u256, dn >> 3);
+    do_transpose(inv);
+
+    // Initialize sign data by fixing round-trip signs.
+    PauliStringVal pauli_buf(num_qubits);
+    auto p = pauli_buf.ptr();
+    for (size_t k = 0; k < num_qubits; k++) {
+        p.set_x_bit(k, true);
+        x_obs_ptr(k).bit_ptr_sign.toggle_if(inv((*this)(p)).val_sign);
+        p.set_x_bit(k, false);
+
+        p.set_z_bit(k, true);
+        z_obs_ptr(k).bit_ptr_sign.toggle_if(inv((*this)(p)).val_sign);
+        p.set_z_bit(k, false);
+    }
+
+    return inv;
 }
 
 const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES {

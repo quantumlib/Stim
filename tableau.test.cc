@@ -590,3 +590,14 @@ TEST(tableau, transposed_access) {
         }
     }
 }
+
+TEST(tableau, inverse) {
+    for (size_t k = 5; k < 20; k += 7) {
+        auto t1 = Tableau::random(k);
+        auto t2 = t1.inverse();
+        ASSERT_TRUE(t2.satisfies_invariants());
+        auto p = PauliStringVal::random(k);
+        ASSERT_EQ(p, t1(t2(p)));
+        ASSERT_EQ(p, t2(t1(p)));
+    }
+}

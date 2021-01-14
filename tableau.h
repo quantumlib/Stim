@@ -109,6 +109,7 @@ struct Tableau {
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
     static Tableau random(size_t num_qubits);
+    Tableau inverse();
 
     bool satisfies_invariants() const;
 
@@ -271,8 +272,6 @@ struct TempBlockTransposedTableauRaii {
     void append_CZ(size_t control, size_t target);
     void append_X(size_t q);
     void append_SWAP(size_t q1, size_t q2);
-private:
-    void do_transpose();
 };
 
 #endif

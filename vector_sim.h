@@ -24,6 +24,10 @@ struct VectorSim {
     void apply(const std::string &gate, size_t qubit1, size_t qubit2);
     /// Helper method for applying the gates in a Pauli string.
     void apply(const PauliStringPtr &gate, size_t qubit_offset);
+
+    void project(const PauliStringPtr &observable);
+
+    bool approximate_equals(const VectorSim &other) const;
 };
 
 /// Unitary matrices for common gates, keyed by name.
