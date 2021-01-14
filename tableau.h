@@ -12,88 +12,17 @@
 /// conjugating that observable by the operation. In other words, it explains how
 /// to transform "input side" Pauli products into "output side" Pauli products.
 ///
-/// The memory layout of this class was carefully chosen in order to make certain
-/// operations amenable to acceleration using AVX instructions. In particular,
-/// rows and columns are interleaved in memory so that transposing the tableau
-/// enough to allow AVX instructions on the columns (instead of the rows) can be
-/// done locally on 256x256 bit blocks.
-///
-/// ------
-///
-/// Layout while not transposed.
-/// Let M = ceil256(num_qubits)
-///
-/// A row starts every bit with a 256*M bit gap every 256'th bit.
-/// Row word-to-word stride is 256*256 bits long.
-/// A column starts every 256 bits.
-/// Column word-to-word stride is M*256*256 bits long.
-///
-/// X-to-X quadrant (size M x M where M = ceil256(qubits))
-///
-///         256*256 bit row stride
-///  *-------------*
-///  ___________   ___________       ___________
-/// |____00_____| |__1_00_____|     |__M-1+00___| *
-/// |____01_____| |__1_01_____|     |__M-1+01___| |
-/// |____02_____| |__1_02_____|     |__M-1+02___| |
-/// |____03_____| |__1_03_____| ... |__M-1+03___| | M*256 bit col stride
-/// |____.______| |____.______|     |____.______| |
-/// |____.______| |____.______|     |____.______| |
-/// |____FF_____| |__1_FF_____|     |__M-1+FF___| |
-///  ___________   ___________       ___________  |
-/// |__M+00_____| |__M+100____|     |_2M-1+00___| *
-/// |__M+01_____| |__M+101____|     |_2M-1+01___|
-/// |__M+02_____| |__M+102____|     |_2M-1+02___|
-/// |__M+03_____| |__M+103____| ... |_2M-1+03___|
-/// |____.______| |____.______|     |____.______|
-/// |____.______| |____.______|     |____.______|
-/// |__M+FF_____| |__M+1FF____|     |_2M-1+FF___|
-/// .
-/// .
-/// .
-/// Z-to-X quadrant
-/// X-to-Z quadrant
-/// Z-to-Z quadrant
-///
-///
-/// Layout while transposed.
-/// Let M = ceil256(num_qubits)
-///
-/// A row starts every bit with a 256*M bit gap every 256'th bit.
-/// Row word-to-word stride is 256*256 bits long.
-/// A column starts every 256 bits.
-/// Column word-to-word stride is M*256*256 bits long.
-///
-/// X-to-X quadrant (size M x M where M = ceil256(qubits))
-///
-///         256*256 bit row stride
-///  *-------------*
-///  __ __ __ __   __ __ __ __       __ __ __ __
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | *
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | |
-/// |  |  |  |  | |1 |1 |  |1 |     |M-|M-|  |M-| |
-/// |00|01|..|FF| |00|01|..|FF| ... |00|01|..|FF| | M*256 bit col stride
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | |
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | |
-/// |__|__|__|__| |__|__|__|__|     |__|__|__|__| |
-///  __ __ __ __   __ __ __ __       __ __ __ __  |
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  | *
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  |
-/// |M |M |  |M | |M+|M+|M+|M+|     |2M|2M|  |2M|
-/// |00|01|..|FF| |00|01|..|FF| ... |00|01|..|FF|
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  |
-/// |  |  |  |  | |  |  |  |  |     |  |  |  |  |
-/// |__|__|__|__| |__|__|__|__|     |__|__|__|__|
-/// .
-/// .
-/// .
-/// Z-to-X quadrant
-/// X-to-Z quadrant
-/// Z-to-Z quadrant
+/// The memory layout used by this class is column major, meaning iterating over
+/// the output observable is iterating along the grain of memory. This makes
+/// prepending operations cheap. To append operations, use TempTransposedTableauRaii.
 struct Tableau {
     size_t num_qubits;
-    aligned_bits256 data_x2x_z2x_x2z_z2z;
-    aligned_bits256 data_sign_x_z;
+    aligned_bits256 data_x2x;
+    aligned_bits256 data_x2z;
+    aligned_bits256 data_z2x;
+    aligned_bits256 data_z2z;
+    aligned_bits256 data_sx;
+    aligned_bits256 data_sz;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
@@ -226,7 +155,7 @@ struct TransposedPauliStringPtr {
     }
 };
 
-size_t bit_address(size_t input_qubit, size_t output_qubit, size_t num_qubits, size_t quadrant, bool transposed);
+size_t bit_address(size_t input_qubit, size_t output_qubit, size_t num_qubits, bool transposed);
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
@@ -248,22 +177,22 @@ extern const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAM
 ///     ...
 ///     // tableau is not transposed yet.
 ///     {
-///         TempBlockTransposedTableauRaii trans(tableau);
+///         TempTransposedTableauRaii trans(tableau);
 ///         // tableau is blockwise transposed until the end of this block.
 ///         ... use trans (DO NOT USE tableau DIRECTLY) ...
 ///     }
 ///     // tableau is no longer transposed.
 ///     ...
 ///     ```
-struct TempBlockTransposedTableauRaii {
+struct TempTransposedTableauRaii {
     Tableau &tableau;
 
-    explicit TempBlockTransposedTableauRaii(Tableau &tableau);
-    ~TempBlockTransposedTableauRaii();
+    explicit TempTransposedTableauRaii(Tableau &tableau);
+    ~TempTransposedTableauRaii();
 
-    TempBlockTransposedTableauRaii() = delete;
-    TempBlockTransposedTableauRaii(const TempBlockTransposedTableauRaii &) = delete;
-    TempBlockTransposedTableauRaii(TempBlockTransposedTableauRaii &&) = delete;
+    TempTransposedTableauRaii() = delete;
+    TempTransposedTableauRaii(const TempTransposedTableauRaii &) = delete;
+    TempTransposedTableauRaii(TempTransposedTableauRaii &&) = delete;
 
     TransposedPauliStringPtr transposed_double_col_obs_ptr(size_t qubit) const;
 

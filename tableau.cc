@@ -8,64 +8,57 @@
 #include <cstring>
 #include <thread>
 
-#define X2X_QUAD 0
-#define Z2X_QUAD 1
-#define X2Z_QUAD 2
-#define Z2Z_QUAD 3
-
 size_t bit_address(
         size_t input_qubit,
         size_t output_qubit,
         size_t num_qubits,
-        size_t quadrant,
         bool transposed) {
     if (transposed) {
         std::swap(input_qubit, output_qubit);
     }
     size_t m = ceil256(num_qubits);
     size_t bit_offset = input_qubit * m + output_qubit;
-    return bit_offset + quadrant * m * m;
+    return bit_offset;
 }
 
 void do_transpose(Tableau &tableau) {
     size_t n = ceil256(tableau.num_qubits);
-    size_t m = (n * n) >> 6;
     if (n >= 1024) {
-        std::thread t1([&]() { transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64, n); });
-        std::thread t2([&]() { transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m, n); });
-        std::thread t3([&]() { transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 2, n); });
-        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 3, n);
+        std::thread t1([&]() { transpose_bit_matrix(tableau.data_x2x.u64, n); });
+        std::thread t2([&]() { transpose_bit_matrix(tableau.data_z2x.u64, n); });
+        std::thread t3([&]() { transpose_bit_matrix(tableau.data_x2z.u64, n); });
+        transpose_bit_matrix(tableau.data_z2z.u64, n);
         t1.join();
         t2.join();
         t3.join();
     } else {
-        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64, n);
-        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m, n);
-        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 2, n);
-        transpose_bit_matrix(tableau.data_x2x_z2x_x2z_z2z.u64 + m * 3, n);
+        transpose_bit_matrix(tableau.data_x2x.u64, n);
+        transpose_bit_matrix(tableau.data_z2x.u64, n);
+        transpose_bit_matrix(tableau.data_x2z.u64, n);
+        transpose_bit_matrix(tableau.data_z2z.u64, n);
     }
 }
 
-TransposedPauliStringPtr TempBlockTransposedTableauRaii::transposed_double_col_obs_ptr(size_t qubit) const {
+TransposedPauliStringPtr TempTransposedTableauRaii::transposed_double_col_obs_ptr(size_t qubit) const {
     return TransposedPauliStringPtr {
-        &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, X2X_QUAD, true) >> 8],
-        &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, X2Z_QUAD, true) >> 8],
-        tableau.data_sign_x_z.u256,
-        &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, Z2X_QUAD, true) >> 8],
-        &tableau.data_x2x_z2x_x2z_z2z.u256[bit_address(0, qubit, tableau.num_qubits, Z2Z_QUAD, true) >> 8],
-        tableau.data_sign_x_z.u256 + (ceil256(tableau.num_qubits) >> 8),
+        &tableau.data_x2x.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
+        &tableau.data_x2z.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
+        tableau.data_sx.u256,
+        &tableau.data_z2x.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
+        &tableau.data_z2z.u256[bit_address(0, qubit, tableau.num_qubits, true) >> 8],
+        tableau.data_sz.u256,
     };
 }
 
-TempBlockTransposedTableauRaii::TempBlockTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
+TempTransposedTableauRaii::TempTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
     do_transpose(tableau);
 }
 
-TempBlockTransposedTableauRaii::~TempBlockTransposedTableauRaii() {
+TempTransposedTableauRaii::~TempTransposedTableauRaii() {
     do_transpose(tableau);
 }
 
-void TempBlockTransposedTableauRaii::append_CX(size_t control, size_t target) {
+void TempTransposedTableauRaii::append_CX(size_t control, size_t target) {
     auto pcs = transposed_double_col_obs_ptr(control);
     auto pts = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
@@ -104,8 +97,8 @@ void Tableau::expand(size_t new_num_qubits) {
     this->~Tableau();
     new(this) Tableau(new_num_qubits);
 
-    memcpy(data_sign_x_z.u256, old_state.data_sign_x_z.u256, m1 >> 3);
-    memcpy(data_sign_x_z.u256 + (m2 >> 8), old_state.data_sign_x_z.u256 + (m1 >> 8), m1 >> 3);
+    memcpy(data_sx.u256, old_state.data_sx.u256, m1 >> 3);
+    memcpy(data_sz.u256, old_state.data_sz.u256, m1 >> 3);
     for (size_t k = 0; k < n1; k++) {
         memcpy(x_obs_ptr(k)._x, old_state.x_obs_ptr(k)._x, m1 >> 3);
         memcpy(x_obs_ptr(k)._z, old_state.x_obs_ptr(k)._z, m1 >> 3);
@@ -114,7 +107,7 @@ void Tableau::expand(size_t new_num_qubits) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_CY(size_t control, size_t target) {
+void TempTransposedTableauRaii::append_CY(size_t control, size_t target) {
     auto pcs = transposed_double_col_obs_ptr(control);
     auto pts = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
@@ -137,7 +130,7 @@ void TempBlockTransposedTableauRaii::append_CY(size_t control, size_t target) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_CZ(size_t control, size_t target) {
+void TempTransposedTableauRaii::append_CZ(size_t control, size_t target) {
     auto pcs = transposed_double_col_obs_ptr(control);
     auto pts = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
@@ -158,7 +151,7 @@ void TempBlockTransposedTableauRaii::append_CZ(size_t control, size_t target) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
+void TempTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
     auto p1s = transposed_double_col_obs_ptr(q1);
     auto p2s = transposed_double_col_obs_ptr(q2);
     for (size_t k = 0; k < 2; k++) {
@@ -176,7 +169,7 @@ void TempBlockTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_H_XY(size_t target) {
+void TempTransposedTableauRaii::append_H_XY(size_t target) {
     auto ps = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
         auto p = ps.get(k);
@@ -192,7 +185,7 @@ void TempBlockTransposedTableauRaii::append_H_XY(size_t target) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_H_YZ(size_t target) {
+void TempTransposedTableauRaii::append_H_YZ(size_t target) {
     auto ps = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
         auto p = ps.get(k);
@@ -208,7 +201,7 @@ void TempBlockTransposedTableauRaii::append_H_YZ(size_t target) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_H(size_t target) {
+void TempTransposedTableauRaii::append_H(size_t target) {
     auto ps = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
         auto p = ps.get(k);
@@ -224,7 +217,7 @@ void TempBlockTransposedTableauRaii::append_H(size_t target) {
     }
 }
 
-void TempBlockTransposedTableauRaii::append_X(size_t target) {
+void TempTransposedTableauRaii::append_X(size_t target) {
     auto ps = transposed_double_col_obs_ptr(target);
     for (size_t k = 0; k < 2; k++) {
         auto p = ps.get(k);
@@ -241,42 +234,42 @@ void TempBlockTransposedTableauRaii::append_X(size_t target) {
 PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
     return PauliStringPtr(
             num_qubits,
-            BitPtr(data_sign_x_z.u64, qubit),
-            &data_x2x_z2x_x2z_z2z.u64[bit_address(qubit, 0, num_qubits, X2X_QUAD, false) >> 6],
-            &data_x2x_z2x_x2z_z2z.u64[bit_address(qubit, 0, num_qubits, X2Z_QUAD, false) >> 6]);
+            BitPtr(data_sx.u64, qubit),
+            &data_x2x.u64[bit_address(qubit, 0, num_qubits, false) >> 6],
+            &data_x2z.u64[bit_address(qubit, 0, num_qubits, false) >> 6]);
 }
 
 PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
     return PauliStringPtr(
             num_qubits,
-            BitPtr(data_sign_x_z.u64, ceil256(num_qubits) + qubit),
-            &data_x2x_z2x_x2z_z2z.u64[bit_address(qubit, 0, num_qubits, Z2X_QUAD, false) >> 6],
-            &data_x2x_z2x_x2z_z2z.u64[bit_address(qubit, 0, num_qubits, Z2Z_QUAD, false) >> 6]);
+            BitPtr(data_sz.u64, qubit),
+            &data_z2x.u64[bit_address(qubit, 0, num_qubits, false) >> 6],
+            &data_z2z.u64[bit_address(qubit, 0, num_qubits, false) >> 6]);
 }
 
 bool Tableau::z_sign(size_t a) const {
-    return data_sign_x_z.get_bit(a + ceil256(num_qubits));
+    return data_sz.get_bit(a);
 }
 
-bool TempBlockTransposedTableauRaii::z_sign(size_t a) const {
+bool TempTransposedTableauRaii::z_sign(size_t a) const {
     return tableau.z_sign(a);
 }
 
-bool TempBlockTransposedTableauRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_x2x_z2x_x2z_z2z.get_bit(
-            bit_address(input_qubit, output_qubit, tableau.num_qubits, Z2X_QUAD, true)
+bool TempTransposedTableauRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
+    return tableau.data_z2x.get_bit(
+            bit_address(input_qubit, output_qubit, tableau.num_qubits, true)
     );
 }
 
-bool TempBlockTransposedTableauRaii::x_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_x2x_z2x_x2z_z2z.get_bit(
-            bit_address(input_qubit, output_qubit, tableau.num_qubits, X2Z_QUAD, true)
+bool TempTransposedTableauRaii::x_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
+    return tableau.data_x2z.get_bit(
+            bit_address(input_qubit, output_qubit, tableau.num_qubits, true)
     );
 }
 
-bool TempBlockTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_x2x_z2x_x2z_z2z.get_bit(
-            bit_address(input_qubit, output_qubit, tableau.num_qubits, Z2Z_QUAD, true)
+bool TempTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
+    return tableau.data_z2z.get_bit(
+            bit_address(input_qubit, output_qubit, tableau.num_qubits, true)
     );
 }
 
@@ -293,11 +286,15 @@ PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
 
 Tableau::Tableau(size_t num_qubits) :
         num_qubits(num_qubits),
-        data_x2x_z2x_x2z_z2z(ceil256(num_qubits) * ceil256(num_qubits) * 4),
-        data_sign_x_z(ceil256(num_qubits) * 2) {
+        data_x2x(ceil256(num_qubits) * ceil256(num_qubits)),
+        data_x2z(ceil256(num_qubits) * ceil256(num_qubits)),
+        data_z2x(ceil256(num_qubits) * ceil256(num_qubits)),
+        data_z2z(ceil256(num_qubits) * ceil256(num_qubits)),
+        data_sx(ceil256(num_qubits)),
+        data_sz(ceil256(num_qubits)) {
     for (size_t q = 0; q < num_qubits; q++) {
-        data_x2x_z2x_x2z_z2z.set_bit(bit_address(q, q, num_qubits, X2X_QUAD, false), true);
-        data_x2x_z2x_x2z_z2z.set_bit(bit_address(q, q, num_qubits, Z2Z_QUAD, false), true);
+        x_obs_ptr(q).set_x_bit(q, true);
+        z_obs_ptr(q).set_z_bit(q, true);
     }
 }
 
@@ -368,8 +365,12 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 
 bool Tableau::operator==(const Tableau &other) const {
     return num_qubits == other.num_qubits
-        && data_x2x_z2x_x2z_z2z == other.data_x2x_z2x_x2z_z2z
-        && data_sign_x_z == other.data_sign_x_z;
+        && data_x2x == other.data_x2x
+        && data_x2z == other.data_x2z
+        && data_z2x == other.data_z2x
+        && data_z2z == other.data_z2z
+        && data_sx == other.data_sx
+        && data_sz == other.data_sz;
 }
 
 bool Tableau::operator!=(const Tableau &other) const {
@@ -719,8 +720,8 @@ Tableau Tableau::random(size_t num_qubits) {
             result.z_obs_ptr(row).set_x_bit(col, raw.get(row + num_qubits, col));
             result.z_obs_ptr(row).set_z_bit(col, raw.get(row + num_qubits, col + num_qubits));
         }
-        result.data_sign_x_z.set_bit(row, rand_bit(gen));
-        result.data_sign_x_z.set_bit(ceil256(num_qubits) + row, rand_bit(gen));
+        result.data_sx.set_bit(row, rand_bit(gen));
+        result.data_sz.set_bit(row, rand_bit(gen));
     }
     return result;
 }
@@ -749,9 +750,10 @@ Tableau Tableau::inverse() const {
     dn *= dn;
 
     // Transpose data with xx zz swap tweak.
-    memcpy(inv.data_x2x_z2x_x2z_z2z.u256, data_x2x_z2x_x2z_z2z.u256 + 3 * (dn >> 8), dn >> 3);
-    memcpy(inv.data_x2x_z2x_x2z_z2z.u256 + (dn >> 8), data_x2x_z2x_x2z_z2z.u256 + (dn >> 8), 2 * (dn >> 3));
-    memcpy(inv.data_x2x_z2x_x2z_z2z.u256 + 3 * (dn >> 8), data_x2x_z2x_x2z_z2z.u256, dn >> 3);
+    memcpy(inv.data_x2x.u256, data_z2z.u256, dn >> 3);
+    memcpy(inv.data_x2z.u256, data_x2z.u256, dn >> 3);
+    memcpy(inv.data_z2x.u256, data_z2x.u256, dn >> 3);
+    memcpy(inv.data_z2z.u256, data_x2x.u256, dn >> 3);
     do_transpose(inv);
 
     // Initialize sign data by fixing round-trip signs.

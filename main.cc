@@ -114,9 +114,9 @@ void time_transpose_tableau(size_t num_qubits) {
     std::cerr << "transpose_tableau(num_qubits=" << num_qubits << "; ";
 
     Tableau tableau(num_qubits);
-    std::cerr << (tableau.data_x2x_z2x_x2z_z2z.num_bits / 8 / 1024 / 1024) << "MiB)\n";
+    std::cerr << (tableau.data_x2x.num_bits * 4 / 8 / 1024 / 1024) << "MiB)\n";
     auto f = PerfResult::time([&](){
-        TempBlockTransposedTableauRaii temp(tableau);
+        TempTransposedTableauRaii temp(tableau);
     });
     std::cerr << f;
     std::cerr << "\n";

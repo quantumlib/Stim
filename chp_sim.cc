@@ -226,7 +226,7 @@ void ChpSim::collapse_many(const std::vector<size_t> &targets, float bias) {
     std::sort(collapse_targets.begin(), collapse_targets.end());
 
     auto n = inv_state.num_qubits;
-    TempBlockTransposedTableauRaii temp_transposed(inv_state);
+    TempTransposedTableauRaii temp_transposed(inv_state);
 
     for (auto target : collapse_targets) {
         // Find an anti-commuting part of the measurement observable's at the start of time.
