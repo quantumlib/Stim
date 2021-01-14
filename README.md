@@ -2,7 +2,7 @@
 
 Stim is a fast quantum stabilizer circuit simulator.
 
-Stim uses a stabilizer tableau representation, very similar to [Scott Aaronson's CHP simulator](https://arxiv.org/abs/1601.07601),
+Stim uses a stabilizer tableau representation, very similar to [Scott Aaronson's CHP simulator](https://arxiv.org/abs/quant-ph/0406196),
 but with two major improvements.
 
 First, the tableau is inverted.
