@@ -116,14 +116,24 @@ TEST(vector_sim, approximate_equals) {
     VectorSim s1(2);
     VectorSim s2(2);
     ASSERT_TRUE(s1.approximate_equals(s2));
+    ASSERT_TRUE(s1.approximate_equals(s2, false));
+    ASSERT_TRUE(s1.approximate_equals(s2, true));
     s1.state[0] *= -1;
     ASSERT_FALSE(s1.approximate_equals(s2));
+    ASSERT_FALSE(s1.approximate_equals(s2, false));
+    ASSERT_TRUE(s1.approximate_equals(s2, true));
     s1.state[0] *= std::complex<float>(0, 1);
     ASSERT_FALSE(s1.approximate_equals(s2));
     ASSERT_FALSE(s2.approximate_equals(s1));
+    ASSERT_FALSE(s1.approximate_equals(s2, false));
+    ASSERT_TRUE(s1.approximate_equals(s2, true));
+    ASSERT_FALSE(s2.approximate_equals(s1, false));
+    ASSERT_TRUE(s2.approximate_equals(s1, true));
     s1.state[0] = 0;
     s1.state[1] = 1;
     ASSERT_FALSE(s1.approximate_equals(s2));
+    ASSERT_FALSE(s1.approximate_equals(s2, false));
+    ASSERT_FALSE(s1.approximate_equals(s2, true));
     s2.state[0] = 0;
     s2.state[1] = 1;
     ASSERT_TRUE(s1.approximate_equals(s2));
@@ -187,4 +197,45 @@ TEST(vector_sim, project) {
     sim.project(PauliStringVal::from_str("-ZI"));
     ref.state = {0, {0, -sqrtf(0.5)}, 0, sqrtf(0.5)};
     ASSERT_TRUE(sim.approximate_equals(ref));
+}
+
+TEST(VectorSim, from_stabilizers) {
+    VectorSim ref(2);
+    auto sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("IZ")});
+    ref.state = {1, 0, 0, 0};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("ZZ")});
+    ref.state = {1, 0, 0, 0};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("-ZZ")});
+    ref.state = {0, 0, 1, 0};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("IX")});
+    ref.state = {sqrtf(0.5), 0, sqrtf(0.5), 0};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZZ"), PauliStringVal::from_str("XX")});
+    ref.state = {sqrtf(0.5), 0, 0, sqrtf(0.5)};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("XXX"),
+                                       PauliStringVal::from_str("ZZI"),
+                                       PauliStringVal::from_str("IZZ")});
+    ref.state = {sqrtf(0.5), 0, 0, 0, 0, 0, 0, sqrtf(0.5)};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("YYY"),
+                                       PauliStringVal::from_str("ZZI"),
+                                       PauliStringVal::from_str("IZZ")});
+    ref.state = {sqrtf(0.5), 0, 0, 0, 0, 0, 0, {0, -sqrtf(0.5)}};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+
+    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("-YYY"),
+                                       PauliStringVal::from_str("-ZZI"),
+                                       PauliStringVal::from_str("IZZ")});
+    ref.state = {0, sqrtf(0.5), 0, 0, 0, 0, {0, -sqrtf(0.5)}, 0};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
 }

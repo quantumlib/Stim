@@ -80,6 +80,22 @@ void VectorSim::apply(const PauliStringPtr &gate, size_t qubit_offset) {
     }
 }
 
+VectorSim VectorSim::from_stabilizers(const std::vector<PauliStringPtr> stabilizers) {
+    assert(!stabilizers.empty());
+    size_t num_qubits = stabilizers[0].size;
+    VectorSim result(num_qubits);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(-1.0, +1.0);
+    for (size_t k = 0; k < result.state.size(); k++) {
+        result.state[k] = dist(gen);
+    }
+    for (const auto &p : stabilizers) {
+        result.project(p);
+    }
+    return result;
+}
+
 void VectorSim::project(const PauliStringPtr &observable) {
     assert(1 << observable.size == state.size());
     auto basis_change = [&]() {
@@ -169,7 +185,7 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
     {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
 };
 
-bool VectorSim::approximate_equals(const VectorSim &other) const {
+bool VectorSim::approximate_equals(const VectorSim &other, bool up_to_global_phase) const {
     if (state.size() != other.state.size()) {
         return false;
     }
@@ -185,5 +201,11 @@ bool VectorSim::approximate_equals(const VectorSim &other) const {
     }
     assert(1 - 1e-6 <= mag1 && mag1 <= 1 + 1e-6);
     assert(1 - 1e-6 <= mag2 && mag2 <= 1 + 1e-6);
-    return 1 - 1e-6 <= dot.real() && dot.real() <= 1 + 1e-6;
+    float f;
+    if (up_to_global_phase) {
+        f = dot.real() * dot.real() + dot.imag() * dot.imag();
+    } else {
+        f = dot.real();
+    }
+    return 1 - 1e-6 <= f && f <= 1 + 1e-6;
 }

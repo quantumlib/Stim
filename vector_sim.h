@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <complex>
 #include "pauli_string.h"
+#include <random>
 
 /// A state vector quantum circuit simulator.
 ///
@@ -14,6 +15,8 @@ struct VectorSim {
 
     /// Creates a state vector for the given number of qubits, initialized to the zero state.
     explicit VectorSim(size_t num_qubits);
+
+    static VectorSim from_stabilizers(const std::vector<PauliStringPtr> stabilizers);
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);
@@ -27,7 +30,7 @@ struct VectorSim {
 
     void project(const PauliStringPtr &observable);
 
-    bool approximate_equals(const VectorSim &other) const;
+    bool approximate_equals(const VectorSim &other, bool up_to_global_phase = false) const;
 };
 
 /// Unitary matrices for common gates, keyed by name.
