@@ -223,7 +223,6 @@ void ChpSim::collapse_many(const std::vector<size_t> &targets, float bias) {
     if (collapse_targets.empty()) {
         return;
     }
-    std::sort(collapse_targets.begin(), collapse_targets.end());
 
     auto n = inv_state.num_qubits;
     TempTransposedTableauRaii temp_transposed(inv_state);

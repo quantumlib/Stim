@@ -276,6 +276,14 @@ bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t
     return true;
 }
 
+TEST(PauliStringPtr, sparse_str) {
+    ASSERT_EQ(PauliStringVal::from_str("IIIII").ptr().sparse_str(), "+I");
+    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ptr().sparse_str(), "-I");
+    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ptr().sparse_str(), "+X3");
+    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ptr().sparse_str(), "+Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ptr().sparse_str(), "-Y1*X3*Z4");
+}
+
 TEST(PauliStringPtr, unsigned_consistency) {
     EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H, "H"));
     EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H_XY, "H_XY"));

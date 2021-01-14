@@ -31,6 +31,7 @@ struct PauliStringPtr {
     void gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const;
     void scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const;
 
+    std::string sparse_str() const;
     std::string str() const;
 
     // Multiplies a commuting Pauli string into this one.

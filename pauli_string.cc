@@ -89,6 +89,28 @@ PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         _z(other.z_data.u64) {
 }
 
+std::string PauliStringPtr::sparse_str() const {
+    std::stringstream ss;
+    bool first = true;
+    ss << "+-"[bit_ptr_sign.get()];
+    for (size_t k = 0; k < size; k++) {
+        auto x = get_x_bit(k);
+        auto z = get_z_bit(k);
+        if (x | z) {
+            if (!first) {
+                ss << '*';
+            }
+            first = false;
+            ss << "_XZY"[x + z*2];
+            ss << k;
+        }
+    }
+    if (first) {
+        ss << 'I';
+    }
+    return ss.str();
+}
+
 std::string PauliStringPtr::str() const {
     std::stringstream ss;
     ss << *this;
