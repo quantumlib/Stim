@@ -167,6 +167,8 @@ TEST(tableau, equality) {
     ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("CNOT"));
     ASSERT_FALSE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("SQRT_X"));
     ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("SQRT_X"));
+    ASSERT_EQ(Tableau(1), GATE_TABLEAUS.at("I"));
+    ASSERT_NE(Tableau(1), GATE_TABLEAUS.at("X"));
 }
 
 TEST(tableau, inplace_scatter_append) {
@@ -497,29 +499,6 @@ TEST(tableau, specialized_operations) {
     ));
 }
 
-TEST(tableau, bit_address) {
-    size_t n = 1500;
-    size_t quad_0 = 0;
-    size_t quad_1 = 1;
-    bool not_transposed = false;
-    bool yes_transposed = true;
-
-//    ASSERT_EQ(bit_address(0, 0, n, quad_0, not_transposed), 0);
-//    ASSERT_EQ(bit_address(1, 0, n, quad_0, not_transposed), 1 << 8);
-//    ASSERT_EQ(bit_address(0, 1, n, quad_0, not_transposed), 1);
-//    ASSERT_EQ(bit_address(256, 0, n, quad_0, not_transposed), 6 << 16);
-//    ASSERT_EQ(bit_address(0, 256, n, quad_0, not_transposed), 1 << 16);
-//
-//    ASSERT_EQ(bit_address(0, 0, n, quad_0, yes_transposed), 0);
-//    ASSERT_EQ(bit_address(1, 0, n, quad_0, yes_transposed), 1);
-//    ASSERT_EQ(bit_address(0, 1, n, quad_0, yes_transposed), 1 << 8);
-//    ASSERT_EQ(bit_address(256, 0, n, quad_0, yes_transposed), 6 << 16);
-//    ASSERT_EQ(bit_address(0, 256, n, quad_0, yes_transposed), 1 << 16);
-//
-//    ASSERT_EQ(bit_address(0, 0, n, quad_1, not_transposed), ceil256(n)*ceil256(n));
-//    ASSERT_EQ(bit_address(0, 0, n, quad_1, yes_transposed), ceil256(n)*ceil256(n));
-}
-
 TEST(tableau, expand) {
     auto t = Tableau::random(4);
     auto t2 = t;
@@ -592,9 +571,17 @@ TEST(tableau, transposed_access) {
 }
 
 TEST(tableau, inverse) {
+    Tableau t1(1);
+    ASSERT_EQ(t1, t1.inverse());
+    t1.prepend_X(0);
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("X"));
+    auto t2 = t1.inverse();
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("X"));
+    ASSERT_EQ(t2, GATE_TABLEAUS.at("X"));
+
     for (size_t k = 5; k < 20; k += 7) {
-        auto t1 = Tableau::random(k);
-        auto t2 = t1.inverse();
+        t1 = Tableau::random(k);
+        t2 = t1.inverse();
         ASSERT_TRUE(t2.satisfies_invariants());
         auto p = PauliStringVal::random(k);
         ASSERT_EQ(p, t1(t2(p)));

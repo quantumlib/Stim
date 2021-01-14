@@ -682,7 +682,7 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
-Tableau Tableau::inverse() {
+Tableau Tableau::inverse() const {
     Tableau inv(num_qubits);
     auto dn = ceil256(num_qubits);
     dn *= dn;
@@ -698,11 +698,11 @@ Tableau Tableau::inverse() {
     auto p = pauli_buf.ptr();
     for (size_t k = 0; k < num_qubits; k++) {
         p.set_x_bit(k, true);
-        x_obs_ptr(k).bit_ptr_sign.toggle_if(inv((*this)(p)).val_sign);
+        inv.x_obs_ptr(k).bit_ptr_sign.toggle_if((*this)(inv(p)).val_sign);
         p.set_x_bit(k, false);
 
         p.set_z_bit(k, true);
-        z_obs_ptr(k).bit_ptr_sign.toggle_if(inv((*this)(p)).val_sign);
+        inv.z_obs_ptr(k).bit_ptr_sign.toggle_if((*this)(inv(p)).val_sign);
         p.set_z_bit(k, false);
     }
 

@@ -10,6 +10,7 @@
 #include "tableau.h"
 #include <random>
 #include "circuit.h"
+#include "vector_sim.h"
 
 struct ChpSim {
     Tableau inv_state;
@@ -18,6 +19,7 @@ struct ChpSim {
     explicit ChpSim(size_t num_qubits);
     void ensure_large_enough_for_qubit(size_t q);
 
+    VectorSim to_vector_sim() const;
     bool is_deterministic(size_t target) const;
     bool measure(size_t q, float bias = 0.5);
     void reset(size_t target);

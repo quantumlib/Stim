@@ -289,3 +289,33 @@ TEST(ChpSim, simulate_reset) {
     ASSERT_EQ(results[1], false);
     ASSERT_EQ(results[2], false);
 }
+
+TEST(ChpSim, to_vector_sim) {
+    ChpSim chp_sim(2);
+    VectorSim vec_sim(2);
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+
+    chp_sim.X(0);
+    vec_sim.apply("X", 0);
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+
+    chp_sim.H(0);
+    vec_sim.apply("H", 0);
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+
+    chp_sim.SQRT_Z(0);
+    vec_sim.apply("SQRT_Z", 0);
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+
+    chp_sim.CX(0, 1);
+    vec_sim.apply("CX", 0, 1);
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+
+    chp_sim.inv_state = Tableau::random(10);
+    vec_sim = chp_sim.to_vector_sim();
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+
+    chp_sim.op("XCX", {4, 7});
+    vec_sim.apply("XCX", 4, 7);
+    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+}

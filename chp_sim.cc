@@ -173,6 +173,15 @@ void ChpSim::simulate(FILE *in, FILE *out) {
     }
 }
 
+VectorSim ChpSim::to_vector_sim() const {
+    auto inv = inv_state.inverse();
+    std::vector<PauliStringPtr> stabilizers;
+    for (size_t k = 0; k < inv.num_qubits; k++) {
+        stabilizers.push_back(inv.z_obs_ptr(k));
+    }
+    return VectorSim::from_stabilizers(stabilizers);
+}
+
 const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SINGLE_QUBIT_GATE_FUNCS{
         {"M",          [](ChpSim &sim, size_t q) { sim.measure(q); }},
         {"R",          &ChpSim::reset},

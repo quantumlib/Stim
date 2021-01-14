@@ -199,13 +199,13 @@ bool VectorSim::approximate_equals(const VectorSim &other, bool up_to_global_pha
         mag1 += c.real() * c.real() + c.imag() * c.imag();
         mag2 += c2.real() * c2.real() + c2.imag() * c2.imag();
     }
-    assert(1 - 1e-6 <= mag1 && mag1 <= 1 + 1e-6);
-    assert(1 - 1e-6 <= mag2 && mag2 <= 1 + 1e-6);
+    assert(1 - 1e-4 <= mag1 && mag1 <= 1 + 1e-4);
+    assert(1 - 1e-4 <= mag2 && mag2 <= 1 + 1e-4);
     float f;
     if (up_to_global_phase) {
         f = dot.real() * dot.real() + dot.imag() * dot.imag();
     } else {
         f = dot.real();
     }
-    return 1 - 1e-6 <= f && f <= 1 + 1e-6;
+    return 1 - 1e-4 <= f && f <= 1 + 1e-4;
 }
