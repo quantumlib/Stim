@@ -574,3 +574,18 @@ TEST(tableau, inverse) {
         ASSERT_EQ(p, t2(t1(p)));
     }
 }
+
+TEST(tableau, prepend_pauli) {
+    Tableau t = Tableau::random(6);
+    Tableau ref = t;
+    t.prepend(PauliStringVal::from_str("_XYZ__"));
+    ref.prepend_X(1);
+    ref.prepend_Y(2);
+    ref.prepend_Z(3);
+    ASSERT_EQ(t, ref);
+    t.prepend(SparsePauliString {false, {{3, 'X'}, {0, 'Y'}, {2, 'Z'}}});
+    ref.prepend_X(3);
+    ref.prepend_Y(0);
+    ref.prepend_Z(2);
+    ASSERT_EQ(t, ref);
+}

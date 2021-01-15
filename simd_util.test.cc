@@ -261,3 +261,15 @@ TEST(simd_util, transpose_bit_matrix) {
     transpose_bit_matrix(data.u64, bit_width);
     ASSERT_EQ(data, expected);
 }
+
+TEST(simd_util, mem_xor256) {
+    auto d1 = aligned_bits256::random(500);
+    auto d2 = aligned_bits256::random(500);
+    aligned_bits256 d3(500);
+    mem_xor256(d3.u256, d1.u256, 2);
+    ASSERT_EQ(d1, d3);
+    mem_xor256(d3.u256, d2.u256, 2);
+    for (size_t k = 0; k < 500; k++) {
+        ASSERT_EQ(d3.get_bit(k), d1.get_bit(k) ^ d2.get_bit(k));
+    }
+}

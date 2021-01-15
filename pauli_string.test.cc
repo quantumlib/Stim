@@ -277,11 +277,13 @@ bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t
 }
 
 TEST(PauliStringPtr, sparse_str) {
-    ASSERT_EQ(PauliStringVal::from_str("IIIII").ptr().sparse_str(), "+I");
-    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ptr().sparse_str(), "-I");
-    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ptr().sparse_str(), "+X3");
-    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ptr().sparse_str(), "+Y1*X3*Z4");
-    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ptr().sparse_str(), "-Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_str("IIIII").ptr().sparse().str(), "+I");
+    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ptr().sparse().str(), "-I");
+    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ptr().sparse().str(), "+X3");
+    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ptr().sparse().str(), "+Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ptr().sparse().str(), "-Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_pattern(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ptr().sparse().str(),
+            "+X501");
 }
 
 TEST(PauliStringPtr, unsigned_consistency) {

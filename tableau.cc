@@ -497,6 +497,26 @@ void Tableau::prepend_H_XY(const size_t q) {
     }
 }
 
+void Tableau::prepend(const PauliStringPtr &op) {
+    assert(op.size == num_qubits);
+    mem_xor256(data_sz.u256, (__m256i *)op._x, ceil256(num_qubits) >> 8);
+    mem_xor256(data_sx.u256, (__m256i *)op._z, ceil256(num_qubits) >> 8);
+}
+
+void Tableau::prepend(const SparsePauliString &op) {
+    for (const auto &p : op.paulis) {
+        if (p.pauli == 'X') {
+            prepend_X(p.index);
+        } else if (p.pauli == 'Y') {
+            prepend_Y(p.index);
+        } else if (p.pauli == 'Z') {
+            prepend_Z(p.index);
+        } else {
+            throw std::out_of_range(std::string("Unknown pauli ") + p.pauli);
+        }
+    }
+}
+
 void Tableau::prepend_X(size_t q) {
     z_obs_ptr(q).bit_ptr_sign.toggle();
 }

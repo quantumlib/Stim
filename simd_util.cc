@@ -119,6 +119,16 @@ bool any_non_zero(const __m256i *data, size_t words256) {
     return false;
 }
 
+void mem_xor256(__m256i *dst, __m256i *src, size_t words256) {
+    __m256i *dst_end = dst + words256;
+    while (dst != dst_end) {
+        *dst ^= *src;
+        dst++;
+        src++;
+    }
+}
+
+
 /// Transposes within the 64x64 bit blocks of a 256x256 block subset of a boolean matrix.
 ///
 /// For example, if we were transposing 2x2 blocks inside a 4x4 matrix, the order would go from:

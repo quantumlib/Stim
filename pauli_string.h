@@ -13,6 +13,17 @@
 
 struct PauliStringVal;
 
+struct SparsePauli {
+    uint32_t index;
+    char pauli;
+};
+
+struct SparsePauliString {
+    bool sign;
+    std::vector<SparsePauli> paulis;
+    std::string str() const;
+};
+
 struct PauliStringPtr {
     size_t size;
     BitPtr bit_ptr_sign;
@@ -31,7 +42,7 @@ struct PauliStringPtr {
     void gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const;
     void scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const;
 
-    std::string sparse_str() const;
+    SparsePauliString sparse() const;
     std::string str() const;
 
     // Multiplies a commuting Pauli string into this one.
@@ -98,6 +109,8 @@ struct PauliStringVal {
     std::string str() const;
 };
 
+std::ostream &operator<<(std::ostream &out, const SparsePauli &ps);
+std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
 

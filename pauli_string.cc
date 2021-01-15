@@ -89,29 +89,34 @@ PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         _z(other.z_data.u64) {
 }
 
-std::string PauliStringPtr::sparse_str() const {
-    std::stringstream ss;
-    bool first = true;
-    ss << "+-"[bit_ptr_sign.get()];
-    for (size_t k = 0; k < size; k++) {
-        auto x = get_x_bit(k);
-        auto z = get_z_bit(k);
-        if (x | z) {
-            if (!first) {
-                ss << '*';
+SparsePauliString PauliStringPtr::sparse() const {
+    SparsePauliString result {
+        bit_ptr_sign.get(),
+        {}
+    };
+    for (size_t k = 0; k < size; k += 64) {
+        auto wx = _x[k >> 6];
+        auto wz = _z[k >> 6];
+        if (wx | wz) {
+            for (size_t k2 = 0; k2 < 64; k2++) {
+                bool x = (wx >> k2) & 1;
+                bool z = (wz >> k2) & 1;
+                if (x | z) {
+                    result.paulis.push_back({(uint32_t)(k | k2), "IXZY"[x + z*2]});
+                }
             }
-            first = false;
-            ss << "_XZY"[x + z*2];
-            ss << k;
         }
     }
-    if (first) {
-        ss << 'I';
-    }
-    return ss.str();
+    return result;
 }
 
 std::string PauliStringPtr::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+
+std::string SparsePauliString::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
@@ -148,6 +153,24 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
 
 bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
     return !(*this == other);
+}
+
+std::ostream &operator<<(std::ostream &out, const SparsePauli &ps) {
+    return out << ps.pauli << ps.index;
+}
+
+std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps) {
+    out << "+-"[ps.sign];
+    for (size_t k = 0; k < ps.paulis.size(); k++) {
+        if (k) {
+            out << '*';
+        }
+        out << ps.paulis[k];
+    }
+    if (ps.paulis.empty()) {
+        out << 'I';
+    }
+    return out;
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {

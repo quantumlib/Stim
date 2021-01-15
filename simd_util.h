@@ -101,6 +101,7 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
 size_t ceil256(size_t n);
 
 bool any_non_zero(const __m256i *data, size_t words256);
+void mem_xor256(__m256i *dst, __m256i *src, size_t words256);
 
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept;

@@ -128,6 +128,8 @@ struct Tableau {
     void prepend_YCX(size_t control, size_t target);
     void prepend_YCY(size_t control, size_t target);
     void prepend_YCZ(size_t control, size_t target);
+    void prepend(const PauliStringPtr &op);
+    void prepend(const SparsePauliString &op);
 
     bool z_sign(size_t a) const;
 };
