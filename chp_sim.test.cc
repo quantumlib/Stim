@@ -359,3 +359,12 @@ TEST(ChpSim, measurement_vs_vector_sim) {
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
     }
 }
+
+TEST(ChpSim, extended_collapse) {
+    ChpSim sim(3);
+    sim.H(0);
+    sim.CX(0, 1);
+    sim.CX(0, 2);
+    auto r = sim.extended_collapse_with_destabilizer_kickback({1});
+    ASSERT_EQ(r[0].str(), "+X0*X1*X2");
+}

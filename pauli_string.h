@@ -20,7 +20,7 @@ struct SparsePauliWord {
 };
 
 struct SparsePauliString {
-    bool sign;
+    bool sign = false;
     std::vector<SparsePauliWord> indexed_words;
     std::string str() const;
 };

@@ -55,8 +55,16 @@ struct ChpSim {
 
     void op(const std::string &name, const std::vector<size_t> &targets);
 
+    std::vector<SparsePauliString> extended_collapse_with_destabilizer_kickback(
+            const std::vector<size_t> &targets);
+
 private:
     void collapse_many(const std::vector<size_t> &targets, float bias);
+    void collapse_while_transposed(
+            size_t target,
+            TempTransposedTableauRaii &temp_transposed,
+            SparsePauliString *destabilizer_out,
+            float else_bias);
 };
 
 extern const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SINGLE_QUBIT_GATE_FUNCS;

@@ -1,4 +1,5 @@
 #include "chp_sim.h"
+#include <queue>
 
 ChpSim::ChpSim(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rng((std::random_device {})()) {
 }
@@ -220,39 +221,83 @@ void ChpSim::collapse_many(const std::vector<size_t> &targets, float bias) {
             collapse_targets.push_back(target);
         }
     }
-    if (collapse_targets.empty()) {
+    if (!collapse_targets.empty()) {
+        TempTransposedTableauRaii temp_transposed(inv_state);
+        for (auto target : collapse_targets) {
+            collapse_while_transposed(target, temp_transposed, nullptr, bias);
+        }
+    }
+}
+
+std::vector<SparsePauliString> ChpSim::extended_collapse_with_destabilizer_kickback(
+        const std::vector<size_t> &targets) {
+    std::vector<SparsePauliString> out(targets.size());
+
+    std::queue<size_t> remaining;
+    for (size_t k = 0; k < targets.size(); k++) {
+        if (is_deterministic(targets[k])) {
+            out[k].sign = inv_state.z_sign(k);
+        } else {
+            remaining.push(k);
+        }
+    }
+    if (!remaining.empty()) {
+        TempTransposedTableauRaii temp_transposed(inv_state);
+        do {
+            auto k = remaining.front();
+            remaining.pop();
+            collapse_while_transposed(targets[k], temp_transposed, &out[k], -1);
+        } while (!remaining.empty());
+    }
+
+    return out;
+}
+
+void ChpSim::collapse_while_transposed(
+        size_t target,
+        TempTransposedTableauRaii &temp_transposed,
+        SparsePauliString *destabilizer_out,
+        float else_bias) {
+    auto n = inv_state.num_qubits;
+
+    // Find an anti-commuting part of the measurement observable's at the start of time.
+    size_t pivot = 0;
+    while (pivot < n && !temp_transposed.z_obs_x_bit(target, pivot)) {
+        pivot++;
+    }
+    if (pivot == n) {
+        // No anti-commuting part. Already collapsed.
+        if (destabilizer_out != nullptr) {
+            destabilizer_out->sign = temp_transposed.z_sign(target);
+        }
         return;
     }
 
-    auto n = inv_state.num_qubits;
-    TempTransposedTableauRaii temp_transposed(inv_state);
+    // Introduce no-op CNOTs at the start of time to remove all anti-commuting parts except for one.
+    for (size_t k = pivot + 1; k < n; k++) {
+        auto x = temp_transposed.z_obs_x_bit(target, k);
+        if (x) {
+            temp_transposed.append_CX(pivot, k);
+        }
+    }
 
-    for (auto target : collapse_targets) {
-        // Find an anti-commuting part of the measurement observable's at the start of time.
-        size_t pivot = 0;
-        while (pivot < n && !temp_transposed.z_obs_x_bit(target, pivot)) {
-            pivot++;
-        }
-        if (pivot == n) {
-            // No anti-commuting part. Already collapsed.
-            continue;
-        }
-
-        // Introduce no-op CNOTs at the start of time to remove all anti-commuting parts except for one.
-        for (size_t k = pivot + 1; k < n; k++) {
-            if (temp_transposed.z_obs_x_bit(target, k)) {
-                temp_transposed.append_CX(pivot, k);
-            }
-        }
-
-        // Collapse the anti-commuting part.
-        if (temp_transposed.z_obs_z_bit(target, pivot)) {
-            temp_transposed.append_H_YZ(pivot);
-        } else {
-            temp_transposed.append_H(pivot);
-        }
-        auto coin_flip = std::bernoulli_distribution(bias)(rng);
-        if (temp_transposed.z_sign(target) != coin_flip) {
+    // Collapse the anti-commuting part.
+    if (temp_transposed.z_obs_z_bit(target, pivot)) {
+        temp_transposed.append_H_YZ(pivot);
+    } else {
+        temp_transposed.append_H(pivot);
+    }
+    bool sign = temp_transposed.z_sign(target);
+    if (destabilizer_out != nullptr) {
+        auto t = temp_transposed.transposed_xz_ptr(pivot);
+        *destabilizer_out = PauliStringPtr(
+                n,
+                BitPtr(&sign, 0),
+                (uint64_t *) t.xz[1].z,
+                (uint64_t *) t.xz[0].z).sparse();
+    } else {
+        auto coin_flip = std::bernoulli_distribution(else_bias)(rng);
+        if (sign != coin_flip) {
             temp_transposed.append_X(pivot);
         }
     }
