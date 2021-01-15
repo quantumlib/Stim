@@ -94,17 +94,12 @@ SparsePauliString PauliStringPtr::sparse() const {
         bit_ptr_sign.get(),
         {}
     };
-    for (size_t k = 0; k < size; k += 64) {
-        auto wx = _x[k >> 6];
-        auto wz = _z[k >> 6];
+    auto n = (size + 63) >> 6;
+    for (size_t k = 0; k < n; k++) {
+        auto wx = _x[k];
+        auto wz = _z[k];
         if (wx | wz) {
-            for (size_t k2 = 0; k2 < 64; k2++) {
-                bool x = (wx >> k2) & 1;
-                bool z = (wz >> k2) & 1;
-                if (x | z) {
-                    result.paulis.push_back({(uint32_t)(k | k2), "IXZY"[x + z*2]});
-                }
-            }
+            result.indexed_words.push_back({k, wx, wz});
         }
     }
     return result;
@@ -155,19 +150,24 @@ bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
     return !(*this == other);
 }
 
-std::ostream &operator<<(std::ostream &out, const SparsePauli &ps) {
-    return out << ps.pauli << ps.index;
-}
-
 std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps) {
     out << "+-"[ps.sign];
-    for (size_t k = 0; k < ps.paulis.size(); k++) {
-        if (k) {
-            out << '*';
+    bool first = true;
+    for (const auto &w : ps.indexed_words) {
+        for (size_t k2 = 0; k2 < 64; k2++) {
+            auto x = (w.wx >> k2) & 1;
+            auto z = (w.wz >> k2) & 1;
+            auto p = x + 2*z;
+            if (p) {
+                if (!first) {
+                    out << '*';
+                }
+                first = false;
+                out << "IXZY"[p] << ((w.index64 << 6) | k2);
+            }
         }
-        out << ps.paulis[k];
     }
-    if (ps.paulis.empty()) {
+    if (first) {
         out << 'I';
     }
     return out;

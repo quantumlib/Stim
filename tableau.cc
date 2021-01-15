@@ -504,16 +504,9 @@ void Tableau::prepend(const PauliStringPtr &op) {
 }
 
 void Tableau::prepend(const SparsePauliString &op) {
-    for (const auto &p : op.paulis) {
-        if (p.pauli == 'X') {
-            prepend_X(p.index);
-        } else if (p.pauli == 'Y') {
-            prepend_Y(p.index);
-        } else if (p.pauli == 'Z') {
-            prepend_Z(p.index);
-        } else {
-            throw std::out_of_range(std::string("Unknown pauli ") + p.pauli);
-        }
+    for (const auto &p : op.indexed_words) {
+        data_sz.u64[p.index64] ^= p.wx;
+        data_sx.u64[p.index64] ^= p.wz;
     }
 }
 

@@ -13,14 +13,15 @@
 
 struct PauliStringVal;
 
-struct SparsePauli {
-    uint32_t index;
-    char pauli;
+struct SparsePauliWord {
+    size_t index64;
+    uint64_t wx;
+    uint64_t wz;
 };
 
 struct SparsePauliString {
     bool sign;
-    std::vector<SparsePauli> paulis;
+    std::vector<SparsePauliWord> indexed_words;
     std::string str() const;
 };
 
@@ -109,7 +110,6 @@ struct PauliStringVal {
     std::string str() const;
 };
 
-std::ostream &operator<<(std::ostream &out, const SparsePauli &ps);
 std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
