@@ -7,6 +7,7 @@ set(SOURCE_FILES_NO_MAIN
         bit_mat.cc
         bit_ptr.cc
         chp_sim.cc
+        chp_sim_record.cc
         circuit.cc
         pauli_string.cc
         perf.cc
@@ -19,6 +20,7 @@ set(TEST_FILES
         bit_mat.test.cc
         bit_ptr.test.cc
         chp_sim.test.cc
+        chp_sim_record.test.cc
         circuit.test.cc
         pauli_string.test.cc
         simd_util.test.cc

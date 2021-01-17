@@ -140,7 +140,17 @@ void ChpSim::Z(size_t q) {
     inv_state.prepend_Z(q);
 }
 
-void ChpSim::op(const std::string &name, const std::vector<size_t> &targets) {
+void ChpSim::func_op(const std::string &name, const std::vector<size_t> &targets) {
+    if (targets.size() == 1) {
+        SINGLE_QUBIT_GATE_FUNCS.at(name)(*this, targets[0]);
+    } else if (targets.size() == 2) {
+        TWO_QUBIT_GATE_FUNCS.at(name)(*this, targets[0], targets[1]);
+    } else {
+        throw std::out_of_range("Unknown ChpSim op " + name);
+    }
+}
+
+void ChpSim::tableau_op(const std::string &name, const std::vector<size_t> &targets) {
     // Note: inverted because we're tracking the inverse tableau.
     inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
 }

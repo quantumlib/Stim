@@ -10,13 +10,16 @@
 #include "perf.h"
 #include "simd_util.h"
 #include <cstring>
+#include "circuit.h"
+#include "chp_sim_record.h"
 
-void run_surface_code_sim(size_t distance, bool progress = false) {
+Circuit surface_code_circuit(size_t distance) {
+    std::stringstream ss;
     size_t diam = distance * 2 - 1;
-    auto sim = ChpSim(diam*diam);
+    size_t num_qubits = diam * diam;
     auto qubit = [&](std::complex<float> c){
         size_t q = (size_t)(c.real() * diam + c.imag());
-        assert(q < sim.inv_state.num_qubits);
+        assert(q < num_qubits);
         return q;
     };
     auto in_range = [=](std::complex<float> c) {
@@ -55,43 +58,53 @@ void run_surface_code_sim(size_t distance, bool progress = false) {
             {-1, 0},
     };
     for (size_t round = 0; round < distance; round++) {
-        if (progress) {
-            std::cerr << "round " << round << "\n";
-        }
         for (const auto &x : xs) {
-            sim.H(qubit(x));
+            ss << "H " << qubit(x) << "\n";
         }
         for (const auto &d : dirs) {
             for (const auto &z : zs) {
                 auto p = z + d;
                 if (in_range(p)) {
-                    sim.CX(qubit(p), qubit(z));
+                    ss << "CX " << qubit(p) << " " << qubit(z) << "\n";
                 }
             }
             for (const auto &x : xs) {
                 auto p = x + d;
                 if (in_range(p)) {
-                    sim.CX(qubit(x), qubit(p));
+                    ss << "CX " << qubit(x) << " " << qubit(p) << "\n";
                 }
             }
         }
         for (const auto &x : xs) {
-            sim.H(qubit(x));
+            ss << "H " << qubit(x) << "\n";
         }
-        for (const auto &z : zs) {
-            assert(sim.is_deterministic(qubit(z)));
+        for (const auto &q : zxqs) {
+            ss << "M " << q << "\n";
         }
-        for (const auto &x : xs) {
-            assert(sim.is_deterministic(qubit(x)) == (round > 0));
-        }
-        sim.measure_many(zxqs);
     }
-    sim.measure_many(data_qs);
+    for (const auto &q : data_qs) {
+        ss << "M " << q << "\n";
+    }
+    return Circuit::from_text(ss.str());
 }
 
-void time_clifford_sim(size_t distance, bool progress = false) {
-    std::cerr << "run_surface_code_sim(distance=" << distance << ")\n";
-    auto f = PerfResult::time([&]() { run_surface_code_sim(distance, progress); });
+void time_tableau_sim(size_t distance) {
+    std::cerr << "tableau_sim(unrotated surface code distance=" << distance << ")\n";
+    auto circuit = surface_code_circuit(distance);
+    auto f = PerfResult::time([&]() { ChpSim::simulate(circuit); });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
+void time_pauli_frame_sim(size_t distance) {
+    std::cerr << "frame_sim(unrotated surface code distance=" << distance << ")\n";
+    auto circuit = surface_code_circuit(distance);
+    auto sim = PauliFrameSimulation::recorded_from_tableau_sim(circuit.operations);
+    std::mt19937 rng((std::random_device {})());
+    auto out = aligned_bits256(sim.num_measurements);
+    auto f = PerfResult::time([&]() {
+        sim.sample(out, rng);
+    });
     std::cerr << f;
     std::cerr << "\n";
 }
@@ -214,7 +227,8 @@ int main() {
 //    time_memcpy(10000000);
 //    time_tableau_pauli_multiplication(10000);
 //    time_pauli_swap(100000);
-//    time_clifford_sim(41);
+    time_tableau_sim(51);
+    time_pauli_frame_sim(51);
 //    time_cnot(10000);
-    ChpSim::simulate(stdin, stdout);
+//    ChpSim::simulate(stdin, stdout);
 }

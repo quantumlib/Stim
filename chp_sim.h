@@ -53,7 +53,8 @@ struct ChpSim {
     void YCY(size_t control, size_t target);
     void YCZ(size_t control, size_t target);
 
-    void op(const std::string &name, const std::vector<size_t> &targets);
+    void func_op(const std::string &name, const std::vector<size_t> &targets);
+    void tableau_op(const std::string &name, const std::vector<size_t> &targets);
 
     std::vector<SparsePauliString> inspected_collapse(
             const std::vector<size_t> &targets);

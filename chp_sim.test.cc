@@ -246,7 +246,7 @@ TEST(ChpSim, single_qubit_gates_consistent_with_tableau_data) {
         const auto &action = kv.second;
         const auto &inverse_op_tableau = GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name));
         action(sim, 5);
-        sim2.op(name, {5});
+        sim2.tableau_op(name, {5});
         t.inplace_scatter_prepend(inverse_op_tableau, {5});
         ASSERT_EQ(sim.inv_state, t) << name;
         ASSERT_EQ(sim.inv_state, sim2.inv_state) << name;
@@ -256,7 +256,7 @@ TEST(ChpSim, single_qubit_gates_consistent_with_tableau_data) {
         const auto &action = kv.second;
         const auto &inverse_op_tableau = GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name));
         action(sim, 7, 4);
-        sim2.op(name, {7, 4});
+        sim2.tableau_op(name, {7, 4});
         t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         ASSERT_EQ(sim.inv_state, t) << name;
         ASSERT_EQ(sim.inv_state, sim2.inv_state) << name;
@@ -312,7 +312,7 @@ TEST(ChpSim, to_vector_sim) {
     vec_sim = chp_sim.to_vector_sim();
     ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
 
-    chp_sim.op("XCX", {4, 7});
+    chp_sim.tableau_op("XCX", {4, 7});
     vec_sim.apply("XCX", 4, 7);
     ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
 }

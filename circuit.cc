@@ -71,7 +71,7 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
                 throw std::runtime_error("Unrecognized two qubit gate " + name + " in line '" + line + "'.");
             }
         } else if (op.targets.size() == 0) {
-            if (name != "tick") {
+            if (name != "TICK") {
                 throw std::runtime_error("Unrecognized zero qubit command " + name + " in line '" + line + "'.");
             }
         } else {
