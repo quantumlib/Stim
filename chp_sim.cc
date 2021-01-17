@@ -229,7 +229,7 @@ void ChpSim::collapse_many(const std::vector<size_t> &targets, float bias) {
     }
 }
 
-std::vector<SparsePauliString> ChpSim::extended_collapse_with_destabilizer_kickback(
+std::vector<SparsePauliString> ChpSim::inspected_collapse(
         const std::vector<size_t> &targets) {
     std::vector<SparsePauliString> out(targets.size());
 

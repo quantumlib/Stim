@@ -75,18 +75,32 @@ struct PauliStringPtr {
     bool commutes(const PauliStringPtr& other) const noexcept;
     bool get_x_bit(size_t k) const;
     bool get_z_bit(size_t k) const;
+    bool get_xz_bit(size_t k) const;
     void set_x_bit(size_t k, bool b);
     void set_z_bit(size_t k, bool b);
     void toggle_x_bit(size_t k);
     void toggle_z_bit(size_t k);
+    void toggle_x_bit_if(size_t k, bool condition);
+    void toggle_xz_bit_if(size_t k, bool condition);
+    void toggle_z_bit_if(size_t k, bool condition);
 
-    void unsigned_conjugate_by_H(size_t q);
+    void unsigned_conjugate_by_H_XZ(size_t q);
     void unsigned_conjugate_by_H_XY(size_t q);
     void unsigned_conjugate_by_H_YZ(size_t q);
     void unsigned_conjugate_by_CX(size_t control, size_t target);
     void unsigned_conjugate_by_CY(size_t control, size_t target);
     void unsigned_conjugate_by_CZ(size_t control, size_t target);
+    void unsigned_conjugate_by_XCX(size_t control, size_t target);
+    void unsigned_conjugate_by_XCY(size_t control, size_t target);
+    void unsigned_conjugate_by_XCZ(size_t control, size_t target);
+    void unsigned_conjugate_by_YCX(size_t control, size_t target);
+    void unsigned_conjugate_by_YCY(size_t control, size_t target);
+    void unsigned_conjugate_by_YCZ(size_t control, size_t target);
     void unsigned_conjugate_by_SWAP(size_t q1, size_t q2);
+    void unsigned_conjugate_by_ISWAP(size_t q1, size_t q2);
+    void unsigned_conjugate_by(const std::string &name, const std::vector<size_t> &targets);
+    void unsigned_multiply_by(const SparsePauliString &other);
+    void unsigned_multiply_by(const PauliStringPtr &other);
 };
 
 struct PauliStringVal {
@@ -113,5 +127,8 @@ struct PauliStringVal {
 std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
+
+extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t)>> SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t, size_t)>> TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
 
 #endif

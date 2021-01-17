@@ -55,7 +55,7 @@ struct ChpSim {
 
     void op(const std::string &name, const std::vector<size_t> &targets);
 
-    std::vector<SparsePauliString> extended_collapse_with_destabilizer_kickback(
+    std::vector<SparsePauliString> inspected_collapse(
             const std::vector<size_t> &targets);
 
 private:

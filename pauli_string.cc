@@ -326,13 +326,19 @@ bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
 bool PauliStringPtr::get_x_bit(size_t k) const {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
-    return ((_x[i0] >> i1) & 1) != 0;
+    return (_x[i0] >> i1) & 1;
 }
 
 bool PauliStringPtr::get_z_bit(size_t k) const {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
-    return ((_z[i0] >> i1) & 1) != 0;
+    return (_z[i0] >> i1) & 1;
+}
+
+bool PauliStringPtr::get_xz_bit(size_t k) const {
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    return ((_x[i0] ^ _z[i0]) >> i1) & 1;
 }
 
 void PauliStringPtr::toggle_x_bit(size_t k) {
@@ -345,6 +351,25 @@ void PauliStringPtr::toggle_z_bit(size_t k) {
     size_t i0 = k >> 6;
     size_t i1 = k & 63;
     _z[i0] ^= 1ull << i1;
+}
+
+void PauliStringPtr::toggle_x_bit_if(size_t k, bool condition) {
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    _x[i0] ^= (size_t)condition << i1;
+}
+
+void PauliStringPtr::toggle_xz_bit_if(size_t k, bool condition) {
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    _x[i0] ^= (size_t)condition << i1;
+    _z[i0] ^= (size_t)condition << i1;
+}
+
+void PauliStringPtr::toggle_z_bit_if(size_t k, bool condition) {
+    size_t i0 = k >> 6;
+    size_t i1 = k & 63;
+    _z[i0] ^= (size_t)condition << i1;
 }
 
 void PauliStringPtr::set_x_bit(size_t k, bool val) {
@@ -387,7 +412,7 @@ bool PauliStringVal::operator!=(const PauliStringPtr &other) const {
     return ptr() != other;
 }
 
-void PauliStringPtr::unsigned_conjugate_by_H(size_t q) {
+void PauliStringPtr::unsigned_conjugate_by_H_XZ(size_t q) {
     bool x = get_x_bit(q);
     bool z = get_z_bit(q);
     set_x_bit(q, z);
@@ -395,39 +420,26 @@ void PauliStringPtr::unsigned_conjugate_by_H(size_t q) {
 }
 
 void PauliStringPtr::unsigned_conjugate_by_H_XY(size_t q) {
-    set_z_bit(q, get_x_bit(q) ^ get_z_bit(q));
+    toggle_z_bit_if(q, get_x_bit(q));
 }
 
 void PauliStringPtr::unsigned_conjugate_by_H_YZ(size_t q) {
-    set_x_bit(q, get_x_bit(q) ^ get_z_bit(q));
+    toggle_x_bit_if(q, get_z_bit(q));
 }
 
 void PauliStringPtr::unsigned_conjugate_by_CX(size_t control, size_t target) {
-    bool cx = get_x_bit(control);
-    bool cz = get_z_bit(control);
-    bool tx = get_x_bit(target);
-    bool tz = get_z_bit(target);
-    set_x_bit(target, tx ^ cx);
-    set_z_bit(control, tz ^ cz);
+    toggle_z_bit_if(control, get_z_bit(target));
+    toggle_x_bit_if(target, get_x_bit(control));
 }
 
 void PauliStringPtr::unsigned_conjugate_by_CY(size_t control, size_t target) {
-    bool cx = get_x_bit(control);
-    bool cz = get_z_bit(control);
-    bool tx = get_x_bit(target);
-    bool tz = get_z_bit(target);
-    set_z_bit(control, cz ^ tz ^ tx);
-    set_x_bit(target, tx ^ cx);
-    set_z_bit(target, tz ^ cx);
+    toggle_z_bit_if(control, get_xz_bit(target));
+    toggle_xz_bit_if(target, get_x_bit(control));
 }
 
 void PauliStringPtr::unsigned_conjugate_by_CZ(size_t control, size_t target) {
-    bool cx = get_x_bit(control);
-    bool cz = get_z_bit(control);
-    bool tx = get_x_bit(target);
-    bool tz = get_z_bit(target);
-    set_z_bit(target, tz ^ cx);
-    set_z_bit(control, cz ^ tx);
+    toggle_z_bit_if(control, get_x_bit(target));
+    toggle_z_bit_if(target, get_x_bit(control));
 }
 
 void PauliStringPtr::unsigned_conjugate_by_SWAP(size_t q1, size_t q2) {
@@ -440,3 +452,118 @@ void PauliStringPtr::unsigned_conjugate_by_SWAP(size_t q1, size_t q2) {
     set_x_bit(q2, x1);
     set_z_bit(q2, z1);
 }
+
+void PauliStringPtr::unsigned_conjugate_by(const std::string &name, const std::vector<size_t> &targets) {
+    if (targets.size() == 1) {
+        SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(name)(*this, targets[0]);
+    } else if (targets.size() == 2) {
+        TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(name)(*this, targets[0], targets[1]);
+    } else {
+        throw std::out_of_range("unsigned_conjugate_by " + name);
+    }
+}
+
+void PauliStringPtr::unsigned_multiply_by(const SparsePauliString &other) {
+    for (const auto &w : other.indexed_words) {
+        _x[w.index64] ^= w.wx;
+        _z[w.index64] ^= w.wz;
+    }
+}
+
+void PauliStringPtr::unsigned_multiply_by(const PauliStringPtr &other) {
+    assert(size == other.size);
+    auto x256 = (__m256i *)_x;
+    auto z256 = (__m256i *)_z;
+    auto ox256 = (__m256i *)other._x;
+    auto oz256 = (__m256i *)other._z;
+    auto end = &x256[num_words256()];
+    while (x256 != end) {
+        *x256++ ^= *ox256++;
+        *z256++ ^= *oz256++;
+    }
+}
+
+void PauliStringPtr::unsigned_conjugate_by_ISWAP(size_t q1, size_t q2) {
+    bool x2 = get_x_bit(q1);
+    bool z2 = get_z_bit(q1);
+    bool x1 = get_x_bit(q2);
+    bool z1 = get_z_bit(q2);
+    bool dx = x1 ^ x2;
+    z1 ^= dx;
+    z2 ^= dx;
+    set_x_bit(q1, x1);
+    set_z_bit(q1, z1);
+    set_x_bit(q2, x2);
+    set_z_bit(q2, z2);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_XCX(size_t control, size_t target) {
+    toggle_x_bit_if(control, get_z_bit(target));
+    toggle_x_bit_if(target, get_z_bit(control));
+}
+
+void PauliStringPtr::unsigned_conjugate_by_XCY(size_t control, size_t target) {
+    toggle_x_bit_if(control, get_xz_bit(target));
+    toggle_xz_bit_if(target, get_z_bit(control));
+}
+
+void PauliStringPtr::unsigned_conjugate_by_XCZ(size_t control, size_t target) {
+    unsigned_conjugate_by_CX(target, control);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_YCX(size_t control, size_t target) {
+    unsigned_conjugate_by_XCY(target, control);
+}
+
+void PauliStringPtr::unsigned_conjugate_by_YCY(size_t control, size_t target) {
+    toggle_xz_bit_if(control, get_xz_bit(target));
+    toggle_xz_bit_if(target, get_xz_bit(control));
+}
+
+void PauliStringPtr::unsigned_conjugate_by_YCZ(size_t control, size_t target) {
+    unsigned_conjugate_by_CY(target, control);
+}
+
+void do_nothing_pst(PauliStringPtr &p, size_t target) {
+}
+
+const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t)>> SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS{
+        {"I",          &do_nothing_pst},
+        // Pauli gates.
+        {"X",          &do_nothing_pst},
+        {"Y",          &do_nothing_pst},
+        {"Z",          &do_nothing_pst},
+        // Axis exchange gates.
+        {"H", &PauliStringPtr::unsigned_conjugate_by_H_XZ},
+        {"H_XY",       &PauliStringPtr::unsigned_conjugate_by_H_XY},
+        {"H_XZ", &PauliStringPtr::unsigned_conjugate_by_H_XZ},
+        {"H_YZ",       &PauliStringPtr::unsigned_conjugate_by_H_YZ},
+        // 90 degree rotation gates.
+        {"SQRT_X",     &PauliStringPtr::unsigned_conjugate_by_H_YZ},
+        {"SQRT_X_DAG", &PauliStringPtr::unsigned_conjugate_by_H_YZ},
+        {"SQRT_Y",     &PauliStringPtr::unsigned_conjugate_by_H_XZ},
+        {"SQRT_Y_DAG", &PauliStringPtr::unsigned_conjugate_by_H_XZ},
+        {"SQRT_Z",     &PauliStringPtr::unsigned_conjugate_by_H_XY},
+        {"SQRT_Z_DAG", &PauliStringPtr::unsigned_conjugate_by_H_XY},
+        {"S",          &PauliStringPtr::unsigned_conjugate_by_H_XY},
+        {"S_DAG",      &PauliStringPtr::unsigned_conjugate_by_H_XY},
+};
+
+const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t, size_t)>> TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS {
+    // Swap gates.
+    {"SWAP", &PauliStringPtr::unsigned_conjugate_by_SWAP},
+    {"ISWAP", &PauliStringPtr::unsigned_conjugate_by_ISWAP},
+    {"ISWAP_DAG", &PauliStringPtr::unsigned_conjugate_by_ISWAP},
+    // Controlled gates.
+    {"CNOT", &PauliStringPtr::unsigned_conjugate_by_CX},
+    {"CX", &PauliStringPtr::unsigned_conjugate_by_CX},
+    {"CY", &PauliStringPtr::unsigned_conjugate_by_CY},
+    {"CZ", &PauliStringPtr::unsigned_conjugate_by_CZ},
+    // Controlled interactions in other bases.
+    {"XCX", &PauliStringPtr::unsigned_conjugate_by_XCX},
+    {"XCY", &PauliStringPtr::unsigned_conjugate_by_XCY},
+    {"XCZ", &PauliStringPtr::unsigned_conjugate_by_XCZ},
+    {"YCX", &PauliStringPtr::unsigned_conjugate_by_YCX},
+    {"YCY", &PauliStringPtr::unsigned_conjugate_by_YCY},
+    {"YCZ", &PauliStringPtr::unsigned_conjugate_by_YCZ},
+};

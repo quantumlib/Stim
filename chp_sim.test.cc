@@ -365,6 +365,6 @@ TEST(ChpSim, extended_collapse) {
     sim.H(0);
     sim.CX(0, 1);
     sim.CX(0, 2);
-    auto r = sim.extended_collapse_with_destabilizer_kickback({1});
+    auto r = sim.inspected_collapse({1});
     ASSERT_EQ(r[0].str(), "+X0*X1*X2");
 }

@@ -232,7 +232,8 @@ TEST(pauli_string, commutes) {
     ASSERT_EQ(qb.ptr().commutes(qa.ptr()), false);
 }
 
-bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t)> func, std::string op_name) {
+bool is_1q_unsigned_conjugate_consistent_with_tableau(const std::string &op_name) {
+    const auto &func = SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(op_name);
     for (size_t k = 0; k < 10; k++) {
         auto val = PauliStringVal::random(500);
         auto val2 = val;
@@ -254,7 +255,8 @@ bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t
     return true;
 }
 
-bool is_unsigned_conjugate_consistent(std::function<void(PauliStringPtr&, size_t, size_t)> func, std::string op_name) {
+bool is_2q_unsigned_conjugate_consistent_with_tableau(const std::string &op_name) {
+    const auto &func = TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(op_name);
     for (size_t k = 0; k < 10; k++) {
         auto val = PauliStringVal::random(500);
         auto val2 = val;
@@ -287,11 +289,33 @@ TEST(PauliStringPtr, sparse_str) {
 }
 
 TEST(PauliStringPtr, unsigned_consistency) {
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H, "H"));
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H_XY, "H_XY"));
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_H_YZ, "H_YZ"));
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_CX, "CX"));
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_CY, "CY"));
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_CZ, "CZ"));
-    EXPECT_TRUE(is_unsigned_conjugate_consistent(&PauliStringPtr::unsigned_conjugate_by_SWAP, "SWAP"));
+    const auto &d1 = SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
+    const auto &d2 = TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
+
+    for (const auto &kv : d1) {
+        const auto &name = kv.first;
+        EXPECT_TRUE(is_1q_unsigned_conjugate_consistent_with_tableau(name)) << name;
+    }
+    for (const auto &kv : d2) {
+        const auto &name = kv.first;
+        EXPECT_TRUE(is_2q_unsigned_conjugate_consistent_with_tableau(name)) << name;
+    }
+    for (const auto &kv : GATE_TABLEAUS) {
+        const auto &name = kv.first;
+        EXPECT_TRUE(d1.find(name) != d1.end() || d2.find(name) != d2.end()) << name + " should exist";
+    }
+}
+
+TEST(pauli_string, unsigned_multiply) {
+    auto x = PauliStringVal::from_str("XXX");
+    auto y = PauliStringVal::from_str("YYY");
+    auto z = PauliStringVal::from_str("ZZZ");
+    x.ptr().unsigned_multiply_by(y);
+    ASSERT_EQ(x, z);
+
+    auto p1 = PauliStringVal::from_pattern(false, 1001, [](size_t k){ return "_XYZ_XYZ_XXX_XYZ"[k % 16]; });
+    auto p2 = PauliStringVal::from_pattern(true, 1001, [](size_t k){ return "XXXXYYYYZZZZZZZZ"[k % 16]; });
+    auto p3 = PauliStringVal::from_pattern(false, 1001, [](size_t k){ return "X_ZYYZ_XZYYYZYX_"[k % 16]; });
+    p1.ptr().unsigned_multiply_by(p2);
+    ASSERT_EQ(p1, p3);
 }
