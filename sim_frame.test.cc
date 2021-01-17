@@ -78,7 +78,7 @@ TEST(PauliFrameSimulation, epr_pair) {
         "H 0\n"
         "CNOT 0 1\n"
         "RANDOM_INTO_FRAME X0*X1\n"
-        "REPORT_FRAME 0 1\n"
+        "REPORT 0 1\n"
     );
 
     ASSERT_EQ(
@@ -92,7 +92,7 @@ TEST(PauliFrameSimulation, epr_pair) {
         "H 0\n"
         "CNOT 0 1\n"
         "RANDOM_INTO_FRAME X0*X1\n"
-        "REPORT_FRAME !0 1\n"
+        "REPORT !0 1\n"
     );
 
     ASSERT_EQ(
@@ -106,7 +106,7 @@ TEST(PauliFrameSimulation, epr_pair) {
         "H 0\n"
         "CNOT 0 1\n"
         "RANDOM_INTO_FRAME X0*X1\n"
-        "REPORT_FRAME 0 !1\n"
+        "REPORT 0 !1\n"
     );
 
     ASSERT_EQ(
@@ -120,7 +120,7 @@ TEST(PauliFrameSimulation, epr_pair) {
         "H 0\n"
         "CNOT 0 1\n"
         "RANDOM_INTO_FRAME X0*X1\n"
-        "REPORT_FRAME 0 !1\n"
+        "REPORT 0 !1\n"
     );
 }
 

@@ -125,7 +125,7 @@ std::ostream &operator<<(std::ostream &out, const SimFrame &ps) {
             out << "RANDOM_INTO_FRAME " << op.destabilizer.str().substr(1) << "\n";
         }
         if (!cycle.step3_measure.empty()) {
-            out << "REPORT_FRAME";
+            out << "REPORT";
             for (const auto &q : cycle.step3_measure) {
                 out << " ";
                 if (q.invert) {

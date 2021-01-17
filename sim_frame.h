@@ -22,6 +22,14 @@ struct PauliFrameSimCycle {
     std::vector<size_t> step4_reset;
 };
 
+/// A Pauli Frame simulator.
+///
+/// This simulator tracks, for each qubit, whether or not that qubit is bit flipped and/or phase flipped.
+/// Instead of reporting qubit measurements, it reports whether a measurement is inverted or not.
+/// This requires some care, because it can leak unobservable information (e.g. which errors have occurred)
+/// if applied to a random measurement. Correct usage requires all random measurements to be split into
+/// two parts: a randomization part (e.g. `RANDOM_INTO_FRAME X1*X2`) and a reporting part (e.g. `REPORT !0 1`).
+/// Deterministic measurements only require the reporting part.
 struct SimFrame {
     size_t num_qubits = 0;
     size_t num_measurements = 0;
@@ -33,6 +41,5 @@ struct SimFrame {
 };
 
 std::ostream &operator<<(std::ostream &out, const SimFrame &ps);
-
 
 #endif

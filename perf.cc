@@ -27,11 +27,10 @@ PerfResult PerfResult::from_once(const std::function<void(void)> &func) {
     return {micros / 1000.0 / 1000.0, 1};
 }
 
-PerfResult PerfResult::time(const std::function<void(void)> &func) {
+PerfResult PerfResult::time(const std::function<void(void)> &func, float target_seconds) {
     auto total = PerfResult {0, 0};
-    double time_target = 0.5;
-    for (size_t rep_limit = 1; total.total_seconds < time_target; rep_limit *= 100) {
-        double remaining_time = time_target  - total.total_seconds;
+    for (size_t rep_limit = 1; total.total_seconds < target_seconds; rep_limit *= 100) {
+        double remaining_time = target_seconds  - total.total_seconds;
         size_t reps = (size_t)(remaining_time / (total.seconds_per_rep() + 0.00000001));
         if (reps > rep_limit) {
             reps = rep_limit;
