@@ -8,7 +8,7 @@
 struct Operation {
     std::string name;
     std::vector<size_t> targets;
-    static Operation from_line(const std::string &line, size_t start, size_t end, bool validate);
+    static Operation from_line(const std::string &line, size_t start, size_t end);
 
     bool operator==(const Operation &other) const;
     bool operator!=(const Operation &other) const;

@@ -41,7 +41,7 @@ size_t parse_size_t(const std::string &text) {
     return std::stoull(text);
 }
 
-Operation Operation::from_line(const std::string &line, size_t start, size_t end, bool validate_operations) {
+Operation Operation::from_line(const std::string &line, size_t start, size_t end) {
     auto tokens = tokenize(line, start, end);
     if (tokens.size() == 0) {
         return Operation{"", {}};
@@ -50,7 +50,7 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
         tokens[0][k] = std::toupper(tokens[0][k]);
     }
     const auto &name = tokens[0];
-    Operation op {tokens[0], {}};
+    Operation op {name, {}};
     op.targets.reserve(tokens.size() - 1);
     try {
         for (size_t k = 1; k < tokens.size(); k++) {
@@ -61,23 +61,6 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
     } catch (const std::invalid_argument &ex) {
         throw std::runtime_error("Bad qubit id in line '" + line + "'.");
     }
-    if (validate_operations) {
-        if (op.targets.size() == 1) {
-            if (SINGLE_QUBIT_GATE_FUNCS.find(name) == SINGLE_QUBIT_GATE_FUNCS.end()) {
-                throw std::runtime_error("Unrecognized single qubit gate " + name + " in line '" + line + "'.");
-            }
-        } else if (op.targets.size() == 2) {
-            if (TWO_QUBIT_GATE_FUNCS.find(name) == TWO_QUBIT_GATE_FUNCS.end()) {
-                throw std::runtime_error("Unrecognized two qubit gate " + name + " in line '" + line + "'.");
-            }
-        } else if (op.targets.size() == 0) {
-            if (name != "TICK") {
-                throw std::runtime_error("Unrecognized zero qubit command " + name + " in line '" + line + "'.");
-            }
-        } else {
-            throw std::runtime_error("Too many tokens in line '" + line + "'.");
-        }
-    }
     return op;
 }
 
@@ -86,7 +69,7 @@ Circuit Circuit::from_text(const std::string &text) {
     size_t s = 0;
     for (size_t k = 0; k <= text.size(); k++) {
         if (text[k] == '\n' || text[k] == '\0') {
-            auto op = Operation::from_line(text, s, k, true);
+            auto op = Operation::from_line(text, s, k);
             s = k + 1;
             if (op.targets.size()) {
                 if ((op.name == "M" || op.name == "R") && operations.size() && operations.back().name == op.name) {
@@ -140,7 +123,7 @@ bool CircuitReader::read_next_moment() {
             line_buf.append(1, (char) i);
         }
 
-        auto op = Operation::from_line(line_buf, 0, line_buf.size(), false);
+        auto op = Operation::from_line(line_buf, 0, line_buf.size());
         if ((op.name == "M" || op.name == "R") && operations.size() && operations.back().name == op.name) {
             operations.back().targets.push_back(op.targets[0]);
         } else if (op.targets.size()) {

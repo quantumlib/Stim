@@ -150,6 +150,10 @@ void SimTableau::func_op(const std::string &name, const std::vector<size_t> &tar
     }
 }
 
+void SimTableau::broadcast_op(const std::string &name, const std::vector<size_t> &targets) {
+    BROADCAST_GATE_FUNCS.at(name)(*this, targets);
+}
+
 void SimTableau::tableau_op(const std::string &name, const std::vector<size_t> &targets) {
     // Note: inverted because we're tracking the inverse tableau.
     inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
@@ -353,3 +357,29 @@ const std::unordered_map<std::string, std::function<void(SimTableau &, size_t, s
     {"YCY", &SimTableau::YCY},
     {"YCZ", &SimTableau::YCZ},
 };
+
+const std::unordered_map<std::string, std::function<void(SimTableau &, const std::vector<size_t> &)>> BROADCAST_GATE_FUNCS = [](){
+    std::unordered_map<std::string, std::function<void(SimTableau &, const std::vector<size_t> &)>> result {};
+    for (const auto &kv : SINGLE_QUBIT_GATE_FUNCS) {
+        const auto &func = kv.second;
+        if (kv.first == "M" || kv.first == "R") {
+            continue;
+        }
+        result[kv.first] = [&func](SimTableau &sim, const std::vector<size_t> &targets) {
+            for (auto q : targets) {
+                func(sim, q);
+            }
+        };
+    }
+    for (const auto &kv : TWO_QUBIT_GATE_FUNCS) {
+        const auto &func = kv.second;
+        result[kv.first] = [&func](SimTableau &sim, const std::vector<size_t> &targets) {
+            assert((targets.size() & 1) == 0);
+            for (size_t k = 0; k < targets.size(); k += 2) {
+                func(sim, targets[k], targets[k + 1]);
+            }
+        };
+    }
+    result["R"] = &SimTableau::reset_many;
+    return result;
+}();

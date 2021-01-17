@@ -122,6 +122,25 @@ TEST(PauliFrameSimulation, epr_pair) {
         "RANDOM_INTO_FRAME X0*X1\n"
         "REPORT 0 !1\n"
     );
+
+    ASSERT_EQ(
+        record(
+            "H 0\n"
+            "H 1\n"
+            "CNOT 0 2\n"
+            "CNOT 1 3\n"
+            "X 1\n"
+            "M 0\n"
+            "M 2\n"
+            "M 3\n"
+            "M 1\n"
+        ),
+        "H 0 1\n"
+        "CNOT 0 2 1 3\n"
+        "RANDOM_INTO_FRAME X0*X2\n"
+        "RANDOM_INTO_FRAME X1*X3\n"
+        "REPORT 0 2 3 !1\n"
+    );
 }
 
 #define CHECK_CONSISTENCY(program) EXPECT_TRUE(is_frame_sim_output_consistent_with_tableau_sim(program)) << record(program)
@@ -131,6 +150,18 @@ TEST(PauliFrameSimulation, consistency) {
             "H 0\n"
             "CNOT 0 1\n"
             "M 0\n"
+            "M 1\n"
+    );
+
+    CHECK_CONSISTENCY(
+            "H 0\n"
+            "H 1\n"
+            "CNOT 0 2\n"
+            "CNOT 1 3\n"
+            "X 1\n"
+            "M 0\n"
+            "M 2\n"
+            "M 3\n"
             "M 1\n"
     );
 

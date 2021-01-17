@@ -2,7 +2,7 @@
 #include "circuit.h"
 
 TEST(circuit, operation_from_line) {
-    auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size(), true); };
+    auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size()); };
     ASSERT_EQ(f("# not an operation"), (Operation{"", {}}));
 
     ASSERT_EQ(f("H 0"), (Operation{"H", {0}}));
@@ -22,18 +22,6 @@ TEST(circuit, operation_from_line) {
     }, std::runtime_error);
     ASSERT_THROW({
         f("H -1");
-    }, std::runtime_error);
-    ASSERT_THROW({
-        f("H");
-    }, std::runtime_error);
-    ASSERT_THROW({
-        f("H 0 1");
-    }, std::runtime_error);
-    ASSERT_THROW({
-        f("CNOT 0");
-    }, std::runtime_error);
-    ASSERT_THROW({
-        f("CNOT 0 1 2");
     }, std::runtime_error);
     ASSERT_THROW({
         f("CNOT 0 a");

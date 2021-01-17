@@ -53,7 +53,7 @@ SimFrame SimFrame::recorded_from_tableau_sim(const std::vector<Operation> &opera
         qubit_phases.clear();
     };
     for (const auto &op : operations) {
-        if (op.name == "X" || op.name == "Y" || op.name == "Z") {
+        if (op.name == "I" || op.name == "X" || op.name == "Y" || op.name == "Z") {
             sim.func_op(op.name, op.targets);
             continue;
         }
@@ -97,7 +97,12 @@ SimFrame SimFrame::recorded_from_tableau_sim(const std::vector<Operation> &opera
                     break;
                 }
             }
-            partial_cycle.step1_unitary.push_back(op);
+            if (!partial_cycle.step1_unitary.empty() && partial_cycle.step1_unitary.back().name == op.name) {
+                auto &back = partial_cycle.step1_unitary.back();
+                back.targets.insert(back.targets.end(), op.targets.begin(), op.targets.end());
+            } else {
+                partial_cycle.step1_unitary.push_back(op);
+            }
             sim.func_op(op.name, op.targets);
         }
     }

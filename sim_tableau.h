@@ -55,6 +55,7 @@ struct SimTableau {
 
     void func_op(const std::string &name, const std::vector<size_t> &targets);
     void tableau_op(const std::string &name, const std::vector<size_t> &targets);
+    void broadcast_op(const std::string &name, const std::vector<size_t> &targets);
 
     std::vector<SparsePauliString> inspected_collapse(
             const std::vector<size_t> &targets);
@@ -71,4 +72,5 @@ private:
 extern const std::unordered_map<std::string, std::function<void(SimTableau &, size_t)>> SINGLE_QUBIT_GATE_FUNCS;
 extern const std::unordered_map<std::string, std::function<void(SimTableau &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS;
 
+extern const std::unordered_map<std::string, std::function<void(SimTableau &, const std::vector<size_t> &)>> BROADCAST_GATE_FUNCS;
 #endif

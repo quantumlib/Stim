@@ -432,6 +432,26 @@ void PauliStringPtr::unsigned_conjugate_by_CX(size_t control, size_t target) {
     toggle_x_bit_if(target, get_x_bit(control));
 }
 
+void PauliStringPtr::unsigned_conjugate_by_H_XZ_many(const std::vector<size_t> &targets) {
+    for (auto q : targets) {
+        bool x = get_x_bit(q);
+        bool z = get_z_bit(q);
+        set_x_bit(q, z);
+        set_z_bit(q, x);
+    }
+}
+
+void PauliStringPtr::unsigned_conjugate_by_CX_many(const std::vector<size_t> &targets) {
+    auto n = targets.size();
+    assert((n & 1) == 0);
+    for (size_t k = 0; k < n; k += 2) {
+        size_t c = targets[0];
+        size_t t = targets[1];
+        toggle_z_bit_if(c, get_z_bit(t));
+        toggle_x_bit_if(t, get_x_bit(c));
+    }
+}
+
 void PauliStringPtr::unsigned_conjugate_by_CY(size_t control, size_t target) {
     toggle_z_bit_if(control, get_xz_bit(target));
     toggle_xz_bit_if(target, get_x_bit(control));
@@ -454,13 +474,7 @@ void PauliStringPtr::unsigned_conjugate_by_SWAP(size_t q1, size_t q2) {
 }
 
 void PauliStringPtr::unsigned_conjugate_by(const std::string &name, const std::vector<size_t> &targets) {
-    if (targets.size() == 1) {
-        SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(name)(*this, targets[0]);
-    } else if (targets.size() == 2) {
-        TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(name)(*this, targets[0], targets[1]);
-    } else {
-        throw std::out_of_range("unsigned_conjugate_by " + name);
-    }
+    BROADCAST_GATE_UNSIGNED_CONJ_FUNCS.at(name)(*this, targets);
 }
 
 void PauliStringPtr::unsigned_multiply_by(const SparsePauliString &other) {
@@ -567,3 +581,29 @@ const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_
     {"YCY", &PauliStringPtr::unsigned_conjugate_by_YCY},
     {"YCZ", &PauliStringPtr::unsigned_conjugate_by_YCZ},
 };
+
+const std::unordered_map<std::string, std::function<void(PauliStringPtr &, const std::vector<size_t> &)>> BROADCAST_GATE_UNSIGNED_CONJ_FUNCS = [](){
+    std::unordered_map<std::string, std::function<void(PauliStringPtr &, const std::vector<size_t> &)>> result {};
+    for (const auto &kv : SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS) {
+        const auto &func = kv.second;
+        result[kv.first] = [&func](PauliStringPtr &sim, const std::vector<size_t> &targets) {
+            for (auto q : targets) {
+                func(sim, q);
+            }
+        };
+    }
+    for (const auto &kv : TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS) {
+        const auto &func = kv.second;
+        result[kv.first] = [&func](PauliStringPtr &sim, const std::vector<size_t> &targets) {
+            assert((targets.size() & 1) == 0);
+            for (size_t k = 0; k < targets.size(); k += 2) {
+                func(sim, targets[k], targets[k + 1]);
+            }
+        };
+    }
+    result["CX"] = &PauliStringPtr::unsigned_conjugate_by_CX_many;
+    result["CNOT"] = &PauliStringPtr::unsigned_conjugate_by_CX_many;
+    result["H"] = &PauliStringPtr::unsigned_conjugate_by_H_XZ_many;
+    result["H_XZ"] = &PauliStringPtr::unsigned_conjugate_by_H_XZ_many;
+    return result;
+}();

@@ -101,6 +101,9 @@ struct PauliStringPtr {
     void unsigned_conjugate_by(const std::string &name, const std::vector<size_t> &targets);
     void unsigned_multiply_by(const SparsePauliString &other);
     void unsigned_multiply_by(const PauliStringPtr &other);
+
+    void unsigned_conjugate_by_H_XZ_many(const std::vector<size_t> &targets);
+    void unsigned_conjugate_by_CX_many(const std::vector<size_t> &targets);
 };
 
 struct PauliStringVal {
@@ -130,5 +133,6 @@ std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
 
 extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t)>> SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
 extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t, size_t)>> TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, const std::vector<size_t> &)>> BROADCAST_GATE_UNSIGNED_CONJ_FUNCS;
 
 #endif
