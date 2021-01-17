@@ -5,13 +5,13 @@
 #include <iostream>
 #include <new>
 #include <sstream>
-#include "chp_sim.h"
+#include "sim_tableau.h"
 #include "pauli_string.h"
 #include "perf.h"
 #include "simd_util.h"
 #include <cstring>
 #include "circuit.h"
-#include "chp_sim_record.h"
+#include "sim_frame.h"
 
 Circuit surface_code_circuit(size_t distance) {
     std::stringstream ss;
@@ -91,7 +91,7 @@ Circuit surface_code_circuit(size_t distance) {
 void time_tableau_sim(size_t distance) {
     std::cerr << "tableau_sim(unrotated surface code distance=" << distance << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto f = PerfResult::time([&]() { ChpSim::simulate(circuit); });
+    auto f = PerfResult::time([&]() { SimTableau::simulate(circuit); });
     std::cerr << f;
     std::cerr << "\n";
 }
@@ -99,7 +99,7 @@ void time_tableau_sim(size_t distance) {
 void time_pauli_frame_sim(size_t distance) {
     std::cerr << "frame_sim(unrotated surface code distance=" << distance << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto sim = PauliFrameSimulation::recorded_from_tableau_sim(circuit.operations);
+    auto sim = SimFrame::recorded_from_tableau_sim(circuit.operations);
     std::mt19937 rng((std::random_device {})());
     auto out = aligned_bits256(sim.num_measurements);
     auto f = PerfResult::time([&]() {
@@ -207,7 +207,7 @@ void time_pauli_swap(size_t num_qubits) {
 void time_cnot(size_t num_qubits) {
     std::cerr << "cnot(n=" << num_qubits << ")\n";
 
-    ChpSim sim(num_qubits);
+    SimTableau sim(num_qubits);
     auto f = PerfResult::time([&](){
         sim.CX(0, num_qubits - 1);
     });
@@ -230,5 +230,5 @@ int main() {
     time_tableau_sim(51);
     time_pauli_frame_sim(51);
 //    time_cnot(10000);
-//    ChpSim::simulate(stdin, stdout);
+//    SimTableau::simulate(stdin, stdout);
 }

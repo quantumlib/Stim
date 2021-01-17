@@ -10,13 +10,13 @@
 /// A state vector quantum circuit simulator.
 ///
 /// Not intended to be particularly performant. Mostly used as a reference when testing.
-struct VectorSim {
+struct SimVector {
     std::vector<std::complex<float>> state;
 
     /// Creates a state vector for the given number of qubits, initialized to the zero state.
-    explicit VectorSim(size_t num_qubits);
+    explicit SimVector(size_t num_qubits);
 
-    static VectorSim from_stabilizers(const std::vector<PauliStringPtr> stabilizers);
+    static SimVector from_stabilizers(const std::vector<PauliStringPtr> stabilizers);
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);
@@ -30,7 +30,7 @@ struct VectorSim {
 
     float project(const PauliStringPtr &observable);
 
-    bool approximate_equals(const VectorSim &other, bool up_to_global_phase = false) const;
+    bool approximate_equals(const SimVector &other, bool up_to_global_phase = false) const;
 };
 
 /// Unitary matrices for common gates, keyed by name.

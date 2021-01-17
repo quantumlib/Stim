@@ -4,29 +4,29 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
+        aligned_bits256.cc
         bit_mat.cc
         bit_ptr.cc
-        chp_sim.cc
-        chp_sim_record.cc
         circuit.cc
         pauli_string.cc
         perf.cc
+        sim_tableau.cc
+        sim_frame.cc
+        sim_vector.cc
         simd_util.cc
         tableau.cc
-        aligned_bits256.cc
-        vector_sim.cc
         )
 set(TEST_FILES
+        aligned_bits256.test.cc
         bit_mat.test.cc
         bit_ptr.test.cc
-        chp_sim.test.cc
-        chp_sim_record.test.cc
         circuit.test.cc
         pauli_string.test.cc
+        sim_tableau.test.cc
+        sim_frame.test.cc
+        sim_vector.test.cc
         simd_util.test.cc
         tableau.test.cc
-        aligned_bits256.test.cc
-        vector_sim.test.cc
         )
 
 add_executable(stim main.cc ${SOURCE_FILES_NO_MAIN})

@@ -1,5 +1,5 @@
-#ifndef CHP_SIM_RECORD_H
-#define CHP_SIM_RECORD_H
+#ifndef SIM_FRAME_H
+#define SIM_FRAME_H
 
 #include <random>
 
@@ -22,17 +22,17 @@ struct PauliFrameSimCycle {
     std::vector<size_t> step4_reset;
 };
 
-struct PauliFrameSimulation {
+struct SimFrame {
     size_t num_qubits = 0;
     size_t num_measurements = 0;
     std::vector<PauliFrameSimCycle> cycles;
 
-    static PauliFrameSimulation recorded_from_tableau_sim(const std::vector<Operation> &operations);
+    static SimFrame recorded_from_tableau_sim(const std::vector<Operation> &operations);
     void sample(aligned_bits256& out, std::mt19937 &rng);
     std::string str() const;
 };
 
-std::ostream &operator<<(std::ostream &out, const PauliFrameSimulation &ps);
+std::ostream &operator<<(std::ostream &out, const SimFrame &ps);
 
 
 #endif

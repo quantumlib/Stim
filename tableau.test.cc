@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "tableau.h"
-#include "vector_sim.h"
+#include "sim_vector.h"
 #include <random>
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
@@ -43,7 +43,7 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
     }
 
     for (const auto &input_side_obs : basis) {
-        VectorSim sim(n*2);
+        SimVector sim(n * 2);
         // Create EPR pairs to test all possible inputs via state channel duality.
         for (size_t q = 0; q < n; q++) {
             sim.apply("H", q);

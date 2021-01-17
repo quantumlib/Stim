@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
-#include "chp_sim_record.h"
-#include "chp_sim.h"
+#include "sim_frame.h"
+#include "sim_tableau.h"
 
 std::string record(const std::string &program) {
-    return PauliFrameSimulation::recorded_from_tableau_sim(Circuit::from_text(program).operations).str();
+    return SimFrame::recorded_from_tableau_sim(Circuit::from_text(program).operations).str();
 }
 
 bool is_output_possible_no_bare_resets(const Circuit &circuit, const aligned_bits256 &output) {
-    auto tableau_sim = ChpSim(circuit.num_qubits);
+    auto tableau_sim = SimTableau(circuit.num_qubits);
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
         if (op.name == "TICK") {
@@ -50,7 +50,7 @@ TEST(PauliFrameSimulation, test_util_is_output_possible) {
 
 bool is_frame_sim_output_consistent_with_tableau_sim(const std::string &program) {
     auto circuit = Circuit::from_text(program);
-    auto frame_sim = PauliFrameSimulation::recorded_from_tableau_sim(circuit.operations);
+    auto frame_sim = SimFrame::recorded_from_tableau_sim(circuit.operations);
     std::mt19937 rng((std::random_device {})());
     auto out = aligned_bits256(frame_sim.num_measurements);
     for (size_t reps = 0; reps < 10; reps++) {

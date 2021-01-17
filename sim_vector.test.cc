@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "vector_sim.h"
+#include "sim_vector.h"
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;
@@ -9,7 +9,7 @@ static float complex_distance(std::complex<float> a, std::complex<float> b) {
 #define ASSERT_NEAR_C(a, b) ASSERT_LE(complex_distance(a, b), 1e-4)
 
 TEST(vector_sim, qubit_order) {
-    VectorSim sim(2);
+    SimVector sim(2);
     sim.apply("H", 0);
     sim.apply("CNOT", 0, 1);
     ASSERT_NEAR_C(sim.state[0], sqrtf(0.5));
@@ -19,7 +19,7 @@ TEST(vector_sim, qubit_order) {
 }
 
 TEST(vector_sim, h_squared) {
-    VectorSim sim(1);
+    SimVector sim(1);
     sim.apply("H", 0);
     sim.apply("H", 0);
     ASSERT_NEAR_C(sim.state[0], 1);
@@ -27,7 +27,7 @@ TEST(vector_sim, h_squared) {
 }
 
 TEST(vector_sim, sqrt_x_squared) {
-    VectorSim sim(1);
+    SimVector sim(1);
     sim.apply("SQRT_X_DAG", 0);
     sim.apply("SQRT_X_DAG", 0);
     ASSERT_NEAR_C(sim.state[0], 0);
@@ -35,7 +35,7 @@ TEST(vector_sim, sqrt_x_squared) {
 }
 
 TEST(vector_sim, state_channel_duality_cnot) {
-    VectorSim sim(4);
+    SimVector sim(4);
     sim.apply("H", 0);
     sim.apply("H", 1);
     sim.apply("CNOT", 0, 2);
@@ -49,7 +49,7 @@ TEST(vector_sim, state_channel_duality_cnot) {
 }
 
 TEST(vector_sim, state_channel_duality_y) {
-    VectorSim sim(2);
+    SimVector sim(2);
     sim.apply("H", 0);
     sim.apply("CNOT", 0, 1);
     sim.apply("Y", 1);
@@ -61,7 +61,7 @@ TEST(vector_sim, state_channel_duality_y) {
 }
 
 TEST(vector_sim, apply_pauli) {
-    VectorSim sim(2);
+    SimVector sim(2);
 
     sim.apply(PauliStringVal::from_str("+II"), 0);
     ASSERT_NEAR_C(sim.state[0], 1);
@@ -113,8 +113,8 @@ TEST(vector_sim, apply_pauli) {
 }
 
 TEST(vector_sim, approximate_equals) {
-    VectorSim s1(2);
-    VectorSim s2(2);
+    SimVector s1(2);
+    SimVector s2(2);
     ASSERT_TRUE(s1.approximate_equals(s2));
     ASSERT_TRUE(s1.approximate_equals(s2, false));
     ASSERT_TRUE(s1.approximate_equals(s2, true));
@@ -147,8 +147,8 @@ TEST(vector_sim, approximate_equals) {
 }
 
 TEST(vector_sim, project) {
-    VectorSim sim(2);
-    VectorSim ref(2);
+    SimVector sim(2);
+    SimVector ref(2);
 
     sim.state = {0.5, 0.5, 0.5, 0.5};
     ASSERT_NEAR_C(sim.project(PauliStringVal::from_str("ZI")), 0.5);
@@ -202,40 +202,40 @@ TEST(vector_sim, project) {
 }
 
 TEST(VectorSim, from_stabilizers) {
-    VectorSim ref(2);
-    auto sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("IZ")});
+    SimVector ref(2);
+    auto sim = SimVector::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("IZ")});
     ref.state = {1, 0, 0, 0};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("ZZ")});
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("ZZ")});
     ref.state = {1, 0, 0, 0};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("-ZZ")});
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("-ZZ")});
     ref.state = {0, 0, 1, 0};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("IX")});
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("ZI"), PauliStringVal::from_str("IX")});
     ref.state = {sqrtf(0.5), 0, sqrtf(0.5), 0};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("ZZ"), PauliStringVal::from_str("XX")});
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("ZZ"), PauliStringVal::from_str("XX")});
     ref.state = {sqrtf(0.5), 0, 0, sqrtf(0.5)};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("XXX"),
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("XXX"),
                                        PauliStringVal::from_str("ZZI"),
                                        PauliStringVal::from_str("IZZ")});
     ref.state = {sqrtf(0.5), 0, 0, 0, 0, 0, 0, sqrtf(0.5)};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("YYY"),
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("YYY"),
                                        PauliStringVal::from_str("ZZI"),
                                        PauliStringVal::from_str("IZZ")});
     ref.state = {sqrtf(0.5), 0, 0, 0, 0, 0, 0, {0, -sqrtf(0.5)}};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 
-    sim = VectorSim::from_stabilizers({PauliStringVal::from_str("-YYY"),
+    sim = SimVector::from_stabilizers({PauliStringVal::from_str("-YYY"),
                                        PauliStringVal::from_str("-ZZI"),
                                        PauliStringVal::from_str("IZZ")});
     ref.state = {0, sqrtf(0.5), 0, 0, 0, 0, {0, -sqrtf(0.5)}, 0};

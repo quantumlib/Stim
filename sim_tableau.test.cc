@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
-#include "chp_sim.h"
+#include "sim_tableau.h"
 
-TEST(ChpSim, identity) {
-    auto s = ChpSim(1);
+TEST(SimTableau, identity) {
+    auto s = SimTableau(1);
     ASSERT_EQ(s.measure(0), false);
 }
 
-TEST(ChpSim, bit_flip) {
-    auto s = ChpSim(1);
+TEST(SimTableau, bit_flip) {
+    auto s = SimTableau(1);
     s.H(0);
     s.SQRT_Z(0);
     s.SQRT_Z(0);
@@ -17,14 +17,14 @@ TEST(ChpSim, bit_flip) {
     ASSERT_EQ(s.measure(0), false);
 }
 
-TEST(ChpSim, identity2) {
-    auto s = ChpSim(2);
+TEST(SimTableau, identity2) {
+    auto s = SimTableau(2);
     ASSERT_EQ(s.measure(0), false);
     ASSERT_EQ(s.measure(1), false);
 }
 
-TEST(ChpSim, bit_flip_2) {
-    auto s = ChpSim(2);
+TEST(SimTableau, bit_flip_2) {
+    auto s = SimTableau(2);
     s.H(0);
     s.SQRT_Z(0);
     s.SQRT_Z(0);
@@ -33,8 +33,8 @@ TEST(ChpSim, bit_flip_2) {
     ASSERT_EQ(s.measure(1), false);
 }
 
-TEST(ChpSim, epr) {
-    auto s = ChpSim(2);
+TEST(SimTableau, epr) {
+    auto s = SimTableau(2);
     s.H(0);
     s.CX(0, 1);
     ASSERT_EQ(s.is_deterministic(0), false);
@@ -46,8 +46,8 @@ TEST(ChpSim, epr) {
     ASSERT_EQ(v1, v2);
 }
 
-TEST(ChpSim, big_determinism) {
-    auto s = ChpSim(1000);
+TEST(SimTableau, big_determinism) {
+    auto s = SimTableau(1000);
     s.H(0);
     ASSERT_FALSE(s.is_deterministic(0));
     for (size_t k = 1; k < 1000; k++) {
@@ -55,9 +55,9 @@ TEST(ChpSim, big_determinism) {
     }
 }
 
-TEST(ChpSim, phase_kickback_consume_s_state) {
+TEST(SimTableau, phase_kickback_consume_s_state) {
     for (size_t k = 0; k < 8; k++) {
-        auto s = ChpSim(2);
+        auto s = SimTableau(2);
         s.H(1);
         s.SQRT_Z(1);
         s.H(0);
@@ -75,8 +75,8 @@ TEST(ChpSim, phase_kickback_consume_s_state) {
     }
 }
 
-TEST(ChpSim, phase_kickback_preserve_s_state) {
-    auto s = ChpSim(2);
+TEST(SimTableau, phase_kickback_preserve_s_state) {
+    auto s = SimTableau(2);
 
     // Prepare S state.
     s.H(1);
@@ -102,8 +102,8 @@ TEST(ChpSim, phase_kickback_preserve_s_state) {
     ASSERT_EQ(s.measure(1), true);
 }
 
-TEST(ChpSim, kickback_vs_stabilizer) {
-    auto sim = ChpSim(3);
+TEST(SimTableau, kickback_vs_stabilizer) {
+    auto sim = SimTableau(3);
     sim.H(2);
     sim.CX(2, 0);
     sim.CX(2, 1);
@@ -120,9 +120,9 @@ TEST(ChpSim, kickback_vs_stabilizer) {
               "| XX XX XZ");
 }
 
-TEST(ChpSim, s_state_distillation_low_depth) {
+TEST(SimTableau, s_state_distillation_low_depth) {
     for (size_t reps = 0; reps < 10; reps++) {
-        auto sim = ChpSim(9);
+        auto sim = SimTableau(9);
 
         std::vector<std::vector<uint8_t>> stabilizers = {
                 {0, 1, 2, 3},
@@ -188,9 +188,9 @@ TEST(ChpSim, s_state_distillation_low_depth) {
     }
 }
 
-TEST(ChpSim, s_state_distillation_low_space) {
+TEST(SimTableau, s_state_distillation_low_space) {
     for (size_t rep = 0; rep < 10; rep++) {
-        auto sim = ChpSim(5);
+        auto sim = SimTableau(5);
 
         std::vector<std::vector<uint8_t>> phasors = {
                 {0,},
@@ -232,10 +232,10 @@ TEST(ChpSim, s_state_distillation_low_space) {
     }
 }
 
-TEST(ChpSim, single_qubit_gates_consistent_with_tableau_data) {
+TEST(SimTableau, single_qubit_gates_consistent_with_tableau_data) {
     auto t = Tableau::random(10);
-    ChpSim sim(10);
-    ChpSim sim2(10);
+    SimTableau sim(10);
+    SimTableau sim2(10);
     sim.inv_state = t;
     sim2.inv_state = t;
     for (const auto &kv : SINGLE_QUBIT_GATE_FUNCS) {
@@ -263,8 +263,8 @@ TEST(ChpSim, single_qubit_gates_consistent_with_tableau_data) {
     }
 }
 
-TEST(ChpSim, simulate) {
-    auto results = ChpSim::simulate(Circuit::from_text(
+TEST(SimTableau, simulate) {
+    auto results = SimTableau::simulate(Circuit::from_text(
             "H 0\n"
             "CNOT 0 1\n"
             "M 0\n"
@@ -274,8 +274,8 @@ TEST(ChpSim, simulate) {
     ASSERT_EQ(results[2], false);
 }
 
-TEST(ChpSim, simulate_reset) {
-    auto results = ChpSim::simulate(Circuit::from_text(
+TEST(SimTableau, simulate_reset) {
+    auto results = SimTableau::simulate(Circuit::from_text(
             "X 0\n"
             "M 0\n"
             "R 0\n"
@@ -287,41 +287,41 @@ TEST(ChpSim, simulate_reset) {
     ASSERT_EQ(results[2], false);
 }
 
-TEST(ChpSim, to_vector_sim) {
-    ChpSim chp_sim(2);
-    VectorSim vec_sim(2);
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+TEST(SimTableau, to_vector_sim) {
+    SimTableau sim_tab(2);
+    SimVector sim_vec(2);
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    chp_sim.X(0);
-    vec_sim.apply("X", 0);
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+    sim_tab.X(0);
+    sim_vec.apply("X", 0);
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    chp_sim.H(0);
-    vec_sim.apply("H", 0);
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+    sim_tab.H(0);
+    sim_vec.apply("H", 0);
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    chp_sim.SQRT_Z(0);
-    vec_sim.apply("SQRT_Z", 0);
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+    sim_tab.SQRT_Z(0);
+    sim_vec.apply("SQRT_Z", 0);
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    chp_sim.CX(0, 1);
-    vec_sim.apply("CX", 0, 1);
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+    sim_tab.CX(0, 1);
+    sim_vec.apply("CX", 0, 1);
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    chp_sim.inv_state = Tableau::random(10);
-    vec_sim = chp_sim.to_vector_sim();
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+    sim_tab.inv_state = Tableau::random(10);
+    sim_vec = sim_tab.to_vector_sim();
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    chp_sim.tableau_op("XCX", {4, 7});
-    vec_sim.apply("XCX", 4, 7);
-    ASSERT_TRUE(chp_sim.to_vector_sim().approximate_equals(vec_sim, true));
+    sim_tab.tableau_op("XCX", {4, 7});
+    sim_vec.apply("XCX", 4, 7);
+    ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 }
 
-bool vec_sim_corroborates_measurement_process(const ChpSim &sim, std::vector<size_t> measurement_targets) {
-    ChpSim chp_sim = sim;
-    auto vec_sim = chp_sim.to_vector_sim();
-    auto results = chp_sim.measure_many(measurement_targets);
-    PauliStringVal buf(chp_sim.inv_state.num_qubits);
+bool vec_sim_corroborates_measurement_process(const SimTableau &sim, std::vector<size_t> measurement_targets) {
+    SimTableau sim_tab = sim;
+    auto vec_sim = sim_tab.to_vector_sim();
+    auto results = sim_tab.measure_many(measurement_targets);
+    PauliStringVal buf(sim_tab.inv_state.num_qubits);
     auto p = buf.ptr();
     for (size_t k = 0; k < measurement_targets.size(); k++) {
         p.set_z_bit(measurement_targets[k], true);
@@ -335,33 +335,33 @@ bool vec_sim_corroborates_measurement_process(const ChpSim &sim, std::vector<siz
     return true;
 }
 
-TEST(ChpSim, measurement_vs_vector_sim) {
+TEST(SimTableau, measurement_vs_vector_sim) {
     for (size_t k = 0; k < 10; k++) {
-        ChpSim chp_sim(2);
-        chp_sim.inv_state = Tableau::random(2);
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {1}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1}));
+        SimTableau sim_tab(2);
+        sim_tab.inv_state = Tableau::random(2);
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {1}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1}));
     }
     for (size_t k = 0; k < 10; k++) {
-        ChpSim chp_sim(4);
-        chp_sim.inv_state = Tableau::random(4);
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {2, 1}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3}));
+        SimTableau sim_tab(4);
+        sim_tab.inv_state = Tableau::random(4);
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {2, 1}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1, 2, 3}));
     }
     {
-        ChpSim chp_sim(12);
-        chp_sim.inv_state = Tableau::random(12);
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 10, 11}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {11, 5, 7}));
-        ASSERT_TRUE(vec_sim_corroborates_measurement_process(chp_sim, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
+        SimTableau sim_tab(12);
+        sim_tab.inv_state = Tableau::random(12);
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1, 2, 3}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 10, 11}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {11, 5, 7}));
+        ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
     }
 }
 
-TEST(ChpSim, extended_collapse) {
-    ChpSim sim(3);
+TEST(SimTableau, extended_collapse) {
+    SimTableau sim(3);
     sim.H(0);
     sim.CX(0, 1);
     sim.CX(0, 2);

@@ -1,7 +1,7 @@
-#include "chp_sim.h"
-#include "chp_sim_record.h"
+#include "sim_tableau.h"
+#include "sim_frame.h"
 
-void PauliFrameSimulation::sample(aligned_bits256& out, std::mt19937 &rng) {
+void SimFrame::sample(aligned_bits256& out, std::mt19937 &rng) {
     auto rand_bit = std::bernoulli_distribution(0.5);
 
     PauliStringVal pauli_frame_val(num_qubits);
@@ -28,11 +28,11 @@ void PauliFrameSimulation::sample(aligned_bits256& out, std::mt19937 &rng) {
     }
 }
 
-PauliFrameSimulation PauliFrameSimulation::recorded_from_tableau_sim(const std::vector<Operation> &operations) {
+SimFrame SimFrame::recorded_from_tableau_sim(const std::vector<Operation> &operations) {
     constexpr uint8_t PHASE_UNITARY = 0;
     constexpr uint8_t PHASE_COLLAPSED = 1;
     constexpr uint8_t PHASE_RESET = 2;
-    PauliFrameSimulation resulting_simulation {};
+    SimFrame resulting_simulation {};
 
     for (const auto &op : operations) {
         for (auto q : op.targets) {
@@ -45,7 +45,7 @@ PauliFrameSimulation PauliFrameSimulation::recorded_from_tableau_sim(const std::
 
     PauliFrameSimCycle partial_cycle {};
     std::unordered_map<size_t, uint8_t> qubit_phases {};
-    ChpSim sim(resulting_simulation.num_qubits);
+    SimTableau sim(resulting_simulation.num_qubits);
 
     auto start_next_moment = [&](){
         resulting_simulation.cycles.push_back(partial_cycle);
@@ -112,7 +112,7 @@ PauliFrameSimulation PauliFrameSimulation::recorded_from_tableau_sim(const std::
     return resulting_simulation;
 }
 
-std::ostream &operator<<(std::ostream &out, const PauliFrameSimulation &ps) {
+std::ostream &operator<<(std::ostream &out, const SimFrame &ps) {
     for (const auto &cycle : ps.cycles) {
         for (const auto &op : cycle.step1_unitary) {
             out << op.name;
@@ -146,7 +146,7 @@ std::ostream &operator<<(std::ostream &out, const PauliFrameSimulation &ps) {
     return out;
 }
 
-std::string PauliFrameSimulation::str() const {
+std::string SimFrame::str() const {
     std::stringstream s;
     s << *this;
     return s.str();

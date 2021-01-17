@@ -1,10 +1,10 @@
 #include <iostream>
 #include <map>
 #include "pauli_string.h"
-#include "vector_sim.h"
+#include "sim_vector.h"
 #include <bit>
 
-VectorSim::VectorSim(size_t num_qubits) {
+SimVector::SimVector(size_t num_qubits) {
     state.resize(1 << num_qubits, 0.0f);
     state[0] = 1;
 }
@@ -22,7 +22,7 @@ std::vector<std::complex<float>> mat_vec_mul(const std::vector<std::vector<std::
     return result;
 }
 
-void VectorSim::apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
+void SimVector::apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
     size_t n = 1 << qubits.size();
     assert(matrix.size() == n);
     std::vector<size_t> masks;
@@ -52,15 +52,15 @@ void VectorSim::apply(const std::vector<std::vector<std::complex<float>>> &matri
     }
 }
 
-void VectorSim::apply(const std::string &gate, size_t qubit) {
+void SimVector::apply(const std::string &gate, size_t qubit) {
     apply(GATE_UNITARIES.at(gate), {qubit});
 }
 
-void VectorSim::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
+void SimVector::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
     apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
 }
 
-void VectorSim::apply(const PauliStringPtr &gate, size_t qubit_offset) {
+void SimVector::apply(const PauliStringPtr &gate, size_t qubit_offset) {
     if (gate.bit_ptr_sign.get()) {
         for (auto &e : state) {
             e *= -1;
@@ -80,10 +80,10 @@ void VectorSim::apply(const PauliStringPtr &gate, size_t qubit_offset) {
     }
 }
 
-VectorSim VectorSim::from_stabilizers(const std::vector<PauliStringPtr> stabilizers) {
+SimVector SimVector::from_stabilizers(const std::vector<PauliStringPtr> stabilizers) {
     assert(!stabilizers.empty());
     size_t num_qubits = stabilizers[0].size;
-    VectorSim result(num_qubits);
+    SimVector result(num_qubits);
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> dist(-1.0, +1.0);
@@ -96,7 +96,7 @@ VectorSim VectorSim::from_stabilizers(const std::vector<PauliStringPtr> stabiliz
     return result;
 }
 
-float VectorSim::project(const PauliStringPtr &observable) {
+float SimVector::project(const PauliStringPtr &observable) {
     assert(1ULL << observable.size == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.size; k++) {
@@ -137,7 +137,7 @@ float VectorSim::project(const PauliStringPtr &observable) {
     return mag2;
 }
 
-bool VectorSim::approximate_equals(const VectorSim &other, bool up_to_global_phase) const {
+bool SimVector::approximate_equals(const SimVector &other, bool up_to_global_phase) const {
     if (state.size() != other.state.size()) {
         return false;
     }

@@ -1,5 +1,5 @@
-#ifndef CHP_SIM_H
-#define CHP_SIM_H
+#ifndef SIM_TABLEAU_H
+#define SIM_TABLEAU_H
 
 #include <iostream>
 #include <immintrin.h>
@@ -10,16 +10,16 @@
 #include "tableau.h"
 #include <random>
 #include "circuit.h"
-#include "vector_sim.h"
+#include "sim_vector.h"
 
-struct ChpSim {
+struct SimTableau {
     Tableau inv_state;
     std::mt19937 rng;
 
-    explicit ChpSim(size_t num_qubits);
+    explicit SimTableau(size_t num_qubits);
     void ensure_large_enough_for_qubit(size_t q);
 
-    VectorSim to_vector_sim() const;
+    SimVector to_vector_sim() const;
     bool is_deterministic(size_t target) const;
     bool measure(size_t q, float bias = 0.5);
     void reset(size_t target);
@@ -68,7 +68,7 @@ private:
             float else_bias);
 };
 
-extern const std::unordered_map<std::string, std::function<void(ChpSim &, size_t)>> SINGLE_QUBIT_GATE_FUNCS;
-extern const std::unordered_map<std::string, std::function<void(ChpSim &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(SimTableau &, size_t)>> SINGLE_QUBIT_GATE_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(SimTableau &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS;
 
 #endif
