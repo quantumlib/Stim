@@ -24,6 +24,10 @@ aligned_bits256::~aligned_bits256() {
     }
 }
 
+void aligned_bits256::clear() {
+    memset(u64, 0, num_bits >> 3);
+}
+
 aligned_bits256::aligned_bits256(size_t init_num_bits) :
         num_bits(init_num_bits),
         u64(alloc_aligned_bits(init_num_bits)) {

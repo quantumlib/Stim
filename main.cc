@@ -99,7 +99,7 @@ void time_tableau_sim(size_t distance) {
 void time_pauli_frame_sim(size_t distance) {
     std::cerr << "frame_sim(unrotated surface code distance=" << distance << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto sim = SimFrame::recorded_from_tableau_sim(circuit.operations);
+    auto sim = PauliFrameProgram::recorded_from_tableau_sim(circuit.operations);
     std::mt19937 rng((std::random_device {})());
     auto out = aligned_bits256(sim.num_measurements);
     auto f = PerfResult::time([&]() {
@@ -113,9 +113,10 @@ void time_pauli_frame_sim2(size_t distance, size_t num_samples) {
     assert(!(num_samples & 0xFF));
     std::cerr << "frame_sim(unrotated surface code distance=" << distance << ", samples=" << num_samples << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto sim = SimFrame::recorded_from_tableau_sim(circuit.operations);
-    auto sim2 = SimFrame2(sim.num_qubits, num_samples >> 8, sim.num_measurements);
+    auto sim = PauliFrameProgram::recorded_from_tableau_sim(circuit.operations);
+    auto sim2 = SimBulkPauliFrames(sim.num_qubits, num_samples >> 8, sim.num_measurements);
     auto f = PerfResult::time([&]() {
+        sim2.clear();
         for (const auto &cycle : sim.cycles) {
             for (const auto &op : cycle.step1_unitary) {
                 if (op.name == "H") {
@@ -129,8 +130,8 @@ void time_pauli_frame_sim2(size_t distance, size_t num_samples) {
             for (const auto &collapse : cycle.step2_collapse) {
                 sim2.RANDOM_INTO_FRAME(collapse.destabilizer);
             }
-            sim2.RECORD(cycle.step3_measure);
-            sim2.R(cycle.step4_reset);
+            sim2.measure_deterministic(cycle.step3_measure);
+            sim2.reset(cycle.step4_reset);
         }
     });
 

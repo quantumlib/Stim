@@ -3,7 +3,7 @@
 #include "sim_tableau.h"
 
 std::string record(const std::string &program) {
-    return SimFrame::recorded_from_tableau_sim(Circuit::from_text(program).operations).str();
+    return PauliFrameProgram::recorded_from_tableau_sim(Circuit::from_text(program).operations).str();
 }
 
 bool is_output_possible_no_bare_resets(const Circuit &circuit, const aligned_bits256 &output) {
@@ -50,7 +50,7 @@ TEST(PauliFrameSimulation, test_util_is_output_possible) {
 
 bool is_frame_sim_output_consistent_with_tableau_sim(const std::string &program) {
     auto circuit = Circuit::from_text(program);
-    auto frame_sim = SimFrame::recorded_from_tableau_sim(circuit.operations);
+    auto frame_sim = PauliFrameProgram::recorded_from_tableau_sim(circuit.operations);
     std::mt19937 rng((std::random_device {})());
     auto out = aligned_bits256(frame_sim.num_measurements);
     for (size_t reps = 0; reps < 10; reps++) {
@@ -272,7 +272,7 @@ TEST(PauliFrameSimulation, consistency) {
 }
 
 TEST(SimFrame2, XXX) {
-    SimFrame2 sim(501, 1024 >> 8, 10);
+    SimBulkPauliFrames sim(501, 1024 >> 8, 10);
     ASSERT_EQ(sim.current_frame(0).ptr().sparse().str(), "+I");
     __m256i mask[2];
     mask[0] = _mm256_set1_epi8(-1);
