@@ -12,29 +12,12 @@ std::vector<bool> m256i_to_bits(__m256i data);
 std::string hex(__m256i data);
 std::string bin(__m256i data);
 
-/// Transposes the 256x256 blocks of a block bit packed square boolean matrix.
-///
-/// Data Format:
-///     The matrix data storage order is such that the bit at column c row r is toggled by
-///     performing:
-///
-///        ```
-///        auto block_col = col >> 8;
-///        auto inner_col = col & 0xFF;
-///        auto block_row = row >> 8;
-///        auto inner_row = row & 0xFF;
-///        auto bit = inner_col + (inner_row << 8) + (block_col << 16) + block_row * (bit_width << 8)
-///        matrix[bit / 64] ^= 1 << (bit & 63)`.
-///        ```
-///
-///     The block transpose operation swaps the roles inner_col and inner_row while leaving block_col
-///     and block_row unchanged.
+/// Transposes 256x256 blocks of bits.
 ///
 /// Args:
-///     bit_width: Must be a multiple of 256. The number of bits in a row of the matrix.
-///         Also the number of bits in a column, since the matrix must be square.
-///     matrix: Must be aligned on a 32 byte boundary. Pointer to the matrix data.
-void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_width) noexcept;
+///     num_bits: Must be a multiple of 256*256. The number of blocks to transpose within, times 256*256.
+///     blocks: Pointer to the block data. Must be aligned on a 32 byte boundary.
+void blockwise_transpose_256x256(uint64_t *blocks, size_t num_bits, bool allow_threading = true) noexcept;
 
 void mat256_permute_address_swap_c7_r7(uint64_t *matrix256x256) noexcept;
 

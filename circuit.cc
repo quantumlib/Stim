@@ -64,6 +64,20 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
     return op;
 }
 
+Circuit Circuit::from_file(FILE *file) {
+    Circuit result;
+    CircuitReader reader(file);
+    while (reader.read_next_moment()) {
+        result.operations.insert(result.operations.end(), reader.operations.begin(), reader.operations.end());
+    }
+    for (const auto &e : result.operations) {
+        for (auto q : e.targets) {
+            result.num_qubits = std::max(result.num_qubits, q + 1);
+        }
+    }
+    return result;
+}
+
 Circuit Circuit::from_text(const std::string &text) {
     std::vector<Operation> operations;
     size_t s = 0;
@@ -107,7 +121,7 @@ bool Circuit::operator!=(const Circuit &other) const {
 CircuitReader::CircuitReader(FILE *file) : input_file(file) {
 }
 
-bool CircuitReader::read_next_moment() {
+bool CircuitReader::read_next_moment(bool stop_after_measurement) {
     operations.clear();
 
     while (true) {
@@ -131,5 +145,25 @@ bool CircuitReader::read_next_moment() {
         } else if (op.name == "TICK") {
             return true;
         }
+        if (stop_after_measurement && op.name == "M") {
+            return true;
+        }
     }
+}
+
+std::ostream &operator<<(std::ostream &out, const Circuit &c) {
+    for (const auto &op : c.operations) {
+        out << op.name;
+        for (auto q : op.targets) {
+            out << " " << q;
+        }
+        out << "\n";
+    }
+    return out;
+}
+
+std::string Circuit::str() const {
+    std::stringstream s;
+    s << *this;
+    return s.str();
 }

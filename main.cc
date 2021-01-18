@@ -12,6 +12,7 @@
 #include <cstring>
 #include "circuit.h"
 #include "sim_frame.h"
+#include "arg_parse.h"
 
 Circuit surface_code_circuit(size_t distance) {
     std::stringstream ss;
@@ -96,45 +97,14 @@ void time_tableau_sim(size_t distance) {
     std::cerr << "\n";
 }
 
-void time_pauli_frame_sim(size_t distance) {
-    std::cerr << "frame_sim(unrotated surface code distance=" << distance << ")\n";
+void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
+    std::cerr << "time_sim_bulk_pauli_frame(unrotated surface code distance=" << distance << ", samples=" << num_samples << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto sim = PauliFrameProgram::recorded_from_tableau_sim(circuit.operations);
-    std::mt19937 rng((std::random_device {})());
-    auto out = aligned_bits256(sim.num_measurements);
+    auto frame_program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
+    auto sim = SimBulkPauliFrames(frame_program.num_qubits, num_samples, frame_program.num_measurements);
     auto f = PerfResult::time([&]() {
-        sim.sample(out, rng);
+        sim.begin_and_run_and_finish(frame_program);
     });
-    std::cerr << f;
-    std::cerr << "\n";
-}
-
-void time_pauli_frame_sim2(size_t distance, size_t num_samples) {
-    assert(!(num_samples & 0xFF));
-    std::cerr << "frame_sim(unrotated surface code distance=" << distance << ", samples=" << num_samples << ")\n";
-    auto circuit = surface_code_circuit(distance);
-    auto sim = PauliFrameProgram::recorded_from_tableau_sim(circuit.operations);
-    auto sim2 = SimBulkPauliFrames(sim.num_qubits, num_samples >> 8, sim.num_measurements);
-    auto f = PerfResult::time([&]() {
-        sim2.clear();
-        for (const auto &cycle : sim.cycles) {
-            for (const auto &op : cycle.step1_unitary) {
-                if (op.name == "H") {
-                    sim2.H_XZ(op.targets);
-                } else if (op.name == "CX") {
-                    sim2.CX(op.targets);
-                } else {
-                    assert(false);
-                }
-            }
-            for (const auto &collapse : cycle.step2_collapse) {
-                sim2.RANDOM_INTO_FRAME(collapse.destabilizer);
-            }
-            sim2.measure_deterministic(cycle.step3_measure);
-            sim2.reset(cycle.step4_reset);
-        }
-    });
-
     std::cerr << f << " (sample rate " << si_describe(f.rate() * num_samples) << "Hz)";
     std::cerr << "\n";
 }
@@ -146,7 +116,7 @@ void time_transpose_blockwise(size_t blocks) {
     size_t num_bits = blocks << 16;
     auto data = aligned_bits256::random(num_bits);
     auto f = PerfResult::time([&](){
-        transpose_bit_matrix_256x256blocks(data.u64, num_bits);
+        blockwise_transpose_256x256(data.u64, num_bits);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * blocks / 1000.0 / 1000.0 << " MegaBlocks/s)";
@@ -246,7 +216,14 @@ void time_cnot(size_t num_qubits) {
     std::cerr << "\n";
 }
 
-int main() {
+void bulk_sample_stdin_to_stdout(size_t num_samples) {
+    auto circuit = Circuit::from_file(stdin);
+    auto program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
+    program.sample_out_ascii(num_samples, stdout);
+    fflush(stdout);
+}
+
+void profile() {
 //    time_transpose_blockwise(100);
 //    time_transpose_tableau(20000);
 //    time_pauli_multiplication(100000);
@@ -258,8 +235,40 @@ int main() {
 //    time_tableau_pauli_multiplication(10000);
 //    time_pauli_swap(100000);
 //    time_tableau_sim(51);
-    time_pauli_frame_sim2(51, 256 * 4);
+//    time_sim_bulk_pauli_frame(51, 1024);
 //    time_pauli_frame_sim(51);
 //    time_cnot(10000);
-//    SimTableau::simulate(stdin, stdout);
+}
+
+std::vector<const char *> known_arguments {
+        "-shots",
+        "-profile",
+        "-repl",
+};
+
+int main(int argc, const char** argv) {
+    check_for_unknown_arguments(known_arguments.size(), known_arguments.data(), argc, argv);
+    bool interactive = find_bool_argument("-repl", argc, argv);
+    bool profiling = find_bool_argument("-profile", argc, argv);
+    bool forced_sampling = find_argument("-shots", argc, argv) != nullptr || interactive;
+    int samples = find_int_argument("-shots", 1, 0, 1 << 30, argc, argv);
+    if (forced_sampling && profiling) {
+        std::cerr << "Incompatible arguments. -profile when sampling.\n";
+        exit(EXIT_FAILURE);
+    }
+    if (samples != 1 && interactive) {
+        std::cerr << "Incompatible arguments. Multiple samples and interactive.\n";
+        exit(EXIT_FAILURE);
+    }
+
+    if (profiling) {
+        profile();
+        exit(EXIT_SUCCESS);
+    }
+
+    if (samples == 1) {
+        SimTableau::simulate(stdin, stdout, interactive);
+    } else {
+        bulk_sample_stdin_to_stdout((size_t)samples);
+    }
 }

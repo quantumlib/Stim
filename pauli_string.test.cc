@@ -232,52 +232,6 @@ TEST(pauli_string, commutes) {
     ASSERT_EQ(qb.ptr().commutes(qa.ptr()), false);
 }
 
-bool is_1q_unsigned_conjugate_consistent_with_tableau(const std::string &op_name) {
-    const auto &func = SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(op_name);
-    for (size_t k = 0; k < 10; k++) {
-        auto val = PauliStringVal::random(500);
-        auto val2 = val;
-        auto p1 = val.ptr();
-        auto p2 = val2.ptr();
-        func(p1, 10);
-        GATE_TABLEAUS.at(op_name).apply_within(p2, {10});
-        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
-        if (p1 != p2) {
-            return false;
-        }
-        func(p1, 301);
-        GATE_TABLEAUS.at(op_name).apply_within(p2, {301});
-        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
-        if (p1 != p2) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool is_2q_unsigned_conjugate_consistent_with_tableau(const std::string &op_name) {
-    const auto &func = TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS.at(op_name);
-    for (size_t k = 0; k < 10; k++) {
-        auto val = PauliStringVal::random(500);
-        auto val2 = val;
-        auto p1 = val.ptr();
-        auto p2 = val2.ptr();
-        func(p1, 10, 400);
-        GATE_TABLEAUS.at(op_name).apply_within(p2, {10, 400});
-        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
-        if (p1 != p2) {
-            return false;
-        }
-        func(p1, 301, 0);
-        GATE_TABLEAUS.at(op_name).apply_within(p2, {301, 0});
-        p1.bit_ptr_sign.set(p2.bit_ptr_sign.get());
-        if (p1 != p2) {
-            return false;
-        }
-    }
-    return true;
-}
-
 TEST(PauliStringPtr, sparse_str) {
     ASSERT_EQ(PauliStringVal::from_str("IIIII").ptr().sparse().str(), "+I");
     ASSERT_EQ(PauliStringVal::from_str("-IIIII").ptr().sparse().str(), "-I");
@@ -286,36 +240,4 @@ TEST(PauliStringPtr, sparse_str) {
     ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ptr().sparse().str(), "-Y1*X3*Z4");
     ASSERT_EQ(PauliStringVal::from_pattern(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ptr().sparse().str(),
             "+X501");
-}
-
-TEST(PauliStringPtr, unsigned_consistency) {
-    const auto &d1 = SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
-    const auto &d2 = TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
-
-    for (const auto &kv : d1) {
-        const auto &name = kv.first;
-        EXPECT_TRUE(is_1q_unsigned_conjugate_consistent_with_tableau(name)) << name;
-    }
-    for (const auto &kv : d2) {
-        const auto &name = kv.first;
-        EXPECT_TRUE(is_2q_unsigned_conjugate_consistent_with_tableau(name)) << name;
-    }
-    for (const auto &kv : GATE_TABLEAUS) {
-        const auto &name = kv.first;
-        EXPECT_TRUE(d1.find(name) != d1.end() || d2.find(name) != d2.end()) << name + " should exist";
-    }
-}
-
-TEST(pauli_string, unsigned_multiply) {
-    auto x = PauliStringVal::from_str("XXX");
-    auto y = PauliStringVal::from_str("YYY");
-    auto z = PauliStringVal::from_str("ZZZ");
-    x.ptr().unsigned_multiply_by(y);
-    ASSERT_EQ(x, z);
-
-    auto p1 = PauliStringVal::from_pattern(false, 1001, [](size_t k){ return "_XYZ_XYZ_XXX_XYZ"[k % 16]; });
-    auto p2 = PauliStringVal::from_pattern(true, 1001, [](size_t k){ return "XXXXYYYYZZZZZZZZ"[k % 16]; });
-    auto p3 = PauliStringVal::from_pattern(false, 1001, [](size_t k){ return "X_ZYYZ_XZYYYZYX_"[k % 16]; });
-    p1.ptr().unsigned_multiply_by(p2);
-    ASSERT_EQ(p1, p3);
 }

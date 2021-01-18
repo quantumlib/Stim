@@ -94,11 +94,11 @@ void transpose_bit_matrix_threaded(uint64_t *matrix, size_t area, size_t thread_
     }
 }
 
-void transpose_bit_matrix_256x256blocks(uint64_t *matrix, size_t bit_area) noexcept {
-    if (bit_area < 1 << 24) {
-        transpose_bit_matrix_thread_body(matrix, bit_area);
+void blockwise_transpose_256x256(uint64_t *matrix, size_t num_bits, bool allow_threading) noexcept {
+    if (allow_threading && num_bits < 1 << 24) {
+        transpose_bit_matrix_thread_body(matrix, num_bits);
     } else {
-        transpose_bit_matrix_threaded(matrix, bit_area, 4);
+        transpose_bit_matrix_threaded(matrix, num_bits, 4);
     }
 }
 

@@ -72,7 +72,7 @@ TEST(simd_util, block_transpose_bit_matrix) {
     size_t bit_area = 9 << 16;
     auto data = aligned_bits256::random(bit_area);
     auto expected = reference_blockwise_transpose_of(bit_area, data);
-    transpose_bit_matrix_256x256blocks(data.u64, bit_area);
+    blockwise_transpose_256x256(data.u64, bit_area);
     ASSERT_EQ(data, expected);
 }
 

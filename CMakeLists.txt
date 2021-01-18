@@ -5,10 +5,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
         aligned_bits256.cc
+        arg_parse.cc
         bit_mat.cc
         bit_ptr.cc
         circuit.cc
         pauli_string.cc
+        program_frame.cc
         perf.cc
         sim_tableau.cc
         sim_frame.cc
@@ -18,10 +20,12 @@ set(SOURCE_FILES_NO_MAIN
         )
 set(TEST_FILES
         aligned_bits256.test.cc
+        arg_parse.test.cc
         bit_mat.test.cc
         bit_ptr.test.cc
         circuit.test.cc
         pauli_string.test.cc
+        program_frame.test.cc
         sim_tableau.test.cc
         sim_frame.test.cc
         sim_vector.test.cc

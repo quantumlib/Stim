@@ -19,7 +19,9 @@ struct Circuit {
     std::vector<Operation> operations;
 
     static Circuit from_text(const std::string &text);
+    static Circuit from_file(FILE *file);
 
+    std::string str() const;
     bool operator==(const Circuit &other) const;
     bool operator!=(const Circuit &other) const;
 };
@@ -32,7 +34,9 @@ public:
     std::vector<Operation> operations;
 
     CircuitReader(FILE *file);
-    bool read_next_moment();
+    bool read_next_moment(bool stop_after_measurement = false);
 };
+
+std::ostream &operator<<(std::ostream &out, const Circuit &c);
 
 #endif

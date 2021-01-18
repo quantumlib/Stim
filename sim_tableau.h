@@ -26,7 +26,7 @@ struct SimTableau {
     std::vector<bool> measure_many(const std::vector<size_t> &targets, float bias = 0.5);
     void reset_many(const std::vector<size_t> &targets);
     static std::vector<bool> simulate(const Circuit &circuit);
-    static void simulate(FILE *in, FILE *out);
+    static void simulate(FILE *in, FILE *out, bool newline_after_ticks);
 
     void H(size_t q);
     void H_YZ(size_t q);

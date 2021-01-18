@@ -13,3 +13,4 @@ Makefile
 lib/*
 out/*
 stim.cbp
+data/*

@@ -187,11 +187,11 @@ void SimTableau::ensure_large_enough_for_qubit(size_t q) {
     inv_state.expand(ceil256(q + 1));
 }
 
-void SimTableau::simulate(FILE *in, FILE *out) {
+void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement) {
     CircuitReader reader(in);
     size_t max_qubit = 0;
     SimTableau sim(1);
-    while (reader.read_next_moment()) {
+    while (reader.read_next_moment(newline_after_measurement)) {
         for (const auto &e : reader.operations) {
             for (size_t q : e.targets) {
                 max_qubit = std::max(q, max_qubit);
@@ -203,7 +203,10 @@ void SimTableau::simulate(FILE *in, FILE *out) {
             if (op.name == "M") {
                 for (bool b : sim.measure_many(op.targets)) {
                     putc_unlocked(b ? '1' : '0', out);
+                }
+                if (newline_after_measurement) {
                     putc_unlocked('\n', out);
+                    fflush(out);
                 }
             } else if (op.name == "R") {
                 sim.reset_many(op.targets);
@@ -215,6 +218,9 @@ void SimTableau::simulate(FILE *in, FILE *out) {
                 throw std::runtime_error("Unsupported operation " + op.name);
             }
         }
+    }
+    if (!newline_after_measurement) {
+        putc_unlocked('\n', out);
     }
 }
 
@@ -250,7 +256,7 @@ std::vector<SparsePauliString> SimTableau::inspected_collapse(
     std::queue<size_t> remaining;
     for (size_t k = 0; k < targets.size(); k++) {
         if (is_deterministic(targets[k])) {
-            out[k].sign = inv_state.z_sign(k);
+            out[k].sign = inv_state.z_sign(targets[k]);
         } else {
             remaining.push(k);
         }
