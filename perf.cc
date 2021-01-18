@@ -5,6 +5,41 @@
 #include <chrono>
 #include "perf.h"
 
+std::string si_describe(double val) {
+    std::string unit = "";
+    if (val < 1) {
+        if (val < 1) {
+            val *= 1000;
+            unit = "m";
+        }
+        if (val < 1) {
+            val *= 1000;
+            unit = "u";
+        }
+        if (val < 1) {
+            val *= 1000;
+            unit = "n";
+        }
+    } else {
+        if (val > 1000) {
+            val /= 1000;
+            unit = "k";
+        }
+        if (val > 1000) {
+            val /= 1000;
+            unit = "M";
+        }
+        if (val > 1000) {
+            val /= 1000;
+            unit = "G";
+        }
+    }
+    std::stringstream ss;
+    val = (size_t)(val * 10) / 10.0;
+    ss << val << unit;
+    return ss.str();
+}
+
 double PerfResult::rate() const {
     return total_reps / total_seconds;
 }
@@ -52,36 +87,11 @@ PerfResult PerfResult::time(const std::function<void(void)> &func, float target_
 std::ostream &operator<<(std::ostream &out, const PerfResult &p) {
     std::stringstream s;
     std::string unit = "s";
-    double val = p.seconds_per_rep();
-    if (val < 1) {
-        val *= 1000;
-        unit = "ms";
-    }
-    if (val < 1) {
-        val *= 1000;
-        unit = "us";
-    }
-    if (val < 1) {
-        val *= 1000;
-        unit = "ns";
-    }
-    val = (size_t)(val * 10) / 10.0;
-    s << val << unit;
+    s << si_describe(p.seconds_per_rep()) << "s";
     while (s.str().size() < 20) {
         s << " ";
     }
-    val = p.rate();
-    unit = "Hz";
-    if (val > 1000) {
-        val /= 1000;
-        unit = "kHz";
-    }
-    if (val > 1000) {
-        val /= 1000;
-        unit = "MHz";
-    }
-    val = (size_t)(val * 10) / 10.0;
-    s << val << unit;
+    s << si_describe(p.rate()) << "Hz";
     while (s.str().size() < 40) {
         s << " ";
     }

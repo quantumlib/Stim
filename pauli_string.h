@@ -14,8 +14,11 @@
 struct PauliStringVal;
 
 struct SparsePauliWord {
+    // Bit index divided by 64, giving the uint64_t index.
     size_t index64;
+    // X flip bits.
     uint64_t wx;
+    // Z flip bits.
     uint64_t wz;
 };
 

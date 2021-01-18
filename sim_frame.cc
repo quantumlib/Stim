@@ -1,5 +1,6 @@
 #include "sim_tableau.h"
 #include "sim_frame.h"
+#include <cstring>
 
 void SimFrame::sample(aligned_bits256& out, std::mt19937 &rng) {
     auto rand_bit = std::bernoulli_distribution(0.5);
@@ -155,4 +156,122 @@ std::string SimFrame::str() const {
     std::stringstream s;
     s << *this;
     return s.str();
+}
+
+SimFrame2::SimFrame2(size_t init_num_qubits, size_t init_num_samples256, size_t init_num_measurements) :
+    num_qubits(init_num_qubits),
+    num_samples256(init_num_samples256),
+    num_measurements(init_num_measurements),
+    x_blocks(init_num_qubits * init_num_samples256 * 256),
+    z_blocks(init_num_qubits * init_num_samples256 * 256),
+    recorded_results(init_num_measurements * init_num_samples256 * 256),
+    rng_buffer(num_samples256 * 256),
+    rng((std::random_device {})()) {
+}
+
+void SimFrame2::H_XZ(const std::vector<size_t> &qubits) {
+    for (auto q : qubits) {
+        auto x = x_blocks.u256 + q * num_samples256;
+        auto z = z_blocks.u256 + q * num_samples256;
+        auto x_end = x + num_samples256;
+        while (x != x_end) {
+            std::swap(*x, *z);
+            x++;
+            z++;
+        }
+    }
+}
+void SimFrame2::CX(const std::vector<size_t> &qubits) {
+    assert((qubits.size() & 1) == 0);
+    for (size_t k = 0; k < qubits.size(); k += 2) {
+        size_t c = qubits[k];
+        size_t t = qubits[k + 1];
+        auto cx = x_blocks.u256 + c * num_samples256;
+        auto cz = z_blocks.u256 + c * num_samples256;
+        auto tx = x_blocks.u256 + t * num_samples256;
+        auto tz = z_blocks.u256 + t * num_samples256;
+        auto tx_end = tx + num_samples256;
+        while (tx != tx_end) {
+            *cz ^= *tz;
+            *tx ^= *cx;
+            tx++;
+            tz++;
+            cx++;
+            cz++;
+        }
+    }
+}
+void SimFrame2::RECORD(const std::vector<PauliFrameSimMeasurement> &measurements) {
+    for (auto e : measurements) {
+        auto q = e.target_qubit;
+        auto x = x_blocks.u256 + q * num_samples256;
+        auto m = recorded_results.u256 + q * num_samples256;
+        if (e.invert) {
+            auto m_end = m + num_samples256;
+            while (m != m_end) {
+                *m = *x ^ _mm256_set1_epi8(-1);
+                m++;
+                x++;
+            }
+        } else {
+            memcpy(m, x, num_samples256 << 5);
+        }
+    }
+}
+
+void SimFrame2::MUL_INTO_FRAME(const SparsePauliString &pauli_string, const __m256i *mask) {
+    for (const auto &w : pauli_string.indexed_words) {
+        for (size_t k2 = 0; k2 < 64; k2++) {
+            if ((w.wx >> k2) & 1) {
+                auto q = w.index64 * 64 + k2;
+                auto x = x_blocks.u256 + q * num_samples256;
+                auto x_end = x + num_samples256;
+                auto m = mask;
+                while (x != x_end) {
+                    *x ^= *m;
+                    x++;
+                    m++;
+                }
+            }
+            if ((w.wz >> k2) & 1) {
+                auto q = w.index64 * 64 + k2;
+                auto z = z_blocks.u256 + q * num_samples256;
+                auto z_end = z + num_samples256;
+                auto m = mask;
+                while (z != z_end) {
+                    *z ^= *m;
+                    z++;
+                    m++;
+                }
+            }
+        }
+
+    }
+}
+
+void SimFrame2::RANDOM_INTO_FRAME(const SparsePauliString &pauli_string) {
+    auto n64 = num_samples256 << 2;
+    for (size_t k = 0; k < n64; k++) {
+        rng_buffer.u64[k] = rng();
+    }
+    MUL_INTO_FRAME(pauli_string, rng_buffer.u256);
+}
+
+void SimFrame2::R(const std::vector<size_t> &qubits) {
+    for (auto q : qubits) {
+        auto x = x_blocks.u256 + q * num_samples256;
+        auto z = z_blocks.u256 + q * num_samples256;
+        memset(x, 0, num_samples256 << 5);
+        memset(z, 0, num_samples256 << 5);
+    }
+}
+
+PauliStringVal SimFrame2::current_frame(size_t sample_index) const {
+    assert(sample_index < num_samples256 * 256);
+    PauliStringVal result(num_qubits);
+    for (size_t q = 0; q < num_qubits; q++) {
+        result.ptr().set_x_bit(q, x_blocks.get_bit(q * num_samples256 * 256 + sample_index));
+        result.ptr().set_z_bit(q, z_blocks.get_bit(q * num_samples256 * 256 + sample_index));
+    }
+    return result;
 }

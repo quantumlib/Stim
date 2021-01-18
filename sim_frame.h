@@ -36,8 +36,30 @@ struct SimFrame {
     std::vector<PauliFrameSimCycle> cycles;
 
     static SimFrame recorded_from_tableau_sim(const std::vector<Operation> &operations);
-    void sample(aligned_bits256& out, std::mt19937 &rng);
+    void sample(aligned_bits256 &out, std::mt19937 &rng);
     std::string str() const;
+};
+
+struct SimFrame2 {
+    size_t num_qubits;
+    size_t num_samples256;
+    size_t num_measurements;
+    aligned_bits256 x_blocks;
+    aligned_bits256 z_blocks;
+    aligned_bits256 recorded_results;
+    aligned_bits256 rng_buffer;
+    std::mt19937 rng;
+
+    SimFrame2(size_t num_qubits, size_t num_samples, size_t num_measurements);
+
+    PauliStringVal current_frame(size_t sample_index) const;
+
+    void H_XZ(const std::vector<size_t> &qubits);
+    void CX(const std::vector<size_t> &qubits);
+    void RECORD(const std::vector<PauliFrameSimMeasurement> &measurements);
+    void MUL_INTO_FRAME(const SparsePauliString &pauli_string, const __m256i *mask);
+    void RANDOM_INTO_FRAME(const SparsePauliString &pauli_string);
+    void R(const std::vector<size_t> &qubits);
 };
 
 std::ostream &operator<<(std::ostream &out, const SimFrame &ps);

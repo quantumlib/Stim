@@ -270,3 +270,19 @@ TEST(PauliFrameSimulation, consistency) {
             "M 5\n"
             "M 6");
 }
+
+TEST(SimFrame2, XXX) {
+    SimFrame2 sim(501, 1024 >> 8, 10);
+    ASSERT_EQ(sim.current_frame(0).ptr().sparse().str(), "+I");
+    __m256i mask[2];
+    mask[0] = _mm256_set1_epi8(-1);
+    mask[1] = _mm256_set1_epi8(-1);
+    sim.MUL_INTO_FRAME(SparsePauliString {false, {{5, 0b1100, 0b1010}}}, &mask[0]);
+    ASSERT_EQ(sim.current_frame(0).ptr().sparse().str(), "+Z321*X322*Y323");
+    sim.H_XZ({320});
+    ASSERT_EQ(sim.current_frame(0).ptr().sparse().str(), "+Z321*X322*Y323");
+    sim.H_XZ({321});
+    ASSERT_EQ(sim.current_frame(0).ptr().sparse().str(), "+X321*X322*Y323");
+    sim.CX({321, 320});
+    ASSERT_EQ(sim.current_frame(0).ptr().sparse().str(), "+X320*X321*X322*Y323");
+}

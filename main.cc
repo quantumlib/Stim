@@ -109,6 +109,35 @@ void time_pauli_frame_sim(size_t distance) {
     std::cerr << "\n";
 }
 
+void time_pauli_frame_sim2(size_t distance, size_t num_samples) {
+    assert(!(num_samples & 0xFF));
+    std::cerr << "frame_sim(unrotated surface code distance=" << distance << ", samples=" << num_samples << ")\n";
+    auto circuit = surface_code_circuit(distance);
+    auto sim = SimFrame::recorded_from_tableau_sim(circuit.operations);
+    auto sim2 = SimFrame2(sim.num_qubits, num_samples >> 8, sim.num_measurements);
+    auto f = PerfResult::time([&]() {
+        for (const auto &cycle : sim.cycles) {
+            for (const auto &op : cycle.step1_unitary) {
+                if (op.name == "H") {
+                    sim2.H_XZ(op.targets);
+                } else if (op.name == "CX") {
+                    sim2.CX(op.targets);
+                } else {
+                    assert(false);
+                }
+            }
+            for (const auto &collapse : cycle.step2_collapse) {
+                sim2.RANDOM_INTO_FRAME(collapse.destabilizer);
+            }
+            sim2.RECORD(cycle.step3_measure);
+            sim2.R(cycle.step4_reset);
+        }
+    });
+
+    std::cerr << f << " (sample rate " << si_describe(f.rate() * num_samples) << "Hz)";
+    std::cerr << "\n";
+}
+
 void time_transpose_blockwise(size_t blocks) {
     std::cerr << "transpose_bit_matrix_256x256blocks(blocks=" << blocks << "; ";
     std::cerr << (blocks * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
@@ -227,8 +256,9 @@ int main() {
 //    time_memcpy(10000000);
 //    time_tableau_pauli_multiplication(10000);
 //    time_pauli_swap(100000);
-    time_tableau_sim(51);
-    time_pauli_frame_sim(51);
+//    time_tableau_sim(51);
+    time_pauli_frame_sim2(51, 256 * 4);
+//    time_pauli_frame_sim(51);
 //    time_cnot(10000);
 //    SimTableau::simulate(stdin, stdout);
 }

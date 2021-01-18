@@ -18,5 +18,6 @@ struct PerfResult {
 };
 
 std::ostream &operator<<(std::ostream &out, const PerfResult &ps);
+std::string si_describe(double val);
 
 #endif
