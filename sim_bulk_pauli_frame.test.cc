@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "sim_frame.h"
+#include "sim_bulk_pauli_frame.h"
 #include "program_frame.h"
 #include "sim_tableau.h"
 
@@ -61,17 +61,18 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
 TEST(SimBulkPauliFrames, recorded_bit_address) {
     SimBulkPauliFrames sim(1, 750, 1250);
 
-    ASSERT_EQ(sim.recorded_bit_address(0, 0, false), 0);
-    ASSERT_EQ(sim.recorded_bit_address(1, 0, false), 1);
-    ASSERT_EQ(sim.recorded_bit_address(0, 1, false), 1 << 8);
-    ASSERT_EQ(sim.recorded_bit_address(256, 0, false), 1 << 16);
-    ASSERT_EQ(sim.recorded_bit_address(0, 256, false), 3 << 16);
+    ASSERT_EQ(sim.recorded_bit_address(0, 0), 0);
+    ASSERT_EQ(sim.recorded_bit_address(1, 0), 1);
+    ASSERT_EQ(sim.recorded_bit_address(0, 1), 1 << 8);
+    ASSERT_EQ(sim.recorded_bit_address(256, 0), 1 << 16);
+    ASSERT_EQ(sim.recorded_bit_address(0, 256), 3 << 16);
 
-    ASSERT_EQ(sim.recorded_bit_address(0, 0, true), 0);
-    ASSERT_EQ(sim.recorded_bit_address(1, 0, true), 1 << 8);
-    ASSERT_EQ(sim.recorded_bit_address(0, 1, true), 1);
-    ASSERT_EQ(sim.recorded_bit_address(256, 0, true), 1 << 16);
-    ASSERT_EQ(sim.recorded_bit_address(0, 256, true), 3 << 16);
+    sim.do_transpose();
+    ASSERT_EQ(sim.recorded_bit_address(0, 0), 0);
+    ASSERT_EQ(sim.recorded_bit_address(1, 0), 1 << 8);
+    ASSERT_EQ(sim.recorded_bit_address(0, 1), 1);
+    ASSERT_EQ(sim.recorded_bit_address(256, 0), 1 << 16);
+    ASSERT_EQ(sim.recorded_bit_address(0, 256), 3 << 16);
 }
 
 TEST(SimBulkPauliFrames, unpack_measurements) {
@@ -81,18 +82,18 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
         expected.push_back(aligned_bits256::random(sim.num_measurements_raw));
     }
 
-    sim.begin();
+    sim.clear();
     for (size_t s = 0; s < sim.num_samples_raw; s++) {
         for (size_t m = 0; m < sim.num_measurements_raw; m++) {
-            sim.recorded_results.set_bit(sim.recorded_bit_address(s, m, false), expected[s].get_bit(m));
+            sim.recorded_results.set_bit(sim.recorded_bit_address(s, m), expected[s].get_bit(m));
         }
     }
-    sim.finish();
+    sim.do_transpose();
     ASSERT_EQ(sim.unpack_measurements(), expected);
 
     for (size_t s = 0; s < sim.num_samples_raw; s++) {
         for (size_t m = 0; m < sim.num_measurements_raw; m++) {
-            sim.recorded_results.set_bit(sim.recorded_bit_address(s, m, true), expected[s].get_bit(m));
+            sim.recorded_results.set_bit(sim.recorded_bit_address(s, m), expected[s].get_bit(m));
         }
     }
     ASSERT_EQ(sim.unpack_measurements(), expected);
@@ -100,15 +101,15 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
 
 TEST(SimBulkPauliFrames, measure_deterministic) {
     SimBulkPauliFrames sim(1, 750, 1250);
-    sim.begin();
+    sim.clear();
     sim.recorded_results = aligned_bits256::random(sim.recorded_results.num_bits);
     sim.measure_deterministic({
         {0, false},
         {0, true},
     });
     for (size_t s = 0; s < 750; s++) {
-        ASSERT_FALSE(sim.recorded_results.get_bit(sim.recorded_bit_address(s, 0, false)));
-        ASSERT_TRUE(sim.recorded_results.get_bit(sim.recorded_bit_address(s, 1, false)));
+        ASSERT_FALSE(sim.recorded_results.get_bit(sim.recorded_bit_address(s, 0)));
+        ASSERT_TRUE(sim.recorded_results.get_bit(sim.recorded_bit_address(s, 1)));
     }
 }
 
@@ -356,7 +357,7 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     }
 
     FILE *tmp = tmpfile();
-    program.sample_out_ascii(5, tmp);
+    program.sample_out(5, tmp, SAMPLE_FORMAT_ASCII);
     rewind(tmp);
     std::stringstream ss;
     while (true) {
@@ -367,6 +368,14 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
         ss << (char)i;
     }
     ASSERT_EQ(ss.str(), "0100\n0100\n0100\n0100\n0100\n");
+
+    tmp = tmpfile();
+    program.sample_out(5, tmp, SAMPLE_FORMAT_BINLE8);
+    rewind(tmp);
+    for (size_t k = 0; k < 5; k++) {
+        ASSERT_EQ(getc(tmp), 0b0010);
+    }
+    ASSERT_EQ(getc(tmp), EOF);
 }
 
 TEST(PauliFrameSimulation, big_circuit_measurements) {
@@ -387,14 +396,26 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     }
 
     FILE *tmp = tmpfile();
-    program.sample_out_ascii(750, tmp);
+    program.sample_out(750, tmp, SAMPLE_FORMAT_ASCII);
     rewind(tmp);
-    std::stringstream ss;
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
             ASSERT_EQ(getc(tmp), "01"[k % 3 == 0]);
         }
         ASSERT_EQ(getc(tmp), '\n');
+    }
+    ASSERT_EQ(getc(tmp), EOF);
+
+    tmp = tmpfile();
+    program.sample_out(750, tmp, SAMPLE_FORMAT_BINLE8);
+    rewind(tmp);
+    for (size_t s = 0; s < 750; s++) {
+        for (size_t k = 0; k < 1250; k += 8) {
+            char c = getc(tmp);
+            for (size_t k2 = 0; k + k2 < 1250 && k2 < 8; k2++) {
+                ASSERT_EQ((c >> k2) & 1, (k + k2) % 3 == 0);
+            }
+        }
     }
     ASSERT_EQ(getc(tmp), EOF);
 }
@@ -413,16 +434,4 @@ TEST(PauliFrameSimulation, big_circuit_random_measurements) {
     for (size_t k = 0; k < r.size(); k++) {
         ASSERT_TRUE(any_non_zero(r[k].u256, ceil256(r[k].num_bits) >> 8)) << k;
     }
-//
-//    FILE *tmp = tmpfile();
-//    program.sample_out_ascii(750, tmp);
-//    rewind(tmp);
-//    std::stringstream ss;
-//    for (size_t s = 0; s < 750; s++) {
-//        for (size_t k = 0; k < 1250; k++) {
-//            ASSERT_EQ(getc(tmp), "01"[k % 3 == 0]);
-//        }
-//        ASSERT_EQ(getc(tmp), '\n');
-//    }
-//    ASSERT_EQ(getc(tmp), EOF);
 }

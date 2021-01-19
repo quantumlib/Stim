@@ -29,7 +29,7 @@ struct PauliFrameProgram {
     std::string str() const;
 
     std::vector<aligned_bits256> sample(size_t num_samples);
-    void sample_out_ascii(size_t num_samples, FILE *out);
+    void sample_out(size_t num_samples, FILE *out, SampleFormat format);
 };
 
 std::ostream &operator<<(std::ostream &out, const PauliFrameProgram &ps);

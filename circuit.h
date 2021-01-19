@@ -5,6 +5,12 @@
 #include <vector>
 #include <iostream>
 
+enum SampleFormat {
+    SAMPLE_FORMAT_ASCII,
+    SAMPLE_FORMAT_BINLE8,
+    SAMPLE_FORMAT_RAW,
+};
+
 struct Operation {
     std::string name;
     std::vector<size_t> targets;

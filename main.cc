@@ -11,7 +11,7 @@
 #include "simd_util.h"
 #include <cstring>
 #include "circuit.h"
-#include "sim_frame.h"
+#include "sim_bulk_pauli_frame.h"
 #include "arg_parse.h"
 
 Circuit surface_code_circuit(size_t distance) {
@@ -103,7 +103,7 @@ void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
     auto frame_program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
     auto sim = SimBulkPauliFrames(frame_program.num_qubits, num_samples, frame_program.num_measurements);
     auto f = PerfResult::time([&]() {
-        sim.begin_and_run_and_finish(frame_program);
+        sim.clear_and_run(frame_program);
     });
     std::cerr << f << " (sample rate " << si_describe(f.rate() * num_samples) << "Hz)";
     std::cerr << "\n";
@@ -216,11 +216,10 @@ void time_cnot(size_t num_qubits) {
     std::cerr << "\n";
 }
 
-void bulk_sample_stdin_to_stdout(size_t num_samples) {
-    auto circuit = Circuit::from_file(stdin);
+void bulk_sample(size_t num_samples, SampleFormat format, FILE *in, FILE *out) {
+    auto circuit = Circuit::from_file(in);
     auto program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
-    program.sample_out_ascii(num_samples, stdout);
-    fflush(stdout);
+    program.sample_out(num_samples, out, format);
 }
 
 void profile() {
@@ -244,14 +243,40 @@ std::vector<const char *> known_arguments {
         "-shots",
         "-profile",
         "-repl",
+        "-format",
+        "-out",
+};
+std::vector<const char *> format_names {
+        "ascii",
+        "bin_LE8",
+        "RAW",
+};
+std::vector<SampleFormat > format_values {
+        SAMPLE_FORMAT_ASCII,
+        SAMPLE_FORMAT_BINLE8,
+        SAMPLE_FORMAT_RAW,
 };
 
 int main(int argc, const char** argv) {
     check_for_unknown_arguments(known_arguments.size(), known_arguments.data(), argc, argv);
+
+    SampleFormat format = format_values[find_enum_argument("-format", 0, format_names.size(), format_names.data(), argc, argv)];
     bool interactive = find_bool_argument("-repl", argc, argv);
     bool profiling = find_bool_argument("-profile", argc, argv);
     bool forced_sampling = find_argument("-shots", argc, argv) != nullptr || interactive;
     int samples = find_int_argument("-shots", 1, 0, 1 << 30, argc, argv);
+    const char *out_path = find_argument("-out", argc, argv);
+    FILE *out;
+    if (out_path == nullptr) {
+        out = stdout;
+    } else {
+        out = fopen(out_path, "w");
+        if (out == nullptr) {
+            std::cerr << "Failed to open '" << out_path << "' to write.";
+            exit(EXIT_FAILURE);
+        }
+    }
+
     if (forced_sampling && profiling) {
         std::cerr << "Incompatible arguments. -profile when sampling.\n";
         exit(EXIT_FAILURE);
@@ -260,15 +285,19 @@ int main(int argc, const char** argv) {
         std::cerr << "Incompatible arguments. Multiple samples and interactive.\n";
         exit(EXIT_FAILURE);
     }
+    if (interactive && format != SAMPLE_FORMAT_ASCII) {
+        std::cerr << "Incompatible arguments. Binary output format and repl.\n";
+        exit(EXIT_FAILURE);
+    }
 
     if (profiling) {
         profile();
         exit(EXIT_SUCCESS);
     }
 
-    if (samples == 1) {
-        SimTableau::simulate(stdin, stdout, interactive);
+    if (samples == 1 && format == SAMPLE_FORMAT_ASCII) {
+        SimTableau::simulate(stdin, out, interactive);
     } else {
-        bulk_sample_stdin_to_stdout((size_t)samples);
+        bulk_sample((size_t) samples, format, stdin, out);
     }
 }

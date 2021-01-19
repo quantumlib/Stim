@@ -25,6 +25,7 @@ struct SimBulkPauliFrames {
     aligned_bits256 recorded_results;
     aligned_bits256 rng_buffer;
     std::mt19937 rng;
+    bool results_block_transposed = false;
 
     SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements);
 
@@ -33,17 +34,18 @@ struct SimBulkPauliFrames {
     __m256i *x_start(size_t qubit);
     __m256i *z_start(size_t qubit);
 
-    void begin_and_run_and_finish(const PauliFrameProgram &program);
-    void begin();
-    void finish();
+    void unpack_sample_measurements_into(size_t sample_index, aligned_bits256 &out);
+    void clear_and_run(const PauliFrameProgram &program);
+    void clear();
+    void do_transpose();
     void MUL_INTO_FRAME(const SparsePauliString &pauli_string, const __m256i *mask);
     void RANDOM_KICKBACK(const SparsePauliString &pauli_string);
     void measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements);
     void reset(const std::vector<size_t> &qubits);
 
-    size_t recorded_bit_address(size_t sample_index, size_t measure_index, bool finished) const;
-    void unpack_write_measurements_ascii(FILE *out) const;
-    std::vector<aligned_bits256> unpack_measurements() const;
+    size_t recorded_bit_address(size_t sample_index, size_t measure_index) const;
+    void unpack_write_measurements(FILE *out, SampleFormat format);
+    std::vector<aligned_bits256> unpack_measurements();
 
     void H_XZ(const std::vector<size_t> &targets);
     void H_XY(const std::vector<size_t> &targets);

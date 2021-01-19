@@ -13,7 +13,7 @@ set(SOURCE_FILES_NO_MAIN
         program_frame.cc
         perf.cc
         sim_tableau.cc
-        sim_frame.cc
+        sim_bulk_pauli_frame.cc
         sim_vector.cc
         simd_util.cc
         tableau.cc
@@ -27,7 +27,7 @@ set(TEST_FILES
         pauli_string.test.cc
         program_frame.test.cc
         sim_tableau.test.cc
-        sim_frame.test.cc
+        sim_bulk_pauli_frame.test.cc
         sim_vector.test.cc
         simd_util.test.cc
         tableau.test.cc

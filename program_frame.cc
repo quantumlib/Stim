@@ -1,5 +1,6 @@
 #include "sim_tableau.h"
-#include "sim_frame.h"
+#include "program_frame.h"
+#include "sim_bulk_pauli_frame.h"
 #include <cstring>
 
 PauliFrameProgram PauliFrameProgram::from_stabilizer_circuit(const std::vector<Operation> &operations) {
@@ -133,24 +134,24 @@ std::string PauliFrameProgram::str() const {
 
 std::vector<aligned_bits256> PauliFrameProgram::sample(size_t num_samples) {
     SimBulkPauliFrames sim(num_qubits, num_samples, num_measurements);
-    sim.begin_and_run_and_finish(*this);
+    sim.clear_and_run(*this);
     return sim.unpack_measurements();
 }
 
-void PauliFrameProgram::sample_out_ascii(size_t num_samples, FILE *out) {
+void PauliFrameProgram::sample_out(size_t num_samples, FILE *out, SampleFormat format) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     constexpr size_t LEFTOVER_MASK = GOOD_BLOCK_SIZE - 1;
     if (num_samples & LEFTOVER_MASK) {
         auto sim = SimBulkPauliFrames(num_qubits, num_samples & LEFTOVER_MASK, num_measurements);
-        sim.begin_and_run_and_finish(*this);
-        sim.unpack_write_measurements_ascii(out);
+        sim.clear_and_run(*this);
+        sim.unpack_write_measurements(out, format);
         num_samples &= ~LEFTOVER_MASK;
     }
     if (num_samples) {
         auto sim = SimBulkPauliFrames(num_qubits, GOOD_BLOCK_SIZE, num_measurements);
         while (num_samples) {
-            sim.begin_and_run_and_finish(*this);
-            sim.unpack_write_measurements_ascii(out);
+            sim.clear_and_run(*this);
+            sim.unpack_write_measurements(out, format);
             num_samples -= GOOD_BLOCK_SIZE;
         }
     }
