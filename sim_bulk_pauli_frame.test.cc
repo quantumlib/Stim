@@ -167,15 +167,13 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const a
         if (op.name == "M") {
             for (auto q : op.targets) {
                 bool b = output.get_bit(out_p);
-                if (tableau_sim.measure(q, b) != b) {
+                if (tableau_sim.measure({q}, b)[0] != b) {
                     return false;
                 }
                 out_p++;
             }
-        } else if (op.name == "R") {
-            tableau_sim.reset_many(op.targets);
         } else {
-            tableau_sim.func_op(op.name, op.targets);
+            tableau_sim.broadcast_op(op.name, op.targets);
         }
     }
     return true;

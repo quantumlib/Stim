@@ -29,7 +29,7 @@ PauliFrameProgram PauliFrameProgram::from_stabilizer_circuit(const std::vector<O
     };
     for (const auto &op : operations) {
         if (op.name == "I" || op.name == "X" || op.name == "Y" || op.name == "Z") {
-            sim.func_op(op.name, op.targets);
+            sim.broadcast_op(op.name, op.targets);
             continue;
         }
         if (op.name == "TICK") {
@@ -64,7 +64,7 @@ PauliFrameProgram PauliFrameProgram::from_stabilizer_circuit(const std::vector<O
                 partial_cycle.step4_reset.push_back(q);
                 qubit_phases[q] = PHASE_RESET;
             }
-            sim.reset_many(op.targets);
+            sim.reset(op.targets);
         } else {
             for (auto q : op.targets) {
                 if (qubit_phases[q] > PHASE_UNITARY) {
@@ -78,7 +78,7 @@ PauliFrameProgram PauliFrameProgram::from_stabilizer_circuit(const std::vector<O
             } else {
                 partial_cycle.step1_unitary.push_back(op);
             }
-            sim.func_op(op.name, op.targets);
+            sim.broadcast_op(op.name, op.targets);
         }
     }
 

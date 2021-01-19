@@ -21,39 +21,36 @@ struct SimTableau {
 
     SimVector to_vector_sim() const;
     bool is_deterministic(size_t target) const;
-    bool measure(size_t q, float bias = 0.5);
-    void reset(size_t target);
-    std::vector<bool> measure_many(const std::vector<size_t> &targets, float bias = 0.5);
-    void reset_many(const std::vector<size_t> &targets);
+    std::vector<bool> measure(const std::vector<size_t> &targets, float bias = 0.5);
+    void reset(const std::vector<size_t> &targets);
     static std::vector<bool> simulate(const Circuit &circuit);
     static void simulate(FILE *in, FILE *out, bool newline_after_ticks);
 
-    void H(size_t q);
-    void H_YZ(size_t q);
-    void H_XY(size_t q);
-    void SQRT_X(size_t q);
-    void SQRT_Y(size_t q);
-    void SQRT_Z(size_t q);
-    void SQRT_X_DAG(size_t q);
-    void SQRT_Y_DAG(size_t q);
-    void SQRT_Z_DAG(size_t q);
-    void CX(size_t c, size_t t);
-    void CY(size_t c, size_t t);
-    void CZ(size_t c, size_t t);
-    void SWAP(size_t q1, size_t q2);
-    void X(size_t q);
-    void Y(size_t q);
-    void Z(size_t q);
-    void ISWAP(size_t q1, size_t q2);
-    void ISWAP_DAG(size_t q1, size_t q2);
-    void XCX(size_t control, size_t target);
-    void XCY(size_t control, size_t target);
-    void XCZ(size_t control, size_t target);
-    void YCX(size_t control, size_t target);
-    void YCY(size_t control, size_t target);
-    void YCZ(size_t control, size_t target);
+    void H(const std::vector<size_t> &targets);
+    void H_YZ(const std::vector<size_t> &targets);
+    void H_XY(const std::vector<size_t> &targets);
+    void SQRT_X(const std::vector<size_t> &targets);
+    void SQRT_Y(const std::vector<size_t> &targets);
+    void SQRT_Z(const std::vector<size_t> &targets);
+    void SQRT_X_DAG(const std::vector<size_t> &targets);
+    void SQRT_Y_DAG(const std::vector<size_t> &targets);
+    void SQRT_Z_DAG(const std::vector<size_t> &targets);
+    void CX(const std::vector<size_t> &targets);
+    void CY(const std::vector<size_t> &targets);
+    void CZ(const std::vector<size_t> &targets);
+    void SWAP(const std::vector<size_t> &targets);
+    void X(const std::vector<size_t> &targets);
+    void Y(const std::vector<size_t> &targets);
+    void Z(const std::vector<size_t> &targets);
+    void ISWAP(const std::vector<size_t> &targets);
+    void ISWAP_DAG(const std::vector<size_t> &targets);
+    void XCX(const std::vector<size_t> &targets);
+    void XCY(const std::vector<size_t> &targets);
+    void XCZ(const std::vector<size_t> &targets);
+    void YCX(const std::vector<size_t> &targets);
+    void YCY(const std::vector<size_t> &targets);
+    void YCZ(const std::vector<size_t> &targets);
 
-    void func_op(const std::string &name, const std::vector<size_t> &targets);
     void tableau_op(const std::string &name, const std::vector<size_t> &targets);
     void broadcast_op(const std::string &name, const std::vector<size_t> &targets);
 
@@ -69,8 +66,6 @@ private:
             float else_bias);
 };
 
-extern const std::unordered_map<std::string, std::function<void(SimTableau &, size_t)>> SINGLE_QUBIT_GATE_FUNCS;
-extern const std::unordered_map<std::string, std::function<void(SimTableau &, size_t, size_t)>> TWO_QUBIT_GATE_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(SimTableau &, const std::vector<size_t> &)>> SIM_TABLEAU_GATE_FUNC_DATA;
 
-extern const std::unordered_map<std::string, std::function<void(SimTableau &, const std::vector<size_t> &)>> BROADCAST_GATE_FUNCS;
 #endif

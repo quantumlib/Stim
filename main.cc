@@ -209,7 +209,7 @@ void time_cnot(size_t num_qubits) {
 
     SimTableau sim(num_qubits);
     auto f = PerfResult::time([&](){
-        sim.CX(0, num_qubits - 1);
+        sim.CX({0, num_qubits - 1});
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() / 1000 / 1000 << " MegaCNOT/s)";

@@ -33,12 +33,6 @@ __m256i *SimBulkPauliFrames::x_start(size_t qubit) {
     return x_blocks.u256 + qubit * num_sample_blocks256;
 }
 
-struct IterMeasure {
-    size_t sample_index;
-    size_t measurement_word256_index;
-    __m256i *bits;
-};
-
 void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, aligned_bits256 &out) {
     if (!results_block_transposed) {
         do_transpose();
