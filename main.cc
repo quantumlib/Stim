@@ -109,6 +109,40 @@ void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
     std::cerr << "\n";
 }
 
+void time_sim_bulk_pauli_frame_depolarize(size_t num_qubits, size_t num_samples, float probability) {
+    std::cerr << "time_sim_bulk_pauli_frame_depolarize(num_qubits=" << num_qubits
+        << ",num_samples=" << num_samples
+        << ",probability=" << probability << ")\n";
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::vector<size_t> targets;
+    for (size_t k = 0; k < num_qubits; k++) {
+        targets.push_back(k);
+    }
+    auto f = PerfResult::time([&]() {
+        sim.DEPOLARIZE(targets, probability);
+    });
+    std::cerr << f << " (hit rate " << si_describe(f.rate() * num_samples * num_qubits * probability) << "Hz)";
+    std::cerr << " (attempt rate " << si_describe(f.rate() * num_samples * num_qubits) << "Hz)";
+    std::cerr << "\n";
+}
+
+void time_sim_bulk_pauli_frame_depolarize2(size_t num_qubits, size_t num_samples, float probability) {
+    std::cerr << "time_sim_bulk_pauli_frame_depolarize2(num_qubits=" << num_qubits
+        << ",num_samples=" << num_samples
+        << ",probability=" << probability << ")\n";
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::vector<size_t> targets;
+    for (size_t k = 0; k < num_qubits; k++) {
+        targets.push_back(k);
+    }
+    auto f = PerfResult::time([&]() {
+        sim.DEPOLARIZE2(targets, probability);
+    });
+    std::cerr << f << " (hit rate " << si_describe(f.rate() * num_samples * num_qubits * probability) << "Hz)";
+    std::cerr << " (attempt rate " << si_describe(f.rate() * num_samples * num_qubits) << "Hz)";
+    std::cerr << "\n";
+}
+
 void time_transpose_blockwise(size_t blocks) {
     std::cerr << "transpose_bit_matrix_256x256blocks(blocks=" << blocks << "; ";
     std::cerr << (blocks * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
@@ -235,6 +269,8 @@ void profile() {
 //    time_pauli_swap(100000);
 //    time_tableau_sim(51);
 //    time_sim_bulk_pauli_frame(51, 1024);
+    time_sim_bulk_pauli_frame_depolarize(10000, 1000, 0.001);
+    time_sim_bulk_pauli_frame_depolarize2(10000, 1000, 0.001);
 //    time_pauli_frame_sim(51);
 //    time_cnot(10000);
 }

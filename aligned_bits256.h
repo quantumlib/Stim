@@ -23,6 +23,7 @@ struct aligned_bits256 {
 
     [[nodiscard]] bool get_bit(size_t k) const;
     void set_bit(size_t k, bool value);
+    void toggle_bit_if(size_t k, bool condition);
     void clear();
 
     bool operator==(const aligned_bits256 &other) const;

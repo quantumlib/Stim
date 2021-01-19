@@ -62,6 +62,9 @@ struct SimBulkPauliFrames {
     void SWAP(const std::vector<size_t> &targets2);
     void ISWAP(const std::vector<size_t> &targets2);
     void do_named_op(const std::string &name, const std::vector<size_t> &targets);
+
+    void DEPOLARIZE(const std::vector<size_t> &targets, float probability);
+    void DEPOLARIZE2(const std::vector<size_t> &targets, float probability);
 };
 
 std::ostream &operator<<(std::ostream &out, const PauliFrameProgram &ps);

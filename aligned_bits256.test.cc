@@ -22,3 +22,24 @@ TEST(aligned_bits256, clear) {
     a.clear();
     ASSERT_FALSE(any_non_zero(a.u256, 4));
 }
+
+TEST(aligned_bits256, bit_manipulation) {
+    aligned_bits256 a(1001);
+    ASSERT_EQ(a.get_bit(300), false);
+    a.set_bit(300, true);
+    ASSERT_EQ(a.get_bit(300), true);
+    a.set_bit(300, true);
+    ASSERT_EQ(a.get_bit(300), true);
+    a.set_bit(300, false);
+    ASSERT_EQ(a.get_bit(300), false);
+    a.toggle_bit_if(300, false);
+    ASSERT_EQ(a.get_bit(300), false);
+    a.toggle_bit_if(300, true);
+    ASSERT_EQ(a.get_bit(300), true);
+    a.toggle_bit_if(300, true);
+    ASSERT_EQ(a.get_bit(300), false);
+    a.toggle_bit_if(300, true);
+    ASSERT_EQ(a.get_bit(300), true);
+    a.toggle_bit_if(300, false);
+    ASSERT_EQ(a.get_bit(300), true);
+}

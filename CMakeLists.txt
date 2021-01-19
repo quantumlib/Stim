@@ -12,6 +12,7 @@ set(SOURCE_FILES_NO_MAIN
         pauli_string.cc
         program_frame.cc
         perf.cc
+        probability_util.cc
         sim_tableau.cc
         sim_bulk_pauli_frame.cc
         sim_vector.cc
@@ -26,6 +27,7 @@ set(TEST_FILES
         circuit.test.cc
         pauli_string.test.cc
         program_frame.test.cc
+        probability_util.test.cc
         sim_tableau.test.cc
         sim_bulk_pauli_frame.test.cc
         sim_vector.test.cc

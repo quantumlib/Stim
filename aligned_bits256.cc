@@ -82,6 +82,10 @@ void aligned_bits256::set_bit(size_t k, bool value) {
     }
 }
 
+void aligned_bits256::toggle_bit_if(size_t k, bool condition) {
+    u64[k >> 6] ^= (uint64_t)condition << (k & 63);
+}
+
 bool aligned_bits256::operator==(const aligned_bits256 &other) const {
     if (num_bits != other.num_bits) {
         return false;

@@ -4,6 +4,7 @@
 #include "sim_tableau.h"
 #include "sim_bulk_pauli_frame.h"
 #include "simd_util.h"
+#include "probability_util.h"
 
 size_t SimBulkPauliFrames::recorded_bit_address(size_t sample_index, size_t measure_index) const {
     size_t s_high = sample_index >> 8;
@@ -464,6 +465,44 @@ void SimBulkPauliFrames::YCY(const std::vector<size_t> &targets) {
             x2++;
             z2++;
         }
+    }
+}
+
+void SimBulkPauliFrames::DEPOLARIZE(const std::vector<size_t> &targets, float probability) {
+    RareErrorIterator skipper(probability);
+    auto n = targets.size() * num_samples_raw;
+    while (true) {
+        size_t s = skipper.next(rng);
+        if (s >= n) {
+            break;
+        }
+        auto p = 1 + (rng() % 3);
+        auto target_index = s / num_samples_raw;
+        auto sample_index = s % num_samples_raw;
+        size_t i = targets[target_index] * num_sample_blocks256 + sample_index;
+        x_blocks.toggle_bit_if(i, p & 1);
+        z_blocks.toggle_bit_if(i, p & 2);
+    }
+}
+
+void SimBulkPauliFrames::DEPOLARIZE2(const std::vector<size_t> &targets, float probability) {
+    assert(!(targets.size() & 1));
+    RareErrorIterator skipper(probability);
+    auto n = (targets.size() * num_samples_raw) >> 1;
+    while (true) {
+        size_t s = skipper.next(rng);
+        if (s >= n) {
+            break;
+        }
+        auto p = 1 + (rng() % 15);
+        auto target_index = (s / num_samples_raw) << 1;
+        auto sample_index = s % num_samples_raw;
+        size_t i1 = targets[target_index] * num_sample_blocks256 + sample_index;
+        size_t i2 = targets[target_index + 1] * num_sample_blocks256 + sample_index;
+        x_blocks.toggle_bit_if(i1, p & 1);
+        z_blocks.toggle_bit_if(i1, p & 2);
+        x_blocks.toggle_bit_if(i2, p & 4);
+        z_blocks.toggle_bit_if(i2, p & 8);
     }
 }
 
