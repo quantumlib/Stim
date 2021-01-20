@@ -235,8 +235,8 @@ void time_pauli_multiplication(size_t num_qubits) {
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
-    PauliStringPtr p1_ptr = p1;
-    PauliStringPtr p2_ptr = p2;
+    PauliStringRef p1_ptr = p1;
+    PauliStringRef p2_ptr = p2;
     auto f = PerfResult::time([&](){
         p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
     });
@@ -262,8 +262,8 @@ void time_tableau_pauli_multiplication(size_t num_qubits) {
     std::cerr << "tableau pauli multiplication(n=" << num_qubits << ")\n";
 
     Tableau t(num_qubits);
-    PauliStringPtr p1_ptr = t.x_obs_ptr(0);
-    PauliStringPtr p2_ptr = t.x_obs_ptr(5);
+    PauliStringRef p1_ptr = t.x_obs_ptr(0);
+    PauliStringRef p2_ptr = t.x_obs_ptr(5);
     auto f = PerfResult::time([&](){
         p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
     });
@@ -283,8 +283,8 @@ void time_pauli_swap(size_t num_qubits) {
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
-    PauliStringPtr p1_ptr = p1;
-    PauliStringPtr p2_ptr = p2;
+    PauliStringRef p1_ptr = p1;
+    PauliStringRef p2_ptr = p2;
     auto f = PerfResult::time([&](){
         p1_ptr.swap_with(p2_ptr);
     });

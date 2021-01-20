@@ -230,16 +230,16 @@ void TempTransposedTableauRaii::append_X(size_t target) {
     }
 }
 
-PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
-    return PauliStringPtr(
+PauliStringRef Tableau::x_obs_ptr(size_t qubit) const {
+    return PauliStringRef(
             num_qubits,
             bit_ref(data_sx.u64, qubit),
             data_x2x.word_range_ref(bit_address(qubit, 0, num_qubits, false) >> 8, ceil256(num_qubits) >> 8),
             data_x2z.word_range_ref(bit_address(qubit, 0, num_qubits, false) >> 8, ceil256(num_qubits) >> 8));
 }
 
-PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
-    return PauliStringPtr(
+PauliStringRef Tableau::z_obs_ptr(size_t qubit) const {
+    return PauliStringRef(
             num_qubits,
             bit_ref(data_sz.u64, qubit),
             data_z2x.word_range_ref(bit_address(qubit, 0, num_qubits, false) >> 8, ceil256(num_qubits) >> 8),
@@ -480,7 +480,7 @@ void Tableau::prepend_H_XY(const size_t q) {
     x.sign_ref ^= m & 2;
 }
 
-void Tableau::prepend(const PauliStringPtr &op) {
+void Tableau::prepend(const PauliStringRef &op) {
     assert(op.num_qubits == num_qubits);
     data_sz.range_ref() ^= op.x_ref;
     data_sx.range_ref() ^= op.z_ref;
@@ -537,7 +537,7 @@ void Tableau::prepend_YCZ(size_t control, size_t target) {
     prepend_CY(target, control);
 }
 
-PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {
+PauliStringVal Tableau::scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const {
     assert(gathered_input.num_qubits == scattered_indices.size());
     auto result = PauliStringVal::identity(num_qubits);
     result.val_sign = gathered_input.sign_ref;
@@ -563,7 +563,7 @@ PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const
     return result;
 }
 
-PauliStringVal Tableau::operator()(const PauliStringPtr &p) const {
+PauliStringVal Tableau::operator()(const PauliStringRef &p) const {
     assert(p.num_qubits == num_qubits);
     std::vector<size_t> indices;
     for (size_t k = 0; k < p.num_qubits; k++) {
@@ -572,10 +572,10 @@ PauliStringVal Tableau::operator()(const PauliStringPtr &p) const {
     return scatter_eval(p, indices);
 }
 
-void Tableau::apply_within(PauliStringPtr &target, const std::vector<size_t> &target_qubits) const {
+void Tableau::apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const {
     assert(num_qubits == target_qubits.size());
     auto inp = PauliStringVal::identity(num_qubits);
-    PauliStringPtr inp_ptr = inp;
+    PauliStringRef inp_ptr = inp;
     target.gather_into(inp_ptr, target_qubits);
     auto out = (*this)(inp);
     out.ptr().scatter_into(target, target_qubits);

@@ -29,8 +29,8 @@ struct Tableau {
     bool operator!=(const Tableau &other) const;
 
     PauliStringVal eval_y_obs(size_t qubit) const;
-    PauliStringPtr x_obs_ptr(size_t qubit) const;
-    PauliStringPtr z_obs_ptr(size_t qubit) const;
+    PauliStringRef x_obs_ptr(size_t qubit) const;
+    PauliStringRef z_obs_ptr(size_t qubit) const;
 
     std::string str() const;
     void expand(size_t new_num_qubits);
@@ -76,13 +76,13 @@ struct Tableau {
     /// Returns:
     ///     The output-side Pauli string.
     ///     Algebraically: $c p c^{-1}$ where $c$ is the tableau's Clifford operation.
-    PauliStringVal operator()(const PauliStringPtr &p) const;
+    PauliStringVal operator()(const PauliStringRef &p) const;
 
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
-    PauliStringVal scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const;
+    PauliStringVal scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
-    void apply_within(PauliStringPtr &target, const std::vector<size_t> &target_qubits) const;
+    void apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const;
 
     /// Appends a smaller operation into this tableau's operation.
     ///
@@ -128,7 +128,7 @@ struct Tableau {
     void prepend_YCX(size_t control, size_t target);
     void prepend_YCY(size_t control, size_t target);
     void prepend_YCZ(size_t control, size_t target);
-    void prepend(const PauliStringPtr &op);
+    void prepend(const PauliStringRef &op);
     void prepend(const SparsePauliString &op);
 
     bool z_sign(size_t a) const;

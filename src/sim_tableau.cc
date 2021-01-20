@@ -276,7 +276,7 @@ void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement) {
 
 SimVector SimTableau::to_vector_sim() const {
     auto inv = inv_state.inverse();
-    std::vector<PauliStringPtr> stabilizers;
+    std::vector<PauliStringRef> stabilizers;
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.z_obs_ptr(k));
     }
@@ -360,7 +360,7 @@ void SimTableau::collapse_while_transposed(
     bool sign = temp_transposed.z_sign(target);
     if (destabilizer_out != nullptr) {
         auto t = temp_transposed.transposed_xz_ptr(pivot);
-        *destabilizer_out = PauliStringPtr(
+        *destabilizer_out = PauliStringRef(
                 n,
                 bit_ref(&sign, 0),
                 simd_range_ref(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),

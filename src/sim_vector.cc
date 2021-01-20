@@ -60,7 +60,7 @@ void SimVector::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
     apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
 }
 
-void SimVector::apply(const PauliStringPtr &gate, size_t qubit_offset) {
+void SimVector::apply(const PauliStringRef &gate, size_t qubit_offset) {
     if (gate.sign_ref) {
         for (auto &e : state) {
             e *= -1;
@@ -80,7 +80,7 @@ void SimVector::apply(const PauliStringPtr &gate, size_t qubit_offset) {
     }
 }
 
-SimVector SimVector::from_stabilizers(const std::vector<PauliStringPtr> stabilizers) {
+SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabilizers) {
     assert(!stabilizers.empty());
     size_t num_qubits = stabilizers[0].num_qubits;
     SimVector result(num_qubits);
@@ -96,7 +96,7 @@ SimVector SimVector::from_stabilizers(const std::vector<PauliStringPtr> stabiliz
     return result;
 }
 
-float SimVector::project(const PauliStringPtr &observable) {
+float SimVector::project(const PauliStringRef &observable) {
     assert(1ULL << observable.num_qubits == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.num_qubits; k++) {

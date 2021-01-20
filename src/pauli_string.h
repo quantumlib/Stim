@@ -29,23 +29,23 @@ struct SparsePauliString {
     std::string str() const;
 };
 
-struct PauliStringPtr {
+struct PauliStringRef {
     size_t num_qubits;
     bit_ref sign_ref;
     simd_range_ref x_ref;
     simd_range_ref z_ref;
 
-    PauliStringPtr(size_t num_qubits, bit_ref sign_ref, simd_range_ref x_ref, simd_range_ref z_ref);
-    PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
+    PauliStringRef(size_t num_qubits, bit_ref sign_ref, simd_range_ref x_ref, simd_range_ref z_ref);
+    PauliStringRef(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
-    bool operator==(const PauliStringPtr &other) const;
-    bool operator!=(const PauliStringPtr &other) const;
+    bool operator==(const PauliStringRef &other) const;
+    bool operator!=(const PauliStringRef &other) const;
 
-    void overwrite_with(const PauliStringPtr &other);
-    void swap_with(PauliStringPtr &other);
+    void overwrite_with(const PauliStringRef &other);
+    void swap_with(PauliStringRef &other);
 
-    void gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const;
-    void scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const;
+    void gather_into(PauliStringRef &out, const std::vector<size_t> &in_indices) const;
+    void scatter_into(PauliStringRef &out, const std::vector<size_t> &out_indices) const;
 
     SparsePauliString sparse() const;
     std::string str() const;
@@ -55,7 +55,7 @@ struct PauliStringPtr {
     // ASSERTS:
     //     The given Pauli strings have the same size.
     //     The given Pauli strings commute.
-    PauliStringPtr& operator*=(const PauliStringPtr &commuting_rhs);
+    PauliStringRef& operator*=(const PauliStringRef &commuting_rhs);
 
     // A more general version  of `*this *= rhs` which works for anti-commuting Paulis.
     //
@@ -72,11 +72,11 @@ struct PauliStringPtr {
     //
     // ASSERTS:
     //     The given Pauli strings have the same size.
-    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringPtr& rhs) noexcept;
+    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef& rhs) noexcept;
 
     size_t num_words256() const;
 
-    bool commutes(const PauliStringPtr& other) const noexcept;
+    bool commutes(const PauliStringRef& other) const noexcept;
 };
 
 struct PauliStringVal {
@@ -85,27 +85,27 @@ struct PauliStringVal {
     simd_bits z_data;
 
     explicit PauliStringVal(size_t num_qubits);
-    PauliStringVal(const PauliStringPtr &other); // NOLINT(google-explicit-constructor)
-    PauliStringVal& operator=(const PauliStringPtr &other) noexcept;
+    PauliStringVal(const PauliStringRef &other); // NOLINT(google-explicit-constructor)
+    PauliStringVal& operator=(const PauliStringRef &other) noexcept;
     static PauliStringVal random(size_t num_qubits);
 
-    bool operator==(const PauliStringPtr &other) const;
-    bool operator!=(const PauliStringPtr &other) const;
+    bool operator==(const PauliStringRef &other) const;
+    bool operator!=(const PauliStringRef &other) const;
 
     static PauliStringVal from_pattern(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     static PauliStringVal from_str(const char *text);
     static PauliStringVal identity(size_t num_qubits);
-    PauliStringPtr ptr() const;
+    PauliStringRef ptr() const;
 
     std::string str() const;
 };
 
 std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps);
-std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps);
+std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
 
-extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t)>> SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
-extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, size_t, size_t)>> TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
-extern const std::unordered_map<std::string, std::function<void(PauliStringPtr &, const std::vector<size_t> &)>> BROADCAST_GATE_UNSIGNED_CONJ_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(PauliStringRef &, size_t)>> SINGLE_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(PauliStringRef &, size_t, size_t)>> TWO_QUBIT_GATE_UNSIGNED_CONJ_FUNCS;
+extern const std::unordered_map<std::string, std::function<void(PauliStringRef &, const std::vector<size_t> &)>> BROADCAST_GATE_UNSIGNED_CONJ_FUNCS;
 
 #endif

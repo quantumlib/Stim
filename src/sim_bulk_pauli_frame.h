@@ -30,7 +30,7 @@ struct SimBulkPauliFrames {
     SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements);
 
     PauliStringVal get_frame(size_t sample_index) const;
-    void set_frame(size_t sample_index, const PauliStringPtr &new_frame);
+    void set_frame(size_t sample_index, const PauliStringRef &new_frame);
     __m256i *x_start(size_t qubit);
     __m256i *z_start(size_t qubit);
     SimdRange x_rng(size_t qubit);

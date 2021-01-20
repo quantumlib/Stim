@@ -218,7 +218,7 @@ PauliStringVal SimBulkPauliFrames::get_frame(size_t sample_index) const {
     return result;
 }
 
-void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringPtr &new_frame) {
+void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringRef &new_frame) {
     assert(sample_index < num_samples_raw);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
