@@ -1,13 +1,14 @@
 #include "gtest/gtest.h"
 #include "sim_tableau.h"
+#include "test_util.test.h"
 
 TEST(SimTableau, identity) {
-    auto s = SimTableau(1);
+    auto s = SimTableau(1, SHARED_TEST_RNG());
     ASSERT_EQ(s.measure({0})[0], false);
 }
 
 TEST(SimTableau, bit_flip) {
-    auto s = SimTableau(1);
+    auto s = SimTableau(1, SHARED_TEST_RNG());
     s.H({0});
     s.SQRT_Z({0});
     s.SQRT_Z({0});
@@ -18,13 +19,13 @@ TEST(SimTableau, bit_flip) {
 }
 
 TEST(SimTableau, identity2) {
-    auto s = SimTableau(2);
+    auto s = SimTableau(2, SHARED_TEST_RNG());
     ASSERT_EQ(s.measure({0})[0], false);
     ASSERT_EQ(s.measure({1})[0], false);
 }
 
 TEST(SimTableau, bit_flip_2) {
-    auto s = SimTableau(2);
+    auto s = SimTableau(2, SHARED_TEST_RNG());
     s.H({0});
     s.SQRT_Z({0});
     s.SQRT_Z({0});
@@ -34,7 +35,7 @@ TEST(SimTableau, bit_flip_2) {
 }
 
 TEST(SimTableau, epr) {
-    auto s = SimTableau(2);
+    auto s = SimTableau(2, SHARED_TEST_RNG());
     s.H({0});
     s.CX({0, 1});
     ASSERT_EQ(s.is_deterministic(0), false);
@@ -47,7 +48,7 @@ TEST(SimTableau, epr) {
 }
 
 TEST(SimTableau, big_determinism) {
-    auto s = SimTableau(1000);
+    auto s = SimTableau(1000, SHARED_TEST_RNG());
     s.H({0});
     ASSERT_FALSE(s.is_deterministic(0));
     for (size_t k = 1; k < 1000; k++) {
@@ -57,7 +58,7 @@ TEST(SimTableau, big_determinism) {
 
 TEST(SimTableau, phase_kickback_consume_s_state) {
     for (size_t k = 0; k < 8; k++) {
-        auto s = SimTableau(2);
+        auto s = SimTableau(2, SHARED_TEST_RNG());
         s.H({1});
         s.SQRT_Z({1});
         s.H({0});
@@ -76,7 +77,7 @@ TEST(SimTableau, phase_kickback_consume_s_state) {
 }
 
 TEST(SimTableau, phase_kickback_preserve_s_state) {
-    auto s = SimTableau(2);
+    auto s = SimTableau(2, SHARED_TEST_RNG());
 
     // Prepare S state.
     s.H({1});
@@ -103,7 +104,7 @@ TEST(SimTableau, phase_kickback_preserve_s_state) {
 }
 
 TEST(SimTableau, kickback_vs_stabilizer) {
-    auto sim = SimTableau(3);
+    auto sim = SimTableau(3, SHARED_TEST_RNG());
     sim.H({2});
     sim.CX({2, 0});
     sim.CX({2, 1});
@@ -122,7 +123,7 @@ TEST(SimTableau, kickback_vs_stabilizer) {
 
 TEST(SimTableau, s_state_distillation_low_depth) {
     for (size_t reps = 0; reps < 10; reps++) {
-        auto sim = SimTableau(9);
+        auto sim = SimTableau(9, SHARED_TEST_RNG());
 
         std::vector<std::vector<uint8_t>> stabilizers = {
                 {0, 1, 2, 3},
@@ -190,7 +191,7 @@ TEST(SimTableau, s_state_distillation_low_depth) {
 
 TEST(SimTableau, s_state_distillation_low_space) {
     for (size_t rep = 0; rep < 10; rep++) {
-        auto sim = SimTableau(5);
+        auto sim = SimTableau(5, SHARED_TEST_RNG());
 
         std::vector<std::vector<uint8_t>> phasors = {
                 {0,},
@@ -233,9 +234,9 @@ TEST(SimTableau, s_state_distillation_low_space) {
 }
 
 TEST(SimTableau, single_qubit_gates_consistent_with_tableau_data) {
-    auto t = Tableau::random(10);
-    SimTableau sim(10);
-    SimTableau sim2(10);
+    auto t = Tableau::random(10, SHARED_TEST_RNG());
+    SimTableau sim(10, SHARED_TEST_RNG());
+    SimTableau sim2(10, SHARED_TEST_RNG());
     sim.inv_state = t;
     sim2.inv_state = t;
     for (const auto &kv : SIM_TABLEAU_GATE_FUNC_DATA) {
@@ -265,7 +266,7 @@ TEST(SimTableau, simulate) {
             "CNOT 0 1\n"
             "M 0\n"
             "M 1\n"
-            "M 2\n"));
+            "M 2\n"), SHARED_TEST_RNG());
     ASSERT_EQ(results[0], results[1]);
     ASSERT_EQ(results[2], false);
 }
@@ -277,14 +278,14 @@ TEST(SimTableau, simulate_reset) {
             "R 0\n"
             "M 0\n"
             "R 0\n"
-            "M 0\n"));
+            "M 0\n"), SHARED_TEST_RNG());
     ASSERT_EQ(results[0], true);
     ASSERT_EQ(results[1], false);
     ASSERT_EQ(results[2], false);
 }
 
 TEST(SimTableau, to_vector_sim) {
-    SimTableau sim_tab(2);
+    SimTableau sim_tab(2, SHARED_TEST_RNG());
     SimVector sim_vec(2);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -304,7 +305,7 @@ TEST(SimTableau, to_vector_sim) {
     sim_vec.apply("CX", 0, 1);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.inv_state = Tableau::random(10);
+    sim_tab.inv_state = Tableau::random(10, SHARED_TEST_RNG());
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -332,22 +333,22 @@ bool vec_sim_corroborates_measurement_process(const SimTableau &sim, std::vector
 
 TEST(SimTableau, measurement_vs_vector_sim) {
     for (size_t k = 0; k < 10; k++) {
-        SimTableau sim_tab(2);
-        sim_tab.inv_state = Tableau::random(2);
+        SimTableau sim_tab(2, SHARED_TEST_RNG());
+        sim_tab.inv_state = Tableau::random(2, SHARED_TEST_RNG());
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1}));
     }
     for (size_t k = 0; k < 10; k++) {
-        SimTableau sim_tab(4);
-        sim_tab.inv_state = Tableau::random(4);
+        SimTableau sim_tab(4, SHARED_TEST_RNG());
+        sim_tab.inv_state = Tableau::random(4, SHARED_TEST_RNG());
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {2, 1}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1, 2, 3}));
     }
     {
-        SimTableau sim_tab(12);
-        sim_tab.inv_state = Tableau::random(12);
+        SimTableau sim_tab(12, SHARED_TEST_RNG());
+        sim_tab.inv_state = Tableau::random(12, SHARED_TEST_RNG());
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1, 2, 3}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 10, 11}));
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {11, 5, 7}));
@@ -356,7 +357,7 @@ TEST(SimTableau, measurement_vs_vector_sim) {
 }
 
 TEST(SimTableau, extended_collapse) {
-    SimTableau sim(3);
+    SimTableau sim(3, SHARED_TEST_RNG());
     sim.H({0});
     sim.CX({0, 1, 0, 2});
     auto r = sim.inspected_collapse({1});

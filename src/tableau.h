@@ -42,7 +42,7 @@ struct Tableau {
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
-    static Tableau random(size_t num_qubits);
+    static Tableau random(size_t num_qubits, std::mt19937 &rng);
     Tableau inverse() const;
 
     bool satisfies_invariants() const;

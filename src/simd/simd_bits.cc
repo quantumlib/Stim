@@ -2,61 +2,56 @@
 #include <cstring>
 #include <immintrin.h>
 #include <random>
+#include <sstream>
 
 #include "simd_bits.h"
 #include "simd_util.h"
 
-size_t num_bytes(size_t num_bits) {
-    return ((num_bits + 255) / 256) * sizeof(__m256i);
+size_t min_bits_to_num_simd_words(size_t min_bits) {
+    return ceil256(min_bits) >> 8;
 }
 
-uint64_t *alloc_aligned_bits(size_t num_bits) {
-    auto bytes = num_bytes(num_bits);
-    auto result = (uint64_t *)_mm_malloc(bytes, 32);
-    memset(result, 0, bytes);
-    return result;
+uint64_t *malloc_aligned_padded_zeroed(size_t min_bits) {
+    size_t num_u8 = sizeof(__m256i) * min_bits_to_num_simd_words(min_bits);
+    void *result = _mm_malloc(num_u8, 32);
+    memset(result, 0, num_u8);
+    return (uint64_t *)result;
+}
+
+simd_bits::simd_bits(size_t min_bits) :
+        num_simd_words(min_bits_to_num_simd_words(min_bits)),
+        u64(malloc_aligned_padded_zeroed(min_bits)) {
+}
+
+simd_bits::simd_bits(const simd_bits& other) :
+        num_simd_words(other.num_simd_words),
+        u64(malloc_aligned_padded_zeroed(other.num_bits_padded())) {
+    memcpy(u8, other.u8, num_u8_padded());
+}
+
+simd_bits::simd_bits(const simd_bits_range_ref other) :
+        num_simd_words(other.num_simd_words),
+        u64(malloc_aligned_padded_zeroed(other.num_bits_padded())) {
+    memcpy(u8, other.u8, num_u8_padded());
+}
+
+simd_bits::simd_bits(simd_bits&& other) noexcept :
+        num_simd_words(other.num_simd_words),
+        u64(other.u64) {
+    other.u64 = nullptr;
+    other.num_simd_words = 0;
 }
 
 simd_bits::~simd_bits() {
     if (u64 != nullptr) {
         _mm_free(u64);
         u64 = nullptr;
-        num_bits = 0;
+        num_simd_words = 0;
     }
 }
 
 void simd_bits::clear() {
-    memset(u64, 0, num_bits >> 3);
-}
-
-simd_bits::simd_bits(size_t init_num_bits) :
-        num_bits(init_num_bits),
-        u64(alloc_aligned_bits(init_num_bits)) {
-}
-
-simd_bits::simd_bits(size_t num_bits, const void *other) :
-        num_bits(num_bits),
-        u64(alloc_aligned_bits(num_bits)) {
-    memcpy(u64, other, num_bytes(num_bits));
-}
-
-simd_bits::simd_bits(simd_bits&& other) noexcept :
-        num_bits(other.num_bits),
-        u64(other.u64) {
-    other.u64 = nullptr;
-    other.num_bits = 0;
-}
-
-simd_bits::simd_bits(const simd_bits& other) :
-        num_bits(other.num_bits),
-        u64(alloc_aligned_bits(other.num_bits)) {
-    memcpy(u64, other.u64, num_bytes(num_bits));
-}
-
-simd_bits::simd_bits(const simd_range_ref& other) :
-        num_bits(other.count << 8),
-        u64(alloc_aligned_bits(other.count << 8)) {
-    memcpy(u64, other.start, num_bytes(num_bits));
+    simd_bits_range_ref(*this).clear();
 }
 
 simd_bits& simd_bits::operator=(simd_bits&& other) noexcept {
@@ -66,9 +61,14 @@ simd_bits& simd_bits::operator=(simd_bits&& other) noexcept {
 }
 
 simd_bits& simd_bits::operator=(const simd_bits& other) {
+    *this = simd_bits_range_ref(other);
+    return *this;
+}
+
+simd_bits& simd_bits::operator=(const simd_bits_range_ref other) {
     // Avoid re-allocating if already the same size.
-    if (this->num_bits == other.num_bits) {
-        memcpy(u64, other.u64, num_bytes(num_bits));
+    if (num_simd_words == other.num_simd_words) {
+        simd_bits_range_ref(*this) = other;
         return *this;
     }
 
@@ -77,32 +77,22 @@ simd_bits& simd_bits::operator=(const simd_bits& other) {
     return *this;
 }
 
-bool simd_bits::operator==(const simd_bits &other) const {
-    if (num_bits != other.num_bits) {
-        return false;
-    }
-    return memcmp(u64, other.u64, (num_bits + 7) >> 3) == 0;
+bool simd_bits::operator==(const simd_bits_range_ref &other) const {
+    return simd_bits_range_ref(*this) == other;
 }
 
-bool simd_bits::operator!=(const simd_bits &other) const {
+bool simd_bits::operator!=(const simd_bits_range_ref &other) const {
     return !(*this == other);
 }
 
-simd_bits simd_bits::random(size_t num_bits) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<unsigned long long> dis(
-            std::numeric_limits<std::uint64_t>::min(),
-            std::numeric_limits<std::uint64_t>::max());
-    size_t num_u64 = (num_bits + 63) / 64;
-    auto data = simd_bits(num_bits);
-    for (size_t k = 0; k < num_u64; k++) {
-        data.u64[k] = dis(gen);
-    }
-    if (num_bits & 63) {
-      data.u64[num_u64 - 1] &= (1 << (num_bits & 63)) - 1;
-    }
-    return data;
+simd_bits simd_bits::random(size_t min_bits, std::mt19937& rng) {
+    simd_bits result(min_bits);
+    result.randomize(min_bits, rng);
+    return result;
+}
+
+void simd_bits::randomize(size_t num_bits, std::mt19937 &rng) {
+    simd_bits_range_ref(*this).randomize(num_bits, rng);
 }
 
 bit_ref simd_bits::operator[](size_t k) {
@@ -113,18 +103,31 @@ const bit_ref simd_bits::operator[](size_t k) const {
     return bit_ref(u64, k);
 }
 
-simd_range_ref simd_bits::range_ref() {
-    return simd_range_ref {u256, ceil256(num_bits) >> 8};
+simd_bits_range_ref simd_bits::word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
+    return simd_bits_range_ref(u256 + word_offset, sub_num_simd_words);
 }
 
-const simd_range_ref simd_bits::range_ref() const {
-    return simd_range_ref {u256, ceil256(num_bits) >> 8};
+const simd_bits_range_ref simd_bits::word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
+    return simd_bits_range_ref(u256 + word_offset, sub_num_simd_words);
 }
 
-simd_range_ref simd_bits::word_range_ref(size_t word_offset, size_t word_count) {
-    return simd_range_ref {u256 + word_offset, word_count};
+simd_bits::operator simd_bits_range_ref() {
+    return simd_bits_range_ref(u256, num_simd_words);
 }
 
-const simd_range_ref simd_bits::word_range_ref(size_t word_offset, size_t word_count) const {
-    return simd_range_ref {u256 + word_offset, word_count};
+simd_bits::operator const simd_bits_range_ref() const {
+    return simd_bits_range_ref(u256, num_simd_words);
+}
+
+simd_bits &simd_bits::operator^=(const simd_bits_range_ref other) {
+    simd_bits_range_ref(*this) ^= other;
+    return *this;
+}
+
+bool simd_bits::not_zero() const {
+    return simd_bits_range_ref(*this).not_zero();
+}
+
+std::string simd_bits::str() const {
+    return simd_bits_range_ref(*this).str();
 }

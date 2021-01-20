@@ -12,8 +12,8 @@
 PauliStringRef::PauliStringRef(
         size_t init_num_qubits,
         bit_ref init_sign_ref,
-        simd_range_ref init_x_ref,
-        simd_range_ref init_z_ref) :
+        simd_bits_range_ref init_x_ref,
+        simd_bits_range_ref init_z_ref) :
         num_qubits(init_num_qubits),
         sign_ref(init_sign_ref),
         x_ref(init_x_ref),
@@ -29,32 +29,34 @@ PauliStringVal::operator PauliStringRef() {
 }
 
 PauliStringVal::PauliStringVal(size_t num_qubits) :
+        num_qubits(num_qubits),
         val_sign(false),
         x_data(num_qubits),
         z_data(num_qubits) {
 }
 
 PauliStringVal::PauliStringVal(const PauliStringRef &other) :
+        num_qubits(other.num_qubits),
         val_sign((bool)other.sign_ref),
-        x_data(other.num_qubits, other.x_ref.start),
-        z_data(other.num_qubits, other.z_ref.start) {
+        x_data(other.x_ref),
+        z_data(other.z_ref) {
 }
 
 const PauliStringRef PauliStringVal::ref() const {
     return PauliStringRef(
-        x_data.num_bits,
-        // HACK: remove and restore const correctness.
-        (const bit_ref)bit_ref((bool *)&val_sign, 0),
-        x_data.range_ref(),
-        z_data.range_ref());
+        num_qubits,
+        // HACK: const correctness is temporarily removed, but immediately restored.
+        bit_ref((bool *)&val_sign, 0),
+        x_data,
+        z_data);
 }
 
 PauliStringRef PauliStringVal::ref() {
     return PauliStringRef(
-        x_data.num_bits,
+        num_qubits,
         bit_ref(&val_sign, 0),
-        x_data.range_ref(),
-        z_data.range_ref());
+        x_data,
+        z_data);
 }
 
 std::string PauliStringVal::str() const {
@@ -88,12 +90,10 @@ SparsePauliString PauliStringRef::sparse() const {
         (bool)sign_ref,
         {}
     };
-    auto n = (num_qubits + 63) >> 6;
-    auto x64 = (uint64_t *)x_ref.start;
-    auto z64 = (uint64_t *)z_ref.start;
+    auto n = x_ref.num_u64_padded();
     for (size_t k = 0; k < n; k++) {
-        auto wx = x64[k];
-        auto wz = z64[k];
+        auto wx = x_ref.u64[k];
+        auto wz = z_ref.u64[k];
         if (wx | wz) {
             result.indexed_words.push_back({k, wx, wz});
         }
@@ -146,10 +146,6 @@ std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps) {
 
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
     return out << ps.ref();
-}
-
-size_t PauliStringRef::num_words256() const {
-    return ceil256(num_qubits) >> 8;
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
@@ -215,11 +211,11 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     __m256i cnt2 {};
 
     simd_for_each_4(
-            x_ref.start,
-            z_ref.start,
-            rhs.x_ref.start,
-            rhs.z_ref.start,
-            num_words256(),
+            x_ref.u256,
+            z_ref.u256,
+            rhs.x_ref.u256,
+            rhs.z_ref.u256,
+            x_ref.num_simd_words,
             [&cnt1, &cnt2](auto px1, auto pz1, auto px2, auto pz2) {
                 // Load into registers.
                 auto x1 = *px1;
@@ -245,11 +241,11 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     return s & 3;
 }
 
-PauliStringVal PauliStringVal::random(size_t num_qubits) {
+PauliStringVal PauliStringVal::random(size_t num_qubits, std::mt19937& rng) {
     auto result = PauliStringVal(num_qubits);
-    result.x_data = std::move(simd_bits::random(num_qubits));
-    result.z_data = std::move(simd_bits::random(num_qubits));
-    result.val_sign ^= simd_bits::random(1)[0];
+    result.x_data.randomize(num_qubits, rng);
+    result.z_data.randomize(num_qubits, rng);
+    result.val_sign ^= rng() & 1;
     return result;
 }
 
@@ -257,11 +253,11 @@ bool PauliStringRef::commutes(const PauliStringRef& other) const noexcept {
     assert(num_qubits == other.num_qubits);
     __m256i cnt1 {};
     simd_for_each_4(
-            x_ref.start,
-            z_ref.start,
-            other.x_ref.start,
-            other.z_ref.start,
-            num_words256(),
+            x_ref.u256,
+            z_ref.u256,
+            other.x_ref.u256,
+            other.z_ref.u256,
+            x_ref.num_simd_words,
             [&cnt1](auto x1, auto z1, auto x2, auto z2) {
         cnt1 ^= (*x1 & *z2) ^ (*x2 & *z1);
     });

@@ -15,7 +15,7 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/bit_ref.cc
         src/simd/simd_bit_table.cc
         src/simd/simd_bits.cc
-        src/simd/simd_range.cc
+        src/simd/simd_bits_range_ref.cc
         src/simd/simd_util.cc
         src/sim_tableau.cc
         src/sim_vector.cc
@@ -32,8 +32,9 @@ set(TEST_FILES
         src/simd/bit_ref.test.cc
         src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
-        src/simd/simd_range.test.cc
+        src/simd/simd_bits_range_ref.test.cc
         src/simd/simd_util.test.cc
+        src/test_util.test.cc
         src/sim_tableau.test.cc
         src/sim_vector.test.cc
         src/tableau.test.cc

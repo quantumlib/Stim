@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "simd_bits.h"
 #include "simd_util.h"
+#include "../test_util.test.h"
 
 TEST(simd_bits, move) {
     auto a = simd_bits(512);
@@ -17,7 +18,7 @@ TEST(simd_bits, small_copy) {
 }
 
 TEST(simd_bits, clear) {
-    auto a = simd_bits::random(1001);
+    auto a = simd_bits::random(1001, SHARED_TEST_RNG());
     ASSERT_TRUE(any_non_zero(a.u256, 4));
     a.clear();
     ASSERT_FALSE(any_non_zero(a.u256, 4));

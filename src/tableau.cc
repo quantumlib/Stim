@@ -43,8 +43,8 @@ TransposedTableauXZ TempTransposedTableauRaii::transposed_xz_ptr(size_t qubit) c
     PauliStringRef x(tableau.xs[qubit]);
     PauliStringRef z(tableau.zs[qubit]);
     return {{
-        {x.x_ref.start, x.z_ref.start, tableau.xs.signs.u256},
-        {z.x_ref.start, z.z_ref.start, tableau.zs.signs.u256}
+        {x.x_ref.u256, x.z_ref.u256, tableau.xs.signs.u256},
+        {z.x_ref.u256, z.z_ref.u256, tableau.zs.signs.u256}
     }};
 }
 
@@ -79,11 +79,11 @@ void TempTransposedTableauRaii::append_CX(size_t control, size_t target) {
 
 void Tableau::expand(size_t new_num_qubits) {
     assert(new_num_qubits >= num_qubits);
-    size_t n1 = num_qubits;
-    size_t m1 = ceil256(n1);
-    size_t m2 = ceil256(new_num_qubits);
-    if (m1 == m2) {
-        for (size_t k = n1; k < new_num_qubits; k++) {
+    size_t old_num_qubits = num_qubits;
+    size_t old_num_simd_words = ceil256(old_num_qubits) >> 8;
+    size_t new_num_simd_words = ceil256(new_num_qubits) >> 8;
+    if (old_num_simd_words == new_num_simd_words) {
+        for (size_t k = num_qubits; k < new_num_qubits; k++) {
             xs[k].x_ref[k] = true;
             zs[k].z_ref[k] = true;
         }
@@ -95,14 +95,13 @@ void Tableau::expand(size_t new_num_qubits) {
     this->~Tableau();
     new(this) Tableau(new_num_qubits);
 
-    memcpy(xs.signs.u256, old_state.xs.signs.u256, m1 >> 3);
-    memcpy(zs.signs.u256, old_state.zs.signs.u256, m1 >> 3);
-    for (size_t k = 0; k < n1; k++) {
-
-        memcpy(xs[k].x_ref.start, old_state.xs[k].x_ref.start, m1 >> 3);
-        memcpy(xs[k].z_ref.start, old_state.xs[k].z_ref.start, m1 >> 3);
-        memcpy(zs[k].x_ref.start, old_state.zs[k].x_ref.start, m1 >> 3);
-        memcpy(zs[k].z_ref.start, old_state.zs[k].z_ref.start, m1 >> 3);
+    xs.signs.word_range_ref(0, old_num_simd_words) = old_state.xs.signs;
+    zs.signs.word_range_ref(0, old_num_simd_words) = old_state.zs.signs;
+    for (size_t k = 0; k < old_num_qubits; k++) {
+        xs[k].x_ref.word_range_ref(0, old_num_simd_words) = old_state.xs[k].x_ref;
+        xs[k].z_ref.word_range_ref(0, old_num_simd_words) = old_state.xs[k].z_ref;
+        zs[k].x_ref.word_range_ref(0, old_num_simd_words) = old_state.zs[k].x_ref;
+        zs[k].z_ref.word_range_ref(0, old_num_simd_words) = old_state.zs[k].z_ref;
     }
 }
 
@@ -478,8 +477,8 @@ void Tableau::prepend_H_XY(const size_t q) {
 
 void Tableau::prepend(const PauliStringRef &op) {
     assert(op.num_qubits == num_qubits);
-    zs.signs.range_ref() ^= op.x_ref;
-    xs.signs.range_ref() ^= op.z_ref;
+    zs.signs ^= op.x_ref;
+    xs.signs ^= op.z_ref;
 }
 
 void Tableau::prepend(const SparsePauliString &op) {
@@ -695,12 +694,8 @@ BitMat random_stabilizer_tableau_raw(size_t n, std::mt19937 &gen) {
     return fused_m * u;
 }
 
-Tableau Tableau::random(size_t num_qubits) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    auto rand_bit = std::bernoulli_distribution(0.5);
-
-    auto raw = random_stabilizer_tableau_raw(num_qubits, gen);
+Tableau Tableau::random(size_t num_qubits, std::mt19937 &rng) {
+    auto raw = random_stabilizer_tableau_raw(num_qubits, rng);
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
@@ -709,8 +704,9 @@ Tableau Tableau::random(size_t num_qubits) {
             result.zs[row].x_ref[col] = raw.get(row + num_qubits, col);
             result.zs[row].z_ref[col] = raw.get(row + num_qubits, col + num_qubits);
         }
-        result.xs.signs[row] = rand_bit(gen);
-        result.zs.signs[row] = rand_bit(gen);
+        uint32_t u = rng();
+        result.xs.signs[row] = u & 1;
+        result.zs.signs[row] = u & 2;
     }
     return result;
 }
@@ -734,30 +730,30 @@ bool Tableau::satisfies_invariants() const {
 }
 
 Tableau Tableau::inverse() const {
-    Tableau inv(num_qubits);
-    auto dn = ceil256(num_qubits);
-    dn *= dn;
+    Tableau result(num_qubits);
 
     // Transpose data with xx zz swap tweak.
-    inv.xs.xt.data = zs.zt.data;
-    inv.xs.zt.data = xs.zt.data;
-    inv.zs.xt.data = zs.xt.data;
-    inv.zs.zt.data = xs.xt.data;
-    do_transpose(inv);
+    result.xs.xt.data = zs.zt.data;
+    result.xs.zt.data = xs.zt.data;
+    result.zs.xt.data = zs.xt.data;
+    result.zs.zt.data = xs.xt.data;
+    do_transpose(result);
 
-    // Initialize sign data by fixing round-trip signs.
-    PauliStringVal pauli_buf(num_qubits);
+    // Fix signs by checking for consistent round trips.
+    PauliStringVal singleton(num_qubits);
     for (size_t k = 0; k < num_qubits; k++) {
-        pauli_buf.x_data[k] = true;
-        inv.xs[k].sign_ref ^= (*this)(inv(pauli_buf)).val_sign;
-        pauli_buf.x_data[k] = false;
+        singleton.x_data[k] = true;
+        bool x_round_trip_sign = (*this)(result(singleton)).val_sign;
+        singleton.x_data[k] = false;
+        singleton.z_data[k] = true;
+        bool z_round_trip_sign = (*this)(result(singleton)).val_sign;
+        singleton.z_data[k] = false;
 
-        pauli_buf.z_data[k] = true;
-        inv.zs[k].sign_ref ^= (*this)(inv(pauli_buf)).val_sign;
-        pauli_buf.z_data[k] = false;
+        result.xs[k].sign_ref ^= x_round_trip_sign;
+        result.zs[k].sign_ref ^= z_round_trip_sign;
     }
 
-    return inv;
+    return result;
 }
 
 const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES {

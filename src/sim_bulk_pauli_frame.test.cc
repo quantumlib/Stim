@@ -2,9 +2,10 @@
 #include "sim_bulk_pauli_frame.h"
 #include "program_frame.h"
 #include "sim_tableau.h"
+#include "test_util.test.h"
 
 TEST(SimBulkPauliFrames, get_set_frame) {
-    SimBulkPauliFrames sim(6, 4, 999);
+    SimBulkPauliFrames sim(6, 4, 999, SHARED_TEST_RNG());
     ASSERT_EQ(sim.get_frame(0), PauliStringVal::from_str("______"));
     ASSERT_EQ(sim.get_frame(1), PauliStringVal::from_str("______"));
     ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
@@ -20,19 +21,19 @@ TEST(SimBulkPauliFrames, get_set_frame) {
     ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
     ASSERT_EQ(sim.get_frame(3), PauliStringVal::from_str("ZZZZZZ"));
 
-    SimBulkPauliFrames big_sim(501, 1001, 999);
+    SimBulkPauliFrames big_sim(501, 1001, 999, SHARED_TEST_RNG());
     big_sim.set_frame(258, PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[k == 303]; }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse().str(), "+X303");
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse().str(), "+I");
 }
 
 TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
-    SimBulkPauliFrames big_sim(501, 1001, 999);
-    __m256i mask[4];
-    mask[0] = _mm256_set1_epi8(4);
-    mask[1] = _mm256_set1_epi8(-1);
-    mask[2] = _mm256_set1_epi8(0);
-    mask[3] = _mm256_set1_epi8(0);
+    SimBulkPauliFrames big_sim(501, 1001, 999, SHARED_TEST_RNG());
+    simd_bits mask(1024);
+    mask.u256[0] = _mm256_set1_epi8(4);
+    mask.u256[1] = _mm256_set1_epi8(-1);
+    mask.u256[2] = _mm256_set1_epi8(0);
+    mask.u256[3] = _mm256_set1_epi8(0);
     auto ps1 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[(k | 2) == 303]; }).ref().sparse();
     auto ps2 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_Z"[(k | 1) == 303]; }).ref().sparse();
     big_sim.MUL_INTO_FRAME(ps1, mask);
@@ -46,7 +47,7 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
     ASSERT_EQ(big_sim.get_frame(511).ref().sparse().str(), "+X301*X303");
     ASSERT_EQ(big_sim.get_frame(512).ref().sparse().str(), "+I");
 
-    mask[1] = _mm256_set1_epi8(0);
+    mask.u256[1] = _mm256_set1_epi8(0);
     big_sim.MUL_INTO_FRAME(ps2, mask);
     ASSERT_EQ(big_sim.get_frame(0).ref().sparse().str(), "+I");
     ASSERT_EQ(big_sim.get_frame(1).ref().sparse().str(), "+I");
@@ -59,7 +60,7 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
 }
 
 TEST(SimBulkPauliFrames, recorded_bit_address) {
-    SimBulkPauliFrames sim(1, 750, 1250);
+    SimBulkPauliFrames sim(1, 750, 1250, SHARED_TEST_RNG());
 
     ASSERT_EQ(sim.recorded_bit_address(0, 0), 0);
     ASSERT_EQ(sim.recorded_bit_address(1, 0), 1);
@@ -76,10 +77,10 @@ TEST(SimBulkPauliFrames, recorded_bit_address) {
 }
 
 TEST(SimBulkPauliFrames, unpack_measurements) {
-    SimBulkPauliFrames sim(1, 500, 1000);
+    SimBulkPauliFrames sim(1, 500, 1000, SHARED_TEST_RNG());
     std::vector<simd_bits> expected;
     for (size_t k = 0; k < sim.num_samples_raw; k++) {
-        expected.push_back(simd_bits::random(sim.num_measurements_raw));
+        expected.push_back(simd_bits::random(sim.num_measurements_raw, SHARED_TEST_RNG()));
     }
 
     sim.clear();
@@ -92,9 +93,9 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
 }
 
 TEST(SimBulkPauliFrames, measure_deterministic) {
-    SimBulkPauliFrames sim(1, 750, 1250);
+    SimBulkPauliFrames sim(1, 750, 1250, SHARED_TEST_RNG());
     sim.clear();
-    sim.m_table.data = simd_bits::random(sim.m_table.data.num_bits);
+    sim.m_table.data.randomize(sim.m_table.data.num_bits_padded(), SHARED_TEST_RNG());
     sim.measure_deterministic({
         {0, false},
         {0, true},
@@ -112,7 +113,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
     size_t num_qubits = 500;
     size_t num_samples = 1000;
     size_t num_measurements = 10;
-    SimBulkPauliFrames sim(num_qubits, num_samples, num_measurements);
+    SimBulkPauliFrames sim(num_qubits, num_samples, num_measurements, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<size_t> targets {101, 403, 202, 100};
@@ -120,7 +121,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
         targets.pop_back();
     }
     for (size_t k = 7; k < num_samples; k += 101) {
-        PauliStringVal test_value = PauliStringVal::random(num_qubits);
+        PauliStringVal test_value = PauliStringVal::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
         bulk_func(sim, targets);
@@ -150,7 +151,7 @@ TEST(SimBulkPauliFrames, operations_consistent_with_tableau_data) {
 #define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << PauliFrameProgram::from_stabilizer_circuit(Circuit::from_text(program).operations)
 
 bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits &output) {
-    auto tableau_sim = SimTableau(circuit.num_qubits);
+    auto tableau_sim = SimTableau(circuit.num_qubits, SHARED_TEST_RNG());
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
         if (op.name == "TICK") {
@@ -193,7 +194,7 @@ bool is_sim_frame_consistent_with_sim_tableau(const std::string &program) {
     auto circuit = Circuit::from_text(program);
     auto frame_program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
 
-    for (const auto &sample : frame_program.sample(10)) {
+    for (const auto &sample : frame_program.sample(10, SHARED_TEST_RNG())) {
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
             for (size_t k = 0; k < frame_program.num_measurements; k++) {
@@ -340,14 +341,14 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
             "M 2\n"
             "M 3\n"
             ).operations);
-    auto r = program.sample(10);
+    auto r = program.sample(10, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 10);
     for (const auto &e : r) {
         ASSERT_EQ(e.u64[0], 0b0010);
     }
 
     FILE *tmp = tmpfile();
-    program.sample_out(5, tmp, SAMPLE_FORMAT_ASCII);
+    program.sample_out(5, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
     rewind(tmp);
     std::stringstream ss;
     while (true) {
@@ -360,7 +361,7 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     ASSERT_EQ(ss.str(), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    program.sample_out(5, tmp, SAMPLE_FORMAT_BINLE8);
+    program.sample_out(5, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 0b0010);
@@ -377,7 +378,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
         ops.push_back({"M", {k}});
     }
     auto program = PauliFrameProgram::from_stabilizer_circuit(ops);
-    auto r = program.sample(750);
+    auto r = program.sample(750, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 750);
     for (const auto &e : r) {
         for (size_t k = 0; k < 1250; k++) {
@@ -386,7 +387,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     }
 
     FILE *tmp = tmpfile();
-    program.sample_out(750, tmp, SAMPLE_FORMAT_ASCII);
+    program.sample_out(750, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -397,7 +398,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    program.sample_out(750, tmp, SAMPLE_FORMAT_BINLE8);
+    program.sample_out(750, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {
@@ -419,9 +420,9 @@ TEST(PauliFrameSimulation, big_circuit_random_measurements) {
         ops.push_back({"M", {k}});
     }
     auto program = PauliFrameProgram::from_stabilizer_circuit(ops);
-    auto r = program.sample(1000);
+    auto r = program.sample(1000, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 1000);
     for (size_t k = 0; k < r.size(); k++) {
-        ASSERT_TRUE(any_non_zero(r[k].u256, ceil256(r[k].num_bits) >> 8)) << k;
+        ASSERT_TRUE(r[k].not_zero()) << k;
     }
 }

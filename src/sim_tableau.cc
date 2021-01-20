@@ -1,7 +1,7 @@
 #include "sim_tableau.h"
 #include <queue>
 
-SimTableau::SimTableau(size_t num_qubits) : inv_state(Tableau::identity(num_qubits)), rng((std::random_device {})()) {
+SimTableau::SimTableau(size_t num_qubits, std::mt19937 &rng) : inv_state(Tableau::identity(num_qubits)), rng(rng) {
 }
 
 bool SimTableau::is_deterministic(size_t target) const {
@@ -221,8 +221,8 @@ void SimTableau::tableau_op(const std::string &name, const std::vector<size_t> &
     inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
 }
 
-std::vector<bool> SimTableau::simulate(const Circuit &circuit) {
-    SimTableau sim(circuit.num_qubits);
+std::vector<bool> SimTableau::simulate(const Circuit &circuit, std::mt19937 &rng) {
+    SimTableau sim(circuit.num_qubits, rng);
     std::vector<bool> result;
     for (const auto &op : circuit.operations) {
         if (op.name == "M") {
@@ -243,10 +243,10 @@ void SimTableau::ensure_large_enough_for_qubit(size_t q) {
     inv_state.expand(ceil256(q + 1));
 }
 
-void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement) {
+void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement, std::mt19937 &rng) {
     CircuitReader reader(in);
     size_t max_qubit = 0;
-    SimTableau sim(1);
+    SimTableau sim(1, rng);
     while (reader.read_next_moment(newline_after_measurement)) {
         for (const auto &e : reader.operations) {
             for (size_t q : e.targets) {
@@ -280,7 +280,7 @@ SimVector SimTableau::to_vector_sim() const {
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.zs[k]);
     }
-    return SimVector::from_stabilizers(stabilizers);
+    return SimVector::from_stabilizers(stabilizers, rng);
 }
 
 void SimTableau::collapse_many(const std::vector<size_t> &targets, float bias) {
@@ -363,8 +363,8 @@ void SimTableau::collapse_while_transposed(
         *destabilizer_out = PauliStringRef(
                 n,
                 bit_ref(&sign, 0),
-                simd_range_ref(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),
-                simd_range_ref(t.xz[0].z, ceil256(inv_state.num_qubits) >> 8)).sparse();
+                simd_bits_range_ref(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),
+                simd_bits_range_ref(t.xz[0].z, ceil256(inv_state.num_qubits) >> 8)).sparse();
     } else {
         auto coin_flip = std::bernoulli_distribution(else_bias)(rng);
         if (sign != coin_flip) {

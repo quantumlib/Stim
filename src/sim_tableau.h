@@ -14,17 +14,17 @@
 
 struct SimTableau {
     Tableau inv_state;
-    std::mt19937 rng;
+    std::mt19937 &rng;
 
-    explicit SimTableau(size_t num_qubits);
+    explicit SimTableau(size_t num_qubits, std::mt19937 &rng);
     void ensure_large_enough_for_qubit(size_t q);
 
     SimVector to_vector_sim() const;
     bool is_deterministic(size_t target) const;
     std::vector<bool> measure(const std::vector<size_t> &targets, float bias = 0.5);
     void reset(const std::vector<size_t> &targets);
-    static std::vector<bool> simulate(const Circuit &circuit);
-    static void simulate(FILE *in, FILE *out, bool newline_after_ticks);
+    static std::vector<bool> simulate(const Circuit &circuit, std::mt19937 &rng);
+    static void simulate(FILE *in, FILE *out, bool newline_after_ticks, std::mt19937 &rng);
 
     void H(const std::vector<size_t> &targets);
     void H_YZ(const std::vector<size_t> &targets);

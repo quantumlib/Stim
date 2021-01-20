@@ -4,6 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 
+/// A reference to a bit within a byte.
+///
+/// Conceptually behaves the same as a `bool &`, as opposed to a `bool *`. For example, the `=` operator overwrites the
+/// contents of the bit being referenced instead of changing which bit is pointed to.
 struct bit_ref {
     uint8_t *byte;
     uint8_t bit_index;

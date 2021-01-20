@@ -80,19 +80,22 @@ void SimVector::apply(const PauliStringRef &gate, size_t qubit_offset) {
     }
 }
 
-SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabilizers) {
+SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937 &rng) {
     assert(!stabilizers.empty());
     size_t num_qubits = stabilizers[0].num_qubits;
     SimVector result(num_qubits);
-    std::random_device rd;
-    std::mt19937 gen(rd());
+
+    // Create an initial state $|T\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
     std::uniform_real_distribution<float> dist(-1.0, +1.0);
     for (size_t k = 0; k < result.state.size(); k++) {
-        result.state[k] = dist(gen);
+        result.state[k] = {dist(rng), dist(rng)};
     }
+
+    // Project out the non-overlapping parts.
     for (const auto &p : stabilizers) {
         result.project(p);
     }
+
     return result;
 }
 
@@ -212,3 +215,19 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
              {0.5f, i*0.5f, i*0.5f, 0.5f}}},
     {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
 };
+
+std::string SimVector::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+
+std::ostream &operator<<(std::ostream &out, const SimVector &sim) {
+    out << "SimVector {\n";
+    for (size_t k = 0; k < sim.state.size(); k++) {
+        out << "    " << k << ": " << sim.state[k] << "\n";
+
+    }
+    out << "}";
+    return out;
+}

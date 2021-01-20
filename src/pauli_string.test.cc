@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "pauli_string.h"
 #include "tableau.h"
+#include "test_util.test.h"
 
 TEST(pauli_string, str) {
     auto p1 = PauliStringVal::from_str("+IXYZ");
@@ -170,7 +171,7 @@ TEST(pauli_string, move_copy_assignment) {
 
 TEST(pauli_string, foreign_memory) {
     size_t bits = 2048;
-    auto buffer = simd_bits::random(bits);
+    auto buffer = simd_bits::random(bits, SHARED_TEST_RNG());
     bool signs = false;
 
     auto p1 = PauliStringRef(500, bit_ref(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));

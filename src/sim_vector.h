@@ -16,7 +16,11 @@ struct SimVector {
     /// Creates a state vector for the given number of qubits, initialized to the zero state.
     explicit SimVector(size_t num_qubits);
 
-    static SimVector from_stabilizers(const std::vector<PauliStringRef> stabilizers);
+    /// Returns a SimVector with a state vector satisfying all the given stabilizers.
+    ///
+    /// Assumes the stabilizers commute. Works by generating a random state vector and projecting onto
+    /// each of the given stabilizers. Global phase will vary.
+    static SimVector from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937 &rng);
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);
@@ -31,9 +35,13 @@ struct SimVector {
     float project(const PauliStringRef &observable);
 
     bool approximate_equals(const SimVector &other, bool up_to_global_phase = false) const;
+
+    std::string str() const;
 };
 
 /// Unitary matrices for common gates, keyed by name.
 extern const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
+
+std::ostream &operator<<(std::ostream &out, const SimVector &sim);
 
 #endif

@@ -8,7 +8,7 @@
 #include <sstream>
 #include <functional>
 #include "simd/simd_bits.h"
-#include "simd/simd_range.h"
+#include "simd/simd_bits_range_ref.h"
 #include "simd/bit_ref.h"
 #include "simd/simd_util.h"
 
@@ -20,10 +20,10 @@ struct SparsePauliString;
 struct PauliStringRef {
     size_t num_qubits;
     bit_ref sign_ref;
-    simd_range_ref x_ref;
-    simd_range_ref z_ref;
+    simd_bits_range_ref x_ref;
+    simd_bits_range_ref z_ref;
 
-    PauliStringRef(size_t num_qubits, bit_ref sign_ref, simd_range_ref x_ref, simd_range_ref z_ref);
+    PauliStringRef(size_t num_qubits, bit_ref sign_ref, simd_bits_range_ref x_ref, simd_bits_range_ref z_ref);
     PauliStringRef &operator=(const PauliStringRef &other);
 
     bool operator==(const PauliStringRef &other) const;
@@ -61,8 +61,6 @@ struct PauliStringRef {
     //     The given Pauli strings have the same size.
     uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef& rhs) noexcept;
 
-    size_t num_words256() const;
-
     bool commutes(const PauliStringRef& other) const noexcept;
 };
 
@@ -82,6 +80,7 @@ struct SparsePauliString {
 };
 
 struct PauliStringVal {
+    size_t num_qubits;
     bool val_sign;
     simd_bits x_data;
     simd_bits z_data;
@@ -89,7 +88,7 @@ struct PauliStringVal {
     explicit PauliStringVal(size_t num_qubits);
     PauliStringVal(const PauliStringRef &other); // NOLINT(google-explicit-constructor)
     PauliStringVal& operator=(const PauliStringRef &other) noexcept;
-    static PauliStringVal random(size_t num_qubits);
+    static PauliStringVal random(size_t num_qubits, std::mt19937& rng);
     operator const PauliStringRef() const;
     operator PauliStringRef();
 

@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
-#include "tableau.h"
-#include "sim_vector.h"
 #include <random>
+#include "gtest/gtest.h"
+#include "sim_vector.h"
+#include "tableau.h"
+#include "test_util.test.h"
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;
@@ -325,8 +326,8 @@ bool are_tableau_mutations_equivalent(
 
     std::vector<Tableau> tableaus{
         test_tableau_dual,
-        Tableau::random(n + 10),
-        Tableau::random(n + 30),
+        Tableau::random(n + 10, SHARED_TEST_RNG()),
+        Tableau::random(n + 30, SHARED_TEST_RNG()),
     };
     std::vector<std::vector<size_t>> cases{targets1, targets2, targets3};
     for (const auto &t : tableaus) {
@@ -373,19 +374,19 @@ TEST(tableau, check_invariants) {
 
 TEST(tableau, random) {
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau::random(1);
+        auto t = Tableau::random(1, SHARED_TEST_RNG());
         ASSERT_TRUE(t.satisfies_invariants()) << t;
     }
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau::random(2);
+        auto t = Tableau::random(2, SHARED_TEST_RNG());
         ASSERT_TRUE(t.satisfies_invariants()) << t;
     }
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau::random(3);
+        auto t = Tableau::random(3, SHARED_TEST_RNG());
         ASSERT_TRUE(t.satisfies_invariants()) << t;
     }
     for (size_t k = 0; k < 20; k++) {
-        auto t = Tableau::random(30);
+        auto t = Tableau::random(30, SHARED_TEST_RNG());
         ASSERT_TRUE(t.satisfies_invariants());
     }
 }
@@ -492,7 +493,7 @@ TEST(tableau, specialized_operations) {
 }
 
 TEST(tableau, expand) {
-    auto t = Tableau::random(4);
+    auto t = Tableau::random(4, SHARED_TEST_RNG());
     auto t2 = t;
     for (size_t n = 8; n < 500; n += 255) {
         t2.expand(n);
@@ -530,10 +531,11 @@ TEST(tableau, expand) {
 TEST(tableau, transposed_access) {
     size_t n = 1000;
     Tableau t(n);
-    t.xs.xt.data = simd_bits::random(t.xs.xt.data.num_bits);
-    t.xs.zt.data = simd_bits::random(t.xs.xt.data.num_bits);
-    t.zs.xt.data = simd_bits::random(t.xs.xt.data.num_bits);
-    t.zs.zt.data = simd_bits::random(t.xs.xt.data.num_bits);
+    auto m = t.xs.xt.data.num_bits_padded();
+    t.xs.xt.data.randomize(m, SHARED_TEST_RNG());
+    t.xs.zt.data.randomize(m, SHARED_TEST_RNG());
+    t.zs.xt.data.randomize(m, SHARED_TEST_RNG());
+    t.zs.zt.data.randomize(m, SHARED_TEST_RNG());
     for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
         for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
             bool bxx = t.xs.xt[inp_qubit][out_qubit];
@@ -570,17 +572,22 @@ TEST(tableau, inverse) {
     ASSERT_EQ(t2, GATE_TABLEAUS.at("X"));
 
     for (size_t k = 5; k < 20; k += 7) {
-        t1 = Tableau::random(k);
+        t1 = Tableau::random(k, SHARED_TEST_RNG());
         t2 = t1.inverse();
         ASSERT_TRUE(t2.satisfies_invariants());
-        auto p = PauliStringVal::random(k);
-        ASSERT_EQ(p, t1(t2(p)));
+        auto p = PauliStringVal::random(k, SHARED_TEST_RNG());
+        auto p2 = t1(t2(p));
+        auto x1 = p.x_data.str();
+        auto x2 = p2.x_data.str();
+        auto z1 = p.z_data.str();
+        auto z2 = p2.z_data.str();
+        ASSERT_EQ(p, p2);
         ASSERT_EQ(p, t2(t1(p)));
     }
 }
 
 TEST(tableau, prepend_pauli) {
-    Tableau t = Tableau::random(6);
+    Tableau t = Tableau::random(6, SHARED_TEST_RNG());
     Tableau ref = t;
     t.prepend(PauliStringVal::from_str("_XYZ__"));
     ref.prepend_X(1);

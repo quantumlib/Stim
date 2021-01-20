@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "simd_util.h"
 #include "simd_bits.h"
+#include "../test_util.test.h"
 
 simd_bits reference_transpose_of(size_t bit_width, const simd_bits &data) {
     auto expected = simd_bits(ceil256(bit_width) * ceil256(bit_width));
@@ -55,7 +56,7 @@ TEST(simd_util, pack256_1) {
 }
 
 simd_bits reference_blockwise_transpose_of(size_t bit_area, const simd_bits &data) {
-    auto expected = simd_bits(data.num_bits);
+    auto expected = simd_bits(data.num_bits_padded());
     for (size_t block = 0; block < bit_area; block += 1 << 16) {
         for (size_t i = 0; i < 256; i++) {
             for (size_t j = 0; j < 256; j++) {
@@ -68,7 +69,7 @@ simd_bits reference_blockwise_transpose_of(size_t bit_area, const simd_bits &dat
 
 TEST(simd_util, block_transpose_bit_matrix) {
     size_t bit_area = 9 << 16;
-    auto data = simd_bits::random(bit_area);
+    auto data = simd_bits::random(bit_area, SHARED_TEST_RNG());
     auto expected = reference_blockwise_transpose_of(bit_area, data);
     blockwise_transpose_256x256(data.u64, bit_area);
     ASSERT_EQ(data, expected);
@@ -101,7 +102,7 @@ bool function_performs_address_bit_permutation(
         const std::function<void(simd_bits &)> &func,
         const std::vector<uint8_t> &bit_permutation) {
     size_t area = 1 << w;
-    auto data = simd_bits::random(area);
+    auto data = simd_bits::random(area, SHARED_TEST_RNG());
     auto expected = simd_bits(area);
 
     for (size_t k_in = 0; k_in < area; k_in++) {
@@ -254,15 +255,15 @@ TEST(simd_util, any_non_zero) {
 
 TEST(simd_util, transpose_bit_matrix) {
     size_t bit_width = 256 * 3;
-    auto data = simd_bits::random(bit_width * bit_width);
+    auto data = simd_bits::random(bit_width * bit_width, SHARED_TEST_RNG());
     auto expected = reference_transpose_of(bit_width, data);
     transpose_bit_matrix(data.u64, bit_width);
     ASSERT_EQ(data, expected);
 }
 
 TEST(simd_util, mem_xor256) {
-    auto d1 = simd_bits::random(500);
-    auto d2 = simd_bits::random(500);
+    auto d1 = simd_bits::random(500, SHARED_TEST_RNG());
+    auto d2 = simd_bits::random(500, SHARED_TEST_RNG());
     simd_bits d3(500);
     mem_xor256(d3.u256, d1.u256, 2);
     ASSERT_EQ(d1, d3);

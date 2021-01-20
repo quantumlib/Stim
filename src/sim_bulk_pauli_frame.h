@@ -25,10 +25,10 @@ struct SimBulkPauliFrames {
     simd_bit_table z_table;
     simd_bit_table m_table;
     simd_bits rng_buffer;
-    std::mt19937 rng;
+    std::mt19937 &rng;
     bool results_block_transposed = false;
 
-    SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements);
+    SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937 &rng);
 
     PauliStringVal get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
@@ -37,7 +37,7 @@ struct SimBulkPauliFrames {
     void clear_and_run(const PauliFrameProgram &program);
     void clear();
     void do_transpose();
-    void MUL_INTO_FRAME(const SparsePauliString &pauli_string, const __m256i *mask);
+    void MUL_INTO_FRAME(const SparsePauliString &pauli_string, const simd_bits_range_ref mask);
     void RANDOM_KICKBACK(const SparsePauliString &pauli_string);
     void measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements);
     void reset(const std::vector<size_t> &qubits);

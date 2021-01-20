@@ -92,7 +92,8 @@ Circuit surface_code_circuit(size_t distance) {
 void time_tableau_sim(size_t distance) {
     std::cerr << "tableau_sim(unrotated surface code distance=" << distance << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto f = PerfResult::time([&]() { SimTableau::simulate(circuit); });
+    std::mt19937 rng((std::random_device {})());
+    auto f = PerfResult::time([&]() { SimTableau::simulate(circuit, rng); });
     std::cerr << f;
     std::cerr << "\n";
 }
@@ -101,7 +102,8 @@ void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
     std::cerr << "time_sim_bulk_pauli_frame(unrotated surface code distance=" << distance << ", samples=" << num_samples << ")\n";
     auto circuit = surface_code_circuit(distance);
     auto frame_program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
-    auto sim = SimBulkPauliFrames(frame_program.num_qubits, num_samples, frame_program.num_measurements);
+    std::mt19937 rng((std::random_device {})());
+    auto sim = SimBulkPauliFrames(frame_program.num_qubits, num_samples, frame_program.num_measurements, rng);
     auto f = PerfResult::time([&]() {
         sim.clear_and_run(frame_program);
     });
@@ -112,7 +114,8 @@ void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
 void time_sim_bulk_pauli_frame_h(size_t num_qubits, size_t num_samples) {
     std::cerr << "time_sim_bulk_pauli_frame_h(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples << ")\n";
-    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::mt19937 rng((std::random_device {})());
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1, rng);
     std::vector<size_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
@@ -127,7 +130,8 @@ void time_sim_bulk_pauli_frame_h(size_t num_qubits, size_t num_samples) {
 void time_sim_bulk_pauli_frame_cz(size_t num_qubits, size_t num_samples) {
     std::cerr << "time_sim_bulk_pauli_frame_cz(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples << ")\n";
-    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::mt19937 rng((std::random_device {})());
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1, rng);
     std::vector<size_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
@@ -141,9 +145,10 @@ void time_sim_bulk_pauli_frame_cz(size_t num_qubits, size_t num_samples) {
 
 void time_any_non_zero(size_t num_bits) {
     std::cerr << "any_non_zero(num_bits=" << num_bits << ")\n";
-    auto d = simd_bits::random(num_bits);
+    std::mt19937 rng((std::random_device {})());
+    auto d = simd_bits::random(num_bits, rng);
     auto f = PerfResult::time([&]() {
-        any_non_zero(d.u256, ceil256(d.num_bits) >> 8);
+        d.not_zero();
     });
     std::cerr << f;
     std::cerr << "\n";
@@ -152,7 +157,8 @@ void time_any_non_zero(size_t num_bits) {
 void time_sim_bulk_pauli_frame_swap(size_t num_qubits, size_t num_samples) {
     std::cerr << "time_sim_bulk_pauli_frame_swap(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples << ")\n";
-    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::mt19937 rng((std::random_device {})());
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1, rng);
     std::vector<size_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
@@ -168,7 +174,8 @@ void time_sim_bulk_pauli_frame_depolarize(size_t num_qubits, size_t num_samples,
     std::cerr << "time_sim_bulk_pauli_frame_depolarize(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples
         << ",probability=" << probability << ")\n";
-    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::mt19937 rng((std::random_device {})());
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1, rng);
     std::vector<size_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
@@ -185,7 +192,8 @@ void time_sim_bulk_pauli_frame_depolarize2(size_t num_qubits, size_t num_samples
     std::cerr << "time_sim_bulk_pauli_frame_depolarize2(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples
         << ",probability=" << probability << ")\n";
-    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::mt19937 rng((std::random_device {})());
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1, rng);
     std::vector<size_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
@@ -203,7 +211,8 @@ void time_transpose_blockwise(size_t blocks) {
     std::cerr << (blocks * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
 
     size_t num_bits = blocks << 16;
-    auto data = simd_bits::random(num_bits);
+    std::mt19937 rng((std::random_device {})());
+    auto data = simd_bits::random(num_bits, rng);
     auto f = PerfResult::time([&](){
         blockwise_transpose_256x256(data.u64, num_bits);
     });
@@ -216,7 +225,7 @@ void time_transpose_tableau(size_t num_qubits) {
     std::cerr << "transpose_tableau(num_qubits=" << num_qubits << "; ";
 
     Tableau tableau(num_qubits);
-    std::cerr << (tableau.xs.xt.data.num_bits * 4 / 8 / 1024 / 1024) << "MiB)\n";
+    std::cerr << (tableau.xs.xt.data.num_bits_padded() * 4 / 8 / 1024 / 1024) << "MiB)\n";
     auto f = PerfResult::time([&](){
         TempTransposedTableauRaii temp(tableau);
     });
@@ -246,10 +255,11 @@ void time_pauli_multiplication(size_t num_qubits) {
 void time_memcpy(size_t bits) {
     std::cerr << "memcpy (bits=" << bits << ")\n";
 
-    auto d1 = simd_bits::random(bits * 2);
-    auto d2 = simd_bits::random(bits * 2);
+    std::mt19937 rng((std::random_device {})());
+    auto d1 = simd_bits::random(bits * 2, rng);
+    auto d2 = simd_bits::random(bits * 2, rng);
     auto f = PerfResult::time([&](){
-        memcpy(d1.u64, d2.u64, d1.num_bits >> 3);
+        memcpy(d1.u64, d2.u64, d1.num_u8_padded());
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * bits / 1000 / 1000 / 1000 << " GigaPaulis/s)";
@@ -290,7 +300,8 @@ void time_pauli_swap(size_t num_qubits) {
 void time_cnot(size_t num_qubits) {
     std::cerr << "cnot(n=" << num_qubits << ")\n";
 
-    SimTableau sim(num_qubits);
+    std::mt19937 rng((std::random_device {})());
+    SimTableau sim(num_qubits, rng);
     auto f = PerfResult::time([&](){
         sim.CX({0, num_qubits - 1});
     });
@@ -299,10 +310,10 @@ void time_cnot(size_t num_qubits) {
     std::cerr << "\n";
 }
 
-void bulk_sample(size_t num_samples, SampleFormat format, FILE *in, FILE *out) {
+void bulk_sample(size_t num_samples, SampleFormat format, FILE *in, FILE *out, std::mt19937 &rng) {
     auto circuit = Circuit::from_file(in);
     auto program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
-    program.sample_out(num_samples, out, format);
+    program.sample_out(num_samples, out, format, rng);
 }
 
 void profile() {
@@ -384,9 +395,10 @@ int main(int argc, const char** argv) {
         exit(EXIT_SUCCESS);
     }
 
+    std::mt19937 rng((std::random_device {})());
     if (samples == 1 && format == SAMPLE_FORMAT_ASCII) {
-        SimTableau::simulate(stdin, out, interactive);
+        SimTableau::simulate(stdin, out, interactive, rng);
     } else {
-        bulk_sample((size_t) samples, format, stdin, out);
+        bulk_sample((size_t) samples, format, stdin, out, rng);
     }
 }
