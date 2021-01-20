@@ -4,7 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <immintrin.h>
-#include "simd_util.h"
+#include "simd/simd_util.h"
 #include "pauli_string.h"
 
 /// A Tableau is a stabilizer tableau representation of a Clifford operation.

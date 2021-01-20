@@ -8,7 +8,7 @@
 #include "sim_tableau.h"
 #include "pauli_string.h"
 #include "perf.h"
-#include "simd_util.h"
+#include "simd/simd_util.h"
 #include <cstring>
 #include "circuit.h"
 #include "sim_bulk_pauli_frame.h"

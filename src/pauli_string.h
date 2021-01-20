@@ -7,9 +7,9 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
-#include "aligned_bits256.h"
-#include "bit_ptr.h"
-#include "simd_util.h"
+#include "simd/aligned_bits256.h"
+#include "simd/bit_ptr.h"
+#include "simd/simd_util.h"
 
 struct PauliStringVal;
 

@@ -2,7 +2,7 @@
 
 #include <sstream>
 #include "bit_mat.h"
-#include "simd_util.h"
+#include "simd/simd_util.h"
 
 BitMat::BitMat(size_t n) : n(n), data(ceil256(n) * ceil256(n)) {
 }

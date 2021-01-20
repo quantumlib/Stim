@@ -1,7 +1,7 @@
 #ifndef BIT_MAT_H
 #define BIT_MAT_H
 
-#include "aligned_bits256.h"
+#include "simd/aligned_bits256.h"
 #include <iostream>
 #include <string>
 

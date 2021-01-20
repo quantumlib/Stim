@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "../src/aligned_bits256.h"
-#include "../src/simd_util.h"
+#include "../../src/simd/aligned_bits256.h"
+#include "../../src/simd/simd_util.h"
 
 TEST(aligned_bits256, move) {
     auto a = aligned_bits256(512);

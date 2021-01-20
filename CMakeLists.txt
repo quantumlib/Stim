@@ -4,10 +4,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
-        src/aligned_bits256.cc
+        src/simd/aligned_bits256.cc
         src/arg_parse.cc
         src/bit_mat.cc
-        src/bit_ptr.cc
+        src/simd/bit_ptr.cc
         src/circuit.cc
         src/pauli_string.cc
         src/program_frame.cc
@@ -16,14 +16,14 @@ set(SOURCE_FILES_NO_MAIN
         src/sim_tableau.cc
         src/sim_bulk_pauli_frame.cc
         src/sim_vector.cc
-        src/simd_util.cc
+        src/simd/simd_util.cc
         src/tableau.cc
         )
 set(TEST_FILES
-        test/aligned_bits256.test.cc
+        test/simd/aligned_bits256.test.cc
         test/arg_parse.test.cc
         test/bit_mat.test.cc
-        test/bit_ptr.test.cc
+        test/simd/bit_ptr.test.cc
         test/circuit.test.cc
         test/pauli_string.test.cc
         test/program_frame.test.cc
@@ -31,7 +31,7 @@ set(TEST_FILES
         test/sim_tableau.test.cc
         test/sim_bulk_pauli_frame.test.cc
         test/sim_vector.test.cc
-        test/simd_util.test.cc
+        test/simd/simd_util.test.cc
         test/tableau.test.cc
         )
 
