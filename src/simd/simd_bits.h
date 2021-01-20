@@ -5,6 +5,7 @@
 #include <immintrin.h>
 #include "bit_ptr.h"
 
+/// Densely packed bits, allocated with an alignment that enables SIMD operations.
 struct simd_bits {
     size_t num_bits;
     union {

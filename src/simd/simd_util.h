@@ -157,21 +157,6 @@ inline void simd_for_each_5(__m256i *v0, __m256i *v1, __m256i *v2, __m256i *v3, 
     }
 }
 
-struct SimdRange {
-    __m256i *start;
-    size_t count;
-    SimdRange &operator^=(const SimdRange &other);
-    SimdRange &operator^=(const __m256i *other);
-    void overwrite_with(const SimdRange &other);
-    void overwrite_with(const __m256i *other);
-    void clear();
-    void swap_with(SimdRange other);
-    void swap_with(__m256i *other);
-
-    BitRef operator[](size_t k);
-    bool operator[](size_t k) const;
-};
-
 uint16_t pop_count(const __m256i &val);
 
 #endif

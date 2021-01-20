@@ -188,35 +188,6 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
     }
 }
 
-SimdRange &SimdRange::operator^=(const SimdRange &other) {
-    return *this ^= other.start;
-}
-
-SimdRange &SimdRange::operator^=(const __m256i *other) {
-    mem_xor256(start, other, count);
-    return *this;
-}
-
-void SimdRange::overwrite_with(const SimdRange &other) {
-    overwrite_with(other.start);
-}
-
-void SimdRange::overwrite_with(const __m256i *other) {
-    memcpy(start, other, count << 5);
-}
-
-void SimdRange::clear() {
-    memset(start, 0, count << 5);
-}
-
-void SimdRange::swap_with(SimdRange other) {
-    swap_with(other.start);
-}
-
-void SimdRange::swap_with(__m256i *other) {
-    mem_swap256(start, other, count);
-}
-
 uint16_t pop_count(const __m256i &val) {
     auto p = (uint64_t *)&val;
     uint16_t result = 0;
@@ -225,12 +196,4 @@ uint16_t pop_count(const __m256i &val) {
     result += std::popcount(p[2]);
     result += std::popcount(p[3]);
     return result;
-}
-
-BitRef SimdRange::operator[](size_t k) {
-    return BitRef(start, k);
-}
-
-bool SimdRange::operator[](size_t k) const {
-    return (bool)BitRef(start, k);
 }
