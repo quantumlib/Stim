@@ -84,8 +84,8 @@ void Tableau::expand(size_t new_num_qubits) {
     size_t m2 = ceil256(new_num_qubits);
     if (m1 == m2) {
         for (size_t k = n1; k < new_num_qubits; k++) {
-            x_obs_ptr(k)._xr.set_bit(k, true);
-            z_obs_ptr(k)._zr.set_bit(k, true);
+            x_obs_ptr(k)._xr[k] = true;
+            z_obs_ptr(k)._zr[k] = true;
         }
         num_qubits = new_num_qubits;
         return;
@@ -246,7 +246,7 @@ PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
 }
 
 bool Tableau::z_sign(size_t a) const {
-    return data_sz.get_bit(a);
+    return data_sz[a];
 }
 
 bool TempTransposedTableauRaii::z_sign(size_t a) const {
@@ -254,21 +254,15 @@ bool TempTransposedTableauRaii::z_sign(size_t a) const {
 }
 
 bool TempTransposedTableauRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_z2x.get_bit(
-            bit_address(input_qubit, output_qubit, tableau.num_qubits, true)
-    );
+    return tableau.data_z2x[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
 }
 
 bool TempTransposedTableauRaii::x_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_x2z.get_bit(
-            bit_address(input_qubit, output_qubit, tableau.num_qubits, true)
-    );
+    return tableau.data_x2z[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
 }
 
 bool TempTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_z2z.get_bit(
-            bit_address(input_qubit, output_qubit, tableau.num_qubits, true)
-    );
+    return tableau.data_z2z[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
 }
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
@@ -291,8 +285,8 @@ Tableau::Tableau(size_t num_qubits) :
         data_sx(ceil256(num_qubits)),
         data_sz(ceil256(num_qubits)) {
     for (size_t q = 0; q < num_qubits; q++) {
-        x_obs_ptr(q)._xr.set_bit(q, true);
-        z_obs_ptr(q)._zr.set_bit(q, true);
+        x_obs_ptr(q)._xr[q] = true;
+        z_obs_ptr(q)._zr[q] = true;
     }
 }
 
@@ -338,8 +332,8 @@ std::ostream &operator<<(std::ostream &out, const Tableau &t) {
             out << ' ';
             auto x = t.x_obs_ptr(k);
             auto z = t.z_obs_ptr(k);
-            out << "_XZY"[x._xr.get_bit(q) + 2 * x._zr.get_bit(q)];
-            out << "_XZY"[z._xr.get_bit(q) + 2 * z._zr.get_bit(q)];
+            out << "_XZY"[x._xr[q] + 2 * x._zr[q]];
+            out << "_XZY"[z._xr[q] + 2 * z._zr[q]];
         }
     }
     return out;
@@ -560,8 +554,8 @@ PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const
     result.val_sign = gathered_input.bit_ptr_sign.get();
     for (size_t k_gathered = 0; k_gathered < gathered_input.num_qubits; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
-        auto x = gathered_input._xr.get_bit(k_gathered);
-        auto z = gathered_input._zr.get_bit(k_gathered);
+        auto x = gathered_input._xr[k_gathered];
+        auto z = gathered_input._zr[k_gathered];
         if (x) {
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
@@ -726,13 +720,13 @@ Tableau Tableau::random(size_t num_qubits) {
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
-            result.x_obs_ptr(row)._xr.set_bit(col, raw.get(row, col));
-            result.x_obs_ptr(row)._zr.set_bit(col, raw.get(row, col + num_qubits));
-            result.z_obs_ptr(row)._xr.set_bit(col, raw.get(row + num_qubits, col));
-            result.z_obs_ptr(row)._zr.set_bit(col, raw.get(row + num_qubits, col + num_qubits));
+            result.x_obs_ptr(row)._xr[col] = raw.get(row, col);
+            result.x_obs_ptr(row)._zr[col] = raw.get(row, col + num_qubits);
+            result.z_obs_ptr(row)._xr[col] = raw.get(row + num_qubits, col);
+            result.z_obs_ptr(row)._zr[col] = raw.get(row + num_qubits, col + num_qubits);
         }
-        result.data_sx.set_bit(row, rand_bit(gen));
-        result.data_sz.set_bit(row, rand_bit(gen));
+        result.data_sx[row] = rand_bit(gen);
+        result.data_sz[row] = rand_bit(gen);
     }
     return result;
 }
@@ -771,13 +765,13 @@ Tableau Tableau::inverse() const {
     PauliStringVal pauli_buf(num_qubits);
     auto p = pauli_buf.ptr();
     for (size_t k = 0; k < num_qubits; k++) {
-        p._xr.set_bit(k, true);
+        p._xr[k] = true;
         inv.x_obs_ptr(k).bit_ptr_sign.toggle_if((*this)(inv(p)).val_sign);
-        p._xr.set_bit(k, false);
+        p._xr[k] = false;
 
-        p._zr.set_bit(k, true);
+        p._zr[k] = true;
         inv.z_obs_ptr(k).bit_ptr_sign.toggle_if((*this)(inv(p)).val_sign);
-        p._zr.set_bit(k, false);
+        p._zr[k] = false;
     }
 
     return inv;

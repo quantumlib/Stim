@@ -85,15 +85,7 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
     sim.clear();
     for (size_t s = 0; s < sim.num_samples_raw; s++) {
         for (size_t m = 0; m < sim.num_measurements_raw; m++) {
-            sim.recorded_results.set_bit(sim.recorded_bit_address(s, m), expected[s].get_bit(m));
-        }
-    }
-    sim.do_transpose();
-    ASSERT_EQ(sim.unpack_measurements(), expected);
-
-    for (size_t s = 0; s < sim.num_samples_raw; s++) {
-        for (size_t m = 0; m < sim.num_measurements_raw; m++) {
-            sim.recorded_results.set_bit(sim.recorded_bit_address(s, m), expected[s].get_bit(m));
+            sim.recorded_results[sim.recorded_bit_address(s, m)] = expected[s][m];
         }
     }
     ASSERT_EQ(sim.unpack_measurements(), expected);
@@ -108,8 +100,8 @@ TEST(SimBulkPauliFrames, measure_deterministic) {
         {0, true},
     });
     for (size_t s = 0; s < 750; s++) {
-        ASSERT_FALSE(sim.recorded_results.get_bit(sim.recorded_bit_address(s, 0)));
-        ASSERT_TRUE(sim.recorded_results.get_bit(sim.recorded_bit_address(s, 1)));
+        ASSERT_FALSE(sim.recorded_results[sim.recorded_bit_address(s, 0)]);
+        ASSERT_TRUE(sim.recorded_results[sim.recorded_bit_address(s, 1)]);
     }
 }
 
@@ -166,7 +158,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
         }
         if (op.name == "M") {
             for (auto q : op.targets) {
-                bool b = output.get_bit(out_p);
+                bool b = output[out_p];
                 if (tableau_sim.measure({q}, b)[0] != b) {
                     return false;
                 }
@@ -205,7 +197,7 @@ bool is_sim_frame_consistent_with_sim_tableau(const std::string &program) {
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
             for (size_t k = 0; k < frame_program.num_measurements; k++) {
-                std::cerr << "01"[sample.get_bit(k)];
+                std::cerr << "01"[sample[k]];
             }
             std::cerr << "\n";
             return false;
@@ -389,7 +381,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     ASSERT_EQ(r.size(), 750);
     for (const auto &e : r) {
         for (size_t k = 0; k < 1250; k++) {
-            ASSERT_EQ(e.get_bit(k), k % 3 == 0);
+            ASSERT_EQ(e[k], k % 3 == 0);
         }
     }
 

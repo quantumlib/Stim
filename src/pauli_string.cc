@@ -248,7 +248,7 @@ PauliStringVal PauliStringVal::random(size_t num_qubits) {
     auto result = PauliStringVal(num_qubits);
     result.x_data = std::move(simd_bits::random(num_qubits));
     result.z_data = std::move(simd_bits::random(num_qubits));
-    result.val_sign ^= simd_bits::random(1).get_bit(0);
+    result.val_sign ^= simd_bits::random(1)[0];
     return result;
 }
 
@@ -271,8 +271,8 @@ void PauliStringPtr::gather_into(PauliStringPtr &out, const std::vector<size_t> 
     assert(in_indices.size() == out.num_qubits);
     for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
-        out._xr.bit_ptr(k_out).set(_xr.get_bit(k_in));
-        out._zr.bit_ptr(k_out).set(_zr.get_bit(k_in));
+        out._xr[k_out] = _xr[k_in];
+        out._zr[k_out] = _zr[k_in];
     }
 }
 
@@ -280,8 +280,8 @@ void PauliStringPtr::scatter_into(PauliStringPtr &out, const std::vector<size_t>
     assert(num_qubits == out_indices.size());
     for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];
-        out._xr.bit_ptr(k_out).set(_xr.get_bit(k_in));
-        out._zr.bit_ptr(k_out).set(_zr.get_bit(k_in));
+        out._xr[k_out] = _xr[k_in];
+        out._zr[k_out] = _zr[k_in];
     }
     out.bit_ptr_sign.toggle_if(bit_ptr_sign.get());
 }

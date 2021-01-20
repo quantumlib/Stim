@@ -25,21 +25,21 @@ TEST(simd_bits, clear) {
 
 TEST(simd_bits, bit_manipulation) {
     simd_bits a(1001);
-    ASSERT_EQ(a.get_bit(300), false);
-    a.set_bit(300, true);
-    ASSERT_EQ(a.get_bit(300), true);
-    a.set_bit(300, true);
-    ASSERT_EQ(a.get_bit(300), true);
-    a.set_bit(300, false);
-    ASSERT_EQ(a.get_bit(300), false);
-    a.toggle_bit_if(300, false);
-    ASSERT_EQ(a.get_bit(300), false);
-    a.toggle_bit_if(300, true);
-    ASSERT_EQ(a.get_bit(300), true);
-    a.toggle_bit_if(300, true);
-    ASSERT_EQ(a.get_bit(300), false);
-    a.toggle_bit_if(300, true);
-    ASSERT_EQ(a.get_bit(300), true);
-    a.toggle_bit_if(300, false);
-    ASSERT_EQ(a.get_bit(300), true);
+    ASSERT_EQ(a[300], false);
+    a[300] = true;
+    ASSERT_EQ(a[300], true);
+    a[300] = true;
+    ASSERT_EQ(a[300], true);
+    a[300] = false;
+    ASSERT_EQ(a[300], false);
+    a[300] ^= false;
+    ASSERT_EQ(a[300], false);
+    a[300] ^= true;
+    ASSERT_EQ(a[300], true);
+    a[300] ^= true;
+    ASSERT_EQ(a[300], false);
+    a[300] ^= true;
+    ASSERT_EQ(a[300], true);
+    a[300] ^= false;
+    ASSERT_EQ(a[300], true);
 }

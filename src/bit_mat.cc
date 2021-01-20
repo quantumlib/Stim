@@ -20,11 +20,11 @@ BitMat BitMat::identity(size_t n) {
 }
 
 bool BitMat::get(size_t row, size_t col) const {
-    return data.get_bit(row * ceil256(n) + col);
+    return data[row * ceil256(n) + col];
 }
 
 void BitMat::set(size_t row, size_t col, bool new_value) {
-    return data.set_bit(row * ceil256(n) + col, new_value);
+    data[row * ceil256(n) + col] = new_value;
 }
 
 __m256i *BitMat::row(size_t k) const {

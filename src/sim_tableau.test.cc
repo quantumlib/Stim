@@ -320,13 +320,13 @@ bool vec_sim_corroborates_measurement_process(const SimTableau &sim, std::vector
     PauliStringVal buf(sim_tab.inv_state.num_qubits);
     auto p = buf.ptr();
     for (size_t k = 0; k < measurement_targets.size(); k++) {
-        p._zr.set_bit(measurement_targets[k], true);
+        p._zr[measurement_targets[k]] = true;
         p.bit_ptr_sign.set(results[k]);
         float f = vec_sim.project(p);
         if (fabsf(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;
         }
-        p._zr.set_bit(measurement_targets[k], false);
+        p._zr[measurement_targets[k]] = false;
     }
     return true;
 }

@@ -16,4 +16,18 @@ struct BitPtr {
     void swap(BitPtr &other);
 };
 
+struct BitRef {
+    uint8_t *byte;
+    uint8_t bit_index;
+
+    operator bool() const; // NOLINT(google-explicit-constructor)
+    BitRef(void *base, size_t offset);
+    BitRef &operator=(bool value);
+    BitRef &operator=(const BitRef &value);
+    BitRef &operator^=(bool value);
+    BitRef &operator&=(bool value);
+    BitRef &operator|=(bool value);
+    void swap_with(BitRef &other);
+};
+
 #endif

@@ -227,18 +227,10 @@ uint16_t pop_count(const __m256i &val) {
     return result;
 }
 
-BitPtr SimdRange::bit_ptr(size_t k) {
-    return BitPtr(start, k);
+BitRef SimdRange::operator[](size_t k) {
+    return BitRef(start, k);
 }
-bool SimdRange::get_bit(size_t k) const {
-    return BitPtr(start, k).get();
-}
-void SimdRange::set_bit(size_t k, bool value) {
-    return BitPtr(start, k).set(value);
-}
-void SimdRange::toggle_bit(size_t k) {
-    return BitPtr(start, k).toggle();
-}
-void SimdRange::toggle_bit_if(size_t k, bool value) {
-    return BitPtr(start, k).toggle_if(value);
+
+bool SimdRange::operator[](size_t k) const {
+    return (bool)BitRef(start, k);
 }

@@ -168,11 +168,8 @@ struct SimdRange {
     void swap_with(SimdRange other);
     void swap_with(__m256i *other);
 
-    BitPtr bit_ptr(size_t k);
-    bool get_bit(size_t k) const;
-    void set_bit(size_t k, bool value);
-    void toggle_bit(size_t k);
-    void toggle_bit_if(size_t k, bool value);
+    BitRef operator[](size_t k);
+    bool operator[](size_t k) const;
 };
 
 uint16_t pop_count(const __m256i &val);

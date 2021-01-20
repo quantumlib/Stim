@@ -6,7 +6,7 @@ simd_bits reference_transpose_of(size_t bit_width, const simd_bits &data) {
     auto expected = simd_bits(ceil256(bit_width) * ceil256(bit_width));
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
-            expected.set_bit(i*bit_width + j, data.get_bit(j*bit_width + i));
+            expected[i*bit_width + j] = data[j*bit_width + i];
         }
     }
     return expected;
@@ -59,9 +59,7 @@ simd_bits reference_blockwise_transpose_of(size_t bit_area, const simd_bits &dat
     for (size_t block = 0; block < bit_area; block += 1 << 16) {
         for (size_t i = 0; i < 256; i++) {
             for (size_t j = 0; j < 256; j++) {
-                auto a = i + (j << 8) + block;
-                auto b = j + (i << 8) + block;
-                expected.set_bit(a, data.get_bit(b));
+                expected[i + (j << 8) + block] = data[j + (i << 8) + block];
             }
         }
     }
@@ -79,11 +77,11 @@ TEST(simd_util, block_transpose_bit_matrix) {
 template <size_t w>
 uint8_t determine_permutation_bit(const std::function<void(simd_bits &)> &func, uint8_t bit) {
     auto data = simd_bits(1 << w);
-    data.set_bit(1 << bit, true);
+    data[1 << bit] = true;
     func(data);
     uint32_t seen = 0;
     for (size_t k = 0; k < 1 << w; k++) {
-        if (data.get_bit(k)) {
+        if (data[k]) {
             seen++;
         }
     }
@@ -91,7 +89,7 @@ uint8_t determine_permutation_bit(const std::function<void(simd_bits &)> &func, 
         throw std::runtime_error("Not a permutation.");
     }
     for (uint8_t k = 0; k < w; k++) {
-        if (data.get_bit(1 << k)) {
+        if (data[1 << k]) {
             return k;
         }
     }
@@ -113,7 +111,7 @@ bool function_performs_address_bit_permutation(
                 k_out ^= 1 << bit_permutation[bit];
             }
         }
-        expected.set_bit(k_out, data.get_bit(k_in));
+        expected[k_out] = data[k_in];
     }
     func(data);
     bool result = data == expected;
@@ -243,13 +241,13 @@ TEST(simd_util, any_non_zero) {
     auto d = simd_bits(5000);
     ASSERT_FALSE(any_non_zero(d.u256, 1));
     ASSERT_FALSE(any_non_zero(d.u256, 2));
-    d.set_bit(256, true);
+    d[256] = true;
     ASSERT_FALSE(any_non_zero(d.u256, 1));
     ASSERT_TRUE(any_non_zero(d.u256, 2));
-    d.set_bit(257, true);
+    d[257] = true;
     ASSERT_FALSE(any_non_zero(d.u256, 1));
     ASSERT_TRUE(any_non_zero(d.u256, 2));
-    d.set_bit(255, true);
+    d[255] = true;
     ASSERT_TRUE(any_non_zero(d.u256, 1));
     ASSERT_TRUE(any_non_zero(d.u256, 2));
 }
@@ -270,6 +268,6 @@ TEST(simd_util, mem_xor256) {
     ASSERT_EQ(d1, d3);
     mem_xor256(d3.u256, d2.u256, 2);
     for (size_t k = 0; k < 500; k++) {
-        ASSERT_EQ(d3.get_bit(k), d1.get_bit(k) ^ d2.get_bit(k));
+        ASSERT_EQ(d3[k], d1[k] ^ d2[k]);
     }
 }

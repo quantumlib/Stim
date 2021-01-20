@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <immintrin.h>
+#include "bit_ptr.h"
 
 struct simd_bits {
     size_t num_bits;
@@ -21,9 +22,8 @@ struct simd_bits {
 
     static simd_bits random(size_t num_bits);
 
-    [[nodiscard]] bool get_bit(size_t k) const;
-    void set_bit(size_t k, bool value);
-    void toggle_bit_if(size_t k, bool condition);
+    BitRef operator[](size_t k);
+    bool operator[](size_t k) const;
     void clear();
 
     bool operator==(const simd_bits &other) const;

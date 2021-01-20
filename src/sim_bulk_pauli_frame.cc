@@ -109,7 +109,7 @@ void SimBulkPauliFrames::unpack_write_measurements(FILE *out, SampleFormat forma
             fwrite(buf.u64, 1, (buf.num_bits + 7) >> 3, out);
         } else if (format == SAMPLE_FORMAT_ASCII) {
             for (size_t k = 0; k < num_measurements_raw; k++) {
-                putc_unlocked('0' + (char)buf.get_bit(k), out);
+                putc_unlocked('0' + buf[k], out);
             }
             putc_unlocked('\n', out);
         } else {
@@ -212,8 +212,8 @@ PauliStringVal SimBulkPauliFrames::get_frame(size_t sample_index) const {
     assert(sample_index < num_samples_raw);
     PauliStringVal result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        result.ptr()._xr.set_bit(q, x_blocks.get_bit(q * num_sample_blocks256 * 256 + sample_index));
-        result.ptr()._zr.set_bit(q, z_blocks.get_bit(q * num_sample_blocks256 * 256 + sample_index));
+        result.x_data[q] = x_blocks[q * num_sample_blocks256 * 256 + sample_index];
+        result.z_data[q] = z_blocks[q * num_sample_blocks256 * 256 + sample_index];
     }
     return result;
 }
@@ -222,8 +222,8 @@ void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringPtr &ne
     assert(sample_index < num_samples_raw);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        x_blocks.set_bit(q * num_sample_blocks256 * 256 + sample_index, new_frame._xr.get_bit(q));
-        z_blocks.set_bit(q * num_sample_blocks256 * 256 + sample_index, new_frame._zr.get_bit(q));
+        x_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame._xr[q];
+        z_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame._zr[q];
     }
 }
 
@@ -346,8 +346,8 @@ void SimBulkPauliFrames::DEPOLARIZE(const std::vector<size_t> &targets, float pr
         auto target_index = s / num_samples_raw;
         auto sample_index = s % num_samples_raw;
         size_t i = targets[target_index] * num_sample_blocks256 + sample_index;
-        x_blocks.toggle_bit_if(i, p & 1);
-        z_blocks.toggle_bit_if(i, p & 2);
+        x_blocks[i] ^= p & 1;
+        z_blocks[i] ^= p & 2;
     }
 }
 
@@ -365,10 +365,10 @@ void SimBulkPauliFrames::DEPOLARIZE2(const std::vector<size_t> &targets, float p
         auto sample_index = s % num_samples_raw;
         size_t i1 = targets[target_index] * num_sample_blocks256 + sample_index;
         size_t i2 = targets[target_index + 1] * num_sample_blocks256 + sample_index;
-        x_blocks.toggle_bit_if(i1, p & 1);
-        z_blocks.toggle_bit_if(i1, p & 2);
-        x_blocks.toggle_bit_if(i2, p & 4);
-        z_blocks.toggle_bit_if(i2, p & 8);
+        x_blocks[i1] ^= p & 1;
+        z_blocks[i1] ^= p & 2;
+        x_blocks[i2] ^= p & 4;
+        z_blocks[i2] ^= p & 8;
     }
 }
 

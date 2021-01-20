@@ -35,9 +35,9 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
         for (size_t k = 0; k < n; k++) {
             basis.emplace_back(n);
             if (x) {
-                basis.back().ptr()._xr.bit_ptr(k).toggle();
+                basis.back().ptr()._xr[k] ^= 1;
             } else {
-                basis.back().ptr()._zr.bit_ptr(k).toggle();
+                basis.back().ptr()._zr[k] ^= 1;
             }
         }
     }
@@ -503,20 +503,20 @@ TEST(tableau, expand) {
             }
             for (size_t k2 = 0; k2 < n; k2++) {
                 if (k < 4 && k2 < 4) {
-                    ASSERT_EQ(t.x_obs_ptr(k)._xr.get_bit(k2), t2.x_obs_ptr(k)._xr.get_bit(k2));
-                    ASSERT_EQ(t.x_obs_ptr(k)._zr.get_bit(k2), t2.x_obs_ptr(k)._zr.get_bit(k2));
-                    ASSERT_EQ(t.z_obs_ptr(k)._xr.get_bit(k2), t2.z_obs_ptr(k)._xr.get_bit(k2));
-                    ASSERT_EQ(t.z_obs_ptr(k)._zr.get_bit(k2), t2.z_obs_ptr(k)._zr.get_bit(k2));
+                    ASSERT_EQ(t.x_obs_ptr(k)._xr[k2], t2.x_obs_ptr(k)._xr[k2]);
+                    ASSERT_EQ(t.x_obs_ptr(k)._zr[k2], t2.x_obs_ptr(k)._zr[k2]);
+                    ASSERT_EQ(t.z_obs_ptr(k)._xr[k2], t2.z_obs_ptr(k)._xr[k2]);
+                    ASSERT_EQ(t.z_obs_ptr(k)._zr[k2], t2.z_obs_ptr(k)._zr[k2]);
                 } else if (k == k2) {
-                    ASSERT_EQ(t2.x_obs_ptr(k)._xr.get_bit(k2), true);
-                    ASSERT_EQ(t2.x_obs_ptr(k)._zr.get_bit(k2), false);
-                    ASSERT_EQ(t2.z_obs_ptr(k)._xr.get_bit(k2), false);
-                    ASSERT_EQ(t2.z_obs_ptr(k)._zr.get_bit(k2), true);
+                    ASSERT_EQ(t2.x_obs_ptr(k)._xr[k2], true);
+                    ASSERT_EQ(t2.x_obs_ptr(k)._zr[k2], false);
+                    ASSERT_EQ(t2.z_obs_ptr(k)._xr[k2], false);
+                    ASSERT_EQ(t2.z_obs_ptr(k)._zr[k2], true);
                 } else {
-                    ASSERT_EQ(t2.x_obs_ptr(k)._xr.get_bit(k2), false);
-                    ASSERT_EQ(t2.x_obs_ptr(k)._zr.get_bit(k2), false);
-                    ASSERT_EQ(t2.z_obs_ptr(k)._xr.get_bit(k2), false);
-                    ASSERT_EQ(t2.z_obs_ptr(k)._zr.get_bit(k2), false);
+                    ASSERT_EQ(t2.x_obs_ptr(k)._xr[k2], false);
+                    ASSERT_EQ(t2.x_obs_ptr(k)._zr[k2], false);
+                    ASSERT_EQ(t2.z_obs_ptr(k)._xr[k2], false);
+                    ASSERT_EQ(t2.z_obs_ptr(k)._zr[k2], false);
                 }
             }
         }
@@ -532,22 +532,22 @@ TEST(tableau, transposed_access) {
     t.data_z2z = simd_bits::random(t.data_x2x.num_bits);
     for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
         for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
-            auto bxx = t.data_x2x.get_bit(bit_address(inp_qubit, out_qubit, n, false));
-            auto bxz = t.data_x2z.get_bit(bit_address(inp_qubit, out_qubit, n, false));
-            auto bzx = t.data_z2x.get_bit(bit_address(inp_qubit, out_qubit, n, false));
-            auto bzz = t.data_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, false));
+            bool bxx = t.data_x2x[bit_address(inp_qubit, out_qubit, n, false)];
+            bool bxz = t.data_x2z[bit_address(inp_qubit, out_qubit, n, false)];
+            bool bzx = t.data_z2x[bit_address(inp_qubit, out_qubit, n, false)];
+            bool bzz = t.data_z2z[bit_address(inp_qubit, out_qubit, n, false)];
 
-            ASSERT_EQ(t.x_obs_ptr(inp_qubit)._xr.get_bit(out_qubit), bxx) << inp_qubit << ", " << out_qubit;
-            ASSERT_EQ(t.x_obs_ptr(inp_qubit)._zr.get_bit(out_qubit), bxz) << inp_qubit << ", " << out_qubit;
-            ASSERT_EQ(t.z_obs_ptr(inp_qubit)._xr.get_bit(out_qubit), bzx) << inp_qubit << ", " << out_qubit;
-            ASSERT_EQ(t.z_obs_ptr(inp_qubit)._zr.get_bit(out_qubit), bzz) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.x_obs_ptr(inp_qubit)._xr[out_qubit], bxx) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.x_obs_ptr(inp_qubit)._zr[out_qubit], bxz) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.z_obs_ptr(inp_qubit)._xr[out_qubit], bzx) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.z_obs_ptr(inp_qubit)._zr[out_qubit], bzz) << inp_qubit << ", " << out_qubit;
 
             {
                 TempTransposedTableauRaii trans(t);
-                ASSERT_EQ(t.data_x2x.get_bit(bit_address(inp_qubit, out_qubit, n, true)), bxx);
-                ASSERT_EQ(t.data_x2z.get_bit(bit_address(inp_qubit, out_qubit, n, true)), bxz);
-                ASSERT_EQ(t.data_z2x.get_bit(bit_address(inp_qubit, out_qubit, n, true)), bzx);
-                ASSERT_EQ(t.data_z2z.get_bit(bit_address(inp_qubit, out_qubit, n, true)), bzz);
+                ASSERT_EQ(t.data_x2x[bit_address(inp_qubit, out_qubit, n, true)], bxx);
+                ASSERT_EQ(t.data_x2z[bit_address(inp_qubit, out_qubit, n, true)], bxz);
+                ASSERT_EQ(t.data_z2x[bit_address(inp_qubit, out_qubit, n, true)], bzx);
+                ASSERT_EQ(t.data_z2z[bit_address(inp_qubit, out_qubit, n, true)], bzz);
 
                 ASSERT_EQ(trans.z_obs_x_bit(inp_qubit, out_qubit), bzx);
                 ASSERT_EQ(trans.z_obs_z_bit(inp_qubit, out_qubit), bzz);

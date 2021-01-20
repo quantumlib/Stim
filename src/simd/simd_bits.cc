@@ -70,40 +70,11 @@ simd_bits& simd_bits::operator=(const simd_bits& other) {
     return *this;
 }
 
-bool simd_bits::get_bit(size_t k) const {
-    return ((u64[k >> 6] >> (k & 63)) & 1) != 0;
-}
-
-void simd_bits::set_bit(size_t k, bool value) {
-    if (value) {
-        u64[k >> 6] |= (uint64_t)1 << (k & 63);
-    } else {
-        u64[k >> 6] &= ~((uint64_t)1 << (k & 63));
-    }
-}
-
-void simd_bits::toggle_bit_if(size_t k, bool condition) {
-    u64[k >> 6] ^= (uint64_t)condition << (k & 63);
-}
-
 bool simd_bits::operator==(const simd_bits &other) const {
     if (num_bits != other.num_bits) {
         return false;
     }
-    union {__m256i m256; uint64_t u64[4]; } acc;
-    acc.m256 = _mm256_set1_epi32(-1);
-    auto a = (__m256i *)u64;
-    auto b = (__m256i *)other.u64;
-    size_t n = (num_bits + 0xFF) >> 8;
-    for (size_t i = 0; i < n; i++) {
-        acc.m256 = _mm256_andnot_si256(a[i] ^ b[i], acc.m256);
-    }
-    for (size_t k = 0; k < 4; k++) {
-        if (acc.u64[k] != UINT64_MAX) {
-            return false;
-        }
-    }
-    return true;
+    return memcmp(u64, other.u64, (num_bits + 7) >> 3) == 0;
 }
 
 bool simd_bits::operator!=(const simd_bits &other) const {
@@ -125,4 +96,12 @@ simd_bits simd_bits::random(size_t num_bits) {
       data.u64[num_u64 - 1] &= (1 << (num_bits & 63)) - 1;
     }
     return data;
+}
+
+BitRef simd_bits::operator[](size_t k) {
+    return BitRef(u64, k);
+}
+
+bool simd_bits::operator[](size_t k) const {
+    return (bool)BitRef(u64, k);
 }
