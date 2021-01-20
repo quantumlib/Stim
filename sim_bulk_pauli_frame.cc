@@ -6,6 +6,36 @@
 #include "simd_util.h"
 #include "probability_util.h"
 
+// Iterates over the X and Z frame components of a pair of qubits, applying a custom BODY to each.
+//
+// HACK: Templating the body function type makes inlining significantly more likely.
+struct XZ_PAIR {
+    __m256i *x1;
+    __m256i *z1;
+    __m256i *x2;
+    __m256i *z2;
+};
+template <typename BODY>
+inline void FOR_EACH_XZ_PAIR(SimBulkPauliFrames &sim, const std::vector<size_t> &targets, BODY body) {
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t q1 = targets[k];
+        size_t q2 = targets[k + 1];
+        auto x1 = sim.x_start(q1);
+        auto z1 = sim.z_start(q1);
+        auto x2 = sim.x_start(q2);
+        auto z2 = sim.z_start(q2);
+        auto x2_end = x2 + sim.num_sample_blocks256;
+        while (x2 != x2_end) {
+            body({x1, z1, x2, z2});
+            x1++;
+            z1++;
+            x2++;
+            z2++;
+        }
+    }
+}
+
 size_t SimBulkPauliFrames::recorded_bit_address(size_t sample_index, size_t measure_index) const {
     size_t s_high = sample_index >> 8;
     size_t s_low = sample_index & 0xFF;
@@ -28,6 +58,14 @@ SimBulkPauliFrames::SimBulkPauliFrames(size_t init_num_qubits, size_t num_sample
         recorded_results(ceil256(num_measurements) * ceil256(num_samples)),
         rng_buffer(ceil256(num_samples)),
         rng((std::random_device {})()) {
+}
+
+SimdRange SimBulkPauliFrames::x_rng(size_t qubit) {
+    return {x_blocks.u256 + qubit * num_sample_blocks256, num_sample_blocks256};
+}
+
+SimdRange SimBulkPauliFrames::z_rng(size_t qubit) {
+    return {z_blocks.u256 + qubit * num_sample_blocks256, num_sample_blocks256};
 }
 
 __m256i *SimBulkPauliFrames::x_start(size_t qubit) {
@@ -53,11 +91,11 @@ std::vector<aligned_bits256> SimBulkPauliFrames::unpack_measurements() {
 }
 
 void SimBulkPauliFrames::unpack_write_measurements(FILE *out, SampleFormat format) {
-    if (results_block_transposed != (format == SAMPLE_FORMAT_RAW)) {
+    if (results_block_transposed != (format == SAMPLE_FORMAT_RAW_UNSTABLE)) {
         do_transpose();
     }
 
-    if (format == SAMPLE_FORMAT_RAW) {
+    if (format == SAMPLE_FORMAT_RAW_UNSTABLE) {
         fwrite(recorded_results.u64, 1, recorded_results.num_bits >> 3, out);
         return;
     }
@@ -116,7 +154,6 @@ void SimBulkPauliFrames::do_named_op(const std::string &name, const std::vector<
     SIM_BULK_PAULI_FRAMES_GATE_DATA.at(name)(*this, targets);
 }
 
-
 void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements) {
     for (auto e : measurements) {
         auto q = e.target_qubit;
@@ -145,26 +182,10 @@ void SimBulkPauliFrames::MUL_INTO_FRAME(const SparsePauliString &pauli_string, c
     for (const auto &w : pauli_string.indexed_words) {
         for (size_t k2 = 0; k2 < 64; k2++) {
             if ((w.wx >> k2) & 1) {
-                auto q = w.index64 * 64 + k2;
-                auto x = x_start(q);
-                auto x_end = x + num_sample_blocks256;
-                auto m = mask;
-                while (x != x_end) {
-                    *x ^= *m;
-                    x++;
-                    m++;
-                }
+                x_rng(w.index64 * 64 + k2) ^= mask;
             }
             if ((w.wz >> k2) & 1) {
-                auto q = w.index64 * 64 + k2;
-                auto z = z_start(q);
-                auto z_end = z + num_sample_blocks256;
-                auto m = mask;
-                while (z != z_end) {
-                    *z ^= *m;
-                    z++;
-                    m++;
-                }
+                z_rng(w.index64 * 64 + k2) ^= mask;
             }
         }
 
@@ -182,10 +203,8 @@ void SimBulkPauliFrames::RANDOM_KICKBACK(const SparsePauliString &pauli_string) 
 
 void SimBulkPauliFrames::reset(const std::vector<size_t> &qubits) {
     for (auto q : qubits) {
-        auto x = x_start(q);
-        auto z = z_start(q);
-        memset(x, 0, num_sample_blocks256 << 5);
-        memset(z, 0, num_sample_blocks256 << 5);
+        x_rng(q).clear();
+        z_rng(q).clear();
     }
 }
 
@@ -210,262 +229,109 @@ void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringPtr &ne
 
 void SimBulkPauliFrames::H_XZ(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        auto x = x_start(q);
-        auto z = z_start(q);
-        auto x_end = x + num_sample_blocks256;
-        while (x != x_end) {
-            std::swap(*x, *z);
-            x++;
-            z++;
-        }
+        x_rng(q).swap_with(z_rng(q));
     }
 }
 
 void SimBulkPauliFrames::H_XY(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        auto x = x_start(q);
-        auto z = z_start(q);
-        auto x_end = x + num_sample_blocks256;
-        while (x != x_end) {
-            *z ^= *x;
-            x++;
-            z++;
-        }
+        z_rng(q) ^= x_rng(q);
     }
 }
 
 void SimBulkPauliFrames::H_YZ(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        auto x = x_start(q);
-        auto z = z_start(q);
-        auto x_end = x + num_sample_blocks256;
-        while (x != x_end) {
-            *x ^= *z;
-            x++;
-            z++;
-        }
+        x_rng(q) ^= z_rng(q);
     }
 }
 
 void SimBulkPauliFrames::CX(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *z1 ^= *z2;
-            *x2 ^= *x1;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.z1 ^= *s.z2;
+        *s.x2 ^= *s.x1;
+    });
 }
 
 void SimBulkPauliFrames::CY(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *z1 ^= *x2 ^ *z2;
-            *z2 ^= *x1;
-            *x2 ^= *x1;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.z1 ^= *s.x2 ^ *s.z2;
+        *s.z2 ^= *s.x1;
+        *s.x2 ^= *s.x1;
+    });
 }
 
 void SimBulkPauliFrames::CZ(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *z1 ^= *x2;
-            *z2 ^= *x1;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.z1 ^= *s.x2;
+        *s.z2 ^= *s.x1;
+    });
 }
 
 void SimBulkPauliFrames::SWAP(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            std::swap(*z1, *z2);
-            std::swap(*x1, *x2);
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        std::swap(*s.z1, *s.z2);
+        std::swap(*s.x1, *s.x2);
+    });
 }
 
 void SimBulkPauliFrames::ISWAP(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            auto dx = *x1 ^ *x2;
-            auto t1 = *z1 ^ dx;
-            auto t2 = *z2 ^ dx;
-            *z1 = t2;
-            *z2 = t1;
-            std::swap(*x1, *x2);
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        auto dx = *s.x1 ^ *s.x2;
+        auto t1 = *s.z1 ^ dx;
+        auto t2 = *s.z2 ^ dx;
+        *s.z1 = t2;
+        *s.z2 = t1;
+        std::swap(*s.x1, *s.x2);
+    });
 }
 
 void SimBulkPauliFrames::XCX(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *x1 ^= *z2;
-            *x2 ^= *z1;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.x1 ^= *s.z2;
+        *s.x2 ^= *s.z1;
+    });
 }
 
 void SimBulkPauliFrames::XCY(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *x1 ^= *x2 ^ *z2;
-            *x2 ^= *z1;
-            *z2 ^= *z1;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.x1 ^= *s.x2 ^ *s.z2;
+        *s.x2 ^= *s.z1;
+        *s.z2 ^= *s.z1;
+    });
 }
 
 void SimBulkPauliFrames::XCZ(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *z2 ^= *z1;
-            *x1 ^= *x2;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.z2 ^= *s.z1;
+        *s.x1 ^= *s.x2;
+    });
 }
 
 void SimBulkPauliFrames::YCX(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *x2 ^= *x1 ^ *z1;
-            *x1 ^= *z2;
-            *z1 ^= *z2;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.x2 ^= *s.x1 ^ *s.z1;
+        *s.x1 ^= *s.z2;
+        *s.z1 ^= *s.z2;
+    });
 }
 
 void SimBulkPauliFrames::YCY(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            auto y1 = *x1 ^ *z1;
-            auto y2 = *x2 ^ *z2;
-            *x1 ^= y2;
-            *z1 ^= y2;
-            *x2 ^= y1;
-            *z2 ^= y1;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
-    }
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        auto y1 = *s.x1 ^ *s.z1;
+        auto y2 = *s.x2 ^ *s.z2;
+        *s.x1 ^= y2;
+        *s.z1 ^= y2;
+        *s.x2 ^= y1;
+        *s.z2 ^= y1;
+    });
+}
+
+void SimBulkPauliFrames::YCZ(const std::vector<size_t> &targets) {
+    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
+        *s.z2 ^= *s.x1 ^ *s.z1;
+        *s.z1 ^= *s.x2;
+        *s.x1 ^= *s.x2;
+    });
 }
 
 void SimBulkPauliFrames::DEPOLARIZE(const std::vector<size_t> &targets, float probability) {
@@ -503,28 +369,6 @@ void SimBulkPauliFrames::DEPOLARIZE2(const std::vector<size_t> &targets, float p
         z_blocks.toggle_bit_if(i1, p & 2);
         x_blocks.toggle_bit_if(i2, p & 4);
         z_blocks.toggle_bit_if(i2, p & 8);
-    }
-}
-
-void SimBulkPauliFrames::YCZ(const std::vector<size_t> &targets) {
-    assert((targets.size() & 1) == 0);
-    for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
-        auto x1 = x_start(q1);
-        auto z1 = z_start(q1);
-        auto x2 = x_start(q2);
-        auto z2 = z_start(q2);
-        auto x2_end = x2 + num_sample_blocks256;
-        while (x2 != x2_end) {
-            *z2 ^= *x1 ^ *z1;
-            *z1 ^= *x2;
-            *x1 ^= *x2;
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
     }
 }
 

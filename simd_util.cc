@@ -106,28 +106,30 @@ size_t ceil256(size_t n) {
     return (n + 0xFF) & ~0xFF;
 }
 
+bool not_zero(const __m256i &v) {
+    auto p = (const uint64_t *)&v;
+    return p[0] | p[1] | p[2] | p[3];
+}
+
 bool any_non_zero(const __m256i *data, size_t words256) {
-    union {__m256i m256; uint64_t u64[4]; } acc {};
-    for (size_t i = 0; i < words256; i++) {
-        acc.m256 |= data[i];
-    }
-    for (size_t k = 0; k < 4; k++) {
-        if (acc.u64[k]) {
-            return true;
-        }
-    }
-    return false;
+    __m256i acc {};
+    simd_for_each(data, words256, [&acc](auto v) {
+        acc |= *v;
+    });
+    return not_zero(acc);
 }
 
-void mem_xor256(__m256i *dst, __m256i *src, size_t words256) {
-    __m256i *dst_end = dst + words256;
-    while (dst != dst_end) {
-        *dst ^= *src;
-        dst++;
-        src++;
-    }
+void mem_xor256(__m256i *dst, const __m256i *src, size_t words256) {
+    simd_for_each_2(dst, (__m256i *)src, words256, [](auto w0, auto w1) {
+        *w0 ^= *w1;
+    });
 }
 
+void mem_swap256(__m256i *v0, __m256i *v1, size_t words256) {
+    simd_for_each_2(v0, v1, words256, [](auto w0, auto w1) {
+        std::swap(*w0, *w1);
+    });
+}
 
 /// Transposes within the 64x64 bit blocks of a 256x256 block subset of a boolean matrix.
 ///
@@ -184,4 +186,43 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
             }
         }
     }
+}
+
+SimdRange &SimdRange::operator^=(const SimdRange &other) {
+    return *this ^= other.start;
+}
+
+SimdRange &SimdRange::operator^=(const __m256i *other) {
+    mem_xor256(start, other, count);
+    return *this;
+}
+
+void SimdRange::overwrite_with(const SimdRange &other) {
+    overwrite_with(other.start);
+}
+
+void SimdRange::overwrite_with(const __m256i *other) {
+    memcpy(start, other, count << 5);
+}
+
+void SimdRange::clear() {
+    memset(start, 0, count << 5);
+}
+
+void SimdRange::swap_with(SimdRange other) {
+    swap_with(other.start);
+}
+
+void SimdRange::swap_with(__m256i *other) {
+    mem_swap256(start, other, count);
+}
+
+uint16_t pop_count(const __m256i &val) {
+    auto p = (uint64_t *)&val;
+    uint16_t result = 0;
+    result += std::popcount(p[0]);
+    result += std::popcount(p[1]);
+    result += std::popcount(p[2]);
+    result += std::popcount(p[3]);
+    return result;
 }

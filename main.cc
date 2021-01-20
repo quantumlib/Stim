@@ -109,6 +109,21 @@ void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
     std::cerr << "\n";
 }
 
+void time_sim_bulk_pauli_frame_h(size_t num_qubits, size_t num_samples) {
+    std::cerr << "time_sim_bulk_pauli_frame_h(num_qubits=" << num_qubits
+        << ",num_samples=" << num_samples << ")\n";
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::vector<size_t> targets;
+    for (size_t k = 0; k < num_qubits; k++) {
+        targets.push_back(k);
+    }
+    auto f = PerfResult::time([&]() {
+        sim.H_XY(targets);
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
 void time_sim_bulk_pauli_frame_cz(size_t num_qubits, size_t num_samples) {
     std::cerr << "time_sim_bulk_pauli_frame_cz(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples << ")\n";
@@ -119,6 +134,31 @@ void time_sim_bulk_pauli_frame_cz(size_t num_qubits, size_t num_samples) {
     }
     auto f = PerfResult::time([&]() {
         sim.CZ(targets);
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
+void time_any_non_zero(size_t num_bits) {
+    std::cerr << "any_non_zero(num_bits=" << num_bits << ")\n";
+    auto d = aligned_bits256::random(num_bits);
+    auto f = PerfResult::time([&]() {
+        any_non_zero(d.u256, ceil256(d.num_bits) >> 8);
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
+void time_sim_bulk_pauli_frame_swap(size_t num_qubits, size_t num_samples) {
+    std::cerr << "time_sim_bulk_pauli_frame_swap(num_qubits=" << num_qubits
+        << ",num_samples=" << num_samples << ")\n";
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::vector<size_t> targets;
+    for (size_t k = 0; k < num_qubits; k++) {
+        targets.push_back(k);
+    }
+    auto f = PerfResult::time([&]() {
+        sim.SWAP(targets);
     });
     std::cerr << f;
     std::cerr << "\n";
@@ -275,7 +315,7 @@ void profile() {
 //    time_transpose_blockwise(100);
 //    time_transpose_tableau(20000);
 //    time_pauli_multiplication(100000);
-//    time_pauli_multiplication(1000000);
+    time_pauli_multiplication(1000000);
 //    time_pauli_multiplication(10000000);
 //    time_memcpy(100000);
 //    time_memcpy(1000000);
@@ -286,7 +326,10 @@ void profile() {
 //    time_sim_bulk_pauli_frame(51, 1024);
 //    time_sim_bulk_pauli_frame_depolarize(10000, 1000, 0.001);
 //    time_sim_bulk_pauli_frame_depolarize2(10000, 1000, 0.001);
-    time_sim_bulk_pauli_frame_cz(10000, 1000);
+//    time_any_non_zero(1000*1000*1000);
+//    time_sim_bulk_pauli_frame_h(10000, 1000);
+//    time_sim_bulk_pauli_frame_cz(10000, 1000);
+//    time_sim_bulk_pauli_frame_swap(10000, 1000);
 //    time_pauli_frame_sim(51);
 //    time_cnot(10000);
 }

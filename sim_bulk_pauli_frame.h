@@ -33,6 +33,8 @@ struct SimBulkPauliFrames {
     void set_frame(size_t sample_index, const PauliStringPtr &new_frame);
     __m256i *x_start(size_t qubit);
     __m256i *z_start(size_t qubit);
+    SimdRange x_rng(size_t qubit);
+    SimdRange z_rng(size_t qubit);
 
     void unpack_sample_measurements_into(size_t sample_index, aligned_bits256 &out);
     void clear_and_run(const PauliFrameProgram &program);

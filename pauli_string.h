@@ -34,6 +34,9 @@ struct PauliStringPtr {
     uint64_t *_x;
     uint64_t *_z;
 
+    SimdRange x_rng();
+    SimdRange z_rng();
+
     PauliStringPtr(size_t size, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 

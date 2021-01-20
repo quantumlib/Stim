@@ -43,37 +43,22 @@ std::string PauliStringVal::str() const {
 void PauliStringPtr::swap_with(PauliStringPtr &other) {
     assert(size == other.size);
     bit_ptr_sign.swap(other.bit_ptr_sign);
-    auto x256 = (__m256i *)_x;
-    auto z256 = (__m256i *)_z;
-    auto ox256 = (__m256i *)other._x;
-    auto oz256 = (__m256i *)other._z;
-    auto end = &x256[num_words256()];
-    while (x256 != end) {
-        std::swap(*x256, *ox256);
-        std::swap(*z256, *oz256);
-        x256++;
-        z256++;
-        ox256++;
-        oz256++;
-    }
+    x_rng().swap_with((__m256i *)other._x);
+    z_rng().swap_with((__m256i *)other._z);
+}
+
+SimdRange PauliStringPtr::x_rng() {
+    return SimdRange {(__m256i *)_x, num_words256()};
+}
+SimdRange PauliStringPtr::z_rng() {
+    return SimdRange {(__m256i *)_z, num_words256()};
 }
 
 void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
     assert(size == other.size);
     bit_ptr_sign.set(other.bit_ptr_sign.get());
-    auto x256 = (__m256i *)_x;
-    auto z256 = (__m256i *)_z;
-    auto ox256 = (__m256i *)other._x;
-    auto oz256 = (__m256i *)other._z;
-    auto end = &x256[num_words256()];
-    while (x256 != end) {
-        *x256 = *ox256;
-        *z256 = *oz256;
-        x256++;
-        z256++;
-        ox256++;
-        oz256++;
-    }
+    x_rng().overwrite_with((__m256i *)other._x);
+    z_rng().overwrite_with((__m256i *)other._z);
 }
 
 PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept {
@@ -121,29 +106,8 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
     if (size != other.size || bit_ptr_sign.get() != other.bit_ptr_sign.get()) {
         return false;
     }
-    __m256i acc {};
-    auto x256 = (__m256i *)_x;
-    auto z256 = (__m256i *)_z;
-    auto ox256 = (__m256i *)other._x;
-    auto oz256 = (__m256i *)other._z;
-    auto end = &x256[num_words256()];
-    while (x256 != end) {
-        acc |= *x256 ^ *ox256;
-        acc |= *z256 ^ *oz256;
-        x256++;
-        z256++;
-        ox256++;
-        oz256++;
-    }
-
-    auto acc64 = (uint64_t *)&acc;
-    for (size_t k = 0; k < 4; k++) {
-        if (acc64[k]) {
-            return false;
-        }
-    }
-
-    return true;
+    auto n = num_words256() << 5;
+    return memcmp(_x, other._x, n) == 0 && memcmp(_z, other._z, n) == 0;
 }
 
 bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
@@ -254,41 +218,33 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
     __m256i cnt1 {};
     __m256i cnt2 {};
 
-    auto x256 = (__m256i *)_x;
-    auto z256 = (__m256i *)_z;
-    auto ox256 = (__m256i *)rhs._x;
-    auto oz256 = (__m256i *)rhs._z;
-    auto end = &x256[num_words256()];
-    while (x256 != end) {
-        // Load into registers.
-        auto x1 = *x256;
-        auto z2 = *oz256;
-        auto z1 = *z256;
-        auto x2 = *ox256;
+    simd_for_each_4(
+            (__m256i *)_x,
+            (__m256i *)_z,
+            (__m256i *)rhs._x,
+            (__m256i *)rhs._z,
+            num_words256(),
+            [&cnt1, &cnt2](auto px1, auto pz1, auto px2, auto pz2) {
+                // Load into registers.
+                auto x1 = *px1;
+                auto z2 = *pz2;
+                auto z1 = *pz1;
+                auto x2 = *px2;
 
-        // Update the left hand side Paulis.
-        *x256 = x1 ^ x2;
-        *z256 = z1 ^ z2;
+                // Update the left hand side Paulis.
+                *px1 = x1 ^ x2;
+                *pz1 = z1 ^ z2;
 
-        // At each bit position: accumulate anti-commutation (+i or -i) counts.
-        auto x1z2 = x1 & z2;
-        auto anti_commutes = (x2 & z1) ^x1z2;
-        cnt2 ^= (cnt1 ^ *x256 ^ *z256 ^ x1z2) & anti_commutes;
-        cnt1 ^= anti_commutes;
-
-        // Move along.
-        x256++;
-        z256++;
-        ox256++;
-        oz256++;
-    }
+                // At each bit position: accumulate anti-commutation (+i or -i) counts.
+                auto x1z2 = x1 & z2;
+                auto anti_commutes = (x2 & z1) ^ x1z2;
+                cnt2 ^= (cnt1 ^ *px1 ^ *pz1 ^ x1z2) & anti_commutes;
+                cnt1 ^= anti_commutes;
+            });
 
     // Combine final anti-commutation phase tally (mod 4).
-    uint8_t s = 0;
-    for (size_t k = 0; k < 4; k++) {
-        s += (uint8_t) std::popcount(((uint64_t *)&cnt1)[k]);
-        s ^= (uint8_t) std::popcount(((uint64_t *)&cnt2)[k]) << 1;
-    }
+    uint8_t s = pop_count(cnt1);
+    s ^= pop_count(cnt2) << 1;
     s ^= (uint8_t)rhs.bit_ptr_sign.get() << 1;
     return s & 3;
 }
@@ -303,24 +259,17 @@ PauliStringVal PauliStringVal::random(size_t num_qubits) {
 
 bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
     assert(size == other.size);
-    union {__m256i u256; uint64_t u64[4]; } cnt1 {};
-    auto x256 = (__m256i *)_x;
-    auto z256 = (__m256i *)_z;
-    auto ox256 = (__m256i *)other._x;
-    auto oz256 = (__m256i *)other._z;
-    auto end = &x256[num_words256()];
-    while (x256 != end) {
-        cnt1.u256 ^= (*x256 & *oz256) ^ (*ox256 & *z256);
-        x256++;
-        z256++;
-        ox256++;
-        oz256++;
-    }
-    bool s = true;
-    for (size_t k = 0; k < 4; k++) {
-        s ^= std::popcount(cnt1.u64[k]) & 1;
-    }
-    return s;
+    __m256i cnt1 {};
+    simd_for_each_4(
+            (__m256i *)_x,
+            (__m256i *)_z,
+            (__m256i *)other._x,
+            (__m256i *)other._z,
+            num_words256(),
+            [&cnt1](auto x1, auto z1, auto x2, auto z2) {
+        cnt1 ^= (*x1 & *z2) ^ (*x2 & *z1);
+    });
+    return (pop_count(cnt1) & 1) == 0;
 }
 
 bool PauliStringPtr::get_x_bit(size_t k) const {
