@@ -24,27 +24,27 @@ size_t bit_address(
 void do_transpose(Tableau &tableau) {
     size_t n = ceil256(tableau.num_qubits);
     if (n >= 1024) {
-        std::thread t1([&]() { transpose_bit_matrix(tableau.data_x2x.u64, n); });
-        std::thread t2([&]() { transpose_bit_matrix(tableau.data_z2x.u64, n); });
-        std::thread t3([&]() { transpose_bit_matrix(tableau.data_x2z.u64, n); });
-        transpose_bit_matrix(tableau.data_z2z.u64, n);
+        std::thread t1([&]() { transpose_bit_matrix(tableau.xs.xs.u64, n); });
+        std::thread t2([&]() { transpose_bit_matrix(tableau.xs.zs.u64, n); });
+        std::thread t3([&]() { transpose_bit_matrix(tableau.zs.xs.u64, n); });
+        transpose_bit_matrix(tableau.zs.zs.u64, n);
         t1.join();
         t2.join();
         t3.join();
     } else {
-        transpose_bit_matrix(tableau.data_x2x.u64, n);
-        transpose_bit_matrix(tableau.data_z2x.u64, n);
-        transpose_bit_matrix(tableau.data_x2z.u64, n);
-        transpose_bit_matrix(tableau.data_z2z.u64, n);
+        transpose_bit_matrix(tableau.xs.xs.u64, n);
+        transpose_bit_matrix(tableau.xs.zs.u64, n);
+        transpose_bit_matrix(tableau.zs.xs.u64, n);
+        transpose_bit_matrix(tableau.zs.zs.u64, n);
     }
 }
 
 TransposedTableauXZ TempTransposedTableauRaii::transposed_xz_ptr(size_t qubit) const {
-    auto x = tableau.xs()[qubit];
-    auto z = tableau.zs()[qubit];
+    PauliStringRef x = tableau.xs[qubit];
+    PauliStringRef z = tableau.zs[qubit];
     return {{
-        {x.x_ref.start, x.z_ref.start, tableau.data_sx.u256},
-        {z.x_ref.start, z.z_ref.start, tableau.data_sz.u256}
+        {x.x_ref.start, x.z_ref.start, tableau.xs.signs.u256},
+        {z.x_ref.start, z.z_ref.start, tableau.zs.signs.u256}
     }};
 }
 
@@ -84,8 +84,8 @@ void Tableau::expand(size_t new_num_qubits) {
     size_t m2 = ceil256(new_num_qubits);
     if (m1 == m2) {
         for (size_t k = n1; k < new_num_qubits; k++) {
-            xs()[k].x_ref[k] = true;
-            zs()[k].z_ref[k] = true;
+            xs[k].x_ref[k] = true;
+            zs[k].z_ref[k] = true;
         }
         num_qubits = new_num_qubits;
         return;
@@ -95,14 +95,14 @@ void Tableau::expand(size_t new_num_qubits) {
     this->~Tableau();
     new(this) Tableau(new_num_qubits);
 
-    memcpy(data_sx.u256, old_state.data_sx.u256, m1 >> 3);
-    memcpy(data_sz.u256, old_state.data_sz.u256, m1 >> 3);
+    memcpy(xs.signs.u256, old_state.xs.signs.u256, m1 >> 3);
+    memcpy(zs.signs.u256, old_state.zs.signs.u256, m1 >> 3);
     for (size_t k = 0; k < n1; k++) {
 
-        memcpy(xs()[k].x_ref.start, old_state.xs()[k].x_ref.start, m1 >> 3);
-        memcpy(xs()[k].z_ref.start, old_state.xs()[k].z_ref.start, m1 >> 3);
-        memcpy(zs()[k].x_ref.start, old_state.zs()[k].x_ref.start, m1 >> 3);
-        memcpy(zs()[k].z_ref.start, old_state.zs()[k].z_ref.start, m1 >> 3);
+        memcpy(xs[k].x_ref.start, old_state.xs[k].x_ref.start, m1 >> 3);
+        memcpy(xs[k].z_ref.start, old_state.xs[k].z_ref.start, m1 >> 3);
+        memcpy(zs[k].x_ref.start, old_state.zs[k].x_ref.start, m1 >> 3);
+        memcpy(zs[k].z_ref.start, old_state.zs[k].z_ref.start, m1 >> 3);
     }
 }
 
@@ -230,7 +230,7 @@ void TempTransposedTableauRaii::append_X(size_t target) {
     }
 }
 
-PauliStringRef TableauPauliStringRefVector::operator[](size_t qubit) {
+PauliStringRef TableauHalf::operator[](size_t qubit) {
     return PauliStringRef(
             num_qubits,
             signs[qubit],
@@ -238,7 +238,7 @@ PauliStringRef TableauPauliStringRefVector::operator[](size_t qubit) {
             zs.word_range_ref(bit_address(qubit, 0, num_qubits, false) >> 8, ceil256(num_qubits) >> 8));
 }
 
-const PauliStringRef TableauPauliStringRefVector::operator[](size_t qubit) const {
+const PauliStringRef TableauHalf::operator[](size_t qubit) const {
     return PauliStringRef(
             num_qubits,
             bit_ref::const_ref(signs[qubit]),
@@ -246,40 +246,8 @@ const PauliStringRef TableauPauliStringRefVector::operator[](size_t qubit) const
             zs.word_range_ref(bit_address(qubit, 0, num_qubits, false) >> 8, ceil256(num_qubits) >> 8));
 }
 
-const TableauPauliStringRefVector Tableau::xs() const {
-    return {
-        data_x2x.range_ref(),
-        data_x2z.range_ref(),
-        data_sx.range_ref(),
-        num_qubits
-    };
-}
-TableauPauliStringRefVector Tableau::xs() {
-    return {
-        data_x2x.range_ref(),
-        data_x2z.range_ref(),
-        data_sx.range_ref(),
-        num_qubits
-    };
-}
-const TableauPauliStringRefVector Tableau::zs() const {
-    return {
-        data_z2x.range_ref(),
-        data_z2z.range_ref(),
-        data_sz.range_ref(),
-        num_qubits
-    };
-}
-TableauPauliStringRefVector Tableau::zs() {
-    return {
-        data_z2x.range_ref(),
-        data_z2z.range_ref(),
-        data_sz.range_ref(),
-        num_qubits
-    };
-}
 bool Tableau::z_sign(size_t a) const {
-    return data_sz[a];
+    return zs.signs[a];
 }
 
 bool TempTransposedTableauRaii::z_sign(size_t a) const {
@@ -287,20 +255,20 @@ bool TempTransposedTableauRaii::z_sign(size_t a) const {
 }
 
 bool TempTransposedTableauRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_z2x[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
+    return tableau.zs.xs[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
 }
 
 bool TempTransposedTableauRaii::x_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_x2z[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
+    return tableau.xs.zs[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
 }
 
 bool TempTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.data_z2z[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
+    return tableau.zs.zs[bit_address(input_qubit, output_qubit, tableau.num_qubits, true)];
 }
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
-    PauliStringVal result(xs()[qubit]);
-    uint8_t log_i = result.ptr().inplace_right_mul_returning_log_i_scalar(zs()[qubit]);
+    PauliStringVal result(xs[qubit]);
+    uint8_t log_i = result.ptr().inplace_right_mul_returning_log_i_scalar(zs[qubit]);
     log_i++;
     assert((log_i & 1) == 0);
     if (log_i & 2) {
@@ -311,16 +279,19 @@ PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
 
 Tableau::Tableau(size_t num_qubits) :
         num_qubits(num_qubits),
-        data_x2x(ceil256(num_qubits) * ceil256(num_qubits)),
-        data_x2z(ceil256(num_qubits) * ceil256(num_qubits)),
-        data_z2x(ceil256(num_qubits) * ceil256(num_qubits)),
-        data_z2z(ceil256(num_qubits) * ceil256(num_qubits)),
-        data_sx(ceil256(num_qubits)),
-        data_sz(ceil256(num_qubits)) {
+        xs(num_qubits),
+        zs(num_qubits) {
     for (size_t q = 0; q < num_qubits; q++) {
-        xs()[q].x_ref[q] = true;
-        zs()[q].z_ref[q] = true;
+        xs[q].x_ref[q] = true;
+        zs[q].z_ref[q] = true;
     }
+}
+
+TableauHalf::TableauHalf(size_t num_qubits) :
+        num_qubits(num_qubits),
+        xs(ceil256(num_qubits) * ceil256(num_qubits)),
+        zs(ceil256(num_qubits) * ceil256(num_qubits)),
+        signs(ceil256(num_qubits)) {
 }
 
 Tableau Tableau::identity(size_t num_qubits) {
@@ -329,8 +300,8 @@ Tableau Tableau::identity(size_t num_qubits) {
 
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
-    result.xs()[0].overwrite_with(PauliStringVal::from_str(x));
-    result.zs()[0].overwrite_with(PauliStringVal::from_str(z));
+    result.xs[0].overwrite_with(PauliStringVal::from_str(x));
+    result.zs[0].overwrite_with(PauliStringVal::from_str(z));
     return result;
 }
 
@@ -339,10 +310,10 @@ Tableau Tableau::gate2(const char *x1,
                        const char *x2,
                        const char *z2) {
     Tableau result(2);
-    result.xs()[0].overwrite_with(PauliStringVal::from_str(x1));
-    result.zs()[0].overwrite_with(PauliStringVal::from_str(z1));
-    result.xs()[1].overwrite_with(PauliStringVal::from_str(x2));
-    result.zs()[1].overwrite_with(PauliStringVal::from_str(z2));
+    result.xs[0].overwrite_with(PauliStringVal::from_str(x1));
+    result.zs[0].overwrite_with(PauliStringVal::from_str(z1));
+    result.xs[1].overwrite_with(PauliStringVal::from_str(x2));
+    result.zs[1].overwrite_with(PauliStringVal::from_str(z2));
     return result;
 }
 
@@ -356,15 +327,15 @@ std::ostream &operator<<(std::ostream &out, const Tableau &t) {
     out << "\n|";
     for (size_t k = 0; k < t.num_qubits; k++) {
         out << ' ';
-        out << "+-"[t.xs()[k].sign_ref];
-        out << "+-"[t.zs()[k].sign_ref];
+        out << "+-"[t.xs[k].sign_ref];
+        out << "+-"[t.zs[k].sign_ref];
     }
     for (size_t q = 0; q < t.num_qubits; q++) {
         out << "\n|";
         for (size_t k = 0; k < t.num_qubits; k++) {
             out << ' ';
-            auto x = t.xs()[k];
-            auto z = t.zs()[k];
+            auto x = t.xs[k];
+            auto z = t.zs[k];
             out << "_XZY"[x.x_ref[q] + 2 * x.z_ref[q]];
             out << "_XZY"[z.x_ref[q] + 2 * z.z_ref[q]];
         }
@@ -381,8 +352,8 @@ std::string Tableau::str() const {
 void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());
     for (size_t q = 0; q < num_qubits; q++) {
-        auto x = xs()[q];
-        auto z = zs()[q];
+        auto x = xs[q];
+        auto z = zs[q];
         operation.apply_within(x, target_qubits);
         operation.apply_within(z, target_qubits);
     }
@@ -390,12 +361,12 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 
 bool Tableau::operator==(const Tableau &other) const {
     return num_qubits == other.num_qubits
-        && data_x2x == other.data_x2x
-        && data_x2z == other.data_x2z
-        && data_z2x == other.data_z2x
-        && data_z2z == other.data_z2z
-        && data_sx == other.data_sx
-        && data_sz == other.data_sz;
+        && xs.xs == other.xs.xs
+        && xs.zs == other.xs.zs
+        && zs.xs == other.zs.xs
+        && zs.zs == other.zs.zs
+        && xs.signs == other.xs.signs
+        && zs.signs == other.zs.signs;
 }
 
 bool Tableau::operator!=(const Tableau &other) const {
@@ -409,61 +380,61 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     new_x.reserve(operation.num_qubits);
     new_z.reserve(operation.num_qubits);
     for (size_t q = 0; q < operation.num_qubits; q++) {
-        new_x.emplace_back(std::move(scatter_eval(operation.xs()[q], target_qubits)));
-        new_z.emplace_back(std::move(scatter_eval(operation.zs()[q], target_qubits)));
+        new_x.emplace_back(std::move(scatter_eval(operation.xs[q], target_qubits)));
+        new_z.emplace_back(std::move(scatter_eval(operation.zs[q], target_qubits)));
     }
     for (size_t q = 0; q < operation.num_qubits; q++) {
-        xs()[target_qubits[q]].overwrite_with(new_x[q]);
-        zs()[target_qubits[q]].overwrite_with(new_z[q]);
+        xs[target_qubits[q]].overwrite_with(new_x[q]);
+        zs[target_qubits[q]].overwrite_with(new_z[q]);
     }
 }
 
 void Tableau::prepend_SQRT_X(size_t q) {
-    auto z = zs()[q];
-    uint8_t m = 1 + z.inplace_right_mul_returning_log_i_scalar(xs()[q]);
+    auto z = zs[q];
+    uint8_t m = 1 + z.inplace_right_mul_returning_log_i_scalar(xs[q]);
     z.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_SQRT_X_DAG(size_t q) {
-    auto z = zs()[q];
-    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(xs()[q]);
+    auto z = zs[q];
+    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(xs[q]);
     z.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_SQRT_Y(size_t q) {
-    auto z = zs()[q];
+    auto z = zs[q];
     z.sign_ref ^= 1;
-    xs()[q].swap_with(z);
+    xs[q].swap_with(z);
 }
 
 void Tableau::prepend_SQRT_Y_DAG(size_t q) {
-    auto z = zs()[q];
-    xs()[q].swap_with(z);
+    auto z = zs[q];
+    xs[q].swap_with(z);
     z.sign_ref ^= 1;
 }
 
 void Tableau::prepend_SQRT_Z(size_t q) {
-    auto x = xs()[q];
-    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(zs()[q]);
+    auto x = xs[q];
+    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(zs[q]);
     x.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_SQRT_Z_DAG(size_t q) {
-    auto x = xs()[q];
-    uint8_t m = 3 + x.inplace_right_mul_returning_log_i_scalar(zs()[q]);
+    auto x = xs[q];
+    uint8_t m = 3 + x.inplace_right_mul_returning_log_i_scalar(zs[q]);
     x.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_SWAP(size_t q1, size_t q2) {
-    auto z2 = zs()[q2];
-    auto x2 = xs()[q2];
-    zs()[q1].swap_with(z2);
-    xs()[q1].swap_with(x2);
+    auto z2 = zs[q2];
+    auto x2 = xs[q2];
+    zs[q1].swap_with(z2);
+    xs[q1].swap_with(x2);
 }
 
 void Tableau::prepend_CX(size_t control, size_t target) {
-    zs()[target] *= zs()[control];
-    xs()[control] *= xs()[target];
+    zs[target] *= zs[control];
+    xs[control] *= xs[target];
 }
 
 void Tableau::prepend_CY(size_t control, size_t target) {
@@ -473,8 +444,8 @@ void Tableau::prepend_CY(size_t control, size_t target) {
 }
 
 void Tableau::prepend_CZ(size_t control, size_t target) {
-    xs()[target] *= zs()[control];
-    xs()[control] *= zs()[target];
+    xs[target] *= zs[control];
+    xs[control] *= zs[target];
 }
 
 void Tableau::prepend_ISWAP(size_t q1, size_t q2) {
@@ -492,21 +463,21 @@ void Tableau::prepend_ISWAP_DAG(size_t q1, size_t q2) {
 }
 
 void Tableau::prepend_H(const size_t q) {
-    auto z = zs()[q];
-    xs()[q].swap_with(z);
+    auto z = zs[q];
+    xs[q].swap_with(z);
 }
 
 void Tableau::prepend_H_YZ(const size_t q) {
-    auto x = xs()[q];
-    auto z = zs()[q];
+    auto x = xs[q];
+    auto z = zs[q];
     uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x);
     x.sign_ref ^= 1;
     z.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_H_XY(const size_t q) {
-    auto x = xs()[q];
-    auto z = zs()[q];
+    auto x = xs[q];
+    auto z = zs[q];
     uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z);
     z.sign_ref ^= 1;
     x.sign_ref ^= m & 2;
@@ -514,33 +485,33 @@ void Tableau::prepend_H_XY(const size_t q) {
 
 void Tableau::prepend(const PauliStringRef &op) {
     assert(op.num_qubits == num_qubits);
-    data_sz.range_ref() ^= op.x_ref;
-    data_sx.range_ref() ^= op.z_ref;
+    zs.signs.range_ref() ^= op.x_ref;
+    xs.signs.range_ref() ^= op.z_ref;
 }
 
 void Tableau::prepend(const SparsePauliString &op) {
     for (const auto &p : op.indexed_words) {
-        data_sz.u64[p.index64] ^= p.wx;
-        data_sx.u64[p.index64] ^= p.wz;
+        zs.signs.u64[p.index64] ^= p.wx;
+        xs.signs.u64[p.index64] ^= p.wz;
     }
 }
 
 void Tableau::prepend_X(size_t q) {
-    zs()[q].sign_ref ^= 1;
+    zs[q].sign_ref ^= 1;
 }
 
 void Tableau::prepend_Y(size_t q) {
-    xs()[q].sign_ref ^= 1;
-    zs()[q].sign_ref ^= 1;
+    xs[q].sign_ref ^= 1;
+    zs[q].sign_ref ^= 1;
 }
 
 void Tableau::prepend_Z(size_t q) {
-    xs()[q].sign_ref ^= 1;
+    xs[q].sign_ref ^= 1;
 }
 
 void Tableau::prepend_XCX(size_t control, size_t target) {
-    zs()[target] *= xs()[control];
-    zs()[control] *= xs()[target];
+    zs[target] *= xs[control];
+    zs[control] *= xs[target];
 }
 
 void Tableau::prepend_XCY(size_t control, size_t target) {
@@ -581,15 +552,15 @@ PauliStringVal Tableau::scatter_eval(const PauliStringRef &gathered_input, const
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
                 uint8_t log_i = 1;
-                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(xs()[k_scattered]);
-                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(zs()[k_scattered]);
+                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(xs[k_scattered]);
+                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(zs[k_scattered]);
                 assert((log_i & 1) == 0);
                 result.val_sign ^= (log_i & 2) != 0;
             } else {
-                result.ptr() *= xs()[k_scattered];
+                result.ptr() *= xs[k_scattered];
             }
         } else if (z) {
-            result.ptr() *= zs()[k_scattered];
+            result.ptr() *= zs[k_scattered];
         }
     }
     return result;
@@ -741,27 +712,27 @@ Tableau Tableau::random(size_t num_qubits) {
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
-            result.xs()[row].x_ref[col] = raw.get(row, col);
-            result.xs()[row].z_ref[col] = raw.get(row, col + num_qubits);
-            result.zs()[row].x_ref[col] = raw.get(row + num_qubits, col);
-            result.zs()[row].z_ref[col] = raw.get(row + num_qubits, col + num_qubits);
+            result.xs[row].x_ref[col] = raw.get(row, col);
+            result.xs[row].z_ref[col] = raw.get(row, col + num_qubits);
+            result.zs[row].x_ref[col] = raw.get(row + num_qubits, col);
+            result.zs[row].z_ref[col] = raw.get(row + num_qubits, col + num_qubits);
         }
-        result.data_sx[row] = rand_bit(gen);
-        result.data_sz[row] = rand_bit(gen);
+        result.xs.signs[row] = rand_bit(gen);
+        result.zs.signs[row] = rand_bit(gen);
     }
     return result;
 }
 
 bool Tableau::satisfies_invariants() const {
     for (size_t q1 = 0; q1 < num_qubits; q1++) {
-        auto x1 = xs()[q1];
-        auto z1 = zs()[q1];
+        auto x1 = xs[q1];
+        auto z1 = zs[q1];
         if (x1.commutes(z1)) {
             return false;
         }
         for (size_t q2 = q1 + 1; q2 < num_qubits; q2++) {
-            auto x2 = xs()[q2];
-            auto z2 = zs()[q2];
+            auto x2 = xs[q2];
+            auto z2 = zs[q2];
             if (!x1.commutes(x2) || !x1.commutes(z2) || !z1.commutes(x2) || !z1.commutes(z2)) {
                 return false;
             }
@@ -776,10 +747,10 @@ Tableau Tableau::inverse() const {
     dn *= dn;
 
     // Transpose data with xx zz swap tweak.
-    memcpy(inv.data_x2x.u256, data_z2z.u256, dn >> 3);
-    memcpy(inv.data_x2z.u256, data_x2z.u256, dn >> 3);
-    memcpy(inv.data_z2x.u256, data_z2x.u256, dn >> 3);
-    memcpy(inv.data_z2z.u256, data_x2x.u256, dn >> 3);
+    memcpy(inv.xs.xs.u256, zs.zs.u256, dn >> 3);
+    memcpy(inv.xs.zs.u256, xs.zs.u256, dn >> 3);
+    memcpy(inv.zs.xs.u256, zs.xs.u256, dn >> 3);
+    memcpy(inv.zs.zs.u256, xs.xs.u256, dn >> 3);
     do_transpose(inv);
 
     // Initialize sign data by fixing round-trip signs.
@@ -787,11 +758,11 @@ Tableau Tableau::inverse() const {
     auto p = pauli_buf.ptr();
     for (size_t k = 0; k < num_qubits; k++) {
         p.x_ref[k] = true;
-        inv.xs()[k].sign_ref ^= (*this)(inv(p)).val_sign;
+        inv.xs[k].sign_ref ^= (*this)(inv(p)).val_sign;
         p.x_ref[k] = false;
 
         p.z_ref[k] = true;
-        inv.zs()[k].sign_ref ^= (*this)(inv(p)).val_sign;
+        inv.zs[k].sign_ref ^= (*this)(inv(p)).val_sign;
         p.z_ref[k] = false;
     }
 

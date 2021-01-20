@@ -216,7 +216,7 @@ void time_transpose_tableau(size_t num_qubits) {
     std::cerr << "transpose_tableau(num_qubits=" << num_qubits << "; ";
 
     Tableau tableau(num_qubits);
-    std::cerr << (tableau.data_x2x.num_bits * 4 / 8 / 1024 / 1024) << "MiB)\n";
+    std::cerr << (tableau.xs.xs.num_bits * 4 / 8 / 1024 / 1024) << "MiB)\n";
     auto f = PerfResult::time([&](){
         TempTransposedTableauRaii temp(tableau);
     });
@@ -262,8 +262,8 @@ void time_tableau_pauli_multiplication(size_t num_qubits) {
     std::cerr << "tableau pauli multiplication(n=" << num_qubits << ")\n";
 
     Tableau t(num_qubits);
-    PauliStringRef p1_ptr = t.xs()[0];
-    PauliStringRef p2_ptr = t.xs()[5];
+    PauliStringRef p1_ptr = t.xs[0];
+    PauliStringRef p2_ptr = t.xs[5];
     auto f = PerfResult::time([&](){
         p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
     });

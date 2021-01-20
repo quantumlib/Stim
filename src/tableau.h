@@ -7,13 +7,14 @@
 #include "simd/simd_util.h"
 #include "pauli_string.h"
 
-struct TableauPauliStringRefVector {
-    simd_range_ref xs;
-    simd_range_ref zs;
-    simd_range_ref signs;
+struct TableauHalf {
     size_t num_qubits;
+    simd_bits xs;
+    simd_bits zs;
+    simd_bits signs;
     PauliStringRef operator[](size_t k);
     const PauliStringRef operator[](size_t k) const;
+    TableauHalf(size_t num_qubits);
 };
 
 /// A Tableau is a stabilizer tableau representation of a Clifford operation.
@@ -26,23 +27,14 @@ struct TableauPauliStringRefVector {
 /// prepending operations cheap. To append operations, use TempTransposedTableauRaii.
 struct Tableau {
     size_t num_qubits;
-    simd_bits data_x2x;
-    simd_bits data_x2z;
-    simd_bits data_z2x;
-    simd_bits data_z2z;
-    simd_bits data_sx;
-    simd_bits data_sz;
+    TableauHalf xs;
+    TableauHalf zs;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
     bool operator!=(const Tableau &other) const;
 
     PauliStringVal eval_y_obs(size_t qubit) const;
-
-    const TableauPauliStringRefVector xs() const;
-    TableauPauliStringRefVector xs();
-    const TableauPauliStringRefVector zs() const;
-    TableauPauliStringRefVector zs();
 
     std::string str() const;
     void expand(size_t new_num_qubits);
