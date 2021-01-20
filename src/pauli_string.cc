@@ -60,7 +60,7 @@ std::string PauliStringVal::str() const {
     return ref().str();
 }
 
-void PauliStringRef::swap_with(PauliStringRef &other) {
+void PauliStringRef::swap_with(PauliStringRef other) {
     assert(num_qubits == other.num_qubits);
     sign_ref.swap_with(other.sign_ref);
     x_ref.swap_with(other.x_ref);
@@ -266,7 +266,7 @@ bool PauliStringRef::commutes(const PauliStringRef& other) const noexcept {
     return (pop_count(cnt1) & 1) == 0;
 }
 
-void PauliStringRef::gather_into(PauliStringRef &out, const std::vector<size_t> &in_indices) const {
+void PauliStringRef::gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const {
     assert(in_indices.size() == out.num_qubits);
     for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
@@ -275,7 +275,7 @@ void PauliStringRef::gather_into(PauliStringRef &out, const std::vector<size_t> 
     }
 }
 
-void PauliStringRef::scatter_into(PauliStringRef &out, const std::vector<size_t> &out_indices) const {
+void PauliStringRef::scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const {
     assert(num_qubits == out_indices.size());
     for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];

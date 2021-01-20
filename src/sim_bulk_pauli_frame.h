@@ -4,6 +4,7 @@
 #include <random>
 
 #include "program_frame.h"
+#include "simd/simd_bit_table.h"
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
@@ -20,9 +21,9 @@ struct SimBulkPauliFrames {
     size_t num_measurements_raw;
     size_t num_measurement_blocks;
     size_t num_recorded_measurements;
-    simd_bits x_blocks;
-    simd_bits z_blocks;
-    simd_bits recorded_results;
+    simd_bit_table x_table;
+    simd_bit_table z_table;
+    simd_bit_table m_table;
     simd_bits rng_buffer;
     std::mt19937 rng;
     bool results_block_transposed = false;
@@ -31,10 +32,6 @@ struct SimBulkPauliFrames {
 
     PauliStringVal get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
-    __m256i *x_start(size_t qubit);
-    __m256i *z_start(size_t qubit);
-    SimdRange x_rng(size_t qubit);
-    SimdRange z_rng(size_t qubit);
 
     void unpack_sample_measurements_into(size_t sample_index, simd_bits &out);
     void clear_and_run(const PauliFrameProgram &program);

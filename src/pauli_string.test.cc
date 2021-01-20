@@ -113,10 +113,9 @@ TEST(pauli_string, identity) {
 TEST(pauli_string, gather) {
     auto p = PauliStringVal::from_str("-____XXXXYYYYZZZZ");
     auto p2 = PauliStringVal::identity(4);
-    PauliStringRef p2_ref(p2);
-    p.ref().gather_into(p2_ref, {0, 1, 2, 3});
+    p.ref().gather_into(p2, {0, 1, 2, 3});
     ASSERT_EQ(p2, PauliStringVal::from_str("+IIII"));
-    p.ref().gather_into(p2_ref, {4, 7, 8, 9});
+    p.ref().gather_into(p2, {4, 7, 8, 9});
     ASSERT_EQ(p2, PauliStringVal::from_str("+XXYY"));
 }
 
@@ -125,9 +124,8 @@ TEST(pauli_string, swap_with_overwrite_with) {
     auto b = PauliStringVal::from_pattern(false, 500, [](size_t k){ return "ZZYIXXY"[k % 7]; });
     auto a2 = a;
     auto b2 = b;
-    PauliStringRef b2_ref(b2);
 
-    a2.ref().swap_with(b2_ref);
+    a2.ref().swap_with(b2);
     ASSERT_EQ(a2, b);
     ASSERT_EQ(b2, a);
 
@@ -141,14 +139,13 @@ TEST(pauli_string, scatter) {
     auto s1 = PauliStringVal::from_str("-_XYZ");
     auto s2 = PauliStringVal::from_str("+XXZZ");
     auto p = PauliStringVal::identity(8);
-    PauliStringRef p_ref(p);
-    s1.ref().scatter_into(p_ref, {1, 3, 5, 7});
+    s1.ref().scatter_into(p, {1, 3, 5, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("-___X_Y_Z"));
-    s1.ref().scatter_into(p_ref, {1, 3, 5, 7});
+    s1.ref().scatter_into(p, {1, 3, 5, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("+___X_Y_Z"));
-    s2.ref().scatter_into(p_ref, {1, 3, 5, 7});
+    s2.ref().scatter_into(p, {1, 3, 5, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("+_X_X_Z_Z"));
-    s2.ref().scatter_into(p_ref, {4, 5, 6, 7});
+    s2.ref().scatter_into(p, {4, 5, 6, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("+_X_XXXZZ"));
 }
 

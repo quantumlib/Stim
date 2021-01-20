@@ -15,7 +15,7 @@ struct simd_range_ref {
     simd_range_ref &operator=(const __m256i *other);
     bool operator==(const simd_range_ref &other) const;
     bool operator!=(const simd_range_ref &other) const;
-    void swap_with(simd_range_ref &other);
+    void swap_with(simd_range_ref other);
     void swap_with(__m256i *other);
     void clear();
     bit_ref operator[](size_t k);

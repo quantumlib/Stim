@@ -279,10 +279,8 @@ void time_pauli_swap(size_t num_qubits) {
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
-    PauliStringRef p1_ref(p1);
-    PauliStringRef p2_ref(p2);
     auto f = PerfResult::time([&](){
-        p1_ref.swap_with(p2_ref);
+        p1.ref().swap_with(p2);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliSwaps/s)";

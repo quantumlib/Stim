@@ -578,8 +578,7 @@ PauliStringVal Tableau::operator()(const PauliStringRef &p) const {
 void Tableau::apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const {
     assert(num_qubits == target_qubits.size());
     auto inp = PauliStringVal::identity(num_qubits);
-    PauliStringRef inp_ref(inp);
-    target.gather_into(inp_ref, target_qubits);
+    target.gather_into(inp, target_qubits);
     auto out = (*this)(inp);
     out.ref().scatter_into(target, target_qubits);
 }

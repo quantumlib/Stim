@@ -42,7 +42,7 @@ void SimdRange::swap_with(__m256i *other) {
     mem_swap256(start, other, count);
 }
 
-void simd_range_ref::swap_with(simd_range_ref &other) {
+void simd_range_ref::swap_with(simd_range_ref other) {
     mem_swap256(start, other.start, count);
 }
 

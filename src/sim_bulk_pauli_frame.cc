@@ -21,10 +21,10 @@ inline void FOR_EACH_XZ_PAIR(SimBulkPauliFrames &sim, const std::vector<size_t> 
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t q1 = targets[k];
         size_t q2 = targets[k + 1];
-        auto x1 = sim.x_start(q1);
-        auto z1 = sim.z_start(q1);
-        auto x2 = sim.x_start(q2);
-        auto z2 = sim.z_start(q2);
+        auto x1 = sim.x_table[q1].start;
+        auto z1 = sim.z_table[q1].start;
+        auto x2 = sim.x_table[q2].start;
+        auto z2 = sim.z_table[q2].start;
         auto x2_end = x2 + sim.num_sample_blocks256;
         while (x2 != x2_end) {
             body({x1, z1, x2, z2});
@@ -53,23 +53,11 @@ SimBulkPauliFrames::SimBulkPauliFrames(size_t init_num_qubits, size_t num_sample
         num_sample_blocks256(ceil256(num_samples) >> 8),
         num_measurements_raw(num_measurements),
         num_measurement_blocks(ceil256(num_measurements) >> 8),
-        x_blocks(init_num_qubits * ceil256(num_samples)),
-        z_blocks(init_num_qubits * ceil256(num_samples)),
-        recorded_results(ceil256(num_measurements) * ceil256(num_samples)),
+        x_table(init_num_qubits, num_samples),
+        z_table(init_num_qubits, num_samples),
+        m_table(ceil256(num_measurements), num_samples),
         rng_buffer(ceil256(num_samples)),
         rng((std::random_device {})()) {
-}
-
-SimdRange SimBulkPauliFrames::x_rng(size_t qubit) {
-    return {x_blocks.u256 + qubit * num_sample_blocks256, num_sample_blocks256};
-}
-
-SimdRange SimBulkPauliFrames::z_rng(size_t qubit) {
-    return {z_blocks.u256 + qubit * num_sample_blocks256, num_sample_blocks256};
-}
-
-__m256i *SimBulkPauliFrames::x_start(size_t qubit) {
-    return x_blocks.u256 + qubit * num_sample_blocks256;
 }
 
 void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, simd_bits &out) {
@@ -77,7 +65,7 @@ void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, si
         do_transpose();
     }
     for (size_t m = 0; m < num_measurements_raw; m += 256) {
-        out.u256[m >> 8] = recorded_results.u256[recorded_bit_address(sample_index, m) >> 8];
+        out.u256[m >> 8] = m_table.data.u256[recorded_bit_address(sample_index, m) >> 8];
     }
 }
 
@@ -96,7 +84,7 @@ void SimBulkPauliFrames::unpack_write_measurements(FILE *out, SampleFormat forma
     }
 
     if (format == SAMPLE_FORMAT_RAW_UNSTABLE) {
-        fwrite(recorded_results.u64, 1, recorded_results.num_bits >> 3, out);
+        fwrite(m_table.data.u64, 1, m_table.data.num_bits >> 3, out);
         return;
     }
 
@@ -120,18 +108,14 @@ void SimBulkPauliFrames::unpack_write_measurements(FILE *out, SampleFormat forma
 
 void SimBulkPauliFrames::do_transpose() {
     results_block_transposed = !results_block_transposed;
-    blockwise_transpose_256x256(recorded_results.u64, recorded_results.num_bits);
-}
-
-__m256i *SimBulkPauliFrames::z_start(size_t qubit) {
-    return z_blocks.u256 + qubit * num_sample_blocks256;
+    blockwise_transpose_256x256(m_table.data.u64, m_table.data.num_bits);
 }
 
 void SimBulkPauliFrames::clear() {
     num_recorded_measurements = 0;
-    x_blocks.clear();
-    z_blocks.clear();
-    recorded_results.clear();
+    x_table.clear();
+    z_table.clear();
+    m_table.clear();
     results_block_transposed = false;
 }
 
@@ -157,9 +141,9 @@ void SimBulkPauliFrames::do_named_op(const std::string &name, const std::vector<
 void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements) {
     for (auto e : measurements) {
         auto q = e.target_qubit;
-        auto x = x_start(q);
+        auto x = x_table[q].start;
         auto x_end = x + num_sample_blocks256;
-        auto m = recorded_results.u256 + (recorded_bit_address(0, num_recorded_measurements) >> 8);
+        auto m = m_table.data.u256 + (recorded_bit_address(0, num_recorded_measurements) >> 8);
         auto m_stride = recorded_bit_address(256, 0) >> 8;
         if (e.invert) {
             while (x != x_end) {
@@ -182,10 +166,10 @@ void SimBulkPauliFrames::MUL_INTO_FRAME(const SparsePauliString &pauli_string, c
     for (const auto &w : pauli_string.indexed_words) {
         for (size_t k2 = 0; k2 < 64; k2++) {
             if ((w.wx >> k2) & 1) {
-                *x_rng(w.index64 * 64 + k2) ^= mask;
+                x_table[w.index64 * 64 + k2] ^= mask;
             }
             if ((w.wz >> k2) & 1) {
-                *z_rng(w.index64 * 64 + k2) ^= mask;
+                z_table[w.index64 * 64 + k2] ^= mask;
             }
         }
 
@@ -203,8 +187,8 @@ void SimBulkPauliFrames::RANDOM_KICKBACK(const SparsePauliString &pauli_string) 
 
 void SimBulkPauliFrames::reset(const std::vector<size_t> &qubits) {
     for (auto q : qubits) {
-        x_rng(q).clear();
-        z_rng(q).clear();
+        x_table[q].clear();
+        z_table[q].clear();
     }
 }
 
@@ -212,8 +196,8 @@ PauliStringVal SimBulkPauliFrames::get_frame(size_t sample_index) const {
     assert(sample_index < num_samples_raw);
     PauliStringVal result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        result.x_data[q] = x_blocks[q * num_sample_blocks256 * 256 + sample_index];
-        result.z_data[q] = z_blocks[q * num_sample_blocks256 * 256 + sample_index];
+        result.x_data[q] = x_table[q][sample_index];
+        result.z_data[q] = z_table[q][sample_index];
     }
     return result;
 }
@@ -222,26 +206,26 @@ void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringRef &ne
     assert(sample_index < num_samples_raw);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        x_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame.x_ref[q];
-        z_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame.z_ref[q];
+        x_table[q][sample_index] = new_frame.x_ref[q];
+        z_table[q][sample_index] = new_frame.z_ref[q];
     }
 }
 
 void SimBulkPauliFrames::H_XZ(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        x_rng(q).swap_with(z_rng(q));
+        x_table[q].swap_with(z_table[q]);
     }
 }
 
 void SimBulkPauliFrames::H_XY(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        *z_rng(q) ^= *x_rng(q);
+        z_table[q] ^= x_table[q];
     }
 }
 
 void SimBulkPauliFrames::H_YZ(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        *x_rng(q) ^= *z_rng(q);
+        x_table[q] ^= z_table[q];
     }
 }
 
@@ -345,9 +329,9 @@ void SimBulkPauliFrames::DEPOLARIZE(const std::vector<size_t> &targets, float pr
         auto p = 1 + (rng() % 3);
         auto target_index = s / num_samples_raw;
         auto sample_index = s % num_samples_raw;
-        size_t i = targets[target_index] * num_sample_blocks256 + sample_index;
-        x_blocks[i] ^= p & 1;
-        z_blocks[i] ^= p & 2;
+        auto t = targets[target_index];
+        x_table[t][sample_index] ^= p & 1;
+        z_table[t][sample_index] ^= p & 2;
     }
 }
 
@@ -363,12 +347,12 @@ void SimBulkPauliFrames::DEPOLARIZE2(const std::vector<size_t> &targets, float p
         auto p = 1 + (rng() % 15);
         auto target_index = (s / num_samples_raw) << 1;
         auto sample_index = s % num_samples_raw;
-        size_t i1 = targets[target_index] * num_sample_blocks256 + sample_index;
-        size_t i2 = targets[target_index + 1] * num_sample_blocks256 + sample_index;
-        x_blocks[i1] ^= p & 1;
-        z_blocks[i1] ^= p & 2;
-        x_blocks[i2] ^= p & 4;
-        z_blocks[i2] ^= p & 8;
+        size_t t1 = targets[target_index];
+        size_t t2 = targets[target_index + 1];
+        x_table[t1][sample_index] ^= p & 1;
+        z_table[t1][sample_index] ^= p & 2;
+        x_table[t2][sample_index] ^= p & 4;
+        z_table[t2][sample_index] ^= p & 8;
     }
 }
 

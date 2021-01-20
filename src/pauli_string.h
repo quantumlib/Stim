@@ -29,10 +29,10 @@ struct PauliStringRef {
     bool operator==(const PauliStringRef &other) const;
     bool operator!=(const PauliStringRef &other) const;
 
-    void swap_with(PauliStringRef &other);
+    void swap_with(PauliStringRef other);
 
-    void gather_into(PauliStringRef &out, const std::vector<size_t> &in_indices) const;
-    void scatter_into(PauliStringRef &out, const std::vector<size_t> &out_indices) const;
+    void gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const;
+    void scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const;
 
     SparsePauliString sparse() const;
     std::string str() const;

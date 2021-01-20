@@ -13,6 +13,7 @@ set(SOURCE_FILES_NO_MAIN
         src/probability_util.cc
         src/sim_bulk_pauli_frame.cc
         src/simd/bit_ptr.cc
+        src/simd/simd_bit_table.cc
         src/simd/simd_bits.cc
         src/simd/simd_range.cc
         src/simd/simd_util.cc
@@ -29,6 +30,7 @@ set(TEST_FILES
         src/probability_util.test.cc
         src/sim_bulk_pauli_frame.test.cc
         src/simd/bit_ptr.test.cc
+        src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
         src/simd/simd_range.test.cc
         src/simd/simd_util.test.cc

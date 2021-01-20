@@ -85,7 +85,7 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
     sim.clear();
     for (size_t s = 0; s < sim.num_samples_raw; s++) {
         for (size_t m = 0; m < sim.num_measurements_raw; m++) {
-            sim.recorded_results[sim.recorded_bit_address(s, m)] = expected[s][m];
+            sim.m_table.data[sim.recorded_bit_address(s, m)] = expected[s][m];
         }
     }
     ASSERT_EQ(sim.unpack_measurements(), expected);
@@ -94,14 +94,14 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
 TEST(SimBulkPauliFrames, measure_deterministic) {
     SimBulkPauliFrames sim(1, 750, 1250);
     sim.clear();
-    sim.recorded_results = simd_bits::random(sim.recorded_results.num_bits);
+    sim.m_table.data = simd_bits::random(sim.m_table.data.num_bits);
     sim.measure_deterministic({
         {0, false},
         {0, true},
     });
     for (size_t s = 0; s < 750; s++) {
-        ASSERT_FALSE(sim.recorded_results[sim.recorded_bit_address(s, 0)]);
-        ASSERT_TRUE(sim.recorded_results[sim.recorded_bit_address(s, 1)]);
+        ASSERT_FALSE(sim.m_table.data[sim.recorded_bit_address(s, 0)]);
+        ASSERT_TRUE(sim.m_table.data[sim.recorded_bit_address(s, 1)]);
     }
 }
 
