@@ -13,7 +13,7 @@ struct aligned_bits256 {
 
     ~aligned_bits256();
     explicit aligned_bits256(size_t num_bits);
-    aligned_bits256(size_t num_bits, const uint64_t *other);
+    aligned_bits256(size_t num_bits, const void *other);
     aligned_bits256(aligned_bits256&& other) noexcept;
     aligned_bits256(const aligned_bits256& other);
     aligned_bits256& operator=(aligned_bits256&& other) noexcept;

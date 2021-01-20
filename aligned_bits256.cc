@@ -33,7 +33,7 @@ aligned_bits256::aligned_bits256(size_t init_num_bits) :
         u64(alloc_aligned_bits(init_num_bits)) {
 }
 
-aligned_bits256::aligned_bits256(size_t num_bits, const uint64_t *other) :
+aligned_bits256::aligned_bits256(size_t num_bits, const void *other) :
         num_bits(num_bits),
         u64(alloc_aligned_bits(num_bits)) {
     memcpy(u64, other, num_bytes(num_bits));

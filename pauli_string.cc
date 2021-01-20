@@ -12,12 +12,12 @@
 PauliStringPtr::PauliStringPtr(
             size_t init_num_qubits,
             BitPtr init_sign,
-            uint64_t *init_x,
-            uint64_t *init_z) :
+            SimdRange init_x,
+            SimdRange init_z) :
         num_qubits(init_num_qubits),
         bit_ptr_sign(init_sign),
-        _x(init_x),
-        _z(init_z) {
+        _xr(init_x),
+        _zr(init_z) {
 }
 
 PauliStringVal::PauliStringVal(size_t num_qubits) :
@@ -28,8 +28,8 @@ PauliStringVal::PauliStringVal(size_t num_qubits) :
 
 PauliStringVal::PauliStringVal(const PauliStringPtr &other) :
         val_sign(other.bit_ptr_sign.get()),
-        x_data(other.num_qubits, other._x),
-        z_data(other.num_qubits, other._z) {
+        x_data(other.num_qubits, other._xr.start),
+        z_data(other.num_qubits, other._zr.start) {
 }
 
 PauliStringPtr PauliStringVal::ptr() const {
@@ -43,22 +43,15 @@ std::string PauliStringVal::str() const {
 void PauliStringPtr::swap_with(PauliStringPtr &other) {
     assert(num_qubits == other.num_qubits);
     bit_ptr_sign.swap(other.bit_ptr_sign);
-    x_rng().swap_with((__m256i *)other._x);
-    z_rng().swap_with((__m256i *)other._z);
-}
-
-SimdRange PauliStringPtr::x_rng() {
-    return SimdRange {(__m256i *)_x, num_words256()};
-}
-SimdRange PauliStringPtr::z_rng() {
-    return SimdRange {(__m256i *)_z, num_words256()};
+    _xr.swap_with(other._xr);
+    _zr.swap_with(other._zr);
 }
 
 void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
     assert(num_qubits == other.num_qubits);
     bit_ptr_sign.set(other.bit_ptr_sign.get());
-    x_rng().overwrite_with((__m256i *)other._x);
-    z_rng().overwrite_with((__m256i *)other._z);
+    _xr.overwrite_with(other._xr);
+    _zr.overwrite_with(other._zr);
 }
 
 PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept {
@@ -70,8 +63,8 @@ PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept 
 PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
         num_qubits(other.x_data.num_bits),
         bit_ptr_sign(BitPtr((void *)&other.val_sign, 0)),
-        _x(other.x_data.u64),
-        _z(other.z_data.u64) {
+        _xr(other.x_data.u256, ceil256(other.x_data.num_bits) >> 8),
+        _zr(other.z_data.u256, ceil256(other.x_data.num_bits) >> 8) {
 }
 
 SparsePauliString PauliStringPtr::sparse() const {
@@ -80,9 +73,11 @@ SparsePauliString PauliStringPtr::sparse() const {
         {}
     };
     auto n = (num_qubits + 63) >> 6;
+    auto x64 = (uint64_t *)_xr.start;
+    auto z64 = (uint64_t *)_zr.start;
     for (size_t k = 0; k < n; k++) {
-        auto wx = _x[k];
-        auto wz = _z[k];
+        auto wx = x64[k];
+        auto wz = z64[k];
         if (wx | wz) {
             result.indexed_words.push_back({k, wx, wz});
         }
@@ -107,7 +102,7 @@ bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
         return false;
     }
     auto n = num_words256() << 5;
-    return memcmp(_x, other._x, n) == 0 && memcmp(_z, other._z, n) == 0;
+    return memcmp(_xr.start, other._xr.start, n) == 0 && memcmp(_zr.start, other._zr.start, n) == 0;
 }
 
 bool PauliStringPtr::operator!=(const PauliStringPtr &other) const {
@@ -147,8 +142,8 @@ size_t PauliStringPtr::num_words256() const {
 
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
     out << (ps.bit_ptr_sign.get() ? '-' : '+');
-    auto x256 = (__m256i *)ps._x;
-    auto z256 = (__m256i *)ps._z;
+    auto x256 = ps._xr.start;
+    auto z256 = ps._zr.start;
     auto end = &x256[ps.num_words256()];
     size_t remaining = ps.num_qubits;
     while (x256 != end) {
@@ -219,10 +214,10 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
     __m256i cnt2 {};
 
     simd_for_each_4(
-            (__m256i *)_x,
-            (__m256i *)_z,
-            (__m256i *)rhs._x,
-            (__m256i *)rhs._z,
+            _xr.start,
+            _zr.start,
+            rhs._xr.start,
+            rhs._zr.start,
             num_words256(),
             [&cnt1, &cnt2](auto px1, auto pz1, auto px2, auto pz2) {
                 // Load into registers.
@@ -261,10 +256,10 @@ bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
     assert(num_qubits == other.num_qubits);
     __m256i cnt1 {};
     simd_for_each_4(
-            (__m256i *)_x,
-            (__m256i *)_z,
-            (__m256i *)other._x,
-            (__m256i *)other._z,
+            _xr.start,
+            _zr.start,
+            other._xr.start,
+            other._zr.start,
             num_words256(),
             [&cnt1](auto x1, auto z1, auto x2, auto z2) {
         cnt1 ^= (*x1 & *z2) ^ (*x2 & *z1);
@@ -272,75 +267,12 @@ bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
     return (pop_count(cnt1) & 1) == 0;
 }
 
-bool PauliStringPtr::get_x_bit(size_t k) const {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    return (_x[i0] >> i1) & 1;
-}
-
-bool PauliStringPtr::get_z_bit(size_t k) const {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    return (_z[i0] >> i1) & 1;
-}
-
-bool PauliStringPtr::get_xz_bit(size_t k) const {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    return ((_x[i0] ^ _z[i0]) >> i1) & 1;
-}
-
-void PauliStringPtr::toggle_x_bit(size_t k) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _x[i0] ^= 1ull << i1;
-}
-
-void PauliStringPtr::toggle_z_bit(size_t k) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _z[i0] ^= 1ull << i1;
-}
-
-void PauliStringPtr::toggle_x_bit_if(size_t k, bool condition) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _x[i0] ^= (size_t)condition << i1;
-}
-
-void PauliStringPtr::toggle_xz_bit_if(size_t k, bool condition) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _x[i0] ^= (size_t)condition << i1;
-    _z[i0] ^= (size_t)condition << i1;
-}
-
-void PauliStringPtr::toggle_z_bit_if(size_t k, bool condition) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _z[i0] ^= (size_t)condition << i1;
-}
-
-void PauliStringPtr::set_x_bit(size_t k, bool val) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _x[i0] &= ~(1ull << i1);
-    _x[i0] ^= (uint64_t)val << i1;
-}
-
-void PauliStringPtr::set_z_bit(size_t k, bool val) {
-    size_t i0 = k >> 6;
-    size_t i1 = k & 63;
-    _z[i0] &= ~(1ull << i1);
-    _z[i0] ^= (uint64_t)val << i1;
-}
-
 void PauliStringPtr::gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const {
     assert(in_indices.size() == out.num_qubits);
     for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
-        out.set_x_bit(k_out, get_x_bit(k_in));
-        out.set_z_bit(k_out, get_z_bit(k_in));
+        out._xr.bit_ptr(k_out).set(_xr.get_bit(k_in));
+        out._zr.bit_ptr(k_out).set(_zr.get_bit(k_in));
     }
 }
 
@@ -348,8 +280,8 @@ void PauliStringPtr::scatter_into(PauliStringPtr &out, const std::vector<size_t>
     assert(num_qubits == out_indices.size());
     for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];
-        out.set_x_bit(k_out, get_x_bit(k_in));
-        out.set_z_bit(k_out, get_z_bit(k_in));
+        out._xr.bit_ptr(k_out).set(_xr.get_bit(k_in));
+        out._zr.bit_ptr(k_out).set(_zr.get_bit(k_in));
     }
     out.bit_ptr_sign.toggle_if(bit_ptr_sign.get());
 }

@@ -31,13 +31,10 @@ struct SparsePauliString {
 struct PauliStringPtr {
     size_t num_qubits;
     BitPtr bit_ptr_sign;
-    uint64_t *_x;
-    uint64_t *_z;
+    SimdRange _xr;
+    SimdRange _zr;
 
-    SimdRange x_rng();
-    SimdRange z_rng();
-
-    PauliStringPtr(size_t num_qubits, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z);
+    PauliStringPtr(size_t num_qubits, BitPtr bit_ptr_sign, SimdRange x, SimdRange z);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
     bool operator==(const PauliStringPtr &other) const;
@@ -79,16 +76,6 @@ struct PauliStringPtr {
     size_t num_words256() const;
 
     bool commutes(const PauliStringPtr& other) const noexcept;
-    bool get_x_bit(size_t k) const;
-    bool get_z_bit(size_t k) const;
-    bool get_xz_bit(size_t k) const;
-    void set_x_bit(size_t k, bool b);
-    void set_z_bit(size_t k, bool b);
-    void toggle_x_bit(size_t k);
-    void toggle_z_bit(size_t k);
-    void toggle_x_bit_if(size_t k, bool condition);
-    void toggle_xz_bit_if(size_t k, bool condition);
-    void toggle_z_bit_if(size_t k, bool condition);
 };
 
 struct PauliStringVal {

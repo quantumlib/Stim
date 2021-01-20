@@ -212,8 +212,8 @@ PauliStringVal SimBulkPauliFrames::get_frame(size_t sample_index) const {
     assert(sample_index < num_samples_raw);
     PauliStringVal result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        result.ptr().set_x_bit(q, x_blocks.get_bit(q * num_sample_blocks256 * 256 + sample_index));
-        result.ptr().set_z_bit(q, z_blocks.get_bit(q * num_sample_blocks256 * 256 + sample_index));
+        result.ptr()._xr.set_bit(q, x_blocks.get_bit(q * num_sample_blocks256 * 256 + sample_index));
+        result.ptr()._zr.set_bit(q, z_blocks.get_bit(q * num_sample_blocks256 * 256 + sample_index));
     }
     return result;
 }
@@ -222,8 +222,8 @@ void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringPtr &ne
     assert(sample_index < num_samples_raw);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        x_blocks.set_bit(q * num_sample_blocks256 * 256 + sample_index, new_frame.get_x_bit(q));
-        z_blocks.set_bit(q * num_sample_blocks256 * 256 + sample_index, new_frame.get_z_bit(q));
+        x_blocks.set_bit(q * num_sample_blocks256 * 256 + sample_index, new_frame._xr.get_bit(q));
+        z_blocks.set_bit(q * num_sample_blocks256 * 256 + sample_index, new_frame._zr.get_bit(q));
     }
 }
 

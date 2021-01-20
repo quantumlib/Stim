@@ -67,8 +67,8 @@ void SimVector::apply(const PauliStringPtr &gate, size_t qubit_offset) {
         }
     }
     for (size_t k = 0; k < gate.num_qubits; k++) {
-        bool x = gate.get_x_bit(k);
-        bool z = gate.get_z_bit(k);
+        bool x = gate._xr.get_bit(k);
+        bool z = gate._zr.get_bit(k);
         size_t q = qubit_offset + k;
         if (x && z) {
             apply("Y", q);
@@ -100,8 +100,8 @@ float SimVector::project(const PauliStringPtr &observable) {
     assert(1ULL << observable.num_qubits == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.num_qubits; k++) {
-            if (observable.get_x_bit(k)) {
-                if (observable.get_z_bit(k)) {
+            if (observable._xr.get_bit(k)) {
+                if (observable._zr.get_bit(k)) {
                     apply("H_YZ", k);
                 } else {
                     apply("H", k);
@@ -112,7 +112,7 @@ float SimVector::project(const PauliStringPtr &observable) {
 
     uint64_t mask = 0;
     for (size_t k = 0; k < observable.num_qubits; k++) {
-        if (observable.get_x_bit(k) | observable.get_z_bit(k)) {
+        if (observable._xr.get_bit(k) | observable._zr.get_bit(k)) {
             mask |= 1 << k;
         }
     }

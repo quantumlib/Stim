@@ -43,8 +43,8 @@ TransposedTableauXZ TempTransposedTableauRaii::transposed_xz_ptr(size_t qubit) c
     auto x = tableau.x_obs_ptr(qubit);
     auto z = tableau.z_obs_ptr(qubit);
     return {{
-        {(__m256i *) x._x, (__m256i *) x._z, tableau.data_sx.u256},
-        {(__m256i *) z._x, (__m256i *) z._z, tableau.data_sz.u256}
+        {x._xr.start, x._zr.start, tableau.data_sx.u256},
+        {z._xr.start, z._zr.start, tableau.data_sz.u256}
     }};
 }
 
@@ -84,8 +84,8 @@ void Tableau::expand(size_t new_num_qubits) {
     size_t m2 = ceil256(new_num_qubits);
     if (m1 == m2) {
         for (size_t k = n1; k < new_num_qubits; k++) {
-            x_obs_ptr(k).set_x_bit(k, true);
-            z_obs_ptr(k).set_z_bit(k, true);
+            x_obs_ptr(k)._xr.set_bit(k, true);
+            z_obs_ptr(k)._zr.set_bit(k, true);
         }
         num_qubits = new_num_qubits;
         return;
@@ -98,10 +98,10 @@ void Tableau::expand(size_t new_num_qubits) {
     memcpy(data_sx.u256, old_state.data_sx.u256, m1 >> 3);
     memcpy(data_sz.u256, old_state.data_sz.u256, m1 >> 3);
     for (size_t k = 0; k < n1; k++) {
-        memcpy(x_obs_ptr(k)._x, old_state.x_obs_ptr(k)._x, m1 >> 3);
-        memcpy(x_obs_ptr(k)._z, old_state.x_obs_ptr(k)._z, m1 >> 3);
-        memcpy(z_obs_ptr(k)._x, old_state.z_obs_ptr(k)._x, m1 >> 3);
-        memcpy(z_obs_ptr(k)._z, old_state.z_obs_ptr(k)._z, m1 >> 3);
+        memcpy(x_obs_ptr(k)._xr.start, old_state.x_obs_ptr(k)._xr.start, m1 >> 3);
+        memcpy(x_obs_ptr(k)._zr.start, old_state.x_obs_ptr(k)._zr.start, m1 >> 3);
+        memcpy(z_obs_ptr(k)._xr.start, old_state.z_obs_ptr(k)._xr.start, m1 >> 3);
+        memcpy(z_obs_ptr(k)._zr.start, old_state.z_obs_ptr(k)._zr.start, m1 >> 3);
     }
 }
 
@@ -233,16 +233,16 @@ PauliStringPtr Tableau::x_obs_ptr(size_t qubit) const {
     return PauliStringPtr(
             num_qubits,
             BitPtr(data_sx.u64, qubit),
-            &data_x2x.u64[bit_address(qubit, 0, num_qubits, false) >> 6],
-            &data_x2z.u64[bit_address(qubit, 0, num_qubits, false) >> 6]);
+            SimdRange(&data_x2x.u256[bit_address(qubit, 0, num_qubits, false) >> 8], ceil256(num_qubits) >> 8),
+            SimdRange(&data_x2z.u256[bit_address(qubit, 0, num_qubits, false) >> 8], ceil256(num_qubits) >> 8));
 }
 
 PauliStringPtr Tableau::z_obs_ptr(size_t qubit) const {
     return PauliStringPtr(
             num_qubits,
             BitPtr(data_sz.u64, qubit),
-            &data_z2x.u64[bit_address(qubit, 0, num_qubits, false) >> 6],
-            &data_z2z.u64[bit_address(qubit, 0, num_qubits, false) >> 6]);
+            SimdRange(&data_z2x.u256[bit_address(qubit, 0, num_qubits, false) >> 8], ceil256(num_qubits) >> 8),
+            SimdRange(&data_z2z.u256[bit_address(qubit, 0, num_qubits, false) >> 8], ceil256(num_qubits) >> 8));
 }
 
 bool Tableau::z_sign(size_t a) const {
@@ -291,8 +291,8 @@ Tableau::Tableau(size_t num_qubits) :
         data_sx(ceil256(num_qubits)),
         data_sz(ceil256(num_qubits)) {
     for (size_t q = 0; q < num_qubits; q++) {
-        x_obs_ptr(q).set_x_bit(q, true);
-        z_obs_ptr(q).set_z_bit(q, true);
+        x_obs_ptr(q)._xr.set_bit(q, true);
+        z_obs_ptr(q)._zr.set_bit(q, true);
     }
 }
 
@@ -338,8 +338,8 @@ std::ostream &operator<<(std::ostream &out, const Tableau &t) {
             out << ' ';
             auto x = t.x_obs_ptr(k);
             auto z = t.z_obs_ptr(k);
-            out << "_XZY"[x.get_x_bit(q) + 2 * x.get_z_bit(q)];
-            out << "_XZY"[z.get_x_bit(q) + 2 * z.get_z_bit(q)];
+            out << "_XZY"[x._xr.get_bit(q) + 2 * x._zr.get_bit(q)];
+            out << "_XZY"[z._xr.get_bit(q) + 2 * z._zr.get_bit(q)];
         }
     }
     return out;
@@ -499,8 +499,8 @@ void Tableau::prepend_H_XY(const size_t q) {
 
 void Tableau::prepend(const PauliStringPtr &op) {
     assert(op.num_qubits == num_qubits);
-    mem_xor256(data_sz.u256, (__m256i *)op._x, ceil256(num_qubits) >> 8);
-    mem_xor256(data_sx.u256, (__m256i *)op._z, ceil256(num_qubits) >> 8);
+    mem_xor256(data_sz.u256, op._xr.start, ceil256(num_qubits) >> 8);
+    mem_xor256(data_sx.u256, op._zr.start, ceil256(num_qubits) >> 8);
 }
 
 void Tableau::prepend(const SparsePauliString &op) {
@@ -560,8 +560,8 @@ PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const
     result.val_sign = gathered_input.bit_ptr_sign.get();
     for (size_t k_gathered = 0; k_gathered < gathered_input.num_qubits; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
-        auto x = gathered_input.get_x_bit(k_gathered);
-        auto z = gathered_input.get_z_bit(k_gathered);
+        auto x = gathered_input._xr.get_bit(k_gathered);
+        auto z = gathered_input._zr.get_bit(k_gathered);
         if (x) {
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
@@ -726,10 +726,10 @@ Tableau Tableau::random(size_t num_qubits) {
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
-            result.x_obs_ptr(row).set_x_bit(col, raw.get(row, col));
-            result.x_obs_ptr(row).set_z_bit(col, raw.get(row, col + num_qubits));
-            result.z_obs_ptr(row).set_x_bit(col, raw.get(row + num_qubits, col));
-            result.z_obs_ptr(row).set_z_bit(col, raw.get(row + num_qubits, col + num_qubits));
+            result.x_obs_ptr(row)._xr.set_bit(col, raw.get(row, col));
+            result.x_obs_ptr(row)._zr.set_bit(col, raw.get(row, col + num_qubits));
+            result.z_obs_ptr(row)._xr.set_bit(col, raw.get(row + num_qubits, col));
+            result.z_obs_ptr(row)._zr.set_bit(col, raw.get(row + num_qubits, col + num_qubits));
         }
         result.data_sx.set_bit(row, rand_bit(gen));
         result.data_sz.set_bit(row, rand_bit(gen));
@@ -771,13 +771,13 @@ Tableau Tableau::inverse() const {
     PauliStringVal pauli_buf(num_qubits);
     auto p = pauli_buf.ptr();
     for (size_t k = 0; k < num_qubits; k++) {
-        p.set_x_bit(k, true);
+        p._xr.set_bit(k, true);
         inv.x_obs_ptr(k).bit_ptr_sign.toggle_if((*this)(inv(p)).val_sign);
-        p.set_x_bit(k, false);
+        p._xr.set_bit(k, false);
 
-        p.set_z_bit(k, true);
+        p._zr.set_bit(k, true);
         inv.z_obs_ptr(k).bit_ptr_sign.toggle_if((*this)(inv(p)).val_sign);
-        p.set_z_bit(k, false);
+        p._zr.set_bit(k, false);
     }
 
     return inv;

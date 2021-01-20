@@ -179,9 +179,9 @@ TEST(pauli_string, foreign_memory) {
     auto buffer = aligned_bits256::random(bits);
     bool signs = false;
 
-    auto p1 = PauliStringPtr(500, BitPtr(&signs, 0), &buffer.u64[0], &buffer.u64[16]);
-    auto p1b = new PauliStringPtr(500, BitPtr(&signs, 0), &buffer.u64[0], &buffer.u64[16]);
-    auto p2 = PauliStringPtr(500, BitPtr(&signs, 1), &buffer.u64[32], &buffer.u64[64]);
+    auto p1 = PauliStringPtr(500, BitPtr(&signs, 0), SimdRange(&buffer.u256[0], 2), SimdRange(&buffer.u256[4], 2));
+    auto p1b = new PauliStringPtr(500, BitPtr(&signs, 0), SimdRange(&buffer.u256[0], 2), SimdRange(&buffer.u256[4], 2));
+    auto p2 = PauliStringPtr(500, BitPtr(&signs, 1), SimdRange(&buffer.u256[8], 2), SimdRange(&buffer.u256[16], 2));
     PauliStringVal copy_p1 = p1;
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);
