@@ -7,7 +7,7 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
-#include "tableau.h"
+#include "stabilizers/tableau.h"
 #include <random>
 #include "circuit.h"
 #include "sim_vector.h"

@@ -6,7 +6,7 @@
 #include <new>
 #include <sstream>
 #include "sim_tableau.h"
-#include "pauli_string.h"
+#include "stabilizers/pauli_string.h"
 #include "perf.h"
 #include "simd/simd_util.h"
 #include <cstring>

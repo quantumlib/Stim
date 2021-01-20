@@ -7,7 +7,7 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/bit_mat.cc
         src/circuit.cc
-        src/pauli_string.cc
+        src/stabilizers/pauli_string.cc
         src/program_frame.cc
         src/perf.cc
         src/probability_util.cc
@@ -19,13 +19,13 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/simd_util.cc
         src/sim_tableau.cc
         src/sim_vector.cc
-        src/tableau.cc
+        src/stabilizers/tableau.cc
         )
 set(TEST_FILES
         src/arg_parse.test.cc
         src/bit_mat.test.cc
         src/circuit.test.cc
-        src/pauli_string.test.cc
+        src/stabilizers/pauli_string.test.cc
         src/program_frame.test.cc
         src/probability_util.test.cc
         src/sim_bulk_pauli_frame.test.cc
@@ -37,7 +37,7 @@ set(TEST_FILES
         src/test_util.test.cc
         src/sim_tableau.test.cc
         src/sim_vector.test.cc
-        src/tableau.test.cc
+        src/stabilizers/tableau.test.cc
         )
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})

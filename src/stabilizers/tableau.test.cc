@@ -1,8 +1,8 @@
 #include <random>
 #include "gtest/gtest.h"
-#include "sim_vector.h"
+#include "../sim_vector.h"
 #include "tableau.h"
-#include "test_util.test.h"
+#include "../test_util.test.h"
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;

@@ -3,7 +3,7 @@
 #include <new>
 #include <cassert>
 #include <sstream>
-#include "simd/simd_util.h"
+#include "../simd/simd_util.h"
 #include "pauli_string.h"
 #include <cstring>
 #include <cstdlib>

@@ -7,10 +7,10 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
-#include "simd/simd_bits.h"
-#include "simd/simd_bits_range_ref.h"
-#include "simd/bit_ref.h"
-#include "simd/simd_util.h"
+#include "../simd/simd_bits.h"
+#include "../simd/simd_bits_range_ref.h"
+#include "../simd/bit_ref.h"
+#include "../simd/simd_util.h"
 
 struct PauliStringVal;
 struct PauliStringRef;

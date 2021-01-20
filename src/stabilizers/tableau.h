@@ -4,8 +4,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <immintrin.h>
-#include "simd/simd_bit_table.h"
-#include "simd/simd_util.h"
+#include "../simd/simd_bit_table.h"
+#include "../simd/simd_util.h"
 #include "pauli_string.h"
 
 struct TableauHalf {

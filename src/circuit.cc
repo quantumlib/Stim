@@ -1,6 +1,6 @@
 #include "circuit.h"
 #include <string>
-#include "tableau.h"
+#include "stabilizers/tableau.h"
 #include "sim_tableau.h"
 
 std::vector<std::string> tokenize(const std::string &line, size_t start, size_t end) {

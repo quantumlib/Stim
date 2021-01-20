@@ -3,7 +3,7 @@
 #include <random>
 #include "pauli_string.h"
 #include "tableau.h"
-#include "bit_mat.h"
+#include "../bit_mat.h"
 #include <cmath>
 #include <cstring>
 #include <thread>

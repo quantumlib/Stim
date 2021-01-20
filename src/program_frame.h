@@ -2,7 +2,7 @@
 #define PROGRAM_FRAME_H
 
 #include "circuit.h"
-#include "pauli_string.h"
+#include "stabilizers/pauli_string.h"
 
 struct PauliFrameProgramCollapse {
     SparsePauliString destabilizer;

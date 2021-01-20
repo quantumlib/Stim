@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "pauli_string.h"
 #include "tableau.h"
-#include "test_util.test.h"
+#include "../test_util.test.h"
 
 TEST(pauli_string, str) {
     auto p1 = PauliStringVal::from_str("+IXYZ");
