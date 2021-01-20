@@ -106,17 +106,9 @@ size_t ceil256(size_t n) {
     return (n + 0xFF) & ~0xFF;
 }
 
-bool not_zero(const __m256i &v) {
+bool not_zero256(const __m256i &v) {
     auto p = (const uint64_t *)&v;
     return p[0] | p[1] | p[2] | p[3];
-}
-
-bool any_non_zero(const __m256i *data, size_t words256) {
-    __m256i acc {};
-    simd_for_each(data, words256, [&acc](auto v) {
-        acc |= *v;
-    });
-    return not_zero(acc);
 }
 
 void mem_xor256(__m256i *dst, const __m256i *src, size_t words256) {

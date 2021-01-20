@@ -30,7 +30,11 @@ bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
 }
 
 bool simd_bits_range_ref::not_zero() const {
-    return any_non_zero(u256, num_simd_words);
+    __m256i acc {};
+    simd_for_each(u256, num_simd_words, [&acc](auto v) {
+        acc |= *v;
+    });
+    return not_zero256(acc);
 }
 
 bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const {

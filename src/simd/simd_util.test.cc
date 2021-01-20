@@ -238,21 +238,6 @@ TEST(simd_util, ceil256) {
     ASSERT_EQ(ceil256((1 << 30) + 1), (1 << 30) + 256);
 }
 
-TEST(simd_util, any_non_zero) {
-    auto d = simd_bits(5000);
-    ASSERT_FALSE(any_non_zero(d.u256, 1));
-    ASSERT_FALSE(any_non_zero(d.u256, 2));
-    d[256] = true;
-    ASSERT_FALSE(any_non_zero(d.u256, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2));
-    d[257] = true;
-    ASSERT_FALSE(any_non_zero(d.u256, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2));
-    d[255] = true;
-    ASSERT_TRUE(any_non_zero(d.u256, 1));
-    ASSERT_TRUE(any_non_zero(d.u256, 2));
-}
-
 TEST(simd_util, transpose_bit_matrix) {
     size_t bit_width = 256 * 3;
     auto data = simd_bits::random(bit_width * bit_width, SHARED_TEST_RNG());

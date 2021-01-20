@@ -157,7 +157,7 @@ TEST(simd_bits, clear) {
     ASSERT_TRUE(!m0.not_zero());
 }
 
-TEST(simd_bits, not_zero) {
+TEST(simd_bits, not_zero256) {
     simd_bits m0(512);
     ASSERT_FALSE(m0.not_zero());
     m0[5] = 1;

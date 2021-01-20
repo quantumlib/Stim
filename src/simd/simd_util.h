@@ -84,7 +84,6 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
 
 size_t ceil256(size_t n);
 
-bool any_non_zero(const __m256i *data, size_t words256);
 void mem_xor256(__m256i *dst, const __m256i *src, size_t words256);
 void mem_swap256(__m256i *v0, __m256i *v1, size_t words256);
 
@@ -109,7 +108,7 @@ inline void simd_for_each(const __m256i *v0, size_t num_words256, BODY body) {
     }
 }
 
-bool not_zero(const __m256i &v);
+bool not_zero256(const __m256i &v);
 
 template <typename BODY>
 inline void simd_for_each_2(__m256i *v0, __m256i *v1, size_t num_words256, BODY body) {

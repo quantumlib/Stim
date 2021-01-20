@@ -158,7 +158,7 @@ TEST(simd_bits_range_ref, clear) {
     ASSERT_TRUE(!m0.not_zero());
 }
 
-TEST(simd_bits_range_ref, not_zero) {
+TEST(simd_bits_range_ref, not_zero256) {
     __m256i data[2]{};
     simd_bits_range_ref m0(&data[0], 2);
     ASSERT_FALSE(m0.not_zero());
