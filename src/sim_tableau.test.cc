@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../src/sim_tableau.h"
+#include "sim_tableau.h"
 
 TEST(SimTableau, identity) {
     auto s = SimTableau(1);

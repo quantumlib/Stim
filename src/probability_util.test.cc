@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../src/probability_util.h"
+#include "probability_util.h"
 
 TEST(probability_util, qubit_order) {
     std::mt19937 rng((std::random_device {})());

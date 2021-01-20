@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "../src/tableau.h"
-#include "../src/sim_vector.h"
+#include "tableau.h"
+#include "sim_vector.h"
 #include <random>
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
@@ -526,10 +526,10 @@ TEST(tableau, expand) {
 TEST(tableau, transposed_access) {
     size_t n = 1000;
     Tableau t(n);
-    t.data_x2x = aligned_bits256::random(t.data_x2x.num_bits);
-    t.data_x2z = aligned_bits256::random(t.data_x2x.num_bits);
-    t.data_z2x = aligned_bits256::random(t.data_x2x.num_bits);
-    t.data_z2z = aligned_bits256::random(t.data_x2x.num_bits);
+    t.data_x2x = simd_bits::random(t.data_x2x.num_bits);
+    t.data_x2z = simd_bits::random(t.data_x2x.num_bits);
+    t.data_z2x = simd_bits::random(t.data_x2x.num_bits);
+    t.data_z2z = simd_bits::random(t.data_x2x.num_bits);
     for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
         for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
             auto bxx = t.data_x2x.get_bit(bit_address(inp_qubit, out_qubit, n, false));

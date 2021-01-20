@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../src/sim_vector.h"
+#include "sim_vector.h"
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;

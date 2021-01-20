@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "../src/sim_bulk_pauli_frame.h"
-#include "../src/program_frame.h"
-#include "../src/sim_tableau.h"
+#include "sim_bulk_pauli_frame.h"
+#include "program_frame.h"
+#include "sim_tableau.h"
 
 TEST(SimBulkPauliFrames, get_set_frame) {
     SimBulkPauliFrames sim(6, 4, 999);
@@ -77,9 +77,9 @@ TEST(SimBulkPauliFrames, recorded_bit_address) {
 
 TEST(SimBulkPauliFrames, unpack_measurements) {
     SimBulkPauliFrames sim(1, 500, 1000);
-    std::vector<aligned_bits256> expected;
+    std::vector<simd_bits> expected;
     for (size_t k = 0; k < sim.num_samples_raw; k++) {
-        expected.push_back(aligned_bits256::random(sim.num_measurements_raw));
+        expected.push_back(simd_bits::random(sim.num_measurements_raw));
     }
 
     sim.clear();
@@ -102,7 +102,7 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
 TEST(SimBulkPauliFrames, measure_deterministic) {
     SimBulkPauliFrames sim(1, 750, 1250);
     sim.clear();
-    sim.recorded_results = aligned_bits256::random(sim.recorded_results.num_bits);
+    sim.recorded_results = simd_bits::random(sim.recorded_results.num_bits);
     sim.measure_deterministic({
         {0, false},
         {0, true},
@@ -157,7 +157,7 @@ TEST(SimBulkPauliFrames, operations_consistent_with_tableau_data) {
 
 #define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << PauliFrameProgram::from_stabilizer_circuit(Circuit::from_text(program).operations)
 
-bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const aligned_bits256 &output) {
+bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits &output) {
     auto tableau_sim = SimTableau(circuit.num_qubits);
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
@@ -186,7 +186,7 @@ TEST(PauliFrameSimulation, test_util_is_output_possible) {
             "X 0\n"
             "M 0\n"
             "M 1\n");
-    auto data = aligned_bits256(2);
+    auto data = simd_bits(2);
     data.u64[0] = 0b00;
     ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
     data.u64[0] = 0b01;

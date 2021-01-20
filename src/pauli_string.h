@@ -7,7 +7,7 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
-#include "simd/aligned_bits256.h"
+#include "simd/simd_bits.h"
 #include "simd/bit_ptr.h"
 #include "simd/simd_util.h"
 
@@ -80,8 +80,8 @@ struct PauliStringPtr {
 
 struct PauliStringVal {
     bool val_sign;
-    aligned_bits256 x_data;
-    aligned_bits256 z_data;
+    simd_bits x_data;
+    simd_bits z_data;
 
     explicit PauliStringVal(size_t num_qubits);
     PauliStringVal(const PauliStringPtr &other); // NOLINT(google-explicit-constructor)

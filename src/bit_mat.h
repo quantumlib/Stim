@@ -1,13 +1,13 @@
 #ifndef BIT_MAT_H
 #define BIT_MAT_H
 
-#include "simd/aligned_bits256.h"
+#include "simd/simd_bits.h"
 #include <iostream>
 #include <string>
 
 struct BitMat {
     size_t n;
-    aligned_bits256 data;
+    simd_bits data;
 
     explicit BitMat(size_t n);
     static BitMat zero(size_t n);

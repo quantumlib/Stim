@@ -246,9 +246,9 @@ uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStri
 
 PauliStringVal PauliStringVal::random(size_t num_qubits) {
     auto result = PauliStringVal(num_qubits);
-    result.x_data = std::move(aligned_bits256::random(num_qubits));
-    result.z_data = std::move(aligned_bits256::random(num_qubits));
-    result.val_sign ^= aligned_bits256::random(1).get_bit(0);
+    result.x_data = std::move(simd_bits::random(num_qubits));
+    result.z_data = std::move(simd_bits::random(num_qubits));
+    result.val_sign ^= simd_bits::random(1).get_bit(0);
     return result;
 }
 

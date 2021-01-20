@@ -141,7 +141,7 @@ void time_sim_bulk_pauli_frame_cz(size_t num_qubits, size_t num_samples) {
 
 void time_any_non_zero(size_t num_bits) {
     std::cerr << "any_non_zero(num_bits=" << num_bits << ")\n";
-    auto d = aligned_bits256::random(num_bits);
+    auto d = simd_bits::random(num_bits);
     auto f = PerfResult::time([&]() {
         any_non_zero(d.u256, ceil256(d.num_bits) >> 8);
     });
@@ -203,7 +203,7 @@ void time_transpose_blockwise(size_t blocks) {
     std::cerr << (blocks * 256 * 256 / 8 / 1024 / 1024) << "MiB)\n";
 
     size_t num_bits = blocks << 16;
-    auto data = aligned_bits256::random(num_bits);
+    auto data = simd_bits::random(num_bits);
     auto f = PerfResult::time([&](){
         blockwise_transpose_256x256(data.u64, num_bits);
     });
@@ -248,8 +248,8 @@ void time_pauli_multiplication(size_t num_qubits) {
 void time_memcpy(size_t bits) {
     std::cerr << "memcpy (bits=" << bits << ")\n";
 
-    auto d1 = aligned_bits256::random(bits * 2);
-    auto d2 = aligned_bits256::random(bits * 2);
+    auto d1 = simd_bits::random(bits * 2);
+    auto d2 = simd_bits::random(bits * 2);
     auto f = PerfResult::time([&](){
         memcpy(d1.u64, d2.u64, d1.num_bits >> 3);
     });

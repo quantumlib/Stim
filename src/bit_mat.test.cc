@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../src/bit_mat.h"
+#include "bit_mat.h"
 
 TEST(bit_mat, creation) {
     ASSERT_EQ(BitMat(3).str(),

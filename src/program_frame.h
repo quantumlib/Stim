@@ -28,7 +28,7 @@ struct PauliFrameProgram {
     static PauliFrameProgram from_stabilizer_circuit(const std::vector<Operation> &operations);
     std::string str() const;
 
-    std::vector<aligned_bits256> sample(size_t num_samples);
+    std::vector<simd_bits> sample(size_t num_samples);
     void sample_out(size_t num_samples, FILE *out, SampleFormat format);
 };
 

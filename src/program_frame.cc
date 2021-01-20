@@ -132,7 +132,7 @@ std::string PauliFrameProgram::str() const {
     return s.str();
 }
 
-std::vector<aligned_bits256> PauliFrameProgram::sample(size_t num_samples) {
+std::vector<simd_bits> PauliFrameProgram::sample(size_t num_samples) {
     SimBulkPauliFrames sim(num_qubits, num_samples, num_measurements);
     sim.clear_and_run(*this);
     return sim.unpack_measurements();

@@ -3,7 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include "../src/arg_parse.h"
+#include "arg_parse.h"
 #include "assert.h"
 
 TEST(arg_parse, check_for_unknown_arguments_recognize_arguments) {

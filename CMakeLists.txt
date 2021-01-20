@@ -4,35 +4,35 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
-        src/simd/aligned_bits256.cc
         src/arg_parse.cc
         src/bit_mat.cc
-        src/simd/bit_ptr.cc
         src/circuit.cc
         src/pauli_string.cc
         src/program_frame.cc
         src/perf.cc
         src/probability_util.cc
-        src/sim_tableau.cc
         src/sim_bulk_pauli_frame.cc
-        src/sim_vector.cc
+        src/simd/bit_ptr.cc
+        src/simd/simd_bits.cc
         src/simd/simd_util.cc
+        src/sim_tableau.cc
+        src/sim_vector.cc
         src/tableau.cc
         )
 set(TEST_FILES
-        test/simd/aligned_bits256.test.cc
-        test/arg_parse.test.cc
-        test/bit_mat.test.cc
-        test/simd/bit_ptr.test.cc
-        test/circuit.test.cc
-        test/pauli_string.test.cc
-        test/program_frame.test.cc
-        test/probability_util.test.cc
-        test/sim_tableau.test.cc
-        test/sim_bulk_pauli_frame.test.cc
-        test/sim_vector.test.cc
-        test/simd/simd_util.test.cc
-        test/tableau.test.cc
+        src/arg_parse.test.cc
+        src/bit_mat.test.cc
+        src/circuit.test.cc
+        src/pauli_string.test.cc
+        src/program_frame.test.cc
+        src/probability_util.test.cc
+        src/sim_bulk_pauli_frame.test.cc
+        src/simd/bit_ptr.test.cc
+        src/simd/simd_bits.test.cc
+        src/simd/simd_util.test.cc
+        src/sim_tableau.test.cc
+        src/sim_vector.test.cc
+        src/tableau.test.cc
         )
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})

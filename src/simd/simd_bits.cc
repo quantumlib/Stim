@@ -3,7 +3,7 @@
 #include <immintrin.h>
 #include <random>
 
-#include "aligned_bits256.h"
+#include "simd_bits.h"
 
 size_t num_bytes(size_t num_bits) {
     return ((num_bits + 255) / 256) * sizeof(__m256i);
@@ -16,7 +16,7 @@ uint64_t *alloc_aligned_bits(size_t num_bits) {
     return result;
 }
 
-aligned_bits256::~aligned_bits256() {
+simd_bits::~simd_bits() {
     if (u64 != nullptr) {
         _mm_free(u64);
         u64 = nullptr;
@@ -24,57 +24,57 @@ aligned_bits256::~aligned_bits256() {
     }
 }
 
-void aligned_bits256::clear() {
+void simd_bits::clear() {
     memset(u64, 0, num_bits >> 3);
 }
 
-aligned_bits256::aligned_bits256(size_t init_num_bits) :
+simd_bits::simd_bits(size_t init_num_bits) :
         num_bits(init_num_bits),
         u64(alloc_aligned_bits(init_num_bits)) {
 }
 
-aligned_bits256::aligned_bits256(size_t num_bits, const void *other) :
+simd_bits::simd_bits(size_t num_bits, const void *other) :
         num_bits(num_bits),
         u64(alloc_aligned_bits(num_bits)) {
     memcpy(u64, other, num_bytes(num_bits));
 }
 
-aligned_bits256::aligned_bits256(aligned_bits256&& other) noexcept :
+simd_bits::simd_bits(simd_bits&& other) noexcept :
         num_bits(other.num_bits),
         u64(other.u64) {
     other.u64 = nullptr;
     other.num_bits = 0;
 }
 
-aligned_bits256::aligned_bits256(const aligned_bits256& other) :
+simd_bits::simd_bits(const simd_bits& other) :
         num_bits(other.num_bits),
         u64(alloc_aligned_bits(other.num_bits)) {
     memcpy(u64, other.u64, num_bytes(num_bits));
 }
 
-aligned_bits256& aligned_bits256::operator=(aligned_bits256&& other) noexcept {
-    (*this).~aligned_bits256();
-    new(this) aligned_bits256(std::move(other));
+simd_bits& simd_bits::operator=(simd_bits&& other) noexcept {
+    (*this).~simd_bits();
+    new(this) simd_bits(std::move(other));
     return *this;
 }
 
-aligned_bits256& aligned_bits256::operator=(const aligned_bits256& other) {
+simd_bits& simd_bits::operator=(const simd_bits& other) {
     // Avoid re-allocating if already the same size.
     if (this->num_bits == other.num_bits) {
         memcpy(u64, other.u64, num_bytes(num_bits));
         return *this;
     }
 
-    (*this).~aligned_bits256();
-    new(this) aligned_bits256(other);
+    (*this).~simd_bits();
+    new(this) simd_bits(other);
     return *this;
 }
 
-bool aligned_bits256::get_bit(size_t k) const {
+bool simd_bits::get_bit(size_t k) const {
     return ((u64[k >> 6] >> (k & 63)) & 1) != 0;
 }
 
-void aligned_bits256::set_bit(size_t k, bool value) {
+void simd_bits::set_bit(size_t k, bool value) {
     if (value) {
         u64[k >> 6] |= (uint64_t)1 << (k & 63);
     } else {
@@ -82,11 +82,11 @@ void aligned_bits256::set_bit(size_t k, bool value) {
     }
 }
 
-void aligned_bits256::toggle_bit_if(size_t k, bool condition) {
+void simd_bits::toggle_bit_if(size_t k, bool condition) {
     u64[k >> 6] ^= (uint64_t)condition << (k & 63);
 }
 
-bool aligned_bits256::operator==(const aligned_bits256 &other) const {
+bool simd_bits::operator==(const simd_bits &other) const {
     if (num_bits != other.num_bits) {
         return false;
     }
@@ -106,18 +106,18 @@ bool aligned_bits256::operator==(const aligned_bits256 &other) const {
     return true;
 }
 
-bool aligned_bits256::operator!=(const aligned_bits256 &other) const {
+bool simd_bits::operator!=(const simd_bits &other) const {
     return !(*this == other);
 }
 
-aligned_bits256 aligned_bits256::random(size_t num_bits) {
+simd_bits simd_bits::random(size_t num_bits) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<unsigned long long> dis(
             std::numeric_limits<std::uint64_t>::min(),
             std::numeric_limits<std::uint64_t>::max());
     size_t num_u64 = (num_bits + 63) / 64;
-    auto data = aligned_bits256(num_bits);
+    auto data = simd_bits(num_bits);
     for (size_t k = 0; k < num_u64; k++) {
         data.u64[k] = dis(gen);
     }

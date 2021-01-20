@@ -72,7 +72,7 @@ __m256i *SimBulkPauliFrames::x_start(size_t qubit) {
     return x_blocks.u256 + qubit * num_sample_blocks256;
 }
 
-void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, aligned_bits256 &out) {
+void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, simd_bits &out) {
     if (!results_block_transposed) {
         do_transpose();
     }
@@ -81,8 +81,8 @@ void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, al
     }
 }
 
-std::vector<aligned_bits256> SimBulkPauliFrames::unpack_measurements() {
-    std::vector<aligned_bits256> result;
+std::vector<simd_bits> SimBulkPauliFrames::unpack_measurements() {
+    std::vector<simd_bits> result;
     for (size_t s = 0; s < num_samples_raw; s++) {
         result.emplace_back(num_measurements_raw);
         unpack_sample_measurements_into(s, result.back());
@@ -100,7 +100,7 @@ void SimBulkPauliFrames::unpack_write_measurements(FILE *out, SampleFormat forma
         return;
     }
 
-    aligned_bits256 buf(num_measurements_raw);
+    simd_bits buf(num_measurements_raw);
     for (size_t s = 0; s < num_samples_raw; s++) {
         unpack_sample_measurements_into(s, buf);
 

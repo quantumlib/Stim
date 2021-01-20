@@ -17,12 +17,12 @@
 /// prepending operations cheap. To append operations, use TempTransposedTableauRaii.
 struct Tableau {
     size_t num_qubits;
-    aligned_bits256 data_x2x;
-    aligned_bits256 data_x2z;
-    aligned_bits256 data_z2x;
-    aligned_bits256 data_z2z;
-    aligned_bits256 data_sx;
-    aligned_bits256 data_sz;
+    simd_bits data_x2x;
+    simd_bits data_x2z;
+    simd_bits data_z2x;
+    simd_bits data_z2z;
+    simd_bits data_sx;
+    simd_bits data_sz;
 
     explicit Tableau(size_t num_qubits);
     bool operator==(const Tableau &other) const;
