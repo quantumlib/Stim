@@ -7,6 +7,7 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/bit_mat.cc
         src/circuit.cc
+        src/gate_data.cc
         src/stabilizers/pauli_string.cc
         src/program_frame.cc
         src/perf.cc

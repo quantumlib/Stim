@@ -165,57 +165,6 @@ bool SimVector::approximate_equals(const SimVector &other, bool up_to_global_pha
     return 1 - 1e-4 <= f && f <= 1 + 1e-4;
 }
 
-constexpr std::complex<float> i = std::complex<float>(0, 1);
-constexpr std::complex<float> s = 0.7071067811865475244f;
-const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES {
-    {"I", {{1, 0}, {0, 1}}},
-    // Pauli gates.
-    {"X", {{0, 1}, {1, 0}}},
-    {"Y", {{0, -i}, {i, 0}}},
-    {"Z", {{1, 0}, {0, -1}}},
-    // Axis exchange gates.
-    {"H", {{s, s}, {s, -s}}},
-    {"H_XY", {{0, s - i*s}, {s + i*s, 0}}},
-    {"H_XZ", {{s, s}, {s, -s}}},
-    {"H_YZ", {{s, -i*s}, {i*s, -s}}},
-    // 90 degree rotation gates.
-    {"SQRT_X", {{0.5f + 0.5f*i, 0.5f - 0.5f*i}, {0.5f - 0.5f*i, 0.5f + 0.5f*i}}},
-    {"SQRT_X_DAG", {{0.5f - 0.5f*i, 0.5f + 0.5f*i}, {0.5f + 0.5f*i, 0.5f - 0.5f*i}}},
-    {"SQRT_Y", {{0.5f + 0.5f*i, -0.5f - 0.5f*i}, {0.5f + 0.5f*i, 0.5f + 0.5f*i}}},
-    {"SQRT_Y_DAG", {{0.5f - 0.5f*i, 0.5f - 0.5f*i}, {-0.5f + 0.5f*i, 0.5f - 0.5f*i}}},
-    {"SQRT_Z", {{1, 0}, {0, i}}},
-    {"SQRT_Z_DAG", {{1, 0}, {0, -i}}},
-    {"S", {{1, 0}, {0, i}}},
-    {"S_DAG", {{1, 0}, {0, -i}}},
-    // Two qubit gates.
-    {"CNOT", {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}}},
-    {"CX", {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}}},
-    {"CY", {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}}},
-    {"CZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}}},
-    {"SWAP", {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}}},
-    {"ISWAP", {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}}},
-    {"ISWAP_DAG", {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}}},
-    // Controlled interactions in other bases.
-    {"XCX", {{0.5f, 0.5f, 0.5f, -0.5f},
-             {0.5f, 0.5f, -0.5f, 0.5f},
-             {0.5f, -0.5f, 0.5f, 0.5f},
-             {-0.5f, 0.5f, 0.5f, 0.5f}}},
-    {"XCY", {{0.5f, 0.5f, -0.5f*i, 0.5f*i},
-             {0.5f, 0.5f, 0.5f*i, -0.5f*i},
-             {0.5f*i, -0.5f*i, 0.5f, 0.5f},
-             {-0.5f*i, 0.5f*i, 0.5f, 0.5f}}},
-    {"XCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}}},
-    {"YCX", {{0.5f, -i*0.5f, 0.5f, i*0.5f},
-             {i*0.5f, 0.5f, -i*0.5f, 0.5f},
-             {0.5f, i*0.5f, 0.5f, -i*0.5f},
-             {-i*0.5f, 0.5f, i*0.5f, 0.5f}}},
-    {"YCY", {{0.5f, -i*0.5f, -i*0.5f, 0.5f},
-             {i*0.5f, 0.5f, -0.5f, -i*0.5f},
-             {i*0.5f, -0.5f, 0.5f, -i*0.5f},
-             {0.5f, i*0.5f, i*0.5f, 0.5f}}},
-    {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
-};
-
 std::string SimVector::str() const {
     std::stringstream ss;
     ss << *this;
