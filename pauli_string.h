@@ -29,7 +29,7 @@ struct SparsePauliString {
 };
 
 struct PauliStringPtr {
-    size_t size;
+    size_t num_qubits;
     BitPtr bit_ptr_sign;
     uint64_t *_x;
     uint64_t *_z;
@@ -37,7 +37,7 @@ struct PauliStringPtr {
     SimdRange x_rng();
     SimdRange z_rng();
 
-    PauliStringPtr(size_t size, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z);
+    PauliStringPtr(size_t num_qubits, BitPtr bit_ptr_sign, uint64_t *x, uint64_t *z);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
     bool operator==(const PauliStringPtr &other) const;
@@ -96,7 +96,7 @@ struct PauliStringVal {
     aligned_bits256 x_data;
     aligned_bits256 z_data;
 
-    explicit PauliStringVal(size_t size);
+    explicit PauliStringVal(size_t num_qubits);
     PauliStringVal(const PauliStringPtr &other); // NOLINT(google-explicit-constructor)
     PauliStringVal& operator=(const PauliStringPtr &other) noexcept;
     static PauliStringVal random(size_t num_qubits);
@@ -104,9 +104,9 @@ struct PauliStringVal {
     bool operator==(const PauliStringPtr &other) const;
     bool operator!=(const PauliStringPtr &other) const;
 
-    static PauliStringVal from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func);
+    static PauliStringVal from_pattern(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     static PauliStringVal from_str(const char *text);
-    static PauliStringVal identity(size_t size);
+    static PauliStringVal identity(size_t num_qubits);
     PauliStringPtr ptr() const;
 
     std::string str() const;

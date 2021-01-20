@@ -498,7 +498,7 @@ void Tableau::prepend_H_XY(const size_t q) {
 }
 
 void Tableau::prepend(const PauliStringPtr &op) {
-    assert(op.size == num_qubits);
+    assert(op.num_qubits == num_qubits);
     mem_xor256(data_sz.u256, (__m256i *)op._x, ceil256(num_qubits) >> 8);
     mem_xor256(data_sx.u256, (__m256i *)op._z, ceil256(num_qubits) >> 8);
 }
@@ -555,10 +555,10 @@ void Tableau::prepend_YCZ(size_t control, size_t target) {
 }
 
 PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const std::vector<size_t> &scattered_indices) const {
-    assert(gathered_input.size == scattered_indices.size());
+    assert(gathered_input.num_qubits == scattered_indices.size());
     auto result = PauliStringVal::identity(num_qubits);
     result.val_sign = gathered_input.bit_ptr_sign.get();
-    for (size_t k_gathered = 0; k_gathered < gathered_input.size; k_gathered++) {
+    for (size_t k_gathered = 0; k_gathered < gathered_input.num_qubits; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
         auto x = gathered_input.get_x_bit(k_gathered);
         auto z = gathered_input.get_z_bit(k_gathered);
@@ -581,9 +581,9 @@ PauliStringVal Tableau::scatter_eval(const PauliStringPtr &gathered_input, const
 }
 
 PauliStringVal Tableau::operator()(const PauliStringPtr &p) const {
-    assert(p.size == num_qubits);
+    assert(p.num_qubits == num_qubits);
     std::vector<size_t> indices;
-    for (size_t k = 0; k < p.size; k++) {
+    for (size_t k = 0; k < p.num_qubits; k++) {
         indices.push_back(k);
     }
     return scatter_eval(p, indices);

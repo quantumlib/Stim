@@ -10,26 +10,26 @@
 #include <bit>
 
 PauliStringPtr::PauliStringPtr(
-            size_t init_size,
+            size_t init_num_qubits,
             BitPtr init_sign,
             uint64_t *init_x,
             uint64_t *init_z) :
-        size(init_size),
+        num_qubits(init_num_qubits),
         bit_ptr_sign(init_sign),
         _x(init_x),
         _z(init_z) {
 }
 
-PauliStringVal::PauliStringVal(size_t init_size) :
+PauliStringVal::PauliStringVal(size_t num_qubits) :
         val_sign(false),
-        x_data(init_size),
-        z_data(init_size) {
+        x_data(num_qubits),
+        z_data(num_qubits) {
 }
 
 PauliStringVal::PauliStringVal(const PauliStringPtr &other) :
         val_sign(other.bit_ptr_sign.get()),
-        x_data(other.size, other._x),
-        z_data(other.size, other._z) {
+        x_data(other.num_qubits, other._x),
+        z_data(other.num_qubits, other._z) {
 }
 
 PauliStringPtr PauliStringVal::ptr() const {
@@ -41,7 +41,7 @@ std::string PauliStringVal::str() const {
 }
 
 void PauliStringPtr::swap_with(PauliStringPtr &other) {
-    assert(size == other.size);
+    assert(num_qubits == other.num_qubits);
     bit_ptr_sign.swap(other.bit_ptr_sign);
     x_rng().swap_with((__m256i *)other._x);
     z_rng().swap_with((__m256i *)other._z);
@@ -55,7 +55,7 @@ SimdRange PauliStringPtr::z_rng() {
 }
 
 void PauliStringPtr::overwrite_with(const PauliStringPtr &other) {
-    assert(size == other.size);
+    assert(num_qubits == other.num_qubits);
     bit_ptr_sign.set(other.bit_ptr_sign.get());
     x_rng().overwrite_with((__m256i *)other._x);
     z_rng().overwrite_with((__m256i *)other._z);
@@ -68,7 +68,7 @@ PauliStringVal& PauliStringVal::operator=(const PauliStringPtr &other) noexcept 
 }
 
 PauliStringPtr::PauliStringPtr(const PauliStringVal &other) :
-        size(other.x_data.num_bits),
+        num_qubits(other.x_data.num_bits),
         bit_ptr_sign(BitPtr((void *)&other.val_sign, 0)),
         _x(other.x_data.u64),
         _z(other.z_data.u64) {
@@ -79,7 +79,7 @@ SparsePauliString PauliStringPtr::sparse() const {
         bit_ptr_sign.get(),
         {}
     };
-    auto n = (size + 63) >> 6;
+    auto n = (num_qubits + 63) >> 6;
     for (size_t k = 0; k < n; k++) {
         auto wx = _x[k];
         auto wz = _z[k];
@@ -103,7 +103,7 @@ std::string SparsePauliString::str() const {
 }
 
 bool PauliStringPtr::operator==(const PauliStringPtr &other) const {
-    if (size != other.size || bit_ptr_sign.get() != other.bit_ptr_sign.get()) {
+    if (num_qubits != other.num_qubits || bit_ptr_sign.get() != other.bit_ptr_sign.get()) {
         return false;
     }
     auto n = num_words256() << 5;
@@ -142,7 +142,7 @@ std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
 }
 
 size_t PauliStringPtr::num_words256() const {
-    return ceil256(size) >> 8;
+    return ceil256(num_qubits) >> 8;
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
@@ -150,7 +150,7 @@ std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
     auto x256 = (__m256i *)ps._x;
     auto z256 = (__m256i *)ps._z;
     auto end = &x256[ps.num_words256()];
-    size_t remaining = ps.size;
+    size_t remaining = ps.num_qubits;
     while (x256 != end) {
         auto xs = m256i_to_bits(*x256);
         auto zs = m256i_to_bits(*z256);
@@ -164,10 +164,10 @@ std::ostream &operator<<(std::ostream &out, const PauliStringPtr &ps) {
     return out;
 }
 
-PauliStringVal PauliStringVal::from_pattern(bool sign, size_t size, const std::function<char(size_t)> &func) {
-    PauliStringVal result(size);
+PauliStringVal PauliStringVal::from_pattern(bool sign, size_t num_qubits, const std::function<char(size_t)> &func) {
+    PauliStringVal result(num_qubits);
     result.val_sign = sign;
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < num_qubits; i++) {
         char c = func(i);
         bool x;
         bool z;
@@ -200,8 +200,8 @@ PauliStringVal PauliStringVal::from_str(const char *text) {
     return PauliStringVal::from_pattern(sign, strlen(text), [&](size_t i){ return text[i]; });
 }
 
-PauliStringVal PauliStringVal::identity(size_t size) {
-    return PauliStringVal(size);
+PauliStringVal PauliStringVal::identity(size_t num_qubits) {
+    return PauliStringVal(num_qubits);
 }
 
 PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
@@ -212,7 +212,7 @@ PauliStringPtr& PauliStringPtr::operator*=(const PauliStringPtr& rhs) {
 }
 
 uint8_t PauliStringPtr::inplace_right_mul_returning_log_i_scalar(const PauliStringPtr& rhs) noexcept {
-    assert(size == rhs.size);
+    assert(num_qubits == rhs.num_qubits);
 
     // Accumulator registers for counting mod 4 in parallel across each bit position.
     __m256i cnt1 {};
@@ -258,7 +258,7 @@ PauliStringVal PauliStringVal::random(size_t num_qubits) {
 }
 
 bool PauliStringPtr::commutes(const PauliStringPtr& other) const noexcept {
-    assert(size == other.size);
+    assert(num_qubits == other.num_qubits);
     __m256i cnt1 {};
     simd_for_each_4(
             (__m256i *)_x,
@@ -336,8 +336,8 @@ void PauliStringPtr::set_z_bit(size_t k, bool val) {
 }
 
 void PauliStringPtr::gather_into(PauliStringPtr &out, const std::vector<size_t> &in_indices) const {
-    assert(in_indices.size() == out.size);
-    for (size_t k_out = 0; k_out < out.size; k_out++) {
+    assert(in_indices.size() == out.num_qubits);
+    for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
         out.set_x_bit(k_out, get_x_bit(k_in));
         out.set_z_bit(k_out, get_z_bit(k_in));
@@ -345,8 +345,8 @@ void PauliStringPtr::gather_into(PauliStringPtr &out, const std::vector<size_t> 
 }
 
 void PauliStringPtr::scatter_into(PauliStringPtr &out, const std::vector<size_t> &out_indices) const {
-    assert(size == out_indices.size());
-    for (size_t k_in = 0; k_in < size; k_in++) {
+    assert(num_qubits == out_indices.size());
+    for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];
         out.set_x_bit(k_out, get_x_bit(k_in));
         out.set_z_bit(k_out, get_z_bit(k_in));
