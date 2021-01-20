@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "sim_bulk_pauli_frame.h"
-#include "program_frame.h"
-#include "sim_tableau.h"
+#include "../src/sim_bulk_pauli_frame.h"
+#include "../src/program_frame.h"
+#include "../src/sim_tableau.h"
 
 TEST(SimBulkPauliFrames, get_set_frame) {
     SimBulkPauliFrames sim(6, 4, 999);

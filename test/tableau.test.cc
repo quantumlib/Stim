@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "tableau.h"
-#include "sim_vector.h"
+#include "../src/tableau.h"
+#include "../src/sim_vector.h"
 #include <random>
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {

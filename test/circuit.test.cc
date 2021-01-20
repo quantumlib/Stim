@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "circuit.h"
+#include "../src/circuit.h"
 
 TEST(circuit, operation_from_line) {
     auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size()); };

@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "bit_ptr.h"
+#include "../src/bit_ptr.h"
 
 TEST(bit_ptr, basic) {
     uint64_t word = 0;

@@ -4,38 +4,38 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
-        aligned_bits256.cc
-        arg_parse.cc
-        bit_mat.cc
-        bit_ptr.cc
-        circuit.cc
-        pauli_string.cc
-        program_frame.cc
-        perf.cc
-        probability_util.cc
-        sim_tableau.cc
-        sim_bulk_pauli_frame.cc
-        sim_vector.cc
-        simd_util.cc
-        tableau.cc
+        src/aligned_bits256.cc
+        src/arg_parse.cc
+        src/bit_mat.cc
+        src/bit_ptr.cc
+        src/circuit.cc
+        src/pauli_string.cc
+        src/program_frame.cc
+        src/perf.cc
+        src/probability_util.cc
+        src/sim_tableau.cc
+        src/sim_bulk_pauli_frame.cc
+        src/sim_vector.cc
+        src/simd_util.cc
+        src/tableau.cc
         )
 set(TEST_FILES
-        aligned_bits256.test.cc
-        arg_parse.test.cc
-        bit_mat.test.cc
-        bit_ptr.test.cc
-        circuit.test.cc
-        pauli_string.test.cc
-        program_frame.test.cc
-        probability_util.test.cc
-        sim_tableau.test.cc
-        sim_bulk_pauli_frame.test.cc
-        sim_vector.test.cc
-        simd_util.test.cc
-        tableau.test.cc
+        test/aligned_bits256.test.cc
+        test/arg_parse.test.cc
+        test/bit_mat.test.cc
+        test/bit_ptr.test.cc
+        test/circuit.test.cc
+        test/pauli_string.test.cc
+        test/program_frame.test.cc
+        test/probability_util.test.cc
+        test/sim_tableau.test.cc
+        test/sim_bulk_pauli_frame.test.cc
+        test/sim_vector.test.cc
+        test/simd_util.test.cc
+        test/tableau.test.cc
         )
 
-add_executable(stim main.cc ${SOURCE_FILES_NO_MAIN})
+add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 target_compile_options(stim PRIVATE -march=native -O3 -Wall -Wpedantic -Werror)
 target_link_options(stim PRIVATE -pthread -O3)
 

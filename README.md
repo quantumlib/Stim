@@ -176,6 +176,6 @@ make stim_tests
 # Manual Build
 
 ```bash
-ls | grep "\\.cc" | grep -v "\\.test\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3
+ls src | grep "\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3
 # output file: ./a.out
 ```

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "simd_util.h"
-#include "aligned_bits256.h"
+#include "../src/simd_util.h"
+#include "../src/aligned_bits256.h"
 
 aligned_bits256 reference_transpose_of(size_t bit_width, const aligned_bits256 &data) {
     auto expected = aligned_bits256(ceil256(bit_width) * ceil256(bit_width));
