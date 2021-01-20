@@ -1,10 +1,8 @@
 #include "arg_parse.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "memory.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 const char *require_find_argument(const char *name, int argc, const char **argv) {
   const char *result = find_argument(name, argc, argv);
@@ -18,7 +16,7 @@ const char *require_find_argument(const char *name, int argc, const char **argv)
 const char *find_argument(const char *name, int argc, const char **argv) {
   // Respect that the "--" argument terminates flags.
   int flag_count = 1;
-  while (flag_count < argc && strcmp(argv[flag_count], "--")) {
+  while (flag_count < argc && strcmp(argv[flag_count], "--") != 0) {
     flag_count++;
   }
 
@@ -90,7 +88,7 @@ void check_for_unknown_arguments(
 
 int find_bool_argument(const char *name, int argc, const char **argv) {
   const char *text = find_argument(name, argc, argv);
-  if (text == NULL) {
+  if (text == nullptr) {
     return 0;
   }
   if (text[0] == '\0') {
@@ -190,37 +188,4 @@ int find_enum_argument(
   }
   fprintf(stderr, "\033[0m");
   exit(EXIT_FAILURE);
-}
-
-char *find_directory_argument_malloc(
-    const char *name, const char *default_directory, int argc, const char **argv) {
-  const char *path = find_argument(name, argc, argv);
-  if (path == nullptr) {
-    if (default_directory == nullptr) {
-      fprintf(stderr, "\033[31m"
-          "Must specify a value for directory flag '%s'.\n"
-          "\033[0m",
-          name);
-      exit(EXIT_FAILURE);
-    }
-    path = default_directory;
-  }
-
-  size_t n = strlen(path);
-  if (n == 0) {
-    fprintf(stderr, "\033[31m"
-        "The directory flag '%s' cannot be given an empty value.\n"
-        "If you want to refer to the current working directory, use './' \n"
-        "\033[0m",
-        name);
-    exit(EXIT_FAILURE);
-  }
-  char *result = (char *)malloc(n + 1);
-  strcpy(result, path);
-  if (n > 0 && path[n - 1] != '/' && path[n - 1] != '\\') {
-    result[n] = '/';
-    result[n + 1] = '\0';
-  }
-
-  return result;
 }

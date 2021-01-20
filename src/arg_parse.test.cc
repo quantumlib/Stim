@@ -154,33 +154,3 @@ TEST(arg_parse, find_enum_argument) {
       { find_enum_argument("-a", -1, enums.size(), enums.data(), args.size(), args.data()); },
       "Unrecognized value");
 }
-
-std::string c2s(char *c) {
-  std::string result(c);
-  free(c);
-  return result;
-}
-
-TEST(arg_parse, find_directory_argument_malloc) {
-  std::vector<const char *> args{
-      "", "-a=test", "-b=test/", "-c=/test/two", "-d=/test/two/", "-e=.", "-f",
-  };
-
-  ASSERT_EQ(c2s(find_directory_argument_malloc("-a", NULL, args.size(), args.data())), "test/");
-  ASSERT_EQ(c2s(find_directory_argument_malloc("-b", NULL, args.size(), args.data())), "test/");
-  ASSERT_EQ(
-      c2s(find_directory_argument_malloc("-c", NULL, args.size(), args.data())), "/test/two/");
-  ASSERT_EQ(
-      c2s(find_directory_argument_malloc("-d", NULL, args.size(), args.data())), "/test/two/");
-  ASSERT_EQ(c2s(find_directory_argument_malloc("-e", NULL, args.size(), args.data())), "./");
-
-  ASSERT_EQ(
-      c2s(find_directory_argument_malloc("-a", "default", args.size(), args.data())), "test/");
-  ASSERT_EQ(
-      c2s(find_directory_argument_malloc("-ZZ", "default", args.size(), args.data())), "default/");
-
-  ASSERT_DEATH({ find_directory_argument_malloc("-f", NULL, args.size(), args.data()); }, "empty");
-
-  ASSERT_DEATH(
-      { find_directory_argument_malloc("-ZZ", NULL, args.size(), args.data()); }, "Must specify");
-}
