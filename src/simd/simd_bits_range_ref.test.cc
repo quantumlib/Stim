@@ -85,15 +85,18 @@ TEST(simd_bits_range_ref, randomize) {
 TEST(simd_bits_range_ref, xor_assignment) {
     __m256i data[6]{};
     simd_bits_range_ref m0(&data[0], 2);
-    simd_bits_range_ref m1(&data[0], 2);
-    simd_bits_range_ref m2(&data[0], 2);
+    simd_bits_range_ref m1(&data[2], 2);
+    simd_bits_range_ref m2(&data[4], 2);
     m0.randomize(512, SHARED_TEST_RNG());
     m1.randomize(512, SHARED_TEST_RNG());
+    ASSERT_NE(m0, m1);
+    ASSERT_NE(m0, m2);
     m2 ^= m0;
     ASSERT_EQ(m0, m2);
     for (size_t k = 0; k < m0.num_u64_padded(); k++) {
         ASSERT_EQ(m2.u64[k], m0.u64[k] ^ m1.u64[k]);
     }
+    ASSERT_TRUE(false);
 }
 
 TEST(simd_bits_range_ref, assignment) {

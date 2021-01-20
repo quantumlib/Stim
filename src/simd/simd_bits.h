@@ -60,6 +60,7 @@ struct simd_bits {
     bool operator==(const simd_bits_range_ref &other) const;
     bool operator!=(const simd_bits_range_ref &other) const;
     simd_bits &operator^=(const simd_bits_range_ref other);
+    simd_bits &swap_with(simd_bits_range_ref other);
     bool not_zero() const;
 
     inline size_t num_u64_padded() const { return num_simd_words << 2; }
