@@ -140,19 +140,17 @@ std::vector<aligned_bits256> PauliFrameProgram::sample(size_t num_samples) {
 
 void PauliFrameProgram::sample_out(size_t num_samples, FILE *out, SampleFormat format) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
-    constexpr size_t LEFTOVER_MASK = GOOD_BLOCK_SIZE - 1;
-    if (num_samples & LEFTOVER_MASK) {
-        auto sim = SimBulkPauliFrames(num_qubits, num_samples & LEFTOVER_MASK, num_measurements);
-        sim.clear_and_run(*this);
-        sim.unpack_write_measurements(out, format);
-        num_samples &= ~LEFTOVER_MASK;
-    }
-    if (num_samples) {
+    if (num_samples >= GOOD_BLOCK_SIZE) {
         auto sim = SimBulkPauliFrames(num_qubits, GOOD_BLOCK_SIZE, num_measurements);
-        while (num_samples) {
+        while (num_samples > GOOD_BLOCK_SIZE) {
             sim.clear_and_run(*this);
             sim.unpack_write_measurements(out, format);
             num_samples -= GOOD_BLOCK_SIZE;
         }
+    }
+    if (num_samples) {
+        auto sim = SimBulkPauliFrames(num_qubits, num_samples, num_measurements);
+        sim.clear_and_run(*this);
+        sim.unpack_write_measurements(out, format);
     }
 }

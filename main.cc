@@ -109,6 +109,21 @@ void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
     std::cerr << "\n";
 }
 
+void time_sim_bulk_pauli_frame_cz(size_t num_qubits, size_t num_samples) {
+    std::cerr << "time_sim_bulk_pauli_frame_cz(num_qubits=" << num_qubits
+        << ",num_samples=" << num_samples << ")\n";
+    auto sim = SimBulkPauliFrames(num_qubits, num_samples, 1);
+    std::vector<size_t> targets;
+    for (size_t k = 0; k < num_qubits; k++) {
+        targets.push_back(k);
+    }
+    auto f = PerfResult::time([&]() {
+        sim.CZ(targets);
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
 void time_sim_bulk_pauli_frame_depolarize(size_t num_qubits, size_t num_samples, float probability) {
     std::cerr << "time_sim_bulk_pauli_frame_depolarize(num_qubits=" << num_qubits
         << ",num_samples=" << num_samples
@@ -269,8 +284,9 @@ void profile() {
 //    time_pauli_swap(100000);
 //    time_tableau_sim(51);
 //    time_sim_bulk_pauli_frame(51, 1024);
-    time_sim_bulk_pauli_frame_depolarize(10000, 1000, 0.001);
-    time_sim_bulk_pauli_frame_depolarize2(10000, 1000, 0.001);
+//    time_sim_bulk_pauli_frame_depolarize(10000, 1000, 0.001);
+//    time_sim_bulk_pauli_frame_depolarize2(10000, 1000, 0.001);
+    time_sim_bulk_pauli_frame_cz(10000, 1000);
 //    time_pauli_frame_sim(51);
 //    time_cnot(10000);
 }
@@ -285,12 +301,12 @@ std::vector<const char *> known_arguments {
 std::vector<const char *> format_names {
         "ascii",
         "bin_LE8",
-        "RAW",
+        "RAW_UNSTABLE",
 };
 std::vector<SampleFormat > format_values {
         SAMPLE_FORMAT_ASCII,
         SAMPLE_FORMAT_BINLE8,
-        SAMPLE_FORMAT_RAW,
+        SAMPLE_FORMAT_RAW_UNSTABLE,
 };
 
 int main(int argc, const char** argv) {

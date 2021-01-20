@@ -8,7 +8,7 @@
 enum SampleFormat {
     SAMPLE_FORMAT_ASCII,
     SAMPLE_FORMAT_BINLE8,
-    SAMPLE_FORMAT_RAW,
+    SAMPLE_FORMAT_RAW_UNSTABLE,
 };
 
 struct Operation {
