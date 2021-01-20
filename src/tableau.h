@@ -149,8 +149,6 @@ struct TransposedTableauXZ {
     TransposedPauliStringPtr xz[2];
 };
 
-size_t bit_address(size_t input_qubit, size_t output_qubit, size_t num_qubits, bool transposed);
-
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
 /// Tableaus for common gates, keyed by name.

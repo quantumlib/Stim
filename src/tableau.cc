@@ -8,19 +8,6 @@
 #include <cstring>
 #include <thread>
 
-size_t bit_address(
-        size_t input_qubit,
-        size_t output_qubit,
-        size_t num_qubits,
-        bool transposed) {
-    if (transposed) {
-        std::swap(input_qubit, output_qubit);
-    }
-    size_t m = ceil256(num_qubits);
-    size_t bit_offset = input_qubit * m + output_qubit;
-    return bit_offset;
-}
-
 void do_transpose(Tableau &tableau) {
     size_t n = ceil256(tableau.num_qubits);
     if (n >= 1024) {
