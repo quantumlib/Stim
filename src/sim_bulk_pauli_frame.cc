@@ -182,10 +182,10 @@ void SimBulkPauliFrames::MUL_INTO_FRAME(const SparsePauliString &pauli_string, c
     for (const auto &w : pauli_string.indexed_words) {
         for (size_t k2 = 0; k2 < 64; k2++) {
             if ((w.wx >> k2) & 1) {
-                x_rng(w.index64 * 64 + k2) ^= mask;
+                *x_rng(w.index64 * 64 + k2) ^= mask;
             }
             if ((w.wz >> k2) & 1) {
-                z_rng(w.index64 * 64 + k2) ^= mask;
+                *z_rng(w.index64 * 64 + k2) ^= mask;
             }
         }
 
@@ -222,8 +222,8 @@ void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringPtr &ne
     assert(sample_index < num_samples_raw);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        x_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame._xr[q];
-        z_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame._zr[q];
+        x_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame.x_ref[q];
+        z_blocks[q * num_sample_blocks256 * 256 + sample_index] = new_frame.z_ref[q];
     }
 }
 
@@ -235,13 +235,13 @@ void SimBulkPauliFrames::H_XZ(const std::vector<size_t> &targets) {
 
 void SimBulkPauliFrames::H_XY(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        z_rng(q) ^= x_rng(q);
+        *z_rng(q) ^= *x_rng(q);
     }
 }
 
 void SimBulkPauliFrames::H_YZ(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        x_rng(q) ^= z_rng(q);
+        *x_rng(q) ^= *z_rng(q);
     }
 }
 

@@ -6,19 +6,34 @@
 #include <iostream>
 #include "bit_ptr.h"
 
+struct simd_range_ref {
+    __m256i *start;
+    size_t count;
+    simd_range_ref &operator^=(const simd_range_ref &other);
+    simd_range_ref &operator^=(const __m256i *other);
+    simd_range_ref &operator=(const simd_range_ref &other);
+    simd_range_ref &operator=(const __m256i *other);
+    bool operator==(const simd_range_ref &other) const;
+    bool operator!=(const simd_range_ref &other) const;
+    void swap_with(simd_range_ref &other);
+    void swap_with(__m256i *other);
+    void clear();
+    BitRef operator[](size_t k);
+    bool operator[](size_t k) const;
+    bool not_zero() const;
+};
+
 struct SimdRange {
     __m256i *start;
     size_t count;
-    SimdRange &operator^=(const SimdRange &other);
-    SimdRange &operator^=(const __m256i *other);
-    void overwrite_with(const SimdRange &other);
-    void overwrite_with(const __m256i *other);
     void clear();
     void swap_with(SimdRange other);
     void swap_with(__m256i *other);
 
     BitRef operator[](size_t k);
     bool operator[](size_t k) const;
+    simd_range_ref operator*();
+    const simd_range_ref operator*() const;
 };
 
 #endif

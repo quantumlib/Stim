@@ -4,6 +4,7 @@
 #include <random>
 
 #include "simd_bits.h"
+#include "simd_util.h"
 
 size_t num_bytes(size_t num_bits) {
     return ((num_bits + 255) / 256) * sizeof(__m256i);
@@ -50,6 +51,12 @@ simd_bits::simd_bits(const simd_bits& other) :
         num_bits(other.num_bits),
         u64(alloc_aligned_bits(other.num_bits)) {
     memcpy(u64, other.u64, num_bytes(num_bits));
+}
+
+simd_bits::simd_bits(const simd_range_ref& other) :
+        num_bits(other.count << 8),
+        u64(alloc_aligned_bits(other.count << 8)) {
+    memcpy(u64, other.start, num_bytes(num_bits));
 }
 
 simd_bits& simd_bits::operator=(simd_bits&& other) noexcept {
@@ -104,4 +111,20 @@ BitRef simd_bits::operator[](size_t k) {
 
 bool simd_bits::operator[](size_t k) const {
     return (bool)BitRef(u64, k);
+}
+
+simd_range_ref simd_bits::range_ref() {
+    return simd_range_ref {u256, ceil256(num_bits) >> 8};
+}
+
+const simd_range_ref simd_bits::range_ref() const {
+    return simd_range_ref {u256, ceil256(num_bits) >> 8};
+}
+
+simd_range_ref simd_bits::word_range_ref(size_t word_offset, size_t word_count) {
+    return simd_range_ref {u256 + word_offset, word_count};
+}
+
+const simd_range_ref simd_bits::word_range_ref(size_t word_offset, size_t word_count) const {
+    return simd_range_ref {u256 + word_offset, word_count};
 }

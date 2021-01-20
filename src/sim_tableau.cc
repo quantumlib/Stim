@@ -5,9 +5,7 @@ SimTableau::SimTableau(size_t num_qubits) : inv_state(Tableau::identity(num_qubi
 }
 
 bool SimTableau::is_deterministic(size_t target) const {
-    size_t n = inv_state.num_qubits;
-    auto p = inv_state.z_obs_ptr(target);
-    return !any_non_zero(p._xr.start, ceil256(n) >> 8);
+    return !inv_state.z_obs_ptr(target).x_ref.not_zero();
 }
 
 std::vector<bool> SimTableau::measure(const std::vector<size_t> &targets, float bias) {
@@ -365,8 +363,8 @@ void SimTableau::collapse_while_transposed(
         *destabilizer_out = PauliStringPtr(
                 n,
                 BitPtr(&sign, 0),
-                SimdRange(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),
-                SimdRange(t.xz[0].z, ceil256(inv_state.num_qubits) >> 8)).sparse();
+                simd_range_ref(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),
+                simd_range_ref(t.xz[0].z, ceil256(inv_state.num_qubits) >> 8)).sparse();
     } else {
         auto coin_flip = std::bernoulli_distribution(else_bias)(rng);
         if (sign != coin_flip) {

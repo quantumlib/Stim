@@ -179,9 +179,9 @@ TEST(pauli_string, foreign_memory) {
     auto buffer = simd_bits::random(bits);
     bool signs = false;
 
-    auto p1 = PauliStringPtr(500, BitPtr(&signs, 0), SimdRange(&buffer.u256[0], 2), SimdRange(&buffer.u256[4], 2));
-    auto p1b = new PauliStringPtr(500, BitPtr(&signs, 0), SimdRange(&buffer.u256[0], 2), SimdRange(&buffer.u256[4], 2));
-    auto p2 = PauliStringPtr(500, BitPtr(&signs, 1), SimdRange(&buffer.u256[8], 2), SimdRange(&buffer.u256[16], 2));
+    auto p1 = PauliStringPtr(500, BitPtr(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p1b = new PauliStringPtr(500, BitPtr(&signs, 0), buffer.word_range_ref(0, 2), buffer.word_range_ref(4, 2));
+    auto p2 = PauliStringPtr(500, BitPtr(&signs, 1), buffer.word_range_ref(2, 2), buffer.word_range_ref(6, 2));
     PauliStringVal copy_p1 = p1;
     // p1 aliases p1b.
     ASSERT_EQ(p1, *p1b);

@@ -32,10 +32,10 @@ struct SparsePauliString {
 struct PauliStringPtr {
     size_t num_qubits;
     BitPtr bit_ptr_sign;
-    SimdRange _xr;
-    SimdRange _zr;
+    simd_range_ref x_ref;
+    simd_range_ref z_ref;
 
-    PauliStringPtr(size_t num_qubits, BitPtr bit_ptr_sign, SimdRange x, SimdRange z);
+    PauliStringPtr(size_t num_qubits, BitPtr bit_ptr_sign, simd_range_ref x_ref, simd_range_ref z_ref);
     PauliStringPtr(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
 
     bool operator==(const PauliStringPtr &other) const;
