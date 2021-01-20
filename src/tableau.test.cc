@@ -495,11 +495,11 @@ TEST(tableau, expand) {
         assert(t2.num_qubits == n);
         for (size_t k = 0; k < n; k++) {
             if (k < 4) {
-                ASSERT_EQ(t.x_obs_ptr(k).bit_ptr_sign.get(), t2.x_obs_ptr(k).bit_ptr_sign.get());
-                ASSERT_EQ(t.z_obs_ptr(k).bit_ptr_sign.get(), t2.z_obs_ptr(k).bit_ptr_sign.get());
+                ASSERT_EQ(t.x_obs_ptr(k).sign_ref, t2.x_obs_ptr(k).sign_ref);
+                ASSERT_EQ(t.z_obs_ptr(k).sign_ref, t2.z_obs_ptr(k).sign_ref);
             } else {
-                ASSERT_EQ(t2.x_obs_ptr(k).bit_ptr_sign.get(), false);
-                ASSERT_EQ(t2.z_obs_ptr(k).bit_ptr_sign.get(), false);
+                ASSERT_EQ(t2.x_obs_ptr(k).sign_ref, false);
+                ASSERT_EQ(t2.z_obs_ptr(k).sign_ref, false);
             }
             for (size_t k2 = 0; k2 < n; k2++) {
                 if (k < 4 && k2 < 4) {

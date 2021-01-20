@@ -61,7 +61,7 @@ void SimVector::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
 }
 
 void SimVector::apply(const PauliStringPtr &gate, size_t qubit_offset) {
-    if (gate.bit_ptr_sign.get()) {
+    if (gate.sign_ref) {
         for (auto &e : state) {
             e *= -1;
         }
@@ -120,7 +120,7 @@ float SimVector::project(const PauliStringPtr &observable) {
     basis_change();
     float mag2 = 0;
     for (size_t i = 0; i < state.size(); i++) {
-        bool reject = observable.bit_ptr_sign.get();
+        bool reject = observable.sign_ref;
         reject ^= (std::popcount(i & mask) & 1) != 0;
         if (reject) {
             state[i] = 0;

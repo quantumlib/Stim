@@ -29,7 +29,7 @@ struct simd_bits {
     simd_range_ref word_range_ref(size_t word_offset, size_t word_count);
     const simd_range_ref range_ref() const;
     const simd_range_ref word_range_ref(size_t word_offset, size_t word_count) const;
-    BitRef operator[](size_t k);
+    bit_ref operator[](size_t k);
     bool operator[](size_t k) const;
     void clear();
 

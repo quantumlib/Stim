@@ -54,12 +54,12 @@ void simd_range_ref::clear() {
     memset(start, 0, count << 5);
 }
 
-BitRef SimdRange::operator[](size_t k) {
-    return BitRef(start, k);
+bit_ref SimdRange::operator[](size_t k) {
+    return bit_ref(start, k);
 }
 
 bool SimdRange::operator[](size_t k) const {
-    return (bool)BitRef(start, k);
+    return (bool)bit_ref(start, k);
 }
 
 bool simd_range_ref::operator==(const simd_range_ref &other) const {
@@ -74,10 +74,10 @@ bool simd_range_ref::operator!=(const simd_range_ref &other) const {
     return !(*this == other);
 }
 
-BitRef simd_range_ref::operator[](size_t k) {
-    return BitRef(start, k);
+bit_ref simd_range_ref::operator[](size_t k) {
+    return bit_ref(start, k);
 }
 
 bool simd_range_ref::operator[](size_t k) const {
-    return (bool)BitRef(start, k);
+    return (bool)bit_ref(start, k);
 }

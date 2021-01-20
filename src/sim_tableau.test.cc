@@ -321,7 +321,7 @@ bool vec_sim_corroborates_measurement_process(const SimTableau &sim, std::vector
     auto p = buf.ptr();
     for (size_t k = 0; k < measurement_targets.size(); k++) {
         p.z_ref[measurement_targets[k]] = true;
-        p.bit_ptr_sign.set(results[k]);
+        p.sign_ref = results[k];
         float f = vec_sim.project(p);
         if (fabsf(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;

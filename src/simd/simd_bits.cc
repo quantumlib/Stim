@@ -105,12 +105,12 @@ simd_bits simd_bits::random(size_t num_bits) {
     return data;
 }
 
-BitRef simd_bits::operator[](size_t k) {
-    return BitRef(u64, k);
+bit_ref simd_bits::operator[](size_t k) {
+    return bit_ref(u64, k);
 }
 
 bool simd_bits::operator[](size_t k) const {
-    return (bool)BitRef(u64, k);
+    return (bool)bit_ref(u64, k);
 }
 
 simd_range_ref simd_bits::range_ref() {

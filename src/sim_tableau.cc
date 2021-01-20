@@ -362,7 +362,7 @@ void SimTableau::collapse_while_transposed(
         auto t = temp_transposed.transposed_xz_ptr(pivot);
         *destabilizer_out = PauliStringPtr(
                 n,
-                BitPtr(&sign, 0),
+                bit_ref(&sign, 0),
                 simd_range_ref(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),
                 simd_range_ref(t.xz[0].z, ceil256(inv_state.num_qubits) >> 8)).sparse();
     } else {
