@@ -24,26 +24,20 @@ struct simd_bits_range_ref {
 
     /// Construct a simd_bits_range_ref from a given pointer and word count.
     simd_bits_range_ref(__m256i *ptr, size_t num_simd_words);
-    /// Randomizes the bits in the referenced range, up to the given bit count. Leaves further bits unchanged.
-    void randomize(size_t num_bits, std::mt19937 &rng);
 
     /// Overwrite assignment.
     simd_bits_range_ref operator=(const simd_bits_range_ref other);
+    /// Xor assignment.
+    simd_bits_range_ref operator^=(const simd_bits_range_ref other);
+    /// Swap assignment.
+    void swap_with(simd_bits_range_ref other);
+
     /// Equality.
     bool operator==(const simd_bits_range_ref other) const;
     /// Inequality.
     bool operator!=(const simd_bits_range_ref other) const;
     /// Determines whether or not any of the bits in the referenced range are non-zero.
     bool not_zero() const;
-
-    /// Xor-overwrite assignment.
-    simd_bits_range_ref operator^=(const simd_bits_range_ref other);
-    /// Swaps the referenced contents of this range for the referenced contents of the other range.
-    void swap_with(simd_bits_range_ref other);
-    /// Sets all bits in the referenced range to zero.
-    void clear();
-    /// Returns a description of the contents of the range.
-    std::string str() const;
 
     /// Returns a reference to a given bit within the referenced range.
     bit_ref operator[](size_t k);
@@ -53,6 +47,14 @@ struct simd_bits_range_ref {
     const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const;
     /// Returns a reference to a sub-range of the bits in the referenced range.
     simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words);
+
+    /// Sets all bits in the referenced range to zero.
+    void clear();
+    /// Randomizes the bits in the referenced range, up to the given bit count. Leaves further bits unchanged.
+    void randomize(size_t num_bits, std::mt19937 &rng);
+
+    /// Returns a description of the contents of the range.
+    std::string str() const;
 
     /// Number of 64 bit words in the referenced range.
     inline size_t num_u64_padded() const { return num_simd_words << 2; }

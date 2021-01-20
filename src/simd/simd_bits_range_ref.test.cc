@@ -93,10 +93,10 @@ TEST(simd_bits_range_ref, xor_assignment) {
     ASSERT_NE(m0, m2);
     m2 ^= m0;
     ASSERT_EQ(m0, m2);
+    m2 ^= m1;
     for (size_t k = 0; k < m0.num_u64_padded(); k++) {
         ASSERT_EQ(m2.u64[k], m0.u64[k] ^ m1.u64[k]);
     }
-    ASSERT_TRUE(false);
 }
 
 TEST(simd_bits_range_ref, assignment) {
