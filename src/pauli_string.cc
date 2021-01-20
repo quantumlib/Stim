@@ -43,6 +43,7 @@ PauliStringVal::PauliStringVal(const PauliStringRef &other) :
 const PauliStringRef PauliStringVal::ref() const {
     return PauliStringRef(
         x_data.num_bits,
+        // HACK: remove and restore const correctness.
         (const bit_ref)bit_ref((bool *)&val_sign, 0),
         x_data.range_ref(),
         z_data.range_ref());
@@ -70,6 +71,7 @@ void PauliStringRef::swap_with(PauliStringRef other) {
 PauliStringRef &PauliStringRef::operator=(const PauliStringRef &other) {
     assert(num_qubits == other.num_qubits);
     sign_ref = other.sign_ref;
+    assert((bool)sign_ref == (bool)other.sign_ref);
     x_ref = other.x_ref;
     z_ref = other.z_ref;
     return *this;

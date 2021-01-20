@@ -90,6 +90,32 @@ TEST(tableau, big_not_seeing_double) {
 }
 
 TEST(tableau, str) {
+    ASSERT_EQ(Tableau::gate1("+X", "-Z").str(),
+            "+-xz-\n"
+            "| +-\n"
+            "| XZ");
+    ASSERT_EQ(GATE_TABLEAUS.at("X").str(),
+            "+-xz-\n"
+            "| +-\n"
+            "| XZ");
+    ASSERT_EQ(GATE_TABLEAUS.at("S").str(),
+            "+-xz-\n"
+            "| ++\n"
+            "| YZ");
+    ASSERT_EQ(GATE_TABLEAUS.at("S_DAG").str(),
+            "+-xz-\n"
+            "| -+\n"
+            "| YZ");
+    ASSERT_EQ(GATE_TABLEAUS.at("H").str(),
+            "+-xz-\n"
+            "| ++\n"
+            "| ZX");
+    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").str(),
+            "+-xz-xz-\n"
+            "| ++ ++\n"
+            "| XZ _Z\n"
+            "| X_ XZ");
+
     Tableau t(4);
     t.prepend_H(0);
     t.prepend_H(1);
@@ -112,28 +138,6 @@ TEST(tableau, str) {
             "| YX _X __ _X\n"
             "| X_ X_ XZ __\n"
             "| X_ __ __ XZ");
-
-    ASSERT_EQ(GATE_TABLEAUS.at("X").str(),
-            "+-xz-\n"
-            "| +-\n"
-            "| XZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("S").str(),
-            "+-xz-\n"
-            "| ++\n"
-            "| YZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("S_DAG").str(),
-            "+-xz-\n"
-            "| -+\n"
-            "| YZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("H").str(),
-            "+-xz-\n"
-            "| ++\n"
-            "| ZX");
-    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").str(),
-            "+-xz-xz-\n"
-            "| ++ ++\n"
-            "| XZ _Z\n"
-            "| X_ XZ");
 }
 
 TEST(tableau, gate_tableau_data_vs_unitary_data) {
@@ -526,16 +530,16 @@ TEST(tableau, expand) {
 TEST(tableau, transposed_access) {
     size_t n = 1000;
     Tableau t(n);
-    t.xs.xs = simd_bits::random(t.xs.xs.num_bits);
-    t.xs.zs = simd_bits::random(t.xs.xs.num_bits);
-    t.zs.xs = simd_bits::random(t.xs.xs.num_bits);
-    t.zs.zs = simd_bits::random(t.xs.xs.num_bits);
+    t.xs.xt.data = simd_bits::random(t.xs.xt.data.num_bits);
+    t.xs.zt.data = simd_bits::random(t.xs.xt.data.num_bits);
+    t.zs.xt.data = simd_bits::random(t.xs.xt.data.num_bits);
+    t.zs.zt.data = simd_bits::random(t.xs.xt.data.num_bits);
     for (size_t inp_qubit = 0; inp_qubit < 1000; inp_qubit += 99) {
         for (size_t out_qubit = 0; out_qubit < 1000; out_qubit += 99) {
-            bool bxx = t.xs.xs[bit_address(inp_qubit, out_qubit, n, false)];
-            bool bxz = t.xs.zs[bit_address(inp_qubit, out_qubit, n, false)];
-            bool bzx = t.zs.xs[bit_address(inp_qubit, out_qubit, n, false)];
-            bool bzz = t.zs.zs[bit_address(inp_qubit, out_qubit, n, false)];
+            bool bxx = t.xs.xt[inp_qubit][out_qubit];
+            bool bxz = t.xs.zt[inp_qubit][out_qubit];
+            bool bzx = t.zs.xt[inp_qubit][out_qubit];
+            bool bzz = t.zs.zt[inp_qubit][out_qubit];
 
             ASSERT_EQ(t.xs[inp_qubit].x_ref[out_qubit], bxx) << inp_qubit << ", " << out_qubit;
             ASSERT_EQ(t.xs[inp_qubit].z_ref[out_qubit], bxz) << inp_qubit << ", " << out_qubit;
@@ -544,10 +548,10 @@ TEST(tableau, transposed_access) {
 
             {
                 TempTransposedTableauRaii trans(t);
-                ASSERT_EQ(t.xs.xs[bit_address(inp_qubit, out_qubit, n, true)], bxx);
-                ASSERT_EQ(t.xs.zs[bit_address(inp_qubit, out_qubit, n, true)], bxz);
-                ASSERT_EQ(t.zs.xs[bit_address(inp_qubit, out_qubit, n, true)], bzx);
-                ASSERT_EQ(t.zs.zs[bit_address(inp_qubit, out_qubit, n, true)], bzz);
+                ASSERT_EQ(t.xs.xt[out_qubit][inp_qubit], bxx);
+                ASSERT_EQ(t.xs.zt[out_qubit][inp_qubit], bxz);
+                ASSERT_EQ(t.zs.xt[out_qubit][inp_qubit], bzx);
+                ASSERT_EQ(t.zs.zt[out_qubit][inp_qubit], bzz);
 
                 ASSERT_EQ(trans.z_obs_x_bit(inp_qubit, out_qubit), bzx);
                 ASSERT_EQ(trans.z_obs_z_bit(inp_qubit, out_qubit), bzz);

@@ -23,3 +23,10 @@ const simd_range_ref simd_bit_table::operator[](size_t major_index) const {
 void simd_bit_table::clear() {
     data.clear();
 }
+
+bool simd_bit_table::operator==(const simd_bit_table &other) const {
+    return num_words_minor == other.num_words_minor && num_bits_major == other.num_bits_major && data == other.data;
+}
+bool simd_bit_table::operator!=(const simd_bit_table &other) const {
+    return !(*this == other);
+}

@@ -109,8 +109,8 @@ bit_ref simd_bits::operator[](size_t k) {
     return bit_ref(u64, k);
 }
 
-bool simd_bits::operator[](size_t k) const {
-    return (bool)bit_ref(u64, k);
+const bit_ref simd_bits::operator[](size_t k) const {
+    return bit_ref(u64, k);
 }
 
 simd_range_ref simd_bits::range_ref() {

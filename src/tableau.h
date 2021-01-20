@@ -4,16 +4,17 @@
 #include <iostream>
 #include <unordered_map>
 #include <immintrin.h>
+#include "simd/simd_bit_table.h"
 #include "simd/simd_util.h"
 #include "pauli_string.h"
 
 struct TableauHalf {
     size_t num_qubits;
-    simd_bits xs;
-    simd_bits zs;
+    simd_bit_table xt;
+    simd_bit_table zt;
     simd_bits signs;
-    PauliStringRef operator[](size_t k);
-    const PauliStringRef operator[](size_t k) const;
+    PauliStringRef operator[](size_t input_qubit);
+    const PauliStringRef operator[](size_t input_qubit) const;
     TableauHalf(size_t num_qubits);
 };
 
