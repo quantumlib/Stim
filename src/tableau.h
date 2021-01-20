@@ -7,6 +7,15 @@
 #include "simd/simd_util.h"
 #include "pauli_string.h"
 
+struct TableauPauliStringRefVector {
+    simd_range_ref xs;
+    simd_range_ref zs;
+    simd_range_ref signs;
+    size_t num_qubits;
+    PauliStringRef operator[](size_t k);
+    const PauliStringRef operator[](size_t k) const;
+};
+
 /// A Tableau is a stabilizer tableau representation of a Clifford operation.
 /// It stores, for each X and Z observable for each qubit, what is produced when
 /// conjugating that observable by the operation. In other words, it explains how
@@ -29,8 +38,11 @@ struct Tableau {
     bool operator!=(const Tableau &other) const;
 
     PauliStringVal eval_y_obs(size_t qubit) const;
-    PauliStringRef x_obs_ptr(size_t qubit) const;
-    PauliStringRef z_obs_ptr(size_t qubit) const;
+
+    const TableauPauliStringRefVector xs() const;
+    TableauPauliStringRefVector xs();
+    const TableauPauliStringRefVector zs() const;
+    TableauPauliStringRefVector zs();
 
     std::string str() const;
     void expand(size_t new_num_qubits);

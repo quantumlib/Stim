@@ -81,3 +81,11 @@ bit_ref simd_range_ref::operator[](size_t k) {
 bool simd_range_ref::operator[](size_t k) const {
     return (bool)bit_ref(start, k);
 }
+
+simd_range_ref simd_range_ref::word_range_ref(size_t word_offset, size_t word_count) {
+    return simd_range_ref {start + word_offset, word_count};
+}
+
+const simd_range_ref simd_range_ref::word_range_ref(size_t word_offset, size_t word_count) const {
+    return simd_range_ref {start + word_offset, word_count};
+}

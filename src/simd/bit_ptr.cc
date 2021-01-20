@@ -66,3 +66,9 @@ void bit_ref::swap_with(bit_ref &other) {
     other = (bool)*this;
     *this = b;
 }
+
+const bit_ref bit_ref::const_ref(bool value) {
+    return bit_ref(&CONST_BIT_REF_VALUE, value);
+}
+
+uint8_t CONST_BIT_REF_VALUE = 0b10;

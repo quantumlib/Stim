@@ -5,7 +5,7 @@ SimTableau::SimTableau(size_t num_qubits) : inv_state(Tableau::identity(num_qubi
 }
 
 bool SimTableau::is_deterministic(size_t target) const {
-    return !inv_state.z_obs_ptr(target).x_ref.not_zero();
+    return !inv_state.zs()[target].x_ref.not_zero();
 }
 
 std::vector<bool> SimTableau::measure(const std::vector<size_t> &targets, float bias) {
@@ -278,7 +278,7 @@ SimVector SimTableau::to_vector_sim() const {
     auto inv = inv_state.inverse();
     std::vector<PauliStringRef> stabilizers;
     for (size_t k = 0; k < inv.num_qubits; k++) {
-        stabilizers.push_back(inv.z_obs_ptr(k));
+        stabilizers.push_back(inv.zs()[k]);
     }
     return SimVector::from_stabilizers(stabilizers);
 }

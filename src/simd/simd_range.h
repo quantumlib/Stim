@@ -21,6 +21,8 @@ struct simd_range_ref {
     bit_ref operator[](size_t k);
     bool operator[](size_t k) const;
     bool not_zero() const;
+    const simd_range_ref word_range_ref(size_t word_offset, size_t word_count) const;
+    simd_range_ref word_range_ref(size_t word_offset, size_t word_count);
 };
 
 struct SimdRange {
