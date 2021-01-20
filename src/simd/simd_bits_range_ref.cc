@@ -8,7 +8,9 @@ simd_bits_range_ref::simd_bits_range_ref(__m256i *ptr, size_t num_simd_words) :
 }
 
 simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref other) {
-    mem_xor256(u256, other.u256, num_simd_words);
+    for_each_word(other, [](auto w0, auto w1) {
+        *w0 ^= *w1;
+    });
     return *this;
 }
 
@@ -18,7 +20,9 @@ simd_bits_range_ref simd_bits_range_ref::operator=(const simd_bits_range_ref oth
 }
 
 void simd_bits_range_ref::swap_with(simd_bits_range_ref other) {
-    mem_swap256(u256, other.u256, num_simd_words);
+    for_each_word(other, [](auto w0, auto w1) {
+        std::swap(*w0, *w1);
+    });
 }
 
 void simd_bits_range_ref::clear() {
@@ -31,8 +35,8 @@ bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
 
 bool simd_bits_range_ref::not_zero() const {
     __m256i acc {};
-    simd_for_each(u256, num_simd_words, [&acc](auto v) {
-        acc |= *v;
+    for_each_word([&acc](auto *w) {
+        acc |= *w;
     });
     return not_zero256(acc);
 }

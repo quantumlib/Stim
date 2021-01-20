@@ -84,77 +84,10 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
 
 size_t ceil256(size_t n);
 
-void mem_xor256(__m256i *dst, const __m256i *src, size_t words256);
-void mem_swap256(__m256i *v0, __m256i *v1, size_t words256);
-
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept;
 
-template <typename BODY>
-inline void simd_for_each(__m256i *v0, size_t num_words256, BODY body) {
-    auto v0_end = v0 + num_words256;
-    while (v0 != v0_end) {
-        body(v0);
-        v0++;
-    }
-}
-
-template <typename BODY>
-inline void simd_for_each(const __m256i *v0, size_t num_words256, BODY body) {
-    auto v0_end = v0 + num_words256;
-    while (v0 != v0_end) {
-        body(v0);
-        v0++;
-    }
-}
-
 bool not_zero256(const __m256i &v);
-
-template <typename BODY>
-inline void simd_for_each_2(__m256i *v0, __m256i *v1, size_t num_words256, BODY body) {
-    auto v0_end = v0 + num_words256;
-    while (v0 != v0_end) {
-        body(v0, v1);
-        v0++;
-        v1++;
-    }
-}
-
-template <typename BODY>
-inline void simd_for_each_3(__m256i *v0, __m256i *v1, __m256i *v2, size_t num_words256, BODY body) {
-    auto v0_end = v0 + num_words256;
-    while (v0 != v0_end) {
-        body(v0, v1, v2);
-        v0++;
-        v1++;
-        v2++;
-    }
-}
-
-template <typename BODY>
-inline void simd_for_each_4(__m256i *v0, __m256i *v1, __m256i *v2, __m256i *v3, size_t num_words256, BODY body) {
-    auto v0_end = v0 + num_words256;
-    while (v0 != v0_end) {
-        body(v0, v1, v2, v3);
-        v0++;
-        v1++;
-        v2++;
-        v3++;
-    }
-}
-
-template <typename BODY>
-inline void simd_for_each_5(__m256i *v0, __m256i *v1, __m256i *v2, __m256i *v3, __m256i *v4, size_t num_words256, BODY body) {
-    auto v0_end = v0 + num_words256;
-    while (v0 != v0_end) {
-        body(v0, v1, v2, v3, v4);
-        v0++;
-        v1++;
-        v2++;
-        v3++;
-        v4++;
-    }
-}
 
 uint16_t pop_count(const __m256i &val);
 

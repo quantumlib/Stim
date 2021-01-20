@@ -66,6 +66,44 @@ struct simd_bits_range_ref {
     inline size_t num_u8_padded() const { return num_simd_words << 5; }
     /// Number of bits in the referenced range.
     inline size_t num_bits_padded() const { return num_simd_words << 8; }
+
+    template <typename BODY>
+    inline void for_each_word(BODY body) const {
+        auto v0 = u256;
+        auto v0_end = v0 + num_simd_words;
+        while (v0 != v0_end) {
+            body(v0);
+            v0++;
+        }
+    }
+
+    template <typename BODY>
+    inline void for_each_word(simd_bits_range_ref other, BODY body) const {
+        auto v0 = u256;
+        auto v1 = other.u256;
+        auto v0_end = v0 + num_simd_words;
+        while (v0 != v0_end) {
+            body(v0, v1);
+            v0++;
+            v1++;
+        }
+    }
+
+    template <typename BODY>
+    inline void for_each_word(simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, BODY body) const {
+        auto v0 = u256;
+        auto v1 = other1.u256;
+        auto v2 = other2.u256;
+        auto v3 = other3.u256;
+        auto v0_end = v0 + num_simd_words;
+        while (v0 != v0_end) {
+            body(v0, v1, v2, v3);
+            v0++;
+            v1++;
+            v2++;
+            v3++;
+        }
+    }
 };
 
 /// Writes a description of the contents of the range to `out`.

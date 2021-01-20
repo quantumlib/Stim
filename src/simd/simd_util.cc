@@ -111,18 +111,6 @@ bool not_zero256(const __m256i &v) {
     return p[0] | p[1] | p[2] | p[3];
 }
 
-void mem_xor256(__m256i *dst, const __m256i *src, size_t words256) {
-    simd_for_each_2(dst, (__m256i *)src, words256, [](auto w0, auto w1) {
-        *w0 ^= *w1;
-    });
-}
-
-void mem_swap256(__m256i *v0, __m256i *v1, size_t words256) {
-    simd_for_each_2(v0, v1, words256, [](auto w0, auto w1) {
-        std::swap(*w0, *w1);
-    });
-}
-
 /// Transposes within the 64x64 bit blocks of a 256x256 block subset of a boolean matrix.
 ///
 /// For example, if we were transposing 2x2 blocks inside a 4x4 matrix, the order would go from:
