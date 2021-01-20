@@ -9,7 +9,7 @@
 #include <functional>
 #include "simd/simd_bits.h"
 #include "simd/simd_range.h"
-#include "simd/bit_ptr.h"
+#include "simd/bit_ref.h"
 #include "simd/simd_util.h"
 
 struct PauliStringVal;

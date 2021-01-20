@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <immintrin.h>
-#include "bit_ptr.h"
+#include "bit_ref.h"
 #include "simd_range.h"
 
 /// Densely packed bits, allocated with an alignment that enables SIMD operations.

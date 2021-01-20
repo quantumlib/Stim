@@ -4,7 +4,7 @@
 #include <immintrin.h>
 #include <vector>
 #include <iostream>
-#include "bit_ptr.h"
+#include "bit_ref.h"
 
 __m256i bits_to_m256i(std::vector<bool> data);
 

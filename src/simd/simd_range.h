@@ -4,7 +4,7 @@
 #include <immintrin.h>
 #include <vector>
 #include <iostream>
-#include "bit_ptr.h"
+#include "bit_ref.h"
 
 struct simd_range_ref {
     __m256i *start;
