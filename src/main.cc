@@ -235,10 +235,8 @@ void time_pauli_multiplication(size_t num_qubits) {
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
-    PauliStringRef p1_ptr = p1;
-    PauliStringRef p2_ptr = p2;
     auto f = PerfResult::time([&](){
-        p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
+        p1.ref().inplace_right_mul_returning_log_i_scalar(p2);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPaulis/s)";
@@ -262,10 +260,8 @@ void time_tableau_pauli_multiplication(size_t num_qubits) {
     std::cerr << "tableau pauli multiplication(n=" << num_qubits << ")\n";
 
     Tableau t(num_qubits);
-    PauliStringRef p1_ptr = t.xs[0];
-    PauliStringRef p2_ptr = t.xs[5];
     auto f = PerfResult::time([&](){
-        p1_ptr.inplace_right_mul_returning_log_i_scalar(p2_ptr);
+        t.xs[0].inplace_right_mul_returning_log_i_scalar(t.xs[5]);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPaulis/s)";
@@ -283,10 +279,10 @@ void time_pauli_swap(size_t num_qubits) {
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
-    PauliStringRef p1_ptr = p1;
-    PauliStringRef p2_ptr = p2;
+    PauliStringRef p1_ref(p1);
+    PauliStringRef p2_ref(p2);
     auto f = PerfResult::time([&](){
-        p1_ptr.swap_with(p2_ptr);
+        p1_ref.swap_with(p2_ref);
     });
     std::cerr << f;
     std::cerr << " (" << f.rate() * num_qubits / 1000 / 1000 / 1000 << " GigaPauliSwaps/s)";

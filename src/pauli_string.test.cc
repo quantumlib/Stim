@@ -33,17 +33,14 @@ TEST(pauli_string, str) {
 }
 
 TEST(pauli_string, log_i_scalar_byproduct) {
-    auto id_val = PauliStringVal::from_str("_");
-    auto x_val = PauliStringVal::from_str("X");
-    auto y_val = PauliStringVal::from_str("Y");
-    auto z_val = PauliStringVal::from_str("Z");
-    PauliStringRef id = id_val;
-    PauliStringRef x = x_val;
-    PauliStringRef y = y_val;
-    PauliStringRef z = z_val;
+    auto id = PauliStringVal::from_str("_");
+    auto x = PauliStringVal::from_str("X");
+    auto y = PauliStringVal::from_str("Y");
+    auto z = PauliStringVal::from_str("Z");
 
-    auto f = [](PauliStringVal a, PauliStringRef b){
-        return a.ptr().inplace_right_mul_returning_log_i_scalar(b);
+    auto f = [](PauliStringVal a, PauliStringVal b){
+        // Note: copying is intentational. Do not change args to references.
+        return a.ref().inplace_right_mul_returning_log_i_scalar(b);
     };
 
     ASSERT_EQ(f(id, id), 0);
@@ -99,13 +96,13 @@ TEST(pauli_string, multiplication) {
     auto z = PauliStringVal::from_str("Z");
 
     auto lhs = x;
-    uint8_t log_i = lhs.ptr().inplace_right_mul_returning_log_i_scalar(y);
+    uint8_t log_i = lhs.ref().inplace_right_mul_returning_log_i_scalar(y);
     ASSERT_EQ(log_i, 1);
     ASSERT_EQ(lhs, z);
 
     auto xxi = PauliStringVal::from_str("XXI");
     auto yyy = PauliStringVal::from_str("YYY");
-    xxi.ptr() *= yyy;
+    xxi.ref() *= yyy;
     ASSERT_EQ(xxi, PauliStringVal::from_str("-ZZY"));
 }
 
@@ -115,11 +112,11 @@ TEST(pauli_string, identity) {
 
 TEST(pauli_string, gather) {
     auto p = PauliStringVal::from_str("-____XXXXYYYYZZZZ");
-    auto p2_val = PauliStringVal::identity(4);
-    PauliStringRef p2 = p2_val;
-    p.ptr().gather_into(p2, {0, 1, 2, 3});
+    auto p2 = PauliStringVal::identity(4);
+    PauliStringRef p2_ref(p2);
+    p.ref().gather_into(p2_ref, {0, 1, 2, 3});
     ASSERT_EQ(p2, PauliStringVal::from_str("+IIII"));
-    p.ptr().gather_into(p2, {4, 7, 8, 9});
+    p.ref().gather_into(p2_ref, {4, 7, 8, 9});
     ASSERT_EQ(p2, PauliStringVal::from_str("+XXYY"));
 }
 
@@ -128,13 +125,13 @@ TEST(pauli_string, swap_with_overwrite_with) {
     auto b = PauliStringVal::from_pattern(false, 500, [](size_t k){ return "ZZYIXXY"[k % 7]; });
     auto a2 = a;
     auto b2 = b;
+    PauliStringRef b2_ref(b2);
 
-    auto b2_ptr = b2.ptr();
-    a2.ptr().swap_with(b2_ptr);
+    a2.ref().swap_with(b2_ref);
     ASSERT_EQ(a2, b);
     ASSERT_EQ(b2, a);
 
-    a2.ptr().overwrite_with(b2);
+    a2.ref() = b2;
     ASSERT_EQ(a2, a);
     ASSERT_EQ(b2, a);
 }
@@ -143,15 +140,15 @@ TEST(pauli_string, swap_with_overwrite_with) {
 TEST(pauli_string, scatter) {
     auto s1 = PauliStringVal::from_str("-_XYZ");
     auto s2 = PauliStringVal::from_str("+XXZZ");
-    auto p_val = PauliStringVal::identity(8);
-    PauliStringRef p = p_val;
-    s1.ptr().scatter_into(p, {1, 3, 5, 7});
+    auto p = PauliStringVal::identity(8);
+    PauliStringRef p_ref(p);
+    s1.ref().scatter_into(p_ref, {1, 3, 5, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("-___X_Y_Z"));
-    s1.ptr().scatter_into(p, {1, 3, 5, 7});
+    s1.ref().scatter_into(p_ref, {1, 3, 5, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("+___X_Y_Z"));
-    s2.ptr().scatter_into(p, {1, 3, 5, 7});
+    s2.ref().scatter_into(p_ref, {1, 3, 5, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("+_X_X_Z_Z"));
-    s2.ptr().scatter_into(p, {4, 5, 6, 7});
+    s2.ref().scatter_into(p_ref, {4, 5, 6, 7});
     ASSERT_EQ(p, PauliStringVal::from_str("+_X_XXXZZ"));
 }
 
@@ -200,7 +197,7 @@ TEST(pauli_string, commutes) {
     auto f = [](const char *a, const char *b) {
         auto pa = PauliStringVal::from_str(a);
         auto pb = PauliStringVal::from_str(b);
-        return pa.ptr().commutes(pb.ptr());
+        return pa.ref().commutes(pb);
     };
     ASSERT_EQ(f("I", "I"), true);
     ASSERT_EQ(f("I", "X"), true);
@@ -226,18 +223,18 @@ TEST(pauli_string, commutes) {
 
     auto qa = PauliStringVal::from_pattern(false, 5000, [](size_t k) { return k == 0 ? 'X' : 'Z'; });
     auto qb = PauliStringVal::from_pattern(false, 5000, [](size_t k) { return 'Z'; });
-    ASSERT_EQ(qa.ptr().commutes(qa.ptr()), true);
-    ASSERT_EQ(qb.ptr().commutes(qb.ptr()), true);
-    ASSERT_EQ(qa.ptr().commutes(qb.ptr()), false);
-    ASSERT_EQ(qb.ptr().commutes(qa.ptr()), false);
+    ASSERT_EQ(qa.ref().commutes(qa), true);
+    ASSERT_EQ(qb.ref().commutes(qb), true);
+    ASSERT_EQ(qa.ref().commutes(qb), false);
+    ASSERT_EQ(qb.ref().commutes(qa), false);
 }
 
 TEST(PauliStringPtr, sparse_str) {
-    ASSERT_EQ(PauliStringVal::from_str("IIIII").ptr().sparse().str(), "+I");
-    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ptr().sparse().str(), "-I");
-    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ptr().sparse().str(), "+X3");
-    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ptr().sparse().str(), "+Y1*X3*Z4");
-    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ptr().sparse().str(), "-Y1*X3*Z4");
-    ASSERT_EQ(PauliStringVal::from_pattern(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ptr().sparse().str(),
+    ASSERT_EQ(PauliStringVal::from_str("IIIII").ref().sparse().str(), "+I");
+    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ref().sparse().str(), "-I");
+    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ref().sparse().str(), "+X3");
+    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ref().sparse().str(), "+Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ref().sparse().str(), "-Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_pattern(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ref().sparse().str(),
             "+X501");
 }

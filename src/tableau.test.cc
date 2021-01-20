@@ -35,9 +35,9 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
         for (size_t k = 0; k < n; k++) {
             basis.emplace_back(n);
             if (x) {
-                basis.back().ptr().x_ref[k] ^= 1;
+                basis.back().x_data[k] ^= 1;
             } else {
-                basis.back().ptr().z_ref[k] ^= 1;
+                basis.back().z_data[k] ^= 1;
             }
         }
     }
@@ -184,12 +184,12 @@ TEST(tableau, apply_within) {
     const auto &cnot = GATE_TABLEAUS.at("CNOT");
 
     auto p1 = PauliStringVal::from_str("-XX");
-    auto p1_ptr = p1.ptr();
+    PauliStringRef p1_ptr(p1);
     cnot.apply_within(p1_ptr, {0, 1});
     ASSERT_EQ(p1, PauliStringVal::from_str("-XI"));
 
     auto p2 = PauliStringVal::from_str("+XX");
-    auto p2_ptr = p2.ptr();
+    PauliStringRef p2_ptr(p2);
     cnot.apply_within(p2_ptr, {0, 1});
     ASSERT_EQ(p2, PauliStringVal::from_str("+XI"));
 }
@@ -583,7 +583,7 @@ TEST(tableau, prepend_pauli) {
     ref.prepend_Y(2);
     ref.prepend_Z(3);
     ASSERT_EQ(t, ref);
-    t.prepend(PauliStringVal::from_str("Y_ZX__").ptr().sparse());
+    t.prepend(PauliStringVal::from_str("Y_ZX__").ref().sparse());
     ref.prepend_X(3);
     ref.prepend_Y(0);
     ref.prepend_Z(2);

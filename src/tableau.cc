@@ -40,8 +40,8 @@ void do_transpose(Tableau &tableau) {
 }
 
 TransposedTableauXZ TempTransposedTableauRaii::transposed_xz_ptr(size_t qubit) const {
-    PauliStringRef x = tableau.xs[qubit];
-    PauliStringRef z = tableau.zs[qubit];
+    PauliStringRef x(tableau.xs[qubit]);
+    PauliStringRef z(tableau.zs[qubit]);
     return {{
         {x.x_ref.start, x.z_ref.start, tableau.xs.signs.u256},
         {z.x_ref.start, z.z_ref.start, tableau.zs.signs.u256}
@@ -268,7 +268,7 @@ bool TempTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qu
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
     PauliStringVal result(xs[qubit]);
-    uint8_t log_i = result.ptr().inplace_right_mul_returning_log_i_scalar(zs[qubit]);
+    uint8_t log_i = result.ref().inplace_right_mul_returning_log_i_scalar(zs[qubit]);
     log_i++;
     assert((log_i & 1) == 0);
     if (log_i & 2) {
@@ -300,8 +300,8 @@ Tableau Tableau::identity(size_t num_qubits) {
 
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
-    result.xs[0].overwrite_with(PauliStringVal::from_str(x));
-    result.zs[0].overwrite_with(PauliStringVal::from_str(z));
+    result.xs[0] = PauliStringVal::from_str(x);
+    result.zs[0] = PauliStringVal::from_str(z);
     return result;
 }
 
@@ -310,10 +310,10 @@ Tableau Tableau::gate2(const char *x1,
                        const char *x2,
                        const char *z2) {
     Tableau result(2);
-    result.xs[0].overwrite_with(PauliStringVal::from_str(x1));
-    result.zs[0].overwrite_with(PauliStringVal::from_str(z1));
-    result.xs[1].overwrite_with(PauliStringVal::from_str(x2));
-    result.zs[1].overwrite_with(PauliStringVal::from_str(z2));
+    result.xs[0] = PauliStringVal::from_str(x1);
+    result.zs[0] = PauliStringVal::from_str(z1);
+    result.xs[1] = PauliStringVal::from_str(x2);
+    result.zs[1] = PauliStringVal::from_str(z2);
     return result;
 }
 
@@ -384,8 +384,8 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
         new_z.emplace_back(std::move(scatter_eval(operation.zs[q], target_qubits)));
     }
     for (size_t q = 0; q < operation.num_qubits; q++) {
-        xs[target_qubits[q]].overwrite_with(new_x[q]);
-        zs[target_qubits[q]].overwrite_with(new_z[q]);
+        xs[target_qubits[q]] = new_x[q];
+        zs[target_qubits[q]] = new_z[q];
     }
 }
 
@@ -552,15 +552,15 @@ PauliStringVal Tableau::scatter_eval(const PauliStringRef &gathered_input, const
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
                 uint8_t log_i = 1;
-                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(xs[k_scattered]);
-                log_i += result.ptr().inplace_right_mul_returning_log_i_scalar(zs[k_scattered]);
+                log_i += result.ref().inplace_right_mul_returning_log_i_scalar(xs[k_scattered]);
+                log_i += result.ref().inplace_right_mul_returning_log_i_scalar(zs[k_scattered]);
                 assert((log_i & 1) == 0);
                 result.val_sign ^= (log_i & 2) != 0;
             } else {
-                result.ptr() *= xs[k_scattered];
+                result.ref() *= xs[k_scattered];
             }
         } else if (z) {
-            result.ptr() *= zs[k_scattered];
+            result.ref() *= zs[k_scattered];
         }
     }
     return result;
@@ -578,10 +578,10 @@ PauliStringVal Tableau::operator()(const PauliStringRef &p) const {
 void Tableau::apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const {
     assert(num_qubits == target_qubits.size());
     auto inp = PauliStringVal::identity(num_qubits);
-    PauliStringRef inp_ptr = inp;
-    target.gather_into(inp_ptr, target_qubits);
+    PauliStringRef inp_ref(inp);
+    target.gather_into(inp_ref, target_qubits);
     auto out = (*this)(inp);
-    out.ptr().scatter_into(target, target_qubits);
+    out.ref().scatter_into(target, target_qubits);
 }
 
 /// Samples a vector of bits and a permutation from a skewed distribution.
@@ -755,15 +755,14 @@ Tableau Tableau::inverse() const {
 
     // Initialize sign data by fixing round-trip signs.
     PauliStringVal pauli_buf(num_qubits);
-    auto p = pauli_buf.ptr();
     for (size_t k = 0; k < num_qubits; k++) {
-        p.x_ref[k] = true;
-        inv.xs[k].sign_ref ^= (*this)(inv(p)).val_sign;
-        p.x_ref[k] = false;
+        pauli_buf.x_data[k] = true;
+        inv.xs[k].sign_ref ^= (*this)(inv(pauli_buf)).val_sign;
+        pauli_buf.x_data[k] = false;
 
-        p.z_ref[k] = true;
-        inv.zs[k].sign_ref ^= (*this)(inv(p)).val_sign;
-        p.z_ref[k] = false;
+        pauli_buf.z_data[k] = true;
+        inv.zs[k].sign_ref ^= (*this)(inv(pauli_buf)).val_sign;
+        pauli_buf.z_data[k] = false;
     }
 
     return inv;

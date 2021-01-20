@@ -13,21 +13,9 @@
 #include "simd/simd_util.h"
 
 struct PauliStringVal;
-
-struct SparsePauliWord {
-    // Bit index divided by 64, giving the uint64_t index.
-    size_t index64;
-    // X flip bits.
-    uint64_t wx;
-    // Z flip bits.
-    uint64_t wz;
-};
-
-struct SparsePauliString {
-    bool sign = false;
-    std::vector<SparsePauliWord> indexed_words;
-    std::string str() const;
-};
+struct PauliStringRef;
+struct SparsePauliWord;
+struct SparsePauliString;
 
 struct PauliStringRef {
     size_t num_qubits;
@@ -36,12 +24,11 @@ struct PauliStringRef {
     simd_range_ref z_ref;
 
     PauliStringRef(size_t num_qubits, bit_ref sign_ref, simd_range_ref x_ref, simd_range_ref z_ref);
-    PauliStringRef(const PauliStringVal &other); // NOLINT(google-explicit-constructor)
+    PauliStringRef &operator=(const PauliStringRef &other);
 
     bool operator==(const PauliStringRef &other) const;
     bool operator!=(const PauliStringRef &other) const;
 
-    void overwrite_with(const PauliStringRef &other);
     void swap_with(PauliStringRef &other);
 
     void gather_into(PauliStringRef &out, const std::vector<size_t> &in_indices) const;
@@ -79,6 +66,21 @@ struct PauliStringRef {
     bool commutes(const PauliStringRef& other) const noexcept;
 };
 
+struct SparsePauliWord {
+    // Bit index divided by 64, giving the uint64_t index.
+    size_t index64;
+    // X flip bits.
+    uint64_t wx;
+    // Z flip bits.
+    uint64_t wz;
+};
+
+struct SparsePauliString {
+    bool sign = false;
+    std::vector<SparsePauliWord> indexed_words;
+    std::string str() const;
+};
+
 struct PauliStringVal {
     bool val_sign;
     simd_bits x_data;
@@ -88,6 +90,8 @@ struct PauliStringVal {
     PauliStringVal(const PauliStringRef &other); // NOLINT(google-explicit-constructor)
     PauliStringVal& operator=(const PauliStringRef &other) noexcept;
     static PauliStringVal random(size_t num_qubits);
+    operator const PauliStringRef() const;
+    operator PauliStringRef();
 
     bool operator==(const PauliStringRef &other) const;
     bool operator!=(const PauliStringRef &other) const;
@@ -95,7 +99,8 @@ struct PauliStringVal {
     static PauliStringVal from_pattern(bool sign, size_t num_qubits, const std::function<char(size_t)> &func);
     static PauliStringVal from_str(const char *text);
     static PauliStringVal identity(size_t num_qubits);
-    PauliStringRef ptr() const;
+    const PauliStringRef ref() const;
+    PauliStringRef ref();
 
     std::string str() const;
 };

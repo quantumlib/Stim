@@ -22,8 +22,8 @@ TEST(SimBulkPauliFrames, get_set_frame) {
 
     SimBulkPauliFrames big_sim(501, 1001, 999);
     big_sim.set_frame(258, PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[k == 303]; }));
-    ASSERT_EQ(big_sim.get_frame(258).ptr().sparse().str(), "+X303");
-    ASSERT_EQ(big_sim.get_frame(257).ptr().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(258).ref().sparse().str(), "+X303");
+    ASSERT_EQ(big_sim.get_frame(257).ref().sparse().str(), "+I");
 }
 
 TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
@@ -33,29 +33,29 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
     mask[1] = _mm256_set1_epi8(-1);
     mask[2] = _mm256_set1_epi8(0);
     mask[3] = _mm256_set1_epi8(0);
-    auto ps1 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[(k | 2) == 303]; }).ptr().sparse();
-    auto ps2 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_Z"[(k | 1) == 303]; }).ptr().sparse();
+    auto ps1 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[(k | 2) == 303]; }).ref().sparse();
+    auto ps2 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_Z"[(k | 1) == 303]; }).ref().sparse();
     big_sim.MUL_INTO_FRAME(ps1, mask);
-    ASSERT_EQ(big_sim.get_frame(0).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(1).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(2).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(3).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(255).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(256).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(257).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(511).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(512).ptr().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(0).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(1).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(2).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(3).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(255).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(256).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(257).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(511).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(512).ref().sparse().str(), "+I");
 
     mask[1] = _mm256_set1_epi8(0);
     big_sim.MUL_INTO_FRAME(ps2, mask);
-    ASSERT_EQ(big_sim.get_frame(0).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(1).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(2).ptr().sparse().str(), "+X301*Z302*Y303");
-    ASSERT_EQ(big_sim.get_frame(255).ptr().sparse().str(), "+I");
-    ASSERT_EQ(big_sim.get_frame(256).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(257).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(511).ptr().sparse().str(), "+X301*X303");
-    ASSERT_EQ(big_sim.get_frame(512).ptr().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(0).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(1).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(2).ref().sparse().str(), "+X301*Z302*Y303");
+    ASSERT_EQ(big_sim.get_frame(255).ref().sparse().str(), "+I");
+    ASSERT_EQ(big_sim.get_frame(256).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(257).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(511).ref().sparse().str(), "+X301*X303");
+    ASSERT_EQ(big_sim.get_frame(512).ref().sparse().str(), "+I");
 }
 
 TEST(SimBulkPauliFrames, recorded_bit_address) {
@@ -121,14 +121,14 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
     }
     for (size_t k = 7; k < num_samples; k += 101) {
         PauliStringVal test_value = PauliStringVal::random(num_qubits);
-        auto test_value_ptr = test_value.ptr();
-        sim.set_frame(k, test_value.ptr());
+        PauliStringRef test_value_ref(test_value);
+        sim.set_frame(k, test_value);
         bulk_func(sim, targets);
         for (size_t k = 0; k < targets.size(); k += num_targets) {
             if (num_targets == 1) {
-                tableau.apply_within(test_value_ptr, {targets[k]});
+                tableau.apply_within(test_value_ref, {targets[k]});
             } else {
-                tableau.apply_within(test_value_ptr, {targets[k], targets[k + 1]});
+                tableau.apply_within(test_value_ref, {targets[k], targets[k + 1]});
             }
         }
         test_value.val_sign = false;

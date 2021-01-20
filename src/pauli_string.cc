@@ -20,6 +20,14 @@ PauliStringRef::PauliStringRef(
         z_ref(init_z_ref) {
 }
 
+PauliStringVal::operator const PauliStringRef() const {
+    return ref();
+}
+
+PauliStringVal::operator PauliStringRef() {
+    return ref();
+}
+
 PauliStringVal::PauliStringVal(size_t num_qubits) :
         val_sign(false),
         x_data(num_qubits),
@@ -32,12 +40,24 @@ PauliStringVal::PauliStringVal(const PauliStringRef &other) :
         z_data(other.num_qubits, other.z_ref.start) {
 }
 
-PauliStringRef PauliStringVal::ptr() const {
-    return PauliStringRef(*this);
+const PauliStringRef PauliStringVal::ref() const {
+    return PauliStringRef(
+        x_data.num_bits,
+        (const bit_ref)bit_ref((bool *)&val_sign, 0),
+        x_data.range_ref(),
+        z_data.range_ref());
+}
+
+PauliStringRef PauliStringVal::ref() {
+    return PauliStringRef(
+        x_data.num_bits,
+        bit_ref(&val_sign, 0),
+        x_data.range_ref(),
+        z_data.range_ref());
 }
 
 std::string PauliStringVal::str() const {
-    return ptr().str();
+    return ref().str();
 }
 
 void PauliStringRef::swap_with(PauliStringRef &other) {
@@ -47,24 +67,18 @@ void PauliStringRef::swap_with(PauliStringRef &other) {
     z_ref.swap_with(other.z_ref);
 }
 
-void PauliStringRef::overwrite_with(const PauliStringRef &other) {
+PauliStringRef &PauliStringRef::operator=(const PauliStringRef &other) {
     assert(num_qubits == other.num_qubits);
     sign_ref = other.sign_ref;
     x_ref = other.x_ref;
     z_ref = other.z_ref;
+    return *this;
 }
 
 PauliStringVal& PauliStringVal::operator=(const PauliStringRef &other) noexcept {
     (*this).~PauliStringVal();
     new(this) PauliStringVal(other);
     return *this;
-}
-
-PauliStringRef::PauliStringRef(const PauliStringVal &other) :
-        num_qubits(other.x_data.num_bits),
-        sign_ref(bit_ref((void *)&other.val_sign, 0)),
-        x_ref(other.x_data.range_ref()),
-        z_ref(other.z_data.range_ref()) {
 }
 
 SparsePauliString PauliStringRef::sparse() const {
@@ -129,7 +143,7 @@ std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps) {
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
-    return out << ps.ptr();
+    return out << ps.ref();
 }
 
 size_t PauliStringRef::num_words256() const {
@@ -272,8 +286,8 @@ void PauliStringRef::scatter_into(PauliStringRef &out, const std::vector<size_t>
 }
 
 bool PauliStringVal::operator==(const PauliStringRef &other) const {
-    return ptr() == other;
+    return ref() == other;
 }
 bool PauliStringVal::operator!=(const PauliStringRef &other) const {
-    return ptr() != other;
+    return ref() != other;
 }

@@ -318,15 +318,14 @@ bool vec_sim_corroborates_measurement_process(const SimTableau &sim, std::vector
     auto vec_sim = sim_tab.to_vector_sim();
     auto results = sim_tab.measure(measurement_targets);
     PauliStringVal buf(sim_tab.inv_state.num_qubits);
-    auto p = buf.ptr();
     for (size_t k = 0; k < measurement_targets.size(); k++) {
-        p.z_ref[measurement_targets[k]] = true;
-        p.sign_ref = results[k];
-        float f = vec_sim.project(p);
+        buf.z_data[measurement_targets[k]] = true;
+        buf.val_sign = results[k];
+        float f = vec_sim.project(buf);
         if (fabsf(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;
         }
-        p.z_ref[measurement_targets[k]] = false;
+        buf.z_data[measurement_targets[k]] = false;
     }
     return true;
 }
