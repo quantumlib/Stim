@@ -5,13 +5,13 @@
 #include <iostream>
 #include <new>
 #include <sstream>
-#include "sim_tableau.h"
+#include "simulators/sim_tableau.h"
 #include "stabilizers/pauli_string.h"
 #include "perf.h"
 #include "simd/simd_util.h"
 #include <cstring>
 #include "circuit.h"
-#include "sim_bulk_pauli_frame.h"
+#include "simulators/sim_bulk_pauli_frame.h"
 #include "arg_parse.h"
 
 Circuit surface_code_circuit(size_t distance) {

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "sim_tableau.h"
-#include "test_util.test.h"
+#include "../test_util.test.h"
 
 TEST(SimTableau, identity) {
     auto s = SimTableau(1, SHARED_TEST_RNG());

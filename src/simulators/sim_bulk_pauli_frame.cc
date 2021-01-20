@@ -3,8 +3,8 @@
 
 #include "sim_tableau.h"
 #include "sim_bulk_pauli_frame.h"
-#include "simd/simd_util.h"
-#include "probability_util.h"
+#include "../simd/simd_util.h"
+#include "../probability_util.h"
 
 // Iterates over the X and Z frame components of a pair of qubits, applying a custom BODY to each.
 //

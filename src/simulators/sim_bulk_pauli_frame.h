@@ -3,8 +3,8 @@
 
 #include <random>
 
-#include "program_frame.h"
-#include "simd/simd_bit_table.h"
+#include "../program_frame.h"
+#include "../simd/simd_bit_table.h"
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///

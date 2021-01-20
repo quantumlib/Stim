@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "program_frame.h"
-#include "sim_tableau.h"
+#include "simulators/sim_tableau.h"
 
 std::string convert_program(const std::string &program) {
     return PauliFrameProgram::from_stabilizer_circuit(Circuit::from_text(program).operations).str();

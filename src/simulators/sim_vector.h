@@ -4,7 +4,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <complex>
-#include "stabilizers/pauli_string.h"
+#include "../stabilizers/pauli_string.h"
 #include <random>
 
 /// A state vector quantum circuit simulator.

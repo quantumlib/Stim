@@ -7,38 +7,38 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/bit_mat.cc
         src/circuit.cc
-        src/gate_data.cc
-        src/stabilizers/pauli_string.cc
         src/program_frame.cc
         src/perf.cc
         src/probability_util.cc
-        src/sim_bulk_pauli_frame.cc
         src/simd/bit_ref.cc
         src/simd/simd_bit_table.cc
         src/simd/simd_bits.cc
         src/simd/simd_bits_range_ref.cc
         src/simd/simd_util.cc
-        src/sim_tableau.cc
-        src/sim_vector.cc
+        src/simulators/gate_data.cc
+        src/simulators/sim_bulk_pauli_frame.cc
+        src/simulators/sim_tableau.cc
+        src/simulators/sim_vector.cc
+        src/stabilizers/pauli_string.cc
         src/stabilizers/tableau.cc
         )
 set(TEST_FILES
         src/arg_parse.test.cc
         src/bit_mat.test.cc
         src/circuit.test.cc
-        src/stabilizers/pauli_string.test.cc
         src/program_frame.test.cc
         src/probability_util.test.cc
-        src/sim_bulk_pauli_frame.test.cc
         src/simd/bit_ref.test.cc
         src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
         src/simd/simd_bits_range_ref.test.cc
         src/simd/simd_util.test.cc
-        src/test_util.test.cc
-        src/sim_tableau.test.cc
-        src/sim_vector.test.cc
+        src/simulators/sim_bulk_pauli_frame.test.cc
+        src/simulators/sim_tableau.test.cc
+        src/simulators/sim_vector.test.cc
+        src/stabilizers/pauli_string.test.cc
         src/stabilizers/tableau.test.cc
+        src/test_util.test.cc
         )
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})

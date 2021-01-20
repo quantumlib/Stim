@@ -7,9 +7,9 @@
 #include <cassert>
 #include <sstream>
 #include <functional>
-#include "stabilizers/tableau.h"
+#include "../stabilizers/tableau.h"
 #include <random>
-#include "circuit.h"
+#include "../circuit.h"
 #include "sim_vector.h"
 
 struct SimTableau {

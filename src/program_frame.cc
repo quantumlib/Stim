@@ -1,6 +1,6 @@
-#include "sim_tableau.h"
+#include "simulators/sim_tableau.h"
 #include "program_frame.h"
-#include "sim_bulk_pauli_frame.h"
+#include "simulators/sim_bulk_pauli_frame.h"
 #include <cstring>
 
 PauliFrameProgram PauliFrameProgram::from_stabilizer_circuit(const std::vector<Operation> &operations) {

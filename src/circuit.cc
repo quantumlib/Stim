@@ -1,7 +1,7 @@
 #include "circuit.h"
 #include <string>
 #include "stabilizers/tableau.h"
-#include "sim_tableau.h"
+#include "simulators/sim_tableau.h"
 
 std::vector<std::string> tokenize(const std::string &line, size_t start, size_t end) {
     // Ignore comments.

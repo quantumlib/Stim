@@ -1,6 +1,6 @@
 #include <iostream>
 #include <map>
-#include "stabilizers/pauli_string.h"
+#include "../stabilizers/pauli_string.h"
 #include "sim_vector.h"
 #include <bit>
 
