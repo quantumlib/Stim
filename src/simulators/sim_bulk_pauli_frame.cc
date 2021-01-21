@@ -21,11 +21,11 @@ inline void FOR_EACH_XZ_PAIR(SimBulkPauliFrames &sim, const std::vector<size_t> 
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t q1 = targets[k];
         size_t q2 = targets[k + 1];
-        auto x1 = sim.x_table[q1].u256;
-        auto z1 = sim.z_table[q1].u256;
-        auto x2 = sim.x_table[q2].u256;
-        auto z2 = sim.z_table[q2].u256;
-        auto x2_end = x2 + sim.num_sample_blocks256;
+        auto x1 = sim.x_table[q1].ptr_simd;
+        auto z1 = sim.z_table[q1].ptr_simd;
+        auto x2 = sim.x_table[q2].ptr_simd;
+        auto z2 = sim.z_table[q2].ptr_simd;
+        auto x2_end = x2 + sim.x_table[q1].num_simd_words;
         while (x2 != x2_end) {
             body({x1, z1, x2, z2});
             x1++;
@@ -44,19 +44,17 @@ size_t SimBulkPauliFrames::recorded_bit_address(size_t sample_index, size_t meas
     if (results_block_transposed) {
         std::swap(m_low, s_low);
     }
-    return s_low + (m_low << 8) + (s_high << 16) + (m_high * num_sample_blocks256 << 16);
+    return s_low + (m_low << 8) + (s_high << 16) + (m_high * x_table.num_simd_words_minor << 16);
 }
 
 SimBulkPauliFrames::SimBulkPauliFrames(size_t init_num_qubits, size_t num_samples, size_t num_measurements, std::mt19937 &rng) :
         num_qubits(init_num_qubits),
         num_samples_raw(num_samples),
-        num_sample_blocks256(ceil256(num_samples) >> 8),
         num_measurements_raw(num_measurements),
-        num_measurement_blocks(ceil256(num_measurements) >> 8),
         x_table(init_num_qubits, num_samples),
         z_table(init_num_qubits, num_samples),
-        m_table(ceil256(num_measurements), num_samples),
-        rng_buffer(ceil256(num_samples)),
+        m_table(num_measurements, num_samples),
+        rng_buffer(num_samples),
         rng(rng) {
 }
 
@@ -141,8 +139,8 @@ void SimBulkPauliFrames::do_named_op(const std::string &name, const std::vector<
 void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements) {
     for (auto e : measurements) {
         auto q = e.target_qubit;
-        auto x = x_table[q].u256;
-        auto x_end = x + num_sample_blocks256;
+        auto x = x_table[q].ptr_simd;
+        auto x_end = x + x_table[q].num_simd_words;
         auto m = m_table.data.u256 + (recorded_bit_address(0, num_recorded_measurements) >> 8);
         auto m_stride = recorded_bit_address(256, 0) >> 8;
         if (e.invert) {
@@ -177,7 +175,7 @@ void SimBulkPauliFrames::MUL_INTO_FRAME(const SparsePauliString &pauli_string, c
 }
 
 void SimBulkPauliFrames::RANDOM_KICKBACK(const SparsePauliString &pauli_string) {
-    rng_buffer.randomize(num_sample_blocks256 << 8, rng);
+    rng_buffer.randomize(rng_buffer.num_bits_padded(), rng);
     MUL_INTO_FRAME(pauli_string, rng_buffer);
 }
 

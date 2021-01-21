@@ -72,9 +72,9 @@ Tableau::Tableau(size_t num_qubits) :
 
 TableauHalf::TableauHalf(size_t num_qubits) :
         num_qubits(num_qubits),
-        xt(ceil256(num_qubits), ceil256(num_qubits)),
-        zt(ceil256(num_qubits), ceil256(num_qubits)),
-        signs(ceil256(num_qubits)) {
+        xt(num_qubits, num_qubits),
+        zt(num_qubits, num_qubits),
+        signs(num_qubits) {
 }
 
 Tableau Tableau::identity(size_t num_qubits) {

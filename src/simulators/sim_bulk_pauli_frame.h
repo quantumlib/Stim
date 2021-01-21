@@ -17,9 +17,7 @@
 struct SimBulkPauliFrames {
     size_t num_qubits;
     size_t num_samples_raw;
-    size_t num_sample_blocks256;
     size_t num_measurements_raw;
-    size_t num_measurement_blocks;
     size_t num_recorded_measurements;
     simd_bit_table x_table;
     simd_bit_table z_table;
