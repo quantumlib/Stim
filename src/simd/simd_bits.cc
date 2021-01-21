@@ -7,19 +7,23 @@
 #include "simd_bits.h"
 #include "simd_util.h"
 
-size_t min_bits_to_num_simd_words(size_t min_bits) {
-    return ceil256(min_bits) >> 8;
+size_t simd_bits::min_bits_to_num_bits_padded(size_t min_bits) {
+    return ceil256(min_bits);
+}
+
+size_t simd_bits::min_bits_to_num_simd_words(size_t min_bits) {
+    return min_bits_to_num_bits_padded(min_bits) >> 8;
 }
 
 uint64_t *malloc_aligned_padded_zeroed(size_t min_bits) {
-    size_t num_u8 = sizeof(__m256i) * min_bits_to_num_simd_words(min_bits);
+    size_t num_u8 = sizeof(__m256i) * simd_bits::min_bits_to_num_simd_words(min_bits);
     void *result = _mm_malloc(num_u8, 32);
     memset(result, 0, num_u8);
     return (uint64_t *)result;
 }
 
 simd_bits::simd_bits(size_t min_bits) :
-        num_simd_words(min_bits_to_num_simd_words(min_bits)),
+        num_simd_words(simd_bits::min_bits_to_num_simd_words(min_bits)),
         u64(malloc_aligned_padded_zeroed(min_bits)) {
 }
 
@@ -104,19 +108,19 @@ const bit_ref simd_bits::operator[](size_t k) const {
 }
 
 simd_bits_range_ref simd_bits::word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
-    return simd_bits_range_ref(u256 + word_offset, sub_num_simd_words);
+    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
 }
 
 const simd_bits_range_ref simd_bits::word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
-    return simd_bits_range_ref(u256 + word_offset, sub_num_simd_words);
+    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
 }
 
 simd_bits::operator simd_bits_range_ref() {
-    return simd_bits_range_ref(u256, num_simd_words);
+    return simd_bits_range_ref(ptr_simd, num_simd_words);
 }
 
 simd_bits::operator const simd_bits_range_ref() const {
-    return simd_bits_range_ref(u256, num_simd_words);
+    return simd_bits_range_ref(ptr_simd, num_simd_words);
 }
 
 simd_bits &simd_bits::operator^=(const simd_bits_range_ref other) {

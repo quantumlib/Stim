@@ -6,13 +6,6 @@
 #include <iostream>
 #include "bit_ref.h"
 
-__m256i bits_to_m256i(std::vector<bool> data);
-
-std::vector<bool> m256i_to_bits(__m256i data);
-
-std::string hex(__m256i data);
-std::string bin(__m256i data);
-
 /// Transposes 256x256 blocks of bits.
 ///
 /// Args:

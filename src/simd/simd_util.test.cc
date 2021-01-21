@@ -13,48 +13,6 @@ simd_bits reference_transpose_of(size_t bit_width, const simd_bits &data) {
     return expected;
 }
 
-TEST(simd_util, hex) {
-    ASSERT_EQ(
-            hex(_mm256_set1_epi8(1)),
-            ".1.1.1.1.1.1.1.1"
-            " .1.1.1.1.1.1.1.1"
-            " .1.1.1.1.1.1.1.1"
-            " .1.1.1.1.1.1.1.1");
-    ASSERT_EQ(
-            hex(_mm256_set1_epi16(1)),
-            "...1...1...1...1 "
-            "...1...1...1...1 "
-            "...1...1...1...1 "
-            "...1...1...1...1");
-    ASSERT_EQ(
-            hex(_mm256_set1_epi32(1)),
-            ".......1.......1"
-            " .......1.......1"
-            " .......1.......1"
-            " .......1.......1");
-    ASSERT_EQ(
-            hex(_mm256_set_epi32(1, 2, -1, 4, 5, 255, 7, 8)),
-            ".......7.......8"
-            " .......5......FF"
-            " FFFFFFFF.......4"
-            " .......1.......2");
-}
-
-TEST(simd_util, pack256_1) {
-    std::vector<bool> bits(256);
-    for (size_t i = 0; i < 16; i++) {
-        bits[i*i] = true;
-    }
-    auto m = bits_to_m256i(bits);
-    ASSERT_EQ(hex(m),
-              "...2..1..2.1.213 "
-              ".2....1....2...1 "
-              ".....2.....1.... "
-              ".......2......1."
-              );
-    ASSERT_EQ(bits, m256i_to_bits(m));
-}
-
 simd_bits reference_blockwise_transpose_of(size_t bit_area, const simd_bits &data) {
     auto expected = simd_bits(data.num_bits_padded());
     for (size_t block = 0; block < bit_area; block += 1 << 16) {

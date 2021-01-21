@@ -21,6 +21,8 @@ struct simd_bits {
         __m256i *u256;
         __m256i *ptr_simd;
     };
+    static size_t min_bits_to_num_simd_words(size_t min_bits);
+    static size_t min_bits_to_num_bits_padded(size_t min_bits);
 
     /// Constructs a zero-initialized simd_bits with at least the given number of bits.
     explicit simd_bits(size_t min_bits);

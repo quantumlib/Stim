@@ -15,7 +15,7 @@ simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref ot
 }
 
 simd_bits_range_ref simd_bits_range_ref::operator=(const simd_bits_range_ref other) {
-    memcpy(u256, other.u256, num_u8_padded());
+    memcpy(ptr_simd, other.ptr_simd, num_u8_padded());
     return *this;
 }
 
@@ -26,11 +26,11 @@ void simd_bits_range_ref::swap_with(simd_bits_range_ref other) {
 }
 
 void simd_bits_range_ref::clear() {
-    memset(u256, 0, num_u8_padded());
+    memset(ptr_simd, 0, num_u8_padded());
 }
 
 bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
-    return num_simd_words == other.num_simd_words && memcmp(u256, other.u256, num_u8_padded()) == 0;
+    return num_simd_words == other.num_simd_words && memcmp(ptr_simd, other.ptr_simd, num_u8_padded()) == 0;
 }
 
 bool simd_bits_range_ref::not_zero() const {
