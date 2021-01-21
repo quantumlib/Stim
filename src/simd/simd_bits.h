@@ -17,9 +17,7 @@ struct simd_bits {
         uint16_t *u16;
         uint32_t *u32;
         uint64_t *u64;
-        __m128i *u128;
-        __m256i *u256;
-        __m256i *ptr_simd;
+        SIMD_WORD_TYPE *ptr_simd;
     };
     static size_t min_bits_to_num_simd_words(size_t min_bits);
     static size_t min_bits_to_num_bits_padded(size_t min_bits);

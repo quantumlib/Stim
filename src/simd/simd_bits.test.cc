@@ -17,7 +17,7 @@ TEST(simd_bits, move) {
 
 TEST(simd_bits, construct) {
     simd_bits d(1024);
-    ASSERT_NE(d.u256, nullptr);
+    ASSERT_NE(d.ptr_simd, nullptr);
     ASSERT_EQ(d.num_simd_words, 4);
     ASSERT_EQ(d.num_bits_padded(), 1024);
     ASSERT_EQ(d.num_u8_padded(), 128);

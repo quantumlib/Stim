@@ -109,12 +109,16 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
     }
 }
 
-uint16_t pop_count(const __m256i &val) {
+uint16_t popcount(const __m256i &val) {
     auto p = (uint64_t *)&val;
-    uint16_t result = 0;
-    result += std::popcount(p[0]);
-    result += std::popcount(p[1]);
-    result += std::popcount(p[2]);
-    result += std::popcount(p[3]);
-    return result;
+    return std::popcount(p[0]) + std::popcount(p[1]) + std::popcount(p[2]) + std::popcount(p[3]);
+}
+
+uint8_t popcount(const __m128i &val) {
+    auto p = (uint64_t *)&val;
+    return std::popcount(p[0]) + std::popcount(p[1]);
+}
+
+uint8_t popcount(const uint64_t val) {
+    return std::popcount(val);
 }

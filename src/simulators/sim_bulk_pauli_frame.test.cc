@@ -30,10 +30,11 @@ TEST(SimBulkPauliFrames, get_set_frame) {
 TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
     SimBulkPauliFrames big_sim(501, 1001, 999, SHARED_TEST_RNG());
     simd_bits mask(1024);
-    mask.u256[0] = _mm256_set1_epi8(4);
-    mask.u256[1] = _mm256_set1_epi8(-1);
-    mask.u256[2] = _mm256_set1_epi8(0);
-    mask.u256[3] = _mm256_set1_epi8(0);
+    mask.u64[0] = 4;
+    mask.u64[4] = -1;
+    mask.u64[5] = -1;
+    mask.u64[6] = -1;
+    mask.u64[7] = -1;
     auto ps1 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[(k | 2) == 303]; }).ref().sparse();
     auto ps2 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_Z"[(k | 1) == 303]; }).ref().sparse();
     big_sim.MUL_INTO_FRAME(ps1, mask);
@@ -47,7 +48,10 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
     ASSERT_EQ(big_sim.get_frame(511).ref().sparse().str(), "+X301*X303");
     ASSERT_EQ(big_sim.get_frame(512).ref().sparse().str(), "+I");
 
-    mask.u256[1] = _mm256_set1_epi8(0);
+    mask.u64[4] = 0;
+    mask.u64[5] = 0;
+    mask.u64[6] = 0;
+    mask.u64[7] = 0;
     big_sim.MUL_INTO_FRAME(ps2, mask);
     ASSERT_EQ(big_sim.get_frame(0).ref().sparse().str(), "+I");
     ASSERT_EQ(big_sim.get_frame(1).ref().sparse().str(), "+I");

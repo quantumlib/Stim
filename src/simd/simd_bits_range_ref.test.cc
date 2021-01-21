@@ -6,7 +6,7 @@ TEST(simd_bits_range_ref, construct) {
     __m256i data[4] {};
     simd_bits_range_ref ref(data, 4);
 
-    ASSERT_EQ(ref.u256, &data[0]);
+    ASSERT_EQ(ref.ptr_simd, &data[0]);
     ASSERT_EQ(ref.num_simd_words, 4);
     ASSERT_EQ(ref.num_bits_padded(), 1024);
     ASSERT_EQ(ref.num_u8_padded(), 128);

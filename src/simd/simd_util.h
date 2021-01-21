@@ -78,6 +78,8 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept;
 
-uint16_t pop_count(const __m256i &val);
+uint16_t popcount(const __m256i &val);
+uint8_t popcount(const __m128i &val);
+uint8_t popcount(const uint64_t &val);
 
 #endif

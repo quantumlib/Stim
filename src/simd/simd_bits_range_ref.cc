@@ -3,8 +3,8 @@
 #include "simd_bits_range_ref.h"
 #include "simd_util.h"
 
-simd_bits_range_ref::simd_bits_range_ref(__m256i *ptr, size_t num_simd_words) :
-    u256(ptr), num_simd_words(num_simd_words) {
+simd_bits_range_ref::simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd_init, size_t num_simd_words) :
+        ptr_simd(ptr_simd_init), num_simd_words(num_simd_words) {
 }
 
 simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref other) {
@@ -34,7 +34,7 @@ bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
 }
 
 bool simd_bits_range_ref::not_zero() const {
-    __m256i acc {};
+    SIMD_WORD_TYPE acc {};
     for_each_word([&acc](auto &w) {
         acc |= w;
     });
@@ -60,11 +60,11 @@ const bit_ref simd_bits_range_ref::operator[](size_t k) const {
 }
 
 simd_bits_range_ref simd_bits_range_ref::word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
-    return simd_bits_range_ref(u256 + word_offset, sub_num_simd_words);
+    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
 }
 
 const simd_bits_range_ref simd_bits_range_ref::word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
-    return simd_bits_range_ref(u256 + word_offset, sub_num_simd_words);
+    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
 }
 
 std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m) {

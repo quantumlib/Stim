@@ -7,6 +7,8 @@
 #include <random>
 #include "bit_ref.h"
 
+#define SIMD_WORD_TYPE __m256i
+
 /// A reference to a range of bits that support SIMD operations (e.g. they are aligned and padded correctly).
 ///
 /// Conceptually behaves the same as a reference like `int &`, as opposed to a pointer like `int *`. For example, the
@@ -17,14 +19,12 @@ struct simd_bits_range_ref {
         uint16_t *const u16;
         uint32_t *const u32;
         uint64_t *const u64;
-        __m128i *const u128;
-        __m256i *const u256;
-        __m256i *const ptr_simd;
+        SIMD_WORD_TYPE *const ptr_simd;
     };
     const size_t num_simd_words;
 
     /// Construct a simd_bits_range_ref from a given pointer and word count.
-    simd_bits_range_ref(__m256i *ptr, size_t num_simd_words);
+    simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd, size_t num_simd_words);
 
     /// Overwrite assignment.
     simd_bits_range_ref operator=(const simd_bits_range_ref other);

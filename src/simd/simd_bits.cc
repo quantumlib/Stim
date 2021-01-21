@@ -8,16 +8,17 @@
 #include "simd_util.h"
 
 size_t simd_bits::min_bits_to_num_bits_padded(size_t min_bits) {
-    return (min_bits + 0xFF) & ~0xFF;
+    constexpr size_t mask = sizeof(SIMD_WORD_TYPE) * 8 - 1;
+    return (min_bits + mask) & ~mask;
 }
 
 size_t simd_bits::min_bits_to_num_simd_words(size_t min_bits) {
-    return min_bits_to_num_bits_padded(min_bits) >> 8;
+    return min_bits_to_num_bits_padded(min_bits) / sizeof(SIMD_WORD_TYPE) / 8;
 }
 
 uint64_t *malloc_aligned_padded_zeroed(size_t min_bits) {
-    size_t num_u8 = sizeof(__m256i) * simd_bits::min_bits_to_num_simd_words(min_bits);
-    void *result = _mm_malloc(num_u8, 32);
+    size_t num_u8 = simd_bits::min_bits_to_num_bits_padded(min_bits) / 8;
+    void *result = _mm_malloc(num_u8, sizeof(SIMD_WORD_TYPE));
     memset(result, 0, num_u8);
     return (uint64_t *)result;
 }

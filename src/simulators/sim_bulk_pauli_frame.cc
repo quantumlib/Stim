@@ -45,8 +45,10 @@ void SimBulkPauliFrames::unpack_sample_measurements_into(size_t sample_index, si
     if (!results_block_transposed) {
         do_transpose();
     }
+    auto p = (__m256i *)out.ptr_simd;
+    auto p2 = (__m256i *)m_table.data.ptr_simd;
     for (size_t m = 0; m < num_measurements_raw; m += 256) {
-        out.u256[m >> 8] = m_table.data.u256[recorded_bit_address(sample_index, m) >> 8];
+        p[m >> 8] = p2[recorded_bit_address(sample_index, m) >> 8];
     }
 }
 
@@ -124,7 +126,7 @@ void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgr
         auto q = e.target_qubit;
         auto x = x_table[q].ptr_simd;
         auto x_end = x + x_table[q].num_simd_words;
-        auto m = m_table.data.u256 + (recorded_bit_address(0, num_recorded_measurements) >> 8);
+        auto m = (__m256i *)m_table.data.ptr_simd + (recorded_bit_address(0, num_recorded_measurements) >> 8);
         auto m_stride = recorded_bit_address(256, 0) >> 8;
         if (e.invert) {
             while (x != x_end) {
