@@ -556,9 +556,6 @@ TEST(tableau, transposed_access) {
                 ASSERT_EQ(t.xs.zt[out_qubit][inp_qubit], bxz);
                 ASSERT_EQ(t.zs.xt[out_qubit][inp_qubit], bzx);
                 ASSERT_EQ(t.zs.zt[out_qubit][inp_qubit], bzz);
-
-                ASSERT_EQ(trans.z_obs_x_bit(inp_qubit, out_qubit), bzx);
-                ASSERT_EQ(trans.z_obs_z_bit(inp_qubit, out_qubit), bzz);
             }
         }
     }

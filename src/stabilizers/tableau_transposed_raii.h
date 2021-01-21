@@ -24,10 +24,6 @@ struct TableauTransposedRaii {
     TableauTransposedRaii(const TableauTransposedRaii &) = delete;
     TableauTransposedRaii(TableauTransposedRaii &&) = delete;
 
-    bool x_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
-    bool z_obs_x_bit(size_t input_qubit, size_t output_qubit) const;
-    bool z_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
-
     void append_H(size_t q);
     void append_H_XY(size_t q);
     void append_H_YZ(size_t q);

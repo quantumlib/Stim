@@ -334,7 +334,7 @@ void SimTableau::collapse_while_transposed(
 
     // Find an anti-commuting part of the measurement observable's at the start of time.
     size_t pivot = 0;
-    while (pivot < n && !temp_transposed.z_obs_x_bit(target, pivot)) {
+    while (pivot < n && !temp_transposed.tableau.zs.xt[pivot][target]) {
         pivot++;
     }
     if (pivot == n) {
@@ -347,14 +347,14 @@ void SimTableau::collapse_while_transposed(
 
     // Introduce no-op CNOTs at the start of time to remove all anti-commuting parts except for one.
     for (size_t k = pivot + 1; k < n; k++) {
-        auto x = temp_transposed.z_obs_x_bit(target, k);
+        auto x = temp_transposed.tableau.zs.xt[k][target];
         if (x) {
             temp_transposed.append_CX(pivot, k);
         }
     }
 
     // Collapse the anti-commuting part.
-    if (temp_transposed.z_obs_z_bit(target, pivot)) {
+    if (temp_transposed.tableau.zs.zt[pivot][target]) {
         temp_transposed.append_H_YZ(pivot);
     } else {
         temp_transposed.append_H(pivot);

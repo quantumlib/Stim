@@ -100,15 +100,3 @@ void TableauTransposedRaii::append_X(size_t target) {
         s ^= z;
     });
 }
-
-bool TableauTransposedRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.zs.xt[output_qubit][input_qubit];
-}
-
-bool TableauTransposedRaii::x_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.xs.zt[output_qubit][input_qubit];
-}
-
-bool TableauTransposedRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.zs.zt[output_qubit][input_qubit];
-}
