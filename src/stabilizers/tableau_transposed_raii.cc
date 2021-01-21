@@ -7,15 +7,6 @@
 #include "pauli_string.h"
 #include "tableau_transposed_raii.h"
 
-TransposedTableauXZ TableauTransposedRaii::transposed_xz_ptr(size_t qubit) const {
-    PauliStringRef x(tableau.xs[qubit]);
-    PauliStringRef z(tableau.zs[qubit]);
-    return {{
-        {x.x_ref, x.z_ref, tableau.xs.signs},
-        {z.x_ref, z.z_ref, tableau.zs.signs}
-    }};
-}
-
 TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau) {
     tableau.do_transpose_quadrants();
 }
@@ -29,12 +20,12 @@ inline void for_each_trans_obs(
         TableauTransposedRaii &trans,
         size_t q,
         BODY body) {
-    auto ps = trans.transposed_xz_ptr(q);
     for (size_t k = 0; k < 2; k++) {
-        auto x = ps.xz[k].x.ptr_simd;
-        auto z = ps.xz[k].z.ptr_simd;
-        auto s = ps.xz[k].s.ptr_simd;
-        auto x_end = x + ps.xz[k].x.num_simd_words;
+        TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
+        auto x = h[q].x_ref.ptr_simd;
+        auto z = h[q].z_ref.ptr_simd;
+        auto s = h.signs.ptr_simd;
+        auto x_end = x + h[q].x_ref.num_simd_words;
         while (x != x_end) {
             body(*x, *z, *s);
             x++;
@@ -50,15 +41,14 @@ inline void for_each_trans_obs(
         size_t q1,
         size_t q2,
         BODY body) {
-    auto p1s = trans.transposed_xz_ptr(q1);
-    auto p2s = trans.transposed_xz_ptr(q2);
     for (size_t k = 0; k < 2; k++) {
-        auto x1 = p1s.xz[k].x.ptr_simd;
-        auto z1 = p1s.xz[k].z.ptr_simd;
-        auto x2 = p2s.xz[k].x.ptr_simd;
-        auto z2 = p2s.xz[k].z.ptr_simd;
-        auto s = p1s.xz[k].s.ptr_simd;
-        auto x1_end = x1 + p1s.xz[k].x.num_simd_words;
+        TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
+        auto x1 = h[q1].x_ref.ptr_simd;
+        auto z1 = h[q1].z_ref.ptr_simd;
+        auto x2 = h[q2].x_ref.ptr_simd;
+        auto z2 = h[q2].z_ref.ptr_simd;
+        auto s = h.signs.ptr_simd;
+        auto x1_end = x1 + h[q1].x_ref.num_simd_words;
         while (x1 != x1_end) {
             body(*x1, *z1, *x2, *z2, *s);
             x1++;
@@ -128,10 +118,6 @@ void TableauTransposedRaii::append_X(size_t target) {
     for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
         s ^= z;
     });
-}
-
-bool TableauTransposedRaii::z_sign(size_t a) const {
-    return tableau.z_sign(a);
 }
 
 bool TableauTransposedRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {

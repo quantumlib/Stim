@@ -19,6 +19,7 @@ struct simd_bits {
         uint64_t *u64;
         __m128i *u128;
         __m256i *u256;
+        __m256i *ptr_simd;
     };
 
     /// Constructs a zero-initialized simd_bits with at least the given number of bits.

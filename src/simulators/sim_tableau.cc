@@ -17,7 +17,7 @@ std::vector<bool> SimTableau::measure(const std::vector<size_t> &targets, float 
     // Report deterministic measurement results.
     std::vector<bool> results(targets.size(), false);
     for (size_t t = 0; t < targets.size(); t++) {
-        results[t] = inv_state.z_sign(targets[t]);
+        results[t] = inv_state.zs.signs[targets[t]];
     }
     return results;
 }
@@ -308,7 +308,7 @@ std::vector<SparsePauliString> SimTableau::inspected_collapse(
     std::queue<size_t> remaining;
     for (size_t k = 0; k < targets.size(); k++) {
         if (is_deterministic(targets[k])) {
-            out[k].sign = inv_state.z_sign(targets[k]);
+            out[k].sign = inv_state.zs.signs[targets[k]];
         } else {
             remaining.push(k);
         }
@@ -340,7 +340,7 @@ void SimTableau::collapse_while_transposed(
     if (pivot == n) {
         // No anti-commuting part. Already collapsed.
         if (destabilizer_out != nullptr) {
-            destabilizer_out->sign = temp_transposed.z_sign(target);
+            destabilizer_out->sign = temp_transposed.tableau.zs.signs[target];
         }
         return;
     }
@@ -359,15 +359,16 @@ void SimTableau::collapse_while_transposed(
     } else {
         temp_transposed.append_H(pivot);
     }
-    bool sign = temp_transposed.z_sign(target);
+    bool sign = temp_transposed.tableau.zs.signs[target];
     if (destabilizer_out != nullptr) {
-        auto t = temp_transposed.transposed_xz_ptr(pivot);
         *destabilizer_out = PauliStringRef(
                 n,
                 bit_ref(&sign, 0),
-                t.xz[1].z,
-                t.xz[0].z).sparse();
+                temp_transposed.tableau.zs[pivot].z_ref,
+                temp_transposed.tableau.xs[pivot].z_ref
+        ).sparse();
     } else {
+        bool sign = temp_transposed.tableau.zs.signs[target];
         auto coin_flip = std::bernoulli_distribution(else_bias)(rng);
         if (sign != coin_flip) {
             temp_transposed.append_X(pivot);

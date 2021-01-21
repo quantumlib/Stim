@@ -9,16 +9,6 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
-struct TransposedPaulisRef {
-    simd_bits_range_ref x;
-    simd_bits_range_ref z;
-    simd_bits_range_ref s;
-};
-
-struct TransposedTableauXZ {
-    TransposedPaulisRef xz[2];
-};
-
 /// When this class is constructed, it transposes the tableau given to it.
 /// The transpose is undone on deconstruction.
 ///
@@ -34,9 +24,6 @@ struct TableauTransposedRaii {
     TableauTransposedRaii(const TableauTransposedRaii &) = delete;
     TableauTransposedRaii(TableauTransposedRaii &&) = delete;
 
-    TransposedTableauXZ transposed_xz_ptr(size_t qubit) const;
-
-    bool z_sign(size_t a) const;
     bool x_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
     bool z_obs_x_bit(size_t input_qubit, size_t output_qubit) const;
     bool z_obs_z_bit(size_t input_qubit, size_t output_qubit) const;

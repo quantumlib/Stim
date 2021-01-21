@@ -136,8 +136,6 @@ struct Tableau {
     void prepend(const PauliStringRef &op);
     void prepend(const SparsePauliString &op);
 
-    bool z_sign(size_t a) const;
-
     void do_transpose_quadrants();
 };
 

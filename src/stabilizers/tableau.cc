@@ -44,10 +44,6 @@ const PauliStringRef TableauHalf::operator[](size_t input_qubit) const {
     return PauliStringRef(num_qubits, signs[input_qubit], xt[input_qubit], zt[input_qubit]);
 }
 
-bool Tableau::z_sign(size_t a) const {
-    return zs.signs[a];
-}
-
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
     PauliStringVal result(xs[qubit]);
     uint8_t log_i = result.ref().inplace_right_mul_returning_log_i_scalar(zs[qubit]);
