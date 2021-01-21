@@ -52,10 +52,6 @@ void blockwise_transpose_256x256(uint64_t *matrix, size_t num_bits, bool allow_t
     }
 }
 
-size_t ceil256(size_t n) {
-    return (n + 0xFF) & ~0xFF;
-}
-
 /// Transposes within the 64x64 bit blocks of a 256x256 block subset of a boolean matrix.
 ///
 /// For example, if we were transposing 2x2 blocks inside a 4x4 matrix, the order would go from:

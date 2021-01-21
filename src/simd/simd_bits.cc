@@ -8,7 +8,7 @@
 #include "simd_util.h"
 
 size_t simd_bits::min_bits_to_num_bits_padded(size_t min_bits) {
-    return ceil256(min_bits);
+    return (min_bits + 0xFF) & ~0xFF;
 }
 
 size_t simd_bits::min_bits_to_num_simd_words(size_t min_bits) {

@@ -45,6 +45,19 @@ TEST(simd_bits, aliased_editing_and_bit_refs) {
     ASSERT_EQ(cref[100], d[100]);
 }
 
+TEST(simd_util, min_bits_to_num_bits_padded) {
+    const auto &f = &simd_bits::min_bits_to_num_bits_padded;
+    ASSERT_EQ(f(0), 0);
+    ASSERT_EQ(f(1), 256);
+    ASSERT_EQ(f(100), 256);
+    ASSERT_EQ(f(255), 256);
+    ASSERT_EQ(f(256), 256);
+    ASSERT_EQ(f(257), 512);
+    ASSERT_EQ(f((1 << 30) - 1), 1 << 30);
+    ASSERT_EQ(f(1 << 30), 1 << 30);
+    ASSERT_EQ(f((1 << 30) + 1), (1 << 30) + 256);
+}
+
 TEST(simd_bits, str) {
     simd_bits d(256);
     ASSERT_EQ(d.str(),

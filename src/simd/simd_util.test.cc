@@ -4,7 +4,8 @@
 #include "../test_util.test.h"
 
 simd_bits reference_transpose_of(size_t bit_width, const simd_bits &data) {
-    auto expected = simd_bits(ceil256(bit_width) * ceil256(bit_width));
+    assert(!(bit_width & 0xFF));
+    auto expected = simd_bits(bit_width * bit_width);
     for (size_t i = 0; i < bit_width; i++) {
         for (size_t j = 0; j < bit_width; j++) {
             expected[i*bit_width + j] = data[j*bit_width + i];
@@ -182,18 +183,6 @@ TEST(simd_util, address_permutation) {
                     10, 11, 12, 13, 14, 15, 6, 7, 8, 9,
                     0, 1, 2, 3, 4, 5, 16, 17, 18, 19,
             }));
-}
-
-TEST(simd_util, ceil256) {
-    ASSERT_EQ(ceil256(0), 0);
-    ASSERT_EQ(ceil256(1), 256);
-    ASSERT_EQ(ceil256(100), 256);
-    ASSERT_EQ(ceil256(255), 256);
-    ASSERT_EQ(ceil256(256), 256);
-    ASSERT_EQ(ceil256(257), 512);
-    ASSERT_EQ(ceil256((1 << 30) - 1), 1 << 30);
-    ASSERT_EQ(ceil256(1 << 30), 1 << 30);
-    ASSERT_EQ(ceil256((1 << 30) + 1), (1 << 30) + 256);
 }
 
 TEST(simd_util, transpose_bit_matrix) {

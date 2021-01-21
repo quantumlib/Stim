@@ -242,7 +242,7 @@ void SimTableau::ensure_large_enough_for_qubit(size_t q) {
     if (q < inv_state.num_qubits) {
         return;
     }
-    inv_state.expand(ceil256(q + 1));
+    inv_state.expand(q + 1);
 }
 
 void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement, std::mt19937 &rng) {
