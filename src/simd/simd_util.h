@@ -23,10 +23,10 @@ void mat256_permute_address_swap_ck_rk(uint64_t *matrix256x256, __m256i mask) no
         for (size_t j = i; j < i + bit_val; j++) {
             auto &a = m[j];
             auto &b = m[j + bit_val];
-            auto a1 = andnot(mask, a);
+            auto a1 = _mm256_andnot_si256(mask, a);
             auto b0 = b & mask;
             a &= mask;
-            b = andnot(mask, b);
+            b = _mm256_andnot_si256(mask, b);
             a |= _mm256_slli_epi64(b0, bit_val);
             b |= _mm256_srli_epi64(a1, bit_val);
         }
@@ -66,10 +66,10 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
         for (size_t row = col; row < col + h; row++) {
             auto &a = u256[row * row_stride_256];
             auto &b = u256[(row + h) * row_stride_256];
-            auto a1 = andnot(mask, a);
+            auto a1 = _mm256_andnot_si256(mask, a);
             auto b0 = _mm256_and_si256(mask, b);
             a = _mm256_and_si256(mask, a);
-            b = andnot(mask, b);
+            b = _mm256_andnot_si256(mask, b);
             a = _mm256_or_si256(a, _mm256_slli_epi64(b0, h));
             b = _mm256_or_si256(_mm256_srli_epi64(a1, h), b);
         }

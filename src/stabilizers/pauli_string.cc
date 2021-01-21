@@ -225,8 +225,8 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     });
 
     // Combine final anti-commutation phase tally (mod 4).
-    uint8_t s = popcount(cnt1);
-    s ^= popcount(cnt2) << 1;
+    uint8_t s = cnt1.popcount();
+    s ^= cnt2.popcount() << 1;
     s ^= (uint8_t)rhs.sign_ref << 1;
     return s & 3;
 }
@@ -245,7 +245,7 @@ bool PauliStringRef::commutes(const PauliStringRef& other) const noexcept {
     x_ref.for_each_word(z_ref, other.x_ref, other.z_ref, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) {
         cnt1 ^= (x1 & z2) ^ (x2 & z1);
     });
-    return (popcount(cnt1) & 1) == 0;
+    return (cnt1.popcount() & 1) == 0;
 }
 
 void PauliStringRef::gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const {

@@ -124,7 +124,7 @@ void SimBulkPauliFrames::do_named_op(const std::string &name, const std::vector<
 void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements) {
     for (auto e : measurements) {
         auto q = e.target_qubit;
-        auto x = x_table[q].ptr_simd;
+        auto x = (__m256i *)x_table[q].ptr_simd;
         auto x_end = x + x_table[q].num_simd_words;
         auto m = (__m256i *)m_table.data.ptr_simd + (recorded_bit_address(0, num_recorded_measurements) >> 8);
         auto m_stride = recorded_bit_address(256, 0) >> 8;

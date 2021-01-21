@@ -38,13 +38,7 @@ bool simd_bits_range_ref::not_zero() const {
     for_each_word([&acc](auto &w) {
         acc |= w;
     });
-    auto p = (uint64_t *)&acc;
-    for (size_t k = 0; k < sizeof(acc) >> 3; k++) {
-        if (p[k]) {
-            return true;
-        }
-    }
-    return false;
+    return acc;
 }
 
 bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const {
