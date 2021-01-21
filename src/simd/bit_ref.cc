@@ -33,7 +33,7 @@ bit_ref &bit_ref::operator|=(bool value) {
     return *this;
 }
 
-void bit_ref::swap_with(bit_ref &other) {
+void bit_ref::swap_with(bit_ref other) {
     bool b = (bool)other;
     other = (bool)*this;
     *this = b;

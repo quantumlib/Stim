@@ -30,7 +30,7 @@ struct bit_ref {
     /// Bitwise-or assignment.
     bit_ref &operator|=(bool value);
     /// Swap assignment.
-    void swap_with(bit_ref &other);
+    void swap_with(bit_ref other);
 
     /// Implicit conversion to bool.
     operator bool() const; // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)

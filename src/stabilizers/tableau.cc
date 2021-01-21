@@ -1,28 +1,27 @@
 #include <iostream>
 #include <map>
 #include <random>
-#include "pauli_string.h"
-#include "tableau.h"
-#include "../bit_mat.h"
 #include <cmath>
 #include <cstring>
 #include <thread>
+#include "pauli_string.h"
+#include "tableau.h"
 
 void do_transpose(Tableau &tableau) {
     size_t n = ceil256(tableau.num_qubits);
     if (n >= 1024) {
-        std::thread t1([&]() { transpose_bit_matrix(tableau.xs.xt.data.u64, n); });
-        std::thread t2([&]() { transpose_bit_matrix(tableau.xs.zt.data.u64, n); });
-        std::thread t3([&]() { transpose_bit_matrix(tableau.zs.xt.data.u64, n); });
-        transpose_bit_matrix(tableau.zs.zt.data.u64, n);
+        std::thread t1([&]() { tableau.xs.xt.do_square_transpose(); });
+        std::thread t2([&]() { tableau.xs.zt.do_square_transpose(); });
+        std::thread t3([&]() { tableau.zs.xt.do_square_transpose(); });
+        tableau.zs.zt.do_square_transpose();
         t1.join();
         t2.join();
         t3.join();
     } else {
-        transpose_bit_matrix(tableau.xs.xt.data.u64, n);
-        transpose_bit_matrix(tableau.xs.zt.data.u64, n);
-        transpose_bit_matrix(tableau.zs.xt.data.u64, n);
-        transpose_bit_matrix(tableau.zs.zt.data.u64, n);
+        tableau.xs.xt.do_square_transpose();
+        tableau.xs.zt.do_square_transpose();
+        tableau.zs.xt.do_square_transpose();
+        tableau.zs.zt.do_square_transpose();
     }
 }
 
@@ -598,87 +597,89 @@ std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std:
 ///     "Hadamard-free circuits expose the structure of the Clifford group"
 ///     Sergey Bravyi, Dmitri Maslov
 ///     https://arxiv.org/abs/2003.09412
-BitMat random_stabilizer_tableau_raw(size_t n, std::mt19937 &gen) {
-    auto rand_bit = std::bernoulli_distribution(0.5);
+simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937 &gen) {
+    auto rand_bit = [&]() { return gen() & 1; };
     auto hs_pair = sample_qmallows(n, gen);
     const auto &hada = hs_pair.first;
     const auto &perm = hs_pair.second;
 
-    BitMat symmetric(n);
+    simd_bit_table symmetric(n, n);
     for (size_t col = 0; col < n; col++) {
-        symmetric.set(col, col, rand_bit(gen));
+        symmetric[col][col] = rand_bit();
         for (size_t row = col + 1; row < n; row++) {
-            bool b = rand_bit(gen);
-            symmetric.set(row, col, b);
-            symmetric.set(col, row, b);
+            bool b = rand_bit();
+            symmetric[row][col] = b;
+            symmetric[col][row] = b;
         }
     }
 
-    BitMat symmetric_m(n);
+    simd_bit_table symmetric_m(n, n);
     for (size_t col = 0; col < n; col++) {
-        symmetric_m.set(col, col, rand_bit(gen) && hada[col]);
+        symmetric_m[col][col] = rand_bit() && hada[col];
         for (size_t row = col + 1; row < n; row++) {
             bool b = hada[row] && hada[col];
             b |= hada[row] > hada[col] && perm[row] < perm[col];
             b |= hada[row] < hada[col] && perm[row] > perm[col];
-            b &= rand_bit(gen);
-            symmetric_m.set(row, col, b);
-            symmetric_m.set(col, row, b);
+            b &= rand_bit();
+            symmetric_m[row][col] = b;
+            symmetric_m[col][row] = b;
         }
     }
 
-    auto lower = BitMat::identity(n);
+    auto lower = simd_bit_table::identity(n);
     for (size_t col = 0; col < n; col++) {
         for (size_t row = col + 1; row < n; row++) {
-            lower.set(row, col, rand_bit(gen));
+            lower[row][col] = rand_bit();
         }
     }
 
-    auto lower_m = BitMat::identity(n);
+    auto lower_m = simd_bit_table::identity(n);
     for (size_t col = 0; col < n; col++) {
         for (size_t row = col + 1; row < n; row++) {
             bool b = hada[row] < hada[col];
             b |= hada[row] && hada[col] && perm[row] > perm[col];
             b |= !hada[row] && !hada[col] && perm[row] < perm[col];
-            b &= rand_bit(gen);
-            lower_m.set(row, col, b);
+            b &= rand_bit();
+            lower_m[row][col] = b;
         }
     }
 
-    auto prod = symmetric * lower;
-    auto prod_m = symmetric_m * lower_m;
+    auto prod = symmetric.square_mat_mul(lower, n);
+    auto prod_m = symmetric_m.square_mat_mul(lower_m, n);
 
-    auto inv = lower.inv_lower_triangular().transposed();
-    auto inv_m = lower_m.inv_lower_triangular().transposed();
+    auto inv = lower.inverse_assuming_lower_triangular(n);
+    auto inv_m = lower_m.inverse_assuming_lower_triangular(n);
+    inv.do_square_transpose();
+    inv_m.do_square_transpose();
 
-    auto fused = BitMat::from_quadrants(
-        lower, BitMat(n),
+    auto fused = simd_bit_table::from_quadrants(
+        n,
+        lower, simd_bit_table(n, n),
         prod, inv);
-    auto fused_m = BitMat::from_quadrants(
-        lower_m, BitMat(n),
+    auto fused_m = simd_bit_table::from_quadrants(
+        n,
+        lower_m, simd_bit_table(n, n),
         prod_m, inv_m);
 
-    BitMat u(2*n);
+    simd_bit_table u(2*n, 2*n);
 
     // Apply permutation.
     for (size_t row = 0; row < n; row++) {
         for (size_t col = 0; col < 2 * n; col++) {
-            u.set(row, col, fused.get(perm[row], col));
-            u.set(row + n, col, fused.get(perm[row] + n, col));
+            u[row][col] = fused[perm[row]][col];
+            u[row + n][col] = fused[perm[row] + n][col];
         }
     }
     // Apply Hadamards.
     for (size_t row = 0; row < n; row++) {
         if (hada[row]) {
             for (size_t col = 0; col < 2*n; col++) {
-                bool t = u.get(row, col);
-                u.set(row, col, u.get(row + n, col));
-                u.set(row + n, col, t);
+                u[row][col].swap_with(u[row + n][col]);
             }
         }
     }
 
-    return fused_m * u;
+    return fused_m.square_mat_mul(u, 2*n);
 }
 
 Tableau Tableau::random(size_t num_qubits, std::mt19937 &rng) {
@@ -686,10 +687,10 @@ Tableau Tableau::random(size_t num_qubits, std::mt19937 &rng) {
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
-            result.xs[row].x_ref[col] = raw.get(row, col);
-            result.xs[row].z_ref[col] = raw.get(row, col + num_qubits);
-            result.zs[row].x_ref[col] = raw.get(row + num_qubits, col);
-            result.zs[row].z_ref[col] = raw.get(row + num_qubits, col + num_qubits);
+            result.xs[row].x_ref[col] = raw[row][col];
+            result.xs[row].z_ref[col] = raw[row][col + num_qubits];
+            result.zs[row].x_ref[col] = raw[row + num_qubits][col];
+            result.zs[row].z_ref[col] = raw[row + num_qubits][col + num_qubits];
         }
         uint32_t u = rng();
         result.xs.signs[row] = u & 1;
