@@ -22,14 +22,6 @@ simd_bit_table simd_bit_table::identity(size_t n) {
     return result;
 }
 
-simd_bits_range_ref simd_bit_table::operator[](size_t major_index) {
-    return data.word_range_ref(major_index * num_simd_words_minor, num_simd_words_minor);
-}
-
-const simd_bits_range_ref simd_bit_table::operator[](size_t major_index) const {
-    return data.word_range_ref(major_index * num_simd_words_minor, num_simd_words_minor);
-}
-
 void simd_bit_table::clear() {
     data.clear();
 }
@@ -76,9 +68,86 @@ simd_bit_table simd_bit_table::inverse_assuming_lower_triangular(size_t n) const
     return result;
 }
 
+template <uint8_t step>
+void rc_address_bit_swap(simd_bit_table &t, size_t base, size_t len) {
+    size_t end = base + len;
+    auto mask4 = SIMD_WORD_TYPE::tile(interleave_mask(step));
+    for (size_t major = base; major < end; major++, major += major & step) {
+        t[major].for_each_word(t[major + step], [&mask4](auto &a, auto &b) {
+            auto a1 = mask4.andnot(a);
+            auto b0 = b & mask4;
+            a = (a & mask4) | b0.leftshift_tile64(step);
+            b = mask4.andnot(b) | a1.rightshift_tile64(step);
+        });
+    }
+}
+
+template <uint8_t step>
+void rc3456_address_bit_rotate_swap(simd_bit_table &t, size_t m1, size_t m2) {
+    for (size_t major = m1; major < m2; major++, major += major & step) {
+        t[major].for_each_word(t[major + step], [](auto &a, auto &b){
+            a.interleave8_128_with(b);
+        });
+    }
+}
+
+constexpr uint8_t lg(size_t k) {
+    size_t t = 0;
+    while (k > 1) {
+        k >>= 1;
+        t += 1;
+    }
+    return t;
+}
+
+template <typename word_t>
+void rc_address_word_swap(simd_bit_table &t) {
+    constexpr uint16_t block_diameter = sizeof(word_t) << 3;
+    constexpr uint8_t block_shift = lg(block_diameter);
+    size_t n = t.num_major_bits_padded();
+    size_t num_blocks = n >> block_shift;
+    word_t *words = (word_t *)t.data.ptr_simd;
+    for (size_t block_row = 0; block_row < num_blocks; block_row++) {
+        for (size_t block_col = block_row + 1; block_col < num_blocks; block_col++) {
+            size_t rc = block_row * n + block_col;
+            size_t cr = block_col * n + block_row;
+            for (size_t k = 0; k < n; k += num_blocks) {
+                std::swap(words[rc + k], words[cr + k]);
+            }
+        }
+    }
+}
+
 void simd_bit_table::do_square_transpose() {
-    assert(num_major_bits_padded() == num_minor_bits_padded());
-    transpose_bit_matrix(data.u64, num_major_bits_padded());
+    assert(num_simd_words_minor == num_simd_words_major);
+
+    size_t n = num_major_bits_padded();
+    // Bit order = C0 C1 C2 C3 C4 C5 C6 C7 ... r0 r1 r2 r3 r4 r5 r6 r7 ...
+    for (size_t base = 0; base < n; base += 128) {
+        auto end = base + 128;
+        // Bit order = C0 C1 C2 C3 C4 C5 C6 C7 ... r0 r1 r2 r3 r4 r5 r6 r7 ...
+        rc3456_address_bit_rotate_swap<64>(*this, base, end);
+        // Bit order = C0 C1 C2 r6 C3 C4 C5 C7 ... r0 r1 r2 r3 r4 r5 C6 r7 ...
+        rc3456_address_bit_rotate_swap<32>(*this, base, end);
+        // Bit order = C0 C1 C2 r5 r6 C3 C4 C7 ... r0 r1 r2 r3 r4 C5 C6 r7 ...
+        for (size_t local_base = base; local_base < end; local_base += 8) {
+            // Bit order = C0 C1 C2 r5 r6 C3 C4 C7 ... r0 r1 r2 r3 r4 C5 C6 r7 ...
+            rc_address_bit_swap<1>(*this, local_base, 4);
+            rc_address_bit_swap<2>(*this, local_base, 8);
+            rc_address_bit_swap<1>(*this, local_base + 4, 4);
+            // Bit order = r0 r1 C2 r5 r6 C3 C4 C7 ... C0 C1 r2 r3 r4 C5 C6 r7 ...
+            rc_address_bit_swap<4>(*this, local_base, 8);
+            // Bit order = r0 r1 r2 r5 r6 C3 C4 C7 ... C0 C1 C2 r3 r4 C5 C6 r7 ...
+        }
+        // Bit order = r0 r1 r2 r5 r6 C3 C4 C7 ... C0 C1 C2 r3 r4 C5 C6 r7 ...
+        rc3456_address_bit_rotate_swap<16>(*this, base, end);
+        // Bit order = r0 r1 r2 r4 r5 r6 C3 C7 ... C0 C1 C2 r3 C4 C5 C6 r7 ...
+        rc3456_address_bit_rotate_swap<8>(*this, base, end);
+        // Bit order = r0 r1 r2 r3 r4 r5 r6 C7 ... C0 C1 C2 C3 C4 C5 C6 r7 ...
+    }
+    // Bit order = r0 r1 r2 r3 r4 r5 r6 C7 ... C0 C1 C2 C3 C4 C5 C6 r7 ...
+    rc_address_word_swap<__m128i>(*this);
+    // Bit order = r0 r1 r2 r3 r4 r5 r6 r7 ... C0 C1 C2 C3 C4 C5 C6 C7 ...
 }
 
 simd_bit_table simd_bit_table::from_quadrants(

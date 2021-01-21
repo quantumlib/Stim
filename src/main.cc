@@ -222,12 +222,32 @@ void time_transpose_blockwise(size_t blocks) {
 }
 
 void time_transpose_tableau(size_t num_qubits) {
-    std::cerr << "transpose_tableau(num_qubits=" << num_qubits << "; ";
+    std::cerr << "transpose_tableau(num_qubits=" << num_qubits << ")\n";
 
     Tableau tableau(num_qubits);
     std::cerr << (tableau.xs.xt.data.num_bits_padded() * 4 / 8 / 1024 / 1024) << "MiB)\n";
     auto f = PerfResult::time([&](){
         TableauTransposedRaii temp(tableau);
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
+void time_transpose_data_1(size_t diameter) {
+    std::cerr << "transpose_data_NEW(diam=" << diameter << ")\n";
+    simd_bit_table table(diameter, diameter);
+    auto f = PerfResult::time([&](){
+        table.do_square_transpose();
+    });
+    std::cerr << f;
+    std::cerr << "\n";
+}
+
+void time_transpose_data_2(size_t diameter) {
+    std::cerr << "transpose_data_existing(diam=" << diameter << ")\n";
+    simd_bit_table table(diameter, diameter);
+    auto f = PerfResult::time([&](){
+        transpose_bit_matrix(table.data.u64, table.num_major_bits_padded());
     });
     std::cerr << f;
     std::cerr << "\n";
@@ -319,8 +339,10 @@ void bulk_sample(size_t num_samples, SampleFormat format, FILE *in, FILE *out, s
 void profile() {
 //    time_transpose_blockwise(100);
 //    time_transpose_tableau(20000);
+    time_transpose_data_1(20000);
+    time_transpose_data_2(20000);
 //    time_pauli_multiplication(100000);
-    time_pauli_multiplication(1000000);
+//    time_pauli_multiplication(1000000);
 //    time_pauli_multiplication(10000000);
 //    time_memcpy(100000);
 //    time_memcpy(1000000);

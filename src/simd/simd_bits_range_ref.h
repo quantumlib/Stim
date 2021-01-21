@@ -40,13 +40,21 @@ struct simd_bits_range_ref {
     bool not_zero() const;
 
     /// Returns a reference to a given bit within the referenced range.
-    bit_ref operator[](size_t k);
+    inline bit_ref operator[](size_t k) {
+        return bit_ref(u8, k);
+    }
     /// Returns a const reference to a given bit within the referenced range.
-    const bit_ref operator[](size_t k) const;
-    /// Returns a const reference to a sub-range of the bits in the referenced range.
-    const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const;
+    inline const bit_ref operator[](size_t k) const {
+        return bit_ref(u8, k);
+    }
     /// Returns a reference to a sub-range of the bits in the referenced range.
-    simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words);
+    inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
+        return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
+    }
+    /// Returns a const reference to a sub-range of the bits in the referenced range.
+    inline const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
+        return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
+    }
 
     /// Sets all bits in the referenced range to zero.
     void clear();

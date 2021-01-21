@@ -108,14 +108,6 @@ const bit_ref simd_bits::operator[](size_t k) const {
     return bit_ref(u64, k);
 }
 
-simd_bits_range_ref simd_bits::word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
-    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
-}
-
-const simd_bits_range_ref simd_bits::word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
-    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
-}
-
 simd_bits::operator simd_bits_range_ref() {
     return simd_bits_range_ref(ptr_simd, num_simd_words);
 }

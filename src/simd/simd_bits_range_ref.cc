@@ -45,22 +45,6 @@ bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const {
     return !(*this == other);
 }
 
-bit_ref simd_bits_range_ref::operator[](size_t k) {
-    return bit_ref(u8, k);
-}
-
-const bit_ref simd_bits_range_ref::operator[](size_t k) const {
-    return bit_ref(u8, k);
-}
-
-simd_bits_range_ref simd_bits_range_ref::word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
-    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
-}
-
-const simd_bits_range_ref simd_bits_range_ref::word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
-    return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
-}
-
 std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m) {
     for (size_t k = 0; k < m.num_bits_padded(); k++) {
         out << "_1"[m[k]];

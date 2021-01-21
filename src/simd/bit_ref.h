@@ -20,20 +20,42 @@ struct bit_ref {
     bit_ref(void *base, size_t offset);
 
     /// Copy assignment.
-    bit_ref &operator=(bool value);
+    inline bit_ref &operator=(bool value) {
+        *byte &= ~((uint8_t)1 << bit_index);
+        *byte |= (uint8_t)value << bit_index;
+        return *this;
+    }
     /// Copy assignment.
-    bit_ref &operator=(const bit_ref &value);
+    inline bit_ref &operator=(const bit_ref &value) {
+        *this = (bool)value;
+        return *this;
+    }
     /// Xor assignment.
-    bit_ref &operator^=(bool value);
+    inline bit_ref &operator^=(bool value) {
+        *byte ^= (uint8_t)value << bit_index;
+        return *this;
+    }
     /// Bitwise-and assignment.
-    bit_ref &operator&=(bool value);
+    inline bit_ref &operator&=(bool value) {
+        *byte &= (uint8_t)value << bit_index;
+        return *this;
+    }
     /// Bitwise-or assignment.
-    bit_ref &operator|=(bool value);
+    inline bit_ref &operator|=(bool value) {
+        *byte |= (uint8_t)value << bit_index;
+        return *this;
+    }
     /// Swap assignment.
-    void swap_with(bit_ref other);
+    inline void swap_with(bit_ref other) {
+        bool b = (bool)other;
+        other = (bool)*this;
+        *this = b;
+    }
 
     /// Implicit conversion to bool.
-    operator bool() const; // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+    inline operator bool() const {  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+        return (*byte >> bit_index) & 1;
+    }
 };
 
 #endif

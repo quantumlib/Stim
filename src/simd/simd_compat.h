@@ -62,9 +62,23 @@ struct simd_word_256 {
         return {_mm256_andnot_si256(val, other.val)};
     }
 
+    inline simd_word_256 leftshift_tile64(uint8_t offset) {
+        return {_mm256_slli_epi64(val, offset)};
+    }
+
+    inline simd_word_256 rightshift_tile64(uint8_t offset) {
+        return {_mm256_srli_epi64(val, offset)};
+    }
+
     inline uint16_t popcount() const {
         auto p = (uint64_t *)&val;
         return std::popcount(p[0]) + std::popcount(p[1]) + std::popcount(p[2]) + std::popcount(p[3]);
+    }
+
+    inline void interleave8_128_with(simd_word_256 &other) {
+        auto t = _mm256_unpackhi_epi8(val, other.val);
+        val = _mm256_unpacklo_epi8(val, other.val);
+        other.val = t;
     }
 };
 
@@ -126,6 +140,12 @@ struct simd_word_128 {
     inline uint16_t popcount() const {
         auto p = (uint64_t *)&val;
         return std::popcount(p[0]) + std::popcount(p[1]);
+    }
+
+    inline void interleave8_128_with(simd_word_128 &other) {
+        auto t = _mm_unpackhi_epi8(val, other.val);
+        val = _mm_unpacklo_epi8(val, other.val);
+        other.val = t;
     }
 };
 

@@ -50,6 +50,14 @@ void mat256_permute_address_rotate_c3_c4_c5_c6_swap_c6_rk(uint64_t *matrix256x25
     }
 }
 
+constexpr uint64_t interleave_mask(size_t step) {
+    uint64_t result = (1ULL << step) - 1;
+    while (step < 32) {
+        step <<= 1;
+        result |= result << step;
+    }
+    return result;
+}
 /// Permutes a bit-packed matrix block to swap a column address bit for a row address bit.
 ///
 /// Args:

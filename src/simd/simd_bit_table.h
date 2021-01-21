@@ -26,9 +26,13 @@ struct simd_bit_table {
     bool operator!=(const simd_bit_table &other) const;
 
     /// Returns a reference to a row (column) of the table, when using row (column) major indexing.
-    simd_bits_range_ref operator[](size_t major_index);
+    inline simd_bits_range_ref operator[](size_t major_index) {
+        return data.word_range_ref(major_index * num_simd_words_minor, num_simd_words_minor);
+    }
     /// Returns a const reference to a row (column) of the table, when using row (column) major indexing.
-    const simd_bits_range_ref operator[](size_t major_index) const;
+    inline const simd_bits_range_ref operator[](size_t major_index) const {
+        return data.word_range_ref(major_index * num_simd_words_minor, num_simd_words_minor);
+    }
 
     /// Square matrix multiplication (assumes row major indexing). n is the diameter of the matrix.
     simd_bit_table square_mat_mul(const simd_bit_table &rhs, size_t n) const;
