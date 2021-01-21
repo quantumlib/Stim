@@ -27,67 +27,64 @@ void Tableau::prepend(const SparsePauliString &op) {
 }
 
 void Tableau::prepend_H_XZ(const size_t q) {
-    auto z = zs[q];
-    xs[q].swap_with(z);
+    xs[q].swap_with(zs[q]);
 }
 
 void Tableau::prepend_H_YZ(const size_t q) {
-    auto x = xs[q];
-    auto z = zs[q];
-    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x);
+    PauliStringRef x = xs[q];
+    PauliStringRef z = zs[q];
+    uint8_t m = z.inplace_right_mul_returning_log_i_scalar(x);
     x.sign_ref ^= 1;
     z.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_H_XY(const size_t q) {
-    auto x = xs[q];
-    auto z = zs[q];
-    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z);
+    PauliStringRef x = xs[q];
+    PauliStringRef z = zs[q];
+    uint8_t m = x.inplace_right_mul_returning_log_i_scalar(z);
     z.sign_ref ^= 1;
-    x.sign_ref ^= m & 2;
+    x.sign_ref ^= !(m & 2);
 }
 
 void Tableau::prepend_SQRT_X(size_t q) {
-    auto z = zs[q];
-    uint8_t m = 1 + z.inplace_right_mul_returning_log_i_scalar(xs[q]);
-    z.sign_ref ^= m & 2;
+    PauliStringRef z = zs[q];
+    uint8_t m = z.inplace_right_mul_returning_log_i_scalar(xs[q]);
+    z.sign_ref ^= !(m & 2);
 }
 
 void Tableau::prepend_SQRT_X_DAG(size_t q) {
-    auto z = zs[q];
-    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(xs[q]);
+    PauliStringRef z = zs[q];
+    uint8_t m = z.inplace_right_mul_returning_log_i_scalar(xs[q]);
     z.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_SQRT_Y(size_t q) {
-    auto z = zs[q];
+    PauliStringRef z = zs[q];
     z.sign_ref ^= 1;
     xs[q].swap_with(z);
 }
 
 void Tableau::prepend_SQRT_Y_DAG(size_t q) {
-    auto z = zs[q];
+    PauliStringRef z = zs[q];
     xs[q].swap_with(z);
     z.sign_ref ^= 1;
 }
 
 void Tableau::prepend_SQRT_Z(size_t q) {
-    auto x = xs[q];
-    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(zs[q]);
-    x.sign_ref ^= m & 2;
+    PauliStringRef x = xs[q];
+    uint8_t m = x.inplace_right_mul_returning_log_i_scalar(zs[q]);
+    x.sign_ref ^= !(m & 2);
 }
 
 void Tableau::prepend_SQRT_Z_DAG(size_t q) {
-    auto x = xs[q];
-    uint8_t m = 3 + x.inplace_right_mul_returning_log_i_scalar(zs[q]);
+    PauliStringRef x = xs[q];
+    uint8_t m = x.inplace_right_mul_returning_log_i_scalar(zs[q]);
     x.sign_ref ^= m & 2;
 }
 
 void Tableau::prepend_SWAP(size_t q1, size_t q2) {
-    auto z2 = zs[q2];
-    auto x2 = xs[q2];
-    zs[q1].swap_with(z2);
-    xs[q1].swap_with(x2);
+    zs[q1].swap_with(zs[q2]);
+    xs[q1].swap_with(xs[q2]);
 }
 
 void Tableau::prepend_ISWAP(size_t q1, size_t q2) {

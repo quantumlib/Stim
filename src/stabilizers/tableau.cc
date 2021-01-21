@@ -9,11 +9,9 @@
 #include "tableau_transposed_raii.h"
 
 void Tableau::expand(size_t new_num_qubits) {
+    // If the new qubits fit inside the padding, just extend into it.
     assert(new_num_qubits >= num_qubits);
-    size_t old_num_qubits = num_qubits;
-    size_t old_num_simd_words = ceil256(old_num_qubits) >> 8;
-    size_t new_num_simd_words = ceil256(new_num_qubits) >> 8;
-    if (old_num_simd_words == new_num_simd_words) {
+    if (new_num_qubits <= xs.xt.num_major_bits_padded()) {
         for (size_t k = num_qubits; k < new_num_qubits; k++) {
             xs[k].x_ref[k] = true;
             zs[k].z_ref[k] = true;
@@ -22,17 +20,24 @@ void Tableau::expand(size_t new_num_qubits) {
         return;
     }
 
+    // Move state to temporary storage then re-allocate to make room for additional qubits.
+    size_t old_num_simd_words = xs.xt.num_simd_words_major;
+    size_t old_num_qubits = num_qubits;
     Tableau old_state = std::move(*this);
     this->~Tableau();
     new(this) Tableau(new_num_qubits);
 
-    xs.signs.word_range_ref(0, old_num_simd_words) = old_state.xs.signs;
-    zs.signs.word_range_ref(0, old_num_simd_words) = old_state.zs.signs;
+    // Copy stored state back into new larger space.
+    auto partial_copy = [=](simd_bits_range_ref dst, simd_bits_range_ref src) {
+        dst.word_range_ref(0, old_num_simd_words) = src;
+    };
+    partial_copy(xs.signs, old_state.xs.signs);
+    partial_copy(zs.signs, old_state.zs.signs);
     for (size_t k = 0; k < old_num_qubits; k++) {
-        xs[k].x_ref.word_range_ref(0, old_num_simd_words) = old_state.xs[k].x_ref;
-        xs[k].z_ref.word_range_ref(0, old_num_simd_words) = old_state.xs[k].z_ref;
-        zs[k].x_ref.word_range_ref(0, old_num_simd_words) = old_state.zs[k].x_ref;
-        zs[k].z_ref.word_range_ref(0, old_num_simd_words) = old_state.zs[k].z_ref;
+        partial_copy(xs[k].x_ref, old_state.xs[k].x_ref);
+        partial_copy(xs[k].z_ref, old_state.xs[k].z_ref);
+        partial_copy(zs[k].x_ref, old_state.zs[k].x_ref);
+        partial_copy(zs[k].z_ref, old_state.zs[k].z_ref);
     }
 }
 

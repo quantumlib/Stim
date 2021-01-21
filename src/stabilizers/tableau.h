@@ -109,6 +109,10 @@ struct Tableau {
     ///     target_qubits: The qubits being acted on by `operation`.
     void inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits);
 
+    /// Applies a transpose to the X2X, X2Z, Z2X, and Z2Z bit tables within the tableau.
+    void do_transpose_quadrants();
+
+    /// === Specialized vectorized methods for prepending operations onto the tableau === ///
     void prepend_SWAP(size_t q1, size_t q2);
     void prepend_X(size_t q);
     void prepend_Y(size_t q);
@@ -135,8 +139,6 @@ struct Tableau {
     void prepend_YCZ(size_t control, size_t target);
     void prepend(const PauliStringRef &op);
     void prepend(const SparsePauliString &op);
-
-    void do_transpose_quadrants();
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
