@@ -1,4 +1,5 @@
 #include <complex>
+#include "gate_data.h"
 #include "sim_tableau.h"
 #include "sim_vector.h"
 #include "sim_bulk_pauli_frame.h"

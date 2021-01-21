@@ -6,62 +6,7 @@
 #include <thread>
 #include "pauli_string.h"
 #include "tableau.h"
-
-void do_transpose(Tableau &tableau) {
-    size_t n = ceil256(tableau.num_qubits);
-    if (n >= 1024) {
-        std::thread t1([&]() { tableau.xs.xt.do_square_transpose(); });
-        std::thread t2([&]() { tableau.xs.zt.do_square_transpose(); });
-        std::thread t3([&]() { tableau.zs.xt.do_square_transpose(); });
-        tableau.zs.zt.do_square_transpose();
-        t1.join();
-        t2.join();
-        t3.join();
-    } else {
-        tableau.xs.xt.do_square_transpose();
-        tableau.xs.zt.do_square_transpose();
-        tableau.zs.xt.do_square_transpose();
-        tableau.zs.zt.do_square_transpose();
-    }
-}
-
-TransposedTableauXZ TempTransposedTableauRaii::transposed_xz_ptr(size_t qubit) const {
-    PauliStringRef x(tableau.xs[qubit]);
-    PauliStringRef z(tableau.zs[qubit]);
-    return {{
-        {x.x_ref.u256, x.z_ref.u256, tableau.xs.signs.u256},
-        {z.x_ref.u256, z.z_ref.u256, tableau.zs.signs.u256}
-    }};
-}
-
-TempTransposedTableauRaii::TempTransposedTableauRaii(Tableau &tableau) : tableau(tableau) {
-    do_transpose(tableau);
-}
-
-TempTransposedTableauRaii::~TempTransposedTableauRaii() {
-    do_transpose(tableau);
-}
-
-void TempTransposedTableauRaii::append_CX(size_t control, size_t target) {
-    auto pcs = transposed_xz_ptr(control);
-    auto pts = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.xz[k];
-        auto pt = pts.xz[k];
-        auto s = pc.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= _mm256_andnot_si256(*pc.z ^ *pt.x, *pc.x & *pt.z);
-            *pc.z ^= *pt.z;
-            *pt.x ^= *pc.x;
-            pc.x++;
-            pc.z++;
-            pt.x++;
-            pt.z++;
-            s++;
-        }
-    }
-}
+#include "tableau_transposed_raii.h"
 
 void Tableau::expand(size_t new_num_qubits) {
     assert(new_num_qubits >= num_qubits);
@@ -91,130 +36,6 @@ void Tableau::expand(size_t new_num_qubits) {
     }
 }
 
-void TempTransposedTableauRaii::append_CY(size_t control, size_t target) {
-    auto pcs = transposed_xz_ptr(control);
-    auto pts = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.xz[k];
-        auto pt = pts.xz[k];
-        auto s = pc.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= *pc.x & (*pc.z ^ *pt.x) & (*pt.z ^ *pt.x);
-            *pc.z ^= *pt.x;
-            *pc.z ^= *pt.z;
-            *pt.x ^= *pc.x;
-            *pt.z ^= *pc.x;
-            pc.x++;
-            pc.z++;
-            pt.x++;
-            pt.z++;
-            s++;
-        }
-    }
-}
-
-void TempTransposedTableauRaii::append_CZ(size_t control, size_t target) {
-    auto pcs = transposed_xz_ptr(control);
-    auto pts = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.xz[k];
-        auto pt = pts.xz[k];
-        auto s = pc.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= *pc.x & *pt.x & (*pc.z ^ *pt.z);
-            *pc.z ^= *pt.x;
-            *pt.z ^= *pc.x;
-            pc.x++;
-            pc.z++;
-            pt.x++;
-            pt.z++;
-            s++;
-        }
-    }
-}
-
-void TempTransposedTableauRaii::append_SWAP(size_t q1, size_t q2) {
-    auto p1s = transposed_xz_ptr(q1);
-    auto p2s = transposed_xz_ptr(q2);
-    for (size_t k = 0; k < 2; k++) {
-        auto p1 = p1s.xz[k];
-        auto p2 = p2s.xz[k];
-        auto end = p1.x + (ceil256(tableau.num_qubits) >> 8);
-        while (p1.x != end) {
-            std::swap(*p1.x, *p2.x);
-            std::swap(*p1.z, *p2.z);
-            p1.x++;
-            p1.z++;
-            p2.x++;
-            p2.z++;
-        }
-    }
-}
-
-void TempTransposedTableauRaii::append_H_XY(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= _mm256_andnot_si256(*p.x, *p.z);
-            *p.z ^= *p.x;
-            p.x++;
-            p.z++;
-            s++;
-        }
-    }
-}
-
-void TempTransposedTableauRaii::append_H_YZ(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= _mm256_andnot_si256(*p.z, *p.x);
-            *p.x ^= *p.z;
-            p.x++;
-            p.z++;
-            s++;
-        }
-    }
-}
-
-void TempTransposedTableauRaii::append_H(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            std::swap(*p.x, *p.z);
-            *s ^= *p.x & *p.z;
-            p.x++;
-            p.z++;
-            s++;
-        }
-    }
-}
-
-void TempTransposedTableauRaii::append_X(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= *p.z;
-            p.z++;
-            s++;
-        }
-    }
-}
-
 PauliStringRef TableauHalf::operator[](size_t input_qubit) {
     return PauliStringRef(num_qubits, signs[input_qubit], xt[input_qubit], zt[input_qubit]);
 }
@@ -225,22 +46,6 @@ const PauliStringRef TableauHalf::operator[](size_t input_qubit) const {
 
 bool Tableau::z_sign(size_t a) const {
     return zs.signs[a];
-}
-
-bool TempTransposedTableauRaii::z_sign(size_t a) const {
-    return tableau.z_sign(a);
-}
-
-bool TempTransposedTableauRaii::z_obs_x_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.zs.xt[output_qubit][input_qubit];
-}
-
-bool TempTransposedTableauRaii::x_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.xs.zt[output_qubit][input_qubit];
-}
-
-bool TempTransposedTableauRaii::z_obs_z_bit(size_t input_qubit, size_t output_qubit) const {
-    return tableau.zs.zt[output_qubit][input_qubit];
 }
 
 PauliStringVal Tableau::eval_y_obs(size_t qubit) const {
@@ -365,157 +170,6 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
         xs[target_qubits[q]] = new_x[q];
         zs[target_qubits[q]] = new_z[q];
     }
-}
-
-void Tableau::prepend_SQRT_X(size_t q) {
-    auto z = zs[q];
-    uint8_t m = 1 + z.inplace_right_mul_returning_log_i_scalar(xs[q]);
-    z.sign_ref ^= m & 2;
-}
-
-void Tableau::prepend_SQRT_X_DAG(size_t q) {
-    auto z = zs[q];
-    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(xs[q]);
-    z.sign_ref ^= m & 2;
-}
-
-void Tableau::prepend_SQRT_Y(size_t q) {
-    auto z = zs[q];
-    z.sign_ref ^= 1;
-    xs[q].swap_with(z);
-}
-
-void Tableau::prepend_SQRT_Y_DAG(size_t q) {
-    auto z = zs[q];
-    xs[q].swap_with(z);
-    z.sign_ref ^= 1;
-}
-
-void Tableau::prepend_SQRT_Z(size_t q) {
-    auto x = xs[q];
-    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(zs[q]);
-    x.sign_ref ^= m & 2;
-}
-
-void Tableau::prepend_SQRT_Z_DAG(size_t q) {
-    auto x = xs[q];
-    uint8_t m = 3 + x.inplace_right_mul_returning_log_i_scalar(zs[q]);
-    x.sign_ref ^= m & 2;
-}
-
-void Tableau::prepend_SWAP(size_t q1, size_t q2) {
-    auto z2 = zs[q2];
-    auto x2 = xs[q2];
-    zs[q1].swap_with(z2);
-    xs[q1].swap_with(x2);
-}
-
-void Tableau::prepend_CX(size_t control, size_t target) {
-    zs[target] *= zs[control];
-    xs[control] *= xs[target];
-}
-
-void Tableau::prepend_CY(size_t control, size_t target) {
-    prepend_H_YZ(target);
-    prepend_CZ(control, target);
-    prepend_H_YZ(target);
-}
-
-void Tableau::prepend_CZ(size_t control, size_t target) {
-    xs[target] *= zs[control];
-    xs[control] *= zs[target];
-}
-
-void Tableau::prepend_ISWAP(size_t q1, size_t q2) {
-    prepend_SWAP(q1, q2);
-    prepend_CZ(q1, q2);
-    prepend_SQRT_Z(q1);
-    prepend_SQRT_Z(q2);
-}
-
-void Tableau::prepend_ISWAP_DAG(size_t q1, size_t q2) {
-    prepend_SWAP(q1, q2);
-    prepend_CZ(q1, q2);
-    prepend_SQRT_Z_DAG(q1);
-    prepend_SQRT_Z_DAG(q2);
-}
-
-void Tableau::prepend_H(const size_t q) {
-    auto z = zs[q];
-    xs[q].swap_with(z);
-}
-
-void Tableau::prepend_H_YZ(const size_t q) {
-    auto x = xs[q];
-    auto z = zs[q];
-    uint8_t m = 3 + z.inplace_right_mul_returning_log_i_scalar(x);
-    x.sign_ref ^= 1;
-    z.sign_ref ^= m & 2;
-}
-
-void Tableau::prepend_H_XY(const size_t q) {
-    auto x = xs[q];
-    auto z = zs[q];
-    uint8_t m = 1 + x.inplace_right_mul_returning_log_i_scalar(z);
-    z.sign_ref ^= 1;
-    x.sign_ref ^= m & 2;
-}
-
-void Tableau::prepend(const PauliStringRef &op) {
-    assert(op.num_qubits == num_qubits);
-    zs.signs ^= op.x_ref;
-    xs.signs ^= op.z_ref;
-}
-
-void Tableau::prepend(const SparsePauliString &op) {
-    for (const auto &p : op.indexed_words) {
-        zs.signs.u64[p.index64] ^= p.wx;
-        xs.signs.u64[p.index64] ^= p.wz;
-    }
-}
-
-void Tableau::prepend_X(size_t q) {
-    zs[q].sign_ref ^= 1;
-}
-
-void Tableau::prepend_Y(size_t q) {
-    xs[q].sign_ref ^= 1;
-    zs[q].sign_ref ^= 1;
-}
-
-void Tableau::prepend_Z(size_t q) {
-    xs[q].sign_ref ^= 1;
-}
-
-void Tableau::prepend_XCX(size_t control, size_t target) {
-    zs[target] *= xs[control];
-    zs[control] *= xs[target];
-}
-
-void Tableau::prepend_XCY(size_t control, size_t target) {
-    prepend_H_XY(target);
-    prepend_XCX(control, target);
-    prepend_H_XY(target);
-}
-
-void Tableau::prepend_XCZ(size_t control, size_t target) {
-    prepend_CX(target, control);
-}
-
-void Tableau::prepend_YCX(size_t control, size_t target) {
-    prepend_XCY(target, control);
-}
-
-void Tableau::prepend_YCY(size_t control, size_t target) {
-    prepend_H_YZ(control);
-    prepend_H_YZ(target);
-    prepend_CZ(control, target);
-    prepend_H_YZ(target);
-    prepend_H_YZ(control);
-}
-
-void Tableau::prepend_YCZ(size_t control, size_t target) {
-    prepend_CY(target, control);
 }
 
 PauliStringVal Tableau::scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const {
@@ -725,7 +379,7 @@ Tableau Tableau::inverse() const {
     result.xs.zt.data = xs.zt.data;
     result.zs.xt.data = zs.xt.data;
     result.zs.zt.data = xs.xt.data;
-    do_transpose(result);
+    result.do_transpose_quadrants();
 
     // Fix signs by checking for consistent round trips.
     PauliStringVal singleton(num_qubits);
@@ -742,4 +396,21 @@ Tableau Tableau::inverse() const {
     }
 
     return result;
+}
+
+void Tableau::do_transpose_quadrants() {
+    if (num_qubits >= 1024) {
+        std::thread t1([&]() { xs.xt.do_square_transpose(); });
+        std::thread t2([&]() { xs.zt.do_square_transpose(); });
+        std::thread t3([&]() { zs.xt.do_square_transpose(); });
+        zs.zt.do_square_transpose();
+        t1.join();
+        t2.join();
+        t3.join();
+    } else {
+        xs.xt.do_square_transpose();
+        xs.zt.do_square_transpose();
+        zs.xt.do_square_transpose();
+        zs.zt.do_square_transpose();
+    }
 }

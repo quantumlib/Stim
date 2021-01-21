@@ -25,7 +25,7 @@ struct TableauHalf {
 ///
 /// The memory layout used by this class is column major, meaning iterating over
 /// the output observable is iterating along the grain of memory. This makes
-/// prepending operations cheap. To append operations, use TempTransposedTableauRaii.
+/// prepending operations cheap. To append operations, use TableauTransposedRaii.
 struct Tableau {
     size_t num_qubits;
     TableauHalf xs;
@@ -113,7 +113,7 @@ struct Tableau {
     void prepend_X(size_t q);
     void prepend_Y(size_t q);
     void prepend_Z(size_t q);
-    void prepend_H(size_t q);
+    void prepend_H_XZ(const size_t q);
     void prepend_H_YZ(size_t q);
     void prepend_H_XY(size_t q);
     void prepend_SQRT_X(size_t q);
@@ -137,54 +137,13 @@ struct Tableau {
     void prepend(const SparsePauliString &op);
 
     bool z_sign(size_t a) const;
-};
 
-struct TransposedPauliStringPtr {
-    __m256i *x;
-    __m256i *z;
-    __m256i *s;
-};
-
-struct TransposedTableauXZ {
-    TransposedPauliStringPtr xz[2];
+    void do_transpose_quadrants();
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
 /// Tableaus for common gates, keyed by name.
 extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
-extern const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES;
-
-/// When this class is constructed, it transposes the tableau given to it.
-/// The transpose is undone on deconstruction.
-///
-/// This is useful when appending operations to the tableau, since otherwise
-/// the append would be working against the grain of memory.
-struct TempTransposedTableauRaii {
-    Tableau &tableau;
-
-    explicit TempTransposedTableauRaii(Tableau &tableau);
-    ~TempTransposedTableauRaii();
-
-    TempTransposedTableauRaii() = delete;
-    TempTransposedTableauRaii(const TempTransposedTableauRaii &) = delete;
-    TempTransposedTableauRaii(TempTransposedTableauRaii &&) = delete;
-
-    TransposedTableauXZ transposed_xz_ptr(size_t qubit) const;
-
-    bool z_sign(size_t a) const;
-    bool x_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
-    bool z_obs_x_bit(size_t input_qubit, size_t output_qubit) const;
-    bool z_obs_z_bit(size_t input_qubit, size_t output_qubit) const;
-
-    void append_H(size_t q);
-    void append_H_XY(size_t q);
-    void append_H_YZ(size_t q);
-    void append_CX(size_t control, size_t target);
-    void append_CY(size_t control, size_t target);
-    void append_CZ(size_t control, size_t target);
-    void append_X(size_t q);
-    void append_SWAP(size_t q1, size_t q2);
-};
 
 #endif

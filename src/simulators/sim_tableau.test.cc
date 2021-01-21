@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "sim_tableau.h"
+#include "../simulators/gate_data.h"
 #include "../test_util.test.h"
 
 TEST(SimTableau, identity) {

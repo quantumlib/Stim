@@ -1,5 +1,7 @@
-#include "sim_tableau.h"
 #include <queue>
+
+#include "gate_data.h"
+#include "sim_tableau.h"
 
 SimTableau::SimTableau(size_t num_qubits, std::mt19937 &rng) : inv_state(Tableau::identity(num_qubits)), rng(rng) {
 }
@@ -31,7 +33,7 @@ void SimTableau::reset(const std::vector<size_t> &targets) {
 
 void SimTableau::H(const std::vector<size_t> &targets) {
     for (auto q : targets) {
-        inv_state.prepend_H(q);
+        inv_state.prepend_H_XZ(q);
     }
 }
 
@@ -292,7 +294,7 @@ void SimTableau::collapse_many(const std::vector<size_t> &targets, float bias) {
         }
     }
     if (!collapse_targets.empty()) {
-        TempTransposedTableauRaii temp_transposed(inv_state);
+        TableauTransposedRaii temp_transposed(inv_state);
         for (auto target : collapse_targets) {
             collapse_while_transposed(target, temp_transposed, nullptr, bias);
         }
@@ -312,7 +314,7 @@ std::vector<SparsePauliString> SimTableau::inspected_collapse(
         }
     }
     if (!remaining.empty()) {
-        TempTransposedTableauRaii temp_transposed(inv_state);
+        TableauTransposedRaii temp_transposed(inv_state);
         do {
             auto k = remaining.front();
             remaining.pop();
@@ -325,7 +327,7 @@ std::vector<SparsePauliString> SimTableau::inspected_collapse(
 
 void SimTableau::collapse_while_transposed(
         size_t target,
-        TempTransposedTableauRaii &temp_transposed,
+        TableauTransposedRaii &temp_transposed,
         SparsePauliString *destabilizer_out,
         float else_bias) {
     auto n = inv_state.num_qubits;

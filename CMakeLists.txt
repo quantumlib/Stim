@@ -20,6 +20,8 @@ set(SOURCE_FILES_NO_MAIN
         src/simulators/sim_vector.cc
         src/stabilizers/pauli_string.cc
         src/stabilizers/tableau.cc
+        src/stabilizers/tableau_specialized_prepend.cc
+        src/stabilizers/tableau_transposed_raii.cc
         )
 set(TEST_FILES
         src/arg_parse.test.cc

@@ -11,6 +11,7 @@
 #include <random>
 #include "../circuit.h"
 #include "sim_vector.h"
+#include "../stabilizers/tableau_transposed_raii.h"
 
 struct SimTableau {
     Tableau inv_state;
@@ -61,7 +62,7 @@ private:
     void collapse_many(const std::vector<size_t> &targets, float bias);
     void collapse_while_transposed(
             size_t target,
-            TempTransposedTableauRaii &temp_transposed,
+            TableauTransposedRaii &temp_transposed,
             SparsePauliString *destabilizer_out,
             float else_bias);
 };
