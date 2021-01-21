@@ -365,8 +365,8 @@ void SimTableau::collapse_while_transposed(
         *destabilizer_out = PauliStringRef(
                 n,
                 bit_ref(&sign, 0),
-                simd_bits_range_ref(t.xz[1].z, ceil256(inv_state.num_qubits) >> 8),
-                simd_bits_range_ref(t.xz[0].z, ceil256(inv_state.num_qubits) >> 8)).sparse();
+                t.xz[1].z,
+                t.xz[0].z).sparse();
     } else {
         auto coin_flip = std::bernoulli_distribution(else_bias)(rng);
         if (sign != coin_flip) {

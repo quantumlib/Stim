@@ -19,6 +19,7 @@ struct simd_bits_range_ref {
         uint64_t *const u64;
         __m128i *const u128;
         __m256i *const u256;
+        __m256i *const ptr_simd;
     };
     const size_t num_simd_words;
 
@@ -90,7 +91,11 @@ struct simd_bits_range_ref {
     }
 
     template <typename BODY>
-    inline void for_each_word(simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, BODY body) const {
+    inline void for_each_word(
+            simd_bits_range_ref other1,
+            simd_bits_range_ref other2,
+            simd_bits_range_ref other3,
+            BODY body) const {
         auto v0 = u256;
         auto v1 = other1.u256;
         auto v2 = other2.u256;

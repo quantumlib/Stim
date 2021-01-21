@@ -11,8 +11,8 @@ TransposedTableauXZ TableauTransposedRaii::transposed_xz_ptr(size_t qubit) const
     PauliStringRef x(tableau.xs[qubit]);
     PauliStringRef z(tableau.zs[qubit]);
     return {{
-        {x.x_ref.u256, x.z_ref.u256, tableau.xs.signs.u256},
-        {z.x_ref.u256, z.z_ref.u256, tableau.zs.signs.u256}
+        {x.x_ref, x.z_ref, tableau.xs.signs},
+        {z.x_ref, z.z_ref, tableau.zs.signs}
     }};
 }
 
@@ -24,149 +24,110 @@ TableauTransposedRaii::~TableauTransposedRaii() {
     tableau.do_transpose_quadrants();
 }
 
-void TableauTransposedRaii::append_CX(size_t control, size_t target) {
-    auto pcs = transposed_xz_ptr(control);
-    auto pts = transposed_xz_ptr(target);
+template <typename BODY>
+inline void for_each_trans_obs(
+        TableauTransposedRaii &trans,
+        size_t q,
+        BODY body) {
+    auto ps = trans.transposed_xz_ptr(q);
     for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.xz[k];
-        auto pt = pts.xz[k];
-        auto s = pc.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= _mm256_andnot_si256(*pc.z ^ *pt.x, *pc.x & *pt.z);
-            *pc.z ^= *pt.z;
-            *pt.x ^= *pc.x;
-            pc.x++;
-            pc.z++;
-            pt.x++;
-            pt.z++;
+        auto x = ps.xz[k].x.ptr_simd;
+        auto z = ps.xz[k].z.ptr_simd;
+        auto s = ps.xz[k].s.ptr_simd;
+        auto x_end = x + ps.xz[k].x.num_simd_words;
+        while (x != x_end) {
+            body(*x, *z, *s);
+            x++;
+            z++;
             s++;
         }
     }
+}
+
+template <typename BODY>
+inline void for_each_trans_obs(
+        TableauTransposedRaii &trans,
+        size_t q1,
+        size_t q2,
+        BODY body) {
+    auto p1s = trans.transposed_xz_ptr(q1);
+    auto p2s = trans.transposed_xz_ptr(q2);
+    for (size_t k = 0; k < 2; k++) {
+        auto x1 = p1s.xz[k].x.ptr_simd;
+        auto z1 = p1s.xz[k].z.ptr_simd;
+        auto x2 = p2s.xz[k].x.ptr_simd;
+        auto z2 = p2s.xz[k].z.ptr_simd;
+        auto s = p1s.xz[k].s.ptr_simd;
+        auto x1_end = x1 + p1s.xz[k].x.num_simd_words;
+        while (x1 != x1_end) {
+            body(*x1, *z1, *x2, *z2, *s);
+            x1++;
+            z1++;
+            x2++;
+            z2++;
+            s++;
+        }
+    }
+}
+
+void TableauTransposedRaii::append_CX(size_t control, size_t target) {
+    for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
+        s ^= _mm256_andnot_si256(cz ^ tx, cx & tz);
+        cz ^= tz;
+        tx ^= cx;
+    });
 }
 
 void TableauTransposedRaii::append_CY(size_t control, size_t target) {
-    auto pcs = transposed_xz_ptr(control);
-    auto pts = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.xz[k];
-        auto pt = pts.xz[k];
-        auto s = pc.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= *pc.x & (*pc.z ^ *pt.x) & (*pt.z ^ *pt.x);
-            *pc.z ^= *pt.x;
-            *pc.z ^= *pt.z;
-            *pt.x ^= *pc.x;
-            *pt.z ^= *pc.x;
-            pc.x++;
-            pc.z++;
-            pt.x++;
-            pt.z++;
-            s++;
-        }
-    }
+    for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
+        cz ^= tx;
+        s ^= cx & cz & (tx ^ tz);
+        cz ^= tz;
+        tx ^= cx;
+        tz ^= cx;
+    });
 }
 
 void TableauTransposedRaii::append_CZ(size_t control, size_t target) {
-    auto pcs = transposed_xz_ptr(control);
-    auto pts = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto pc = pcs.xz[k];
-        auto pt = pts.xz[k];
-        auto s = pc.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= *pc.x & *pt.x & (*pc.z ^ *pt.z);
-            *pc.z ^= *pt.x;
-            *pt.z ^= *pc.x;
-            pc.x++;
-            pc.z++;
-            pt.x++;
-            pt.z++;
-            s++;
-        }
-    }
+    for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
+        s ^= cx & tx & (cz ^ tz);
+        cz ^= tx;
+        tz ^= cx;
+    });
 }
 
 void TableauTransposedRaii::append_SWAP(size_t q1, size_t q2) {
-    auto p1s = transposed_xz_ptr(q1);
-    auto p2s = transposed_xz_ptr(q2);
-    for (size_t k = 0; k < 2; k++) {
-        auto p1 = p1s.xz[k];
-        auto p2 = p2s.xz[k];
-        auto end = p1.x + (ceil256(tableau.num_qubits) >> 8);
-        while (p1.x != end) {
-            std::swap(*p1.x, *p2.x);
-            std::swap(*p1.z, *p2.z);
-            p1.x++;
-            p1.z++;
-            p2.x++;
-            p2.z++;
-        }
-    }
+    for_each_trans_obs(*this, q1, q2, [](auto &x1, auto &z1, auto &x2, auto &z2, auto &s) {
+        std::swap(x1, x2);
+        std::swap(z1, z2);
+    });
 }
 
 void TableauTransposedRaii::append_H_XY(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= _mm256_andnot_si256(*p.x, *p.z);
-            *p.z ^= *p.x;
-            p.x++;
-            p.z++;
-            s++;
-        }
-    }
+    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+        s ^= _mm256_andnot_si256(x, z);
+        z ^= x;
+    });
 }
 
 void TableauTransposedRaii::append_H_YZ(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= _mm256_andnot_si256(*p.z, *p.x);
-            *p.x ^= *p.z;
-            p.x++;
-            p.z++;
-            s++;
-        }
-    }
+    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+        s ^= _mm256_andnot_si256(z, x);
+        x ^= z;
+    });
 }
 
 void TableauTransposedRaii::append_H(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            std::swap(*p.x, *p.z);
-            *s ^= *p.x & *p.z;
-            p.x++;
-            p.z++;
-            s++;
-        }
-    }
+    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+        std::swap(x, z);
+        s ^= x & z;
+    });
 }
 
 void TableauTransposedRaii::append_X(size_t target) {
-    auto ps = transposed_xz_ptr(target);
-    for (size_t k = 0; k < 2; k++) {
-        auto p = ps.xz[k];
-        auto s = p.s;
-        auto end = s + (ceil256(tableau.num_qubits) >> 8);
-        while (s != end) {
-            *s ^= *p.z;
-            p.z++;
-            s++;
-        }
-    }
+    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+        s ^= z;
+    });
 }
 
 bool TableauTransposedRaii::z_sign(size_t a) const {

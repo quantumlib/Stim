@@ -9,14 +9,14 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
-struct TransposedPauliStringPtr {
-    __m256i *x;
-    __m256i *z;
-    __m256i *s;
+struct TransposedPaulisRef {
+    simd_bits_range_ref x;
+    simd_bits_range_ref z;
+    simd_bits_range_ref s;
 };
 
 struct TransposedTableauXZ {
-    TransposedPauliStringPtr xz[2];
+    TransposedPaulisRef xz[2];
 };
 
 /// When this class is constructed, it transposes the tableau given to it.
