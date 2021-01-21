@@ -90,13 +90,13 @@ bool simd_bits::operator!=(const simd_bits_range_ref &other) const {
     return !(*this == other);
 }
 
-simd_bits simd_bits::random(size_t min_bits, std::mt19937& rng) {
+simd_bits simd_bits::random(size_t min_bits, std::mt19937_64 &rng) {
     simd_bits result(min_bits);
     result.randomize(min_bits, rng);
     return result;
 }
 
-void simd_bits::randomize(size_t num_bits, std::mt19937 &rng) {
+void simd_bits::randomize(size_t num_bits, std::mt19937_64 &rng) {
     simd_bits_range_ref(*this).randomize(num_bits, rng);
 }
 

@@ -23,10 +23,10 @@ struct SimBulkPauliFrames {
     simd_bit_table z_table;
     simd_bit_table m_table;
     simd_bits rng_buffer;
-    std::mt19937 &rng;
+    std::mt19937_64 &rng;
     bool results_block_transposed = false;
 
-    SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937 &rng);
+    SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
 
     PauliStringVal get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);

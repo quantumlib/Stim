@@ -2,4 +2,4 @@
 #include "stabilizers/pauli_string.h"
 #include <random>
 
-std::mt19937 &SHARED_TEST_RNG();
+std::mt19937_64 &SHARED_TEST_RNG();

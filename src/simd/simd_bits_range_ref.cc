@@ -58,15 +58,15 @@ std::string simd_bits_range_ref::str() const {
     return ss.str();
 }
 
-void simd_bits_range_ref::randomize(size_t num_bits, std::mt19937 &rng) {
-    auto n = num_bits >> 5;
+void simd_bits_range_ref::randomize(size_t num_bits, std::mt19937_64 &rng) {
+    auto n = num_bits >> 6;
     for (size_t k = 0; k < n; k++) {
-        u32[k] = rng();
+        u64[k] = rng();
     }
-    auto leftover = num_bits & 31;
+    auto leftover = num_bits & 63;
     if (leftover) {
-        uint32_t mask = ((uint32_t)1 << leftover) - 1;
-        u32[n] &= ~mask;
-        u32[n] |= rng() & mask;
+        uint64_t mask = ((uint64_t)1 << leftover) - 1;
+        u64[n] &= ~mask;
+        u64[n] |= rng() & mask;
     }
 }

@@ -28,8 +28,8 @@ struct PauliFrameProgram {
     static PauliFrameProgram from_stabilizer_circuit(const std::vector<Operation> &operations);
     std::string str() const;
 
-    std::vector<simd_bits> sample(size_t num_samples, std::mt19937 &rng);
-    void sample_out(size_t num_samples, FILE *out, SampleFormat format, std::mt19937 &rng);
+    std::vector<simd_bits> sample(size_t num_samples, std::mt19937_64 &rng);
+    void sample_out(size_t num_samples, FILE *out, SampleFormat format, std::mt19937_64 &rng);
 };
 
 std::ostream &operator<<(std::ostream &out, const PauliFrameProgram &ps);

@@ -231,7 +231,7 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     return s & 3;
 }
 
-PauliStringVal PauliStringVal::random(size_t num_qubits, std::mt19937& rng) {
+PauliStringVal PauliStringVal::random(size_t num_qubits, std::mt19937_64 &rng) {
     auto result = PauliStringVal(num_qubits);
     result.x_data.randomize(num_qubits, rng);
     result.z_data.randomize(num_qubits, rng);

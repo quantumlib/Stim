@@ -30,7 +30,7 @@ size_t SimBulkPauliFrames::recorded_bit_address(size_t sample_index, size_t meas
     return s_low + (m_low << 8) + (s_high << 16) + (m_high * x_table.num_simd_words_minor << 16);
 }
 
-SimBulkPauliFrames::SimBulkPauliFrames(size_t init_num_qubits, size_t num_samples, size_t num_measurements, std::mt19937 &rng) :
+SimBulkPauliFrames::SimBulkPauliFrames(size_t init_num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng) :
         num_qubits(init_num_qubits),
         num_samples_raw(num_samples),
         num_measurements_raw(num_measurements),

@@ -3,7 +3,7 @@
 #include "gate_data.h"
 #include "sim_tableau.h"
 
-SimTableau::SimTableau(size_t num_qubits, std::mt19937 &rng) : inv_state(Tableau::identity(num_qubits)), rng(rng) {
+SimTableau::SimTableau(size_t num_qubits, std::mt19937_64 &rng) : inv_state(Tableau::identity(num_qubits)), rng(rng) {
 }
 
 bool SimTableau::is_deterministic(size_t target) const {
@@ -223,7 +223,7 @@ void SimTableau::tableau_op(const std::string &name, const std::vector<size_t> &
     inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
 }
 
-std::vector<bool> SimTableau::simulate(const Circuit &circuit, std::mt19937 &rng) {
+std::vector<bool> SimTableau::simulate(const Circuit &circuit, std::mt19937_64 &rng) {
     SimTableau sim(circuit.num_qubits, rng);
     std::vector<bool> result;
     for (const auto &op : circuit.operations) {
@@ -245,7 +245,7 @@ void SimTableau::ensure_large_enough_for_qubit(size_t q) {
     inv_state.expand(q + 1);
 }
 
-void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement, std::mt19937 &rng) {
+void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement, std::mt19937_64 &rng) {
     CircuitReader reader(in);
     size_t max_qubit = 0;
     SimTableau sim(1, rng);

@@ -20,7 +20,7 @@ struct SimVector {
     ///
     /// Assumes the stabilizers commute. Works by generating a random state vector and projecting onto
     /// each of the given stabilizers. Global phase will vary.
-    static SimVector from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937 &rng);
+    static SimVector from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937_64 &rng);
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);

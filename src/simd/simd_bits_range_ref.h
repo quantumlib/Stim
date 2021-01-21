@@ -59,7 +59,7 @@ struct simd_bits_range_ref {
     /// Sets all bits in the referenced range to zero.
     void clear();
     /// Randomizes the bits in the referenced range, up to the given bit count. Leaves further bits unchanged.
-    void randomize(size_t num_bits, std::mt19937 &rng);
+    void randomize(size_t num_bits, std::mt19937_64 &rng);
 
     /// Returns a description of the contents of the range.
     std::string str() const;

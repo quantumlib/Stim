@@ -222,7 +222,7 @@ void Tableau::apply_within(PauliStringRef &target, const std::vector<size_t> &ta
 ///     "Hadamard-free circuits expose the structure of the Clifford group"
 ///     Sergey Bravyi, Dmitri Maslov
 ///     https://arxiv.org/abs/2003.09412
-std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std::mt19937 &gen) {
+std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std::mt19937_64 &gen) {
     auto uni = std::uniform_real_distribution<double>(0, 1);
 
     std::vector<bool> hada;
@@ -252,50 +252,45 @@ std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std:
 ///     "Hadamard-free circuits expose the structure of the Clifford group"
 ///     Sergey Bravyi, Dmitri Maslov
 ///     https://arxiv.org/abs/2003.09412
-simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937 &gen) {
-    auto rand_bit = [&]() { return gen() & 1; };
-    auto hs_pair = sample_qmallows(n, gen);
+simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
+    auto hs_pair = sample_qmallows(n, rng);
     const auto &hada = hs_pair.first;
     const auto &perm = hs_pair.second;
 
     simd_bit_table symmetric(n, n);
-    for (size_t col = 0; col < n; col++) {
-        symmetric[col][col] = rand_bit();
-        for (size_t row = col + 1; row < n; row++) {
-            bool b = rand_bit();
-            symmetric[row][col] = b;
-            symmetric[col][row] = b;
+    for (size_t row = 0; row < n; row++) {
+        symmetric[row].randomize(row + 1, rng);
+        for (size_t col = 0; col < row; col++) {
+            symmetric[col][row] = symmetric[row][col];
         }
     }
 
     simd_bit_table symmetric_m(n, n);
-    for (size_t col = 0; col < n; col++) {
-        symmetric_m[col][col] = rand_bit() && hada[col];
-        for (size_t row = col + 1; row < n; row++) {
+    for (size_t row = 0; row < n; row++) {
+        symmetric_m[row].randomize(row + 1, rng);
+        symmetric_m[row][row] &= hada[row];
+        for (size_t col = 0; col < row; col++) {
             bool b = hada[row] && hada[col];
             b |= hada[row] > hada[col] && perm[row] < perm[col];
             b |= hada[row] < hada[col] && perm[row] > perm[col];
-            b &= rand_bit();
-            symmetric_m[row][col] = b;
-            symmetric_m[col][row] = b;
+            symmetric_m[row][col] &= b;
+            symmetric_m[col][row] = symmetric_m[row][col];
         }
     }
 
     auto lower = simd_bit_table::identity(n);
-    for (size_t col = 0; col < n; col++) {
-        for (size_t row = col + 1; row < n; row++) {
-            lower[row][col] = rand_bit();
-        }
+    for (size_t row = 0; row < n; row++) {
+        lower[row].randomize(row, rng);
     }
 
     auto lower_m = simd_bit_table::identity(n);
-    for (size_t col = 0; col < n; col++) {
-        for (size_t row = col + 1; row < n; row++) {
+    for (size_t row = 0; row < n; row++) {
+        lower_m[row].randomize(row, rng);
+        for (size_t col = 0; col < row; col++) {
             bool b = hada[row] < hada[col];
             b |= hada[row] && hada[col] && perm[row] > perm[col];
             b |= !hada[row] && !hada[col] && perm[row] < perm[col];
-            b &= rand_bit();
-            lower_m[row][col] = b;
+            lower_m[row][col] &= b;
         }
     }
 
@@ -320,24 +315,20 @@ simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937 &gen) {
 
     // Apply permutation.
     for (size_t row = 0; row < n; row++) {
-        for (size_t col = 0; col < 2 * n; col++) {
-            u[row][col] = fused[perm[row]][col];
-            u[row + n][col] = fused[perm[row] + n][col];
-        }
+        u[row] = fused[perm[row]];
+        u[row + n] = fused[perm[row] + n];
     }
     // Apply Hadamards.
     for (size_t row = 0; row < n; row++) {
         if (hada[row]) {
-            for (size_t col = 0; col < 2*n; col++) {
-                u[row][col].swap_with(u[row + n][col]);
-            }
+            u[row].swap_with(u[row + n]);
         }
     }
 
     return fused_m.square_mat_mul(u, 2*n);
 }
 
-Tableau Tableau::random(size_t num_qubits, std::mt19937 &rng) {
+Tableau Tableau::random(size_t num_qubits, std::mt19937_64 &rng) {
     auto raw = random_stabilizer_tableau_raw(num_qubits, rng);
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
@@ -347,10 +338,9 @@ Tableau Tableau::random(size_t num_qubits, std::mt19937 &rng) {
             result.zs[row].x_ref[col] = raw[row + num_qubits][col];
             result.zs[row].z_ref[col] = raw[row + num_qubits][col + num_qubits];
         }
-        uint32_t u = rng();
-        result.xs.signs[row] = u & 1;
-        result.zs.signs[row] = u & 2;
     }
+    result.xs.signs.randomize(num_qubits, rng);
+    result.zs.signs.randomize(num_qubits, rng);
     return result;
 }
 

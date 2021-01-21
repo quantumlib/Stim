@@ -88,7 +88,7 @@ struct PauliStringVal {
     explicit PauliStringVal(size_t num_qubits);
     PauliStringVal(const PauliStringRef &other); // NOLINT(google-explicit-constructor)
     PauliStringVal& operator=(const PauliStringRef &other) noexcept;
-    static PauliStringVal random(size_t num_qubits, std::mt19937& rng);
+    static PauliStringVal random(size_t num_qubits, std::mt19937_64 &rng);
     operator const PauliStringRef() const;
     operator PauliStringRef();
 

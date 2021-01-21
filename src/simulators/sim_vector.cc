@@ -80,7 +80,7 @@ void SimVector::apply(const PauliStringRef &gate, size_t qubit_offset) {
     }
 }
 
-SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937 &rng) {
+SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937_64 &rng) {
     assert(!stabilizers.empty());
     size_t num_qubits = stabilizers[0].num_qubits;
     SimVector result(num_qubits);

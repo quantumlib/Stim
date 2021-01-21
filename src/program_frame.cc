@@ -20,7 +20,7 @@ PauliFrameProgram PauliFrameProgram::from_stabilizer_circuit(const std::vector<O
 
     PauliFrameProgramCycle partial_cycle {};
     std::unordered_map<size_t, uint8_t> qubit_phases {};
-    std::mt19937 unused_rng(0);
+    std::mt19937_64 unused_rng(0);
     SimTableau sim(resulting_simulation.num_qubits, unused_rng);
 
     auto start_next_moment = [&](){
@@ -133,13 +133,13 @@ std::string PauliFrameProgram::str() const {
     return s.str();
 }
 
-std::vector<simd_bits> PauliFrameProgram::sample(size_t num_samples, std::mt19937 &rng) {
+std::vector<simd_bits> PauliFrameProgram::sample(size_t num_samples, std::mt19937_64 &rng) {
     SimBulkPauliFrames sim(num_qubits, num_samples, num_measurements, rng);
     sim.clear_and_run(*this);
     return sim.unpack_measurements();
 }
 
-void PauliFrameProgram::sample_out(size_t num_samples, FILE *out, SampleFormat format, std::mt19937 &rng) {
+void PauliFrameProgram::sample_out(size_t num_samples, FILE *out, SampleFormat format, std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     if (num_samples >= GOOD_BLOCK_SIZE) {
         auto sim = SimBulkPauliFrames(num_qubits, GOOD_BLOCK_SIZE, num_measurements, rng);

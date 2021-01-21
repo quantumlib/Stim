@@ -21,42 +21,62 @@ TEST(bit_ref, set) {
 
 TEST(bit_ref, bit_xor) {
     uint64_t word = 0;
-    bit_ref b(&word, 5);
-    b ^= 1;
+    bit_ref b2(&word, 2);
+    bit_ref b5(&word, 5);
+    b5 ^= 1;
     ASSERT_EQ(word, 32);
-    b ^= 1;
+    b5 ^= 1;
     ASSERT_EQ(word, 0);
-    b ^= 1;
+    b5 ^= 1;
     ASSERT_EQ(word, 32);
-    b ^= 0;
+    b5 ^= 0;
     ASSERT_EQ(word, 32);
-    b ^= 1;
+    b2 ^= 1;
+    ASSERT_EQ(word, 36);
+    b5 ^= 0;
+    ASSERT_EQ(word, 36);
+    b2 ^= 1;
+    ASSERT_EQ(word, 32);
+    b5 ^= 1;
     ASSERT_EQ(word, 0);
 }
 
 TEST(bit_ref, bit_or) {
     uint64_t word = 0;
-    bit_ref b(&word, 3);
-    b |= 0;
+    bit_ref b2(&word, 2);
+    bit_ref b3(&word, 3);
+    b2 |= 0;
     ASSERT_EQ(word, 0);
-    b |= 1;
+    b2 |= 1;
+    ASSERT_EQ(word, 4);
+    b3 |= 1;
+    ASSERT_EQ(word, 12);
+    word = 0;
+    b3 |= 0;
+    ASSERT_EQ(word, 0);
+    b3 |= 1;
     ASSERT_EQ(word, 8);
-    b |= 1;
+    b3 |= 1;
     ASSERT_EQ(word, 8);
-    b |= 0;
+    b3 |= 0;
     ASSERT_EQ(word, 8);
 }
 
 TEST(bit_ref, bit_andr) {
     uint64_t word = 8;
-    bit_ref b(&word, 3);
-    b &= 1;
+    bit_ref b2(&word, 2);
+    b2 &= 0;
     ASSERT_EQ(word, 8);
-    b &= 0;
+    b2 &= 1;
+    ASSERT_EQ(word, 8);
+    bit_ref b3(&word, 3);
+    b3 &= 1;
+    ASSERT_EQ(word, 8);
+    b3 &= 0;
     ASSERT_EQ(word, 0);
-    b &= 0;
+    b3 &= 0;
     ASSERT_EQ(word, 0);
-    b &= 1;
+    b3 &= 1;
     ASSERT_EQ(word, 0);
 }
 

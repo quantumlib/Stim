@@ -37,7 +37,7 @@ struct bit_ref {
     }
     /// Bitwise-and assignment.
     inline bit_ref &operator&=(bool value) {
-        *byte &= (uint8_t)value << bit_index;
+        *byte &= ((uint8_t)value << bit_index) | ~(1 << bit_index);
         return *this;
     }
     /// Bitwise-or assignment.

@@ -71,10 +71,10 @@ struct simd_bits {
     /// Sets all bits in the referenced range to zero.
     void clear();
     /// Randomizes the contents of this simd_bits using the given random number generator, up to the given bit position.
-    void randomize(size_t num_bits, std::mt19937& rng);
+    void randomize(size_t num_bits, std::mt19937_64 &rng);
     /// Returns a simd_bits with at least the given number of bits, with bits up to the given number of bits randomized.
     /// Padding bits beyond the minimum number of bits are not randomized.
-    static simd_bits random(size_t min_bits, std::mt19937& rng);
+    static simd_bits random(size_t min_bits, std::mt19937_64 &rng);
 
     /// Returns a description of the contents of the simd_bits.
     std::string str() const;

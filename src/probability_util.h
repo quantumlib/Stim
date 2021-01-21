@@ -10,9 +10,9 @@ struct RareErrorIterator {
     size_t next_candidate;
     std::geometric_distribution<size_t> dist;
     RareErrorIterator(float probability);
-    size_t next(std::mt19937 &rng);
+    size_t next(std::mt19937_64 &rng);
 };
 
-std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::mt19937 &rng);
+std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng);
 
 #endif
