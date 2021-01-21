@@ -75,7 +75,11 @@ struct simd_word_256 {
         return std::popcount(p[0]) + std::popcount(p[1]) + std::popcount(p[2]) + std::popcount(p[3]);
     }
 
-    inline void interleave8_128_with(simd_word_256 &other) {
+    /// For each 128 bit word pair between the two registers, the byte order goes from this:
+    /// [a0 a1 a2 a3 ... a14 a15] [b0 b1 b2 b3 ... b14 b15]
+    /// to this:
+    /// [a0 b0 a1 b1 ...  a7  b7] [a8 b8 a9 b9 ... a15 b15]
+    inline void do_interleave8_tile128(simd_word_256 &other) {
         auto t = _mm256_unpackhi_epi8(val, other.val);
         val = _mm256_unpacklo_epi8(val, other.val);
         other.val = t;
@@ -142,7 +146,11 @@ struct simd_word_128 {
         return std::popcount(p[0]) + std::popcount(p[1]);
     }
 
-    inline void interleave8_128_with(simd_word_128 &other) {
+    /// For each 128 bit word pair between the two registers, the byte order goes from this:
+    /// [a0 a1 a2 a3 ... a14 a15] [b0 b1 b2 b3 ... b14 b15]
+    /// to this:
+    /// [a0 b0 a1 b1 ...  a7  b7] [a8 b8 a9 b9 ... a15 b15]
+    inline void do_interleave8_tile128(simd_word_128 &other) {
         auto t = _mm_unpackhi_epi8(val, other.val);
         val = _mm_unpacklo_epi8(val, other.val);
         other.val = t;
