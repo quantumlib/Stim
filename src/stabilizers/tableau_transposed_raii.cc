@@ -22,16 +22,8 @@ inline void for_each_trans_obs(
         BODY body) {
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
-        auto x = h[q].x_ref.ptr_simd;
-        auto z = h[q].z_ref.ptr_simd;
-        auto s = h.signs.ptr_simd;
-        auto x_end = x + h[q].x_ref.num_simd_words;
-        while (x != x_end) {
-            body(*x, *z, *s);
-            x++;
-            z++;
-            s++;
-        }
+        PauliStringRef p = h[q];
+        p.x_ref.for_each_word(p.z_ref, h.signs, body);
     }
 }
 
@@ -43,20 +35,9 @@ inline void for_each_trans_obs(
         BODY body) {
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
-        auto x1 = h[q1].x_ref.ptr_simd;
-        auto z1 = h[q1].z_ref.ptr_simd;
-        auto x2 = h[q2].x_ref.ptr_simd;
-        auto z2 = h[q2].z_ref.ptr_simd;
-        auto s = h.signs.ptr_simd;
-        auto x1_end = x1 + h[q1].x_ref.num_simd_words;
-        while (x1 != x1_end) {
-            body(*x1, *z1, *x2, *z2, *s);
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-            s++;
-        }
+        PauliStringRef p1 = h[q1];
+        PauliStringRef p2 = h[q2];
+        p1.x_ref.for_each_word(p1.z_ref, p2.x_ref, p2.z_ref, h.signs, body);
     }
 }
 

@@ -210,21 +210,17 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     __m256i cnt1 {};
     __m256i cnt2 {};
 
-    x_ref.for_each_word(z_ref, rhs.x_ref, rhs.z_ref,  [&cnt1, &cnt2](auto px1, auto pz1, auto px2, auto pz2) {
-        // Load into registers.
-        auto x1 = *px1;
-        auto z2 = *pz2;
-        auto z1 = *pz1;
-        auto x2 = *px2;
-
+    x_ref.for_each_word(z_ref, rhs.x_ref, rhs.z_ref,  [&cnt1, &cnt2](auto &x1, auto &z1, auto &x2, auto &z2) {
         // Update the left hand side Paulis.
-        *px1 = x1 ^ x2;
-        *pz1 = z1 ^ z2;
+        auto old_x1 = x1;
+        auto old_z1 = z1;
+        x1 ^= x2;
+        z1 ^= z2;
 
         // At each bit position: accumulate anti-commutation (+i or -i) counts.
-        auto x1z2 = x1 & z2;
-        auto anti_commutes = (x2 & z1) ^ x1z2;
-        cnt2 ^= (cnt1 ^ *px1 ^ *pz1 ^ x1z2) & anti_commutes;
+        auto x1z2 = old_x1 & z2;
+        auto anti_commutes = (x2 & old_z1) ^ x1z2;
+        cnt2 ^= (cnt1 ^ x1 ^ z1 ^ x1z2) & anti_commutes;
         cnt1 ^= anti_commutes;
     });
 
@@ -246,8 +242,8 @@ PauliStringVal PauliStringVal::random(size_t num_qubits, std::mt19937& rng) {
 bool PauliStringRef::commutes(const PauliStringRef& other) const noexcept {
     assert(num_qubits == other.num_qubits);
     __m256i cnt1 {};
-    x_ref.for_each_word(z_ref, other.x_ref, other.z_ref, [&cnt1](auto x1, auto z1, auto x2, auto z2) {
-        cnt1 ^= (*x1 & *z2) ^ (*x2 & *z1);
+    x_ref.for_each_word(z_ref, other.x_ref, other.z_ref, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) {
+        cnt1 ^= (x1 & z2) ^ (x2 & z1);
     });
     return (pop_count(cnt1) & 1) == 0;
 }

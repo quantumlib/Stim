@@ -70,21 +70,21 @@ struct simd_bits_range_ref {
 
     template <typename BODY>
     inline void for_each_word(BODY body) const {
-        auto v0 = u256;
+        auto v0 = ptr_simd;
         auto v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
-            body(v0);
+            body(*v0);
             v0++;
         }
     }
 
     template <typename BODY>
     inline void for_each_word(simd_bits_range_ref other, BODY body) const {
-        auto v0 = u256;
-        auto v1 = other.u256;
+        auto v0 = ptr_simd;
+        auto v1 = other.ptr_simd;
         auto v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
-            body(v0, v1);
+            body(*v0, *v1);
             v0++;
             v1++;
         }
@@ -94,19 +94,59 @@ struct simd_bits_range_ref {
     inline void for_each_word(
             simd_bits_range_ref other1,
             simd_bits_range_ref other2,
-            simd_bits_range_ref other3,
             BODY body) const {
-        auto v0 = u256;
-        auto v1 = other1.u256;
-        auto v2 = other2.u256;
-        auto v3 = other3.u256;
+        auto v0 = ptr_simd;
+        auto v1 = other1.ptr_simd;
+        auto v2 = other2.ptr_simd;
         auto v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
-            body(v0, v1, v2, v3);
+            body(*v0, *v1, *v2);
+            v0++;
+            v1++;
+            v2++;
+        }
+    }
+
+    template <typename BODY>
+    inline void for_each_word(
+            simd_bits_range_ref other1,
+            simd_bits_range_ref other2,
+            simd_bits_range_ref other3,
+            BODY body) const {
+        auto v0 = ptr_simd;
+        auto v1 = other1.ptr_simd;
+        auto v2 = other2.ptr_simd;
+        auto v3 = other3.ptr_simd;
+        auto v0_end = v0 + num_simd_words;
+        while (v0 != v0_end) {
+            body(*v0, *v1, *v2, *v3);
             v0++;
             v1++;
             v2++;
             v3++;
+        }
+    }
+
+    template <typename BODY>
+    inline void for_each_word(
+            simd_bits_range_ref other1,
+            simd_bits_range_ref other2,
+            simd_bits_range_ref other3,
+            simd_bits_range_ref other4,
+            BODY body) const {
+        auto v0 = ptr_simd;
+        auto v1 = other1.ptr_simd;
+        auto v2 = other2.ptr_simd;
+        auto v3 = other3.ptr_simd;
+        auto v4 = other4.ptr_simd;
+        auto v0_end = v0 + num_simd_words;
+        while (v0 != v0_end) {
+            body(*v0, *v1, *v2, *v3, *v4);
+            v0++;
+            v1++;
+            v2++;
+            v3++;
+            v4++;
         }
     }
 };
