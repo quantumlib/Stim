@@ -6,8 +6,7 @@
 #include <iostream>
 #include <random>
 #include "bit_ref.h"
-
-#define SIMD_WORD_TYPE __m256i
+#include "simd_compat.h"
 
 /// A reference to a range of bits that support SIMD operations (e.g. they are aligned and padded correctly).
 ///

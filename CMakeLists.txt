@@ -13,6 +13,7 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/simd_bit_table.cc
         src/simd/simd_bits.cc
         src/simd/simd_bits_range_ref.cc
+        src/simd/simd_compat.cc
         src/simd/simd_util.cc
         src/simulators/gate_data.cc
         src/simulators/sim_bulk_pauli_frame.cc
@@ -32,6 +33,7 @@ set(TEST_FILES
         src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
         src/simd/simd_bits_range_ref.test.cc
+        src/simd/simd_compat.test.cc
         src/simd/simd_util.test.cc
         src/simulators/sim_bulk_pauli_frame.test.cc
         src/simulators/sim_tableau.test.cc

@@ -43,7 +43,7 @@ inline void for_each_trans_obs(
 
 void TableauTransposedRaii::append_CX(size_t control, size_t target) {
     for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
-        s ^= _mm256_andnot_si256(cz ^ tx, cx & tz);
+        s ^= andnot(cz ^ tx, cx & tz);
         cz ^= tz;
         tx ^= cx;
     });
@@ -76,14 +76,14 @@ void TableauTransposedRaii::append_SWAP(size_t q1, size_t q2) {
 
 void TableauTransposedRaii::append_H_XY(size_t target) {
     for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
-        s ^= _mm256_andnot_si256(x, z);
+        s ^= andnot(x, z);
         z ^= x;
     });
 }
 
 void TableauTransposedRaii::append_H_YZ(size_t target) {
     for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
-        s ^= _mm256_andnot_si256(z, x);
+        s ^= andnot(z, x);
         x ^= z;
     });
 }

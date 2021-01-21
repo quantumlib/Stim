@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include "bit_ref.h"
+#include "simd_compat.h"
 
 /// Transposes 256x256 blocks of bits.
 ///
@@ -22,10 +23,10 @@ void mat256_permute_address_swap_ck_rk(uint64_t *matrix256x256, __m256i mask) no
         for (size_t j = i; j < i + bit_val; j++) {
             auto &a = m[j];
             auto &b = m[j + bit_val];
-            auto a1 = _mm256_andnot_si256(mask, a);
+            auto a1 = andnot(mask, a);
             auto b0 = b & mask;
             a &= mask;
-            b = _mm256_andnot_si256(mask, b);
+            b = andnot(mask, b);
             a |= _mm256_slli_epi64(b0, bit_val);
             b |= _mm256_srli_epi64(a1, bit_val);
         }
@@ -65,10 +66,10 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
         for (size_t row = col; row < col + h; row++) {
             auto &a = u256[row * row_stride_256];
             auto &b = u256[(row + h) * row_stride_256];
-            auto a1 = _mm256_andnot_si256(mask, a);
+            auto a1 = andnot(mask, a);
             auto b0 = _mm256_and_si256(mask, b);
             a = _mm256_and_si256(mask, a);
-            b = _mm256_andnot_si256(mask, b);
+            b = andnot(mask, b);
             a = _mm256_or_si256(a, _mm256_slli_epi64(b0, h));
             b = _mm256_or_si256(_mm256_srli_epi64(a1, h), b);
         }
@@ -77,9 +78,5 @@ void mat_permute_address_swap_ck_rs(uint64_t *matrix, size_t row_stride_256, __m
 
 void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept;
 void avx_transpose_64x64s_within_256x256(uint64_t *matrix, size_t row_stride_256) noexcept;
-
-uint16_t popcount(const __m256i &val);
-uint8_t popcount(const __m128i &val);
-uint8_t popcount(const uint64_t &val);
 
 #endif
