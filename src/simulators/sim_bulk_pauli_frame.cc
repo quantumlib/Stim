@@ -9,30 +9,13 @@
 // Iterates over the X and Z frame components of a pair of qubits, applying a custom BODY to each.
 //
 // HACK: Templating the body function type makes inlining significantly more likely.
-struct XZ_PAIR {
-    __m256i *x1;
-    __m256i *z1;
-    __m256i *x2;
-    __m256i *z2;
-};
 template <typename BODY>
-inline void FOR_EACH_XZ_PAIR(SimBulkPauliFrames &sim, const std::vector<size_t> &targets, BODY body) {
+inline void for_each_target_pair(SimBulkPauliFrames &sim, const std::vector<size_t> &targets, BODY body) {
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t q1 = targets[k];
         size_t q2 = targets[k + 1];
-        auto x1 = sim.x_table[q1].ptr_simd;
-        auto z1 = sim.z_table[q1].ptr_simd;
-        auto x2 = sim.x_table[q2].ptr_simd;
-        auto z2 = sim.z_table[q2].ptr_simd;
-        auto x2_end = x2 + sim.x_table[q1].num_simd_words;
-        while (x2 != x2_end) {
-            body({x1, z1, x2, z2});
-            x1++;
-            z1++;
-            x2++;
-            z2++;
-        }
+        sim.x_table[q1].for_each_word(sim.z_table[q1], sim.x_table[q2], sim.z_table[q2], body);
     }
 }
 
@@ -224,91 +207,91 @@ void SimBulkPauliFrames::H_YZ(const std::vector<size_t> &targets) {
 }
 
 void SimBulkPauliFrames::CX(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.z1 ^= *s.z2;
-        *s.x2 ^= *s.x1;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        z1 ^= z2;
+        x2 ^= x1;
     });
 }
 
 void SimBulkPauliFrames::CY(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.z1 ^= *s.x2 ^ *s.z2;
-        *s.z2 ^= *s.x1;
-        *s.x2 ^= *s.x1;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        z1 ^= x2 ^ z2;
+        z2 ^= x1;
+        x2 ^= x1;
     });
 }
 
 void SimBulkPauliFrames::CZ(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.z1 ^= *s.x2;
-        *s.z2 ^= *s.x1;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        z1 ^= x2;
+        z2 ^= x1;
     });
 }
 
 void SimBulkPauliFrames::SWAP(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        std::swap(*s.z1, *s.z2);
-        std::swap(*s.x1, *s.x2);
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        std::swap(z1, z2);
+        std::swap(x1, x2);
     });
 }
 
 void SimBulkPauliFrames::ISWAP(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        auto dx = *s.x1 ^ *s.x2;
-        auto t1 = *s.z1 ^ dx;
-        auto t2 = *s.z2 ^ dx;
-        *s.z1 = t2;
-        *s.z2 = t1;
-        std::swap(*s.x1, *s.x2);
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        auto dx = x1 ^ x2;
+        auto t1 = z1 ^ dx;
+        auto t2 = z2 ^ dx;
+        z1 = t2;
+        z2 = t1;
+        std::swap(x1, x2);
     });
 }
 
 void SimBulkPauliFrames::XCX(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.x1 ^= *s.z2;
-        *s.x2 ^= *s.z1;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        x1 ^= z2;
+        x2 ^= z1;
     });
 }
 
 void SimBulkPauliFrames::XCY(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.x1 ^= *s.x2 ^ *s.z2;
-        *s.x2 ^= *s.z1;
-        *s.z2 ^= *s.z1;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        x1 ^= x2 ^ z2;
+        x2 ^= z1;
+        z2 ^= z1;
     });
 }
 
 void SimBulkPauliFrames::XCZ(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.z2 ^= *s.z1;
-        *s.x1 ^= *s.x2;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        z2 ^= z1;
+        x1 ^= x2;
     });
 }
 
 void SimBulkPauliFrames::YCX(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.x2 ^= *s.x1 ^ *s.z1;
-        *s.x1 ^= *s.z2;
-        *s.z1 ^= *s.z2;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        x2 ^= x1 ^ z1;
+        x1 ^= z2;
+        z1 ^= z2;
     });
 }
 
 void SimBulkPauliFrames::YCY(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        auto y1 = *s.x1 ^ *s.z1;
-        auto y2 = *s.x2 ^ *s.z2;
-        *s.x1 ^= y2;
-        *s.z1 ^= y2;
-        *s.x2 ^= y1;
-        *s.z2 ^= y1;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        auto y1 = x1 ^z1;
+        auto y2 = x2 ^z2;
+        x1 ^= y2;
+        z1 ^= y2;
+        x2 ^= y1;
+        z2 ^= y1;
     });
 }
 
 void SimBulkPauliFrames::YCZ(const std::vector<size_t> &targets) {
-    FOR_EACH_XZ_PAIR(*this, targets, [](XZ_PAIR s) {
-        *s.z2 ^= *s.x1 ^ *s.z1;
-        *s.z1 ^= *s.x2;
-        *s.x1 ^= *s.x2;
+    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+        z2 ^= x1 ^ z1;
+        z1 ^= x2;
+        x1 ^= x2;
     });
 }
 
