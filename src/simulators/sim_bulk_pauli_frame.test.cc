@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "sim_bulk_pauli_frame.h"
-#include "../program_frame.h"
 #include "sim_tableau.h"
+#include "gate_data.h"
 #include "../test_util.test.h"
 
 TEST(SimBulkPauliFrames, get_set_frame) {
@@ -37,7 +37,7 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
     mask.u64[7] = -1;
     auto ps1 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[(k | 2) == 303]; }).ref().sparse();
     auto ps2 = PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_Z"[(k | 1) == 303]; }).ref().sparse();
-    big_sim.MUL_INTO_FRAME(ps1, mask);
+    big_sim.apply_frame_change(ps1, mask);
     ASSERT_EQ(big_sim.get_frame(0).ref().sparse().str(), "+I");
     ASSERT_EQ(big_sim.get_frame(1).ref().sparse().str(), "+I");
     ASSERT_EQ(big_sim.get_frame(2).ref().sparse().str(), "+X301*X303");
@@ -52,7 +52,7 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
     mask.u64[5] = 0;
     mask.u64[6] = 0;
     mask.u64[7] = 0;
-    big_sim.MUL_INTO_FRAME(ps2, mask);
+    big_sim.apply_frame_change(ps2, mask);
     ASSERT_EQ(big_sim.get_frame(0).ref().sparse().str(), "+I");
     ASSERT_EQ(big_sim.get_frame(1).ref().sparse().str(), "+I");
     ASSERT_EQ(big_sim.get_frame(2).ref().sparse().str(), "+X301*Z302*Y303");
@@ -100,10 +100,7 @@ TEST(SimBulkPauliFrames, measure_deterministic) {
     SimBulkPauliFrames sim(1, 750, 1250, SHARED_TEST_RNG());
     sim.clear();
     sim.m_table.data.randomize(sim.m_table.data.num_bits_padded(), SHARED_TEST_RNG());
-    sim.measure_deterministic({
-        {0, false},
-        {0, true},
-    });
+    sim.measure_ref({{0, 0}, {false, true}});
     for (size_t s = 0; s < 750; s++) {
         ASSERT_FALSE(sim.m_table.data[sim.recorded_bit_address(s, 0)]);
         ASSERT_TRUE(sim.m_table.data[sim.recorded_bit_address(s, 1)]);
@@ -144,35 +141,35 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
     return true;
 }
 
-TEST(SimBulkPauliFrames, operations_consistent_with_tableau_data) {
-    assert(GATE_TABLEAUS.size() == SIM_BULK_PAULI_FRAMES_GATE_DATA.size());
+TEST(SimBulkPauliFrames, bulk_operations_consistent_with_tableau_data) {
     for (const auto &kv : GATE_TABLEAUS) {
         const auto &name = kv.first;
         EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau(name)) << name;
     }
 }
 
-#define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << PauliFrameProgram::from_stabilizer_circuit(Circuit::from_text(program).operations)
+#define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << Circuit::from_text(program).with_reference_measurements_from_tableau_simulation()
 
 bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits &output) {
     auto tableau_sim = SimTableau(circuit.num_qubits, SHARED_TEST_RNG());
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
-        if (op.name == "TICK") {
-            continue;
-        }
         if (op.name == "M") {
-            for (auto q : op.targets) {
-                bool b = output[out_p];
-                if (tableau_sim.measure({q}, b)[0] != b) {
+            for (size_t k = 0; k < op.target_data.targets.size(); k++) {
+                tableau_sim.measure(
+                        OperationData({op.target_data.targets[k]}, {op.target_data.flags[k]}),
+                        output[out_p] ? -1 : +1);
+                if (output[out_p] != tableau_sim.recorded_measurement_results.front()) {
                     return false;
                 }
+                tableau_sim.recorded_measurement_results.pop();
                 out_p++;
             }
         } else {
-            tableau_sim.broadcast_op(op.name, op.targets);
+            tableau_sim.apply(op.name, op.target_data);
         }
     }
+
     return true;
 }
 
@@ -196,9 +193,9 @@ TEST(PauliFrameSimulation, test_util_is_output_possible) {
 
 bool is_sim_frame_consistent_with_sim_tableau(const std::string &program) {
     auto circuit = Circuit::from_text(program);
-    auto frame_program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
+    auto frame_program = circuit.with_reference_measurements_from_tableau_simulation();
 
-    for (const auto &sample : frame_program.sample(10, SHARED_TEST_RNG())) {
+    for (const auto &sample : SimBulkPauliFrames::sample(frame_program, 10, SHARED_TEST_RNG())) {
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
             for (size_t k = 0; k < frame_program.num_measurements; k++) {
@@ -338,21 +335,21 @@ TEST(PauliFrameSimulation, consistency) {
 }
 
 TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
-    auto program = PauliFrameProgram::from_stabilizer_circuit(Circuit::from_text(
+    auto program = Circuit::from_text(
             "X 0\n"
             "M 1\n"
             "M 0\n"
             "M 2\n"
             "M 3\n"
-            ).operations);
-    auto r = program.sample(10, SHARED_TEST_RNG());
+            ).with_reference_measurements_from_tableau_simulation();
+    auto r = SimBulkPauliFrames::sample(program, 10, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 10);
     for (const auto &e : r) {
         ASSERT_EQ(e.u64[0], 0b0010);
     }
 
     FILE *tmp = tmpfile();
-    program.sample_out(5, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
+    SimBulkPauliFrames::sample_out(program, 5, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
     rewind(tmp);
     std::stringstream ss;
     while (true) {
@@ -365,7 +362,7 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     ASSERT_EQ(ss.str(), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    program.sample_out(5, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
+    SimBulkPauliFrames::sample_out(program, 5, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 0b0010);
@@ -381,17 +378,17 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     for (size_t k = 0; k < 1250; k++) {
         ops.push_back({"M", {k}});
     }
-    auto program = PauliFrameProgram::from_stabilizer_circuit(ops);
-    auto r = program.sample(750, SHARED_TEST_RNG());
+    auto program = Circuit(ops).with_reference_measurements_from_tableau_simulation();
+    auto r = SimBulkPauliFrames::sample(program, 750, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 750);
     for (const auto &e : r) {
         for (size_t k = 0; k < 1250; k++) {
-            ASSERT_EQ(e[k], k % 3 == 0);
+            ASSERT_EQ(e[k], k % 3 == 0) << k;
         }
     }
 
     FILE *tmp = tmpfile();
-    program.sample_out(750, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
+    SimBulkPauliFrames::sample_out(program, 750, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -402,7 +399,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    program.sample_out(750, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
+    SimBulkPauliFrames::sample_out(program, 750, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {
@@ -423,8 +420,8 @@ TEST(PauliFrameSimulation, big_circuit_random_measurements) {
     for (size_t k = 0; k < 270; k++) {
         ops.push_back({"M", {k}});
     }
-    auto program = PauliFrameProgram::from_stabilizer_circuit(ops);
-    auto r = program.sample(1000, SHARED_TEST_RNG());
+    auto program = Circuit(ops).with_reference_measurements_from_tableau_simulation();
+    auto r = SimBulkPauliFrames::sample(program, 1000, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 1000);
     for (size_t k = 0; k < r.size(); k++) {
         ASSERT_TRUE(r[k].not_zero()) << k;

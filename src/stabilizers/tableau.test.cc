@@ -454,7 +454,7 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_H(targets[0]); }
+        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_H_XZ(targets[0]); }
     ));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(

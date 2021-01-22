@@ -3,6 +3,7 @@
 
 #include "sim_tableau.h"
 #include "sim_bulk_pauli_frame.h"
+#include "gate_data.h"
 #include "../simd/simd_util.h"
 #include "../probability_util.h"
 
@@ -10,7 +11,8 @@
 //
 // HACK: Templating the body function type makes inlining significantly more likely.
 template <typename BODY>
-inline void for_each_target_pair(SimBulkPauliFrames &sim, const std::vector<size_t> &targets, BODY body) {
+inline void for_each_target_pair(SimBulkPauliFrames &sim, const OperationData &target_data, BODY body) {
+    const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t q1 = targets[k];
@@ -97,38 +99,43 @@ void SimBulkPauliFrames::do_transpose() {
 void SimBulkPauliFrames::clear() {
     num_recorded_measurements = 0;
     x_table.clear();
-    z_table.clear();
+    z_table.data.randomize(z_table.data.num_bits_padded(), rng);
     m_table.clear();
     results_block_transposed = false;
 }
 
-void SimBulkPauliFrames::clear_and_run(const PauliFrameProgram &program) {
-    assert(program.num_measurements == num_measurements_raw);
+void SimBulkPauliFrames::clear_and_run(const Circuit &circuit) {
+    assert(circuit.num_measurements == num_measurements_raw);
     clear();
-    for (const auto &cycle : program.cycles) {
-        for (const auto &op : cycle.step1_unitary) {
-            do_named_op(op.name, op.targets);
-        }
-        for (const auto &collapse : cycle.step2_collapse) {
-            RANDOM_KICKBACK(collapse.destabilizer);
-        }
-        measure_deterministic(cycle.step3_measure);
-        reset(cycle.step4_reset);
+    for (const auto &op : circuit.operations) {
+        do_named_op(op.name, op.target_data);
     }
 }
 
-void SimBulkPauliFrames::do_named_op(const std::string &name, const std::vector<size_t> &targets) {
-    SIM_BULK_PAULI_FRAMES_GATE_DATA.at(name)(*this, targets);
+void SimBulkPauliFrames::do_named_op(const std::string &name, const OperationData &target_data) {
+    try {
+        SIM_BULK_PAULI_FRAMES_GATE_DATA.at(name)(*this, target_data);
+    } catch (const std::out_of_range &ex) {
+        auto message = "Gate isn't supported by SimBulkPauliFrames: " + name;
+        if (name == "M" || name == "M_PREFER_0") {
+            message += ".\nMeasurements need to be converted to measurement-with-reference-result (M_REF) operations, "
+                       "so that the tracked Pauli frame has something to invert with respect to."
+                       "\nDid you forget a conversion step? Did you intend to use the Tableau simulator instead?";
+        }
+        throw std::out_of_range(message);
+    }
 }
 
-void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgramMeasurement> &measurements) {
-    for (auto e : measurements) {
-        auto q = e.target_qubit;
+void SimBulkPauliFrames::measure_ref(const OperationData &target_data) {
+    for (size_t k = 0; k < target_data.targets.size(); k++) {
+        size_t q = target_data.targets[k];
+        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
+
         auto x = (__m256i *)x_table[q].ptr_simd;
         auto x_end = x + x_table[q].num_simd_words;
         auto m = (__m256i *)m_table.data.ptr_simd + (recorded_bit_address(0, num_recorded_measurements) >> 8);
         auto m_stride = recorded_bit_address(256, 0) >> 8;
-        if (e.invert) {
+        if (target_data.flags[k]) {
             while (x != x_end) {
                 *m = *x ^ _mm256_set1_epi8(-1);
                 x++;
@@ -145,7 +152,7 @@ void SimBulkPauliFrames::measure_deterministic(const std::vector<PauliFrameProgr
     }
 }
 
-void SimBulkPauliFrames::MUL_INTO_FRAME(const SparsePauliString &pauli_string, const simd_bits_range_ref mask) {
+void SimBulkPauliFrames::apply_frame_change(const SparsePauliString &pauli_string, const simd_bits_range_ref mask) {
     for (const auto &w : pauli_string.indexed_words) {
         for (size_t k2 = 0; k2 < 64; k2++) {
             if ((w.wx >> k2) & 1) {
@@ -159,15 +166,10 @@ void SimBulkPauliFrames::MUL_INTO_FRAME(const SparsePauliString &pauli_string, c
     }
 }
 
-void SimBulkPauliFrames::RANDOM_KICKBACK(const SparsePauliString &pauli_string) {
-    rng_buffer.randomize(rng_buffer.num_bits_padded(), rng);
-    MUL_INTO_FRAME(pauli_string, rng_buffer);
-}
-
-void SimBulkPauliFrames::reset(const std::vector<size_t> &qubits) {
-    for (auto q : qubits) {
+void SimBulkPauliFrames::reset(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
         x_table[q].clear();
-        z_table[q].clear();
+        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
     }
 }
 
@@ -190,55 +192,55 @@ void SimBulkPauliFrames::set_frame(size_t sample_index, const PauliStringRef &ne
     }
 }
 
-void SimBulkPauliFrames::H_XZ(const std::vector<size_t> &targets) {
-    for (auto q : targets) {
+void SimBulkPauliFrames::H_XZ(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
         x_table[q].swap_with(z_table[q]);
     }
 }
 
-void SimBulkPauliFrames::H_XY(const std::vector<size_t> &targets) {
-    for (auto q : targets) {
+void SimBulkPauliFrames::H_XY(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
         z_table[q] ^= x_table[q];
     }
 }
 
-void SimBulkPauliFrames::H_YZ(const std::vector<size_t> &targets) {
-    for (auto q : targets) {
+void SimBulkPauliFrames::H_YZ(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
         x_table[q] ^= z_table[q];
     }
 }
 
-void SimBulkPauliFrames::CX(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::CX(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z1 ^= z2;
         x2 ^= x1;
     });
 }
 
-void SimBulkPauliFrames::CY(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::CY(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z1 ^= x2 ^ z2;
         z2 ^= x1;
         x2 ^= x1;
     });
 }
 
-void SimBulkPauliFrames::CZ(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::CZ(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z1 ^= x2;
         z2 ^= x1;
     });
 }
 
-void SimBulkPauliFrames::SWAP(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::SWAP(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         std::swap(z1, z2);
         std::swap(x1, x2);
     });
 }
 
-void SimBulkPauliFrames::ISWAP(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::ISWAP(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         auto dx = x1 ^ x2;
         auto t1 = z1 ^ dx;
         auto t2 = z2 ^ dx;
@@ -248,38 +250,38 @@ void SimBulkPauliFrames::ISWAP(const std::vector<size_t> &targets) {
     });
 }
 
-void SimBulkPauliFrames::XCX(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::XCX(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         x1 ^= z2;
         x2 ^= z1;
     });
 }
 
-void SimBulkPauliFrames::XCY(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::XCY(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         x1 ^= x2 ^ z2;
         x2 ^= z1;
         z2 ^= z1;
     });
 }
 
-void SimBulkPauliFrames::XCZ(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::XCZ(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z2 ^= z1;
         x1 ^= x2;
     });
 }
 
-void SimBulkPauliFrames::YCX(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::YCX(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         x2 ^= x1 ^ z1;
         x1 ^= z2;
         z1 ^= z2;
     });
 }
 
-void SimBulkPauliFrames::YCY(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::YCY(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         auto y1 = x1 ^z1;
         auto y2 = x2 ^z2;
         x1 ^= y2;
@@ -289,15 +291,16 @@ void SimBulkPauliFrames::YCY(const std::vector<size_t> &targets) {
     });
 }
 
-void SimBulkPauliFrames::YCZ(const std::vector<size_t> &targets) {
-    for_each_target_pair(*this, targets, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+void SimBulkPauliFrames::YCZ(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z2 ^= x1 ^ z1;
         z1 ^= x2;
         x1 ^= x2;
     });
 }
 
-void SimBulkPauliFrames::DEPOLARIZE(const std::vector<size_t> &targets, float probability) {
+void SimBulkPauliFrames::DEPOLARIZE(const OperationData &target_data, float probability) {
+    const auto &targets = target_data.targets;
     RareErrorIterator skipper(probability);
     auto n = targets.size() * num_samples_raw;
     while (true) {
@@ -314,7 +317,8 @@ void SimBulkPauliFrames::DEPOLARIZE(const std::vector<size_t> &targets, float pr
     }
 }
 
-void SimBulkPauliFrames::DEPOLARIZE2(const std::vector<size_t> &targets, float probability) {
+void SimBulkPauliFrames::DEPOLARIZE2(const OperationData &target_data, float probability) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     RareErrorIterator skipper(probability);
     auto n = (targets.size() * num_samples_raw) >> 1;
@@ -332,5 +336,28 @@ void SimBulkPauliFrames::DEPOLARIZE2(const std::vector<size_t> &targets, float p
         z_table[t1][sample_index] ^= p & 2;
         x_table[t2][sample_index] ^= p & 4;
         z_table[t2][sample_index] ^= p & 8;
+    }
+}
+
+std::vector<simd_bits> SimBulkPauliFrames::sample(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng) {
+    SimBulkPauliFrames sim(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
+    sim.clear_and_run(circuit);
+    return sim.unpack_measurements();
+}
+
+void SimBulkPauliFrames::sample_out(const Circuit &circuit, size_t num_samples, FILE *out, SampleFormat format, std::mt19937_64 &rng) {
+    constexpr size_t GOOD_BLOCK_SIZE = 1024;
+    if (num_samples >= GOOD_BLOCK_SIZE) {
+        auto sim = SimBulkPauliFrames(circuit.num_qubits, GOOD_BLOCK_SIZE, circuit.num_measurements, rng);
+        while (num_samples > GOOD_BLOCK_SIZE) {
+            sim.clear_and_run(circuit);
+            sim.unpack_write_measurements(out, format);
+            num_samples -= GOOD_BLOCK_SIZE;
+        }
+    }
+    if (num_samples) {
+        auto sim = SimBulkPauliFrames(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
+        sim.clear_and_run(circuit);
+        sim.unpack_write_measurements(out, format);
     }
 }

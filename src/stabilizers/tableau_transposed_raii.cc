@@ -88,8 +88,8 @@ void TableauTransposedRaii::append_H_YZ(size_t target) {
     });
 }
 
-void TableauTransposedRaii::append_H(size_t target) {
-    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+void TableauTransposedRaii::append_H_XZ(size_t q) {
+    for_each_trans_obs(*this, q, [](auto &x, auto &z, auto &s) {
         std::swap(x, z);
         s ^= x & z;
     });

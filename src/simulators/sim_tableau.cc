@@ -10,88 +10,97 @@ bool SimTableau::is_deterministic(size_t target) const {
     return !inv_state.zs[target].x_ref.not_zero();
 }
 
-std::vector<bool> SimTableau::measure(const std::vector<size_t> &targets, float bias) {
-    // Force all measurements to become deterministic.
-    collapse_many(targets, bias);
+void SimTableau::measure(const OperationData &target_data, int8_t sign_bias) {
+    // Ensure measurement observables are collapsed, picking random results.
+    collapse(target_data, sign_bias);
 
-    // Report deterministic measurement results.
-    std::vector<bool> results(targets.size(), false);
-    for (size_t t = 0; t < targets.size(); t++) {
-        results[t] = inv_state.zs.signs[targets[t]];
-    }
-    return results;
-}
-
-void SimTableau::reset(const std::vector<size_t> &targets) {
-    auto needs_reset = measure(targets);
-    for (size_t k = 0; k < targets.size(); k++) {
-        if (needs_reset[k]) {
-            inv_state.prepend_X(targets[k]);
-        }
+    // Record measurement results.
+    for (size_t k = 0; k < target_data.targets.size(); k++) {
+        recorded_measurement_results.push(inv_state.zs.signs[target_data.targets[k]] ^ target_data.flags[k]);
     }
 }
 
-void SimTableau::H(const std::vector<size_t> &targets) {
+void SimTableau::reset(const OperationData &target_data, int8_t sign_bias) {
+    // Collapse the qubits to be reset.
+    collapse(target_data, sign_bias);
+
+    // Force the collapsed qubits into the desired state.
+    for (size_t k = 0; k < target_data.targets.size(); k++) {
+        inv_state.zs.signs[target_data.targets[k]] = target_data.flags[k];
+    }
+}
+
+void SimTableau::H_XZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_XZ(q);
     }
 }
 
-void SimTableau::H_XY(const std::vector<size_t> &targets) {
+void SimTableau::H_XY(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_XY(q);
     }
 }
 
-void SimTableau::H_YZ(const std::vector<size_t> &targets) {
+void SimTableau::H_YZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_YZ(q);
     }
 }
 
-void SimTableau::SQRT_Z(const std::vector<size_t> &targets) {
+void SimTableau::SQRT_Z(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_Z_DAG(q);
     }
 }
 
-void SimTableau::SQRT_Z_DAG(const std::vector<size_t> &targets) {
+void SimTableau::SQRT_Z_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_Z(q);
     }
 }
 
-void SimTableau::SQRT_X(const std::vector<size_t> &targets) {
+void SimTableau::SQRT_X(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_X_DAG(q);
     }
 }
 
-void SimTableau::SQRT_X_DAG(const std::vector<size_t> &targets) {
+void SimTableau::SQRT_X_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_X(q);
     }
 }
 
-void SimTableau::SQRT_Y(const std::vector<size_t> &targets) {
+void SimTableau::SQRT_Y(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_Y_DAG(q);
     }
 }
 
-void SimTableau::SQRT_Y_DAG(const std::vector<size_t> &targets) {
+void SimTableau::SQRT_Y_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_Y(q);
     }
 }
 
-void SimTableau::CX(const std::vector<size_t> &targets) {
+void SimTableau::CX(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
@@ -100,7 +109,8 @@ void SimTableau::CX(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::CY(const std::vector<size_t> &targets) {
+void SimTableau::CY(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
@@ -109,7 +119,8 @@ void SimTableau::CY(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::CZ(const std::vector<size_t> &targets) {
+void SimTableau::CZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
@@ -118,7 +129,8 @@ void SimTableau::CZ(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::SWAP(const std::vector<size_t> &targets) {
+void SimTableau::SWAP(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -127,7 +139,8 @@ void SimTableau::SWAP(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::ISWAP(const std::vector<size_t> &targets) {
+void SimTableau::ISWAP(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -137,7 +150,8 @@ void SimTableau::ISWAP(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::ISWAP_DAG(const std::vector<size_t> &targets) {
+void SimTableau::ISWAP_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -147,7 +161,8 @@ void SimTableau::ISWAP_DAG(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::XCX(const std::vector<size_t> &targets) {
+void SimTableau::XCX(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -155,7 +170,8 @@ void SimTableau::XCX(const std::vector<size_t> &targets) {
         inv_state.prepend_XCX(q1, q2);
     }
 }
-void SimTableau::XCY(const std::vector<size_t> &targets) {
+void SimTableau::XCY(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -163,7 +179,8 @@ void SimTableau::XCY(const std::vector<size_t> &targets) {
         inv_state.prepend_XCY(q1, q2);
     }
 }
-void SimTableau::XCZ(const std::vector<size_t> &targets) {
+void SimTableau::XCZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -171,7 +188,8 @@ void SimTableau::XCZ(const std::vector<size_t> &targets) {
         inv_state.prepend_XCZ(q1, q2);
     }
 }
-void SimTableau::YCX(const std::vector<size_t> &targets) {
+void SimTableau::YCX(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -179,7 +197,8 @@ void SimTableau::YCX(const std::vector<size_t> &targets) {
         inv_state.prepend_YCX(q1, q2);
     }
 }
-void SimTableau::YCY(const std::vector<size_t> &targets) {
+void SimTableau::YCY(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -187,7 +206,8 @@ void SimTableau::YCY(const std::vector<size_t> &targets) {
         inv_state.prepend_YCY(q1, q2);
     }
 }
-void SimTableau::YCZ(const std::vector<size_t> &targets) {
+void SimTableau::YCZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
@@ -196,62 +216,68 @@ void SimTableau::YCZ(const std::vector<size_t> &targets) {
     }
 }
 
-void SimTableau::X(const std::vector<size_t> &targets) {
+void SimTableau::X(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_X(q);
     }
 }
 
-void SimTableau::Y(const std::vector<size_t> &targets) {
+void SimTableau::Y(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_Y(q);
     }
 }
 
-void SimTableau::Z(const std::vector<size_t> &targets) {
+void SimTableau::Z(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_Z(q);
     }
 }
 
-void SimTableau::broadcast_op(const std::string &name, const std::vector<size_t> &targets) {
-    SIM_TABLEAU_GATE_FUNC_DATA.at(name)(*this, targets);
+void SimTableau::apply(const std::string &name, const OperationData &target_data) {
+    try {
+        SIM_TABLEAU_GATE_FUNC_DATA.at(name)(*this, target_data);
+    } catch (const std::out_of_range &ex) {
+        throw std::out_of_range("Gate isn't supported by SimTableau: " + name);
+    }
 }
 
-void SimTableau::tableau_op(const std::string &name, const std::vector<size_t> &targets) {
+void SimTableau::apply(const Tableau &tableau, const OperationData &target_data) {
     // Note: inverted because we're tracking the inverse tableau.
-    inv_state.inplace_scatter_prepend(GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name)), targets);
+    inv_state.inplace_scatter_prepend(tableau.inverse(), target_data.targets);
 }
 
-std::vector<bool> SimTableau::simulate(const Circuit &circuit, std::mt19937_64 &rng) {
+std::vector<bool> SimTableau::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng) {
     SimTableau sim(circuit.num_qubits, rng);
-    std::vector<bool> result;
     for (const auto &op : circuit.operations) {
-        if (op.name == "M") {
-            for (bool b : sim.measure(op.targets)) {
-                result.push_back(b);
-            }
-        } else {
-            SIM_TABLEAU_GATE_FUNC_DATA.at(op.name)(sim, op.targets);
-        }
+        sim.apply(op.name, op.target_data);
+    }
+
+    std::vector<bool> result;
+    while (!sim.recorded_measurement_results.empty()) {
+        result.push_back(sim.recorded_measurement_results.front());
+        sim.recorded_measurement_results.pop();
     }
     return result;
 }
 
-void SimTableau::ensure_large_enough_for_qubit(size_t q) {
-    if (q < inv_state.num_qubits) {
+void SimTableau::ensure_large_enough_for_qubit(size_t max_q) {
+    if (max_q < inv_state.num_qubits) {
         return;
     }
-    inv_state.expand(q + 1);
+    inv_state.expand(max_q + 1);
 }
 
-void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement, std::mt19937_64 &rng) {
+void SimTableau::sample_stream(FILE *in, FILE *out, bool newline_after_ticks, std::mt19937_64 &rng) {
     CircuitReader reader(in);
     size_t max_qubit = 0;
     SimTableau sim(1, rng);
-    while (reader.read_next_moment(newline_after_measurement)) {
+    while (reader.read_next_moment(newline_after_ticks)) {
         for (const auto &e : reader.operations) {
-            for (size_t q : e.targets) {
+            for (size_t q : e.target_data.targets) {
                 max_qubit = std::max(q, max_qubit);
             }
         }
@@ -259,19 +285,21 @@ void SimTableau::simulate(FILE *in, FILE *out, bool newline_after_measurement, s
 
         for (const auto &op : reader.operations) {
             if (op.name == "M") {
-                for (bool b : sim.measure(op.targets)) {
-                    putc_unlocked(b ? '1' : '0', out);
+                sim.measure(op.target_data);
+                while (!sim.recorded_measurement_results.empty()) {
+                    putc_unlocked(sim.recorded_measurement_results.front() ? '1' : '0', out);
+                    sim.recorded_measurement_results.pop();
                 }
-                if (newline_after_measurement) {
+                if (newline_after_ticks) {
                     putc_unlocked('\n', out);
                     fflush(out);
                 }
             } else {
-                SIM_TABLEAU_GATE_FUNC_DATA.at(op.name)(sim, op.targets);
+                SIM_TABLEAU_GATE_FUNC_DATA.at(op.name)(sim, op.target_data);
             }
         }
     }
-    if (!newline_after_measurement) {
+    if (!newline_after_ticks) {
         putc_unlocked('\n', out);
     }
 }
@@ -285,93 +313,59 @@ SimVector SimTableau::to_vector_sim() const {
     return SimVector::from_stabilizers(stabilizers, rng);
 }
 
-void SimTableau::collapse_many(const std::vector<size_t> &targets, float bias) {
+void SimTableau::collapse(const OperationData &target_data, int8_t sign_bias) {
+    // Find targets that need to be collapsed.
     std::vector<size_t> collapse_targets;
-    collapse_targets.reserve(targets.size());
-    for (auto target : targets) {
-        if (!is_deterministic(target)) {
-            collapse_targets.push_back(target);
+    collapse_targets.reserve(target_data.targets.size());
+    for (size_t t : target_data.targets) {
+        if (!is_deterministic(t)) {
+            collapse_targets.push_back(t);
         }
     }
+
+    // Only pay the cost of transposing if collapsing is needed.
     if (!collapse_targets.empty()) {
         TableauTransposedRaii temp_transposed(inv_state);
         for (auto target : collapse_targets) {
-            collapse_while_transposed(target, temp_transposed, nullptr, bias);
+            collapse_qubit(target, temp_transposed, sign_bias);
         }
     }
 }
 
-std::vector<SparsePauliString> SimTableau::inspected_collapse(
-        const std::vector<size_t> &targets) {
-    std::vector<SparsePauliString> out(targets.size());
-
-    std::queue<size_t> remaining;
-    for (size_t k = 0; k < targets.size(); k++) {
-        if (is_deterministic(targets[k])) {
-            out[k].sign = inv_state.zs.signs[targets[k]];
-        } else {
-            remaining.push(k);
-        }
-    }
-    if (!remaining.empty()) {
-        TableauTransposedRaii temp_transposed(inv_state);
-        do {
-            auto k = remaining.front();
-            remaining.pop();
-            collapse_while_transposed(targets[k], temp_transposed, &out[k], -1);
-        } while (!remaining.empty());
-    }
-
-    return out;
-}
-
-void SimTableau::collapse_while_transposed(
+void SimTableau::collapse_qubit(
         size_t target,
-        TableauTransposedRaii &temp_transposed,
-        SparsePauliString *destabilizer_out,
-        float else_bias) {
+        TableauTransposedRaii &transposed_raii,
+        int8_t sign_bias) {
     auto n = inv_state.num_qubits;
 
-    // Find an anti-commuting part of the measurement observable's at the start of time.
+    // Search for any stabilizer generator that anti-commutes with the measurement observable.
     size_t pivot = 0;
-    while (pivot < n && !temp_transposed.tableau.zs.xt[pivot][target]) {
+    while (pivot < n && !transposed_raii.tableau.zs.xt[pivot][target]) {
         pivot++;
     }
     if (pivot == n) {
-        // No anti-commuting part. Already collapsed.
-        if (destabilizer_out != nullptr) {
-            destabilizer_out->sign = temp_transposed.tableau.zs.signs[target];
-        }
+        // No anti-commuting stabilizer generator. Measurement is deterministic.
         return;
     }
 
-    // Introduce no-op CNOTs at the start of time to remove all anti-commuting parts except for one.
+    // Perform partial Gaussian elimination over the stabilizer generators that anti-commute with the measurement.
+    // Do this by introducing no-effect-because-control-is-zero CNOTs at the beginning of time.
     for (size_t k = pivot + 1; k < n; k++) {
-        auto x = temp_transposed.tableau.zs.xt[k][target];
-        if (x) {
-            temp_transposed.append_CX(pivot, k);
+        if (transposed_raii.tableau.zs.xt[k][target]) {
+            transposed_raii.append_CX(pivot, k);
         }
     }
 
-    // Collapse the anti-commuting part.
-    if (temp_transposed.tableau.zs.zt[pivot][target]) {
-        temp_transposed.append_H_YZ(pivot);
+    // Swap the now-isolated anti-commuting stabilizer generator for one that commutes with the measurement.
+    if (transposed_raii.tableau.zs.zt[pivot][target]) {
+        transposed_raii.append_H_YZ(pivot);
     } else {
-        temp_transposed.append_H(pivot);
+        transposed_raii.append_H_XZ(pivot);
     }
-    bool sign = temp_transposed.tableau.zs.signs[target];
-    if (destabilizer_out != nullptr) {
-        *destabilizer_out = PauliStringRef(
-                n,
-                bit_ref(&sign, 0),
-                temp_transposed.tableau.zs[pivot].z_ref,
-                temp_transposed.tableau.xs[pivot].z_ref
-        ).sparse();
-    } else {
-        bool sign = temp_transposed.tableau.zs.signs[target];
-        auto coin_flip = std::bernoulli_distribution(else_bias)(rng);
-        if (sign != coin_flip) {
-            temp_transposed.append_X(pivot);
-        }
+
+    // Assign a measurement result.
+    bool result_if_measured = sign_bias == 0 ? (rng() & 1) : sign_bias < 0;
+    if (inv_state.zs.signs[target] != result_if_measured) {
+        transposed_raii.append_X(pivot);
     }
 }

@@ -24,7 +24,7 @@ struct TableauTransposedRaii {
     TableauTransposedRaii(const TableauTransposedRaii &) = delete;
     TableauTransposedRaii(TableauTransposedRaii &&) = delete;
 
-    void append_H(size_t q);
+    void append_H_XZ(size_t q);
     void append_H_XY(size_t q);
     void append_H_YZ(size_t q);
     void append_CX(size_t control, size_t target);

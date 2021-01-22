@@ -1,7 +1,6 @@
 # Stim
 
 Stim is an extremely fast simulator for non-adaptive quantum stabilizer circuits.
-
 Stim is based on a stabilizer tableau representation,
 analogous to [Scott Aaronson's CHP simulator](https://arxiv.org/abs/quant-ph/0406196).
 However, Stim makes three improvements each with large performance consequences.
@@ -9,15 +8,18 @@ However, Stim makes three improvements each with large performance consequences.
 First, the stabilizer tableau that is being tracked is inverted.
 The tableau tracked by Stim indexes how each qubit's X and Z observables at the current time map to compound observables
 at the start of time (instead of mapping from the start of time to the current time).
-This is done so that the sign of the current-time observables is always known.
-As a result, deterministic measurements can be resolved in linear time instead of quadratic time.
+This is done so that the sign of the tracked observables directly store the measurement result to return
+when a measurement is deterministic.
+As a result, deterministic measurements can be completed in linear time instead of quadratic time.
 
-Second, when producing multiple samples, the initial stabilizer simulation is used to analyze and compile the circuit
-into an equivalent form where qubit collapse events are replaced by a Pauli product error applied with 50% probability,
-all measurements have a known default result, and errors are accumulated into a "Pauli frame" that propagates through
-the circuit flipping (or not) these default measurement results.
-Tracking a single Pauli frame, instead of every single stabilizer, improves the worst case running time by a factor of
-n where n is the number of qubits.
+Second, when producing multiple samples, the initial stabilizer simulation is executed without noise in order
+to create a reference sample.
+Once a reference sample from the circuit is available, all that is needed is to track a Pauli frame through the circuit,
+using the original sample as a template whose results are flipped or not flipped by the passing Pauli frame.
+As long as all errors are probabilistic Pauli operations, and as long as 50/50 probability Z errors are placed after
+every reset and every measurement, the Pauli frame can track these errors and the resulting samples will come from the
+same distribution as a full stabilizer simulation.
+This optimization ensures every gate has a worst case complexity of O(1), instead of O(n) or O(n^2).
 
 Third, the simulator states are operated on using 256-bit-wide SIMD instructions.
 This makes basic building block operations extremely fast, particularly considering that the relevant operations tend
@@ -69,8 +71,8 @@ $ echo -e "H 0 \n CNOT 0 1 \n M 0 \n M 1 \n" | stim
         There is no separator between shots (other than the padding).
     - `RAW_UNSTABLE`:
         A raw dump of the Pauli frame simulator's internal representation.
-        This is the fastest binary format but it is **NOT STABLE OVER TIME**.
-        It interleaves measurements from multiple shots together, with padding to multiples of 256.        
+        This is the fastest binary format but it will vary from version to version.
+        Avoid it unless you are truly desperate for speed.
 - `-profile`: Unstable. Debug command for timing various things.
 
 
@@ -78,9 +80,10 @@ Here is a list of the supported no-qubit commands:
 
 ## Supported Gates
 
-Note: all gates support implicit broadcasting.
+Note: all gates support broadcasting over multiple targets.
 For example, `H 0 1 2` will apply a Hadamard gate to qubits 0, 1, and 2.
-Similarly, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
+Two qubit gates broadcast over each aligned pair of targets.
+For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 
 ### Single qubit gates
 
@@ -96,7 +99,7 @@ Similarly, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 - `SQRT_Y_DAG`: Adjoint square root of Y gate. Equal to `H_YZ*S_DAG*H_YZ`.
 - `SQRT_X`: Principle square root of X gate. Equal to `H*S*H`.
 - `SQRT_X_DAG`: Adjoint square root of X gate. Equal to `H*S_DAG*H`.
-- `I`: Identity gate. Does nothing.
+- `I`: Identity gate. Does nothing. Why is this even here? Probably out of a misguided desire for closure.
 
 ### Two qubit gates
 
@@ -115,14 +118,19 @@ Similarly, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 
 ### Non-unitary gates
 
-- `M`:
+- `M` (Tableau simulator only):
     Z-basis measurement.
     Examples: `M 0`, `M 2 1`, `M 0 !3 1 2`. 
     Collapses the target qubits and reports their values.
-    Prefixing a target with a `!` indicates that the measurement result should be inverted.
+    Prefixing a target with a `!` indicates that the measurement result should be inverted when reported.
     In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
-    (e.g. prefer `M 0 1 \n X 0` over `M 0 \n X 0 \n M 1`).
-    This operation is not supported by the Pauli frame simulator, which uses `M_DET` instead.
+    (e.g. prefer `M 0 1 \n H 0` over `M 0 \n H 0 \n M 1`).
+- `M_REF` (Pauli frame simulator only):
+    A measurement augmented with reference results from a noiseless simulation of the circuit.
+    The default result is indicated by the absence (0) or presence (1) of a `!` before each qubit.
+    The Pauli frame simulator will use these measurements as a starting point, flipping them based
+    on the tracked Pauli frame.
+    Examples: `M_REF 0`, `M_REF 2 1`, `M_REF 0 !3 1 2`.
 - `R`:
     Reset to |0>.
     Examples: `R 0`, `R 2 1`, `R 0 3 1 2`.
@@ -131,25 +139,27 @@ Similarly, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
     In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
     (e.g. prefer `R 0 1 \n X 0` over `R 0 \n X 0 \ nR 1`).
 - `DEPOLARIZE1(p)`:
+    Single qubit depolarizing error.
     Examples: `DEPOLARIZE1(0.001) 1`, `DEPOLARIZE1(0.0003) 0 2 4 6`.
     With probability `p`, applies independent single-qubit depolarizing kicks to the given qubits.
     A single-qubit depolarizing kick is `X`, `Y`, or `Z` chosen uniformly at random.
 - `DEPOLARIZE2(p)`:
+    Two qubit depolarizing error.
     Examples: `DEPOLARIZE2(0.001) 0 1`, `DEPOLARIZE2(0.0003) 0 2 4 6`.
     With probability `p`, applies independent two-qubit depolarizing kicks to the given qubit pairs.
     A two-qubit depolarizing kick is
     `IX`, `IY`, `IZ`, `XI`, `XX`, `XY`, `XZ`, `YI`, `YX`, `YY`, `YZ`, `ZI`, `ZX`, `ZY`, `ZZ`
     chosen uniformly at random.
-- (Pauli frame simulator) `M_DET`:
-    A measurement that is promised to be deterministic under noiseless execution.
-    Reports the measurement result, possibly flipped due to preceding noise.
-    Examples: `M_DET 0`, `M_DET 2 1`, `M_DET 0 !3 1 2`.
-    The deterministic result is indicated by the absence (0) or presence (1) of a `!` before each qubit.
-- (Pauli frame simulator) `RANDOM_KICKBACK`:
-    A Pauli product error applied with 50/50 chance.
-    Examples: `RANDOM_KICKBACK X0`, `RANDOM_KICKBACK X2*Z1*Y4`.
-    The default values of deterministic measurements assume all kickback operations are skipped.
-    This operation is used to simulate the collapse from random measurements, when using Pauli frame simulation.
+- `M_PREFER_0`:
+    Same as `M` but with a consistent outcome.
+    Collapses preferentially to the +1 eigenstate of Z observables, instead of to +1 or -1 randomly.
+    (Used internally when preprocessing a circuit for the Pauli frame simulator, so that the result of
+    preprocessing is consistent instead of varying from run to run.)
+- `R_PREFER_0`:
+    Same as `R` but with a consistent outcome.
+    Collapses preferentially to the +1 eigenstate of Z observables, instead of to +1 or -1 randomly.
+    (Used internally when preprocessing a circuit for the Pauli frame simulator, so that the result of
+    preprocessing is consistent instead of varying from run to run.)
 
 ### Other.
 

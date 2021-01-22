@@ -93,7 +93,7 @@ void time_tableau_sim(size_t distance) {
     std::cerr << "tableau_sim(unrotated surface code distance=" << distance << ")\n";
     auto circuit = surface_code_circuit(distance);
     std::mt19937_64 rng((std::random_device {})());
-    auto f = PerfResult::time([&]() { SimTableau::simulate(circuit, rng); });
+    auto f = PerfResult::time([&]() { SimTableau::sample_circuit(circuit, rng); });
     std::cerr << f;
     std::cerr << "\n";
 }
@@ -101,7 +101,7 @@ void time_tableau_sim(size_t distance) {
 void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
     std::cerr << "time_sim_bulk_pauli_frame(unrotated surface code distance=" << distance << ", samples=" << num_samples << ")\n";
     auto circuit = surface_code_circuit(distance);
-    auto frame_program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
+    auto frame_program = circuit.with_reference_measurements_from_tableau_simulation();
     std::mt19937_64 rng((std::random_device {})());
     auto sim = SimBulkPauliFrames(frame_program.num_qubits, num_samples, frame_program.num_measurements, rng);
     auto f = PerfResult::time([&]() {
@@ -343,8 +343,8 @@ void time_cnot(size_t num_qubits) {
 
 void bulk_sample(size_t num_samples, SampleFormat format, FILE *in, FILE *out, std::mt19937_64 &rng) {
     auto circuit = Circuit::from_file(in);
-    auto program = PauliFrameProgram::from_stabilizer_circuit(circuit.operations);
-    program.sample_out(num_samples, out, format, rng);
+    auto program = circuit.with_reference_measurements_from_tableau_simulation();
+    SimBulkPauliFrames::sample_out(program, num_samples, out, format, rng);
 }
 
 void profile() {
@@ -430,7 +430,7 @@ int main(int argc, const char** argv) {
 
     std::mt19937_64 rng((std::random_device {})());
     if (samples == 1 && format == SAMPLE_FORMAT_ASCII) {
-        SimTableau::simulate(stdin, out, interactive, rng);
+        SimTableau::sample_stream(stdin, out, interactive, rng);
     } else {
         bulk_sample((size_t) samples, format, stdin, out, rng);
     }

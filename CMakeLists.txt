@@ -6,7 +6,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit.cc
-        src/program_frame.cc
         src/perf.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
@@ -27,7 +26,6 @@ set(SOURCE_FILES_NO_MAIN
 set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit.test.cc
-        src/program_frame.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
         src/simd/simd_bit_table.test.cc

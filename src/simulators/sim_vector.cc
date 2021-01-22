@@ -53,11 +53,19 @@ void SimVector::apply(const std::vector<std::vector<std::complex<float>>> &matri
 }
 
 void SimVector::apply(const std::string &gate, size_t qubit) {
-    apply(GATE_UNITARIES.at(gate), {qubit});
+    try {
+        apply(GATE_UNITARIES.at(gate), {qubit});
+    } catch (const std::out_of_range &ex) {
+        throw std::out_of_range("Single qubit gate isn't supported by SimVector: " + gate);
+    }
 }
 
 void SimVector::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
-    apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
+    try {
+        apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
+    } catch (const std::out_of_range &ex) {
+        throw std::out_of_range("Two qubit gate isn't supported by SimVector: " + gate);
+    }
 }
 
 void SimVector::apply(const PauliStringRef &gate, size_t qubit_offset) {
