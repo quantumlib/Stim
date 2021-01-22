@@ -19,6 +19,7 @@ set(SOURCE_FILES_NO_MAIN
         src/simulators/tableau_simulator.cc
         src/simulators/vector_simulator.cc
         src/stabilizers/pauli_string.cc
+        src/stabilizers/pauli_string_ref.cc
         src/stabilizers/tableau.cc
         src/stabilizers/tableau_specialized_prepend.cc
         src/stabilizers/tableau_transposed_raii.cc
