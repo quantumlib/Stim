@@ -10,16 +10,16 @@
 #include "../stabilizers/tableau.h"
 #include <random>
 #include "../circuit.h"
-#include "sim_vector.h"
+#include "vector_simulator.h"
 #include <queue>
 #include "../stabilizers/tableau_transposed_raii.h"
 
-struct SimTableau {
+struct TableauSimulator {
     Tableau inv_state;
     std::mt19937_64 &rng;
     std::queue<bool> recorded_measurement_results;
 
-    explicit SimTableau(size_t num_qubits, std::mt19937_64 &rng);
+    explicit TableauSimulator(size_t num_qubits, std::mt19937_64 &rng);
     static std::vector<bool> sample_circuit(const Circuit &circuit, std::mt19937_64 &rng);
     static void sample_stream(FILE *in, FILE *out, bool newline_after_ticks, std::mt19937_64 &rng);
 
@@ -30,7 +30,7 @@ struct SimTableau {
     void ensure_large_enough_for_qubit(size_t max_q);
 
     /// Finds a state vector satisfying the current stabilizer generators, and returns a vector simulator in that state.
-    SimVector to_vector_sim() const;
+    VectorSimulator to_vector_sim() const;
 
     /// Applies a custom Clifford operation (represented by a stabilizer tableau) to the given targets.
     ///

@@ -1,7 +1,7 @@
 #include "circuit.h"
 #include <string>
 #include "stabilizers/tableau.h"
-#include "simulators/sim_tableau.h"
+#include "simulators/tableau_simulator.h"
 #include "simulators/gate_data.h"
 
 std::vector<std::string> tokenize(const std::string &line, size_t start, size_t end) {
@@ -208,7 +208,7 @@ Circuit Circuit::with_reference_measurements_from_tableau_simulation() const {
     }
 
     std::mt19937_64 irrelevant_rng(0);
-    std::vector<bool> reference_samples = SimTableau::sample_circuit(Circuit(deterministic_operations), irrelevant_rng);
+    std::vector<bool> reference_samples = TableauSimulator::sample_circuit(Circuit(deterministic_operations), irrelevant_rng);
 
     size_t next_result_index = 0;
     std::vector<Operation> reference_operations {};

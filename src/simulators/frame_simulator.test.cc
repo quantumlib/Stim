@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
-#include "sim_bulk_pauli_frame.h"
-#include "sim_tableau.h"
+#include "frame_simulator.h"
+#include "tableau_simulator.h"
 #include "gate_data.h"
 #include "../test_util.test.h"
 
 TEST(SimBulkPauliFrames, get_set_frame) {
-    SimBulkPauliFrames sim(6, 4, 999, SHARED_TEST_RNG());
+    FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
     ASSERT_EQ(sim.get_frame(0), PauliStringVal::from_str("______"));
     ASSERT_EQ(sim.get_frame(1), PauliStringVal::from_str("______"));
     ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
@@ -21,14 +21,14 @@ TEST(SimBulkPauliFrames, get_set_frame) {
     ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
     ASSERT_EQ(sim.get_frame(3), PauliStringVal::from_str("ZZZZZZ"));
 
-    SimBulkPauliFrames big_sim(501, 1001, 999, SHARED_TEST_RNG());
+    FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
     big_sim.set_frame(258, PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[k == 303]; }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse().str(), "+X303");
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse().str(), "+I");
 }
 
 TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
-    SimBulkPauliFrames big_sim(501, 1001, 999, SHARED_TEST_RNG());
+    FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
     simd_bits mask(1024);
     mask.u64[0] = 4;
     mask.u64[4] = -1;
@@ -64,7 +64,7 @@ TEST(SimBulkPauliFrames, MUL_INTO_FRAME) {
 }
 
 TEST(SimBulkPauliFrames, recorded_bit_address) {
-    SimBulkPauliFrames sim(1, 750, 1250, SHARED_TEST_RNG());
+    FrameSimulator sim(1, 750, 1250, SHARED_TEST_RNG());
 
     ASSERT_EQ(sim.recorded_bit_address(0, 0), 0);
     ASSERT_EQ(sim.recorded_bit_address(1, 0), 1);
@@ -81,7 +81,7 @@ TEST(SimBulkPauliFrames, recorded_bit_address) {
 }
 
 TEST(SimBulkPauliFrames, unpack_measurements) {
-    SimBulkPauliFrames sim(1, 500, 1000, SHARED_TEST_RNG());
+    FrameSimulator sim(1, 500, 1000, SHARED_TEST_RNG());
     std::vector<simd_bits> expected;
     for (size_t k = 0; k < sim.num_samples_raw; k++) {
         expected.push_back(simd_bits::random(sim.num_measurements_raw, SHARED_TEST_RNG()));
@@ -97,7 +97,7 @@ TEST(SimBulkPauliFrames, unpack_measurements) {
 }
 
 TEST(SimBulkPauliFrames, measure_deterministic) {
-    SimBulkPauliFrames sim(1, 750, 1250, SHARED_TEST_RNG());
+    FrameSimulator sim(1, 750, 1250, SHARED_TEST_RNG());
     sim.clear();
     sim.m_table.data.randomize(sim.m_table.data.num_bits_padded(), SHARED_TEST_RNG());
     sim.measure_ref({{0, 0}, {false, true}});
@@ -114,7 +114,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
     size_t num_qubits = 500;
     size_t num_samples = 1000;
     size_t num_measurements = 10;
-    SimBulkPauliFrames sim(num_qubits, num_samples, num_measurements, SHARED_TEST_RNG());
+    FrameSimulator sim(num_qubits, num_samples, num_measurements, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<size_t> targets {101, 403, 202, 100};
@@ -151,7 +151,7 @@ TEST(SimBulkPauliFrames, bulk_operations_consistent_with_tableau_data) {
 #define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << Circuit::from_text(program).with_reference_measurements_from_tableau_simulation()
 
 bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits &output) {
-    auto tableau_sim = SimTableau(circuit.num_qubits, SHARED_TEST_RNG());
+    auto tableau_sim = TableauSimulator(circuit.num_qubits, SHARED_TEST_RNG());
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
         if (op.name == "M") {
@@ -195,7 +195,7 @@ bool is_sim_frame_consistent_with_sim_tableau(const std::string &program) {
     auto circuit = Circuit::from_text(program);
     auto frame_program = circuit.with_reference_measurements_from_tableau_simulation();
 
-    for (const auto &sample : SimBulkPauliFrames::sample(frame_program, 10, SHARED_TEST_RNG())) {
+    for (const auto &sample : FrameSimulator::sample(frame_program, 10, SHARED_TEST_RNG())) {
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
             for (size_t k = 0; k < frame_program.num_measurements; k++) {
@@ -342,14 +342,14 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
             "M 2\n"
             "M 3\n"
             ).with_reference_measurements_from_tableau_simulation();
-    auto r = SimBulkPauliFrames::sample(program, 10, SHARED_TEST_RNG());
+    auto r = FrameSimulator::sample(program, 10, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 10);
     for (const auto &e : r) {
         ASSERT_EQ(e.u64[0], 0b0010);
     }
 
     FILE *tmp = tmpfile();
-    SimBulkPauliFrames::sample_out(program, 5, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(program, 5, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
     rewind(tmp);
     std::stringstream ss;
     while (true) {
@@ -362,7 +362,7 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     ASSERT_EQ(ss.str(), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    SimBulkPauliFrames::sample_out(program, 5, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(program, 5, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 0b0010);
@@ -379,7 +379,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
         ops.push_back({"M", {k}});
     }
     auto program = Circuit(ops).with_reference_measurements_from_tableau_simulation();
-    auto r = SimBulkPauliFrames::sample(program, 750, SHARED_TEST_RNG());
+    auto r = FrameSimulator::sample(program, 750, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 750);
     for (const auto &e : r) {
         for (size_t k = 0; k < 1250; k++) {
@@ -388,7 +388,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     }
 
     FILE *tmp = tmpfile();
-    SimBulkPauliFrames::sample_out(program, 750, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(program, 750, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -399,7 +399,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    SimBulkPauliFrames::sample_out(program, 750, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(program, 750, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {
@@ -421,7 +421,7 @@ TEST(PauliFrameSimulation, big_circuit_random_measurements) {
         ops.push_back({"M", {k}});
     }
     auto program = Circuit(ops).with_reference_measurements_from_tableau_simulation();
-    auto r = SimBulkPauliFrames::sample(program, 1000, SHARED_TEST_RNG());
+    auto r = FrameSimulator::sample(program, 1000, SHARED_TEST_RNG());
     ASSERT_EQ(r.size(), 1000);
     for (size_t k = 0; k < r.size(); k++) {
         ASSERT_TRUE(r[k].not_zero()) << k;

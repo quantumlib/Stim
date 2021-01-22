@@ -1,6 +1,6 @@
 #include <random>
 #include "../simulators/gate_data.h"
-#include "../simulators/sim_vector.h"
+#include "../simulators/vector_simulator.h"
 #include "../test_util.test.h"
 #include "gtest/gtest.h"
 #include "tableau.h"
@@ -46,7 +46,7 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
     }
 
     for (const auto &input_side_obs : basis) {
-        SimVector sim(n * 2);
+        VectorSimulator sim(n * 2);
         // Create EPR pairs to test all possible inputs via state channel duality.
         for (size_t q = 0; q < n; q++) {
             sim.apply("H", q);

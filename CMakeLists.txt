@@ -15,9 +15,9 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/simd_compat.cc
         src/simd/simd_util.cc
         src/simulators/gate_data.cc
-        src/simulators/sim_bulk_pauli_frame.cc
-        src/simulators/sim_tableau.cc
-        src/simulators/sim_vector.cc
+        src/simulators/frame_simulator.cc
+        src/simulators/tableau_simulator.cc
+        src/simulators/vector_simulator.cc
         src/stabilizers/pauli_string.cc
         src/stabilizers/tableau.cc
         src/stabilizers/tableau_specialized_prepend.cc
@@ -33,9 +33,9 @@ set(TEST_FILES
         src/simd/simd_bits_range_ref.test.cc
         src/simd/simd_compat.test.cc
         src/simd/simd_util.test.cc
-        src/simulators/sim_bulk_pauli_frame.test.cc
-        src/simulators/sim_tableau.test.cc
-        src/simulators/sim_vector.test.cc
+        src/simulators/frame_simulator.test.cc
+        src/simulators/tableau_simulator.test.cc
+        src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
         src/stabilizers/tableau.test.cc
         src/test_util.test.cc

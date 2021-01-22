@@ -1,16 +1,16 @@
 #include <queue>
 
 #include "gate_data.h"
-#include "sim_tableau.h"
+#include "tableau_simulator.h"
 
-SimTableau::SimTableau(size_t num_qubits, std::mt19937_64 &rng) : inv_state(Tableau::identity(num_qubits)), rng(rng) {
+TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng) : inv_state(Tableau::identity(num_qubits)), rng(rng) {
 }
 
-bool SimTableau::is_deterministic(size_t target) const {
+bool TableauSimulator::is_deterministic(size_t target) const {
     return !inv_state.zs[target].x_ref.not_zero();
 }
 
-void SimTableau::measure(const OperationData &target_data, int8_t sign_bias) {
+void TableauSimulator::measure(const OperationData &target_data, int8_t sign_bias) {
     // Ensure measurement observables are collapsed, picking random results.
     collapse(target_data, sign_bias);
 
@@ -20,7 +20,7 @@ void SimTableau::measure(const OperationData &target_data, int8_t sign_bias) {
     }
 }
 
-void SimTableau::reset(const OperationData &target_data, int8_t sign_bias) {
+void TableauSimulator::reset(const OperationData &target_data, int8_t sign_bias) {
     // Collapse the qubits to be reset.
     collapse(target_data, sign_bias);
 
@@ -30,28 +30,28 @@ void SimTableau::reset(const OperationData &target_data, int8_t sign_bias) {
     }
 }
 
-void SimTableau::H_XZ(const OperationData &target_data) {
+void TableauSimulator::H_XZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_XZ(q);
     }
 }
 
-void SimTableau::H_XY(const OperationData &target_data) {
+void TableauSimulator::H_XY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_XY(q);
     }
 }
 
-void SimTableau::H_YZ(const OperationData &target_data) {
+void TableauSimulator::H_YZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_H_YZ(q);
     }
 }
 
-void SimTableau::SQRT_Z(const OperationData &target_data) {
+void TableauSimulator::SQRT_Z(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -59,7 +59,7 @@ void SimTableau::SQRT_Z(const OperationData &target_data) {
     }
 }
 
-void SimTableau::SQRT_Z_DAG(const OperationData &target_data) {
+void TableauSimulator::SQRT_Z_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -67,7 +67,7 @@ void SimTableau::SQRT_Z_DAG(const OperationData &target_data) {
     }
 }
 
-void SimTableau::SQRT_X(const OperationData &target_data) {
+void TableauSimulator::SQRT_X(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -75,7 +75,7 @@ void SimTableau::SQRT_X(const OperationData &target_data) {
     }
 }
 
-void SimTableau::SQRT_X_DAG(const OperationData &target_data) {
+void TableauSimulator::SQRT_X_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -83,7 +83,7 @@ void SimTableau::SQRT_X_DAG(const OperationData &target_data) {
     }
 }
 
-void SimTableau::SQRT_Y(const OperationData &target_data) {
+void TableauSimulator::SQRT_Y(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -91,7 +91,7 @@ void SimTableau::SQRT_Y(const OperationData &target_data) {
     }
 }
 
-void SimTableau::SQRT_Y_DAG(const OperationData &target_data) {
+void TableauSimulator::SQRT_Y_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
@@ -99,7 +99,7 @@ void SimTableau::SQRT_Y_DAG(const OperationData &target_data) {
     }
 }
 
-void SimTableau::CX(const OperationData &target_data) {
+void TableauSimulator::CX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -109,7 +109,7 @@ void SimTableau::CX(const OperationData &target_data) {
     }
 }
 
-void SimTableau::CY(const OperationData &target_data) {
+void TableauSimulator::CY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -119,7 +119,7 @@ void SimTableau::CY(const OperationData &target_data) {
     }
 }
 
-void SimTableau::CZ(const OperationData &target_data) {
+void TableauSimulator::CZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -129,7 +129,7 @@ void SimTableau::CZ(const OperationData &target_data) {
     }
 }
 
-void SimTableau::SWAP(const OperationData &target_data) {
+void TableauSimulator::SWAP(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -139,7 +139,7 @@ void SimTableau::SWAP(const OperationData &target_data) {
     }
 }
 
-void SimTableau::ISWAP(const OperationData &target_data) {
+void TableauSimulator::ISWAP(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -150,7 +150,7 @@ void SimTableau::ISWAP(const OperationData &target_data) {
     }
 }
 
-void SimTableau::ISWAP_DAG(const OperationData &target_data) {
+void TableauSimulator::ISWAP_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -161,7 +161,7 @@ void SimTableau::ISWAP_DAG(const OperationData &target_data) {
     }
 }
 
-void SimTableau::XCX(const OperationData &target_data) {
+void TableauSimulator::XCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -170,7 +170,7 @@ void SimTableau::XCX(const OperationData &target_data) {
         inv_state.prepend_XCX(q1, q2);
     }
 }
-void SimTableau::XCY(const OperationData &target_data) {
+void TableauSimulator::XCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -179,7 +179,7 @@ void SimTableau::XCY(const OperationData &target_data) {
         inv_state.prepend_XCY(q1, q2);
     }
 }
-void SimTableau::XCZ(const OperationData &target_data) {
+void TableauSimulator::XCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -188,7 +188,7 @@ void SimTableau::XCZ(const OperationData &target_data) {
         inv_state.prepend_XCZ(q1, q2);
     }
 }
-void SimTableau::YCX(const OperationData &target_data) {
+void TableauSimulator::YCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -197,7 +197,7 @@ void SimTableau::YCX(const OperationData &target_data) {
         inv_state.prepend_YCX(q1, q2);
     }
 }
-void SimTableau::YCY(const OperationData &target_data) {
+void TableauSimulator::YCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -206,7 +206,7 @@ void SimTableau::YCY(const OperationData &target_data) {
         inv_state.prepend_YCY(q1, q2);
     }
 }
-void SimTableau::YCZ(const OperationData &target_data) {
+void TableauSimulator::YCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -216,42 +216,42 @@ void SimTableau::YCZ(const OperationData &target_data) {
     }
 }
 
-void SimTableau::X(const OperationData &target_data) {
+void TableauSimulator::X(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_X(q);
     }
 }
 
-void SimTableau::Y(const OperationData &target_data) {
+void TableauSimulator::Y(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_Y(q);
     }
 }
 
-void SimTableau::Z(const OperationData &target_data) {
+void TableauSimulator::Z(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         inv_state.prepend_Z(q);
     }
 }
 
-void SimTableau::apply(const std::string &name, const OperationData &target_data) {
+void TableauSimulator::apply(const std::string &name, const OperationData &target_data) {
     try {
         SIM_TABLEAU_GATE_FUNC_DATA.at(name)(*this, target_data);
     } catch (const std::out_of_range &ex) {
-        throw std::out_of_range("Gate isn't supported by SimTableau: " + name);
+        throw std::out_of_range("Gate isn't supported by TableauSimulator: " + name);
     }
 }
 
-void SimTableau::apply(const Tableau &tableau, const OperationData &target_data) {
+void TableauSimulator::apply(const Tableau &tableau, const OperationData &target_data) {
     // Note: inverted because we're tracking the inverse tableau.
     inv_state.inplace_scatter_prepend(tableau.inverse(), target_data.targets);
 }
 
-std::vector<bool> SimTableau::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng) {
-    SimTableau sim(circuit.num_qubits, rng);
+std::vector<bool> TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng) {
+    TableauSimulator sim(circuit.num_qubits, rng);
     for (const auto &op : circuit.operations) {
         sim.apply(op.name, op.target_data);
     }
@@ -264,17 +264,17 @@ std::vector<bool> SimTableau::sample_circuit(const Circuit &circuit, std::mt1993
     return result;
 }
 
-void SimTableau::ensure_large_enough_for_qubit(size_t max_q) {
+void TableauSimulator::ensure_large_enough_for_qubit(size_t max_q) {
     if (max_q < inv_state.num_qubits) {
         return;
     }
     inv_state.expand(max_q + 1);
 }
 
-void SimTableau::sample_stream(FILE *in, FILE *out, bool newline_after_ticks, std::mt19937_64 &rng) {
+void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_ticks, std::mt19937_64 &rng) {
     CircuitReader reader(in);
     size_t max_qubit = 0;
-    SimTableau sim(1, rng);
+    TableauSimulator sim(1, rng);
     while (reader.read_next_moment(newline_after_ticks)) {
         for (const auto &e : reader.operations) {
             for (size_t q : e.target_data.targets) {
@@ -304,16 +304,16 @@ void SimTableau::sample_stream(FILE *in, FILE *out, bool newline_after_ticks, st
     }
 }
 
-SimVector SimTableau::to_vector_sim() const {
+VectorSimulator TableauSimulator::to_vector_sim() const {
     auto inv = inv_state.inverse();
     std::vector<PauliStringRef> stabilizers;
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.zs[k]);
     }
-    return SimVector::from_stabilizers(stabilizers, rng);
+    return VectorSimulator::from_stabilizers(stabilizers, rng);
 }
 
-void SimTableau::collapse(const OperationData &target_data, int8_t sign_bias) {
+void TableauSimulator::collapse(const OperationData &target_data, int8_t sign_bias) {
     // Find targets that need to be collapsed.
     std::vector<size_t> collapse_targets;
     collapse_targets.reserve(target_data.targets.size());
@@ -332,7 +332,7 @@ void SimTableau::collapse(const OperationData &target_data, int8_t sign_bias) {
     }
 }
 
-void SimTableau::collapse_qubit(
+void TableauSimulator::collapse_qubit(
         size_t target,
         TableauTransposedRaii &transposed_raii,
         int8_t sign_bias) {

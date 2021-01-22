@@ -1,10 +1,10 @@
 #include <iostream>
 #include <map>
 #include "../stabilizers/pauli_string.h"
-#include "sim_vector.h"
+#include "vector_simulator.h"
 #include <bit>
 
-SimVector::SimVector(size_t num_qubits) {
+VectorSimulator::VectorSimulator(size_t num_qubits) {
     state.resize(1 << num_qubits, 0.0f);
     state[0] = 1;
 }
@@ -22,7 +22,7 @@ std::vector<std::complex<float>> mat_vec_mul(const std::vector<std::vector<std::
     return result;
 }
 
-void SimVector::apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
+void VectorSimulator::apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
     size_t n = 1 << qubits.size();
     assert(matrix.size() == n);
     std::vector<size_t> masks;
@@ -52,23 +52,23 @@ void SimVector::apply(const std::vector<std::vector<std::complex<float>>> &matri
     }
 }
 
-void SimVector::apply(const std::string &gate, size_t qubit) {
+void VectorSimulator::apply(const std::string &gate, size_t qubit) {
     try {
         apply(GATE_UNITARIES.at(gate), {qubit});
     } catch (const std::out_of_range &ex) {
-        throw std::out_of_range("Single qubit gate isn't supported by SimVector: " + gate);
+        throw std::out_of_range("Single qubit gate isn't supported by VectorSimulator: " + gate);
     }
 }
 
-void SimVector::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
+void VectorSimulator::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
     try {
         apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
     } catch (const std::out_of_range &ex) {
-        throw std::out_of_range("Two qubit gate isn't supported by SimVector: " + gate);
+        throw std::out_of_range("Two qubit gate isn't supported by VectorSimulator: " + gate);
     }
 }
 
-void SimVector::apply(const PauliStringRef &gate, size_t qubit_offset) {
+void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
     if (gate.sign_ref) {
         for (auto &e : state) {
             e *= -1;
@@ -88,10 +88,10 @@ void SimVector::apply(const PauliStringRef &gate, size_t qubit_offset) {
     }
 }
 
-SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937_64 &rng) {
+VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937_64 &rng) {
     assert(!stabilizers.empty());
     size_t num_qubits = stabilizers[0].num_qubits;
-    SimVector result(num_qubits);
+    VectorSimulator result(num_qubits);
 
     // Create an initial state $|T\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
     std::uniform_real_distribution<float> dist(-1.0, +1.0);
@@ -107,7 +107,7 @@ SimVector SimVector::from_stabilizers(const std::vector<PauliStringRef> stabiliz
     return result;
 }
 
-float SimVector::project(const PauliStringRef &observable) {
+float VectorSimulator::project(const PauliStringRef &observable) {
     assert(1ULL << observable.num_qubits == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.num_qubits; k++) {
@@ -148,7 +148,7 @@ float SimVector::project(const PauliStringRef &observable) {
     return mag2;
 }
 
-bool SimVector::approximate_equals(const SimVector &other, bool up_to_global_phase) const {
+bool VectorSimulator::approximate_equals(const VectorSimulator &other, bool up_to_global_phase) const {
     if (state.size() != other.state.size()) {
         return false;
     }
@@ -173,14 +173,14 @@ bool SimVector::approximate_equals(const SimVector &other, bool up_to_global_pha
     return 1 - 1e-4 <= f && f <= 1 + 1e-4;
 }
 
-std::string SimVector::str() const {
+std::string VectorSimulator::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const SimVector &sim) {
-    out << "SimVector {\n";
+std::ostream &operator<<(std::ostream &out, const VectorSimulator &sim) {
+    out << "VectorSimulator {\n";
     for (size_t k = 0; k < sim.state.size(); k++) {
         out << "    " << k << ": " << sim.state[k] << "\n";
 

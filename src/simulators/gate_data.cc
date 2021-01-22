@@ -1,8 +1,8 @@
 #include <complex>
 #include "gate_data.h"
-#include "sim_tableau.h"
-#include "sim_vector.h"
-#include "sim_bulk_pauli_frame.h"
+#include "tableau_simulator.h"
+#include "vector_simulator.h"
+#include "frame_simulator.h"
 
 const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES {
     {"I", "I"},
@@ -124,12 +124,12 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
     {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
 };
 
-void do_nothing_pst(SimBulkPauliFrames &p, const OperationData &target_data) {
+void do_nothing_pst(FrameSimulator &p, const OperationData &target_data) {
 }
 
-const std::unordered_map<std::string, std::function<void(SimBulkPauliFrames &, const OperationData &)>> SIM_BULK_PAULI_FRAMES_GATE_DATA{
-    {"R",          &SimBulkPauliFrames::reset},
-    {"M_REF",      &SimBulkPauliFrames::measure_ref},
+const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>> SIM_BULK_PAULI_FRAMES_GATE_DATA{
+    {"R",          &FrameSimulator::reset},
+    {"M_REF",      &FrameSimulator::measure_ref},
     // Pauli gates.
     {"TICK",       &do_nothing_pst},
     {"I",          &do_nothing_pst},
@@ -137,38 +137,38 @@ const std::unordered_map<std::string, std::function<void(SimBulkPauliFrames &, c
     {"Y",          &do_nothing_pst},
     {"Z",          &do_nothing_pst},
     // Axis exchange gates.
-    {"H", &SimBulkPauliFrames::H_XZ},
-    {"H_XY",       &SimBulkPauliFrames::H_XY},
-    {"H_XZ", &SimBulkPauliFrames::H_XZ},
-    {"H_YZ",       &SimBulkPauliFrames::H_YZ},
+    {"H", &FrameSimulator::H_XZ},
+    {"H_XY",       &FrameSimulator::H_XY},
+    {"H_XZ", &FrameSimulator::H_XZ},
+    {"H_YZ",       &FrameSimulator::H_YZ},
     // 90 degree rotation gates.
-    {"SQRT_X",     &SimBulkPauliFrames::H_YZ},
-    {"SQRT_X_DAG", &SimBulkPauliFrames::H_YZ},
-    {"SQRT_Y",     &SimBulkPauliFrames::H_XZ},
-    {"SQRT_Y_DAG", &SimBulkPauliFrames::H_XZ},
-    {"SQRT_Z",     &SimBulkPauliFrames::H_XY},
-    {"SQRT_Z_DAG", &SimBulkPauliFrames::H_XY},
-    {"S",          &SimBulkPauliFrames::H_XY},
-    {"S_DAG",      &SimBulkPauliFrames::H_XY},
+    {"SQRT_X",     &FrameSimulator::H_YZ},
+    {"SQRT_X_DAG", &FrameSimulator::H_YZ},
+    {"SQRT_Y",     &FrameSimulator::H_XZ},
+    {"SQRT_Y_DAG", &FrameSimulator::H_XZ},
+    {"SQRT_Z",     &FrameSimulator::H_XY},
+    {"SQRT_Z_DAG", &FrameSimulator::H_XY},
+    {"S",          &FrameSimulator::H_XY},
+    {"S_DAG",      &FrameSimulator::H_XY},
     // Swap gates.
-    {"SWAP", &SimBulkPauliFrames::SWAP},
-    {"ISWAP", &SimBulkPauliFrames::ISWAP},
-    {"ISWAP_DAG", &SimBulkPauliFrames::ISWAP},
+    {"SWAP", &FrameSimulator::SWAP},
+    {"ISWAP", &FrameSimulator::ISWAP},
+    {"ISWAP_DAG", &FrameSimulator::ISWAP},
     // Controlled gates.
-    {"CNOT", &SimBulkPauliFrames::CX},
-    {"CX", &SimBulkPauliFrames::CX},
-    {"CY", &SimBulkPauliFrames::CY},
-    {"CZ", &SimBulkPauliFrames::CZ},
+    {"CNOT", &FrameSimulator::CX},
+    {"CX", &FrameSimulator::CX},
+    {"CY", &FrameSimulator::CY},
+    {"CZ", &FrameSimulator::CZ},
     // Controlled interactions in other bases.
-    {"XCX", &SimBulkPauliFrames::XCX},
-    {"XCY", &SimBulkPauliFrames::XCY},
-    {"XCZ", &SimBulkPauliFrames::XCZ},
-    {"YCX", &SimBulkPauliFrames::YCX},
-    {"YCY", &SimBulkPauliFrames::YCY},
-    {"YCZ", &SimBulkPauliFrames::YCZ},
+    {"XCX", &FrameSimulator::XCX},
+    {"XCY", &FrameSimulator::XCY},
+    {"XCZ", &FrameSimulator::XCZ},
+    {"YCX", &FrameSimulator::YCX},
+    {"YCY", &FrameSimulator::YCY},
+    {"YCZ", &FrameSimulator::YCZ},
 };
 
-const std::unordered_map<std::string, std::function<void(SimTableau &, const OperationData &)>> SIM_TABLEAU_GATE_FUNC_DATA{
+const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>> SIM_TABLEAU_GATE_FUNC_DATA{
         {"M",          [](auto &s, const auto &t) { s.measure(t, 0); }},
         {"M_PREFER_0", [](auto &s, const auto &t) { s.measure(t, +1); }},
         {"R",          [](auto &s, const auto &t) { s.reset(t, 0); }},
@@ -176,39 +176,39 @@ const std::unordered_map<std::string, std::function<void(SimTableau &, const Ope
         {"TICK",       [](auto &s, const auto &t) {}},
         {"I",          [](auto &s, const auto &t) {}},
         // Pauli gates.
-        {"X",          &SimTableau::X},
-        {"Y",          &SimTableau::Y},
-        {"Z",          &SimTableau::Z},
+        {"X",          &TableauSimulator::X},
+        {"Y",          &TableauSimulator::Y},
+        {"Z",          &TableauSimulator::Z},
         // Axis exchange gates.
-        {"H",          &SimTableau::H_XZ},
-        {"H_XY",       &SimTableau::H_XY},
-        {"H_XZ",       &SimTableau::H_XZ},
-        {"H_YZ",       &SimTableau::H_YZ},
+        {"H",          &TableauSimulator::H_XZ},
+        {"H_XY",       &TableauSimulator::H_XY},
+        {"H_XZ",       &TableauSimulator::H_XZ},
+        {"H_YZ",       &TableauSimulator::H_YZ},
         // 90 degree rotation gates.
-        {"SQRT_X",     &SimTableau::SQRT_X},
-        {"SQRT_X_DAG", &SimTableau::SQRT_X_DAG},
-        {"SQRT_Y",     &SimTableau::SQRT_Y},
-        {"SQRT_Y_DAG", &SimTableau::SQRT_Y_DAG},
-        {"SQRT_Z",     &SimTableau::SQRT_Z},
-        {"SQRT_Z_DAG", &SimTableau::SQRT_Z_DAG},
-        {"S",          &SimTableau::SQRT_Z},
-        {"S_DAG",      &SimTableau::SQRT_Z_DAG},
+        {"SQRT_X",     &TableauSimulator::SQRT_X},
+        {"SQRT_X_DAG", &TableauSimulator::SQRT_X_DAG},
+        {"SQRT_Y",     &TableauSimulator::SQRT_Y},
+        {"SQRT_Y_DAG", &TableauSimulator::SQRT_Y_DAG},
+        {"SQRT_Z",     &TableauSimulator::SQRT_Z},
+        {"SQRT_Z_DAG", &TableauSimulator::SQRT_Z_DAG},
+        {"S",          &TableauSimulator::SQRT_Z},
+        {"S_DAG",      &TableauSimulator::SQRT_Z_DAG},
         // Swap gates.
-        {"SWAP",       &SimTableau::SWAP},
-        {"ISWAP",      &SimTableau::ISWAP},
-        {"ISWAP_DAG",  &SimTableau::ISWAP_DAG},
+        {"SWAP",       &TableauSimulator::SWAP},
+        {"ISWAP",      &TableauSimulator::ISWAP},
+        {"ISWAP_DAG",  &TableauSimulator::ISWAP_DAG},
         // Controlled gates.
-        {"CNOT",       &SimTableau::CX},
-        {"CX",         &SimTableau::CX},
-        {"CY",         &SimTableau::CY},
-        {"CZ",         &SimTableau::CZ},
+        {"CNOT",       &TableauSimulator::CX},
+        {"CX",         &TableauSimulator::CX},
+        {"CY",         &TableauSimulator::CY},
+        {"CZ",         &TableauSimulator::CZ},
         // Controlled interactions in other bases.
-        {"XCX",        &SimTableau::XCX},
-        {"XCY",        &SimTableau::XCY},
-        {"XCZ",        &SimTableau::XCZ},
-        {"YCX",        &SimTableau::YCX},
-        {"YCY",        &SimTableau::YCY},
-        {"YCZ",        &SimTableau::YCZ},
+        {"XCX",        &TableauSimulator::XCX},
+        {"XCY",        &TableauSimulator::XCY},
+        {"XCZ",        &TableauSimulator::XCZ},
+        {"YCX",        &TableauSimulator::YCX},
+        {"YCY",        &TableauSimulator::YCY},
+        {"YCZ",        &TableauSimulator::YCZ},
 };
 
 const std::unordered_set<std::string> NOISY_GATE_NAMES {

@@ -12,7 +12,7 @@
 /// This simulator tracks, for each qubit, whether or not that qubit is bit flipped and/or phase flipped.
 /// Instead of reporting qubit measurements, it reports whether a measurement is inverted or not.
 /// This requires a set of reference measurements to diff against.
-struct SimBulkPauliFrames {
+struct FrameSimulator {
     size_t num_qubits;
     size_t num_samples_raw;
     size_t num_measurements_raw;
@@ -24,7 +24,7 @@ struct SimBulkPauliFrames {
     std::mt19937_64 &rng;
     bool results_block_transposed = false;
 
-    SimBulkPauliFrames(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
+    FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
 
     static std::vector<simd_bits> sample(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng);
     static void sample_out(const Circuit &circuit, size_t num_samples, FILE *out, SampleFormat format, std::mt19937_64 &rng);
