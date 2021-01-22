@@ -138,7 +138,6 @@ struct Tableau {
     void prepend_YCY(size_t control, size_t target);
     void prepend_YCZ(size_t control, size_t target);
     void prepend(const PauliStringRef &op);
-    void prepend(const SparsePauliString &op);
 };
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);

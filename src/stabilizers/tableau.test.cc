@@ -593,7 +593,7 @@ TEST(tableau, prepend_pauli) {
     ref.prepend_Y(2);
     ref.prepend_Z(3);
     ASSERT_EQ(t, ref);
-    t.prepend(PauliStringVal::from_str("Y_ZX__").ref().sparse());
+    t.prepend(PauliStringVal::from_str("Y_ZX__"));
     ref.prepend_X(3);
     ref.prepend_Y(0);
     ref.prepend_Z(2);

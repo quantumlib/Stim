@@ -14,8 +14,6 @@
 
 struct PauliStringVal;
 struct PauliStringRef;
-struct SparsePauliWord;
-struct SparsePauliString;
 
 struct PauliStringRef {
     size_t num_qubits;
@@ -34,8 +32,8 @@ struct PauliStringRef {
     void gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const;
     void scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const;
 
-    SparsePauliString sparse() const;
     std::string str() const;
+    std::string sparse_str() const;
 
     // Multiplies a commuting Pauli string into this one.
     //
@@ -64,21 +62,6 @@ struct PauliStringRef {
     bool commutes(const PauliStringRef& other) const noexcept;
 };
 
-struct SparsePauliWord {
-    // Bit index divided by 64, giving the uint64_t index.
-    size_t index64;
-    // X flip bits.
-    uint64_t wx;
-    // Z flip bits.
-    uint64_t wz;
-};
-
-struct SparsePauliString {
-    bool sign = false;
-    std::vector<SparsePauliWord> indexed_words;
-    std::string str() const;
-};
-
 struct PauliStringVal {
     size_t num_qubits;
     bool val_sign;
@@ -104,7 +87,6 @@ struct PauliStringVal {
     std::string str() const;
 };
 
-std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps);
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps);
 

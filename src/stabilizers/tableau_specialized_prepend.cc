@@ -19,13 +19,6 @@ void Tableau::prepend(const PauliStringRef &op) {
     xs.signs ^= op.z_ref;
 }
 
-void Tableau::prepend(const SparsePauliString &op) {
-    for (const auto &p : op.indexed_words) {
-        zs.signs.u64[p.index64] ^= p.wx;
-        xs.signs.u64[p.index64] ^= p.wz;
-    }
-}
-
 void Tableau::prepend_H_XZ(const size_t q) {
     xs[q].swap_with(zs[q]);
 }

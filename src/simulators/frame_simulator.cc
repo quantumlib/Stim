@@ -152,20 +152,6 @@ void FrameSimulator::measure_ref(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::apply_frame_change(const SparsePauliString &pauli_string, const simd_bits_range_ref mask) {
-    for (const auto &w : pauli_string.indexed_words) {
-        for (size_t k2 = 0; k2 < 64; k2++) {
-            if ((w.wx >> k2) & 1) {
-                x_table[w.index64 * 64 + k2] ^= mask;
-            }
-            if ((w.wz >> k2) & 1) {
-                z_table[w.index64 * 64 + k2] ^= mask;
-            }
-        }
-
-    }
-}
-
 void FrameSimulator::reset(const OperationData &target_data) {
     for (auto q : target_data.targets) {
         x_table[q].clear();

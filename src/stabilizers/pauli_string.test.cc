@@ -228,11 +228,11 @@ TEST(pauli_string, commutes) {
 }
 
 TEST(PauliStringPtr, sparse_str) {
-    ASSERT_EQ(PauliStringVal::from_str("IIIII").ref().sparse().str(), "+I");
-    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ref().sparse().str(), "-I");
-    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ref().sparse().str(), "+X3");
-    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ref().sparse().str(), "+Y1*X3*Z4");
-    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ref().sparse().str(), "-Y1*X3*Z4");
-    ASSERT_EQ(PauliStringVal::from_pattern(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ref().sparse().str(),
+    ASSERT_EQ(PauliStringVal::from_str("IIIII").ref().sparse_str(), "+I");
+    ASSERT_EQ(PauliStringVal::from_str("-IIIII").ref().sparse_str(), "-I");
+    ASSERT_EQ(PauliStringVal::from_str("IIIXI").ref().sparse_str(), "+X3");
+    ASSERT_EQ(PauliStringVal::from_str("IYIXZ").ref().sparse_str(), "+Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_str("-IYIXZ").ref().sparse_str(), "-Y1*X3*Z4");
+    ASSERT_EQ(PauliStringVal::from_pattern(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ref().sparse_str(),
             "+X501");
 }

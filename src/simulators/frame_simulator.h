@@ -36,7 +36,6 @@ struct FrameSimulator {
     void clear_and_run(const Circuit &circuit);
     void clear();
     void do_transpose();
-    void apply_frame_change(const SparsePauliString &pauli_string, const simd_bits_range_ref mask);
 
     size_t recorded_bit_address(size_t sample_index, size_t measure_index) const;
     void unpack_write_measurements(FILE *out, SampleFormat format);

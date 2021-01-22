@@ -63,6 +63,28 @@ std::string PauliStringVal::str() const {
     return ref().str();
 }
 
+std::string PauliStringRef::sparse_str() const {
+    std::stringstream out;
+    out << "+-"[(bool)sign_ref];
+    bool first = true;
+    for (size_t k = 0; k < num_qubits; k++) {
+        auto x = x_ref[k];
+        auto z = z_ref[k];
+        auto p = x + 2*z;
+        if (p) {
+            if (!first) {
+                out << '*';
+            }
+            first = false;
+            out << "IXZY"[p] << k;
+        }
+    }
+    if (first) {
+        out << 'I';
+    }
+    return out.str();
+}
+
 void PauliStringRef::swap_with(PauliStringRef other) {
     assert(num_qubits == other.num_qubits);
     sign_ref.swap_with(other.sign_ref);
@@ -85,29 +107,7 @@ PauliStringVal& PauliStringVal::operator=(const PauliStringRef &other) noexcept 
     return *this;
 }
 
-SparsePauliString PauliStringRef::sparse() const {
-    SparsePauliString result {
-        (bool)sign_ref,
-        {}
-    };
-    auto n = x_ref.num_u64_padded();
-    for (size_t k = 0; k < n; k++) {
-        auto wx = x_ref.u64[k];
-        auto wz = z_ref.u64[k];
-        if (wx | wz) {
-            result.indexed_words.push_back({k, wx, wz});
-        }
-    }
-    return result;
-}
-
 std::string PauliStringRef::str() const {
-    std::stringstream ss;
-    ss << *this;
-    return ss.str();
-}
-
-std::string SparsePauliString::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
@@ -119,29 +119,6 @@ bool PauliStringRef::operator==(const PauliStringRef &other) const {
 
 bool PauliStringRef::operator!=(const PauliStringRef &other) const {
     return !(*this == other);
-}
-
-std::ostream &operator<<(std::ostream &out, const SparsePauliString &ps) {
-    out << "+-"[ps.sign];
-    bool first = true;
-    for (const auto &w : ps.indexed_words) {
-        for (size_t k2 = 0; k2 < 64; k2++) {
-            auto x = (w.wx >> k2) & 1;
-            auto z = (w.wz >> k2) & 1;
-            auto p = x + 2*z;
-            if (p) {
-                if (!first) {
-                    out << '*';
-                }
-                first = false;
-                out << "IXZY"[p] << ((w.index64 << 6) | k2);
-            }
-        }
-    }
-    if (first) {
-        out << 'I';
-    }
-    return out;
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringVal &ps) {
