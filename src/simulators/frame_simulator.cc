@@ -163,8 +163,8 @@ PauliString FrameSimulator::get_frame(size_t sample_index) const {
     assert(sample_index < num_samples_raw);
     PauliString result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        result.x_data[q] = x_table[q][sample_index];
-        result.z_data[q] = z_table[q][sample_index];
+        result.xs[q] = x_table[q][sample_index];
+        result.zs[q] = z_table[q][sample_index];
     }
     return result;
 }
@@ -173,8 +173,8 @@ void FrameSimulator::set_frame(size_t sample_index, const PauliStringRef &new_fr
     assert(sample_index < num_samples_raw);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
-        x_table[q][sample_index] = new_frame.x_ref[q];
-        z_table[q][sample_index] = new_frame.z_ref[q];
+        x_table[q][sample_index] = new_frame.xs[q];
+        z_table[q][sample_index] = new_frame.zs[q];
     }
 }
 

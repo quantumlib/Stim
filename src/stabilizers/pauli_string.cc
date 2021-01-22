@@ -19,33 +19,33 @@ PauliString::operator PauliStringRef() {
 
 PauliString::PauliString(size_t num_qubits) :
         num_qubits(num_qubits),
-        val_sign(false),
-        x_data(num_qubits),
-        z_data(num_qubits) {
+        sign(false),
+        xs(num_qubits),
+        zs(num_qubits) {
 }
 
 PauliString::PauliString(const PauliStringRef &other) :
         num_qubits(other.num_qubits),
-        val_sign((bool)other.sign_ref),
-        x_data(other.x_ref),
-        z_data(other.z_ref) {
+        sign((bool)other.sign),
+        xs(other.xs),
+        zs(other.zs) {
 }
 
 const PauliStringRef PauliString::ref() const {
     return PauliStringRef(
-        num_qubits,
+            num_qubits,
         // HACK: const correctness is temporarily removed, but immediately restored.
-        bit_ref((bool *)&val_sign, 0),
-        x_data,
-        z_data);
+        bit_ref((bool *)&sign, 0),
+            xs,
+            zs);
 }
 
 PauliStringRef PauliString::ref() {
     return PauliStringRef(
-        num_qubits,
-        bit_ref(&val_sign, 0),
-        x_data,
-        z_data);
+            num_qubits,
+            bit_ref(&sign, 0),
+            xs,
+            zs);
 }
 
 std::string PauliString::str() const {
@@ -53,7 +53,7 @@ std::string PauliString::str() const {
 }
 
 PauliString& PauliString::operator=(const PauliStringRef &other) noexcept {
-    (*this).~PauliStringVal();
+    (*this).~PauliString();
     new(this) PauliString(other);
     return *this;
 }
@@ -62,9 +62,9 @@ std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
     return out << ps.ref();
 }
 
-PauliString PauliString::from_pattern(bool sign, size_t num_qubits, const std::function<char(size_t)> &func) {
+PauliString PauliString::from_func(bool sign, size_t num_qubits, const std::function<char(size_t)> &func) {
     PauliString result(num_qubits);
-    result.val_sign = sign;
+    result.sign = sign;
     for (size_t i = 0; i < num_qubits; i++) {
         char c = func(i);
         bool x;
@@ -84,8 +84,8 @@ PauliString PauliString::from_pattern(bool sign, size_t num_qubits, const std::f
         } else {
             throw std::runtime_error("Unrecognized pauli character. " + std::to_string(c));
         }
-        result.x_data.u64[i / 64] ^= (uint64_t)x << (i & 63);
-        result.z_data.u64[i / 64] ^= (uint64_t)z << (i & 63);
+        result.xs.u64[i / 64] ^= (uint64_t)x << (i & 63);
+        result.zs.u64[i / 64] ^= (uint64_t)z << (i & 63);
     }
     return result;
 }
@@ -95,18 +95,14 @@ PauliString PauliString::from_str(const char *text) {
     if (text[0] == '+' || text[0] == '-') {
         text++;
     }
-    return PauliString::from_pattern(sign, strlen(text), [&](size_t i){ return text[i]; });
-}
-
-PauliString PauliString::identity(size_t num_qubits) {
-    return PauliString(num_qubits);
+    return PauliString::from_func(sign, strlen(text), [&](size_t i) { return text[i]; });
 }
 
 PauliString PauliString::random(size_t num_qubits, std::mt19937_64 &rng) {
     auto result = PauliString(num_qubits);
-    result.x_data.randomize(num_qubits, rng);
-    result.z_data.randomize(num_qubits, rng);
-    result.val_sign ^= rng() & 1;
+    result.xs.randomize(num_qubits, rng);
+    result.zs.randomize(num_qubits, rng);
+    result.sign ^= rng() & 1;
     return result;
 }
 

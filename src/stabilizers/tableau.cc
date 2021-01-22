@@ -1,8 +1,10 @@
+#include <cassert>
+#include <cmath>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <random>
-#include <cmath>
-#include <cstring>
+#include <sstream>
 #include <thread>
 #include "pauli_string.h"
 #include "tableau.h"
@@ -13,8 +15,8 @@ void Tableau::expand(size_t new_num_qubits) {
     assert(new_num_qubits >= num_qubits);
     if (new_num_qubits <= xs.xt.num_major_bits_padded()) {
         for (size_t k = num_qubits; k < new_num_qubits; k++) {
-            xs[k].x_ref[k] = true;
-            zs[k].z_ref[k] = true;
+            xs[k].xs[k] = true;
+            zs[k].zs[k] = true;
         }
         num_qubits = new_num_qubits;
         return;
@@ -34,10 +36,10 @@ void Tableau::expand(size_t new_num_qubits) {
     partial_copy(xs.signs, old_state.xs.signs);
     partial_copy(zs.signs, old_state.zs.signs);
     for (size_t k = 0; k < old_num_qubits; k++) {
-        partial_copy(xs[k].x_ref, old_state.xs[k].x_ref);
-        partial_copy(xs[k].z_ref, old_state.xs[k].z_ref);
-        partial_copy(zs[k].x_ref, old_state.zs[k].x_ref);
-        partial_copy(zs[k].z_ref, old_state.zs[k].z_ref);
+        partial_copy(xs[k].xs, old_state.xs[k].xs);
+        partial_copy(xs[k].zs, old_state.xs[k].zs);
+        partial_copy(zs[k].xs, old_state.zs[k].xs);
+        partial_copy(zs[k].zs, old_state.zs[k].zs);
     }
 }
 
@@ -55,7 +57,7 @@ PauliString Tableau::eval_y_obs(size_t qubit) const {
     log_i++;
     assert((log_i & 1) == 0);
     if (log_i & 2) {
-        result.val_sign ^= true;
+        result.sign ^= true;
     }
     return result;
 }
@@ -85,7 +87,7 @@ Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
     result.xs[0] = PauliString::from_str(x);
     result.zs[0] = PauliString::from_str(z);
-    assert((bool)result.zs[0].sign_ref == (z[0] == '-'));
+    assert((bool)result.zs[0].sign == (z[0] == '-'));
     return result;
 }
 
@@ -111,8 +113,8 @@ std::ostream &operator<<(std::ostream &out, const Tableau &t) {
     out << "\n|";
     for (size_t k = 0; k < t.num_qubits; k++) {
         out << ' ';
-        out << "+-"[t.xs[k].sign_ref];
-        out << "+-"[t.zs[k].sign_ref];
+        out << "+-"[t.xs[k].sign];
+        out << "+-"[t.zs[k].sign];
     }
     for (size_t q = 0; q < t.num_qubits; q++) {
         out << "\n|";
@@ -120,8 +122,8 @@ std::ostream &operator<<(std::ostream &out, const Tableau &t) {
             out << ' ';
             auto x = t.xs[k];
             auto z = t.zs[k];
-            out << "_XZY"[x.x_ref[q] + 2 * x.z_ref[q]];
-            out << "_XZY"[z.x_ref[q] + 2 * z.z_ref[q]];
+            out << "_XZY"[x.xs[q] + 2 * x.zs[q]];
+            out << "_XZY"[z.xs[q] + 2 * z.zs[q]];
         }
     }
     return out;
@@ -175,12 +177,12 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
 
 PauliString Tableau::scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const {
     assert(gathered_input.num_qubits == scattered_indices.size());
-    auto result = PauliString::PauliString(num_qubits);
-    result.val_sign = gathered_input.sign_ref;
+    auto result = PauliString(num_qubits);
+    result.sign = gathered_input.sign;
     for (size_t k_gathered = 0; k_gathered < gathered_input.num_qubits; k_gathered++) {
         size_t k_scattered = scattered_indices[k_gathered];
-        bool x = gathered_input.x_ref[k_gathered];
-        bool z = gathered_input.z_ref[k_gathered];
+        bool x = gathered_input.xs[k_gathered];
+        bool z = gathered_input.zs[k_gathered];
         if (x) {
             if (z) {
                 // Multiply by Y using Y = i*X*Z.
@@ -188,7 +190,7 @@ PauliString Tableau::scatter_eval(const PauliStringRef &gathered_input, const st
                 log_i += result.ref().inplace_right_mul_returning_log_i_scalar(xs[k_scattered]);
                 log_i += result.ref().inplace_right_mul_returning_log_i_scalar(zs[k_scattered]);
                 assert((log_i & 1) == 0);
-                result.val_sign ^= (log_i & 2) != 0;
+                result.sign ^= (log_i & 2) != 0;
             } else {
                 result.ref() *= xs[k_scattered];
             }
@@ -210,7 +212,7 @@ PauliString Tableau::operator()(const PauliStringRef &p) const {
 
 void Tableau::apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const {
     assert(num_qubits == target_qubits.size());
-    auto inp = PauliString::PauliString(num_qubits);
+    auto inp = PauliString(num_qubits);
     target.gather_into(inp, target_qubits);
     auto out = (*this)(inp);
     out.ref().scatter_into(target, target_qubits);
@@ -333,10 +335,10 @@ Tableau Tableau::random(size_t num_qubits, std::mt19937_64 &rng) {
     Tableau result(num_qubits);
     for (size_t row = 0; row < num_qubits; row++) {
         for (size_t col = 0; col < num_qubits; col++) {
-            result.xs[row].x_ref[col] = raw[row][col];
-            result.xs[row].z_ref[col] = raw[row][col + num_qubits];
-            result.zs[row].x_ref[col] = raw[row + num_qubits][col];
-            result.zs[row].z_ref[col] = raw[row + num_qubits][col + num_qubits];
+            result.xs[row].xs[col] = raw[row][col];
+            result.xs[row].zs[col] = raw[row][col + num_qubits];
+            result.zs[row].xs[col] = raw[row + num_qubits][col];
+            result.zs[row].zs[col] = raw[row + num_qubits][col + num_qubits];
         }
     }
     result.xs.signs.randomize(num_qubits, rng);
@@ -375,15 +377,15 @@ Tableau Tableau::inverse() const {
     // Fix signs by checking for consistent round trips.
     PauliString singleton(num_qubits);
     for (size_t k = 0; k < num_qubits; k++) {
-        singleton.x_data[k] = true;
-        bool x_round_trip_sign = (*this)(result(singleton)).val_sign;
-        singleton.x_data[k] = false;
-        singleton.z_data[k] = true;
-        bool z_round_trip_sign = (*this)(result(singleton)).val_sign;
-        singleton.z_data[k] = false;
+        singleton.xs[k] = true;
+        bool x_round_trip_sign = (*this)(result(singleton)).sign;
+        singleton.xs[k] = false;
+        singleton.zs[k] = true;
+        bool z_round_trip_sign = (*this)(result(singleton)).sign;
+        singleton.zs[k] = false;
 
-        result.xs[k].sign_ref ^= x_round_trip_sign;
-        result.zs[k].sign_ref ^= z_round_trip_sign;
+        result.xs[k].sign ^= x_round_trip_sign;
+        result.zs[k].sign ^= z_round_trip_sign;
     }
 
     return result;

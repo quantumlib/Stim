@@ -7,7 +7,7 @@ TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng) : in
 }
 
 bool TableauSimulator::is_deterministic(size_t target) const {
-    return !inv_state.zs[target].x_ref.not_zero();
+    return !inv_state.zs[target].xs.not_zero();
 }
 
 void TableauSimulator::measure(const OperationData &target_data, int8_t sign_bias) {

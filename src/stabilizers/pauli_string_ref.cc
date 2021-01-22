@@ -11,22 +11,22 @@
 
 PauliStringRef::PauliStringRef(
         size_t init_num_qubits,
-        bit_ref init_sign_ref,
-        simd_bits_range_ref init_x_ref,
-        simd_bits_range_ref init_z_ref) :
+        bit_ref init_sign,
+        simd_bits_range_ref init_xs,
+        simd_bits_range_ref init_zs) :
         num_qubits(init_num_qubits),
-        sign_ref(init_sign_ref),
-        x_ref(init_x_ref),
-        z_ref(init_z_ref) {
+        sign(init_sign),
+        xs(init_xs),
+        zs(init_zs) {
 }
 
 std::string PauliStringRef::sparse_str() const {
     std::stringstream out;
-    out << "+-"[(bool)sign_ref];
+    out << "+-"[(bool)sign];
     bool first = true;
     for (size_t k = 0; k < num_qubits; k++) {
-        auto x = x_ref[k];
-        auto z = z_ref[k];
+        auto x = xs[k];
+        auto z = zs[k];
         auto p = x + 2*z;
         if (p) {
             if (!first) {
@@ -44,17 +44,17 @@ std::string PauliStringRef::sparse_str() const {
 
 void PauliStringRef::swap_with(PauliStringRef other) {
     assert(num_qubits == other.num_qubits);
-    sign_ref.swap_with(other.sign_ref);
-    x_ref.swap_with(other.x_ref);
-    z_ref.swap_with(other.z_ref);
+    sign.swap_with(other.sign);
+    xs.swap_with(other.xs);
+    zs.swap_with(other.zs);
 }
 
 PauliStringRef &PauliStringRef::operator=(const PauliStringRef &other) {
     assert(num_qubits == other.num_qubits);
-    sign_ref = other.sign_ref;
-    assert((bool)sign_ref == (bool)other.sign_ref);
-    x_ref = other.x_ref;
-    z_ref = other.z_ref;
+    sign = other.sign;
+    assert((bool)sign == (bool)other.sign);
+    xs = other.xs;
+    zs = other.zs;
     return *this;
 }
 
@@ -65,7 +65,7 @@ std::string PauliStringRef::str() const {
 }
 
 bool PauliStringRef::operator==(const PauliStringRef &other) const {
-    return num_qubits == other.num_qubits && sign_ref == other.sign_ref && x_ref == other.x_ref && z_ref == other.z_ref;
+    return num_qubits == other.num_qubits && sign == other.sign && xs == other.xs && zs == other.zs;
 }
 
 bool PauliStringRef::operator!=(const PauliStringRef &other) const {
@@ -73,9 +73,9 @@ bool PauliStringRef::operator!=(const PauliStringRef &other) const {
 }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
-    out << "+-"[ps.sign_ref];
+    out << "+-"[ps.sign];
     for (size_t k = 0; k < ps.num_qubits; k++) {
-        out << "_XZY"[ps.x_ref[k] + 2 * ps.z_ref[k]];
+        out << "_XZY"[ps.xs[k] + 2 * ps.zs[k]];
     }
     return out;
 }
@@ -83,7 +83,7 @@ std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
 PauliStringRef& PauliStringRef::operator*=(const PauliStringRef& rhs) {
     uint8_t log_i = inplace_right_mul_returning_log_i_scalar(rhs);
     assert((log_i & 1) == 0);
-    sign_ref ^= log_i & 2;
+    sign ^= log_i & 2;
     return *this;
 }
 
@@ -94,7 +94,7 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     SIMD_WORD_TYPE cnt1 {};
     SIMD_WORD_TYPE cnt2 {};
 
-    x_ref.for_each_word(z_ref, rhs.x_ref, rhs.z_ref,  [&cnt1, &cnt2](auto &x1, auto &z1, auto &x2, auto &z2) {
+    xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](auto &x1, auto &z1, auto &x2, auto &z2) {
         // Update the left hand side Paulis.
         auto old_x1 = x1;
         auto old_z1 = z1;
@@ -111,14 +111,14 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     // Combine final anti-commutation phase tally (mod 4).
     uint8_t s = cnt1.popcount();
     s ^= cnt2.popcount() << 1;
-    s ^= (uint8_t)rhs.sign_ref << 1;
+    s ^= (uint8_t)rhs.sign << 1;
     return s & 3;
 }
 
 bool PauliStringRef::commutes(const PauliStringRef& other) const noexcept {
     assert(num_qubits == other.num_qubits);
     SIMD_WORD_TYPE cnt1 {};
-    x_ref.for_each_word(z_ref, other.x_ref, other.z_ref, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) {
+    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) {
         cnt1 ^= (x1 & z2) ^ (x2 & z1);
     });
     return (cnt1.popcount() & 1) == 0;
@@ -128,8 +128,8 @@ void PauliStringRef::gather_into(PauliStringRef out, const std::vector<size_t> &
     assert(in_indices.size() == out.num_qubits);
     for (size_t k_out = 0; k_out < out.num_qubits; k_out++) {
         size_t k_in = in_indices[k_out];
-        out.x_ref[k_out] = x_ref[k_in];
-        out.z_ref[k_out] = z_ref[k_in];
+        out.xs[k_out] = xs[k_in];
+        out.zs[k_out] = zs[k_in];
     }
 }
 
@@ -137,8 +137,8 @@ void PauliStringRef::scatter_into(PauliStringRef out, const std::vector<size_t> 
     assert(num_qubits == out_indices.size());
     for (size_t k_in = 0; k_in < num_qubits; k_in++) {
         size_t k_out = out_indices[k_in];
-        out.x_ref[k_out] = x_ref[k_in];
-        out.z_ref[k_out] = z_ref[k_in];
+        out.xs[k_out] = xs[k_in];
+        out.zs[k_out] = zs[k_in];
     }
-    out.sign_ref ^= sign_ref;
+    out.sign ^= sign;
 }

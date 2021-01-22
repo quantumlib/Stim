@@ -23,7 +23,7 @@ inline void for_each_trans_obs(
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
         PauliStringRef p = h[q];
-        p.x_ref.for_each_word(p.z_ref, h.signs, body);
+        p.xs.for_each_word(p.zs, h.signs, body);
     }
 }
 
@@ -37,7 +37,7 @@ inline void for_each_trans_obs(
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
         PauliStringRef p1 = h[q1];
         PauliStringRef p2 = h[q2];
-        p1.x_ref.for_each_word(p1.z_ref, p2.x_ref, p2.z_ref, h.signs, body);
+        p1.xs.for_each_word(p1.zs, p2.xs, p2.zs, h.signs, body);
     }
 }
 

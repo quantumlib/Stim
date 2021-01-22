@@ -361,14 +361,14 @@ bool vec_sim_corroborates_measurement_process(const TableauSimulator &sim, std::
     sim_tab.measure(measurement_targets);
     PauliString buf(sim_tab.inv_state.num_qubits);
     for (size_t k = 0; k < measurement_targets.size(); k++) {
-        buf.z_data[measurement_targets[k]] = true;
-        buf.val_sign = sim_tab.recorded_measurement_results.front();
+        buf.zs[measurement_targets[k]] = true;
+        buf.sign = sim_tab.recorded_measurement_results.front();
         sim_tab.recorded_measurement_results.pop();
         float f = vec_sim.project(buf);
         if (fabsf(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;
         }
-        buf.z_data[measurement_targets[k]] = false;
+        buf.zs[measurement_targets[k]] = false;
     }
     return true;
 }

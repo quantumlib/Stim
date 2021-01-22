@@ -2,41 +2,43 @@
 #define PAULI_STRING_REF_H
 
 #include <iostream>
-#include <immintrin.h>
-#include <new>
-#include <cassert>
-#include <sstream>
-#include <functional>
-#include "../simd/simd_bits.h"
 #include "../simd/simd_bits_range_ref.h"
 #include "../simd/bit_ref.h"
-#include "../simd/simd_util.h"
 
+/// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
+///
+/// A PauliStringRef is a Pauli string whose contents are backed by referenced memory, instead of memory owned by the
+/// class instance. For example, the memory may be a row from the densely packed bits of a stabilizer tableau. This
+/// avoids unnecessary copying, and allows for conveniently applying operations inplace on existing data.
 struct PauliStringRef {
+    /// The length of the Pauli string.
     size_t num_qubits;
-    bit_ref sign_ref;
-    simd_bits_range_ref x_ref;
-    simd_bits_range_ref z_ref;
+    /// Whether or not the Pauli string is negated. True means -1, False means +1. Imaginary phase is not permitted.
+    bit_ref sign;
+    /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use vectorized instructions.
+    /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
+    simd_bits_range_ref xs, zs;
 
-    PauliStringRef(size_t num_qubits, bit_ref sign_ref, simd_bits_range_ref x_ref, simd_bits_range_ref z_ref);
-    PauliStringRef &operator=(const PauliStringRef &other);
+    /// Constructs a PauliStringRef pointing at the given sign, x, and z data.
+    PauliStringRef(size_t num_qubits, bit_ref sign, simd_bits_range_ref xs, simd_bits_range_ref zs);
 
+    /// Equality.
     bool operator==(const PauliStringRef &other) const;
+    /// Inequality.
     bool operator!=(const PauliStringRef &other) const;
 
+    /// Overwrite assignment.
+    PauliStringRef &operator=(const PauliStringRef &other);
+    /// Swap assignment.
     void swap_with(PauliStringRef other);
 
-    void gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const;
-    void scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const;
-
-    std::string str() const;
-    std::string sparse_str() const;
-
-    // Multiplies a commuting Pauli string into this one.
-    //
-    // ASSERTS:
-    //     The given Pauli strings have the same size.
-    //     The given Pauli strings commute.
+    /// Multiplies a commuting Pauli string into this one.
+    ///
+    /// If the two Pauli strings may anticommute, use `inplace_right_mul_returning_log_i_scalar` instead.
+    ///
+    /// ASSERTS:
+    ///     The given Pauli strings have the same size.
+    ///     The given Pauli strings commute.
     PauliStringRef& operator*=(const PauliStringRef &commuting_rhs);
 
     // A more general version  of `*this *= rhs` which works for anti-commuting Paulis.
@@ -56,10 +58,34 @@ struct PauliStringRef {
     //     The given Pauli strings have the same size.
     uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef& rhs) noexcept;
 
+    /// Overwrites the entire given Pauli string's contents with a subset of Paulis from this Pauli string.
+    /// Does not affect the sign of the given Pauli string.
+    ///
+    /// Args:
+    ///     out: The Pauli string to overwrite.
+    ///     in_indices: For each qubit position in the output Pauli string, which qubit positions is read from in this
+    ///         Pauli string.
+    void gather_into(PauliStringRef out, const std::vector<size_t> &in_indices) const;
+
+    /// Overwrites part of the given Pauli string with the contents of this Pauli string.
+    /// Also multiplies this Pauli string's sign into the given Pauli string's sign.
+    ///
+    /// Args:
+    ///     out: The Pauli string to partially overwrite.
+    ///     out_indices: For each qubit position in this Pauli string, which qubit position is overwritten in the output
+    ///         Pauli string.
+    void scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const;
+
+    /// Determines if this Pauli string commutes with the given Pauli string.
     bool commutes(const PauliStringRef& other) const noexcept;
+
+    /// Returns a string describing the given Pauli string, with one character per qubit.
+    std::string str() const;
+    /// Returns a string describing the given Pauli string, indexing the Paulis so that identities can be omitted.
+    std::string sparse_str() const;
 };
 
+/// Writes a string describing the given Pauli string to an output stream.
 std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps);
-
 
 #endif

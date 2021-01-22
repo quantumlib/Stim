@@ -1,8 +1,9 @@
 #include <iostream>
+#include <bit>
+#include <cassert>
 #include <map>
 #include "../stabilizers/pauli_string.h"
 #include "vector_simulator.h"
-#include <bit>
 
 VectorSimulator::VectorSimulator(size_t num_qubits) {
     state.resize(1 << num_qubits, 0.0f);
@@ -69,14 +70,14 @@ void VectorSimulator::apply(const std::string &gate, size_t qubit1, size_t qubit
 }
 
 void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
-    if (gate.sign_ref) {
+    if (gate.sign) {
         for (auto &e : state) {
             e *= -1;
         }
     }
     for (size_t k = 0; k < gate.num_qubits; k++) {
-        bool x = gate.x_ref[k];
-        bool z = gate.z_ref[k];
+        bool x = gate.xs[k];
+        bool z = gate.zs[k];
         size_t q = qubit_offset + k;
         if (x && z) {
             apply("Y", q);
@@ -111,8 +112,8 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     assert(1ULL << observable.num_qubits == state.size());
     auto basis_change = [&]() {
         for (size_t k = 0; k < observable.num_qubits; k++) {
-            if (observable.x_ref[k]) {
-                if (observable.z_ref[k]) {
+            if (observable.xs[k]) {
+                if (observable.zs[k]) {
                     apply("H_YZ", k);
                 } else {
                     apply("H", k);
@@ -123,7 +124,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
 
     uint64_t mask = 0;
     for (size_t k = 0; k < observable.num_qubits; k++) {
-        if (observable.x_ref[k] | observable.z_ref[k]) {
+        if (observable.xs[k] | observable.zs[k]) {
             mask |= 1 << k;
         }
     }
@@ -131,7 +132,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     basis_change();
     float mag2 = 0;
     for (size_t i = 0; i < state.size(); i++) {
-        bool reject = observable.sign_ref;
+        bool reject = observable.sign;
         reject ^= (std::popcount(i & mask) & 1) != 0;
         if (reject) {
             state[i] = 0;

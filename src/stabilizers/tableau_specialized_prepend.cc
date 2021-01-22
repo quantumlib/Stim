@@ -1,22 +1,23 @@
+#include <cassert>
 #include "tableau.h"
 
 void Tableau::prepend_X(size_t q) {
-    zs[q].sign_ref ^= 1;
+    zs[q].sign ^= 1;
 }
 
 void Tableau::prepend_Y(size_t q) {
-    xs[q].sign_ref ^= 1;
-    zs[q].sign_ref ^= 1;
+    xs[q].sign ^= 1;
+    zs[q].sign ^= 1;
 }
 
 void Tableau::prepend_Z(size_t q) {
-    xs[q].sign_ref ^= 1;
+    xs[q].sign ^= 1;
 }
 
 void Tableau::prepend(const PauliStringRef &op) {
     assert(op.num_qubits == num_qubits);
-    zs.signs ^= op.x_ref;
-    xs.signs ^= op.z_ref;
+    zs.signs ^= op.xs;
+    xs.signs ^= op.zs;
 }
 
 void Tableau::prepend_H_XZ(const size_t q) {
@@ -27,52 +28,52 @@ void Tableau::prepend_H_YZ(const size_t q) {
     PauliStringRef x = xs[q];
     PauliStringRef z = zs[q];
     uint8_t m = z.inplace_right_mul_returning_log_i_scalar(x);
-    x.sign_ref ^= 1;
-    z.sign_ref ^= m & 2;
+    x.sign ^= 1;
+    z.sign ^= m & 2;
 }
 
 void Tableau::prepend_H_XY(const size_t q) {
     PauliStringRef x = xs[q];
     PauliStringRef z = zs[q];
     uint8_t m = x.inplace_right_mul_returning_log_i_scalar(z);
-    z.sign_ref ^= 1;
-    x.sign_ref ^= !(m & 2);
+    z.sign ^= 1;
+    x.sign ^= !(m & 2);
 }
 
 void Tableau::prepend_SQRT_X(size_t q) {
     PauliStringRef z = zs[q];
     uint8_t m = z.inplace_right_mul_returning_log_i_scalar(xs[q]);
-    z.sign_ref ^= !(m & 2);
+    z.sign ^= !(m & 2);
 }
 
 void Tableau::prepend_SQRT_X_DAG(size_t q) {
     PauliStringRef z = zs[q];
     uint8_t m = z.inplace_right_mul_returning_log_i_scalar(xs[q]);
-    z.sign_ref ^= m & 2;
+    z.sign ^= m & 2;
 }
 
 void Tableau::prepend_SQRT_Y(size_t q) {
     PauliStringRef z = zs[q];
-    z.sign_ref ^= 1;
+    z.sign ^= 1;
     xs[q].swap_with(z);
 }
 
 void Tableau::prepend_SQRT_Y_DAG(size_t q) {
     PauliStringRef z = zs[q];
     xs[q].swap_with(z);
-    z.sign_ref ^= 1;
+    z.sign ^= 1;
 }
 
 void Tableau::prepend_SQRT_Z(size_t q) {
     PauliStringRef x = xs[q];
     uint8_t m = x.inplace_right_mul_returning_log_i_scalar(zs[q]);
-    x.sign_ref ^= !(m & 2);
+    x.sign ^= !(m & 2);
 }
 
 void Tableau::prepend_SQRT_Z_DAG(size_t q) {
     PauliStringRef x = xs[q];
     uint8_t m = x.inplace_right_mul_returning_log_i_scalar(zs[q]);
-    x.sign_ref ^= m & 2;
+    x.sign ^= m & 2;
 }
 
 void Tableau::prepend_SWAP(size_t q1, size_t q2) {

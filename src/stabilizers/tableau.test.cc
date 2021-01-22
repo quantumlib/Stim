@@ -38,9 +38,9 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
         for (size_t k = 0; k < n; k++) {
             basis.emplace_back(n);
             if (x) {
-                basis.back().x_data[k] ^= 1;
+                basis.back().xs[k] ^= 1;
             } else {
-                basis.back().z_data[k] ^= 1;
+                basis.back().zs[k] ^= 1;
             }
         }
     }
@@ -502,28 +502,28 @@ TEST(tableau, expand) {
         assert(t2.num_qubits == n);
         for (size_t k = 0; k < n; k++) {
             if (k < 4) {
-                ASSERT_EQ(t.xs[k].sign_ref, t2.xs[k].sign_ref);
-                ASSERT_EQ(t.zs[k].sign_ref, t2.zs[k].sign_ref);
+                ASSERT_EQ(t.xs[k].sign, t2.xs[k].sign);
+                ASSERT_EQ(t.zs[k].sign, t2.zs[k].sign);
             } else {
-                ASSERT_EQ(t2.xs[k].sign_ref, false);
-                ASSERT_EQ(t2.zs[k].sign_ref, false);
+                ASSERT_EQ(t2.xs[k].sign, false);
+                ASSERT_EQ(t2.zs[k].sign, false);
             }
             for (size_t k2 = 0; k2 < n; k2++) {
                 if (k < 4 && k2 < 4) {
-                    ASSERT_EQ(t.xs[k].x_ref[k2], t2.xs[k].x_ref[k2]);
-                    ASSERT_EQ(t.xs[k].z_ref[k2], t2.xs[k].z_ref[k2]);
-                    ASSERT_EQ(t.zs[k].x_ref[k2], t2.zs[k].x_ref[k2]);
-                    ASSERT_EQ(t.zs[k].z_ref[k2], t2.zs[k].z_ref[k2]);
+                    ASSERT_EQ(t.xs[k].xs[k2], t2.xs[k].xs[k2]);
+                    ASSERT_EQ(t.xs[k].zs[k2], t2.xs[k].zs[k2]);
+                    ASSERT_EQ(t.zs[k].xs[k2], t2.zs[k].xs[k2]);
+                    ASSERT_EQ(t.zs[k].zs[k2], t2.zs[k].zs[k2]);
                 } else if (k == k2) {
-                    ASSERT_EQ(t2.xs[k].x_ref[k2], true);
-                    ASSERT_EQ(t2.xs[k].z_ref[k2], false);
-                    ASSERT_EQ(t2.zs[k].x_ref[k2], false);
-                    ASSERT_EQ(t2.zs[k].z_ref[k2], true);
+                    ASSERT_EQ(t2.xs[k].xs[k2], true);
+                    ASSERT_EQ(t2.xs[k].zs[k2], false);
+                    ASSERT_EQ(t2.zs[k].xs[k2], false);
+                    ASSERT_EQ(t2.zs[k].zs[k2], true);
                 } else {
-                    ASSERT_EQ(t2.xs[k].x_ref[k2], false);
-                    ASSERT_EQ(t2.xs[k].z_ref[k2], false);
-                    ASSERT_EQ(t2.zs[k].x_ref[k2], false);
-                    ASSERT_EQ(t2.zs[k].z_ref[k2], false);
+                    ASSERT_EQ(t2.xs[k].xs[k2], false);
+                    ASSERT_EQ(t2.xs[k].zs[k2], false);
+                    ASSERT_EQ(t2.zs[k].xs[k2], false);
+                    ASSERT_EQ(t2.zs[k].zs[k2], false);
                 }
             }
         }
@@ -545,10 +545,10 @@ TEST(tableau, transposed_access) {
             bool bzx = t.zs.xt[inp_qubit][out_qubit];
             bool bzz = t.zs.zt[inp_qubit][out_qubit];
 
-            ASSERT_EQ(t.xs[inp_qubit].x_ref[out_qubit], bxx) << inp_qubit << ", " << out_qubit;
-            ASSERT_EQ(t.xs[inp_qubit].z_ref[out_qubit], bxz) << inp_qubit << ", " << out_qubit;
-            ASSERT_EQ(t.zs[inp_qubit].x_ref[out_qubit], bzx) << inp_qubit << ", " << out_qubit;
-            ASSERT_EQ(t.zs[inp_qubit].z_ref[out_qubit], bzz) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.xs[inp_qubit].xs[out_qubit], bxx) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.xs[inp_qubit].zs[out_qubit], bxz) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.zs[inp_qubit].xs[out_qubit], bzx) << inp_qubit << ", " << out_qubit;
+            ASSERT_EQ(t.zs[inp_qubit].zs[out_qubit], bzz) << inp_qubit << ", " << out_qubit;
 
             {
                 TableauTransposedRaii trans(t);
@@ -576,10 +576,10 @@ TEST(tableau, inverse) {
         ASSERT_TRUE(t2.satisfies_invariants());
         auto p = PauliString::random(k, SHARED_TEST_RNG());
         auto p2 = t1(t2(p));
-        auto x1 = p.x_data.str();
-        auto x2 = p2.x_data.str();
-        auto z1 = p.z_data.str();
-        auto z2 = p2.z_data.str();
+        auto x1 = p.xs.str();
+        auto x2 = p2.xs.str();
+        auto z1 = p.zs.str();
+        auto z2 = p2.zs.str();
         ASSERT_EQ(p, p2);
         ASSERT_EQ(p, t2(t1(p)));
     }

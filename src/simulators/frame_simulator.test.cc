@@ -22,7 +22,7 @@ TEST(SimBulkPauliFrames, get_set_frame) {
     ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
 
     FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
-    big_sim.set_frame(258, PauliString::from_pattern(false, 501, [](size_t k) { return "_X"[k == 303]; }));
+    big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) { return "_X"[k == 303]; }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse_str(), "+X303");
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse_str(), "+I");
 }
@@ -97,7 +97,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
                 tableau.apply_within(test_value_ref, {targets[k], targets[k + 1]});
             }
         }
-        test_value.val_sign = false;
+        test_value.sign = false;
         if (test_value != sim.get_frame(k)) {
             return false;
         }

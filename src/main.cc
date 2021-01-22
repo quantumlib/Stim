@@ -267,11 +267,11 @@ void time_transpose_data_2(size_t diameter) {
 void time_pauli_multiplication(size_t num_qubits) {
     std::cerr << "pauli multiplication(n=" << num_qubits << ")\n";
 
-    auto p1 = PauliString::from_pattern(
+    auto p1 = PauliString::from_func(
             false,
             num_qubits,
             [](size_t i) { return "_XYZX"[i % 5]; });
-    auto p2 = PauliString::from_pattern(
+    auto p2 = PauliString::from_func(
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
@@ -312,11 +312,11 @@ void time_tableau_pauli_multiplication(size_t num_qubits) {
 void time_pauli_swap(size_t num_qubits) {
     std::cerr << "pauli swaps(n=" << num_qubits << ")\n";
 
-    auto p1 = PauliString::from_pattern(
+    auto p1 = PauliString::from_func(
             false,
             num_qubits,
             [](size_t i) { return "_XYZX"[i % 5]; });
-    auto p2 = PauliString::from_pattern(
+    auto p2 = PauliString::from_func(
             true,
             num_qubits,
             [](size_t i) { return "_XZYZZX"[i % 7]; });
