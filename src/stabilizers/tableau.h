@@ -35,7 +35,7 @@ struct Tableau {
     bool operator==(const Tableau &other) const;
     bool operator!=(const Tableau &other) const;
 
-    PauliStringVal eval_y_obs(size_t qubit) const;
+    PauliString eval_y_obs(size_t qubit) const;
 
     std::string str() const;
     void expand(size_t new_num_qubits);
@@ -49,7 +49,7 @@ struct Tableau {
 
     /// Creates a Tableau representing a single qubit gate.
     ///
-    /// All observables specified using the string format accepted by `PauliStringVal::from_str`.
+    /// All observables specified using the string format accepted by `PauliString::from_str`.
     /// For example: "-X" or "+Y".
     ///
     /// Args:
@@ -60,7 +60,7 @@ struct Tableau {
 
     /// Creates a Tableau representing a two qubit gate.
     ///
-    /// All observables specified using the string format accepted by `PauliStringVal::from_str`.
+    /// All observables specified using the string format accepted by `PauliString::from_str`.
     /// For example: "-IX" or "+YZ".
     ///
     /// Args:
@@ -81,10 +81,10 @@ struct Tableau {
     /// Returns:
     ///     The output-side Pauli string.
     ///     Algebraically: $c p c^{-1}$ where $c$ is the tableau's Clifford operation.
-    PauliStringVal operator()(const PauliStringRef &p) const;
+    PauliString operator()(const PauliStringRef &p) const;
 
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
-    PauliStringVal scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const;
+    PauliString scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
     void apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const;

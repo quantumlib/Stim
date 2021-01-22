@@ -6,23 +6,23 @@
 
 TEST(SimBulkPauliFrames, get_set_frame) {
     FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
-    ASSERT_EQ(sim.get_frame(0), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(1), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliStringVal::from_str("______"));
-    sim.set_frame(0, PauliStringVal::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(0), PauliStringVal::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(1), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliStringVal::from_str("______"));
-    sim.set_frame(3, PauliStringVal::from_str("ZZZZZZ"));
-    ASSERT_EQ(sim.get_frame(0), PauliStringVal::from_str("_XYZ__"));
-    ASSERT_EQ(sim.get_frame(1), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(2), PauliStringVal::from_str("______"));
-    ASSERT_EQ(sim.get_frame(3), PauliStringVal::from_str("ZZZZZZ"));
+    ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString::from_str("______"));
+    sim.set_frame(0, PauliString::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(0), PauliString::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString::from_str("______"));
+    sim.set_frame(3, PauliString::from_str("ZZZZZZ"));
+    ASSERT_EQ(sim.get_frame(0), PauliString::from_str("_XYZ__"));
+    ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
+    ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
 
     FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
-    big_sim.set_frame(258, PauliStringVal::from_pattern(false, 501, [](size_t k) { return "_X"[k == 303]; }));
+    big_sim.set_frame(258, PauliString::from_pattern(false, 501, [](size_t k) { return "_X"[k == 303]; }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse_str(), "+X303");
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse_str(), "+I");
 }
@@ -86,7 +86,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
         targets.pop_back();
     }
     for (size_t k = 7; k < num_samples; k += 101) {
-        PauliStringVal test_value = PauliStringVal::random(num_qubits, SHARED_TEST_RNG());
+        PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
         bulk_func(sim, targets);

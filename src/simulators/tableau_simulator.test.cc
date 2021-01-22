@@ -359,7 +359,7 @@ bool vec_sim_corroborates_measurement_process(const TableauSimulator &sim, std::
     TableauSimulator sim_tab = sim;
     auto vec_sim = sim_tab.to_vector_sim();
     sim_tab.measure(measurement_targets);
-    PauliStringVal buf(sim_tab.inv_state.num_qubits);
+    PauliString buf(sim_tab.inv_state.num_qubits);
     for (size_t k = 0; k < measurement_targets.size(); k++) {
         buf.z_data[measurement_targets[k]] = true;
         buf.val_sign = sim_tab.recorded_measurement_results.front();

@@ -33,7 +33,7 @@ bool tableau_agrees_with_unitary(const Tableau &tableau,
     auto n = tableau.num_qubits;
     assert(unitary.size() == 1ULL << n);
 
-    std::vector<PauliStringVal> basis;
+    std::vector<PauliString> basis;
     for (size_t x = 0; x < 2; x++) {
         for (size_t k = 0; k < n; k++) {
             basis.emplace_back(n);
@@ -169,36 +169,36 @@ TEST(tableau, inverse_data) {
 
 TEST(tableau, eval) {
     const auto &cnot = GATE_TABLEAUS.at("CNOT");
-    ASSERT_EQ(cnot(PauliStringVal::from_str("-XX")), PauliStringVal::from_str("-XI"));
-    ASSERT_EQ(cnot(PauliStringVal::from_str("+XX")), PauliStringVal::from_str("+XI"));
-    ASSERT_EQ(cnot(PauliStringVal::from_str("+ZZ")), PauliStringVal::from_str("+IZ"));
-    ASSERT_EQ(cnot(PauliStringVal::from_str("+IY")), PauliStringVal::from_str("+ZY"));
-    ASSERT_EQ(cnot(PauliStringVal::from_str("+YI")), PauliStringVal::from_str("+YX"));
-    ASSERT_EQ(cnot(PauliStringVal::from_str("+YY")), PauliStringVal::from_str("-XZ"));
+    ASSERT_EQ(cnot(PauliString::from_str("-XX")), PauliString::from_str("-XI"));
+    ASSERT_EQ(cnot(PauliString::from_str("+XX")), PauliString::from_str("+XI"));
+    ASSERT_EQ(cnot(PauliString::from_str("+ZZ")), PauliString::from_str("+IZ"));
+    ASSERT_EQ(cnot(PauliString::from_str("+IY")), PauliString::from_str("+ZY"));
+    ASSERT_EQ(cnot(PauliString::from_str("+YI")), PauliString::from_str("+YX"));
+    ASSERT_EQ(cnot(PauliString::from_str("+YY")), PauliString::from_str("-XZ"));
 
     const auto &x2 = GATE_TABLEAUS.at("SQRT_X");
-    ASSERT_EQ(x2(PauliStringVal::from_str("+X")), PauliStringVal::from_str("+X"));
-    ASSERT_EQ(x2(PauliStringVal::from_str("+Y")), PauliStringVal::from_str("+Z"));
-    ASSERT_EQ(x2(PauliStringVal::from_str("+Z")), PauliStringVal::from_str("-Y"));
+    ASSERT_EQ(x2(PauliString::from_str("+X")), PauliString::from_str("+X"));
+    ASSERT_EQ(x2(PauliString::from_str("+Y")), PauliString::from_str("+Z"));
+    ASSERT_EQ(x2(PauliString::from_str("+Z")), PauliString::from_str("-Y"));
 
     const auto &s = GATE_TABLEAUS.at("S");
-    ASSERT_EQ(s(PauliStringVal::from_str("+X")), PauliStringVal::from_str("+Y"));
-    ASSERT_EQ(s(PauliStringVal::from_str("+Y")), PauliStringVal::from_str("-X"));
-    ASSERT_EQ(s(PauliStringVal::from_str("+Z")), PauliStringVal::from_str("+Z"));
+    ASSERT_EQ(s(PauliString::from_str("+X")), PauliString::from_str("+Y"));
+    ASSERT_EQ(s(PauliString::from_str("+Y")), PauliString::from_str("-X"));
+    ASSERT_EQ(s(PauliString::from_str("+Z")), PauliString::from_str("+Z"));
 }
 
 TEST(tableau, apply_within) {
     const auto &cnot = GATE_TABLEAUS.at("CNOT");
 
-    auto p1 = PauliStringVal::from_str("-XX");
+    auto p1 = PauliString::from_str("-XX");
     PauliStringRef p1_ptr(p1);
     cnot.apply_within(p1_ptr, {0, 1});
-    ASSERT_EQ(p1, PauliStringVal::from_str("-XI"));
+    ASSERT_EQ(p1, PauliString::from_str("-XI"));
 
-    auto p2 = PauliStringVal::from_str("+XX");
+    auto p2 = PauliString::from_str("+XX");
     PauliStringRef p2_ptr(p2);
     cnot.apply_within(p2_ptr, {0, 1});
-    ASSERT_EQ(p2, PauliStringVal::from_str("+XI"));
+    ASSERT_EQ(p2, PauliString::from_str("+XI"));
 }
 
 TEST(tableau, equality) {
@@ -246,10 +246,10 @@ TEST(tableau, inplace_scatter_append) {
     t3.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
     t3.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {1});
     t3.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {0, 1});
-    ASSERT_EQ(t3(PauliStringVal::from_str("XI")), PauliStringVal::from_str("ZI"));
-    ASSERT_EQ(t3(PauliStringVal::from_str("ZI")), PauliStringVal::from_str("XX"));
-    ASSERT_EQ(t3(PauliStringVal::from_str("IX")), PauliStringVal::from_str("IX"));
-    ASSERT_EQ(t3(PauliStringVal::from_str("IZ")), PauliStringVal::from_str("-ZY"));
+    ASSERT_EQ(t3(PauliString::from_str("XI")), PauliString::from_str("ZI"));
+    ASSERT_EQ(t3(PauliString::from_str("ZI")), PauliString::from_str("XX"));
+    ASSERT_EQ(t3(PauliString::from_str("IX")), PauliString::from_str("IX"));
+    ASSERT_EQ(t3(PauliString::from_str("IZ")), PauliString::from_str("-ZY"));
 }
 
 TEST(tableau, inplace_scatter_prepend) {
@@ -286,28 +286,28 @@ TEST(tableau, inplace_scatter_prepend) {
     t3.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), {0});
     t3.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_X"), {1});
     t3.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), {0, 1});
-    ASSERT_EQ(t3(PauliStringVal::from_str("XI")), PauliStringVal::from_str("ZX"));
-    ASSERT_EQ(t3(PauliStringVal::from_str("ZI")), PauliStringVal::from_str("XI"));
-    ASSERT_EQ(t3(PauliStringVal::from_str("IX")), PauliStringVal::from_str("IX"));
-    ASSERT_EQ(t3(PauliStringVal::from_str("IZ")), PauliStringVal::from_str("-XY"));
+    ASSERT_EQ(t3(PauliString::from_str("XI")), PauliString::from_str("ZX"));
+    ASSERT_EQ(t3(PauliString::from_str("ZI")), PauliString::from_str("XI"));
+    ASSERT_EQ(t3(PauliString::from_str("IX")), PauliString::from_str("IX"));
+    ASSERT_EQ(t3(PauliString::from_str("IZ")), PauliString::from_str("-XY"));
 }
 
 TEST(tableau, eval_y) {
-    ASSERT_EQ(GATE_TABLEAUS.at("H").zs[0], PauliStringVal::from_str("+X"));
-    ASSERT_EQ(GATE_TABLEAUS.at("S").zs[0], PauliStringVal::from_str("+Z"));
-    ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").zs[0], PauliStringVal::from_str("+Y"));
-    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").zs[0], PauliStringVal::from_str("X"));
-    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").zs[0], PauliStringVal::from_str("-X"));
-    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").zs[1], PauliStringVal::from_str("ZZ"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H").zs[0], PauliString::from_str("+X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("S").zs[0], PauliString::from_str("+Z"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").zs[0], PauliString::from_str("+Y"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").zs[0], PauliString::from_str("X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").zs[0], PauliString::from_str("-X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").zs[1], PauliString::from_str("ZZ"));
 
-    ASSERT_EQ(GATE_TABLEAUS.at("H").eval_y_obs(0), PauliStringVal::from_str("-Y"));
-    ASSERT_EQ(GATE_TABLEAUS.at("S").eval_y_obs(0), PauliStringVal::from_str("-X"));
-    ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").eval_y_obs(0), PauliStringVal::from_str("+Z"));
-    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").eval_y_obs(0), PauliStringVal::from_str("+Y"));
-    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").eval_y_obs(0), PauliStringVal::from_str("+Y"));
-    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X").eval_y_obs(0), PauliStringVal::from_str("+Z"));
-    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X_DAG").eval_y_obs(0), PauliStringVal::from_str("-Z"));
-    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").eval_y_obs(1), PauliStringVal::from_str("ZY"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H").eval_y_obs(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(GATE_TABLEAUS.at("S").eval_y_obs(0), PauliString::from_str("-X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").eval_y_obs(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").eval_y_obs(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").eval_y_obs(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X").eval_y_obs(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X_DAG").eval_y_obs(0), PauliString::from_str("-Z"));
+    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").eval_y_obs(1), PauliString::from_str("ZY"));
 }
 
 bool are_tableau_mutations_equivalent(
@@ -574,7 +574,7 @@ TEST(tableau, inverse) {
         t1 = Tableau::random(k, SHARED_TEST_RNG());
         t2 = t1.inverse();
         ASSERT_TRUE(t2.satisfies_invariants());
-        auto p = PauliStringVal::random(k, SHARED_TEST_RNG());
+        auto p = PauliString::random(k, SHARED_TEST_RNG());
         auto p2 = t1(t2(p));
         auto x1 = p.x_data.str();
         auto x2 = p2.x_data.str();
@@ -588,12 +588,12 @@ TEST(tableau, inverse) {
 TEST(tableau, prepend_pauli) {
     Tableau t = Tableau::random(6, SHARED_TEST_RNG());
     Tableau ref = t;
-    t.prepend(PauliStringVal::from_str("_XYZ__"));
+    t.prepend(PauliString::from_str("_XYZ__"));
     ref.prepend_X(1);
     ref.prepend_Y(2);
     ref.prepend_Z(3);
     ASSERT_EQ(t, ref);
-    t.prepend(PauliStringVal::from_str("Y_ZX__"));
+    t.prepend(PauliString::from_str("Y_ZX__"));
     ref.prepend_X(3);
     ref.prepend_Y(0);
     ref.prepend_Z(2);
