@@ -11,7 +11,7 @@ TEST(SimTableau, identity) {
     ASSERT_EQ(s.recorded_measurement_results.front(), false);
     s.recorded_measurement_results.pop();
     ASSERT_EQ(s.recorded_measurement_results.size(), 0);
-    s.measure(OperationData({0}, {true}));
+    s.measure(OperationData({0}, {true}, 0));
     ASSERT_EQ(s.recorded_measurement_results.size(), 1);
     ASSERT_EQ(s.recorded_measurement_results.front(), true);
 }

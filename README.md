@@ -69,10 +69,6 @@ $ echo -e "H 0 \n CNOT 0 1 \n M 0 \n M 1 \n" | stim
         Each byte holds 8 measurement results, ordered from least significant bit to most significant bit.
         The number of measurement results from the circuit is increased to a multiple of 8 by padding with 0s.
         There is no separator between shots (other than the padding).
-    - `RAW_UNSTABLE`:
-        A raw dump of the Pauli frame simulator's internal representation.
-        This is the fastest binary format but it will vary from version to version.
-        Avoid it unless you are truly desperate for speed.
 - `-profile`: Unstable. Debug command for timing various things.
 
 
@@ -118,19 +114,13 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 
 ### Non-unitary gates
 
-- `M` (Tableau simulator only):
+- `M`:
     Z-basis measurement.
     Examples: `M 0`, `M 2 1`, `M 0 !3 1 2`. 
     Collapses the target qubits and reports their values.
     Prefixing a target with a `!` indicates that the measurement result should be inverted when reported.
     In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
     (e.g. prefer `M 0 1 \n H 0` over `M 0 \n H 0 \n M 1`).
-- `M_REF` (Pauli frame simulator only):
-    A measurement augmented with reference results from a noiseless simulation of the circuit.
-    The default result is indicated by the absence (0) or presence (1) of a `!` before each qubit.
-    The Pauli frame simulator will use these measurements as a starting point, flipping them based
-    on the tracked Pauli frame.
-    Examples: `M_REF 0`, `M_REF 2 1`, `M_REF 0 !3 1 2`.
 - `R`:
     Reset to |0>.
     Examples: `R 0`, `R 2 1`, `R 0 3 1 2`.
@@ -150,21 +140,14 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
     A two-qubit depolarizing kick is
     `IX`, `IY`, `IZ`, `XI`, `XX`, `XY`, `XZ`, `YI`, `YX`, `YY`, `YZ`, `ZI`, `ZX`, `ZY`, `ZZ`
     chosen uniformly at random.
-- `M_PREFER_0`:
-    Same as `M` but with a consistent outcome.
-    Collapses preferentially to the +1 eigenstate of Z observables, instead of to +1 or -1 randomly.
-    (Used internally when preprocessing a circuit for the Pauli frame simulator, so that the result of
-    preprocessing is consistent instead of varying from run to run.)
-- `R_PREFER_0`:
-    Same as `R` but with a consistent outcome.
-    Collapses preferentially to the +1 eigenstate of Z observables, instead of to +1 or -1 randomly.
-    (Used internally when preprocessing a circuit for the Pauli frame simulator, so that the result of
-    preprocessing is consistent instead of varying from run to run.)
 
 ### Other.
 
 - `TICK`: Optional command indicating the end of a layer of gates.
     May be ignored, may force processing of internally queued operations and flushing of queued measurement results.
+- `REPEATLAST(window) iterations_including_initial`: Meta command flattened while parsing.
+    Repeats the last `window` gates a total of `iterations` times (including the initial execution).
+    In particular, note that `REPEATLAST(window) 1` is equivalent to having no `REPEATLAST` instruction at all.
 
 
 # Building

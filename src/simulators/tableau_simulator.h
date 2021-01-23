@@ -17,11 +17,21 @@
 struct TableauSimulator {
     Tableau inv_state;
     std::mt19937_64 &rng;
+    int8_t sign_bias;
     std::queue<bool> recorded_measurement_results;
 
-    explicit TableauSimulator(size_t num_qubits, std::mt19937_64 &rng);
-    static std::vector<bool> sample_circuit(const Circuit &circuit, std::mt19937_64 &rng);
-    static void sample_stream(FILE *in, FILE *out, bool newline_after_ticks, std::mt19937_64 &rng);
+    /// Args:
+    ///     num_qubits: The initial number of qubits in the simulator state.
+    ///     rng: The random number generator to use for random operations.
+    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
+    explicit TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias = 0);
+
+    /// Samples the given circuit in a deterministic fashion.
+    ///
+    /// Discards all noisy operations, and biases all collapse events towards +Z instead of randomly +Z/-Z.
+    static simd_bits reference_sample_circuit(const Circuit &circuit);
+    static simd_bits sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
+    static void sample_stream(FILE *in, FILE *out, bool newline_after_measurements, std::mt19937_64 &rng);
 
     /// Expands the internal state of the simulator (if needed) to ensure the given qubit exists.
     ///
@@ -43,15 +53,14 @@ struct TableauSimulator {
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void measure(const OperationData &target_data, int8_t sign_bias = 0);
+    void measure(const OperationData &target_data);
 
     /// Collapses then clears the target qubits.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void reset(const OperationData &target_data, int8_t sign_bias = 0);
+    void reset(const OperationData &target_data);
 
     /// Applies a named operation to the given targets.
     ///
@@ -103,15 +112,13 @@ private:
     ///     target: The index of the qubit to collapse.
     ///     transposed_raii: A RAII value whose existence certifies the tableau data is currently transposed
     ///         (to make operations efficient).
-    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii, int8_t sign_bias);
+    void collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii);
 
     /// Collapses the given qubits.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void collapse(const OperationData &target_data, int8_t sign_bias = 0);
+    void collapse(const OperationData &target_data);
 };
 
 #endif

@@ -129,10 +129,10 @@ void do_nothing_pst(FrameSimulator &p, const OperationData &target_data) {
 
 const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>> SIM_BULK_PAULI_FRAMES_GATE_DATA{
     {"R",          &FrameSimulator::reset},
-    {"M_REF",      &FrameSimulator::measure_ref},
-    // Pauli gates.
+    {"M",          &FrameSimulator::measure},
     {"TICK",       &do_nothing_pst},
     {"I",          &do_nothing_pst},
+    // Pauli gates (ignored because they are accounted for by the reference sample results being inverted or not.)
     {"X",          &do_nothing_pst},
     {"Y",          &do_nothing_pst},
     {"Z",          &do_nothing_pst},
@@ -169,10 +169,8 @@ const std::unordered_map<std::string, std::function<void(FrameSimulator &, const
 };
 
 const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>> SIM_TABLEAU_GATE_FUNC_DATA{
-        {"M",          [](auto &s, const auto &t) { s.measure(t, 0); }},
-        {"M_PREFER_0", [](auto &s, const auto &t) { s.measure(t, +1); }},
-        {"R",          [](auto &s, const auto &t) { s.reset(t, 0); }},
-        {"R_PREFER_0", [](auto &s, const auto &t) { s.reset(t, +1); }},
+        {"M",          &TableauSimulator::measure},
+        {"R",          &TableauSimulator::reset},
         {"TICK",       [](auto &s, const auto &t) {}},
         {"I",          [](auto &s, const auto &t) {}},
         // Pauli gates.

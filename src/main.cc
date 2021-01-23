@@ -382,12 +382,10 @@ std::vector<const char *> known_arguments {
 std::vector<const char *> format_names {
         "ascii",
         "bin_LE8",
-        "RAW_UNSTABLE",
 };
 std::vector<SampleFormat > format_values {
         SAMPLE_FORMAT_ASCII,
         SAMPLE_FORMAT_BINLE8,
-        SAMPLE_FORMAT_RAW_UNSTABLE,
 };
 
 int main(int argc, const char** argv) {

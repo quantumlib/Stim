@@ -26,22 +26,32 @@ struct FrameSimulator {
 
     FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
 
-    static std::vector<simd_bits> sample(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng);
-    static void sample_out(const Circuit &circuit, size_t num_samples, FILE *out, SampleFormat format, std::mt19937_64 &rng);
+    static simd_bit_table sample(
+            const Circuit &circuit,
+            const simd_bits &reference_sample,
+            size_t num_samples,
+            std::mt19937_64 &rng);
+    static void sample_out(
+            const Circuit &circuit,
+            const simd_bits &reference_sample,
+            size_t num_samples,
+            FILE *out,
+            SampleFormat format,
+            std::mt19937_64 &rng);
 
     PauliString get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
 
-    void unpack_sample_measurements_into(size_t sample_index, simd_bits &out);
+    void unpack_sample_measurements_into(size_t sample_index, const simd_bits &reference_sample, simd_bits_range_ref out);
     void clear_and_run(const Circuit &circuit);
     void clear();
     void do_transpose();
 
     size_t recorded_bit_address(size_t sample_index, size_t measure_index) const;
-    void unpack_write_measurements(FILE *out, SampleFormat format);
-    std::vector<simd_bits> unpack_measurements();
+    void unpack_write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format);
+    simd_bit_table unpack_measurements(const simd_bits &reference_sample);
 
-    void measure_ref(const OperationData &target_data);
+    void measure(const OperationData &target_data);
     void reset(const OperationData &target_data);
 
     void H_XZ(const OperationData &target_data);

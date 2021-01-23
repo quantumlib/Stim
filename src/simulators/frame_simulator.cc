@@ -43,7 +43,10 @@ FrameSimulator::FrameSimulator(size_t init_num_qubits, size_t num_samples, size_
         rng(rng) {
 }
 
-void FrameSimulator::unpack_sample_measurements_into(size_t sample_index, simd_bits &out) {
+void FrameSimulator::unpack_sample_measurements_into(
+        size_t sample_index,
+        const simd_bits &reference_sample,
+        simd_bits_range_ref out) {
     if (!results_block_transposed) {
         do_transpose();
     }
@@ -52,30 +55,24 @@ void FrameSimulator::unpack_sample_measurements_into(size_t sample_index, simd_b
     for (size_t m = 0; m < num_measurements_raw; m += 256) {
         p[m >> 8] = p2[recorded_bit_address(sample_index, m) >> 8];
     }
+    out ^= reference_sample;
 }
 
-std::vector<simd_bits> FrameSimulator::unpack_measurements() {
-    std::vector<simd_bits> result;
+simd_bit_table FrameSimulator::unpack_measurements(const simd_bits &reference_sample) {
+    simd_bit_table result(num_samples_raw, num_measurements_raw);
     for (size_t s = 0; s < num_samples_raw; s++) {
-        result.emplace_back(num_measurements_raw);
-        unpack_sample_measurements_into(s, result.back());
+        unpack_sample_measurements_into(s, reference_sample, result[s]);
     }
     return result;
 }
 
-void FrameSimulator::unpack_write_measurements(FILE *out, SampleFormat format) {
-    if (results_block_transposed != (format == SAMPLE_FORMAT_RAW_UNSTABLE)) {
-        do_transpose();
-    }
-
-    if (format == SAMPLE_FORMAT_RAW_UNSTABLE) {
-        fwrite(m_table.data.u64, 1, m_table.data.num_bits_padded() >> 3, out);
-        return;
-    }
-
+void FrameSimulator::unpack_write_measurements(
+        FILE *out,
+        const simd_bits &reference_sample,
+        SampleFormat format) {
     simd_bits buf(num_measurements_raw);
     for (size_t s = 0; s < num_samples_raw; s++) {
-        unpack_sample_measurements_into(s, buf);
+        unpack_sample_measurements_into(s, reference_sample, buf);
 
         if (format == SAMPLE_FORMAT_BINLE8) {
             static_assert(std::endian::native == std::endian::little);
@@ -116,37 +113,23 @@ void FrameSimulator::do_named_op(const std::string &name, const OperationData &t
     try {
         SIM_BULK_PAULI_FRAMES_GATE_DATA.at(name)(*this, target_data);
     } catch (const std::out_of_range &ex) {
-        auto message = "Gate isn't supported by FrameSimulator: " + name;
-        if (name == "M" || name == "M_PREFER_0") {
-            message += ".\nMeasurements need to be converted to measurement-with-reference-result (M_REF) operations, "
-                       "so that the tracked Pauli frame has something to invert with respect to."
-                       "\nDid you forget a conversion step? Did you intend to use the Tableau simulator instead?";
-        }
-        throw std::out_of_range(message);
+        throw std::out_of_range("Gate isn't supported by FrameSimulator: " + name);
     }
 }
 
-void FrameSimulator::measure_ref(const OperationData &target_data) {
-    for (size_t k = 0; k < target_data.targets.size(); k++) {
-        size_t q = target_data.targets[k];
+void FrameSimulator::measure(const OperationData &target_data) {
+    // Note: measurement flags (inversions) are ignored because they are accounted for in the reference sample.
+    for (auto q : target_data.targets) {
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
 
         auto x = (__m256i *)x_table[q].ptr_simd;
         auto x_end = x + x_table[q].num_simd_words;
         auto m = (__m256i *)m_table.data.ptr_simd + (recorded_bit_address(0, num_recorded_measurements) >> 8);
         auto m_stride = recorded_bit_address(256, 0) >> 8;
-        if (target_data.flags[k]) {
-            while (x != x_end) {
-                *m = *x ^ _mm256_set1_epi8(-1);
-                x++;
-                m += m_stride;
-            }
-        } else {
-            while (x != x_end) {
-                *m = *x;
-                x++;
-                m += m_stride;
-            }
+        while (x != x_end) {
+            *m = *x;
+            x++;
+            m += m_stride;
         }
         num_recorded_measurements++;
     }
@@ -325,25 +308,35 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data, float probabi
     }
 }
 
-std::vector<simd_bits> FrameSimulator::sample(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng) {
+simd_bit_table FrameSimulator::sample(
+        const Circuit &circuit,
+        const simd_bits &reference_sample,
+        size_t num_samples,
+        std::mt19937_64 &rng) {
     FrameSimulator sim(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
     sim.clear_and_run(circuit);
-    return sim.unpack_measurements();
+    return sim.unpack_measurements(reference_sample);
 }
 
-void FrameSimulator::sample_out(const Circuit &circuit, size_t num_samples, FILE *out, SampleFormat format, std::mt19937_64 &rng) {
+void FrameSimulator::sample_out(
+        const Circuit &circuit,
+        const simd_bits &reference_sample,
+        size_t num_samples,
+        FILE *out,
+        SampleFormat format,
+        std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     if (num_samples >= GOOD_BLOCK_SIZE) {
         auto sim = FrameSimulator(circuit.num_qubits, GOOD_BLOCK_SIZE, circuit.num_measurements, rng);
         while (num_samples > GOOD_BLOCK_SIZE) {
             sim.clear_and_run(circuit);
-            sim.unpack_write_measurements(out, format);
+            sim.unpack_write_measurements(out, reference_sample, format);
             num_samples -= GOOD_BLOCK_SIZE;
         }
     }
     if (num_samples) {
         auto sim = FrameSimulator(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
         sim.clear_and_run(circuit);
-        sim.unpack_write_measurements(out, format);
+        sim.unpack_write_measurements(out, reference_sample, format);
     }
 }
