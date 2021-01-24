@@ -1,0 +1,14 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+AlignAfterOpenBracket: AlwaysBreak
+IncludeCategories:
+  - Regex:           '^<.*>$'
+    Priority:        1
+  - Regex:           '^"gtest/.*"$'
+    Priority:        2
+  - Regex:           '^".*"$'
+    Priority:        3
+...

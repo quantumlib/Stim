@@ -190,6 +190,9 @@ slower [....................*....................] faster dB | 5.3 ms (vs 5.0 ms
 The bars on the left show how fast each task is running compared to baseline expectations (on my dev machine).
 Each tick away from the center `|` is 1 decibel slower or faster (i.e. each `<` or `>` represents a factor of `1.26`).
 
+Basically, if you see `[......*<<<<<<<<<<<<<|....................]` then something is *seriously* wrong, because the
+code is running 25x slower than expected.
+
 The benchmark binary supports a `-only=TASK_NAME_1,TASK_NAME_2,...` flag.
 
 # Manual Build
