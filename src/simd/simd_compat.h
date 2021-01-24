@@ -1,28 +1,32 @@
 #ifndef SIMD_COMPAT_H
 #define SIMD_COMPAT_H
 
-#include <bit>
 #include <cstdint>
 #include <immintrin.h>
+#include <iostream>
 
 #define SIMD_WORD_TYPE simd_word_256
+
+inline uint8_t popcnt(uint64_t value) {
+    return _mm_popcnt_u64(value);
+}
 
 struct simd_word_256 {
     __m256i val;
 
-    inline static simd_word_256 tile(uint8_t pattern) {
+    inline static simd_word_256 tile8(uint8_t pattern) {
         return {_mm256_set1_epi8(pattern)};
     }
 
-    inline static simd_word_256 tile(uint16_t pattern) {
+    inline static simd_word_256 tile16(uint16_t pattern) {
         return {_mm256_set1_epi16(pattern)};
     }
 
-    inline static simd_word_256 tile(uint32_t pattern) {
+    inline static simd_word_256 tile32(uint32_t pattern) {
         return {_mm256_set1_epi32(pattern)};
     }
 
-    inline static simd_word_256 tile(uint64_t pattern) {
+    inline static simd_word_256 tile64(uint64_t pattern) {
         return {_mm256_set1_epi64x(pattern)};
     }
 
@@ -72,7 +76,7 @@ struct simd_word_256 {
 
     inline uint16_t popcount() const {
         auto p = (uint64_t *)&val;
-        return std::popcount(p[0]) + std::popcount(p[1]) + std::popcount(p[2]) + std::popcount(p[3]);
+        return popcnt(p[0]) + popcnt(p[1]) + popcnt(p[2]) + (uint16_t)popcnt(p[3]);
     }
 
     /// For each 128 bit word pair between the two registers, the byte order goes from this:
@@ -89,19 +93,19 @@ struct simd_word_256 {
 struct simd_word_128 {
     __m128i val;
 
-    inline static simd_word_128 tile(uint8_t pattern) {
+    inline static simd_word_128 tile8(uint8_t pattern) {
         return {_mm_set1_epi8(pattern)};
     }
 
-    inline static simd_word_128 tile(uint16_t pattern) {
+    inline static simd_word_128 tile16(uint16_t pattern) {
         return {_mm_set1_epi16(pattern)};
     }
 
-    inline static simd_word_128 tile(uint32_t pattern) {
+    inline static simd_word_128 tile32(uint32_t pattern) {
         return {_mm_set1_epi32(pattern)};
     }
 
-    inline static simd_word_128 tile(uint64_t pattern) {
+    inline static simd_word_128 tile64(uint64_t pattern) {
         return {_mm_set1_epi64x(pattern)};
     }
 
@@ -143,7 +147,7 @@ struct simd_word_128 {
 
     inline uint16_t popcount() const {
         auto p = (uint64_t *)&val;
-        return std::popcount(p[0]) + std::popcount(p[1]);
+        return popcnt(p[0]) + popcnt(p[1]);
     }
 
     /// For each 128 bit word pair between the two registers, the byte order goes from this:
@@ -160,7 +164,7 @@ struct simd_word_128 {
 struct simd_word_64 {
     uint64_t val;
 
-    constexpr inline static simd_word_64 tile(uint8_t pattern) {
+    constexpr inline static simd_word_64 tile8(uint8_t pattern) {
         uint64_t result = pattern;
         result |= result << 8;
         result |= result << 16;
@@ -168,20 +172,20 @@ struct simd_word_64 {
         return {result};
     }
 
-    constexpr inline static simd_word_64 tile(uint16_t pattern) {
+    constexpr inline static simd_word_64 tile16(uint16_t pattern) {
         uint64_t result = pattern;
         result |= result << 16;
         result |= result << 32;
         return {result};
     }
 
-    constexpr inline static simd_word_64 tile(uint32_t pattern) {
+    constexpr inline static simd_word_64 tile32(uint32_t pattern) {
         uint64_t result = pattern;
         result |= result << 32;
         return {result};
     }
 
-    constexpr inline static simd_word_64 tile(uint64_t pattern) {
+    constexpr inline static simd_word_64 tile64(uint64_t pattern) {
         return {pattern};
     }
 
@@ -222,7 +226,7 @@ struct simd_word_64 {
     }
 
     inline uint16_t popcount() const {
-        return std::popcount(val);
+        return popcnt(val);
     }
 };
 

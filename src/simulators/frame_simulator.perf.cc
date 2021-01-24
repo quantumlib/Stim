@@ -1,7 +1,6 @@
 #include "frame_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../test_util.test.h"
 
 BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;

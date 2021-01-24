@@ -2,7 +2,6 @@
 
 #include "../benchmark_util.h"
 #include "../simulators/gate_data.h"
-#include "../test_util.test.h"
 
 BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d5) {
     size_t distance = 5;

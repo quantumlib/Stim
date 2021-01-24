@@ -132,7 +132,7 @@ int main(int argc, const char **argv) {
                 std::cout << si2(actual_seconds_per_rep) << "s";
                 std::cout << " (vs " << si2(result.goal_seconds) << "s) ";
             } else {
-                std::cout << si2(actual_seconds_per_rep) << "s";
+                std::cout << si2(actual_seconds_per_rep) << "s ";
             }
             for (const auto &e : result.marginal_rates) {
                 const auto &multiplier = e.second;

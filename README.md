@@ -164,8 +164,8 @@ Follow the ["Standalone CMake Project" from the GTest README](https://github.com
 
 ```bash
 cmake .
-make stim_tests
-./out/stim_tests
+make stim_test
+./out/stim_test
 ```
 
 # Benchmarking

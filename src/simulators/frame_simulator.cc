@@ -1,6 +1,5 @@
 #include "frame_simulator.h"
 
-#include <bit>
 #include <cstring>
 
 #include "../probability_util.h"
@@ -71,7 +70,6 @@ void FrameSimulator::unpack_write_measurements(FILE *out, const simd_bits &refer
         unpack_sample_measurements_into(s, reference_sample, buf);
 
         if (format == SAMPLE_FORMAT_BINLE8) {
-            static_assert(std::endian::native == std::endian::little);
             fwrite(buf.u64, 1, (num_measurements_raw + 7) >> 3, out);
         } else if (format == SAMPLE_FORMAT_ASCII) {
             for (size_t k = 0; k < num_measurements_raw; k++) {

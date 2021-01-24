@@ -1,0 +1,38 @@
+name: ci
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  run_main:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - run: sudo apt update
+    - run: cmake .
+    - run: make stim
+    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - run: cmake .
+    - run: make stim_benchmark
+    - run: out/stim_benchmark
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - run: |
+        cd ..
+        git clone https://github.com/google/googletest.git -b release-1.10.0
+        mkdir googletest/build && cd googletest/build
+        cmake .. -DBUILD_GMOCK=OFF
+        make
+        sudo make install
+    - run: cmake .
+    - run: make stim_test
+    - run: out/stim_test

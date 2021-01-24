@@ -3,6 +3,7 @@
 #include <chrono>
 #include <functional>
 #include <string>
+#include <vector>
 #include "circuit.h"
 
 Circuit unrotated_surface_code_circuit(size_t distance);

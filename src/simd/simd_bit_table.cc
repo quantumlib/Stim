@@ -68,7 +68,7 @@ simd_bit_table simd_bit_table::inverse_assuming_lower_triangular(size_t n) const
 
 template <uint8_t step>
 void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
-    auto mask = SIMD_WORD_TYPE::tile(interleave_mask(step));
+    auto mask = SIMD_WORD_TYPE::tile64(interleave_mask(step));
     for (size_t major = base; major < end; major++, major += major & step) {
         table[major].for_each_word(table[major + step], [&mask](auto &a, auto &b) {
             auto t0 = a ^ b.leftshift_tile64(step);

@@ -1,9 +1,6 @@
 #include "vector_simulator.h"
 
-#include <bit>
 #include <cassert>
-#include <iostream>
-#include <map>
 
 #include "../stabilizers/pauli_string.h"
 
@@ -136,7 +133,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     float mag2 = 0;
     for (size_t i = 0; i < state.size(); i++) {
         bool reject = observable.sign;
-        reject ^= (std::popcount(i & mask) & 1) != 0;
+        reject ^= (popcnt(i & mask) & 1) != 0;
         if (reject) {
             state[i] = 0;
         } else {

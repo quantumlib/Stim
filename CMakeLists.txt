@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(stim)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
@@ -46,6 +46,7 @@ set(BENCHMARK_FILES
         src/benchmark_util.perf.cc
         src/simd/simd_bits.perf.cc
         src/simd/simd_bit_table.perf.cc
+        src/simd/simd_compat.perf.cc
         src/simulators/frame_simulator.perf.cc
         src/simulators/tableau_simulator.perf.cc
         src/stabilizers/pauli_string.perf.cc
@@ -63,11 +64,11 @@ target_link_options(stim_benchmark PRIVATE -pthread)
 
 find_package(GTest QUIET)
 if(${GTest_FOUND})
-    add_executable(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
-    add_test(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
-    target_link_libraries(stim_tests gtest_main)
-    target_compile_options(stim_tests PRIVATE -march=native -Wall -Wpedantic -Werror)
-    target_link_options(stim_tests PRIVATE -pthread)
+    add_executable(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+    add_test(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+    target_link_libraries(stim_test gtest gtest_main)
+    target_compile_options(stim_test PRIVATE -march=native -Wall -Wpedantic -Werror)
+    target_link_options(stim_test PRIVATE -pthread)
 else()
     message("WARNING: Skipped stim_test target. `GTest` not found. To fix, follow Standalone CMake Project install instructions at https://github.com/google/googletest")
 endif()
