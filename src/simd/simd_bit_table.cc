@@ -1,3 +1,5 @@
+#include "simd_bit_table.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -5,14 +7,14 @@
 #include <random>
 #include <sstream>
 
-#include "simd_bit_table.h"
 #include "simd_util.h"
 
-simd_bit_table::simd_bit_table(size_t min_bits_major, size_t min_bits_minor) :
-    num_simd_words_major(simd_bits::min_bits_to_num_simd_words(min_bits_major)),
-    num_simd_words_minor(simd_bits::min_bits_to_num_simd_words(min_bits_minor)),
-    data(simd_bits::min_bits_to_num_bits_padded(min_bits_minor) * simd_bits::min_bits_to_num_bits_padded(min_bits_major)) {
-}
+simd_bit_table::simd_bit_table(size_t min_bits_major, size_t min_bits_minor)
+    : num_simd_words_major(simd_bits::min_bits_to_num_simd_words(min_bits_major)),
+      num_simd_words_minor(simd_bits::min_bits_to_num_simd_words(min_bits_minor)),
+      data(
+          simd_bits::min_bits_to_num_bits_padded(min_bits_minor) *
+          simd_bits::min_bits_to_num_bits_padded(min_bits_major)) {}
 
 simd_bit_table simd_bit_table::identity(size_t n) {
     simd_bit_table result(n, n);
@@ -22,18 +24,13 @@ simd_bit_table simd_bit_table::identity(size_t n) {
     return result;
 }
 
-void simd_bit_table::clear() {
-    data.clear();
-}
+void simd_bit_table::clear() { data.clear(); }
 
 bool simd_bit_table::operator==(const simd_bit_table &other) const {
-    return num_simd_words_minor == other.num_simd_words_minor
-        && num_simd_words_major == other.num_simd_words_major
-        && data == other.data;
+    return num_simd_words_minor == other.num_simd_words_minor && num_simd_words_major == other.num_simd_words_major &&
+           data == other.data;
 }
-bool simd_bit_table::operator!=(const simd_bit_table &other) const {
-    return !(*this == other);
-}
+bool simd_bit_table::operator!=(const simd_bit_table &other) const { return !(*this == other); }
 
 simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t n) const {
     assert(num_major_bits_padded() >= n && num_minor_bits_padded() >= n);
@@ -85,9 +82,7 @@ void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
 template <uint8_t step>
 void rc3456_address_bit_rotate_swap(simd_bit_table &table, size_t m1, size_t m2) {
     for (size_t major = m1; major < m2; major++, major += major & step) {
-        table[major].for_each_word(table[major + step], [](auto &a, auto &b){
-            a.do_interleave8_tile128(b);
-        });
+        table[major].for_each_word(table[major + step], [](auto &a, auto &b) { a.do_interleave8_tile128(b); });
     }
 }
 
@@ -136,11 +131,8 @@ void simd_bit_table::do_square_transpose() {
 }
 
 simd_bit_table simd_bit_table::from_quadrants(
-        size_t n,
-        const simd_bit_table &upper_left,
-        const simd_bit_table &upper_right,
-        const simd_bit_table &lower_left,
-        const simd_bit_table &lower_right) {
+    size_t n, const simd_bit_table &upper_left, const simd_bit_table &upper_right, const simd_bit_table &lower_left,
+    const simd_bit_table &lower_right) {
     assert(upper_left.num_minor_bits_padded() >= n && upper_left.num_major_bits_padded() >= n);
     assert(upper_right.num_minor_bits_padded() >= n && upper_right.num_major_bits_padded() >= n);
     assert(lower_left.num_minor_bits_padded() >= n && lower_left.num_major_bits_padded() >= n);

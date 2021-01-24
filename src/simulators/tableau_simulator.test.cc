@@ -1,5 +1,7 @@
-#include <gtest/gtest.h>
 #include "tableau_simulator.h"
+
+#include <gtest/gtest.h>
+
 #include "../simulators/gate_data.h"
 #include "../test_util.test.h"
 
@@ -145,12 +147,13 @@ TEST(SimTableau, kickback_vs_stabilizer) {
     sim.H_XZ(0);
     sim.H_XZ(1);
     sim.H_XZ(2);
-    ASSERT_EQ(sim.inv_state.str(),
-              "+-xz-xz-xz-\n"
-              "| +- +- ++\n"
-              "| ZY __ _X\n"
-              "| __ ZY _X\n"
-              "| XX XX XZ");
+    ASSERT_EQ(
+        sim.inv_state.str(),
+        "+-xz-xz-xz-\n"
+        "| +- +- ++\n"
+        "| ZY __ _X\n"
+        "| __ ZY _X\n"
+        "| XX XX XZ");
 }
 
 TEST(SimTableau, s_state_distillation_low_depth) {
@@ -158,15 +161,15 @@ TEST(SimTableau, s_state_distillation_low_depth) {
         auto sim = TableauSimulator(9, SHARED_TEST_RNG());
 
         std::vector<std::vector<uint8_t>> stabilizers = {
-                {0, 1, 2, 3},
-                {0, 1, 4, 5},
-                {0, 2, 4, 6},
-                {1, 2, 4, 7},
+            {0, 1, 2, 3},
+            {0, 1, 4, 5},
+            {0, 2, 4, 6},
+            {1, 2, 4, 7},
         };
         std::vector<std::unordered_map<std::string, std::vector<uint8_t>>> checks{
-                {{"s", {0}}, {"q", stabilizers[0]}},
-                {{"s", {1}}, {"q", stabilizers[1]}},
-                {{"s", {2}}, {"q", stabilizers[2]}},
+            {{"s", {0}}, {"q", stabilizers[0]}},
+            {{"s", {1}}, {"q", stabilizers[1]}},
+            {{"s", {2}}, {"q", stabilizers[2]}},
         };
 
         std::vector<bool> stabilizer_measurements;
@@ -232,13 +235,19 @@ TEST(SimTableau, s_state_distillation_low_space) {
         auto sim = TableauSimulator(5, SHARED_TEST_RNG());
 
         std::vector<std::vector<uint8_t>> phasors = {
-                {0,},
-                {1,},
-                {2,},
-                {0, 1, 2},
-                {0, 1, 3},
-                {0, 2, 3},
-                {1, 2, 3},
+            {
+                0,
+            },
+            {
+                1,
+            },
+            {
+                2,
+            },
+            {0, 1, 2},
+            {0, 1, 3},
+            {0, 2, 3},
+            {1, 2, 3},
         };
 
         size_t anc = 4;
@@ -302,24 +311,26 @@ TEST(SimTableau, unitary_gates_consistent_with_tableau_data) {
 }
 
 TEST(SimTableau, simulate) {
-    auto results = TableauSimulator::sample_circuit(Circuit::from_text(
-            "H 0\n"
-            "CNOT 0 1\n"
-            "M 0\n"
-            "M 1\n"
-            "M 2\n"), SHARED_TEST_RNG());
+    auto results = TableauSimulator::sample_circuit(
+        Circuit::from_text("H 0\n"
+                           "CNOT 0 1\n"
+                           "M 0\n"
+                           "M 1\n"
+                           "M 2\n"),
+        SHARED_TEST_RNG());
     ASSERT_EQ(results[0], results[1]);
     ASSERT_EQ(results[2], false);
 }
 
 TEST(SimTableau, simulate_reset) {
-    auto results = TableauSimulator::sample_circuit(Circuit::from_text(
-            "X 0\n"
-            "M 0\n"
-            "R 0\n"
-            "M 0\n"
-            "R 0\n"
-            "M 0\n"), SHARED_TEST_RNG());
+    auto results = TableauSimulator::sample_circuit(
+        Circuit::from_text("X 0\n"
+                           "M 0\n"
+                           "R 0\n"
+                           "M 0\n"
+                           "R 0\n"
+                           "M 0\n"),
+        SHARED_TEST_RNG());
     ASSERT_EQ(results[0], true);
     ASSERT_EQ(results[1], false);
     ASSERT_EQ(results[2], false);

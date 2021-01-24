@@ -1,12 +1,12 @@
 #include <cmath>
-#include <sstream>
-#include "benchmark_util.h"
 #include <iostream>
+#include <sstream>
 
 #include "arg_parse.h"
+#include "benchmark_util.h"
 
 RegisteredBenchmark *running_benchmark = nullptr;
-std::vector<RegisteredBenchmark> all_registered_benchmarks {};
+std::vector<RegisteredBenchmark> all_registered_benchmarks{};
 
 /// Describe quantity as an SI-prefixed value with two significant figures.
 std::string si2(double val) {
@@ -60,8 +60,8 @@ std::string si2(double val) {
     return ss.str();
 }
 
-std::vector<const char *> known_arguments {
-        "-only",
+std::vector<const char *> known_arguments{
+    "-only",
 };
 
 int main(int argc, const char **argv) {
@@ -72,11 +72,11 @@ int main(int argc, const char **argv) {
         chosen_benchmarks = all_registered_benchmarks;
     } else {
         std::string filter_text = only;
-        std::vector<std::string> filters {};
+        std::vector<std::string> filters{};
         size_t s = 0;
-        for (size_t k = 0; ; k++) {
+        for (size_t k = 0;; k++) {
             if (only[k] == ',' || only[k] == '\0') {
-                filters.push_back(filter_text.substr(s, k-s));
+                filters.push_back(filter_text.substr(s, k - s));
                 s = k + 1;
             }
             if (only[k] == '\0') {
@@ -113,7 +113,7 @@ int main(int argc, const char **argv) {
         for (const auto &result : benchmark.results) {
             double actual_seconds_per_rep = result.total_seconds / result.total_reps;
             if (result.goal_seconds != -1) {
-                int deviation = (int) round((log(result.goal_seconds) - log(actual_seconds_per_rep)) / (log(10) / 10.0));
+                int deviation = (int)round((log(result.goal_seconds) - log(actual_seconds_per_rep)) / (log(10) / 10.0));
                 std::cout << "slower [";
                 for (int k = -20; k <= 20; k++) {
                     if ((k < deviation && k < 0) || (k > deviation && k > 0)) {

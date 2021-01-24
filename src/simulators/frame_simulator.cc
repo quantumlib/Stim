@@ -1,11 +1,12 @@
+#include "frame_simulator.h"
+
 #include <bit>
 #include <cstring>
 
-#include "tableau_simulator.h"
-#include "frame_simulator.h"
-#include "gate_data.h"
-#include "../simd/simd_util.h"
 #include "../probability_util.h"
+#include "../simd/simd_util.h"
+#include "gate_data.h"
+#include "tableau_simulator.h"
 
 // Iterates over the X and Z frame components of a pair of qubits, applying a custom BODY to each.
 //
@@ -32,21 +33,19 @@ size_t FrameSimulator::recorded_bit_address(size_t sample_index, size_t measure_
     return s_low + (m_low << 8) + (s_high << 16) + (m_high * x_table.num_simd_words_minor << 16);
 }
 
-FrameSimulator::FrameSimulator(size_t init_num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng) :
-        num_qubits(init_num_qubits),
-        num_samples_raw(num_samples),
-        num_measurements_raw(num_measurements),
-        x_table(init_num_qubits, num_samples),
-        z_table(init_num_qubits, num_samples),
-        m_table(num_measurements, num_samples),
-        rng_buffer(num_samples),
-        rng(rng) {
-}
+FrameSimulator::FrameSimulator(
+    size_t init_num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng)
+    : num_qubits(init_num_qubits),
+      num_samples_raw(num_samples),
+      num_measurements_raw(num_measurements),
+      x_table(init_num_qubits, num_samples),
+      z_table(init_num_qubits, num_samples),
+      m_table(num_measurements, num_samples),
+      rng_buffer(num_samples),
+      rng(rng) {}
 
 void FrameSimulator::unpack_sample_measurements_into(
-        size_t sample_index,
-        const simd_bits &reference_sample,
-        simd_bits_range_ref out) {
+    size_t sample_index, const simd_bits &reference_sample, simd_bits_range_ref out) {
     if (!results_block_transposed) {
         do_transpose();
     }
@@ -66,10 +65,7 @@ simd_bit_table FrameSimulator::unpack_measurements(const simd_bits &reference_sa
     return result;
 }
 
-void FrameSimulator::unpack_write_measurements(
-        FILE *out,
-        const simd_bits &reference_sample,
-        SampleFormat format) {
+void FrameSimulator::unpack_write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) {
     simd_bits buf(num_measurements_raw);
     for (size_t s = 0; s < num_samples_raw; s++) {
         unpack_sample_measurements_into(s, reference_sample, buf);
@@ -251,8 +247,8 @@ void FrameSimulator::YCX(const OperationData &target_data) {
 
 void FrameSimulator::YCY(const OperationData &target_data) {
     for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
-        auto y1 = x1 ^z1;
-        auto y2 = x2 ^z2;
+        auto y1 = x1 ^ z1;
+        auto y2 = x2 ^ z2;
         x1 ^= y2;
         z1 ^= y2;
         x2 ^= y1;
@@ -309,22 +305,15 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data, float probabi
 }
 
 simd_bit_table FrameSimulator::sample(
-        const Circuit &circuit,
-        const simd_bits &reference_sample,
-        size_t num_samples,
-        std::mt19937_64 &rng) {
+    const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng) {
     FrameSimulator sim(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
     sim.clear_and_run(circuit);
     return sim.unpack_measurements(reference_sample);
 }
 
 void FrameSimulator::sample_out(
-        const Circuit &circuit,
-        const simd_bits &reference_sample,
-        size_t num_samples,
-        FILE *out,
-        SampleFormat format,
-        std::mt19937_64 &rng) {
+    const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+    std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     if (num_samples >= GOOD_BLOCK_SIZE) {
         auto sim = FrameSimulator(circuit.num_qubits, GOOD_BLOCK_SIZE, circuit.num_measurements, rng);

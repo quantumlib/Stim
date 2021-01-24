@@ -1,24 +1,28 @@
+#include "tableau.h"
+
+#include <gtest/gtest.h>
 #include <random>
+
 #include "../simulators/gate_data.h"
 #include "../simulators/vector_simulator.h"
 #include "../test_util.test.h"
-#include <gtest/gtest.h>
-#include "tableau.h"
 #include "tableau_transposed_raii.h"
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;
-    return sqrtf(d.real()*d.real() + d.imag()*d.imag());
+    return sqrtf(d.real() * d.real() + d.imag() * d.imag());
 }
 
 TEST(tableau, identity) {
     auto t = Tableau::identity(4);
-    ASSERT_EQ(t.str(), "+-xz-xz-xz-xz-\n"
-                       "| ++ ++ ++ ++\n"
-                       "| XZ __ __ __\n"
-                       "| __ XZ __ __\n"
-                       "| __ __ XZ __\n"
-                       "| __ __ __ XZ");
+    ASSERT_EQ(
+        t.str(),
+        "+-xz-xz-xz-xz-\n"
+        "| ++ ++ ++ ++\n"
+        "| XZ __ __ __\n"
+        "| __ XZ __ __\n"
+        "| __ __ XZ __\n"
+        "| __ __ __ XZ");
 }
 
 TEST(tableau, gate1) {
@@ -28,8 +32,7 @@ TEST(tableau, gate1) {
     ASSERT_EQ(gate1.zs[0].str(), "+Z");
 }
 
-bool tableau_agrees_with_unitary(const Tableau &tableau,
-                                 const std::vector<std::vector<std::complex<float>>> &unitary) {
+bool tableau_agrees_with_unitary(const Tableau &tableau, const std::vector<std::vector<std::complex<float>>> &unitary) {
     auto n = tableau.num_qubits;
     assert(unitary.size() == 1ULL << n);
 
@@ -93,31 +96,37 @@ TEST(tableau, big_not_seeing_double) {
 }
 
 TEST(tableau, str) {
-    ASSERT_EQ(Tableau::gate1("+X", "-Z").str(),
-            "+-xz-\n"
-            "| +-\n"
-            "| XZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("X").str(),
-            "+-xz-\n"
-            "| +-\n"
-            "| XZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("S").str(),
-            "+-xz-\n"
-            "| ++\n"
-            "| YZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("S_DAG").str(),
-            "+-xz-\n"
-            "| -+\n"
-            "| YZ");
-    ASSERT_EQ(GATE_TABLEAUS.at("H").str(),
-            "+-xz-\n"
-            "| ++\n"
-            "| ZX");
-    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").str(),
-            "+-xz-xz-\n"
-            "| ++ ++\n"
-            "| XZ _Z\n"
-            "| X_ XZ");
+    ASSERT_EQ(
+        Tableau::gate1("+X", "-Z").str(),
+        "+-xz-\n"
+        "| +-\n"
+        "| XZ");
+    ASSERT_EQ(
+        GATE_TABLEAUS.at("X").str(),
+        "+-xz-\n"
+        "| +-\n"
+        "| XZ");
+    ASSERT_EQ(
+        GATE_TABLEAUS.at("S").str(),
+        "+-xz-\n"
+        "| ++\n"
+        "| YZ");
+    ASSERT_EQ(
+        GATE_TABLEAUS.at("S_DAG").str(),
+        "+-xz-\n"
+        "| -+\n"
+        "| YZ");
+    ASSERT_EQ(
+        GATE_TABLEAUS.at("H").str(),
+        "+-xz-\n"
+        "| ++\n"
+        "| ZX");
+    ASSERT_EQ(
+        GATE_TABLEAUS.at("CNOT").str(),
+        "+-xz-xz-\n"
+        "| ++ ++\n"
+        "| XZ _Z\n"
+        "| X_ XZ");
 
     Tableau t(4);
     t.prepend_H_XZ(0);
@@ -127,20 +136,22 @@ TEST(tableau, str) {
     t.prepend_CX(1, 3);
     t.prepend_CX(0, 1);
     t.prepend_CX(1, 0);
-    ASSERT_EQ(t.inverse().str(),
-            "+-xz-xz-xz-xz-\n"
-            "| ++ +- ++ ++\n"
-            "| Z_ ZY _Z _Z\n"
-            "| ZX _X _Z __\n"
-            "| _X __ XZ __\n"
-            "| __ _X __ XZ");
-    ASSERT_EQ(t.str(),
-            "+-xz-xz-xz-xz-\n"
-            "| -+ ++ ++ ++\n"
-            "| Z_ ZX _X __\n"
-            "| YX _X __ _X\n"
-            "| X_ X_ XZ __\n"
-            "| X_ __ __ XZ");
+    ASSERT_EQ(
+        t.inverse().str(),
+        "+-xz-xz-xz-xz-\n"
+        "| ++ +- ++ ++\n"
+        "| Z_ ZY _Z _Z\n"
+        "| ZX _X _Z __\n"
+        "| _X __ XZ __\n"
+        "| __ _X __ XZ");
+    ASSERT_EQ(
+        t.str(),
+        "+-xz-xz-xz-xz-\n"
+        "| -+ ++ ++ ++\n"
+        "| Z_ ZX _X __\n"
+        "| YX _X __ _X\n"
+        "| X_ X_ XZ __\n"
+        "| X_ __ __ XZ");
 }
 
 TEST(tableau, gate_tableau_data_vs_unitary_data) {
@@ -158,7 +169,7 @@ TEST(tableau, inverse_data) {
         Tableau tab = kv.second;
         const auto &inverse_name = GATE_INVERSE_NAMES.at(name);
         const auto &tab2 = GATE_TABLEAUS.at(inverse_name);
-        std::vector<size_t> targets {0};
+        std::vector<size_t> targets{0};
         while (targets.size() < tab.num_qubits) {
             targets.push_back(targets.size());
         }
@@ -311,9 +322,8 @@ TEST(tableau, eval_y) {
 }
 
 bool are_tableau_mutations_equivalent(
-        size_t n,
-        const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation1,
-        const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation2) {
+    size_t n, const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation1,
+    const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation2) {
     auto test_tableau_dual = Tableau::identity(2 * n);
     std::vector<size_t> targets1;
     std::vector<size_t> targets2;
@@ -346,24 +356,23 @@ bool are_tableau_mutations_equivalent(
     return true;
 }
 
-bool are_tableau_prepends_equivalent(
-        const std::string &name,
-        const std::function<void(Tableau &t, size_t)> &func) {
+bool are_tableau_prepends_equivalent(const std::string &name, const std::function<void(Tableau &t, size_t)> &func) {
     return are_tableau_mutations_equivalent(
         1,
-        [&](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at(name), targets); },
-        [&](Tableau &t, const std::vector<size_t> &targets){ func(t, targets[0]); }
-    );
+        [&](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at(name), targets);
+        },
+        [&](Tableau &t, const std::vector<size_t> &targets) { func(t, targets[0]); });
 }
 
 bool are_tableau_prepends_equivalent(
-        const std::string &name,
-        const std::function<void(Tableau &t, size_t, size_t)> &func) {
+    const std::string &name, const std::function<void(Tableau &t, size_t, size_t)> &func) {
     return are_tableau_mutations_equivalent(
         2,
-        [&](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at(name), targets); },
-        [&](Tableau &t, const std::vector<size_t> &targets){ func(t, targets[0], targets[1]); }
-    );
+        [&](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at(name), targets);
+        },
+        [&](Tableau &t, const std::vector<size_t> &targets) { func(t, targets[0], targets[1]); });
 }
 
 TEST(tableau, check_invariants) {
@@ -396,29 +405,44 @@ TEST(tableau, random) {
 TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("X"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("X"), targets); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("X"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("X"), targets);
+        }));
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), targets); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), targets);
+        }));
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CX"), targets); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CX"), targets);
+        }));
     EXPECT_FALSE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), targets); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), targets);
+        }));
     EXPECT_FALSE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_prepend(GATE_TABLEAUS.at("CZ"), targets); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CZ"), targets);
+        }));
 
     EXPECT_TRUE(are_tableau_prepends_equivalent("H", &Tableau::prepend_H_XZ));
     EXPECT_TRUE(are_tableau_prepends_equivalent("H_YZ", &Tableau::prepend_H_YZ));
@@ -447,51 +471,67 @@ TEST(tableau, specialized_operations) {
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("X"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_X(targets[0]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("X"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) { TableauTransposedRaii(t).append_X(targets[0]); }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_H_XZ(targets[0]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("H"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) { TableauTransposedRaii(t).append_H_XZ(targets[0]); }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H_XY"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_H_XY(targets[0]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("H_XY"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) { TableauTransposedRaii(t).append_H_XY(targets[0]); }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_H_YZ(targets[0]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) { TableauTransposedRaii(t).append_H_YZ(targets[0]); }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_CX(targets[0], targets[1]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            TableauTransposedRaii(t).append_CX(targets[0], targets[1]);
+        }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CY"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_CY(targets[0], targets[1]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("CY"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            TableauTransposedRaii(t).append_CY(targets[0], targets[1]);
+        }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("CZ"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_CZ(targets[0], targets[1]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("CZ"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            TableauTransposedRaii(t).append_CZ(targets[0], targets[1]);
+        }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
-        [](Tableau &t, const std::vector<size_t> &targets){ t.inplace_scatter_append(GATE_TABLEAUS.at("SWAP"), targets); },
-        [](Tableau &t, const std::vector<size_t> &targets){ TableauTransposedRaii(t).append_SWAP(targets[0], targets[1]); }
-    ));
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_TABLEAUS.at("SWAP"), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            TableauTransposedRaii(t).append_SWAP(targets[0], targets[1]);
+        }));
 }
 
 TEST(tableau, expand) {

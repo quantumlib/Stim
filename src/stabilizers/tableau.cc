@@ -1,3 +1,5 @@
+#include "tableau.h"
+
 #include <cassert>
 #include <cmath>
 #include <cstring>
@@ -6,8 +8,8 @@
 #include <random>
 #include <sstream>
 #include <thread>
+
 #include "pauli_string.h"
-#include "tableau.h"
 #include "tableau_transposed_raii.h"
 
 void Tableau::expand(size_t new_num_qubits) {
@@ -27,7 +29,7 @@ void Tableau::expand(size_t new_num_qubits) {
     size_t old_num_qubits = num_qubits;
     Tableau old_state = std::move(*this);
     this->~Tableau();
-    new(this) Tableau(new_num_qubits);
+    new (this) Tableau(new_num_qubits);
 
     // Copy stored state back into new larger space.
     auto partial_copy = [=](simd_bits_range_ref dst, simd_bits_range_ref src) {
@@ -62,26 +64,17 @@ PauliString Tableau::eval_y_obs(size_t qubit) const {
     return result;
 }
 
-Tableau::Tableau(size_t num_qubits) :
-        num_qubits(num_qubits),
-        xs(num_qubits),
-        zs(num_qubits) {
+Tableau::Tableau(size_t num_qubits) : num_qubits(num_qubits), xs(num_qubits), zs(num_qubits) {
     for (size_t q = 0; q < num_qubits; q++) {
         xs.xt[q][q] = true;
         zs.zt[q][q] = true;
     }
 }
 
-TableauHalf::TableauHalf(size_t num_qubits) :
-        num_qubits(num_qubits),
-        xt(num_qubits, num_qubits),
-        zt(num_qubits, num_qubits),
-        signs(num_qubits) {
-}
+TableauHalf::TableauHalf(size_t num_qubits)
+    : num_qubits(num_qubits), xt(num_qubits, num_qubits), zt(num_qubits, num_qubits), signs(num_qubits) {}
 
-Tableau Tableau::identity(size_t num_qubits) {
-    return Tableau(num_qubits);
-}
+Tableau Tableau::identity(size_t num_qubits) { return Tableau(num_qubits); }
 
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
@@ -91,10 +84,7 @@ Tableau Tableau::gate1(const char *x, const char *z) {
     return result;
 }
 
-Tableau Tableau::gate2(const char *x1,
-                       const char *z1,
-                       const char *x2,
-                       const char *z2) {
+Tableau Tableau::gate2(const char *x1, const char *z1, const char *x2, const char *z2) {
     Tableau result(2);
     result.xs[0] = PauliString::from_str(x1);
     result.zs[0] = PauliString::from_str(z1);
@@ -146,18 +136,11 @@ void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector
 }
 
 bool Tableau::operator==(const Tableau &other) const {
-    return num_qubits == other.num_qubits
-        && xs.xt == other.xs.xt
-        && xs.zt == other.xs.zt
-        && zs.xt == other.zs.xt
-        && zs.zt == other.zs.zt
-        && xs.signs == other.xs.signs
-        && zs.signs == other.zs.signs;
+    return num_qubits == other.num_qubits && xs.xt == other.xs.xt && xs.zt == other.xs.zt && zs.xt == other.zs.xt &&
+           zs.zt == other.zs.zt && xs.signs == other.xs.signs && zs.signs == other.zs.signs;
 }
 
-bool Tableau::operator!=(const Tableau &other) const {
-    return !(*this == other);
-}
+bool Tableau::operator!=(const Tableau &other) const { return !(*this == other); }
 
 void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());
@@ -175,7 +158,8 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     }
 }
 
-PauliString Tableau::scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const {
+PauliString Tableau::scatter_eval(
+    const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const {
     assert(gathered_input.num_qubits == scattered_indices.size());
     auto result = PauliString(num_qubits);
     result.sign = gathered_input.sign;
@@ -234,16 +218,16 @@ std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std:
         remaining_indices.push_back(k);
     }
     for (size_t i = 0; i < n; i++) {
-		auto m = remaining_indices.size();
-		auto u = uni(gen);
-		auto eps = pow(4, -(int)m);
-		auto k = (size_t)-ceil(log2(u + (1 - u) * eps));
-		hada.push_back(k < m);
-		if (k >= m) {
+        auto m = remaining_indices.size();
+        auto u = uni(gen);
+        auto eps = pow(4, -(int)m);
+        auto k = (size_t)-ceil(log2(u + (1 - u) * eps));
+        hada.push_back(k < m);
+        if (k >= m) {
             k = 2 * m - k - 1;
         }
-		permutation.push_back(remaining_indices[k]);
-		remaining_indices.erase(remaining_indices.begin() + k);
+        permutation.push_back(remaining_indices[k]);
+        remaining_indices.erase(remaining_indices.begin() + k);
     }
     return {hada, permutation};
 }
@@ -304,16 +288,10 @@ simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
     inv.do_square_transpose();
     inv_m.do_square_transpose();
 
-    auto fused = simd_bit_table::from_quadrants(
-        n,
-        lower, simd_bit_table(n, n),
-        prod, inv);
-    auto fused_m = simd_bit_table::from_quadrants(
-        n,
-        lower_m, simd_bit_table(n, n),
-        prod_m, inv_m);
+    auto fused = simd_bit_table::from_quadrants(n, lower, simd_bit_table(n, n), prod, inv);
+    auto fused_m = simd_bit_table::from_quadrants(n, lower_m, simd_bit_table(n, n), prod_m, inv_m);
 
-    simd_bit_table u(2*n, 2*n);
+    simd_bit_table u(2 * n, 2 * n);
 
     // Apply permutation.
     for (size_t row = 0; row < n; row++) {
@@ -327,7 +305,7 @@ simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
         }
     }
 
-    return fused_m.square_mat_mul(u, 2*n);
+    return fused_m.square_mat_mul(u, 2 * n);
 }
 
 Tableau Tableau::random(size_t num_qubits, std::mt19937_64 &rng) {

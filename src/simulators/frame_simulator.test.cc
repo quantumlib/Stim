@@ -1,8 +1,10 @@
-#include <gtest/gtest.h>
 #include "frame_simulator.h"
-#include "tableau_simulator.h"
-#include "gate_data.h"
+
+#include <gtest/gtest.h>
+
 #include "../test_util.test.h"
+#include "gate_data.h"
+#include "tableau_simulator.h"
 
 TEST(FrameSimulator, get_set_frame) {
     FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
@@ -65,7 +67,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
     FrameSimulator sim(num_qubits, num_samples, num_measurements, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
-    std::vector<size_t> targets {101, 403, 202, 100};
+    std::vector<size_t> targets{101, 403, 202, 100};
     while (targets.size() > num_targets) {
         targets.pop_back();
     }
@@ -105,8 +107,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
         if (op.name == "M") {
             for (size_t k = 0; k < op.target_data.targets.size(); k++) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure(
-                        OperationData({op.target_data.targets[k]}, {op.target_data.flags[k]}, 0));
+                tableau_sim.measure(OperationData({op.target_data.targets[k]}, {op.target_data.flags[k]}, 0));
                 if (output[out_p] != tableau_sim.recorded_measurement_results.front()) {
                     return false;
                 }
@@ -123,11 +124,11 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
 
 TEST(PauliFrameSimulation, test_util_is_output_possible) {
     auto circuit = Circuit::from_text(
-            "H 0\n"
-            "CNOT 0 1\n"
-            "X 0\n"
-            "M 0\n"
-            "M 1\n");
+        "H 0\n"
+        "CNOT 0 1\n"
+        "X 0\n"
+        "M 0\n"
+        "M 1\n");
     auto data = simd_bits(2);
     data.u64[0] = 0b00;
     ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
@@ -160,137 +161,131 @@ bool is_sim_frame_consistent_with_sim_tableau(const std::string &program_text) {
 
 TEST(PauliFrameSimulation, consistency) {
     EXPECT_SAMPLES_POSSIBLE(
-            "H 0\n"
-            "CNOT 0 1\n"
-            "M 0\n"
-            "M 1\n"
-    );
+        "H 0\n"
+        "CNOT 0 1\n"
+        "M 0\n"
+        "M 1\n");
 
     EXPECT_SAMPLES_POSSIBLE(
-            "H 0\n"
-            "H 1\n"
-            "CNOT 0 2\n"
-            "CNOT 1 3\n"
-            "X 1\n"
-            "M 0\n"
-            "M 2\n"
-            "M 3\n"
-            "M 1\n"
-    );
+        "H 0\n"
+        "H 1\n"
+        "CNOT 0 2\n"
+        "CNOT 1 3\n"
+        "X 1\n"
+        "M 0\n"
+        "M 2\n"
+        "M 3\n"
+        "M 1\n");
 
     EXPECT_SAMPLES_POSSIBLE(
-            "H 0\n"
-            "CNOT 0 1\n"
-            "X 0\n"
-            "M 0\n"
-            "M 1\n"
-    );
+        "H 0\n"
+        "CNOT 0 1\n"
+        "X 0\n"
+        "M 0\n"
+        "M 1\n");
 
     EXPECT_SAMPLES_POSSIBLE(
-            "H 0\n"
-            "CNOT 0 1\n"
-            "Z 0\n"
-            "M 0\n"
-            "M 1\n"
-    );
+        "H 0\n"
+        "CNOT 0 1\n"
+        "Z 0\n"
+        "M 0\n"
+        "M 1\n");
 
     EXPECT_SAMPLES_POSSIBLE(
-            "H 0\n"
-            "M 0\n"
-            "H 0\n"
-            "M 0\n"
-            "R 0\n"
-            "H 0\n"
-            "M 0\n"
-    );
+        "H 0\n"
+        "M 0\n"
+        "H 0\n"
+        "M 0\n"
+        "R 0\n"
+        "H 0\n"
+        "M 0\n");
 
     EXPECT_SAMPLES_POSSIBLE(
-            "H 0\n"
-            "CNOT 0 1\n"
-            "M 0\n"
-            "R 0\n"
-            "M 0\n"
-            "M 1\n"
-    );
+        "H 0\n"
+        "CNOT 0 1\n"
+        "M 0\n"
+        "R 0\n"
+        "M 0\n"
+        "M 1\n");
 
     // Distance 2 surface code.
     EXPECT_SAMPLES_POSSIBLE(
-            "R 0\n"
-            "R 1\n"
-            "R 5\n"
-            "R 6\n"
-            "tick\n"
-            "tick\n"
-            "R 2\n"
-            "R 3\n"
-            "R 4\n"
-            "tick\n"
-            "H 2\n"
-            "H 3\n"
-            "H 4\n"
-            "tick\n"
-            "CZ 3 0\n"
-            "CNOT 4 1\n"
-            "tick\n"
-            "CZ 3 1\n"
-            "CNOT 4 6\n"
-            "tick\n"
-            "CNOT 2 0\n"
-            "CZ 3 5\n"
-            "tick\n"
-            "CNOT 2 5\n"
-            "CZ 3 6\n"
-            "tick\n"
-            "H 2\n"
-            "H 3\n"
-            "H 4\n"
-            "tick\n"
-            "M 2\n"
-            "M 3\n"
-            "M 4\n"
-            "tick\n"
-            "R 2\n"
-            "R 3\n"
-            "R 4\n"
-            "tick\n"
-            "H 2\n"
-            "H 3\n"
-            "H 4\n"
-            "tick\n"
-            "CZ 3 0\n"
-            "CNOT 4 1\n"
-            "tick\n"
-            "CZ 3 1\n"
-            "CNOT 4 6\n"
-            "tick\n"
-            "CNOT 2 0\n"
-            "CZ 3 5\n"
-            "tick\n"
-            "CNOT 2 5\n"
-            "CZ 3 6\n"
-            "tick\n"
-            "H 2\n"
-            "H 3\n"
-            "H 4\n"
-            "tick\n"
-            "M 2\n"
-            "M 3\n"
-            "M 4\n"
-            "tick\n"
-            "tick\n"
-            "M 0\n"
-            "M 1\n"
-            "M 5\n"
-            "M 6");
+        "R 0\n"
+        "R 1\n"
+        "R 5\n"
+        "R 6\n"
+        "tick\n"
+        "tick\n"
+        "R 2\n"
+        "R 3\n"
+        "R 4\n"
+        "tick\n"
+        "H 2\n"
+        "H 3\n"
+        "H 4\n"
+        "tick\n"
+        "CZ 3 0\n"
+        "CNOT 4 1\n"
+        "tick\n"
+        "CZ 3 1\n"
+        "CNOT 4 6\n"
+        "tick\n"
+        "CNOT 2 0\n"
+        "CZ 3 5\n"
+        "tick\n"
+        "CNOT 2 5\n"
+        "CZ 3 6\n"
+        "tick\n"
+        "H 2\n"
+        "H 3\n"
+        "H 4\n"
+        "tick\n"
+        "M 2\n"
+        "M 3\n"
+        "M 4\n"
+        "tick\n"
+        "R 2\n"
+        "R 3\n"
+        "R 4\n"
+        "tick\n"
+        "H 2\n"
+        "H 3\n"
+        "H 4\n"
+        "tick\n"
+        "CZ 3 0\n"
+        "CNOT 4 1\n"
+        "tick\n"
+        "CZ 3 1\n"
+        "CNOT 4 6\n"
+        "tick\n"
+        "CNOT 2 0\n"
+        "CZ 3 5\n"
+        "tick\n"
+        "CNOT 2 5\n"
+        "CZ 3 6\n"
+        "tick\n"
+        "H 2\n"
+        "H 3\n"
+        "H 4\n"
+        "tick\n"
+        "M 2\n"
+        "M 3\n"
+        "M 4\n"
+        "tick\n"
+        "tick\n"
+        "M 0\n"
+        "M 1\n"
+        "M 5\n"
+        "M 6");
 }
 
 TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     auto circuit = Circuit::from_text(
-            "X 0\n"
-            "M 1\n"
-            "M 0\n"
-            "M 2\n"
-            "M 3\n");
+        "X 0\n"
+        "M 1\n"
+        "M 0\n"
+        "M 2\n"
+        "M 3\n");
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 10, SHARED_TEST_RNG());
     for (size_t k = 0; k < 10; k++) {

@@ -1,8 +1,6 @@
 #include "probability_util.h"
 
-RareErrorIterator::RareErrorIterator(float probability) :
-    next_candidate(0), dist(probability) {
-}
+RareErrorIterator::RareErrorIterator(float probability) : next_candidate(0), dist(probability) {}
 
 size_t RareErrorIterator::next(std::mt19937_64 &rng) {
     size_t result = next_candidate + dist(rng);

@@ -1,17 +1,19 @@
-#include <iostream>
+#include "vector_simulator.h"
+
 #include <bit>
 #include <cassert>
+#include <iostream>
 #include <map>
+
 #include "../stabilizers/pauli_string.h"
-#include "vector_simulator.h"
 
 VectorSimulator::VectorSimulator(size_t num_qubits) {
     state.resize(1 << num_qubits, 0.0f);
     state[0] = 1;
 }
 
-std::vector<std::complex<float>> mat_vec_mul(const std::vector<std::vector<std::complex<float>>> &matrix,
-                                             const std::vector<std::complex<float>> &vec) {
+std::vector<std::complex<float>> mat_vec_mul(
+    const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<std::complex<float>> &vec) {
     std::vector<std::complex<float>> result;
     for (size_t row = 0; row < vec.size(); row++) {
         std::complex<float> v = 0;
@@ -23,7 +25,8 @@ std::vector<std::complex<float>> mat_vec_mul(const std::vector<std::vector<std::
     return result;
 }
 
-void VectorSimulator::apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
+void VectorSimulator::apply(
+    const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
     size_t n = 1 << qubits.size();
     assert(matrix.size() == n);
     std::vector<size_t> masks;
@@ -184,7 +187,6 @@ std::ostream &operator<<(std::ostream &out, const VectorSimulator &sim) {
     out << "VectorSimulator {\n";
     for (size_t k = 0; k < sim.state.size(); k++) {
         out << "    " << k << ": " << sim.state[k] << "\n";
-
     }
     out << "}";
     return out;

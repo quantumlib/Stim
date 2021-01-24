@@ -1,5 +1,6 @@
-#include <gtest/gtest.h>
 #include "bit_ref.h"
+
+#include <gtest/gtest.h>
 
 TEST(bit_ref, get) {
     uint64_t word = 0;

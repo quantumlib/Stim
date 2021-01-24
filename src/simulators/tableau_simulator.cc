@@ -1,15 +1,13 @@
+#include "tableau_simulator.h"
+
 #include <queue>
 
 #include "gate_data.h"
-#include "tableau_simulator.h"
 
-TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias) :
-    inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {
-}
+TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
+    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {}
 
-bool TableauSimulator::is_deterministic(size_t target) const {
-    return !inv_state.zs[target].xs.not_zero();
-}
+bool TableauSimulator::is_deterministic(size_t target) const { return !inv_state.zs[target].xs.not_zero(); }
 
 void TableauSimulator::measure(const OperationData &target_data) {
     // Ensure measurement observables are collapsed.
@@ -334,9 +332,7 @@ void TableauSimulator::collapse(const OperationData &target_data) {
     }
 }
 
-void TableauSimulator::collapse_qubit(
-        size_t target,
-        TableauTransposedRaii &transposed_raii) {
+void TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii) {
     auto n = inv_state.num_qubits;
 
     // Search for any stabilizer generator that anti-commutes with the measurement observable.
@@ -372,7 +368,7 @@ void TableauSimulator::collapse_qubit(
 }
 
 simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
-    std::vector<Operation> deterministic_operations {};
+    std::vector<Operation> deterministic_operations{};
     for (const auto &op : circuit.operations) {
         if (NOISY_GATE_NAMES.find(op.name) == NOISY_GATE_NAMES.end()) {
             deterministic_operations.push_back(op);

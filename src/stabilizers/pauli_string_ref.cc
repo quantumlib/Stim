@@ -1,24 +1,18 @@
-#include <iostream>
-#include <immintrin.h>
-#include <new>
+#include <bit>
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <immintrin.h>
+#include <iostream>
+#include <new>
 #include <sstream>
+
 #include "../simd/simd_util.h"
 #include "pauli_string.h"
-#include <cstring>
-#include <cstdlib>
-#include <bit>
 
 PauliStringRef::PauliStringRef(
-        size_t init_num_qubits,
-        bit_ref init_sign,
-        simd_bits_range_ref init_xs,
-        simd_bits_range_ref init_zs) :
-        num_qubits(init_num_qubits),
-        sign(init_sign),
-        xs(init_xs),
-        zs(init_zs) {
-}
+    size_t init_num_qubits, bit_ref init_sign, simd_bits_range_ref init_xs, simd_bits_range_ref init_zs)
+    : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {}
 
 std::string PauliStringRef::sparse_str() const {
     std::stringstream out;
@@ -27,7 +21,7 @@ std::string PauliStringRef::sparse_str() const {
     for (size_t k = 0; k < num_qubits; k++) {
         auto x = xs[k];
         auto z = zs[k];
-        auto p = x + 2*z;
+        auto p = x + 2 * z;
         if (p) {
             if (!first) {
                 out << '*';
@@ -68,9 +62,7 @@ bool PauliStringRef::operator==(const PauliStringRef &other) const {
     return num_qubits == other.num_qubits && sign == other.sign && xs == other.xs && zs == other.zs;
 }
 
-bool PauliStringRef::operator!=(const PauliStringRef &other) const {
-    return !(*this == other);
-}
+bool PauliStringRef::operator!=(const PauliStringRef &other) const { return !(*this == other); }
 
 std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
     out << "+-"[ps.sign];
@@ -80,19 +72,19 @@ std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
     return out;
 }
 
-PauliStringRef& PauliStringRef::operator*=(const PauliStringRef& rhs) {
+PauliStringRef &PauliStringRef::operator*=(const PauliStringRef &rhs) {
     uint8_t log_i = inplace_right_mul_returning_log_i_scalar(rhs);
     assert((log_i & 1) == 0);
     sign ^= log_i & 2;
     return *this;
 }
 
-uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStringRef& rhs) noexcept {
+uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStringRef &rhs) noexcept {
     assert(num_qubits == rhs.num_qubits);
 
     // Accumulator registers for counting mod 4 in parallel across each bit position.
-    SIMD_WORD_TYPE cnt1 {};
-    SIMD_WORD_TYPE cnt2 {};
+    SIMD_WORD_TYPE cnt1{};
+    SIMD_WORD_TYPE cnt2{};
 
     xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](auto &x1, auto &z1, auto &x2, auto &z2) {
         // Update the left hand side Paulis.
@@ -115,12 +107,11 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     return s & 3;
 }
 
-bool PauliStringRef::commutes(const PauliStringRef& other) const noexcept {
+bool PauliStringRef::commutes(const PauliStringRef &other) const noexcept {
     assert(num_qubits == other.num_qubits);
-    SIMD_WORD_TYPE cnt1 {};
-    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) {
-        cnt1 ^= (x1 & z2) ^ (x2 & z1);
-    });
+    SIMD_WORD_TYPE cnt1{};
+    xs.for_each_word(
+        zs, other.xs, other.zs, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) { cnt1 ^= (x1 & z2) ^ (x2 & z1); });
     return (cnt1.popcount() & 1) == 0;
 }
 

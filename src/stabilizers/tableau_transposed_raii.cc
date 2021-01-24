@@ -1,25 +1,20 @@
+#include "tableau_transposed_raii.h"
+
+#include <cmath>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <random>
-#include <cmath>
-#include <cstring>
 #include <thread>
+
 #include "pauli_string.h"
-#include "tableau_transposed_raii.h"
 
-TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau) {
-    tableau.do_transpose_quadrants();
-}
+TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau) { tableau.do_transpose_quadrants(); }
 
-TableauTransposedRaii::~TableauTransposedRaii() {
-    tableau.do_transpose_quadrants();
-}
+TableauTransposedRaii::~TableauTransposedRaii() { tableau.do_transpose_quadrants(); }
 
 template <typename BODY>
-inline void for_each_trans_obs(
-        TableauTransposedRaii &trans,
-        size_t q,
-        BODY body) {
+inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q, BODY body) {
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
         PauliStringRef p = h[q];
@@ -28,11 +23,7 @@ inline void for_each_trans_obs(
 }
 
 template <typename BODY>
-inline void for_each_trans_obs(
-        TableauTransposedRaii &trans,
-        size_t q1,
-        size_t q2,
-        BODY body) {
+inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q1, size_t q2, BODY body) {
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
         PauliStringRef p1 = h[q1];
@@ -96,7 +87,5 @@ void TableauTransposedRaii::append_H_XZ(size_t q) {
 }
 
 void TableauTransposedRaii::append_X(size_t target) {
-    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
-        s ^= z;
-    });
+    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) { s ^= z; });
 }

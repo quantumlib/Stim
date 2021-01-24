@@ -1,10 +1,11 @@
 #include "simd_util.h"
-#include <sstream>
-#include <cassert>
-#include <thread>
+
 #include <algorithm>
-#include <cstring>
 #include <bitset>
+#include <cassert>
+#include <cstring>
+#include <sstream>
+#include <thread>
 
 void transpose_bit_block_256x256(uint64_t *matrix256x256) noexcept {
     mat256_permute_address_swap_ck_rk<1>(matrix256x256, _mm256_set1_epi8(0x55));
@@ -89,9 +90,7 @@ void transpose_bit_matrix(uint64_t *matrix, size_t bit_width) noexcept {
     size_t stride = bit_width >> 8;
     for (size_t col = 0; col < bit_width; col += 256) {
         for (size_t row = 0; row < bit_width; row += 256) {
-            avx_transpose_64x64s_within_256x256(
-                    matrix + ((col + row * bit_width) >> 6),
-                    stride);
+            avx_transpose_64x64s_within_256x256(matrix + ((col + row * bit_width) >> 6), stride);
         }
     }
 

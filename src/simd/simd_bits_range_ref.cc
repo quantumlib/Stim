@@ -1,16 +1,15 @@
+#include "simd_bits_range_ref.h"
+
 #include <cstring>
 #include <sstream>
-#include "simd_bits_range_ref.h"
+
 #include "simd_util.h"
 
-simd_bits_range_ref::simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd_init, size_t num_simd_words) :
-        ptr_simd(ptr_simd_init), num_simd_words(num_simd_words) {
-}
+simd_bits_range_ref::simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd_init, size_t num_simd_words)
+    : ptr_simd(ptr_simd_init), num_simd_words(num_simd_words) {}
 
 simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref other) {
-    for_each_word(other, [](auto &w0, auto &w1) {
-        w0 ^= w1;
-    });
+    for_each_word(other, [](auto &w0, auto &w1) { w0 ^= w1; });
     return *this;
 }
 
@@ -20,30 +19,22 @@ simd_bits_range_ref simd_bits_range_ref::operator=(const simd_bits_range_ref oth
 }
 
 void simd_bits_range_ref::swap_with(simd_bits_range_ref other) {
-    for_each_word(other, [](auto &w0, auto &w1) {
-        std::swap(w0, w1);
-    });
+    for_each_word(other, [](auto &w0, auto &w1) { std::swap(w0, w1); });
 }
 
-void simd_bits_range_ref::clear() {
-    memset(ptr_simd, 0, num_u8_padded());
-}
+void simd_bits_range_ref::clear() { memset(ptr_simd, 0, num_u8_padded()); }
 
 bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
     return num_simd_words == other.num_simd_words && memcmp(ptr_simd, other.ptr_simd, num_u8_padded()) == 0;
 }
 
 bool simd_bits_range_ref::not_zero() const {
-    SIMD_WORD_TYPE acc {};
-    for_each_word([&acc](auto &w) {
-        acc |= w;
-    });
+    SIMD_WORD_TYPE acc{};
+    for_each_word([&acc](auto &w) { acc |= w; });
     return (bool)acc;
 }
 
-bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const {
-    return !(*this == other);
-}
+bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const { return !(*this == other); }
 
 std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m) {
     for (size_t k = 0; k < m.num_bits_padded(); k++) {

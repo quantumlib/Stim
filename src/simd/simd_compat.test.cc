@@ -1,7 +1,8 @@
-#include <gtest/gtest.h>
 #include "simd_compat.h"
+
+#include <gtest/gtest.h>
 //
-//TEST(simd_compat, popcount) {
+// TEST(simd_compat, popcount) {
 //    uint64_t u64[4] {0, 0b01000010, 0b11111, UINT64_MAX};
 //    auto u128 = (__m128i *)u64;
 //    auto u256 = (__m256i *)u64;

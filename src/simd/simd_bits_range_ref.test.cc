@@ -1,9 +1,11 @@
-#include <gtest/gtest.h>
 #include "simd_bits_range_ref.h"
+
+#include <gtest/gtest.h>
+
 #include "../test_util.test.h"
 
 TEST(simd_bits_range_ref, construct) {
-    alignas(64) uint64_t data[16] {};
+    alignas(64) uint64_t data[16]{};
     simd_bits_range_ref ref((SIMD_WORD_TYPE *)data, sizeof(data) / sizeof(SIMD_WORD_TYPE));
 
     ASSERT_EQ(ref.ptr_simd, (SIMD_WORD_TYPE *)&data[0]);
@@ -16,7 +18,7 @@ TEST(simd_bits_range_ref, construct) {
 }
 
 TEST(simd_bits_range_ref, aliased_editing_and_bit_refs) {
-    alignas(64) uint64_t data[16] {};
+    alignas(64) uint64_t data[16]{};
     auto c = (char *)&data;
     simd_bits_range_ref ref((SIMD_WORD_TYPE *)data, sizeof(data) / sizeof(SIMD_WORD_TYPE));
     const simd_bits_range_ref cref((SIMD_WORD_TYPE *)data, sizeof(data) / sizeof(SIMD_WORD_TYPE));
@@ -36,27 +38,29 @@ TEST(simd_bits_range_ref, aliased_editing_and_bit_refs) {
 }
 
 TEST(simd_bits_range_ref, str) {
-    alignas(64) uint64_t data[8] {};
+    alignas(64) uint64_t data[8]{};
     simd_bits_range_ref ref((SIMD_WORD_TYPE *)data, sizeof(data) / sizeof(SIMD_WORD_TYPE));
-    ASSERT_EQ(ref.str(),
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________");
+    ASSERT_EQ(
+        ref.str(),
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________");
     ref[5] = 1;
-    ASSERT_EQ(ref.str(),
-            "_____1__________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________"
-            "________________________________________________________________");
+    ASSERT_EQ(
+        ref.str(),
+        "_____1__________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________"
+        "________________________________________________________________");
 }
 
 TEST(simd_bits_range_ref, randomize) {
@@ -91,7 +95,7 @@ TEST(simd_bits_range_ref, randomize) {
 }
 
 TEST(simd_bits_range_ref, xor_assignment) {
-    alignas(64) uint64_t data[24] {};
+    alignas(64) uint64_t data[24]{};
     simd_bits_range_ref m0((SIMD_WORD_TYPE *)&data[0], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 3);
     simd_bits_range_ref m1((SIMD_WORD_TYPE *)&data[8], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 3);
     simd_bits_range_ref m2((SIMD_WORD_TYPE *)&data[16], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 3);
@@ -122,7 +126,7 @@ TEST(simd_bits_range_ref, assignment) {
 }
 
 TEST(simd_bits_range_ref, equality) {
-    alignas(64) uint64_t data[32] {};
+    alignas(64) uint64_t data[32]{};
     simd_bits_range_ref m0((SIMD_WORD_TYPE *)&data[0], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 4);
     simd_bits_range_ref m1((SIMD_WORD_TYPE *)&data[8], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 4);
     simd_bits_range_ref m4((SIMD_WORD_TYPE *)&data[16], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 2);
@@ -141,7 +145,7 @@ TEST(simd_bits_range_ref, equality) {
 }
 
 TEST(simd_bits_range_ref, swap_with) {
-    alignas(64) uint64_t data[32] {};
+    alignas(64) uint64_t data[32]{};
     simd_bits_range_ref m0((SIMD_WORD_TYPE *)&data[0], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 4);
     simd_bits_range_ref m1((SIMD_WORD_TYPE *)&data[8], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 4);
     simd_bits_range_ref m2((SIMD_WORD_TYPE *)&data[16], sizeof(data) / sizeof(SIMD_WORD_TYPE) / 4);
@@ -158,7 +162,7 @@ TEST(simd_bits_range_ref, swap_with) {
 }
 
 TEST(simd_bits_range_ref, clear) {
-    alignas(64) uint64_t data[8] {};
+    alignas(64) uint64_t data[8]{};
     simd_bits_range_ref m0((SIMD_WORD_TYPE *)&data[0], sizeof(data) / sizeof(SIMD_WORD_TYPE));
     m0.randomize(512, SHARED_TEST_RNG());
     ASSERT_TRUE(m0.not_zero());
@@ -167,7 +171,7 @@ TEST(simd_bits_range_ref, clear) {
 }
 
 TEST(simd_bits_range_ref, not_zero256) {
-    alignas(64) uint64_t data[8] {};
+    alignas(64) uint64_t data[8]{};
     simd_bits_range_ref m0((SIMD_WORD_TYPE *)&data[0], sizeof(data) / sizeof(SIMD_WORD_TYPE));
     ASSERT_FALSE(m0.not_zero());
     m0[5] = 1;

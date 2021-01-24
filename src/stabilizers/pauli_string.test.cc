@@ -1,7 +1,9 @@
-#include <gtest/gtest.h>
 #include "pauli_string.h"
-#include "tableau.h"
+
+#include <gtest/gtest.h>
+
 #include "../test_util.test.h"
+#include "tableau.h"
 
 TEST(pauli_string, str) {
     auto p1 = PauliString::from_str("+IXYZ");
@@ -13,24 +15,34 @@ TEST(pauli_string, str) {
     auto p3 = PauliString::from_str("-XZ");
     ASSERT_EQ(p3.str(), "-XZ");
 
-    auto s1 = PauliString::from_func(
-            true,
-            24 * 24,
-            [](size_t i) { return "_XYZ"[i & 3]; });
-    ASSERT_EQ(s1.str(),
-              "-"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
-              "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ" "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ");
+    auto s1 = PauliString::from_func(true, 24 * 24, [](size_t i) { return "_XYZ"[i & 3]; });
+    ASSERT_EQ(
+        s1.str(),
+        "-"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ"
+        "_XYZ_XYZ_XYZ_XYZ_XYZ_XYZ");
 }
 
 TEST(pauli_string, log_i_scalar_byproduct) {
@@ -39,7 +51,7 @@ TEST(pauli_string, log_i_scalar_byproduct) {
     auto y = PauliString::from_str("Y");
     auto z = PauliString::from_str("Z");
 
-    auto f = [](PauliString a, PauliString b){
+    auto f = [](PauliString a, PauliString b) {
         // Note: copying is intentational. Do not change args to references.
         return a.ref().inplace_right_mul_returning_log_i_scalar(b);
     };
@@ -70,7 +82,7 @@ TEST(pauli_string, log_i_scalar_byproduct) {
     for (size_t n : std::vector<size_t>{1, 499, 4999, 5000}) {
         auto all_x = PauliString::from_func(false, n, [](size_t i) { return 'X'; });
         auto all_z = PauliString::from_func(false, n, [](size_t i) { return 'Z'; });
-        ASSERT_EQ(f(all_x, all_z), (-(int) n) & 3);
+        ASSERT_EQ(f(all_x, all_z), (-(int)n) & 3);
     }
 }
 
@@ -107,9 +119,7 @@ TEST(pauli_string, multiplication) {
     ASSERT_EQ(xxi, PauliString::from_str("-ZZY"));
 }
 
-TEST(pauli_string, identity) {
-    ASSERT_EQ(PauliString(5).str(), "+_____");
-}
+TEST(pauli_string, identity) { ASSERT_EQ(PauliString(5).str(), "+_____"); }
 
 TEST(pauli_string, gather) {
     auto p = PauliString::from_str("-____XXXXYYYYZZZZ");
@@ -134,7 +144,6 @@ TEST(pauli_string, swap_with_overwrite_with) {
     ASSERT_EQ(a2, a);
     ASSERT_EQ(b2, a);
 }
-
 
 TEST(pauli_string, scatter) {
     auto s1 = PauliString::from_str("-_XYZ");
@@ -233,6 +242,5 @@ TEST(PauliStringPtr, sparse_str) {
     ASSERT_EQ(PauliString::from_str("IIIXI").ref().sparse_str(), "+X3");
     ASSERT_EQ(PauliString::from_str("IYIXZ").ref().sparse_str(), "+Y1*X3*Z4");
     ASSERT_EQ(PauliString::from_str("-IYIXZ").ref().sparse_str(), "-Y1*X3*Z4");
-    ASSERT_EQ(PauliString::from_func(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ref().sparse_str(),
-              "+X501");
+    ASSERT_EQ(PauliString::from_func(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ref().sparse_str(), "+X501");
 }

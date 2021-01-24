@@ -1,8 +1,10 @@
 #include "circuit.h"
+
 #include <string>
-#include "stabilizers/tableau.h"
-#include "simulators/tableau_simulator.h"
+
 #include "simulators/gate_data.h"
+#include "simulators/tableau_simulator.h"
+#include "stabilizers/tableau.h"
 
 std::vector<std::string> tokenize(const std::string &line, size_t start, size_t end) {
     // Ignore comments.
@@ -14,7 +16,7 @@ std::vector<std::string> tokenize(const std::string &line, size_t start, size_t 
     }
 
     // Ignore leading and trailing whitespace.
-    while (start < end && std::isspace(line[end-1])) {
+    while (start < end && std::isspace(line[end - 1])) {
         end--;
     }
     while (start < end && std::isspace(line[start])) {
@@ -22,7 +24,7 @@ std::vector<std::string> tokenize(const std::string &line, size_t start, size_t 
     }
 
     // Tokenize.
-    std::vector<std::string> tokens {};
+    std::vector<std::string> tokens{};
     size_t s = start;
     for (size_t k = start; k <= end; k++) {
         if (k == end || std::isspace(line[k]) || line[k] == '(' || line[k] == ')') {
@@ -38,9 +40,7 @@ std::vector<std::string> tokenize(const std::string &line, size_t start, size_t 
     return tokens;
 }
 
-double parse_double(const std::string &text) {
-    return std::stold(text);
-}
+double parse_double(const std::string &text) { return std::stold(text); }
 
 size_t parse_size_t(const std::string &text) {
     if (std::stoll(text) < 0) {
@@ -59,7 +59,7 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
     for (size_t k = 0; k < tokens[0].size(); k++) {
         tokens[0][k] = std::toupper(tokens[0][k]);
     }
-    Operation op {tokens[0], OperationData({}, {}, 0)};
+    Operation op{tokens[0], OperationData({}, {}, 0)};
 
     size_t start_of_args = 1;
     if (tokens.size() >= 4 && tokens[1] == "(" && tokens[3] == ")") {
@@ -103,13 +103,13 @@ void init_nums(Circuit &circuit) {
     }
 }
 
-Circuit::Circuit(const std::vector<Operation> &init_operations) :
-        operations(init_operations), num_qubits(0), num_measurements(0) {
+Circuit::Circuit(const std::vector<Operation> &init_operations)
+    : operations(init_operations), num_qubits(0), num_measurements(0) {
     init_nums(*this);
 }
 
-Circuit::Circuit(std::vector<Operation> &&init_operations) :
-        operations(init_operations), num_qubits(0), num_measurements(0) {
+Circuit::Circuit(std::vector<Operation> &&init_operations)
+    : operations(init_operations), num_qubits(0), num_measurements(0) {
     init_nums(*this);
 }
 
@@ -151,22 +151,16 @@ bool Operation::try_fuse_with(const Operation &other) {
 }
 
 bool Operation::operator==(const Operation &other) const {
-    return name == other.name
-        && target_data.targets == other.target_data.targets
-        && target_data.arg == other.target_data.arg
-        && target_data.flags == other.target_data.flags;
+    return name == other.name && target_data.targets == other.target_data.targets &&
+           target_data.arg == other.target_data.arg && target_data.flags == other.target_data.flags;
 }
 
-bool Operation::operator!=(const Operation &other) const {
-    return !(*this == other);
-}
+bool Operation::operator!=(const Operation &other) const { return !(*this == other); }
 
 bool Circuit::operator==(const Circuit &other) const {
     return num_qubits == other.num_qubits && operations == other.operations;
 }
-bool Circuit::operator!=(const Circuit &other) const {
-    return !(*this == other);
-}
+bool Circuit::operator!=(const Circuit &other) const { return !(*this == other); }
 
 void CircuitReader::read_operation(const Operation &operation) {
     // Ignore empty operations.
@@ -176,23 +170,21 @@ void CircuitReader::read_operation(const Operation &operation) {
 
     // Flatten loops.
     if (operation.name == "REPEATLAST") {
-        if (fmod(operation.target_data.arg, 1.0) != 0.0
-                || operation.target_data.targets.size() != 1
-                || operation.target_data.flags[0]) {
-            throw std::out_of_range(
-                    "Expected `REPEATLAST(#back) #reps` but got " + operation.str());
+        if (fmod(operation.target_data.arg, 1.0) != 0.0 || operation.target_data.targets.size() != 1 ||
+            operation.target_data.flags[0]) {
+            throw std::out_of_range("Expected `REPEATLAST(#back) #reps` but got " + operation.str());
         }
         size_t window = (size_t)operation.target_data.arg;
         size_t iterations = operation.target_data.targets[0];
         if (window > ops.size()) {
-            throw std::out_of_range(
-                    operation.str() + " reaches further back than the start of time.");
+            throw std::out_of_range(operation.str() + " reaches further back than the start of time.");
         }
         if (iterations <= 0) {
             throw std::out_of_range(
-                    operation.str() + " has an invalid number of repetitions "
-                                      "(repetitions include the initial execution of the gates, e.g. "
-                                      "`REPEATLAST(X) 1` is equivalent to having no `REPEATLAST` instruction.");
+                operation.str() +
+                " has an invalid number of repetitions "
+                "(repetitions include the initial execution of the gates, e.g. "
+                "`REPEATLAST(X) 1` is equivalent to having no `REPEATLAST` instruction.");
         }
         auto end = ops.end();
         auto begin = end - window;
@@ -207,7 +199,7 @@ void CircuitReader::read_operation(const Operation &operation) {
 
 bool CircuitReader::read_more(FILE *file, bool stop_after_measurement) {
     bool read_any = false;
-    std::string line_buf {};
+    std::string line_buf{};
     while (true) {
         line_buf.clear();
         while (true) {
@@ -218,7 +210,7 @@ bool CircuitReader::read_more(FILE *file, bool stop_after_measurement) {
             if (i == '\n') {
                 break;
             }
-            line_buf.append(1, (char) i);
+            line_buf.append(1, (char)i);
         }
 
         auto op = Operation::from_line(line_buf, 0, line_buf.size());
@@ -278,18 +270,13 @@ std::string Operation::str() const {
     return s.str();
 }
 
-OperationData::OperationData(size_t target) :
-    targets({target}), flags({false}), arg(0) {
-}
-OperationData::OperationData(std::initializer_list<size_t> init_targets) :
-    targets(init_targets), flags(init_targets.size(), false), arg(0) {
-}
-OperationData::OperationData(const std::vector<size_t> &init_targets) :
-    targets({init_targets}), flags(init_targets.size(), false), arg(0) {
-}
-OperationData::OperationData(const std::vector<size_t> &init_targets, std::vector<bool> init_flags, float init_arg) :
-    targets(init_targets), flags(init_flags), arg(init_arg) {
-}
+OperationData::OperationData(size_t target) : targets({target}), flags({false}), arg(0) {}
+OperationData::OperationData(std::initializer_list<size_t> init_targets)
+    : targets(init_targets), flags(init_targets.size(), false), arg(0) {}
+OperationData::OperationData(const std::vector<size_t> &init_targets)
+    : targets({init_targets}), flags(init_targets.size(), false), arg(0) {}
+OperationData::OperationData(const std::vector<size_t> &init_targets, std::vector<bool> init_flags, float init_arg)
+    : targets(init_targets), flags(init_flags), arg(init_arg) {}
 
 OperationData &OperationData::operator+=(const OperationData &other) {
     targets.insert(targets.end(), other.targets.begin(), other.targets.end());
