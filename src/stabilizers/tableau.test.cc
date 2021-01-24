@@ -2,7 +2,7 @@
 #include "../simulators/gate_data.h"
 #include "../simulators/vector_simulator.h"
 #include "../test_util.test.h"
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "tableau.h"
 #include "tableau_transposed_raii.h"
 

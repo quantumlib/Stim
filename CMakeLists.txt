@@ -6,7 +6,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit.cc
-        src/perf.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
         src/simd/simd_bit_table.cc
@@ -42,24 +41,33 @@ set(TEST_FILES
         src/test_util.test.cc
         )
 
+set(BENCHMARK_FILES
+        src/benchmark_main.perf.cc
+        src/benchmark_util.perf.cc
+        src/simd/simd_bits.perf.cc
+        src/simd/simd_bit_table.perf.cc
+        src/simulators/frame_simulator.perf.cc
+        src/simulators/tableau_simulator.perf.cc
+        src/stabilizers/pauli_string.perf.cc
+        src/stabilizers/tableau.perf.cc
+        )
+
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 target_compile_options(stim PRIVATE -march=native -O3 -Wall -Wpedantic -Werror)
 target_link_options(stim PRIVATE -pthread -O3)
 
-configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-        EXCLUDE_FROM_ALL)
-add_executable(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+add_executable(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
+add_test(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
+target_compile_options(stim_benchmark PRIVATE -march=native -Wall -Wpedantic -Werror -O3)
+target_link_options(stim_benchmark PRIVATE -pthread)
 
-target_link_libraries(stim_tests gtest_main)
-add_test(stim_tests stim_tests)
-target_compile_options(stim_tests PRIVATE -march=native -Wall -Wpedantic -Werror)
-target_link_options(stim_tests PRIVATE -pthread)
+find_package(GTest QUIET)
+if(${GTest_FOUND})
+    add_executable(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+    add_test(stim_tests ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
+    target_link_libraries(stim_tests gtest_main)
+    target_compile_options(stim_tests PRIVATE -march=native -Wall -Wpedantic -Werror)
+    target_link_options(stim_tests PRIVATE -pthread)
+else()
+    message("WARNING: Skipped stim_test target. `GTest` not found. To fix, follow Standalone CMake Project install instructions at https://github.com/google/googletest")
+endif()

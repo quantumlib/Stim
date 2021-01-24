@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "vector_simulator.h"
 #include "../test_util.test.h"
 

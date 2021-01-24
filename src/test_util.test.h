@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "stabilizers/pauli_string.h"
 #include <random>
 

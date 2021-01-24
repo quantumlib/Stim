@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "simd_util.h"
 #include "simd_bits.h"
 #include "simd_bit_table.h"

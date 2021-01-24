@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 #include "arg_parse.h"
 #include "assert.h"

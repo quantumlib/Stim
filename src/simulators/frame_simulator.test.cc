@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "frame_simulator.h"
 #include "tableau_simulator.h"
 #include "gate_data.h"

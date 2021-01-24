@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "tableau_simulator.h"
 #include "../simulators/gate_data.h"
 #include "../test_util.test.h"

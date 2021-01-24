@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "pauli_string.h"
 #include "tableau.h"
 #include "../test_util.test.h"

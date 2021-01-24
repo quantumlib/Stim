@@ -69,7 +69,6 @@ $ echo -e "H 0 \n CNOT 0 1 \n M 0 \n M 1 \n" | stim
         Each byte holds 8 measurement results, ordered from least significant bit to most significant bit.
         The number of measurement results from the circuit is increased to a multiple of 8 by padding with 0s.
         There is no separator between shots (other than the padding).
-- `-profile`: Unstable. Debug command for timing various things.
 
 
 Here is a list of the supported no-qubit commands:
@@ -160,15 +159,44 @@ make stim
 
 # Testing
 
+Unit testing requires GTest to be installed on your system and discoverable by CMake.
+Follow the ["Standalone CMake Project" from the GTest README](https://github.com/google/googletest).
+
 ```bash
 cmake .
 make stim_tests
 ./out/stim_tests
 ```
 
-# Manual Build
+# Benchmarking
 
 ```bash
-find src | grep "\\.cc" | grep -v "\\.test\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3
+cmake .
+make stim_benchmark
+./out/stim_benchmark
+```
+
+This will output results like:
+
+```
+slower [....................*....................] faster dB | 460 ns (vs 450 ns) ( 21 GBits/s) simd_bits_randomize_10K
+slower [...................*|....................] faster dB |  24 ns (vs  20 ns) (400 GBits/s) simd_bits_xor_10K
+slower [....................|>>>>*...............] faster dB | 3.6 ns (vs 4.0 ns) (270 GBits/s) simd_bits_not_zero_100K
+slower [....................*....................] faster dB | 5.8 ms (vs 6.0 ms) ( 17 GBits/s) simd_bit_table_inplace_square_transpose_diam10K
+slower [...............*<<<<|....................] faster dB | 8.1 ms (vs 5.0 ms) ( 12 GOpQubits/s) FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000
+slower [....................*....................] faster dB | 5.3 ms (vs 5.0 ms) ( 18 GOpQubits/s) FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000
+```
+
+The bars on the left show how fast each task is running compared to baseline expectations (on my dev machine).
+Each tick away from the center `|` is 1 decibel slower or faster (i.e. each `<` or `>` represents a factor of `1.26`).
+
+The benchmark binary supports a `-only=TASK_NAME_1,TASK_NAME_2,...` flag.
+
+# Manual Build
+
+Emergency `cmake`+`make` bypass:
+
+```bash
+find src | grep "\\.cc" | grep -v "\\.test\\.cc" | grep -v "\\.perf\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3
 # output file: ./a.out
 ```

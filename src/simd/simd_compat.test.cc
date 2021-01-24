@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "simd_compat.h"
 //
 //TEST(simd_compat, popcount) {

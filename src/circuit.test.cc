@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "circuit.h"
 
 TEST(circuit, operation_from_line) {

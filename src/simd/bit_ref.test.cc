@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "bit_ref.h"
 
 TEST(bit_ref, get) {

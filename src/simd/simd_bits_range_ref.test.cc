@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "simd_bits_range_ref.h"
 #include "../test_util.test.h"
 

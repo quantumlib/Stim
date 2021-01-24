@@ -38,7 +38,7 @@ bool simd_bits_range_ref::not_zero() const {
     for_each_word([&acc](auto &w) {
         acc |= w;
     });
-    return acc;
+    return (bool)acc;
 }
 
 bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const {

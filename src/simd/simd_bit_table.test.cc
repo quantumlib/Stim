@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "simd_bit_table.h"
 
 TEST(bit_mat, creation) {
