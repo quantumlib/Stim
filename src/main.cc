@@ -1,35 +1,6 @@
-#include <cassert>
-#include <chrono>
-#include <complex>
-#include <cstring>
-#include <immintrin.h>
-#include <iostream>
-#include <new>
-#include <sstream>
-
 #include "arg_parse.h"
-#include "circuit.h"
-#include "simd/simd_util.h"
 #include "simulators/frame_simulator.h"
 #include "simulators/tableau_simulator.h"
-#include "stabilizers/pauli_string.h"
-
-void time_sim_bulk_pauli_frame(size_t distance, size_t num_samples) {
-    std::cerr << "time_sim_bulk_pauli_frame(unrotated surface code distance=" << distance << ", samples=" << num_samples
-              << ")\n";
-    auto circuit = surface_code_circuit(distance);
-    std::mt19937_64 rng(0);
-    auto sim = FrameSimulator(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
-    auto f = PerfResult::time([&]() { sim.clear_and_run(circuit); });
-    std::cerr << f << " (sample rate " << si_describe(f.rate() * num_samples) << "Hz)";
-    std::cerr << "\n";
-}
-
-void bulk_sample(size_t num_samples, SampleFormat format, FILE *in, FILE *out, std::mt19937_64 &rng) {
-    auto circuit = Circuit::from_file(in);
-    auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    FrameSimulator::sample_out(circuit, ref, num_samples, out, format, rng);
-}
 
 std::vector<const char *> known_arguments{
     "-shots",
@@ -52,7 +23,6 @@ int main(int argc, const char **argv) {
     SampleFormat format =
         format_values[find_enum_argument("-format", 0, format_names.size(), format_names.data(), argc, argv)];
     bool interactive = find_bool_argument("-repl", argc, argv);
-    bool forced_sampling = find_argument("-shots", argc, argv) != nullptr || interactive;
     int samples = find_int_argument("-shots", 1, 0, 1 << 30, argc, argv);
     const char *out_path = find_argument("-out", argc, argv);
     FILE *out;
@@ -79,6 +49,8 @@ int main(int argc, const char **argv) {
     if (samples == 1 && format == SAMPLE_FORMAT_ASCII) {
         TableauSimulator::sample_stream(stdin, out, interactive, rng);
     } else {
-        bulk_sample((size_t)samples, format, stdin, out, rng);
+        auto circuit = Circuit::from_file(stdin);
+        auto ref = TableauSimulator::reference_sample_circuit(circuit);
+        FrameSimulator::sample_out(circuit, ref, samples, out, format, rng);
     }
 }
