@@ -36,16 +36,19 @@ simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t 
     assert(num_major_bits_padded() >= n && num_minor_bits_padded() >= n);
     assert(rhs.num_major_bits_padded() >= n && rhs.num_minor_bits_padded() >= n);
 
+    auto tmp = rhs.transposed();
+
     simd_bit_table result(n, n);
     for (size_t row = 0; row < n; row++) {
         for (size_t col = 0; col < n; col++) {
-            bool b = false;
-            for (size_t mid = 0; mid < n; mid++) {
-                b ^= (*this)[row][mid] & rhs[mid][col];
-            }
-            result[row][col] = b;
+            SIMD_WORD_TYPE acc {};
+            (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) {
+                acc ^= w1 & w2;
+            });
+            result[row][col] = acc.popcount() & 1;
         }
     }
+
     return result;
 }
 
@@ -128,6 +131,37 @@ void simd_bit_table::do_square_transpose() {
         rc3456_address_bit_rotate_swap<8>(*this, base, end);
     }
     rc_address_word_swap<__m128i>(*this);
+}
+
+simd_bit_table simd_bit_table::transposed() const {
+    simd_bit_table result(num_minor_bits_padded(), num_major_bits_padded());
+    transpose_into(result);
+    return result;
+}
+
+void simd_bit_table::transpose_into(simd_bit_table &out) const {
+    assert(out.num_simd_words_minor == num_simd_words_major);
+    assert(out.num_simd_words_major == num_simd_words_minor);
+
+    auto n_maj = num_major_bits_padded();
+    auto n_min = num_minor_bits_padded();
+    for (size_t min = 0; min < n_min; min += 128) {
+        for (size_t maj = 0; maj < n_maj; maj += 128) {
+            for (size_t common = 0; common < 128; common++) {
+                __m128i *dst = (__m128i *)out[min | common].ptr_simd;
+                __m128i *src = (__m128i *)(*this)[maj | common].ptr_simd;
+                dst[maj >> 7] = src[min >> 7];
+            }
+        }
+        size_t end = min + 128;
+        rc3456_address_bit_rotate_swap<64>(out, min, end);
+        rc3456_address_bit_rotate_swap<32>(out, min, end);
+        rc_address_bit_swap<1>(out, min, end);
+        rc_address_bit_swap<2>(out, min, end);
+        rc_address_bit_swap<4>(out, min, end);
+        rc3456_address_bit_rotate_swap<16>(out, min, end);
+        rc3456_address_bit_rotate_swap<8>(out, min, end);
+    }
 }
 
 simd_bit_table simd_bit_table::from_quadrants(

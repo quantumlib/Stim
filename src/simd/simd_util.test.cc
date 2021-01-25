@@ -78,11 +78,17 @@ bool function_performs_address_bit_permutation(
     func(data);
     bool result = data == expected;
     if (!result) {
+        std::vector<uint8_t> perm;
         std::cerr << "actual permutation:";
         for (uint8_t k = 0; k < w; k++) {
-            std::cerr << " " << (uint32_t)determine_permutation_bit<w>(func, k) << ",";
+            auto v = (uint32_t)determine_permutation_bit<w>(func, k);
+            std::cerr << " " << v << ",";
+            perm.push_back(v);
         }
         std::cerr << "\n";
+        if (perm == bit_permutation) {
+            std::cerr << "[BUT PERMUTATION ACTS INCORRECTLY ON SOME BITS.]\n";
+        }
     }
     return result;
 }
@@ -214,6 +220,19 @@ TEST(simd_util, address_permutation) {
         },
         {
             10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+        }));
+}
+
+TEST(simd_bit_table, transposed) {
+    ASSERT_TRUE(function_performs_address_bit_permutation<19>(
+        [](simd_bits &d) {
+            simd_bit_table t(512, 1024);
+            t.data = d;
+            auto t2 = t.transposed();
+            d = t2.data;
+        },
+        {
+            9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 1, 2, 3, 4, 5, 6, 7, 8,
         }));
 }
 

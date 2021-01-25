@@ -40,6 +40,10 @@ struct simd_bit_table {
     [[nodiscard]] simd_bit_table inverse_assuming_lower_triangular(size_t n) const;
     /// Transposes the table inplace.
     void do_square_transpose();
+    /// Transposes the table out of place into a target location.
+    void transpose_into(simd_bit_table &out) const;
+    /// Transposes the table out of place.
+    simd_bit_table transposed() const;
 
     /// Sets all bits in the table to zero.
     void clear();

@@ -64,6 +64,35 @@ std::vector<const char *> known_arguments{
     "-only",
 };
 
+void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark> &out) {
+    bool found = false;
+
+    if (!filter.empty() && filter[filter.size() - 1] == '*') {
+        std::string start = filter.substr(0, filter.size() - 1);
+        for (const auto &benchmark : all_registered_benchmarks) {
+            if (benchmark.name.substr(0, start.size()) == start) {
+                out.push_back(benchmark);
+                found = true;
+            }
+        }
+    } else {
+        for (const auto &benchmark : all_registered_benchmarks) {
+            if (benchmark.name == filter) {
+                out.push_back(benchmark);
+                found = true;
+            }
+        }
+    }
+
+    if (!found) {
+        std::cerr << "No benchmark matching filter '" << filter << "'. Available benchmarks are:\n";
+        for (auto &benchmark : all_registered_benchmarks) {
+            std::cerr << "    " << benchmark.name << "\n";
+        }
+        exit(EXIT_FAILURE);
+    }
+}
+
 int main(int argc, const char **argv) {
     check_for_unknown_arguments(known_arguments.size(), known_arguments.data(), argc, argv);
     const char *only = find_argument("-only", argc, argv);
@@ -90,20 +119,7 @@ int main(int argc, const char **argv) {
         }
 
         for (const auto &filter : filters) {
-            bool found = false;
-            for (const auto &benchmark : all_registered_benchmarks) {
-                if (benchmark.name == filter) {
-                    chosen_benchmarks.push_back(benchmark);
-                    found = true;
-                }
-            }
-            if (!found) {
-                std::cerr << "No benchmark with name '" << filter << "'. Available benchmarks are:\n";
-                for (auto &benchmark : all_registered_benchmarks) {
-                    std::cerr << "    " << benchmark.name << "\n";
-                }
-                exit(EXIT_FAILURE);
-            }
+            find_benchmarks(filter, chosen_benchmarks);
         }
     }
 
