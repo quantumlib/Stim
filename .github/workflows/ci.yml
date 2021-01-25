@@ -11,10 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - run: sudo apt update
     - run: cmake .
     - run: make stim
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim
+  benchmark_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: microsoft/setup-msbuild@v1.0.2
+      - run: cmake .
+      - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
+      - run: msbuild_out/stim_benchmark.exe
   benchmark:
     runs-on: ubuntu-latest
     steps:

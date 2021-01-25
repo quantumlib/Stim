@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(stim)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 set(SOURCE_FILES_NO_MAIN
@@ -54,13 +54,16 @@ set(BENCHMARK_FILES
         )
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
-target_compile_options(stim PRIVATE -march=native -O3 -Wall -Wpedantic -Werror)
-target_link_options(stim PRIVATE -pthread -O3)
+if(NOT(MSVC))
+    target_compile_options(stim PRIVATE -march=native -O3 -Wall -Wpedantic -Werror)
+    target_link_options(stim PRIVATE -pthread -O3)
+endif()
 
 add_executable(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
-add_test(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
-target_compile_options(stim_benchmark PRIVATE -march=native -Wall -Wpedantic -Werror -O3)
-target_link_options(stim_benchmark PRIVATE -pthread)
+if(NOT(MSVC))
+    target_compile_options(stim_benchmark PRIVATE -march=native -Wall -Wpedantic -Werror -O3)
+    target_link_options(stim_benchmark PRIVATE -pthread)
+endif()
 
 find_package(GTest QUIET)
 if(${GTest_FOUND})

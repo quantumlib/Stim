@@ -19,7 +19,7 @@ BENCHMARK(simd_bits_xor_10K) {
 }
 
 BENCHMARK(simd_bits_not_zero_100K) {
-    auto n = 10 * 100;
+    size_t n = 10 * 100;
     simd_bits d(n);
     benchmark_go([&]() { d.not_zero(); }).goal_nanos(4).show_rate("Bits", n);
 }
