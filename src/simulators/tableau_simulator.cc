@@ -239,7 +239,7 @@ void TableauSimulator::Z(const OperationData &target_data) {
 void TableauSimulator::apply(const std::string &name, const OperationData &target_data) {
     try {
         SIM_TABLEAU_GATE_FUNC_DATA.at(name)(*this, target_data);
-    } catch (const std::out_of_range &ex) {
+    } catch (const std::out_of_range &) {
         throw std::out_of_range("Gate isn't supported by TableauSimulator: " + name);
     }
 }
@@ -288,11 +288,11 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
             const auto &op = reader.ops[k];
             sim.apply(op.name, op.target_data);
             while (!sim.recorded_measurement_results.empty()) {
-                putc_unlocked('0' + sim.recorded_measurement_results.front(), out);
+                putc('0' + sim.recorded_measurement_results.front(), out);
                 sim.recorded_measurement_results.pop();
             }
             if (newline_after_measurements && op.name == "M") {
-                putc_unlocked('\n', out);
+                putc('\n', out);
                 fflush(out);
             }
         }
@@ -300,7 +300,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
         num_processed_ops = reader.ops.size();
     }
     if (!newline_after_measurements) {
-        putc_unlocked('\n', out);
+        putc('\n', out);
     }
 }
 

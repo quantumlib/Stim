@@ -95,7 +95,7 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     });
 
     // Combine final anti-commutation phase tally (mod 4).
-    uint8_t s = cnt1.popcount();
+    auto s = (uint8_t)cnt1.popcount();
     s ^= cnt2.popcount() << 1;
     s ^= (uint8_t)rhs.sign << 1;
     return s & 3;

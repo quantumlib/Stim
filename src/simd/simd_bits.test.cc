@@ -102,9 +102,9 @@ TEST(simd_bits, randomize) {
     ASSERT_NE(d.u64[1] & mask, 0);
     ASSERT_NE(d.u64[1] & mask, 0);
     // Not touched.
-    ASSERT_EQ(d.u64[1] & ~mask, SIZE_MAX & ~mask);
-    ASSERT_EQ(d.u64[2], SIZE_MAX);
-    ASSERT_EQ(d.u64[3], SIZE_MAX);
+    ASSERT_EQ(d.u64[1] & ~mask, UINT64_MAX & ~mask);
+    ASSERT_EQ(d.u64[2], UINT64_MAX);
+    ASSERT_EQ(d.u64[3], UINT64_MAX);
 }
 
 TEST(simd_bits, xor_assignment) {

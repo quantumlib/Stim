@@ -15,14 +15,14 @@ const char *require_find_argument(const char *name, int argc, const char **argv)
 
 const char *find_argument(const char *name, int argc, const char **argv) {
     // Respect that the "--" argument terminates flags.
-    int flag_count = 1;
-    while (flag_count < argc && strcmp(argv[flag_count], "--") != 0) {
+    size_t flag_count = 1;
+    while (flag_count < (size_t)argc && strcmp(argv[flag_count], "--") != 0) {
         flag_count++;
     }
 
     // Search for the desired flag.
-    int n = strlen(name);
-    for (int i = 1; i < flag_count; i++) {
+    size_t n = strlen(name);
+    for (size_t i = 1; i < flag_count; i++) {
         // Check if argument starts with expected flag.
         const char *loc = strstr(argv[i], name);
         if (loc != argv[i] || (loc[n] != '\0' && loc[n] != '=')) {
@@ -31,7 +31,7 @@ const char *find_argument(const char *name, int argc, const char **argv) {
 
         // If the flag is alone and followed by the end or another flag, no
         // argument was provided. Return the empty string to indicate this.
-        if (loc[n] == '\0' && (i == argc - 1 || argv[i + 1][0] == '-')) {
+        if (loc[n] == '\0' && ((int)i == argc - 1 || argv[i + 1][0] == '-')) {
             return argv[i] + n;
         }
 
@@ -50,7 +50,7 @@ const char *find_argument(const char *name, int argc, const char **argv) {
     return 0;
 }
 
-void check_for_unknown_arguments(int known_argument_count, const char **known_arguments, int argc, const char **argv) {
+void check_for_unknown_arguments(size_t known_argument_count, const char **known_arguments, int argc, const char **argv) {
     for (int i = 1; i < argc; i++) {
         // Respect that the "--" argument terminates flags.
         if (!strcmp(argv[i], "--")) {
@@ -59,9 +59,9 @@ void check_for_unknown_arguments(int known_argument_count, const char **known_ar
 
         // Check if there's a matching command line argument.
         int matched = 0;
-        for (int j = 0; j < known_argument_count; j++) {
+        for (size_t j = 0; j < known_argument_count; j++) {
             const char *loc = strstr(argv[i], known_arguments[j]);
-            int n = strlen(known_arguments[j]);
+            size_t n = strlen(known_arguments[j]);
             if (loc == argv[i] && (loc[n] == '\0' || loc[n] == '=')) {
                 // Skip words that are values for a previous flag.
                 if (loc[n] == '\0' && i < argc - 1 && argv[i + 1][0] != '-') {
@@ -76,7 +76,7 @@ void check_for_unknown_arguments(int known_argument_count, const char **known_ar
         if (!matched) {
             fprintf(stderr, "\033[31mUnrecognized command line argument %s.\n", argv[i]);
             fprintf(stderr, "Recognized command line arguments:\n");
-            for (int j = 0; j < known_argument_count; j++) {
+            for (size_t j = 0; j < known_argument_count; j++) {
                 fprintf(stderr, "    %s\n", known_arguments[j]);
             }
             fprintf(stderr, "\033[0m");
@@ -85,13 +85,13 @@ void check_for_unknown_arguments(int known_argument_count, const char **known_ar
     }
 }
 
-int find_bool_argument(const char *name, int argc, const char **argv) {
+bool find_bool_argument(const char *name, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {
-        return 0;
+        return false;
     }
     if (text[0] == '\0') {
-        return 1;
+        return true;
     }
     fprintf(stderr, "\033[31mGot non-empty value '%s' for boolean flag '%s'.\033[0m\n", text, name);
     exit(EXIT_FAILURE);

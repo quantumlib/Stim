@@ -46,7 +46,11 @@ size_t parse_size_t(const std::string &text) {
     if (std::stoll(text) < 0) {
         throw std::out_of_range("");
     }
-    return std::stoull(text);
+    auto r = std::stoull(text);
+    if (r > SIZE_MAX) {
+        throw std::out_of_range("");
+    }
+    return (size_t) r;
 }
 
 Operation Operation::from_line(const std::string &line, size_t start, size_t end) {
@@ -65,9 +69,9 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
     if (tokens.size() >= 4 && tokens[1] == "(" && tokens[3] == ")") {
         try {
             op.target_data.arg = parse_double(tokens[2]);
-        } catch (const std::out_of_range &ex) {
+        } catch (const std::out_of_range &) {
             throw std::runtime_error("Bad numeric (argument) in line '" + line + "'.");
-        } catch (const std::invalid_argument &ex) {
+        } catch (const std::invalid_argument &) {
             throw std::runtime_error("Bad numeric (argument) in line '" + line + "'.");
         }
         if (op.target_data.arg < 0 || op.target_data.arg > 999999999999 || op.target_data.arg != op.target_data.arg) {
@@ -84,9 +88,9 @@ Operation Operation::from_line(const std::string &line, size_t start, size_t end
             op.target_data.flags.push_back(flag);
             op.target_data.targets.push_back(parse_size_t(tokens[k].substr(flag)));
         }
-    } catch (const std::out_of_range &ex) {
+    } catch (const std::out_of_range &) {
         throw std::runtime_error("Bad qubit id in line '" + line + "'.");
-    } catch (const std::invalid_argument &ex) {
+    } catch (const std::invalid_argument &) {
         throw std::runtime_error("Bad qubit id in line '" + line + "'.");
     }
     return op;
@@ -177,7 +181,7 @@ bool CircuitReader::read_more(FILE *file, bool stop_after_measurement) {
     while (true) {
         line_buf.clear();
         while (true) {
-            int i = getc_unlocked(file);
+            int i = getc(file);
             if (i == EOF) {
                 return read_any;
             }

@@ -43,7 +43,7 @@ const char *require_find_argument(const char *name, int argc, const char **argv)
 ///     argc: Number of command line arguments.
 ///     argv: Array of command line argument strings.
 void check_for_unknown_arguments(
-    int known_argument_count, const char **known_arguments, int argc, const char **argv);
+    size_t known_argument_count, const char **known_arguments, int argc, const char **argv);
 
 /// Returns a floating point value that can be modified using command line arguments.
 ///
@@ -114,7 +114,7 @@ int find_int_argument(
 /// Returns:
 ///     The boolean value.
 ///
-int find_bool_argument(const char *name, int argc, const char **argv);
+bool find_bool_argument(const char *name, int argc, const char **argv);
 
 /// Returns the index of an argument value within an enumerated list of allowed values.
 ///

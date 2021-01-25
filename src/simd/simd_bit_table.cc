@@ -95,7 +95,7 @@ constexpr uint8_t lg(size_t k) {
         k >>= 1;
         t += 1;
     }
-    return t;
+    return (uint8_t)t;
 }
 
 template <typename word_t>

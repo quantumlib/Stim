@@ -7,8 +7,16 @@
 
 #define SIMD_WORD_TYPE simd_word_256
 
+// HACK: use "Substitution failure is not an error" to use _mm_popcnt_u64 if available.
+// Otherwise fallback to _mm_popcnt_u32.
+template <typename T> static decltype(_mm_popcnt_u64(0)) popcount_fallback_select(uint64_t arg) {
+    return _mm_popcnt_u64(arg);
+}
+template <typename T> static decltype(_mm_popcnt_u32(0)) popcount_fallback_select(uint64_t arg) {
+    return _mm_popcnt_u32((uint32_t)arg) + _mm_popcnt_u32((uint32_t)(arg >> 32));
+}
 inline uint8_t popcnt(uint64_t value) {
-    return _mm_popcnt_u64(value);
+    return (uint8_t) popcount_fallback_select<void>(value);
 }
 
 struct simd_word_256 {

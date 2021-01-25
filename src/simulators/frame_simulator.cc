@@ -48,9 +48,9 @@ void FrameSimulator::unpack_write_measurements(FILE *out, const simd_bits &refer
             fwrite(result[s].u64, 1, (num_measurements_raw + 7) >> 3, out);
         } else if (format == SAMPLE_FORMAT_01) {
             for (size_t k = 0; k < num_measurements_raw; k++) {
-                putc_unlocked('0' + result[s][k], out);
+                putc('0' + result[s][k], out);
             }
-            putc_unlocked('\n', out);
+            putc('\n', out);
         } else {
             throw std::out_of_range("Unrecognized output format.");
         }
@@ -75,7 +75,7 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
 void FrameSimulator::do_named_op(const std::string &name, const OperationData &target_data) {
     try {
         SIM_BULK_PAULI_FRAMES_GATE_DATA.at(name)(*this, target_data);
-    } catch (const std::out_of_range &ex) {
+    } catch (const std::out_of_range &) {
         throw std::out_of_range("Gate isn't supported by FrameSimulator: " + name);
     }
 }

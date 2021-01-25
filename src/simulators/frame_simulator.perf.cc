@@ -5,8 +5,8 @@
 BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    float probability = 0.001;
-    std::mt19937_64 rng(0);
+    float probability = 0.001f;
+    std::mt19937_64 rng(0); // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
     std::vector<size_t> targets;
@@ -22,8 +22,8 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
 BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    float probability = 0.001;
-    std::mt19937_64 rng(0);
+    float probability = 0.001f;
+    std::mt19937_64 rng(0); // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
     std::vector<size_t> targets;
@@ -39,7 +39,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
 BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    std::mt19937_64 rng(0);
+    std::mt19937_64 rng(0); // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
     std::vector<size_t> targets;
@@ -53,7 +53,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
 BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    std::mt19937_64 rng(0);
+    std::mt19937_64 rng(0); // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
     std::vector<size_t> targets;
@@ -68,7 +68,7 @@ BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d5_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 5;
     auto circuit = unrotated_surface_code_circuit(distance);
-    std::mt19937_64 rng(0);
+    std::mt19937_64 rng(0); // NOLINT(cert-msc51-cpp)
     simd_bits ref(circuit.num_measurements);
     benchmark_go([&]() { FrameSimulator::sample(circuit, ref, num_samples, rng); })
         .goal_micros(100)
@@ -80,7 +80,7 @@ BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d41_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 41;
     auto circuit = unrotated_surface_code_circuit(distance);
-    std::mt19937_64 rng(0);
+    std::mt19937_64 rng(0); // NOLINT(cert-msc51-cpp)
     simd_bits ref(circuit.num_measurements);
     benchmark_go([&]() { FrameSimulator::sample(circuit, ref, num_samples, rng); })
         .goal_millis(50)

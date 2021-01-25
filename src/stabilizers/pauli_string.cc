@@ -1,6 +1,7 @@
 #include "pauli_string.h"
 
 #include <cstring>
+#include <string>
 
 #include "../simd/simd_util.h"
 

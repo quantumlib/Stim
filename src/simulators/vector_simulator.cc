@@ -56,7 +56,7 @@ void VectorSimulator::apply(
 void VectorSimulator::apply(const std::string &gate, size_t qubit) {
     try {
         apply(GATE_UNITARIES.at(gate), {qubit});
-    } catch (const std::out_of_range &ex) {
+    } catch (const std::out_of_range &) {
         throw std::out_of_range("Single qubit gate isn't supported by VectorSimulator: " + gate);
     }
 }
@@ -64,7 +64,7 @@ void VectorSimulator::apply(const std::string &gate, size_t qubit) {
 void VectorSimulator::apply(const std::string &gate, size_t qubit1, size_t qubit2) {
     try {
         apply(GATE_UNITARIES.at(gate), {qubit1, qubit2});
-    } catch (const std::out_of_range &ex) {
+    } catch (const std::out_of_range &) {
         throw std::out_of_range("Two qubit gate isn't supported by VectorSimulator: " + gate);
     }
 }
@@ -94,7 +94,7 @@ VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringR
     size_t num_qubits = stabilizers[0].num_qubits;
     VectorSimulator result(num_qubits);
 
-    // Create an initial state $|T\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
+    // Create an initial state $|A\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
     std::uniform_real_distribution<float> dist(-1.0, +1.0);
     for (size_t k = 0; k < result.state.size(); k++) {
         result.state[k] = {dist(rng), dist(rng)};
@@ -125,7 +125,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     uint64_t mask = 0;
     for (size_t k = 0; k < observable.num_qubits; k++) {
         if (observable.xs[k] | observable.zs[k]) {
-            mask |= 1 << k;
+            mask |= 1ULL << k;
         }
     }
 

@@ -89,9 +89,9 @@ TEST(simd_bits_range_ref, randomize) {
     ASSERT_NE(ref.u64[1] & mask, 0);
     ASSERT_NE(ref.u64[1] & mask, 0);
     // Not touched.
-    ASSERT_EQ(ref.u64[1] & ~mask, SIZE_MAX & ~mask);
-    ASSERT_EQ(ref.u64[2], SIZE_MAX);
-    ASSERT_EQ(ref.u64[3], SIZE_MAX);
+    ASSERT_EQ(ref.u64[1] & ~mask, UINT64_MAX & ~mask);
+    ASSERT_EQ(ref.u64[2], UINT64_MAX);
+    ASSERT_EQ(ref.u64[3], UINT64_MAX);
 }
 
 TEST(simd_bits_range_ref, xor_assignment) {
