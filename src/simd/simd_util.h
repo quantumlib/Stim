@@ -2,6 +2,7 @@
 #define SIMD_UTIL_H
 
 #include <cstdint>
+#include <cstddef>
 
 constexpr uint64_t interleave_mask(size_t step) {
     uint64_t result = (1ULL << step) - 1;
