@@ -69,9 +69,9 @@ void FrameSimulator::unpack_write_measurements(FILE *out, const simd_bits &refer
     for (size_t s = 0; s < num_samples_raw; s++) {
         unpack_sample_measurements_into(s, reference_sample, buf);
 
-        if (format == SAMPLE_FORMAT_BINLE8) {
+        if (format == SAMPLE_FORMAT_B8) {
             fwrite(buf.u64, 1, (num_measurements_raw + 7) >> 3, out);
-        } else if (format == SAMPLE_FORMAT_ASCII) {
+        } else if (format == SAMPLE_FORMAT_01) {
             for (size_t k = 0; k < num_measurements_raw; k++) {
                 putc_unlocked('0' + buf[k], out);
             }

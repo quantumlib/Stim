@@ -168,32 +168,6 @@ void CircuitReader::read_operation(const Operation &operation) {
         return;
     }
 
-    // Flatten loops.
-    if (operation.name == "REPEATLAST") {
-        if (fmod(operation.target_data.arg, 1.0) != 0.0 || operation.target_data.targets.size() != 1 ||
-            operation.target_data.flags[0]) {
-            throw std::out_of_range("Expected `REPEATLAST(#back) #reps` but got " + operation.str());
-        }
-        size_t window = (size_t)operation.target_data.arg;
-        size_t iterations = operation.target_data.targets[0];
-        if (window > ops.size()) {
-            throw std::out_of_range(operation.str() + " reaches further back than the start of time.");
-        }
-        if (iterations <= 0) {
-            throw std::out_of_range(
-                operation.str() +
-                " has an invalid number of repetitions "
-                "(repetitions include the initial execution of the gates, e.g. "
-                "`REPEATLAST(X) 1` is equivalent to having no `REPEATLAST` instruction.");
-        }
-        auto end = ops.end();
-        auto begin = end - window;
-        for (size_t k = 1; k < iterations; k++) {
-            ops.insert(ops.end(), begin, end);
-        }
-        return;
-    }
-
     ops.push_back(operation);
 }
 

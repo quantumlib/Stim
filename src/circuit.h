@@ -6,8 +6,8 @@
 #include <iostream>
 
 enum SampleFormat {
-    SAMPLE_FORMAT_ASCII,
-    SAMPLE_FORMAT_BINLE8,
+    SAMPLE_FORMAT_01,
+    SAMPLE_FORMAT_B8,
 };
 
 struct OperationData {

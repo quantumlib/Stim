@@ -293,7 +293,7 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     }
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
     rewind(tmp);
     std::stringstream ss;
     while (true) {
@@ -306,7 +306,7 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     ASSERT_EQ(ss.str(), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 0b0010);
@@ -332,7 +332,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     }
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_ASCII, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -343,7 +343,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_BINLE8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {

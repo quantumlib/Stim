@@ -41,11 +41,29 @@ See below for a list of supported gates.
 The default output format is a string of "0" and "1" characters, indicating measurement results.
 The order of the results is the same as the order of the measurement commands in the input.
 
-## Example
+## Examples
+
+Measuring and bit flipping a qubit:
 
 ```bash
-$ echo -e "H 0 \n CNOT 0 1 \n M 0 \n M 1 \n" | stim
-11
+$ echo -e 'M 0 \n X 0 \n M 0' | stim
+01
+```
+
+Creating and measuring a GHZ state, ten times:
+
+```bash
+$ echo -e 'H 0 \n CNOT 0 1 0 2 \n M 0 1 2' | out/stim -shots=10
+111
+111
+000
+111
+000
+111
+000
+000
+000
+111
 ```
 
 ## Command line flags
@@ -59,12 +77,12 @@ $ echo -e "H 0 \n CNOT 0 1 \n M 0 \n M 1 \n" | stim
     Specifying the output file in this way may be more performant than redirecting `stdout` to a file on the command line.
 - `-shots=#`:
     Run the circuit multiple times instead of one time.
-- `-format=ascii|bin_LE8|RAW`: Output format to use.
-    - `ascii` (default):
+- `-format=[name]`: Output format to use.
+    - `01` (default):
         Human readable format.
         Prints "0" or "1" for each measurement.
         Prints "\n" at the end of each shot.
-    - `bin_LE8`:
+    - `b8`:
         Faster binary format.
         Each byte holds 8 measurement results, ordered from least significant bit to most significant bit.
         The number of measurement results from the circuit is increased to a multiple of 8 by padding with 0s.
@@ -144,9 +162,6 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 
 - `TICK`: Optional command indicating the end of a layer of gates.
     May be ignored, may force processing of internally queued operations and flushing of queued measurement results.
-- `REPEATLAST(window) iterations_including_initial`: Meta command flattened while parsing.
-    Repeats the last `window` gates a total of `iterations` times (including the initial execution).
-    In particular, note that `REPEATLAST(window) 1` is equivalent to having no `REPEATLAST` instruction at all.
 
 
 # Building
