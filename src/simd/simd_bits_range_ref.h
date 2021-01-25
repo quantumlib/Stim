@@ -26,7 +26,7 @@ struct simd_bits_range_ref {
     simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd, size_t num_simd_words);
 
     /// Overwrite assignment.
-    simd_bits_range_ref operator=(const simd_bits_range_ref other);
+    simd_bits_range_ref operator=(const simd_bits_range_ref other); // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
     /// Xor assignment.
     simd_bits_range_ref operator^=(const simd_bits_range_ref other);
     /// Swap assignment.
@@ -37,7 +37,7 @@ struct simd_bits_range_ref {
     /// Inequality.
     bool operator!=(const simd_bits_range_ref other) const;
     /// Determines whether or not any of the bits in the referenced range are non-zero.
-    bool not_zero() const;
+    [[nodiscard]] bool not_zero() const;
 
     /// Returns a reference to a given bit within the referenced range.
     inline bit_ref operator[](size_t k) {
@@ -48,11 +48,11 @@ struct simd_bits_range_ref {
         return bit_ref(u8, k);
     }
     /// Returns a reference to a sub-range of the bits in the referenced range.
-    inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
+    [[nodiscard]] inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
     }
     /// Returns a const reference to a sub-range of the bits in the referenced range.
-    inline const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
+    [[nodiscard]] inline const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
     }
 
@@ -62,18 +62,18 @@ struct simd_bits_range_ref {
     void randomize(size_t num_bits, std::mt19937_64 &rng);
 
     /// Returns a description of the contents of the range.
-    std::string str() const;
+    [[nodiscard]] std::string str() const;
 
     /// Number of 64 bit words in the referenced range.
-    inline size_t num_u64_padded() const { return num_simd_words << 2; }
+    [[nodiscard]] inline size_t num_u64_padded() const { return num_simd_words << 2; }
     /// Number of 32 bit words in the referenced range.
-    inline size_t num_u32_padded() const { return num_simd_words << 3; }
+    [[nodiscard]] inline size_t num_u32_padded() const { return num_simd_words << 3; }
     /// Number of 16 bit words in the referenced range.
-    inline size_t num_u16_padded() const { return num_simd_words << 4; }
+    [[nodiscard]] inline size_t num_u16_padded() const { return num_simd_words << 4; }
     /// Number of 8 bit words in the referenced range.
-    inline size_t num_u8_padded() const { return num_simd_words << 5; }
+    [[nodiscard]] inline size_t num_u8_padded() const { return num_simd_words << 5; }
     /// Number of bits in the referenced range.
-    inline size_t num_bits_padded() const { return num_simd_words << 8; }
+    [[nodiscard]] inline size_t num_bits_padded() const { return num_simd_words << 8; }
 
     /// Runs a function on each word in the range, in sequential order.
     ///
@@ -247,6 +247,6 @@ struct simd_bits_range_ref {
 };
 
 /// Writes a description of the contents of the range to `out`.
-std::ostream &operator<<(std::ostream &out, simd_bits_range_ref m);
+std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m);
 
 #endif
