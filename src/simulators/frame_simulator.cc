@@ -7,11 +7,11 @@
 #include "gate_data.h"
 #include "tableau_simulator.h"
 
-// Iterates over the X and Z frame components of a pair of qubits, applying a custom BODY to each.
+// Iterates over the X and Z frame components of a pair of qubits, applying a custom FUNC to each.
 //
 // HACK: Templating the body function type makes inlining significantly more likely.
-template <typename BODY>
-inline void for_each_target_pair(FrameSimulator &sim, const OperationData &target_data, BODY body) {
+template <typename FUNC>
+inline void for_each_target_pair(FrameSimulator &sim, const OperationData &target_data, FUNC body) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
@@ -37,6 +37,7 @@ FrameSimulator::FrameSimulator(
     : num_qubits(init_num_qubits),
       num_samples_raw(num_samples),
       num_measurements_raw(num_measurements),
+      num_recorded_measurements(0),
       x_table(init_num_qubits, num_samples),
       z_table(init_num_qubits, num_samples),
       m_table(num_measurements, num_samples),
@@ -77,7 +78,7 @@ void FrameSimulator::unpack_write_measurements(FILE *out, const simd_bits &refer
             }
             putc_unlocked('\n', out);
         } else {
-            assert(false);
+            throw std::out_of_range("Unrecognized output format.");
         }
     }
 }

@@ -75,8 +75,26 @@ struct simd_bits_range_ref {
     /// Number of bits in the referenced range.
     inline size_t num_bits_padded() const { return num_simd_words << 8; }
 
-    template <typename BODY>
-    inline void for_each_word(BODY body) const {
+    /// Runs a function on each word in the range, in sequential order.
+    ///
+    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    ///
+    /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
+    /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
+    /// than iterators.
+    ///
+    /// Example:
+    ///     size_t simd_popcount(simd_bits_ref data) {
+    ///         size_t popcount = 0;
+    ///         data.for_each_word([&](auto &w) {
+    ///             popcount += w.popcount();
+    ///         });
+    ///         return popcount;
+    ///     }
+    ///
+    /// HACK: Templating the function type makes inlining significantly more likely.
+    template <typename FUNC>
+    inline void for_each_word(FUNC body) const {
         auto v0 = ptr_simd;
         auto v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
@@ -85,8 +103,24 @@ struct simd_bits_range_ref {
         }
     }
 
-    template <typename BODY>
-    inline void for_each_word(simd_bits_range_ref other, BODY body) const {
+    /// Runs a function on paired up words from two ranges, in sequential order.
+    ///
+    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    ///
+    /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
+    /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
+    /// than iterators.
+    ///
+    /// Example:
+    ///     void xor_left_into_right(simd_bits_ref data1, simd_bits_ref data2) {
+    ///         data1.for_each_word(data2, [&](auto &w1, auto &w2) {
+    ///             w2 ^= w1;
+    ///         });
+    ///     }
+    ///
+    /// HACK: Templating the function type makes inlining significantly more likely.
+    template <typename FUNC>
+    inline void for_each_word(simd_bits_range_ref other, FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other.ptr_simd;
         auto v0_end = v0 + num_simd_words;
@@ -97,11 +131,27 @@ struct simd_bits_range_ref {
         }
     }
 
-    template <typename BODY>
+    /// Runs a function on paired up words from three ranges, in sequential order.
+    ///
+    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    ///
+    /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
+    /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
+    /// than iterators.
+    ///
+    /// Example:
+    ///     void xor_intersection_into_last(simd_bits_ref data1, simd_bits_ref data2, simd_bits_ref data3) {
+    ///         data1.for_each_word(data2, data3, [&](auto &w1, auto &w2, auto &w3) {
+    ///             w3 ^= w1 & w2;
+    ///         });
+    ///     }
+    ///
+    /// HACK: Templating the function type makes inlining significantly more likely.
+    template <typename FUNC>
     inline void for_each_word(
             simd_bits_range_ref other1,
             simd_bits_range_ref other2,
-            BODY body) const {
+            FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other1.ptr_simd;
         auto v2 = other2.ptr_simd;
@@ -114,12 +164,29 @@ struct simd_bits_range_ref {
         }
     }
 
-    template <typename BODY>
+    /// Runs a function on paired up words from four ranges, in sequential order.
+    ///
+    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    ///
+    /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
+    /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
+    /// than iterators.
+    ///
+    /// Example:
+    ///     void xor_union_into_last(
+    ///             simd_bits_ref data1, simd_bits_ref data2, simd_bits_ref data3, simd_bits_ref data4) {
+    ///         data1.for_each_word(data2, data3, data4, [&](auto &w1, auto &w2, auto &w3, auto &w4) {
+    ///             w4 ^= w1 | w2 | w3;
+    ///         });
+    ///     }
+    ///
+    /// HACK: Templating the function type makes inlining significantly more likely.
+    template <typename FUNC>
     inline void for_each_word(
             simd_bits_range_ref other1,
             simd_bits_range_ref other2,
             simd_bits_range_ref other3,
-            BODY body) const {
+            FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other1.ptr_simd;
         auto v2 = other2.ptr_simd;
@@ -134,13 +201,34 @@ struct simd_bits_range_ref {
         }
     }
 
-    template <typename BODY>
+    /// Runs a function on paired up words from five ranges, in sequential order.
+    ///
+    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    ///
+    /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
+    /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
+    /// than iterators.
+    ///
+    /// Example:
+    ///     void xor_union_into_last(
+    ///             simd_bits_ref data1,
+    ///             simd_bits_ref data2,
+    ///             simd_bits_ref data3,
+    ///             simd_bits_ref data4,
+    ///             simd_bits_ref data5) {
+    ///         data1.for_each_word(data2, data3, data4, data5, [&](auto &w1, auto &w2, auto &w3, auto &w4, auto &w5) {
+    ///             w5 ^= w1 | w2 | w3 | w4;
+    ///         });
+    ///     }
+    ///
+    /// HACK: Templating the function type makes inlining significantly more likely.
+    template <typename FUNC>
     inline void for_each_word(
             simd_bits_range_ref other1,
             simd_bits_range_ref other2,
             simd_bits_range_ref other3,
             simd_bits_range_ref other4,
-            BODY body) const {
+            FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other1.ptr_simd;
         auto v2 = other2.ptr_simd;
@@ -159,6 +247,6 @@ struct simd_bits_range_ref {
 };
 
 /// Writes a description of the contents of the range to `out`.
-std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m);
+std::ostream &operator<<(std::ostream &out, simd_bits_range_ref m);
 
 #endif

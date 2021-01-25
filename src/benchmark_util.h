@@ -52,8 +52,9 @@ extern std::vector<RegisteredBenchmark> all_registered_benchmarks;
     void BENCH_ ## name ## _METHOD()
 
 
-template <typename BODY>
-BenchmarkResult &benchmark_go(BODY body) {
+// HACK: Templating the body function type makes inlining significantly more likely.
+template <typename FUNC>
+BenchmarkResult &benchmark_go(FUNC body) {
     size_t total_reps = 0;
     double total_seconds = 0.0;
     double target_wait_time_seconds = 0.5;

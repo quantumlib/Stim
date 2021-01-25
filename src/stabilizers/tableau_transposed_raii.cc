@@ -13,8 +13,8 @@ TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau
 
 TableauTransposedRaii::~TableauTransposedRaii() { tableau.do_transpose_quadrants(); }
 
-template <typename BODY>
-inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q, BODY body) {
+template <typename FUNC>
+inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q, FUNC body) {
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
         PauliStringRef p = h[q];
@@ -22,8 +22,8 @@ inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q, BODY body
     }
 }
 
-template <typename BODY>
-inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q1, size_t q2, BODY body) {
+template <typename FUNC>
+inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q1, size_t q2, FUNC body) {
     for (size_t k = 0; k < 2; k++) {
         TableauHalf &h = k == 0 ? trans.tableau.xs : trans.tableau.zs;
         PauliStringRef p1 = h[q1];
