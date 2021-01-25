@@ -1,6 +1,8 @@
 #ifndef MAIN_PARSE_H
 #define MAIN_PARSE_H
 
+#include <cstddef>
+
 /// Searches through command line flags for a particular flag's argument.
 ///
 /// Args:
