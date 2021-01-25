@@ -29,34 +29,6 @@ TEST(FrameSimulator, get_set_frame) {
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse_str(), "+I");
 }
 
-TEST(FrameSimulator, recorded_bit_address) {
-    FrameSimulator sim(1, 750, 1250, SHARED_TEST_RNG());
-
-    ASSERT_EQ(sim.recorded_bit_address(0, 0), 0);
-    ASSERT_EQ(sim.recorded_bit_address(1, 0), 1);
-    ASSERT_EQ(sim.recorded_bit_address(0, 1), 1 << 8);
-    ASSERT_EQ(sim.recorded_bit_address(256, 0), 1 << 16);
-    ASSERT_EQ(sim.recorded_bit_address(0, 256), 3 << 16);
-
-    sim.do_transpose();
-    ASSERT_EQ(sim.recorded_bit_address(0, 0), 0);
-    ASSERT_EQ(sim.recorded_bit_address(1, 0), 1 << 8);
-    ASSERT_EQ(sim.recorded_bit_address(0, 1), 1);
-    ASSERT_EQ(sim.recorded_bit_address(256, 0), 1 << 16);
-    ASSERT_EQ(sim.recorded_bit_address(0, 256), 3 << 16);
-}
-
-TEST(FrameSimulator, measure_deterministic) {
-    FrameSimulator sim(1, 750, 1250, SHARED_TEST_RNG());
-    sim.clear();
-    sim.m_table.data.randomize(sim.m_table.data.num_bits_padded(), SHARED_TEST_RNG());
-    sim.measure({{0, 0}, {false, true}, 0});
-    for (size_t s = 0; s < 750; s++) {
-        ASSERT_FALSE(sim.m_table.data[sim.recorded_bit_address(s, 0)]);
-        ASSERT_FALSE(sim.m_table.data[sim.recorded_bit_address(s, 1)]);
-    }
-}
-
 bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name) {
     const auto &tableau = GATE_TABLEAUS.at(op_name);
     const auto &bulk_func = SIM_BULK_PAULI_FRAMES_GATE_DATA.at(op_name);
