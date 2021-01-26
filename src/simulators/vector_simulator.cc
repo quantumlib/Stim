@@ -4,6 +4,7 @@
 
 #include "../simd/simd_util.h"
 #include "../stabilizers/pauli_string.h"
+#include "gate_data.h"
 
 VectorSimulator::VectorSimulator(size_t num_qubits) {
     state.resize(size_t {1} << num_qubits, 0.0f);

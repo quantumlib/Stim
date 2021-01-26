@@ -32,16 +32,21 @@ struct VectorSimulator {
     /// Helper method for applying the gates in a Pauli string.
     void apply(const PauliStringRef &gate, size_t qubit_offset);
 
+    /// Projects the state vector into the +1 eigenstate of the given observable, and renormalizes.
+    ///
+    /// Returns:
+    ///     The 2-norm of the component of the state vector that was already in the +1 eigenstate.
+    ///     In other words, the probability that measuring the observable would have returned +1 instead of -1.
     float project(const PauliStringRef &observable);
 
+    /// Determines if two vector simulators have similar state vectors.
     bool approximate_equals(const VectorSimulator &other, bool up_to_global_phase = false) const;
 
+    /// A description of the state vector's state.
     std::string str() const;
 };
 
-/// Unitary matrices for common gates, keyed by name.
-extern const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
-
+/// Writes a description of the state vector's state to an output stream.
 std::ostream &operator<<(std::ostream &out, const VectorSimulator &sim);
 
 #endif

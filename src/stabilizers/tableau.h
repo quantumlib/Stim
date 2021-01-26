@@ -141,7 +141,4 @@ struct Tableau {
 
 std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
-/// Tableaus for common gates, keyed by name.
-extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
-
 #endif
