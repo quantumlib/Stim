@@ -213,7 +213,9 @@ Each tick away from the center `|` is 1 decibel slower or faster (i.e. each `<` 
 Basically, if you see `[......*<<<<<<<<<<<<<|....................]` then something is *seriously* wrong, because the
 code is running 25x slower than expected.
 
-The benchmark binary supports a `-only=TASK_NAME_1,TASK_NAME_2,...` flag.
+The benchmark binary supports a `-only=BENCHMARK_NAME` filter flag.
+Multiple filters can be specified by separating them with commas `-only=A,B`.
+Ending a filter with a `*` turns it into a prefix filter `-only=sim_*`.
 
 # Manual Build
 
