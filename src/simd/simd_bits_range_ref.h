@@ -1,7 +1,6 @@
 #ifndef SIMD_RANGE_H
 #define SIMD_RANGE_H
 
-#include <immintrin.h>
 #include <vector>
 #include <iostream>
 #include <random>

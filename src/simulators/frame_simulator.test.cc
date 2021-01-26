@@ -331,7 +331,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
 TEST(PauliFrameSimulation, big_circuit_random_measurements) {
     std::vector<Operation> ops;
     for (size_t k = 0; k < 270; k++) {
-        ops.push_back({"H", {k}});
+        ops.push_back({"H_XZ", {k}});
     }
     for (size_t k = 0; k < 270; k++) {
         ops.push_back({"M", {k}});

@@ -8,7 +8,7 @@ on:
       - master
 jobs:
   run_main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
     - run: cmake .
@@ -23,7 +23,7 @@ jobs:
       - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
       - run: msbuild_out/stim_benchmark.exe
   benchmark:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         simd_width: [64, 128, 256]
@@ -33,7 +33,7 @@ jobs:
     - run: make stim_benchmark
     - run: out/stim_benchmark
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         simd_width: [64, 128, 256]

@@ -166,12 +166,15 @@ bool Circuit::operator==(const Circuit &other) const {
 }
 bool Circuit::operator!=(const Circuit &other) const { return !(*this == other); }
 
-void CircuitReader::read_operation(const Operation &operation) {
+void CircuitReader::read_operation(Operation operation) {
     // Ignore empty operations.
     if (operation.name == "" && operation.target_data.targets.size() == 0) {
         return;
     }
-
+    auto s = GATE_CANONICAL_NAMES.find(operation.name);
+    if (s != GATE_CANONICAL_NAMES.end()) {
+        operation.name = s->second;
+    }
     ops.push_back(operation);
 }
 

@@ -59,7 +59,7 @@ TEST(SimTableau, bit_flip_2) {
 TEST(SimTableau, epr) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
     s.H_XZ(0);
-    s.CX({0, 1});
+    s.ZCX({0, 1});
     ASSERT_EQ(s.is_deterministic(0), false);
     ASSERT_EQ(s.is_deterministic(1), false);
     s.measure(0);
@@ -88,7 +88,7 @@ TEST(SimTableau, phase_kickback_consume_s_state) {
         s.H_XZ(1);
         s.SQRT_Z(1);
         s.H_XZ(0);
-        s.CX({0, 1});
+        s.ZCX({0, 1});
         ASSERT_EQ(s.is_deterministic(1), false);
         s.measure(1);
         auto v1 = s.recorded_measurement_results.front();
@@ -117,9 +117,9 @@ TEST(SimTableau, phase_kickback_preserve_s_state) {
     s.H_XZ(0);
 
     // Kickback.
-    s.CX({0, 1});
+    s.ZCX({0, 1});
     s.H_XZ(1);
-    s.CX({0, 1});
+    s.ZCX({0, 1});
     s.H_XZ(1);
 
     // Check.
@@ -140,8 +140,8 @@ TEST(SimTableau, phase_kickback_preserve_s_state) {
 TEST(SimTableau, kickback_vs_stabilizer) {
     auto sim = TableauSimulator(3, SHARED_TEST_RNG());
     sim.H_XZ(2);
-    sim.CX({2, 0});
-    sim.CX({2, 1});
+    sim.ZCX({2, 0});
+    sim.ZCX({2, 1});
     sim.SQRT_Z(0);
     sim.SQRT_Z(1);
     sim.H_XZ(0);
@@ -177,7 +177,7 @@ TEST(SimTableau, s_state_distillation_low_depth) {
         for (const auto &stabilizer : stabilizers) {
             sim.H_XZ({anc});
             for (const auto &k : stabilizer) {
-                sim.CX({anc, k});
+                sim.ZCX({anc, k});
             }
             sim.H_XZ({anc});
             ASSERT_EQ(sim.is_deterministic(anc), false);
@@ -254,7 +254,7 @@ TEST(SimTableau, s_state_distillation_low_space) {
         for (const auto &phasor : phasors) {
             sim.H_XZ({anc});
             for (const auto &k : phasor) {
-                sim.CX({anc, k});
+                sim.ZCX({anc, k});
             }
             sim.H_XZ({anc});
             sim.SQRT_Z({anc});
@@ -346,15 +346,15 @@ TEST(SimTableau, to_vector_sim) {
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.H_XZ(0);
-    sim_vec.apply("H", 0);
+    sim_vec.apply("H_XZ", 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.SQRT_Z(0);
     sim_vec.apply("SQRT_Z", 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.CX({0, 1});
-    sim_vec.apply("CX", 0, 1);
+    sim_tab.ZCX({0, 1});
+    sim_vec.apply("ZCX", 0, 1);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
     sim_tab.inv_state = Tableau::random(10, SHARED_TEST_RNG());

@@ -33,5 +33,5 @@ BENCHMARK(tableau_random_1000) {
 BENCHMARK(tableau_cnot_10Kqubits) {
     size_t n = 10 * 1000;
     Tableau t(n);
-    benchmark_go([&]() { t.prepend_CX(5, 20); }).goal_nanos(120);
+    benchmark_go([&]() { t.prepend_ZCX(5, 20); }).goal_nanos(120);
 }

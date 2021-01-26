@@ -1,11 +1,6 @@
 #ifndef SIMD_COMPAT_H
 #define SIMD_COMPAT_H
 
-#include <cstdint>
-#include <immintrin.h>
-#include <iostream>
-#include "simd_util.h"
-
 #ifndef SIMD_WIDTH
 #error SIMD_WIDTH must be defined. For example, pass -DSIMD_WIDTH=256 as a compiler flag.
 #endif

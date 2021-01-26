@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <immintrin.h>
 #include <random>
 #include <sstream>
 

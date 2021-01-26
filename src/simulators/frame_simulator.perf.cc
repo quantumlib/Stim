@@ -61,7 +61,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
         targets.push_back(k);
     }
 
-    benchmark_go([&]() { sim.CX(targets); }).goal_millis(2).show_rate("OpQubits", targets.size() * num_samples);
+    benchmark_go([&]() { sim.ZCX(targets); }).goal_millis(2).show_rate("OpQubits", targets.size() * num_samples);
 }
 
 BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d5_samples1024) {

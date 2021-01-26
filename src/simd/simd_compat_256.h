@@ -1,3 +1,6 @@
+#include <immintrin.h>
+#include "simd_util.h"
+
 struct simd_word {
     __m256i val;
 

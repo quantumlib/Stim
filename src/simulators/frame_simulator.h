@@ -53,9 +53,9 @@ struct FrameSimulator {
     void H_XZ(const OperationData &target_data);
     void H_XY(const OperationData &target_data);
     void H_YZ(const OperationData &target_data);
-    void CX(const OperationData &target_data);
-    void CY(const OperationData &target_data);
-    void CZ(const OperationData &target_data);
+    void ZCX(const OperationData &target_data);
+    void ZCY(const OperationData &target_data);
+    void ZCZ(const OperationData &target_data);
     void XCX(const OperationData &target_data);
     void XCY(const OperationData &target_data);
     void XCZ(const OperationData &target_data);

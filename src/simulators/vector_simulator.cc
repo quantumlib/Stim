@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "../simd/simd_util.h"
 #include "../stabilizers/pauli_string.h"
 
 VectorSimulator::VectorSimulator(size_t num_qubits) {
@@ -116,7 +117,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
                 if (observable.zs[k]) {
                     apply("H_YZ", k);
                 } else {
-                    apply("H", k);
+                    apply("H_XZ", k);
                 }
             }
         }

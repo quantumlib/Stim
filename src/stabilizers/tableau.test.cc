@@ -52,8 +52,8 @@ bool tableau_agrees_with_unitary(const Tableau &tableau, const std::vector<std::
         VectorSimulator sim(n * 2);
         // Create EPR pairs to test all possible inputs via state channel duality.
         for (size_t q = 0; q < n; q++) {
-            sim.apply("H", q);
-            sim.apply("CNOT", q, q + n);
+            sim.apply("H_XZ", q);
+            sim.apply("ZCX", q, q + n);
         }
         // Apply input-side observable.
         sim.apply(input_side_obs, n);
@@ -107,22 +107,22 @@ TEST(tableau, str) {
         "| +-\n"
         "| XZ");
     ASSERT_EQ(
-        GATE_TABLEAUS.at("S").str(),
+        GATE_TABLEAUS.at("SQRT_Z").str(),
         "+-xz-\n"
         "| ++\n"
         "| YZ");
     ASSERT_EQ(
-        GATE_TABLEAUS.at("S_DAG").str(),
+        GATE_TABLEAUS.at("SQRT_Z_DAG").str(),
         "+-xz-\n"
         "| -+\n"
         "| YZ");
     ASSERT_EQ(
-        GATE_TABLEAUS.at("H").str(),
+        GATE_TABLEAUS.at("H_XZ").str(),
         "+-xz-\n"
         "| ++\n"
         "| ZX");
     ASSERT_EQ(
-        GATE_TABLEAUS.at("CNOT").str(),
+        GATE_TABLEAUS.at("ZCX").str(),
         "+-xz-xz-\n"
         "| ++ ++\n"
         "| XZ _Z\n"
@@ -132,10 +132,10 @@ TEST(tableau, str) {
     t.prepend_H_XZ(0);
     t.prepend_H_XZ(1);
     t.prepend_SQRT_Z(1);
-    t.prepend_CX(0, 2);
-    t.prepend_CX(1, 3);
-    t.prepend_CX(0, 1);
-    t.prepend_CX(1, 0);
+    t.prepend_ZCX(0, 2);
+    t.prepend_ZCX(1, 3);
+    t.prepend_ZCX(0, 1);
+    t.prepend_ZCX(1, 0);
     ASSERT_EQ(
         t.inverse().str(),
         "+-xz-xz-xz-xz-\n"
@@ -179,7 +179,7 @@ TEST(tableau, inverse_data) {
 }
 
 TEST(tableau, eval) {
-    const auto &cnot = GATE_TABLEAUS.at("CNOT");
+    const auto &cnot = GATE_TABLEAUS.at("ZCX");
     ASSERT_EQ(cnot(PauliString::from_str("-XX")), PauliString::from_str("-XI"));
     ASSERT_EQ(cnot(PauliString::from_str("+XX")), PauliString::from_str("+XI"));
     ASSERT_EQ(cnot(PauliString::from_str("+ZZ")), PauliString::from_str("+IZ"));
@@ -192,14 +192,14 @@ TEST(tableau, eval) {
     ASSERT_EQ(x2(PauliString::from_str("+Y")), PauliString::from_str("+Z"));
     ASSERT_EQ(x2(PauliString::from_str("+Z")), PauliString::from_str("-Y"));
 
-    const auto &s = GATE_TABLEAUS.at("S");
+    const auto &s = GATE_TABLEAUS.at("SQRT_Z");
     ASSERT_EQ(s(PauliString::from_str("+X")), PauliString::from_str("+Y"));
     ASSERT_EQ(s(PauliString::from_str("+Y")), PauliString::from_str("-X"));
     ASSERT_EQ(s(PauliString::from_str("+Z")), PauliString::from_str("+Z"));
 }
 
 TEST(tableau, apply_within) {
-    const auto &cnot = GATE_TABLEAUS.at("CNOT");
+    const auto &cnot = GATE_TABLEAUS.at("ZCX");
 
     auto p1 = PauliString::from_str("-XX");
     PauliStringRef p1_ptr(p1);
@@ -213,50 +213,50 @@ TEST(tableau, apply_within) {
 }
 
 TEST(tableau, equality) {
-    ASSERT_TRUE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("SQRT_Z"));
-    ASSERT_FALSE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("SQRT_Z"));
-    ASSERT_FALSE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("CNOT"));
-    ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("CNOT"));
-    ASSERT_FALSE(GATE_TABLEAUS.at("S") == GATE_TABLEAUS.at("SQRT_X"));
-    ASSERT_TRUE(GATE_TABLEAUS.at("S") != GATE_TABLEAUS.at("SQRT_X"));
+    ASSERT_TRUE(GATE_TABLEAUS.at("SQRT_Z") == GATE_TABLEAUS.at("SQRT_Z"));
+    ASSERT_FALSE(GATE_TABLEAUS.at("SQRT_Z") != GATE_TABLEAUS.at("SQRT_Z"));
+    ASSERT_FALSE(GATE_TABLEAUS.at("SQRT_Z") == GATE_TABLEAUS.at("ZCX"));
+    ASSERT_TRUE(GATE_TABLEAUS.at("SQRT_Z") != GATE_TABLEAUS.at("ZCX"));
+    ASSERT_FALSE(GATE_TABLEAUS.at("SQRT_Z") == GATE_TABLEAUS.at("SQRT_X"));
+    ASSERT_TRUE(GATE_TABLEAUS.at("SQRT_Z") != GATE_TABLEAUS.at("SQRT_X"));
     ASSERT_EQ(Tableau(1), GATE_TABLEAUS.at("I"));
     ASSERT_NE(Tableau(1), GATE_TABLEAUS.at("X"));
 }
 
 TEST(tableau, inplace_scatter_append) {
     auto t1 = Tableau::identity(1);
-    t1.inplace_scatter_append(GATE_TABLEAUS.at("S"), {0});
-    ASSERT_EQ(t1, GATE_TABLEAUS.at("S"));
-    t1.inplace_scatter_append(GATE_TABLEAUS.at("S"), {0});
+    t1.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("SQRT_Z"));
+    t1.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {0});
     ASSERT_EQ(t1, GATE_TABLEAUS.at("Z"));
-    t1.inplace_scatter_append(GATE_TABLEAUS.at("S"), {0});
-    ASSERT_EQ(t1, GATE_TABLEAUS.at("S_DAG"));
+    t1.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("SQRT_Z_DAG"));
 
     // Test swap decomposition into exp(i pi/2 (XX + YY + ZZ)).
     auto t2 = Tableau::identity(2);
     // ZZ^0.5
     t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {0});
     t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Z"), {1});
-    t2.inplace_scatter_append(GATE_TABLEAUS.at("CZ"), {0, 1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("ZCZ"), {0, 1});
     // YY^0.5
     t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Y"), {0});
     t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_Y"), {1});
     t2.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), {0});
-    t2.inplace_scatter_append(GATE_TABLEAUS.at("CY"), {0, 1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("ZCY"), {0, 1});
     t2.inplace_scatter_append(GATE_TABLEAUS.at("H_YZ"), {0});
     // XX^0.5
     t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {0});
     t2.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {1});
-    t2.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
-    t2.inplace_scatter_append(GATE_TABLEAUS.at("CX"), {0, 1});
-    t2.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("H_XZ"), {0});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("ZCX"), {0, 1});
+    t2.inplace_scatter_append(GATE_TABLEAUS.at("H_XZ"), {0});
     ASSERT_EQ(t2, GATE_TABLEAUS.at("SWAP"));
 
     // Test order dependence.
     auto t3 = Tableau::identity(2);
-    t3.inplace_scatter_append(GATE_TABLEAUS.at("H"), {0});
+    t3.inplace_scatter_append(GATE_TABLEAUS.at("H_XZ"), {0});
     t3.inplace_scatter_append(GATE_TABLEAUS.at("SQRT_X"), {1});
-    t3.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {0, 1});
+    t3.inplace_scatter_append(GATE_TABLEAUS.at("ZCX"), {0, 1});
     ASSERT_EQ(t3(PauliString::from_str("XI")), PauliString::from_str("ZI"));
     ASSERT_EQ(t3(PauliString::from_str("ZI")), PauliString::from_str("XX"));
     ASSERT_EQ(t3(PauliString::from_str("IX")), PauliString::from_str("IX"));
@@ -265,38 +265,38 @@ TEST(tableau, inplace_scatter_append) {
 
 TEST(tableau, inplace_scatter_prepend) {
     auto t1 = Tableau::identity(1);
-    t1.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), {0});
-    ASSERT_EQ(t1, GATE_TABLEAUS.at("S"));
-    t1.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), {0});
+    t1.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("SQRT_Z"));
+    t1.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), {0});
     ASSERT_EQ(t1, GATE_TABLEAUS.at("Z"));
-    t1.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), {0});
-    ASSERT_EQ(t1, GATE_TABLEAUS.at("S_DAG"));
+    t1.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), {0});
+    ASSERT_EQ(t1, GATE_TABLEAUS.at("SQRT_Z_DAG"));
 
     // Test swap decomposition into exp(i pi/2 (XX + YY + ZZ)).
     auto t2 = Tableau::identity(2);
     // ZZ^0.5
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), {0});
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), {1});
-    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("CZ"), {0, 1});
+    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCZ"), {0, 1});
     // YY^0.5
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), {0});
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), {1});
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("H_YZ"), {0});
-    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("CY"), {0, 1});
+    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCY"), {0, 1});
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("H_YZ"), {0});
     // XX^0.5
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_X"), {0});
     t2.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_X"), {1});
-    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), {0});
-    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("CX"), {0, 1});
-    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), {0});
+    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("H_XZ"), {0});
+    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCX"), {0, 1});
+    t2.inplace_scatter_prepend(GATE_TABLEAUS.at("H_XZ"), {0});
     ASSERT_EQ(t2, GATE_TABLEAUS.at("SWAP"));
 
     // Test order dependence.
     auto t3 = Tableau::identity(2);
-    t3.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), {0});
+    t3.inplace_scatter_prepend(GATE_TABLEAUS.at("H_XZ"), {0});
     t3.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_X"), {1});
-    t3.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), {0, 1});
+    t3.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCX"), {0, 1});
     ASSERT_EQ(t3(PauliString::from_str("XI")), PauliString::from_str("ZX"));
     ASSERT_EQ(t3(PauliString::from_str("ZI")), PauliString::from_str("XI"));
     ASSERT_EQ(t3(PauliString::from_str("IX")), PauliString::from_str("IX"));
@@ -304,21 +304,21 @@ TEST(tableau, inplace_scatter_prepend) {
 }
 
 TEST(tableau, eval_y) {
-    ASSERT_EQ(GATE_TABLEAUS.at("H").zs[0], PauliString::from_str("+X"));
-    ASSERT_EQ(GATE_TABLEAUS.at("S").zs[0], PauliString::from_str("+Z"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H_XZ").zs[0], PauliString::from_str("+X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Z").zs[0], PauliString::from_str("+Z"));
     ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").zs[0], PauliString::from_str("+Y"));
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").zs[0], PauliString::from_str("X"));
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").zs[0], PauliString::from_str("-X"));
-    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").zs[1], PauliString::from_str("ZZ"));
+    ASSERT_EQ(GATE_TABLEAUS.at("ZCX").zs[1], PauliString::from_str("ZZ"));
 
-    ASSERT_EQ(GATE_TABLEAUS.at("H").eval_y_obs(0), PauliString::from_str("-Y"));
-    ASSERT_EQ(GATE_TABLEAUS.at("S").eval_y_obs(0), PauliString::from_str("-X"));
+    ASSERT_EQ(GATE_TABLEAUS.at("H_XZ").eval_y_obs(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Z").eval_y_obs(0), PauliString::from_str("-X"));
     ASSERT_EQ(GATE_TABLEAUS.at("H_YZ").eval_y_obs(0), PauliString::from_str("+Z"));
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y").eval_y_obs(0), PauliString::from_str("+Y"));
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_Y_DAG").eval_y_obs(0), PauliString::from_str("+Y"));
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X").eval_y_obs(0), PauliString::from_str("+Z"));
     ASSERT_EQ(GATE_TABLEAUS.at("SQRT_X_DAG").eval_y_obs(0), PauliString::from_str("-Z"));
-    ASSERT_EQ(GATE_TABLEAUS.at("CNOT").eval_y_obs(1), PauliString::from_str("ZY"));
+    ASSERT_EQ(GATE_TABLEAUS.at("ZCX").eval_y_obs(1), PauliString::from_str("ZY"));
 }
 
 bool are_tableau_mutations_equivalent(
@@ -329,8 +329,8 @@ bool are_tableau_mutations_equivalent(
     std::vector<size_t> targets2;
     std::vector<size_t> targets3;
     for (size_t k = 0; k < n; k++) {
-        test_tableau_dual.inplace_scatter_append(GATE_TABLEAUS.at("H"), {k});
-        test_tableau_dual.inplace_scatter_append(GATE_TABLEAUS.at("CNOT"), {k, k + n});
+        test_tableau_dual.inplace_scatter_append(GATE_TABLEAUS.at("H_XZ"), {k});
+        test_tableau_dual.inplace_scatter_append(GATE_TABLEAUS.at("ZCX"), {k, k + n});
         targets1.push_back(k);
         targets2.push_back(k + n);
         targets3.push_back(k + (k % 2 == 0 ? 0 : n));
@@ -414,7 +414,7 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_TABLEAUS.at("S"), targets);
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
             t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Z"), targets);
@@ -422,15 +422,15 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets);
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCX"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CX"), targets);
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCX"), targets);
         }));
     EXPECT_FALSE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_TABLEAUS.at("H"), targets);
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("H_XZ"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
             t.inplace_scatter_prepend(GATE_TABLEAUS.at("SQRT_Y"), targets);
@@ -438,13 +438,13 @@ TEST(tableau, specialized_operations) {
     EXPECT_FALSE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CNOT"), targets);
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCX"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_prepend(GATE_TABLEAUS.at("CZ"), targets);
+            t.inplace_scatter_prepend(GATE_TABLEAUS.at("ZCZ"), targets);
         }));
 
-    EXPECT_TRUE(are_tableau_prepends_equivalent("H", &Tableau::prepend_H_XZ));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("H_XZ", &Tableau::prepend_H_XZ));
     EXPECT_TRUE(are_tableau_prepends_equivalent("H_YZ", &Tableau::prepend_H_YZ));
     EXPECT_TRUE(are_tableau_prepends_equivalent("H_XY", &Tableau::prepend_H_XY));
     EXPECT_TRUE(are_tableau_prepends_equivalent("X", &Tableau::prepend_X));
@@ -457,9 +457,9 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_Y_DAG", &Tableau::prepend_SQRT_Y_DAG));
     EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_Z_DAG", &Tableau::prepend_SQRT_Z_DAG));
     EXPECT_TRUE(are_tableau_prepends_equivalent("SWAP", &Tableau::prepend_SWAP));
-    EXPECT_TRUE(are_tableau_prepends_equivalent("CX", &Tableau::prepend_CX));
-    EXPECT_TRUE(are_tableau_prepends_equivalent("CY", &Tableau::prepend_CY));
-    EXPECT_TRUE(are_tableau_prepends_equivalent("CZ", &Tableau::prepend_CZ));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("ZCX", &Tableau::prepend_ZCX));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("ZCY", &Tableau::prepend_ZCY));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("ZCZ", &Tableau::prepend_ZCZ));
     EXPECT_TRUE(are_tableau_prepends_equivalent("ISWAP", &Tableau::prepend_ISWAP));
     EXPECT_TRUE(are_tableau_prepends_equivalent("ISWAP_DAG", &Tableau::prepend_ISWAP_DAG));
     EXPECT_TRUE(are_tableau_prepends_equivalent("XCX", &Tableau::prepend_XCX));
@@ -479,7 +479,7 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_TABLEAUS.at("H"), targets);
+            t.inplace_scatter_append(GATE_TABLEAUS.at("H_XZ"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) { TableauTransposedRaii(t).append_H_XZ(targets[0]); }));
 
@@ -500,28 +500,28 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_TABLEAUS.at("CX"), targets);
+            t.inplace_scatter_append(GATE_TABLEAUS.at("ZCX"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii(t).append_CX(targets[0], targets[1]);
+            TableauTransposedRaii(t).append_ZCX(targets[0], targets[1]);
         }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_TABLEAUS.at("CY"), targets);
+            t.inplace_scatter_append(GATE_TABLEAUS.at("ZCY"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii(t).append_CY(targets[0], targets[1]);
+            TableauTransposedRaii(t).append_ZCY(targets[0], targets[1]);
         }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets) {
-            t.inplace_scatter_append(GATE_TABLEAUS.at("CZ"), targets);
+            t.inplace_scatter_append(GATE_TABLEAUS.at("ZCZ"), targets);
         },
         [](Tableau &t, const std::vector<size_t> &targets) {
-            TableauTransposedRaii(t).append_CZ(targets[0], targets[1]);
+            TableauTransposedRaii(t).append_ZCZ(targets[0], targets[1]);
         }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(

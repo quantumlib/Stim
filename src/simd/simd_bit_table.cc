@@ -3,8 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#include <immintrin.h>
-#include <random>
 #include <sstream>
 
 #include "simd_util.h"

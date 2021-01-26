@@ -1,7 +1,6 @@
 #ifndef CIRCUIT_H
 #define CIRCUIT_H
 
-#include <immintrin.h>
 #include <vector>
 #include <iostream>
 
@@ -53,7 +52,7 @@ struct Circuit {
 
 struct CircuitReader {
     std::vector<Operation> ops;
-    void read_operation(const Operation &operation);
+    void read_operation(Operation operation);
     bool read_more(FILE *file, bool stop_after_measurement = false);
 };
 

@@ -133,14 +133,14 @@ void FrameSimulator::H_YZ(const OperationData &target_data) {
     }
 }
 
-void FrameSimulator::CX(const OperationData &target_data) {
+void FrameSimulator::ZCX(const OperationData &target_data) {
     for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z1 ^= z2;
         x2 ^= x1;
     });
 }
 
-void FrameSimulator::CY(const OperationData &target_data) {
+void FrameSimulator::ZCY(const OperationData &target_data) {
     for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z1 ^= x2 ^ z2;
         z2 ^= x1;
@@ -148,7 +148,7 @@ void FrameSimulator::CY(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::CZ(const OperationData &target_data) {
+void FrameSimulator::ZCZ(const OperationData &target_data) {
     for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
         z1 ^= x2;
         z2 ^= x1;

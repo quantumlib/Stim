@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <unordered_map>
-#include <immintrin.h>
 #include "../simd/simd_bit_table.h"
 #include "../simd/simd_util.h"
 #include "pauli_string.h"
@@ -126,9 +125,9 @@ struct Tableau {
     void prepend_SQRT_Y_DAG(size_t q);
     void prepend_SQRT_Z(size_t q);
     void prepend_SQRT_Z_DAG(size_t q);
-    void prepend_CX(size_t control, size_t target);
-    void prepend_CY(size_t control, size_t target);
-    void prepend_CZ(size_t control, size_t target);
+    void prepend_ZCX(size_t control, size_t target);
+    void prepend_ZCY(size_t control, size_t target);
+    void prepend_ZCZ(size_t control, size_t target);
     void prepend_ISWAP(size_t q1, size_t q2);
     void prepend_ISWAP_DAG(size_t q1, size_t q2);
     void prepend_XCX(size_t control, size_t target);

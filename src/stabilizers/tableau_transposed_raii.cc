@@ -32,7 +32,7 @@ inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q1, size_t q
     }
 }
 
-void TableauTransposedRaii::append_CX(size_t control, size_t target) {
+void TableauTransposedRaii::append_ZCX(size_t control, size_t target) {
     for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
         s ^= (cz ^ tx).andnot(cx & tz);
         cz ^= tz;
@@ -40,7 +40,7 @@ void TableauTransposedRaii::append_CX(size_t control, size_t target) {
     });
 }
 
-void TableauTransposedRaii::append_CY(size_t control, size_t target) {
+void TableauTransposedRaii::append_ZCY(size_t control, size_t target) {
     for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
         cz ^= tx;
         s ^= cx & cz & (tx ^ tz);
@@ -50,7 +50,7 @@ void TableauTransposedRaii::append_CY(size_t control, size_t target) {
     });
 }
 
-void TableauTransposedRaii::append_CZ(size_t control, size_t target) {
+void TableauTransposedRaii::append_ZCZ(size_t control, size_t target) {
     for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
         s ^= cx & tx & (cz ^ tz);
         cz ^= tx;

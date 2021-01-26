@@ -2,7 +2,6 @@
 #define SIM_TABLEAU_H
 
 #include <iostream>
-#include <immintrin.h>
 #include <new>
 #include <cassert>
 #include <sstream>
@@ -84,9 +83,9 @@ struct TableauSimulator {
     void SQRT_X_DAG(const OperationData &target_data);
     void SQRT_Y_DAG(const OperationData &target_data);
     void SQRT_Z_DAG(const OperationData &target_data);
-    void CX(const OperationData &target_data);
-    void CY(const OperationData &target_data);
-    void CZ(const OperationData &target_data);
+    void ZCX(const OperationData &target_data);
+    void ZCY(const OperationData &target_data);
+    void ZCZ(const OperationData &target_data);
     void SWAP(const OperationData &target_data);
     void X(const OperationData &target_data);
     void Y(const OperationData &target_data);

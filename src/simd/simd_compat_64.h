@@ -1,3 +1,5 @@
+#include "simd_util.h"
+
 struct simd_word {
     uint64_t val[2];
 

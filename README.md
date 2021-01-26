@@ -119,15 +119,15 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 - `SWAP`: Swaps two qubits.
 - `ISWAP`: Swaps two qubits while phasing the ZZ observable by i. Equal to `SWAP * CZ * (S tensor S)`.
 - `ISWAP_DAG`: Swaps two qubits while phasing the ZZ observable by -i. Equal to `SWAP * CZ * (S_DAG tensor S_DAG)`.
-- `CNOT` (alternate name `CX`): Controlled NOT operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `CY`: Controlled Y operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `CZ`: Controlled Z operation. Insensitive to qubit pair order.
-- `YCZ`: Y-basis-controlled Z operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `YCY`: Y-basis-controlled Y operation. Insensitive to qubit pair order.
-- `YCX`: Y-basis-controlled X operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `XCZ`: X-basis-controlled Z operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `XCY`: X-basis-controlled Y operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `XCX`: X-basis-controlled X operation. Insensitive to qubit pair order.
+- `CNOT` (alternate names `CX`, `ZCX`): Controlled NOT operation. Qubit pairs are in name order (first qubit is the control, second is the target).
+- `CY` (alternate name `ZCY`): Controlled Y operation. Qubit pairs are in name order (first qubit is the control, second is the target).
+- `CZ` (alternate name `ZCZ`): Controlled Z operation.
+- `YCZ`: Y-basis-controlled Z operation. Qubit pairs are in name order.
+- `YCY`: Y-basis-controlled Y operation.
+- `YCX`: Y-basis-controlled X operation. Qubit pairs are in name order.
+- `XCZ`: X-basis-controlled Z operation. Qubit pairs are in name order.
+- `XCY`: X-basis-controlled Y operation. Qubit pairs are in name order.
+- `XCX`: X-basis-controlled X operation.
 
 ### Non-unitary gates
 
@@ -167,10 +167,15 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 # Building
 
 ```bash
-cmake .
+cmake . -DSIMD_WIDTH=256
 make stim
 # output file: out/stim
 ```
+
+By default, stim vectorizes loops using 256 bit wide avx2 instructions.
+Some systems don't support these instructions.
+Passing `-DSIMD_WIDTH=128` into cmake will use 128 bit wide SSE instructions instead.
+Passing `-DSIMD_WIDTH=64` into cmake will use plain `uint64_t` values for everything.
 
 # Testing
 

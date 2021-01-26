@@ -29,14 +29,14 @@ TEST(circuit, operation_from_line) {
 TEST(circuit, from_text) {
     ASSERT_EQ(Circuit::from_text(""), Circuit({}));
     ASSERT_EQ(Circuit::from_text("# Comment\n\n\n# More"), Circuit({}));
-    ASSERT_EQ(Circuit::from_text("H 0"), Circuit(std::vector<Operation>{{"H", OperationData({0})}}));
-    ASSERT_EQ(Circuit::from_text("H 0 \n H 1"), Circuit({{"H", OperationData({0, 1})}}));
-    ASSERT_EQ(Circuit::from_text("H 1"), Circuit({{"H", OperationData({1})}}));
+    ASSERT_EQ(Circuit::from_text("H 0"), Circuit(std::vector<Operation>{{"H_XZ", OperationData({0})}}));
+    ASSERT_EQ(Circuit::from_text("H 0 \n H 1"), Circuit({{"H_XZ", OperationData({0, 1})}}));
+    ASSERT_EQ(Circuit::from_text("H 1"), Circuit({{"H_XZ", OperationData({1})}}));
     ASSERT_EQ(
         Circuit::from_text("# EPR\n"
                            "H 0\n"
                            "CNOT 0 1"),
-        Circuit(std::vector<Operation>{{"H", OperationData({0})}, {"CNOT", OperationData({0, 1})}}));
+        Circuit(std::vector<Operation>{{"H_XZ", OperationData({0})}, {"ZCX", OperationData({0, 1})}}));
     ASSERT_EQ(
         Circuit::from_text("M 0 !0 1 !1"),
         Circuit(std::vector<Operation>{{"M", OperationData({0, 0, 1, 1}, {false, true, false, true}, 0)}}));
@@ -50,7 +50,7 @@ TEST(circuit, from_text) {
                            "M 0\n"
                            "M 10\n"),
         Circuit(std::vector<Operation>{
-            {"H", OperationData({0})},
+            {"H_XZ", OperationData({0})},
             {"M", OperationData({0, 1, 2})},
             {"SWAP", OperationData({0, 1})},
             {"M", OperationData({0, 10})}}));

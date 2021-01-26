@@ -2,7 +2,6 @@
 #define SIMD_BITS_H
 
 #include <cstdint>
-#include <immintrin.h>
 #include <random>
 #include "bit_ref.h"
 #include "simd_bits_range_ref.h"

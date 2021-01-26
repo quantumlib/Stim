@@ -98,33 +98,33 @@ void TableauSimulator::SQRT_Y_DAG(const OperationData &target_data) {
     }
 }
 
-void TableauSimulator::CX(const OperationData &target_data) {
+void TableauSimulator::ZCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        inv_state.prepend_CX(c, t);
+        inv_state.prepend_ZCX(c, t);
     }
 }
 
-void TableauSimulator::CY(const OperationData &target_data) {
+void TableauSimulator::ZCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        inv_state.prepend_CY(c, t);
+        inv_state.prepend_ZCY(c, t);
     }
 }
 
-void TableauSimulator::CZ(const OperationData &target_data) {
+void TableauSimulator::ZCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        inv_state.prepend_CZ(c, t);
+        inv_state.prepend_ZCZ(c, t);
     }
 }
 
@@ -349,7 +349,7 @@ void TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &tran
     // Do this by introducing no-effect-because-control-is-zero CNOTs at the beginning of time.
     for (size_t k = pivot + 1; k < n; k++) {
         if (transposed_raii.tableau.zs.xt[k][target]) {
-            transposed_raii.append_CX(pivot, k);
+            transposed_raii.append_ZCX(pivot, k);
         }
     }
 

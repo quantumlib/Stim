@@ -13,8 +13,8 @@ static float complex_distance(std::complex<float> a, std::complex<float> b) {
 
 TEST(vector_sim, qubit_order) {
     VectorSimulator sim(2);
-    sim.apply("H", 0);
-    sim.apply("CNOT", 0, 1);
+    sim.apply("H_XZ", 0);
+    sim.apply("ZCX", 0, 1);
     ASSERT_NEAR_C(sim.state[0], sqrtf(0.5));
     ASSERT_NEAR_C(sim.state[1], 0);
     ASSERT_NEAR_C(sim.state[2], 0);
@@ -23,8 +23,8 @@ TEST(vector_sim, qubit_order) {
 
 TEST(vector_sim, h_squared) {
     VectorSimulator sim(1);
-    sim.apply("H", 0);
-    sim.apply("H", 0);
+    sim.apply("H_XZ", 0);
+    sim.apply("H_XZ", 0);
     ASSERT_NEAR_C(sim.state[0], 1);
     ASSERT_NEAR_C(sim.state[1], 0);
 }
@@ -39,22 +39,22 @@ TEST(vector_sim, sqrt_x_squared) {
 
 TEST(vector_sim, state_channel_duality_cnot) {
     VectorSimulator sim(4);
-    sim.apply("H", 0);
-    sim.apply("H", 1);
-    sim.apply("CNOT", 0, 2);
-    sim.apply("CNOT", 1, 3);
-    sim.apply("CNOT", 2, 3);
+    sim.apply("H_XZ", 0);
+    sim.apply("H_XZ", 1);
+    sim.apply("ZCX", 0, 2);
+    sim.apply("ZCX", 1, 3);
+    sim.apply("ZCX", 2, 3);
     for (size_t row = 0; row < 4; row++) {
         for (size_t col = 0; col < 4; col++) {
-            ASSERT_NEAR_C(sim.state[row * 4 + col], GATE_UNITARIES.at("CNOT")[row][col] * 0.5f);
+            ASSERT_NEAR_C(sim.state[row * 4 + col], GATE_UNITARIES.at("ZCX")[row][col] * 0.5f);
         }
     }
 }
 
 TEST(vector_sim, state_channel_duality_y) {
     VectorSimulator sim(2);
-    sim.apply("H", 0);
-    sim.apply("CNOT", 0, 1);
+    sim.apply("H_XZ", 0);
+    sim.apply("ZCX", 0, 1);
     sim.apply("Y", 1);
     for (size_t row = 0; row < 2; row++) {
         for (size_t col = 0; col < 2; col++) {
