@@ -5,7 +5,7 @@
 
 #include "simd_util.h"
 
-simd_bits_range_ref::simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd_init, size_t num_simd_words)
+simd_bits_range_ref::simd_bits_range_ref(simd_word *ptr_simd_init, size_t num_simd_words)
     : ptr_simd(ptr_simd_init), num_simd_words(num_simd_words) {}
 
 simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref other) {
@@ -29,7 +29,7 @@ bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
 }
 
 bool simd_bits_range_ref::not_zero() const {
-    SIMD_WORD_TYPE acc{};
+    simd_word acc{};
     for_each_word([&acc](auto &w) { acc |= w; });
     return (bool)acc;
 }

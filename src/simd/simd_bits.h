@@ -17,7 +17,7 @@ struct simd_bits {
         uint16_t *u16;
         uint32_t *u32;
         uint64_t *u64;
-        SIMD_WORD_TYPE *ptr_simd;
+        simd_word *ptr_simd;
     };
     static size_t min_bits_to_num_simd_words(size_t min_bits);
     static size_t min_bits_to_num_bits_padded(size_t min_bits);
@@ -80,15 +80,15 @@ struct simd_bits {
     std::string str() const;
 
     /// Number of 64 bit words in the range.
-    inline size_t num_u64_padded() const { return num_simd_words << 2; }
+    inline size_t num_u64_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint64_t)); }
     /// Number of 32 bit words in the range.
-    inline size_t num_u32_padded() const { return num_simd_words << 3; }
+    inline size_t num_u32_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint32_t)); }
     /// Number of 16 bit words in the range.
-    inline size_t num_u16_padded() const { return num_simd_words << 4; }
+    inline size_t num_u16_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint16_t)); }
     /// Number of 8 bit words in the range.
-    inline size_t num_u8_padded() const { return num_simd_words << 5; }
+    inline size_t num_u8_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint8_t)); }
     /// Number of bits in the range.
-    inline size_t num_bits_padded() const { return num_simd_words << 8; }
+    inline size_t num_bits_padded() const { return num_simd_words * sizeof(simd_word) << 3; }
 };
 
 #endif

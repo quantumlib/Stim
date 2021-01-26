@@ -24,13 +24,19 @@ jobs:
       - run: msbuild_out/stim_benchmark.exe
   benchmark:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        simd_width: [64, 128, 256]
     steps:
     - uses: actions/checkout@v1
-    - run: cmake .
+    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
     - run: make stim_benchmark
     - run: out/stim_benchmark
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        simd_width: [64, 128, 256]
     steps:
     - uses: actions/checkout@v1
     - run: |
@@ -40,6 +46,6 @@ jobs:
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - run: cmake .
+    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
     - run: make stim_test
     - run: out/stim_test

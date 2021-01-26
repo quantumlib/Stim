@@ -49,29 +49,29 @@ struct simd_bit_table {
     void clear();
 
     /// Number of 64 bit words in a column (row) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_major_u64_padded() const { return num_simd_words_major << 2; }
+    inline size_t num_major_u64_padded() const { return num_simd_words_major * (sizeof(simd_word) / sizeof(uint64_t)); }
     /// Number of 32 bit words in a column (row) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_major_u32_padded() const { return num_simd_words_major << 3; }
+    inline size_t num_major_u32_padded() const { return num_simd_words_major * (sizeof(simd_word) / sizeof(uint32_t)); }
     /// Number of 16 bit words in a column (row) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_major_u16_padded() const { return num_simd_words_major << 4; }
+    inline size_t num_major_u16_padded() const { return num_simd_words_major * (sizeof(simd_word) / sizeof(uint16_t)); }
     /// Number of 8 bit words in a column (row) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_major_u8_padded() const { return num_simd_words_major << 5; }
+    inline size_t num_major_u8_padded() const { return num_simd_words_major * (sizeof(simd_word) / sizeof(uint8_t)); }
     /// Number of bits in a column (row) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_major_bits_padded() const { return num_simd_words_major << 8; }
+    inline size_t num_major_bits_padded() const { return num_simd_words_major * sizeof(simd_word) << 3; }
 
     /// Number of 64 bit words in a row (column) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_minor_u64_padded() const { return num_simd_words_minor << 2; }
+    inline size_t num_minor_u64_padded() const { return num_simd_words_minor * (sizeof(simd_word) / sizeof(uint64_t)); }
     /// Number of 32 bit words in a row (column) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_minor_u32_padded() const { return num_simd_words_minor << 3; }
+    inline size_t num_minor_u32_padded() const { return num_simd_words_minor * (sizeof(simd_word) / sizeof(uint32_t)); }
     /// Number of 16 bit words in a row (column) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_minor_u16_padded() const { return num_simd_words_minor << 4; }
+    inline size_t num_minor_u16_padded() const { return num_simd_words_minor * (sizeof(simd_word) / sizeof(uint16_t)); }
     /// Number of 8 bit words in a row (column) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_minor_u8_padded() const { return num_simd_words_minor << 5; }
+    inline size_t num_minor_u8_padded() const { return num_simd_words_minor * (sizeof(simd_word) / sizeof(uint8_t)); }
     /// Number of bits in a row (column) assuming row (column) major indexing.
-    [[nodiscard]] inline size_t num_minor_bits_padded() const { return num_simd_words_minor << 8; }
+    inline size_t num_minor_bits_padded() const { return num_simd_words_minor * sizeof(simd_word) << 3; }
 
     /// Returns a truncated description of the table's contents.
-    [[nodiscard]] std::string str(size_t n) const;
+    std::string str(size_t n) const;
 };
 
 #endif

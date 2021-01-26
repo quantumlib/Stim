@@ -77,8 +77,8 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     assert(num_qubits == rhs.num_qubits);
 
     // Accumulator registers for counting mod 4 in parallel across each bit position.
-    SIMD_WORD_TYPE cnt1{};
-    SIMD_WORD_TYPE cnt2{};
+    simd_word cnt1{};
+    simd_word cnt2{};
 
     xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](auto &x1, auto &z1, auto &x2, auto &z2) {
         // Update the left hand side Paulis.
@@ -103,7 +103,7 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
 
 bool PauliStringRef::commutes(const PauliStringRef &other) const noexcept {
     assert(num_qubits == other.num_qubits);
-    SIMD_WORD_TYPE cnt1{};
+    simd_word cnt1{};
     xs.for_each_word(
         zs, other.xs, other.zs, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) { cnt1 ^= (x1 & z2) ^ (x2 & z1); });
     return (cnt1.popcount() & 1) == 0;

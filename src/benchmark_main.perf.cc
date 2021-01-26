@@ -130,7 +130,7 @@ int main(int argc, const char **argv) {
             double actual_seconds_per_rep = result.total_seconds / result.total_reps;
             if (result.goal_seconds != -1) {
                 int deviation = (int)round((log(result.goal_seconds) - log(actual_seconds_per_rep)) / (log(10) / 10.0));
-                std::cout << "slower [";
+                std::cout << "[";
                 for (int k = -20; k <= 20; k++) {
                     if ((k < deviation && k < 0) || (k > deviation && k > 0)) {
                         std::cout << '.';
@@ -144,7 +144,7 @@ int main(int argc, const char **argv) {
                         std::cout << '>';
                     }
                 }
-                std::cout << "] faster dB | ";
+                std::cout << "] ";
                 std::cout << si2(actual_seconds_per_rep) << "s";
                 std::cout << " (vs " << si2(result.goal_seconds) << "s) ";
             } else {

@@ -20,7 +20,7 @@ TEST(simd_bits, move) {
 TEST(simd_bits, construct) {
     simd_bits d(1024);
     ASSERT_NE(d.ptr_simd, nullptr);
-    ASSERT_EQ(d.num_simd_words, 4);
+    ASSERT_EQ(d.num_simd_words, 1024 / 8 / sizeof(simd_word));
     ASSERT_EQ(d.num_bits_padded(), 1024);
     ASSERT_EQ(d.num_u8_padded(), 128);
     ASSERT_EQ(d.num_u16_padded(), 64);
@@ -49,15 +49,29 @@ TEST(simd_bits, aliased_editing_and_bit_refs) {
 
 TEST(simd_util, min_bits_to_num_bits_padded) {
     const auto &f = &simd_bits::min_bits_to_num_bits_padded;
-    ASSERT_EQ(f(0), 0);
-    ASSERT_EQ(f(1), 256);
-    ASSERT_EQ(f(100), 256);
-    ASSERT_EQ(f(255), 256);
-    ASSERT_EQ(f(256), 256);
-    ASSERT_EQ(f(257), 512);
-    ASSERT_EQ(f((1 << 30) - 1), 1 << 30);
-    ASSERT_EQ(f(1 << 30), 1 << 30);
-    ASSERT_EQ(f((1 << 30) + 1), (1 << 30) + 256);
+    if (sizeof(simd_word) == 256 / 8) {
+        ASSERT_EQ(f(0), 0);
+        ASSERT_EQ(f(1), 256);
+        ASSERT_EQ(f(100), 256);
+        ASSERT_EQ(f(255), 256);
+        ASSERT_EQ(f(256), 256);
+        ASSERT_EQ(f(257), 512);
+        ASSERT_EQ(f((1 << 30) - 1), 1 << 30);
+        ASSERT_EQ(f(1 << 30), 1 << 30);
+        ASSERT_EQ(f((1 << 30) + 1), (1 << 30) + 256);
+    } else if (sizeof(simd_word) == 128 / 8) {
+        ASSERT_EQ(f(0), 0);
+        ASSERT_EQ(f(1), 128);
+        ASSERT_EQ(f(100), 128);
+        ASSERT_EQ(f(255), 256);
+        ASSERT_EQ(f(256), 256);
+        ASSERT_EQ(f(257), 256 + 128);
+        ASSERT_EQ(f((1 << 30) - 1), 1 << 30);
+        ASSERT_EQ(f(1 << 30), 1 << 30);
+        ASSERT_EQ(f((1 << 30) + 1), (1 << 30) + 128);
+    } else {
+        ASSERT_TRUE(false) << "Unrecognized size.";
+    }
 }
 
 TEST(simd_bits, str) {
@@ -68,7 +82,7 @@ TEST(simd_bits, str) {
         "________________________________________________________________"
         "________________________________________________________________"
         "________________________________________________________________");
-    d[5] = 1;
+    d[5] = true;
     ASSERT_EQ(
         d.str(),
         "_____1__________________________________________________________"
@@ -142,10 +156,10 @@ TEST(simd_bits, equality) {
     ASSERT_FALSE(m0 == m4);
     ASSERT_TRUE(m0 != m4);
 
-    m1[505] = 1;
+    m1[505] = true;
     ASSERT_FALSE(m0 == m1);
     ASSERT_TRUE(m0 != m1);
-    m0[505] = 1;
+    m0[505] = true;
     ASSERT_TRUE(m0 == m1);
     ASSERT_FALSE(m0 != m1);
 }
@@ -174,14 +188,14 @@ TEST(simd_bits, clear) {
     ASSERT_TRUE(!m0.not_zero());
 }
 
-TEST(simd_bits, not_zero256) {
+TEST(simd_bits, not_zero) {
     simd_bits m0(512);
     ASSERT_FALSE(m0.not_zero());
-    m0[5] = 1;
+    m0[5] = true;
     ASSERT_TRUE(m0.not_zero());
-    m0[511] = 1;
+    m0[511] = true;
     ASSERT_TRUE(m0.not_zero());
-    m0[5] = 0;
+    m0[5] = false;
     ASSERT_TRUE(m0.not_zero());
 }
 
@@ -190,10 +204,11 @@ TEST(simd_bits, word_range_ref) {
     const simd_bits &cref = d;
     auto r1 = d.word_range_ref(1, 2);
     auto r2 = d.word_range_ref(2, 2);
-    r1[1] = 1;
+    r1[1] = true;
     ASSERT_TRUE(!r2.not_zero());
-    ASSERT_EQ(r1[257], false);
-    r2[1] = 1;
-    ASSERT_EQ(r1[257], true);
-    ASSERT_EQ(cref.word_range_ref(1, 2)[257], true);
+    auto k = sizeof(simd_word)*8 + 1;
+    ASSERT_EQ(r1[k], false);
+    r2[1] = true;
+    ASSERT_EQ(r1[k], true);
+    ASSERT_EQ(cref.word_range_ref(1, 2)[k], true);
 }

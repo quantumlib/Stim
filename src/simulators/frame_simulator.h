@@ -38,7 +38,7 @@ struct FrameSimulator {
             SampleFormat format,
             std::mt19937_64 &rng);
 
-    [[nodiscard]] PauliString get_frame(size_t sample_index) const;
+    PauliString get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
 
     void reset_all_and_run(const Circuit &circuit);

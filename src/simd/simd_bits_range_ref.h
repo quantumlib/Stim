@@ -18,12 +18,12 @@ struct simd_bits_range_ref {
         uint16_t *const u16;
         uint32_t *const u32;
         uint64_t *const u64;
-        SIMD_WORD_TYPE *const ptr_simd;
+        simd_word *const ptr_simd;
     };
     const size_t num_simd_words;
 
     /// Construct a simd_bits_range_ref from a given pointer and word count.
-    simd_bits_range_ref(SIMD_WORD_TYPE *ptr_simd, size_t num_simd_words);
+    simd_bits_range_ref(simd_word *ptr_simd, size_t num_simd_words);
 
     /// Overwrite assignment.
     simd_bits_range_ref operator=(const simd_bits_range_ref other); // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
@@ -37,7 +37,7 @@ struct simd_bits_range_ref {
     /// Inequality.
     bool operator!=(const simd_bits_range_ref other) const;
     /// Determines whether or not any of the bits in the referenced range are non-zero.
-    [[nodiscard]] bool not_zero() const;
+    bool not_zero() const;
 
     /// Returns a reference to a given bit within the referenced range.
     inline bit_ref operator[](size_t k) {
@@ -48,11 +48,11 @@ struct simd_bits_range_ref {
         return bit_ref(u8, k);
     }
     /// Returns a reference to a sub-range of the bits in the referenced range.
-    [[nodiscard]] inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
+    inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
     }
     /// Returns a const reference to a sub-range of the bits in the referenced range.
-    [[nodiscard]] inline const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
+    inline const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
     }
 
@@ -62,22 +62,22 @@ struct simd_bits_range_ref {
     void randomize(size_t num_bits, std::mt19937_64 &rng);
 
     /// Returns a description of the contents of the range.
-    [[nodiscard]] std::string str() const;
+    std::string str() const;
 
     /// Number of 64 bit words in the referenced range.
-    [[nodiscard]] inline size_t num_u64_padded() const { return num_simd_words << 2; }
+    inline size_t num_u64_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint64_t)); }
     /// Number of 32 bit words in the referenced range.
-    [[nodiscard]] inline size_t num_u32_padded() const { return num_simd_words << 3; }
+    inline size_t num_u32_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint32_t)); }
     /// Number of 16 bit words in the referenced range.
-    [[nodiscard]] inline size_t num_u16_padded() const { return num_simd_words << 4; }
+    inline size_t num_u16_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint16_t)); }
     /// Number of 8 bit words in the referenced range.
-    [[nodiscard]] inline size_t num_u8_padded() const { return num_simd_words << 5; }
+    inline size_t num_u8_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint8_t)); }
     /// Number of bits in the referenced range.
-    [[nodiscard]] inline size_t num_bits_padded() const { return num_simd_words << 8; }
+    inline size_t num_bits_padded() const { return num_simd_words * sizeof(simd_word) << 3; }
 
     /// Runs a function on each word in the range, in sequential order.
     ///
-    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    /// The words are passed by reference and have type simd_word.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -105,7 +105,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from two ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    /// The words are passed by reference and have type simd_word.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -133,7 +133,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from three ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    /// The words are passed by reference and have type simd_word.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -166,7 +166,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from four ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    /// The words are passed by reference and have type simd_word.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -203,7 +203,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from five ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type SIMD_WORD_TYPE.
+    /// The words are passed by reference and have type simd_word.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather

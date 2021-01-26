@@ -194,12 +194,12 @@ make stim_benchmark
 This will output results like:
 
 ```
-slower [....................*....................] faster dB | 460 ns (vs 450 ns) ( 21 GBits/s) simd_bits_randomize_10K
-slower [...................*|....................] faster dB |  24 ns (vs  20 ns) (400 GBits/s) simd_bits_xor_10K
-slower [....................|>>>>*...............] faster dB | 3.6 ns (vs 4.0 ns) (270 GBits/s) simd_bits_not_zero_100K
-slower [....................*....................] faster dB | 5.8 ms (vs 6.0 ms) ( 17 GBits/s) simd_bit_table_inplace_square_transpose_diam10K
-slower [...............*<<<<|....................] faster dB | 8.1 ms (vs 5.0 ms) ( 12 GOpQubits/s) FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000
-slower [....................*....................] faster dB | 5.3 ms (vs 5.0 ms) ( 18 GOpQubits/s) FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000
+[....................*....................] 460 ns (vs 450 ns) ( 21 GBits/s) simd_bits_randomize_10K
+[...................*|....................]  24 ns (vs  20 ns) (400 GBits/s) simd_bits_xor_10K
+[....................|>>>>*...............] 3.6 ns (vs 4.0 ns) (270 GBits/s) simd_bits_not_zero_100K
+[....................*....................] 5.8 ms (vs 6.0 ms) ( 17 GBits/s) simd_bit_table_inplace_square_transpose_diam10K
+[...............*<<<<|....................] 8.1 ms (vs 5.0 ms) ( 12 GOpQubits/s) FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000
+[....................*....................] 5.3 ms (vs 5.0 ms) ( 18 GOpQubits/s) FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000
 ```
 
 The bars on the left show how fast each task is running compared to baseline expectations (on my dev machine).

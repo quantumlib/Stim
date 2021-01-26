@@ -41,7 +41,7 @@ simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t 
     simd_bit_table result(n, n);
     for (size_t row = 0; row < n; row++) {
         for (size_t col = 0; col < n; col++) {
-            SIMD_WORD_TYPE acc {};
+            simd_word acc {};
             (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) {
                 acc ^= w1 & w2;
             });
@@ -71,7 +71,7 @@ simd_bit_table simd_bit_table::inverse_assuming_lower_triangular(size_t n) const
 
 template <uint8_t step>
 void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
-    auto mask = SIMD_WORD_TYPE::tile64(interleave_mask(step));
+    auto mask = simd_word::tile64(interleave_mask(step));
     for (size_t major = base; major < end; major++, major += major & step) {
         table[major].for_each_word(table[major + step], [&mask](auto &a, auto &b) {
             auto t0 = a ^ b.leftshift_tile64(step);
