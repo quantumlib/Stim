@@ -10,6 +10,7 @@ endif()
 set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit.cc
+        src/common_circuits.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
         src/simd/simd_bit_table.cc
@@ -30,6 +31,7 @@ set(SOURCE_FILES_NO_MAIN
 set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit.test.cc
+        src/common_circuits.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
         src/simd/simd_bit_table.test.cc

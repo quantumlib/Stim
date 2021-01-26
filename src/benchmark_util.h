@@ -5,10 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "circuit.h"
-
-Circuit unrotated_surface_code_circuit(size_t distance);
-
 struct BenchmarkResult {
     double total_seconds;
     size_t total_reps;

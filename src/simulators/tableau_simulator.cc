@@ -276,7 +276,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
     size_t max_qubit = 0;
     TableauSimulator sim(1, rng);
     size_t num_processed_ops = 0;
-    while (reader.read_more(in, newline_after_measurements)) {
+    while (reader.read_more(in, false, newline_after_measurements)) {
         for (size_t k = num_processed_ops; k < reader.ops.size(); k++) {
             for (size_t q : reader.ops[k].target_data.targets) {
                 max_qubit = std::max(q, max_qubit);

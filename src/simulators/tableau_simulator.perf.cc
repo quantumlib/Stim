@@ -1,11 +1,12 @@
 #include "tableau_simulator.h"
 
 #include "../benchmark_util.h"
+#include "../common_circuits.h"
 #include "../simulators/gate_data.h"
 
 BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d5) {
     size_t distance = 5;
-    auto circuit = unrotated_surface_code_circuit(distance);
+    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance));
     std::mt19937_64 rng(0);
     benchmark_go([&]() { TableauSimulator::sample_circuit(circuit, rng); })
         .goal_micros(100)
@@ -15,7 +16,7 @@ BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d5) {
 
 BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d41) {
     size_t distance = 41;
-    auto circuit = unrotated_surface_code_circuit(distance);
+    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance));
     std::mt19937_64 rng(0);
     benchmark_go([&]() { TableauSimulator::sample_circuit(circuit, rng); })
         .goal_millis(420)

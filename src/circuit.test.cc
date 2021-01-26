@@ -3,20 +3,20 @@
 #include <gtest/gtest.h>
 
 TEST(circuit, operation_from_line) {
-    auto f = [](const std::string line) { return Operation::from_line(line, 0, line.size()); };
+    auto f = [](const std::string line) { return Instruction::from_line(line, 0, line.size()); };
     ASSERT_EQ(f("# not an operation"), (Operation{"", OperationData({}, {}, 0)}));
 
-    ASSERT_EQ(f("H 0"), (Operation{"H", OperationData({0})}));
-    ASSERT_EQ(f("h 0"), (Operation{"H", OperationData({0})}));
-    ASSERT_EQ(f("H 0     "), (Operation{"H", OperationData({0})}));
-    ASSERT_EQ(f("     H 0     "), (Operation{"H", OperationData({0})}));
-    ASSERT_EQ(f("\tH 0\t\t"), (Operation{"H", OperationData({0})}));
-    ASSERT_EQ(f("H 0  # comment"), (Operation{"H", OperationData({0})}));
+    ASSERT_EQ(f("H 0"), (Operation{"H_XZ", OperationData({0})}));
+    ASSERT_EQ(f("h 0"), (Operation{"H_XZ", OperationData({0})}));
+    ASSERT_EQ(f("H 0     "), (Operation{"H_XZ", OperationData({0})}));
+    ASSERT_EQ(f("     H 0     "), (Operation{"H_XZ", OperationData({0})}));
+    ASSERT_EQ(f("\tH 0\t\t"), (Operation{"H_XZ", OperationData({0})}));
+    ASSERT_EQ(f("H 0  # comment"), (Operation{"H_XZ", OperationData({0})}));
     ASSERT_EQ(
         f("DEPOLARIZE1(0.125) 4 5  # comment"),
         (Operation{"DEPOLARIZE1", OperationData({4, 5}, {false, false}, 0.125)}));
 
-    ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), (Operation{"CNOT", {{5, 6}}}));
+    ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), (Operation{"ZCX", {{5, 6}}}));
 
     ASSERT_THROW({ f("H a"); }, std::runtime_error);
     ASSERT_THROW({ f("H 9999999999999999999999999999999999999999999"); }, std::runtime_error);
@@ -54,4 +54,36 @@ TEST(circuit, from_text) {
             {"M", OperationData({0, 1, 2})},
             {"SWAP", OperationData({0, 1})},
             {"M", OperationData({0, 10})}}));
+
+    ASSERT_EQ(
+        Circuit::from_text("X 0\n"
+                           "REPEAT 2 {\n"
+                           "  Y 1\n"
+                           "  Y 2 #####\n"
+                           "} #####"),
+        Circuit(std::vector<Operation>{
+            {"X", OperationData({0})},
+            {"Y", OperationData({1, 2})},
+            {"Y", OperationData({1, 2})}
+        }));
+
+    ASSERT_EQ(
+        Circuit::from_text("X 0\n"
+                           "REPEAT 2 {\n"
+                           "  Y 1\n"
+                           "  REPEAT 3 {\n"
+                           "    Z 1\n"
+                           "  }\n"
+                           "}"),
+        Circuit(std::vector<Operation>{
+            {"X", OperationData({0})},
+            {"Y", OperationData({1})},
+            {"Z", OperationData({1})},
+            {"Z", OperationData({1})},
+            {"Z", OperationData({1})},
+            {"Y", OperationData({1})},
+            {"Z", OperationData({1})},
+            {"Z", OperationData({1})},
+            {"Z", OperationData({1})},
+        }));
 }

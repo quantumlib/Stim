@@ -1,6 +1,7 @@
 #include "frame_simulator.h"
 
 #include "../benchmark_util.h"
+#include "../common_circuits.h"
 
 BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
@@ -67,7 +68,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
 BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d5_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 5;
-    auto circuit = unrotated_surface_code_circuit(distance);
+    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance));
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     simd_bits ref(circuit.num_measurements);
     benchmark_go([&]() { FrameSimulator::sample(circuit, ref, num_samples, rng); })
@@ -79,7 +80,7 @@ BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d5_samples1024) {
 BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d41_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 41;
-    auto circuit = unrotated_surface_code_circuit(distance);
+    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance));
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     simd_bits ref(circuit.num_measurements);
     benchmark_go([&]() { FrameSimulator::sample(circuit, ref, num_samples, rng); })

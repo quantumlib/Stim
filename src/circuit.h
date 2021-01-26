@@ -1,6 +1,7 @@
 #ifndef CIRCUIT_H
 #define CIRCUIT_H
 
+#include <functional>
 #include <iostream>
 #include <vector>
 
@@ -25,11 +26,22 @@ struct OperationData {
 struct Operation {
     std::string name;
     OperationData target_data;
-    static Operation from_line(const std::string &line, size_t start, size_t end);
     bool try_fuse_with(const Operation &other);
 
     bool operator==(const Operation &other) const;
     bool operator!=(const Operation &other) const;
+    std::string str() const;
+};
+
+struct Instruction {
+    Operation operation;
+    bool started_block;
+    bool ended_block;
+    static Instruction from_line(const std::string &line, size_t start, size_t end);
+    bool operator==(const Operation &other) const;
+    bool operator!=(const Operation &other) const;
+    bool operator==(const Instruction &other) const;
+    bool operator!=(const Instruction &other) const;
     std::string str() const;
 };
 
@@ -43,7 +55,6 @@ struct Circuit {
 
     static Circuit from_text(const std::string &text);
     static Circuit from_file(FILE *file);
-    Circuit with_fused_operations() const;
 
     std::string str() const;
     bool operator==(const Circuit &other) const;
@@ -52,11 +63,13 @@ struct Circuit {
 
 struct CircuitReader {
     std::vector<Operation> ops;
-    void read_operation(Operation operation);
-    bool read_more(FILE *file, bool stop_after_measurement = false);
+    bool read_more(std::string text, bool inside_block, bool stop_after_measurement);
+    bool read_more(FILE *file, bool inside_block, bool stop_after_measurement);
+    bool read_more_helper(const std::function<std::string(void)>& line_getter, bool inside_block, bool stop_after_measurement);
 };
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
 std::ostream &operator<<(std::ostream &out, const Operation &op);
+std::ostream &operator<<(std::ostream &out, const Instruction &inst);
 
 #endif
