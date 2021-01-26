@@ -50,7 +50,8 @@ const char *find_argument(const char *name, int argc, const char **argv) {
     return 0;
 }
 
-void check_for_unknown_arguments(size_t known_argument_count, const char **known_arguments, int argc, const char **argv) {
+void check_for_unknown_arguments(
+    size_t known_argument_count, const char **known_arguments, int argc, const char **argv) {
     for (int i = 1; i < argc; i++) {
         // Respect that the "--" argument terminates flags.
         if (!strcmp(argv[i], "--")) {

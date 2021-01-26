@@ -22,7 +22,7 @@ TEST(simd_compat, popcnt64) {
 TEST(simd_compat, popcount) {
     if (sizeof(simd_word) == 256 / 8) {
         simd_word w{};
-        auto p = (uint64_t *) &w.val;
+        auto p = (uint64_t *)&w.val;
         p[0] = 0;
         ASSERT_EQ(w.popcount(), 0);
         p[0] = 1;
@@ -68,7 +68,7 @@ TEST(simd_compat, popcount) {
         }
     } else if (sizeof(simd_word) == 128 / 8) {
         simd_word w{};
-        auto p = (uint64_t *) &w.val;
+        auto p = (uint64_t *)&w.val;
         p[0] = 0;
         ASSERT_EQ(w.popcount(), 0);
         p[0] = 1;
@@ -109,8 +109,8 @@ TEST(simd_compat, popcount) {
 }
 
 TEST(simd_compat, do_interleave8_tile128) {
-    simd_word t1 {};
-    simd_word t2 {};
+    simd_word t1{};
+    simd_word t2{};
     auto c1 = (uint8_t *)&t1;
     auto c2 = (uint8_t *)&t2;
     for (uint8_t k = 0; k < (uint8_t)sizeof(uint64_t) * 2; k++) {

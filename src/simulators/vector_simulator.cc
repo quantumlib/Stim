@@ -7,7 +7,7 @@
 #include "gate_data.h"
 
 VectorSimulator::VectorSimulator(size_t num_qubits) {
-    state.resize(size_t {1} << num_qubits, 0.0f);
+    state.resize(size_t{1} << num_qubits, 0.0f);
     state[0] = 1;
 }
 
@@ -26,14 +26,14 @@ std::vector<std::complex<float>> mat_vec_mul(
 
 void VectorSimulator::apply(
     const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits) {
-    size_t n = size_t {1} << qubits.size();
+    size_t n = size_t{1} << qubits.size();
     assert(matrix.size() == n);
     std::vector<size_t> masks;
     for (size_t k = 0; k < n; k++) {
         size_t m = 0;
         for (size_t q = 0; q < qubits.size(); q++) {
             if ((k >> q) & 1) {
-                m |= size_t {1} << qubits[q];
+                m |= size_t{1} << qubits[q];
             }
         }
         masks.push_back(m);

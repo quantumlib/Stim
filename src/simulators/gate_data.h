@@ -19,7 +19,9 @@ extern const std::unordered_set<std::string> NOISY_GATE_NAMES;
 extern const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
 extern const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS;
 
-extern const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>> SIM_TABLEAU_GATE_FUNC_DATA;
-extern const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>> SIM_BULK_PAULI_FRAMES_GATE_DATA;
+extern const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>>
+    SIM_TABLEAU_GATE_FUNC_DATA;
+extern const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>>
+    SIM_BULK_PAULI_FRAMES_GATE_DATA;
 
 #endif

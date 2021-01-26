@@ -2,8 +2,9 @@
 #define PAULI_STRING_REF_H
 
 #include <iostream>
-#include "../simd/simd_bits_range_ref.h"
+
 #include "../simd/bit_ref.h"
+#include "../simd/simd_bits_range_ref.h"
 
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
@@ -39,7 +40,7 @@ struct PauliStringRef {
     /// ASSERTS:
     ///     The given Pauli strings have the same size.
     ///     The given Pauli strings commute.
-    PauliStringRef& operator*=(const PauliStringRef &commuting_rhs);
+    PauliStringRef &operator*=(const PauliStringRef &commuting_rhs);
 
     // A more general version  of `*this *= rhs` which works for anti-commuting Paulis.
     //
@@ -56,7 +57,7 @@ struct PauliStringRef {
     //
     // ASSERTS:
     //     The given Pauli strings have the same size.
-    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef& rhs) noexcept;
+    uint8_t inplace_right_mul_returning_log_i_scalar(const PauliStringRef &rhs) noexcept;
 
     /// Overwrites the entire given Pauli string's contents with a subset of Paulis from this Pauli string.
     /// Does not affect the sign of the given Pauli string.
@@ -77,7 +78,7 @@ struct PauliStringRef {
     void scatter_into(PauliStringRef out, const std::vector<size_t> &out_indices) const;
 
     /// Determines if this Pauli string commutes with the given Pauli string.
-    bool commutes(const PauliStringRef& other) const noexcept;
+    bool commutes(const PauliStringRef &other) const noexcept;
 
     /// Returns a string describing the given Pauli string, with one character per qubit.
     std::string str() const;

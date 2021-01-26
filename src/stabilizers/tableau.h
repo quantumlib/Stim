@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <unordered_map>
+
 #include "../simd/simd_bit_table.h"
 #include "../simd/simd_util.h"
 #include "pauli_string.h"
@@ -54,8 +55,7 @@ struct Tableau {
     /// Args:
     ///    x: The output-side observable that the input-side X observable gets mapped to.
     ///    z: The output-side observable that the input-side Y observable gets mapped to.
-    static Tableau gate1(const char *x,
-                         const char *z);
+    static Tableau gate1(const char *x, const char *z);
 
     /// Creates a Tableau representing a two qubit gate.
     ///
@@ -67,10 +67,7 @@ struct Tableau {
     ///    z1: The output-side observable that the input-side YI observable gets mapped to.
     ///    x2: The output-side observable that the input-side IX observable gets mapped to.
     ///    z2: The output-side observable that the input-side IY observable gets mapped to.
-    static Tableau gate2(const char *x1,
-                         const char *z1,
-                         const char *x2,
-                         const char *z2);
+    static Tableau gate2(const char *x1, const char *z1, const char *x2, const char *z2);
 
     /// Returns the result of applying the tableau to the given Pauli string.
     ///

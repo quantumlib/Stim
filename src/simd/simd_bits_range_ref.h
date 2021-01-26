@@ -1,9 +1,10 @@
 #ifndef SIMD_RANGE_H
 #define SIMD_RANGE_H
 
-#include <vector>
 #include <iostream>
 #include <random>
+#include <vector>
+
 #include "bit_ref.h"
 #include "simd_compat.h"
 
@@ -25,7 +26,9 @@ struct simd_bits_range_ref {
     simd_bits_range_ref(simd_word *ptr_simd, size_t num_simd_words);
 
     /// Overwrite assignment.
-    simd_bits_range_ref operator=(const simd_bits_range_ref other); // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
+    simd_bits_range_ref operator=(
+        const simd_bits_range_ref
+            other);  // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
     /// Xor assignment.
     simd_bits_range_ref operator^=(const simd_bits_range_ref other);
     /// Swap assignment.
@@ -39,13 +42,9 @@ struct simd_bits_range_ref {
     bool not_zero() const;
 
     /// Returns a reference to a given bit within the referenced range.
-    inline bit_ref operator[](size_t k) {
-        return bit_ref(u8, k);
-    }
+    inline bit_ref operator[](size_t k) { return bit_ref(u8, k); }
     /// Returns a const reference to a given bit within the referenced range.
-    inline const bit_ref operator[](size_t k) const {
-        return bit_ref(u8, k);
-    }
+    inline const bit_ref operator[](size_t k) const { return bit_ref(u8, k); }
     /// Returns a reference to a sub-range of the bits in the referenced range.
     inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
@@ -147,10 +146,7 @@ struct simd_bits_range_ref {
     ///
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
-    inline void for_each_word(
-            simd_bits_range_ref other1,
-            simd_bits_range_ref other2,
-            FUNC body) const {
+    inline void for_each_word(simd_bits_range_ref other1, simd_bits_range_ref other2, FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other1.ptr_simd;
         auto v2 = other2.ptr_simd;
@@ -182,10 +178,7 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(
-            simd_bits_range_ref other1,
-            simd_bits_range_ref other2,
-            simd_bits_range_ref other3,
-            FUNC body) const {
+        simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other1.ptr_simd;
         auto v2 = other2.ptr_simd;
@@ -223,11 +216,8 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(
-            simd_bits_range_ref other1,
-            simd_bits_range_ref other2,
-            simd_bits_range_ref other3,
-            simd_bits_range_ref other4,
-            FUNC body) const {
+        simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, simd_bits_range_ref other4,
+        FUNC body) const {
         auto v0 = ptr_simd;
         auto v1 = other1.ptr_simd;
         auto v2 = other2.ptr_simd;

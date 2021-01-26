@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <random>
+
 #include "bit_ref.h"
 #include "simd_bits_range_ref.h"
 
@@ -26,18 +27,18 @@ struct simd_bits {
     /// Frees allocated bits.
     ~simd_bits();
     /// Copy constructor.
-    simd_bits(const simd_bits& other);
+    simd_bits(const simd_bits &other);
     /// Copy constructor from range reference.
     simd_bits(const simd_bits_range_ref other);
     /// Move constructor.
-    simd_bits(simd_bits&& other) noexcept;
+    simd_bits(simd_bits &&other) noexcept;
 
     /// Copy assignment.
-    simd_bits& operator=(const simd_bits& other);
+    simd_bits &operator=(const simd_bits &other);
     /// Copy assignment from range reference.
-    simd_bits& operator=(const simd_bits_range_ref other);
+    simd_bits &operator=(const simd_bits_range_ref other);
     /// Move assignment.
-    simd_bits& operator=(simd_bits&& other) noexcept;
+    simd_bits &operator=(simd_bits &&other) noexcept;
     // Xor assignment.
     simd_bits &operator^=(const simd_bits_range_ref other);
     // Swap assignment.

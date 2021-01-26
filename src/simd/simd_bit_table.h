@@ -14,11 +14,8 @@ struct simd_bit_table {
     static simd_bit_table identity(size_t n);
     /// Concatenates tables together to form a larger table.
     static simd_bit_table from_quadrants(
-            size_t n,
-            const simd_bit_table &upper_left,
-            const simd_bit_table &upper_right,
-            const simd_bit_table &lower_left,
-            const simd_bit_table &lower_right);
+        size_t n, const simd_bit_table &upper_left, const simd_bit_table &upper_right, const simd_bit_table &lower_left,
+        const simd_bit_table &lower_right);
 
     /// Equality.
     bool operator==(const simd_bit_table &other) const;

@@ -39,10 +39,8 @@ simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t 
     simd_bit_table result(n, n);
     for (size_t row = 0; row < n; row++) {
         for (size_t col = 0; col < n; col++) {
-            simd_word acc {};
-            (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) {
-                acc ^= w1 & w2;
-            });
+            simd_word acc{};
+            (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) { acc ^= w1 & w2; });
             result[row][col] = acc.popcount() & 1;
         }
     }

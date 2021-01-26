@@ -50,7 +50,7 @@ size_t parse_size_t(const std::string &text) {
     if (r > SIZE_MAX) {
         throw std::out_of_range("");
     }
-    return (size_t) r;
+    return (size_t)r;
 }
 
 Operation Operation::from_line(const std::string &line, size_t start, size_t end) {

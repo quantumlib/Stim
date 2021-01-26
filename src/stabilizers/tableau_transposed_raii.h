@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <unordered_map>
+
 #include "../simd/simd_bit_table.h"
 #include "../simd/simd_util.h"
 #include "pauli_string.h"

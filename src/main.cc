@@ -20,10 +20,10 @@ std::vector<SampleFormat> format_values{
 int main(int argc, const char **argv) {
     check_for_unknown_arguments(known_arguments.size(), known_arguments.data(), argc, argv);
 
-    SampleFormat format =
-        format_values[find_enum_argument("-format", SAMPLE_FORMAT_01, format_names.size(), format_names.data(), argc, argv)];
+    SampleFormat format = format_values[find_enum_argument(
+        "-format", SAMPLE_FORMAT_01, format_names.size(), format_names.data(), argc, argv)];
     bool interactive = find_bool_argument("-repl", argc, argv);
-    int samples = (size_t) find_int_argument("-shots", 1, 0, 1 << 30, argc, argv);
+    int samples = (size_t)find_int_argument("-shots", 1, 0, 1 << 30, argc, argv);
     const char *out_path = find_argument("-out", argc, argv);
     FILE *out;
     if (out_path == nullptr) {

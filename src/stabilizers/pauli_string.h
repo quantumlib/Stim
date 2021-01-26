@@ -1,8 +1,9 @@
 #ifndef PAULI_STRING_H
 #define PAULI_STRING_H
 
-#include <iostream>
 #include <functional>
+#include <iostream>
+
 #include "../simd/simd_bits.h"
 #include "pauli_string_ref.h"
 
@@ -31,9 +32,9 @@ struct PauliString {
     static PauliString random(size_t num_qubits, std::mt19937_64 &rng);
 
     /// Copy constructor.
-    PauliString(const PauliStringRef &other); // NOLINT(google-explicit-constructor)
+    PauliString(const PauliStringRef &other);  // NOLINT(google-explicit-constructor)
     /// Overwrite assignment.
-    PauliString& operator=(const PauliStringRef &other) noexcept;
+    PauliString &operator=(const PauliStringRef &other) noexcept;
 
     /// Equality.
     bool operator==(const PauliStringRef &other) const;

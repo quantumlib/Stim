@@ -1,17 +1,18 @@
 #ifndef SIM_TABLEAU_H
 #define SIM_TABLEAU_H
 
+#include <cassert>
+#include <functional>
 #include <iostream>
 #include <new>
-#include <cassert>
-#include <sstream>
-#include <functional>
-#include "../stabilizers/tableau.h"
-#include <random>
-#include "../circuit.h"
-#include "vector_simulator.h"
 #include <queue>
+#include <random>
+#include <sstream>
+
+#include "../circuit.h"
+#include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
+#include "vector_simulator.h"
 
 struct TableauSimulator {
     Tableau inv_state;
@@ -99,7 +100,7 @@ struct TableauSimulator {
     void YCY(const OperationData &target_data);
     void YCZ(const OperationData &target_data);
 
-private:
+   private:
     /// Forces a qubit to have a collapsed Z observable.
     ///
     /// If the qubit already has a collapsed Z observable, this method has no effect.

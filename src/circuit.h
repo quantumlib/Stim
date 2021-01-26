@@ -1,8 +1,8 @@
 #ifndef CIRCUIT_H
 #define CIRCUIT_H
 
-#include <vector>
 #include <iostream>
+#include <vector>
 
 enum SampleFormat {
     SAMPLE_FORMAT_01,

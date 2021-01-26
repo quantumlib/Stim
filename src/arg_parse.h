@@ -72,8 +72,7 @@ void check_for_unknown_arguments(
 ///     EXIT_FAILURE:
 ///         The command line flag was not specified and default_value was not in range.
 float find_float_argument(
-    const char *name, float default_value, float min_value, float max_value, int argc,
-    const char **argv);
+    const char *name, float default_value, float min_value, float max_value, int argc, const char **argv);
 
 /// Returns an integer value that can be modified using command line arguments.
 ///
@@ -99,8 +98,7 @@ float find_float_argument(
 ///         The command line flag was specified but failed to parse into an int in range.
 ///     EXIT_FAILURE:
 ///         The command line flag was not specified and default_value was not in range.
-int find_int_argument(
-    const char *name, int default_value, int min_value, int max_value, int argc, const char **argv);
+int find_int_argument(const char *name, int default_value, int min_value, int max_value, int argc, const char **argv);
 
 ///
 /// Returns a boolean value that can be enabled using a command line argument.
@@ -143,7 +141,7 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///     EXIT_FAILURE:
 ///         The command line flag is not specified and default_index is negative.
 int find_enum_argument(
-    const char *name, int default_index, int num_known_values, const char *const *known_values,
-    int argc, const char **argv);
+    const char *name, int default_index, int num_known_values, const char *const *known_values, int argc,
+    const char **argv);
 
 #endif

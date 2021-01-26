@@ -1,8 +1,8 @@
 #include "simd_compat.h"
 
 #include "../benchmark_util.h"
-#include "simd_compat.h"
 #include "simd_bits.h"
+#include "simd_compat.h"
 
 BENCHMARK(simd_compat_popcnt) {
     simd_bits d(1024 * 256);
@@ -15,7 +15,9 @@ BENCHMARK(simd_compat_popcnt) {
         for (size_t k = 0; k < d.num_simd_words; k++) {
             optimization_blocker += d.ptr_simd[k].popcount();
         }
-    }).goal_micros(1.5).show_rate("Bits", d.num_bits_padded());
+    })
+        .goal_micros(1.5)
+        .show_rate("Bits", d.num_bits_padded());
     if (optimization_blocker == 0) {
         std::cout << '!';
     }

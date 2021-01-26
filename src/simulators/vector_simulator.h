@@ -1,11 +1,12 @@
 #ifndef VECTOR_SIM_H
 #define VECTOR_SIM_H
 
-#include <iostream>
-#include <unordered_map>
 #include <complex>
-#include "../stabilizers/pauli_string.h"
+#include <iostream>
 #include <random>
+#include <unordered_map>
+
+#include "../stabilizers/pauli_string.h"
 
 /// A state vector quantum circuit simulator.
 ///

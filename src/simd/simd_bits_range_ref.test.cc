@@ -190,7 +190,7 @@ TEST(simd_bits_range_ref, word_range_ref) {
     auto r2 = ref.word_range_ref(2, 2);
     r1[1] = true;
     ASSERT_TRUE(!r2.not_zero());
-    auto k = sizeof(simd_word)*8 + 1;
+    auto k = sizeof(simd_word) * 8 + 1;
     ASSERT_EQ(r1[k], false);
     r2[1] = true;
     ASSERT_EQ(r1[k], true);

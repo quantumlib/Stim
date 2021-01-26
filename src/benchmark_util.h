@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+
 #include "circuit.h"
 
 Circuit unrotated_surface_code_circuit(size_t distance);
@@ -43,14 +44,13 @@ struct RegisteredBenchmark {
 extern RegisteredBenchmark *running_benchmark;
 extern std::vector<RegisteredBenchmark> all_registered_benchmarks;
 
-#define BENCHMARK(name) \
-    void BENCH_ ## name ## _METHOD(); \
-    struct BENCH_STARTUP_TYPE_ ## name { \
-        BENCH_STARTUP_TYPE_ ## name(){ all_registered_benchmarks.push_back({#name, BENCH_ ## name ## _METHOD}); } \
-    }; \
-    static BENCH_STARTUP_TYPE_ ## name BENCH_STARTUP_INSTANCE_ ## name; \
-    void BENCH_ ## name ## _METHOD()
-
+#define BENCHMARK(name)                                                                                      \
+    void BENCH_##name##_METHOD();                                                                            \
+    struct BENCH_STARTUP_TYPE_##name {                                                                       \
+        BENCH_STARTUP_TYPE_##name() { all_registered_benchmarks.push_back({#name, BENCH_##name##_METHOD}); } \
+    };                                                                                                       \
+    static BENCH_STARTUP_TYPE_##name BENCH_STARTUP_INSTANCE_##name;                                          \
+    void BENCH_##name##_METHOD()
 
 // HACK: Templating the body function type makes inlining significantly more likely.
 template <typename FUNC>

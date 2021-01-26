@@ -7,14 +7,8 @@
 #include "vector_simulator.h"
 
 const std::unordered_map<std::string, const std::string> GATE_CANONICAL_NAMES{
-    {"H", "H_XZ"},
-    {"S", "SQRT_Z"},
-    {"S_DAG", "SQRT_Z_DAG"},
-    {"NOT", "X"},
-    {"CNOT", "ZCX"},
-    {"CX", "ZCX"},
-    {"CY", "ZCY"},
-    {"CZ", "ZCZ"},
+    {"H", "H_XZ"},   {"S", "SQRT_Z"}, {"S_DAG", "SQRT_Z_DAG"}, {"NOT", "X"},
+    {"CNOT", "ZCX"}, {"CX", "ZCX"},   {"CY", "ZCY"},           {"CZ", "ZCZ"},
 };
 
 const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES{

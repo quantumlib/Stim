@@ -26,17 +26,10 @@ struct FrameSimulator {
     FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
 
     static simd_bit_table sample(
-            const Circuit &circuit,
-            const simd_bits &reference_sample,
-            size_t num_samples,
-            std::mt19937_64 &rng);
+        const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng);
     static void sample_out(
-            const Circuit &circuit,
-            const simd_bits &reference_sample,
-            size_t num_samples,
-            FILE *out,
-            SampleFormat format,
-            std::mt19937_64 &rng);
+        const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+        std::mt19937_64 &rng);
 
     PauliString get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);
