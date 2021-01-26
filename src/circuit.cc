@@ -40,7 +40,9 @@ std::vector<std::string> tokenize(const std::string &line, size_t start, size_t 
     return tokens;
 }
 
-double parse_double(const std::string &text) { return std::stold(text); }
+double parse_double(const std::string &text) {
+    return std::stold(text);
+}
 
 size_t parse_size_t(const std::string &text) {
     if (std::stoll(text) < 0) {
@@ -160,31 +162,39 @@ bool Operation::operator==(const Operation &other) const {
            target_data.arg == other.target_data.arg && target_data.flags == other.target_data.flags;
 }
 
-bool Operation::operator!=(const Operation &other) const { return !(*this == other); }
+bool Operation::operator!=(const Operation &other) const {
+    return !(*this == other);
+}
 
 bool Instruction::operator==(const Instruction &other) const {
     return started_block == other.started_block && ended_block == other.ended_block && operation == other.operation;
 }
 
-bool Instruction::operator!=(const Instruction &other) const { return !(*this == other); }
+bool Instruction::operator!=(const Instruction &other) const {
+    return !(*this == other);
+}
 
 bool Instruction::operator==(const Operation &other) const {
     return !started_block && !ended_block && operation == other;
 }
 
-bool Instruction::operator!=(const Operation &other) const { return !(*this == other); }
+bool Instruction::operator!=(const Operation &other) const {
+    return !(*this == other);
+}
 
 bool Circuit::operator==(const Circuit &other) const {
     return num_qubits == other.num_qubits && operations == other.operations;
 }
-bool Circuit::operator!=(const Circuit &other) const { return !(*this == other); }
+bool Circuit::operator!=(const Circuit &other) const {
+    return !(*this == other);
+}
 
 std::string read_line(FILE *file) {
-    std::string result {};
+    std::string result{};
     while (true) {
         int i = getc(file);
         if (i == EOF) {
-            return  "\n";
+            return "\n";
         }
         if (i == '\n') {
             return result;
@@ -196,27 +206,30 @@ std::string read_line(FILE *file) {
 bool CircuitReader::read_more(std::string text, bool inside_block, bool stop_after_measurement) {
     size_t s = 0;
     size_t k = 0;
-    return read_more_helper([&](){
-        if (k >= text.size() || text[k] == '\0') {
-            return std::string(1, '\n');
-        }
-        while (true) {
-            if (text[k] == '\n' || text[k] == '\0') {
-                auto result = text.substr(s, k - s);
-                k++;
-                s = k;
-                return result;
+    return read_more_helper(
+        [&]() {
+            if (k >= text.size() || text[k] == '\0') {
+                return std::string(1, '\n');
             }
-            k++;
-        }
-    }, inside_block, stop_after_measurement);
+            while (true) {
+                if (text[k] == '\n' || text[k] == '\0') {
+                    auto result = text.substr(s, k - s);
+                    k++;
+                    s = k;
+                    return result;
+                }
+                k++;
+            }
+        },
+        inside_block, stop_after_measurement);
 }
 
 bool CircuitReader::read_more(FILE *file, bool inside_block, bool stop_after_measurement) {
-    return read_more_helper([&](){ return read_line(file); }, inside_block, stop_after_measurement);
+    return read_more_helper([&]() { return read_line(file); }, inside_block, stop_after_measurement);
 }
 
-bool CircuitReader::read_more_helper(const std::function<std::string(void)>& line_getter, bool inside_block, bool stop_after_measurement) {
+bool CircuitReader::read_more_helper(
+    const std::function<std::string(void)> &line_getter, bool inside_block, bool stop_after_measurement) {
     bool read_any = false;
     bool can_fuse = false;
     while (true) {
@@ -265,7 +278,7 @@ bool CircuitReader::read_more_helper(const std::function<std::string(void)>& lin
         }
         can_fuse = true;
         read_any = true;
-   }
+    }
 }
 
 std::ostream &operator<<(std::ostream &out, const Operation &op) {
@@ -319,13 +332,17 @@ std::string Operation::str() const {
     return s.str();
 }
 
-OperationData::OperationData(size_t target) : targets({target}), flags({false}), arg(0) {}
+OperationData::OperationData(size_t target) : targets({target}), flags({false}), arg(0) {
+}
 OperationData::OperationData(std::initializer_list<size_t> init_targets)
-    : targets(init_targets), flags(init_targets.size(), false), arg(0) {}
+    : targets(init_targets), flags(init_targets.size(), false), arg(0) {
+}
 OperationData::OperationData(const std::vector<size_t> &init_targets)
-    : targets({init_targets}), flags(init_targets.size(), false), arg(0) {}
+    : targets({init_targets}), flags(init_targets.size(), false), arg(0) {
+}
 OperationData::OperationData(const std::vector<size_t> &init_targets, std::vector<bool> init_flags, float init_arg)
-    : targets(init_targets), flags(init_flags), arg(init_arg) {}
+    : targets(init_targets), flags(init_flags), arg(init_arg) {
+}
 
 OperationData &OperationData::operator+=(const OperationData &other) {
     targets.insert(targets.end(), other.targets.begin(), other.targets.end());

@@ -5,9 +5,12 @@
 #include "gate_data.h"
 
 TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
-    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {}
+    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {
+}
 
-bool TableauSimulator::is_deterministic(size_t target) const { return !inv_state.zs[target].xs.not_zero(); }
+bool TableauSimulator::is_deterministic(size_t target) const {
+    return !inv_state.zs[target].xs.not_zero();
+}
 
 void TableauSimulator::measure(const OperationData &target_data) {
     // Ensure measurement observables are collapsed.

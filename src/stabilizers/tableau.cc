@@ -72,9 +72,12 @@ Tableau::Tableau(size_t num_qubits) : num_qubits(num_qubits), xs(num_qubits), zs
 }
 
 TableauHalf::TableauHalf(size_t num_qubits)
-    : num_qubits(num_qubits), xt(num_qubits, num_qubits), zt(num_qubits, num_qubits), signs(num_qubits) {}
+    : num_qubits(num_qubits), xt(num_qubits, num_qubits), zt(num_qubits, num_qubits), signs(num_qubits) {
+}
 
-Tableau Tableau::identity(size_t num_qubits) { return Tableau(num_qubits); }
+Tableau Tableau::identity(size_t num_qubits) {
+    return Tableau(num_qubits);
+}
 
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
@@ -140,7 +143,9 @@ bool Tableau::operator==(const Tableau &other) const {
            zs.zt == other.zs.zt && xs.signs == other.xs.signs && zs.signs == other.zs.signs;
 }
 
-bool Tableau::operator!=(const Tableau &other) const { return !(*this == other); }
+bool Tableau::operator!=(const Tableau &other) const {
+    return !(*this == other);
+}
 
 void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());

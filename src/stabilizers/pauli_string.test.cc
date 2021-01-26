@@ -119,7 +119,9 @@ TEST(pauli_string, multiplication) {
     ASSERT_EQ(xxi, PauliString::from_str("-ZZY"));
 }
 
-TEST(pauli_string, identity) { ASSERT_EQ(PauliString(5).str(), "+_____"); }
+TEST(pauli_string, identity) {
+    ASSERT_EQ(PauliString(5).str(), "+_____");
+}
 
 TEST(pauli_string, gather) {
     auto p = PauliString::from_str("-____XXXXYYYYZZZZ");

@@ -2,14 +2,18 @@
 
 #include "tableau.h"
 
-void Tableau::prepend_X(size_t q) { zs[q].sign ^= 1; }
+void Tableau::prepend_X(size_t q) {
+    zs[q].sign ^= 1;
+}
 
 void Tableau::prepend_Y(size_t q) {
     xs[q].sign ^= 1;
     zs[q].sign ^= 1;
 }
 
-void Tableau::prepend_Z(size_t q) { xs[q].sign ^= 1; }
+void Tableau::prepend_Z(size_t q) {
+    xs[q].sign ^= 1;
+}
 
 void Tableau::prepend(const PauliStringRef &op) {
     assert(op.num_qubits == num_qubits);
@@ -17,7 +21,9 @@ void Tableau::prepend(const PauliStringRef &op) {
     xs.signs ^= op.zs;
 }
 
-void Tableau::prepend_H_XZ(const size_t q) { xs[q].swap_with(zs[q]); }
+void Tableau::prepend_H_XZ(const size_t q) {
+    xs[q].swap_with(zs[q]);
+}
 
 void Tableau::prepend_H_YZ(const size_t q) {
     PauliStringRef x = xs[q];
@@ -117,9 +123,13 @@ void Tableau::prepend_XCY(size_t control, size_t target) {
     prepend_H_XY(target);
 }
 
-void Tableau::prepend_XCZ(size_t control, size_t target) { prepend_ZCX(target, control); }
+void Tableau::prepend_XCZ(size_t control, size_t target) {
+    prepend_ZCX(target, control);
+}
 
-void Tableau::prepend_YCX(size_t control, size_t target) { prepend_XCY(target, control); }
+void Tableau::prepend_YCX(size_t control, size_t target) {
+    prepend_XCY(target, control);
+}
 
 void Tableau::prepend_YCY(size_t control, size_t target) {
     prepend_H_YZ(control);
@@ -129,4 +139,6 @@ void Tableau::prepend_YCY(size_t control, size_t target) {
     prepend_H_YZ(control);
 }
 
-void Tableau::prepend_YCZ(size_t control, size_t target) { prepend_ZCY(target, control); }
+void Tableau::prepend_YCZ(size_t control, size_t target) {
+    prepend_ZCY(target, control);
+}

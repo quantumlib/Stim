@@ -65,7 +65,8 @@ struct CircuitReader {
     std::vector<Operation> ops;
     bool read_more(std::string text, bool inside_block, bool stop_after_measurement);
     bool read_more(FILE *file, bool inside_block, bool stop_after_measurement);
-    bool read_more_helper(const std::function<std::string(void)>& line_getter, bool inside_block, bool stop_after_measurement);
+    bool read_more_helper(
+        const std::function<std::string(void)> &line_getter, bool inside_block, bool stop_after_measurement);
 };
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);

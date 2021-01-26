@@ -31,7 +31,8 @@ FrameSimulator::FrameSimulator(
       z_table(init_num_qubits, num_samples),
       m_table(num_measurements, num_samples),
       rng_buffer(num_samples),
-      rng(rng) {}
+      rng(rng) {
+}
 
 simd_bit_table FrameSimulator::unpack_measurements(const simd_bits &reference_sample) {
     auto result = m_table.transposed();

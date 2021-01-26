@@ -62,10 +62,7 @@ TEST(circuit, from_text) {
                            "  Y 2 #####\n"
                            "} #####"),
         Circuit(std::vector<Operation>{
-            {"X", OperationData({0})},
-            {"Y", OperationData({1, 2})},
-            {"Y", OperationData({1, 2})}
-        }));
+            {"X", OperationData({0})}, {"Y", OperationData({1, 2})}, {"Y", OperationData({1, 2})}}));
 
     ASSERT_EQ(
         Circuit::from_text("X 0\n"

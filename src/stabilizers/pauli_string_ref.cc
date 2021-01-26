@@ -6,7 +6,8 @@
 
 PauliStringRef::PauliStringRef(
     size_t init_num_qubits, bit_ref init_sign, simd_bits_range_ref init_xs, simd_bits_range_ref init_zs)
-    : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {}
+    : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {
+}
 
 std::string PauliStringRef::sparse_str() const {
     std::stringstream out;
@@ -56,7 +57,9 @@ bool PauliStringRef::operator==(const PauliStringRef &other) const {
     return num_qubits == other.num_qubits && sign == other.sign && xs == other.xs && zs == other.zs;
 }
 
-bool PauliStringRef::operator!=(const PauliStringRef &other) const { return !(*this == other); }
+bool PauliStringRef::operator!=(const PauliStringRef &other) const {
+    return !(*this == other);
+}
 
 std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
     out << "+-"[ps.sign];

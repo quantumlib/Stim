@@ -9,9 +9,13 @@
 
 #include "pauli_string.h"
 
-TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau) { tableau.do_transpose_quadrants(); }
+TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau) {
+    tableau.do_transpose_quadrants();
+}
 
-TableauTransposedRaii::~TableauTransposedRaii() { tableau.do_transpose_quadrants(); }
+TableauTransposedRaii::~TableauTransposedRaii() {
+    tableau.do_transpose_quadrants();
+}
 
 template <typename FUNC>
 inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q, FUNC body) {

@@ -12,7 +12,8 @@ simd_bit_table::simd_bit_table(size_t min_bits_major, size_t min_bits_minor)
       num_simd_words_minor(simd_bits::min_bits_to_num_simd_words(min_bits_minor)),
       data(
           simd_bits::min_bits_to_num_bits_padded(min_bits_minor) *
-          simd_bits::min_bits_to_num_bits_padded(min_bits_major)) {}
+          simd_bits::min_bits_to_num_bits_padded(min_bits_major)) {
+}
 
 simd_bit_table simd_bit_table::identity(size_t n) {
     simd_bit_table result(n, n);
@@ -22,13 +23,17 @@ simd_bit_table simd_bit_table::identity(size_t n) {
     return result;
 }
 
-void simd_bit_table::clear() { data.clear(); }
+void simd_bit_table::clear() {
+    data.clear();
+}
 
 bool simd_bit_table::operator==(const simd_bit_table &other) const {
     return num_simd_words_minor == other.num_simd_words_minor && num_simd_words_major == other.num_simd_words_major &&
            data == other.data;
 }
-bool simd_bit_table::operator!=(const simd_bit_table &other) const { return !(*this == other); }
+bool simd_bit_table::operator!=(const simd_bit_table &other) const {
+    return !(*this == other);
+}
 
 simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t n) const {
     assert(num_major_bits_padded() >= n && num_minor_bits_padded() >= n);

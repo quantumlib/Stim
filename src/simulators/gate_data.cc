@@ -120,7 +120,8 @@ const std::unordered_map<std::string, const std::vector<std::vector<std::complex
     {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
 };
 
-void do_nothing_pst(FrameSimulator &p, const OperationData &target_data) {}
+void do_nothing_pst(FrameSimulator &p, const OperationData &target_data) {
+}
 
 const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>>
     SIM_BULK_PAULI_FRAMES_GATE_DATA{
