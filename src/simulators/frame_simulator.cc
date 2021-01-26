@@ -223,7 +223,8 @@ void FrameSimulator::YCZ(const OperationData &target_data) {
     });
 }
 
-void FrameSimulator::DEPOLARIZE1(const OperationData &target_data, float probability) {
+void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
+    auto probability = target_data.arg;
     const auto &targets = target_data.targets;
     RareErrorIterator skipper(probability);
     auto n = targets.size() * num_samples_raw;
@@ -241,7 +242,8 @@ void FrameSimulator::DEPOLARIZE1(const OperationData &target_data, float probabi
     }
 }
 
-void FrameSimulator::DEPOLARIZE2(const OperationData &target_data, float probability) {
+void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
+    auto probability = target_data.arg;
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     RareErrorIterator skipper(probability);

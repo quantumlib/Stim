@@ -3,6 +3,7 @@
 #include <queue>
 
 #include "gate_data.h"
+#include "../probability_util.h"
 
 TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
     : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {
@@ -215,6 +216,44 @@ void TableauSimulator::YCZ(const OperationData &target_data) {
         auto q1 = targets[k];
         auto q2 = targets[k + 1];
         inv_state.prepend_YCZ(q1, q2);
+    }
+}
+
+void TableauSimulator::DEPOLARIZE1(const OperationData &target_data) {
+    auto probability = target_data.arg;
+    const auto &targets = target_data.targets;
+    RareErrorIterator skipper(probability);
+    auto n = targets.size();
+    while (true) {
+        size_t s = skipper.next(rng);
+        if (s >= n) {
+            break;
+        }
+        auto q = targets[s];
+        auto p = 1 + (rng() % 3);
+        inv_state.xs.signs[q] ^= p & 1;
+        inv_state.zs.signs[q] ^= p & 2;
+    }
+}
+
+void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
+    auto probability = target_data.arg;
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    RareErrorIterator skipper(probability);
+    auto n = targets.size() >> 1;
+    while (true) {
+        size_t s = skipper.next(rng);
+        if (s >= n) {
+            break;
+        }
+        auto p = 1 + (rng() % 15);
+        auto q1 = targets[s << 1];
+        auto q2 = targets[1 | (s << 1)];
+        inv_state.xs.signs[q1] ^= p & 1;
+        inv_state.zs.signs[q1] ^= p & 2;
+        inv_state.xs.signs[q2] ^= p & 4;
+        inv_state.zs.signs[q2] ^= p & 8;
     }
 }
 

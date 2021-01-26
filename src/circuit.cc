@@ -231,7 +231,6 @@ bool CircuitReader::read_more(FILE *file, bool inside_block, bool stop_after_mea
 bool CircuitReader::read_more_helper(
     const std::function<std::string(void)> &line_getter, bool inside_block, bool stop_after_measurement) {
     bool read_any = false;
-    bool can_fuse = false;
     while (true) {
         auto line = line_getter();
         if (line == "\n") {
@@ -259,8 +258,7 @@ bool CircuitReader::read_more_helper(
                 for (size_t k = 0; k < instruction.operation.target_data.targets[0]; k++) {
                     ops.insert(ops.end(), sub.ops.begin(), sub.ops.end());
                 }
-                can_fuse = false;
-                continue;
+                return true;
             } else {
                 throw std::out_of_range("'" + instruction.operation.name + "' is not a block starting instruction.");
             }
@@ -270,13 +268,12 @@ bool CircuitReader::read_more_helper(
             continue;
         }
 
-        if (!can_fuse || !ops.back().try_fuse_with(instruction.operation)) {
+        if (!read_any || !ops.back().try_fuse_with(instruction.operation)) {
             ops.push_back(instruction.operation);
         }
         if (stop_after_measurement && instruction.operation.name == "M") {
             return true;
         }
-        can_fuse = true;
         read_any = true;
     }
 }

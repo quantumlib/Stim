@@ -10,14 +10,16 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
-    std::vector<size_t> targets;
+    OperationData op_data{};
     for (size_t k = 0; k < num_qubits; k++) {
-        targets.push_back(k);
+        op_data.targets.push_back(k);
+        op_data.flags.push_back(false);
     }
+    op_data.arg = probability;
 
-    benchmark_go([&]() { sim.DEPOLARIZE1(targets, probability); })
+    benchmark_go([&]() { sim.DEPOLARIZE1(op_data); })
         .goal_millis(5)
-        .show_rate("OpQubits", targets.size() * num_samples);
+        .show_rate("OpQubits", op_data.targets.size() * num_samples);
 }
 
 BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
@@ -27,14 +29,16 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
-    std::vector<size_t> targets;
+    OperationData op_data{};
     for (size_t k = 0; k < num_qubits; k++) {
-        targets.push_back(k);
+        op_data.targets.push_back(k);
+        op_data.flags.push_back(false);
     }
+    op_data.arg = probability;
 
-    benchmark_go([&]() { sim.DEPOLARIZE2(targets, probability); })
+    benchmark_go([&]() { sim.DEPOLARIZE2(op_data); })
         .goal_millis(5)
-        .show_rate("OpQubits", targets.size() * num_samples);
+        .show_rate("OpQubits", op_data.targets.size() * num_samples);
 }
 
 BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {

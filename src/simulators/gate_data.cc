@@ -158,6 +158,9 @@ const std::unordered_map<std::string, std::function<void(FrameSimulator &, const
         {"YCX", &FrameSimulator::YCX},
         {"YCY", &FrameSimulator::YCY},
         {"YCZ", &FrameSimulator::YCZ},
+        // Noisy gates.
+        {"DEPOLARIZE1", &FrameSimulator::DEPOLARIZE1},
+        {"DEPOLARIZE2", &FrameSimulator::DEPOLARIZE2},
     };
 
 const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>>
@@ -195,6 +198,9 @@ const std::unordered_map<std::string, std::function<void(TableauSimulator &, con
         {"YCX", &TableauSimulator::YCX},
         {"YCY", &TableauSimulator::YCY},
         {"YCZ", &TableauSimulator::YCZ},
+        // Noisy gates.
+        {"DEPOLARIZE1", &TableauSimulator::DEPOLARIZE1},
+        {"DEPOLARIZE2", &TableauSimulator::DEPOLARIZE2},
     };
 
 const std::unordered_set<std::string> NOISY_GATE_NAMES{

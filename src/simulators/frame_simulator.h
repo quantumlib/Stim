@@ -59,8 +59,8 @@ struct FrameSimulator {
     void ISWAP(const OperationData &target_data);
     void do_named_op(const std::string &name, const OperationData &target_data);
 
-    void DEPOLARIZE1(const OperationData &target_data, float probability);
-    void DEPOLARIZE2(const OperationData &target_data, float probability);
+    void DEPOLARIZE1(const OperationData &target_data);
+    void DEPOLARIZE2(const OperationData &target_data);
 };
 
 #endif

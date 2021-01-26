@@ -99,6 +99,8 @@ struct TableauSimulator {
     void YCX(const OperationData &target_data);
     void YCY(const OperationData &target_data);
     void YCZ(const OperationData &target_data);
+    void DEPOLARIZE1(const OperationData &target_data);
+    void DEPOLARIZE2(const OperationData &target_data);
 
    private:
     /// Forces a qubit to have a collapsed Z observable.
