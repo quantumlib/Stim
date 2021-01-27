@@ -112,6 +112,11 @@ $ echo "
 
 ## Command line flags
 
+- `-shots=#`:
+    Run the circuit multiple times instead of one time.
+- `-frame0`:
+    Assume that a valid reference sample is for all measurements to return 0, so that the frame simulator can start
+    running immediately (without waiting for a reference sample from the tableau simulator).
 - `-repl`:
     Print measurement results interactively, with line separators, instead of all in one big blob the end of the circuit.
     Incompatible with several other flags.
@@ -119,8 +124,6 @@ $ echo "
     Specifies where to write results.
     If not specified, the `stdout` pipe is used.
     Specifying the output file in this way may be more performant than redirecting `stdout` to a file on the command line.
-- `-shots=#`:
-    Run the circuit multiple times instead of one time.
 - `-format=[name]`: Output format to use.
     - `01` (default):
         Human readable format.

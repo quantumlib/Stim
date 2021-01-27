@@ -99,13 +99,12 @@ constexpr uint8_t lg(size_t k) {
     return (uint8_t)t;
 }
 
-template <typename word_t>
 void rc_address_word_swap(simd_bit_table &t) {
-    constexpr uint16_t block_diameter = sizeof(word_t) << 3;
+    constexpr uint16_t block_diameter = sizeof(__m128i) << 3;
     constexpr uint8_t block_shift = lg(block_diameter);
     size_t n = t.num_major_bits_padded();
     size_t num_blocks = n >> block_shift;
-    word_t *words = (word_t *)t.data.ptr_simd;
+    auto *words = &t.data.ptr_simd[0].u128[0];
     for (size_t block_row = 0; block_row < num_blocks; block_row++) {
         for (size_t block_col = block_row + 1; block_col < num_blocks; block_col++) {
             size_t rc = block_row * n + block_col;
@@ -131,7 +130,7 @@ void simd_bit_table::do_square_transpose() {
         rc3456_address_bit_rotate_swap<16>(*this, base, end);
         rc3456_address_bit_rotate_swap<8>(*this, base, end);
     }
-    rc_address_word_swap<__m128i>(*this);
+    rc_address_word_swap(*this);
 }
 
 simd_bit_table simd_bit_table::transposed() const {
@@ -149,8 +148,8 @@ void simd_bit_table::transpose_into(simd_bit_table &out) const {
     for (size_t min = 0; min < n_min; min += 128) {
         for (size_t maj = 0; maj < n_maj; maj += 128) {
             for (size_t common = 0; common < 128; common++) {
-                __m128i *dst = (__m128i *)out[min | common].ptr_simd;
-                __m128i *src = (__m128i *)(*this)[maj | common].ptr_simd;
+                auto *dst = &out[min | common].ptr_simd[0].u128[0];
+                auto *src = &(*this)[maj | common].ptr_simd[0].u128[0];
                 dst[maj >> 7] = src[min >> 7];
             }
         }

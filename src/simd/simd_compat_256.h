@@ -1,9 +1,18 @@
 #include <immintrin.h>
 
 #include "simd_util.h"
+#include <iostream>
 
 struct simd_word {
-    __m256i val;
+    union {
+        __m256i val;
+        __m128i u128[2];
+        uint64_t u64[4];
+        uint8_t u8[32];
+    };
+
+    inline simd_word() : val(__m256i {}) {}
+    inline simd_word(__m256i val) : val(val) {}
 
     inline static simd_word tile8(uint8_t pattern) { return {_mm256_set1_epi8(pattern)}; }
 
@@ -14,8 +23,7 @@ struct simd_word {
     inline static simd_word tile64(uint64_t pattern) { return {_mm256_set1_epi64x(pattern)}; }
 
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
-        auto p = (uint64_t *)&val;
-        return p[0] | p[1] | p[2] | p[3];
+        return u64[0] | u64[1] | u64[2] | u64[3];
     }
 
     inline simd_word &operator^=(const simd_word &other) {
@@ -46,8 +54,7 @@ struct simd_word {
     inline simd_word rightshift_tile64(uint8_t offset) { return {_mm256_srli_epi64(val, offset)}; }
 
     inline uint16_t popcount() const {
-        auto p = (uint64_t *)&val;
-        return popcnt64(p[0]) + popcnt64(p[1]) + popcnt64(p[2]) + (uint16_t)popcnt64(p[3]);
+        return popcnt64(u64[0]) + popcnt64(u64[1]) + popcnt64(u64[2]) + (uint16_t)popcnt64(u64[3]);
     }
 
     /// For each 128 bit word pair between the two registers, the byte order goes from this:

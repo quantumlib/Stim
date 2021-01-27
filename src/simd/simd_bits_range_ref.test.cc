@@ -183,9 +183,9 @@ TEST(simd_bits_range_ref, not_zero256) {
 }
 
 TEST(simd_bits_range_ref, word_range_ref) {
-    alignas(64) uint64_t data[16]{};
-    simd_bits_range_ref ref((simd_word *)data, sizeof(data) / sizeof(simd_word));
-    const simd_bits_range_ref cref((simd_word *)data, sizeof(data) / sizeof(simd_word));
+    simd_word d[sizeof(uint64_t) * 16 / sizeof(simd_word)]{};
+    simd_bits_range_ref ref(d, sizeof(d) / sizeof(simd_word));
+    const simd_bits_range_ref cref(d, sizeof(d) / sizeof(simd_word));
     auto r1 = ref.word_range_ref(1, 2);
     auto r2 = ref.word_range_ref(2, 2);
     r1[1] = true;

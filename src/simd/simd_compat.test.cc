@@ -1,6 +1,7 @@
 #include "simd_compat.h"
 
 #include <gtest/gtest.h>
+
 TEST(simd_compat, popcnt64) {
     ASSERT_EQ(popcnt64(0), 0);
     ASSERT_EQ(popcnt64(1), 1);
@@ -22,7 +23,7 @@ TEST(simd_compat, popcnt64) {
 TEST(simd_compat, popcount) {
     if (sizeof(simd_word) == 256 / 8) {
         simd_word w{};
-        auto p = (uint64_t *)&w.val;
+        auto p = &w.u64[0];
         p[0] = 0;
         ASSERT_EQ(w.popcount(), 0);
         p[0] = 1;
@@ -68,7 +69,7 @@ TEST(simd_compat, popcount) {
         }
     } else if (sizeof(simd_word) == 128 / 8) {
         simd_word w{};
-        auto p = (uint64_t *)&w.val;
+        auto p = &w.u64[0];
         p[0] = 0;
         ASSERT_EQ(w.popcount(), 0);
         p[0] = 1;
@@ -111,8 +112,8 @@ TEST(simd_compat, popcount) {
 TEST(simd_compat, do_interleave8_tile128) {
     simd_word t1{};
     simd_word t2{};
-    auto c1 = (uint8_t *)&t1;
-    auto c2 = (uint8_t *)&t2;
+    auto c1 = t1.u8;
+    auto c2 = t2.u8;
     for (uint8_t k = 0; k < (uint8_t)sizeof(uint64_t) * 2; k++) {
         c1[k] = k + 1;
         c2[k] = k + 128;
@@ -122,4 +123,17 @@ TEST(simd_compat, do_interleave8_tile128) {
         ASSERT_EQ(c1[k], k % 2 == 0 ? (k / 2) + 1 : (k / 2) + 128);
         ASSERT_EQ(c2[k], k % 2 == 0 ? (k / 2) + 1 + 8 : (k / 2) + 128 + 8);
     }
+}
+
+TEST(simd_word, operator_bool) {
+    simd_word w{};
+    auto p = &w.u64[0];
+    ASSERT_EQ((bool)w, false);
+    p[0] = 5;
+    ASSERT_EQ((bool)w, true);
+    p[0] = 0;
+    p[1] = 5;
+    ASSERT_EQ((bool)w, true);
+    p[1] = 0;
+    ASSERT_EQ((bool)w, false);
 }

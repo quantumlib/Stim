@@ -49,3 +49,17 @@ jobs:
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
     - run: make stim_test
     - run: out/stim_test
+  test_o3:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - run: |
+        cd ..
+        git clone https://github.com/google/googletest.git -b release-1.10.0
+        mkdir googletest/build && cd googletest/build
+        cmake .. -DBUILD_GMOCK=OFF
+        make
+        sudo make install
+    - run: cmake . -DSIMD_WIDTH=256
+    - run: make stim_test_o3
+    - run: out/stim_test_o3

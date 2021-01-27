@@ -4,6 +4,7 @@
 
 std::vector<const char *> known_arguments{
     "-shots",
+    "-frame0",
     "-repl",
     "-format",
     "-out",
@@ -23,6 +24,7 @@ int main(int argc, const char **argv) {
     SampleFormat format = format_values[find_enum_argument(
         "-format", SAMPLE_FORMAT_01, format_names.size(), format_names.data(), argc, argv)];
     bool interactive = find_bool_argument("-repl", argc, argv);
+    bool frame0 = find_bool_argument("-frame0", argc, argv);
     int samples = (size_t)find_int_argument("-shots", 1, 0, 1 << 30, argc, argv);
     const char *out_path = find_argument("-out", argc, argv);
     FILE *out;
@@ -44,9 +46,17 @@ int main(int argc, const char **argv) {
         std::cerr << "Incompatible arguments. Binary output format and repl.\n";
         exit(EXIT_FAILURE);
     }
+    if (interactive && frame0) {
+        std::cerr << "Incompatible arguments. -repl and -frame0.\n";
+        exit(EXIT_FAILURE);
+    }
 
     std::mt19937_64 rng((std::random_device{})());
-    if (samples == 1 && format == SAMPLE_FORMAT_01) {
+    if (frame0) {
+        auto circuit = Circuit::from_file(stdin);
+        simd_bits ref(circuit.num_measurements);
+        FrameSimulator::sample_out(circuit, ref, samples, out, format, rng);
+    } else if (samples == 1 && format == SAMPLE_FORMAT_01) {
         TableauSimulator::sample_stream(stdin, out, interactive, rng);
     } else {
         auto circuit = Circuit::from_file(stdin);

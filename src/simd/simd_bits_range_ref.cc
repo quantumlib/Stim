@@ -24,7 +24,7 @@ void simd_bits_range_ref::swap_with(simd_bits_range_ref other) {
 }
 
 void simd_bits_range_ref::clear() {
-    memset(ptr_simd, 0, num_u8_padded());
+    memset(u8, 0, num_u8_padded());
 }
 
 bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
