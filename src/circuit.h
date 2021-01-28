@@ -6,8 +6,25 @@
 #include <vector>
 
 enum SampleFormat {
+    /// Human readable format.
+    ///
+    /// For each shot:
+    ///     For each measurement:
+    ///         Output '0' if false, '1' if true
+    ///     Output '\n'
     SAMPLE_FORMAT_01,
+    /// Binary format.
+    ///
+    /// For each shot:
+    ///     for each group of 8 measurement (padded with 0s if needed):
+    ///         Output a bit packed byte (least significant bit of byte has first measurement)
     SAMPLE_FORMAT_B8,
+    /// Transposed binary format.
+    ///
+    /// For each measurement:
+    ///     for each group of 8 shots (padded with 0s if needed):
+    ///         Output bit packed bytes (least significant bit of first byte has first shot)
+    SAMPLE_FORMAT_PTB64,
 };
 
 struct OperationData {

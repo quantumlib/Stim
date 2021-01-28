@@ -42,20 +42,53 @@ simd_bit_table FrameSimulator::unpack_measurements(const simd_bits &reference_sa
     return result;
 }
 
-void FrameSimulator::unpack_write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) {
-    auto result = unpack_measurements(reference_sample);
-    for (size_t s = 0; s < num_samples_raw; s++) {
-        if (format == SAMPLE_FORMAT_B8) {
-            fwrite(result[s].u64, 1, (num_measurements_raw + 7) >> 3, out);
-        } else if (format == SAMPLE_FORMAT_01) {
+void FrameSimulator::write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) {
+    if (format == SAMPLE_FORMAT_01) {
+        auto result = unpack_measurements(reference_sample);
+        for (size_t s = 0; s < num_samples_raw; s++) {
             for (size_t k = 0; k < num_measurements_raw; k++) {
                 putc('0' + result[s][k], out);
             }
             putc('\n', out);
-        } else {
-            throw std::out_of_range("Unrecognized output format.");
         }
+        return;
     }
+
+    if (format == SAMPLE_FORMAT_B8) {
+        auto result = unpack_measurements(reference_sample);
+        auto n = (num_measurements_raw + 7) >> 3;
+        for (size_t s = 0; s < num_samples_raw; s++) {
+            fwrite(result[s].u8, 1, n, out);
+        }
+        return;
+    }
+
+    if (format == SAMPLE_FORMAT_PTB64) {
+        auto f64 = num_samples_raw >> 6;
+        for (size_t s = 0; s < f64; s++) {
+            for (size_t m = 0; m < num_recorded_measurements; m++) {
+                uint64_t v = m_table[m].u64[s];
+                if (reference_sample[m]) {
+                    v = ~v;
+                }
+                fwrite(&v, 1, 64 >> 3, out);
+            }
+        }
+        if (num_samples_raw & 63) {
+            uint64_t mask = (uint64_t{1} << (num_samples_raw & 63)) - 1ULL;
+            for (size_t m = 0; m < num_recorded_measurements; m++) {
+                uint64_t v = m_table[m].u64[f64];
+                if (reference_sample[m]) {
+                    v = ~v;
+                }
+                v &= mask;
+                fwrite(&v, 1, 64 >> 3, out);
+            }
+        }
+        return;
+    }
+
+    throw std::out_of_range("Unrecognized output format.");
 }
 
 void FrameSimulator::reset_all() {
@@ -280,13 +313,13 @@ void FrameSimulator::sample_out(
         auto sim = FrameSimulator(circuit.num_qubits, GOOD_BLOCK_SIZE, circuit.num_measurements, rng);
         while (num_samples > GOOD_BLOCK_SIZE) {
             sim.reset_all_and_run(circuit);
-            sim.unpack_write_measurements(out, reference_sample, format);
+            sim.write_measurements(out, reference_sample, format);
             num_samples -= GOOD_BLOCK_SIZE;
         }
     }
     if (num_samples) {
         auto sim = FrameSimulator(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
         sim.reset_all_and_run(circuit);
-        sim.unpack_write_measurements(out, reference_sample, format);
+        sim.write_measurements(out, reference_sample, format);
     }
 }

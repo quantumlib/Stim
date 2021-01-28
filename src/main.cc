@@ -13,10 +13,12 @@ std::vector<const char *> known_arguments{
 std::vector<const char *> format_names{
     "01",
     "b8",
+    "ptb64",
 };
 std::vector<SampleFormat> format_values{
-    SAMPLE_FORMAT_01,
-    SAMPLE_FORMAT_B8,
+        SAMPLE_FORMAT_01,
+        SAMPLE_FORMAT_B8,
+        SAMPLE_FORMAT_PTB64,
 };
 
 int main(int argc, const char **argv) {

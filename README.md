@@ -127,13 +127,26 @@ $ echo "
 - `-format=[name]`: Output format to use.
     - `01` (default):
         Human readable format.
-        Prints "0" or "1" for each measurement.
-        Prints "\n" at the end of each shot.
+        Prints all the measurements from one shot before moving on to the next.
+        Prints '0' or '1' for each measurement.
+        Prints '\n' at the end of each shot.
     - `b8`:
-        Faster binary format.
-        Each byte holds 8 measurement results, ordered from least significant bit to most significant bit.
-        The number of measurement results from the circuit is increased to a multiple of 8 by padding with 0s.
-        There is no separator between shots (other than the padding).
+        Binary format.
+        Writes all the measurements from one shot before moving on to the next.
+        The number of measurements is padded up to a multiple of 8 using fake measurements that returned 0.
+        Measurements are combined into groups of 8.
+        The measurement results for a group are bit packed into a byte, ordered from least significant bit to most significant bit.
+        The byte for the first measurement group is printed, then the second, and so forth for all groups in order.
+        There is no separator between shots (other than the fake measurement padding).
+    - `ptb64`:
+        Partially transposed binary format.
+        The number of shots is padded up to a multiple of 64 using fake shots where all measurement results are 0.
+        Shots are combined into groups of 64.
+        All the measurements from one shot group are written before moving on to the next group.
+        Within a shot group, each of the circuit measurements has 64 results (one from each shot).
+        These 64 bits of information are packed into 8 bytes, ordered from first byte to last byte and then least significant bit to most significant bit.
+        The 8 bytes for the first measurement are output, then the 8 bytes for the next, and so forth for all measurements.
+        There is no separator between shot groups (other than the fake shot padding).
 
 ## Supported Gates
 

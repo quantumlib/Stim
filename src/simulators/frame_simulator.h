@@ -37,7 +37,7 @@ struct FrameSimulator {
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
-    void unpack_write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format);
+    void write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format);
     simd_bit_table unpack_measurements(const simd_bits &reference_sample);
 
     void measure(const OperationData &target_data);

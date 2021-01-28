@@ -251,7 +251,7 @@ TEST(PauliFrameSimulation, consistency) {
         "M 6");
 }
 
-TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
+TEST(PauliFrameSimulation, sample_out) {
     auto circuit = Circuit::from_text(
         "X 0\n"
         "M 1\n"
@@ -282,6 +282,21 @@ TEST(PauliFrameSimulation, unpack_write_measurements_ascii) {
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 0b0010);
+    }
+    ASSERT_EQ(getc(tmp), EOF);
+
+    tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_PTB64, SHARED_TEST_RNG());
+    rewind(tmp);
+    for (size_t k = 0; k < 4; k++) {
+        if (k == 1) {
+            ASSERT_EQ(getc(tmp), 0b11111);
+        } else {
+            ASSERT_EQ(getc(tmp), 0);
+        }
+        for (size_t k2 = 1; k2 < 64 >> 3; k2++) {
+            ASSERT_EQ(getc(tmp), 0);
+        }
     }
     ASSERT_EQ(getc(tmp), EOF);
 }
