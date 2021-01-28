@@ -15,4 +15,6 @@ struct RareErrorIterator {
 
 std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng);
 
+std::mt19937_64 externally_seeded_rng();
+
 #endif

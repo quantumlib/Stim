@@ -21,3 +21,10 @@ std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::
     }
     return result;
 }
+
+std::mt19937_64 externally_seeded_rng() {
+    std::random_device d;
+    std::seed_seq seq{d(), d(), d(), d(), d(), d(), d(), d()};
+    std::mt19937_64 result(seq);
+    return result;
+}

@@ -1,4 +1,5 @@
 #include "arg_parse.h"
+#include "probability_util.h"
 #include "simulators/frame_simulator.h"
 #include "simulators/tableau_simulator.h"
 
@@ -51,7 +52,7 @@ int main(int argc, const char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    std::mt19937_64 rng((std::random_device{})());
+    std::mt19937_64 rng = externally_seeded_rng();
     if (frame0) {
         auto circuit = Circuit::from_file(stdin);
         simd_bits ref(circuit.num_measurements);
