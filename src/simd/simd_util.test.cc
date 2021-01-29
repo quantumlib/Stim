@@ -136,3 +136,20 @@ TEST(simd_util, interleave_mask) {
     ASSERT_EQ(interleave_mask(16), 0x0000FFFF0000FFFFULL);
     ASSERT_EQ(interleave_mask(32), 0x00000000FFFFFFFFULL);
 }
+
+TEST(simd_util, popcnt64) {
+    for (size_t expected = 0; expected <= 64; expected++) {
+        std::vector<uint64_t> bits{};
+        for (size_t i = 0; i < 64; i++) {
+            bits.push_back(i < expected);
+        }
+        for (size_t reps = 0; reps < 100; reps++) {
+            std::shuffle(bits.begin(), bits.end(), SHARED_TEST_RNG());
+            uint64_t v = 0;
+            for (size_t i = 0; i < 64; i++) {
+                v |= bits[i] << i;
+            }
+            ASSERT_EQ(popcnt64(v), expected);
+        }
+    }
+}
