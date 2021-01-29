@@ -1,4 +1,5 @@
 #include "simd_compat.h"
+#include "../test_util.test.h"
 
 #include <gtest/gtest.h>
 
@@ -21,91 +22,33 @@ TEST(simd_compat, popcnt64) {
 }
 
 TEST(simd_compat, popcount) {
-    if (sizeof(simd_word) == 256 / 8) {
-        simd_word w{};
-        auto p = &w.u64[0];
-        p[0] = 0;
-        ASSERT_EQ(w.popcount(), 0);
-        p[0] = 1;
-        ASSERT_EQ(w.popcount(), 1);
-        p[0] = 2;
-        ASSERT_EQ(w.popcount(), 1);
-        p[0] = 3;
-        ASSERT_EQ(w.popcount(), 2);
-        p[0] = 0b1010111011011011010011111000011101010111101010101010110101011101ULL;
-        ASSERT_EQ(w.popcount(), 39);
-        p[1] = 0b1010111011011011010011111000011101010111101010101010110101011101ULL;
-        ASSERT_EQ(w.popcount(), 39 * 2);
-        p[2] = 0b1010111011011011010011111000011101010111101010101010110101011101ULL;
-        p[3] = 0b1010111011011011010011111000011101010111101010101010110101011101ULL;
-        ASSERT_EQ(w.popcount(), 39 * 4);
-        p[1] = 1;
-        ASSERT_EQ(w.popcount(), 39 * 3 + 1);
-        p[0] = UINT64_MAX;
-        p[1] = UINT64_MAX;
-        p[2] = UINT64_MAX;
-        p[3] = UINT64_MAX;
-        ASSERT_EQ(w.popcount(), 256);
-        for (size_t k = 0; k < 70000; k++) {
-            p[0] = k;
-            p[1] = k;
-            p[2] = k;
-            p[3] = k;
-            auto expected = 0;
-            size_t k2 = k;
-            while (k2) {
-                k2 &= k2 - 1;
-                expected++;
+    union {
+        simd_word w;
+        uint64_t p[sizeof(simd_word) / sizeof(uint64_t)]{};
+    } v{};
+    auto n = sizeof(simd_word) * 8;
+
+    for (size_t expected = 0; expected <= n; expected++) {
+        std::vector<uint64_t> bits{};
+        for (size_t i = 0; i < n; i++) {
+            bits.push_back(i < expected);
+        }
+        for (size_t reps = 0; reps < 100; reps++) {
+            std::shuffle(bits.begin(), bits.end(), SHARED_TEST_RNG());
+            for (size_t i = 0; i < n; i++) {
+                v.p[i >> 6] = 0;
             }
-            ASSERT_EQ(w.popcount(), expected * 4);
-        }
-        p[0] = 0;
-        p[1] = 0;
-        p[2] = 0;
-        p[3] = 0;
-        for (size_t k = 0; k < 256; k++) {
-            p[k >> 6] |= (1ULL << (k & 63));
-            ASSERT_EQ(w.popcount(), k + 1);
-        }
-    } else if (sizeof(simd_word) == 128 / 8) {
-        simd_word w{};
-        auto p = &w.u64[0];
-        p[0] = 0;
-        ASSERT_EQ(w.popcount(), 0);
-        p[0] = 1;
-        ASSERT_EQ(w.popcount(), 1);
-        p[0] = 2;
-        ASSERT_EQ(w.popcount(), 1);
-        p[0] = 3;
-        ASSERT_EQ(w.popcount(), 2);
-        p[0] = 0b1010111011011011010011111000011101010111101010101010110101011101ULL;
-        ASSERT_EQ(w.popcount(), 39);
-        p[1] = 0b1010111011011011010011111000011101010111101010101010110101011101ULL;
-        ASSERT_EQ(w.popcount(), 39 * 2);
-        p[1] = 1;
-        ASSERT_EQ(w.popcount(), 40);
-        p[0] = UINT64_MAX;
-        p[1] = UINT64_MAX;
-        ASSERT_EQ(w.popcount(), 128);
-        for (size_t k = 0; k < 70000; k++) {
-            p[0] = k;
-            p[1] = k;
-            auto expected = 0;
-            size_t k2 = k;
-            while (k2) {
-                k2 &= k2 - 1;
-                expected++;
+            for (size_t i = 0; i < n; i++) {
+                v.p[i >> 6] |= bits[i] << (i & 63);
             }
-            ASSERT_EQ(w.popcount(), expected * 2);
+            if (v.w.popcount() != expected) {
+                std::cerr << v.p[0] << "\n";
+                std::cerr << v.p[1] << "\n";
+                std::cerr << v.p[2] << "\n";
+                std::cerr << v.p[3] << "\n";
+            }
+            ASSERT_EQ(v.w.popcount(), expected);
         }
-        p[0] = 0;
-        p[1] = 0;
-        for (size_t k = 0; k < 128; k++) {
-            p[k >> 6] |= (1ULL << (k & 63));
-            ASSERT_EQ(w.popcount(), k + 1);
-        }
-    } else {
-        ASSERT_TRUE(false) << "Unrecognized size.";
     }
 }
 
