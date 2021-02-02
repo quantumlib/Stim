@@ -78,7 +78,9 @@ PauliString PauliString::from_str(const char *text) {
     if (text[0] == '+' || text[0] == '-') {
         text++;
     }
-    return PauliString::from_func(sign, strlen(text), [&](size_t i) { return text[i]; });
+    return PauliString::from_func(sign, strlen(text), [&](size_t i) {
+        return text[i];
+    });
 }
 
 PauliString PauliString::random(size_t num_qubits, std::mt19937_64 &rng) {

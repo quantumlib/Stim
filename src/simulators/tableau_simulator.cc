@@ -2,8 +2,8 @@
 
 #include <queue>
 
-#include "gate_data.h"
 #include "../probability_util.h"
+#include "gate_data.h"
 
 TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
     : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {
@@ -19,7 +19,22 @@ void TableauSimulator::measure(const OperationData &target_data) {
 
     // Record measurement results.
     for (size_t k = 0; k < target_data.targets.size(); k++) {
-        recorded_measurement_results.push(inv_state.zs.signs[target_data.targets[k]] ^ target_data.flags[k]);
+        auto q = target_data.targets[k];
+        recorded_measurement_results.push(inv_state.zs.signs[q] ^ target_data.metas[k]);
+    }
+}
+
+void TableauSimulator::measure_reset(const OperationData &target_data) {
+    // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+
+    // Ensure measurement observables are collapsed.
+    collapse(target_data);
+
+    // Record measurement results while triggering resets.
+    for (size_t k = 0; k < target_data.targets.size(); k++) {
+        auto q = target_data.targets[k];
+        recorded_measurement_results.push(inv_state.zs.signs[q] ^ target_data.metas[k]);
+        inv_state.zs.signs[q] = false;
     }
 }
 
@@ -29,7 +44,7 @@ void TableauSimulator::reset(const OperationData &target_data) {
 
     // Force the collapsed qubits into the desired state.
     for (size_t k = 0; k < target_data.targets.size(); k++) {
-        inv_state.zs.signs[target_data.targets[k]] = target_data.flags[k];
+        inv_state.zs.signs[target_data.targets[k]] = target_data.metas[k];
     }
 }
 
@@ -220,33 +235,18 @@ void TableauSimulator::YCZ(const OperationData &target_data) {
 }
 
 void TableauSimulator::DEPOLARIZE1(const OperationData &target_data) {
-    auto probability = target_data.arg;
-    const auto &targets = target_data.targets;
-    RareErrorIterator skipper(probability);
-    auto n = targets.size();
-    while (true) {
-        size_t s = skipper.next(rng);
-        if (s >= n) {
-            break;
-        }
-        auto q = targets[s];
+    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
         auto p = 1 + (rng() % 3);
         inv_state.xs.signs[q] ^= p & 1;
         inv_state.zs.signs[q] ^= p & 2;
-    }
+    });
 }
 
 void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
-    auto probability = target_data.arg;
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
-    RareErrorIterator skipper(probability);
     auto n = targets.size() >> 1;
-    while (true) {
-        size_t s = skipper.next(rng);
-        if (s >= n) {
-            break;
-        }
+    RareErrorIterator::for_samples(target_data.arg, n, rng, [&](size_t s) {
         auto p = 1 + (rng() % 15);
         auto q1 = targets[s << 1];
         auto q2 = targets[1 | (s << 1)];
@@ -254,7 +254,26 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
         inv_state.zs.signs[q1] ^= p & 2;
         inv_state.xs.signs[q2] ^= p & 4;
         inv_state.zs.signs[q2] ^= p & 8;
-    }
+    });
+}
+
+void TableauSimulator::X_ERROR(const OperationData &target_data) {
+    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+        inv_state.xs.signs[q] ^= true;
+    });
+}
+
+void TableauSimulator::Y_ERROR(const OperationData &target_data) {
+    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+        inv_state.xs.signs[q] ^= true;
+        inv_state.zs.signs[q] ^= true;
+    });
+}
+
+void TableauSimulator::Z_ERROR(const OperationData &target_data) {
+    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+        inv_state.zs.signs[q] ^= true;
+    });
 }
 
 void TableauSimulator::X(const OperationData &target_data) {
@@ -333,7 +352,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
                 putc('0' + sim.recorded_measurement_results.front(), out);
                 sim.recorded_measurement_results.pop();
             }
-            if (newline_after_measurements && op.name == "M") {
+            if (newline_after_measurements && MEASUREMENT_OP_NAMES.find(op.name) != MEASUREMENT_OP_NAMES.end()) {
                 putc('\n', out);
                 fflush(out);
             }

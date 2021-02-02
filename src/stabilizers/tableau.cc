@@ -9,6 +9,7 @@
 #include <sstream>
 #include <thread>
 
+#include "../simulators/gate_data.h"
 #include "pauli_string.h"
 #include "tableau_transposed_raii.h"
 
@@ -77,6 +78,17 @@ TableauHalf::TableauHalf(size_t num_qubits)
 
 Tableau Tableau::identity(size_t num_qubits) {
     return Tableau(num_qubits);
+}
+
+Tableau Tableau::named_gate(const std::string &name) {
+    const auto &data = GATE_TABLEAUS.at(name);
+    if (data.size() == 2) {
+        return Tableau::gate1(data[0], data[1]);
+    }
+    if (data.size() == 4) {
+        return Tableau::gate2(data[0], data[1], data[2], data[3]);
+    }
+    throw std::out_of_range(name);
 }
 
 Tableau Tableau::gate1(const char *x, const char *z) {
@@ -376,9 +388,15 @@ Tableau Tableau::inverse() const {
 
 void Tableau::do_transpose_quadrants() {
     if (num_qubits >= 1024) {
-        std::thread t1([&]() { xs.xt.do_square_transpose(); });
-        std::thread t2([&]() { xs.zt.do_square_transpose(); });
-        std::thread t3([&]() { zs.xt.do_square_transpose(); });
+        std::thread t1([&]() {
+            xs.xt.do_square_transpose();
+        });
+        std::thread t2([&]() {
+            xs.zt.do_square_transpose();
+        });
+        std::thread t3([&]() {
+            zs.xt.do_square_transpose();
+        });
         zs.zt.do_square_transpose();
         t1.join();
         t2.join();

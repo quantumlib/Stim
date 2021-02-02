@@ -45,7 +45,7 @@ Bit flip and measure a qubit:
 $ echo "
   X 0
   M 0
-" | stim
+" | ./stim --sample
 ```
 
 ```
@@ -59,7 +59,7 @@ $ echo "
   H 0
   CNOT 0 1 0 2
   M 0 1 2
-" | stim -shots=5
+" | ./stim --sample=5
 ```
 
 ```
@@ -94,7 +94,7 @@ $ echo "
   }
   DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
   M 0 2 4 6 8
-" | stim -shots=10
+" | ./stim --sample=10
 ```
 
 ```
@@ -110,50 +110,148 @@ $ echo "
 0000000000000000000000000000000000000000000001000100010001001000100011001100110000100
 ```
 
+Generate a large noisy surface code circuit with detector annotations,
+sample 10 shots of detection events from it,
+and print out the number of detection events that fired (1) vs didn't (0):
+
+```bash
+./stim --make_circuit=surface_unrotated --distance=15 --rounds=100 --noise_level=0.001 \
+    | ./stim --detect=10 \
+    | sed 's/\(.\)/\1\n/g' | sort | uniq -c | tail -n 2
+```
+
+```
+ 410560 0
+   9440 1
+```
+
 ## Command line flags
 
-- `-shots=#`:
-    Run the circuit multiple times instead of one time.
-- `-frame0`:
-    Assume that a valid reference sample is for all measurements to return 0, so that the frame simulator can start
+- `--help`:
+    Prints usage examples and exits.
+
+### Modes
+
+Only one mode can be specified.
+
+- `--repl`:
+    Interactive mode.
+    Print measurement results interactively as a circuit is typed into stdin.
+- `--sample` or `--sample=#`:
+    Measurement sampling mode.
+    Output measurement results from the given circuit.
+    If an integer argument is specified, run that many shots of the circuit.
+- `--detect` or `--detect=#`:
+    Detection event sampling mode.
+    Outputs whether or not measurement sets specified by `DETECTOR` instructions have been flipped by noise.
+    Assumes (does not verify) that all `DETECTOR` instructions corresponding to measurement sets with deterministic parity.
+    See also `--prepend_observables`, `--append_observables`.
+    If an integer argument is specified, run that many shots of the circuit.
+- `--make_circuit=surface_unrotated`:
+    Circuit generation mode.
+
+### Modifiers
+
+Modifiers tweak how a mode runs.
+Not all modifiers apply to all modes.
+
+- `--frame0`:
+    Significantly improve the performance of measurement sampling mode by asserting that it is possible to take a sample
+    from the given circuit where all measurement results are 0.
+    Allows the frame simulator to start immediately, without waiting for a reference sample from the tableau simulator.
+    If this assertion is wrong, the output samples can be corrected by xoring them against a valid sample from the circuit.
+    Requires measurement sampling mode.
+- `--prepend_observables`:
+    Requires detection event sampling mode.
+    In addition to outputting the values of detectors, output the values of Assume that a valid reference sample is for all measurements to return 0, so that the frame simulator can start
     running immediately (without waiting for a reference sample from the tableau simulator).
-- `-repl`:
-    Print measurement results interactively, with line separators, instead of all in one big blob the end of the circuit.
-    Incompatible with several other flags.
-- `-out=FILEPATH`:
-    Specifies where to write results.
+- `--in=FILEPATH`:
+    Specifies a file to read a circuit from.
+    If not specified, the `stdin` pipe is used.
+    Incompatible with interactive mode.
+- `--out=FILEPATH`:
+    Specifies a file to create or overwrite with results.
     If not specified, the `stdout` pipe is used.
-    Specifying the output file in this way may be more performant than redirecting `stdout` to a file on the command line.
-- `-format=[name]`: Output format to use.
+    Incompatible with interactive mode.
+- `--out_format=[name]`: Output format to use.
+    Incompatible with interactive mode.
+    Definition: a "sample" is one measurement result in measurement sampling mode or one detector/observable result in detection event sampling mode.
+    Definition: a "shot" is composed of all of the samples from a circuit.
+    Definition: a "sample location" is a measurement gate in measurement sampling mode, or a detector/observable in detection event sampling mode. 
     - `01` (default):
-        Human readable format.
-        Prints all the measurements from one shot before moving on to the next.
-        Prints '0' or '1' for each measurement.
+        Human readable ASCII format.
+        Prints all the samples from one shot before moving on to the next.
+        Prints '0' or '1' for each sample.
         Prints '\n' at the end of each shot.
+        Example all-true ASCII data (for 10 measurements, 4 shots):
+        ```
+        1111111111
+        1111111111
+        1111111111
+        1111111111
+        ```
+    - `hits`:
+        Human readable ASCII format.
+        Writes the indices of samples equal to 1, suffixed by a comma.
+        Shots are separated by a newline.
+        This format is more useful in `--detect` mode, where `1`s are rarer.
+        Example all-true output data (for 10 measurements, 4 shots):
+        ```
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9,
+        ```
     - `b8`:
         Binary format.
-        Writes all the measurements from one shot before moving on to the next.
-        The number of measurements is padded up to a multiple of 8 using fake measurements that returned 0.
-        Measurements are combined into groups of 8.
-        The measurement results for a group are bit packed into a byte, ordered from least significant bit to most significant bit.
-        The byte for the first measurement group is printed, then the second, and so forth for all groups in order.
-        There is no separator between shots (other than the fake measurement padding).
+        Writes all the samples from one shot before moving on to the next.
+        The number of samples is padded up to a multiple of 8 using fake samples set to 0.
+        Samples are combined into groups of 8.
+        The sample results for a group are bit packed into a byte, ordered from least significant bit to most significant bit.
+        The byte for the first sample group is printed, then the second, and so forth for all groups in order.
+        There is no separator between shots (other than the fake zero sample padding).
+        Example all-true output hex data (for 10 measurements, 4 shots):
+        ```
+        FF 30
+        FF 30
+        FF 30
+        FF 30
+        ```
     - `ptb64`:
         Partially transposed binary format.
-        The number of shots is padded up to a multiple of 64 using fake shots where all measurement results are 0.
+        The number of shots is padded up to a multiple of 64 using fake shots where all samples are 0.
         Shots are combined into groups of 64.
-        All the measurements from one shot group are written before moving on to the next group.
-        Within a shot group, each of the circuit measurements has 64 results (one from each shot).
-        These 64 bits of information are packed into 8 bytes, ordered from first byte to last byte and then least significant bit to most significant bit.
-        The 8 bytes for the first measurement are output, then the 8 bytes for the next, and so forth for all measurements.
-        There is no separator between shot groups (other than the fake shot padding).
+        All the samples from one shot group are written before moving on to the next group.
+        Within a shot group, each of the circuit sample locations has 64 results (one from each shot).
+        These 64 bits of information are packed into 8 bytes, ordered from first file byte to last file byte and then least significant bit to most significant bit.
+        The 8 bytes for the first sample location are output, then the 8 bytes for the next, and so forth for all sample locations.
+        There is no separator between shot groups.
+        Example all-true output hex data (for 3 measurements, 81 shots):
+        ```
+        FF FF FF FF FF FF FF FF
+        FF FF FF FF FF FF FF FF
+        FF FF FF FF FF FF FF FF
+        FF FF F1 00 00 00 00 00
+        FF FF F1 00 00 00 00 00
+        FF FF F1 00 00 00 00 00
+        ```
+- `--distance=#`:
+    Distance to use in circuit generation mode.
+    Defaults to 3.
+- `--rounds=#`:
+    Number of rounds to use in circuit generation mode.
+    Defaults to the same as distance.
+- `--noise_level=%f`:
+    Strength of depolarizing noise, from 0 to 1, to insert into generated circuits.
+    Defaults to 0 (none).
 
 ## Supported Gates
 
 Note: all gates support broadcasting over multiple targets.
 For example, `H 0 1 2` will apply a Hadamard gate to qubits 0, 1, and 2.
 Two qubit gates broadcast over each aligned pair of targets.
-For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
+For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and then `CNOT 2 3`.
+Broadcasting is always evaluated in left-to-right order.
 
 ### Single qubit gates
 
@@ -186,12 +284,12 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
 - `XCY`: X-basis-controlled Y operation. Qubit pairs are in name order.
 - `XCX`: X-basis-controlled X operation.
 
-### Non-unitary gates
+### Collapsing gates
 
 - `M`:
     Z-basis measurement.
     Examples: `M 0`, `M 2 1`, `M 0 !3 1 2`. 
-    Collapses the target qubits and reports their values.
+    Collapses the target qubits and reports their values (optionally flipped).
     Prefixing a target with a `!` indicates that the measurement result should be inverted when reported.
     In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
     (e.g. prefer `M 0 1 \n H 0` over `M 0 \n H 0 \n M 1`).
@@ -202,6 +300,17 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
     Equivalently, discards the target qubits for zero'd qubits.
     In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
     (e.g. prefer `R 0 1 \n X 0` over `R 0 \n X 0 \ nR 1`).
+- `MR`:
+    Z-basis measurement and reset.
+    Examples: `MR 0`, `MR 2 1`, `MR 0 !3 1 2`.
+    Collapses the target qubits, reports their values (optionally flipped), then resets them to the |0> state.
+    Prefixing a target with a `!` indicates that the measurement result should be inverted when reported.
+    (The ! does not change that the qubit is reset to |0>.)
+    In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
+    (e.g. prefer `MR 0 1 \n H 0` over `MR 0 \n H 0 \n MR 1`).
+
+### Noise Gates
+
 - `DEPOLARIZE1(p)`:
     Single qubit depolarizing error.
     Examples: `DEPOLARIZE1(0.001) 1`, `DEPOLARIZE1(0.0003) 0 2 4 6`.
@@ -214,8 +323,41 @@ For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and also `CNOT 2 3`.
     A two-qubit depolarizing kick is
     `IX`, `IY`, `IZ`, `XI`, `XX`, `XY`, `XZ`, `YI`, `YX`, `YY`, `YZ`, `ZI`, `ZX`, `ZY`, `ZZ`
     chosen uniformly at random.
+- `X_ERROR(p)`:
+    Single-qubit probabilistic X error.
+    Examples: `X_ERROR(0.001) 0 1`.
+    For each target qubit, independently applies an X gate With probability `p`.
+- `Y_ERROR(p)`:
+    Single-qubit probabilistic Y error.
+    Examples: `Y_ERROR(0.001) 0 1`.
+    For each target qubit, independently applies a Y gate With probability `p`.
+- `Z_ERROR(p)`:
+    Single-qubit probabilistic Z error.
+    Examples: `Z_ERROR(0.001) 0 1`.
+    For each target qubit, independently applies a Z gate With probability `p`.
 
-### Other.
+### Annotations
+
+- `DETECTOR`:
+    Asserts that a set of measurements have a deterministic result,
+    and that this result changing can be used to detect errors.
+    Ignored in measurement sampling mode.
+    Doesn't target qubits; targets the measurement record using `qubit@-backtrack` notation.
+    For example, `2@-1` is the latest measurement on qubit 2 and `2@-2` is the next-to-latest measurement on qubit 2.
+    Measurements "before the start of time", if referenced, are considered to have returned 0.
+    Examples: `DETECTOR 2@-1 2@-2`, `DETECTOR 2@-1 3@-1 4@-1`.
+- `OBSERVABLE_INCLUDE(k)`:
+    Adds physical measurement locations to a specified logical measurement result.
+    The logical measurement result is the parity of all its physical measurements.
+    Basically the same thing as a detector, except logical measurements tend to be more spread out.
+    The argument `(k)` says which logical measurement is being append into (e.g. `0`, `1`, etc).
+    Ignored in measurement sampling mode.
+    Doesn't target qubits; targets the measurement record using `qubit@-backtrack` notation.
+    For example, `2@-1` is the latest measurement on qubit 2 and `2@-2` is the next-to-latest measurement on qubit 2.
+    Measurements "before the start of time", if referenced, are considered to have returned 0.
+    Examples: `OBSERVABLE_INCLUDE(0) 2@-1 2@-2`, `OBSERVABLE_INCLUDE(3) 2@-1 3@-1 4@-1`.
+
+### Other
 
 - `TICK`: Optional command indicating the end of a layer of gates.
     May be ignored, may force processing of internally queued operations and flushing of queued measurement results.
@@ -271,15 +413,15 @@ Each tick away from the center `|` is 1 decibel slower or faster (i.e. each `<` 
 Basically, if you see `[......*<<<<<<<<<<<<<|....................]` then something is *seriously* wrong, because the
 code is running 25x slower than expected.
 
-The benchmark binary supports a `-only=BENCHMARK_NAME` filter flag.
-Multiple filters can be specified by separating them with commas `-only=A,B`.
-Ending a filter with a `*` turns it into a prefix filter `-only=sim_*`.
+The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
+Multiple filters can be specified by separating them with commas `--only=A,B`.
+Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 
 # Manual Build
 
 Emergency `cmake`+`make` bypass:
 
 ```bash
-find src | grep "\\.cc" | grep -v "\\.test\\.cc" | grep -v "\\.perf\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3
+find src | grep "\\.cc" | grep -v "\\.test\\.cc" | grep -v "\\.perf\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3 -DSIMD_WIDTH=256
 # output file: ./a.out
 ```

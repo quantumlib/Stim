@@ -60,8 +60,8 @@ std::string si2(double val) {
     return ss.str();
 }
 
-std::vector<const char *> known_arguments{
-    "-only",
+static std::vector<const char *> known_arguments{
+    "--only",
 };
 
 void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark> &out) {
@@ -94,8 +94,8 @@ void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark>
 }
 
 int main(int argc, const char **argv) {
-    check_for_unknown_arguments(known_arguments.size(), known_arguments.data(), argc, argv);
-    const char *only = find_argument("-only", argc, argv);
+    check_for_unknown_arguments(known_arguments, nullptr, argc, argv);
+    const char *only = find_argument("--only", argc, argv);
     std::vector<RegisteredBenchmark> chosen_benchmarks;
     if (only == nullptr) {
         chosen_benchmarks = all_registered_benchmarks;

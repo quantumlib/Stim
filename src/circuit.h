@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 enum SampleFormat {
@@ -25,17 +26,21 @@ enum SampleFormat {
     ///     for each group of 8 shots (padded with 0s if needed):
     ///         Output bit packed bytes (least significant bit of first byte has first shot)
     SAMPLE_FORMAT_PTB64,
+    SAMPLE_FORMAT_HITS,
 };
 
 struct OperationData {
+    /// Qubits targeted by this operation (with implicit broadcasting).
     std::vector<size_t> targets;
-    std::vector<bool> flags;
+    /// Context-dependent accompanying data for each target (e.g. backtrack distance, measurement inversion).
+    std::vector<size_t> metas;
+    /// Context-dependent parens argument (e.g. noise probability).
     double arg;
 
     OperationData(size_t target);
     OperationData(std::initializer_list<size_t> init_targets);
     OperationData(const std::vector<size_t> &init_targets);
-    OperationData(const std::vector<size_t> &init_targets, std::vector<bool> init_flags, float arg);
+    OperationData(const std::vector<size_t> &init_targets, std::vector<size_t> init_flags, float arg);
 
     OperationData &operator+=(const OperationData &other);
 };
@@ -50,10 +55,16 @@ struct Operation {
     std::string str() const;
 };
 
+enum InstructionType {
+    INSTRUCTION_TYPE_EMPTY,
+    INSTRUCTION_TYPE_OPERATION,
+    INSTRUCTION_TYPE_BLOCK_OPERATION_START,
+    INSTRUCTION_TYPE_BLOCK_END,
+};
+
 struct Instruction {
-    Operation operation;
-    bool started_block;
-    bool ended_block;
+    InstructionType type;
+    Operation op;
     static Instruction from_line(const std::string &line, size_t start, size_t end);
     bool operator==(const Operation &other) const;
     bool operator!=(const Operation &other) const;
@@ -62,13 +73,20 @@ struct Instruction {
     std::string str() const;
 };
 
+struct MeasurementSet {
+    std::vector<size_t> indices;
+    bool expected_parity;
+    MeasurementSet &operator*=(const MeasurementSet &other);
+};
+
 struct Circuit {
     std::vector<Operation> operations;
     size_t num_qubits;
     size_t num_measurements;
+    std::vector<MeasurementSet> detectors;
+    std::vector<MeasurementSet> observables;
 
-    Circuit(const std::vector<Operation> &operations);
-    Circuit(std::vector<Operation> &&operations);
+    Circuit(std::vector<Operation> operations);
 
     static Circuit from_text(const std::string &text);
     static Circuit from_file(FILE *file);
@@ -80,7 +98,8 @@ struct Circuit {
 
 struct CircuitReader {
     std::vector<Operation> ops;
-    bool read_more(std::string text, bool inside_block, bool stop_after_measurement);
+
+    void read_all(std::string text);
     bool read_more(FILE *file, bool inside_block, bool stop_after_measurement);
     bool read_more_helper(
         const std::function<std::string(void)> &line_getter, bool inside_block, bool stop_after_measurement);

@@ -62,6 +62,12 @@ struct TableauSimulator {
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
     void reset(const OperationData &target_data);
 
+    /// Collapses then records and clears the Z signs of the target qubits. Supports flipping the result.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to invert results.
+    void measure_reset(const OperationData &target_data);
+
     /// Applies a named operation to the given targets.
     ///
     /// See `SIM_TABLEAU_GATE_FUNC_DATA` and `gate_data.c` for a list of supported operations.
@@ -101,6 +107,9 @@ struct TableauSimulator {
     void YCZ(const OperationData &target_data);
     void DEPOLARIZE1(const OperationData &target_data);
     void DEPOLARIZE2(const OperationData &target_data);
+    void X_ERROR(const OperationData &target_data);
+    void Y_ERROR(const OperationData &target_data);
+    void Z_ERROR(const OperationData &target_data);
 
    private:
     /// Forces a qubit to have a collapsed Z observable.

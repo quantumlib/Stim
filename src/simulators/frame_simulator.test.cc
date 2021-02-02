@@ -24,13 +24,15 @@ TEST(FrameSimulator, get_set_frame) {
     ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
 
     FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
-    big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) { return "_X"[k == 303]; }));
+    big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) {
+                          return "_X"[k == 303];
+                      }));
     ASSERT_EQ(big_sim.get_frame(258).ref().sparse_str(), "+X303");
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse_str(), "+I");
 }
 
 bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name) {
-    const auto &tableau = GATE_TABLEAUS.at(op_name);
+    const auto &tableau = Tableau::named_gate(op_name);
     const auto &bulk_func = SIM_BULK_PAULI_FRAMES_GATE_DATA.at(op_name);
 
     size_t num_qubits = 500;
@@ -79,7 +81,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
         if (op.name == "M") {
             for (size_t k = 0; k < op.target_data.targets.size(); k++) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure(OperationData({op.target_data.targets[k]}, {op.target_data.flags[k]}, 0));
+                tableau_sim.measure(OperationData({op.target_data.targets[k]}, {op.target_data.metas[k]}, 0));
                 if (output[out_p] != tableau_sim.recorded_measurement_results.front()) {
                     return false;
                 }

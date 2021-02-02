@@ -1,7 +1,8 @@
 #include "simd_compat.h"
-#include "../test_util.test.h"
 
 #include <gtest/gtest.h>
+
+#include "../test_util.test.h"
 
 TEST(simd_compat, popcnt64) {
     ASSERT_EQ(popcnt64(0), 0);

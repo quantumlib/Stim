@@ -7,33 +7,31 @@
 #include "assert.h"
 
 TEST(arg_parse, check_for_unknown_arguments_recognize_arguments) {
-    const char *known[] = {
+    std::vector<const char *> known{
         "--mode",
         "--test",
         "--other",
     };
     const char *argv[] = {"skipped", "--mode", "2", "--test", "5"};
-    check_for_unknown_arguments(sizeof(known) / sizeof(char *), known, sizeof(argv) / sizeof(char *), argv);
+    check_for_unknown_arguments(known, nullptr, sizeof(argv) / sizeof(char *), argv);
 }
 
 TEST(arg_parse, check_for_unknown_arguments_bad_arguments) {
-    const char *known[] = {
+    std::vector<const char *> known{
         "--mode",
         "--test",
     };
     const char *argv[] = {"skipped", "--mode", "2", "--unknown", "5"};
 
-    ASSERT_DEATH(
-        { check_for_unknown_arguments(sizeof(known) / sizeof(char *), known, sizeof(argv) / sizeof(char *), argv); },
-        "");
+    ASSERT_DEATH({ check_for_unknown_arguments(known, nullptr, sizeof(argv) / sizeof(char *), argv); }, "");
 }
 
 TEST(arg_parse, check_for_unknown_arguments_terminator) {
-    const char *known[] = {
+    std::vector<const char *> known{
         "--mode",
     };
     const char *argv[] = {"skipped", "--mode", "2", "--", "--unknown"};
-    check_for_unknown_arguments(sizeof(known) / sizeof(char *), known, sizeof(argv) / sizeof(char *), argv);
+    check_for_unknown_arguments(known, nullptr, sizeof(argv) / sizeof(char *), argv);
 }
 
 TEST(arg_parse, find_argument) {
@@ -133,17 +131,15 @@ TEST(arg_parse, find_enum_argument) {
         "test",
         "rest",
     };
-    ASSERT_EQ(find_enum_argument("-a", -1, enums.size(), enums.data(), args.size(), args.data()), 1);
-    ASSERT_EQ(find_enum_argument("-b", -1, enums.size(), enums.data(), args.size(), args.data()), 0);
-    ASSERT_EQ(find_enum_argument("-c", -1, enums.size(), enums.data(), args.size(), args.data()), 2);
-    ASSERT_EQ(find_enum_argument("-d", 0, enums.size(), enums.data(), args.size(), args.data()), 0);
-    ASSERT_EQ(find_enum_argument("-d", 4, enums.size(), enums.data(), args.size(), args.data()), 4);
-    ASSERT_DEATH(
-        { find_enum_argument("-d", -1, enums.size(), enums.data(), args.size(), args.data()); }, "specify a value");
+    ASSERT_EQ(find_enum_argument("-a", -1, enums, args.size(), args.data()), 1);
+    ASSERT_EQ(find_enum_argument("-b", -1, enums, args.size(), args.data()), 0);
+    ASSERT_EQ(find_enum_argument("-c", -1, enums, args.size(), args.data()), 2);
+    ASSERT_EQ(find_enum_argument("-d", 0, enums, args.size(), args.data()), 0);
+    ASSERT_EQ(find_enum_argument("-d", 4, enums, args.size(), args.data()), 4);
+    ASSERT_DEATH({ find_enum_argument("-d", -1, enums, args.size(), args.data()); }, "specify a value");
 
     enums = {
         "not in list",
     };
-    ASSERT_DEATH(
-        { find_enum_argument("-a", -1, enums.size(), enums.data(), args.size(), args.data()); }, "Unrecognized value");
+    ASSERT_DEATH({ find_enum_argument("-a", -1, enums, args.size(), args.data()); }, "Unrecognized value");
 }

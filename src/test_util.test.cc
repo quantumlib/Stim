@@ -1,5 +1,6 @@
-#include "probability_util.h"
 #include "test_util.test.h"
+
+#include "probability_util.h"
 
 static bool shared_test_rng_initialized;
 static std::mt19937_64 shared_test_rng;

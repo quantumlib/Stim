@@ -12,8 +12,10 @@ struct simd_word {
         emu_u128 u128[1];
     };
 
-    inline constexpr simd_word() : u64 {} {}
-    inline constexpr simd_word(uint64_t v1, uint64_t v2) : u64 {v1, v2} {}
+    inline constexpr simd_word() : u64{} {
+    }
+    inline constexpr simd_word(uint64_t v1, uint64_t v2) : u64{v1, v2} {
+    }
 
     constexpr inline static simd_word tile8(uint8_t pattern) {
         uint64_t result = pattern;
@@ -36,7 +38,9 @@ struct simd_word {
         return {result, result};
     }
 
-    constexpr inline static simd_word tile64(uint64_t pattern) { return {pattern, pattern}; }
+    constexpr inline static simd_word tile64(uint64_t pattern) {
+        return {pattern, pattern};
+    }
 
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         return u64[0] | u64[1];
@@ -60,19 +64,33 @@ struct simd_word {
         return *this;
     }
 
-    inline simd_word operator^(const simd_word &other) const { return {u64[0] ^ other.u64[0], u64[1] ^ other.u64[1]}; }
+    inline simd_word operator^(const simd_word &other) const {
+        return {u64[0] ^ other.u64[0], u64[1] ^ other.u64[1]};
+    }
 
-    inline simd_word operator&(const simd_word &other) const { return {u64[0] & other.u64[0], u64[1] & other.u64[1]}; }
+    inline simd_word operator&(const simd_word &other) const {
+        return {u64[0] & other.u64[0], u64[1] & other.u64[1]};
+    }
 
-    inline simd_word operator|(const simd_word &other) const { return {u64[0] | other.u64[0], u64[1] | other.u64[1]}; }
+    inline simd_word operator|(const simd_word &other) const {
+        return {u64[0] | other.u64[0], u64[1] | other.u64[1]};
+    }
 
-    inline simd_word andnot(const simd_word &other) const { return {~u64[0] & other.u64[0], ~u64[1] & other.u64[1]}; }
+    inline simd_word andnot(const simd_word &other) const {
+        return {~u64[0] & other.u64[0], ~u64[1] & other.u64[1]};
+    }
 
-    inline uint16_t popcount() const { return popcnt64(u64[0]) + popcnt64(u64[1]); }
+    inline uint16_t popcount() const {
+        return popcnt64(u64[0]) + popcnt64(u64[1]);
+    }
 
-    inline simd_word leftshift_tile64(uint8_t offset) { return {u64[0] << offset, u64[1] << offset}; }
+    inline simd_word leftshift_tile64(uint8_t offset) {
+        return {u64[0] << offset, u64[1] << offset};
+    }
 
-    inline simd_word rightshift_tile64(uint8_t offset) { return {u64[0] >> offset, u64[1] >> offset}; }
+    inline simd_word rightshift_tile64(uint8_t offset) {
+        return {u64[0] >> offset, u64[1] >> offset};
+    }
 
     /// For each 128 bit word pair between the two registers, the byte order goes from this:
     /// [a0 a1 a2 a3 ... a14 a15] [b0 b1 b2 b3 ... b14 b15]

@@ -8,6 +8,7 @@ AllowShortBlocksOnASingleLine: Never
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: None
 IncludeCategories:
   - Regex:           '^<.*>$'
     Priority:        1

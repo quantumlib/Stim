@@ -2,6 +2,7 @@
 #define MAIN_PARSE_H
 
 #include <cstddef>
+#include <vector>
 
 /// Searches through command line flags for a particular flag's argument.
 ///
@@ -40,12 +41,12 @@ const char *require_find_argument(const char *name, int argc, const char **argv)
 /// a message containing the known arguments to stderr.
 ///
 /// Args:
-///     known_argument_count: Number of known arguments.
-///     known_arguments: Array of known argument names.
+///     known_arguments: Names of known arguments.
+///     for_mode: Can be set to nullptr. Modifies error message.
 ///     argc: Number of command line arguments.
 ///     argv: Array of command line argument strings.
 void check_for_unknown_arguments(
-    size_t known_argument_count, const char **known_arguments, int argc, const char **argv);
+    const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv);
 
 /// Returns a floating point value that can be modified using command line arguments.
 ///
@@ -122,9 +123,7 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///     name: The name of the enumerated flag.
 ///     default_index: The value to return if the flag is not specified. Set to -1 if you want the
 ///         program to exit if the command line argument is not specified.
-///     num_known_values: The number of known values that the command line argument might be.
-///     known_values: A pointer to the list of known values (in the form of strings) that the
-///         command line argument might be.
+///     known_values: The known values (in the form of strings) that the command line argument might be.
 ///     argc: Number of command line arguments.
 ///     argv: Array of command line argument strings.
 ///
@@ -141,7 +140,6 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///     EXIT_FAILURE:
 ///         The command line flag is not specified and default_index is negative.
 int find_enum_argument(
-    const char *name, int default_index, int num_known_values, const char *const *known_values, int argc,
-    const char **argv);
+    const char *name, int default_index, const std::vector<const char *> &known_values, int argc, const char **argv);
 
 #endif

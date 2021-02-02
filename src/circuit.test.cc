@@ -3,10 +3,13 @@
 #include <gtest/gtest.h>
 
 TEST(circuit, operation_from_line) {
-    auto f = [](const std::string line) { return Instruction::from_line(line, 0, line.size()); };
-    ASSERT_EQ(f("# not an operation"), (Operation{"", OperationData({}, {}, 0)}));
+    auto f = [](const std::string &line) {
+        return Instruction::from_line(line, 0, line.size());
+    };
+    ASSERT_EQ(f("# not an operation"), (Instruction{INSTRUCTION_TYPE_EMPTY}));
 
     ASSERT_EQ(f("H 0"), (Operation{"H_XZ", OperationData({0})}));
+    ASSERT_EQ(f("H 23"), (Operation{"H_XZ", OperationData({23})}));
     ASSERT_EQ(f("h 0"), (Operation{"H_XZ", OperationData({0})}));
     ASSERT_EQ(f("H 0     "), (Operation{"H_XZ", OperationData({0})}));
     ASSERT_EQ(f("     H 0     "), (Operation{"H_XZ", OperationData({0})}));
@@ -19,11 +22,14 @@ TEST(circuit, operation_from_line) {
     ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), (Operation{"ZCX", {{5, 6}}}));
 
     ASSERT_THROW({ f("H a"); }, std::runtime_error);
+    ASSERT_THROW({ f("H(1)"); }, std::runtime_error);
+    ASSERT_THROW({ f("X_ERROR 1"); }, std::runtime_error);
     ASSERT_THROW({ f("H 9999999999999999999999999999999999999999999"); }, std::runtime_error);
     ASSERT_THROW({ f("H -1"); }, std::runtime_error);
     ASSERT_THROW({ f("CNOT 0 a"); }, std::runtime_error);
     ASSERT_THROW({ f("CNOT 0 99999999999999999999999999999999"); }, std::runtime_error);
     ASSERT_THROW({ f("CNOT 0 -1"); }, std::runtime_error);
+    ASSERT_THROW({ f("CNOT 0@-1 1@-2"); }, std::runtime_error);
 }
 
 TEST(circuit, from_text) {

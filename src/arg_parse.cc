@@ -51,7 +51,7 @@ const char *find_argument(const char *name, int argc, const char **argv) {
 }
 
 void check_for_unknown_arguments(
-    size_t known_argument_count, const char **known_arguments, int argc, const char **argv) {
+    const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv) {
     for (int i = 1; i < argc; i++) {
         // Respect that the "--" argument terminates flags.
         if (!strcmp(argv[i], "--")) {
@@ -60,7 +60,7 @@ void check_for_unknown_arguments(
 
         // Check if there's a matching command line argument.
         int matched = 0;
-        for (size_t j = 0; j < known_argument_count; j++) {
+        for (size_t j = 0; j < known_arguments.size(); j++) {
             const char *loc = strstr(argv[i], known_arguments[j]);
             size_t n = strlen(known_arguments[j]);
             if (loc == argv[i] && (loc[n] == '\0' || loc[n] == '=')) {
@@ -75,9 +75,14 @@ void check_for_unknown_arguments(
 
         // Print error and exit if flag is not recognized.
         if (!matched) {
-            fprintf(stderr, "\033[31mUnrecognized command line argument %s.\n", argv[i]);
-            fprintf(stderr, "Recognized command line arguments:\n");
-            for (size_t j = 0; j < known_argument_count; j++) {
+            if (for_mode == nullptr) {
+                fprintf(stderr, "\033[31mUnrecognized command line argument %s.\n", argv[i]);
+                fprintf(stderr, "Recognized command line arguments:\n");
+            } else {
+                fprintf(stderr, "\033[31mUnrecognized command line argument %s for mode %s.\n", argv[i], for_mode);
+                fprintf(stderr, "Recognized command line arguments for mode %s:\n", for_mode);
+            }
+            for (size_t j = 0; j < known_arguments.size(); j++) {
                 fprintf(stderr, "    %s\n", known_arguments[j]);
             }
             fprintf(stderr, "\033[0m");
@@ -100,7 +105,7 @@ bool find_bool_argument(const char *name, int argc, const char **argv) {
 
 int find_int_argument(const char *name, int default_value, int min_value, int max_value, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
-    if (text == nullptr) {
+    if (text == nullptr || text[0] == '\0') {
         if (default_value < min_value || default_value > max_value) {
             fprintf(
                 stderr,
@@ -168,8 +173,7 @@ float find_float_argument(
 }
 
 int find_enum_argument(
-    const char *name, int default_index, int num_known_values, const char *const *known_values, int argc,
-    const char **argv) {
+    const char *name, int default_index, const std::vector<const char *> &known_values, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {
         if (default_index >= 0) {
@@ -177,7 +181,7 @@ int find_enum_argument(
         }
         fprintf(stderr, "\033[31mMust specify a value for enum flag '%s'.\n", name);
     } else {
-        for (int i = 0; i < num_known_values; i++) {
+        for (size_t i = 0; i < known_values.size(); i++) {
             if (!strcmp(text, known_values[i])) {
                 return i;
             }
@@ -186,8 +190,8 @@ int find_enum_argument(
     }
 
     fprintf(stderr, "Recognized values are:\n");
-    for (int i = 0; i < num_known_values; i++) {
-        fprintf(stderr, "    '%s'%s\n", known_values[i], i == default_index ? " (default)" : "");
+    for (size_t i = 0; i < known_values.size(); i++) {
+        fprintf(stderr, "    '%s'%s\n", known_values[i], i == (size_t)default_index ? " (default)" : "");
     }
     fprintf(stderr, "\033[0m");
     exit(EXIT_FAILURE);

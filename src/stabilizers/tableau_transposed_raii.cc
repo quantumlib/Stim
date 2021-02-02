@@ -91,5 +91,7 @@ void TableauTransposedRaii::append_H_XZ(size_t q) {
 }
 
 void TableauTransposedRaii::append_X(size_t target) {
-    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) { s ^= z; });
+    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+        s ^= z;
+    });
 }

@@ -10,7 +10,9 @@ simd_bits_range_ref::simd_bits_range_ref(simd_word *ptr_simd_init, size_t num_si
 }
 
 simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref other) {
-    for_each_word(other, [](auto &w0, auto &w1) { w0 ^= w1; });
+    for_each_word(other, [](auto &w0, auto &w1) {
+        w0 ^= w1;
+    });
     return *this;
 }
 
@@ -20,7 +22,16 @@ simd_bits_range_ref simd_bits_range_ref::operator=(const simd_bits_range_ref oth
 }
 
 void simd_bits_range_ref::swap_with(simd_bits_range_ref other) {
-    for_each_word(other, [](auto &w0, auto &w1) { std::swap(w0, w1); });
+    for_each_word(other, [](auto &w0, auto &w1) {
+        std::swap(w0, w1);
+    });
+}
+
+void simd_bits_range_ref::invert_bits() {
+    auto mask = simd_word::tile8(0xFF);
+    for_each_word([&mask](auto &w) {
+        w ^= mask;
+    });
 }
 
 void simd_bits_range_ref::clear() {
@@ -33,7 +44,9 @@ bool simd_bits_range_ref::operator==(const simd_bits_range_ref other) const {
 
 bool simd_bits_range_ref::not_zero() const {
     simd_word acc{};
-    for_each_word([&acc](auto &w) { acc |= w; });
+    for_each_word([&acc](auto &w) {
+        acc |= w;
+    });
     return (bool)acc;
 }
 

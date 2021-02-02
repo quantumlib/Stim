@@ -42,10 +42,12 @@ struct Tableau {
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
+    /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
     static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
     Tableau inverse() const;
 
     bool satisfies_invariants() const;
+    static Tableau named_gate(const std::string &name);
 
     /// Creates a Tableau representing a single qubit gate.
     ///

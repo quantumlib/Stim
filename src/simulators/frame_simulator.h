@@ -25,6 +25,7 @@ struct FrameSimulator {
 
     FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
 
+    static simd_bit_table sample_flipped_measurements(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng);
     static simd_bit_table sample(
         const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng);
     static void sample_out(
@@ -38,10 +39,10 @@ struct FrameSimulator {
     void reset_all();
 
     void write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format);
-    simd_bit_table unpack_measurements(const simd_bits &reference_sample);
 
     void measure(const OperationData &target_data);
     void reset(const OperationData &target_data);
+    void measure_reset(const OperationData &target_data);
 
     void H_XZ(const OperationData &target_data);
     void H_XY(const OperationData &target_data);
@@ -61,6 +62,13 @@ struct FrameSimulator {
 
     void DEPOLARIZE1(const OperationData &target_data);
     void DEPOLARIZE2(const OperationData &target_data);
+    void X_ERROR(const OperationData &target_data);
+    void Y_ERROR(const OperationData &target_data);
+    void Z_ERROR(const OperationData &target_data);
 };
+
+void write_table_data(
+    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
+    const simd_bit_table &table, SampleFormat format);
 
 #endif

@@ -39,37 +39,37 @@ const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES{
     {"ISWAP_DAG", "ISWAP"},
 };
 
-const std::unordered_map<std::string, const Tableau> GATE_TABLEAUS{
-    {"I", Tableau::gate1("+X", "+Z")},
+const std::unordered_map<std::string, const std::vector<const char *>> GATE_TABLEAUS{
+    {"I", {"+X", "+Z"}},
     // Pauli gates.
-    {"X", Tableau::gate1("+X", "-Z")},
-    {"Y", Tableau::gate1("-X", "-Z")},
-    {"Z", Tableau::gate1("-X", "+Z")},
+    {"X", {"+X", "-Z"}},
+    {"Y", {"-X", "-Z"}},
+    {"Z", {"-X", "+Z"}},
     // Axis exchange gates.
-    {"H_XY", Tableau::gate1("+Y", "-Z")},
-    {"H_XZ", Tableau::gate1("+Z", "+X")},
-    {"H_YZ", Tableau::gate1("-X", "+Y")},
+    {"H_XY", {"+Y", "-Z"}},
+    {"H_XZ", {"+Z", "+X"}},
+    {"H_YZ", {"-X", "+Y"}},
     // 90 degree rotation gates.
-    {"SQRT_X", Tableau::gate1("+X", "-Y")},
-    {"SQRT_X_DAG", Tableau::gate1("+X", "+Y")},
-    {"SQRT_Y", Tableau::gate1("-Z", "+X")},
-    {"SQRT_Y_DAG", Tableau::gate1("+Z", "-X")},
-    {"SQRT_Z", Tableau::gate1("+Y", "+Z")},
-    {"SQRT_Z_DAG", Tableau::gate1("-Y", "+Z")},
+    {"SQRT_X", {"+X", "-Y"}},
+    {"SQRT_X_DAG", {"+X", "+Y"}},
+    {"SQRT_Y", {"-Z", "+X"}},
+    {"SQRT_Y_DAG", {"+Z", "-X"}},
+    {"SQRT_Z", {"+Y", "+Z"}},
+    {"SQRT_Z_DAG", {"-Y", "+Z"}},
     // Swaps.
-    {"SWAP", Tableau::gate2("+IX", "+IZ", "+XI", "+ZI")},
-    {"ISWAP", Tableau::gate2("+ZY", "+IZ", "+YZ", "+ZI")},
-    {"ISWAP_DAG", Tableau::gate2("-ZY", "+IZ", "-YZ", "+ZI")},
+    {"SWAP", {"+IX", "+IZ", "+XI", "+ZI"}},
+    {"ISWAP", {"+ZY", "+IZ", "+YZ", "+ZI"}},
+    {"ISWAP_DAG", {"-ZY", "+IZ", "-YZ", "+ZI"}},
     // Controlled interactions.
-    {"ZCX", Tableau::gate2("+XX", "+ZI", "+IX", "+ZZ")},
-    {"ZCY", Tableau::gate2("+XY", "+ZI", "+ZX", "+ZZ")},
-    {"ZCZ", Tableau::gate2("+XZ", "+ZI", "+ZX", "+IZ")},
-    {"XCX", Tableau::gate2("+XI", "+ZX", "+IX", "+XZ")},
-    {"XCY", Tableau::gate2("+XI", "+ZY", "+XX", "+XZ")},
-    {"XCZ", Tableau::gate2("+XI", "+ZZ", "+XX", "+IZ")},
-    {"YCX", Tableau::gate2("+XX", "+ZX", "+IX", "+YZ")},
-    {"YCY", Tableau::gate2("+XY", "+ZY", "+YX", "+YZ")},
-    {"YCZ", Tableau::gate2("+XZ", "+ZZ", "+YX", "+IZ")},
+    {"ZCX", {"+XX", "+ZI", "+IX", "+ZZ"}},
+    {"ZCY", {"+XY", "+ZI", "+ZX", "+ZZ"}},
+    {"ZCZ", {"+XZ", "+ZI", "+ZX", "+IZ"}},
+    {"XCX", {"+XI", "+ZX", "+IX", "+XZ"}},
+    {"XCY", {"+XI", "+ZY", "+XX", "+XZ"}},
+    {"XCZ", {"+XI", "+ZZ", "+XX", "+IZ"}},
+    {"YCX", {"+XX", "+ZX", "+IX", "+YZ"}},
+    {"YCY", {"+XY", "+ZY", "+YX", "+YZ"}},
+    {"YCZ", {"+XZ", "+ZZ", "+YX", "+IZ"}},
 };
 
 constexpr std::complex<float> i = std::complex<float>(0, 1);
@@ -125,10 +125,9 @@ void do_nothing_pst(FrameSimulator &p, const OperationData &target_data) {
 
 const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>>
     SIM_BULK_PAULI_FRAMES_GATE_DATA{
-        {"R", &FrameSimulator::reset},
         {"M", &FrameSimulator::measure},
-        {"TICK", &do_nothing_pst},
-        {"I", &do_nothing_pst},
+        {"R", &FrameSimulator::reset},
+        {"MR", &FrameSimulator::measure_reset},
         // Pauli gates (ignored because they are accounted for by the reference sample results being inverted or not.)
         {"X", &do_nothing_pst},
         {"Y", &do_nothing_pst},
@@ -161,14 +160,21 @@ const std::unordered_map<std::string, std::function<void(FrameSimulator &, const
         // Noisy gates.
         {"DEPOLARIZE1", &FrameSimulator::DEPOLARIZE1},
         {"DEPOLARIZE2", &FrameSimulator::DEPOLARIZE2},
+        {"X_ERROR", &FrameSimulator::X_ERROR},
+        {"Y_ERROR", &FrameSimulator::Y_ERROR},
+        {"Z_ERROR", &FrameSimulator::Z_ERROR},
+        // Ignored.
+        {"TICK", &do_nothing_pst},
+        {"I", &do_nothing_pst},
+        {"DETECTOR", &do_nothing_pst},
+        {"OBSERVABLE_INCLUDE", &do_nothing_pst},
     };
 
 const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>>
     SIM_TABLEAU_GATE_FUNC_DATA{
         {"M", &TableauSimulator::measure},
         {"R", &TableauSimulator::reset},
-        {"TICK", [](auto &s, const auto &t) {}},
-        {"I", [](auto &s, const auto &t) {}},
+        {"MR", &TableauSimulator::measure_reset},
         // Pauli gates.
         {"X", &TableauSimulator::X},
         {"Y", &TableauSimulator::Y},
@@ -201,9 +207,43 @@ const std::unordered_map<std::string, std::function<void(TableauSimulator &, con
         // Noisy gates.
         {"DEPOLARIZE1", &TableauSimulator::DEPOLARIZE1},
         {"DEPOLARIZE2", &TableauSimulator::DEPOLARIZE2},
+        {"X_ERROR", &TableauSimulator::X_ERROR},
+        {"Y_ERROR", &TableauSimulator::Y_ERROR},
+        {"Z_ERROR", &TableauSimulator::Z_ERROR},
+        // Ignored.
+        {"DETECTOR",
+         [](auto &s, const auto &t) {
+         }},
+        {"OBSERVABLE_INCLUDE",
+         [](auto &s, const auto &t) {
+         }},
+        {"TICK",
+         [](auto &s, const auto &t) {
+         }},
+        {"I",
+         [](auto &s, const auto &t) {
+         }},
     };
 
 const std::unordered_set<std::string> NOISY_GATE_NAMES{
-    "DEPOLARIZE1",
-    "DEPOLARIZE2",
+    "DEPOLARIZE1", "DEPOLARIZE2", "X_ERROR", "Y_ERROR", "Z_ERROR",
+};
+
+const std::unordered_set<std::string> PARENS_ARG_OP_NAMES{
+    "OBSERVABLE_INCLUDE", "DEPOLARIZE1", "DEPOLARIZE2", "X_ERROR", "Y_ERROR", "Z_ERROR",
+};
+
+const std::unordered_set<std::string> BACKTRACK_ARG_OP_NAMES{
+    "DETECTOR",
+    "OBSERVABLE_INCLUDE",
+};
+
+const std::unordered_set<std::string> MEASUREMENT_OP_NAMES{
+    "M",
+    "MR",
+};
+
+const std::unordered_set<std::string> UNFUSABLE_OP_NAMES{
+    "DETECTOR",
+    "OBSERVABLE_INCLUDE",
 };

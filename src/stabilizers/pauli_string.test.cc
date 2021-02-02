@@ -15,7 +15,9 @@ TEST(pauli_string, str) {
     auto p3 = PauliString::from_str("-XZ");
     ASSERT_EQ(p3.str(), "-XZ");
 
-    auto s1 = PauliString::from_func(true, 24 * 24, [](size_t i) { return "_XYZ"[i & 3]; });
+    auto s1 = PauliString::from_func(true, 24 * 24, [](size_t i) {
+        return "_XYZ"[i & 3];
+    });
     ASSERT_EQ(
         s1.str(),
         "-"
@@ -80,8 +82,12 @@ TEST(pauli_string, log_i_scalar_byproduct) {
     ASSERT_EQ(f(PauliString::from_str("XX"), PauliString::from_str("ZY")), 0);
     ASSERT_EQ(f(PauliString::from_str("XX"), PauliString::from_str("YY")), 2);
     for (size_t n : std::vector<size_t>{1, 499, 4999, 5000}) {
-        auto all_x = PauliString::from_func(false, n, [](size_t i) { return 'X'; });
-        auto all_z = PauliString::from_func(false, n, [](size_t i) { return 'Z'; });
+        auto all_x = PauliString::from_func(false, n, [](size_t i) {
+            return 'X';
+        });
+        auto all_z = PauliString::from_func(false, n, [](size_t i) {
+            return 'Z';
+        });
         ASSERT_EQ(f(all_x, all_z), (-(int)n) & 3);
     }
 }
@@ -96,9 +102,15 @@ TEST(pauli_string, equality) {
     ASSERT_FALSE(PauliString::from_str("XX") == PauliString::from_str("XZ"));
     ASSERT_FALSE(PauliString::from_str("XX") == PauliString::from_str("X_"));
 
-    auto all_x1 = PauliString::from_func(false, 1000, [](size_t i) { return 'X'; });
-    auto all_x2 = PauliString::from_func(false, 1000, [](size_t i) { return 'X'; });
-    auto all_z = PauliString::from_func(false, 1000, [](size_t i) { return 'Z'; });
+    auto all_x1 = PauliString::from_func(false, 1000, [](size_t i) {
+        return 'X';
+    });
+    auto all_x2 = PauliString::from_func(false, 1000, [](size_t i) {
+        return 'X';
+    });
+    auto all_z = PauliString::from_func(false, 1000, [](size_t i) {
+        return 'Z';
+    });
     ASSERT_EQ(all_x1, all_x2);
     ASSERT_NE(all_x1, all_z);
 }
@@ -133,8 +145,12 @@ TEST(pauli_string, gather) {
 }
 
 TEST(pauli_string, swap_with_overwrite_with) {
-    auto a = PauliString::from_func(false, 500, [](size_t k) { return "XYZIX"[k % 5]; });
-    auto b = PauliString::from_func(false, 500, [](size_t k) { return "ZZYIXXY"[k % 7]; });
+    auto a = PauliString::from_func(false, 500, [](size_t k) {
+        return "XYZIX"[k % 5];
+    });
+    auto b = PauliString::from_func(false, 500, [](size_t k) {
+        return "ZZYIXXY"[k % 7];
+    });
     auto a2 = a;
     auto b2 = b;
 
@@ -230,8 +246,12 @@ TEST(pauli_string, commutes) {
     ASSERT_EQ(f("XZ", "ZZ"), false);
     ASSERT_EQ(f("-XZ", "ZZ"), false);
 
-    auto qa = PauliString::from_func(false, 5000, [](size_t k) { return k == 0 ? 'X' : 'Z'; });
-    auto qb = PauliString::from_func(false, 5000, [](size_t k) { return 'Z'; });
+    auto qa = PauliString::from_func(false, 5000, [](size_t k) {
+        return k == 0 ? 'X' : 'Z';
+    });
+    auto qb = PauliString::from_func(false, 5000, [](size_t k) {
+        return 'Z';
+    });
     ASSERT_EQ(qa.ref().commutes(qa), true);
     ASSERT_EQ(qb.ref().commutes(qb), true);
     ASSERT_EQ(qa.ref().commutes(qb), false);
@@ -244,5 +264,13 @@ TEST(PauliStringPtr, sparse_str) {
     ASSERT_EQ(PauliString::from_str("IIIXI").ref().sparse_str(), "+X3");
     ASSERT_EQ(PauliString::from_str("IYIXZ").ref().sparse_str(), "+Y1*X3*Z4");
     ASSERT_EQ(PauliString::from_str("-IYIXZ").ref().sparse_str(), "-Y1*X3*Z4");
-    ASSERT_EQ(PauliString::from_func(false, 1000, [](size_t k) { return "IX"[k == 501]; }).ref().sparse_str(), "+X501");
+    ASSERT_EQ(
+        PauliString::from_func(
+            false, 1000,
+            [](size_t k) {
+                return "IX"[k == 501];
+            })
+            .ref()
+            .sparse_str(),
+        "+X501");
 }

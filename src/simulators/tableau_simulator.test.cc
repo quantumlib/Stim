@@ -295,14 +295,14 @@ TEST(SimTableau, unitary_gates_consistent_with_tableau_data) {
     for (const auto &kv : GATE_INVERSE_NAMES) {
         const auto &name = kv.first;
         const auto &action = SIM_TABLEAU_GATE_FUNC_DATA.at(name);
-        const auto &inverse_op_tableau = GATE_TABLEAUS.at(GATE_INVERSE_NAMES.at(name));
+        const auto &inverse_op_tableau = Tableau::named_gate(GATE_INVERSE_NAMES.at(name));
         if (inverse_op_tableau.num_qubits == 2) {
             action(sim, {7, 4});
-            sim2.apply(GATE_TABLEAUS.at(name), {7, 4});
+            sim2.apply(Tableau::named_gate(name), {7, 4});
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         } else {
             action(sim, {5});
-            sim2.apply(GATE_TABLEAUS.at(name), {5});
+            sim2.apply(Tableau::named_gate(name), {5});
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
         ASSERT_EQ(sim.inv_state, t) << name;

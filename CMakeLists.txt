@@ -11,6 +11,7 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit.cc
         src/common_circuits.cc
+        src/main_helper.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
         src/simd/simd_bit_table.cc
@@ -18,6 +19,7 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/simd_bits_range_ref.cc
         src/simd/simd_compat.cc
         src/simd/simd_util.cc
+        src/simulators/detection_simulator.cc
         src/simulators/gate_data.cc
         src/simulators/frame_simulator.cc
         src/simulators/tableau_simulator.cc
@@ -32,6 +34,7 @@ set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit.test.cc
         src/common_circuits.test.cc
+        src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
         src/simd/simd_bit_table.test.cc
@@ -39,6 +42,7 @@ set(TEST_FILES
         src/simd/simd_bits_range_ref.test.cc
         src/simd/simd_compat.test.cc
         src/simd/simd_util.test.cc
+        src/simulators/detection_simulator.test.cc
         src/simulators/frame_simulator.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc

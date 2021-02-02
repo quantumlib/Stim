@@ -68,7 +68,9 @@ struct simd_bits {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
     }
 
-    /// Sets all bits in the referenced range to zero.
+    /// Inverts all bits in the range.
+    void invert_bits();
+    /// Sets all bits in the range to zero.
     void clear();
     /// Randomizes the contents of this simd_bits using the given random number generator, up to the given bit position.
     void randomize(size_t num_bits, std::mt19937_64 &rng);
@@ -80,15 +82,25 @@ struct simd_bits {
     std::string str() const;
 
     /// Number of 64 bit words in the range.
-    inline size_t num_u64_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint64_t)); }
+    inline size_t num_u64_padded() const {
+        return num_simd_words * (sizeof(simd_word) / sizeof(uint64_t));
+    }
     /// Number of 32 bit words in the range.
-    inline size_t num_u32_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint32_t)); }
+    inline size_t num_u32_padded() const {
+        return num_simd_words * (sizeof(simd_word) / sizeof(uint32_t));
+    }
     /// Number of 16 bit words in the range.
-    inline size_t num_u16_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint16_t)); }
+    inline size_t num_u16_padded() const {
+        return num_simd_words * (sizeof(simd_word) / sizeof(uint16_t));
+    }
     /// Number of 8 bit words in the range.
-    inline size_t num_u8_padded() const { return num_simd_words * (sizeof(simd_word) / sizeof(uint8_t)); }
+    inline size_t num_u8_padded() const {
+        return num_simd_words * (sizeof(simd_word) / sizeof(uint8_t));
+    }
     /// Number of bits in the range.
-    inline size_t num_bits_padded() const { return num_simd_words * sizeof(simd_word) << 3; }
+    inline size_t num_bits_padded() const {
+        return num_simd_words * sizeof(simd_word) << 3;
+    }
 };
 
 #endif

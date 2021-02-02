@@ -54,6 +54,10 @@ void simd_bits::clear() {
     simd_bits_range_ref(*this).clear();
 }
 
+void simd_bits::invert_bits() {
+    simd_bits_range_ref(*this).invert_bits();
+}
+
 simd_bits &simd_bits::operator=(simd_bits &&other) noexcept {
     (*this).~simd_bits();
     new (this) simd_bits(std::move(other));

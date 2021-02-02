@@ -45,7 +45,9 @@ simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t 
     for (size_t row = 0; row < n; row++) {
         for (size_t col = 0; col < n; col++) {
             simd_word acc{};
-            (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) { acc ^= w1 & w2; });
+            (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) {
+                acc ^= w1 & w2;
+            });
             result[row][col] = acc.popcount() & 1;
         }
     }
@@ -86,7 +88,9 @@ void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
 template <uint8_t step>
 void rc3456_address_bit_rotate_swap(simd_bit_table &table, size_t m1, size_t m2) {
     for (size_t major = m1; major < m2; major++, major += major & step) {
-        table[major].for_each_word(table[major + step], [](auto &a, auto &b) { a.do_interleave8_tile128(b); });
+        table[major].for_each_word(table[major + step], [](auto &a, auto &b) {
+            a.do_interleave8_tile128(b);
+        });
     }
 }
 

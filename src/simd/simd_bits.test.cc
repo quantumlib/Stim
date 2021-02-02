@@ -212,3 +212,12 @@ TEST(simd_bits, word_range_ref) {
     ASSERT_EQ(r1[k], true);
     ASSERT_EQ(cref.word_range_ref(1, 2)[k], true);
 }
+
+TEST(simd_bits, invert_bits) {
+    simd_bits r(100);
+    r[5] = true;
+    r.invert_bits();
+    for (size_t k = 0; k < 100; k++) {
+        ASSERT_EQ(r[k], k != 5);
+    }
+}
