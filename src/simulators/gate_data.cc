@@ -405,7 +405,7 @@ Operation Gate::applied(OperationData data) const {
     return Operation(*this, std::move(data));
 }
 
-Gate::Gate() {
+Gate::Gate() : name(nullptr) {
 }
 
 Gate::Gate(
@@ -425,9 +425,6 @@ Gate::Gate(
 GateDataMap::GateDataMap(
     std::initializer_list<Gate> gates,
     std::initializer_list<std::pair<const char *, const char *>> alternate_names) {
-    for (auto &item : items) {
-        item.name = nullptr;
-    }
     bool collision = false;
     for (auto &gate : gates) {
         const char *c = gate.name;

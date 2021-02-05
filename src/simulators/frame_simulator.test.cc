@@ -93,7 +93,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
     auto tableau_sim = TableauSimulator(circuit.num_qubits, SHARED_TEST_RNG());
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
-        if (op.gate.name == std::string("M")) {
+        if (op.gate->name == std::string("M")) {
             for (size_t k = 0; k < op.target_data.targets.size(); k++) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
                 tableau_sim.measure(OperationData({op.target_data.targets[k]}, {op.target_data.metas[k]}, 0));
@@ -104,7 +104,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
                 out_p++;
             }
         } else {
-            (tableau_sim.*op.gate.tableau_simulator_function)(op.target_data);
+            (tableau_sim.*op.gate->tableau_simulator_function)(op.target_data);
         }
     }
 

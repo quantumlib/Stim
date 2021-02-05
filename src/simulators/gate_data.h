@@ -37,18 +37,25 @@ inline uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
-    uint8_t result = v[0] + (v[n - 1] << 2);
-    if (n >= 3) {
-        result ^= 1;
-        result += v[1];
-        result ^= v[1];
-        result += v[2] * 5;
-        result ^= v[2];
+    uint8_t result = 0;
+    if (n > 0) {
+        result += (v[0] | 0x20) + ((v[n - 1] | 0x20) << 2);
     }
-    if (n >= 5) {
+    if (n > 2) {
+        result ^= 1;
+        char c1 = (char)(v[1] | 0x20);
+        char c2 = (char)(v[2] | 0x20);
+        result += c1;
+        result ^= c1;
+        result += c2 * 5;
+        result ^= c2;
+    }
+    if (n > 5) {
         result ^= 5;
-        result += v[3] * 7;
-        result += v[5] * 11;
+        char c3 = (char)(v[3] | 0x20);
+        char c5 = (char)(v[5] | 0x20);
+        result += c3 * 7;
+        result += c5 * 11;
     }
     result &= 0x1F;
     result |= n << 5;
@@ -110,6 +117,89 @@ struct Gate {
     Operation applied(OperationData data) const;
 };
 
+struct StringView {
+    const char *c;
+    size_t n;
+
+    StringView(const char *c, size_t n) : c(c), n(n) {
+    }
+
+    StringView(std::string &v) : c(&v[0]), n(v.size()) {
+    }
+
+    inline StringView substr(size_t offset) const {
+        return {c + offset, n - offset};
+    }
+
+    inline StringView substr(size_t offset, size_t length) const {
+        return {c + offset, length};
+    }
+
+    inline StringView &operator=(const std::string &other) {
+        c = (char *)&other[0];
+        n = other.size();
+        return *this;
+    }
+
+    inline const char &operator[](size_t index) const {
+        return c[index];
+    }
+
+    inline bool operator==(const std::string &other) const {
+        return n == other.size() && memcmp(c, other.data(), n) == 0;
+    }
+
+    inline bool operator!=(const std::string &other) const {
+        return !(*this == other);
+    }
+
+    inline bool operator==(const char *other) const {
+        size_t k = 0;
+        for (; k < n; k++) {
+            if (other[k] != c[k]) {
+                return false;
+            }
+        }
+        return other[k] == '\0';
+    }
+
+    inline bool operator!=(const char *other) const {
+        return !(*this == other);
+    }
+
+    inline std::string str() const {
+        return std::string(c, n);
+    }
+};
+
+inline std::string operator+(const StringView &a, const char *b) {
+    return a.str() + b;
+}
+
+inline std::string operator+(const char *a, const StringView &b) {
+    return a + b.str();
+}
+
+inline std::string operator+(const StringView &a, const std::string &b) {
+    return a.str() + b;
+}
+
+inline std::string operator+(const std::string &a, const StringView &b) {
+    return a + b.str();
+}
+
+inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name) {
+    bool failed = false;
+    if (bucket_name == nullptr) {
+        return true;
+    }
+    size_t k = 0;
+    for (; k < text_len; k++) {
+        failed |= toupper(text[k]) != bucket_name[k];
+    }
+    return failed | bucket_name[k];
+}
+
 struct GateDataMap {
 private:
     Gate items[256];
@@ -122,10 +212,10 @@ public:
     std::vector<Gate> gates() const;
 
     inline const Gate &at(const char *text, size_t text_len) const {
-        uint8_t h = gate_name_to_id(text);
+        uint8_t h = gate_name_to_id(text, text_len);
         const char *bucket_name = items[h].name;
-        if (bucket_name == nullptr || strcmp(items[h].name, text) != 0) {
-            throw std::out_of_range("Gate not found " + std::string(text));
+        if (_case_insensitive_mismatch(text, text_len, bucket_name)) {
+            throw std::out_of_range("Gate not found " + std::string(text, text_len));
         }
         // Canonicalize.
         return items[items[h].id];
@@ -135,13 +225,18 @@ public:
         return at(text, strlen(text));
     }
 
+    inline const Gate &at(StringView text) const {
+        return at(text.c, text.n);
+    }
+
     inline const Gate &at(const std::string &text) const {
         return at(text.data(), text.size());
     }
 
     inline bool has(const std::string &text) const {
         uint8_t h = gate_name_to_id(text.data(), text.size());
-        return items[h].name != nullptr && strcmp(items[h].name, text.data()) == 0;
+        const char *bucket_name = items[h].name;
+        return !_case_insensitive_mismatch(text.data(), text.size(), bucket_name);
     }
 };
 

@@ -143,7 +143,7 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
     assert(circuit.num_measurements == num_measurements_raw);
     reset_all();
     for (const auto &op : circuit.operations) {
-        (this->*op.gate.frame_simulator_function)(op.target_data);
+        (this->*op.gate->frame_simulator_function)(op.target_data);
     }
 }
 

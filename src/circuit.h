@@ -21,6 +21,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+#include <cstring>
+#include <memory>
 
 #include "simulators/gate_data.h"
 
@@ -55,6 +57,12 @@ struct OperationData {
     /// Context-dependent parens argument (e.g. noise probability).
     double arg;
 
+    inline void clear() {
+        arg = 0;
+        metas.clear();
+        targets.clear();
+    }
+
     OperationData();
     OperationData(size_t target);
     OperationData(std::initializer_list<size_t> init_targets);
@@ -65,7 +73,7 @@ struct OperationData {
 };
 
 struct Operation {
-    const Gate &gate;
+    const Gate *gate;
     OperationData target_data;
 
     Operation();
@@ -80,16 +88,18 @@ struct Operation {
 
 enum InstructionType {
     INSTRUCTION_TYPE_EMPTY,
-    INSTRUCTION_TYPE_OPERATION,
     INSTRUCTION_TYPE_BLOCK_OPERATION_START,
     INSTRUCTION_TYPE_BLOCK_END,
+    INSTRUCTION_TYPE_FUSED,
+    INSTRUCTION_TYPE_OPERATION,
 };
 
 struct Instruction {
     InstructionType type;
     Operation op;
     Instruction(InstructionType type, Operation op);
-    static Instruction from_line(const std::string &line, size_t start, size_t end);
+    static Instruction from_line(StringView line);
+    static void from_line(StringView line, std::vector<StringView> &view_buffer, Instruction &instruction_out);
     bool operator==(const Operation &other) const;
     bool operator!=(const Operation &other) const;
     bool operator==(const Instruction &other) const;
@@ -122,11 +132,17 @@ struct Circuit {
 
 struct CircuitReader {
     std::vector<Operation> ops;
+    std::string buffer;
+    std::vector<StringView> view_buffer;
+    Instruction instruction;
+
+    CircuitReader() : ops(), buffer(), view_buffer(), instruction(INSTRUCTION_TYPE_EMPTY, GATE_DATA.at("I").applied({})) {
+    }
 
     void read_all(const std::string &text);
     bool read_more(FILE *file, bool inside_block, bool stop_after_measurement);
     bool read_more_helper(
-        const std::function<std::string(void)> &line_getter, bool inside_block, bool stop_after_measurement);
+        const std::function<StringView(void)> &line_getter, bool inside_block, bool stop_after_measurement);
 };
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);

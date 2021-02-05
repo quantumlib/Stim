@@ -29,7 +29,7 @@ BENCHMARK(gate_data_fast_hash) {
             result += gate_name_to_id(s.data(), s.size());
         }
     })
-        .goal_nanos(75)
+        .goal_nanos(125)
         .show_rate("GateHashes", names.size());
     if (result == 0) {
         std::cerr << "impossible";

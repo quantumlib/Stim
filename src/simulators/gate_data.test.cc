@@ -24,4 +24,10 @@ TEST(gate_data, lookup) {
     ASSERT_EQ(GATE_DATA.at("H").id, GATE_DATA.at("H_XZ").id);
     ASSERT_NE(GATE_DATA.at("H").id, GATE_DATA.at("H_XY").id);
     ASSERT_THROW(GATE_DATA.at("MISSING"), std::out_of_range);
+
+    ASSERT_TRUE(GATE_DATA.has("h"));
+    ASSERT_TRUE(GATE_DATA.has("Cnot"));
+
+    ASSERT_TRUE(GATE_DATA.at("h").id == GATE_DATA.at("H").id);
+    ASSERT_TRUE(GATE_DATA.at("H_xz").id == GATE_DATA.at("H").id);
 }
