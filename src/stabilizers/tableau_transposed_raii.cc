@@ -51,7 +51,7 @@ inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q1, size_t q
 }
 
 void TableauTransposedRaii::append_ZCX(size_t control, size_t target) {
-    for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
+    for_each_trans_obs(*this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
         s ^= (cz ^ tx).andnot(cx & tz);
         cz ^= tz;
         tx ^= cx;
@@ -59,7 +59,7 @@ void TableauTransposedRaii::append_ZCX(size_t control, size_t target) {
 }
 
 void TableauTransposedRaii::append_ZCY(size_t control, size_t target) {
-    for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
+    for_each_trans_obs(*this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
         cz ^= tx;
         s ^= cx & cz & (tx ^ tz);
         cz ^= tz;
@@ -69,7 +69,7 @@ void TableauTransposedRaii::append_ZCY(size_t control, size_t target) {
 }
 
 void TableauTransposedRaii::append_ZCZ(size_t control, size_t target) {
-    for_each_trans_obs(*this, control, target, [](auto &cx, auto &cz, auto &tx, auto &tz, auto &s) {
+    for_each_trans_obs(*this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
         s ^= cx & tx & (cz ^ tz);
         cz ^= tx;
         tz ^= cx;
@@ -77,35 +77,35 @@ void TableauTransposedRaii::append_ZCZ(size_t control, size_t target) {
 }
 
 void TableauTransposedRaii::append_SWAP(size_t q1, size_t q2) {
-    for_each_trans_obs(*this, q1, q2, [](auto &x1, auto &z1, auto &x2, auto &z2, auto &s) {
+    for_each_trans_obs(*this, q1, q2, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2, simd_word &s) {
         std::swap(x1, x2);
         std::swap(z1, z2);
     });
 }
 
 void TableauTransposedRaii::append_H_XY(size_t target) {
-    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+    for_each_trans_obs(*this, target, [](simd_word &x, simd_word &z, simd_word &s) {
         s ^= x.andnot(z);
         z ^= x;
     });
 }
 
 void TableauTransposedRaii::append_H_YZ(size_t target) {
-    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+    for_each_trans_obs(*this, target, [](simd_word &x, simd_word &z, simd_word &s) {
         s ^= z.andnot(x);
         x ^= z;
     });
 }
 
 void TableauTransposedRaii::append_H_XZ(size_t q) {
-    for_each_trans_obs(*this, q, [](auto &x, auto &z, auto &s) {
+    for_each_trans_obs(*this, q, [](simd_word &x, simd_word &z, simd_word &s) {
         std::swap(x, z);
         s ^= x & z;
     });
 }
 
 void TableauTransposedRaii::append_X(size_t target) {
-    for_each_trans_obs(*this, target, [](auto &x, auto &z, auto &s) {
+    for_each_trans_obs(*this, target, [](simd_word &x, simd_word &z, simd_word &s) {
         s ^= z;
     });
 }

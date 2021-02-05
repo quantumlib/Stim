@@ -17,17 +17,15 @@
 #ifndef SIMD_UTIL_H
 #define SIMD_UTIL_H
 
-#include <bit>
 #include <cstddef>
 #include <cstdint>
 
+constexpr uint64_t tile64_helper(uint64_t val, size_t shift) {
+    return shift >= 64 ? val : tile64_helper(val | (val << shift), shift << 1);
+}
+
 constexpr uint64_t interleave_mask(size_t step) {
-    uint64_t result = (1ULL << step) - 1;
-    while (step < 32) {
-        step <<= 1;
-        result |= result << step;
-    }
-    return result;
+    return tile64_helper((uint64_t{1} << step) - 1, step << 1);
 }
 
 inline uint64_t spread_bytes_32_to_64(uint32_t v) {

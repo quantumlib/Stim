@@ -18,29 +18,15 @@
 
 #include "../test_util.test.h"
 
-TEST(simd_compat, popcnt64) {
-    ASSERT_EQ(popcnt64(0), 0);
-    ASSERT_EQ(popcnt64(1), 1);
-    ASSERT_EQ(popcnt64(2), 1);
-    ASSERT_EQ(popcnt64(3), 2);
-    ASSERT_EQ(popcnt64(0b1010111011011011010011111000011101010111101010101010110101011101ULL), 39);
-    ASSERT_EQ(popcnt64(UINT64_MAX), 64);
-    for (size_t k = 0; k < 70000; k++) {
-        auto expected = 0;
-        size_t k2 = k;
-        while (k2) {
-            k2 &= k2 - 1;
-            expected++;
-        }
-        ASSERT_EQ(popcnt64(k), expected);
-    }
-}
+union WordOr64 {
+    simd_word w;
+    uint64_t p[sizeof(simd_word) / sizeof(uint64_t)];
+
+    WordOr64() : p() {}
+};
 
 TEST(simd_compat, popcount) {
-    union {
-        simd_word w;
-        uint64_t p[sizeof(simd_word) / sizeof(uint64_t)]{};
-    } v{};
+    WordOr64 v;
     auto n = sizeof(simd_word) * 8;
 
     for (size_t expected = 0; expected <= n; expected++) {

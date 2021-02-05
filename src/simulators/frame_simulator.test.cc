@@ -118,13 +118,13 @@ TEST(PauliFrameSimulation, test_util_is_output_possible) {
         "M 0\n"
         "M 1\n");
     auto data = simd_bits(2);
-    data.u64[0] = 0b00;
+    data.u64[0] = 0;
     ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
-    data.u64[0] = 0b01;
+    data.u64[0] = 1;
     ASSERT_EQ(true, is_output_possible_promising_no_bare_resets(circuit, data));
-    data.u64[0] = 0b10;
+    data.u64[0] = 2;
     ASSERT_EQ(true, is_output_possible_promising_no_bare_resets(circuit, data));
-    data.u64[0] = 0b11;
+    data.u64[0] = 3;
     ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
 }
 
@@ -277,7 +277,7 @@ TEST(PauliFrameSimulation, sample_out) {
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 10, SHARED_TEST_RNG());
     for (size_t k = 0; k < 10; k++) {
-        ASSERT_EQ(r[k].u64[0], 0b0010);
+        ASSERT_EQ(r[k].u64[0], 2);
     }
 
     FILE *tmp = tmpfile();
@@ -297,7 +297,7 @@ TEST(PauliFrameSimulation, sample_out) {
     FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
-        ASSERT_EQ(getc(tmp), 0b0010);
+        ASSERT_EQ(getc(tmp), 2);
     }
     ASSERT_EQ(getc(tmp), EOF);
 
@@ -306,7 +306,7 @@ TEST(PauliFrameSimulation, sample_out) {
     rewind(tmp);
     for (size_t k = 0; k < 4; k++) {
         if (k == 1) {
-            ASSERT_EQ(getc(tmp), 0b11111);
+            ASSERT_EQ(getc(tmp), 31);
         } else {
             ASSERT_EQ(getc(tmp), 0);
         }

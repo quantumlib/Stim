@@ -53,6 +53,7 @@ struct OperationData {
     /// Context-dependent parens argument (e.g. noise probability).
     double arg;
 
+    OperationData();
     OperationData(size_t target);
     OperationData(std::initializer_list<size_t> init_targets);
     OperationData(const std::vector<size_t> &init_targets);
@@ -64,6 +65,10 @@ struct OperationData {
 struct Operation {
     std::string name;
     OperationData target_data;
+
+    Operation();
+    Operation(std::string name, OperationData target_data);
+
     bool try_fuse_with(const Operation &other);
 
     bool operator==(const Operation &other) const;
@@ -81,6 +86,7 @@ enum InstructionType {
 struct Instruction {
     InstructionType type;
     Operation op;
+    Instruction(InstructionType type, Operation op);
     static Instruction from_line(const std::string &line, size_t start, size_t end);
     bool operator==(const Operation &other) const;
     bool operator!=(const Operation &other) const;

@@ -161,10 +161,16 @@ Not all modifiers apply to all modes.
     Allows the frame simulator to start immediately, without waiting for a reference sample from the tableau simulator.
     If this assertion is wrong, the output samples can be corrected by xoring them against a valid sample from the circuit.
     Requires measurement sampling mode.
+- `--append_observables`:
+    Requires detection event sampling mode.
+    In addition to outputting the values of detectors, output the values of logical observables
+    built up using `OBSERVABLE_INCLUDE` instructions.
+    Put these observables' values into the detection event output as if they were additional detectors at the end of the circuit.
 - `--prepend_observables`:
     Requires detection event sampling mode.
-    In addition to outputting the values of detectors, output the values of Assume that a valid reference sample is for all measurements to return 0, so that the frame simulator can start
-    running immediately (without waiting for a reference sample from the tableau simulator).
+    In addition to outputting the values of detectors, output the values of logical observables
+    built up using `OBSERVABLE_INCLUDE` instructions.
+    Put these observables' values into the detection event output as if they were additional detectors at the start of the circuit
 - `--in=FILEPATH`:
     Specifies a file to read a circuit from.
     If not specified, the `stdin` pipe is used.
@@ -192,7 +198,7 @@ Not all modifiers apply to all modes.
         ```
     - `hits`:
         Human readable ASCII format.
-        Writes the indices of samples equal to 1, suffixed by a comma.
+        Writes the decimal indices of samples equal to 1, suffixed by a comma.
         Shots are separated by a newline.
         This format is more useful in `--detect` mode, where `1`s are rarer.
         Example all-true output data (for 10 measurements, 4 shots):
@@ -380,7 +386,7 @@ Passing `-DSIMD_WIDTH=64` into cmake will use plain `uint64_t` values for everyt
 # Testing
 
 Unit testing requires GTest to be installed on your system and discoverable by CMake.
-Follow the ["Standalone CMake Project" from the GTest README](https://github.com/google/googletest).
+Follow the ["Standalone CMake Project" from the GTest README](https://github.com/google/googletest/tree/master/googletest).
 
 ```bash
 cmake .
@@ -422,6 +428,6 @@ Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 Emergency `cmake`+`make` bypass:
 
 ```bash
-find src | grep "\\.cc" | grep -v "\\.test\\.cc" | grep -v "\\.perf\\.cc" | xargs g++ -pthread -std=c++20 -march=native -O3 -DSIMD_WIDTH=256
+find src | grep "\\.cc" | grep -v "\\.test\\.cc" | grep -v "\\.perf\\.cc" | xargs g++ -pthread -std=c++11 -march=native -O3 -DSIMD_WIDTH=256
 # output file: ./a.out
 ```

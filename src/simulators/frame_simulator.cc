@@ -220,14 +220,14 @@ void FrameSimulator::H_YZ(const OperationData &target_data) {
 }
 
 void FrameSimulator::ZCX(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z1 ^= z2;
         x2 ^= x1;
     });
 }
 
 void FrameSimulator::ZCY(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z1 ^= x2 ^ z2;
         z2 ^= x1;
         x2 ^= x1;
@@ -235,21 +235,21 @@ void FrameSimulator::ZCY(const OperationData &target_data) {
 }
 
 void FrameSimulator::ZCZ(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z1 ^= x2;
         z2 ^= x1;
     });
 }
 
 void FrameSimulator::SWAP(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         std::swap(z1, z2);
         std::swap(x1, x2);
     });
 }
 
 void FrameSimulator::ISWAP(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         auto dx = x1 ^ x2;
         auto t1 = z1 ^ dx;
         auto t2 = z2 ^ dx;
@@ -260,14 +260,14 @@ void FrameSimulator::ISWAP(const OperationData &target_data) {
 }
 
 void FrameSimulator::XCX(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         x1 ^= z2;
         x2 ^= z1;
     });
 }
 
 void FrameSimulator::XCY(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         x1 ^= x2 ^ z2;
         x2 ^= z1;
         z2 ^= z1;
@@ -275,14 +275,14 @@ void FrameSimulator::XCY(const OperationData &target_data) {
 }
 
 void FrameSimulator::XCZ(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z2 ^= z1;
         x1 ^= x2;
     });
 }
 
 void FrameSimulator::YCX(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         x2 ^= x1 ^ z1;
         x1 ^= z2;
         z1 ^= z2;
@@ -290,7 +290,7 @@ void FrameSimulator::YCX(const OperationData &target_data) {
 }
 
 void FrameSimulator::YCY(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         auto y1 = x1 ^ z1;
         auto y2 = x2 ^ z2;
         x1 ^= y2;
@@ -301,7 +301,7 @@ void FrameSimulator::YCY(const OperationData &target_data) {
 }
 
 void FrameSimulator::YCZ(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](auto &x1, auto &z1, auto &x2, auto &z2) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         z2 ^= x1 ^ z1;
         z1 ^= x2;
         x1 ^= x2;

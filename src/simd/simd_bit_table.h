@@ -107,4 +107,8 @@ struct simd_bit_table {
     std::string str(size_t n) const;
 };
 
+constexpr uint8_t lg(size_t k) {
+    return k <= 1 ? 0 : lg(k >> 1) + 1;
+}
+
 #endif

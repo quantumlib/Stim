@@ -14,6 +14,7 @@
 
 #include "circuit.h"
 
+#include <cctype>
 #include <string>
 #include <utility>
 
@@ -31,10 +32,10 @@ std::vector<std::string> tokenize(const std::string &line, size_t start, size_t 
     }
 
     // Ignore leading and trailing whitespace.
-    while (start < end && std::isspace(line[end - 1])) {
+    while (start < end && isspace(line[end - 1])) {
         end--;
     }
-    while (start < end && std::isspace(line[start])) {
+    while (start < end && isspace(line[start])) {
         start++;
     }
 
@@ -42,7 +43,7 @@ std::vector<std::string> tokenize(const std::string &line, size_t start, size_t 
     std::vector<std::string> tokens{};
     size_t s = start;
     for (size_t k = start; k <= end; k++) {
-        if (k == end || std::isspace(line[k]) || line[k] == '(' || line[k] == ')') {
+        if (k == end || isspace(line[k]) || line[k] == '(' || line[k] == ')') {
             if (s < k) {
                 tokens.push_back(line.substr(s, k - s));
             }
@@ -142,17 +143,29 @@ Operation operation_from_tokens(const std::vector<std::string> &tokens, const st
     return op;
 }
 
+OperationData::OperationData() : targets(), metas(), arg() {
+}
+
+Operation::Operation() : name(), target_data() {
+}
+
+Operation::Operation(std::string name, OperationData target_data) : name(std::move(name)), target_data(std::move(target_data)) {
+}
+
+Instruction::Instruction(InstructionType type, Operation op) : type(type), op(std::move(op)) {
+}
+
 Instruction Instruction::from_line(const std::string &line, size_t start, size_t end) {
     auto tokens = tokenize(line, start, end);
     if (tokens.empty()) {
-        return {INSTRUCTION_TYPE_EMPTY};
+        return Instruction(INSTRUCTION_TYPE_EMPTY, {});
     }
 
     if (tokens[tokens.size() - 1] == "}") {
         if (tokens.size() > 1) {
             throw std::out_of_range("End of block `}` must be on its own line.");
         }
-        return {INSTRUCTION_TYPE_BLOCK_END};
+        return Instruction(INSTRUCTION_TYPE_BLOCK_END, {});
     }
 
     bool started_block = tokens[tokens.size() - 1] == "{";
@@ -163,14 +176,14 @@ Instruction Instruction::from_line(const std::string &line, size_t start, size_t
 
     // Canonicalize the name.
     for (char &k : tokens[0]) {
-        k = (char)std::toupper(k);
+        k = (char)toupper(k);
     }
     auto canonical_name_ptr = GATE_CANONICAL_NAMES.find(tokens[0]);
     if (canonical_name_ptr != GATE_CANONICAL_NAMES.end()) {
         tokens[0] = canonical_name_ptr->second;
     }
 
-    return {type, operation_from_tokens(tokens, line)};
+    return Instruction(type, operation_from_tokens(tokens, line));
 }
 
 MeasurementSet &MeasurementSet::operator*=(const MeasurementSet &other) {

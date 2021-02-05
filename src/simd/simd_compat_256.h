@@ -19,6 +19,9 @@
 
 #include "simd_util.h"
 
+#define simd_word_malloc(bytes) ((simd_word *)_mm_malloc(bytes, sizeof(simd_word)))
+#define simd_word_free(ptr) _mm_free(ptr)
+
 struct simd_word {
     union {
         __m256i val;

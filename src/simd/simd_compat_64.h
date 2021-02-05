@@ -16,6 +16,9 @@
 
 #include "simd_util.h"
 
+#define simd_word_malloc(bytes) ((simd_word *)malloc(bytes))
+#define simd_word_free(ptr) free(ptr)
+
 struct emu_u128 {
     uint64_t a;
     uint64_t b;
@@ -33,29 +36,20 @@ struct simd_word {
     inline constexpr simd_word(uint64_t v1, uint64_t v2) : u64{v1, v2} {
     }
 
+    constexpr inline static simd_word tile64(uint64_t pattern) {
+        return {pattern, pattern};
+    }
+
     constexpr inline static simd_word tile8(uint8_t pattern) {
-        uint64_t result = pattern;
-        result |= result << 8;
-        result |= result << 16;
-        result |= result << 32;
-        return {result, result};
+        return simd_word::tile64(tile64_helper(pattern, 8));
     }
 
     constexpr inline static simd_word tile16(uint16_t pattern) {
-        uint64_t result = pattern;
-        result |= result << 16;
-        result |= result << 32;
-        return {result, result};
+        return simd_word::tile64(tile64_helper(pattern, 16));
     }
 
     constexpr inline static simd_word tile32(uint32_t pattern) {
-        uint64_t result = pattern;
-        result |= result << 32;
-        return {result, result};
-    }
-
-    constexpr inline static simd_word tile64(uint64_t pattern) {
-        return {pattern, pattern};
+        return simd_word::tile64(tile64_helper(pattern, 32));
     }
 
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)

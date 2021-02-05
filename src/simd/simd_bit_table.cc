@@ -59,7 +59,7 @@ simd_bit_table simd_bit_table::square_mat_mul(const simd_bit_table &rhs, size_t 
     for (size_t row = 0; row < n; row++) {
         for (size_t col = 0; col < n; col++) {
             simd_word acc{};
-            (*this)[row].for_each_word(tmp[col], [&](auto &w1, auto &w2) {
+            (*this)[row].for_each_word(tmp[col], [&](simd_word &w1, simd_word &w2) {
                 acc ^= w1 & w2;
             });
             result[row][col] = acc.popcount() & 1;
@@ -90,7 +90,7 @@ template <uint8_t step>
 void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
     auto mask = simd_word::tile64(interleave_mask(step));
     for (size_t major = base; major < end; major++, major += major & step) {
-        table[major].for_each_word(table[major + step], [&mask](auto &a, auto &b) {
+        table[major].for_each_word(table[major + step], [&mask](simd_word &a, simd_word &b) {
             auto t0 = a ^ b.leftshift_tile64(step);
             auto t1 = a.rightshift_tile64(step) ^ b;
             a ^= mask.andnot(t0);
@@ -102,23 +102,14 @@ void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
 template <uint8_t step>
 void rc3456_address_bit_rotate_swap(simd_bit_table &table, size_t m1, size_t m2) {
     for (size_t major = m1; major < m2; major++, major += major & step) {
-        table[major].for_each_word(table[major + step], [](auto &a, auto &b) {
+        table[major].for_each_word(table[major + step], [](simd_word &a, simd_word &b) {
             a.do_interleave8_tile128(b);
         });
     }
 }
 
-constexpr uint8_t lg(size_t k) {
-    size_t t = 0;
-    while (k > 1) {
-        k >>= 1;
-        t += 1;
-    }
-    return (uint8_t)t;
-}
-
 void rc_address_word_swap(simd_bit_table &t) {
-    constexpr uint16_t block_diameter = sizeof(__m128i) << 3;
+    constexpr uint16_t block_diameter = sizeof(uint64_t) << 4;
     constexpr uint8_t block_shift = lg(block_diameter);
     size_t n = t.num_major_bits_padded();
     size_t num_blocks = n >> block_shift;

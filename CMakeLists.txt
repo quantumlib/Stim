@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(stim)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 if(NOT(SIMD_WIDTH))
     message("Defaulted SIMD_WIDTH to 256. Pass -DSIMD_WIDTH=128 or -DSIMD_WIDTH=64 into cmake for other avx widths.")

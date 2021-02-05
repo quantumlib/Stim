@@ -97,7 +97,7 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
     simd_word cnt1{};
     simd_word cnt2{};
 
-    xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](auto &x1, auto &z1, auto &x2, auto &z2) {
+    xs.for_each_word(zs, rhs.xs, rhs.zs, [&cnt1, &cnt2](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         // Update the left hand side Paulis.
         auto old_x1 = x1;
         auto old_z1 = z1;
@@ -121,7 +121,7 @@ uint8_t PauliStringRef::inplace_right_mul_returning_log_i_scalar(const PauliStri
 bool PauliStringRef::commutes(const PauliStringRef &other) const noexcept {
     assert(num_qubits == other.num_qubits);
     simd_word cnt1{};
-    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](auto &x1, auto &z1, auto &x2, auto &z2) {
+    xs.for_each_word(zs, other.xs, other.zs, [&cnt1](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
         cnt1 ^= (x1 & z2) ^ (x2 & z1);
     });
     return (cnt1.popcount() & 1) == 0;

@@ -20,7 +20,7 @@ TEST(circuit, operation_from_line) {
     auto f = [](const std::string &line) {
         return Instruction::from_line(line, 0, line.size());
     };
-    ASSERT_EQ(f("# not an operation"), (Instruction{INSTRUCTION_TYPE_EMPTY}));
+    ASSERT_EQ(f("# not an operation"), Instruction(INSTRUCTION_TYPE_EMPTY, {}));
 
     ASSERT_EQ(f("H 0"), (Operation{"H_XZ", OperationData({0})}));
     ASSERT_EQ(f("H 23"), (Operation{"H_XZ", OperationData({23})}));

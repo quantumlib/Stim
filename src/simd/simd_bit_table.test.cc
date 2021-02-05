@@ -202,3 +202,16 @@ TEST(bit_mat, from_quadrants) {
         "....\n"
         "1.1.");
 }
+
+TEST(simd_bit_table, lg) {
+    ASSERT_EQ(lg(0), 0);
+    ASSERT_EQ(lg(1), 0);
+    ASSERT_EQ(lg(2), 1);
+    ASSERT_EQ(lg(3), 1);
+    ASSERT_EQ(lg(4), 2);
+    ASSERT_EQ(lg(5), 2);
+    ASSERT_EQ(lg(6), 2);
+    ASSERT_EQ(lg(7), 2);
+    ASSERT_EQ(lg(8), 3);
+    ASSERT_EQ(lg(9), 3);
+}

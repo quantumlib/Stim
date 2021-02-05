@@ -226,16 +226,16 @@ const std::unordered_map<std::string, std::function<void(TableauSimulator &, con
         {"Z_ERROR", &TableauSimulator::Z_ERROR},
         // Ignored.
         {"DETECTOR",
-         [](auto &s, const auto &t) {
+         [](TableauSimulator &s, const OperationData &t) {
          }},
         {"OBSERVABLE_INCLUDE",
-         [](auto &s, const auto &t) {
+         [](TableauSimulator &s, const OperationData &t) {
          }},
         {"TICK",
-         [](auto &s, const auto &t) {
+         [](TableauSimulator &s, const OperationData &t) {
          }},
         {"I",
-         [](auto &s, const auto &t) {
+         [](TableauSimulator &s, const OperationData &t) {
          }},
     };
 
