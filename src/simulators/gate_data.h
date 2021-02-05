@@ -17,8 +17,11 @@
 #ifndef GATE_DATA_H
 #define GATE_DATA_H
 
+#include <cassert>
 #include <complex>
+#include <cstring>
 #include <functional>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -28,32 +31,120 @@ struct TableauSimulator;
 struct FrameSimulator;
 struct OperationData;
 struct Tableau;
+struct Operation;
 
-/// Maps alternate gate names to a canonical name, e.g. `CNOT` -> `ZCX`.
-extern const std::unordered_map<std::string, const std::string> GATE_CANONICAL_NAMES;
-/// Maps the name of a gate to the name of its inverse gate.
-extern const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES;
-/// Names of operations that are part of the noise model.
-extern const std::unordered_set<std::string> NOISY_GATE_NAMES;
-/// Names of operations that take measurement history arguments like `DETECTOR 2@-1 2@-2`.
-extern const std::unordered_set<std::string> BACKTRACK_ARG_OP_NAMES;
-/// Names of operations that require a parenthesized argument, like `X_ERROR(0.0001) 1 2 3`.
-extern const std::unordered_set<std::string> PARENS_ARG_OP_NAMES;
-/// Names of operations that produce measurement results.
-extern const std::unordered_set<std::string> MEASUREMENT_OP_NAMES;
+inline uint8_t gate_name_to_id(const char *v, size_t n) {
+    // HACK: A collision is considered to be an error.
+    // Just do *anything* that makes all the defined gates have different values.
 
-/// Unitary matrix data by gate name..
-extern const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES;
-/// Tableau data by gate name..
-extern const std::unordered_map<std::string, const std::vector<const char *>> GATE_TABLEAUS;
+    uint8_t result = v[0] + (v[n - 1] << 2);
+    if (n >= 3) {
+        result ^= 1;
+        result += v[1];
+        result ^= v[1];
+        result += v[2] * 5;
+        result ^= v[2];
+    }
+    if (n >= 5) {
+        result ^= 5;
+        result += v[3] * 7;
+        result += v[5] * 11;
+    }
+    result &= 0x1F;
+    result |= n << 5;
+    result ^= n;
+    return result;
+}
 
-/// Specialized gate methods by name for the tableau simulator.
-extern const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>>
-    SIM_TABLEAU_GATE_FUNC_DATA;
-/// Specialized gate methods by name for the frame simulator.
-extern const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>>
-    SIM_BULK_PAULI_FRAMES_GATE_DATA;
-/// Operations which shouldn't be merged together.
-extern const std::unordered_set<std::string> UNFUSABLE_OP_NAMES;
+inline uint8_t gate_name_to_id(const char *c) {
+    return gate_name_to_id(c, strlen(c));
+}
+
+template <typename T, size_t max_length>
+struct TruncatedArray {
+    size_t length;
+    T data[max_length];
+    TruncatedArray() : length(0), data() {
+    }
+    TruncatedArray(T item) : length(1), data() {
+        data[0] = std::move(item);
+    }
+    TruncatedArray(std::initializer_list<T> values) : length(values.size()), data() {
+        assert(values.size() <= max_length);
+        size_t k = 0;
+        for (auto &v : values) {
+            data[k++] = std::move(v);
+        }
+    }
+};
+
+enum GateFlags : uint8_t {
+    GATE_NO_FLAGS = 0,
+    GATE_IS_UNITARY = 1 << 0,
+    GATE_IS_NOISE = 1 << 1,
+    GATE_TARGETS_MEASUREMENT_RECORD = 1 << 2,
+    GATE_TAKES_PARENS_ARGUMENT = 1 << 3,
+    GATE_PRODUCES_RESULTS = 1 << 4,
+    GATE_IS_NOT_FUSABLE = 1 << 5,
+};
+
+struct Gate {
+    const char *name;
+    void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
+    void (FrameSimulator::*frame_simulator_function)(const OperationData &);
+    GateFlags flags;
+    TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data;
+    TruncatedArray<const char *, 4> tableau_data;
+    uint8_t id;
+
+    Gate();
+    Gate(
+        const char *name, void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
+        void (FrameSimulator::*frame_simulator_function)(const OperationData &), GateFlags flags,
+        TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data,
+        TruncatedArray<const char *, 4> tableau_data);
+
+    const Gate &inverse() const;
+    Tableau tableau() const;
+    std::vector<std::vector<std::complex<float>>> unitary() const;
+    Operation applied(OperationData data) const;
+};
+
+struct GateDataMap {
+private:
+    Gate items[256];
+
+public:
+    GateDataMap(
+        std::initializer_list<Gate> gates,
+        std::initializer_list<std::pair<const char *, const char *>> alternate_names);
+
+    std::vector<Gate> gates() const;
+
+    inline const Gate &at(const char *text, size_t text_len) const {
+        uint8_t h = gate_name_to_id(text);
+        const char *bucket_name = items[h].name;
+        if (bucket_name == nullptr || strcmp(items[h].name, text) != 0) {
+            throw std::out_of_range("Gate not found " + std::string(text));
+        }
+        // Canonicalize.
+        return items[items[h].id];
+    }
+
+    inline const Gate &at(const char *text) const {
+        return at(text, strlen(text));
+    }
+
+    inline const Gate &at(const std::string &text) const {
+        return at(text.data(), text.size());
+    }
+
+    inline bool has(const std::string &text) const {
+        uint8_t h = gate_name_to_id(text.data(), text.size());
+        return items[h].name != nullptr && strcmp(items[h].name, text.data()) == 0;
+    }
+};
+
+extern const GateDataMap GATE_DATA;
 
 #endif

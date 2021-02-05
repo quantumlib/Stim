@@ -22,7 +22,8 @@ union WordOr64 {
     simd_word w;
     uint64_t p[sizeof(simd_word) / sizeof(uint64_t)];
 
-    WordOr64() : p() {}
+    WordOr64() : p() {
+    }
 };
 
 TEST(simd_compat, popcount) {

@@ -143,15 +143,7 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
     assert(circuit.num_measurements == num_measurements_raw);
     reset_all();
     for (const auto &op : circuit.operations) {
-        do_named_op(op.name, op.target_data);
-    }
-}
-
-void FrameSimulator::do_named_op(const std::string &name, const OperationData &target_data) {
-    try {
-        SIM_BULK_PAULI_FRAMES_GATE_DATA.at(name)(*this, target_data);
-    } catch (const std::out_of_range &) {
-        throw std::out_of_range("Gate isn't supported by FrameSimulator: " + name);
+        (this->*op.gate.frame_simulator_function)(op.target_data);
     }
 }
 
@@ -180,6 +172,9 @@ void FrameSimulator::measure_reset(const OperationData &target_data) {
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         num_recorded_measurements++;
     }
+}
+
+void FrameSimulator::I(const OperationData &target_data) {
 }
 
 PauliString FrameSimulator::get_frame(size_t sample_index) const {

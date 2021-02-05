@@ -51,29 +51,32 @@ inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q1, size_t q
 }
 
 void TableauTransposedRaii::append_ZCX(size_t control, size_t target) {
-    for_each_trans_obs(*this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
-        s ^= (cz ^ tx).andnot(cx & tz);
-        cz ^= tz;
-        tx ^= cx;
-    });
+    for_each_trans_obs(
+        *this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
+            s ^= (cz ^ tx).andnot(cx & tz);
+            cz ^= tz;
+            tx ^= cx;
+        });
 }
 
 void TableauTransposedRaii::append_ZCY(size_t control, size_t target) {
-    for_each_trans_obs(*this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
-        cz ^= tx;
-        s ^= cx & cz & (tx ^ tz);
-        cz ^= tz;
-        tx ^= cx;
-        tz ^= cx;
-    });
+    for_each_trans_obs(
+        *this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
+            cz ^= tx;
+            s ^= cx & cz & (tx ^ tz);
+            cz ^= tz;
+            tx ^= cx;
+            tz ^= cx;
+        });
 }
 
 void TableauTransposedRaii::append_ZCZ(size_t control, size_t target) {
-    for_each_trans_obs(*this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
-        s ^= cx & tx & (cz ^ tz);
-        cz ^= tx;
-        tz ^= cx;
-    });
+    for_each_trans_obs(
+        *this, control, target, [](simd_word &cx, simd_word &cz, simd_word &tx, simd_word &tz, simd_word &s) {
+            s ^= cx & tx & (cz ^ tz);
+            cz ^= tx;
+            tz ^= cx;
+        });
 }
 
 void TableauTransposedRaii::append_SWAP(size_t q1, size_t q2) {

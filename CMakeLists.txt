@@ -44,6 +44,7 @@ set(TEST_FILES
         src/simd/simd_util.test.cc
         src/simulators/detection_simulator.test.cc
         src/simulators/frame_simulator.test.cc
+        src/simulators/gate_data.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
@@ -54,10 +55,12 @@ set(TEST_FILES
 set(BENCHMARK_FILES
         src/benchmark_main.perf.cc
         src/benchmark_util.perf.cc
+        src/circuit.perf.cc
         src/simd/simd_bits.perf.cc
         src/simd/simd_bit_table.perf.cc
         src/simd/simd_compat.perf.cc
         src/simulators/frame_simulator.perf.cc
+        src/simulators/gate_data.perf.cc
         src/simulators/tableau_simulator.perf.cc
         src/stabilizers/pauli_string.perf.cc
         src/stabilizers/tableau.perf.cc

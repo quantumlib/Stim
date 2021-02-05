@@ -60,6 +60,7 @@ struct FrameSimulator {
     void reset(const OperationData &target_data);
     void measure_reset(const OperationData &target_data);
 
+    void I(const OperationData &target_data);
     void H_XZ(const OperationData &target_data);
     void H_XY(const OperationData &target_data);
     void H_YZ(const OperationData &target_data);
@@ -74,7 +75,6 @@ struct FrameSimulator {
     void YCZ(const OperationData &target_data);
     void SWAP(const OperationData &target_data);
     void ISWAP(const OperationData &target_data);
-    void do_named_op(const std::string &name, const OperationData &target_data);
 
     void DEPOLARIZE1(const OperationData &target_data);
     void DEPOLARIZE2(const OperationData &target_data);

@@ -22,18 +22,19 @@ TEST(circuit, operation_from_line) {
     };
     ASSERT_EQ(f("# not an operation"), Instruction(INSTRUCTION_TYPE_EMPTY, {}));
 
-    ASSERT_EQ(f("H 0"), (Operation{"H_XZ", OperationData({0})}));
-    ASSERT_EQ(f("H 23"), (Operation{"H_XZ", OperationData({23})}));
-    ASSERT_EQ(f("h 0"), (Operation{"H_XZ", OperationData({0})}));
-    ASSERT_EQ(f("H 0     "), (Operation{"H_XZ", OperationData({0})}));
-    ASSERT_EQ(f("     H 0     "), (Operation{"H_XZ", OperationData({0})}));
-    ASSERT_EQ(f("\tH 0\t\t"), (Operation{"H_XZ", OperationData({0})}));
-    ASSERT_EQ(f("H 0  # comment"), (Operation{"H_XZ", OperationData({0})}));
+    auto h0 = GATE_DATA.at("H_XZ").applied(OperationData({0}));
+    ASSERT_EQ(f("H 0"), h0);
+    ASSERT_EQ(f("H 23"), GATE_DATA.at("H_XZ").applied(OperationData({23})));
+    ASSERT_EQ(f("h 0"), h0);
+    ASSERT_EQ(f("H 0     "), h0);
+    ASSERT_EQ(f("     H 0     "), h0);
+    ASSERT_EQ(f("\tH 0\t\t"), h0);
+    ASSERT_EQ(f("H 0  # comment"), h0);
     ASSERT_EQ(
         f("DEPOLARIZE1(0.125) 4 5  # comment"),
-        (Operation{"DEPOLARIZE1", OperationData({4, 5}, {false, false}, 0.125)}));
+        GATE_DATA.at("DEPOLARIZE1").applied(OperationData({4, 5}, {false, false}, 0.125)));
 
-    ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), (Operation{"ZCX", {{5, 6}}}));
+    ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), GATE_DATA.at("ZCX").applied({{5, 6}}));
 
     ASSERT_THROW({ f("H a"); }, std::runtime_error);
     ASSERT_THROW({ f("H(1)"); }, std::runtime_error);
@@ -49,17 +50,17 @@ TEST(circuit, operation_from_line) {
 TEST(circuit, from_text) {
     ASSERT_EQ(Circuit::from_text(""), Circuit({}));
     ASSERT_EQ(Circuit::from_text("# Comment\n\n\n# More"), Circuit({}));
-    ASSERT_EQ(Circuit::from_text("H 0"), Circuit(std::vector<Operation>{{"H_XZ", OperationData({0})}}));
-    ASSERT_EQ(Circuit::from_text("H 0 \n H 1"), Circuit({{"H_XZ", OperationData({0, 1})}}));
-    ASSERT_EQ(Circuit::from_text("H 1"), Circuit({{"H_XZ", OperationData({1})}}));
+    ASSERT_EQ(Circuit::from_text("H 0"), Circuit({GATE_DATA.at("H_XZ").applied({0})}));
+    ASSERT_EQ(Circuit::from_text("H 0 \n H 1"), Circuit({GATE_DATA.at("H_XZ").applied({0, 1})}));
+    ASSERT_EQ(Circuit::from_text("H 1"), Circuit({GATE_DATA.at("H_XZ").applied({1})}));
     ASSERT_EQ(
         Circuit::from_text("# EPR\n"
                            "H 0\n"
                            "CNOT 0 1"),
-        Circuit(std::vector<Operation>{{"H_XZ", OperationData({0})}, {"ZCX", OperationData({0, 1})}}));
+        Circuit({GATE_DATA.at("H_XZ").applied({0}), GATE_DATA.at("ZCX").applied({0, 1})}));
     ASSERT_EQ(
         Circuit::from_text("M 0 !0 1 !1"),
-        Circuit(std::vector<Operation>{{"M", OperationData({0, 0, 1, 1}, {false, true, false, true}, 0)}}));
+        Circuit({GATE_DATA.at("M").applied(OperationData({0, 0, 1, 1}, {false, true, false, true}, 0))}));
     ASSERT_EQ(
         Circuit::from_text("# Measurement fusion\n"
                            "H 0\n"
@@ -69,11 +70,12 @@ TEST(circuit, from_text) {
                            "SWAP 0 1\n"
                            "M 0\n"
                            "M 10\n"),
-        Circuit(std::vector<Operation>{
-            {"H_XZ", OperationData({0})},
-            {"M", OperationData({0, 1, 2})},
-            {"SWAP", OperationData({0, 1})},
-            {"M", OperationData({0, 10})}}));
+        Circuit({
+            GATE_DATA.at("H_XZ").applied({0}),
+            GATE_DATA.at("M").applied({0, 1, 2}),
+            GATE_DATA.at("SWAP").applied({0, 1}),
+            GATE_DATA.at("M").applied({0, 10}),
+        }));
 
     ASSERT_EQ(
         Circuit::from_text("X 0\n"
@@ -81,8 +83,11 @@ TEST(circuit, from_text) {
                            "  Y 1\n"
                            "  Y 2 #####\n"
                            "} #####"),
-        Circuit(std::vector<Operation>{
-            {"X", OperationData({0})}, {"Y", OperationData({1, 2})}, {"Y", OperationData({1, 2})}}));
+        Circuit({
+            GATE_DATA.at("X").applied({0}),
+            GATE_DATA.at("Y").applied({1, 2}),
+            GATE_DATA.at("Y").applied({1, 2}),
+        }));
 
     ASSERT_EQ(
         Circuit::from_text("X 0\n"
@@ -92,15 +97,15 @@ TEST(circuit, from_text) {
                            "    Z 1\n"
                            "  }\n"
                            "}"),
-        Circuit(std::vector<Operation>{
-            {"X", OperationData({0})},
-            {"Y", OperationData({1})},
-            {"Z", OperationData({1})},
-            {"Z", OperationData({1})},
-            {"Z", OperationData({1})},
-            {"Y", OperationData({1})},
-            {"Z", OperationData({1})},
-            {"Z", OperationData({1})},
-            {"Z", OperationData({1})},
+        Circuit({
+            GATE_DATA.at("X").applied({0}),
+            GATE_DATA.at("Y").applied({1}),
+            GATE_DATA.at("Z").applied({1}),
+            GATE_DATA.at("Z").applied({1}),
+            GATE_DATA.at("Z").applied({1}),
+            GATE_DATA.at("Y").applied({1}),
+            GATE_DATA.at("Z").applied({1}),
+            GATE_DATA.at("Z").applied({1}),
+            GATE_DATA.at("Z").applied({1}),
         }));
 }

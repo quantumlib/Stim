@@ -84,19 +84,11 @@ struct TableauSimulator {
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
     void measure_reset(const OperationData &target_data);
 
-    /// Applies a named operation to the given targets.
-    ///
-    /// See `SIM_TABLEAU_GATE_FUNC_DATA` and `gate_data.c` for a list of supported operations.
-    ///
-    /// The number of targets must be a multiple of the number of qubits the operation acts on.
-    /// The operation will be broadcast over the aligned targets. For example, CNOT 0 1 2 3 is
-    /// equivalent to CNOT 0 1 then CNOT 2 3.
-    void apply(const std::string &name, const OperationData &target_data);
-
     /// Determines if a qubit's Z observable commutes (vs anti-commutes) with the current stabilizer generators.
     bool is_deterministic(size_t target) const;
 
     /// === SPECIALIZED VECTORIZED OPERATION IMPLEMENTATIONS ===
+    void I(const OperationData &target_data);
     void H_XZ(const OperationData &target_data);
     void H_YZ(const OperationData &target_data);
     void H_XY(const OperationData &target_data);

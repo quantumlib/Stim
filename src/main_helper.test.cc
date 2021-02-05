@@ -436,7 +436,8 @@ TEST(main_helper, make_circuit) {
         execute({"--make_circuit=surface_unrotated", "--distance=5"}, nullptr),
         unrotated_surface_code_program_text(5, 5, 0));
     ASSERT_EQ(
-        execute({"--make_circuit=surface_unrotated", "--rounds=7"}, nullptr), unrotated_surface_code_program_text(3, 7, 0));
+        execute({"--make_circuit=surface_unrotated", "--rounds=7"}, nullptr),
+        unrotated_surface_code_program_text(3, 7, 0));
     ASSERT_EQ(
         execute({"--make_circuit=surface_unrotated", "--distance=5", "--rounds=7"}, nullptr),
         unrotated_surface_code_program_text(5, 7, 0));

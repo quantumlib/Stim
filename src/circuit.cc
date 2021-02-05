@@ -96,11 +96,11 @@ std::pair<size_t, size_t> parse_record_arg(const std::string &token, const std::
 }
 
 Operation operation_from_tokens(const std::vector<std::string> &tokens, const std::string &line) {
-    Operation op{tokens[0], OperationData({}, {}, 0)};
+    Operation op{GATE_DATA.at(tokens[0]), OperationData({}, {}, 0)};
 
     size_t start_of_args = 1;
     bool has_argument = tokens.size() >= 4 && tokens[1] == "(" && tokens[3] == ")";
-    bool expects_argument = PARENS_ARG_OP_NAMES.find(tokens[0]) != PARENS_ARG_OP_NAMES.end();
+    bool expects_argument = op.gate.flags & GATE_TAKES_PARENS_ARGUMENT;
     if (has_argument && !expects_argument) {
         throw std::runtime_error("Don't use parens () with " + tokens[0] + ". '" + line + "'.");
     }
@@ -123,7 +123,7 @@ Operation operation_from_tokens(const std::vector<std::string> &tokens, const st
 
     op.target_data.targets.reserve(tokens.size() - start_of_args);
     op.target_data.metas.reserve(tokens.size() - start_of_args);
-    bool has_record_args = BACKTRACK_ARG_OP_NAMES.find(op.name) != BACKTRACK_ARG_OP_NAMES.end();
+    bool has_record_args = op.gate.flags & GATE_TARGETS_MEASUREMENT_RECORD;
     try {
         for (size_t k = start_of_args; k < tokens.size(); k++) {
             if (has_record_args) {
@@ -146,10 +146,10 @@ Operation operation_from_tokens(const std::vector<std::string> &tokens, const st
 OperationData::OperationData() : targets(), metas(), arg() {
 }
 
-Operation::Operation() : name(), target_data() {
+Operation::Operation() : gate(GATE_DATA.at("I")), target_data() {
 }
 
-Operation::Operation(std::string name, OperationData target_data) : name(std::move(name)), target_data(std::move(target_data)) {
+Operation::Operation(const Gate &gate, OperationData target_data) : gate(gate), target_data(std::move(target_data)) {
 }
 
 Instruction::Instruction(InstructionType type, Operation op) : type(type), op(std::move(op)) {
@@ -178,10 +178,6 @@ Instruction Instruction::from_line(const std::string &line, size_t start, size_t
     for (char &k : tokens[0]) {
         k = (char)toupper(k);
     }
-    auto canonical_name_ptr = GATE_CANONICAL_NAMES.find(tokens[0]);
-    if (canonical_name_ptr != GATE_CANONICAL_NAMES.end()) {
-        tokens[0] = canonical_name_ptr->second;
-    }
 
     return Instruction(type, operation_from_tokens(tokens, line));
 }
@@ -207,13 +203,13 @@ void init_nums(Circuit &circuit) {
         return result;
     };
     for (const auto &p : circuit.operations) {
-        if (MEASUREMENT_OP_NAMES.find(p.name) != MEASUREMENT_OP_NAMES.end()) {
+        if (p.gate.flags & GATE_PRODUCES_RESULTS) {
             for (auto q : p.target_data.targets) {
                 qubit_measure_indices[q].push_back(circuit.num_measurements++);
             }
-        } else if (p.name == "DETECTOR") {
+        } else if (p.gate.id == gate_name_to_id("DETECTOR")) {
             circuit.detectors.push_back(resolve(p));
-        } else if (p.name == "OBSERVABLE_INCLUDE") {
+        } else if (p.gate.id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
             size_t obs = (size_t)p.target_data.arg;
             if (obs != p.target_data.arg) {
                 throw std::out_of_range("Observable index must be an integer.");
@@ -248,10 +244,10 @@ Circuit Circuit::from_text(const std::string &text) {
 }
 
 bool Operation::try_fuse_with(const Operation &other) {
-    if (UNFUSABLE_OP_NAMES.find(name) != UNFUSABLE_OP_NAMES.end()) {
+    if (gate.flags & GATE_IS_NOT_FUSABLE) {
         return false;
     }
-    if (name == other.name && target_data.arg == other.target_data.arg) {
+    if (gate.id == other.gate.id && target_data.arg == other.target_data.arg) {
         target_data += other.target_data;
         return true;
     }
@@ -259,7 +255,7 @@ bool Operation::try_fuse_with(const Operation &other) {
 }
 
 bool Operation::operator==(const Operation &other) const {
-    return name == other.name && target_data.targets == other.target_data.targets &&
+    return gate.id == other.gate.id && target_data.targets == other.target_data.targets &&
            target_data.arg == other.target_data.arg && target_data.metas == other.target_data.metas;
 }
 
@@ -304,7 +300,7 @@ std::string read_line(FILE *file) {
     }
 }
 
-void CircuitReader::read_all(std::string text) {
+void CircuitReader::read_all(const std::string &text) {
     size_t s = 0;
     size_t k = 0;
     while (read_more_helper(
@@ -356,23 +352,26 @@ bool CircuitReader::read_more_helper(
             if (!can_fuse || !ops.back().try_fuse_with(instruction.op)) {
                 ops.push_back(instruction.op);
             }
-            if (stop_after_measurement && instruction.op.name == "M") {
+            if (stop_after_measurement && (instruction.op.gate.flags & GATE_PRODUCES_RESULTS)) {
                 return true;
             }
             read_any = true;
             can_fuse = true;
         } else if (instruction.type == INSTRUCTION_TYPE_BLOCK_OPERATION_START) {
-            if (instruction.op.name == "REPEAT") {
-                if (instruction.op.target_data.targets.size() != 1 || instruction.op.target_data.arg) {
+            if (instruction.op.gate.id == gate_name_to_id("REPEAT")) {
+                if (instruction.op.target_data.targets.size() != 1 || (bool)instruction.op.target_data.arg) {
                     throw std::out_of_range("Invalid instruction. Expected one repetition count like `REPEAT 100 {`.");
                 }
                 CircuitReader sub;
                 sub.read_more_helper(line_getter, true, false);
                 for (size_t k = 0; k < instruction.op.target_data.targets[0]; k++) {
-                    ops.insert(ops.end(), sub.ops.begin(), sub.ops.end());
+                    for (auto &e : sub.ops) {
+                        ops.push_back(e);
+                    }
                 }
             } else {
-                throw std::out_of_range("'" + instruction.op.name + "' is not a block starting instruction.");
+                throw std::out_of_range(
+                    "'" + std::string(instruction.op.gate.name) + "' is not a block starting instruction.");
             }
             can_fuse = false;
             if (stop_after_measurement && !inside_block) {
@@ -390,7 +389,7 @@ bool CircuitReader::read_more_helper(
 }
 
 std::ostream &operator<<(std::ostream &out, const Operation &op) {
-    out << op.name;
+    out << op.gate.name;
     if (op.target_data.arg != 0) {
         out << '(';
         if ((size_t)op.target_data.arg == op.target_data.arg) {

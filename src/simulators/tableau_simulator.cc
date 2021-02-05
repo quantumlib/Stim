@@ -62,6 +62,9 @@ void TableauSimulator::reset(const OperationData &target_data) {
     }
 }
 
+void TableauSimulator::I(const OperationData &target_data) {
+}
+
 void TableauSimulator::H_XZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
@@ -311,14 +314,6 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-void TableauSimulator::apply(const std::string &name, const OperationData &target_data) {
-    try {
-        SIM_TABLEAU_GATE_FUNC_DATA.at(name)(*this, target_data);
-    } catch (const std::out_of_range &) {
-        throw std::out_of_range("Gate isn't supported by TableauSimulator: " + name);
-    }
-}
-
 void TableauSimulator::apply(const Tableau &tableau, const OperationData &target_data) {
     // Note: inverted because we're tracking the inverse tableau.
     inv_state.inplace_scatter_prepend(tableau.inverse(), target_data.targets);
@@ -327,7 +322,7 @@ void TableauSimulator::apply(const Tableau &tableau, const OperationData &target
 simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator sim(circuit.num_qubits, rng, sign_bias);
     for (const auto &op : circuit.operations) {
-        sim.apply(op.name, op.target_data);
+        (sim.*op.gate.tableau_simulator_function)(op.target_data);
     }
 
     assert(sim.recorded_measurement_results.size() == circuit.num_measurements);
@@ -361,12 +356,12 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
 
         for (size_t k = num_processed_ops; k < reader.ops.size(); k++) {
             const auto &op = reader.ops[k];
-            sim.apply(op.name, op.target_data);
+            (sim.*op.gate.tableau_simulator_function)(op.target_data);
             while (!sim.recorded_measurement_results.empty()) {
                 putc('0' + sim.recorded_measurement_results.front(), out);
                 sim.recorded_measurement_results.pop();
             }
-            if (newline_after_measurements && MEASUREMENT_OP_NAMES.find(op.name) != MEASUREMENT_OP_NAMES.end()) {
+            if (newline_after_measurements && (op.gate.flags & GATE_PRODUCES_RESULTS)) {
                 putc('\n', out);
                 fflush(out);
             }
@@ -445,7 +440,7 @@ void TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &tran
 simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
     std::vector<Operation> deterministic_operations{};
     for (const auto &op : circuit.operations) {
-        if (NOISY_GATE_NAMES.find(op.name) == NOISY_GATE_NAMES.end()) {
+        if (!(op.gate.flags & GATE_IS_NOISE)) {
             deterministic_operations.push_back(op);
         }
     }

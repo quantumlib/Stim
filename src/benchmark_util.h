@@ -27,11 +27,8 @@ struct BenchmarkResult {
     std::vector<std::pair<std::string, double>> marginal_rates;
     double goal_seconds;
 
-    BenchmarkResult(double total_seconds, size_t total_reps) :
-        total_seconds(total_seconds),
-        total_reps(total_reps),
-        marginal_rates(),
-        goal_seconds(-1) {
+    BenchmarkResult(double total_seconds, size_t total_reps)
+        : total_seconds(total_seconds), total_reps(total_reps), marginal_rates(), goal_seconds(-1) {
     }
 
     BenchmarkResult &show_rate(const std::string &new_unit_name, double new_multiplier) {

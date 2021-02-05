@@ -59,9 +59,10 @@ TEST(vector_sim, state_channel_duality_cnot) {
     sim.apply("ZCX", 0, 2);
     sim.apply("ZCX", 1, 3);
     sim.apply("ZCX", 2, 3);
+    auto u = GATE_DATA.at("ZCX").unitary();
     for (size_t row = 0; row < 4; row++) {
         for (size_t col = 0; col < 4; col++) {
-            ASSERT_NEAR_C(sim.state[row * 4 + col], GATE_UNITARIES.at("ZCX")[row][col] * 0.5f);
+            ASSERT_NEAR_C(sim.state[row * 4 + col], u[row][col] * 0.5f);
         }
     }
 }
@@ -71,9 +72,10 @@ TEST(vector_sim, state_channel_duality_y) {
     sim.apply("H_XZ", 0);
     sim.apply("ZCX", 0, 1);
     sim.apply("Y", 1);
+    auto u = GATE_DATA.at("Y").unitary();
     for (size_t row = 0; row < 2; row++) {
         for (size_t col = 0; col < 2; col++) {
-            ASSERT_NEAR_C(sim.state[row * 2 + col], GATE_UNITARIES.at("Y")[row][col] * sqrtf(0.5f));
+            ASSERT_NEAR_C(sim.state[row * 2 + col], u[row][col] * sqrtf(0.5f));
         }
     }
 }

@@ -94,17 +94,6 @@ Tableau Tableau::identity(size_t num_qubits) {
     return Tableau(num_qubits);
 }
 
-Tableau Tableau::named_gate(const std::string &name) {
-    const auto &data = GATE_TABLEAUS.at(name);
-    if (data.size() == 2) {
-        return Tableau::gate1(data[0], data[1]);
-    }
-    if (data.size() == 4) {
-        return Tableau::gate2(data[0], data[1], data[2], data[3]);
-    }
-    throw std::out_of_range(name);
-}
-
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
     result.xs[0] = PauliString::from_str(x);

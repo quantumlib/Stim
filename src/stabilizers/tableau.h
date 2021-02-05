@@ -63,7 +63,6 @@ struct Tableau {
     Tableau inverse() const;
 
     bool satisfies_invariants() const;
-    static Tableau named_gate(const std::string &name);
 
     /// Creates a Tableau representing a single qubit gate.
     ///

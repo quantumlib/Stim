@@ -306,21 +306,24 @@ TEST(SimTableau, unitary_gates_consistent_with_tableau_data) {
     TableauSimulator sim2(10, SHARED_TEST_RNG());
     sim.inv_state = t;
     sim2.inv_state = t;
-    for (const auto &kv : GATE_INVERSE_NAMES) {
-        const auto &name = kv.first;
-        const auto &action = SIM_TABLEAU_GATE_FUNC_DATA.at(name);
-        const auto &inverse_op_tableau = Tableau::named_gate(GATE_INVERSE_NAMES.at(name));
+    for (const auto &gate : GATE_DATA.gates()) {
+        if (!(gate.flags & GATE_IS_UNITARY)) {
+            continue;
+        }
+
+        const auto &action = gate.tableau_simulator_function;
+        const auto &inverse_op_tableau = gate.inverse().tableau();
         if (inverse_op_tableau.num_qubits == 2) {
-            action(sim, {7, 4});
-            sim2.apply(Tableau::named_gate(name), {7, 4});
+            (sim.*action)({7, 4});
+            sim2.apply(gate.tableau(), {7, 4});
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         } else {
-            action(sim, {5});
-            sim2.apply(Tableau::named_gate(name), {5});
+            (sim.*action)({5});
+            sim2.apply(gate.tableau(), {5});
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
-        ASSERT_EQ(sim.inv_state, t) << name;
-        ASSERT_EQ(sim.inv_state, sim2.inv_state) << name;
+        ASSERT_EQ(sim.inv_state, t) << gate.name;
+        ASSERT_EQ(sim.inv_state, sim2.inv_state) << gate.name;
     }
 }
 
@@ -375,7 +378,7 @@ TEST(SimTableau, to_vector_sim) {
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.apply("XCX", {4, 7});
+    (sim_tab.*GATE_DATA.at("XCX").tableau_simulator_function)({4, 7});
     sim_vec.apply("XCX", 4, 7);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 }

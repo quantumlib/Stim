@@ -22,6 +22,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "simulators/gate_data.h"
+
 enum SampleFormat {
     /// Human readable format.
     ///
@@ -63,11 +65,11 @@ struct OperationData {
 };
 
 struct Operation {
-    std::string name;
+    const Gate &gate;
     OperationData target_data;
 
     Operation();
-    Operation(std::string name, OperationData target_data);
+    Operation(const Gate &gate, OperationData target_data);
 
     bool try_fuse_with(const Operation &other);
 
@@ -121,7 +123,7 @@ struct Circuit {
 struct CircuitReader {
     std::vector<Operation> ops;
 
-    void read_all(std::string text);
+    void read_all(const std::string &text);
     bool read_more(FILE *file, bool inside_block, bool stop_after_measurement);
     bool read_more_helper(
         const std::function<std::string(void)> &line_getter, bool inside_block, bool stop_after_measurement);

@@ -20,244 +20,447 @@
 #include "tableau_simulator.h"
 #include "vector_simulator.h"
 
-const std::unordered_map<std::string, const std::string> GATE_CANONICAL_NAMES{
-    {"H", "H_XZ"},   {"S", "SQRT_Z"}, {"S_DAG", "SQRT_Z_DAG"}, {"NOT", "X"},
-    {"CNOT", "ZCX"}, {"CX", "ZCX"},   {"CY", "ZCY"},           {"CZ", "ZCZ"},
-};
+static constexpr std::complex<float> i = std::complex<float>(0, 1);
+static constexpr std::complex<float> s = 0.7071067811865475244f;
 
-const std::unordered_map<std::string, const std::string> GATE_INVERSE_NAMES{
-    {"I", "I"},
-    {"X", "X"},
-    {"Y", "Y"},
-    {"Z", "Z"},
-    {"H_XY", "H_XY"},
-    {"H_XZ", "H_XZ"},
-    {"H_YZ", "H_YZ"},
-    {"SQRT_X", "SQRT_X_DAG"},
-    {"SQRT_X_DAG", "SQRT_X"},
-    {"SQRT_Y", "SQRT_Y_DAG"},
-    {"SQRT_Y_DAG", "SQRT_Y"},
-    {"SQRT_Z", "SQRT_Z_DAG"},
-    {"SQRT_Z_DAG", "SQRT_Z"},
-    {"SWAP", "SWAP"},
-    {"ZCX", "ZCX"},
-    {"ZCY", "ZCY"},
-    {"ZCZ", "ZCZ"},
-    {"XCX", "XCX"},
-    {"XCY", "XCY"},
-    {"XCZ", "XCZ"},
-    {"YCX", "YCX"},
-    {"YCY", "YCY"},
-    {"YCZ", "YCZ"},
-    {"ISWAP", "ISWAP_DAG"},
-    {"ISWAP_DAG", "ISWAP"},
-};
+extern const GateDataMap GATE_DATA(
+    {
+        // Collapsing gates.
+        {
+            "M",
+            &TableauSimulator::measure,
+            &FrameSimulator::measure,
+            GATE_PRODUCES_RESULTS,
+            {},
+            {},
+        },
+        {
+            "MR",
+            &TableauSimulator::measure_reset,
+            &FrameSimulator::measure_reset,
+            GATE_PRODUCES_RESULTS,
+            {},
+            {},
+        },
+        {
+            "R",
+            &TableauSimulator::reset,
+            &FrameSimulator::reset,
+            GATE_NO_FLAGS,
+            {},
+            {},
+        },
 
-const std::unordered_map<std::string, const std::vector<const char *>> GATE_TABLEAUS{
-    {"I", {"+X", "+Z"}},
-    // Pauli gates.
-    {"X", {"+X", "-Z"}},
-    {"Y", {"-X", "-Z"}},
-    {"Z", {"-X", "+Z"}},
-    // Axis exchange gates.
-    {"H_XY", {"+Y", "-Z"}},
-    {"H_XZ", {"+Z", "+X"}},
-    {"H_YZ", {"-X", "+Y"}},
-    // 90 degree rotation gates.
-    {"SQRT_X", {"+X", "-Y"}},
-    {"SQRT_X_DAG", {"+X", "+Y"}},
-    {"SQRT_Y", {"-Z", "+X"}},
-    {"SQRT_Y_DAG", {"+Z", "-X"}},
-    {"SQRT_Z", {"+Y", "+Z"}},
-    {"SQRT_Z_DAG", {"-Y", "+Z"}},
-    // Swaps.
-    {"SWAP", {"+IX", "+IZ", "+XI", "+ZI"}},
-    {"ISWAP", {"+ZY", "+IZ", "+YZ", "+ZI"}},
-    {"ISWAP_DAG", {"-ZY", "+IZ", "-YZ", "+ZI"}},
-    // Controlled interactions.
-    {"ZCX", {"+XX", "+ZI", "+IX", "+ZZ"}},
-    {"ZCY", {"+XY", "+ZI", "+ZX", "+ZZ"}},
-    {"ZCZ", {"+XZ", "+ZI", "+ZX", "+IZ"}},
-    {"XCX", {"+XI", "+ZX", "+IX", "+XZ"}},
-    {"XCY", {"+XI", "+ZY", "+XX", "+XZ"}},
-    {"XCZ", {"+XI", "+ZZ", "+XX", "+IZ"}},
-    {"YCX", {"+XX", "+ZX", "+IX", "+YZ"}},
-    {"YCY", {"+XY", "+ZY", "+YX", "+YZ"}},
-    {"YCZ", {"+XZ", "+ZZ", "+YX", "+IZ"}},
-};
+        // Pauli gates.
+        {
+            "I",
+            &TableauSimulator::I,
+            &FrameSimulator::I,
+            GATE_IS_UNITARY,
+            {{1, 0}, {0, 1}},
+            {"+X", "+Z"},
+        },
+        {
+            "X",
+            &TableauSimulator::X,
+            &FrameSimulator::I,
+            GATE_IS_UNITARY,
+            {{0, 1}, {1, 0}},
+            {"+X", "-Z"},
+        },
+        {
+            "Y",
+            &TableauSimulator::Y,
+            &FrameSimulator::I,
+            GATE_IS_UNITARY,
+            {{0, -i}, {i, 0}},
+            {"-X", "-Z"},
+        },
+        {
+            "Z",
+            &TableauSimulator::Z,
+            &FrameSimulator::I,
+            GATE_IS_UNITARY,
+            {{1, 0}, {0, -1}},
+            {"-X", "+Z"},
+        },
 
-constexpr std::complex<float> i = std::complex<float>(0, 1);
-constexpr std::complex<float> s = 0.7071067811865475244f;
-const std::unordered_map<std::string, const std::vector<std::vector<std::complex<float>>>> GATE_UNITARIES{
-    {"I", {{1, 0}, {0, 1}}},
-    // Pauli gates.
-    {"X", {{0, 1}, {1, 0}}},
-    {"Y", {{0, -i}, {i, 0}}},
-    {"Z", {{1, 0}, {0, -1}}},
-    // Axis exchange gates.
-    {"H_XY", {{0, s - i *s}, {s + i * s, 0}}},
-    {"H_XZ", {{s, s}, {s, -s}}},
-    {"H_YZ", {{s, -i *s}, {i * s, -s}}},
-    // 90 degree rotation gates.
-    {"SQRT_X", {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}}},
-    {"SQRT_X_DAG", {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}}},
-    {"SQRT_Y", {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}}},
-    {"SQRT_Y_DAG", {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}}},
-    {"SQRT_Z", {{1, 0}, {0, i}}},
-    {"SQRT_Z_DAG", {{1, 0}, {0, -i}}},
-    // Swaps.
-    {"SWAP", {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}}},
-    {"ISWAP", {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}}},
-    {"ISWAP_DAG", {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}}},
-    // Controlled interactions.
-    {"ZCX", {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}}},
-    {"ZCY", {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}}},
-    {"ZCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}}},
-    {"XCX",
-     {{0.5f, 0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f, 0.5f}}},
-    {"XCY",
-     {{0.5f, 0.5f, -0.5f * i, 0.5f * i},
-      {0.5f, 0.5f, 0.5f * i, -0.5f * i},
-      {0.5f * i, -0.5f * i, 0.5f, 0.5f},
-      {-0.5f * i, 0.5f * i, 0.5f, 0.5f}}},
-    {"XCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}}},
-    {"YCX",
-     {{0.5f, -i * 0.5f, 0.5f, i * 0.5f},
-      {i * 0.5f, 0.5f, -i * 0.5f, 0.5f},
-      {0.5f, i * 0.5f, 0.5f, -i * 0.5f},
-      {-i * 0.5f, 0.5f, i * 0.5f, 0.5f}}},
-    {"YCY",
-     {{0.5f, -i * 0.5f, -i * 0.5f, 0.5f},
-      {i * 0.5f, 0.5f, -0.5f, -i * 0.5f},
-      {i * 0.5f, -0.5f, 0.5f, -i * 0.5f},
-      {0.5f, i * 0.5f, i * 0.5f, 0.5f}}},
-    {"YCZ", {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}}},
-};
+        // Axis exchange gates.
+        {
+            "H_XY",
+            &TableauSimulator::H_XY,
+            &FrameSimulator::H_XY,
+            GATE_IS_UNITARY,
+            {{0, s - i *s}, {s + i * s, 0}},
+            {"+Y", "-Z"},
+        },
+        {
+            "H_XZ",
+            &TableauSimulator::H_XZ,
+            &FrameSimulator::H_XZ,
+            GATE_IS_UNITARY,
+            {{s, s}, {s, -s}},
+            {"+Z", "+X"},
+        },
+        {
+            "H_YZ",
+            &TableauSimulator::H_YZ,
+            &FrameSimulator::H_YZ,
+            GATE_IS_UNITARY,
+            {{s, -i *s}, {i * s, -s}},
+            {"-X", "+Y"},
+        },
 
-void do_nothing_pst(FrameSimulator &p, const OperationData &target_data) {
+        // 90 degree rotation gates.
+        {
+            "SQRT_X",
+            &TableauSimulator::SQRT_X,
+            &FrameSimulator::H_YZ,
+            GATE_IS_UNITARY,
+            {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            {"+X", "-Y"},
+        },
+        {
+            "SQRT_X_DAG",
+            &TableauSimulator::SQRT_X_DAG,
+            &FrameSimulator::H_YZ,
+            GATE_IS_UNITARY,
+            {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            {"+X", "+Y"},
+        },
+        {
+            "SQRT_Y",
+            &TableauSimulator::SQRT_Y,
+            &FrameSimulator::H_XZ,
+            GATE_IS_UNITARY,
+            {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
+            {"-Z", "+X"},
+        },
+        {
+            "SQRT_Y_DAG",
+            &TableauSimulator::SQRT_Y_DAG,
+            &FrameSimulator::H_XZ,
+            GATE_IS_UNITARY,
+            {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            {"+Z", "-X"},
+        },
+        {
+            "SQRT_Z",
+            &TableauSimulator::SQRT_Z,
+            &FrameSimulator::H_XY,
+            GATE_IS_UNITARY,
+            {{1, 0}, {0, i}},
+            {"+Y", "+Z"},
+        },
+        {
+            "SQRT_Z_DAG",
+            &TableauSimulator::SQRT_Z_DAG,
+            &FrameSimulator::H_XY,
+            GATE_IS_UNITARY,
+            {{1, 0}, {0, -i}},
+            {"-Y", "+Z"},
+        },
+
+        // Swap gates.
+        {
+            "SWAP",
+            &TableauSimulator::SWAP,
+            &FrameSimulator::SWAP,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
+            {"+IX", "+IZ", "+XI", "+ZI"},
+        },
+        {
+            "ISWAP",
+            &TableauSimulator::ISWAP,
+            &FrameSimulator::ISWAP,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
+            {"+ZY", "+IZ", "+YZ", "+ZI"},
+        },
+        {
+            "ISWAP_DAG",
+            &TableauSimulator::ISWAP_DAG,
+            &FrameSimulator::ISWAP,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
+            {"-ZY", "+IZ", "-YZ", "+ZI"},
+        },
+
+        // Axis interaction gates.
+        {
+            "XCX",
+            &TableauSimulator::XCX,
+            &FrameSimulator::XCX,
+            GATE_IS_UNITARY,
+            {{0.5f, 0.5f, 0.5f, -0.5f},
+             {0.5f, 0.5f, -0.5f, 0.5f},
+             {0.5f, -0.5f, 0.5f, 0.5f},
+             {-0.5f, 0.5f, 0.5f, 0.5f}},
+            {"+XI", "+ZX", "+IX", "+XZ"},
+        },
+        {
+            "XCY",
+            &TableauSimulator::XCY,
+            &FrameSimulator::XCY,
+            GATE_IS_UNITARY,
+            {{0.5f, 0.5f, -0.5f * i, 0.5f * i},
+             {0.5f, 0.5f, 0.5f * i, -0.5f * i},
+             {0.5f * i, -0.5f * i, 0.5f, 0.5f},
+             {-0.5f * i, 0.5f * i, 0.5f, 0.5f}},
+            {"+XI", "+ZY", "+XX", "+XZ"},
+        },
+        {
+            "XCZ",
+            &TableauSimulator::XCZ,
+            &FrameSimulator::XCZ,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},
+            {"+XI", "+ZZ", "+XX", "+IZ"},
+        },
+        {
+            "YCX",
+            &TableauSimulator::YCX,
+            &FrameSimulator::YCX,
+            GATE_IS_UNITARY,
+            {{0.5f, -i * 0.5f, 0.5f, i * 0.5f},
+             {i * 0.5f, 0.5f, -i * 0.5f, 0.5f},
+             {0.5f, i * 0.5f, 0.5f, -i * 0.5f},
+             {-i * 0.5f, 0.5f, i * 0.5f, 0.5f}},
+            {"+XX", "+ZX", "+IX", "+YZ"},
+        },
+        {
+            "YCY",
+            &TableauSimulator::YCY,
+            &FrameSimulator::YCY,
+            GATE_IS_UNITARY,
+            {{0.5f, -i * 0.5f, -i * 0.5f, 0.5f},
+             {i * 0.5f, 0.5f, -0.5f, -i * 0.5f},
+             {i * 0.5f, -0.5f, 0.5f, -i * 0.5f},
+             {0.5f, i * 0.5f, i * 0.5f, 0.5f}},
+            {"+XY", "+ZY", "+YX", "+YZ"},
+        },
+        {
+            "YCZ",
+            &TableauSimulator::YCZ,
+            &FrameSimulator::YCZ,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}},
+            {"+XZ", "+ZZ", "+YX", "+IZ"},
+        },
+        {
+            "ZCX",
+            &TableauSimulator::ZCX,
+            &FrameSimulator::ZCX,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}},
+            {"+XX", "+ZI", "+IX", "+ZZ"},
+        },
+        {
+            "ZCY",
+            &TableauSimulator::ZCY,
+            &FrameSimulator::ZCY,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}},
+            {"+XY", "+ZI", "+ZX", "+ZZ"},
+        },
+        {
+            "ZCZ",
+            &TableauSimulator::ZCZ,
+            &FrameSimulator::ZCZ,
+            GATE_IS_UNITARY,
+            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}},
+            {"+XZ", "+ZI", "+ZX", "+IZ"},
+        },
+
+        // Noise gates.
+        {
+            "DEPOLARIZE1",
+            &TableauSimulator::DEPOLARIZE1,
+            &FrameSimulator::DEPOLARIZE1,
+            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            {},
+            {},
+        },
+        {
+            "DEPOLARIZE2",
+            &TableauSimulator::DEPOLARIZE2,
+            &FrameSimulator::DEPOLARIZE2,
+            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            {},
+            {},
+        },
+        {
+            "X_ERROR",
+            &TableauSimulator::X_ERROR,
+            &FrameSimulator::X_ERROR,
+            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            {},
+            {},
+        },
+        {
+            "Y_ERROR",
+            &TableauSimulator::Y_ERROR,
+            &FrameSimulator::Y_ERROR,
+            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            {},
+            {},
+        },
+        {
+            "Z_ERROR",
+            &TableauSimulator::Z_ERROR,
+            &FrameSimulator::Z_ERROR,
+            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            {},
+            {},
+        },
+
+        // Annotation gates.
+        {
+            "DETECTOR",
+            &TableauSimulator::I,
+            &FrameSimulator::I,
+            (GateFlags)(GATE_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
+            {},
+            {},
+        },
+        {
+            "OBSERVABLE_INCLUDE",
+            &TableauSimulator::I,
+            &FrameSimulator::I,
+            (GateFlags)(GATE_TARGETS_MEASUREMENT_RECORD | GATE_TAKES_PARENS_ARGUMENT | GATE_IS_NOT_FUSABLE),
+            {},
+            {},
+        },
+        {
+            "TICK",
+            &TableauSimulator::I,
+            &FrameSimulator::I,
+            GATE_NO_FLAGS,
+            {},
+            {},
+        },
+        {
+            "REPEAT",
+            &TableauSimulator::I,
+            &FrameSimulator::I,
+            GATE_NO_FLAGS,
+            {},
+            {},
+        },
+    },
+    {
+        {"H_XZ", "H"},
+        {"SQRT_Z", "S"},
+        {"SQRT_Z_DAG", "S_DAG"},
+        {"ZCZ", "CZ"},
+        {"ZCY", "CY"},
+        {"ZCX", "CX"},
+        {"ZCX", "CNOT"},
+    });
+
+Tableau Gate::tableau() const {
+    auto &d = tableau_data.data;
+    if (tableau_data.length == 2) {
+        return Tableau::gate1(d[0], d[1]);
+    }
+    if (tableau_data.length == 4) {
+        return Tableau::gate2(d[0], d[1], d[2], d[3]);
+    }
+    throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
 }
 
-const std::unordered_map<std::string, std::function<void(FrameSimulator &, const OperationData &)>>
-    SIM_BULK_PAULI_FRAMES_GATE_DATA{
-        {"M", &FrameSimulator::measure},
-        {"R", &FrameSimulator::reset},
-        {"MR", &FrameSimulator::measure_reset},
-        // Pauli gates (ignored because they are accounted for by the reference sample results being inverted or not.)
-        {"X", &do_nothing_pst},
-        {"Y", &do_nothing_pst},
-        {"Z", &do_nothing_pst},
-        // Axis exchange gates.
-        {"H_XY", &FrameSimulator::H_XY},
-        {"H_XZ", &FrameSimulator::H_XZ},
-        {"H_YZ", &FrameSimulator::H_YZ},
-        // 90 degree rotation gates.
-        {"SQRT_X", &FrameSimulator::H_YZ},
-        {"SQRT_X_DAG", &FrameSimulator::H_YZ},
-        {"SQRT_Y", &FrameSimulator::H_XZ},
-        {"SQRT_Y_DAG", &FrameSimulator::H_XZ},
-        {"SQRT_Z", &FrameSimulator::H_XY},
-        {"SQRT_Z_DAG", &FrameSimulator::H_XY},
-        // Swaps.
-        {"SWAP", &FrameSimulator::SWAP},
-        {"ISWAP", &FrameSimulator::ISWAP},
-        {"ISWAP_DAG", &FrameSimulator::ISWAP},
-        // Controlled interactions.
-        {"ZCX", &FrameSimulator::ZCX},
-        {"ZCY", &FrameSimulator::ZCY},
-        {"ZCZ", &FrameSimulator::ZCZ},
-        {"XCX", &FrameSimulator::XCX},
-        {"XCY", &FrameSimulator::XCY},
-        {"XCZ", &FrameSimulator::XCZ},
-        {"YCX", &FrameSimulator::YCX},
-        {"YCY", &FrameSimulator::YCY},
-        {"YCZ", &FrameSimulator::YCZ},
-        // Noisy gates.
-        {"DEPOLARIZE1", &FrameSimulator::DEPOLARIZE1},
-        {"DEPOLARIZE2", &FrameSimulator::DEPOLARIZE2},
-        {"X_ERROR", &FrameSimulator::X_ERROR},
-        {"Y_ERROR", &FrameSimulator::Y_ERROR},
-        {"Z_ERROR", &FrameSimulator::Z_ERROR},
-        // Ignored.
-        {"TICK", &do_nothing_pst},
-        {"I", &do_nothing_pst},
-        {"DETECTOR", &do_nothing_pst},
-        {"OBSERVABLE_INCLUDE", &do_nothing_pst},
-    };
+std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
+    if (unitary_data.length != 2 && unitary_data.length != 4) {
+        throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
+    }
+    std::vector<std::vector<std::complex<float>>> result;
+    for (size_t k = 0; k < unitary_data.length; k++) {
+        auto &d = unitary_data.data[k];
+        result.emplace_back();
+        for (size_t j = 0; j < d.length; j++) {
+            result.back().push_back(d.data[j]);
+        }
+    }
+    return result;
+}
 
-const std::unordered_map<std::string, std::function<void(TableauSimulator &, const OperationData &)>>
-    SIM_TABLEAU_GATE_FUNC_DATA{
-        {"M", &TableauSimulator::measure},
-        {"R", &TableauSimulator::reset},
-        {"MR", &TableauSimulator::measure_reset},
-        // Pauli gates.
-        {"X", &TableauSimulator::X},
-        {"Y", &TableauSimulator::Y},
-        {"Z", &TableauSimulator::Z},
-        // Axis exchange gates.
-        {"H_XY", &TableauSimulator::H_XY},
-        {"H_XZ", &TableauSimulator::H_XZ},
-        {"H_YZ", &TableauSimulator::H_YZ},
-        // 90 degree rotation gates.
-        {"SQRT_X", &TableauSimulator::SQRT_X},
-        {"SQRT_X_DAG", &TableauSimulator::SQRT_X_DAG},
-        {"SQRT_Y", &TableauSimulator::SQRT_Y},
-        {"SQRT_Y_DAG", &TableauSimulator::SQRT_Y_DAG},
-        {"SQRT_Z", &TableauSimulator::SQRT_Z},
-        {"SQRT_Z_DAG", &TableauSimulator::SQRT_Z_DAG},
-        // Swap gates.
-        {"SWAP", &TableauSimulator::SWAP},
-        {"ISWAP", &TableauSimulator::ISWAP},
-        {"ISWAP_DAG", &TableauSimulator::ISWAP_DAG},
-        // Controlled gates.
-        {"ZCX", &TableauSimulator::ZCX},
-        {"ZCY", &TableauSimulator::ZCY},
-        {"ZCZ", &TableauSimulator::ZCZ},
-        {"XCX", &TableauSimulator::XCX},
-        {"XCY", &TableauSimulator::XCY},
-        {"XCZ", &TableauSimulator::XCZ},
-        {"YCX", &TableauSimulator::YCX},
-        {"YCY", &TableauSimulator::YCY},
-        {"YCZ", &TableauSimulator::YCZ},
-        // Noisy gates.
-        {"DEPOLARIZE1", &TableauSimulator::DEPOLARIZE1},
-        {"DEPOLARIZE2", &TableauSimulator::DEPOLARIZE2},
-        {"X_ERROR", &TableauSimulator::X_ERROR},
-        {"Y_ERROR", &TableauSimulator::Y_ERROR},
-        {"Z_ERROR", &TableauSimulator::Z_ERROR},
-        // Ignored.
-        {"DETECTOR",
-         [](TableauSimulator &s, const OperationData &t) {
-         }},
-        {"OBSERVABLE_INCLUDE",
-         [](TableauSimulator &s, const OperationData &t) {
-         }},
-        {"TICK",
-         [](TableauSimulator &s, const OperationData &t) {
-         }},
-        {"I",
-         [](TableauSimulator &s, const OperationData &t) {
-         }},
-    };
+const Gate &Gate::inverse() const {
+    std::string inv_name = name;
+    if (!(flags & GATE_IS_UNITARY)) {
+        throw std::out_of_range(inv_name + " has no inverse.");
+    }
 
-const std::unordered_set<std::string> NOISY_GATE_NAMES{
-    "DEPOLARIZE1", "DEPOLARIZE2", "X_ERROR", "Y_ERROR", "Z_ERROR",
-};
+    if (GATE_DATA.has(inv_name + "_DAG")) {
+        inv_name += "_DAG";
+    } else if (inv_name.size() > 4 && inv_name.substr(inv_name.size() - 4) == "_DAG") {
+        inv_name = inv_name.substr(0, inv_name.size() - 4);
+    } else {
+        // Self inverse.
+    }
+    return GATE_DATA.at(inv_name);
+}
 
-const std::unordered_set<std::string> PARENS_ARG_OP_NAMES{
-    "OBSERVABLE_INCLUDE", "DEPOLARIZE1", "DEPOLARIZE2", "X_ERROR", "Y_ERROR", "Z_ERROR",
-};
+Operation Gate::applied(OperationData data) const {
+    return Operation(*this, std::move(data));
+}
 
-const std::unordered_set<std::string> BACKTRACK_ARG_OP_NAMES{
-    "DETECTOR",
-    "OBSERVABLE_INCLUDE",
-};
+Gate::Gate() {
+}
 
-const std::unordered_set<std::string> MEASUREMENT_OP_NAMES{
-    "M",
-    "MR",
-};
+Gate::Gate(
+    const char *name, void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
+    void (FrameSimulator::*frame_simulator_function)(const OperationData &), GateFlags flags,
+    TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data,
+    TruncatedArray<const char *, 4> tableau_data)
+    : name(name),
+      tableau_simulator_function(tableau_simulator_function),
+      frame_simulator_function(frame_simulator_function),
+      flags(flags),
+      unitary_data(unitary_data),
+      tableau_data(tableau_data),
+      id(gate_name_to_id(name)) {
+}
 
-const std::unordered_set<std::string> UNFUSABLE_OP_NAMES{
-    "DETECTOR",
-    "OBSERVABLE_INCLUDE",
-};
+GateDataMap::GateDataMap(
+    std::initializer_list<Gate> gates,
+    std::initializer_list<std::pair<const char *, const char *>> alternate_names) {
+    for (auto &item : items) {
+        item.name = nullptr;
+    }
+    bool collision = false;
+    for (auto &gate : gates) {
+        const char *c = gate.name;
+        uint8_t h = gate_name_to_id(c);
+        if (items[h].name != nullptr) {
+            std::cerr << "GATE COLLISION " << gate.name << " vs " << items[h].name << "\n";
+            collision = true;
+        }
+        items[h] = gate;
+    }
+    for (auto &alt : alternate_names) {
+        uint8_t h2 = gate_name_to_id(alt.second);
+        if (items[h2].name != nullptr) {
+            std::cerr << "GATE COLLISION " << alt.second << " vs " << items[h2].name << "\n";
+            collision = true;
+        }
+
+        uint8_t h1 = gate_name_to_id(alt.first);
+        assert(items[h1].name != nullptr && items[h1].id == h1);
+        items[h2].name = alt.second;
+        items[h2].id = h1;
+    }
+    if (collision) {
+        exit(EXIT_FAILURE);
+    }
+}
+
+std::vector<Gate> GateDataMap::gates() const {
+    std::vector<Gate> result;
+    for (const auto &item : items) {
+        if (item.name != nullptr) {
+            result.push_back(item);
+        }
+    }
+    return result;
+}

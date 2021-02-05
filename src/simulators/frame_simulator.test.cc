@@ -45,9 +45,9 @@ TEST(FrameSimulator, get_set_frame) {
     ASSERT_EQ(big_sim.get_frame(257).ref().sparse_str(), "+I");
 }
 
-bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name) {
-    const auto &tableau = Tableau::named_gate(op_name);
-    const auto &bulk_func = SIM_BULK_PAULI_FRAMES_GATE_DATA.at(op_name);
+bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
+    Tableau tableau = gate.tableau();
+    const auto &bulk_func = gate.frame_simulator_function;
 
     size_t num_qubits = 500;
     size_t num_samples = 1000;
@@ -63,7 +63,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
         PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
-        bulk_func(sim, targets);
+        (sim.*bulk_func)(targets);
         for (size_t k = 0; k < targets.size(); k += num_targets) {
             if (num_targets == 1) {
                 tableau.apply_within(test_value_ref, {targets[k]});
@@ -80,9 +80,10 @@ bool is_bulk_frame_operation_consistent_with_tableau(const std::string &op_name)
 }
 
 TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
-    for (const auto &kv : GATE_TABLEAUS) {
-        const auto &name = kv.first;
-        EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau(name)) << name;
+    for (const auto &gate : GATE_DATA.gates()) {
+        if (gate.flags & GATE_IS_UNITARY) {
+            EXPECT_TRUE(is_bulk_frame_operation_consistent_with_tableau(gate)) << gate.name;
+        }
     }
 }
 
@@ -92,7 +93,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
     auto tableau_sim = TableauSimulator(circuit.num_qubits, SHARED_TEST_RNG());
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
-        if (op.name == "M") {
+        if (op.gate.name == std::string("M")) {
             for (size_t k = 0; k < op.target_data.targets.size(); k++) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
                 tableau_sim.measure(OperationData({op.target_data.targets[k]}, {op.target_data.metas[k]}, 0));
@@ -103,7 +104,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
                 out_p++;
             }
         } else {
-            tableau_sim.apply(op.name, op.target_data);
+            (tableau_sim.*op.gate.tableau_simulator_function)(op.target_data);
         }
     }
 
@@ -320,10 +321,10 @@ TEST(PauliFrameSimulation, sample_out) {
 TEST(PauliFrameSimulation, big_circuit_measurements) {
     std::vector<Operation> ops;
     for (size_t k = 0; k < 1250; k += 3) {
-        ops.push_back({"X", {k}});
+        ops.push_back(GATE_DATA.at("X").applied({k}));
     }
     for (size_t k = 0; k < 1250; k++) {
-        ops.push_back({"M", {k}});
+        ops.push_back(GATE_DATA.at("M").applied({k}));
     }
     auto circuit = Circuit(ops);
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
@@ -362,10 +363,10 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
 TEST(PauliFrameSimulation, big_circuit_random_measurements) {
     std::vector<Operation> ops;
     for (size_t k = 0; k < 270; k++) {
-        ops.push_back({"H_XZ", {k}});
+        ops.push_back(GATE_DATA.at("H_XZ").applied({k}));
     }
     for (size_t k = 0; k < 270; k++) {
-        ops.push_back({"M", {k}});
+        ops.push_back(GATE_DATA.at("M").applied({k}));
     }
     auto program = Circuit(ops);
     auto ref = TableauSimulator::reference_sample_circuit(program);
