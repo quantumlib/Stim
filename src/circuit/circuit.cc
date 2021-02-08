@@ -388,25 +388,21 @@ void Circuit::append_operation(const Operation &operation) {
     _circuit_incremental_update_from_back(*this);
 }
 
-void Circuit::append_operation(const Gate &gate, const std::vector<uint32_t> &vec, double arg) {
-    Operation converted{&gate, {arg, {&jagged_data, jagged_data.size(), vec.size()}}};
+void Circuit::append_operation(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
+    Operation converted{&GATE_DATA.at(gate_name), {arg, {&jagged_data, jagged_data.size(), vec.size()}}};
     operations.push_back(converted);
     jagged_data.insert(jagged_data.end(), vec.begin(), vec.end());
     _circuit_incremental_update_from_back(*this);
 }
 
-void Circuit::append_operation(const std::string &gate, const std::vector<uint32_t> &vec, double arg) {
-    append_operation(GATE_DATA.at(gate), vec, arg);
-}
-
 bool Circuit::append_from_file(FILE *file, bool stop_asap) {
     size_t before = operations.size();
     circuit_read_operations(
-        *this,
-        [&]() {
+            *this,
+            [&]() {
             return getc(file);
         },
-        stop_asap ? READ_AS_LITTLE_AS_POSSIBLE : READ_UNTIL_END_OF_FILE);
+            stop_asap ? READ_AS_LITTLE_AS_POSSIBLE : READ_UNTIL_END_OF_FILE);
     return operations.size() > before;
 }
 
