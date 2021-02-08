@@ -15,7 +15,7 @@
 #include "frame_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../common_circuits.h"
+#include "../circuit/common_circuits.h"
 
 BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
@@ -24,18 +24,17 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
-    OperationData op_data{};
+    std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
-        op_data.targets.push_back(k);
-        op_data.metas.push_back(false);
+        targets.push_back(k);
     }
+    OperationData op_data{probability, {&targets, 0, targets.size()}};
     op_data.arg = probability;
-
     benchmark_go([&]() {
         sim.DEPOLARIZE1(op_data);
     })
         .goal_millis(5)
-        .show_rate("OpQubits", op_data.targets.size() * num_samples);
+        .show_rate("OpQubits", targets.size() * num_samples);
 }
 
 BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
@@ -45,18 +44,18 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
-    OperationData op_data{};
+    std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
-        op_data.targets.push_back(k);
-        op_data.metas.push_back(false);
+        targets.push_back(k);
     }
+    OperationData op_data{probability, {&targets, 0, targets.size()}};
     op_data.arg = probability;
 
     benchmark_go([&]() {
         sim.DEPOLARIZE2(op_data);
     })
         .goal_millis(5)
-        .show_rate("OpQubits", op_data.targets.size() * num_samples);
+        .show_rate("OpQubits", targets.size() * num_samples);
 }
 
 BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
@@ -65,13 +64,14 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
-    std::vector<size_t> targets;
+    std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
+    OperationData op_data{0, {&targets, 0, targets.size()}};
 
     benchmark_go([&]() {
-        sim.H_XZ(targets);
+        sim.H_XZ(op_data);
     })
         .goal_millis(2)
         .show_rate("OpQubits", targets.size() * num_samples);
@@ -83,13 +83,14 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, 1, rng);
 
-    std::vector<size_t> targets;
+    std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
+    OperationData op_data{0, {&targets, 0, targets.size()}};
 
     benchmark_go([&]() {
-        sim.ZCX(targets);
+        sim.ZCX(op_data);
     })
         .goal_millis(2)
         .show_rate("OpQubits", targets.size() * num_samples);

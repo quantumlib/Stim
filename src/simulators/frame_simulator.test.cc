@@ -16,8 +16,9 @@
 
 #include <gtest/gtest.h>
 
+#include "../circuit/circuit.test.h"
+#include "../circuit/gate_data.h"
 #include "../test_util.test.h"
-#include "gate_data.h"
 #include "tableau_simulator.h"
 
 TEST(FrameSimulator, get_set_frame) {
@@ -55,20 +56,27 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     FrameSimulator sim(num_qubits, num_samples, num_measurements, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
-    std::vector<size_t> targets{101, 403, 202, 100};
+    std::vector<uint32_t> targets{101, 403, 202, 100};
     while (targets.size() > num_targets) {
         targets.pop_back();
     }
+    OperationData op_data{
+        0,
+        {
+            &targets,
+            0,
+            targets.size(),
+        }};
     for (size_t k = 7; k < num_samples; k += 101) {
         PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
         sim.set_frame(k, test_value);
-        (sim.*bulk_func)(targets);
-        for (size_t k = 0; k < targets.size(); k += num_targets) {
+        (sim.*bulk_func)(op_data);
+        for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
             if (num_targets == 1) {
-                tableau.apply_within(test_value_ref, {targets[k]});
+                tableau.apply_within(test_value_ref, {targets[k2]});
             } else {
-                tableau.apply_within(test_value_ref, {targets[k], targets[k + 1]});
+                tableau.apply_within(test_value_ref, {targets[k2], targets[k2 + 1]});
             }
         }
         test_value.sign = false;
@@ -94,9 +102,9 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
     size_t out_p = 0;
     for (const auto &op : circuit.operations) {
         if (op.gate->name == std::string("M")) {
-            for (size_t k = 0; k < op.target_data.targets.size(); k++) {
+            for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure(OperationData({op.target_data.targets[k]}, {op.target_data.metas[k]}, 0));
+                tableau_sim.measure(OpDat(qf));
                 if (output[out_p] != tableau_sim.recorded_measurement_results.front()) {
                     return false;
                 }
@@ -319,14 +327,13 @@ TEST(PauliFrameSimulation, sample_out) {
 }
 
 TEST(PauliFrameSimulation, big_circuit_measurements) {
-    std::vector<Operation> ops;
-    for (size_t k = 0; k < 1250; k += 3) {
-        ops.push_back(GATE_DATA.at("X").applied({k}));
+    Circuit circuit;
+    for (uint32_t k = 0; k < 1250; k += 3) {
+        circuit.append_operation(GATE_DATA.at("X"), {k});
     }
-    for (size_t k = 0; k < 1250; k++) {
-        ops.push_back(GATE_DATA.at("M").applied({k}));
+    for (uint32_t k = 0; k < 1250; k++) {
+        circuit.append_operation(GATE_DATA.at("M"), {k});
     }
-    auto circuit = Circuit(ops);
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 750, SHARED_TEST_RNG());
     for (size_t i = 0; i < 750; i++) {
@@ -361,16 +368,15 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
 }
 
 TEST(PauliFrameSimulation, big_circuit_random_measurements) {
-    std::vector<Operation> ops;
-    for (size_t k = 0; k < 270; k++) {
-        ops.push_back(GATE_DATA.at("H_XZ").applied({k}));
+    Circuit circuit;
+    for (uint32_t k = 0; k < 270; k++) {
+        circuit.append_operation(GATE_DATA.at("H_XZ"), {k});
     }
-    for (size_t k = 0; k < 270; k++) {
-        ops.push_back(GATE_DATA.at("M").applied({k}));
+    for (uint32_t k = 0; k < 270; k++) {
+        circuit.append_operation(GATE_DATA.at("M"), {k});
     }
-    auto program = Circuit(ops);
-    auto ref = TableauSimulator::reference_sample_circuit(program);
-    auto r = FrameSimulator::sample(program, ref, 1000, SHARED_TEST_RNG());
+    auto ref = TableauSimulator::reference_sample_circuit(circuit);
+    auto r = FrameSimulator::sample(circuit, ref, 1000, SHARED_TEST_RNG());
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_TRUE(r[k].not_zero()) << k;
     }

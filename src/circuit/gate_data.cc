@@ -16,9 +16,9 @@
 
 #include <complex>
 
-#include "frame_simulator.h"
-#include "tableau_simulator.h"
-#include "vector_simulator.h"
+#include "../simulators/frame_simulator.h"
+#include "../simulators/tableau_simulator.h"
+#include "../simulators/vector_simulator.h"
 
 static constexpr std::complex<float> i = std::complex<float>(0, 1);
 static constexpr std::complex<float> s = 0.7071067811865475244f;
@@ -344,7 +344,7 @@ extern const GateDataMap GATE_DATA(
             "REPEAT",
             &TableauSimulator::I,
             &FrameSimulator::I,
-            GATE_NO_FLAGS,
+            GATE_IS_BLOCK,
             {},
             {},
         },
@@ -361,24 +361,24 @@ extern const GateDataMap GATE_DATA(
 
 Tableau Gate::tableau() const {
     auto &d = tableau_data.data;
-    if (tableau_data.length == 2) {
+    if (tableau_data.size() == 2) {
         return Tableau::gate1(d[0], d[1]);
     }
-    if (tableau_data.length == 4) {
+    if (tableau_data.size() == 4) {
         return Tableau::gate2(d[0], d[1], d[2], d[3]);
     }
     throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q tableau data.");
 }
 
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
-    if (unitary_data.length != 2 && unitary_data.length != 4) {
+    if (unitary_data.size() != 2 && unitary_data.size() != 4) {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
     }
     std::vector<std::vector<std::complex<float>>> result;
-    for (size_t k = 0; k < unitary_data.length; k++) {
+    for (size_t k = 0; k < unitary_data.size(); k++) {
         auto &d = unitary_data.data[k];
         result.emplace_back();
-        for (size_t j = 0; j < d.length; j++) {
+        for (size_t j = 0; j < d.size(); j++) {
             result.back().push_back(d.data[j]);
         }
     }
@@ -401,10 +401,6 @@ const Gate &Gate::inverse() const {
     return GATE_DATA.at(inv_name);
 }
 
-Operation Gate::applied(OperationData data) const {
-    return Operation(*this, std::move(data));
-}
-
 Gate::Gate() : name(nullptr) {
 }
 
@@ -423,8 +419,7 @@ Gate::Gate(
 }
 
 GateDataMap::GateDataMap(
-    std::initializer_list<Gate> gates,
-    std::initializer_list<std::pair<const char *, const char *>> alternate_names) {
+    std::initializer_list<Gate> gates, std::initializer_list<std::pair<const char *, const char *>> alternate_names) {
     bool collision = false;
     for (auto &gate : gates) {
         const char *c = gate.name;

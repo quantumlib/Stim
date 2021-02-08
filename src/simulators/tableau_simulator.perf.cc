@@ -15,8 +15,8 @@
 #include "tableau_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../common_circuits.h"
-#include "../simulators/gate_data.h"
+#include "../circuit/common_circuits.h"
+#include "../circuit/gate_data.h"
 
 BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d5) {
     size_t distance = 5;

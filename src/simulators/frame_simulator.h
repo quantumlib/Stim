@@ -19,7 +19,7 @@
 
 #include <random>
 
-#include "../circuit.h"
+#include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
 #include "../stabilizers/pauli_string.h"
 

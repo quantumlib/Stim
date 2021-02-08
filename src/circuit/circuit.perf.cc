@@ -12,13 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "common_circuits.h"
-
-#include <gtest/gtest.h>
-
 #include "circuit.h"
 
-TEST(common_circuits, unrotated_surface_code_program_text) {
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(5, 4, 0.001));
-    ASSERT_EQ(circuit.detectors.size(), 5 * 4 * 2 * 4);
+#include "../benchmark_util.h"
+
+BENCHMARK(circuit_parse) {
+    Circuit c({});
+    benchmark_go([&]() {
+        c = Circuit::from_text(R"input(
+H 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+CNOT 4 5 6 7
+M 1 2 3 4 5 6 7 8 9 10 11
+            )input");
+    }).goal_nanos(950);
+    if (c.num_qubits == 0) {
+        std::cerr << "impossible";
+    }
 }

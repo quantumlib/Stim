@@ -21,6 +21,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "circuit/circuit.h"
+
 /// Yields the indices of hits sampled from a Bernoulli distribution.
 /// Gets more efficient as the hit probability drops.
 struct RareErrorIterator {
@@ -46,7 +48,7 @@ struct RareErrorIterator {
     }
 
     template <typename BODY, typename T>
-    inline static void for_samples(double p, const std::vector<T> &vals, std::mt19937_64 &rng, BODY body) {
+    inline static void for_samples(double p, const VectorView<T> &vals, std::mt19937_64 &rng, BODY body) {
         RareErrorIterator skipper((float)p);
         while (true) {
             size_t s = skipper.next(rng);

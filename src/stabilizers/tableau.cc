@@ -23,7 +23,7 @@
 #include <sstream>
 #include <thread>
 
-#include "../simulators/gate_data.h"
+#include "../circuit/gate_data.h"
 #include "pauli_string.h"
 #include "tableau_transposed_raii.h"
 

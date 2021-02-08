@@ -16,8 +16,8 @@
 
 #include <queue>
 
+#include "../circuit/gate_data.h"
 #include "../probability_util.h"
-#include "gate_data.h"
 
 TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
     : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {
@@ -32,9 +32,10 @@ void TableauSimulator::measure(const OperationData &target_data) {
     collapse(target_data);
 
     // Record measurement results.
-    for (size_t k = 0; k < target_data.targets.size(); k++) {
-        auto q = target_data.targets[k];
-        recorded_measurement_results.push(inv_state.zs.signs[q] ^ target_data.metas[k]);
+    for (auto qf : target_data.targets) {
+        auto q = qf & MEASURE_TARGET_MASK;
+        bool flipped = qf & MEASURE_FLIPPED_MASK;
+        recorded_measurement_results.push(inv_state.zs.signs[q] ^ flipped);
     }
 }
 
@@ -45,9 +46,10 @@ void TableauSimulator::measure_reset(const OperationData &target_data) {
     collapse(target_data);
 
     // Record measurement results while triggering resets.
-    for (size_t k = 0; k < target_data.targets.size(); k++) {
-        auto q = target_data.targets[k];
-        recorded_measurement_results.push(inv_state.zs.signs[q] ^ target_data.metas[k]);
+    for (auto qf : target_data.targets) {
+        auto q = qf & MEASURE_TARGET_MASK;
+        bool flipped = qf & MEASURE_FLIPPED_MASK;
+        recorded_measurement_results.push(inv_state.zs.signs[q] ^ flipped);
         inv_state.zs.signs[q] = false;
     }
 }
@@ -56,9 +58,9 @@ void TableauSimulator::reset(const OperationData &target_data) {
     // Collapse the qubits to be reset.
     collapse(target_data);
 
-    // Force the collapsed qubits into the desired state.
-    for (size_t k = 0; k < target_data.targets.size(); k++) {
-        inv_state.zs.signs[target_data.targets[k]] = target_data.metas[k];
+    // Force the collapsed qubits into the ground state.
+    for (auto q : target_data.targets) {
+        inv_state.zs.signs[q] = false;
     }
 }
 
@@ -314,11 +316,6 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-void TableauSimulator::apply(const Tableau &tableau, const OperationData &target_data) {
-    // Note: inverted because we're tracking the inverse tableau.
-    inv_state.inplace_scatter_prepend(tableau.inverse(), target_data.targets);
-}
-
 simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator sim(circuit.num_qubits, rng, sign_bias);
     for (const auto &op : circuit.operations) {
@@ -334,28 +331,20 @@ simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_
     return result;
 }
 
-void TableauSimulator::ensure_large_enough_for_qubit(size_t max_q) {
-    if (max_q < inv_state.num_qubits) {
+void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
+    if (num_qubits <= inv_state.num_qubits) {
         return;
     }
-    inv_state.expand(max_q + 1);
+    inv_state.expand(num_qubits);
 }
 
 void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_measurements, std::mt19937_64 &rng) {
-    CircuitReader reader;
-    size_t max_qubit = 0;
+    Circuit unprocessed;
     TableauSimulator sim(1, rng);
-    size_t num_processed_ops = 0;
-    while (reader.read_more(in, false, newline_after_measurements)) {
-        for (size_t k = num_processed_ops; k < reader.ops.size(); k++) {
-            for (size_t q : reader.ops[k].target_data.targets) {
-                max_qubit = std::max(q, max_qubit);
-            }
-        }
-        sim.ensure_large_enough_for_qubit(max_qubit);
+    while (unprocessed.append_from_file(in, newline_after_measurements)) {
+        sim.ensure_large_enough_for_qubits(unprocessed.num_qubits);
 
-        for (size_t k = num_processed_ops; k < reader.ops.size(); k++) {
-            const auto &op = reader.ops[k];
+        for (const auto &op : unprocessed.operations) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
             while (!sim.recorded_measurement_results.empty()) {
                 putc('0' + sim.recorded_measurement_results.front(), out);
@@ -367,7 +356,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
             }
         }
 
-        num_processed_ops = reader.ops.size();
+        unprocessed.clear();
     }
     if (!newline_after_measurements) {
         putc('\n', out);
@@ -387,7 +376,8 @@ void TableauSimulator::collapse(const OperationData &target_data) {
     // Find targets that need to be collapsed.
     std::vector<size_t> collapse_targets;
     collapse_targets.reserve(target_data.targets.size());
-    for (size_t t : target_data.targets) {
+    for (auto t : target_data.targets) {
+        t &= MEASURE_TARGET_MASK;
         if (!is_deterministic(t)) {
             collapse_targets.push_back(t);
         }
@@ -438,13 +428,14 @@ void TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &tran
 }
 
 simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
+    Circuit filtered;
     std::vector<Operation> deterministic_operations{};
     for (const auto &op : circuit.operations) {
         if (!(op.gate->flags & GATE_IS_NOISE)) {
-            deterministic_operations.push_back(op);
+            filtered.append_operation(op);
         }
     }
 
     std::mt19937_64 irrelevant_rng(0);
-    return TableauSimulator::sample_circuit(Circuit(deterministic_operations), irrelevant_rng, +1);
+    return TableauSimulator::sample_circuit(filtered, irrelevant_rng, +1);
 }

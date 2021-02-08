@@ -15,7 +15,7 @@
 #include "main_helper.h"
 
 #include "arg_parse.h"
-#include "common_circuits.h"
+#include "circuit/common_circuits.h"
 #include "probability_util.h"
 #include "simulators/detection_simulator.h"
 #include "simulators/frame_simulator.h"

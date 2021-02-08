@@ -25,7 +25,7 @@
 #include <random>
 #include <sstream>
 
-#include "../circuit.h"
+#include "../circuit/circuit.h"
 #include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
 #include "vector_simulator.h"
@@ -53,17 +53,10 @@ struct TableauSimulator {
     ///
     /// Failing to ensure the state is large enough for a qubit, before that qubit is acted on for the first time,
     /// results in undefined behavior.
-    void ensure_large_enough_for_qubit(size_t max_q);
+    void ensure_large_enough_for_qubits(size_t num_qubits);
 
     /// Finds a state vector satisfying the current stabilizer generators, and returns a vector simulator in that state.
     VectorSimulator to_vector_sim() const;
-
-    /// Applies a custom Clifford operation (represented by a stabilizer tableau) to the given targets.
-    ///
-    /// The number of targets must be a multiple of the number of qubits the tableau acts on.
-    /// The operation will be broadcast over the aligned targets. For example, CNOT 0 1 2 3 is
-    /// equivalent to CNOT 0 1 then CNOT 2 3.
-    void apply(const Tableau &operation, const OperationData &target_data);
 
     /// Collapses then records the Z signs of the target qubits. Supports flipping the result.
     ///

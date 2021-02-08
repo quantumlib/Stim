@@ -12,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "circuit.h"
+#include "gate_data.h"
 
-#include "benchmark_util.h"
+#include <iostream>
 
-BENCHMARK(circuit_parse) {
-    Circuit c({});
+#include "../benchmark_util.h"
+
+BENCHMARK(gate_data_fast_hash) {
+    std::vector<std::string> names;
+    for (const auto &gate : GATE_DATA.gates()) {
+        names.emplace_back(gate.name);
+    }
+    size_t result = 0;
     benchmark_go([&]() {
-        c = Circuit::from_text(R"input(
-H 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-CNOT 4 5 6 7
-M 1 2 3 4 5 6 7 8 9 10 11
-            )input");
-    }).goal_micros(4);
-    if (c.num_qubits == 0) {
+        for (const auto &s : names) {
+            result += gate_name_to_id(s.data(), s.size());
+        }
+    })
+        .goal_nanos(125)
+        .show_rate("GateHashes", names.size());
+    if (result == 0) {
         std::cerr << "impossible";
     }
 }

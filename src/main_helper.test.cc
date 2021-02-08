@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "common_circuits.h"
+#include "circuit/common_circuits.h"
 
 struct RaiiDeleteFile {
     char *c = nullptr;

@@ -16,8 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include "../circuit/gate_data.h"
 #include "../test_util.test.h"
-#include "gate_data.h"
 
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;

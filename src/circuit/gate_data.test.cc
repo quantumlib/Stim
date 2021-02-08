@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "../simulators/gate_data.h"
+#include "gate_data.h"
 
-#include <iostream>
+#include <gtest/gtest.h>
 
-#include "../benchmark_util.h"
+#include "../test_util.test.h"
 
-BENCHMARK(gate_data_fast_hash) {
-    std::vector<std::string> names;
-    for (const auto &gate : GATE_DATA.gates()) {
-        names.emplace_back(gate.name);
-    }
-    size_t result = 0;
-    benchmark_go([&]() {
-        for (const auto &s : names) {
-            result += gate_name_to_id(s.data(), s.size());
-        }
-    })
-        .goal_nanos(125)
-        .show_rate("GateHashes", names.size());
-    if (result == 0) {
-        std::cerr << "impossible";
-    }
+TEST(gate_data, lookup) {
+    ASSERT_TRUE(GATE_DATA.has("H"));
+    ASSERT_FALSE(GATE_DATA.has("H2345"));
+    ASSERT_EQ(GATE_DATA.at("H").id, GATE_DATA.at("H_XZ").id);
+    ASSERT_NE(GATE_DATA.at("H").id, GATE_DATA.at("H_XY").id);
+    ASSERT_THROW(GATE_DATA.at("MISSING"), std::out_of_range);
+
+    ASSERT_TRUE(GATE_DATA.has("h"));
+    ASSERT_TRUE(GATE_DATA.has("Cnot"));
+
+    ASSERT_TRUE(GATE_DATA.at("h").id == GATE_DATA.at("H").id);
+    ASSERT_TRUE(GATE_DATA.at("H_xz").id == GATE_DATA.at("H").id);
 }

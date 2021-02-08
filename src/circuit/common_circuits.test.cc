@@ -12,22 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "../simulators/gate_data.h"
+#include "common_circuits.h"
 
 #include <gtest/gtest.h>
 
-#include "../test_util.test.h"
+#include "circuit.h"
 
-TEST(gate_data, lookup) {
-    ASSERT_TRUE(GATE_DATA.has("H"));
-    ASSERT_FALSE(GATE_DATA.has("H2345"));
-    ASSERT_EQ(GATE_DATA.at("H").id, GATE_DATA.at("H_XZ").id);
-    ASSERT_NE(GATE_DATA.at("H").id, GATE_DATA.at("H_XY").id);
-    ASSERT_THROW(GATE_DATA.at("MISSING"), std::out_of_range);
-
-    ASSERT_TRUE(GATE_DATA.has("h"));
-    ASSERT_TRUE(GATE_DATA.has("Cnot"));
-
-    ASSERT_TRUE(GATE_DATA.at("h").id == GATE_DATA.at("H").id);
-    ASSERT_TRUE(GATE_DATA.at("H_xz").id == GATE_DATA.at("H").id);
+TEST(common_circuits, unrotated_surface_code_program_text) {
+    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(5, 4, 0.001));
+    auto detectors = circuit.list_detectors_and_observables().first;
+    ASSERT_EQ(detectors.size(), 5 * 4 * 2 * 4);
 }

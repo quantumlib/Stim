@@ -71,6 +71,9 @@ template <typename T, size_t max_length>
 struct TruncatedArray {
     size_t length;
     T data[max_length];
+    inline size_t size() const {
+        return length;
+    }
     TruncatedArray() : length(0), data() {
     }
     TruncatedArray(T item) : length(1), data() {
@@ -93,6 +96,7 @@ enum GateFlags : uint8_t {
     GATE_TAKES_PARENS_ARGUMENT = 1 << 3,
     GATE_PRODUCES_RESULTS = 1 << 4,
     GATE_IS_NOT_FUSABLE = 1 << 5,
+    GATE_IS_BLOCK = 1 << 6,
 };
 
 struct Gate {
@@ -114,7 +118,6 @@ struct Gate {
     const Gate &inverse() const;
     Tableau tableau() const;
     std::vector<std::vector<std::complex<float>>> unitary() const;
-    Operation applied(OperationData data) const;
 };
 
 struct StringView {
@@ -201,10 +204,10 @@ inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const 
 }
 
 struct GateDataMap {
-private:
+   private:
     Gate items[256];
 
-public:
+   public:
     GateDataMap(
         std::initializer_list<Gate> gates,
         std::initializer_list<std::pair<const char *, const char *>> alternate_names);

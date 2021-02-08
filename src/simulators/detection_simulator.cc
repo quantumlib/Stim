@@ -14,11 +14,12 @@
 
 #include "frame_simulator.h"
 
-void compute_observables_into_offset(
-    const Circuit &circuit, simd_bit_table &frame_samples, simd_bit_table &combined_samples, size_t &cs) {
-    for (const auto &obs : circuit.observables) {
-        simd_bits_range_ref dst = combined_samples[cs++];
-        if (obs.expected_parity) {
+void xor_measurement_sets_into_result(
+    const std::vector<MeasurementSet> &measurement_sets, bool include_expected_parity, simd_bit_table &frame_samples,
+    simd_bit_table &combined_samples, size_t &offset) {
+    for (const auto &obs : measurement_sets) {
+        simd_bits_range_ref dst = combined_samples[offset++];
+        if (include_expected_parity && obs.expected_parity) {
             dst.invert_bits();
         }
         for (auto i : obs.indices) {
@@ -28,48 +29,56 @@ void compute_observables_into_offset(
 }
 
 simd_bit_table detector_samples(
-    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng) {
-    auto num_detectors = circuit.detectors.size();
-    auto num_obs = circuit.observables.size();
-    size_t num_sample_locations = num_detectors + num_obs * ((int)prepend_observables + (int)append_observables);
-    simd_bit_table combined_samples(num_sample_locations, num_shots);
-    size_t cs = 0;
-    auto frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
+    const Circuit &circuit, const std::vector<MeasurementSet> &detectors,
+    const std::vector<MeasurementSet> &observables, size_t num_shots, bool prepend_observables, bool append_observables,
+    std::mt19937_64 &rng) {
+    // Start from measurement samples.
+    simd_bit_table frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
 
+    auto num_detectors = detectors.size();
+    auto num_obs = observables.size();
+    size_t num_results = num_detectors + num_obs * ((int)prepend_observables + (int)append_observables);
+    simd_bit_table result(num_results, num_shots);
+
+    // Xor together measurement samples to form detector samples.
+    size_t offset = 0;
     if (prepend_observables) {
-        compute_observables_into_offset(circuit, frame_samples, combined_samples, cs);
+        xor_measurement_sets_into_result(observables, true, frame_samples, result, offset);
     }
-
-    // Compute detector values.
-    for (const auto &det : circuit.detectors) {
-        simd_bits_range_ref dst = combined_samples[cs++];
-        for (auto i : det.indices) {
-            dst ^= frame_samples[i];
-        }
-    }
-
+    xor_measurement_sets_into_result(detectors, false, frame_samples, result, offset);
     if (append_observables) {
-        compute_observables_into_offset(circuit, frame_samples, combined_samples, cs);
+        xor_measurement_sets_into_result(observables, true, frame_samples, result, offset);
     }
 
-    return combined_samples;
+    return result;
+}
+
+simd_bit_table detector_samples(
+    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng) {
+    auto ab = circuit.list_detectors_and_observables();
+    return detector_samples(circuit, ab.first, ab.second, num_shots, prepend_observables, append_observables, rng);
 }
 
 void detector_samples_out(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
     SampleFormat format, std::mt19937_64 &rng) {
+    auto det_obs = circuit.list_detectors_and_observables();
+    const auto &detectors = det_obs.first;
+    const auto &observables = det_obs.second;
     size_t num_sample_locations =
-        circuit.detectors.size() + circuit.observables.size() * ((int)prepend_observables + (int)append_observables);
+        detectors.size() + observables.size() * ((int)prepend_observables + (int)append_observables);
 
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     simd_bits reference_sample(num_sample_locations);
     while (num_shots > GOOD_BLOCK_SIZE) {
-        auto table = detector_samples(circuit, GOOD_BLOCK_SIZE, prepend_observables, append_observables, rng);
+        auto table = detector_samples(
+            circuit, detectors, observables, GOOD_BLOCK_SIZE, prepend_observables, append_observables, rng);
         write_table_data(out, GOOD_BLOCK_SIZE, num_sample_locations, reference_sample, table, format);
         num_shots -= GOOD_BLOCK_SIZE;
     }
     if (num_shots) {
-        auto table = detector_samples(circuit, num_shots, prepend_observables, append_observables, rng);
+        auto table =
+            detector_samples(circuit, detectors, observables, num_shots, prepend_observables, append_observables, rng);
         write_table_data(out, num_shots, num_sample_locations, reference_sample, table, format);
     }
 }

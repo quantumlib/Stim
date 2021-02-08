@@ -16,9 +16,9 @@
 
 #include <cstring>
 
+#include "../circuit/gate_data.h"
 #include "../probability_util.h"
 #include "../simd/simd_util.h"
-#include "gate_data.h"
 #include "tableau_simulator.h"
 
 // Iterates over the X and Z frame components of a pair of qubits, applying a custom FUNC to each.
@@ -148,8 +148,8 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
 }
 
 void FrameSimulator::measure(const OperationData &target_data) {
-    // Note: measurement flags (inversions) are ignored because they are accounted for in the reference sample.
     for (auto q : target_data.targets) {
+        q &= MEASURE_TARGET_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         m_table[num_recorded_measurements] = x_table[q];
         num_recorded_measurements++;
@@ -165,8 +165,8 @@ void FrameSimulator::reset(const OperationData &target_data) {
 
 void FrameSimulator::measure_reset(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
-    // Note: measurement flags (inversions) are ignored because they are accounted for in the reference sample.
     for (auto q : target_data.targets) {
+        q &= MEASURE_TARGET_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         m_table[num_recorded_measurements] = x_table[q];
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);

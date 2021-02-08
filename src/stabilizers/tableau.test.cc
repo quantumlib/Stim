@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 #include <random>
 
-#include "../simulators/gate_data.h"
+#include "../circuit/gate_data.h"
 #include "../simulators/vector_simulator.h"
 #include "../test_util.test.h"
 #include "tableau_transposed_raii.h"

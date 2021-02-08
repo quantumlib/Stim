@@ -16,31 +16,32 @@
 
 #include <gtest/gtest.h>
 
-#include "../simulators/gate_data.h"
+#include "../circuit/circuit.test.h"
+#include "../circuit/gate_data.h"
 #include "../test_util.test.h"
 
 TEST(SimTableau, identity) {
     auto s = TableauSimulator(1, SHARED_TEST_RNG());
     ASSERT_EQ(s.recorded_measurement_results.size(), 0);
-    s.measure(0);
+    s.measure(OpDat(0));
     ASSERT_EQ(s.recorded_measurement_results.size(), 1);
     ASSERT_EQ(s.recorded_measurement_results.front(), false);
     s.recorded_measurement_results.pop();
     ASSERT_EQ(s.recorded_measurement_results.size(), 0);
-    s.measure(OperationData({0}, {true}, 0));
+    s.measure(OpDat::flipped(0));
     ASSERT_EQ(s.recorded_measurement_results.size(), 1);
     ASSERT_EQ(s.recorded_measurement_results.front(), true);
 }
 
 TEST(SimTableau, bit_flip) {
     auto s = TableauSimulator(1, SHARED_TEST_RNG());
-    s.H_XZ(0);
-    s.SQRT_Z(0);
-    s.SQRT_Z(0);
-    s.H_XZ(0);
-    s.measure(0);
-    s.X(0);
-    s.measure(0);
+    s.H_XZ(OpDat(0));
+    s.SQRT_Z(OpDat(0));
+    s.SQRT_Z(OpDat(0));
+    s.H_XZ(OpDat(0));
+    s.measure(OpDat(0));
+    s.X(OpDat(0));
+    s.measure(OpDat(0));
     ASSERT_EQ(s.recorded_measurement_results.front(), true);
     s.recorded_measurement_results.pop();
     ASSERT_EQ(s.recorded_measurement_results.front(), false);
@@ -48,40 +49,40 @@ TEST(SimTableau, bit_flip) {
 
 TEST(SimTableau, identity2) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
-    s.measure(0);
+    s.measure(OpDat(0));
     ASSERT_EQ(s.recorded_measurement_results.front(), false);
     s.recorded_measurement_results.pop();
-    s.measure({1});
+    s.measure(OpDat(1));
     ASSERT_EQ(s.recorded_measurement_results.front(), false);
     s.recorded_measurement_results.pop();
 }
 
 TEST(SimTableau, bit_flip_2) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
-    s.H_XZ(0);
-    s.SQRT_Z(0);
-    s.SQRT_Z(0);
-    s.H_XZ(0);
-    s.measure(0);
+    s.H_XZ(OpDat(0));
+    s.SQRT_Z(OpDat(0));
+    s.SQRT_Z(OpDat(0));
+    s.H_XZ(OpDat(0));
+    s.measure(OpDat(0));
     ASSERT_EQ(s.recorded_measurement_results.front(), true);
     s.recorded_measurement_results.pop();
-    s.measure(1);
+    s.measure(OpDat(1));
     ASSERT_EQ(s.recorded_measurement_results.front(), false);
     s.recorded_measurement_results.pop();
 }
 
 TEST(SimTableau, epr) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
-    s.H_XZ(0);
-    s.ZCX({0, 1});
+    s.H_XZ(OpDat(0));
+    s.ZCX(OpDat({0, 1}));
     ASSERT_EQ(s.is_deterministic(0), false);
     ASSERT_EQ(s.is_deterministic(1), false);
-    s.measure(0);
+    s.measure(OpDat(0));
     auto v1 = s.recorded_measurement_results.front();
     s.recorded_measurement_results.pop();
     ASSERT_EQ(s.is_deterministic(0), true);
     ASSERT_EQ(s.is_deterministic(1), true);
-    s.measure(1);
+    s.measure(OpDat(1));
     auto v2 = s.recorded_measurement_results.front();
     s.recorded_measurement_results.pop();
     ASSERT_EQ(v1, v2);
@@ -89,7 +90,7 @@ TEST(SimTableau, epr) {
 
 TEST(SimTableau, big_determinism) {
     auto s = TableauSimulator(1000, SHARED_TEST_RNG());
-    s.H_XZ(0);
+    s.H_XZ(OpDat(0));
     ASSERT_FALSE(s.is_deterministic(0));
     for (size_t k = 1; k < 1000; k++) {
         ASSERT_TRUE(s.is_deterministic(k));
@@ -99,22 +100,22 @@ TEST(SimTableau, big_determinism) {
 TEST(SimTableau, phase_kickback_consume_s_state) {
     for (size_t k = 0; k < 8; k++) {
         auto s = TableauSimulator(2, SHARED_TEST_RNG());
-        s.H_XZ(1);
-        s.SQRT_Z(1);
-        s.H_XZ(0);
-        s.ZCX({0, 1});
+        s.H_XZ(OpDat(1));
+        s.SQRT_Z(OpDat(1));
+        s.H_XZ(OpDat(0));
+        s.ZCX(OpDat({0, 1}));
         ASSERT_EQ(s.is_deterministic(1), false);
-        s.measure(1);
+        s.measure(OpDat(1));
         auto v1 = s.recorded_measurement_results.front();
         s.recorded_measurement_results.pop();
         if (v1) {
-            s.SQRT_Z(0);
-            s.SQRT_Z(0);
+            s.SQRT_Z(OpDat(0));
+            s.SQRT_Z(OpDat(0));
         }
-        s.SQRT_Z(0);
-        s.H_XZ(0);
+        s.SQRT_Z(OpDat(0));
+        s.H_XZ(OpDat(0));
         ASSERT_EQ(s.is_deterministic(0), true);
-        s.measure(0);
+        s.measure(OpDat(0));
         ASSERT_EQ(s.recorded_measurement_results.front(), true);
         s.recorded_measurement_results.pop();
     }
@@ -124,43 +125,43 @@ TEST(SimTableau, phase_kickback_preserve_s_state) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
 
     // Prepare S state.
-    s.H_XZ(1);
-    s.SQRT_Z(1);
+    s.H_XZ(OpDat(1));
+    s.SQRT_Z(OpDat(1));
 
     // Prepare test input.
-    s.H_XZ(0);
+    s.H_XZ(OpDat(0));
 
     // Kickback.
-    s.ZCX({0, 1});
-    s.H_XZ(1);
-    s.ZCX({0, 1});
-    s.H_XZ(1);
+    s.ZCX(OpDat({0, 1}));
+    s.H_XZ(OpDat(1));
+    s.ZCX(OpDat({0, 1}));
+    s.H_XZ(OpDat(1));
 
     // Check.
-    s.SQRT_Z(0);
-    s.H_XZ(0);
+    s.SQRT_Z(OpDat(0));
+    s.H_XZ(OpDat(0));
     ASSERT_EQ(s.is_deterministic(0), true);
-    s.measure(0);
+    s.measure(OpDat(0));
     ASSERT_EQ(s.recorded_measurement_results.front(), true);
     s.recorded_measurement_results.pop();
-    s.SQRT_Z(1);
-    s.H_XZ(1);
+    s.SQRT_Z(OpDat(1));
+    s.H_XZ(OpDat(1));
     ASSERT_EQ(s.is_deterministic(1), true);
-    s.measure(1);
+    s.measure(OpDat(1));
     ASSERT_EQ(s.recorded_measurement_results.front(), true);
     s.recorded_measurement_results.pop();
 }
 
 TEST(SimTableau, kickback_vs_stabilizer) {
     auto sim = TableauSimulator(3, SHARED_TEST_RNG());
-    sim.H_XZ(2);
-    sim.ZCX({2, 0});
-    sim.ZCX({2, 1});
-    sim.SQRT_Z(0);
-    sim.SQRT_Z(1);
-    sim.H_XZ(0);
-    sim.H_XZ(1);
-    sim.H_XZ(2);
+    sim.H_XZ(OpDat(2));
+    sim.ZCX(OpDat({2, 0}));
+    sim.ZCX(OpDat({2, 1}));
+    sim.SQRT_Z(OpDat(0));
+    sim.SQRT_Z(OpDat(1));
+    sim.H_XZ(OpDat(0));
+    sim.H_XZ(OpDat(1));
+    sim.H_XZ(OpDat(2));
     ASSERT_EQ(
         sim.inv_state.str(),
         "+-xz-xz-xz-\n"
@@ -187,28 +188,28 @@ TEST(SimTableau, s_state_distillation_low_depth) {
         };
 
         std::vector<bool> stabilizer_measurements;
-        size_t anc = 8;
+        uint32_t anc = 8;
         for (const auto &stabilizer : stabilizers) {
-            sim.H_XZ({anc});
+            sim.H_XZ(OpDat(anc));
             for (const auto &k : stabilizer) {
-                sim.ZCX({anc, k});
+                sim.ZCX(OpDat({anc, k}));
             }
-            sim.H_XZ({anc});
+            sim.H_XZ(OpDat(anc));
             ASSERT_EQ(sim.is_deterministic(anc), false);
-            sim.measure({anc});
+            sim.measure(OpDat(anc));
             bool v = sim.recorded_measurement_results.front();
             sim.recorded_measurement_results.pop();
             if (v) {
-                sim.X({anc});
+                sim.X(OpDat(anc));
             }
             stabilizer_measurements.push_back(v);
         }
 
         std::vector<bool> qubit_measurements;
         for (size_t k = 0; k < 7; k++) {
-            sim.SQRT_Z({k});
-            sim.H_XZ({k});
-            sim.measure({k});
+            sim.SQRT_Z(OpDat(k));
+            sim.H_XZ(OpDat(k));
+            sim.measure(OpDat(k));
             qubit_measurements.push_back(sim.recorded_measurement_results.front());
             sim.recorded_measurement_results.pop();
         }
@@ -221,13 +222,13 @@ TEST(SimTableau, s_state_distillation_low_depth) {
             sum ^= e;
         }
         if (sum) {
-            sim.Z({7});
+            sim.Z(OpDat(7));
         }
 
-        sim.SQRT_Z({7});
-        sim.H_XZ({7});
+        sim.SQRT_Z(OpDat(7));
+        sim.H_XZ(OpDat(7));
         ASSERT_EQ(sim.is_deterministic(7), true);
-        sim.measure({7});
+        sim.measure(OpDat(7));
         ASSERT_EQ(sim.recorded_measurement_results.front(), false);
         sim.recorded_measurement_results.pop();
 
@@ -264,37 +265,37 @@ TEST(SimTableau, s_state_distillation_low_space) {
             {1, 2, 3},
         };
 
-        size_t anc = 4;
+        uint32_t anc = 4;
         for (const auto &phasor : phasors) {
-            sim.H_XZ({anc});
+            sim.H_XZ(OpDat(anc));
             for (const auto &k : phasor) {
-                sim.ZCX({anc, k});
+                sim.ZCX(OpDat({anc, k}));
             }
-            sim.H_XZ({anc});
-            sim.SQRT_Z({anc});
-            sim.H_XZ({anc});
+            sim.H_XZ(OpDat(anc));
+            sim.SQRT_Z(OpDat(anc));
+            sim.H_XZ(OpDat(anc));
             ASSERT_EQ(sim.is_deterministic(anc), false);
-            sim.measure({anc});
+            sim.measure(OpDat(anc));
             bool v = sim.recorded_measurement_results.front();
             sim.recorded_measurement_results.pop();
             if (v) {
                 for (const auto &k : phasor) {
-                    sim.X({k});
+                    sim.X(OpDat(k));
                 }
-                sim.X({anc});
+                sim.X(OpDat(anc));
             }
         }
 
         for (size_t k = 0; k < 3; k++) {
             ASSERT_EQ(sim.is_deterministic(k), true);
-            sim.measure({k});
+            sim.measure(OpDat(k));
             ASSERT_EQ(sim.recorded_measurement_results.front(), false);
             sim.recorded_measurement_results.pop();
         }
-        sim.SQRT_Z({3});
-        sim.H_XZ({3});
+        sim.SQRT_Z(OpDat(3));
+        sim.H_XZ(OpDat(3));
         ASSERT_EQ(sim.is_deterministic(3), true);
-        sim.measure({3});
+        sim.measure(OpDat(3));
         ASSERT_EQ(sim.recorded_measurement_results.front(), true);
         sim.recorded_measurement_results.pop();
     }
@@ -303,9 +304,7 @@ TEST(SimTableau, s_state_distillation_low_space) {
 TEST(SimTableau, unitary_gates_consistent_with_tableau_data) {
     auto t = Tableau::random(10, SHARED_TEST_RNG());
     TableauSimulator sim(10, SHARED_TEST_RNG());
-    TableauSimulator sim2(10, SHARED_TEST_RNG());
     sim.inv_state = t;
-    sim2.inv_state = t;
     for (const auto &gate : GATE_DATA.gates()) {
         if (!(gate.flags & GATE_IS_UNITARY)) {
             continue;
@@ -314,16 +313,13 @@ TEST(SimTableau, unitary_gates_consistent_with_tableau_data) {
         const auto &action = gate.tableau_simulator_function;
         const auto &inverse_op_tableau = gate.inverse().tableau();
         if (inverse_op_tableau.num_qubits == 2) {
-            (sim.*action)({7, 4});
-            sim2.apply(gate.tableau(), {7, 4});
+            (sim.*action)(OpDat({7, 4}));
             t.inplace_scatter_prepend(inverse_op_tableau, {7, 4});
         } else {
-            (sim.*action)({5});
-            sim2.apply(gate.tableau(), {5});
+            (sim.*action)(OpDat(5));
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
         ASSERT_EQ(sim.inv_state, t) << gate.name;
-        ASSERT_EQ(sim.inv_state, sim2.inv_state) << gate.name;
     }
 }
 
@@ -358,19 +354,19 @@ TEST(SimTableau, to_vector_sim) {
     VectorSimulator sim_vec(2);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.X(0);
+    sim_tab.X(OpDat(0));
     sim_vec.apply("X", 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.H_XZ(0);
+    sim_tab.H_XZ(OpDat(0));
     sim_vec.apply("H_XZ", 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.SQRT_Z(0);
+    sim_tab.SQRT_Z(OpDat(0));
     sim_vec.apply("SQRT_Z", 0);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    sim_tab.ZCX({0, 1});
+    sim_tab.ZCX(OpDat({0, 1}));
     sim_vec.apply("ZCX", 0, 1);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -378,25 +374,25 @@ TEST(SimTableau, to_vector_sim) {
     sim_vec = sim_tab.to_vector_sim();
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
-    (sim_tab.*GATE_DATA.at("XCX").tableau_simulator_function)({4, 7});
+    (sim_tab.*GATE_DATA.at("XCX").tableau_simulator_function)(OpDat({4, 7}));
     sim_vec.apply("XCX", 4, 7);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 }
 
-bool vec_sim_corroborates_measurement_process(const TableauSimulator &sim, std::vector<size_t> measurement_targets) {
+bool vec_sim_corroborates_measurement_process(const TableauSimulator &sim, std::vector<uint32_t> measurement_targets) {
     TableauSimulator sim_tab = sim;
     auto vec_sim = sim_tab.to_vector_sim();
-    sim_tab.measure(measurement_targets);
+    sim_tab.measure(OpDat(measurement_targets));
     PauliString buf(sim_tab.inv_state.num_qubits);
-    for (size_t k = 0; k < measurement_targets.size(); k++) {
-        buf.zs[measurement_targets[k]] = true;
+    for (auto t : measurement_targets) {
+        buf.zs[t] = true;
         buf.sign = sim_tab.recorded_measurement_results.front();
         sim_tab.recorded_measurement_results.pop();
         float f = vec_sim.project(buf);
-        if (fabsf(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
+        if (fabs(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;
         }
-        buf.zs[measurement_targets[k]] = false;
+        buf.zs[t] = false;
     }
     return true;
 }
