@@ -32,7 +32,7 @@ size_t simd_bits::min_bits_to_num_simd_words(size_t min_bits) {
 
 uint64_t *malloc_aligned_padded_zeroed(size_t min_bits) {
     size_t num_u8 = simd_bits::min_bits_to_num_bits_padded(min_bits) >> 3;
-    void *result = simd_word_malloc(num_u8);
+    void *result = simd_word::aligned_malloc(num_u8);
     memset(result, 0, num_u8);
     return (uint64_t *)result;
 }
@@ -58,7 +58,7 @@ simd_bits::simd_bits(simd_bits &&other) noexcept : num_simd_words(other.num_simd
 
 simd_bits::~simd_bits() {
     if (u64 != nullptr) {
-        simd_word_free(u64);
+        simd_word::aligned_free(u64);
         u64 = nullptr;
         num_simd_words = 0;
     }

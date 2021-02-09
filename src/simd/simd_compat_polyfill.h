@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "simd_util.h"
+/// Implements `simd_word` using no architecture-specific instructions, just raw C++11 code.
 
-#define simd_word_malloc(bytes) ((simd_word *)malloc(bytes))
-#define simd_word_free(ptr) free(ptr)
+#include "simd_util.h"
+#include <stdlib.h>
 
 struct emu_u128 {
     uint64_t a;
@@ -30,6 +30,13 @@ struct simd_word {
         uint8_t u8[8];
         emu_u128 u128[1];
     };
+
+    static void* aligned_malloc(size_t bytes) {
+        return malloc(bytes);
+    }
+    static void aligned_free(void *ptr) {
+        free(ptr);
+    }
 
     inline constexpr simd_word() : u64{} {
     }

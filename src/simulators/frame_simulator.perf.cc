@@ -96,7 +96,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
         .show_rate("OpQubits", targets.size() * num_samples);
 }
 
-BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d5_samples1024) {
+BENCHMARK(FrameSimulator_unrotated_surface_code_d5_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 5;
     auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0));
@@ -110,7 +110,7 @@ BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d5_samples1024) {
         .show_rate("OutBits", circuit.num_measurements * num_samples);
 }
 
-BENCHMARK(FrameSimulator_sample_unrotated_noisy_surface_code_d5_samples1024) {
+BENCHMARK(FrameSimulator_unrotated_noisy_surface_code_d5_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 5;
     auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0.001));
@@ -124,7 +124,7 @@ BENCHMARK(FrameSimulator_sample_unrotated_noisy_surface_code_d5_samples1024) {
         .show_rate("OutBits", circuit.num_measurements * num_samples);
 }
 
-BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d41_samples1024) {
+BENCHMARK(FrameSimulator_unrotated_surface_code_d41_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 41;
     auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0));
@@ -138,7 +138,7 @@ BENCHMARK(FrameSimulator_sample_unrotated_surface_code_d41_samples1024) {
         .show_rate("OutBits", circuit.num_measurements * num_samples);
 }
 
-BENCHMARK(FrameSimulator_sample_unrotated_noisy_surface_code_d41_samples1024) {
+BENCHMARK(FrameSimulator_unrotated_noisy_surface_code_d41_samples1024) {
     size_t num_samples = 1024;
     size_t distance = 41;
     auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0.001));

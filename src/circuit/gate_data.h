@@ -21,6 +21,7 @@
 #include <complex>
 #include <cstring>
 #include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <string>
 #include <unordered_map>

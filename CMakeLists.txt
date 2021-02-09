@@ -1,10 +1,18 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(stim)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
+
+# Convert desired SIMD_WIDTH into machine architecture flags.
 if(NOT(SIMD_WIDTH))
-    message("Defaulted SIMD_WIDTH to 256. Pass -DSIMD_WIDTH=128 or -DSIMD_WIDTH=64 into cmake for other avx widths.")
-    set(SIMD_WIDTH 256)
+    set(MACHINE_FLAG "-march=native")
+elseif(SIMD_WIDTH EQUAL 256)
+    set(MACHINE_FLAG "-mavx2")
+elseif(SIMD_WIDTH EQUAL 128)
+    set(MACHINE_FLAG "-msse2")
+elseif(SIMD_WIDTH EQUAL 64)
+    set(MACHINE_FLAG "")
 endif()
 
 set(SOURCE_FILES_NO_MAIN
@@ -51,7 +59,6 @@ set(TEST_FILES
         src/stabilizers/tableau.test.cc
         src/test_util.test.cc
         )
-
 set(BENCHMARK_FILES
         src/benchmark_main.perf.cc
         src/benchmark_util.perf.cc
@@ -68,7 +75,7 @@ set(BENCHMARK_FILES
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 if(NOT(MSVC))
-    target_compile_options(stim PRIVATE -march=native -O3 -Wall -Wpedantic -Werror -DSIMD_WIDTH=${SIMD_WIDTH})
+    target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic -Werror ${MACHINE_FLAG})
     target_link_options(stim PRIVATE -pthread -O3)
 else()
     target_compile_options(stim PRIVATE -DSIMD_WIDTH=${SIMD_WIDTH})
@@ -76,10 +83,10 @@ endif()
 
 add_executable(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
 if(NOT(MSVC))
-    target_compile_options(stim_benchmark PRIVATE -march=native -Wall -Wpedantic -Werror -O3 -DSIMD_WIDTH=${SIMD_WIDTH})
+    target_compile_options(stim_benchmark PRIVATE -Wall -Wpedantic -Werror -O3 ${MACHINE_FLAG})
     target_link_options(stim_benchmark PRIVATE -pthread)
 else()
-    target_compile_options(stim_benchmark PRIVATE -DSIMD_WIDTH=${SIMD_WIDTH})
+    target_compile_options(stim_benchmark PRIVATE ${MACHINE_FLAG})
 endif()
 
 find_package(GTest QUIET)
@@ -87,13 +94,13 @@ if(${GTest_FOUND})
     add_executable(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     add_test(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(stim_test gtest gtest_main)
-    target_compile_options(stim_test PRIVATE -march=native -Wall -Wpedantic -Werror -fsanitize=undefined -fsanitize=address -DSIMD_WIDTH=${SIMD_WIDTH})
+    target_compile_options(stim_test PRIVATE -Wall -Wpedantic -Werror -fsanitize=undefined -fsanitize=address ${MACHINE_FLAG})
     target_link_options(stim_test PRIVATE -fsanitize=undefined -fsanitize=address -pthread)
 
     add_executable(stim_test_o3 ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     add_test(stim_test_o3 ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(stim_test_o3 gtest gtest_main)
-    target_compile_options(stim_test_o3 PRIVATE -march=native -O3 -Wall -Wpedantic -Werror -DSIMD_WIDTH=${SIMD_WIDTH})
+    target_compile_options(stim_test_o3 PRIVATE -O3 -Wall -Wpedantic -Werror ${MACHINE_FLAG})
     target_link_options(stim_test_o3 PRIVATE -pthread)
 else()
     message("WARNING: Skipped stim_test target. `GTest` not found. To fix, follow Standalone CMake Project install instructions at https://github.com/google/googletest/blob/master/googletest/README.md")

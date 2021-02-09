@@ -17,18 +17,12 @@
 #ifndef SIMD_COMPAT_H
 #define SIMD_COMPAT_H
 
-#ifndef SIMD_WIDTH
-#error SIMD_WIDTH must be defined. For example, pass -DSIMD_WIDTH=256 as a compiler flag.
-#endif
-
-#if SIMD_WIDTH == 256
-#include "simd_compat_256.h"
-#elif SIMD_WIDTH == 128
-#include "simd_compat_128.h"
-#elif SIMD_WIDTH == 64
-#include "simd_compat_64.h"
+#if __AVX2__
+#include "simd_compat_avx2.h"
+#elif __SSE2__
+#include "simd_compat_sse2.h"
 #else
-#error Unsupported SIMD_WIDTH value. Supported values are 256 (default), 128, 64.
+#include "simd_compat_polyfill.h"
 #endif
 
 #endif

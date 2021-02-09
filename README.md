@@ -372,16 +372,33 @@ Broadcasting is always evaluated in left-to-right order.
 
 # Building
 
+### CMake Build
+
 ```bash
-cmake . -DSIMD_WIDTH=256
+cmake .
 make stim
-# output file: out/stim
+# ./out/stim
 ```
 
-By default, stim vectorizes loops using 256 bit wide avx2 instructions.
-Some systems don't support these instructions.
-Passing `-DSIMD_WIDTH=128` into cmake will use 128 bit wide SSE instructions instead.
-Passing `-DSIMD_WIDTH=64` into cmake will use plain `uint64_t` values for everything.
+To control the vectorization (e.g. this is done for testing),
+use `cmake . -DSIMD_WIDTH=256` (implying `-mavx2`)
+or `cmake . -DSIMD_WIDTH=128` (implying `-msse2`)
+or `cmake . -DSIMD_WIDTH=64` (implying no machine architecture flag).
+If `SIMD_WIDTH` is not specified, `-march=native` is used.
+
+### Bazel Build
+
+```bash
+bazel build stim
+# bazel run stim
+```
+
+### Manual Build
+
+```bash
+find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -pthread -std=c++11 -O3 -march=native
+# ./a.out
+```
 
 # Testing
 
@@ -422,12 +439,3 @@ code is running 25x slower than expected.
 The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
-
-# Manual Build
-
-Emergency `cmake`+`make` bypass:
-
-```bash
-find src | grep "\\.cc" | grep -v "\\.test\\.cc" | grep -v "\\.perf\\.cc" | xargs g++ -pthread -std=c++11 -march=native -O3 -DSIMD_WIDTH=256
-# output file: ./a.out
-```
