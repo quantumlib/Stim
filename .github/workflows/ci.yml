@@ -27,8 +27,9 @@ jobs:
     strategy:
       matrix:
         # NOTE: macOS turned off because OSX minutes are 10x cost on github actions.
+        # NOTE: windows turned off because windows minutes are 2x cost on github actions and the builds take long.
         # os: [ubuntu-20.04, windows-2019, macOS-10.15]
-        os: [ubuntu-20.04, windows-2019]
+        os: [ubuntu-20.04]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2

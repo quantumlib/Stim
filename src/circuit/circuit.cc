@@ -75,7 +75,49 @@ std::pair<std::vector<MeasurementSet>, std::vector<MeasurementSet>> Circuit::lis
     return {detectors, observables};
 }
 
-Circuit::Circuit() : operations(), num_qubits(0), num_measurements(0) {
+Circuit::Circuit() : jagged_data(), operations(), num_qubits(0), num_measurements(0) {
+}
+
+Circuit::Circuit(const Circuit &circuit) : jagged_data(circuit.jagged_data), operations(circuit.operations), num_qubits(circuit.num_qubits), num_measurements(circuit.num_measurements) {
+    for (auto &op : operations) {
+        op.target_data.targets.arena = &jagged_data;
+    }
+}
+
+Circuit::Circuit(Circuit &&circuit) noexcept :
+        jagged_data(std::move(circuit.jagged_data)),
+        operations(std::move(circuit.operations)),
+        num_qubits(circuit.num_qubits),
+        num_measurements(circuit.num_measurements) {
+    for (auto &op : operations) {
+        op.target_data.targets.arena = &jagged_data;
+    }
+}
+
+Circuit& Circuit::operator=(const Circuit &circuit) {
+    if (&circuit != this) {
+        num_qubits = circuit.num_qubits;
+        num_measurements = circuit.num_measurements;
+        jagged_data = circuit.jagged_data;
+        operations = circuit.operations;
+        for (auto &op : operations) {
+            op.target_data.targets.arena = &jagged_data;
+        }
+    }
+    return *this;
+}
+
+Circuit& Circuit::operator=(Circuit &&circuit) noexcept {
+    if (&circuit != this) {
+        num_qubits = circuit.num_qubits;
+        num_measurements = circuit.num_measurements;
+        jagged_data = std::move(circuit.jagged_data);
+        operations = std::move(circuit.operations);
+        for (auto &op : operations) {
+            op.target_data.targets.arena = &jagged_data;
+        }
+    }
+    return *this;
 }
 
 bool Operation::can_fuse(const Operation &other) const {
@@ -379,6 +421,29 @@ void _circuit_incremental_update_from_back(Circuit &circuit) {
     }
 }
 
+void Circuit::append_circuit(const Circuit &circuit, size_t repetitions) {
+    if (!repetitions) {
+        return;
+    }
+    auto original_size = operations.size();
+
+    if (&circuit == this) {
+        num_measurements *= repetitions + 1;
+        do {
+            operations.insert(operations.end(), operations.begin(), operations.begin() + original_size);
+        } while (--repetitions);
+        return;
+    }
+
+    for (const auto &op : circuit.operations) {
+        append_operation(op);
+    }
+    auto single_rep_end = operations.end();
+    while (--repetitions) {
+        operations.insert(operations.end(), operations.begin() + original_size, single_rep_end);
+    }
+}
+
 void Circuit::append_operation(const Operation &operation) {
     Operation converted{
         operation.gate,
@@ -388,7 +453,7 @@ void Circuit::append_operation(const Operation &operation) {
     _circuit_incremental_update_from_back(*this);
 }
 
-void Circuit::append_operation(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
+void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
     Operation converted{&GATE_DATA.at(gate_name), {arg, {&jagged_data, jagged_data.size(), vec.size()}}};
     operations.push_back(converted);
     jagged_data.insert(jagged_data.end(), vec.begin(), vec.end());
@@ -439,9 +504,9 @@ std::ostream &operator<<(std::ostream &out, const Operation &op) {
 }
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c) {
-    out << "# Circuit [num_qubits=" << c.num_qubits << ", num_measurements=" << c.num_measurements << "]\n";
+    out << "# Circuit [num_qubits=" << c.num_qubits << ", num_measurements=" << c.num_measurements << "]";
     for (const auto &op : c.operations) {
-        out << op << "\n";
+        out << "\n" << op;
     }
     return out;
 }
@@ -451,6 +516,29 @@ void Circuit::clear() {
     num_measurements = 0;
     jagged_data.clear();
     operations.clear();
+}
+
+Circuit Circuit::operator+(const Circuit &other) const {
+    Circuit result = *this;
+    result += other;
+    return result;
+}
+Circuit Circuit::operator*(size_t repetitions) const {
+    Circuit result = *this;
+    result *= repetitions;
+    return result;
+}
+Circuit &Circuit::operator+=(const Circuit &other) {
+    append_circuit(other, 1);
+    return *this;
+}
+Circuit &Circuit::operator*=(size_t repetitions) {
+    if (repetitions == 0) {
+        clear();
+    } else {
+        append_circuit(*this, repetitions - 1);
+    }
+    return *this;
 }
 
 std::string Circuit::str() const {

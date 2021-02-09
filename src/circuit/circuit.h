@@ -152,6 +152,15 @@ struct Circuit {
 
     /// Constructs an empty circuit.
     Circuit();
+    /// Copy constructor.
+    Circuit(const Circuit &circuit);
+    /// Move constructor.
+    Circuit(Circuit &&circuit) noexcept;
+    /// Copy assignment.
+    Circuit& operator=(Circuit &&circuit) noexcept;
+    /// Move assignment.
+    Circuit& operator=(const Circuit &circuit);
+
     /// Parses a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
     ///
     /// Note: operations are automatically fused.
@@ -184,10 +193,17 @@ struct Circuit {
     ///     false: The string contained no operations.
     bool append_from_text(const std::string &text);
 
+    Circuit operator+(const Circuit &other) const;
+    Circuit operator*(size_t repetitions) const;
+    Circuit &operator+=(const Circuit &other);
+    Circuit &operator*=(size_t repetitions);
+
+    /// Appends a circuit to the end of this one.
+    void append_circuit(const Circuit &circuit, size_t repetitions);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
+    void append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
 
     /// Resets the circuit back to an empty circuit.
     void clear();

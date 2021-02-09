@@ -329,10 +329,10 @@ TEST(PauliFrameSimulation, sample_out) {
 TEST(PauliFrameSimulation, big_circuit_measurements) {
     Circuit circuit;
     for (uint32_t k = 0; k < 1250; k += 3) {
-        circuit.append_operation("X", {k});
+        circuit.append_op("X", {k});
     }
     for (uint32_t k = 0; k < 1250; k++) {
-        circuit.append_operation("M", {k});
+        circuit.append_op("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 750, SHARED_TEST_RNG());
@@ -370,10 +370,10 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
 TEST(PauliFrameSimulation, big_circuit_random_measurements) {
     Circuit circuit;
     for (uint32_t k = 0; k < 270; k++) {
-        circuit.append_operation("H_XZ", {k});
+        circuit.append_op("H_XZ", {k});
     }
     for (uint32_t k = 0; k < 270; k++) {
-        circuit.append_operation("M", {k});
+        circuit.append_op("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 1000, SHARED_TEST_RNG());

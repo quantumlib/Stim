@@ -1,3 +1,5 @@
+package(default_visibility = ["//visibility:public"])
+
 SOURCE_FILES_NO_MAIN = glob(
     [
         "src/**/*.cc",
@@ -35,6 +37,12 @@ PYBIND_FILES = glob(
     ],
 )
 
+cc_library(
+    name = "stim_lib",
+    srcs = SOURCE_FILES_NO_MAIN,
+    linkopts = ["-lpthread"],
+)
+
 cc_binary(
     name = "stim",
     srcs = SOURCE_FILES_NO_MAIN + glob(["src/**/main.cc"]),
@@ -65,5 +73,19 @@ cc_test(
     deps = [
         "@gtest",
         "@gtest//:gtest_main",
+    ],
+)
+
+cc_binary(
+    name = "stim_pybind.so",
+    srcs = SOURCE_FILES_NO_MAIN + PYBIND_FILES,
+    copts = [
+        "-O3",
+        "-fvisibility=hidden",
+    ],
+    linkopts = ["-lpthread"],
+    linkshared = 1,
+    deps = [
+        "@pybind11",
     ],
 )

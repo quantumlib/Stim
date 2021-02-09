@@ -19,3 +19,6 @@ bazel-*
 python_build_stim/*
 stim.egg*
 stim.cpython*
+dist/*
+MANIFEST
+*.whl

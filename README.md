@@ -1,6 +1,6 @@
 # Stim
 
-Stim is an extremely fast simulator for non-adaptive quantum stabilizer circuits.
+Stim is a fast simulator for non-adaptive quantum stabilizer circuits.
 Stim is based on the stabilizer tableau representation introduced in
 [Scott Aaronson et al's CHP simulator](https://arxiv.org/abs/quant-ph/0406196).
 Stim makes three key improvements over CHP.
@@ -22,11 +22,101 @@ same distribution as a full stabilizer simulation.
 This ensures every gate has a worst case complexity of O(1), instead of O(n) or O(n^2).
 
 Third, data is laid out in a cache friendly way and operated on using vectorized 256-bit-wide SIMD instructions.
-This makes key operations extremely fast.
+This makes key operations fast.
 For example, Stim can multiply a Pauli string with a *hundred billion terms* into another in *under a second*.
 Pauli string multiplication is a key bottleneck operation when updating a stabilizer tableau.
 Tracking Pauli frames can also benefit from vectorization, by combining them into batches and computing thousands of
 samples at a time.
+
+# Usage (python)
+
+Stim can be installed into a python 3 environment using pip:
+
+```bash
+pip install stim
+```
+
+Once stim is installed, you can `import stim` and use it.
+There are two supported use cases: interactive usage and high speed sampling.
+
+You can use the Tableau simulator in an interactive fashion:
+
+```python
+import stim
+
+s = stim.TableauSimulator()
+
+# Create a GHZ state.
+s.h(0)
+s.cnot(0, 1)
+s.cnot(0, 2)
+
+# Measure the GHZ state.
+print(s.measure(0, 1, 2))  # [False, False, False] or [True, True, True]
+```
+
+Alternatively, you can compile a circuit and then begin generating samples from it:
+
+```python
+import stim
+import numpy as np
+
+# Create a circuit that measures a large GHZ state.
+c = stim.Circuit()
+c.append_operation("H", [0])
+for k in range(1, 30):
+    c.append_operation("CNOT", [0, k])
+c.append_operation("M", range(30))
+
+# Compile the circuit into a high performance sampler.
+sampler = c.compile()
+
+# Collect a batch of samples.
+# Note: the ideal batch size, in terms of speed per sample, is roughly 1024.
+# Smaller batches are slower because they are not sufficiently vectorized.
+# Bigger batches are slower because they use more memory.
+batch = sampler.sample(1024)
+
+# Samples are bit-packed into bytes.
+print(type(batch))  # numpy.ndarray
+print(batch.dtype)  # numpy.uint8
+print(batch.shape)  # (1024, 4)  [4 because 4*8 >= number of measurements]
+
+# Samples can be unpacked into bits using standard numpy methods.
+unpacked_bits = np.unpackbits(batch, axis=1, bitorder='little')[:, :c.num_measurements]
+print(unpacked_bits)
+# Prints something like:
+# [[1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+#  [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+#  [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+#  ...
+#  [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+#  [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+#  [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+#  [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]]
+```
+
+The circuit can also include noise:
+
+```python
+import stim
+import numpy as np
+
+c = stim.Circuit()
+c.append_operation("X_ERROR", [0], 0.1)
+c.append_operation("Y_ERROR", [1], 0.2)
+c.append_operation("Z_ERROR", [2], 0.3)
+c.append_operation("DEPOLARIZE1", [3], 0.4)
+c.append_operation("DEPOLARIZE2", [4, 5], 0.5)
+c.append_operation("M", [0, 1, 2, 3, 4, 5])
+
+batch = c.compile().sample(2**20)
+bits = np.unpackbits(batch, axis=1, bitorder='little')[:, :c.num_measurements]
+print(np.mean(bits, axis=0))
+# Prints something like:
+# [0.1001091  0.19970512 0.         0.26744652 0.26640606 0.26618862]
+```
+
 
 # Usage (command line)
 
@@ -183,7 +273,7 @@ Not all modifiers apply to all modes.
     Incompatible with interactive mode.
     Definition: a "sample" is one measurement result in measurement sampling mode or one detector/observable result in detection event sampling mode.
     Definition: a "shot" is composed of all of the samples from a circuit.
-    Definition: a "sample location" is a measurement gate in measurement sampling mode, or a detector/observable in detection event sampling mode. 
+    Definition: a "sample location" is a measurement gate in measurement sampling mode, or a detector/observable in detection event sampling mode.
     - `01` (default):
         Human readable ASCII format.
         Prints all the samples from one shot before moving on to the next.
@@ -294,7 +384,7 @@ Broadcasting is always evaluated in left-to-right order.
 
 - `M`:
     Z-basis measurement.
-    Examples: `M 0`, `M 2 1`, `M 0 !3 1 2`. 
+    Examples: `M 0`, `M 2 1`, `M 0 !3 1 2`.
     Collapses the target qubits and reports their values (optionally flipped).
     Prefixing a target with a `!` indicates that the measurement result should be inverted when reported.
     In the tableau simulator, this operation may require a transpose and so is more efficient when grouped
@@ -439,3 +529,19 @@ code is running 25x slower than expected.
 The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
+
+# Python Package
+
+To install stim from pypi, run:
+
+```bash
+pip install stim
+```
+
+To create the package locally from source, run the following from a python 3 environment:
+
+```bash
+python setup.py sdist
+```
+
+Which will produce a `dist` directory containing a `.tar.gz` file which can installed with `pip install [path-to-file]`
