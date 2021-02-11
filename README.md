@@ -490,6 +490,30 @@ find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -
 # ./a.out
 ```
 
+### Python Package Build
+
+Environment requirements:
+
+```bash
+pip install -y pybind11 cibuildwheel
+```
+
+Build source distribution (fallback for missing binary wheels):
+
+```bash
+python setup.py sdist
+```
+
+Output in `dist` directory.
+
+Build manylinux binary distributions (takes 30+ minutes):
+
+```bash
+python -m cibuildwheel --output-dir wheelhouse --platform=linux
+```
+
+Output in `wheelhouse` directory.
+
 # Testing
 
 Unit testing requires GTest to be installed on your system and discoverable by CMake.
@@ -529,19 +553,3 @@ code is running 25x slower than expected.
 The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
-
-# Python Package
-
-To install stim from pypi, run:
-
-```bash
-pip install stim
-```
-
-To create the package locally from source, run the following from a python 3 environment:
-
-```bash
-python setup.py sdist
-```
-
-Which will produce a `dist` directory containing a `.tar.gz` file which can installed with `pip install [path-to-file]`

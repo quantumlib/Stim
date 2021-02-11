@@ -17,7 +17,7 @@
 #include "../benchmark_util.h"
 
 BENCHMARK(circuit_parse) {
-    Circuit c({});
+    Circuit c;
     benchmark_go([&]() {
         c = Circuit::from_text(R"input(
 H 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -25,6 +25,22 @@ CNOT 4 5 6 7
 M 1 2 3 4 5 6 7 8 9 10 11
             )input");
     }).goal_nanos(950);
+    if (c.num_qubits == 0) {
+        std::cerr << "impossible";
+    }
+}
+
+BENCHMARK(circuit_parse_sparse) {
+    Circuit c;
+    for (auto k = 0; k < 1000; k++) {
+        c.append_op("H", {0});
+        c.append_op("CNOT", {1, 2});
+        c.append_op("M", {0});
+    }
+    auto text = c.str();
+    benchmark_go([&]() {
+        c = Circuit::from_text(text);
+    }).goal_micros(150);
     if (c.num_qubits == 0) {
         std::cerr << "impossible";
     }

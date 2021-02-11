@@ -1,4 +1,4 @@
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 import pybind11
 import glob
 
@@ -30,6 +30,7 @@ setup(
     license='Apache 2',
     description='A fast quantum stabilizer circuit simulator.',
     ext_modules=[extension_module],
+    python_requires='>=3.5.0',
     data_files=['pyproject.toml', 'README.md'] + RELEVANT_HEADERS,
     requires=['numpy'],
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.

@@ -15,7 +15,6 @@
 #include "common_circuits.h"
 
 #include <algorithm>
-#include <cassert>
 #include <complex>
 #include <functional>
 #include <sstream>
@@ -75,11 +74,8 @@ std::string unrotated_surface_code_program_text(size_t distance, size_t rounds, 
 
     std::stringstream result{};
     size_t diam = distance * 2 - 1;
-    size_t num_qubits = diam * diam;
     auto qubit = [&](std::complex<float> c) {
-        size_t q = (size_t)(c.real() * diam + c.imag());
-        assert(q < num_qubits);
-        return q;
+        return (size_t)(c.real() * diam + c.imag());
     };
     auto in_range = [=](std::complex<float> c) {
         return c.real() >= 0 && c.real() < (float)diam && c.imag() >= 0 && c.imag() < (float)diam;

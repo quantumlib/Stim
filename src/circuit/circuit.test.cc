@@ -175,3 +175,27 @@ TEST(circuit, append_circuit) {
     ASSERT_EQ(actual.jagged_data.size(), 7);
     ASSERT_EQ(expected.jagged_data.size(), 7 * 4);
 }
+
+TEST(circuit, append_op_fuse) {
+    Circuit expected;
+    Circuit actual;
+    expected.append_op("H", {1, 2, 3});
+    actual.append_op("H", {1}, 0, true);
+    actual.append_op("H", {2, 3}, 0, true);
+    ASSERT_EQ(actual, expected);
+
+    actual.append_op("R", {0}, 0, true);
+    expected.append_op("R", {0});
+    ASSERT_EQ(actual, expected);
+
+    actual.append_op("DETECTOR", {0, 0}, 0, true);
+    actual.append_op("DETECTOR", {1, 1}, 0, true);
+    expected.append_op("DETECTOR", {0, 0});
+    expected.append_op("DETECTOR", {1, 1});
+    ASSERT_EQ(actual, expected);
+
+    actual.append_op("M", {0, 1}, 0, true);
+    actual.append_op("M", {2, 3}, 0, true);
+    expected.append_op("M", {0, 1, 2, 3});
+    ASSERT_EQ(actual, expected);
+}

@@ -453,10 +453,27 @@ void Circuit::append_operation(const Operation &operation) {
     _circuit_incremental_update_from_back(*this);
 }
 
-void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
-    Operation converted{&GATE_DATA.at(gate_name), {arg, {&jagged_data, jagged_data.size(), vec.size()}}};
-    operations.push_back(converted);
-    jagged_data.insert(jagged_data.end(), vec.begin(), vec.end());
+void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg, bool allow_fusing) {
+    const auto &gate = GATE_DATA.at(gate_name);
+    if (allow_fusing
+            && !(gate.flags & GATE_IS_NOT_FUSABLE)
+            && !operations.empty()
+            && operations.back().gate->id == gate.id
+            && operations.back().target_data.arg == arg) {
+        // Don't double count measurements when doing incremental update.
+        if (gate.flags & GATE_PRODUCES_RESULTS) {
+            num_measurements -= operations.back().target_data.targets.size();
+        }
+        // Extend targets of last gate.
+        jagged_data.insert(jagged_data.end(), vec.begin(), vec.end());
+        operations.back().target_data.targets.length += vec.size();
+    } else {
+        // Add a fresh new operation with its own target data.
+        Operation converted{&gate, {arg, {&jagged_data, jagged_data.size(), vec.size()}}};
+        operations.push_back(converted);
+        jagged_data.insert(jagged_data.end(), vec.begin(), vec.end());
+    }
+    // Update num_measurements and num_qubits appropriately.
     _circuit_incremental_update_from_back(*this);
 }
 
