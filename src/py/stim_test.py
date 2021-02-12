@@ -1,0 +1,215 @@
+import numpy as np
+import stim
+import pytest
+
+
+def test_circuit_init_num_measurements_num_qubits():
+    c = stim.Circuit()
+    assert c.num_qubits == c.num_measurements == 0
+    assert str(c).strip() == """
+# Circuit [num_qubits=0, num_measurements=0]
+    """.strip()
+
+    c.append_operation("X", [3])
+    assert c.num_qubits == 4
+    assert c.num_measurements == 0
+    assert str(c).strip() == """
+# Circuit [num_qubits=4, num_measurements=0]
+X 3
+        """.strip()
+
+    c.append_operation("M", [0])
+    assert c.num_qubits == 4
+    assert c.num_measurements == 1
+    assert str(c).strip() == """
+# Circuit [num_qubits=4, num_measurements=1]
+X 3
+M 0
+        """.strip()
+
+
+def test_circuit_append_operation():
+    c = stim.Circuit()
+
+    with pytest.raises(IndexError, match="Gate not found"):
+        c.append_operation("NOT_A_GATE", [0])
+    with pytest.raises(IndexError, match="even number of targets"):
+        c.append_operation("CNOT", [0])
+    with pytest.raises(IndexError, match="doesn't take"):
+        c.append_operation("X", [0], 0.5)
+    with pytest.raises(IndexError, match="invalid flags"):
+        c.append_operation("X", [stim.target_inv(0)])
+    with pytest.raises(IndexError, match="invalid flags"):
+        c.append_operation("X", [stim.target_x(0)])
+    with pytest.raises(IndexError, match="lookback"):
+        stim.target_rec(0, 0)
+    with pytest.raises(IndexError, match="lookback"):
+        stim.target_rec(0, 1)
+    with pytest.raises(IndexError, match="lookback"):
+        stim.target_rec(0, -257)
+    assert stim.target_rec(0, -1) is not None
+    assert stim.target_rec(0, -256) is not None
+
+    c.append_operation("X", [0])
+    c.append_operation("X", [1, 2])
+    c.append_operation("X", [3], fuse=False)
+    c.append_operation("CNOT", [0, 1])
+    c.append_operation("M", [0, stim.target_inv(1)])
+    c.append_operation("X_ERROR", [0], 0.25)
+    c.append_operation("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(1)], 0.5)
+    c.append_operation("DETECTOR", [stim.target_rec(0, -1), stim.target_rec(4, -256)])
+    c.append_operation("OBSERVABLE_INCLUDE", [stim.target_rec(0, -1), stim.target_rec(4, -5)], 5)
+    assert str(c).strip() == """
+# Circuit [num_qubits=5, num_measurements=2]
+X 0 1 2
+X 3
+ZCX 0 1
+M 0 !1
+X_ERROR(0.25) 0
+CORRELATED_ERROR(0.5) X0 Y1
+DETECTOR 0@-1 4@-256
+OBSERVABLE_INCLUDE(5) 0@-1 4@-5
+    """.strip()
+
+
+def test_circuit_iadd():
+    c = stim.Circuit()
+    c.append_operation("X", [1, 2])
+    c2 = stim.Circuit()
+    c2.append_operation("Y", [3])
+    c2.append_operation("M", [4])
+    c += c2
+    assert str(c).strip() == """
+# Circuit [num_qubits=5, num_measurements=1]
+X 1 2
+Y 3
+M 4
+        """.strip()
+
+    c += c
+    assert str(c).strip() == """
+# Circuit [num_qubits=5, num_measurements=2]
+X 1 2
+Y 3
+M 4
+X 1 2
+Y 3
+M 4
+    """.strip()
+
+
+def test_circuit_add():
+    c = stim.Circuit()
+    c.append_operation("X", [1, 2])
+    c2 = stim.Circuit()
+    c2.append_operation("Y", [3])
+    c2.append_operation("M", [4])
+    assert str(c + c2).strip() == """
+    # Circuit [num_qubits=5, num_measurements=1]
+X 1 2
+Y 3
+M 4
+            """.strip()
+
+    assert str(c2 + c2).strip() == """
+# Circuit [num_qubits=5, num_measurements=2]
+Y 3
+M 4
+Y 3
+M 4
+        """.strip()
+
+
+def test_circuit_mul():
+    c = stim.Circuit()
+    c.append_operation("Y", [3])
+    c.append_operation("M", [4])
+    expected = """
+# Circuit [num_qubits=5, num_measurements=2]
+Y 3
+M 4
+Y 3
+M 4
+        """.strip()
+    assert str(c * 2) == str(2 * c) == expected
+    expected = """
+# Circuit [num_qubits=5, num_measurements=3]
+Y 3
+M 4
+Y 3
+M 4
+Y 3
+M 4
+    """.strip()
+    assert str(c * 3) == str(3 * c) == expected
+    c *= 3
+    assert str(c) == expected
+    c *= 1
+    assert str(c) == expected
+    c *= 0
+    assert str(c) == "# Circuit [num_qubits=0, num_measurements=0]"
+
+
+def test_circuit_compile():
+    c = stim.Circuit()
+    s = c.compile()
+    c.append_operation("M", [0])
+    assert str(s) == """
+# reference sample: 
+# Circuit [num_qubits=0, num_measurements=0]
+    """.strip()
+    s = c.compile()
+    assert str(s) == """
+# reference sample: 0
+# Circuit [num_qubits=1, num_measurements=1]
+M 0
+    """.strip()
+
+    c.append_operation("H", [0, 1, 2, 3, 4])
+    c.append_operation("M", [0, 1, 2, 3, 4])
+    s = c.compile()
+    assert str(s) == """
+# reference sample: 000000
+# Circuit [num_qubits=5, num_measurements=6]
+M 0
+    """.strip() == str(stim.CompiledCircuitSampler(c))
+
+
+def test_compiled_circuit_sampler_sample():
+    c = stim.Circuit()
+    c.append_operation("X", [1])
+    c.append_operation("M", [0, 1, 2, 3])
+    np.testing.assert_array_equal(
+        c.compile().sample(5),
+        np.array([
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0],
+        ], dtype=np.uint8))
+    np.testing.assert_array_equal(
+        c.compile().sample_bit_packed(5),
+        np.array([
+            [0b00010],
+            [0b00010],
+            [0b00010],
+            [0b00010],
+            [0b00010],
+        ], dtype=np.uint8))
+
+
+def test_tableau_simulator():
+    s = stim.TableauSimulator()
+    assert s.measure(0) is False
+    assert s.measure(0) is False
+    s.x(0)
+    assert s.measure(0) is True
+    assert s.measure(0) is True
+    s.reset(0)
+    assert s.measure(0) is False
+    s.h(0)
+    s.h(0)
+    s.sqrt_x(1)
+    s.sqrt_x(1)
+    assert s.measure_many(0, 1) == [False, True]

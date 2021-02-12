@@ -89,15 +89,17 @@ struct TruncatedArray {
     }
 };
 
-enum GateFlags : uint8_t {
+enum GateFlags : uint16_t {
     GATE_NO_FLAGS = 0,
     GATE_IS_UNITARY = 1 << 0,
     GATE_IS_NOISE = 1 << 1,
-    GATE_TARGETS_MEASUREMENT_RECORD = 1 << 2,
-    GATE_TAKES_PARENS_ARGUMENT = 1 << 3,
-    GATE_PRODUCES_RESULTS = 1 << 4,
-    GATE_IS_NOT_FUSABLE = 1 << 5,
-    GATE_IS_BLOCK = 1 << 6,
+    GATE_TAKES_PARENS_ARGUMENT = 1 << 2,
+    GATE_PRODUCES_RESULTS = 1 << 3,
+    GATE_IS_NOT_FUSABLE = 1 << 4,
+    GATE_IS_BLOCK = 1 << 5,
+    GATE_TARGETS_PAIRS = 1 << 6,
+    GATE_TARGETS_PAULI_STRING = 1 << 7,
+    GATE_TARGETS_MEASUREMENT_RECORD = 1 << 8,
 };
 
 struct Gate {

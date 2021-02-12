@@ -52,14 +52,13 @@ s.cnot(0, 1)
 s.cnot(0, 2)
 
 # Measure the GHZ state.
-print(s.measure(0, 1, 2))  # [False, False, False] or [True, True, True]
+print(s.measure_many(0, 1, 2))  # [False, False, False] or [True, True, True]
 ```
 
 Alternatively, you can compile a circuit and then begin generating samples from it:
 
 ```python
 import stim
-import numpy as np
 
 # Create a circuit that measures a large GHZ state.
 c = stim.Circuit()
@@ -76,15 +75,10 @@ sampler = c.compile()
 # Smaller batches are slower because they are not sufficiently vectorized.
 # Bigger batches are slower because they use more memory.
 batch = sampler.sample(1024)
-
-# Samples are bit-packed into bytes.
 print(type(batch))  # numpy.ndarray
 print(batch.dtype)  # numpy.uint8
-print(batch.shape)  # (1024, 4)  [4 because 4*8 >= number of measurements]
-
-# Samples can be unpacked into bits using standard numpy methods.
-unpacked_bits = np.unpackbits(batch, axis=1, bitorder='little')[:, :c.num_measurements]
-print(unpacked_bits)
+print(batch.shape)  # (1024, 30)
+print(batch)
 # Prints something like:
 # [[1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
 #  [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
@@ -111,10 +105,9 @@ c.append_operation("DEPOLARIZE2", [4, 5], 0.5)
 c.append_operation("M", [0, 1, 2, 3, 4, 5])
 
 batch = c.compile().sample(2**20)
-bits = np.unpackbits(batch, axis=1, bitorder='little')[:, :c.num_measurements]
-print(np.mean(bits, axis=0))
+print(np.mean(batch, axis=0).round(3))
 # Prints something like:
-# [0.1001091  0.19970512 0.         0.26744652 0.26640606 0.26618862]
+# [0.1   0.2   0.    0.267 0.267 0.266]
 ```
 
 
@@ -431,6 +424,19 @@ Broadcasting is always evaluated in left-to-right order.
     Single-qubit probabilistic Z error.
     Examples: `Z_ERROR(0.001) 0 1`.
     For each target qubit, independently applies a Z gate With probability `p`.
+- `CORRELATED_ERROR(p)` and `ELSE_CORRELATED_ERROR(p)`:
+    Pauli product error cases.
+    Probabilistically applies a Pauli product error with probability `p`,
+    unless the "correlated error occurred" flag is already set.
+    `CORRELATED_ERROR` is equivalent to `ELSE_CORRELATED_ERROR` except that
+    `CORRELATED_ERROR` starts by clearing the "correlated error occurred" flag.
+    Both operations set the "correlated error occurred" flag if they apply their error.
+    Example:
+
+        # With 40% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
+        CORRELATED_ERROR(0.2) X1 Y2
+        ELSE_CORRELATED_ERROR(0.25) Z2 Z3
+        ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
 
 ### Annotations
 

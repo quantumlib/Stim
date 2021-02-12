@@ -35,6 +35,7 @@ struct TableauSimulator {
     std::mt19937_64 &rng;
     int8_t sign_bias;
     std::queue<bool> recorded_measurement_results;
+    bool last_correlated_error_occurred;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
@@ -111,6 +112,8 @@ struct TableauSimulator {
     void X_ERROR(const OperationData &target_data);
     void Y_ERROR(const OperationData &target_data);
     void Z_ERROR(const OperationData &target_data);
+    void CORRELATED_ERROR(const OperationData &target_data);
+    void ELSE_CORRELATED_ERROR(const OperationData &target_data);
 
    private:
     /// Forces a qubit to have a collapsed Z observable.

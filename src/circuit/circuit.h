@@ -26,8 +26,12 @@
 
 #include "gate_data.h"
 
-#define MEASURE_TARGET_MASK ((uint32_t{1} << 24) - uint32_t{1})
-#define MEASURE_FLIPPED_MASK (uint32_t{1} << 31)
+#define TARGET_QUBIT_MASK ((uint32_t{1} << 24) - uint32_t{1})
+#define TARGET_RECORD_MASK (~TARGET_QUBIT_MASK)
+#define TARGET_RECORD_SHIFT (24)
+#define TARGET_INVERTED_MASK (uint32_t{1} << 31)
+#define TARGET_PAULI_X_MASK (uint32_t{1} << 30)
+#define TARGET_PAULI_Z_MASK (uint32_t{1} << 29)
 
 enum SampleFormat {
     /// Human readable format.
@@ -100,9 +104,9 @@ struct OperationData {
     double arg;
     /// Context-dependent data on what to target.
     ///
-    /// For normal operations, this is just a list of qubit indices.
-    /// For result-producing operations, the most significant bit is used to indicate if the result should be flipped.
-    /// For measurement-record-targeting operations, the qubit targets and time deltas (e.g. 2@-3) are interleaved.
+    /// The bottom 24 bits of each item always refer to a qubit index.
+    /// The top 8 bits are used for additional data such as
+    /// Pauli basis, record lookback, and measurement inversion.
     VectorView<uint32_t> targets;
 
     bool operator==(const OperationData &other) const;

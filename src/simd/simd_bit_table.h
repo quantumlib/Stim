@@ -48,9 +48,9 @@ struct simd_bit_table {
     }
 
     /// Square matrix multiplication (assumes row major indexing). n is the diameter of the matrix.
-    [[nodiscard]] simd_bit_table square_mat_mul(const simd_bit_table &rhs, size_t n) const;
+    simd_bit_table square_mat_mul(const simd_bit_table &rhs, size_t n) const;
     /// Square matrix inverse, assuming input is lower triangular. n is the diameter of the matrix.
-    [[nodiscard]] simd_bit_table inverse_assuming_lower_triangular(size_t n) const;
+    simd_bit_table inverse_assuming_lower_triangular(size_t n) const;
     /// Transposes the table inplace.
     void do_square_transpose();
     /// Transposes the table out of place into a target location.

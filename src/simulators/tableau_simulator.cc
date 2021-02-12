@@ -20,7 +20,7 @@
 #include "../probability_util.h"
 
 TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
-    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias) {
+    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias), recorded_measurement_results(), last_correlated_error_occurred(false) {
 }
 
 bool TableauSimulator::is_deterministic(size_t target) const {
@@ -33,8 +33,8 @@ void TableauSimulator::measure(const OperationData &target_data) {
 
     // Record measurement results.
     for (auto qf : target_data.targets) {
-        auto q = qf & MEASURE_TARGET_MASK;
-        bool flipped = qf & MEASURE_FLIPPED_MASK;
+        auto q = qf & TARGET_QUBIT_MASK;
+        bool flipped = qf & TARGET_INVERTED_MASK;
         recorded_measurement_results.push(inv_state.zs.signs[q] ^ flipped);
     }
 }
@@ -47,8 +47,8 @@ void TableauSimulator::measure_reset(const OperationData &target_data) {
 
     // Record measurement results while triggering resets.
     for (auto qf : target_data.targets) {
-        auto q = qf & MEASURE_TARGET_MASK;
-        bool flipped = qf & MEASURE_FLIPPED_MASK;
+        auto q = qf & TARGET_QUBIT_MASK;
+        bool flipped = qf & TARGET_INVERTED_MASK;
         recorded_measurement_results.push(inv_state.zs.signs[q] ^ flipped);
         inv_state.zs.signs[q] = false;
     }
@@ -295,6 +295,32 @@ void TableauSimulator::Z_ERROR(const OperationData &target_data) {
     });
 }
 
+void TableauSimulator::CORRELATED_ERROR(const OperationData &target_data) {
+    last_correlated_error_occurred = false;
+    ELSE_CORRELATED_ERROR(target_data);
+}
+
+void TableauSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
+    if (last_correlated_error_occurred) {
+        return;
+    }
+    last_correlated_error_occurred = std::bernoulli_distribution(target_data.arg)(rng);
+    if (!last_correlated_error_occurred) {
+        return;
+    }
+    for (auto qxz : target_data.targets) {
+        auto q = qxz & TARGET_QUBIT_MASK;
+        auto x = qxz & TARGET_PAULI_X_MASK;
+        auto z = qxz & TARGET_PAULI_Z_MASK;
+        if (x) {
+            inv_state.prepend_X(q);
+        }
+        if (z) {
+            inv_state.prepend_Z(q);
+        }
+    }
+}
+
 void TableauSimulator::X(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
@@ -377,7 +403,7 @@ void TableauSimulator::collapse(const OperationData &target_data) {
     std::vector<size_t> collapse_targets;
     collapse_targets.reserve(target_data.targets.size());
     for (auto t : target_data.targets) {
-        t &= MEASURE_TARGET_MASK;
+        t &= TARGET_QUBIT_MASK;
         if (!is_deterministic(t)) {
             collapse_targets.push_back(t);
         }

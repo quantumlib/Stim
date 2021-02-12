@@ -421,3 +421,96 @@ TEST(SimTableau, measurement_vs_vector_sim) {
         ASSERT_TRUE(vec_sim_corroborates_measurement_process(sim_tab, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
     }
 }
+
+TEST(TableauSimulator, correlated_error) {
+    simd_bits expected(5);
+
+    expected.clear();
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0) X0 X1
+        ELSE_CORRELATED_ERROR(0) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(0) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    expected.clear();
+    expected[1] = true;
+    expected[2] = true;
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    expected.clear();
+    expected[2] = true;
+    expected[3] = true;
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0) X0 X1
+        ELSE_CORRELATED_ERROR(0) X1 X2
+        ELSE_CORRELATED_ERROR(1) X2 X3
+        M 0 1 2 3
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(1) X2 X3
+        M 0 1 2 3
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    expected[3] = true;
+    expected[4] = true;
+    ASSERT_EQ(TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(1) X2 X3
+        CORRELATED_ERROR(1) X3 X4
+        M 0 1 2 3 4
+    )circuit"), SHARED_TEST_RNG()), expected);
+
+    int hits[3]{};
+    size_t n = 10000;
+    std::mt19937_64 rng(0);
+    for (size_t k = 0; k < n; k++) {
+        auto sample = TableauSimulator::sample_circuit(Circuit::from_text(R"circuit(
+            CORRELATED_ERROR(0.5) X0
+            ELSE_CORRELATED_ERROR(0.25) X1
+            ELSE_CORRELATED_ERROR(0.75) X2
+            M 0 1 2
+        )circuit"), rng);
+        hits[0] += sample[0];
+        hits[1] += sample[1];
+        hits[2] += sample[2];
+    }
+    ASSERT_TRUE(0.45 * n < hits[0] && hits[0] < 0.55 * n);
+    ASSERT_TRUE((0.125 - 0.05) * n < hits[1] && hits[1] < (0.125 + 0.05) * n);
+    ASSERT_TRUE((0.28125 - 0.05) * n < hits[2] && hits[2] < (0.28125 + 0.05) * n);
+}

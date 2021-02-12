@@ -37,6 +37,7 @@ struct FrameSimulator {
     simd_bit_table z_table;
     simd_bit_table m_table;
     simd_bits rng_buffer;
+    simd_bits last_correlated_error_occurred;
     std::mt19937_64 &rng;
 
     FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
@@ -81,6 +82,8 @@ struct FrameSimulator {
     void X_ERROR(const OperationData &target_data);
     void Y_ERROR(const OperationData &target_data);
     void Z_ERROR(const OperationData &target_data);
+    void CORRELATED_ERROR(const OperationData &target_data);
+    void ELSE_CORRELATED_ERROR(const OperationData &target_data);
 };
 
 void write_table_data(

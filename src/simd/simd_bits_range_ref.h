@@ -114,7 +114,7 @@ struct simd_bits_range_ref {
     /// than iterators.
     ///
     /// Example:
-    ///     size_t simd_popcount(simd_bits_ref data) {
+    ///     size_t simd_popcount(simd_bits_range_ref data) {
     ///         size_t popcount = 0;
     ///         data.for_each_word([&](auto &w) {
     ///             popcount += w.popcount();
@@ -142,7 +142,7 @@ struct simd_bits_range_ref {
     /// than iterators.
     ///
     /// Example:
-    ///     void xor_left_into_right(simd_bits_ref data1, simd_bits_ref data2) {
+    ///     void xor_left_into_right(simd_bits_range_ref data1, simd_bits_range_ref data2) {
     ///         data1.for_each_word(data2, [&](auto &w1, auto &w2) {
     ///             w2 ^= w1;
     ///         });
@@ -170,7 +170,7 @@ struct simd_bits_range_ref {
     /// than iterators.
     ///
     /// Example:
-    ///     void xor_intersection_into_last(simd_bits_ref data1, simd_bits_ref data2, simd_bits_ref data3) {
+    ///     void xor_intersection_into_last(simd_bits_range_ref data1, simd_bits_range_ref data2, simd_bits_range_ref data3) {
     ///         data1.for_each_word(data2, data3, [&](auto &w1, auto &w2, auto &w3) {
     ///             w3 ^= w1 & w2;
     ///         });
@@ -201,7 +201,7 @@ struct simd_bits_range_ref {
     ///
     /// Example:
     ///     void xor_union_into_last(
-    ///             simd_bits_ref data1, simd_bits_ref data2, simd_bits_ref data3, simd_bits_ref data4) {
+    ///             simd_bits_range_ref data1, simd_bits_range_ref data2, simd_bits_range_ref data3, simd_bits_range_ref data4) {
     ///         data1.for_each_word(data2, data3, data4, [&](auto &w1, auto &w2, auto &w3, auto &w4) {
     ///             w4 ^= w1 | w2 | w3;
     ///         });
@@ -235,11 +235,11 @@ struct simd_bits_range_ref {
     ///
     /// Example:
     ///     void xor_union_into_last(
-    ///             simd_bits_ref data1,
-    ///             simd_bits_ref data2,
-    ///             simd_bits_ref data3,
-    ///             simd_bits_ref data4,
-    ///             simd_bits_ref data5) {
+    ///             simd_bits_range_ref data1,
+    ///             simd_bits_range_ref data2,
+    ///             simd_bits_range_ref data3,
+    ///             simd_bits_range_ref data4,
+    ///             simd_bits_range_ref data5) {
     ///         data1.for_each_word(data2, data3, data4, data5, [&](auto &w1, auto &w2, auto &w3, auto &w4, auto &w5) {
     ///             w5 ^= w1 | w2 | w3 | w4;
     ///         });

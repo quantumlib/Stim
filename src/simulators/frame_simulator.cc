@@ -45,6 +45,7 @@ FrameSimulator::FrameSimulator(
       z_table(init_num_qubits, num_samples),
       m_table(num_measurements, num_samples),
       rng_buffer(num_samples),
+      last_correlated_error_occurred(num_samples),
       rng(rng) {
 }
 
@@ -149,7 +150,7 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
 
 void FrameSimulator::measure(const OperationData &target_data) {
     for (auto q : target_data.targets) {
-        q &= MEASURE_TARGET_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        q &= TARGET_QUBIT_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         m_table[num_recorded_measurements] = x_table[q];
         num_recorded_measurements++;
@@ -166,7 +167,7 @@ void FrameSimulator::reset(const OperationData &target_data) {
 void FrameSimulator::measure_reset(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     for (auto q : target_data.targets) {
-        q &= MEASURE_TARGET_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        q &= TARGET_QUBIT_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         m_table[num_recorded_measurements] = x_table[q];
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
@@ -374,6 +375,37 @@ simd_bit_table FrameSimulator::sample(
     const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng) {
     return transposed_vs_ref(
         num_samples, FrameSimulator::sample_flipped_measurements(circuit, num_samples, rng), reference_sample);
+}
+
+void FrameSimulator::CORRELATED_ERROR(const OperationData &target_data) {
+    last_correlated_error_occurred.clear();
+    ELSE_CORRELATED_ERROR(target_data);
+}
+
+void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
+    // Sample error locations.
+    rng_buffer.clear();
+    RareErrorIterator::for_samples(target_data.arg, num_samples_raw, rng, [&](size_t s) {
+        rng_buffer[s] = true;
+    });
+    // Omit locations blocked by prev error, while updating prev error mask.
+    simd_bits_range_ref{rng_buffer}.for_each_word(last_correlated_error_occurred, [](simd_word &buf, simd_word &prev) {
+        buf = prev.andnot(buf);
+        prev |= buf;
+    });
+
+    // Apply error to only the indicated frames.
+    for (auto qxz : target_data.targets) {
+        auto q = qxz & TARGET_QUBIT_MASK;
+        auto x = qxz & TARGET_PAULI_X_MASK;
+        auto z = qxz & TARGET_PAULI_Z_MASK;
+        if (x) {
+            x_table[q] ^= rng_buffer;
+        }
+        if (z) {
+            z_table[q] ^= rng_buffer;
+        }
+    }
 }
 
 void FrameSimulator::sample_out(

@@ -381,3 +381,97 @@ TEST(PauliFrameSimulation, big_circuit_random_measurements) {
         ASSERT_TRUE(r[k].not_zero()) << k;
     }
 }
+
+TEST(FrameSimulator, correlated_error) {
+    simd_bits ref(5);
+    simd_bits expected(5);
+
+    expected.clear();
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0) X0 X1
+        ELSE_CORRELATED_ERROR(0) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(0) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[1] = true;
+    expected[2] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[2] = true;
+    expected[3] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0) X0 X1
+        ELSE_CORRELATED_ERROR(0) X1 X2
+        ELSE_CORRELATED_ERROR(1) X2 X3
+        M 0 1 2 3
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(0) X2 X3
+        M 0 1 2 3
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(1) X2 X3
+        M 0 1 2 3
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    expected[3] = true;
+    expected[4] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(1) X0 X1
+        ELSE_CORRELATED_ERROR(1) X1 X2
+        ELSE_CORRELATED_ERROR(1) X2 X3
+        CORRELATED_ERROR(1) X3 X4
+        M 0 1 2 3 4
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    int hits[3]{};
+    std::mt19937_64 rng(0);
+    size_t n = 10000;
+    auto samples = FrameSimulator::sample(Circuit::from_text(R"circuit(
+        CORRELATED_ERROR(0.5) X0
+        ELSE_CORRELATED_ERROR(0.25) X1
+        ELSE_CORRELATED_ERROR(0.75) X2
+        M 0 1 2
+    )circuit"), ref, n, rng);
+    for (size_t k = 0; k < n; k++) {
+        hits[0] += samples[k][0];
+        hits[1] += samples[k][1];
+        hits[2] += samples[k][2];
+    }
+    ASSERT_TRUE(0.45 * n < hits[0] && hits[0] < 0.55 * n);
+    ASSERT_TRUE((0.125 - 0.05) * n < hits[1] && hits[1] < (0.125 + 0.05) * n);
+    ASSERT_TRUE((0.28125 - 0.05) * n < hits[2] && hits[2] < (0.28125 + 0.05) * n);
+}
