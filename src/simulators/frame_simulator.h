@@ -39,6 +39,7 @@ struct FrameSimulator {
     simd_bits rng_buffer;
     simd_bits last_correlated_error_occurred;
     std::mt19937_64 &rng;
+    std::vector<std::vector<uint32_t>> lookback_map;
 
     FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
 

@@ -21,7 +21,6 @@
 #include <functional>
 #include <iostream>
 #include <new>
-#include <queue>
 #include <random>
 #include <sstream>
 
@@ -34,8 +33,9 @@ struct TableauSimulator {
     Tableau inv_state;
     std::mt19937_64 &rng;
     int8_t sign_bias;
-    std::queue<bool> recorded_measurement_results;
+    std::vector<bool> measurement_record;
     bool last_correlated_error_occurred;
+    std::vector<std::vector<bool>> lookback_map;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.

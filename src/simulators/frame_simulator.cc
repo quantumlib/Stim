@@ -36,17 +36,18 @@ inline void for_each_target_pair(FrameSimulator &sim, const OperationData &targe
 }
 
 FrameSimulator::FrameSimulator(
-    size_t init_num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng)
-    : num_qubits(init_num_qubits),
+        size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng)
+    : num_qubits(num_qubits),
       num_samples_raw(num_samples),
       num_measurements_raw(num_measurements),
       num_recorded_measurements(0),
-      x_table(init_num_qubits, num_samples),
-      z_table(init_num_qubits, num_samples),
+      x_table(num_qubits, num_samples),
+      z_table(num_qubits, num_samples),
       m_table(num_measurements, num_samples),
       rng_buffer(num_samples),
       last_correlated_error_occurred(num_samples),
-      rng(rng) {
+      rng(rng),
+      lookback_map(num_qubits) {
 }
 
 simd_bit_table transposed_vs_ref(
@@ -153,6 +154,7 @@ void FrameSimulator::measure(const OperationData &target_data) {
         q &= TARGET_QUBIT_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         m_table[num_recorded_measurements] = x_table[q];
+        lookback_map[q].push_back(num_recorded_measurements);
         num_recorded_measurements++;
     }
 }
@@ -171,6 +173,7 @@ void FrameSimulator::measure_reset(const OperationData &target_data) {
         m_table[num_recorded_measurements] = x_table[q];
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
+        lookback_map[q].push_back(num_recorded_measurements);
         num_recorded_measurements++;
     }
 }
@@ -216,25 +219,68 @@ void FrameSimulator::H_YZ(const OperationData &target_data) {
 }
 
 void FrameSimulator::ZCX(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        z1 ^= z2;
-        x2 ^= x1;
-    });
+    const auto &targets = target_data.targets;
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t c = targets[k];
+        size_t t = targets[k + 1];
+        if (c & TARGET_RECORD_MASK) {
+            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
+            uint8_t b = c >> TARGET_RECORD_SHIFT;
+            if (b <= rec.size()) {
+                x_table[t] ^= m_table[rec[rec.size() - b]];
+            }
+        } else {
+            x_table[c].for_each_word(z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                z1 ^= z2;
+                x2 ^= x1;
+            });
+        }
+    }
 }
 
 void FrameSimulator::ZCY(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        z1 ^= x2 ^ z2;
-        z2 ^= x1;
-        x2 ^= x1;
-    });
+    const auto &targets = target_data.targets;
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t c = targets[k];
+        size_t t = targets[k + 1];
+        if (c & TARGET_RECORD_MASK) {
+            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
+            uint8_t b = c >> TARGET_RECORD_SHIFT;
+            if (b <= rec.size()) {
+                x_table[t] ^= m_table[rec[rec.size() - b]];
+                z_table[t] ^= m_table[rec[rec.size() - b]];
+            }
+        } else {
+            x_table[c].for_each_word(z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                z1 ^= x2 ^ z2;
+                z2 ^= x1;
+                x2 ^= x1;
+            });
+        }
+    }
 }
 
 void FrameSimulator::ZCZ(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        z1 ^= x2;
-        z2 ^= x1;
-    });
+    const auto &targets = target_data.targets;
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t c = targets[k];
+        size_t t = targets[k + 1];
+        if (c & TARGET_RECORD_MASK) {
+            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
+            uint8_t b = c >> TARGET_RECORD_SHIFT;
+            if (b <= rec.size()) {
+                z_table[t] ^= m_table[rec[rec.size() - b]];
+            }
+        } else {
+            x_table[c].for_each_word(z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                z1 ^= x2;
+                z2 ^= x1;
+            });
+        }
+    }
 }
 
 void FrameSimulator::SWAP(const OperationData &target_data) {

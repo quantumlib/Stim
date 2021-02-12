@@ -105,10 +105,9 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
             for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
                 tableau_sim.measure(OpDat(qf));
-                if (output[out_p] != tableau_sim.recorded_measurement_results.front()) {
+                if (output[out_p] != tableau_sim.measurement_record.back()) {
                     return false;
                 }
-                tableau_sim.recorded_measurement_results.pop();
                 out_p++;
             }
         } else {
@@ -474,4 +473,86 @@ TEST(FrameSimulator, correlated_error) {
     ASSERT_TRUE(0.45 * n < hits[0] && hits[0] < 0.55 * n);
     ASSERT_TRUE((0.125 - 0.05) * n < hits[1] && hits[1] < (0.125 + 0.05) * n);
     ASSERT_TRUE((0.28125 - 0.05) * n < hits[2] && hits[2] < (0.28125 + 0.05) * n);
+}
+
+TEST(FrameSimulator, classical_controls) {
+    simd_bits ref(128);
+    simd_bits expected(5);
+
+    expected.clear();
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        M 0
+        CX 0@-1 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        M !0
+        CX 0@-1 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        X_ERROR(1) 0
+        M !0
+        CX 0@-1 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        X_ERROR(1) 0
+        M 0
+        CX 0@-1 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+    auto r = FrameSimulator::sample(Circuit::from_text(R"circuit(
+        X_ERROR(0.5) 0
+        M 0
+        CX 0@-1 1
+        M 1
+    )circuit"), ref, 1000, SHARED_TEST_RNG());
+    size_t hits = 0;
+    for (size_t k = 0; k < 1000; k++) {
+        ASSERT_EQ(r[k][0], r[k][1]);
+        hits += r[k][0];
+    }
+    ASSERT_TRUE(400 < hits && hits < 600);
+
+    expected.clear();
+    expected[0] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        X_ERROR(1) 0
+        M 0
+        CX 0@-100 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        X_ERROR(1) 0
+        M 0
+        H 1
+        CZ 0@-1 1
+        H 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
+
+    expected.clear();
+    expected[0] = true;
+    expected[1] = true;
+    ASSERT_EQ(FrameSimulator::sample(Circuit::from_text(R"circuit(
+        X_ERROR(1) 0
+        M 0
+        CY 0@-1 1
+        M 1
+    )circuit"), ref, 1, SHARED_TEST_RNG())[0], expected);
 }

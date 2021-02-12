@@ -91,15 +91,26 @@ struct TruncatedArray {
 
 enum GateFlags : uint16_t {
     GATE_NO_FLAGS = 0,
+    // Indicates whether unitary and tableau data is available for the gate, so it can be tested more easily.
     GATE_IS_UNITARY = 1 << 0,
+    // Determines whether or not the gate is omitted when computing a reference sample.
     GATE_IS_NOISE = 1 << 1,
+    // Controls parsing and validation of instructions like X_ERROR(0.01) taking an argument.
     GATE_TAKES_PARENS_ARGUMENT = 1 << 2,
+    // Indicates whether the gate puts data into the measurement record or not
     GATE_PRODUCES_RESULTS = 1 << 3,
+    // Prevents the same gate on adjacent lines from being combined into one longer invocation.
     GATE_IS_NOT_FUSABLE = 1 << 4,
+    // Controls block functionality for instructions like REPEAT.
     GATE_IS_BLOCK = 1 << 5,
+    // Controls validation code checking for arguments coming in pairs.
     GATE_TARGETS_PAIRS = 1 << 6,
+    // Controls instructions like CORRELATED_ERROR taking Pauli product targets ("X1 Y2 Z3").
     GATE_TARGETS_PAULI_STRING = 1 << 7,
+    // Controls instructions like DETECTOR taking measurement record targets ("2@-1").
     GATE_TARGETS_MEASUREMENT_RECORD = 1 << 8,
+    // Controls instructions like CX,CY,CZ taking qubits or measurement records for their first argument.
+    GATE_IS_CLASSICALLY_CONTROLLABLE = 1 << 9,
 };
 
 struct Gate {

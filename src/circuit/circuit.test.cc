@@ -68,6 +68,7 @@ TEST(circuit, from_text) {
     ASSERT_THROW({ f("DETECTOR 1 2"); }, std::out_of_range);
     ASSERT_THROW({ f("DETEstdCTOR 1@0"); }, std::out_of_range);
     ASSERT_THROW({ f("DETECTOR -1@0"); }, std::out_of_range);
+    ASSERT_THROW({ f("DETECTOR 1@-256"); }, std::out_of_range);
     ASSERT_THROW({ f("DETECTOR(2) -1@0"); }, std::out_of_range);
     ASSERT_THROW({ f("OBSERVABLE_INCLUDE 1@-2"); }, std::out_of_range);
     ASSERT_THROW({ f("CORRELATED_ERROR(1) B1"); }, std::out_of_range);
@@ -138,8 +139,11 @@ TEST(circuit, from_text) {
         expected);
 
     expected.clear();
-    expected.append_op("DETECTOR", {5});
+    expected.append_op("DETECTOR", {5 | (1 << TARGET_RECORD_SHIFT)});
     ASSERT_EQ(f("DETECTOR 5@-1"), expected);
+    expected.clear();
+    expected.append_op("DETECTOR", {5 | (6 << TARGET_RECORD_SHIFT)});
+    ASSERT_EQ(f("DETECTOR 5@-6"), expected);
 
     expected.clear();
     expected.append_op("M", {0});
@@ -233,6 +237,7 @@ TEST(circuit, str) {
     Circuit c;
     c.append_op("tick", {});
     c.append_op("CNOT", {2, 3});
+    c.append_op("CNOT", {2 | (5 << TARGET_RECORD_SHIFT), 3});
     c.append_op("M", {1, 3, 2});
     c.append_op("DETECTOR", {5 | (7 << TARGET_RECORD_SHIFT)});
     c.append_op("OBSERVABLE_INCLUDE", {
@@ -248,9 +253,10 @@ TEST(circuit, str) {
     ASSERT_EQ(c.str(), R"circuit(# Circuit [num_qubits=30, num_measurements=3]
 TICK
 ZCX 2 3
+ZCX 2@-5 3
 M 1 3 2
-DETECTOR 5@-8
-OBSERVABLE_INCLUDE(17) 11@-14 1@-2
+DETECTOR 5@-7
+OBSERVABLE_INCLUDE(17) 11@-13 1@-1
 X_ERROR(0.5) 19
 CORRELATED_ERROR(0.25) X23 Z27 Y29)circuit");
 }
@@ -274,4 +280,22 @@ TEST(circuit, append_op_validation) {
     c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_MASK});
     ASSERT_THROW({c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_MASK | TARGET_INVERTED_MASK}); }, std::out_of_range);
     c.append_op("X_ERROR", {0}, 0.5);
+}
+
+TEST(circuit, classical_controls) {
+    ASSERT_THROW({
+        Circuit::from_text(R"circuit(
+            XCX 0@-1 1
+         )circuit");
+    }, std::out_of_range);
+
+    Circuit expected;
+    expected.append_op("CX", {0 | (0 << TARGET_RECORD_SHIFT), 1, 0 | (11 << TARGET_RECORD_SHIFT), 1});
+    expected.append_op("CY", {2 | (13 << TARGET_RECORD_SHIFT), 1});
+    expected.append_op("CZ", {4 | (14 << TARGET_RECORD_SHIFT), 1});
+    ASSERT_EQ(Circuit::from_text(R"circuit(# Circuit [num_qubits=5, num_measurements=0]
+ZCX 0 1
+ZCX 0@-11 1
+ZCY 2@-13 1
+ZCZ 4@-14 1)circuit"), expected);
 }

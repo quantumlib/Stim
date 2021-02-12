@@ -14,13 +14,12 @@
 
 #include "tableau_simulator.h"
 
-#include <queue>
-
 #include "../circuit/gate_data.h"
 #include "../probability_util.h"
 
 TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias)
-    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias), recorded_measurement_results(), last_correlated_error_occurred(false) {
+    : inv_state(Tableau::identity(num_qubits)), rng(rng), sign_bias(sign_bias),
+    measurement_record(), last_correlated_error_occurred(false), lookback_map(inv_state.num_qubits) {
 }
 
 bool TableauSimulator::is_deterministic(size_t target) const {
@@ -35,7 +34,9 @@ void TableauSimulator::measure(const OperationData &target_data) {
     for (auto qf : target_data.targets) {
         auto q = qf & TARGET_QUBIT_MASK;
         bool flipped = qf & TARGET_INVERTED_MASK;
-        recorded_measurement_results.push(inv_state.zs.signs[q] ^ flipped);
+        bool b = inv_state.zs.signs[q] ^ flipped;
+        measurement_record.push_back(b);
+        lookback_map[q].push_back(b);
     }
 }
 
@@ -49,7 +50,9 @@ void TableauSimulator::measure_reset(const OperationData &target_data) {
     for (auto qf : target_data.targets) {
         auto q = qf & TARGET_QUBIT_MASK;
         bool flipped = qf & TARGET_INVERTED_MASK;
-        recorded_measurement_results.push(inv_state.zs.signs[q] ^ flipped);
+        bool b = inv_state.zs.signs[q] ^ flipped;
+        measurement_record.push_back(b);
+        lookback_map[q].push_back(b);
         inv_state.zs.signs[q] = false;
     }
 }
@@ -142,7 +145,15 @@ void TableauSimulator::ZCX(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        inv_state.prepend_ZCX(c, t);
+        if (c & TARGET_RECORD_MASK) {
+            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
+            uint8_t b = c >> TARGET_RECORD_SHIFT;
+            if (b <= rec.size() && rec[rec.size() - b]) {
+                inv_state.prepend_X(t);
+            }
+        } else {
+            inv_state.prepend_ZCX(c, t);
+        }
     }
 }
 
@@ -152,7 +163,15 @@ void TableauSimulator::ZCY(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        inv_state.prepend_ZCY(c, t);
+        if (c & TARGET_RECORD_MASK) {
+            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
+            uint8_t b = c >> TARGET_RECORD_SHIFT;
+            if (b <= rec.size() && rec[rec.size() - b]) {
+                inv_state.prepend_Y(t);
+            }
+        } else {
+            inv_state.prepend_ZCY(c, t);
+        }
     }
 }
 
@@ -162,7 +181,15 @@ void TableauSimulator::ZCZ(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        inv_state.prepend_ZCZ(c, t);
+        if (c & TARGET_RECORD_MASK) {
+            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
+            uint8_t b = c >> TARGET_RECORD_SHIFT;
+            if (b <= rec.size() && rec[rec.size() - b]) {
+                inv_state.prepend_Z(t);
+            }
+        } else {
+            inv_state.prepend_ZCZ(c, t);
+        }
     }
 }
 
@@ -348,11 +375,10 @@ simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_
         (sim.*op.gate->tableau_simulator_function)(op.target_data);
     }
 
-    assert(sim.recorded_measurement_results.size() == circuit.num_measurements);
+    assert(sim.measurement_record.size() == circuit.num_measurements);
     simd_bits result(circuit.num_measurements);
     for (size_t k = 0; k < circuit.num_measurements; k++) {
-        result[k] = sim.recorded_measurement_results.front();
-        sim.recorded_measurement_results.pop();
+        result[k] = sim.measurement_record[k];
     }
     return result;
 }
@@ -361,20 +387,21 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
     if (num_qubits <= inv_state.num_qubits) {
         return;
     }
+    lookback_map.resize(num_qubits);
     inv_state.expand(num_qubits);
 }
 
 void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_measurements, std::mt19937_64 &rng) {
     Circuit unprocessed;
     TableauSimulator sim(1, rng);
+    size_t reported = 0;
     while (unprocessed.append_from_file(in, newline_after_measurements)) {
         sim.ensure_large_enough_for_qubits(unprocessed.num_qubits);
 
         for (const auto &op : unprocessed.operations) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
-            while (!sim.recorded_measurement_results.empty()) {
-                putc('0' + sim.recorded_measurement_results.front(), out);
-                sim.recorded_measurement_results.pop();
+            while (reported < sim.measurement_record.size()) {
+                putc('0' + sim.measurement_record[reported++], out);
             }
             if (newline_after_measurements && (op.gate->flags & GATE_PRODUCES_RESULTS)) {
                 putc('\n', out);

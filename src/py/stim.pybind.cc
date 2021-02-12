@@ -64,7 +64,7 @@ uint32_t target_rec(uint32_t qubit, int16_t lookback) {
     if (lookback >= 0 || lookback < -256) {
         throw std::out_of_range("Need -256 <= lookback <= -1");
     }
-    return qubit | (uint32_t(~lookback) << TARGET_RECORD_SHIFT);
+    return qubit | (uint32_t(-lookback) << TARGET_RECORD_SHIFT);
 }
 
 uint32_t target_inv(uint32_t qubit) {
@@ -268,9 +268,7 @@ PYBIND11_MODULE(stim, m) {
         })
         .def("measure", [](TableauSimulator &self, uint32_t target) {
             self.measure(Dat({target}));
-            bool result = self.recorded_measurement_results.front();
-            self.recorded_measurement_results.pop();
-            return result;
+            return self.measurement_record.back();
         }, R"DOC(
             Measures a single qubit.
 
@@ -281,13 +279,10 @@ PYBIND11_MODULE(stim, m) {
             To measure multiple qubits, use `TableauSimulator.measure_many`.
          )DOC")
         .def("measure_many", [](TableauSimulator &self, pybind11::args args) {
-            self.measure(args_to_targets(self, args));
-            std::vector<bool> results;
-            while (!self.recorded_measurement_results.empty()) {
-                results.push_back(self.recorded_measurement_results.front());
-                self.recorded_measurement_results.pop();
-            }
-            return results;
+            auto converted_args = args_to_targets(self, args);
+            self.measure(converted_args);
+            auto e = self.measurement_record.end();
+            return std::vector<bool>(e - converted_args.size(), e);
         })
         .def(pybind11::init(&create_tableau_simulator));
 }

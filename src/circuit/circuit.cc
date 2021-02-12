@@ -41,9 +41,12 @@ std::pair<std::vector<MeasurementSet>, std::vector<MeasurementSet>> Circuit::lis
         for (auto qb : op.target_data.targets) {
             auto q = qb & TARGET_QUBIT_MASK;
             auto dt = (qb & TARGET_RECORD_MASK) >> TARGET_RECORD_SHIFT;
+            if (!dt) {
+                throw std::out_of_range("Record lookback can't be 0 (unspecified).");
+            }
             const auto &v = qubit_measure_indices[q];
-            if (dt < v.size()) {
-                result.indices.push_back(v[v.size() - dt - 1]);
+            if (dt <= v.size()) {
+                result.indices.push_back(v[v.size() - dt]);
             }
         }
         return result;
@@ -54,9 +57,8 @@ std::pair<std::vector<MeasurementSet>, std::vector<MeasurementSet>> Circuit::lis
     std::vector<MeasurementSet> observables;
     for (const auto &p : operations) {
         if (p.gate->flags & GATE_PRODUCES_RESULTS) {
-            for (size_t k = 0; k < p.target_data.targets.size(); k++) {
-                auto q = p.target_data.targets[k] & TARGET_QUBIT_MASK;
-                qubit_measure_indices[q].push_back(m++);
+            for (auto target : p.target_data.targets) {
+                qubit_measure_indices[target & TARGET_QUBIT_MASK].push_back(m++);
             }
         } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
             detectors.push_back(resolve(p));
@@ -245,11 +247,51 @@ bool read_until_next_line_arg(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-inline void read_normal_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
+inline void read_raw_qubit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+    uint32_t q = read_uint24_t(c, read_char);
+    circuit.jagged_data.push_back(q);
+    circuit.num_qubits = std::max(circuit.num_qubits, (size_t)q + 1);
+}
+
+template <typename SOURCE>
+inline void read_record_target_into(int &c, SOURCE read_char, Circuit &circuit, bool required) {
+    uint32_t q = read_uint24_t(c, read_char);
+    circuit.num_qubits = std::max(circuit.num_qubits, (size_t) q + 1);
+
+    size_t dt = 0;
+    if (c == '@') {
+        if (read_char() != '-') {
+            throw std::out_of_range("Missing - after @ in record target (like '2@-3')");
+        }
+        c = read_char();
+        dt = read_uint24_t(c, read_char);
+        if (dt == 0) {
+            throw std::out_of_range("Minimum lookback in record target (like 2@-3) is -1, not -0.");
+        }
+        if (dt >= 256) {
+            throw std::out_of_range("Maximum lookback in record target (like 2@-3) is -255.");
+        }
+    } else if (required) {
+        throw std::out_of_range("Missing @ in record target (like '2@-3')");
+    }
+    circuit.jagged_data.push_back(q | (dt << TARGET_RECORD_SHIFT));
+}
+
+template <typename SOURCE>
+inline void read_raw_qubit_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
-        uint32_t q = read_uint24_t(c, read_char);
-        circuit.jagged_data.push_back(q);
-        circuit.num_qubits = std::max(circuit.num_qubits, (size_t)q + 1);
+        read_raw_qubit_target_into(c, read_char, circuit);
+    }
+}
+
+template <typename SOURCE>
+inline void read_classically_controllable_qubit_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
+    while (read_until_next_line_arg(c, read_char)) {
+        read_record_target_into(c, read_char, circuit, false);
+        if (!read_until_next_line_arg(c, read_char)) {
+            throw std::out_of_range("Missing target for controlled gate.");
+        }
+        read_raw_qubit_target_into(c, read_char, circuit);
     }
 }
 
@@ -293,25 +335,7 @@ inline void read_result_targets_into(int &c, SOURCE read_char, const Gate &gate,
 template <typename SOURCE>
 inline void read_record_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
-        uint32_t q = read_uint24_t(c, read_char);
-        circuit.num_qubits = std::max(circuit.num_qubits, (size_t)q + 1);
-
-        if (c != '@') {
-            throw std::out_of_range("Missing @ in record target (like '2@-3')");
-        }
-        if (read_char() != '-') {
-            throw std::out_of_range("Missing - after @ in record target (like '2@-3')");
-        }
-        c = read_char();
-        size_t dt = read_uint24_t(c, read_char);
-        if (dt == 0) {
-            throw std::out_of_range("Minimum lookback in record target (like 2@-3) is -1, not -0.");
-        }
-        dt -= 1;
-        if (dt >= 256) {
-            throw std::out_of_range("Maximum lookback in record target (like 2@-3) is -256.");
-        }
-        circuit.jagged_data.push_back(q | (dt << TARGET_RECORD_SHIFT));
+        read_record_target_into(c, read_char, circuit, true);
     }
 }
 
@@ -343,10 +367,12 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
         val = read_parens_argument(c, gate, read_char);
     }
     size_t offset = circuit.jagged_data.size();
-    if (!(gate.flags & (GATE_IS_BLOCK | GATE_TARGETS_MEASUREMENT_RECORD | GATE_PRODUCES_RESULTS | GATE_TARGETS_PAULI_STRING))) {
-        read_normal_targets_into(c, read_char, circuit);
+    if (!(gate.flags & (GATE_IS_BLOCK | GATE_TARGETS_MEASUREMENT_RECORD | GATE_PRODUCES_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_IS_CLASSICALLY_CONTROLLABLE))) {
+        read_raw_qubit_targets_into(c, read_char, circuit);
     } else if (gate.flags & GATE_TARGETS_MEASUREMENT_RECORD) {
         read_record_targets_into(c, read_char, circuit);
+    } else if (gate.flags & GATE_IS_CLASSICALLY_CONTROLLABLE) {
+        read_classically_controllable_qubit_targets_into(c, read_char, circuit);
     } else if (gate.flags & GATE_PRODUCES_RESULTS) {
         read_result_targets_into(c, read_char, gate, circuit);
     } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
@@ -481,18 +507,24 @@ void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t
     const auto &gate = GATE_DATA.at(gate_name);
 
     // Check that targets are in range.
-    uint32_t valid_target_mask = TARGET_QUBIT_MASK;
+    uint32_t odd_valid_target_mask = TARGET_QUBIT_MASK;
     if (gate.flags & GATE_PRODUCES_RESULTS) {
-        valid_target_mask |= TARGET_INVERTED_MASK;
+        odd_valid_target_mask |= TARGET_INVERTED_MASK;
     }
     if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        valid_target_mask |= TARGET_PAULI_X_MASK | TARGET_PAULI_Z_MASK;
+        odd_valid_target_mask |= TARGET_PAULI_X_MASK | TARGET_PAULI_Z_MASK;
     }
     if (gate.flags & GATE_TARGETS_MEASUREMENT_RECORD) {
-        valid_target_mask |= TARGET_RECORD_MASK;
+        odd_valid_target_mask |= TARGET_RECORD_MASK;
     }
-    for (auto q : vec) {
-        if (q != (q & valid_target_mask)) {
+    uint32_t even_valid_target_mask = odd_valid_target_mask;
+    if (gate.flags & GATE_IS_CLASSICALLY_CONTROLLABLE) {
+        even_valid_target_mask |= TARGET_RECORD_MASK;
+    }
+    for (size_t k = 0; k < vec.size(); k++) {
+        size_t mask = (k & 1) ? odd_valid_target_mask : even_valid_target_mask;
+        size_t q = vec[k];
+        if (q != (q & mask)) {
             throw std::out_of_range(
                 "Target " + std::to_string(q & TARGET_QUBIT_MASK) +
                 " has invalid flags " + std::to_string(q & ~TARGET_QUBIT_MASK) +
@@ -503,7 +535,7 @@ void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t
     if ((gate.flags & GATE_TARGETS_PAIRS) && (vec.size() & 1)) {
         throw std::out_of_range("Two qubit gate " + gate_name + " requires have an even number of targets.");
     }
-    if (arg && !(gate.flags & GATE_TAKES_PARENS_ARGUMENT)) {
+    if (arg != 0 && !(gate.flags & GATE_TAKES_PARENS_ARGUMENT)) {
         throw std::out_of_range("Gate " + gate_name + " doesn't take a parens arg.");
     }
     if (allow_fusing
@@ -550,24 +582,24 @@ std::ostream &operator<<(std::ostream &out, const Operation &op) {
         }
         out << ')';
     }
-    for (size_t k = 0; k < op.target_data.targets.size(); k++) {
+    for (auto t : op.target_data.targets) {
         out << ' ';
         if (op.gate->flags & GATE_PRODUCES_RESULTS) {
-            if (op.target_data.targets[k] & (uint32_t{1} << 31)) {
+            if (t & (uint32_t{1} << 31)) {
                 out << '!';
             }
-            out << (op.target_data.targets[k] & ~(uint32_t{1} << 31));
+            out << (t & ~(uint32_t{1} << 31));
         } else if (op.gate->flags & GATE_TARGETS_PAULI_STRING) {
-            bool x = op.target_data.targets[k] & TARGET_PAULI_X_MASK;
-            bool z = op.target_data.targets[k] & TARGET_PAULI_Z_MASK;
+            bool x = t & TARGET_PAULI_X_MASK;
+            bool z = t & TARGET_PAULI_Z_MASK;
             out << "IXZY"[x + z*2];
-            out << (op.target_data.targets[k] & TARGET_QUBIT_MASK);
-        } else if (op.gate->flags & GATE_TARGETS_MEASUREMENT_RECORD) {
-            out << (op.target_data.targets[k] & TARGET_QUBIT_MASK);
-            out << '@';
-            out << ~(int)((op.target_data.targets[k] & TARGET_RECORD_MASK) >> TARGET_RECORD_SHIFT);
+            out << (t & TARGET_QUBIT_MASK);
         } else {
-            out << op.target_data.targets[k];
+            out << (t & TARGET_QUBIT_MASK);
+            if (t & TARGET_RECORD_MASK) {
+                out << '@';
+                out << -(int) ((t & TARGET_RECORD_MASK) >> TARGET_RECORD_SHIFT);
+            }
         }
     }
     return out;
