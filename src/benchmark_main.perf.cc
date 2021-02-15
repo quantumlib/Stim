@@ -76,6 +76,7 @@ std::string si2(double val) {
 
 static std::vector<const char *> known_arguments{
     "--only",
+    "--target_seconds"
 };
 
 void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark> &out) {
@@ -107,9 +108,13 @@ void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark>
     }
 }
 
+double BENCHMARK_CONFIG_TARGET_SECONDS = 0.5;
+
 int main(int argc, const char **argv) {
     check_for_unknown_arguments(known_arguments, nullptr, argc, argv);
     const char *only = find_argument("--only", argc, argv);
+    BENCHMARK_CONFIG_TARGET_SECONDS = find_float_argument("--target_seconds", 0.5, 0, 10000, argc, argv);
+
     std::vector<RegisteredBenchmark> chosen_benchmarks;
     if (only == nullptr) {
         chosen_benchmarks = all_registered_benchmarks;
@@ -127,7 +132,7 @@ int main(int argc, const char **argv) {
             }
         }
 
-        if (filters.size() == 0) {
+        if (filters.empty()) {
             std::cerr << "No filters specified.\n";
             exit(EXIT_FAILURE);
         }

@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+extern double BENCHMARK_CONFIG_TARGET_SECONDS;
+
 struct BenchmarkResult {
     double total_seconds;
     size_t total_reps;
@@ -75,7 +77,7 @@ template <typename FUNC>
 BenchmarkResult &benchmark_go(FUNC body) {
     size_t total_reps = 0;
     double total_seconds = 0.0;
-    double target_wait_time_seconds = 0.5;
+    double target_wait_time_seconds = BENCHMARK_CONFIG_TARGET_SECONDS;
 
     for (size_t rep_limit = 1; total_seconds < target_wait_time_seconds; rep_limit *= 100) {
         double remaining_time = target_wait_time_seconds - total_seconds;
