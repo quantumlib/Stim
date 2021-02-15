@@ -85,6 +85,11 @@ struct FrameSimulator {
     void Z_ERROR(const OperationData &target_data);
     void CORRELATED_ERROR(const OperationData &target_data);
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
+
+   private:
+    simd_bits_range_ref measurement_record_ref(uint32_t encoded_target);
+    void single_cx(uint32_t c, uint32_t t);
+    void single_cy(uint32_t c, uint32_t t);
 };
 
 void write_table_data(

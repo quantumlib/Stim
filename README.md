@@ -220,6 +220,8 @@ Only one mode can be specified.
 - `--repl`:
     Interactive mode.
     Print measurement results interactively as a circuit is typed into stdin.
+    Note that this mode, unlike the other modes, prints output before operations
+    that mutate the measurement record (e.g. `CNOT 0@-1 1@-1`) are applied.
 - `--sample` or `--sample=#`:
     Measurement sampling mode.
     Output measurement results from the given circuit.
@@ -281,15 +283,15 @@ Not all modifiers apply to all modes.
         ```
     - `hits`:
         Human readable ASCII format.
-        Writes the decimal indices of samples equal to 1, suffixed by a comma.
+        Writes the decimal indices of samples equal to 1, separated by a comma.
         Shots are separated by a newline.
         This format is more useful in `--detect` mode, where `1`s are rarer.
         Example all-true output data (for 10 measurements, 4 shots):
         ```
-        0,1,2,3,4,5,6,7,8,9,
-        0,1,2,3,4,5,6,7,8,9,
-        0,1,2,3,4,5,6,7,8,9,
-        0,1,2,3,4,5,6,7,8,9,
+        0,1,2,3,4,5,6,7,8,9
+        0,1,2,3,4,5,6,7,8,9
+        0,1,2,3,4,5,6,7,8,9
+        0,1,2,3,4,5,6,7,8,9
         ```
     - `b8`:
         Binary format.
@@ -301,10 +303,7 @@ Not all modifiers apply to all modes.
         There is no separator between shots (other than the fake zero sample padding).
         Example all-true output hex data (for 10 measurements, 4 shots):
         ```
-        FF 30
-        FF 30
-        FF 30
-        FF 30
+        FF 30 FF 30 FF 30 FF 30
         ```
     - `ptb64`:
         Partially transposed binary format.
@@ -314,7 +313,7 @@ Not all modifiers apply to all modes.
         Within a shot group, each of the circuit sample locations has 64 results (one from each shot).
         These 64 bits of information are packed into 8 bytes, ordered from first file byte to last file byte and then least significant bit to most significant bit.
         The 8 bytes for the first sample location are output, then the 8 bytes for the next, and so forth for all sample locations.
-        There is no separator between shot groups.
+        There is no separator between shot groups (the reader must know how many measurements are expected).
         Example all-true output hex data (for 3 measurements, 81 shots):
         ```
         FF FF FF FF FF FF FF FF
@@ -324,6 +323,23 @@ Not all modifiers apply to all modes.
         FF FF F1 00 00 00 00 00
         FF FF F1 00 00 00 00 00
         ```
+    - `r8`:
+        Binary run-length format.
+        Each byte is the length of a run of samples that were all False.
+        If the run length is non-maximal (less than 255), the next measurement result is a 1.
+        For example, `0x00` means `[1]`, `0x03` means `[0, 0, 0, 1]`,
+        `0xFE` means `[0] * 254 + [1]`,
+        and `0xFF`   means `[0] * 255`.
+        A fake "True" sample is appended to the end of each shot, and the data for a shot ends on the byte that decodes
+        to produce this fake appended True.
+        Note that this means the reader must know how many measurement results are expected,
+        and that the data will never end with a `0xFF`.
+        There is no separator between shots, other than padding implicit in appending the fake "True" samples.
+        Example data for an all-false shot then an all-true shot then an all-false shot (with 5 measurements per shot):
+        ```
+        0x05 0x00 0x00 0x00 0x00 0x00 0x00 0x05
+        ```
+      Note the extra `0x00` due to the fake appended True.
 - `--distance=#`:
     Distance to use in circuit generation mode.
     Defaults to 3.
@@ -336,11 +352,28 @@ Not all modifiers apply to all modes.
 
 ## Supported Gates
 
-Note: all gates support broadcasting over multiple targets.
-For example, `H 0 1 2` will apply a Hadamard gate to qubits 0, 1, and 2.
-Two qubit gates broadcast over each aligned pair of targets.
-For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and then `CNOT 2 3`.
-Broadcasting is always evaluated in left-to-right order.
+### General facts about all gates.
+
+- **Qubit Targets**:
+    Qubits are referred to by non-negative integers.
+    There is a qubit `0`, a qubit `1`, and so forth (up to an implemented-defined maximum of `16777215`).
+    For example, the line `X 2` says to apply an `X` gate to qubit `2`.
+    Beware that touching qubit `999999` implicitly tells simulators to resize their internal state to accommodate a million qubits.
+
+- **Measurement Record Targets**:
+    Measurement results are referred to by `qubit@-lookback` arguments.
+    For example, `CNOT 2@-1 3` says "toggle qubit `3` if the most recent measurement on qubit
+    `2` was True".
+    A lookback of `-2` refers to the second-most-recent measurement,
+    `-3` is the third-most-recent, and so forth
+    (until an implementation-defined maximum of `-15`).
+
+- **Broadcasting**:
+    Most gates support broadcasting over multiple targets.
+    For example, `H 0 1 2` will broadcast a Hadamard gate over qubits `0`, `1`, and `2`.
+    Two qubit gates can also broadcast, and do so over aligned pair of targets.
+    For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and then `CNOT 2 3`.
+    Broadcasting is always evaluated in left-to-right order.
 
 ### Single qubit gates
 
@@ -360,16 +393,38 @@ Broadcasting is always evaluated in left-to-right order.
 
 ### Two qubit gates
 
-- `SWAP`: Swaps two qubits.
+- `SWAP`:
+    Swaps two qubits.
+    This gate can operate on the measurement record.
+    Examples: unitary `SWAP 1 2`, rewrite measurement results `SWAP 3@-1 4@-1`.
 - `ISWAP`: Swaps two qubits while phasing the ZZ observable by i. Equal to `SWAP * CZ * (S tensor S)`.
 - `ISWAP_DAG`: Swaps two qubits while phasing the ZZ observable by -i. Equal to `SWAP * CZ * (S_DAG tensor S_DAG)`.
-- `CNOT` (alternate names `CX`, `ZCX`): Controlled NOT operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `CY` (alternate name `ZCY`): Controlled Y operation. Qubit pairs are in name order (first qubit is the control, second is the target).
-- `CZ` (alternate name `ZCZ`): Controlled Z operation.
-- `YCZ`: Y-basis-controlled Z operation. Qubit pairs are in name order.
+- `CNOT` (alternate names `CX`, `ZCX`):
+    Controlled NOT operation.
+    Qubit pairs are in name order (first qubit is the control, second is the target).
+    This gate can operate on the measurement record.
+    Examples: unitary `CNOT 1 2`, feedback `CNOT 3@-1 4`, rewrite measurement results `CNOT 5@-1 6@-1`.
+- `CY` (alternate name `ZCY`):
+    Controlled Y operation.
+    Qubit pairs are in name order (first qubit is the control, second is the target).
+    This gate can operate on the measurement record.
+    Examples: unitary `CY 1 2`, feedback `CY 3@-1 4`, rewrite measurement results `CY 5@-1 6@-1`.
+- `CZ` (alternate name `ZCZ`):
+    Controlled Z operation.
+    This gate can operate on the measurement record.
+    Examples: unitary `CZ 1 2`, feedback `CZ 3@-1 4`, `CZ 4 3@-1`, no-op `CZ 5@-1 6@-1`.
+- `YCZ`:
+    Y-basis-controlled Z operation (i.e. the reversed-argument-order controlled-Y).
+    Qubit pairs are in name order.
+    This gate can operate on the measurement record.
+    Examples: unitary `YCZ 1 2`, feedback `YCZ 4 3@-1`, rewrite measurement results `YXZ 5@-1 6@-1`.
 - `YCY`: Y-basis-controlled Y operation.
 - `YCX`: Y-basis-controlled X operation. Qubit pairs are in name order.
-- `XCZ`: X-basis-controlled Z operation. Qubit pairs are in name order.
+- `XCZ`:
+    X-basis-controlled Z operation (i.e. the reversed-argument-order controlled-not).
+    Qubit pairs are in name order.
+    This gate can operate on the measurement record.
+    Examples: unitary `XCZ 1 2`, feedback `XCZ 4 3@-1`, rewrite measurement results `XCZ 5@-1 6@-1`.
 - `XCY`: X-basis-controlled Y operation. Qubit pairs are in name order.
 - `XCX`: X-basis-controlled X operation.
 
@@ -444,19 +499,15 @@ Broadcasting is always evaluated in left-to-right order.
     Asserts that a set of measurements have a deterministic result,
     and that this result changing can be used to detect errors.
     Ignored in measurement sampling mode.
-    Doesn't target qubits; targets the measurement record using `qubit@-backtrack` notation.
-    For example, `2@-1` is the latest measurement on qubit 2 and `2@-2` is the next-to-latest measurement on qubit 2.
-    Measurements "before the start of time", if referenced, are considered to have returned 0.
-    Examples: `DETECTOR 2@-1 2@-2`, `DETECTOR 2@-1 3@-1 4@-1`.
+    In detection sampling mode, a detector produces a sample indicating if it was inverted by  noise or not.
+    Example: `DETECTOR 2@-1 2@-2`.
 - `OBSERVABLE_INCLUDE(k)`:
-    Adds physical measurement locations to a specified logical measurement result.
-    The logical measurement result is the parity of all its physical measurements.
-    Basically the same thing as a detector, except logical measurements tend to be more spread out.
-    The argument `(k)` says which logical measurement is being append into (e.g. `0`, `1`, etc).
+    Adds physical measurement locations to a specified logical observable.
+    The logical measurement result is the parity of all physical measurements added to it.
+    Behaves similarly to a Detector, except observables can be built up globally over the entire circuit instead of being defined locally.
     Ignored in measurement sampling mode.
-    Doesn't target qubits; targets the measurement record using `qubit@-backtrack` notation.
-    For example, `2@-1` is the latest measurement on qubit 2 and `2@-2` is the next-to-latest measurement on qubit 2.
-    Measurements "before the start of time", if referenced, are considered to have returned 0.
+    In detection sampling mode, a logical observable can produce a sample indicating if it was inverted by  noise or not.
+    These samples are dropped or put before or after detector samples, depending on command line flags.
     Examples: `OBSERVABLE_INCLUDE(0) 2@-1 2@-2`, `OBSERVABLE_INCLUDE(3) 2@-1 3@-1 4@-1`.
 
 ### Other
@@ -522,13 +573,36 @@ Output in `wheelhouse` directory.
 
 # Testing
 
-Unit testing requires GTest to be installed on your system and discoverable by CMake.
+### Run tests using CMAKE
+
+Unit testing with CMAKE requires GTest to be installed on your system and discoverable by CMake.
 Follow the ["Standalone CMake Project" from the GTest README](https://github.com/google/googletest/tree/master/googletest).
+
+Run tests with address and memory sanitization, but without optimizations:
 
 ```bash
 cmake .
 make stim_test
 ./out/stim_test
+```
+
+To force AVX vectorization, SSE vectorization, or no vectorization
+pass `-DSIMD_WIDTH=256` or `-DSIMD_WIDTH=128` or -DSIMD_WIDTH=64` to the `cmake` command.
+
+Run tests with optimizations without sanitization:
+
+```bash
+cmake .
+make stim_test_o3
+./out/stim_test_o3
+```
+
+### Run tests using Bazel
+
+Run tests with whatever settings Bazel feels like using:
+
+```bash
+bazel :stim_test
 ```
 
 # Benchmarking

@@ -52,19 +52,13 @@ static std::vector<const char *> make_circuit_mode_known_arguments{
     "--make_circuit", "--out", "--distance", "--rounds", "--noise_level",
 };
 static std::vector<const char *> format_names{
-    "01",
-    "b8",
-    "ptb64",
-    "hits",
+    "01", "b8", "ptb64", "hits", "r8",
 };
 static std::vector<const char *> circuit_names{
     "surface_unrotated",
 };
 static std::vector<SampleFormat> format_values{
-    SAMPLE_FORMAT_01,
-    SAMPLE_FORMAT_B8,
-    SAMPLE_FORMAT_PTB64,
-    SAMPLE_FORMAT_HITS,
+    SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8,
 };
 
 struct RaiiFiles {

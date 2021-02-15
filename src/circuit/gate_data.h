@@ -108,9 +108,9 @@ enum GateFlags : uint16_t {
     // Controls instructions like CORRELATED_ERROR taking Pauli product targets ("X1 Y2 Z3").
     GATE_TARGETS_PAULI_STRING = 1 << 7,
     // Controls instructions like DETECTOR taking measurement record targets ("2@-1").
-    GATE_TARGETS_MEASUREMENT_RECORD = 1 << 8,
-    // Controls instructions like CX,CY,CZ taking qubits or measurement records for their first argument.
-    GATE_IS_CLASSICALLY_CONTROLLABLE = 1 << 9,
+    GATE_ONLY_TARGETS_MEASUREMENT_RECORD = 1 << 8,
+    // Controls instructions like CX and SWAP operating on measurement record targets like "2@-1".
+    GATE_CAN_TARGET_MEASUREMENT_RECORD = 1 << 9,
 };
 
 struct Gate {

@@ -32,3 +32,9 @@ TEST(DetectionSimulator, detector_samples) {
         ".....\n"
         ".....");
 }
+
+TEST(DetectionSimulator, bad_detector) {
+    ASSERT_THROW(
+        { detector_samples(Circuit::from_text("DETECTOR 0@-5"), 5, false, false, SHARED_TEST_RNG()); },
+        std::out_of_range);
+}

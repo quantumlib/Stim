@@ -1,10 +1,11 @@
-#include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "../stabilizers/tableau.h"
+
 #include "../probability_util.h"
-#include "../simulators/tableau_simulator.h"
 #include "../simulators/frame_simulator.h"
+#include "../simulators/tableau_simulator.h"
+#include "../stabilizers/tableau.h"
 
 #define STRINGIFY(x) #x
 
@@ -87,7 +88,8 @@ struct CompiledCircuitSampler {
     const simd_bits ref;
     const Circuit circuit;
 
-    CompiledCircuitSampler(Circuit circuit) : ref(TableauSimulator::reference_sample_circuit(circuit)), circuit(std::move(circuit)) {
+    CompiledCircuitSampler(Circuit circuit)
+        : ref(TableauSimulator::reference_sample_circuit(circuit)), circuit(std::move(circuit)) {
     }
 
     pybind11::array_t<uint8_t> sample(size_t num_samples) {
@@ -105,25 +107,16 @@ struct CompiledCircuitSampler {
         }
 
         return pybind11::array_t<uint8_t>(pybind11::buffer_info(
-                bytes.data(),
-                sizeof(uint8_t),
-                pybind11::format_descriptor<uint8_t>::value,
-                2,
-                {num_samples, circuit.num_measurements},
-                {(long long)sample.num_minor_bits_padded(), (long long)1},
-                true));
+            bytes.data(), sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2,
+            {num_samples, circuit.num_measurements}, {(long long)sample.num_minor_bits_padded(), (long long)1}, true));
     }
 
     pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples) {
         auto sample = FrameSimulator::sample(circuit, ref, num_samples, SHARED_RNG());
         return pybind11::array_t<uint8_t>(pybind11::buffer_info(
-                sample.data.u8,
-                sizeof(uint8_t),
-                pybind11::format_descriptor<uint8_t>::value,
-                2,
-                {num_samples, (circuit.num_measurements + 7) / 8},
-                {(long long)sample.num_minor_u8_padded(), (long long)1},
-                true));
+            sample.data.u8, sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2,
+            {num_samples, (circuit.num_measurements + 7) / 8}, {(long long)sample.num_minor_u8_padded(), (long long)1},
+            true));
     }
 
     std::string str() const {
@@ -167,7 +160,8 @@ PYBIND11_MODULE(stim, m) {
         For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
     )DOC");
 
-    pybind11::class_<CompiledCircuitSampler>(m, "CompiledCircuitSampler", "An analyzed stabilizer circuit that can be sampled quickly.")
+    pybind11::class_<CompiledCircuitSampler>(
+        m, "CompiledCircuitSampler", "An analyzed stabilizer circuit that can be sampled quickly.")
         .def(pybind11::init<Circuit>())
         .def("sample", &CompiledCircuitSampler::sample, R"DOC(
             Returns a batch of samples from the circuit as a numpy array with dtype uint8
@@ -189,9 +183,12 @@ PYBIND11_MODULE(stim, m) {
         .def_readonly("num_qubits", &Circuit::num_qubits, R"DOC(
             The number of qubits used when simulating the circuit.
          )DOC")
-        .def("compile", [](Circuit &self) {
-            return CompiledCircuitSampler(self);
-        }, R"DOC(
+        .def(
+            "compile",
+            [](Circuit &self) {
+                return CompiledCircuitSampler(self);
+            },
+            R"DOC(
             Returns a CompiledCircuitSampler for the circuit.
          )DOC")
         .def("__iadd__", &Circuit::operator+=, R"DOC(
@@ -209,7 +206,8 @@ PYBIND11_MODULE(stim, m) {
         .def("__rmul__", &Circuit::operator*, R"DOC(
             Creates a circuit by repeating a circuit multiple times.
          )DOC")
-        .def("append_operation", &Circuit::append_op, R"DOC(
+        .def(
+            "append_operation", &Circuit::append_op, R"DOC(
             Appends an operation into the circuit.
 
             Args:
@@ -220,56 +218,89 @@ PYBIND11_MODULE(stim, m) {
                     new targets will be appended to the last gate instead of adding a new one. This is particularly
                     important for measurement operations, because batched measurements are significantly more efficient
                     in some cases. Set to false if you don't want this to occur.
-         )DOC", pybind11::arg("name"), pybind11::arg("targets"), pybind11::arg("arg") = 0.0, pybind11::arg("fuse") = true)
+         )DOC",
+            pybind11::arg("name"), pybind11::arg("targets"), pybind11::arg("arg") = 0.0, pybind11::arg("fuse") = true)
         .def("__str__", &Circuit::str);
 
-    pybind11::class_<TableauSimulator>(m, "TableauSimulator", "A quantum stabilizer circuit simulator whose state is a stabilizer tableau.")
-        .def("h", [](TableauSimulator &self, pybind11::args args) {
-            self.H_XZ(args_to_targets(self, args));
-        })
-        .def("x", [](TableauSimulator &self, pybind11::args args) {
-            self.X(args_to_targets(self, args));
-        })
-        .def("y", [](TableauSimulator &self, pybind11::args args) {
-            self.Y(args_to_targets(self, args));
-        })
-        .def("z", [](TableauSimulator &self, pybind11::args args) {
-            self.Z(args_to_targets(self, args));
-        })
-        .def("s", [](TableauSimulator &self, pybind11::args args) {
-            self.SQRT_Z(args_to_targets(self, args));
-        })
-        .def("s_dag", [](TableauSimulator &self, pybind11::args args) {
-            self.SQRT_Z_DAG(args_to_targets(self, args));
-        })
-        .def("sqrt_x", [](TableauSimulator &self, pybind11::args args) {
-            self.SQRT_X(args_to_targets(self, args));
-        })
-        .def("sqrt_x_dag", [](TableauSimulator &self, pybind11::args args) {
-            self.SQRT_X_DAG(args_to_targets(self, args));
-        })
-        .def("sqrt_y", [](TableauSimulator &self, pybind11::args args) {
-            self.SQRT_Y(args_to_targets(self, args));
-        })
-        .def("sqrt_y_dag", [](TableauSimulator &self, pybind11::args args) {
-            self.SQRT_Y_DAG(args_to_targets(self, args));
-        })
-        .def("cnot", [](TableauSimulator &self, pybind11::args args) {
-            self.ZCX(args_to_targets2(self, args));
-        })
-        .def("cz", [](TableauSimulator &self, pybind11::args args) {
-            self.ZCZ(args_to_targets2(self, args));
-        })
-        .def("cy", [](TableauSimulator &self, pybind11::args args) {
-            self.ZCY(args_to_targets2(self, args));
-        })
-        .def("reset", [](TableauSimulator &self, pybind11::args args) {
-            self.reset(args_to_targets(self, args));
-        })
-        .def("measure", [](TableauSimulator &self, uint32_t target) {
-            self.measure(Dat({target}));
-            return self.measurement_record.back();
-        }, R"DOC(
+    pybind11::class_<TableauSimulator>(
+        m, "TableauSimulator", "A quantum stabilizer circuit simulator whose state is a stabilizer tableau.")
+        .def(
+            "h",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.H_XZ(args_to_targets(self, args));
+            })
+        .def(
+            "x",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.X(args_to_targets(self, args));
+            })
+        .def(
+            "y",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.Y(args_to_targets(self, args));
+            })
+        .def(
+            "z",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.Z(args_to_targets(self, args));
+            })
+        .def(
+            "s",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.SQRT_Z(args_to_targets(self, args));
+            })
+        .def(
+            "s_dag",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.SQRT_Z_DAG(args_to_targets(self, args));
+            })
+        .def(
+            "sqrt_x",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.SQRT_X(args_to_targets(self, args));
+            })
+        .def(
+            "sqrt_x_dag",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.SQRT_X_DAG(args_to_targets(self, args));
+            })
+        .def(
+            "sqrt_y",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.SQRT_Y(args_to_targets(self, args));
+            })
+        .def(
+            "sqrt_y_dag",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.SQRT_Y_DAG(args_to_targets(self, args));
+            })
+        .def(
+            "cnot",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.ZCX(args_to_targets2(self, args));
+            })
+        .def(
+            "cz",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.ZCZ(args_to_targets2(self, args));
+            })
+        .def(
+            "cy",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.ZCY(args_to_targets2(self, args));
+            })
+        .def(
+            "reset",
+            [](TableauSimulator &self, pybind11::args args) {
+                self.reset(args_to_targets(self, args));
+            })
+        .def(
+            "measure",
+            [](TableauSimulator &self, uint32_t target) {
+                self.measure(Dat({target}));
+                return self.measurement_record.back();
+            },
+            R"DOC(
             Measures a single qubit.
 
             Unlike the other methods on TableauSimulator, this one does not broadcast
@@ -278,11 +309,13 @@ PYBIND11_MODULE(stim, m) {
 
             To measure multiple qubits, use `TableauSimulator.measure_many`.
          )DOC")
-        .def("measure_many", [](TableauSimulator &self, pybind11::args args) {
-            auto converted_args = args_to_targets(self, args);
-            self.measure(converted_args);
-            auto e = self.measurement_record.end();
-            return std::vector<bool>(e - converted_args.size(), e);
-        })
+        .def(
+            "measure_many",
+            [](TableauSimulator &self, pybind11::args args) {
+                auto converted_args = args_to_targets(self, args);
+                self.measure(converted_args);
+                auto e = self.measurement_record.end();
+                return std::vector<bool>(e - converted_args.size(), e);
+            })
         .def(pybind11::init(&create_tableau_simulator));
 }

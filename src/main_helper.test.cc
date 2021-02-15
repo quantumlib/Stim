@@ -483,14 +483,6 @@ DETECTOR
 
     ASSERT_EQ(
         trim(execute({"--detect"}, R"input(
-DETECTOR 1@-20
-            )input")),
-        trim(R"output(
-0
-            )output"));
-
-    ASSERT_EQ(
-        trim(execute({"--detect"}, R"input(
 X_ERROR(1) 0
 MR 0
 DETECTOR 0@-1
@@ -523,6 +515,8 @@ DETECTOR 0@-1 0@-2
 
     ASSERT_EQ(
         trim(execute({"--detect"}, R"input(
+M 2
+M 2
 REPEAT 3 {
   R 2
   CNOT 0 2 1 2
@@ -538,6 +532,8 @@ OBSERVABLE_INCLUDE(0) 0@-1 1@-1
 
     ASSERT_EQ(
         trim(execute({"--detect", "--prepend_observables"}, R"input(
+M 2
+M 2
 REPEAT 3 {
   R 2
   CNOT 0 2 1 2
@@ -553,6 +549,8 @@ OBSERVABLE_INCLUDE(0) 0@-1 1@-1
 
     ASSERT_EQ(
         trim(execute({"--detect", "--prepend_observables"}, R"input(
+M 2
+M 2
 X_ERROR(1) 0 1
 REPEAT 3 {
   R 2
@@ -569,6 +567,8 @@ OBSERVABLE_INCLUDE(0) 0@-1
 
     ASSERT_EQ(
         trim(execute({"--detect", "--append_observables"}, R"input(
+M 2
+M 2
 X_ERROR(1) 0 1
 REPEAT 3 {
   R 2

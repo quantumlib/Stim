@@ -170,7 +170,8 @@ struct simd_bits_range_ref {
     /// than iterators.
     ///
     /// Example:
-    ///     void xor_intersection_into_last(simd_bits_range_ref data1, simd_bits_range_ref data2, simd_bits_range_ref data3) {
+    ///     void xor_intersection_into_last(simd_bits_range_ref data1, simd_bits_range_ref data2, simd_bits_range_ref
+    ///     data3) {
     ///         data1.for_each_word(data2, data3, [&](auto &w1, auto &w2, auto &w3) {
     ///             w3 ^= w1 & w2;
     ///         });
@@ -201,7 +202,8 @@ struct simd_bits_range_ref {
     ///
     /// Example:
     ///     void xor_union_into_last(
-    ///             simd_bits_range_ref data1, simd_bits_range_ref data2, simd_bits_range_ref data3, simd_bits_range_ref data4) {
+    ///             simd_bits_range_ref data1, simd_bits_range_ref data2, simd_bits_range_ref data3, simd_bits_range_ref
+    ///             data4) {
     ///         data1.for_each_word(data2, data3, data4, [&](auto &w1, auto &w2, auto &w3, auto &w4) {
     ///             w4 ^= w1 | w2 | w3;
     ///         });

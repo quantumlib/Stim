@@ -15,13 +15,10 @@
 #include "frame_simulator.h"
 
 void xor_measurement_sets_into_result(
-    const std::vector<MeasurementSet> &measurement_sets, bool include_expected_parity, simd_bit_table &frame_samples,
+    const std::vector<MeasurementSet> &measurement_sets, simd_bit_table &frame_samples,
     simd_bit_table &combined_samples, size_t &offset) {
     for (const auto &obs : measurement_sets) {
         simd_bits_range_ref dst = combined_samples[offset++];
-        if (include_expected_parity && obs.expected_parity) {
-            dst.invert_bits();
-        }
         for (auto i : obs.indices) {
             dst ^= frame_samples[i];
         }
@@ -43,11 +40,11 @@ simd_bit_table detector_samples(
     // Xor together measurement samples to form detector samples.
     size_t offset = 0;
     if (prepend_observables) {
-        xor_measurement_sets_into_result(observables, true, frame_samples, result, offset);
+        xor_measurement_sets_into_result(observables, frame_samples, result, offset);
     }
-    xor_measurement_sets_into_result(detectors, false, frame_samples, result, offset);
+    xor_measurement_sets_into_result(detectors, frame_samples, result, offset);
     if (append_observables) {
-        xor_measurement_sets_into_result(observables, true, frame_samples, result, offset);
+        xor_measurement_sets_into_result(observables, frame_samples, result, offset);
     }
 
     return result;

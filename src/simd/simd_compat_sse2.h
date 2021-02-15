@@ -29,7 +29,7 @@ struct simd_word {
         uint8_t u8[16];
     };
 
-    static void* aligned_malloc(size_t bytes) {
+    static void *aligned_malloc(size_t bytes) {
         return _mm_malloc(bytes, sizeof(simd_word));
     }
     static void aligned_free(void *ptr) {

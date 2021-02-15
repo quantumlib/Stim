@@ -16,8 +16,9 @@
 
 /// Implements `simd_word` using no architecture-specific instructions, just raw C++11 code.
 
-#include "simd_util.h"
 #include <stdlib.h>
+
+#include "simd_util.h"
 
 struct emu_u128 {
     uint64_t a;
@@ -31,7 +32,7 @@ struct simd_word {
         emu_u128 u128[1];
     };
 
-    static void* aligned_malloc(size_t bytes) {
+    static void *aligned_malloc(size_t bytes) {
         return malloc(bytes);
     }
     static void aligned_free(void *ptr) {

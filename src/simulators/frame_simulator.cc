@@ -35,8 +35,7 @@ inline void for_each_target_pair(FrameSimulator &sim, const OperationData &targe
     }
 }
 
-FrameSimulator::FrameSimulator(
-        size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng)
+FrameSimulator::FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng)
     : num_qubits(num_qubits),
       num_samples_raw(num_samples),
       num_measurements_raw(num_measurements),
@@ -111,13 +110,18 @@ void write_table_data(
         auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
         size_t wn = result.num_minor_u64_padded();
         for (size_t s = 0; s < num_shots_raw; s++) {
+            bool rest = false;
             uint64_t *row = result[s].u64;
             for (size_t k = 0; k < wn; k++) {
                 auto v = row[k];
                 if (v) {
                     for (size_t j = 0; j < 64; j++) {
                         if ((v >> j) & 1) {
-                            fprintf(out, "%lld,", (unsigned long long)(k * 64 + j));
+                            if (rest) {
+                                putc(',', out);
+                            }
+                            rest = true;
+                            fprintf(out, "%lld", (unsigned long long)(k * 64 + j));
                         }
                     }
                 }
@@ -127,11 +131,58 @@ void write_table_data(
         return;
     }
 
+    if (format == SAMPLE_FORMAT_R8) {
+        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
+        size_t wn = (num_sample_locations_raw + 7) / 8;
+        for (size_t s = 0; s < num_shots_raw; s++) {
+            uint8_t *row = result[s].u8;
+            uint16_t gap = 0;
+            for (size_t k = 0; k < wn; k++) {
+                auto v = row[k];
+                if (!v) {
+                    gap += 8;
+                    if (gap >= 0xFF) {
+                        gap -= 0xFF;
+                        putc(0xFF, out);
+                    }
+                    continue;
+                }
+
+                for (size_t j = 0; j < 8; j++) {
+                    if ((v >> j) & 1) {
+                        putc(gap, out);
+                        gap = 0;
+                    } else {
+                        gap++;
+                        if (gap >= 0xFF) {
+                            putc(0xFF, out);
+                            gap -= 0xFF;
+                        }
+                    }
+                }
+            }
+
+            // Always encode a trailing 1 just past the end of the measurement results.
+            gap -= -num_sample_locations_raw & 7;
+            putc(gap, out);
+        }
+        return;
+    }
+
     throw std::out_of_range("Unrecognized output format.");
 }
 
 void FrameSimulator::write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) {
     write_table_data(out, num_samples_raw, num_measurements_raw, reference_sample, m_table, format);
+}
+
+simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_target) {
+    const auto &rec = lookback_map[encoded_target & ~TARGET_RECORD_MASK];
+    uint8_t b = encoded_target >> TARGET_RECORD_SHIFT;
+    if (b > rec.size()) {
+        throw std::out_of_range("Referred to a measurement record before the beginning of time.");
+    }
+    return m_table[rec[rec.size() - b]];
 }
 
 void FrameSimulator::reset_all() {
@@ -218,24 +269,47 @@ void FrameSimulator::H_YZ(const OperationData &target_data) {
     }
 }
 
+void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
+    if (!((c | t) & TARGET_RECORD_MASK)) {
+        x_table[c].for_each_word(
+            z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                z1 ^= z2;
+                x2 ^= x1;
+            });
+    } else if (c & t & TARGET_RECORD_MASK) {
+        measurement_record_ref(t) ^= measurement_record_ref(c);
+    } else if (c & TARGET_RECORD_MASK) {
+        x_table[t] ^= measurement_record_ref(c);
+    } else {
+        throw std::out_of_range("Can't quantum control a classical operation.");
+    }
+}
+
+void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
+    if (!((c | t) & TARGET_RECORD_MASK)) {
+        x_table[c].for_each_word(
+            z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                z1 ^= x2 ^ z2;
+                z2 ^= x1;
+                x2 ^= x1;
+            });
+    } else if (c & t & TARGET_RECORD_MASK) {
+        measurement_record_ref(t) ^= measurement_record_ref(c);
+    } else if (c & TARGET_RECORD_MASK) {
+        x_table[t].for_each_word(z_table[t], measurement_record_ref(c), [](simd_word &x, simd_word &z, simd_word &m) {
+            x ^= m;
+            z ^= m;
+        });
+    } else {
+        throw std::out_of_range("Can't quantum control a classical operation.");
+    }
+}
+
 void FrameSimulator::ZCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t c = targets[k];
-        size_t t = targets[k + 1];
-        if (c & TARGET_RECORD_MASK) {
-            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
-            uint8_t b = c >> TARGET_RECORD_SHIFT;
-            if (b <= rec.size()) {
-                x_table[t] ^= m_table[rec[rec.size() - b]];
-            }
-        } else {
-            x_table[c].for_each_word(z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-                z1 ^= z2;
-                x2 ^= x1;
-            });
-        }
+        single_cx(targets[k], targets[k + 1]);
     }
 }
 
@@ -243,22 +317,7 @@ void FrameSimulator::ZCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t c = targets[k];
-        size_t t = targets[k + 1];
-        if (c & TARGET_RECORD_MASK) {
-            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
-            uint8_t b = c >> TARGET_RECORD_SHIFT;
-            if (b <= rec.size()) {
-                x_table[t] ^= m_table[rec[rec.size() - b]];
-                z_table[t] ^= m_table[rec[rec.size() - b]];
-            }
-        } else {
-            x_table[c].for_each_word(z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-                z1 ^= x2 ^ z2;
-                z2 ^= x1;
-                x2 ^= x1;
-            });
-        }
+        single_cy(targets[k], targets[k + 1]);
     }
 }
 
@@ -268,26 +327,40 @@ void FrameSimulator::ZCZ(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t c = targets[k];
         size_t t = targets[k + 1];
-        if (c & TARGET_RECORD_MASK) {
-            const auto &rec = lookback_map[c & ~TARGET_RECORD_MASK];
-            uint8_t b = c >> TARGET_RECORD_SHIFT;
-            if (b <= rec.size()) {
-                z_table[t] ^= m_table[rec[rec.size() - b]];
-            }
+        if (!((c | t) & TARGET_RECORD_MASK)) {
+            x_table[c].for_each_word(
+                z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                    z1 ^= x2;
+                    z2 ^= x1;
+                });
+        } else if (c & t & TARGET_RECORD_MASK) {
+            // No op.
+        } else if (c & TARGET_RECORD_MASK) {
+            z_table[t] ^= measurement_record_ref(c);
         } else {
-            x_table[c].for_each_word(z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-                z1 ^= x2;
-                z2 ^= x1;
-            });
+            z_table[c] ^= measurement_record_ref(t);
         }
     }
 }
 
 void FrameSimulator::SWAP(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        std::swap(z1, z2);
-        std::swap(x1, x2);
-    });
+    const auto &targets = target_data.targets;
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        size_t q1 = targets[k];
+        size_t q2 = targets[k + 1];
+        if (!((q1 | q2) & TARGET_RECORD_MASK)) {
+            x_table[q1].for_each_word(
+                z_table[q1], x_table[q2], z_table[q2], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                    std::swap(z1, z2);
+                    std::swap(x1, x2);
+                });
+        } else if (q1 & q2 & TARGET_RECORD_MASK) {
+            measurement_record_ref(q1).swap_with(measurement_record_ref(q2));
+        } else {
+            throw std::out_of_range("Can't swap a qubit and a measurement record.");
+        }
+    }
 }
 
 void FrameSimulator::ISWAP(const OperationData &target_data) {
@@ -317,10 +390,11 @@ void FrameSimulator::XCY(const OperationData &target_data) {
 }
 
 void FrameSimulator::XCZ(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        z2 ^= z1;
-        x1 ^= x2;
-    });
+    const auto &targets = target_data.targets;
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        single_cx(targets[k + 1], targets[k]);
+    }
 }
 
 void FrameSimulator::YCX(const OperationData &target_data) {
@@ -343,11 +417,11 @@ void FrameSimulator::YCY(const OperationData &target_data) {
 }
 
 void FrameSimulator::YCZ(const OperationData &target_data) {
-    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-        z2 ^= x1 ^ z1;
-        z1 ^= x2;
-        x1 ^= x2;
-    });
+    const auto &targets = target_data.targets;
+    assert((targets.size() & 1) == 0);
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        single_cy(targets[k + 1], targets[k]);
+    }
 }
 
 void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {

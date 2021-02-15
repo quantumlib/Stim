@@ -44,16 +44,27 @@ enum SampleFormat {
     /// Binary format.
     ///
     /// For each shot:
-    ///     for each group of 8 measurement (padded with 0s if needed):
+    ///     For each group of 8 measurement (padded with 0s if needed):
     ///         Output a bit packed byte (least significant bit of byte has first measurement)
     SAMPLE_FORMAT_B8,
     /// Transposed binary format.
     ///
     /// For each measurement:
-    ///     for each group of 8 shots (padded with 0s if needed):
+    ///     For each group of 8 shots (padded with 0s if needed):
     ///         Output bit packed bytes (least significant bit of first byte has first shot)
     SAMPLE_FORMAT_PTB64,
+    /// Human readable compressed format.
+    ///
+    /// For each shot:
+    ///     For each measurement_index where the measurement result was 1:
+    ///         Output decimal(measurement_index)
     SAMPLE_FORMAT_HITS,
+    /// Binary run-length format.
+    ///
+    /// For each shot:
+    ///     For each run of same-result measurements up to length 128:
+    ///         Output (result ? 0x80 : 0) | (run_length + 1)
+    SAMPLE_FORMAT_R8,
 };
 
 /// A pointer to contiguous data inside a std::vector.
@@ -135,8 +146,6 @@ struct Operation {
 struct MeasurementSet {
     /// The indices of the measurements that are part of the set (e.g. index 0 means the first measurement).
     std::vector<size_t> indices;
-    /// Whether the measurement set's parity is even (false) or odd (true).
-    bool expected_parity;
     /// Folds the given measurement set into this one, forming a combined set.
     MeasurementSet &operator*=(const MeasurementSet &other);
 };
@@ -161,9 +170,9 @@ struct Circuit {
     /// Move constructor.
     Circuit(Circuit &&circuit) noexcept;
     /// Copy assignment.
-    Circuit& operator=(Circuit &&circuit) noexcept;
+    Circuit &operator=(Circuit &&circuit) noexcept;
     /// Move assignment.
-    Circuit& operator=(const Circuit &circuit);
+    Circuit &operator=(const Circuit &circuit);
 
     /// Parses a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
     ///
@@ -207,7 +216,8 @@ struct Circuit {
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0, bool allow_fusing = false);
+    void append_op(
+        const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0, bool allow_fusing = false);
 
     /// Resets the circuit back to an empty circuit.
     void clear();

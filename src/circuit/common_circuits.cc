@@ -177,7 +177,9 @@ std::string unrotated_surface_code_program_text(size_t distance, size_t rounds, 
     }
 
     result << bulk.str();
-    result << z_detectors.str();
+    for (auto q : q_zs) {
+        result << "DETECTOR " << q << "@-1\n";
+    }
     result << "REPEAT " << (rounds - 1) << " {\n";
     indented_into(bulk.str(), result);
     indented_into(x_detectors.str(), result);

@@ -35,7 +35,7 @@ struct TableauSimulator {
     int8_t sign_bias;
     std::vector<bool> measurement_record;
     bool last_correlated_error_occurred;
-    std::vector<std::vector<bool>> lookback_map;
+    std::vector<std::vector<uint32_t>> lookback_map;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
@@ -116,6 +116,12 @@ struct TableauSimulator {
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
 
    private:
+    bool read_measurement_record(uint32_t encoded_target) const;
+    void flip_measurement_record_if(uint32_t encoded_target, bool condition);
+    void measurement_record_cnot(size_t c, size_t t);
+    void single_cx(uint32_t c, uint32_t t);
+    void single_cy(uint32_t c, uint32_t t);
+
     /// Forces a qubit to have a collapsed Z observable.
     ///
     /// If the qubit already has a collapsed Z observable, this method has no effect.
