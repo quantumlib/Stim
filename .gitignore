@@ -22,3 +22,4 @@ stim.cpython*
 dist/*
 MANIFEST
 *.whl
+*.swp

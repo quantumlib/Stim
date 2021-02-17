@@ -134,6 +134,12 @@ bool Operation::can_fuse(const Operation &other) const {
 bool Operation::operator==(const Operation &other) const {
     return gate->id == other.gate->id && target_data == other.target_data;
 }
+bool Operation::approx_equals(const Operation &other, double atol) const {
+    if (gate->id != other.gate->id || target_data.targets != other.target_data.targets) {
+        return false;
+    }
+    return abs(target_data.arg - other.target_data.arg) <= atol;
+}
 
 bool Operation::operator!=(const Operation &other) const {
     return !(*this == other);
@@ -152,6 +158,18 @@ bool Circuit::operator==(const Circuit &other) const {
 }
 bool Circuit::operator!=(const Circuit &other) const {
     return !(*this == other);
+}
+bool Circuit::approx_equals(const Circuit &other, double atol) const {
+    if (num_qubits != other.num_qubits || num_measurements != other.num_measurements ||
+        operations.size() != other.operations.size()) {
+        return false;
+    }
+    for (size_t k = 0; k < operations.size(); k++) {
+        if (!operations[k].approx_equals(other.operations[k], atol)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template <typename SOURCE>
@@ -176,6 +194,29 @@ inline const Gate &read_gate_name(int &c, SOURCE read_char) {
     }
     // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
     return GATE_DATA.at(name_buf, n);
+}
+
+inline bool is_double_char(int c) {
+    return (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-';
+}
+
+template <typename SOURCE>
+double read_non_negative_double(int &c, SOURCE read_char) {
+    char buf[64];
+    size_t n = 0;
+    while (n < sizeof(buf) - 1 && is_double_char(c)) {
+        buf[n] = (char)c;
+        c = read_char();
+        n++;
+    }
+    buf[n] = '\0';
+
+    char *end;
+    double result = strtod(buf, &end);
+    if (end != buf + n || !(result >= 0)) {
+        throw std::out_of_range("Not a non-negative real number: " + std::string(buf));
+    }
+    return result;
 }
 
 template <typename SOURCE>
@@ -208,29 +249,6 @@ uint32_t read_uint24_t(int &c, SOURCE read_char) {
         }
         c = read_char();
     } while (c >= '0' && c <= '9');
-    return result;
-}
-
-inline bool is_double_char(int c) {
-    return (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-';
-}
-
-template <typename SOURCE>
-double read_non_negative_double(int &c, SOURCE read_char) {
-    char buf[64];
-    size_t n = 0;
-    while (n < sizeof(buf) - 1 && is_double_char(c)) {
-        buf[n] = (char)c;
-        c = read_char();
-        n++;
-    }
-    buf[n] = '\0';
-
-    char *end;
-    double result = strtod(buf, &end);
-    if (end != buf + n || !(result >= 0)) {
-        throw std::out_of_range("Not a non-negative real number: " + std::string(buf));
-    }
     return result;
 }
 

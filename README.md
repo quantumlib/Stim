@@ -125,7 +125,7 @@ The order of the results is the same as the order of the measurement commands in
 Bit flip and measure a qubit:
 
 ```bash
-$ echo "
+echo "
   X 0
   M 0
 " | ./stim --sample
@@ -138,7 +138,7 @@ $ echo "
 Create and measure a GHZ state, five times:
 
 ```bash
-$ echo "
+echo "
   H 0
   CNOT 0 1 0 2
   M 0 1 2
@@ -153,29 +153,21 @@ $ echo "
 000
 ```
 
-Sample several runs of a small noisy surface code:
+Sample several runs of a small noisy surface code with phenomenological type noise:
 
 ```bash
-$ echo "
+echo "
   REPEAT 20 {
     DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     H 3 5
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     CNOT 4 1 3 6 5 8
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     CNOT 2 1 8 7 3 4
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     CNOT 0 1 6 7 5 4
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     CNOT 4 7 3 0 5 2
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     H 3 5
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     M 1 7 3 5
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     R 1 7 3 5
   }
-  DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
   M 0 2 4 6 8
 " | ./stim --sample=10
 ```
@@ -193,20 +185,79 @@ $ echo "
 0000000000000000000000000000000000000000000001000100010001001000100011001100110000100
 ```
 
-Generate a large noisy surface code circuit with detector annotations,
-sample 10 shots of detection events from it,
-and print out the number of detection events that fired (1) vs didn't (0):
+Sample detection events in a repetition code with circuit level noise,
+include two qubit depolarizing noise when performing a CNOT.
+Instead of listing all 0s and 1s, print the locations of the 1s in each line:
 
 ```bash
-./stim --make_circuit=surface_unrotated --distance=15 --rounds=100 --noise_level=0.001 \
-    | ./stim --detect=10 \
-    | sed 's/\(.\)/\1\n/g' | sort | uniq -c | tail -n 2
+echo "
+  M 1 3 5 7
+  REPEAT 100 {
+    DEPOLARIZE2(0.001) 0 1 2 3 4 5 6 7
+    DEPOLARIZE1(0.001) 8
+    CNOT 0 1 2 3 4 5 6 7
+    DEPOLARIZE2(0.001) 8 7 6 5 4 3 2 1
+    DEPOLARIZE1(0.001) 0
+    CNOT 8 7 6 5 4 3 2 1
+    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
+    MR 1 3 5 7
+    # Parity measurements should stay consistent over time.
+    DETECTOR 1@-1 1@-2
+    DETECTOR 3@-1 3@-2
+    DETECTOR 5@-1 5@-2
+    DETECTOR 7@-1 7@-2
+  }
+  M 0 2 4 6 8
+  # Data measurements should agree with parity measurements.
+  DETECTOR 0@-1 1@-1 2@-1
+  DETECTOR 2@-1 3@-1 4@-1
+  DETECTOR 4@-1 5@-1 6@-1
+  DETECTOR 6@-1 7@-1 8@-1
+  # Any one of the data qubit measurements can be the logical measurement result.
+  OBSERVABLE_INCLUDE(0) 0@-1
+" | ./stim --detect=10 --out_format=hits
 ```
 
 ```
- 410560 0
-   9440 1
+85,89
+83
+
+
+98,103,242,243
+125,129,241,245
+144,152,153,176,180,238,242
+162,166
+147
+204
 ```
+
+Compute the circuit's detector graph (the graph whose nodes are `DETECTOR`s and
+whose edges are errors grouped into equivalence classes based on which detectors they invert).
+Output the graph as a circuit made up of correlated errors that `--sample`s from the same distribution as the original
+circuit `--detect`ed from:
+
+```bash
+echo "
+  M 0 1
+  H 0
+  CNOT 0 1
+  DEPOLARIZE1(0.01) 0
+  X_ERROR(0.1) 1
+  CNOT 0 1
+  H 0
+  M 0 1
+  DETECTOR 0@-1 0@-2
+  DETECTOR 1@-1 1@-2
+" | ./stim --detector_error_sets
+```
+
+```
+E(0.003345) X0
+E(0.003345) X0 X1
+E(0.102676) X1
+M 1 0
+```
+
 
 ## Command line flags
 
@@ -479,7 +530,7 @@ Not all modifiers apply to all modes.
     Single-qubit probabilistic Z error.
     Examples: `Z_ERROR(0.001) 0 1`.
     For each target qubit, independently applies a Z gate With probability `p`.
-- `CORRELATED_ERROR(p)` and `ELSE_CORRELATED_ERROR(p)`:
+- `CORRELATED_ERROR(p)` (alternate name `E`) and `ELSE_CORRELATED_ERROR(p)`:
     Pauli product error cases.
     Probabilistically applies a Pauli product error with probability `p`,
     unless the "correlated error occurred" flag is already set.

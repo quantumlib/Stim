@@ -72,15 +72,28 @@ enum SampleFormat {
 /// Used by Circuit and OperationData to store jagged data with less memory fragmentation and fewer allocations.
 template <typename T>
 struct VectorView {
-    const std::vector<T> *arena;
+    std::vector<T> *arena;
     size_t offset;
     size_t length;
 
     inline size_t size() const {
         return length;
     }
+
     inline T operator[](size_t k) const {
         return (*arena)[offset + k];
+    }
+
+    inline T& operator[](size_t k) {
+        return (*arena)[offset + k];
+    }
+
+    T *begin() {
+        return arena->data() + offset;
+    }
+
+    T *end() {
+        return arena->data() + offset + length;
     }
 
     const T *begin() const {
@@ -140,6 +153,8 @@ struct Operation {
     bool operator!=(const Operation &other) const;
     /// Returns a text description of the operation's gate and targets.
     std::string str() const;
+    /// Approximate equality.
+    bool approx_equals(const Operation &other, double atol) const;
 };
 
 /// A set of measurements that have deterministic parity under noiseless execution.
@@ -228,6 +243,8 @@ struct Circuit {
     bool operator==(const Circuit &other) const;
     /// Inequality.
     bool operator!=(const Circuit &other) const;
+    /// Approximate equality.
+    bool approx_equals(const Circuit &other, double atol) const;
 
     /// Converts the relative detector and observable annotations in the circuit into absolute measurement sets.
     std::pair<std::vector<MeasurementSet>, std::vector<MeasurementSet>> list_detectors_and_observables() const;

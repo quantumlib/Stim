@@ -26,7 +26,7 @@ OpDat OpDat::flipped(size_t target) {
     return OpDat(target | TARGET_INVERTED_MASK);
 }
 
-OpDat::operator OperationData() const {
+OpDat::operator OperationData() {
     return {0, {&targets, 0, targets.size()}};
 }
 

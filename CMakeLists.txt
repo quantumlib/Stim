@@ -19,6 +19,7 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit/circuit.cc
         src/circuit/common_circuits.cc
+        src/circuit/gate_data.cc
         src/main_helper.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
@@ -27,8 +28,9 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/simd_bits_range_ref.cc
         src/simd/simd_compat.cc
         src/simd/simd_util.cc
+        src/simd/sparse_xor_vec.cc
         src/simulators/detection_simulator.cc
-        src/circuit/gate_data.cc
+        src/simulators/error_fuser.cc
         src/simulators/frame_simulator.cc
         src/simulators/tableau_simulator.cc
         src/simulators/vector_simulator.cc
@@ -42,6 +44,7 @@ set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit/circuit.test.cc
         src/circuit/common_circuits.test.cc
+        src/circuit/gate_data.test.cc
         src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
@@ -50,9 +53,10 @@ set(TEST_FILES
         src/simd/simd_bits_range_ref.test.cc
         src/simd/simd_compat.test.cc
         src/simd/simd_util.test.cc
+        src/simd/sparse_xor_vec.test.cc
         src/simulators/detection_simulator.test.cc
+        src/simulators/error_fuser.test.cc
         src/simulators/frame_simulator.test.cc
-        src/circuit/gate_data.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
@@ -63,11 +67,13 @@ set(BENCHMARK_FILES
         src/benchmark_main.perf.cc
         src/benchmark_util.perf.cc
         src/circuit/circuit.perf.cc
-        src/simd/simd_bits.perf.cc
-        src/simd/simd_bit_table.perf.cc
-        src/simd/simd_compat.perf.cc
-        src/simulators/frame_simulator.perf.cc
         src/circuit/gate_data.perf.cc
+        src/simd/simd_bit_table.perf.cc
+        src/simd/simd_bits.perf.cc
+        src/simd/simd_compat.perf.cc
+        src/simd/sparse_xor_vec.perf.cc
+        src/simulators/error_fuser.perf.cc
+        src/simulators/frame_simulator.perf.cc
         src/simulators/tableau_simulator.perf.cc
         src/stabilizers/pauli_string.perf.cc
         src/stabilizers/tableau.perf.cc

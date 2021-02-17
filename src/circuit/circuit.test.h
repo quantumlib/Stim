@@ -9,7 +9,7 @@ struct OpDat {
     OpDat(uint32_t target);
     OpDat(std::vector<uint32_t> targets);
     static OpDat flipped(size_t target);
-    operator OperationData() const;
+    operator OperationData();
 };
 
 #endif

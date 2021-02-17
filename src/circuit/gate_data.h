@@ -33,6 +33,7 @@ struct FrameSimulator;
 struct OperationData;
 struct Tableau;
 struct Operation;
+struct ErrorFuser;
 
 inline uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
@@ -117,6 +118,7 @@ struct Gate {
     const char *name;
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
+    void (ErrorFuser::*hit_simulator_function)(const OperationData &);
     GateFlags flags;
     TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data;
     TruncatedArray<const char *, 4> tableau_data;
@@ -125,7 +127,8 @@ struct Gate {
     Gate();
     Gate(
         const char *name, void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
-        void (FrameSimulator::*frame_simulator_function)(const OperationData &), GateFlags flags,
+        void (FrameSimulator::*frame_simulator_function)(const OperationData &),
+        void (ErrorFuser::*hit_simulator_function)(const OperationData &), GateFlags flags,
         TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data,
         TruncatedArray<const char *, 4> tableau_data);
 

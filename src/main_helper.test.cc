@@ -136,17 +136,17 @@ TEST(main_helper, help_modes) {
     ASSERT_EQ(trim(execute({"--help"}, "")).substr(0, 19), "[stderr=BASIC USAGE");
 
     ASSERT_EQ(trim(execute({}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --make_circuit
+[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets
 ]
             )output"));
 
     ASSERT_EQ(trim(execute({"--sample", "--repl"}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --make_circuit
+[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets
 ]
             )output"));
 
     ASSERT_EQ(trim(execute({"--sample", "--repl", "--detect"}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --make_circuit
+[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets
 ]
             )output"));
 }
@@ -428,22 +428,6 @@ H 0
 M 0
             )input"),
                 {{"1", 1}}));
-}
-
-TEST(main_helper, make_circuit) {
-    ASSERT_EQ(execute({"--make_circuit=surface_unrotated"}, nullptr), unrotated_surface_code_program_text(3, 3, 0));
-    ASSERT_EQ(
-        execute({"--make_circuit=surface_unrotated", "--distance=5"}, nullptr),
-        unrotated_surface_code_program_text(5, 5, 0));
-    ASSERT_EQ(
-        execute({"--make_circuit=surface_unrotated", "--rounds=7"}, nullptr),
-        unrotated_surface_code_program_text(3, 7, 0));
-    ASSERT_EQ(
-        execute({"--make_circuit=surface_unrotated", "--distance=5", "--rounds=7"}, nullptr),
-        unrotated_surface_code_program_text(5, 7, 0));
-    ASSERT_EQ(
-        execute({"--make_circuit=surface_unrotated", "--distance=5", "--rounds=7", "--noise_level=0.001"}, nullptr),
-        unrotated_surface_code_program_text(5, 7, 0.001));
 }
 
 TEST(main_helper, detect_basic) {

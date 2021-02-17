@@ -74,10 +74,7 @@ std::string si2(double val) {
     return ss.str();
 }
 
-static std::vector<const char *> known_arguments{
-    "--only",
-    "--target_seconds"
-};
+static std::vector<const char *> known_arguments{"--only", "--target_seconds"};
 
 void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark> &out) {
     bool found = false;
