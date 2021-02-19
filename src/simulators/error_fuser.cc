@@ -378,7 +378,7 @@ Circuit ErrorFuser::convert_circuit(const Circuit &circuit, bool prepend_observa
         result.jagged_target_data.vec.push_back(k);
     }
     result.operations.push_back({&GATE_DATA.at("M"), {0.0, view}});
-    result.update_metadata_for_backdoor_appended_operation();
+    result.update_metadata_for_manually_appended_operation();
 
     return result;
 }

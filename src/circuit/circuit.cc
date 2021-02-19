@@ -470,7 +470,7 @@ bool Circuit::append_from_text(const char *text) {
     return operations.size() > before;
 }
 
-void Circuit::update_metadata_for_backdoor_appended_operation() {
+void Circuit::update_metadata_for_manually_appended_operation() {
     const auto &op = operations.back();
     const auto &gate = *op.gate;
     const auto &vec = op.target_data.targets;
@@ -510,7 +510,7 @@ void Circuit::append_circuit(const Circuit &circuit, size_t repetitions) {
 void Circuit::append_operation(const Operation &operation) {
     operations.push_back(
         {operation.gate, {operation.target_data.arg, jagged_target_data.inserted(operation.target_data.targets)}});
-    update_metadata_for_backdoor_appended_operation();
+    update_metadata_for_manually_appended_operation();
 }
 
 void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg, bool allow_fusing) {
@@ -571,7 +571,7 @@ void Circuit::append_operation(
         operations.push_back({&gate, {arg, jagged_target_data.inserted(targets_start, num_targets)}});
     }
     // Update num_measurements and num_qubits appropriately.
-    update_metadata_for_backdoor_appended_operation();
+    update_metadata_for_manually_appended_operation();
 }
 
 bool Circuit::append_from_file(FILE *file, bool stop_asap) {

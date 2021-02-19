@@ -189,7 +189,7 @@ struct Circuit {
     bool approx_equals(const Circuit &other, double atol) const;
 
     /// Updates metadata (e.g. num_qubits) to account for an operation appended via non-standard means.
-    void update_metadata_for_backdoor_appended_operation();
+    void update_metadata_for_manually_appended_operation();
 };
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
