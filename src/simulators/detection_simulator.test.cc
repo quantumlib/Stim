@@ -22,7 +22,7 @@ TEST(DetectionSimulator, detector_samples) {
     auto circuit = Circuit::from_text(
         "X_ERROR(1) 0\n"
         "M 0\n"
-        "DETECTOR 0@-1\n");
+        "DETECTOR rec[-1]\n");
     auto samples = detector_samples(circuit, 5, false, false, SHARED_TEST_RNG());
     ASSERT_EQ(
         samples.str(5),
@@ -35,6 +35,5 @@ TEST(DetectionSimulator, detector_samples) {
 
 TEST(DetectionSimulator, bad_detector) {
     ASSERT_THROW(
-        { detector_samples(Circuit::from_text("DETECTOR 0@-5"), 5, false, false, SHARED_TEST_RNG()); },
-        std::out_of_range);
+        { detector_samples(Circuit::from_text("rec[-1]"), 5, false, false, SHARED_TEST_RNG()); }, std::out_of_range);
 }

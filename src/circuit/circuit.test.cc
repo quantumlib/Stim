@@ -23,7 +23,7 @@ OpDat::OpDat(std::vector<uint32_t> targets) : targets(std::move(targets)) {
 }
 
 OpDat OpDat::flipped(size_t target) {
-    return OpDat(target | TARGET_INVERTED_MASK);
+    return OpDat(target | TARGET_INVERTED_BIT);
 }
 
 OpDat::operator OperationData() {
@@ -68,11 +68,13 @@ TEST(circuit, from_text) {
     ASSERT_THROW({ f("CX 1 1"); }, std::out_of_range);
     ASSERT_THROW({ f("SWAP 1 1"); }, std::out_of_range);
     ASSERT_THROW({ f("DEPOLARIZE2(1) 1 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETEstdCTOR 1@0"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR -1@0"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR 1@-256"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR(2) -1@0"); }, std::out_of_range);
-    ASSERT_THROW({ f("OBSERVABLE_INCLUDE 1@-2"); }, std::out_of_range);
+    ASSERT_THROW({ f("DETEstdCTOR rec[-1]"); }, std::out_of_range);
+    ASSERT_THROW({ f("DETECTOR rec[0]"); }, std::out_of_range);
+    ASSERT_THROW({ f("DETECTOR rec[1]"); }, std::out_of_range);
+    ASSERT_THROW({ f("DETECTOR rec[-999999999999]"); }, std::out_of_range);
+    ASSERT_THROW({ f("DETECTOR(2) rec[-1]"); }, std::out_of_range);
+    ASSERT_THROW({ f("OBSERVABLE_INCLUDE rec[-1]"); }, std::out_of_range);
+    ASSERT_THROW({ f("OBSERVABLE_INCLUDE(-1) rec[-1]"); }, std::out_of_range);
     ASSERT_THROW({ f("CORRELATED_ERROR(1) B1"); }, std::out_of_range);
     ASSERT_THROW({ f("CORRELATED_ERROR(1) X 1"); }, std::out_of_range);
     ASSERT_THROW({ f("CORRELATED_ERROR(1) X\n"); }, std::out_of_range);
@@ -109,7 +111,7 @@ TEST(circuit, from_text) {
         expected);
 
     expected.clear();
-    expected.append_op("M", {0, 0 | TARGET_INVERTED_MASK, 1, 1 | TARGET_INVERTED_MASK});
+    expected.append_op("M", {0, 0 | TARGET_INVERTED_BIT, 1, 1 | TARGET_INVERTED_BIT});
     ASSERT_EQ(f("M 0 !0 1 !1"), expected);
 
     expected.clear();
@@ -141,11 +143,11 @@ TEST(circuit, from_text) {
         expected);
 
     expected.clear();
-    expected.append_op("DETECTOR", {5 | (1 << TARGET_RECORD_SHIFT)});
-    ASSERT_EQ(f("DETECTOR 5@-1"), expected);
+    expected.append_op("DETECTOR", {5 | TARGET_RECORD_BIT});
+    ASSERT_EQ(f("DETECTOR rec[-5]"), expected);
     expected.clear();
-    expected.append_op("DETECTOR", {5 | (6 << TARGET_RECORD_SHIFT)});
-    ASSERT_EQ(f("DETECTOR 5@-6"), expected);
+    expected.append_op("DETECTOR", {6 | TARGET_RECORD_BIT});
+    ASSERT_EQ(f("DETECTOR rec[-6]"), expected);
 
     expected.clear();
     expected.append_op("M", {0});
@@ -165,8 +167,8 @@ TEST(circuit, from_text) {
     expected.clear();
     expected.append_op(
         "CORRELATED_ERROR",
-        {90 | TARGET_PAULI_X_MASK, 91 | TARGET_PAULI_X_MASK | TARGET_PAULI_Z_MASK, 92 | TARGET_PAULI_Z_MASK,
-         93 | TARGET_PAULI_X_MASK},
+        {90 | TARGET_PAULI_X_BIT, 91 | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT, 92 | TARGET_PAULI_Z_BIT,
+         93 | TARGET_PAULI_X_BIT},
         0.125);
     ASSERT_EQ(
         f(R"circuit(
@@ -199,8 +201,8 @@ TEST(circuit, append_circuit) {
         expected.append_op("M", {7});
     }
     ASSERT_EQ(actual, expected);
-    ASSERT_EQ(actual.jagged_data.size(), 7);
-    ASSERT_EQ(expected.jagged_data.size(), 7 * 4);
+    ASSERT_EQ(actual.jagged_target_data.vec.size(), 7);
+    ASSERT_EQ(expected.jagged_target_data.vec.size(), 7 * 4);
 }
 
 TEST(circuit, append_op_fuse) {
@@ -234,26 +236,26 @@ TEST(circuit, str) {
     Circuit c;
     c.append_op("tick", {});
     c.append_op("CNOT", {2, 3});
-    c.append_op("CNOT", {2 | (5 << TARGET_RECORD_SHIFT), 3});
+    c.append_op("CNOT", {5 | TARGET_RECORD_BIT, 3});
     c.append_op("M", {1, 3, 2});
-    c.append_op("DETECTOR", {5 | (7 << TARGET_RECORD_SHIFT)});
-    c.append_op("OBSERVABLE_INCLUDE", {11 | (13 << TARGET_RECORD_SHIFT), 1 | (1 << TARGET_RECORD_SHIFT)}, 17);
+    c.append_op("DETECTOR", {7 | TARGET_RECORD_BIT});
+    c.append_op("OBSERVABLE_INCLUDE", {11 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT}, 17);
     c.append_op("X_ERROR", {19}, 0.5);
     c.append_op(
         "CORRELATED_ERROR",
         {
-            23 | TARGET_PAULI_X_MASK,
-            27 | TARGET_PAULI_Z_MASK,
-            29 | TARGET_PAULI_X_MASK | TARGET_PAULI_Z_MASK,
+            23 | TARGET_PAULI_X_BIT,
+            27 | TARGET_PAULI_Z_BIT,
+            29 | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT,
         },
         0.25);
     ASSERT_EQ(c.str(), R"circuit(# Circuit [num_qubits=30, num_measurements=3]
 TICK
 ZCX 2 3
-ZCX 2@-5 3
+ZCX rec[-5] 3
 M 1 3 2
-DETECTOR 5@-7
-OBSERVABLE_INCLUDE(17) 11@-13 1@-1
+DETECTOR rec[-7]
+OBSERVABLE_INCLUDE(17) rec[-11] rec[-1]
 X_ERROR(0.5) 19
 CORRELATED_ERROR(0.25) X23 Z27 Y29)circuit");
 }
@@ -263,20 +265,20 @@ TEST(circuit, append_op_validation) {
     ASSERT_THROW({ c.append_op("CNOT", {0}); }, std::out_of_range);
     c.append_op("CNOT", {0, 1});
 
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_X_MASK}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_Z_MASK}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_INVERTED_MASK}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_X_BIT}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_Z_BIT}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("X", {0 | TARGET_INVERTED_BIT}); }, std::out_of_range);
     ASSERT_THROW({ c.append_op("X", {0}, 0.5); }, std::out_of_range);
 
-    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_X_MASK}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_Z_MASK}); }, std::out_of_range);
-    c.append_op("M", {0 | TARGET_INVERTED_MASK});
+    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_X_BIT}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_Z_BIT}); }, std::out_of_range);
+    c.append_op("M", {0 | TARGET_INVERTED_BIT});
     ASSERT_THROW({ c.append_op("M", {0}, 0.5); }, std::out_of_range);
 
-    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_MASK});
-    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_MASK});
+    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT});
+    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_BIT});
     ASSERT_THROW(
-        { c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_MASK | TARGET_INVERTED_MASK}); }, std::out_of_range);
+        { c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT | TARGET_INVERTED_BIT}); }, std::out_of_range);
     c.append_op("X_ERROR", {0}, 0.5);
 
     ASSERT_THROW({ c.append_op("CNOT", {0, 0}); }, std::out_of_range);
@@ -286,20 +288,21 @@ TEST(circuit, classical_controls) {
     ASSERT_THROW(
         {
             Circuit::from_text(R"circuit(
-            XCX 0@-1 1
+            M 0
+            XCX rec[-1] 1
          )circuit");
         },
         std::out_of_range);
 
     Circuit expected;
-    expected.append_op("CX", {0 | (0 << TARGET_RECORD_SHIFT), 1, 0 | (11 << TARGET_RECORD_SHIFT), 1});
-    expected.append_op("CY", {2 | (13 << TARGET_RECORD_SHIFT), 1});
-    expected.append_op("CZ", {4 | (14 << TARGET_RECORD_SHIFT), 1});
+    expected.append_op("CX", {0, 1, 1 | TARGET_RECORD_BIT, 1});
+    expected.append_op("CY", {2 | TARGET_RECORD_BIT, 1});
+    expected.append_op("CZ", {4 | TARGET_RECORD_BIT, 1});
     ASSERT_EQ(
         Circuit::from_text(R"circuit(# Circuit [num_qubits=5, num_measurements=0]
 ZCX 0 1
-ZCX 0@-11 1
-ZCY 2@-13 1
-ZCZ 4@-14 1)circuit"),
+ZCX rec[-1] 1
+ZCY rec[-2] 1
+ZCZ rec[-4] 1)circuit"),
         expected);
 }

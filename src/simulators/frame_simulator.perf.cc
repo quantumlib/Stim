@@ -15,7 +15,6 @@
 #include "frame_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../circuit/common_circuits.h"
 
 BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
@@ -94,60 +93,4 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     })
         .goal_millis(2)
         .show_rate("OpQubits", targets.size() * num_samples);
-}
-
-BENCHMARK(FrameSimulator_unrotated_surface_code_d5_samples1024) {
-    size_t num_samples = 1024;
-    size_t distance = 5;
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0));
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
-    benchmark_go([&]() {
-        FrameSimulator::sample(circuit, ref, num_samples, rng);
-    })
-        .goal_micros(70)
-        .show_rate("Layers", distance * num_samples)
-        .show_rate("OutBits", circuit.num_measurements * num_samples);
-}
-
-BENCHMARK(FrameSimulator_unrotated_noisy_surface_code_d5_samples1024) {
-    size_t num_samples = 1024;
-    size_t distance = 5;
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0.001));
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
-    benchmark_go([&]() {
-        FrameSimulator::sample(circuit, ref, num_samples, rng);
-    })
-        .goal_micros(170)
-        .show_rate("Layers", distance * num_samples)
-        .show_rate("OutBits", circuit.num_measurements * num_samples);
-}
-
-BENCHMARK(FrameSimulator_unrotated_surface_code_d41_samples1024) {
-    size_t num_samples = 1024;
-    size_t distance = 41;
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0));
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
-    benchmark_go([&]() {
-        FrameSimulator::sample(circuit, ref, num_samples, rng);
-    })
-        .goal_millis(60)
-        .show_rate("Layers", distance * num_samples)
-        .show_rate("OutBits", circuit.num_measurements * num_samples);
-}
-
-BENCHMARK(FrameSimulator_unrotated_noisy_surface_code_d41_samples1024) {
-    size_t num_samples = 1024;
-    size_t distance = 41;
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0.001));
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
-    benchmark_go([&]() {
-        FrameSimulator::sample(circuit, ref, num_samples, rng);
-    })
-        .goal_millis(130)
-        .show_rate("Layers", distance * num_samples)
-        .show_rate("OutBits", circuit.num_measurements * num_samples);
 }

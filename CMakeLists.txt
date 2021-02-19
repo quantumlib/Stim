@@ -18,7 +18,6 @@ endif()
 set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit/circuit.cc
-        src/circuit/common_circuits.cc
         src/circuit/gate_data.cc
         src/main_helper.cc
         src/probability_util.cc
@@ -43,7 +42,6 @@ set(SOURCE_FILES_NO_MAIN
 set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit/circuit.test.cc
-        src/circuit/common_circuits.test.cc
         src/circuit/gate_data.test.cc
         src/main_helper.test.cc
         src/probability_util.test.cc

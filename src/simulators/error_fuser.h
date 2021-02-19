@@ -3,48 +3,39 @@
 
 #include <map>
 #include <memory>
+#include <queue>
 #include <vector>
 
 #include "../circuit/circuit.h"
 #include "../simd/sparse_xor_vec.h"
 
-struct HitQueue {
-    size_t ticker = 0;
-    std::vector<std::pair<size_t, uint32_t>> q;
-
-    inline void push(uint32_t id, uint8_t lookback) {
-        q.emplace_back(ticker + lookback, id);
-    }
-
-    template <typename BODY>
-    void pop(BODY handler) {
-        ticker++;
-        for (size_t k = 0; k < q.size();) {
-            if (q[k].first == ticker) {
-                handler(q[k].second);
-                q[k] = q.back();
-                q.pop_back();
-            } else {
-                k++;
-            }
-        }
-    }
-};
-
 struct ErrorFuser {
+    std::map<uint32_t, std::vector<uint32_t>> measurement_to_detectors;
+    bool prepend_observables;
+    uint32_t num_found_detectors = 0;
+    uint32_t num_found_observables = 0;
+    /// For each qubit, at the current time, the set of detectors with X dependence on that qubit.
     std::vector<SparseXorVec<uint32_t>> xs;
+    /// For each qubit, at the current time, the set of detectors with Z dependence on that qubit.
     std::vector<SparseXorVec<uint32_t>> zs;
-    std::vector<HitQueue> frame_queues;
-    uint32_t next_detector_id;
-    uint32_t num_kept_observables;
-    std::map<SparseXorVec<uint32_t>, double> probs;
+    size_t scheduled_measurement_time = 0;
 
-    static Circuit convert_circuit(const Circuit &circuit);
+    /// The final result. Independent probabilities of flipping various sets of detectors.
+    ///
+    /// The backing data for the vector views is in the `jagged_data` field.
+    std::map<VectorView<uint32_t>, double> error_class_probabilities;
+    JaggedDataArena<uint32_t> jagged_detector_sets;
+
+    ErrorFuser(size_t num_qubits, bool prepend_observables);
+
+    static Circuit convert_circuit(const Circuit &circuit, bool prepend_observables = false);
     static void convert_circuit_out(const Circuit &circuit, FILE *out, bool prepend_observables);
 
-    ErrorFuser(size_t num_qubits, size_t num_detectors, size_t num_kept_observables);
-
-    void independent_error(double probability, const SparseXorVec<uint32_t> &detector_set);
+    /// Moving is deadly due to the map containing pointers to the jagged data.
+    ErrorFuser(const ErrorFuser &fuser) = delete;
+    ErrorFuser(ErrorFuser &&fuser) noexcept = delete;
+    ErrorFuser &operator=(ErrorFuser &&fuser) noexcept = delete;
+    ErrorFuser &operator=(const ErrorFuser &fuser) = delete;
 
     void R(const OperationData &dat);
     void M(const OperationData &dat);
@@ -74,6 +65,17 @@ struct ErrorFuser {
     void DEPOLARIZE2(const OperationData &dat);
     void ELSE_CORRELATED_ERROR(const OperationData &dat);
     void ISWAP(const OperationData &dat);
+
+   private:
+    void independent_error_1(double probability, const SparseXorVec<uint32_t> &detector_set);
+    void independent_error_1(double probability, const uint32_t *begin, size_t size);
+    void independent_error_2(double probability, const SparseXorVec<uint32_t> &d1, const SparseXorVec<uint32_t> &d2);
+    void independent_error_placed_tail(double probability, VectorView<uint32_t> detector_set);
+    void single_cx(uint32_t c, uint32_t t);
+    void single_cy(uint32_t c, uint32_t t);
+    void single_cz(uint32_t c, uint32_t t);
+    void feedback(uint32_t record_control, size_t target, bool x, bool z);
+    void run_circuit(const Circuit &circuit);
 };
 
 #endif

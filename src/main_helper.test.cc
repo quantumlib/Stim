@@ -16,8 +16,6 @@
 
 #include <gtest/gtest.h>
 
-#include "circuit/common_circuits.h"
-
 struct RaiiDeleteFile {
     char *c = nullptr;
     ~RaiiDeleteFile() {
@@ -441,7 +439,7 @@ M 0
     ASSERT_EQ(
         trim(execute({"--detect"}, R"input(
 M 0
-DETECTOR 0@-1
+DETECTOR rec[-1]
             )input")),
         trim(R"output(
 0
@@ -451,7 +449,7 @@ DETECTOR 0@-1
         trim(execute({"--detect"}, R"input(
 X_ERROR(1) 0
 M 0
-DETECTOR 0@-1
+DETECTOR rec[-1]
             )input")),
         trim(R"output(
 1
@@ -469,7 +467,7 @@ DETECTOR
         trim(execute({"--detect"}, R"input(
 X_ERROR(1) 0
 MR 0
-DETECTOR 0@-1
+DETECTOR rec[-1]
             )input")),
         trim(R"output(
 1
@@ -480,7 +478,7 @@ DETECTOR 0@-1
 X_ERROR(1) 0
 M 0
 M 0
-DETECTOR 0@-1 0@-2
+DETECTOR rec[-1] rec[-2]
             )input")),
         trim(R"output(
 0
@@ -491,7 +489,7 @@ DETECTOR 0@-1 0@-2
 X_ERROR(1) 0
 MR 0
 MR 0
-DETECTOR 0@-1 0@-2
+DETECTOR rec[-1] rec[-2]
             )input")),
         trim(R"output(
 1
@@ -504,11 +502,11 @@ M 2
 REPEAT 3 {
   R 2
   CNOT 0 2 1 2
-  DETECTOR 2@-1 2@-2
+  DETECTOR rec[-1] rec[-2]
   M 2
 }
 M 0 1
-OBSERVABLE_INCLUDE(0) 0@-1 1@-1
+OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
             )input")),
         trim(R"output(
 000
@@ -521,11 +519,11 @@ M 2
 REPEAT 3 {
   R 2
   CNOT 0 2 1 2
-  DETECTOR 2@-1 2@-2
+  DETECTOR rec[-1] rec[-2]
   M 2
 }
 M 0 1
-OBSERVABLE_INCLUDE(0) 0@-1 1@-1
+OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
             )input")),
         trim(R"output(
 0000
@@ -539,11 +537,11 @@ X_ERROR(1) 0 1
 REPEAT 3 {
   R 2
   CNOT 0 2 1 2
-  DETECTOR 2@-1 2@-2
+  DETECTOR rec[-1] rec[-2]
   M 2
 }
 M 0 1
-OBSERVABLE_INCLUDE(0) 0@-1
+OBSERVABLE_INCLUDE(0) rec[-2]
             )input")),
         trim(R"output(
 1000
@@ -557,11 +555,11 @@ X_ERROR(1) 0 1
 REPEAT 3 {
   R 2
   CNOT 0 2 1 2
-  DETECTOR 2@-1 2@-2
+  DETECTOR rec[-1] rec[-2]
   M 2
 }
 M 0 1
-OBSERVABLE_INCLUDE(0) 0@-1
+OBSERVABLE_INCLUDE(0) rec[-2]
             )input")),
         trim(R"output(
 0001

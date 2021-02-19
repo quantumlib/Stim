@@ -22,8 +22,7 @@ TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8
       rng(rng),
       sign_bias(sign_bias),
       measurement_record(),
-      last_correlated_error_occurred(false),
-      lookback_map(inv_state.num_qubits) {
+      last_correlated_error_occurred(false) {
 }
 
 bool TableauSimulator::is_deterministic(size_t target) const {
@@ -36,10 +35,9 @@ void TableauSimulator::measure(const OperationData &target_data) {
 
     // Record measurement results.
     for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_QUBIT_MASK;
-        bool flipped = qf & TARGET_INVERTED_MASK;
+        auto q = qf & TARGET_VALUE_MASK;
+        bool flipped = qf & TARGET_INVERTED_BIT;
         bool b = inv_state.zs.signs[q] ^ flipped;
-        lookback_map[q].push_back(measurement_record.size());
         measurement_record.push_back(b);
     }
 }
@@ -52,10 +50,9 @@ void TableauSimulator::measure_reset(const OperationData &target_data) {
 
     // Record measurement results while triggering resets.
     for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_QUBIT_MASK;
-        bool flipped = qf & TARGET_INVERTED_MASK;
+        auto q = qf & TARGET_VALUE_MASK;
+        bool flipped = qf & TARGET_INVERTED_BIT;
         bool b = inv_state.zs.signs[q] ^ flipped;
-        lookback_map[q].push_back(measurement_record.size());
         measurement_record.push_back(b);
         inv_state.zs.signs[q] = false;
     }
@@ -144,55 +141,34 @@ void TableauSimulator::SQRT_Y_DAG(const OperationData &target_data) {
 }
 
 bool TableauSimulator::read_measurement_record(uint32_t encoded_target) const {
-    const auto &rec = lookback_map[encoded_target & ~TARGET_RECORD_MASK];
-    uint8_t b = encoded_target >> TARGET_RECORD_SHIFT;
-    if (b > rec.size()) {
+    uint8_t b = encoded_target ^ TARGET_RECORD_BIT;
+    if (b == 0 || b > measurement_record.size()) {
         throw std::out_of_range("Referred to a measurement record before the beginning of time.");
     }
-    return measurement_record[rec[rec.size() - b]];
-}
-
-void TableauSimulator::flip_measurement_record_if(uint32_t encoded_target, bool condition) {
-    const auto &rec = lookback_map[encoded_target & ~TARGET_RECORD_MASK];
-    uint8_t b = encoded_target >> TARGET_RECORD_SHIFT;
-    if (b > rec.size()) {
-        throw std::out_of_range("Can't flip a measurement record before the beginning of time.");
-    }
-    auto i = rec[rec.size() - b];
-    if (condition) {
-        measurement_record[i] = !measurement_record[i];
-    }
-}
-
-void TableauSimulator::measurement_record_cnot(size_t c, size_t t) {
-    flip_measurement_record_if(t, read_measurement_record(c));
+    return measurement_record[measurement_record.size() - b];
 }
 
 void TableauSimulator::single_cx(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_MASK)) {
+    if (!((c | t) & TARGET_RECORD_BIT)) {
         inv_state.prepend_ZCX(c, t);
-    } else if ((c & t) & TARGET_RECORD_MASK) {
-        measurement_record_cnot(c, t);
-    } else if (c & TARGET_RECORD_MASK) {
+    } else if (t & TARGET_RECORD_BIT) {
+        throw std::out_of_range("Measurement record editing is not supported.");
+    } else {
         if (read_measurement_record(c)) {
             inv_state.prepend_X(t);
         }
-    } else {
-        throw std::out_of_range("Can't quantum control a classical operation.");
     }
 }
 
 void TableauSimulator::single_cy(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_MASK)) {
+    if (!((c | t) & TARGET_RECORD_BIT)) {
         inv_state.prepend_ZCY(c, t);
-    } else if ((c & t) & TARGET_RECORD_MASK) {
-        measurement_record_cnot(c, t);
-    } else if (c & TARGET_RECORD_MASK) {
+    } else if (t & TARGET_RECORD_BIT) {
+        throw std::out_of_range("Measurement record editing is not supported.");
+    } else {
         if (read_measurement_record(c)) {
             inv_state.prepend_Y(t);
         }
-    } else {
-        throw std::out_of_range("Can't quantum control a classical operation.");
     }
 }
 
@@ -218,16 +194,16 @@ void TableauSimulator::ZCZ(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k];
         auto q2 = targets[k + 1];
-        if (!((q1 | q2) & TARGET_RECORD_MASK)) {
+        if (!((q1 | q2) & TARGET_RECORD_BIT)) {
             inv_state.prepend_ZCZ(q1, q2);
             continue;
-        } else if ((q1 & q2) & TARGET_RECORD_MASK) {
+        } else if ((q1 & q2) & TARGET_RECORD_BIT) {
             // No-op.
-        } else if (q1 & TARGET_RECORD_MASK) {
+        } else if (q1 & TARGET_RECORD_BIT) {
             if (read_measurement_record(q1)) {
                 inv_state.prepend_Z(q2);
             }
-        } else if (q2 & TARGET_RECORD_MASK) {
+        } else if (q2 & TARGET_RECORD_BIT) {
             if (read_measurement_record(q2)) {
                 inv_state.prepend_Z(q1);
             }
@@ -241,16 +217,7 @@ void TableauSimulator::SWAP(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto c = targets[k];
         auto t = targets[k + 1];
-        if (!((c | t) & TARGET_RECORD_MASK)) {
-            inv_state.prepend_SWAP(c, t);
-            continue;
-        } else if ((c & t) & TARGET_RECORD_MASK) {
-            measurement_record_cnot(c, t);
-            measurement_record_cnot(t, c);
-            measurement_record_cnot(c, t);
-        } else {
-            throw std::out_of_range("Can't swap a qubit and a measurement record.");
-        }
+        inv_state.prepend_SWAP(c, t);
     }
 }
 
@@ -383,13 +350,11 @@ void TableauSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
         return;
     }
     for (auto qxz : target_data.targets) {
-        auto q = qxz & TARGET_QUBIT_MASK;
-        auto x = qxz & TARGET_PAULI_X_MASK;
-        auto z = qxz & TARGET_PAULI_Z_MASK;
-        if (x) {
+        auto q = qxz & TARGET_VALUE_MASK;
+        if (qxz & TARGET_PAULI_X_BIT) {
             inv_state.prepend_X(q);
         }
-        if (z) {
+        if (qxz & TARGET_PAULI_Z_BIT) {
             inv_state.prepend_Z(q);
         }
     }
@@ -434,7 +399,6 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
     if (num_qubits <= inv_state.num_qubits) {
         return;
     }
-    lookback_map.resize(num_qubits);
     inv_state.expand(num_qubits);
 }
 
@@ -477,7 +441,7 @@ void TableauSimulator::collapse(const OperationData &target_data) {
     std::vector<size_t> collapse_targets;
     collapse_targets.reserve(target_data.targets.size());
     for (auto t : target_data.targets) {
-        t &= TARGET_QUBIT_MASK;
+        t &= TARGET_VALUE_MASK;
         if (!is_deterministic(t)) {
             collapse_targets.push_back(t);
         }

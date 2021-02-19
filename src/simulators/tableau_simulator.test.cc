@@ -529,7 +529,7 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
             TableauSimulator::sample_circuit(
                 Circuit::from_text(R"circuit(
             M 0
-            CNOT 1 0@-1
+            CNOT 1 rec[-1]
         )circuit"),
                 SHARED_TEST_RNG());
         },
@@ -539,7 +539,7 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
             TableauSimulator::sample_circuit(
                 Circuit::from_text(R"circuit(
             M 0
-            CY 1 0@-1
+            CY 1 rec[-1]
         )circuit"),
                 SHARED_TEST_RNG());
         },
@@ -549,7 +549,7 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
             TableauSimulator::sample_circuit(
                 Circuit::from_text(R"circuit(
             M 0
-            YCZ 0@-1 1
+            YCZ rec[-1] 1
         )circuit"),
                 SHARED_TEST_RNG());
         },
@@ -559,7 +559,7 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
             TableauSimulator::sample_circuit(
                 Circuit::from_text(R"circuit(
             M 0
-            XCZ 0@-1 1
+            XCZ rec[-1] 1
         )circuit"),
                 SHARED_TEST_RNG());
         },
@@ -569,7 +569,7 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
             TableauSimulator::sample_circuit(
                 Circuit::from_text(R"circuit(
             M 0
-            SWAP 1 0@-1
+            SWAP 1 rec[-1]
         )circuit"),
                 SHARED_TEST_RNG());
         },
@@ -585,7 +585,7 @@ TEST(TableauSimulator, classical_can_control_quantum) {
         TableauSimulator::sample_circuit(
             Circuit::from_text(R"circuit(
         M !0
-        CX 0@-1 1
+        CX rec[-1] 1
         M 1
     )circuit"),
             SHARED_TEST_RNG()),
@@ -594,7 +594,7 @@ TEST(TableauSimulator, classical_can_control_quantum) {
         TableauSimulator::sample_circuit(
             Circuit::from_text(R"circuit(
         M !0
-        CY 0@-1 1
+        CY rec[-1] 1
         M 1
     )circuit"),
             SHARED_TEST_RNG()),
@@ -603,7 +603,7 @@ TEST(TableauSimulator, classical_can_control_quantum) {
         TableauSimulator::sample_circuit(
             Circuit::from_text(R"circuit(
         M !0
-        XCZ 1 0@-1
+        XCZ 1 rec[-1]
         M 1
     )circuit"),
             SHARED_TEST_RNG()),
@@ -612,85 +612,7 @@ TEST(TableauSimulator, classical_can_control_quantum) {
         TableauSimulator::sample_circuit(
             Circuit::from_text(R"circuit(
         M !0
-        YCZ 1 0@-1
-        M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-}
-
-TEST(TableauSimulator, fully_classical_operations_work) {
-    simd_bits expected(5);
-    expected.clear();
-    expected[0] = true;
-    expected[1] = true;
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        M !0
-        M 1
-        CX 0@-1 1@-1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        M !0
-        M 1
-        CY 0@-1 1@-1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        M !0
-        M 1
-        XCZ 1@-1 0@-1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        M !0
-        M 1
-        YCZ 1@-1 0@-1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-    expected[0] = true;
-    expected[1] = false;
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        M !0
-        M 1
-        CZ 1@-1 0@-1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-    expected[0] = false;
-    expected[1] = true;
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        M !0
-        M 1
-        SWAP 1@-1 0@-1
-    )circuit"),
-            SHARED_TEST_RNG()),
-        expected);
-
-    expected.clear();
-    expected[0] = true;
-    expected[1] = true;
-    ASSERT_EQ(
-        TableauSimulator::sample_circuit(
-            Circuit::from_text(R"circuit(
-        MR !0
-        CX 0@-1 1
+        YCZ 1 rec[-1]
         M 1
     )circuit"),
             SHARED_TEST_RNG()),
@@ -707,7 +629,7 @@ TEST(TableauSimulator, classical_control_cases) {
             Circuit::from_text(R"circuit(
         M !0
         H 1
-        CZ 0@-1 1
+        CZ rec[-1] 1
         H 1
         M 1
     )circuit"),
@@ -721,7 +643,7 @@ TEST(TableauSimulator, classical_control_cases) {
         TableauSimulator::sample_circuit(
             Circuit::from_text(R"circuit(
         M !0
-        CY 0@-1 1
+        CY rec[-1] 1
         M 1
     )circuit"),
             SHARED_TEST_RNG()),
@@ -734,7 +656,7 @@ TEST(TableauSimulator, classical_control_cases) {
         TableauSimulator::sample_circuit(
             Circuit::from_text(R"circuit(
         M 0
-        CX 0@-1 1
+        CX rec[-1] 1
         M 1
     )circuit"),
             SHARED_TEST_RNG()),
@@ -753,8 +675,8 @@ TEST(TableauSimulator, classical_control_cases) {
         M 0
         R 0
         M 0
-        CX 0@-2 1
-        CX 0@-1 2
+        CX rec[-2] 1
+        CX rec[-1] 2
         M 1 2 3
     )circuit"),
             SHARED_TEST_RNG()),

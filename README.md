@@ -68,7 +68,7 @@ for k in range(1, 30):
 c.append_operation("M", range(30))
 
 # Compile the circuit into a high performance sampler.
-sampler = c.compile()
+sampler = c.compile_sampler()
 
 # Collect a batch of samples.
 # Note: the ideal batch size, in terms of speed per sample, is roughly 1024.
@@ -104,11 +104,13 @@ c.append_operation("DEPOLARIZE1", [3], 0.4)
 c.append_operation("DEPOLARIZE2", [4, 5], 0.5)
 c.append_operation("M", [0, 1, 2, 3, 4, 5])
 
-batch = c.compile().sample(2**20)
+batch = c.compile_sampler().sample(2**20)
 print(np.mean(batch, axis=0).round(3))
 # Prints something like:
 # [0.1   0.2   0.    0.267 0.267 0.266]
 ```
+
+You can also sample detection events using `stim.Circuit.compile_detector_sampler`.
 
 
 # Usage (command line)
@@ -202,19 +204,19 @@ echo "
     DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
     MR 1 3 5 7
     # Parity measurements should stay consistent over time.
-    DETECTOR 1@-1 1@-2
-    DETECTOR 3@-1 3@-2
-    DETECTOR 5@-1 5@-2
-    DETECTOR 7@-1 7@-2
+    DETECTOR rec[-1] rec[-5]
+    DETECTOR rec[-2] rec[-6]
+    DETECTOR rec[-3] rec[-7]
+    DETECTOR rec[-4] rec[-8]
   }
   M 0 2 4 6 8
   # Data measurements should agree with parity measurements.
-  DETECTOR 0@-1 1@-1 2@-1
-  DETECTOR 2@-1 3@-1 4@-1
-  DETECTOR 4@-1 5@-1 6@-1
-  DETECTOR 6@-1 7@-1 8@-1
+  DETECTOR rec[-1] rec[-2] rec[-6]
+  DETECTOR rec[-2] rec[-3] rec[-7]
+  DETECTOR rec[-3] rec[-4] rec[-8]
+  DETECTOR rec[-4] rec[-5] rec[-9]
   # Any one of the data qubit measurements can be the logical measurement result.
-  OBSERVABLE_INCLUDE(0) 0@-1
+  OBSERVABLE_INCLUDE(0) rec[-1]
 " | ./stim --detect=10 --out_format=hits
 ```
 
@@ -246,8 +248,8 @@ echo "
   CNOT 0 1
   H 0
   M 0 1
-  DETECTOR 0@-1 0@-2
-  DETECTOR 1@-1 1@-2
+  DETECTOR rec[-1] rec[-3]
+  DETECTOR rec[-2] rec[-4]
 " | ./stim --detector_error_sets
 ```
 
@@ -272,7 +274,7 @@ Only one mode can be specified.
     Interactive mode.
     Print measurement results interactively as a circuit is typed into stdin.
     Note that this mode, unlike the other modes, prints output before operations
-    that mutate the measurement record (e.g. `CNOT 0@-1 1@-1`) are applied.
+    that mutate the measurement record (e.g. `CNOT rec[-1] rec[-2]`) are applied.
 - `--sample` or `--sample=#`:
     Measurement sampling mode.
     Output measurement results from the given circuit.
@@ -283,8 +285,14 @@ Only one mode can be specified.
     Assumes (does not verify) that all `DETECTOR` instructions corresponding to measurement sets with deterministic parity.
     See also `--prepend_observables`, `--append_observables`.
     If an integer argument is specified, run that many shots of the circuit.
-- `--make_circuit=surface_unrotated`:
-    Circuit generation mode.
+- `--detector_error_sets`:
+    Detector graph creation mode.
+    Computes equivalence classes of errors based on the detectors (and optionally observables)
+    that an error inverts.
+    Each equivalence class is an edge in the graph, and is weighted with a probability such that independently sampling
+    each edge and inverting the associated detectors is equivalent to sampling from the original circuit.
+    The output is given as a stim circuit file, with `E(p) d1 d2 d3` instructions for each edge
+    and a final `M 0 1 2 ...` instruction so that output is produced if the circuit is sampled from.
 
 ### Modifiers
 
@@ -412,12 +420,13 @@ Not all modifiers apply to all modes.
     Beware that touching qubit `999999` implicitly tells simulators to resize their internal state to accommodate a million qubits.
 
 - **Measurement Record Targets**:
-    Measurement results are referred to by `qubit@-lookback` arguments.
-    For example, `CNOT 2@-1 3` says "toggle qubit `3` if the most recent measurement on qubit
-    `2` was True".
-    A lookback of `-2` refers to the second-most-recent measurement,
-    `-3` is the third-most-recent, and so forth
-    (until an implementation-defined maximum of `-15`).
+    Measurement results are referred to by `rec[-#]` arguments, where the index within
+    the square brackets uses python-style negative indices to refer to the end of the
+    growing measurement record.
+    For example, `CNOT rec[-1] 3` says "toggle qubit `3` if the most recent measurement returned `True`
+    and `CZ 1 rec[-2]` means "phase flip qubit `1` if the second most recent measurement returned `True`.
+    There is implementation-defined maximum lookback of `-16777215` when accessing the measurement record.
+    Non-negative indices are not permitted.
 
 - **Broadcasting**:
     Most gates support broadcasting over multiple targets.
@@ -444,38 +453,35 @@ Not all modifiers apply to all modes.
 
 ### Two qubit gates
 
-- `SWAP`:
-    Swaps two qubits.
-    This gate can operate on the measurement record.
-    Examples: unitary `SWAP 1 2`, rewrite measurement results `SWAP 3@-1 4@-1`.
+- `SWAP`: Swaps two qubits.
 - `ISWAP`: Swaps two qubits while phasing the ZZ observable by i. Equal to `SWAP * CZ * (S tensor S)`.
 - `ISWAP_DAG`: Swaps two qubits while phasing the ZZ observable by -i. Equal to `SWAP * CZ * (S_DAG tensor S_DAG)`.
 - `CNOT` (alternate names `CX`, `ZCX`):
     Controlled NOT operation.
     Qubit pairs are in name order (first qubit is the control, second is the target).
-    This gate can operate on the measurement record.
-    Examples: unitary `CNOT 1 2`, feedback `CNOT 3@-1 4`, rewrite measurement results `CNOT 5@-1 6@-1`.
+    This gate can be controlled by on the measurement record.
+    Examples: unitary `CNOT 1 2`, feedback `CNOT rec[-1] 4`.
 - `CY` (alternate name `ZCY`):
     Controlled Y operation.
     Qubit pairs are in name order (first qubit is the control, second is the target).
-    This gate can operate on the measurement record.
-    Examples: unitary `CY 1 2`, feedback `CY 3@-1 4`, rewrite measurement results `CY 5@-1 6@-1`.
+    This gate can be controlled by on the measurement record.
+    Examples: unitary `CY 1 2`, feedback `CY rec[-1] 4`.
 - `CZ` (alternate name `ZCZ`):
     Controlled Z operation.
-    This gate can operate on the measurement record.
-    Examples: unitary `CZ 1 2`, feedback `CZ 3@-1 4`, `CZ 4 3@-1`, no-op `CZ 5@-1 6@-1`.
+    This gate can be controlled by on the measurement record.
+    Examples: unitary `CZ 1 2`, feedback `CZ rec[-1] 4` or `CZ 4 rec[-1]`.
 - `YCZ`:
     Y-basis-controlled Z operation (i.e. the reversed-argument-order controlled-Y).
     Qubit pairs are in name order.
-    This gate can operate on the measurement record.
-    Examples: unitary `YCZ 1 2`, feedback `YCZ 4 3@-1`, rewrite measurement results `YXZ 5@-1 6@-1`.
+    This gate can be controlled by on the measurement record.
+    Examples: unitary `YCZ 1 2`, feedback `YCZ 4 rec[-1]`.
 - `YCY`: Y-basis-controlled Y operation.
 - `YCX`: Y-basis-controlled X operation. Qubit pairs are in name order.
 - `XCZ`:
     X-basis-controlled Z operation (i.e. the reversed-argument-order controlled-not).
     Qubit pairs are in name order.
-    This gate can operate on the measurement record.
-    Examples: unitary `XCZ 1 2`, feedback `XCZ 4 3@-1`, rewrite measurement results `XCZ 5@-1 6@-1`.
+    This gate can be controlled by on the measurement record.
+    Examples: unitary `XCZ 1 2`, feedback `XCZ 4 rec[-1]`.
 - `XCY`: X-basis-controlled Y operation. Qubit pairs are in name order.
 - `XCX`: X-basis-controlled X operation.
 
@@ -551,7 +557,7 @@ Not all modifiers apply to all modes.
     and that this result changing can be used to detect errors.
     Ignored in measurement sampling mode.
     In detection sampling mode, a detector produces a sample indicating if it was inverted by  noise or not.
-    Example: `DETECTOR 2@-1 2@-2`.
+    Example: `DETECTOR rec[-1] rec[-2]`.
 - `OBSERVABLE_INCLUDE(k)`:
     Adds physical measurement locations to a specified logical observable.
     The logical measurement result is the parity of all physical measurements added to it.
@@ -559,7 +565,7 @@ Not all modifiers apply to all modes.
     Ignored in measurement sampling mode.
     In detection sampling mode, a logical observable can produce a sample indicating if it was inverted by  noise or not.
     These samples are dropped or put before or after detector samples, depending on command line flags.
-    Examples: `OBSERVABLE_INCLUDE(0) 2@-1 2@-2`, `OBSERVABLE_INCLUDE(3) 2@-1 3@-1 4@-1`.
+    Examples: `OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]`, `OBSERVABLE_INCLUDE(3) rec[-7]`.
 
 ### Other
 
@@ -654,6 +660,16 @@ Run tests with whatever settings Bazel feels like using:
 
 ```bash
 bazel :stim_test
+```
+
+### Run python binding tests
+
+In a fresh virtual environment:
+
+```bash
+pip install -e .
+pip install -y numpy pytest
+python -m pytest src
 ```
 
 # Benchmarking

@@ -184,7 +184,7 @@ extern const GateDataMap GATE_DATA(
             &TableauSimulator::SWAP,
             &FrameSimulator::SWAP,
             &ErrorFuser::SWAP,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
             {"+IX", "+IZ", "+XI", "+ZI"},
         },

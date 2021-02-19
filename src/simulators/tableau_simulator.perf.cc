@@ -15,29 +15,22 @@
 #include "tableau_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../circuit/common_circuits.h"
 #include "../circuit/gate_data.h"
 
-BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d5) {
-    size_t distance = 5;
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0));
-    std::mt19937_64 rng(0);
-    benchmark_go([&]() {
-        TableauSimulator::sample_circuit(circuit, rng);
-    })
-        .goal_micros(150)
-        .show_rate("Layers", distance)
-        .show_rate("OutBits", circuit.num_measurements);
-}
+BENCHMARK(TableauSimulator_CX_10Kqubits) {
+    size_t num_qubits = 10 * 1000;
+    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
+    TableauSimulator sim(num_qubits, rng);
 
-BENCHMARK(TableauSimulator_sample_unrotated_surface_code_d41) {
-    size_t distance = 41;
-    auto circuit = Circuit::from_text(unrotated_surface_code_program_text(distance, distance, 0));
-    std::mt19937_64 rng(0);
+    std::vector<uint32_t> targets;
+    for (size_t k = 0; k < num_qubits; k++) {
+        targets.push_back(k);
+    }
+    OperationData op_data{0, {&targets, 0, targets.size()}};
+
     benchmark_go([&]() {
-        TableauSimulator::sample_circuit(circuit, rng);
+        sim.ZCX(op_data);
     })
-        .goal_millis(650)
-        .show_rate("Layers", distance)
-        .show_rate("OutBits", circuit.num_measurements);
+        .goal_millis(5)
+        .show_rate("OpQubits", targets.size());
 }

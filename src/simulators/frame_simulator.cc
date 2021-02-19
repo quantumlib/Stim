@@ -45,8 +45,7 @@ FrameSimulator::FrameSimulator(size_t num_qubits, size_t num_samples, size_t num
       m_table(num_measurements, num_samples),
       rng_buffer(num_samples),
       last_correlated_error_occurred(num_samples),
-      rng(rng),
-      lookback_map(num_qubits) {
+      rng(rng) {
 }
 
 simd_bit_table transposed_vs_ref(
@@ -177,12 +176,11 @@ void FrameSimulator::write_measurements(FILE *out, const simd_bits &reference_sa
 }
 
 simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_target) {
-    const auto &rec = lookback_map[encoded_target & ~TARGET_RECORD_MASK];
-    uint8_t b = encoded_target >> TARGET_RECORD_SHIFT;
-    if (b > rec.size()) {
+    uint8_t b = encoded_target ^ TARGET_RECORD_BIT;
+    if (b == 0 || b > num_recorded_measurements) {
         throw std::out_of_range("Referred to a measurement record before the beginning of time.");
     }
-    return m_table[rec[rec.size() - b]];
+    return m_table[num_recorded_measurements - b];
 }
 
 void FrameSimulator::reset_all() {
@@ -202,10 +200,9 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
 
 void FrameSimulator::measure(const OperationData &target_data) {
     for (auto q : target_data.targets) {
-        q &= TARGET_QUBIT_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         m_table[num_recorded_measurements] = x_table[q];
-        lookback_map[q].push_back(num_recorded_measurements);
         num_recorded_measurements++;
     }
 }
@@ -220,11 +217,10 @@ void FrameSimulator::reset(const OperationData &target_data) {
 void FrameSimulator::measure_reset(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     for (auto q : target_data.targets) {
-        q &= TARGET_QUBIT_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         m_table[num_recorded_measurements] = x_table[q];
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
-        lookback_map[q].push_back(num_recorded_measurements);
         num_recorded_measurements++;
     }
 }
@@ -270,38 +266,34 @@ void FrameSimulator::H_YZ(const OperationData &target_data) {
 }
 
 void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_MASK)) {
+    if (!((c | t) & TARGET_RECORD_BIT)) {
         x_table[c].for_each_word(
             z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                 z1 ^= z2;
                 x2 ^= x1;
             });
-    } else if (c & t & TARGET_RECORD_MASK) {
-        measurement_record_ref(t) ^= measurement_record_ref(c);
-    } else if (c & TARGET_RECORD_MASK) {
-        x_table[t] ^= measurement_record_ref(c);
+    } else if (t & TARGET_RECORD_BIT) {
+        throw std::out_of_range("Measurement record editing is not supported.");
     } else {
-        throw std::out_of_range("Can't quantum control a classical operation.");
+        x_table[t] ^= measurement_record_ref(c);
     }
 }
 
 void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_MASK)) {
+    if (!((c | t) & TARGET_RECORD_BIT)) {
         x_table[c].for_each_word(
             z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                 z1 ^= x2 ^ z2;
                 z2 ^= x1;
                 x2 ^= x1;
             });
-    } else if (c & t & TARGET_RECORD_MASK) {
-        measurement_record_ref(t) ^= measurement_record_ref(c);
-    } else if (c & TARGET_RECORD_MASK) {
+    } else if (t & TARGET_RECORD_BIT) {
+        throw std::out_of_range("Measurement record editing is not supported.");
+    } else {
         x_table[t].for_each_word(z_table[t], measurement_record_ref(c), [](simd_word &x, simd_word &z, simd_word &m) {
             x ^= m;
             z ^= m;
         });
-    } else {
-        throw std::out_of_range("Can't quantum control a classical operation.");
     }
 }
 
@@ -327,15 +319,15 @@ void FrameSimulator::ZCZ(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t c = targets[k];
         size_t t = targets[k + 1];
-        if (!((c | t) & TARGET_RECORD_MASK)) {
+        if (!((c | t) & TARGET_RECORD_BIT)) {
             x_table[c].for_each_word(
                 z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                     z1 ^= x2;
                     z2 ^= x1;
                 });
-        } else if (c & t & TARGET_RECORD_MASK) {
+        } else if (c & t & TARGET_RECORD_BIT) {
             // No op.
-        } else if (c & TARGET_RECORD_MASK) {
+        } else if (c & TARGET_RECORD_BIT) {
             z_table[t] ^= measurement_record_ref(c);
         } else {
             z_table[c] ^= measurement_record_ref(t);
@@ -349,17 +341,11 @@ void FrameSimulator::SWAP(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t q1 = targets[k];
         size_t q2 = targets[k + 1];
-        if (!((q1 | q2) & TARGET_RECORD_MASK)) {
-            x_table[q1].for_each_word(
-                z_table[q1], x_table[q2], z_table[q2], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
-                    std::swap(z1, z2);
-                    std::swap(x1, x2);
-                });
-        } else if (q1 & q2 & TARGET_RECORD_MASK) {
-            measurement_record_ref(q1).swap_with(measurement_record_ref(q2));
-        } else {
-            throw std::out_of_range("Can't swap a qubit and a measurement record.");
-        }
+        x_table[q1].for_each_word(
+            z_table[q1], x_table[q2], z_table[q2], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+                std::swap(z1, z2);
+                std::swap(x1, x2);
+            });
     }
 }
 
@@ -516,13 +502,14 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 
     // Apply error to only the indicated frames.
     for (auto qxz : target_data.targets) {
-        auto q = qxz & TARGET_QUBIT_MASK;
-        auto x = qxz & TARGET_PAULI_X_MASK;
-        auto z = qxz & TARGET_PAULI_Z_MASK;
-        if (x) {
+        auto q = qxz & TARGET_VALUE_MASK;
+        if (qxz & TARGET_RECORD_BIT) {
+            measurement_record_ref(qxz) ^= rng_buffer;
+        }
+        if (qxz & TARGET_PAULI_X_BIT) {
             x_table[q] ^= rng_buffer;
         }
-        if (z) {
+        if (qxz & TARGET_PAULI_Z_BIT) {
             z_table[q] ^= rng_buffer;
         }
     }

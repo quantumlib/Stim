@@ -24,14 +24,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../simd/vector_view.h"
 #include "gate_data.h"
 
-#define TARGET_QUBIT_MASK ((uint32_t{1} << 24) - uint32_t{1})
-#define TARGET_RECORD_MASK (~TARGET_QUBIT_MASK)
-#define TARGET_RECORD_SHIFT (24)
-#define TARGET_INVERTED_MASK (uint32_t{1} << 31)
-#define TARGET_PAULI_X_MASK (uint32_t{1} << 30)
-#define TARGET_PAULI_Z_MASK (uint32_t{1} << 29)
+#define TARGET_VALUE_MASK ((uint32_t{1} << 24) - uint32_t{1})
+#define TARGET_INVERTED_BIT (uint32_t{1} << 31)
+#define TARGET_PAULI_X_BIT (uint32_t{1} << 30)
+#define TARGET_PAULI_Z_BIT (uint32_t{1} << 29)
+#define TARGET_RECORD_BIT (uint32_t{1} << 28)
 
 enum SampleFormat {
     /// Human readable format.
@@ -65,59 +65,6 @@ enum SampleFormat {
     ///     For each run of same-result measurements up to length 128:
     ///         Output (result ? 0x80 : 0) | (run_length + 1)
     SAMPLE_FORMAT_R8,
-};
-
-/// A pointer to contiguous data inside a std::vector.
-///
-/// Used by Circuit and OperationData to store jagged data with less memory fragmentation and fewer allocations.
-template <typename T>
-struct VectorView {
-    std::vector<T> *arena;
-    size_t offset;
-    size_t length;
-
-    inline size_t size() const {
-        return length;
-    }
-
-    inline T operator[](size_t k) const {
-        return (*arena)[offset + k];
-    }
-
-    inline T& operator[](size_t k) {
-        return (*arena)[offset + k];
-    }
-
-    T *begin() {
-        return arena->data() + offset;
-    }
-
-    T *end() {
-        return arena->data() + offset + length;
-    }
-
-    const T *begin() const {
-        return arena->data() + offset;
-    }
-
-    const T *end() const {
-        return arena->data() + offset + length;
-    }
-
-    bool operator==(const VectorView<T> &other) const {
-        if (length != other.length) {
-            return false;
-        }
-        for (size_t k = 0; k < length; k++) {
-            if ((*this)[k] != other[k]) {
-                return false;
-            }
-        }
-        return true;
-    }
-    bool operator!=(const VectorView<T> &other) const {
-        return !(*this == other);
-    }
 };
 
 /// The data that describes how a gate is being applied to qubits (or other targets).
@@ -157,20 +104,12 @@ struct Operation {
     bool approx_equals(const Operation &other, double atol) const;
 };
 
-/// A set of measurements that have deterministic parity under noiseless execution.
-struct MeasurementSet {
-    /// The indices of the measurements that are part of the set (e.g. index 0 means the first measurement).
-    std::vector<size_t> indices;
-    /// Folds the given measurement set into this one, forming a combined set.
-    MeasurementSet &operator*=(const MeasurementSet &other);
-};
-
 /// A description of a quantum computation.
 struct Circuit {
     /// Variable-sized operation data is stored as views into this single contiguous array.
     /// Appending operations will append their target data into this vector, and the operation will reference it.
     /// This decreases memory fragmentation and the number of allocations during parsing.
-    std::vector<uint32_t> jagged_data;
+    JaggedDataArena<uint32_t> jagged_target_data;
     /// Operations in the circuit, from earliest to latest.
     std::vector<Operation> operations;
     /// One more than the maximum qubit index seen in the circuit (so far).
@@ -185,14 +124,14 @@ struct Circuit {
     /// Move constructor.
     Circuit(Circuit &&circuit) noexcept;
     /// Copy assignment.
-    Circuit &operator=(Circuit &&circuit) noexcept;
-    /// Move assignment.
     Circuit &operator=(const Circuit &circuit);
+    /// Move assignment.
+    Circuit &operator=(Circuit &&circuit) noexcept;
 
     /// Parses a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
     ///
     /// Note: operations are automatically fused.
-    static Circuit from_text(const std::string &text);
+    static Circuit from_text(const char *text);
     /// Parses a circuit from a file containing operations.
     ///
     /// Note: operations are automatically fused.
@@ -219,7 +158,7 @@ struct Circuit {
     /// Returns:
     ///     true: Operations were read from the string.
     ///     false: The string contained no operations.
-    bool append_from_text(const std::string &text);
+    bool append_from_text(const char *text);
 
     Circuit operator+(const Circuit &other) const;
     Circuit operator*(size_t repetitions) const;
@@ -233,6 +172,9 @@ struct Circuit {
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_op(
         const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0, bool allow_fusing = false);
+    /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
+    void append_operation(
+        const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg, bool allow_fusing = false);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -246,8 +188,21 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
-    /// Converts the relative detector and observable annotations in the circuit into absolute measurement sets.
-    std::pair<std::vector<MeasurementSet>, std::vector<MeasurementSet>> list_detectors_and_observables() const;
+    /// Updates metadata (e.g. num_qubits) to account for an operation appended via non-standard means.
+    void update_metadata_for_backdoor_appended_operation();
+};
+
+/// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
+struct DetectorsAndObservables {
+    JaggedDataArena<uint32_t> jagged_data;
+    std::vector<VectorView<uint32_t>> detectors;
+    std::vector<std::vector<uint32_t>> observables;
+    DetectorsAndObservables(const Circuit &circuit);
+
+    DetectorsAndObservables(DetectorsAndObservables &&other) noexcept;
+    DetectorsAndObservables &operator=(DetectorsAndObservables &&other) noexcept;
+    DetectorsAndObservables(const DetectorsAndObservables &other);
+    DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
 };
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);

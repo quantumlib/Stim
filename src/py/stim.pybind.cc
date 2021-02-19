@@ -3,6 +3,7 @@
 #include <pybind11/stl.h>
 
 #include "../probability_util.h"
+#include "../simulators/detection_simulator.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/tableau.h"
@@ -17,7 +18,9 @@ struct Dat {
 Dat::Dat(std::vector<uint32_t> targets) : targets(std::move(targets)) {
 }
 Dat::operator OperationData() const {
-    return {0, {&targets, 0, targets.size()}};
+    // Temporarily remove const correctness but then immediately restore it.
+    VectorView<uint32_t> v{(std::vector<uint32_t> *)&targets, 0, targets.size()};
+    return {0, v};
 }
 
 static bool shared_rng_initialized;
@@ -61,34 +64,34 @@ Dat args_to_targets2(TableauSimulator &self, const pybind11::args &args) {
     return args_to_targets(self, args);
 }
 
-uint32_t target_rec(uint32_t qubit, int16_t lookback) {
-    if (lookback >= 0 || lookback < -256) {
-        throw std::out_of_range("Need -256 <= lookback <= -1");
+uint32_t target_rec(int32_t lookback) {
+    if (lookback >= 0 || lookback <= -(1 << 24)) {
+        throw std::out_of_range("Need -16777215 <= lookback <= -1");
     }
-    return qubit | (uint32_t(-lookback) << TARGET_RECORD_SHIFT);
+    return uint32_t(-lookback) | TARGET_RECORD_BIT;
 }
 
 uint32_t target_inv(uint32_t qubit) {
-    return qubit | TARGET_INVERTED_MASK;
+    return qubit | TARGET_INVERTED_BIT;
 }
 
 uint32_t target_x(uint32_t qubit) {
-    return qubit | TARGET_PAULI_X_MASK;
+    return qubit | TARGET_PAULI_X_BIT;
 }
 
 uint32_t target_y(uint32_t qubit) {
-    return qubit | TARGET_PAULI_X_MASK | TARGET_PAULI_Z_MASK;
+    return qubit | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT;
 }
 
 uint32_t target_z(uint32_t qubit) {
-    return qubit | TARGET_PAULI_Z_MASK;
+    return qubit | TARGET_PAULI_Z_BIT;
 }
 
-struct CompiledCircuitSampler {
+struct CompiledMeasurementSampler {
     const simd_bits ref;
     const Circuit circuit;
 
-    CompiledCircuitSampler(Circuit circuit)
+    CompiledMeasurementSampler(Circuit circuit)
         : ref(TableauSimulator::reference_sample_circuit(circuit)), circuit(std::move(circuit)) {
     }
 
@@ -131,6 +134,54 @@ struct CompiledCircuitSampler {
     }
 };
 
+struct CompiledDetectorSampler {
+    const DetectorsAndObservables dets_obs;
+    const Circuit circuit;
+
+    CompiledDetectorSampler(Circuit circuit) : dets_obs(circuit), circuit(std::move(circuit)) {
+    }
+
+    pybind11::array_t<uint8_t> sample(size_t num_shots, bool prepend_observables, bool append_observables) {
+        auto sample =
+            detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, SHARED_RNG())
+                .transposed();
+
+        const simd_bits &flat = sample.data;
+        std::vector<uint8_t> bytes;
+        bytes.reserve(flat.num_bits_padded());
+        auto *end = flat.u64 + flat.num_u64_padded();
+        for (auto u64 = flat.u64; u64 != end; u64++) {
+            auto v = *u64;
+            for (size_t k = 0; k < 64; k++) {
+                bytes.push_back((v >> k) & 1);
+            }
+        }
+
+        size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
+        return pybind11::array_t<uint8_t>(pybind11::buffer_info(
+            bytes.data(), sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2, {num_shots, n},
+            {(long long)sample.num_minor_bits_padded(), (long long)1}, true));
+    }
+
+    pybind11::array_t<uint8_t> sample_bit_packed(size_t num_shots, bool prepend_observables, bool append_observables) {
+        auto sample =
+            detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, SHARED_RNG())
+                .transposed();
+        size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
+        return pybind11::array_t<uint8_t>(pybind11::buffer_info(
+            sample.data.u8, sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2, {num_shots, (n + 7) / 8},
+            {(long long)sample.num_minor_u8_padded(), (long long)1}, true));
+    }
+
+    std::string str() const {
+        std::stringstream result;
+        result << "# num_detectors: " << dets_obs.detectors.size() << "\n";
+        result << "# num_observables: " << dets_obs.observables.size() << "\n";
+        result << circuit;
+        return result.str();
+    }
+};
+
 PYBIND11_MODULE(stim, m) {
     m.doc() = R"pbdoc(
         Stim: A stabilizer circuit simulator.
@@ -138,42 +189,113 @@ PYBIND11_MODULE(stim, m) {
 
     m.attr("__version__") = STRINGIFY(VERSION_INFO);
 
-    m.def("target_rec", &target_rec, R"DOC(
+    m.def(
+        "target_rec", &target_rec, R"DOC(
         Returns a record target that can be passed into Circuit.append_operation.
-        For example, the '1@-2' in 'DETECTOR 1@-2' is a record target.
-    )DOC");
-    m.def("target_inv", &target_inv, R"DOC(
+        For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
+    )DOC",
+        pybind11::arg("lookback_index"));
+    m.def(
+        "target_inv", &target_inv, R"DOC(
         Returns a target flagged as inverted that can be passed into Circuit.append_operation
         For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
         meaning the measurement result from qubit 1 should be inverted when reported.
-    )DOC");
-    m.def("target_x", &target_x, R"DOC(
+    )DOC",
+        pybind11::arg("qubit_index"));
+    m.def(
+        "target_x", &target_x, R"DOC(
         Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
         For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
-    )DOC");
-    m.def("target_y", &target_y, R"DOC(
+    )DOC",
+        pybind11::arg("qubit_index"));
+    m.def(
+        "target_y", &target_y, R"DOC(
         Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
         For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
-    )DOC");
-    m.def("target_z", &target_z, R"DOC(
+    )DOC",
+        pybind11::arg("qubit_index"));
+    m.def(
+        "target_z", &target_z, R"DOC(
         Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
         For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
-    )DOC");
+    )DOC",
+        pybind11::arg("qubit_index"));
 
-    pybind11::class_<CompiledCircuitSampler>(
-        m, "CompiledCircuitSampler", "An analyzed stabilizer circuit that can be sampled quickly.")
+    pybind11::class_<CompiledMeasurementSampler>(
+        m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.")
         .def(pybind11::init<Circuit>())
-        .def("sample", &CompiledCircuitSampler::sample, R"DOC(
-            Returns a batch of samples from the circuit as a numpy array with dtype uint8
-            and shape (num_samples, num_measurements).
-            The measurement result for measurement m in sample s is at result[s, m].
-        )DOC")
-        .def("sample_bit_packed", &CompiledCircuitSampler::sample_bit_packed, R"DOC(
-            Returns a bit packed batch of samples from the circuit as a numpy array
-            with dtype uint8 and shape (num_samples, (num_measurements + 7) // 8).
-            The measurement result for measurement m in sample s is at result[s, (m // 8)] & 2**(m % 8).
-        )DOC")
-        .def("__str__", &CompiledCircuitSampler::str);
+        .def(
+            "sample", &CompiledMeasurementSampler::sample, R"DOC(
+            Returns a numpy array containing a batch of measurement samples from the circuit.
+
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+
+            Returns:
+                A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
+                The bit for measurement `m` in shot `s` is at `result[s, m]`.
+        )DOC",
+            pybind11::arg("shots"))
+        .def(
+            "sample_bit_packed", &CompiledMeasurementSampler::sample_bit_packed, R"DOC(
+            Returns a numpy array containing a bit packed batch of measurement samples from the circuit.
+
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+
+            Returns:
+                A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
+                The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+        )DOC",
+            pybind11::arg("shots"))
+        .def("__str__", &CompiledMeasurementSampler::str);
+
+    pybind11::class_<CompiledDetectorSampler>(
+        m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.")
+        .def(pybind11::init<Circuit>())
+        .def(
+            "sample", &CompiledDetectorSampler::sample, R"DOC(
+            Returns a numpy array containing a batch of detector samples from the circuit.
+
+            The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
+            instructions can also be included in the results as honorary detectors.
+
+            Args:
+                shots: The number of times to sample every detector in the circuit.
+                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the start of the results.
+                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the end of the results.
+
+            Returns:
+                A numpy array with `dtype=uint8` and `shape=(shots, n)` where
+                `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
+                The bit for detection event `m` in shot `s` is at `result[s, m]`.
+            )DOC",
+            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
+            pybind11::arg("append_observables") = false)
+        .def(
+            "sample_bit_packed", &CompiledDetectorSampler::sample_bit_packed, R"DOC(
+            Returns a numpy array containing bit packed batch of detector samples from the circuit.
+
+            The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
+            instructions can also be included in the results as honorary detectors.
+
+            Args:
+                shots: The number of times to sample every detector in the circuit.
+                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the start of the results.
+                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the end of the results.
+
+            Returns:
+                A numpy array with `dtype=uint8` and `shape=(shots, n)` where
+                `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
+                The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+            )DOC",
+            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
+            pybind11::arg("append_observables") = false)
+        .def("__str__", &CompiledDetectorSampler::str);
 
     pybind11::class_<Circuit>(m, "Circuit", "A mutable stabilizer circuit.")
         .def(pybind11::init())
@@ -184,12 +306,20 @@ PYBIND11_MODULE(stim, m) {
             The number of qubits used when simulating the circuit.
          )DOC")
         .def(
-            "compile",
+            "compile_sampler",
             [](Circuit &self) {
-                return CompiledCircuitSampler(self);
+                return CompiledMeasurementSampler(self);
             },
             R"DOC(
-            Returns a CompiledCircuitSampler for the circuit.
+            Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
+         )DOC")
+        .def(
+            "compile_detector_sampler",
+            [](Circuit &self) {
+                return CompiledDetectorSampler(self);
+            },
+            R"DOC(
+            Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
          )DOC")
         .def("__iadd__", &Circuit::operator+=, R"DOC(
             Appends a circuit into the receiving circuit (mutating it).
@@ -220,6 +350,21 @@ PYBIND11_MODULE(stim, m) {
                     in some cases. Set to false if you don't want this to occur.
          )DOC",
             pybind11::arg("name"), pybind11::arg("targets"), pybind11::arg("arg") = 0.0, pybind11::arg("fuse") = true)
+        .def(
+            "append_from_stim_program_text", &Circuit::append_from_text, R"DOC(
+            Appends operations described by a STIM format program into the circuit.
+
+            Example STIM program:
+
+                H 0  # comment
+                CNOT 0 2
+                M 2
+                CNOT rec[-1] 1
+
+            Args:
+                text: The STIM program text containing the circuit operations to append.
+         )DOC",
+            pybind11::arg("stim_program_text"))
         .def("__str__", &Circuit::str);
 
     pybind11::class_<TableauSimulator>(
@@ -298,7 +443,7 @@ PYBIND11_MODULE(stim, m) {
             "measure",
             [](TableauSimulator &self, uint32_t target) {
                 self.measure(Dat({target}));
-                return self.measurement_record.back();
+                return (bool)self.measurement_record.back();
             },
             R"DOC(
             Measures a single qubit.
@@ -315,7 +460,7 @@ PYBIND11_MODULE(stim, m) {
                 auto converted_args = args_to_targets(self, args);
                 self.measure(converted_args);
                 auto e = self.measurement_record.end();
-                return std::vector<bool>(e - converted_args.size(), e);
+                return std::vector<bool>(e - converted_args.targets.size(), e);
             })
         .def(pybind11::init(&create_tableau_simulator));
 }

@@ -21,6 +21,8 @@
 #include <sstream>
 #include <vector>
 
+#include "vector_view.h"
+
 /// Merge sorts the elements of two sorted buffers into an output buffer while cancelling out duplicate items.
 ///
 /// \param p1: Pointer to the first input buffer.
@@ -32,10 +34,10 @@
 template <typename T>
 inline T *xor_merge_sorted_items_into(const T *p1, size_t n1, const T *p2, size_t n2, T *out) {
     // Interleave sorted src and dst into a sorted work buffer.
-    auto *end_dst = p2 + n2;
-    auto *end_src = p1 + n1;
-    while (p1 != end_src) {
-        if (p2 == end_dst || *p1 < *p2) {
+    auto *end1 = p1 + n1;
+    auto *end2 = p2 + n2;
+    while (p1 != end1) {
+        if (p2 == end2 || *p1 < *p2) {
             *out++ = *p1++;
         } else if (*p2 < *p1) {
             *out++ = *p2++;
@@ -45,39 +47,54 @@ inline T *xor_merge_sorted_items_into(const T *p1, size_t n1, const T *p2, size_
             p2++;
         }
     }
-    while (p2 != end_dst) {
+    while (p2 != end2) {
         *out++ = *p2++;
     }
     return out;
 }
 
-// HACK: not templated for compatibility with C++11.
+// HACK: this should be templated, but it's not in order to have compatibility with C++11.
 static std::vector<uint32_t> _shared_buf;
+
+template <typename T>
+inline void vector_tail_view_xor_in_place(VectorView<T> &buf, const T *p2, size_t n2) {
+    size_t max = buf.size() + n2;
+    if (_shared_buf.size() < max) {
+        _shared_buf.resize(2 * max);
+    }
+    auto end = xor_merge_sorted_items_into<T>(buf.begin(), buf.size(), p2, n2, _shared_buf.data());
+    buf.length = end - _shared_buf.data();
+    buf.vec_ptr->resize(buf.offset);
+    buf.vec_ptr->insert(buf.vec_ptr->end(), _shared_buf.data(), _shared_buf.data() + buf.length);
+}
+
+template <typename T>
+inline void xor_into_vector_tail_view(VectorView<T> &buf, const T *p1, size_t n1, const T *p2, size_t n2) {
+    buf.vec_ptr->resize(buf.offset + n1 + n2);
+    auto end = xor_merge_sorted_items_into<T>(p1, n1, p2, n2, buf.begin());
+    buf.length = end - buf.begin();
+    buf.vec_ptr->resize(buf.offset + buf.length);
+}
 
 /// A sparse set of integers that supports efficient xoring (computing the symmetric difference).
 template <typename T>
 struct SparseXorVec {
    private:
-    inline void inplace_xor_helper(const T *src_ptr, size_t src_size) {
-        size_t max = size() + src_size;
-        if (_shared_buf.size() < max) {
-            _shared_buf.resize(2 * max);
-        }
-        auto end = xor_merge_sorted_items_into<T>(begin(), size(), src_ptr, src_size, _shared_buf.data());
-        vec.clear();
-        vec.insert(vec.begin(), _shared_buf.data(), end);
-    }
     inline SparseXorVec xor_helper(const T *src_ptr, size_t src_size) const {
         SparseXorVec result;
         result.vec.resize(size() + src_size);
         auto n = xor_merge_sorted_items_into<T>(begin(), size(), src_ptr, src_size, result.begin()) - result.begin();
-        result.vec.erase(result.vec.begin() + n, result.vec.end());
+        result.vec.resize(n);
         return result;
     }
 
    public:
     std::vector<T> vec;
 
+    inline void inplace_xor_helper(const T *src_ptr, size_t src_size) {
+        VectorView<uint32_t> view{&vec, 0, vec.size()};
+        vector_tail_view_xor_in_place(view, src_ptr, src_size);
+    }
     SparseXorVec &operator^=(const T &other) {
         inplace_xor_helper(&other, 1);
         return *this;
@@ -94,6 +111,10 @@ struct SparseXorVec {
 
     SparseXorVec operator^(const T &other) const {
         return xor_helper(&other, 1);
+    }
+
+    bool operator<(const SparseXorVec<T> &other) const {
+        return view() < other.view();
     }
 
     inline size_t size() const {
@@ -124,20 +145,15 @@ struct SparseXorVec {
         return vec != other.vec;
     }
 
-    bool operator<(const SparseXorVec &other) const {
-        auto n = std::min(size(), other.size());
-        for (size_t k = 0; k < n; k++) {
-            if (vec[k] != other.vec[k]) {
-                return vec[k] < other.vec[k];
-            }
-        }
-        return size() < other.size();
-    }
-
     std::string str() const {
         std::stringstream ss;
         ss << *this;
         return ss.str();
+    }
+
+    const VectorView<T> view() const {
+        // Temporarily remove const correctness but then immediately restore it.
+        return VectorView<T>{(std::vector<uint32_t> *)&vec, 0, vec.size()};
     }
 };
 
