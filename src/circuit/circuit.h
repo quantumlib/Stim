@@ -116,6 +116,7 @@ struct Circuit {
     size_t num_qubits;
     /// The total number of measurement results the circuit (so far) will produce.
     size_t num_measurements;
+    size_t min_safe_fusion_index = 0;
 
     /// Constructs an empty circuit.
     Circuit();
@@ -171,10 +172,10 @@ struct Circuit {
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_op(
-        const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0, bool allow_fusing = false);
+        const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(
-        const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg, bool allow_fusing = false);
+        const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -190,6 +191,8 @@ struct Circuit {
 
     /// Updates metadata (e.g. num_qubits) to account for an operation appended via non-standard means.
     void update_metadata_for_manually_appended_operation();
+
+    void fusion_barrier();
 };
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.

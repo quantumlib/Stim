@@ -133,6 +133,7 @@ TEST(circuit, from_text) {
     expected.clear();
     expected.append_op("X", {0});
     expected.append_op("Y", {1, 2});
+    expected.fusion_barrier();
     expected.append_op("Y", {1, 2});
     ASSERT_EQ(
         f("X 0\n"
@@ -151,10 +152,15 @@ TEST(circuit, from_text) {
 
     expected.clear();
     expected.append_op("M", {0});
+    expected.fusion_barrier();
     expected.append_op("M", {1, 2, 3});
+    expected.fusion_barrier();
     expected.append_op("M", {1, 2, 3});
+    expected.fusion_barrier();
     expected.append_op("M", {1, 2, 3});
+    expected.fusion_barrier();
     expected.append_op("M", {1, 2, 3});
+    expected.fusion_barrier();
     expected.append_op("M", {1, 2, 3});
     ASSERT_EQ(
         f("M 0\n"
@@ -188,6 +194,7 @@ TEST(circuit, append_circuit) {
     Circuit expected;
     expected.append_op("X", {0, 1});
     expected.append_op("M", {0, 1, 2, 4});
+    expected.fusion_barrier();
     expected.append_op("M", {7});
 
     Circuit actual = c1;
@@ -198,6 +205,7 @@ TEST(circuit, append_circuit) {
     for (size_t k = 0; k < 3; k++) {
         expected.append_op("X", {0, 1});
         expected.append_op("M", {0, 1, 2, 4});
+        expected.fusion_barrier();
         expected.append_op("M", {7});
     }
     ASSERT_EQ(actual, expected);
@@ -209,22 +217,22 @@ TEST(circuit, append_op_fuse) {
     Circuit expected;
     Circuit actual;
     expected.append_op("H", {1, 2, 3});
-    actual.append_op("H", {1}, 0, true);
-    actual.append_op("H", {2, 3}, 0, true);
+    actual.append_op("H", {1}, 0);
+    actual.append_op("H", {2, 3}, 0);
     ASSERT_EQ(actual, expected);
 
-    actual.append_op("R", {0}, 0, true);
+    actual.append_op("R", {0}, 0);
     expected.append_op("R", {0});
     ASSERT_EQ(actual, expected);
 
-    actual.append_op("DETECTOR", {0, 0}, 0, true);
-    actual.append_op("DETECTOR", {1, 1}, 0, true);
+    actual.append_op("DETECTOR", {0, 0}, 0);
+    actual.append_op("DETECTOR", {1, 1}, 0);
     expected.append_op("DETECTOR", {0, 0});
     expected.append_op("DETECTOR", {1, 1});
     ASSERT_EQ(actual, expected);
 
-    actual.append_op("M", {0, 1}, 0, true);
-    actual.append_op("M", {2, 3}, 0, true);
+    actual.append_op("M", {0, 1}, 0);
+    actual.append_op("M", {2, 3}, 0);
     expected.append_op("M", {0, 1, 2, 3});
     ASSERT_EQ(actual, expected);
 
@@ -251,8 +259,7 @@ TEST(circuit, str) {
         0.25);
     ASSERT_EQ(c.str(), R"circuit(# Circuit [num_qubits=30, num_measurements=3]
 TICK
-ZCX 2 3
-ZCX rec[-5] 3
+ZCX 2 3 rec[-5] 3
 M 1 3 2
 DETECTOR rec[-7]
 OBSERVABLE_INCLUDE(17) rec[-11] rec[-1]

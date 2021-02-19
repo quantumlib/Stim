@@ -321,7 +321,7 @@ PYBIND11_MODULE(stim, m) {
          )DOC")
         .def(
             "compile_sampler",
-            [](Circuit &self) {
+            [](const Circuit &self) {
                 return CompiledMeasurementSampler(self);
             },
             R"DOC(
@@ -358,12 +358,8 @@ PYBIND11_MODULE(stim, m) {
                 name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
                 targets: The gate targets. Gates implicitly broadcast over their targets.
                 arg: A modifier for the gate, e.g. the probability of an error. Defaults to 0.
-                fuse: Defaults to true. If the gate being added is compatible with the last gate in the circuit, the
-                    new targets will be appended to the last gate instead of adding a new one. This is particularly
-                    important for measurement operations, because batched measurements are significantly more efficient
-                    in some cases. Set to false if you don't want this to occur.
          )DOC",
-            pybind11::arg("name"), pybind11::arg("targets"), pybind11::arg("arg") = 0.0, pybind11::arg("fuse") = true)
+            pybind11::arg("name"), pybind11::arg("targets"), pybind11::arg("arg") = 0.0)
         .def(
             "append_from_stim_program_text", &Circuit::append_from_text, R"DOC(
             Appends operations described by a STIM format program into the circuit.
