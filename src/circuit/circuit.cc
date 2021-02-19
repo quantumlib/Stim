@@ -410,7 +410,6 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
 template <typename SOURCE>
 void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION read_condition) {
     auto &ops = circuit.operations;
-    bool can_fuse = false;
     do {
         int c = read_char();
         read_past_dead_space_between_commands(c, read_char);
@@ -441,6 +440,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             }
             size_t ops_start = ops.size();
             size_t num_measure_start = circuit.num_measurements;
+            circuit.fusion_barrier();
             circuit_read_operations(circuit, read_char, READ_UNTIL_END_OF_BLOCK);
             size_t ops_end = ops.size();
             circuit.num_measurements += (circuit.num_measurements - num_measure_start) * (rep_count - 1);
@@ -448,12 +448,12 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
                 ops.insert(ops.end(), ops.data() + ops_start, ops.data() + ops_end);
                 rep_count--;
             }
-            can_fuse = false;
-        } else if (can_fuse && ops[s - 1].can_fuse(ops[s])) {
+            circuit.fusion_barrier();
+        }
+        while (s > circuit.min_safe_fusion_index && ops[s - 1].can_fuse(ops[s])) {
             ops[s - 1].target_data.targets.length += ops[s].target_data.targets.length;
             ops.pop_back();
-        } else {
-            can_fuse = true;
+            s--;
         }
     } while (read_condition != READ_AS_LITTLE_AS_POSSIBLE);
 }
@@ -498,6 +498,7 @@ void Circuit::append_circuit(const Circuit &circuit, size_t repetitions) {
         return;
     }
 
+    fusion_barrier();
     for (const auto &op : circuit.operations) {
         append_operation(op);
     }
@@ -505,6 +506,7 @@ void Circuit::append_circuit(const Circuit &circuit, size_t repetitions) {
     while (--repetitions) {
         operations.insert(operations.end(), operations.begin() + original_size, single_rep_end);
     }
+    fusion_barrier();
 }
 
 void Circuit::append_operation(const Operation &operation) {
@@ -513,13 +515,13 @@ void Circuit::append_operation(const Operation &operation) {
     update_metadata_for_manually_appended_operation();
 }
 
-void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg, bool allow_fusing) {
+void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
     const auto &gate = GATE_DATA.at(gate_name);
-    append_operation(gate, vec.data(), vec.size(), arg, allow_fusing);
+    append_operation(gate, vec.data(), vec.size(), arg);
 }
 
 void Circuit::append_operation(
-    const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg, bool allow_fusing) {
+    const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg) {
     if (gate.flags & GATE_TARGETS_PAIRS) {
         if (num_targets & 1) {
             throw std::out_of_range(
@@ -557,7 +559,7 @@ void Circuit::append_operation(
         }
     }
 
-    if (allow_fusing && !(gate.flags & GATE_IS_NOT_FUSABLE) && !operations.empty() &&
+    if (!(gate.flags & GATE_IS_NOT_FUSABLE) && operations.size() > min_safe_fusion_index &&
         operations.back().gate->id == gate.id && operations.back().target_data.arg == arg) {
         // Don't double count measurements when doing incremental update.
         if (gate.flags & GATE_PRODUCES_RESULTS) {
@@ -628,6 +630,7 @@ void Circuit::clear() {
     num_measurements = 0;
     jagged_target_data.vec.clear();
     operations.clear();
+    min_safe_fusion_index = 0;
 }
 
 Circuit Circuit::operator+(const Circuit &other) const {
@@ -640,6 +643,11 @@ Circuit Circuit::operator*(size_t repetitions) const {
     result *= repetitions;
     return result;
 }
+
+void Circuit::fusion_barrier() {
+    min_safe_fusion_index = operations.size();
+}
+
 Circuit &Circuit::operator+=(const Circuit &other) {
     append_circuit(other, 1);
     return *this;

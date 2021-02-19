@@ -390,7 +390,7 @@ void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool pre
     for (const auto &kv : fuser.error_class_probabilities) {
         fprintf(out, "E(%f)", kv.second);
         for (auto e : kv.first) {
-            fprintf(out, " X%lld", (long long)e);
+            fprintf(out, " X%lld", (long long)(e & TARGET_VALUE_MASK));
         }
         fprintf(out, "\n");
     }

@@ -565,3 +565,16 @@ OBSERVABLE_INCLUDE(0) rec[-2]
 0001
             )output"));
 }
+
+TEST(main_helper, detector_error_sets) {
+    ASSERT_EQ(
+        trim(execute({"--detector_error_sets"}, R"input(
+X_ERROR(0.25) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+E(0.250000) X0
+M 0
+            )output"));
+}
