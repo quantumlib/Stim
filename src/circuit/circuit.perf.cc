@@ -39,7 +39,7 @@ BENCHMARK(circuit_parse_sparse) {
     }
     auto text = c.str();
     benchmark_go([&]() {
-        c = Circuit::from_text(text);
+        c = Circuit::from_text(text.data());
     }).goal_micros(150);
     if (c.num_qubits == 0) {
         std::cerr << "impossible";
