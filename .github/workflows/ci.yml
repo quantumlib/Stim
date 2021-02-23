@@ -110,8 +110,6 @@ jobs:
       - run: pip install -e .
       - run: pip install pytest
       - run: pytest src
-      - run: pip install -e glue/cirq
-      - run: pytest glue/cirq
   test_stim_cirq:
     runs-on: ubuntu-16.04
     steps:
