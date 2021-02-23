@@ -40,7 +40,7 @@ setup(
     version='0.1',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
-    url='https://github.com/Strilanc/Stim',
+    url='https://github.com/quantumlib/stim',
     license='Apache 2',
     description='A fast quantum stabilizer circuit simulator.',
     ext_modules=[extension_module],
