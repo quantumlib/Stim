@@ -46,7 +46,7 @@ setup(
     ext_modules=[extension_module],
     python_requires='>=3.5.0',
     data_files=['pyproject.toml', 'README.md'] + RELEVANT_HEADERS,
-    requires=['numpy'],
+    install_requires=['numpy'],
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     options={'build': {'build_base': 'python_build_stim'}},
 )
