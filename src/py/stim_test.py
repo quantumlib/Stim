@@ -66,7 +66,7 @@ def test_circuit_append_operation():
 
     c.append_operation("X", [0])
     c.append_operation("X", [1, 2])
-    c.append_operation("X", [3], fuse=False)
+    c.append_operation("X", [3])
     c.append_operation("CNOT", [0, 1])
     c.append_operation("M", [0, stim.target_inv(1)])
     c.append_operation("X_ERROR", [0], 0.25)
@@ -75,8 +75,7 @@ def test_circuit_append_operation():
     c.append_operation("OBSERVABLE_INCLUDE", [stim.target_rec(-1), stim.target_rec(-2)], 5)
     assert str(c).strip() == """
 # Circuit [num_qubits=4, num_measurements=2]
-X 0 1 2
-X 3
+X 0 1 2 3
 ZCX 0 1
 M 0 !1
 X_ERROR(0.25) 0

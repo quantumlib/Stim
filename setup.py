@@ -40,13 +40,13 @@ setup(
     version='0.1',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
-    url='https://github.com/Strilanc/Stim',
+    url='https://github.com/quantumlib/stim',
     license='Apache 2',
     description='A fast quantum stabilizer circuit simulator.',
     ext_modules=[extension_module],
     python_requires='>=3.5.0',
     data_files=['pyproject.toml', 'README.md'] + RELEVANT_HEADERS,
-    requires=['numpy'],
+    install_requires=['numpy'],
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     options={'build': {'build_base': 'python_build_stim'}},
 )

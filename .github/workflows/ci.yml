@@ -99,3 +99,26 @@ jobs:
     - run: cmake . -DSIMD_WIDTH=256
     - run: make stim_test_o3
     - run: out/stim_test_o3
+  test_pybind:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+          architecture: 'x64'
+      - run: pip install -e .
+      - run: pip install pytest
+      - run: pytest src
+  test_stim_cirq:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+          architecture: 'x64'
+      - run: pip install -e .
+      - run: pip install -e glue/cirq
+      - run: pip install pytest
+      - run: pytest glue/cirq
