@@ -628,6 +628,15 @@ python -m cibuildwheel --output-dir wheelhouse --platform=linux
 
 Output in `wheelhouse` directory.
 
+Build `stim_cirq` package:
+
+```bash
+cd glue/cirq
+python setup.py sdist
+```
+
+Output in `glue/cirq/dist` directory.
+
 # Testing
 
 ### Run tests using CMAKE
