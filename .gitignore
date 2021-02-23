@@ -20,7 +20,7 @@ python_build_stim/*
 stim.egg*
 stim_cirq.egg*
 stim.cpython*
-dist/*
+**/dist/*
 MANIFEST
 *.whl
 *.swp
