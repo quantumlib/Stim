@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import stim
 import pytest
-import numpy as np
 
 
 def test_circuit_init_num_measurements_num_qubits():

@@ -21,84 +21,84 @@ on:
     branches:
       - main
 jobs:
-#  build_wheels:
-#    name: Build wheels on ${{ matrix.os }}
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        # NOTE: macOS turned off because OSX minutes are 10x cost on github actions.
-#        # NOTE: windows turned off because windows minutes are 2x cost on github actions and the builds take long.
-#        # os: [ubuntu-20.04, windows-2019, macOS-10.15]
-#        os: [ubuntu-20.04]
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions/setup-python@v2
-#        name: Install Python
-#      - name: Install cibuildwheel
-#        run: python -m pip install cibuildwheel==1.8.0
-#      - name: Build wheels
-#        run: python -m cibuildwheel --output-dir wheelhouse
-#        env:
-#          CIBW_SKIP: "cp27-* pp27-*"  # skip Python 2.7 wheels
-#      - uses: actions/upload-artifact@v2
-#        with:
-#          path: ./wheelhouse/*.whl
-#  run_main:
-#    runs-on: ubuntu-20.04
-#    steps:
-#    - uses: actions/checkout@v1
-#    - run: cmake .
-#    - run: make stim
-#    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
-#  benchmark_windows:
-#    runs-on: windows-latest
-#    steps:
-#      - uses: actions/checkout@v1
-#      - uses: microsoft/setup-msbuild@v1.0.2
-#      - run: cmake .
-#      - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
-#      - run: msbuild_out/stim_benchmark.exe
-#  benchmark:
-#    runs-on: ubuntu-20.04
-#    strategy:
-#      matrix:
-#        simd_width: [64, 128, 256]
-#    steps:
-#    - uses: actions/checkout@v1
-#    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-#    - run: make stim_benchmark
-#    - run: out/stim_benchmark
-#  test:
-#    runs-on: ubuntu-20.04
-#    strategy:
-#      matrix:
-#        simd_width: [64, 128, 256]
-#    steps:
-#    - uses: actions/checkout@v1
-#    - run: |
-#        cd ..
-#        git clone https://github.com/google/googletest.git -b release-1.10.0
-#        mkdir googletest/build && cd googletest/build
-#        cmake .. -DBUILD_GMOCK=OFF
-#        make
-#        sudo make install
-#    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-#    - run: make stim_test
-#    - run: out/stim_test
-#  test_o3:
-#    runs-on: ubuntu-20.04
-#    steps:
-#    - uses: actions/checkout@v1
-#    - run: |
-#        cd ..
-#        git clone https://github.com/google/googletest.git -b release-1.10.0
-#        mkdir googletest/build && cd googletest/build
-#        cmake .. -DBUILD_GMOCK=OFF
-#        make
-#        sudo make install
-#    - run: cmake . -DSIMD_WIDTH=256
-#    - run: make stim_test_o3
-#    - run: out/stim_test_o3
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # NOTE: macOS turned off because OSX minutes are 10x cost on github actions.
+        # NOTE: windows turned off because windows minutes are 2x cost on github actions and the builds take long.
+        # os: [ubuntu-20.04, windows-2019, macOS-10.15]
+        os: [ubuntu-20.04]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        name: Install Python
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==1.8.0
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_SKIP: "cp27-* pp27-*"  # skip Python 2.7 wheels
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl
+  run_main:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - run: cmake .
+    - run: make stim
+    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
+  benchmark_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: microsoft/setup-msbuild@v1.0.2
+      - run: cmake .
+      - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
+      - run: msbuild_out/stim_benchmark.exe
+  benchmark:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        simd_width: [64, 128, 256]
+    steps:
+    - uses: actions/checkout@v1
+    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
+    - run: make stim_benchmark
+    - run: out/stim_benchmark
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        simd_width: [64, 128, 256]
+    steps:
+    - uses: actions/checkout@v1
+    - run: |
+        cd ..
+        git clone https://github.com/google/googletest.git -b release-1.10.0
+        mkdir googletest/build && cd googletest/build
+        cmake .. -DBUILD_GMOCK=OFF
+        make
+        sudo make install
+    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
+    - run: make stim_test
+    - run: out/stim_test
+  test_o3:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - run: |
+        cd ..
+        git clone https://github.com/google/googletest.git -b release-1.10.0
+        mkdir googletest/build && cd googletest/build
+        cmake .. -DBUILD_GMOCK=OFF
+        make
+        sudo make install
+    - run: cmake . -DSIMD_WIDTH=256
+    - run: make stim_test_o3
+    - run: out/stim_test_o3
   test_pybind:
     runs-on: ubuntu-16.04
     steps:
