@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple, Sequence, List
 
 import cirq
 import numpy as np
@@ -272,3 +272,68 @@ def test_correlated_error():
     s = stim_cirq.StimSampler()
     a, b = cirq.LineQubit.range(2)
     s.run(cirq.Circuit((cirq.X(a) * cirq.Y(b)).with_probability(0.1)))
+
+
+def test_cirq_circuit_to_stim_circuit_custom_stim_method():
+    class DetectorGate(cirq.Gate):
+        def _num_qubits_(self):
+            return 1
+
+        def _measure_keys_(self):
+            return "custom",
+
+        def _stim_conversion_(self,
+                              edit_circuit: stim.Circuit,
+                              edit_measurement_key_lengths: List[Tuple[str, int]],
+                              targets: Sequence[int],
+                              **kwargs):
+            edit_measurement_key_lengths.append(("custom", 2))
+            edit_circuit.append_operation("M", [stim.target_inv(targets[0])])
+            edit_circuit.append_operation("M", [targets[0]])
+            edit_circuit.append_operation("DETECTOR", [stim.target_rec(-1)])
+
+    class SecondLastMeasurementWasDeterministicOperation(cirq.Operation):
+        def _stim_conversion_(self, edit_circuit: stim.Circuit, **kwargs):
+            edit_circuit.append_operation("DETECTOR", [stim.target_rec(-2)])
+
+        def with_qubits(self, *new_qubits):
+            raise NotImplementedError()
+
+        @property
+        def qubits(self) -> Tuple['cirq.Qid', ...]:
+            return ()
+
+    a, b, c = cirq.LineQubit.range(3)
+    cirq_circuit = cirq.Circuit(
+        cirq.measure(a, key="a"),
+        cirq.measure(b, key="b"),
+        cirq.measure(c, key="c"),
+        cirq.Moment(SecondLastMeasurementWasDeterministicOperation()),
+        cirq.Moment(DetectorGate().on(b)),
+    )
+
+    stim_circuit = stim_cirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    assert str(stim_circuit).strip() == """
+# Circuit [num_qubits=3, num_measurements=5]
+M 0 1 2
+DETECTOR rec[-2]
+M !1 1
+DETECTOR rec[-1]
+    """.strip()
+
+    class BadGate(cirq.Gate):
+        def num_qubits(self) -> int:
+            return 1
+
+        def _stim_conversion_(self):
+            pass
+
+    with pytest.raises(TypeError, match="dont_forget_your_star_star_kwargs"):
+        stim_cirq.cirq_circuit_to_stim_circuit(cirq.Circuit(BadGate().on(a)))
+
+    sample = stim_cirq.StimSampler().sample(cirq_circuit)
+    assert len(sample.columns) == 4
+    np.testing.assert_array_equal(sample["a"], [0])
+    np.testing.assert_array_equal(sample["b"], [0])
+    np.testing.assert_array_equal(sample["c"], [0])
+    np.testing.assert_array_equal(sample["custom"], [2])
