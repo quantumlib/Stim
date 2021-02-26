@@ -114,8 +114,8 @@ def test_more_unitary_gate_conversions():
         str(c).strip()
         == """
 # Circuit [num_qubits=2, num_measurements=2]
-H_XZ 0
-ZCX 0 1
+H 0
+CX 0 1
 M 0 1
 R 0
     """.strip()

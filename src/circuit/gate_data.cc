@@ -19,7 +19,6 @@
 #include "../simulators/error_fuser.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
-#include "../simulators/vector_simulator.h"
 
 static constexpr std::complex<float> i = std::complex<float>(0, 1);
 static constexpr std::complex<float> s = 0.7071067811865475244f;
@@ -104,7 +103,7 @@ extern const GateDataMap GATE_DATA(
             {"+Y", "-Z"},
         },
         {
-            "H_XZ",
+            "H",
             &TableauSimulator::H_XZ,
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
@@ -160,7 +159,7 @@ extern const GateDataMap GATE_DATA(
             {"+Z", "-X"},
         },
         {
-            "SQRT_Z",
+            "S",
             &TableauSimulator::SQRT_Z,
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
@@ -169,7 +168,7 @@ extern const GateDataMap GATE_DATA(
             {"+Y", "+Z"},
         },
         {
-            "SQRT_Z_DAG",
+            "S_DAG",
             &TableauSimulator::SQRT_Z_DAG,
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
@@ -275,7 +274,7 @@ extern const GateDataMap GATE_DATA(
             {"+XZ", "+ZZ", "+YX", "+IZ"},
         },
         {
-            "ZCX",
+            "CX",
             &TableauSimulator::ZCX,
             &FrameSimulator::ZCX,
             &ErrorFuser::ZCX,
@@ -284,7 +283,7 @@ extern const GateDataMap GATE_DATA(
             {"+XX", "+ZI", "+IX", "+ZZ"},
         },
         {
-            "ZCY",
+            "CY",
             &TableauSimulator::ZCY,
             &FrameSimulator::ZCY,
             &ErrorFuser::ZCY,
@@ -293,7 +292,7 @@ extern const GateDataMap GATE_DATA(
             {"+XY", "+ZI", "+ZX", "+ZZ"},
         },
         {
-            "ZCZ",
+            "CZ",
             &TableauSimulator::ZCZ,
             &FrameSimulator::ZCZ,
             &ErrorFuser::ZCZ,
@@ -387,7 +386,7 @@ extern const GateDataMap GATE_DATA(
             {},
         },
         {
-            "CORRELATED_ERROR",
+            "E",
             &TableauSimulator::CORRELATED_ERROR,
             &FrameSimulator::CORRELATED_ERROR,
             &ErrorFuser::CORRELATED_ERROR,
@@ -406,18 +405,18 @@ extern const GateDataMap GATE_DATA(
         },
     },
     {
-        {"H_XZ", "H"},
-        {"CORRELATED_ERROR", "E"},
-        {"SQRT_Z", "S"},
-        {"SQRT_Z_DAG", "S_DAG"},
-        {"ZCZ", "CZ"},
-        {"ZCY", "CY"},
-        {"ZCX", "CX"},
-        {"ZCX", "CNOT"},
+        {"H", "H_XZ"},
+        {"E", "CORRELATED_ERROR"},
+        {"S", "SQRT_Z"},
+        {"S_DAG", "SQRT_Z_DAG"},
+        {"CZ", "ZCZ"},
+        {"CY", "ZCY"},
+        {"CX", "ZCX"},
+        {"CX", "CNOT"},
     });
 
 Tableau Gate::tableau() const {
-    auto &d = tableau_data.data;
+    const auto &d = tableau_data.data;
     if (tableau_data.size() == 2) {
         return Tableau::gate1(d[0], d[1]);
     }
@@ -433,7 +432,7 @@ std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
     }
     std::vector<std::vector<std::complex<float>>> result;
     for (size_t k = 0; k < unitary_data.size(); k++) {
-        auto &d = unitary_data.data[k];
+        const auto &d = unitary_data.data[k];
         result.emplace_back();
         for (size_t j = 0; j < d.size(); j++) {
             result.back().push_back(d.data[j]);
@@ -480,7 +479,7 @@ Gate::Gate(
 GateDataMap::GateDataMap(
     std::initializer_list<Gate> gates, std::initializer_list<std::pair<const char *, const char *>> alternate_names) {
     bool collision = false;
-    for (auto &gate : gates) {
+    for (const auto &gate : gates) {
         const char *c = gate.name;
         uint8_t h = gate_name_to_id(c);
         if (items[h].name != nullptr) {
@@ -489,7 +488,7 @@ GateDataMap::GateDataMap(
         }
         items[h] = gate;
     }
-    for (auto &alt : alternate_names) {
+    for (const auto &alt : alternate_names) {
         uint8_t h2 = gate_name_to_id(alt.second);
         if (items[h2].name != nullptr) {
             std::cerr << "GATE COLLISION " << alt.second << " vs " << items[h2].name << "\n";
