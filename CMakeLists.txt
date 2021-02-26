@@ -80,6 +80,7 @@ set(BENCHMARK_FILES
         src/benchmark_util.perf.cc
         src/circuit/circuit.perf.cc
         src/circuit/gate_data.perf.cc
+        src/probability_util.benchmark.cc
         src/simd/simd_bit_table.perf.cc
         src/simd/simd_bits.perf.cc
         src/simd/simd_compat.perf.cc

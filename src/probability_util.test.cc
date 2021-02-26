@@ -24,12 +24,12 @@ TEST(probability_util, sample_hit_indices_corner_cases) {
 }
 
 TEST(probability_util, sample_hit_indices) {
-    size_t b = 10000;
-    size_t s = 100000;
+    size_t num_buckets = 10000;
+    size_t num_samples = 100000;
     double p = 0.001;
-    std::vector<size_t> buckets(b, 0);
-    for (size_t k = 0; k < s; k++) {
-        for (auto bucket : sample_hit_indices(p, b, SHARED_TEST_RNG())) {
+    std::vector<size_t> buckets(num_buckets, 0);
+    for (size_t k = 0; k < num_samples; k++) {
+        for (auto bucket : sample_hit_indices(p, num_buckets, SHARED_TEST_RNG())) {
             buckets[bucket] += 1;
         }
     }
@@ -37,8 +37,26 @@ TEST(probability_util, sample_hit_indices) {
     for (auto b : buckets) {
         total += b;
     }
-    ASSERT_TRUE(abs(total / (double)(b * s) - p) <= 0.0001);
+    ASSERT_TRUE(abs(total / (double)(num_buckets * num_samples) - p) <= 0.0001);
     for (auto b : buckets) {
-        ASSERT_TRUE(abs(b / (double)s - p) <= 0.01);
+        ASSERT_TRUE(abs(b / (double)num_samples - p) <= 0.01);
+    }
+}
+
+TEST(probability_util, biased_random) {
+    std::vector<float> probs{0, 0.01, 0.03, 0.1, 0.4, 0.49, 0.5, 0.6, 0.9, 0.99, 0.999, 1};
+    simd_bits data(1000000);
+    size_t n = data.num_bits_padded();
+    for (auto p : probs) {
+        biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), SHARED_TEST_RNG());
+        size_t t = 0;
+        for (size_t k = 0; k < data.num_u64_padded(); k++) {
+            t += popcnt64(data.u64[k]);
+        }
+        float dev = sqrtf(p * (1 - p) * n);
+        float min_expected = n * p - dev * 5;
+        float max_expected = n * p + dev * 5;
+        ASSERT_TRUE( min_expected >= 0 && max_expected <= n) << min_expected << ", " << max_expected;
+        EXPECT_TRUE(min_expected <= t && t <= max_expected) << min_expected/n << " < " << t/(float)n << " < " << max_expected/n << " for p=" << p;
     }
 }
