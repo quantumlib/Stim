@@ -49,16 +49,16 @@ static std::vector<const char *> repl_mode_known_arguments{
     "--repl",
 };
 static std::vector<const char *> format_names{
-    "01", "b8", "ptb64", "hits", "r8",
+    "01", "b8", "ptb64", "hits", "r8", "dets"
 };
 static std::vector<SampleFormat> format_values{
-    SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8,
+    SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8, SAMPLE_FORMAT_DETS,
 };
 
 struct RaiiFiles {
     std::vector<FILE *> files;
     ~RaiiFiles() {
-        for (auto f : files) {
+        for (auto *f : files) {
             fclose(f);
         }
         files.clear();
@@ -160,6 +160,9 @@ M 0 1 2
         auto num_shots = (size_t)find_int_argument("--detect", 1, 0, 1 << 30, argc, argv);
         if (num_shots == 0) {
             return EXIT_SUCCESS;
+        }
+        if (out_format == SAMPLE_FORMAT_DETS && !append_observables) {
+            prepend_observables = true;
         }
 
         auto circuit = Circuit::from_file(in);

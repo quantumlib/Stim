@@ -62,19 +62,39 @@ simd_bit_table detector_samples(
 void detector_samples_out(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
     SampleFormat format, std::mt19937_64 &rng) {
+    if (prepend_observables && append_observables) {
+        throw std::out_of_range("Can't have both --prepend_observables and --append_observables");
+    }
+
     DetectorsAndObservables det_obs(circuit);
     size_t num_sample_locations =
         det_obs.detectors.size() + det_obs.observables.size() * ((int)prepend_observables + (int)append_observables);
+
+    char c1, c2;
+    size_t ct;
+    if (prepend_observables) {
+        c1 = 'L';
+        c2 = 'D';
+        ct = det_obs.observables.size();
+    } else if (append_observables) {
+        c1 = 'D';
+        c2 = 'L';
+        ct = det_obs.detectors.size();
+    } else {
+        c1 = 'D';
+        c2 = 'D';
+        ct = 0;
+    }
 
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     simd_bits reference_sample(num_sample_locations);
     while (num_shots > GOOD_BLOCK_SIZE) {
         auto table = detector_samples(circuit, det_obs, GOOD_BLOCK_SIZE, prepend_observables, append_observables, rng);
-        write_table_data(out, GOOD_BLOCK_SIZE, num_sample_locations, reference_sample, table, format);
+        write_table_data(out, GOOD_BLOCK_SIZE, num_sample_locations, reference_sample, table, format, c1, c2, ct);
         num_shots -= GOOD_BLOCK_SIZE;
     }
     if (num_shots) {
         auto table = detector_samples(circuit, det_obs, num_shots, prepend_observables, append_observables, rng);
-        write_table_data(out, num_shots, num_sample_locations, reference_sample, table, format);
+        write_table_data(out, num_shots, num_sample_locations, reference_sample, table, format, c1, c2, ct);
     }
 }

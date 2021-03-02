@@ -55,7 +55,7 @@ struct FrameSimulator {
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
-    void write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format);
+    void write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) const;
 
     void measure(const OperationData &target_data);
     void reset(const OperationData &target_data);
@@ -92,7 +92,14 @@ struct FrameSimulator {
 };
 
 void write_table_data(
-    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
-    const simd_bit_table &table, SampleFormat format);
+        FILE *out,
+        size_t num_shots_raw,
+        size_t num_sample_locations_raw,
+        const simd_bits &reference_sample,
+        const simd_bit_table &table,
+        SampleFormat format,
+        char dets_prefix_1,
+        char dets_prefix_2,
+        size_t dets_prefix_transition);
 
 #endif

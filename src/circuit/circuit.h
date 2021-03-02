@@ -65,6 +65,11 @@ enum SampleFormat {
     ///     For each run of same-result measurements up to length 128:
     ///         Output (result ? 0x80 : 0) | (run_length + 1)
     SAMPLE_FORMAT_R8,
+    /// Specific to detection event data.
+    ///
+    /// For each shot:
+    ///     Output "shot" + " D#" for each detector that fired + " L#" for each observable that was inverted + "\n".
+    SAMPLE_FORMAT_DETS,
 };
 
 /// The data that describes how a gate is being applied to qubits (or other targets).

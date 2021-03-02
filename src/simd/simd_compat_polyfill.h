@@ -102,11 +102,11 @@ struct simd_word {
         return popcnt64(u64[0]) + popcnt64(u64[1]);
     }
 
-    inline simd_word leftshift_tile64(uint8_t offset) {
+    inline simd_word leftshift_tile64(uint8_t offset) const {
         return {u64[0] << offset, u64[1] << offset};
     }
 
-    inline simd_word rightshift_tile64(uint8_t offset) {
+    inline simd_word rightshift_tile64(uint8_t offset) const {
         return {u64[0] >> offset, u64[1] >> offset};
     }
 

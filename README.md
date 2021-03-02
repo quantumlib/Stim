@@ -349,6 +349,16 @@ Not all modifiers apply to all modes.
         0,1,2,3,4,5,6,7,8,9
         0,1,2,3,4,5,6,7,8,9
         ```
+    - `dets`:
+        Human readable ASCII format.
+        Similar to `hits`, except each line is prefixed by `shot ` and each hit is prefixed by a character indicating
+        its type (`M` for measurement, `D` for detector, `L` for logical observable).
+        Example output data (for 3 detectors, 2 observables):
+        ```
+        shot
+        shot L0 L1 D0 D1 D2
+        shot L0 D0
+        ```
     - `b8`:
         Binary format.
         Writes all the samples from one shot before moving on to the next.

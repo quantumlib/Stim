@@ -58,8 +58,15 @@ simd_bit_table transposed_vs_ref(
 }
 
 void write_table_data(
-    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
-    const simd_bit_table &table, SampleFormat format) {
+        FILE *out,
+        size_t num_shots_raw,
+        size_t num_sample_locations_raw,
+        const simd_bits &reference_sample,
+        const simd_bit_table &table,
+        SampleFormat format,
+        char dets_prefix_1,
+        char dets_prefix_2,
+        size_t dets_prefix_transition) {
     if (format == SAMPLE_FORMAT_01) {
         auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
         for (size_t s = 0; s < num_shots_raw; s++) {
@@ -107,24 +114,31 @@ void write_table_data(
 
     if (format == SAMPLE_FORMAT_HITS) {
         auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        size_t wn = result.num_minor_u64_padded();
         for (size_t s = 0; s < num_shots_raw; s++) {
             bool rest = false;
-            uint64_t *row = result[s].u64;
-            for (size_t k = 0; k < wn; k++) {
-                auto v = row[k];
-                if (v) {
-                    for (size_t j = 0; j < 64; j++) {
-                        if ((v >> j) & 1) {
-                            if (rest) {
-                                putc(',', out);
-                            }
-                            rest = true;
-                            fprintf(out, "%lld", (unsigned long long)(k * 64 + j));
-                        }
-                    }
+            result[s].for_each_set_bit([&](size_t k) {
+                if (rest) {
+                    putc(',', out);
                 }
-            }
+                rest = true;
+                fprintf(out, "%lld", (unsigned long long)(k));
+            });
+            putc('\n', out);
+        }
+        return;
+    }
+
+    if (format == SAMPLE_FORMAT_DETS) {
+        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
+        for (size_t s = 0; s < num_shots_raw; s++) {
+            fprintf(out, "shot");
+            result[s].for_each_set_bit([&](size_t k) {
+                if (k < dets_prefix_transition) {
+                    fprintf(out, " %c%lld", dets_prefix_1, (unsigned long long)k);
+                } else {
+                    fprintf(out, " %c%lld", dets_prefix_2, (unsigned long long)k - dets_prefix_transition);
+                }
+            });
             putc('\n', out);
         }
         return;
@@ -132,38 +146,21 @@ void write_table_data(
 
     if (format == SAMPLE_FORMAT_R8) {
         auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        size_t wn = (num_sample_locations_raw + 7) / 8;
         for (size_t s = 0; s < num_shots_raw; s++) {
-            uint8_t *row = result[s].u8;
-            uint16_t gap = 0;
-            for (size_t k = 0; k < wn; k++) {
-                auto v = row[k];
-                if (!v) {
-                    gap += 8;
-                    if (gap >= 0xFF) {
-                        gap -= 0xFF;
-                        putc(0xFF, out);
-                    }
-                    continue;
+            size_t prev = 0;
+            auto write_gap = [&](size_t k) {
+                size_t gap = k - prev;
+                while (gap >= 0xFF) {
+                    gap -= 0xFF;
+                    putc(0xFF, out);
                 }
-
-                for (size_t j = 0; j < 8; j++) {
-                    if ((v >> j) & 1) {
-                        putc(gap, out);
-                        gap = 0;
-                    } else {
-                        gap++;
-                        if (gap >= 0xFF) {
-                            putc(0xFF, out);
-                            gap -= 0xFF;
-                        }
-                    }
-                }
-            }
+                putc((char)gap, out);
+                prev = k + 1;
+            };
+            result[s].for_each_set_bit(write_gap);
 
             // Always encode a trailing 1 just past the end of the measurement results.
-            gap -= -num_sample_locations_raw & 7;
-            putc(gap, out);
+            write_gap(num_sample_locations_raw);
         }
         return;
     }
@@ -171,8 +168,8 @@ void write_table_data(
     throw std::out_of_range("Unrecognized output format.");
 }
 
-void FrameSimulator::write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) {
-    write_table_data(out, num_samples_raw, num_measurements_raw, reference_sample, m_table, format);
+void FrameSimulator::write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) const {
+    write_table_data(out, num_samples_raw, num_measurements_raw, reference_sample, m_table, format, 'M', 'M', 0);
 }
 
 simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_target) {

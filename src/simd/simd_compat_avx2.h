@@ -93,11 +93,11 @@ struct simd_word {
         return {_mm256_andnot_si256(val, other.val)};
     }
 
-    inline simd_word leftshift_tile64(uint8_t offset) {
+    inline simd_word leftshift_tile64(uint8_t offset) const {
         return {_mm256_slli_epi64(val, offset)};
     }
 
-    inline simd_word rightshift_tile64(uint8_t offset) {
+    inline simd_word rightshift_tile64(uint8_t offset) const {
         return {_mm256_srli_epi64(val, offset)};
     }
 
