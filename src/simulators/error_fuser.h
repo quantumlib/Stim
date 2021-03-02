@@ -27,7 +27,6 @@
 
 struct ErrorFuser {
     std::map<uint32_t, std::vector<uint32_t>> measurement_to_detectors;
-    bool prepend_observables;
     uint32_t num_found_detectors = 0;
     uint32_t num_found_observables = 0;
     /// For each qubit, at the current time, the set of detectors with X dependence on that qubit.
@@ -42,10 +41,9 @@ struct ErrorFuser {
     std::map<VectorView<uint32_t>, double> error_class_probabilities;
     JaggedDataArena<uint32_t> jagged_detector_sets;
 
-    ErrorFuser(size_t num_qubits, bool prepend_observables);
+    ErrorFuser(size_t num_qubits);
 
-    static Circuit convert_circuit(const Circuit &circuit, bool prepend_observables = false);
-    static void convert_circuit_out(const Circuit &circuit, FILE *out, bool prepend_observables);
+    static void convert_circuit_out(const Circuit &circuit, FILE *out);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorFuser(const ErrorFuser &fuser) = delete;

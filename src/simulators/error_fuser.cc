@@ -15,6 +15,8 @@
 #include "error_fuser.h"
 
 #include <algorithm>
+#include <iomanip>
+#include <limits>
 #include <queue>
 #include <sstream>
 
@@ -242,16 +244,13 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
 void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
     uint32_t id = (int)dat.arg;
     num_found_observables = std::max(num_found_observables, id + 1);
-    if (prepend_observables) {
-        for (auto t : dat.targets) {
-            auto delay = t & TARGET_VALUE_MASK;
-            measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
-        }
+    for (auto t : dat.targets) {
+        auto delay = t & TARGET_VALUE_MASK;
+        measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
 }
 
-ErrorFuser::ErrorFuser(size_t num_qubits, bool prepend_observables)
-    : prepend_observables(prepend_observables), xs(num_qubits), zs(num_qubits) {
+ErrorFuser::ErrorFuser(size_t num_qubits) : xs(num_qubits), zs(num_qubits) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
@@ -260,14 +259,11 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
         (this->*op.gate->hit_simulator_function)(op.target_data);
     }
     uint32_t detector_id_root = UINT32_MAX - num_found_detectors + 1;
-    if (prepend_observables) {
-        detector_id_root -= num_found_observables;
-    }
     for (auto &t : jagged_detector_sets.vec) {
         if (t > (UINT32_MAX >> 2)) {
             t -= detector_id_root;
+            t |= TARGET_PAULI_X_BIT;
         }
-        t |= TARGET_PAULI_X_BIT;
     }
 }
 
@@ -359,50 +355,24 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
         "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
 }
 
-Circuit ErrorFuser::convert_circuit(const Circuit &circuit, bool prepend_observables) {
-    ErrorFuser fuser(circuit.num_qubits, prepend_observables);
+void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out) {
+    ErrorFuser fuser(circuit.num_qubits);
     fuser.run_circuit(circuit);
-
-    Circuit result;
-    const auto &e_gate = GATE_DATA.at("CORRELATED_ERROR");
-    for (const auto &kv : fuser.error_class_probabilities) {
-        result.append_operation(e_gate, kv.first.begin(), kv.first.size(), kv.second);
-    }
-
-    size_t num_ids = fuser.num_found_detectors;
-    if (prepend_observables) {
-        num_ids += fuser.num_found_observables;
-    }
-    auto view = result.jagged_target_data.view(result.jagged_target_data.vec.size(), num_ids);
-    for (size_t k = 0; k < num_ids; k++) {
-        result.jagged_target_data.vec.push_back(k);
-    }
-    result.operations.push_back({&GATE_DATA.at("M"), {0.0, view}});
-    result.update_metadata_for_manually_appended_operation();
-
-    return result;
-}
-
-void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool prepend_observables) {
-    ErrorFuser fuser(circuit.num_qubits, prepend_observables);
-    fuser.run_circuit(circuit);
+    std::stringstream ss;
 
     for (const auto &kv : fuser.error_class_probabilities) {
-        fprintf(out, "E(%f)", kv.second);
+        ss.str("");
+        ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << kv.second;
+        fprintf(out, "error(%s)", ss.str().data());
         for (auto e : kv.first) {
-            fprintf(out, " X%lld", (long long)(e & TARGET_VALUE_MASK));
+            if (e & TARGET_PAULI_X_BIT) {
+                fprintf(out, " D%lld", (long long)(e - TARGET_PAULI_X_BIT));
+            } else {
+                fprintf(out, " L%lld", (long long)e);
+            }
         }
         fprintf(out, "\n");
     }
-    fprintf(out, "M");
-    size_t num_ids = fuser.num_found_detectors;
-    if (prepend_observables) {
-        num_ids += fuser.num_found_observables;
-    }
-    for (size_t k = 0; k < num_ids; k++) {
-        fprintf(out, " %lld", (long long)k);
-    }
-    fprintf(out, "\n");
 }
 
 void ErrorFuser::independent_error_1(double probability, const SparseXorVec<uint32_t> &d1) {
