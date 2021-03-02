@@ -351,8 +351,8 @@ Not all modifiers apply to all modes.
         ```
     - `dets`:
         Human readable ASCII format.
-        Similar to `hits`, except each line is prefixed by `shot ` and each hit is prefixed by a character indicating
-        its type (`M` for measurement, `D` for detector, `L` for logical observable).
+        Similar to `hits`, except each line is prefixed by `shot `, hits are separated by spaces, and each hit is
+        prefixed by a character indicating its type (`M` for measurement, `D` for detector, `L` for logical observable).
         Example output data (for 3 detectors, 2 observables):
         ```
         shot
