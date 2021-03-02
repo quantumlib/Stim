@@ -110,7 +110,7 @@ jobs:
       - run: pip install -e .
       - run: pip install pytest
       - run: pytest src
-  test_stim_cirq:
+  test_stimcirq:
     runs-on: ubuntu-16.04
     steps:
       - uses: actions/checkout@v2

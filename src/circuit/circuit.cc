@@ -298,7 +298,7 @@ inline void read_classically_controllable_qubit_targets_into(int &c, SOURCE read
 template <typename SOURCE>
 inline void read_pauli_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
-        uint32_t m;
+        uint32_t m = 0;
         if (c == 'X' || c == 'x') {
             m = TARGET_PAULI_X_BIT;
         } else if (c == 'Y' || c == 'y') {
@@ -589,7 +589,7 @@ bool Circuit::append_from_file(FILE *file, bool stop_asap) {
 
 std::ostream &operator<<(std::ostream &out, const Operation &op) {
     out << op.gate->name;
-    if (op.target_data.arg != 0) {
+    if (op.target_data.arg != 0 || (op.gate->flags & GATE_TAKES_PARENS_ARGUMENT)) {
         out << '(';
         if ((size_t)op.target_data.arg == op.target_data.arg) {
             out << (size_t)op.target_data.arg;

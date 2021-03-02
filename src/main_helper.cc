@@ -27,7 +27,7 @@ static std::vector<const char *> known_arguments{
     "--repl",
     "--sample",
     "--detect",
-    "--detector_error_sets",
+    "--detector_hypergraph",
 
     "--append_observables",
     "--prepend_observables",
@@ -42,23 +42,23 @@ static std::vector<const char *> sample_mode_known_arguments{
 static std::vector<const char *> detect_mode_known_arguments{
     "--detect", "--append_observables", "--prepend_observables", "--out_format", "--out", "--in",
 };
-static std::vector<const char *> detector_error_sets_mode_known_arguments{
-    "--detector_error_sets", "--append_observables", "--prepend_observables", "--out", "--in",
+static std::vector<const char *> detector_hypergraph_mode_known_arguments{
+    "--detector_hypergraph", "--out", "--in",
 };
 static std::vector<const char *> repl_mode_known_arguments{
     "--repl",
 };
 static std::vector<const char *> format_names{
-    "01", "b8", "ptb64", "hits", "r8",
+    "01", "b8", "ptb64", "hits", "r8", "dets"
 };
 static std::vector<SampleFormat> format_values{
-    SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8,
+    SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8, SAMPLE_FORMAT_DETS,
 };
 
 struct RaiiFiles {
     std::vector<FILE *> files;
     ~RaiiFiles() {
-        for (auto f : files) {
+        for (auto *f : files) {
             fclose(f);
         }
         files.clear();
@@ -93,9 +93,9 @@ M 0 1 2
     bool mode_interactive = find_bool_argument("--repl", argc, argv);
     bool mode_sampling = find_argument("--sample", argc, argv) != nullptr;
     bool mode_detecting = find_argument("--detect", argc, argv) != nullptr;
-    bool mode_detector_error_sets = find_bool_argument("--detector_error_sets", argc, argv);
-    if ((int)mode_interactive + (int)mode_sampling + (int)mode_detecting + (int)mode_detector_error_sets != 1) {
-        std::cerr << "Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets\n";
+    bool mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
+    if ((int)mode_interactive + (int)mode_sampling + (int)mode_detecting + (int)mode_detector_hypergraph != 1) {
+        std::cerr << "Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph\n";
         return EXIT_FAILURE;
     }
 
@@ -161,16 +161,18 @@ M 0 1 2
         if (num_shots == 0) {
             return EXIT_SUCCESS;
         }
+        if (out_format == SAMPLE_FORMAT_DETS && !append_observables) {
+            prepend_observables = true;
+        }
 
         auto circuit = Circuit::from_file(in);
         simd_bits ref(circuit.num_measurements);
         detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format, rng);
         return EXIT_SUCCESS;
     }
-    if (mode_detector_error_sets) {
-        check_for_unknown_arguments(detector_error_sets_mode_known_arguments, "--detector_error_sets", argc, argv);
-        bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
-        ErrorFuser::convert_circuit_out(Circuit::from_file(in), out, prepend_observables);
+    if (mode_detector_hypergraph) {
+        check_for_unknown_arguments(detector_hypergraph_mode_known_arguments, "--detector_hypergraph", argc, argv);
+        ErrorFuser::convert_circuit_out(Circuit::from_file(in), out);
         return EXIT_SUCCESS;
     }
 

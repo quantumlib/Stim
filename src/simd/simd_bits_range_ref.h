@@ -125,8 +125,8 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(FUNC body) const {
-        auto v0 = ptr_simd;
-        auto v0_end = v0 + num_simd_words;
+        auto *v0 = ptr_simd;
+        auto *v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
             body(*v0);
             v0++;
@@ -151,9 +151,9 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(simd_bits_range_ref other, FUNC body) const {
-        auto v0 = ptr_simd;
-        auto v1 = other.ptr_simd;
-        auto v0_end = v0 + num_simd_words;
+        auto *v0 = ptr_simd;
+        auto *v1 = other.ptr_simd;
+        auto *v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
             body(*v0, *v1);
             v0++;
@@ -180,10 +180,10 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(simd_bits_range_ref other1, simd_bits_range_ref other2, FUNC body) const {
-        auto v0 = ptr_simd;
-        auto v1 = other1.ptr_simd;
-        auto v2 = other2.ptr_simd;
-        auto v0_end = v0 + num_simd_words;
+        auto *v0 = ptr_simd;
+        auto *v1 = other1.ptr_simd;
+        auto *v2 = other2.ptr_simd;
+        auto *v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
             body(*v0, *v1, *v2);
             v0++;
@@ -213,11 +213,11 @@ struct simd_bits_range_ref {
     template <typename FUNC>
     inline void for_each_word(
         simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, FUNC body) const {
-        auto v0 = ptr_simd;
-        auto v1 = other1.ptr_simd;
-        auto v2 = other2.ptr_simd;
-        auto v3 = other3.ptr_simd;
-        auto v0_end = v0 + num_simd_words;
+        auto *v0 = ptr_simd;
+        auto *v1 = other1.ptr_simd;
+        auto *v2 = other2.ptr_simd;
+        auto *v3 = other3.ptr_simd;
+        auto *v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
             body(*v0, *v1, *v2, *v3);
             v0++;
@@ -252,12 +252,12 @@ struct simd_bits_range_ref {
     inline void for_each_word(
         simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, simd_bits_range_ref other4,
         FUNC body) const {
-        auto v0 = ptr_simd;
-        auto v1 = other1.ptr_simd;
-        auto v2 = other2.ptr_simd;
-        auto v3 = other3.ptr_simd;
-        auto v4 = other4.ptr_simd;
-        auto v0_end = v0 + num_simd_words;
+        auto *v0 = ptr_simd;
+        auto *v1 = other1.ptr_simd;
+        auto *v2 = other2.ptr_simd;
+        auto *v3 = other3.ptr_simd;
+        auto *v4 = other4.ptr_simd;
+        auto *v0_end = v0 + num_simd_words;
         while (v0 != v0_end) {
             body(*v0, *v1, *v2, *v3, *v4);
             v0++;
@@ -265,6 +265,22 @@ struct simd_bits_range_ref {
             v2++;
             v3++;
             v4++;
+        }
+    }
+
+    template <typename FUNC>
+    inline void for_each_set_bit(FUNC body) {
+        size_t n = num_bits_padded();
+        for (size_t k = 0; k < n; k += 64) {
+            auto v = u64[k >> 6];
+            if (!v) {
+                continue;
+            }
+            for (size_t j = 0; j < 64; j++) {
+                if ((v >> j) & 1) {
+                    body(k + j);
+                }
+            }
         }
     }
 };

@@ -44,6 +44,10 @@ class StimSampler(cirq.Sampler):
         return trial_results
 
 
+def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
+    return cirq_circuit_to_stim_data(circuit)[0]
+
+
 def cirq_circuit_to_stim_data(
     circuit: cirq.Circuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
@@ -251,6 +255,15 @@ def _c2s_helper(
     for op in operations:
         gate = op.gate
         targets = [q2i[q] for q in op.qubits]
+
+        custom_method = getattr(op, '_stim_conversion_', getattr(gate, '_stim_conversion_', None))
+        if custom_method is not None:
+            custom_method(
+                dont_forget_your_star_star_kwargs=True,
+                edit_circuit=out,
+                edit_measurement_key_lengths=key_out,
+                targets=targets)
+            continue
 
         # Special case measurement, because of its metadata.
         if isinstance(gate, cirq.MeasurementGate):

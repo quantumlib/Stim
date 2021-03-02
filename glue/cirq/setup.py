@@ -15,13 +15,13 @@
 from setuptools import setup
 
 setup(
-    name='stim_cirq',
+    name='stimcirq',
     version='0.1',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
     license='Apache 2',
-    packages=['stim_cirq'],
+    packages=['stimcirq'],
     description='Implements a cirq.Sampler backed by stim.',
     python_requires='>=3.6.0',
     data_files=['README.md'],

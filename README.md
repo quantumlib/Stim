@@ -233,10 +233,9 @@ echo "
 204
 ```
 
-Compute the circuit's detector graph (the graph whose nodes are `DETECTOR`s and
-whose edges are errors grouped into equivalence classes based on which detectors they invert).
-Output the graph as a circuit made up of correlated errors that `--sample`s from the same distribution as the original
-circuit `--detect`ed from:
+Compute the circuit's detector hypergraph (the graph whose nodes are detectors/observables and
+whose edges are errors grouped into equivalence classes based on which detectors and observables they invert).
+Output the graph's hyper edges as a series of lines like `error(probability) D0 D1 L2`:
 
 ```bash
 echo "
@@ -250,14 +249,13 @@ echo "
   M 0 1
   DETECTOR rec[-1] rec[-3]
   DETECTOR rec[-2] rec[-4]
-" | ./stim --detector_error_sets
+" | ./stim --detector_hypergraph
 ```
 
 ```
-E(0.003345) X0
-E(0.003345) X0 X1
-E(0.102676) X1
-M 1 0
+error(0.1026756153132975941) D0
+error(0.003344519141621982161) D0 D1
+error(0.003344519141621982161) D1
 ```
 
 
@@ -285,14 +283,13 @@ Only one mode can be specified.
     Assumes (does not verify) that all `DETECTOR` instructions corresponding to measurement sets with deterministic parity.
     See also `--prepend_observables`, `--append_observables`.
     If an integer argument is specified, run that many shots of the circuit.
-- `--detector_error_sets`:
+- `--detector_hypergraph`:
     Detector graph creation mode.
-    Computes equivalence classes of errors based on the detectors (and optionally observables)
-    that an error inverts.
-    Each equivalence class is an edge in the graph, and is weighted with a probability such that independently sampling
+    Computes equivalence classes of errors based on the detectors and observables that the error inverts.
+    Each equivalence class is a hyper edge in the graph, and is weighted with a probability such that independently sampling
     each edge and inverting the associated detectors is equivalent to sampling from the original circuit.
-    The output is given as a stim circuit file, with `E(p) d1 d2 d3` instructions for each edge
-    and a final `M 0 1 2 ...` instruction so that output is produced if the circuit is sampled from.
+    The output is given as series of lines like `error(probability) D1 D2 L3` where `D#` is a detector and `L#` is
+    a logical observable.
 
 ### Modifiers
 
@@ -351,6 +348,16 @@ Not all modifiers apply to all modes.
         0,1,2,3,4,5,6,7,8,9
         0,1,2,3,4,5,6,7,8,9
         0,1,2,3,4,5,6,7,8,9
+        ```
+    - `dets`:
+        Human readable ASCII format.
+        Similar to `hits`, except each line is prefixed by `shot `, hits are separated by spaces, and each hit is
+        prefixed by a character indicating its type (`M` for measurement, `D` for detector, `L` for logical observable).
+        Example output data (for 3 detectors, 2 observables):
+        ```
+        shot
+        shot L0 L1 D0 D1 D2
+        shot L0 D0
         ```
     - `b8`:
         Binary format.
@@ -628,7 +635,7 @@ python -m cibuildwheel --output-dir wheelhouse --platform=linux
 
 Output in `wheelhouse` directory.
 
-Build `stim_cirq` package:
+Build `stimcirq` package:
 
 ```bash
 cd glue/cirq

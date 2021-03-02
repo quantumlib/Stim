@@ -259,12 +259,12 @@ TEST(circuit, str) {
         0.25);
     ASSERT_EQ(c.str(), R"circuit(# Circuit [num_qubits=30, num_measurements=3]
 TICK
-ZCX 2 3 rec[-5] 3
+CX 2 3 rec[-5] 3
 M 1 3 2
 DETECTOR rec[-7]
 OBSERVABLE_INCLUDE(17) rec[-11] rec[-1]
 X_ERROR(0.5) 19
-CORRELATED_ERROR(0.25) X23 Z27 Y29)circuit");
+E(0.25) X23 Z27 Y29)circuit");
 }
 
 TEST(circuit, append_op_validation) {

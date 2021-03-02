@@ -210,3 +210,13 @@ TEST(simd_bits_range_ref, word_range_ref) {
     ASSERT_EQ(r1[k], true);
     ASSERT_EQ(cref.word_range_ref(1, 2)[k], true);
 }
+
+TEST(simd_bits_range_ref, for_each_set_bit) {
+    simd_bits data(256);
+    simd_bits_range_ref ref(data);
+    ref[5] = true;
+    ref[101] = true;
+    std::vector<size_t> hits;
+    ref.for_each_set_bit([&](size_t k) { hits.push_back(k); });
+    ASSERT_EQ(hits, (std::vector<size_t>{5, 101}));
+}

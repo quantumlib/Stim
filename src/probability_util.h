@@ -64,4 +64,6 @@ std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::
 
 std::mt19937_64 externally_seeded_rng();
 
+void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng);
+
 #endif

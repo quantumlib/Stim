@@ -134,17 +134,17 @@ TEST(main_helper, help_modes) {
     ASSERT_EQ(trim(execute({"--help"}, "")).substr(0, 19), "[stderr=BASIC USAGE");
 
     ASSERT_EQ(trim(execute({}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets
+[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph
 ]
             )output"));
 
     ASSERT_EQ(trim(execute({"--sample", "--repl"}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets
+[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph
 ]
             )output"));
 
     ASSERT_EQ(trim(execute({"--sample", "--repl", "--detect"}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_error_sets
+[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph
 ]
             )output"));
 }
@@ -568,13 +568,12 @@ OBSERVABLE_INCLUDE(0) rec[-2]
 
 TEST(main_helper, detector_error_sets) {
     ASSERT_EQ(
-        trim(execute({"--detector_error_sets"}, R"input(
+        trim(execute({"--detector_hypergraph"}, R"input(
 X_ERROR(0.25) 0
 M 0
 DETECTOR rec[-1]
             )input")),
         trim(R"output(
-E(0.250000) X0
-M 0
+error(0.25) D0
             )output"));
 }

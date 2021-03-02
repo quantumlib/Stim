@@ -382,6 +382,13 @@ TEST(PauliFrameSimulation, run_length_measurement_formats) {
     }
 
     tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
+    rewind(tmp);
+    for (char c : "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n") {
+        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
+    }
+
+    tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 3; k++) {
