@@ -80,12 +80,13 @@ void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, st
         float p_truncated = raised_floor / BUCKETS;
         float p_leftover = raised_leftover / BUCKETS;
         uint64_t p_top_bits = (uint64_t)raised_floor;
+
+        // Flip coins, using the position of the first HEADS result to
+        // select a bit from the probability's binary representation.
         for (uint64_t *cur = start; cur != end; cur++) {
-            // Flip 8 coins, using the position of the first HEADS result to
-            // select a bit from the probability's binary representation.
-            uint64_t alive = UINT64_MAX;
+            uint64_t alive = rng();
             uint64_t result = 0;
-            for (size_t k_bit = COIN_FLIPS; k_bit--;) {
+            for (size_t k_bit = COIN_FLIPS - 1; k_bit--;) {
                 uint64_t shoot = rng();
                 result ^= shoot & alive & -((p_top_bits >> k_bit) & 1);
                 alive &= ~shoot;
@@ -93,6 +94,7 @@ void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, st
             *cur = result;
         }
 
+        // Correct distortion from truncation.
         size_t n = (end - start) << 6;
         RareErrorIterator::for_samples(p_leftover / (1 - p_truncated), n, rng, [&](size_t s) {
             start[s >> 6] |= uint64_t{1} << (s & 63);

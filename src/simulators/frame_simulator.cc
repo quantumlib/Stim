@@ -490,10 +490,10 @@ void FrameSimulator::CORRELATED_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
     // Sample error locations.
-    rng_buffer.clear();
-    RareErrorIterator::for_samples(target_data.arg, num_samples_raw, rng, [&](size_t s) {
-        rng_buffer[s] = true;
-    });
+    biased_randomize_bits(target_data.arg, rng_buffer.u64, rng_buffer.u64 + ((num_samples_raw + 63) >> 6), rng);
+    if (num_samples_raw & 63) {
+        rng_buffer.u64[num_samples_raw >> 6] &= (uint64_t{1} << (num_samples_raw & 63)) - 1;
+    }
     // Omit locations blocked by prev error, while updating prev error mask.
     simd_bits_range_ref{rng_buffer}.for_each_word(last_correlated_error_occurred, [](simd_word &buf, simd_word &prev) {
         buf = prev.andnot(buf);
