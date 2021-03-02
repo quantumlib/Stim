@@ -76,10 +76,10 @@ def test_circuit_append_operation():
     assert str(c).strip() == """
 # Circuit [num_qubits=4, num_measurements=2]
 X 0 1 2 3
-ZCX 0 1
+CX 0 1
 M 0 !1
 X_ERROR(0.25) 0
-CORRELATED_ERROR(0.5) X0 Y1
+E(0.5) X0 Y1
 DETECTOR rec[-1]
 OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
     """.strip()
@@ -185,7 +185,7 @@ M 0
 # reference sample: 000000
 # Circuit [num_qubits=5, num_measurements=6]
 M 0
-H_XZ 0 1 2 3 4
+H 0 1 2 3 4
 M 0 1 2 3 4
     """.strip() == str(stim.CompiledMeasurementSampler(c))
 

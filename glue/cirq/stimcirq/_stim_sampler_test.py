@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 import stim
 
-import stim_cirq
-from stim_cirq._stim_sampler import (
+import stimcirq
+from stimcirq._stim_sampler import (
     cirq_circuit_to_stim_data,
     gate_to_stim_append_func,
 )
@@ -178,7 +178,7 @@ def test_noisy_gate_conversions(gate: cirq.Gate):
 
 
 def test_end_to_end():
-    sampler = stim_cirq.StimSampler()
+    sampler = stimcirq.StimSampler()
     a, b = cirq.LineQubit.range(2)
     result = sampler.run(
         cirq.Circuit(
@@ -198,12 +198,12 @@ def test_endian():
     a, b = cirq.LineQubit.range(2)
     circuit = cirq.Circuit(cirq.X(a), cirq.measure(a, b, key='out'))
     s1 = cirq.Simulator().sample(circuit)
-    s2 = stim_cirq.StimSampler().sample(circuit)
+    s2 = stimcirq.StimSampler().sample(circuit)
     assert s1['out'][0] == s2['out'][0]
 
 
 def test_custom_gates():
-    s = stim_cirq.StimSampler()
+    s = stimcirq.StimSampler()
     a, b, c, d = cirq.LineQubit.range(4)
 
     class GoodGate(cirq.SingleQubitGate):
@@ -255,7 +255,7 @@ def test_custom_measurement():
             q, = qubits
             return [cirq.H(q), cirq.measure(q, key=self.key), cirq.H(q)]
 
-    s = stim_cirq.StimSampler()
+    s = stimcirq.StimSampler()
     a, b = cirq.LineQubit.range(2)
     out = s.sample(cirq.Circuit(
         cirq.H(a),
@@ -269,7 +269,7 @@ def test_custom_measurement():
 
 
 def test_correlated_error():
-    s = stim_cirq.StimSampler()
+    s = stimcirq.StimSampler()
     a, b = cirq.LineQubit.range(2)
     s.run(cirq.Circuit((cirq.X(a) * cirq.Y(b)).with_probability(0.1)))
 
@@ -312,7 +312,7 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
         cirq.Moment(DetectorGate().on(b)),
     )
 
-    stim_circuit = stim_cirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+    stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert str(stim_circuit).strip() == """
 # Circuit [num_qubits=3, num_measurements=5]
 M 0 1 2
@@ -329,9 +329,9 @@ DETECTOR rec[-1]
             pass
 
     with pytest.raises(TypeError, match="dont_forget_your_star_star_kwargs"):
-        stim_cirq.cirq_circuit_to_stim_circuit(cirq.Circuit(BadGate().on(a)))
+        stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(BadGate().on(a)))
 
-    sample = stim_cirq.StimSampler().sample(cirq_circuit)
+    sample = stimcirq.StimSampler().sample(cirq_circuit)
     assert len(sample.columns) == 4
     np.testing.assert_array_equal(sample["a"], [0])
     np.testing.assert_array_equal(sample["b"], [0])

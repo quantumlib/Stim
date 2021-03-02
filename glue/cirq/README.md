@@ -1,6 +1,6 @@
-# stim_cirq
+# stimcirq
 
-Implements `stim_cirq.StimSampler`, a `cirq.Sampler` that uses the stabilizer circuit simulator `stim` to generate samples.
+Implements `stimcirq.StimSampler`, a `cirq.Sampler` that uses the stabilizer circuit simulator `stim` to generate samples.
 
 # Example
 
@@ -14,8 +14,8 @@ c = cirq.Circuit(
     cirq.measure(b, key="b"),
 )
 
-import stim_cirq
-sampler = stim_cirq.StimSampler()
+import stimcirq
+sampler = stimcirq.StimSampler()
 result = sampler.run(c, repetitions=30)
 
 print(result)

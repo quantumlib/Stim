@@ -18,6 +18,7 @@ _deps/*
 bazel-*
 python_build_stim/*
 stim.egg*
+stimcirq.egg*
 stim_cirq.egg*
 stim.cpython*
 **/dist/*
@@ -25,3 +26,4 @@ MANIFEST
 *.whl
 *.swp
 **/__pycache__/**
+pip-wheel-metadata/*
