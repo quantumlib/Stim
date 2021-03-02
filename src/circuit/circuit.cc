@@ -589,7 +589,7 @@ bool Circuit::append_from_file(FILE *file, bool stop_asap) {
 
 std::ostream &operator<<(std::ostream &out, const Operation &op) {
     out << op.gate->name;
-    if (op.target_data.arg != 0) {
+    if (op.target_data.arg != 0 || (op.gate->flags & GATE_TAKES_PARENS_ARGUMENT)) {
         out << '(';
         if ((size_t)op.target_data.arg == op.target_data.arg) {
             out << (size_t)op.target_data.arg;
