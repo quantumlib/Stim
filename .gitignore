@@ -27,3 +27,4 @@ MANIFEST
 *.swp
 **/__pycache__/**
 pip-wheel-metadata/*
+wheelhouse/*
