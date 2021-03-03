@@ -14,17 +14,22 @@
 
 from setuptools import setup
 
+with open('README.md') as f:
+    long_description = f.read()
+
 setup(
     name='stimcirq',
-    version='0.1',
+    version='1.0.dev',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
     license='Apache 2',
     packages=['stimcirq'],
     description='Implements a cirq.Sampler backed by stim.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     python_requires='>=3.6.0',
     data_files=['README.md'],
-    install_requires=['cirq~=0.10.0dev'],
+    install_requires=['stim', 'cirq~=0.10.0dev'],
     tests_require=['pytest', 'python3-distutils'],
 )

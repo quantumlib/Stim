@@ -35,17 +35,22 @@ extension_module = Extension(
     extra_compile_args=['-std=c++11', '-march=native', '-O3']
 )
 
+with open('glue/python/README.md') as f:
+    long_description = f.read()
+
 setup(
     name='stim',
-    version='0.1',
+    version='1.0.dev',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
     license='Apache 2',
     description='A fast quantum stabilizer circuit simulator.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     ext_modules=[extension_module],
-    python_requires='>=3.5.0',
-    data_files=['pyproject.toml', 'README.md'] + RELEVANT_HEADERS,
+    python_requires='>=3.6.0',
+    data_files=['pyproject.toml', 'glue/python/README.md'] + RELEVANT_HEADERS,
     install_requires=['numpy'],
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     options={'build': {'build_base': 'python_build_stim'}},

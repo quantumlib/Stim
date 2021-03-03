@@ -97,13 +97,14 @@ import stim
 import numpy as np
 
 c = stim.Circuit()
-c.append_operation("X_ERROR", [0], 0.1)
-c.append_operation("Y_ERROR", [1], 0.2)
-c.append_operation("Z_ERROR", [2], 0.3)
-c.append_operation("DEPOLARIZE1", [3], 0.4)
-c.append_operation("DEPOLARIZE2", [4, 5], 0.5)
-c.append_operation("M", [0, 1, 2, 3, 4, 5])
-
+c.append_from_stim_program_text("""
+    X_ERROR(0.1) 0
+    Y_ERROR(0.2) 1
+    Z_ERROR(0.3) 2
+    DEPOLARIZE1(0.4) 3
+    DEPOLARIZE2(0.5) 4 5
+    M 0 1 2 3 4 5
+""")
 batch = c.compile_sampler().sample(2**20)
 print(np.mean(batch, axis=0).round(3))
 # Prints something like:
