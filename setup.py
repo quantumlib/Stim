@@ -40,7 +40,7 @@ with open('glue/python/README.md') as f:
 
 setup(
     name='stim',
-    version='1.0.dev',
+    version='1.0',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
