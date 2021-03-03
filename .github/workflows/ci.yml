@@ -26,10 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # NOTE: macOS turned off because OSX minutes are 10x cost on github actions.
-        # NOTE: windows turned off because windows minutes are 2x cost on github actions and the builds take long.
-        # os: [ubuntu-20.04, windows-2019, macOS-10.15]
-        os: [ubuntu-20.04]
+        os: [ubuntu-20.04, windows-2019, macOS-10.15]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -39,7 +36,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_SKIP: "cp27-* pp27-*"  # skip Python 2.7 wheels
+          CIBW_SKIP: "cp27-* pp27-* cp35-*"  # skip Python 2.7 and 3.5 wheels
       - uses: actions/upload-artifact@v2
         with:
           path: ./wheelhouse/*.whl
