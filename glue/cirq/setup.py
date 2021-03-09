@@ -19,7 +19,7 @@ with open('README.md') as f:
 
 setup(
     name='stimcirq',
-    version='1.0.dev',
+    version='1.1.dev',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
