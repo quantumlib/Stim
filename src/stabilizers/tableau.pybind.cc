@@ -186,6 +186,63 @@ void pybind_tableau(pybind11::module &m) {
                     True
             )DOC")
         .def(
+            "then",
+            [](const Tableau &self, const Tableau &second) {
+                if (self.num_qubits != second.num_qubits) {
+                    throw std::invalid_argument("len(self) != len(second)");
+                }
+                return self.then(second);
+            },
+            pybind11::arg("second"),
+            R"DOC(
+                Returns the result of composing two tableaus.
+
+                If the tableau T1 represents the Clifford operation with unitary C1,
+                and the tableau T2 represents the Clifford operation with unitary C2,
+                then the tableau T1.then(T2) represents the Clifford operation with unitary C2*C1.
+
+                Args:
+                    second: The result is equivalent to applying the second tableau after
+                        the receiving tableau.
+
+                Examples:
+                    >>> import stim
+                    >>> t1 = stim.Tableau.random(4)
+                    >>> t2 = stim.Tableau.random(4)
+                    >>> t3 = t1.then(t2)
+                    >>> p = stim.PauliString.random(4)
+                    >>> t3(p) == t2(t1(p))
+                    True
+            )DOC")
+        .def(
+            "__mul__",
+            [](const Tableau &self, const Tableau &rhs) {
+                if (self.num_qubits != rhs.num_qubits) {
+                    throw std::invalid_argument("len(lhs) != len(rhs)");
+                }
+                return rhs.then(self);
+            },
+            pybind11::arg("rhs"),
+            R"DOC(
+                Returns the product of two tableaus.
+
+                If the tableau T1 represents the Clifford operation with unitary C1,
+                and the tableau T2 represents the Clifford operation with unitary C2,
+                then the tableau T1*T2 represents the Clifford operation with unitary C1*C2.
+
+                Args:
+                    rhs: The tableau  on the right hand side of the multiplication.
+
+                Examples:
+                    >>> import stim
+                    >>> t1 = stim.Tableau.random(4)
+                    >>> t2 = stim.Tableau.random(4)
+                    >>> t3 = t2 * t1
+                    >>> p = stim.PauliString.random(4)
+                    >>> t3(p) == t2(t1(p))
+                    True
+            )DOC")
+        .def(
             "prepend",
             [](Tableau &self, const Tableau &gate, const std::vector<size_t> targets) {
                 std::vector<bool> use(self.num_qubits, false);

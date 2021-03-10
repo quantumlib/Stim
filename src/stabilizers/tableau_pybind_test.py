@@ -260,3 +260,36 @@ def test_pow():
     assert s == s**1 == s**5 == s**-3 == s**(40000 + 1) == s**(-40000 + 1)
     assert s_dag == s**-1 == s**3 == s**7 == s**(40000 + 3) == s**(-40000 + 3)
     assert z == s**2 == s**6 == s**-2 == s**(40000 + 2) == s**(-40000 + 2)
+
+
+def test_aliasing():
+    t = stim.Tableau.random(4)
+    t2 = t**1
+    t.append(t2, range(4))
+    t2.append(t2, range(4))
+    assert t == t2
+
+    t = stim.Tableau.random(4)
+    t2 = t**1
+    t.prepend(t2, range(4))
+    t2.prepend(t2, range(4))
+    assert t == t2
+
+
+def test_composition():
+    assert stim.Tableau(0) * stim.Tableau(0) == stim.Tableau(0)
+    assert stim.Tableau(0).then(stim.Tableau(0)) == stim.Tableau(0)
+    assert stim.Tableau(1) * stim.Tableau(1) == stim.Tableau(1)
+    assert stim.Tableau(1).then(stim.Tableau(1)) == stim.Tableau(1)
+
+    t = stim.Tableau.random(4)
+    t2 = stim.Tableau.random(4)
+    t3 = t.then(t2)
+    assert t3 == t2 * t
+    p = stim.PauliString.random(4)
+    assert t2(t(p)) == t3(p)
+
+    with pytest.raises(ValueError, match="!= len"):
+        _ = stim.Tableau(3) * stim.Tableau(4)
+    with pytest.raises(ValueError, match="!= len"):
+        _ = stim.Tableau(3).then(stim.Tableau(4))

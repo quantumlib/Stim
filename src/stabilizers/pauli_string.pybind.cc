@@ -172,7 +172,7 @@ void pybind_pauli_string(pybind11::module &m) {
             "extended_product",
             [](const PauliString &self, const PauliString &other) {
                 if (self.num_qubits != other.num_qubits) {
-                    throw std::invalid_argument("self.num_qubits != other.num_qubits");
+                    throw std::invalid_argument("len(self) != len(other)");
                 }
                 PauliString result = self;
                 uint8_t log_i = result.ref().inplace_right_mul_returning_log_i_scalar(other);
@@ -216,7 +216,7 @@ void pybind_pauli_string(pybind11::module &m) {
             "__mul__",
             [](const PauliString &self, const PauliString &rhs) {
                 if (self.num_qubits != rhs.num_qubits) {
-                    throw std::invalid_argument("self.num_qubits != other.num_qubits");
+                    throw std::invalid_argument("len(self) != len(other)");
                 }
                 PauliString result = self;
                 uint8_t log_i = result.ref().inplace_right_mul_returning_log_i_scalar(rhs);
