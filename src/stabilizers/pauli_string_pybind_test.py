@@ -79,6 +79,8 @@ def test_repr():
 
 
 def test_product():
+    assert stim.PauliString("") * stim.PauliString("") == stim.PauliString("")
+
     x = stim.PauliString("X")
     y = stim.PauliString("Y")
     z = stim.PauliString("Z")
@@ -88,6 +90,11 @@ def test_product():
     assert (-x)[0] == 1
     assert (-x).sign == -1
     assert -(-x) == x
+
+    with pytest.raises(ValueError, match="!= len"):
+        _ = stim.PauliString(10) * stim.PauliString(11)
+    with pytest.raises(ValueError, match="!= len"):
+        _ = stim.PauliString(10).extended_product(stim.PauliString(11))
 
     with pytest.raises(ValueError, match="non-commut"):
         _ = x * z

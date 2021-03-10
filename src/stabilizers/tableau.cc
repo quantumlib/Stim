@@ -148,6 +148,11 @@ std::string Tableau::str() const {
 
 void Tableau::inplace_scatter_append(const Tableau &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());
+    if (&operation == this) {
+        Tableau independent_copy(operation);
+        inplace_scatter_append(independent_copy, target_qubits);
+        return;
+    }
     for (size_t q = 0; q < num_qubits; q++) {
         auto x = xs[q];
         auto z = zs[q];
@@ -167,6 +172,12 @@ bool Tableau::operator!=(const Tableau &other) const {
 
 void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vector<size_t> &target_qubits) {
     assert(operation.num_qubits == target_qubits.size());
+    if (&operation == this) {
+        Tableau independent_copy(operation);
+        inplace_scatter_prepend(independent_copy, target_qubits);
+        return;
+    }
+
     std::vector<PauliString> new_x;
     std::vector<PauliString> new_z;
     new_x.reserve(operation.num_qubits);
