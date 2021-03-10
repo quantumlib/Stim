@@ -123,7 +123,7 @@ void pybind_circuit(pybind11::module &m) {
                 >>> print(c)
                 # Circuit [num_qubits=0, num_measurements=0]
          )DOC")
-        .def("__iadd__", &Circuit::operator+=, R"DOC(
+        .def("__iadd__", &Circuit::operator+=, pybind11::arg("second"), R"DOC(
             Appends a circuit into the receiving circuit (mutating it).
 
             Examples:
@@ -152,7 +152,7 @@ void pybind_circuit(pybind11::module &m) {
             [](const Circuit &self, const Circuit &other) {
                 return self != other;
             })
-        .def("__add__", &Circuit::operator+, R"DOC(
+        .def("__add__", &Circuit::operator+, pybind11::arg("second"), R"DOC(
             Creates a circuit by appending two circuits.
 
             Examples:
@@ -170,7 +170,7 @@ void pybind_circuit(pybind11::module &m) {
                 Y 1 2
                 M 0 1 2
          )DOC")
-        .def("__imul__", &Circuit::operator*=, R"DOC(
+        .def("__imul__", &Circuit::operator*=, pybind11::arg("repetitions"), R"DOC(
             Mutates the circuit into multiple copies of itself.
 
             Examples:
@@ -189,7 +189,7 @@ void pybind_circuit(pybind11::module &m) {
                 X 0
                 Y 1 2
          )DOC")
-        .def("__mul__", &Circuit::operator*, R"DOC(
+        .def("__mul__", &Circuit::operator*, pybind11::arg("repetitions"), R"DOC(
             Creates a circuit by repeating a circuit multiple times.
 
             Examples:
@@ -208,7 +208,7 @@ void pybind_circuit(pybind11::module &m) {
                 Y 1 2
          )DOC")
         .def(
-            "__rmul__", &Circuit::operator*,
+            "__rmul__", &Circuit::operator*, pybind11::arg("repetitions"),
             R"DOC(
                  Creates a circuit by repeating a circuit multiple times.
 

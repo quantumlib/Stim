@@ -27,12 +27,14 @@ TEST_HEADERS = glob.glob("src/**/*.test.h", recursive=True)
 PERF_HEADERS = glob.glob("src/**/*.perf.h", recursive=True)
 RELEVANT_HEADERS = sorted(set(ALL_HEADERS) - set(TEST_HEADERS + PERF_HEADERS))
 
+version = '1.1.dev'
+
 extension_module = Extension(
     'stim',
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include()],
     language='c++',
-    extra_compile_args=['-std=c++11', '-march=native', '-O3']
+    extra_compile_args=['-std=c++11', '-march=native', '-O3', f'-DVERSION_INFO={version}']
 )
 
 with open('glue/python/README.md') as f:
@@ -40,7 +42,7 @@ with open('glue/python/README.md') as f:
 
 setup(
     name='stim',
-    version='1.1.dev',
+    version=version,
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
