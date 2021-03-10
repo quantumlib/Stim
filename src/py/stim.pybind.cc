@@ -18,6 +18,8 @@
 
 #include "../circuit/circuit.pybind.h"
 #include "../simulators/tableau_simulator.pybind.h"
+#include "../stabilizers/pauli_string.pybind.h"
+#include "../stabilizers/tableau.pybind.h"
 #include "compiled_detector_sampler.pybind.h"
 #include "compiled_measurement_sampler.pybind.h"
 
@@ -88,4 +90,6 @@ PYBIND11_MODULE(stim, m) {
     pybind_compiled_detector_sampler(m);
     pybind_compiled_measurement_sampler(m);
     pybind_tableau_simulator(m);
+    pybind_tableau(m);
+    pybind_pauli_string(m);
 }

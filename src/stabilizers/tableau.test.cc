@@ -665,3 +665,75 @@ TEST(tableau, prepend_pauli) {
     ref.prepend_Z(2);
     ASSERT_EQ(t, ref);
 }
+
+TEST(tableau, then) {
+    Tableau cnot = GATE_DATA.at("CNOT").tableau();
+    Tableau swap = GATE_DATA.at("SWAP").tableau();
+    Tableau hh(2);
+    hh.inplace_scatter_append(GATE_DATA.at("H").tableau(), {0});
+    hh.inplace_scatter_append(GATE_DATA.at("H").tableau(), {1});
+
+    ASSERT_EQ(cnot.then(cnot), Tableau(2));
+    ASSERT_EQ(hh.then(cnot).then(hh), swap.then(cnot).then(swap));
+    ASSERT_EQ(cnot.then(cnot), Tableau(2));
+
+    Tableau t(2);
+    t.inplace_scatter_append(GATE_DATA.at("SQRT_X_DAG").tableau(), {1});
+    t = t.then(GATE_DATA.at("CY").tableau());
+    t.inplace_scatter_append(GATE_DATA.at("SQRT_X").tableau(), {1});
+    ASSERT_EQ(t, GATE_DATA.at("CZ").tableau());
+}
+
+TEST(tableau, raised_to) {
+    Tableau cnot = GATE_DATA.at("CNOT").tableau();
+    ASSERT_EQ(cnot.raised_to(-97268202), Tableau(2));
+    ASSERT_EQ(cnot.raised_to(-97268201), cnot);
+    ASSERT_EQ(cnot.raised_to(-3), cnot);
+    ASSERT_EQ(cnot.raised_to(-2), Tableau(2));
+    ASSERT_EQ(cnot.raised_to(-1), cnot);
+    ASSERT_EQ(cnot.raised_to(0), Tableau(2));
+    ASSERT_EQ(cnot.raised_to(1), cnot);
+    ASSERT_EQ(cnot.raised_to(2), Tableau(2));
+    ASSERT_EQ(cnot.raised_to(3), cnot);
+    ASSERT_EQ(cnot.raised_to(4), Tableau(2));
+    ASSERT_EQ(cnot.raised_to(97268201), cnot);
+    ASSERT_EQ(cnot.raised_to(97268202), Tableau(2));
+
+    Tableau s = GATE_DATA.at("S").tableau();
+    Tableau z = GATE_DATA.at("Z").tableau();
+    Tableau s_dag = GATE_DATA.at("S_DAG").tableau();
+    ASSERT_EQ(s.raised_to(4*-437829 + 0), Tableau(1));
+    ASSERT_EQ(s.raised_to(4*-437829 + 1), s);
+    ASSERT_EQ(s.raised_to(4*-437829 + 2), z);
+    ASSERT_EQ(s.raised_to(4*-437829 + 3), s_dag);
+    ASSERT_EQ(s.raised_to(-5), s_dag);
+    ASSERT_EQ(s.raised_to(-4), Tableau(1));
+    ASSERT_EQ(s.raised_to(-3), s);
+    ASSERT_EQ(s.raised_to(-2), z);
+    ASSERT_EQ(s.raised_to(-1), s_dag);
+    ASSERT_EQ(s.raised_to(0), Tableau(1));
+    ASSERT_EQ(s.raised_to(1), s);
+    ASSERT_EQ(s.raised_to(2), z);
+    ASSERT_EQ(s.raised_to(3), s_dag);
+    ASSERT_EQ(s.raised_to(4), Tableau(1));
+    ASSERT_EQ(s.raised_to(5), s);
+    ASSERT_EQ(s.raised_to(6), z);
+    ASSERT_EQ(s.raised_to(7), s_dag);
+    ASSERT_EQ(s.raised_to(4*437829 + 0), Tableau(1));
+    ASSERT_EQ(s.raised_to(4*437829 + 1), s);
+    ASSERT_EQ(s.raised_to(4*437829 + 2), z);
+    ASSERT_EQ(s.raised_to(4*437829 + 3), s_dag);
+
+    Tableau p15(3);
+    p15.inplace_scatter_append(GATE_DATA.at("SQRT_X").tableau(), {0});
+    p15.inplace_scatter_append(s, {2});
+    p15.inplace_scatter_append(cnot, {0, 1});
+    p15.inplace_scatter_append(cnot, {1, 2});
+    for (size_t k = 1; k < 15; k++) {
+        ASSERT_NE(p15.raised_to(k), Tableau(3));
+    }
+    ASSERT_EQ(p15.raised_to(15), Tableau(3));
+    ASSERT_EQ(p15.raised_to(15*47321 + 4), p15.raised_to(4));
+    ASSERT_EQ(p15.raised_to(15*47321 + 1), p15);
+    ASSERT_EQ(p15.raised_to(15*-47321 + 1), p15);
+}

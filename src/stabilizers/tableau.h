@@ -60,7 +60,10 @@ struct Tableau {
     static Tableau identity(size_t num_qubits);
     /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
     static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
+    /// Returns the inverse Tableau.
     Tableau inverse() const;
+    /// Returns the Tableau raised to an integer power (using repeated squaring).
+    Tableau raised_to(int64_t exponent) const;
 
     bool satisfies_invariants() const;
 
@@ -98,6 +101,9 @@ struct Tableau {
 
     /// Returns the result of applying the tableau to `gathered_input.scatter(scattered_indices)`.
     PauliString scatter_eval(const PauliStringRef &gathered_input, const std::vector<size_t> &scattered_indices) const;
+
+    /// Returns a tableau equivalent to the composition of two tableaus of the same size.
+    Tableau then(const Tableau &second) const;
 
     /// Applies the Tableau inplace to a subset of a Pauli string.
     void apply_within(PauliStringRef &target, const std::vector<size_t> &target_qubits) const;

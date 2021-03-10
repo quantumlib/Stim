@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TABLEAU_SIMULATOR_PYBIND_H
-#define TABLEAU_SIMULATOR_PYBIND_H
+#ifndef PAULI_STRING_PYBIND_H
+#define PAULI_STRING_PYBIND_H
 
 #include <pybind11/pybind11.h>
 
-void pybind_tableau_simulator(pybind11::module &m);
+void pybind_pauli_string(pybind11::module &m);
 
 #endif

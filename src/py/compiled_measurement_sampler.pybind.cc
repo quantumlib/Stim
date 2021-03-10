@@ -69,6 +69,16 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
             "sample", &CompiledMeasurementSampler::sample, R"DOC(
             Returns a numpy array containing a batch of measurement samples from the circuit.
 
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit("""
+                ...    X 0   2 3
+                ...    M 0 1 2 3
+                ... """)
+                >>> s = c.compile_sampler()
+                >>> s.sample(shots=1)
+                array([[1, 0, 1, 1]], dtype=uint8)
+
             Args:
                 shots: The number of times to sample every measurement in the circuit.
 
@@ -80,6 +90,16 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
         .def(
             "sample_bit_packed", &CompiledMeasurementSampler::sample_bit_packed, R"DOC(
             Returns a numpy array containing a bit packed batch of measurement samples from the circuit.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit("""
+                ...    X 0 1 2 3 4 5 6 7     10
+                ...    M 0 1 2 3 4 5 6 7 8 9 10
+                ... """)
+                >>> s = c.compile_sampler()
+                >>> s.sample_bit_packed(shots=1)
+                array([[255,   4]], dtype=uint8)
 
             Args:
                 shots: The number of times to sample every measurement in the circuit.
