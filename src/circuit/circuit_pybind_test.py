@@ -163,6 +163,47 @@ M 4
     assert str(c) == "# Circuit [num_qubits=0, num_measurements=0]"
 
 
+def test_circuit_repr():
+    v = stim.Circuit("""
+        X 0
+        M 0
+    """)
+    r = repr(v)
+    assert r == '''stim.Circuit("""
+# Circuit [num_qubits=1, num_measurements=1]
+X 0
+M 0
+""")'''
+    assert eval(r, {'stim': stim}) == v
+
+
+def test_circuit_eq():
+    a = """
+        X 0
+        M 0
+    """
+    b = """
+        Y 0
+        M 0
+    """
+    assert stim.Circuit() == stim.Circuit()
+    assert stim.Circuit() != stim.Circuit(a)
+    assert not (stim.Circuit() != stim.Circuit())
+    assert not (stim.Circuit() == stim.Circuit(a))
+    assert stim.Circuit(a) == stim.Circuit(a)
+    assert stim.Circuit(b) == stim.Circuit(b)
+    assert stim.Circuit(a) != stim.Circuit(b)
+
+
+def test_circuit_clear():
+    c = stim.Circuit("""
+        X 0
+        M 0
+    """)
+    c.clear()
+    assert c == stim.Circuit()
+
+
 def test_circuit_compile_sampler():
     c = stim.Circuit()
     s = c.compile_sampler()
@@ -208,102 +249,3 @@ def test_circuit_compile_detector_sampler():
 M 0
 DETECTOR rec[-1]
     """.strip()
-
-
-def test_compiled_measurement_sampler_sample():
-    c = stim.Circuit()
-    c.append_operation("X", [1])
-    c.append_operation("M", [0, 1, 2, 3])
-    np.testing.assert_array_equal(
-        c.compile_sampler().sample(5),
-        np.array([
-            [0, 1, 0, 0],
-            [0, 1, 0, 0],
-            [0, 1, 0, 0],
-            [0, 1, 0, 0],
-            [0, 1, 0, 0],
-        ], dtype=np.uint8))
-    np.testing.assert_array_equal(
-        c.compile_sampler().sample_bit_packed(5),
-        np.array([
-            [0b00010],
-            [0b00010],
-            [0b00010],
-            [0b00010],
-            [0b00010],
-        ], dtype=np.uint8))
-
-
-def test_tableau_simulator():
-    s = stim.TableauSimulator()
-    assert s.measure(0) is False
-    assert s.measure(0) is False
-    s.x(0)
-    assert s.measure(0) is True
-    assert s.measure(0) is True
-    s.reset(0)
-    assert s.measure(0) is False
-    s.h(0)
-    s.h(0)
-    s.sqrt_x(1)
-    s.sqrt_x(1)
-    assert s.measure_many(0, 1) == [False, True]
-
-
-def test_compiled_detector_sampler_sample():
-    c = stim.Circuit()
-    c.append_operation("X_ERROR", [0], 1)
-    c.append_operation("M", [0, 1, 2])
-    c.append_operation("DETECTOR", [stim.target_rec(-3), stim.target_rec(-2)])
-    c.append_operation("DETECTOR", [stim.target_rec(-3), stim.target_rec(-1)])
-    c.append_operation("DETECTOR", [stim.target_rec(-1), stim.target_rec(-2)])
-    c.append_from_stim_program_text("""
-        OBSERVABLE_INCLUDE(0) rec[-3]
-        OBSERVABLE_INCLUDE(3) rec[-2] rec[-1]
-    """)
-    c.append_operation("OBSERVABLE_INCLUDE", [stim.target_rec(-2)], 0)
-    np.testing.assert_array_equal(
-        c.compile_detector_sampler().sample(5),
-        np.array([
-            [1, 1, 0],
-            [1, 1, 0],
-            [1, 1, 0],
-            [1, 1, 0],
-            [1, 1, 0],
-        ], dtype=np.uint8))
-    np.testing.assert_array_equal(
-        c.compile_detector_sampler().sample(5, prepend_observables=True),
-        np.array([
-            [1, 0, 0, 0, 1, 1, 0],
-            [1, 0, 0, 0, 1, 1, 0],
-            [1, 0, 0, 0, 1, 1, 0],
-            [1, 0, 0, 0, 1, 1, 0],
-            [1, 0, 0, 0, 1, 1, 0],
-        ], dtype=np.uint8))
-    np.testing.assert_array_equal(
-        c.compile_detector_sampler().sample(5, append_observables=True),
-        np.array([
-            [1, 1, 0, 1, 0, 0, 0],
-            [1, 1, 0, 1, 0, 0, 0],
-            [1, 1, 0, 1, 0, 0, 0],
-            [1, 1, 0, 1, 0, 0, 0],
-            [1, 1, 0, 1, 0, 0, 0],
-        ], dtype=np.uint8))
-    np.testing.assert_array_equal(
-        c.compile_detector_sampler().sample(5, append_observables=True, prepend_observables=True),
-        np.array([
-            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
-            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
-            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
-            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
-            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
-        ], dtype=np.uint8))
-    np.testing.assert_array_equal(
-        c.compile_detector_sampler().sample_bit_packed(5),
-        np.array([
-            [0b011],
-            [0b011],
-            [0b011],
-            [0b011],
-            [0b011],
-        ], dtype=np.uint8))

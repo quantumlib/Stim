@@ -31,11 +31,14 @@ void Tableau::expand(size_t new_num_qubits) {
     // If the new qubits fit inside the padding, just extend into it.
     assert(new_num_qubits >= num_qubits);
     if (new_num_qubits <= xs.xt.num_major_bits_padded()) {
-        for (size_t k = num_qubits; k < new_num_qubits; k++) {
+        size_t old_num_qubits = num_qubits;
+        num_qubits = new_num_qubits;
+        xs.num_qubits = new_num_qubits;
+        zs.num_qubits = new_num_qubits;
+        for (size_t k = old_num_qubits; k < new_num_qubits; k++) {
             xs[k].xs[k] = true;
             zs[k].zs[k] = true;
         }
-        num_qubits = new_num_qubits;
         return;
     }
 
@@ -206,7 +209,9 @@ PauliString Tableau::scatter_eval(
 }
 
 PauliString Tableau::operator()(const PauliStringRef &p) const {
-    assert(p.num_qubits == num_qubits);
+    if (p.num_qubits != num_qubits) {
+        throw std::out_of_range("pauli_string.num_qubits != tableau.num_qubits");
+    }
     std::vector<size_t> indices;
     for (size_t k = 0; k < p.num_qubits; k++) {
         indices.push_back(k);
@@ -410,4 +415,38 @@ void Tableau::do_transpose_quadrants() {
         zs.xt.do_square_transpose();
         zs.zt.do_square_transpose();
     }
+}
+
+Tableau Tableau::then(const Tableau &second) const {
+    assert(num_qubits == second.num_qubits);
+    Tableau result(num_qubits);
+    for (size_t q = 0; q < num_qubits; q++) {
+        result.xs[q] = second(xs[q]);
+        result.zs[q] = second(zs[q]);
+    }
+    return result;
+}
+
+Tableau Tableau::raised_to(int64_t exponent) const {
+    Tableau result(num_qubits);
+    if (exponent) {
+        Tableau square = *this;
+
+        if (exponent < 0) {
+            square = square.inverse();
+            exponent *= -1;
+        }
+
+        while (true) {
+            if (exponent & 1) {
+                result = result.then(square);
+            }
+            exponent >>= 1;
+            if (exponent == 0) {
+                break;
+            }
+            square = square.then(square);
+        }
+    }
+    return result;
 }

@@ -96,8 +96,7 @@ The circuit can also include noise:
 import stim
 import numpy as np
 
-c = stim.Circuit()
-c.append_from_stim_program_text("""
+c = stim.Circuit("""
     X_ERROR(0.1) 0
     Y_ERROR(0.2) 1
     Z_ERROR(0.3) 2
