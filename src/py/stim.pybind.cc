@@ -23,7 +23,8 @@
 #include "compiled_detector_sampler.pybind.h"
 #include "compiled_measurement_sampler.pybind.h"
 
-#define STRINGIFY(x) #x
+#define xstr(s) str(s)
+#define str(s) #s
 
 uint32_t target_rec(int32_t lookback) {
     if (lookback >= 0 || lookback <= -(1 << 24)) {
@@ -49,9 +50,9 @@ uint32_t target_z(uint32_t qubit) {
 }
 
 PYBIND11_MODULE(stim, m) {
-    m.attr("__version__") = STRINGIFY(VERSION_INFO);
+    m.attr("__version__") = xstr(VERSION_INFO);
     m.doc() = R"pbdoc(
-        Stim: A stabilizer circuit simulator.
+        Stim: A fast stabilizer circuit simulator library.
     )pbdoc";
 
     m.def(
