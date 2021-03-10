@@ -99,3 +99,11 @@ def test_gates_present(name: str):
     getattr(s1, name)(*range(n))
     s2.do(stim.Circuit(f"{name} " + " ".join(str(e) for e in range(n))))
     assert s1.current_inverse_tableau() == s2.current_inverse_tableau()
+
+
+def test_do():
+    s = stim.TableauSimulator()
+    s.do(stim.Circuit("""
+        S 0
+    """))
+    assert s.current_inverse_tableau() == stim.Tableau.from_named_gate("S_DAG")

@@ -126,6 +126,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "do",
             [](TableauSimulator &self, const Circuit &circuit) {
+                self.ensure_large_enough_for_qubits(circuit.num_qubits);
                 for (const auto &op : circuit.operations) {
                     (self.*op.gate->tableau_simulator_function)(op.target_data);
                 }
