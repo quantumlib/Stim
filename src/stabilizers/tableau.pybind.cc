@@ -27,6 +27,33 @@ void pybind_tableau(pybind11::module &m) {
 
             Represents a Clifford operation by explicitly storing how that operation conjugates a list of Pauli
             group generators into composite Pauli products.
+
+            Examples:
+                >>> import stim
+                >>> stim.Tableau.from_named_gate("H")
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z"),
+                    ],
+                    zs=[
+                        stim.PauliString("+X"),
+                    ],
+                )
+
+                >>> t = stim.Tableau.random(5)
+                >>> t_inv = t**-1
+                >>> print(t * t_inv)
+                +-xz-xz-xz-xz-xz-
+                | ++ ++ ++ ++ ++
+                | XZ __ __ __ __
+                | __ XZ __ __ __
+                | __ __ XZ __ __
+                | __ __ __ XZ __
+                | __ __ __ __ XZ
+
+                >>> x2z3 = t.x_output(2) * t.z_output(3)
+                >>> t_inv(x2z3)
+                stim.PauliString("+__XZ_")
         )DOC")
         .def(
             pybind11::init<size_t>(), pybind11::arg("num_qubits"),

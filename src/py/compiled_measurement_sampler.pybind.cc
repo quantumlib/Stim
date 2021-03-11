@@ -71,10 +71,10 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    X 0   2 3
                 ...    M 0 1 2 3
-                ... """)
+                ... ''')
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
                 array([[1, 0, 1, 1]], dtype=uint8)
@@ -93,10 +93,10 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    X 0 1 2 3 4 5 6 7     10
                 ...    M 0 1 2 3 4 5 6 7 8 9 10
-                ... """)
+                ... ''')
                 >>> s = c.compile_sampler()
                 >>> s.sample_bit_packed(shots=1)
                 array([[255,   4]], dtype=uint8)
