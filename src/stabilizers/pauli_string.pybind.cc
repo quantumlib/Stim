@@ -110,9 +110,11 @@ void pybind_pauli_string(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> p = stim.PauliString(5)
-                >>> print(p)
+                >>> stim.PauliString("XX") * stim.PauliString("YY")
+                stim.PauliString("-ZZ")
+                >>> print(stim.PauliString(5))
                 +_____
+
         )DOC")
         .def_static(
             "random",
@@ -328,6 +330,7 @@ void pybind_pauli_string(pybind11::module &m) {
                 int z = self.zs[u];
                 return (x ^ z) | (z << 1);
             },
+            pybind11::arg("index"),
             GET_ITEM_DOC)
         .def(
             "__getitem__",
@@ -344,9 +347,11 @@ void pybind_pauli_string(pybind11::module &m) {
                     return "_XZY"[self.xs[j] + self.zs[j] * 2];
                 });
             },
+            pybind11::arg("slice"),
             GET_ITEM_DOC)
         .def(
             pybind11::init(&PauliString::from_str),
+            pybind11::arg("text"),
             R"DOC(
                 Creates a stim.PauliString from a text string.
 
@@ -364,7 +369,7 @@ void pybind_pauli_string(pybind11::module &m) {
                     -___X_
 
                 Args:
-                    text: The number of qubits the Pauli string acts on.
+                    text: A text description of the Pauli string's contents, such as "+XXX" or "-_YX".
              )DOC")
         .def(
             pybind11::init<size_t>(), pybind11::arg("num_qubits"),

@@ -20,7 +20,29 @@
 #include "circuit.pybind.h"
 
 void pybind_circuit(pybind11::module &m) {
-    pybind11::class_<Circuit>(m, "Circuit", "A mutable stabilizer circuit.")
+    pybind11::class_<Circuit>(
+        m,
+        "Circuit",
+        R"DOC(
+            A mutable stabilizer circuit.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit()
+                >>> c.append_operation("X", [0])
+                >>> c.append_operation("M", [0])
+                >>> c.compile_sampler().sample(shots=1)
+                array([[1]], dtype=uint8)
+
+                >>> stim.Circuit('''
+                ...    H 0
+                ...    CNOT 0 1
+                ...    M 0 1
+                ...    DETECTOR rec[-1] rec[-2]
+                ... ''').compile_detector_sampler().sample(shots=1)
+                array([[0]], dtype=uint8)
+
+        )DOC")
         .def(
             pybind11::init([](const char *stim_program_text) {
                 Circuit self;
@@ -37,21 +59,21 @@ void pybind_circuit(pybind11::module &m) {
             Examples:
                 >>> import stim
                 >>> empty = stim.Circuit()
-                >>> not_empty = stim.Circuit("""
+                >>> not_empty = stim.Circuit('''
                 ...    X 0
                 ...    CNOT 0 1
                 ...    M 1
-                ... """)
+                ... ''')
          )DOC")
         .def_readonly("num_measurements", &Circuit::num_measurements, R"DOC(
             The number of measurement bits produced when sampling from the circuit.
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    M 0
                 ...    M 0 1
-                ... """)
+                ... ''')
                 >>> c.num_measurements
                 3
          )DOC")
@@ -60,15 +82,15 @@ void pybind_circuit(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    M 0
                 ...    M 0 1
-                ... """)
+                ... ''')
                 >>> c.num_qubits
                 2
-                >>> c.append_from_stim_program_text("""
+                >>> c.append_from_stim_program_text('''
                 ...    X 100
-                ... """)
+                ... ''')
                 >>> c.num_qubits
                 101
          )DOC")
@@ -82,10 +104,10 @@ void pybind_circuit(pybind11::module &m) {
 
                 Examples:
                     >>> import stim
-                    >>> c = stim.Circuit("""
+                    >>> c = stim.Circuit('''
                     ...    X 2
                     ...    M 0 1 2
-                    ... """)
+                    ... ''')
                     >>> s = c.compile_sampler()
                     >>> s.sample(shots=1)
                     array([[0, 0, 1]], dtype=uint8)
@@ -100,12 +122,12 @@ void pybind_circuit(pybind11::module &m) {
 
                 Examples:
                     >>> import stim
-                    >>> c = stim.Circuit("""
+                    >>> c = stim.Circuit('''
                     ...    H 0
                     ...    CNOT 0 1
                     ...    M 0 1
                     ...    DETECTOR rec[-1] rec[-2]
-                    ... """)
+                    ... ''')
                     >>> s = c.compile_detector_sampler()
                     >>> s.sample(shots=1)
                     array([[0]], dtype=uint8)
@@ -115,10 +137,10 @@ void pybind_circuit(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    X 0
                 ...    Y 1 2
-                ... """)
+                ... ''')
                 >>> c.clear()
                 >>> print(c)
                 # Circuit [num_qubits=0, num_measurements=0]
@@ -128,13 +150,13 @@ void pybind_circuit(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c1 = stim.Circuit("""
+                >>> c1 = stim.Circuit('''
                 ...    X 0
                 ...    Y 1 2
-                ... """)
-                >>> c2 = stim.Circuit("""
+                ... ''')
+                >>> c2 = stim.Circuit('''
                 ...    M 0 1 2
-                ... """)
+                ... ''')
                 >>> c1 += c2
                 >>> print(c1)
                 # Circuit [num_qubits=3, num_measurements=3]
@@ -157,13 +179,13 @@ void pybind_circuit(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c1 = stim.Circuit("""
+                >>> c1 = stim.Circuit('''
                 ...    X 0
                 ...    Y 1 2
-                ... """)
-                >>> c2 = stim.Circuit("""
+                ... ''')
+                >>> c2 = stim.Circuit('''
                 ...    M 0 1 2
-                ... """)
+                ... ''')
                 >>> print(c1 + c2)
                 # Circuit [num_qubits=3, num_measurements=3]
                 X 0
@@ -175,10 +197,10 @@ void pybind_circuit(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    X 0
                 ...    Y 1 2
-                ... """)
+                ... ''')
                 >>> c *= 3
                 >>> print(c)
                 # Circuit [num_qubits=3, num_measurements=0]
@@ -194,10 +216,10 @@ void pybind_circuit(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit("""
+                >>> c = stim.Circuit('''
                 ...    X 0
                 ...    Y 1 2
-                ... """)
+                ... ''')
                 >>> print(c * 3)
                 # Circuit [num_qubits=3, num_measurements=0]
                 X 0
@@ -214,10 +236,10 @@ void pybind_circuit(pybind11::module &m) {
 
                  Examples:
                      >>> import stim
-                     >>> c = stim.Circuit("""
+                     >>> c = stim.Circuit('''
                      ...    X 0
                      ...    Y 1 2
-                     ... """)
+                     ... ''')
                      >>> print(3 * c)
                      # Circuit [num_qubits=3, num_measurements=0]
                      X 0
@@ -266,13 +288,13 @@ void pybind_circuit(pybind11::module &m) {
                 Examples:
                     >>> import stim
                     >>> c = stim.Circuit()
-                    >>> c.append_from_stim_program_text("""
+                    >>> c.append_from_stim_program_text('''
                     ...    H 0  # comment
                     ...    CNOT 0 2
                     ...
                     ...    M 2
                     ...    CNOT rec[-1] 1
-                    ... """)
+                    ... ''')
                     >>> print(c)
                     # Circuit [num_qubits=3, num_measurements=1]
                     H 0

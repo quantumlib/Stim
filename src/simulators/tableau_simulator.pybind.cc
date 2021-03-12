@@ -63,8 +63,36 @@ void pybind_tableau_simulator(pybind11::module &m) {
     pybind11::class_<TableauSimulator>(
         m,
         "TableauSimulator",
-        "A quantum stabilizer circuit simulator whose state is an inverse stabilizer tableau."
-        )
+        R"DOC(
+            A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
+
+            Supports interactive usage, where gates and measurements are applied on demand.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.h(0)
+                >>> if s.measure(0):
+                ...     s.h(1)
+                ...     s.cnot(1, 2)
+                >>> s.measure(1) == s.measure(2)
+                True
+
+                >>> s = stim.TableauSimulator()
+                >>> s.h(0)
+                >>> s.cnot(0, 1)
+                >>> s.current_inverse_tableau()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+ZX"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+X_"),
+                        stim.PauliString("+XZ"),
+                    ],
+                )
+        )DOC")
         .def(
             "current_inverse_tableau",
             [](TableauSimulator &self) {
@@ -72,6 +100,9 @@ void pybind_tableau_simulator(pybind11::module &m) {
             },
             R"DOC(
                 Returns a copy of the internal state of the simulator as a stim.Tableau.
+
+                Returns:
+                    A stim.Tableau copy of the simulator's state.
 
                 Examples:
                     >>> import stim
@@ -122,6 +153,9 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     >>> s.do(stim.Circuit("M 0"))
                     >>> s.current_measurement_record()
                     [False, True, True]
+
+                Returns:
+                    A list of booleans containing the result of every measurement performed by the simulator so far.
             )DOC")
         .def(
             "do",
@@ -131,175 +165,329 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     (self.*op.gate->tableau_simulator_function)(op.target_data);
                 }
             },
+            pybind11::arg("circuit"),
             R"DOC(
                 Applies all the operations in the given stim.Circuit to the simulator's state.
 
                 Examples:
                     >>> import stim
                     >>> s = stim.TableauSimulator()
-                    >>> s.do(stim.Circuit("""
+                    >>> s.do(stim.Circuit('''
                     ...     X 0
                     ...     M 0
-                    ... """))
+                    ... '''))
                     >>> s.current_measurement_record()
                     [True]
+
+                Args:
+                    circuit: A stim.Circuit containing operations to apply.
             )DOC")
         .def(
             "h",
             [](TableauSimulator &self, pybind11::args args) {
                 self.H_XZ(args_to_targets(self, args));
             },
-            "Applies a Hadamard gate to the simulator's state.")
+            R"DOC(
+                Applies a Hadamard gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "h_xy",
             [](TableauSimulator &self, pybind11::args args) {
                 self.H_XY(args_to_targets(self, args));
             },
-            "Applies a variant of the Hadamard gate that swaps the X and Y axes to the simulator's state.")
+            R"DOC(
+                Applies a variant of the Hadamard gate that swaps the X and Y axes to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "h_yz",
             [](TableauSimulator &self, pybind11::args args) {
                 self.H_YZ(args_to_targets(self, args));
             },
-            "Applies a variant of the Hadamard gate that swaps the Y and Z axes to the simulator's state.")
+            R"DOC(
+                Applies a variant of the Hadamard gate that swaps the Y and Z axes to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "x",
             [](TableauSimulator &self, pybind11::args args) {
                 self.X(args_to_targets(self, args));
             },
-            "Applies a Pauli X gate to the simulator's state.")
+            R"DOC(
+                Applies a Pauli X gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "y",
             [](TableauSimulator &self, pybind11::args args) {
                 self.Y(args_to_targets(self, args));
             },
-            "Applies a Pauli Y gate to the simulator's state.")
+            R"DOC(
+                Applies a Pauli Y gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "z",
             [](TableauSimulator &self, pybind11::args args) {
                 self.Z(args_to_targets(self, args));
             },
-            "Applies a Pauli Z gate to the simulator's state.")
+            R"DOC(
+                Applies a Pauli Z gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "s",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SQRT_Z(args_to_targets(self, args));
             },
-            "Applies a SQRT_Z gate to the simulator's state.")
+            R"DOC(
+                Applies a SQRT_Z gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "s_dag",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SQRT_Z_DAG(args_to_targets(self, args));
             },
-            "Applies a SQRT_Z_DAG gate to the simulator's state.")
+            R"DOC(
+                Applies a SQRT_Z_DAG gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "sqrt_x",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SQRT_X(args_to_targets(self, args));
             },
-            "Applies a SQRT_X gate to the simulator's state.")
+            R"DOC(
+                Applies a SQRT_X gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "sqrt_x_dag",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SQRT_X_DAG(args_to_targets(self, args));
             },
-            "Applies a SQRT_X_DAG gate to the simulator's state.")
+            R"DOC(
+                Applies a SQRT_X_DAG gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "sqrt_y",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SQRT_Y(args_to_targets(self, args));
             },
-            "Applies a SQRT_Y gate to the simulator's state.")
+            R"DOC(
+                Applies a SQRT_Y gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "sqrt_y_dag",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SQRT_Y_DAG(args_to_targets(self, args));
             },
-            "Applies a SQRT_Y_DAG gate to the simulator's state.")
+            R"DOC(
+                Applies a SQRT_Y_DAG gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+            )DOC")
         .def(
             "swap",
             [](TableauSimulator &self, pybind11::args args) {
                 self.SWAP(args_to_target_pairs(self, args));
             },
-            "Applies a swap gate to the simulator's state.")
+            R"DOC(
+                Applies a swap gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "iswap",
             [](TableauSimulator &self, pybind11::args args) {
                 self.ISWAP(args_to_target_pairs(self, args));
             },
-            "Applies an ISWAP gate to the simulator's state.")
+            R"DOC(
+                Applies an ISWAP gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "iswap_dag",
             [](TableauSimulator &self, pybind11::args args) {
                 self.ISWAP_DAG(args_to_target_pairs(self, args));
             },
-            "Applies an ISWAP_DAG gate to the simulator's state.")
+            R"DOC(
+                Applies an ISWAP_DAG gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "cnot",
             [](TableauSimulator &self, pybind11::args args) {
                 self.ZCX(args_to_target_pairs(self, args));
             },
-            "Applies a controlled X gate to the simulator's state.")
+            R"DOC(
+                Applies a controlled X gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "cz",
             [](TableauSimulator &self, pybind11::args args) {
                 self.ZCZ(args_to_target_pairs(self, args));
             },
-            "Applies a controlled Z gate to the simulator's state.")
+            R"DOC(
+                Applies a controlled Z gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "cy",
             [](TableauSimulator &self, pybind11::args args) {
                 self.ZCY(args_to_target_pairs(self, args));
             },
-            "Applies a controlled Y gate to the simulator's state.")
+            R"DOC(
+                Applies a controlled Y gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "xcx",
             [](TableauSimulator &self, pybind11::args args) {
                 self.XCX(args_to_target_pairs(self, args));
             },
-            "Applies an X-controlled X gate to the simulator's state.")
+            R"DOC(
+                Applies an X-controlled X gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "xcy",
             [](TableauSimulator &self, pybind11::args args) {
                 self.XCY(args_to_target_pairs(self, args));
             },
-            "Applies an X-controlled Y gate to the simulator's state.")
+            R"DOC(
+                Applies an X-controlled Y gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "xcz",
             [](TableauSimulator &self, pybind11::args args) {
                 self.XCZ(args_to_target_pairs(self, args));
             },
-            "Applies an X-controlled Z gate to the simulator's state.")
+            R"DOC(
+                Applies an X-controlled Z gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "ycx",
             [](TableauSimulator &self, pybind11::args args) {
                 self.YCX(args_to_target_pairs(self, args));
             },
-            "Applies a Y-controlled X gate to the simulator's state.")
+            R"DOC(
+                Applies a Y-controlled X gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "ycy",
             [](TableauSimulator &self, pybind11::args args) {
                 self.YCY(args_to_target_pairs(self, args));
             },
-            "Applies a Y-controlled Y gate to the simulator's state.")
+            R"DOC(
+                Applies a Y-controlled Y gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "ycz",
             [](TableauSimulator &self, pybind11::args args) {
                  self.YCZ(args_to_target_pairs(self, args));
             },
-            "Applies a Y-controlled Z gate to the simulator's state.")
+            R"DOC(
+                Applies a Y-controlled Z gate to the simulator's state.
+
+                Args:
+                    *targets: The indices of the qubits to target with the gate.
+                        Applies the gate to the first two targets, then the next two targets, and so forth.
+                        There must be an even number of targets.
+            )DOC")
         .def(
             "reset",
             [](TableauSimulator &self, pybind11::args args) {
                 self.reset(args_to_targets(self, args));
             },
-            "Resets a qubit's state to zero (e.g. by swapping it for a zero'd qubit from the environment).")
+            R"DOC(
+                Resets qubits to zero (e.g. by swapping them for zero'd qubit from the environment).
+
+                Args:
+                    *targets: The indices of the qubits to reset.
+            )DOC")
         .def(
             "measure",
             [](TableauSimulator &self, uint32_t target) {
                 self.measure(TempViewableData({target}));
                 return (bool)self.measurement_record.back();
             },
+            pybind11::arg("target"),
             R"DOC(
                 Measures a single qubit.
 
@@ -308,6 +496,12 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 create a pitfall where typing `if sim.measure(qubit)` would be a bug.
 
                 To measure multiple qubits, use `TableauSimulator.measure_many`.
+
+                Args:
+                    target: The index of the qubit to measure.
+
+                Returns:
+                    The measurement result as a bool.
             )DOC")
         .def(
             "measure_many",
@@ -317,6 +511,14 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 auto e = self.measurement_record.end();
                 return std::vector<bool>(e - converted_args.targets.size(), e);
             },
-            "Measures multiple qubits.")
+            R"DOC(
+                Measures multiple qubits.
+
+                Args:
+                    *targets: The indices of the qubits to measure.
+
+                Returns:
+                    The measurement results as a list of bools.
+            )DOC")
         .def(pybind11::init(&create_tableau_simulator));
 }
