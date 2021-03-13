@@ -22,11 +22,11 @@ BENCHMARK(SparseXorTable_SmallRowXor_1000) {
     size_t n = 1000;
     std::vector<SparseXorVec<uint32_t>> table(n);
     for (uint32_t k = 0; k < n; k++) {
-        table[k] ^= k;
-        table[k] ^= k + 1;
-        table[k] ^= k + 4;
-        table[k] ^= k + 8;
-        table[k] ^= k + 15;
+        table[k].xor_item(k);
+        table[k].xor_item(k + 1);
+        table[k].xor_item(k + 4);
+        table[k].xor_item(k + 8);
+        table[k].xor_item(k + 15);
     }
 
     benchmark_go([&]() {

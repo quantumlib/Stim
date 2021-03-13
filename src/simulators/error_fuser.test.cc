@@ -136,25 +136,25 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     ErrorFuser e(16);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
-            e.xs[q] ^= 0;
+            e.xs[q].xor_item(0);
             f.x_table[q][0] = true;
         }
         if (q & 2) {
-            e.xs[q] ^= 1;
+            e.xs[q].xor_item(1);
             f.x_table[q][1] = true;
         }
         if (q & 4) {
-            e.zs[q] ^= 0;
+            e.zs[q].xor_item(0);
             f.z_table[q][0] = true;
         }
         if (q & 8) {
-            e.zs[q] ^= 1;
+            e.zs[q].xor_item(1);
             f.z_table[q][1] = true;
         }
     }
 
     std::vector<uint32_t> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    OperationData targets = {0, {&data, 0, data.size()}};
+    OperationData targets = {0, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
             (e.*gate.hit_simulator_function)(targets);

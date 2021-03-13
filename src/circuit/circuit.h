@@ -24,7 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../simd/vector_view.h"
+#include "../simd/monotonic_buffer.h"
 #include "gate_data.h"
 
 #define TARGET_VALUE_MASK ((uint32_t{1} << 24) - uint32_t{1})
@@ -83,7 +83,7 @@ struct OperationData {
     /// The bottom 24 bits of each item always refer to a qubit index.
     /// The top 8 bits are used for additional data such as
     /// Pauli basis, record lookback, and measurement inversion.
-    VectorView<uint32_t> targets;
+    PointerRange<uint32_t> targets;
 
     bool operator==(const OperationData &other) const;
     bool operator!=(const OperationData &other) const;
@@ -111,10 +111,8 @@ struct Operation {
 
 /// A description of a quantum computation.
 struct Circuit {
-    /// Variable-sized operation data is stored as views into this single contiguous array.
-    /// Appending operations will append their target data into this vector, and the operation will reference it.
-    /// This decreases memory fragmentation and the number of allocations during parsing.
-    JaggedDataArena<uint32_t> jagged_target_data;
+    /// Backing data store for variable-sized target data referenced by operations.
+    MonotonicBuffer<uint32_t> jag_targets;
     /// Operations in the circuit, from earliest to latest.
     std::vector<Operation> operations;
     /// One more than the maximum qubit index seen in the circuit (so far).
@@ -180,7 +178,7 @@ struct Circuit {
         const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(
-        const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg);
+        const Gate &gate, ConstPointerRange<uint32_t> targets, double arg);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -202,8 +200,8 @@ struct Circuit {
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
 struct DetectorsAndObservables {
-    JaggedDataArena<uint32_t> jagged_data;
-    std::vector<VectorView<uint32_t>> detectors;
+    MonotonicBuffer<uint32_t> jagged_detector_data;
+    std::vector<PointerRange<uint32_t>> detectors;
     std::vector<std::vector<uint32_t>> observables;
     DetectorsAndObservables(const Circuit &circuit);
 

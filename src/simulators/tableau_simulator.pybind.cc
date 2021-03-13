@@ -24,8 +24,7 @@ struct TempViewableData {
     }
     operator OperationData() const {
         // Temporarily remove const correctness but then immediately restore it.
-        VectorView<uint32_t> v{(std::vector<uint32_t> *)&targets, 0, targets.size()};
-        return {0, v};
+        return {0, targets};
     }
 };
 

@@ -60,13 +60,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     while (targets.size() > num_targets) {
         targets.pop_back();
     }
-    OperationData op_data{
-        0,
-        {
-            &targets,
-            0,
-            targets.size(),
-        }};
+    OperationData op_data{0, targets};
     for (size_t k = 7; k < num_samples; k += 101) {
         PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);

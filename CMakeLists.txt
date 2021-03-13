@@ -36,6 +36,7 @@ set(SOURCE_FILES_NO_MAIN
         src/main_helper.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
+        src/simd/monotonic_buffer.cc
         src/simd/simd_bit_table.cc
         src/simd/simd_bits.cc
         src/simd/simd_bits_range_ref.cc
@@ -60,6 +61,7 @@ set(TEST_FILES
         src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
+        src/simd/monotonic_buffer.test.cc
         src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
         src/simd/simd_bits_range_ref.test.cc

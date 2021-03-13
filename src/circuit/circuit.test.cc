@@ -27,7 +27,7 @@ OpDat OpDat::flipped(size_t target) {
 }
 
 OpDat::operator OperationData() {
-    return {0, {&targets, 0, targets.size()}};
+    return {0, targets};
 }
 
 TEST(circuit, from_text) {
@@ -209,8 +209,8 @@ TEST(circuit, append_circuit) {
         expected.append_op("M", {7});
     }
     ASSERT_EQ(actual, expected);
-    ASSERT_EQ(actual.jagged_target_data.vec.size(), 7);
-    ASSERT_EQ(expected.jagged_target_data.vec.size(), 7 * 4);
+    ASSERT_LT(actual.jag_targets.total_allocated(), 7 * 3);
+    ASSERT_GT(expected.jag_targets.total_allocated(), 7 * 3);
 }
 
 TEST(circuit, append_op_fuse) {
