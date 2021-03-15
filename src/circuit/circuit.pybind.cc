@@ -12,12 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "circuit.h"
-
 #include "../py/base.pybind.h"
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
 #include "circuit.pybind.h"
+
+std::string circuit_repr(const Circuit &self) {
+    if (self.operations.empty()) {
+        return "stim.Circuit()";
+    }
+    return "stim.Circuit('''\n" + self.str() + "\n''')";
+}
 
 void pybind_circuit(pybind11::module &m) {
     pybind11::class_<Circuit>(
@@ -142,8 +147,8 @@ void pybind_circuit(pybind11::module &m) {
                 ...    Y 1 2
                 ... ''')
                 >>> c.clear()
-                >>> print(c)
-                # Circuit [num_qubits=0, num_measurements=0]
+                >>> c
+                stim.Circuit()
          )DOC")
         .def("__iadd__", &Circuit::operator+=, pybind11::arg("second"), R"DOC(
             Appends a circuit into the receiving circuit (mutating it).
@@ -159,7 +164,6 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c1 += c2
                 >>> print(c1)
-                # Circuit [num_qubits=3, num_measurements=3]
                 X 0
                 Y 1 2
                 M 0 1 2
@@ -187,7 +191,6 @@ void pybind_circuit(pybind11::module &m) {
                 ...    M 0 1 2
                 ... ''')
                 >>> print(c1 + c2)
-                # Circuit [num_qubits=3, num_measurements=3]
                 X 0
                 Y 1 2
                 M 0 1 2
@@ -203,7 +206,6 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c *= 3
                 >>> print(c)
-                # Circuit [num_qubits=3, num_measurements=0]
                 X 0
                 Y 1 2
                 X 0
@@ -221,7 +223,6 @@ void pybind_circuit(pybind11::module &m) {
                 ...    Y 1 2
                 ... ''')
                 >>> print(c * 3)
-                # Circuit [num_qubits=3, num_measurements=0]
                 X 0
                 Y 1 2
                 X 0
@@ -241,7 +242,6 @@ void pybind_circuit(pybind11::module &m) {
                      ...    Y 1 2
                      ... ''')
                      >>> print(3 * c)
-                     # Circuit [num_qubits=3, num_measurements=0]
                      X 0
                      Y 1 2
                      X 0
@@ -263,7 +263,6 @@ void pybind_circuit(pybind11::module &m) {
                     >>> c.append_operation("X_ERROR", [0], 0.125)
                     >>> c.append_operation("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
                     >>> print(c)
-                    # Circuit [num_qubits=3, num_measurements=2]
                     X 0
                     H 0 1
                     M 0 !1
@@ -296,7 +295,6 @@ void pybind_circuit(pybind11::module &m) {
                     ...    CNOT rec[-1] 1
                     ... ''')
                     >>> print(c)
-                    # Circuit [num_qubits=3, num_measurements=1]
                     H 0
                     CX 0 2
                     M 2
@@ -307,7 +305,5 @@ void pybind_circuit(pybind11::module &m) {
             )DOC",
             pybind11::arg("stim_program_text"))
         .def("__str__", &Circuit::str)
-        .def("__repr__", [](const Circuit &self) {
-            return "stim.Circuit(\"\"\"\n" + self.str() + "\n\"\"\")";
-        });
+        .def("__repr__", &circuit_repr);
 }

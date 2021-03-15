@@ -257,8 +257,7 @@ TEST(circuit, str) {
             29 | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT,
         },
         0.25);
-    ASSERT_EQ(c.str(), R"circuit(# Circuit [num_qubits=30, num_measurements=3]
-TICK
+    ASSERT_EQ(c.str(), R"circuit(TICK
 CX 2 3 rec[-5] 3
 M 1 3 2
 DETECTOR rec[-7]
@@ -306,8 +305,7 @@ TEST(circuit, classical_controls) {
     expected.append_op("CY", {2 | TARGET_RECORD_BIT, 1});
     expected.append_op("CZ", {4 | TARGET_RECORD_BIT, 1});
     ASSERT_EQ(
-        Circuit::from_text(R"circuit(# Circuit [num_qubits=5, num_measurements=0]
-ZCX 0 1
+        Circuit::from_text(R"circuit(ZCX 0 1
 ZCX rec[-1] 1
 ZCY rec[-2] 1
 ZCZ rec[-4] 1)circuit"),

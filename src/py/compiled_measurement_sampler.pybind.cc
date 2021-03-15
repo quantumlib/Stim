@@ -17,6 +17,7 @@
 #include "../simulators/detection_simulator.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
+#include "../circuit/circuit.pybind.h"
 #include "base.pybind.h"
 
 CompiledMeasurementSampler::CompiledMeasurementSampler(Circuit circuit)
@@ -50,14 +51,11 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t 
         true));
 }
 
-std::string CompiledMeasurementSampler::str() const {
+std::string CompiledMeasurementSampler::repr() const {
     std::stringstream result;
-    result << "# reference sample: ";
-    for (size_t k = 0; k < circuit.num_measurements; k++) {
-        result << "01"[ref[k]];
-    }
-    result << "\n";
-    result << circuit;
+    result << "stim.CompiledMeasurementSampler(";
+    result << circuit_repr(circuit);
+    result << ")";
     return result.str();
 }
 
@@ -109,5 +107,5 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
                 The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
         )DOC",
             pybind11::arg("shots"))
-        .def("__str__", &CompiledMeasurementSampler::str);
+        .def("__repr__", &CompiledMeasurementSampler::repr);
 }

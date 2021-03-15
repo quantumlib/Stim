@@ -16,7 +16,9 @@
 #define CIRCUIT_PYBIND_H
 
 #include <pybind11/pybind11.h>
+#include "circuit.h"
 
 void pybind_circuit(pybind11::module &m);
+std::string circuit_repr(const Circuit &self);
 
 #endif

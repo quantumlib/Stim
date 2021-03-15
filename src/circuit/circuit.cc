@@ -630,9 +630,14 @@ std::ostream &operator<<(std::ostream &out, const Operation &op) {
 }
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c) {
-    out << "# Circuit [num_qubits=" << c.num_qubits << ", num_measurements=" << c.num_measurements << "]";
+    bool first = true;
     for (const auto &op : c.operations) {
-        out << "\n" << op;
+        if (first) {
+            first = false;
+        } else {
+            out << "\n";
+        }
+        out << op;
     }
     return out;
 }

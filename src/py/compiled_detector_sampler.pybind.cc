@@ -17,6 +17,7 @@
 #include "../simulators/detection_simulator.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
+#include "../circuit/circuit.pybind.h"
 #include "base.pybind.h"
 
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit) : dets_obs(circuit), circuit(std::move(circuit)) {
@@ -56,11 +57,11 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
         {(long long)sample.num_minor_u8_padded(), (long long)1}, true));
 }
 
-std::string CompiledDetectorSampler::str() const {
+std::string CompiledDetectorSampler::repr() const {
     std::stringstream result;
-    result << "# num_detectors: " << dets_obs.detectors.size() << "\n";
-    result << "# num_observables: " << dets_obs.observables.size() << "\n";
-    result << circuit;
+    result << "stim.CompiledDetectorSampler(";
+    result << circuit_repr(circuit);
+    result << ")";
     return result.str();
 }
 
@@ -110,5 +111,5 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
             )DOC",
             pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
             pybind11::arg("append_observables") = false)
-        .def("__str__", &CompiledDetectorSampler::str);
+        .def("__repr__", &CompiledDetectorSampler::repr);
 }
