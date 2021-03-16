@@ -22,6 +22,7 @@
 #include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
 #include "../stabilizers/pauli_string.h"
+#include "../simulators/measurement_record.h"
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
@@ -30,17 +31,16 @@
 /// This requires a set of reference measurements to diff against.
 struct FrameSimulator {
     size_t num_qubits;
-    size_t num_samples_raw;
-    size_t num_measurements_raw;
+    size_t batch_size;
     size_t num_recorded_measurements;
     simd_bit_table x_table;
     simd_bit_table z_table;
-    simd_bit_table m_table;
+    BatchMeasurementRecord m_record;
     simd_bits rng_buffer;
     simd_bits last_correlated_error_occurred;
     std::mt19937_64 &rng;
 
-    FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
+    FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
 
     static simd_bit_table sample_flipped_measurements(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng);
     static simd_bit_table sample(
@@ -54,8 +54,6 @@ struct FrameSimulator {
 
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
-
-    void write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) const;
 
     void measure(const OperationData &target_data);
     void reset(const OperationData &target_data);

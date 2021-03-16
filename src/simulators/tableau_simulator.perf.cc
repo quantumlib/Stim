@@ -15,7 +15,6 @@
 #include "tableau_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../circuit/gate_data.h"
 
 BENCHMARK(TableauSimulator_CX_10Kqubits) {
     size_t num_qubits = 10 * 1000;

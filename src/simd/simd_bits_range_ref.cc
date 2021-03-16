@@ -30,6 +30,20 @@ simd_bits_range_ref simd_bits_range_ref::operator^=(const simd_bits_range_ref ot
     return *this;
 }
 
+simd_bits_range_ref simd_bits_range_ref::operator|=(const simd_bits_range_ref other) {
+    for_each_word(other, [](simd_word &w0, simd_word &w1) {
+        w0 |= w1;
+    });
+    return *this;
+}
+
+simd_bits_range_ref simd_bits_range_ref::operator&=(const simd_bits_range_ref other) {
+    for_each_word(other, [](simd_word &w0, simd_word &w1) {
+        w0 &= w1;
+    });
+    return *this;
+}
+
 simd_bits_range_ref simd_bits_range_ref::operator=(const simd_bits_range_ref other) {
     memcpy(ptr_simd, other.ptr_simd, num_u8_padded());
     return *this;

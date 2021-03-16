@@ -35,16 +35,15 @@ inline void for_each_target_pair(FrameSimulator &sim, const OperationData &targe
     }
 }
 
-FrameSimulator::FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng)
+FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng)
     : num_qubits(num_qubits),
-      num_samples_raw(num_samples),
-      num_measurements_raw(num_measurements),
+      batch_size(batch_size),
       num_recorded_measurements(0),
-      x_table(num_qubits, num_samples),
-      z_table(num_qubits, num_samples),
-      m_table(num_measurements, num_samples),
-      rng_buffer(num_samples),
-      last_correlated_error_occurred(num_samples),
+      x_table(num_qubits, batch_size),
+      z_table(num_qubits, batch_size),
+      m_record(batch_size, max_lookback, 1),
+      rng_buffer(batch_size),
+      last_correlated_error_occurred(batch_size),
       rng(rng) {
 }
 
@@ -52,7 +51,7 @@ simd_bit_table transposed_vs_ref(
     size_t num_samples_raw, const simd_bit_table &table, const simd_bits &reference_sample) {
     auto result = table.transposed();
     for (size_t s = 0; s < num_samples_raw; s++) {
-        result[s] ^= reference_sample;
+        result[s].word_range_ref(0, reference_sample.num_simd_words) ^= reference_sample;
     }
     return result;
 }
@@ -168,27 +167,19 @@ void write_table_data(
     throw std::out_of_range("Unrecognized output format.");
 }
 
-void FrameSimulator::write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) const {
-    write_table_data(out, num_samples_raw, num_measurements_raw, reference_sample, m_table, format, 'M', 'M', 0);
-}
-
 simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_target) {
-    uint8_t b = encoded_target ^ TARGET_RECORD_BIT;
-    if (b == 0 || b > num_recorded_measurements) {
-        throw std::out_of_range("Referred to a measurement record before the beginning of time.");
-    }
-    return m_table[num_recorded_measurements - b];
+    assert(encoded_target & TARGET_RECORD_BIT);
+    return m_record.lookback(encoded_target ^ TARGET_RECORD_BIT);
 }
 
 void FrameSimulator::reset_all() {
     num_recorded_measurements = 0;
     x_table.clear();
     z_table.data.randomize(z_table.data.num_bits_padded(), rng);
-    m_table.clear();
+    m_record.clear();
 }
 
 void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
-    assert(circuit.count_measurements() == num_measurements_raw);
     reset_all();
     circuit.for_each_operation([&](const Operation &op) {
         (this->*op.gate->frame_simulator_function)(op.target_data);
@@ -199,7 +190,7 @@ void FrameSimulator::measure(const OperationData &target_data) {
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
-        m_table[num_recorded_measurements] = x_table[q];
+        m_record.record_result(x_table[q]);
         num_recorded_measurements++;
     }
 }
@@ -215,7 +206,7 @@ void FrameSimulator::measure_reset(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
-        m_table[num_recorded_measurements] = x_table[q];
+        m_record.record_result(x_table[q]);
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         num_recorded_measurements++;
@@ -226,7 +217,7 @@ void FrameSimulator::I(const OperationData &target_data) {
 }
 
 PauliString FrameSimulator::get_frame(size_t sample_index) const {
-    assert(sample_index < num_samples_raw);
+    assert(sample_index < batch_size);
     PauliString result(num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
         result.xs[q] = x_table[q][sample_index];
@@ -236,7 +227,7 @@ PauliString FrameSimulator::get_frame(size_t sample_index) const {
 }
 
 void FrameSimulator::set_frame(size_t sample_index, const PauliStringRef &new_frame) {
-    assert(sample_index < num_samples_raw);
+    assert(sample_index < batch_size);
     assert(new_frame.num_qubits == num_qubits);
     for (size_t q = 0; q < num_qubits; q++) {
         x_table[q][sample_index] = new_frame.xs[q];
@@ -409,10 +400,10 @@ void FrameSimulator::YCZ(const OperationData &target_data) {
 
 void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * num_samples_raw, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
         auto p = 1 + (rng() % 3);
-        auto target_index = s / num_samples_raw;
-        auto sample_index = s % num_samples_raw;
+        auto target_index = s / batch_size;
+        auto sample_index = s % batch_size;
         auto t = targets[target_index];
         x_table[t][sample_index] ^= p & 1;
         z_table[t][sample_index] ^= p & 2;
@@ -422,11 +413,11 @@ void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
 void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
-    auto n = (targets.size() * num_samples_raw) >> 1;
+    auto n = (targets.size() * batch_size) >> 1;
     RareErrorIterator::for_samples(target_data.arg, n, rng, [&](size_t s) {
         auto p = 1 + (rng() % 15);
-        auto target_index = (s / num_samples_raw) << 1;
-        auto sample_index = s % num_samples_raw;
+        auto target_index = (s / batch_size) << 1;
+        auto sample_index = s % batch_size;
         size_t t1 = targets[target_index];
         size_t t2 = targets[target_index + 1];
         x_table[t1][sample_index] ^= p & 1;
@@ -438,9 +429,9 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
 
 void FrameSimulator::X_ERROR(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * num_samples_raw, rng, [&](size_t s) {
-        auto target_index = s / num_samples_raw;
-        auto sample_index = s % num_samples_raw;
+    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+        auto target_index = s / batch_size;
+        auto sample_index = s % batch_size;
         auto t = targets[target_index];
         x_table[t][sample_index] ^= true;
     });
@@ -448,9 +439,9 @@ void FrameSimulator::X_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::Y_ERROR(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * num_samples_raw, rng, [&](size_t s) {
-        auto target_index = s / num_samples_raw;
-        auto sample_index = s % num_samples_raw;
+    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+        auto target_index = s / batch_size;
+        auto sample_index = s % batch_size;
         auto t = targets[target_index];
         x_table[t][sample_index] ^= true;
         z_table[t][sample_index] ^= true;
@@ -459,9 +450,9 @@ void FrameSimulator::Y_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::Z_ERROR(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * num_samples_raw, rng, [&](size_t s) {
-        auto target_index = s / num_samples_raw;
-        auto sample_index = s % num_samples_raw;
+    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+        auto target_index = s / batch_size;
+        auto sample_index = s % batch_size;
         auto t = targets[target_index];
         z_table[t][sample_index] ^= true;
     });
@@ -469,9 +460,9 @@ void FrameSimulator::Z_ERROR(const OperationData &target_data) {
 
 simd_bit_table FrameSimulator::sample_flipped_measurements(
     const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng) {
-    FrameSimulator sim(circuit.count_qubits(), num_samples, circuit.count_measurements(), rng);
+    FrameSimulator sim(circuit.count_qubits(), num_samples, SIZE_MAX, rng);
     sim.reset_all_and_run(circuit);
-    return sim.m_table;
+    return sim.m_record.storage;
 }
 
 simd_bit_table FrameSimulator::sample(
@@ -487,9 +478,9 @@ void FrameSimulator::CORRELATED_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
     // Sample error locations.
-    biased_randomize_bits(target_data.arg, rng_buffer.u64, rng_buffer.u64 + ((num_samples_raw + 63) >> 6), rng);
-    if (num_samples_raw & 63) {
-        rng_buffer.u64[num_samples_raw >> 6] &= (uint64_t{1} << (num_samples_raw & 63)) - 1;
+    biased_randomize_bits(target_data.arg, rng_buffer.u64, rng_buffer.u64 + ((batch_size + 63) >> 6), rng);
+    if (batch_size & 63) {
+        rng_buffer.u64[batch_size >> 6] &= (uint64_t{1} << (batch_size & 63)) - 1;
     }
     // Omit locations blocked by prev error, while updating prev error mask.
     simd_bits_range_ref{rng_buffer}.for_each_word(last_correlated_error_occurred, [](simd_word &buf, simd_word &prev) {
@@ -512,23 +503,32 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
     }
 }
 
+void sample_out_helper(
+    const Circuit &circuit, FrameSimulator &sim, simd_bits_range_ref ref_sample, size_t num_samples, FILE *out, SampleFormat format) {
+    BatchResultWriter writer(out, num_samples, format);
+    sim.reset_all();
+    circuit.for_each_operation([&](const Operation &op) {
+        (sim.*op.gate->frame_simulator_function)(op.target_data);
+        sim.m_record.write_unwritten_results_to(writer, ref_sample);
+    });
+    writer.write_end();
+}
+
 void FrameSimulator::sample_out(
-    const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
-    std::mt19937_64 &rng) {
+        const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+        std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     size_t num_qubits = circuit.count_qubits();
-    size_t num_measurements = circuit.count_measurements();
+    size_t max_lookback = circuit.max_lookback();
     if (num_samples >= GOOD_BLOCK_SIZE) {
-        auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, num_measurements, rng);
+        auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, max_lookback, rng);
         while (num_samples > GOOD_BLOCK_SIZE) {
-            sim.reset_all_and_run(circuit);
-            sim.write_measurements(out, reference_sample, format);
+            sample_out_helper(circuit, sim, reference_sample, GOOD_BLOCK_SIZE, out, format);
             num_samples -= GOOD_BLOCK_SIZE;
         }
     }
     if (num_samples) {
-        auto sim = FrameSimulator(num_qubits, num_samples, num_measurements, rng);
-        sim.reset_all_and_run(circuit);
-        sim.write_measurements(out, reference_sample, format);
+        auto sim = FrameSimulator(num_qubits, num_samples, max_lookback, rng);
+        sample_out_helper(circuit, sim, reference_sample, num_samples, out, format);
     }
 }

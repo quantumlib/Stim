@@ -46,6 +46,7 @@ set(SOURCE_FILES_NO_MAIN
         src/simulators/detection_simulator.cc
         src/simulators/error_fuser.cc
         src/simulators/frame_simulator.cc
+        src/simulators/measurement_record.cc
         src/simulators/tableau_simulator.cc
         src/simulators/vector_simulator.cc
         src/stabilizers/pauli_string.cc

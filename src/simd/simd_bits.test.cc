@@ -235,3 +235,31 @@ TEST(simd_bits, invert_bits) {
         ASSERT_EQ(r[k], k != 5);
     }
 }
+
+TEST(simd_bits, mask_assignment_and) {
+    simd_bits a(4);
+    simd_bits b(4);
+    a[2] = true;
+    a[3] = true;
+    b[1] = true;
+    b[3] = true;
+    b &= a;
+    simd_bits expected(4);
+    expected[3] = true;
+    ASSERT_EQ(b, expected);
+}
+
+TEST(simd_bits, mask_assignment_or) {
+    simd_bits a(4);
+    simd_bits b(4);
+    a[2] = true;
+    a[3] = true;
+    b[1] = true;
+    b[3] = true;
+    b |= a;
+    simd_bits expected(4);
+    expected[1] = true;
+    expected[2] = true;
+    expected[3] = true;
+    ASSERT_EQ(b, expected);
+}

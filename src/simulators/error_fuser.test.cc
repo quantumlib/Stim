@@ -132,7 +132,7 @@ error(0.01901372644820353841) D3
 }
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
-    FrameSimulator f(16, 16, 0, SHARED_TEST_RNG());
+    FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
     ErrorFuser e(16);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {

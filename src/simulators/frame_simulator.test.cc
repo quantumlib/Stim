@@ -52,8 +52,8 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
 
     size_t num_qubits = 500;
     size_t num_samples = 1000;
-    size_t num_measurements = 10;
-    FrameSimulator sim(num_qubits, num_samples, num_measurements, SHARED_TEST_RNG());
+    size_t max_lookback = 10;
+    FrameSimulator sim(num_qubits, num_samples, max_lookback, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<uint32_t> targets{101, 403, 202, 100};
@@ -100,7 +100,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
             for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
                 tableau_sim.measure(OpDat(qf));
-                if (output[out_p] != tableau_sim.measurement_record.back()) {
+                if (output[out_p] != tableau_sim.measurement_record.lookback_storage.back()) {
                     pass = false;
                 }
                 out_p++;
@@ -139,8 +139,8 @@ bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
         simd_bits_range_ref sample = samples[k];
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
-            for (size_t k = 0; k < circuit.count_measurements(); k++) {
-                std::cerr << '0' + sample[k];
+            for (size_t k2 = 0; k2 < circuit.count_measurements(); k2++) {
+                std::cerr << '0' + sample[k2];
             }
             std::cerr << "\n";
             return false;
@@ -739,4 +739,15 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref, 1, SHARED_TEST_RNG())[0],
         expected);
+}
+
+TEST(FrameSimulator, record_gets_trimmed) {
+    FrameSimulator sim(100, 1024, 5, SHARED_TEST_RNG());
+    Circuit c = Circuit::from_text("M 0 1 2 3 4 5 6 7 8 9");
+    BatchResultWriter b(tmpfile(), 1024, SAMPLE_FORMAT_B8);
+    for (size_t k = 0; k < 100; k++) {
+        sim.measure(c.operations[0].target_data);
+        sim.m_record.write_unwritten_results_to(b, simd_bits(0));
+        ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 500);
+    }
 }

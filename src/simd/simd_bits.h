@@ -57,6 +57,9 @@ struct simd_bits {
     simd_bits &operator=(simd_bits &&other) noexcept;
     // Xor assignment.
     simd_bits &operator^=(const simd_bits_range_ref other);
+    // Mask assignment.
+    simd_bits &operator&=(const simd_bits_range_ref other);
+    simd_bits &operator|=(const simd_bits_range_ref other);
     // Swap assignment.
     simd_bits &swap_with(simd_bits_range_ref other);
 

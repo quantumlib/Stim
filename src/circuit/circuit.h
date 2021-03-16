@@ -50,7 +50,7 @@ enum SampleFormat {
     /// Transposed binary format.
     ///
     /// For each measurement:
-    ///     For each group of 8 shots (padded with 0s if needed):
+    ///     For each group of 64 shots (padded with 0s if needed):
     ///         Output bit packed bytes (least significant bit of first byte has first shot)
     SAMPLE_FORMAT_PTB64,
     /// Human readable compressed format.

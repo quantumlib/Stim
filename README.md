@@ -204,7 +204,7 @@ Only one mode can be specified.
     Detection event sampling mode.
     Outputs whether or not measurement sets specified by `DETECTOR` instructions have been flipped by noise.
     Assumes (does not verify) that all `DETECTOR` instructions corresponding to measurement sets with deterministic parity.
-    See also `--prepend_observables`, `--append_observables`.
+    See also `--append_observables`.
     If an integer argument is specified, run that many shots of the circuit.
 - `--detector_hypergraph`:
     Detector graph creation mode.
@@ -230,11 +230,6 @@ Not all modifiers apply to all modes.
     In addition to outputting the values of detectors, output the values of logical observables
     built up using `OBSERVABLE_INCLUDE` instructions.
     Put these observables' values into the detection event output as if they were additional detectors at the end of the circuit.
-- `--prepend_observables`:
-    Requires detection event sampling mode.
-    In addition to outputting the values of detectors, output the values of logical observables
-    built up using `OBSERVABLE_INCLUDE` instructions.
-    Put these observables' values into the detection event output as if they were additional detectors at the start of the circuit
 - `--in=FILEPATH`:
     Specifies a file to read a circuit from.
     If not specified, the `stdin` pipe is used.

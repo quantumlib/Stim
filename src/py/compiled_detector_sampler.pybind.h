@@ -28,8 +28,8 @@ struct CompiledDetectorSampler {
     const DetectorsAndObservables dets_obs;
     const Circuit circuit;
     CompiledDetectorSampler(Circuit circuit);
-    pybind11::array_t<uint8_t> sample(size_t num_shots, bool prepend_observables, bool append_observables);
-    pybind11::array_t<uint8_t> sample_bit_packed(size_t num_shots, bool prepend_observables, bool append_observables);
+    pybind11::array_t<uint8_t> sample(size_t num_shots, bool append_observables);
+    pybind11::array_t<uint8_t> sample_bit_packed(size_t num_shots, bool append_observables);
     std::string repr() const;
 };
 
