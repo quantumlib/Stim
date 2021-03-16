@@ -118,7 +118,8 @@ struct Circuit {
     std::vector<Circuit> blocks;
 
     size_t count_qubits() const;
-    size_t count_measurements() const;
+    uint64_t count_measurements() const;
+    size_t max_lookback() const;
 
     /// Constructs an empty circuit.
     Circuit();

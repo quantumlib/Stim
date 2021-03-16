@@ -369,6 +369,8 @@ TEST(circuit, for_each_operation_reverse) {
 }
 
 TEST(circuit, count_qubits) {
+    ASSERT_EQ(Circuit().count_qubits(), 0);
+
     ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
         H 0
         M 0 1
@@ -380,9 +382,63 @@ TEST(circuit, count_qubits) {
             }
         }
     )CIRCUIT").count_qubits(), 3);
+
+    // Ensure not unrolling to compute.
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 999999 {
+            REPEAT 999999 {
+                REPEAT 999999 {
+                    REPEAT 999999 {
+                        X 1
+                        REPEAT 999999 {
+                            Y 2
+                            M 2
+                        }
+                    }
+                }
+            }
+        }
+    )CIRCUIT").count_qubits(), 3);
+}
+
+TEST(circuit, max_lookback) {
+    ASSERT_EQ(Circuit().max_lookback(), 0);
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        M 0 1 2 3 4 5 6
+    )CIRCUIT").max_lookback(), 0);
+
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        M 0 1 2 3 4 5 6
+        REPEAT 2 {
+            CNOT rec[-4] 0
+            REPEAT 3 {
+                CNOT rec[-1] 0
+            }
+        }
+    )CIRCUIT").max_lookback(), 4);
+
+    // Ensure not unrolling to compute.
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        M 0 1 2 3 4 5
+        REPEAT 999999 {
+            REPEAT 999999 {
+                REPEAT 999999 {
+                    REPEAT 999999 {
+                        REPEAT 999999 {
+                            CNOT rec[-5] 0
+                        }
+                    }
+                }
+            }
+        }
+    )CIRCUIT").max_lookback(), 5);
 }
 
 TEST(circuit, count_measurements) {
+    ASSERT_EQ(Circuit().count_measurements(), 0);
+
     ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
         H 0
         M 0 1
@@ -394,6 +450,17 @@ TEST(circuit, count_measurements) {
             }
         }
     )CIRCUIT").count_measurements(), 8);
+
+    // Ensure not unrolling to compute.
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        REPEAT 999999 {
+            REPEAT 999999 {
+                REPEAT 999999 {
+                    M 0
+                }
+            }
+        }
+    )CIRCUIT").count_measurements(), 999999ULL*999999ULL*999999ULL);
 }
 
 TEST(circuit, preserves_repetition_blocks) {

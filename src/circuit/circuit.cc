@@ -731,9 +731,9 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
 }
 
 size_t Circuit::count_qubits() const {
-    uint32_t n = 0;
+    size_t n = 0;
     for (const auto &block : blocks) {
-        n = std::max(n, (uint32_t)block.count_qubits());
+        n = std::max(n, block.count_qubits());
     }
     for (const auto &op : operations) {
         if (op.gate->flags & GATE_IS_BLOCK) {
@@ -742,15 +742,32 @@ size_t Circuit::count_qubits() const {
         }
         for (uint32_t t : op.target_data.targets) {
             if (!(t & TARGET_RECORD_BIT)) {
-                n = std::max(n, (t & TARGET_VALUE_MASK) + uint32_t {1});
+                n = std::max(n, (t & TARGET_VALUE_MASK) + size_t {1});
             }
         }
     }
     return n;
 }
 
-size_t Circuit::count_measurements() const {
-    uint32_t n = 0;
+size_t Circuit::max_lookback() const {
+    size_t n = 0;
+    for (const auto &block : blocks) {
+        n = std::max(n, block.max_lookback());
+    }
+    for (const auto &op : operations) {
+        if (op.gate->flags & (GATE_CAN_TARGET_MEASUREMENT_RECORD | GATE_ONLY_TARGETS_MEASUREMENT_RECORD)) {
+            for (uint32_t t : op.target_data.targets) {
+                if (t & TARGET_RECORD_BIT) {
+                    n = std::max(n, size_t {t & TARGET_VALUE_MASK});
+                }
+            }
+        }
+    }
+    return n;
+}
+
+uint64_t Circuit::count_measurements() const {
+    uint64_t n = 0;
     for (const auto &op : operations) {
         assert(op.gate != nullptr);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
