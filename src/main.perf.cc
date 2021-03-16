@@ -67,7 +67,7 @@ BENCHMARK(main_sample1_tableau_rep_d1000_r100) {
         rewind(in);
         rewind(out);
         TableauSimulator::sample_stream(in, out, false, rng);
-    }).goal_millis(60).show_rate("Samples", circuit.num_measurements);
+    }).goal_millis(30).show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
@@ -76,11 +76,11 @@ BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
+    simd_bits ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(7).show_rate("Samples", circuit.num_measurements);
+    }).goal_millis(7).show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
@@ -89,11 +89,11 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
+    simd_bits ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
         detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(10).show_rate("Samples", circuit.num_measurements);
+    }).goal_millis(10).show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
@@ -102,9 +102,9 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.num_measurements);
+    simd_bits ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(12).show_rate("Samples", circuit.num_measurements);
+    }).goal_millis(12).show_rate("Samples", circuit.count_measurements());
 }

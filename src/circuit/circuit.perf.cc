@@ -25,7 +25,7 @@ CNOT 4 5 6 7
 M 1 2 3 4 5 6 7 8 9 10 11
             )input");
     }).goal_nanos(950);
-    if (c.num_qubits == 0) {
+    if (c.count_qubits() == 0) {
         std::cerr << "impossible";
     }
 }
@@ -41,7 +41,7 @@ BENCHMARK(circuit_parse_sparse) {
     benchmark_go([&]() {
         c = Circuit::from_text(text.data());
     }).goal_micros(150);
-    if (c.num_qubits == 0) {
+    if (c.count_qubits() == 0) {
         std::cerr << "impossible";
     }
 }
