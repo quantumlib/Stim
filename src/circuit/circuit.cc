@@ -53,7 +53,7 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
         }
     };
 
-    for (const auto &p : circuit.operations) {
+    circuit.for_each_operation([&](const Operation &p) {
         if (p.gate->flags & GATE_PRODUCES_RESULTS) {
             tick += p.target_data.targets.size();
         } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
@@ -69,17 +69,15 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
             }
             resolve_into(p, [&](uint32_t k){ observables[obs].push_back(k); });
         }
-    }
+    });
 }
 
-Circuit::Circuit() : jag_targets(), operations(), num_qubits(0), num_measurements(0) {
+Circuit::Circuit() : jag_targets(), operations(), blocks() {
 }
 
 Circuit::Circuit(const Circuit &circuit)
-    : jag_targets(circuit.jag_targets.total_allocated()),
-      operations(circuit.operations),
-      num_qubits(circuit.num_qubits),
-      num_measurements(circuit.num_measurements) {
+    : jag_targets(circuit.jag_targets.total_allocated()), operations(circuit.operations),
+      blocks(circuit.blocks) {
     // Keep local copy of operation data.
     for (auto &op : operations) {
         op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
@@ -89,8 +87,7 @@ Circuit::Circuit(const Circuit &circuit)
 Circuit::Circuit(Circuit &&circuit) noexcept
     : jag_targets(circuit.jag_targets.total_allocated()),
       operations(std::move(circuit.operations)),
-      num_qubits(circuit.num_qubits),
-      num_measurements(circuit.num_measurements) {
+      blocks(circuit.blocks) {
     // Keep local copy of operation data.
     for (auto &op : operations) {
         op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
@@ -99,9 +96,7 @@ Circuit::Circuit(Circuit &&circuit) noexcept
 
 Circuit &Circuit::operator=(const Circuit &circuit) {
     if (&circuit != this) {
-        num_qubits = circuit.num_qubits;
-        num_measurements = circuit.num_measurements;
-        operations = circuit.operations;
+        blocks = circuit.blocks;
 
         // Keep local copy of operation data.
         jag_targets = MonotonicBuffer<uint32_t>(circuit.jag_targets.total_allocated());
@@ -114,9 +109,8 @@ Circuit &Circuit::operator=(const Circuit &circuit) {
 
 Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
     if (&circuit != this) {
-        num_qubits = circuit.num_qubits;
-        num_measurements = circuit.num_measurements;
         operations = std::move(circuit.operations);
+        blocks = std::move(circuit.blocks);
 
         // Keep local copy of operation data.
         jag_targets = MonotonicBuffer<uint32_t>(circuit.jag_targets.total_allocated());
@@ -154,19 +148,22 @@ bool OperationData::operator!=(const OperationData &other) const {
 }
 
 bool Circuit::operator==(const Circuit &other) const {
-    return num_qubits == other.num_qubits && num_measurements == other.num_measurements &&
-           operations == other.operations;
+    return operations == other.operations && blocks == other.blocks;
 }
 bool Circuit::operator!=(const Circuit &other) const {
     return !(*this == other);
 }
 bool Circuit::approx_equals(const Circuit &other, double atol) const {
-    if (num_qubits != other.num_qubits || num_measurements != other.num_measurements ||
-        operations.size() != other.operations.size()) {
+    if (operations.size() != other.operations.size() || blocks.size() != other.blocks.size()) {
         return false;
     }
     for (size_t k = 0; k < operations.size(); k++) {
         if (!operations[k].approx_equals(other.operations[k], atol)) {
+            return false;
+        }
+    }
+    for (size_t k = 0; k < blocks.size(); k++) {
+        if (!blocks[k].approx_equals(other.blocks[k], atol)) {
             return false;
         }
     }
@@ -273,7 +270,6 @@ template <typename SOURCE>
 inline void read_raw_qubit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     uint32_t q = read_uint24_t(c, read_char);
     circuit.jag_targets.append_tail(q);
-    circuit.num_qubits = std::max(circuit.num_qubits, (size_t)q + 1);
 }
 
 template <typename SOURCE>
@@ -327,7 +323,6 @@ inline void read_pauli_targets_into(int &c, SOURCE read_char, Circuit &circuit) 
         }
         size_t q = read_uint24_t(c, read_char);
         circuit.jag_targets.append_tail(q | m);
-        circuit.num_qubits = std::max(circuit.num_qubits, (size_t)q + 1);
     }
 }
 
@@ -339,9 +334,7 @@ inline void read_result_targets_into(int &c, SOURCE read_char, const Gate &gate,
             c = read_char();
         }
         uint32_t q = read_uint24_t(c, read_char);
-        circuit.num_qubits = std::max(circuit.num_qubits, (size_t)q + 1);
         circuit.jag_targets.append_tail(q ^ flipped_flag);
-        circuit.num_measurements++;
     }
 }
 
@@ -437,42 +430,39 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             }
             return;
         }
-        size_t s = ops.size();
         circuit_read_single_operation(circuit, c, read_char);
+        Operation &new_op = ops.back();
 
-        if (ops[s].gate->id == gate_name_to_id("REPEAT")) {
-            if (ops[s].target_data.targets.size() != 1) {
+        if (new_op.gate->id == gate_name_to_id("REPEAT")) {
+            if (new_op.target_data.targets.size() != 1) {
                 throw std::out_of_range("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
             }
-            size_t rep_count = ops[s].target_data.targets[0];
-            ops.pop_back();
+            uint32_t rep_count = new_op.target_data.targets[0];
+            uint32_t block_id = circuit.blocks.size();
             if (rep_count == 0) {
                 throw std::out_of_range("Repeating 0 times is not supported.");
             }
-            size_t ops_start = ops.size();
-            size_t num_measure_start = circuit.num_measurements;
-            circuit.fusion_barrier();
-            circuit_read_operations(circuit, read_char, READ_UNTIL_END_OF_BLOCK);
-            size_t ops_end = ops.size();
-            circuit.num_measurements += (circuit.num_measurements - num_measure_start) * (rep_count - 1);
-            while (rep_count > 1) {
-                ops.insert(ops.end(), ops.data() + ops_start, ops.data() + ops_end);
-                rep_count--;
-            }
-            circuit.fusion_barrier();
+
+            // Read block.
+            circuit.blocks.emplace_back();
+            circuit_read_operations(circuit.blocks.back(), read_char, READ_UNTIL_END_OF_BLOCK);
+
+            // Rewrite target data to reference the parsed block.
+            circuit.jag_targets.ensure_available(2);
+            circuit.jag_targets.append_tail(block_id);
+            circuit.jag_targets.append_tail(rep_count);
+            new_op.target_data.targets = circuit.jag_targets.commit_tail();
         }
 
         // Fuse operations.
-        while (s > circuit.min_safe_fusion_index && ops[s - 1].can_fuse(ops[s])) {
-            fuse_data(ops[s - 1].target_data.targets, ops[s].target_data.targets, circuit.jag_targets);
+        while (ops.size() > 1 && ops[ops.size() - 2].can_fuse(new_op)) {
+            fuse_data(ops[ops.size() - 2].target_data.targets, new_op.target_data.targets, circuit.jag_targets);
             ops.pop_back();
-            s--;
         }
     } while (read_condition != READ_AS_LITTLE_AS_POSSIBLE);
 }
 
-bool Circuit::append_from_text(const char *text) {
-    size_t before = operations.size();
+void Circuit::append_from_text(const char *text) {
     size_t k = 0;
     circuit_read_operations(
         *this,
@@ -480,52 +470,11 @@ bool Circuit::append_from_text(const char *text) {
             return text[k] != 0 ? text[k++] : EOF;
         },
         READ_UNTIL_END_OF_FILE);
-    return operations.size() > before;
-}
-
-void Circuit::update_metadata_for_manually_appended_operation() {
-    const auto &op = operations.back();
-    const auto &gate = *op.gate;
-    const auto &vec = op.target_data.targets;
-    if (gate.flags & GATE_PRODUCES_RESULTS) {
-        num_measurements += vec.size();
-    }
-    for (auto q : vec) {
-        if (!(q & TARGET_RECORD_BIT)) {
-            num_qubits = std::max(num_qubits, (size_t)((q & TARGET_VALUE_MASK) + 1));
-        }
-    }
-}
-
-void Circuit::append_circuit(const Circuit &circuit, size_t repetitions) {
-    if (!repetitions) {
-        return;
-    }
-    auto original_size = operations.size();
-
-    if (&circuit == this) {
-        num_measurements *= repetitions + 1;
-        do {
-            operations.insert(operations.end(), operations.begin(), operations.begin() + original_size);
-        } while (--repetitions);
-        return;
-    }
-
-    fusion_barrier();
-    for (const auto &op : circuit.operations) {
-        append_operation(op);
-    }
-    auto single_rep_end = operations.end();
-    while (--repetitions) {
-        operations.insert(operations.end(), operations.begin() + original_size, single_rep_end);
-    }
-    fusion_barrier();
 }
 
 void Circuit::append_operation(const Operation &operation) {
     operations.push_back(
         {operation.gate, {operation.target_data.arg, jag_targets.take_copy(operation.target_data.targets)}});
-    update_metadata_for_manually_appended_operation();
 }
 
 void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
@@ -563,6 +512,9 @@ void Circuit::append_operation(
     if (gate.flags & (GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_CAN_TARGET_MEASUREMENT_RECORD)) {
         valid_target_mask |= TARGET_RECORD_BIT;
     }
+    if (gate.flags & GATE_IS_BLOCK) {
+        throw std::out_of_range("Can't append a block as an operation.");
+    }
     for (uint32_t q : targets) {
         if (q != (q & valid_target_mask)) {
             throw std::out_of_range(
@@ -572,31 +524,23 @@ void Circuit::append_operation(
     }
 
     auto added = jag_targets.take_copy(targets);
-    if (!(gate.flags & GATE_IS_NOT_FUSABLE) && operations.size() > min_safe_fusion_index &&
-        operations.back().gate->id == gate.id && operations.back().target_data.arg == arg) {
-        // Don't double count measurements when doing incremental update.
-        if (gate.flags & GATE_PRODUCES_RESULTS) {
-            num_measurements -= operations.back().target_data.targets.size();
-        }
+    Operation to_add = {&gate, {arg, added}};
+    if (!operations.empty() && operations.back().can_fuse(to_add)) {
         // Extend targets of last gate.
-        fuse_data(operations.back().target_data.targets, added, jag_targets);
+        fuse_data(operations.back().target_data.targets, to_add.target_data.targets, jag_targets);
     } else {
         // Add a fresh new operation with its own target data.
-        operations.push_back({&gate, {arg, added}});
+        operations.push_back(to_add);
     }
-    // Update num_measurements and num_qubits appropriately.
-    update_metadata_for_manually_appended_operation();
 }
 
-bool Circuit::append_from_file(FILE *file, bool stop_asap) {
-    size_t before = operations.size();
+void Circuit::append_from_file(FILE *file, bool stop_asap) {
     circuit_read_operations(
         *this,
         [&]() {
             return getc(file);
         },
         stop_asap ? READ_AS_LITTLE_AS_POSSIBLE : READ_UNTIL_END_OF_FILE);
-    return operations.size() > before;
 }
 
 std::ostream &operator<<(std::ostream &out, const Operation &op) {
@@ -629,7 +573,7 @@ std::ostream &operator<<(std::ostream &out, const Operation &op) {
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const Circuit &c) {
+void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation) {
     bool first = true;
     for (const auto &op : c.operations) {
         if (first) {
@@ -637,17 +581,30 @@ std::ostream &operator<<(std::ostream &out, const Circuit &c) {
         } else {
             out << "\n";
         }
-        out << op;
+
+        // Recurse on repeat blocks.
+        if (op.gate && op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.target_data.targets.size() == 2 && op.target_data.targets[0] < c.blocks.size()) {
+                out << indentation << "REPEAT " << op.target_data.targets[1] << " {\n";
+                print_circuit(out, c.blocks[op.target_data.targets[0]], indentation + "    ");
+                out << "\n" << indentation << "}";
+                continue;
+            }
+        }
+
+        out << indentation << op;
     }
+}
+
+std::ostream &operator<<(std::ostream &out, const Circuit &c) {
+    print_circuit(out, c, "");
     return out;
 }
 
 void Circuit::clear() {
-    num_qubits = 0;
-    num_measurements = 0;
     jag_targets.clear();
     operations.clear();
-    min_safe_fusion_index = 0;
+    blocks.clear();
 }
 
 Circuit Circuit::operator+(const Circuit &other) const {
@@ -656,24 +613,44 @@ Circuit Circuit::operator+(const Circuit &other) const {
     return result;
 }
 Circuit Circuit::operator*(size_t repetitions) const {
-    Circuit result = *this;
-    result *= repetitions;
+    if (repetitions == 0) {
+        return Circuit();
+    }
+    if (repetitions == 1) {
+        return *this;
+    }
+    Circuit result;
+    result.blocks.push_back(*this);
+    result.jag_targets.append_tail(0);
+    result.jag_targets.append_tail(repetitions);
+    result.operations.push_back({&GATE_DATA.at("REPEAT"), {0, result.jag_targets.commit_tail()}});
     return result;
 }
 
-void Circuit::fusion_barrier() {
-    min_safe_fusion_index = operations.size();
-}
-
 Circuit &Circuit::operator+=(const Circuit &other) {
-    append_circuit(other, 1);
+    if (&other == this) {
+        operations.insert(operations.end(), operations.begin(), operations.end());
+        return *this;
+    }
+
+    size_t block_offset = blocks.size();
+    blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
+    for (const auto &op : other.operations) {
+        assert(op.gate != nullptr);
+        append_operation(op);
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            assert(op.target_data.targets.size() == 2);
+            operations.back().target_data.targets[0] += block_offset;
+        }
+    }
+
     return *this;
 }
 Circuit &Circuit::operator*=(size_t repetitions) {
     if (repetitions == 0) {
         clear();
     } else {
-        append_circuit(*this, repetitions - 1);
+        *this = *this * repetitions;
     }
     return *this;
 }
@@ -751,4 +728,38 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
     }
 
     return *this;
+}
+
+size_t Circuit::count_qubits() const {
+    uint32_t n = 0;
+    for (const auto &block : blocks) {
+        n = std::max(n, (uint32_t)block.count_qubits());
+    }
+    for (const auto &op : operations) {
+        if (op.gate->flags & GATE_IS_BLOCK) {
+            // Handled in block case.
+            continue;
+        }
+        for (uint32_t t : op.target_data.targets) {
+            if (!(t & TARGET_RECORD_BIT)) {
+                n = std::max(n, (t & TARGET_VALUE_MASK) + uint32_t {1});
+            }
+        }
+    }
+    return n;
+}
+
+size_t Circuit::count_measurements() const {
+    uint32_t n = 0;
+    for (const auto &op : operations) {
+        assert(op.gate != nullptr);
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            assert(op.target_data.targets.size() == 2);
+            assert(op.target_data.targets[0] < blocks.size());
+            n += blocks[op.target_data.targets[0]].count_measurements() * op.target_data.targets[1];
+        } else if (op.gate->flags & GATE_PRODUCES_RESULTS) {
+            n += op.target_data.targets.size();
+        }
+    }
+    return n;
 }

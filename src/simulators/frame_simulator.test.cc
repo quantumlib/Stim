@@ -92,24 +92,24 @@ TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
 #define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << program
 
 bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref output) {
-    auto tableau_sim = TableauSimulator(circuit.num_qubits, SHARED_TEST_RNG());
+    auto tableau_sim = TableauSimulator(circuit.count_qubits(), SHARED_TEST_RNG());
     size_t out_p = 0;
-    for (const auto &op : circuit.operations) {
+    bool pass = true;
+    circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->name == std::string("M")) {
             for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
                 tableau_sim.measure(OpDat(qf));
                 if (output[out_p] != tableau_sim.measurement_record.back()) {
-                    return false;
+                    pass = false;
                 }
                 out_p++;
             }
         } else {
             (tableau_sim.*op.gate->tableau_simulator_function)(op.target_data);
         }
-    }
-
-    return true;
+    });
+    return pass;
 }
 
 TEST(PauliFrameSimulation, test_util_is_output_possible) {
@@ -139,7 +139,7 @@ bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
         simd_bits_range_ref sample = samples[k];
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
-            for (size_t k = 0; k < circuit.num_measurements; k++) {
+            for (size_t k = 0; k < circuit.count_measurements(); k++) {
                 std::cerr << '0' + sample[k];
             }
             std::cerr << "\n";

@@ -157,7 +157,7 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     OperationData targets = {0, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            (e.*gate.hit_simulator_function)(targets);
+            (e.*gate.reverse_error_fuser_function)(targets);
             (f.*gate.frame_simulator_function)(targets);
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};

@@ -382,14 +382,13 @@ void TableauSimulator::Z(const OperationData &target_data) {
 }
 
 simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
-    TableauSimulator sim(circuit.num_qubits, rng, sign_bias);
-    for (const auto &op : circuit.operations) {
+    TableauSimulator sim(circuit.count_qubits(), rng, sign_bias);
+    circuit.for_each_operation([&](const Operation &op) {
         (sim.*op.gate->tableau_simulator_function)(op.target_data);
-    }
+    });
 
-    assert(sim.measurement_record.size() == circuit.num_measurements);
-    simd_bits result(circuit.num_measurements);
-    for (size_t k = 0; k < circuit.num_measurements; k++) {
+    simd_bits result(sim.measurement_record.size());
+    for (size_t k = 0; k < sim.measurement_record.size(); k++) {
         result[k] = sim.measurement_record[k];
     }
     return result;
@@ -403,13 +402,17 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
 }
 
 void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_measurements, std::mt19937_64 &rng) {
-    Circuit unprocessed;
     TableauSimulator sim(1, rng);
     size_t reported = 0;
-    while (unprocessed.append_from_file(in, newline_after_measurements)) {
-        sim.ensure_large_enough_for_qubits(unprocessed.num_qubits);
+    while (true) {
+        Circuit unprocessed;
+        unprocessed.append_from_file(in, newline_after_measurements);
+        if (unprocessed.operations.empty()) {
+            break;
+        }
+        sim.ensure_large_enough_for_qubits(unprocessed.count_qubits());
 
-        for (const auto &op : unprocessed.operations) {
+        unprocessed.for_each_operation([&](const Operation &op) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
             while (reported < sim.measurement_record.size()) {
                 putc('0' + sim.measurement_record[reported++], out);
@@ -418,7 +421,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, bool newline_after_mea
                 putc('\n', out);
                 fflush(out);
             }
-        }
+        });
 
         unprocessed.clear();
     }
@@ -491,15 +494,21 @@ void TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &tran
     }
 }
 
-simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
-    Circuit filtered;
-    std::vector<Operation> deterministic_operations{};
+Circuit aliased_noiseless_subset(const Circuit &circuit) {
+    // HACK: result has pointers into `circuit`!
+    Circuit result;
     for (const auto &op : circuit.operations) {
         if (!(op.gate->flags & GATE_IS_NOISE)) {
-            filtered.append_operation(op);
+            result.operations.push_back(op);
         }
     }
+    for (const auto &block : circuit.blocks) {
+        result.blocks.push_back(aliased_noiseless_subset(block));
+    }
+    return result;
+}
 
+simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
     std::mt19937_64 irrelevant_rng(0);
-    return TableauSimulator::sample_circuit(filtered, irrelevant_rng, +1);
+    return TableauSimulator::sample_circuit(aliased_noiseless_subset(circuit), irrelevant_rng, +1);
 }

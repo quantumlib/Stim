@@ -257,10 +257,9 @@ ErrorFuser::ErrorFuser(size_t num_qubits) : xs(num_qubits), zs(num_qubits) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
-    for (size_t k = circuit.operations.size(); k-- > 0;) {
-        const auto &op = circuit.operations[k];
-        (this->*op.gate->hit_simulator_function)(op.target_data);
-    }
+    circuit.for_each_operation_reverse([&](const Operation &op){
+        (this->*op.gate->reverse_error_fuser_function)(op.target_data);
+    });
 }
 
 void ErrorFuser::X_ERROR(const OperationData &dat) {
@@ -361,7 +360,7 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
 }
 
 void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out) {
-    ErrorFuser fuser(circuit.num_qubits);
+    ErrorFuser fuser(circuit.count_qubits());
     fuser.run_circuit(circuit);
     std::stringstream ss;
 

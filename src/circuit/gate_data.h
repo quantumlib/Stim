@@ -118,7 +118,7 @@ struct Gate {
     const char *name;
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
-    void (ErrorFuser::*hit_simulator_function)(const OperationData &);
+    void (ErrorFuser::*reverse_error_fuser_function)(const OperationData &);
     GateFlags flags;
     TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data;
     TruncatedArray<const char *, 4> tableau_data;

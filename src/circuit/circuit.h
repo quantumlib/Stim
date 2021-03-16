@@ -115,11 +115,10 @@ struct Circuit {
     MonotonicBuffer<uint32_t> jag_targets;
     /// Operations in the circuit, from earliest to latest.
     std::vector<Operation> operations;
-    /// One more than the maximum qubit index seen in the circuit (so far).
-    size_t num_qubits;
-    /// The total number of measurement results the circuit (so far) will produce.
-    size_t num_measurements;
-    size_t min_safe_fusion_index = 0;
+    std::vector<Circuit> blocks;
+
+    size_t count_qubits() const;
+    size_t count_measurements() const;
 
     /// Constructs an empty circuit.
     Circuit();
@@ -150,27 +149,17 @@ struct Circuit {
     ///         interactive (repl) mode, where measurements should produce results immediately instead of only after the
     ///         circuit is entirely specified. *This has significantly worse performance. It prevents measurement
     ///         batching.*
-    ///
-    /// Returns:
-    ///     true: Operations were read from the file.
-    ///     false: The file has ended, and no operations were read.
-    bool append_from_file(FILE *file, bool stop_asap);
+    void append_from_file(FILE *file, bool stop_asap);
     /// Grows the circuit using operations from a string.
     ///
     /// Note: operations are automatically fused.
-    ///
-    /// Returns:
-    ///     true: Operations were read from the string.
-    ///     false: The string contained no operations.
-    bool append_from_text(const char *text);
+    void append_from_text(const char *text);
 
     Circuit operator+(const Circuit &other) const;
     Circuit operator*(size_t repetitions) const;
     Circuit &operator+=(const Circuit &other);
     Circuit &operator*=(size_t repetitions);
 
-    /// Appends a circuit to the end of this one.
-    void append_circuit(const Circuit &circuit, size_t repetitions);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
@@ -192,10 +181,42 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
-    /// Updates metadata (e.g. num_qubits) to account for an operation appended via non-standard means.
-    void update_metadata_for_manually_appended_operation();
+    template <typename CALLBACK>
+    void for_each_operation(const CALLBACK &callback) const {
+        for (const auto &op : operations) {
+            assert(op.gate != nullptr);
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets[0] < blocks.size());
+                size_t repeats = op.target_data.targets[1];
+                const auto &block = blocks[op.target_data.targets[0]];
+                for (size_t k = 0; k < repeats; k++) {
+                    block.for_each_operation(callback);
+                }
+            } else {
+                callback(op);
+            }
+        }
+    }
 
-    void fusion_barrier();
+    template <typename CALLBACK>
+    void for_each_operation_reverse(const CALLBACK &callback) const {
+        for (size_t p = operations.size(); p-- > 0;) {
+            const auto &op = operations[p];
+            assert(op.gate != nullptr);
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets[0] < blocks.size());
+                size_t repeats = op.target_data.targets[1];
+                const auto &block = blocks[op.target_data.targets[0]];
+                for (size_t k = 0; k < repeats; k++) {
+                    block.for_each_operation_reverse(callback);
+                }
+            } else {
+                callback(op);
+            }
+        }
+    }
 };
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.

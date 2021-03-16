@@ -144,7 +144,7 @@ M 0 1 2
         }
 
         auto circuit = Circuit::from_file(in);
-        simd_bits ref(circuit.num_measurements);
+        simd_bits ref(circuit.count_measurements());
         if (!frame0) {
             ref = TableauSimulator::reference_sample_circuit(circuit);
         }
@@ -166,7 +166,7 @@ M 0 1 2
         }
 
         auto circuit = Circuit::from_file(in);
-        simd_bits ref(circuit.num_measurements);
+        simd_bits ref(circuit.count_measurements());
         detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format, rng);
         return EXIT_SUCCESS;
     }

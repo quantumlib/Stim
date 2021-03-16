@@ -114,33 +114,35 @@ TEST(circuit, from_text) {
     expected.append_op("M", {0, 0 | TARGET_INVERTED_BIT, 1, 1 | TARGET_INVERTED_BIT});
     ASSERT_EQ(f("M 0 !0 1 !1"), expected);
 
+    // Measurement fusion.
     expected.clear();
     expected.append_op("H", {0});
     expected.append_op("M", {0, 1, 2});
     expected.append_op("SWAP", {0, 1});
     expected.append_op("M", {0, 10});
     ASSERT_EQ(
-        f("# Measurement fusion\n"
-          "H 0\n"
-          "M 0\n"
-          "M 1\n"
-          "M 2\n"
-          "SWAP 0 1\n"
-          "M 0\n"
-          "M 10\n"),
+        f(R"CIRCUIT(
+            H 0
+            M 0
+            M 1
+            M 2
+            SWAP 0 1
+            M 0
+            M 10
+        )CIRCUIT"),
         expected);
 
     expected.clear();
     expected.append_op("X", {0});
-    expected.append_op("Y", {1, 2});
-    expected.fusion_barrier();
-    expected.append_op("Y", {1, 2});
+    expected += Circuit::from_text("Y 1 2") * 2;
     ASSERT_EQ(
-        f("X 0\n"
-          "REPEAT 2 {\n"
-          "  Y 1\n"
-          "  Y 2 #####\n"
-          "} #####"),
+        f(R"CIRCUIT(
+            X 0
+            REPEAT 2 {
+              Y 1
+              Y 2 #####"
+            } #####"
+        )CIRCUIT"),
         expected);
 
     expected.clear();
@@ -150,25 +152,15 @@ TEST(circuit, from_text) {
     expected.append_op("DETECTOR", {6 | TARGET_RECORD_BIT});
     ASSERT_EQ(f("DETECTOR rec[-6]"), expected);
 
-    expected.clear();
-    expected.append_op("M", {0});
-    expected.fusion_barrier();
-    expected.append_op("M", {1, 2, 3});
-    expected.fusion_barrier();
-    expected.append_op("M", {1, 2, 3});
-    expected.fusion_barrier();
-    expected.append_op("M", {1, 2, 3});
-    expected.fusion_barrier();
-    expected.append_op("M", {1, 2, 3});
-    expected.fusion_barrier();
-    expected.append_op("M", {1, 2, 3});
-    ASSERT_EQ(
-        f("M 0\n"
+    Circuit parsed = f("M 0\n"
           "REPEAT 5 {\n"
           "  M 1 2\n"
           "  M 3\n"
-          "} #####"),
-        expected);
+          "} #####");
+    ASSERT_EQ(parsed.operations.size(), 2);
+    ASSERT_EQ(parsed.blocks.size(), 1);
+    ASSERT_EQ(parsed.blocks[0].operations.size(), 1);
+    ASSERT_EQ(parsed.blocks[0].operations[0].target_data.targets.size(), 3);
 
     expected.clear();
     expected.append_op(
@@ -194,23 +186,20 @@ TEST(circuit, append_circuit) {
     Circuit expected;
     expected.append_op("X", {0, 1});
     expected.append_op("M", {0, 1, 2, 4});
-    expected.fusion_barrier();
     expected.append_op("M", {7});
 
     Circuit actual = c1;
     actual += c2;
+    ASSERT_EQ(actual.operations.size(), 3);
+    actual = Circuit::from_text(actual.str().data());
+    ASSERT_EQ(actual.operations.size(), 2);
     ASSERT_EQ(actual, expected);
 
     actual *= 4;
-    for (size_t k = 0; k < 3; k++) {
-        expected.append_op("X", {0, 1});
-        expected.append_op("M", {0, 1, 2, 4});
-        expected.fusion_barrier();
-        expected.append_op("M", {7});
-    }
-    ASSERT_EQ(actual, expected);
-    ASSERT_LT(actual.jag_targets.total_allocated(), 7 * 3);
-    ASSERT_GT(expected.jag_targets.total_allocated(), 7 * 3);
+    ASSERT_EQ(actual.str(), R"CIRCUIT(REPEAT 4 {
+    X 0 1
+    M 0 1 2 4 7
+})CIRCUIT");
 }
 
 TEST(circuit, append_op_fuse) {
@@ -271,6 +260,7 @@ TEST(circuit, append_op_validation) {
     ASSERT_THROW({ c.append_op("CNOT", {0}); }, std::out_of_range);
     c.append_op("CNOT", {0, 1});
 
+    ASSERT_THROW({ c.append_op("REPEAT", {100}); }, std::out_of_range);
     ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_X_BIT}); }, std::out_of_range);
     ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_Z_BIT}); }, std::out_of_range);
     ASSERT_THROW({ c.append_op("X", {0 | TARGET_INVERTED_BIT}); }, std::out_of_range);
@@ -310,4 +300,188 @@ ZCX rec[-1] 1
 ZCY rec[-2] 1
 ZCZ rec[-4] 1)circuit"),
         expected);
+}
+
+TEST(circuit, for_each_operation) {
+    Circuit c;
+    c.append_from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                Y 2
+            }
+        }
+    )CIRCUIT");
+
+    Circuit flat;
+    auto f = [&](const char *gate, const std::vector<uint32_t> &targets) {
+        flat.append_operation({&GATE_DATA.at(gate), {0, flat.jag_targets.take_copy(targets)}});
+    };
+    f("H", {0});
+    f("M", {0, 1});
+    f("X", {1});
+    f("Y", {2});
+    f("Y", {2});
+    f("Y", {2});
+    f("X", {1});
+    f("Y", {2});
+    f("Y", {2});
+    f("Y", {2});
+
+    std::vector<Operation> ops;
+    c.for_each_operation([&](const Operation &op) { ops.push_back(op); });
+    ASSERT_EQ(ops, flat.operations);
+}
+
+TEST(circuit, for_each_operation_reverse) {
+    Circuit c;
+    c.append_from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                Y 2
+            }
+        }
+    )CIRCUIT");
+
+    Circuit flat;
+    auto f = [&](const char *gate, const std::vector<uint32_t> &targets) {
+        flat.append_operation({&GATE_DATA.at(gate), {0, flat.jag_targets.take_copy(targets)}});
+    };
+    f("Y", {2});
+    f("Y", {2});
+    f("Y", {2});
+    f("X", {1});
+    f("Y", {2});
+    f("Y", {2});
+    f("Y", {2});
+    f("X", {1});
+    f("M", {0, 1});
+    f("H", {0});
+
+    std::vector<Operation> ops;
+    c.for_each_operation_reverse([&](const Operation &op) { ops.push_back(op); });
+    ASSERT_EQ(ops, flat.operations);
+}
+
+TEST(circuit, count_qubits) {
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                Y 2
+                M 2
+            }
+        }
+    )CIRCUIT").count_qubits(), 3);
+}
+
+TEST(circuit, count_measurements) {
+    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                Y 2
+                M 2
+            }
+        }
+    )CIRCUIT").count_measurements(), 8);
+}
+
+TEST(circuit, preserves_repetition_blocks) {
+    Circuit c = Circuit::from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                Y 2
+                M 2
+                X 0
+            }
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c.operations.size(), 3);
+    ASSERT_EQ(c.blocks.size(), 1);
+    ASSERT_EQ(c.blocks[0].operations.size(), 2);
+    ASSERT_EQ(c.blocks[0].blocks.size(), 1);
+    ASSERT_EQ(c.blocks[0].blocks[0].operations.size(), 3);
+    ASSERT_EQ(c.blocks[0].blocks[0].blocks.size(), 0);
+}
+
+TEST(circuit, multiplication_repeats) {
+    Circuit c = Circuit::from_text(R"CIRCUIT(
+        H 0
+        M 0 1
+    )CIRCUIT");
+    ASSERT_EQ((c * 2).str(), R"CIRCUIT(REPEAT 2 {
+    H 0
+    M 0 1
+})CIRCUIT");
+
+    ASSERT_EQ(c * 0, Circuit());
+    ASSERT_EQ(c * 1, c);
+    Circuit copy = c;
+    c *= 1;
+    ASSERT_EQ(c, copy);
+    c *= 0;
+    ASSERT_EQ(c, Circuit());
+}
+
+TEST(circuit, self_addition) {
+    Circuit c = Circuit::from_text(R"CIRCUIT(
+        X 0
+    )CIRCUIT");
+    c += c;
+    ASSERT_EQ(c.operations.size(), 2);
+    ASSERT_EQ(c.blocks.size(), 0);
+    ASSERT_EQ(c.operations[0], c.operations[1]);
+
+    c = Circuit::from_text(R"CIRCUIT(
+        X 0
+        REPEAT 2 {
+            Y 0
+        }
+    )CIRCUIT");
+    c += c;
+    ASSERT_EQ(c.operations.size(), 4);
+    ASSERT_EQ(c.blocks.size(), 1);
+    ASSERT_EQ(c.operations[0], c.operations[2]);
+    ASSERT_EQ(c.operations[1], c.operations[3]);
+}
+
+TEST(circuit, addition_shares_blocks) {
+    Circuit c1 = Circuit::from_text(R"CIRCUIT(
+        X 0
+        REPEAT 2 {
+            X 1
+        }
+    )CIRCUIT");
+    Circuit c2 = Circuit::from_text(R"CIRCUIT(
+        X 2
+        REPEAT 2 {
+            X 3
+        }
+    )CIRCUIT");
+    Circuit c3 = Circuit::from_text(R"CIRCUIT(
+        X 0
+        REPEAT 2 {
+            X 1
+        }
+        X 2
+        REPEAT 2 {
+            X 3
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c1 + c2, c3);
+    c1 += c2;
+    ASSERT_EQ(c1, c3);
 }

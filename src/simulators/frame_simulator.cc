@@ -188,11 +188,11 @@ void FrameSimulator::reset_all() {
 }
 
 void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
-    assert(circuit.num_measurements == num_measurements_raw);
+    assert(circuit.count_measurements() == num_measurements_raw);
     reset_all();
-    for (const auto &op : circuit.operations) {
+    circuit.for_each_operation([&](const Operation &op) {
         (this->*op.gate->frame_simulator_function)(op.target_data);
-    }
+    });
 }
 
 void FrameSimulator::measure(const OperationData &target_data) {
@@ -469,7 +469,7 @@ void FrameSimulator::Z_ERROR(const OperationData &target_data) {
 
 simd_bit_table FrameSimulator::sample_flipped_measurements(
     const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng) {
-    FrameSimulator sim(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
+    FrameSimulator sim(circuit.count_qubits(), num_samples, circuit.count_measurements(), rng);
     sim.reset_all_and_run(circuit);
     return sim.m_table;
 }
@@ -516,8 +516,10 @@ void FrameSimulator::sample_out(
     const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
     std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
+    size_t num_qubits = circuit.count_qubits();
+    size_t num_measurements = circuit.count_measurements();
     if (num_samples >= GOOD_BLOCK_SIZE) {
-        auto sim = FrameSimulator(circuit.num_qubits, GOOD_BLOCK_SIZE, circuit.num_measurements, rng);
+        auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, num_measurements, rng);
         while (num_samples > GOOD_BLOCK_SIZE) {
             sim.reset_all_and_run(circuit);
             sim.write_measurements(out, reference_sample, format);
@@ -525,7 +527,7 @@ void FrameSimulator::sample_out(
         }
     }
     if (num_samples) {
-        auto sim = FrameSimulator(circuit.num_qubits, num_samples, circuit.num_measurements, rng);
+        auto sim = FrameSimulator(num_qubits, num_samples, num_measurements, rng);
         sim.reset_all_and_run(circuit);
         sim.write_measurements(out, reference_sample, format);
     }
