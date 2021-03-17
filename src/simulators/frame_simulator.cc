@@ -500,7 +500,7 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 void sample_out_helper(
     const Circuit &circuit, FrameSimulator &sim, simd_bits_range_ref ref_sample, size_t num_samples, FILE *out,
     SampleFormat format) {
-    BatchResultWriter writer(out, num_samples, format);
+    MeasureRecordBatchWriter writer(out, num_samples, format);
     sim.reset_all();
     circuit.for_each_operation([&](const Operation &op) {
         (sim.*op.gate->frame_simulator_function)(op.target_data);

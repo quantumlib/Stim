@@ -18,7 +18,7 @@
 #include "../probability_util.h"
 
 TableauSimulator::TableauSimulator(
-    size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias, SingleMeasurementRecord record)
+    size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias, MeasureRecord record)
     : inv_state(Tableau::identity(num_qubits)),
       rng(rng),
       sign_bias(sign_bias),
@@ -402,7 +402,7 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
 
 void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
     TableauSimulator sim(1, rng);
-    auto writer = SingleResultWriter::make(out, format);
+    auto writer = MeasureRecordWriter::make(out, format);
     Circuit unprocessed;
     while (true) {
         unprocessed.clear();

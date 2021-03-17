@@ -744,7 +744,7 @@ TEST(FrameSimulator, classical_controls) {
 TEST(FrameSimulator, record_gets_trimmed) {
     FrameSimulator sim(100, 1024, 5, SHARED_TEST_RNG());
     Circuit c = Circuit::from_text("M 0 1 2 3 4 5 6 7 8 9");
-    BatchResultWriter b(tmpfile(), 1024, SAMPLE_FORMAT_B8);
+    MeasureRecordBatchWriter b(tmpfile(), 1024, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.measure(c.operations[0].target_data);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits(0));

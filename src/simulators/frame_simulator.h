@@ -21,8 +21,8 @@
 
 #include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
-#include "../simulators/measurement_record.h"
 #include "../stabilizers/pauli_string.h"
+#include "measure_record_batch.h"
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
@@ -35,7 +35,7 @@ struct FrameSimulator {
     size_t num_recorded_measurements;
     simd_bit_table x_table;
     simd_bit_table z_table;
-    BatchMeasurementRecord m_record;
+    MeasureRecordBatch m_record;
     simd_bits rng_buffer;
     simd_bits last_correlated_error_occurred;
     std::mt19937_64 &rng;
