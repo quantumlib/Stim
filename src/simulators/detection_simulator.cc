@@ -24,8 +24,8 @@ void xor_measurement_set_into_result(
 }
 
 simd_bit_table detector_samples(
-    const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots,
-    bool append_observables, std::mt19937_64 &rng) {
+    const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots, bool append_observables,
+    std::mt19937_64 &rng) {
     // Start from measurement samples.
     simd_bit_table frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
 
@@ -50,17 +50,12 @@ simd_bit_table detector_samples(
 
 simd_bit_table detector_samples(
     const Circuit &circuit, size_t num_shots, bool append_observables, std::mt19937_64 &rng) {
-    return detector_samples(
-        circuit, DetectorsAndObservables(circuit), num_shots, append_observables, rng);
+    return detector_samples(circuit, DetectorsAndObservables(circuit), num_shots, append_observables, rng);
 }
 
 void detector_sample_out_helper(
-        const Circuit &circuit,
-        FrameSimulator &sim,
-        size_t num_samples,
-        bool append_observables,
-        FILE *out,
-        SampleFormat format) {
+    const Circuit &circuit, FrameSimulator &sim, size_t num_samples, bool append_observables, FILE *out,
+    SampleFormat format) {
     BatchResultWriter writer(out, num_samples, format);
     std::vector<simd_bits> observables;
     sim.reset_all();
@@ -107,9 +102,9 @@ void detector_sample_out_helper(
     writer.write_end();
 }
 
-void detector_samples_out(const Circuit &circuit, size_t num_shots, bool append_observables, FILE *out,
-    SampleFormat format, std::mt19937_64 &rng) {
-
+void detector_samples_out(
+    const Circuit &circuit, size_t num_shots, bool append_observables, FILE *out, SampleFormat format,
+    std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();

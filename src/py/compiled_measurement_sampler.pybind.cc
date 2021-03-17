@@ -14,10 +14,10 @@
 
 #include "compiled_measurement_sampler.pybind.h"
 
+#include "../circuit/circuit.pybind.h"
 #include "../simulators/detection_simulator.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
-#include "../circuit/circuit.pybind.h"
 #include "base.pybind.h"
 
 CompiledMeasurementSampler::CompiledMeasurementSampler(Circuit circuit)

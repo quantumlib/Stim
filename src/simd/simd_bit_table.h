@@ -27,7 +27,8 @@ struct simd_bit_table {
     /// Creates zero initialized table.
     simd_bit_table(size_t min_bits_major, size_t min_bits_minor);
     /// Creates a randomly initialized table.
-    static simd_bit_table random(size_t num_randomized_major_bits, size_t num_randomized_minor_bits, std::mt19937_64 &rng);
+    static simd_bit_table random(
+        size_t num_randomized_major_bits, size_t num_randomized_minor_bits, std::mt19937_64 &rng);
     /// Creates a square table with 1s down the diagonal.
     static simd_bit_table identity(size_t n);
     /// Concatenates tables together to form a larger table.

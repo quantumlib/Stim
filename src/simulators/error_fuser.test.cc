@@ -26,7 +26,7 @@ std::string convert(const char *text) {
     ErrorFuser::convert_circuit_out(Circuit::from_text(text), f);
     rewind(f);
     std::string s;
-    while(true) {
+    while (true) {
         int c = getc(f);
         if (c == EOF) {
             break;
@@ -42,7 +42,8 @@ TEST(ErrorFuser, convert_circuit) {
         X_ERROR(0.25) 3
         M 3
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.25) D0
+    )circuit"),
+        R"graph(error(0.25) D0
 )graph");
 
     ASSERT_EQ(
@@ -50,7 +51,8 @@ TEST(ErrorFuser, convert_circuit) {
         Y_ERROR(0.25) 3
         M 3
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.25) D0
+    )circuit"),
+        R"graph(error(0.25) D0
 )graph");
 
     ASSERT_EQ(
@@ -58,14 +60,16 @@ TEST(ErrorFuser, convert_circuit) {
         Z_ERROR(0.25) 3
         M 3
         DETECTOR rec[-1]
-    )circuit"), R"graph()graph");
+    )circuit"),
+        R"graph()graph");
 
     ASSERT_EQ(
         convert(R"circuit(
         DEPOLARIZE1(0.25) 3
         M 3
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.1666666666666666574) D0
+    )circuit"),
+        R"graph(error(0.1666666666666666574) D0
 )graph");
 
     ASSERT_EQ(
@@ -75,17 +79,20 @@ TEST(ErrorFuser, convert_circuit) {
         M 0 1
         OBSERVABLE_INCLUDE(3) rec[-1]
         DETECTOR rec[-2]
-    )circuit"), R"graph(error(0.125) L3
+    )circuit"),
+        R"graph(error(0.125) L3
 error(0.25) D0
 )graph");
 
-    ASSERT_EQ(convert(R"circuit(
+    ASSERT_EQ(
+        convert(R"circuit(
         X_ERROR(0.25) 0
         X_ERROR(0.125) 1
         M 0 1
         OBSERVABLE_INCLUDE(3) rec[-1]
         DETECTOR rec[-2]
-    )circuit"), R"graph(error(0.125) L3
+    )circuit"),
+        R"graph(error(0.125) L3
 error(0.25) D0
 )graph");
 
@@ -96,7 +103,8 @@ error(0.25) D0
         M 5
         DETECTOR rec[-1]
         DETECTOR rec[-2]
-    )circuit"), R"graph(error(0.07182558071116235121) D0
+    )circuit"),
+        R"graph(error(0.07182558071116235121) D0
 error(0.07182558071116235121) D0 D1
 error(0.07182558071116235121) D1
 )graph");
@@ -113,7 +121,8 @@ error(0.07182558071116235121) D1
         DETECTOR rec[-2]
         DETECTOR rec[-3]
         DETECTOR rec[-4]
-    )circuit"), R"graph(error(0.01901372644820353841) D0
+    )circuit"),
+        R"graph(error(0.01901372644820353841) D0
 error(0.01901372644820353841) D0 D1
 error(0.01901372644820353841) D0 D1 D2
 error(0.01901372644820353841) D0 D1 D2 D3
@@ -188,7 +197,8 @@ TEST(ErrorFuser, reversed_operation_order) {
         M 0 1
         DETECTOR rec[-2]
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.25) D1
+    )circuit"),
+        R"graph(error(0.25) D1
 )graph");
 }
 
@@ -200,7 +210,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         CNOT rec[-1] 1
         M 1
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.125) D0
+    )circuit"),
+        R"graph(error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -212,7 +223,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         H 1
         M 1
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.125) D0
+    )circuit"),
+        R"graph(error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -224,7 +236,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         H 1
         M 1
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.125) D0
+    )circuit"),
+        R"graph(error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -234,7 +247,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         CY rec[-1] 1
         M 1
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.125) D0
+    )circuit"),
+        R"graph(error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -244,7 +258,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         XCZ 1 rec[-1]
         M 1
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.125) D0
+    )circuit"),
+        R"graph(error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -254,6 +269,7 @@ TEST(ErrorFuser, classical_error_propagation) {
         YCZ 1 rec[-1]
         M 1
         DETECTOR rec[-1]
-    )circuit"), R"graph(error(0.125) D0
+    )circuit"),
+        R"graph(error(0.125) D0
 )graph");
 }

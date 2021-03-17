@@ -19,10 +19,10 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <vector>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
+#include <vector>
 
 template <typename T>
 struct PointerRange {
@@ -30,14 +30,14 @@ struct PointerRange {
     T *ptr_end;
     PointerRange() : ptr_start(nullptr), ptr_end(nullptr) {
     }
-    PointerRange(T* begin, T* end) : ptr_start(begin), ptr_end(end) {
+    PointerRange(T *begin, T *end) : ptr_start(begin), ptr_end(end) {
     }
     // Implicit conversions.
     PointerRange(std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
     size_t size() const {
-       return ptr_end - ptr_start;
+        return ptr_end - ptr_start;
     }
     const T *begin() const {
         return ptr_start;
@@ -99,7 +99,7 @@ struct ConstPointerRange {
 
     ConstPointerRange() : ptr_start(nullptr), ptr_end(nullptr) {
     }
-    ConstPointerRange(const T *begin, const T* end) : ptr_start(begin), ptr_end(end) {
+    ConstPointerRange(const T *begin, const T *end) : ptr_start(begin), ptr_end(end) {
     }
     // Implicit conversions.
     ConstPointerRange(PointerRange<T> items) : ptr_start(items.ptr_start), ptr_end(items.ptr_end) {
@@ -108,7 +108,7 @@ struct ConstPointerRange {
     }
 
     size_t size() const {
-       return ptr_end - ptr_start;
+        return ptr_end - ptr_start;
     }
     const T *begin() const {
         return ptr_start;

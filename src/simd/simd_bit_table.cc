@@ -214,7 +214,8 @@ std::string simd_bit_table::str(size_t n) const {
     return out.str();
 }
 
-simd_bit_table simd_bit_table::random(size_t num_randomized_major_bits, size_t num_randomized_minor_bits, std::mt19937_64 &rng) {
+simd_bit_table simd_bit_table::random(
+    size_t num_randomized_major_bits, size_t num_randomized_minor_bits, std::mt19937_64 &rng) {
     simd_bit_table result(num_randomized_major_bits, num_randomized_minor_bits);
     for (size_t maj = 0; maj < num_randomized_major_bits; maj++) {
         result[maj].randomize(num_randomized_minor_bits, rng);

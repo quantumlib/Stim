@@ -152,7 +152,8 @@ TEST(circuit, from_text) {
     expected.append_op("DETECTOR", {6 | TARGET_RECORD_BIT});
     ASSERT_EQ(f("DETECTOR rec[-6]"), expected);
 
-    Circuit parsed = f("M 0\n"
+    Circuit parsed =
+        f("M 0\n"
           "REPEAT 5 {\n"
           "  M 1 2\n"
           "  M 3\n"
@@ -331,7 +332,9 @@ TEST(circuit, for_each_operation) {
     f("Y", {2});
 
     std::vector<Operation> ops;
-    c.for_each_operation([&](const Operation &op) { ops.push_back(op); });
+    c.for_each_operation([&](const Operation &op) {
+        ops.push_back(op);
+    });
     ASSERT_EQ(ops, flat.operations);
 }
 
@@ -364,14 +367,17 @@ TEST(circuit, for_each_operation_reverse) {
     f("H", {0});
 
     std::vector<Operation> ops;
-    c.for_each_operation_reverse([&](const Operation &op) { ops.push_back(op); });
+    c.for_each_operation_reverse([&](const Operation &op) {
+        ops.push_back(op);
+    });
     ASSERT_EQ(ops, flat.operations);
 }
 
 TEST(circuit, count_qubits) {
     ASSERT_EQ(Circuit().count_qubits(), 0);
 
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -381,10 +387,13 @@ TEST(circuit, count_qubits) {
                 M 2
             }
         }
-    )CIRCUIT").count_qubits(), 3);
+    )CIRCUIT")
+            .count_qubits(),
+        3);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 999999 {
@@ -400,16 +409,22 @@ TEST(circuit, count_qubits) {
                 }
             }
         }
-    )CIRCUIT").count_qubits(), 3);
+    )CIRCUIT")
+            .count_qubits(),
+        3);
 }
 
 TEST(circuit, max_lookback) {
     ASSERT_EQ(Circuit().max_lookback(), 0);
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         M 0 1 2 3 4 5 6
-    )CIRCUIT").max_lookback(), 0);
+    )CIRCUIT")
+            .max_lookback(),
+        0);
 
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         M 0 1 2 3 4 5 6
         REPEAT 2 {
             CNOT rec[-4] 0
@@ -417,10 +432,13 @@ TEST(circuit, max_lookback) {
                 CNOT rec[-1] 0
             }
         }
-    )CIRCUIT").max_lookback(), 4);
+    )CIRCUIT")
+            .max_lookback(),
+        4);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         M 0 1 2 3 4 5
         REPEAT 999999 {
             REPEAT 999999 {
@@ -433,13 +451,16 @@ TEST(circuit, max_lookback) {
                 }
             }
         }
-    )CIRCUIT").max_lookback(), 5);
+    )CIRCUIT")
+            .max_lookback(),
+        5);
 }
 
 TEST(circuit, count_measurements) {
     ASSERT_EQ(Circuit().count_measurements(), 0);
 
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -449,10 +470,13 @@ TEST(circuit, count_measurements) {
                 M 2
             }
         }
-    )CIRCUIT").count_measurements(), 8);
+    )CIRCUIT")
+            .count_measurements(),
+        8);
 
     // Ensure not unrolling to compute.
-    ASSERT_EQ(Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
         REPEAT 999999 {
             REPEAT 999999 {
                 REPEAT 999999 {
@@ -460,7 +484,9 @@ TEST(circuit, count_measurements) {
                 }
             }
         }
-    )CIRCUIT").count_measurements(), 999999ULL*999999ULL*999999ULL);
+    )CIRCUIT")
+            .count_measurements(),
+        999999ULL * 999999ULL * 999999ULL);
 }
 
 TEST(circuit, preserves_repetition_blocks) {

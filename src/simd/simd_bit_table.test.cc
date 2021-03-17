@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "simd_bit_table.h"
-#include "../test_util.test.h"
 
 #include <gtest/gtest.h>
+
+#include "../test_util.test.h"
 
 TEST(bit_mat, creation) {
     simd_bit_table a(3, 3);

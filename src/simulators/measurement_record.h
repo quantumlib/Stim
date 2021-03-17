@@ -88,10 +88,11 @@ struct ResultWriterFormatDets : SingleResultWriter {
 };
 
 struct SingleMeasurementRecord {
-  private:
+   private:
     size_t max_lookback;
     size_t unwritten;
-  public:
+
+   public:
     std::vector<bool> storage;
     SingleMeasurementRecord(size_t max_lookback = SIZE_MAX);
     void write_unwritten_results_to(SingleResultWriter &writer);

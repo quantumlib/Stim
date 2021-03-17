@@ -49,7 +49,8 @@ Circuit make_rep_code(uint32_t distance, uint32_t rounds) {
         result.append_op("M", {2 * k});
     }
     for (uint32_t k = 1; k < distance; k++) {
-        result.append_op("DETECTOR", {k | TARGET_RECORD_BIT, (k + 1) | TARGET_RECORD_BIT, (k + distance) | TARGET_RECORD_BIT});
+        result.append_op(
+            "DETECTOR", {k | TARGET_RECORD_BIT, (k + 1) | TARGET_RECORD_BIT, (k + distance) | TARGET_RECORD_BIT});
     }
     result.append_op("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
     return result;
@@ -67,7 +68,9 @@ BENCHMARK(main_sample1_tableau_rep_d1000_r100) {
         rewind(in);
         rewind(out);
         TableauSimulator::sample_stream(in, out, SAMPLE_FORMAT_B8, false, rng);
-    }).goal_millis(30).show_rate("Samples", circuit.count_measurements());
+    })
+        .goal_millis(30)
+        .show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
@@ -80,7 +83,9 @@ BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(7).show_rate("Samples", circuit.count_measurements());
+    })
+        .goal_millis(7)
+        .show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
@@ -93,7 +98,9 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     benchmark_go([&]() {
         rewind(out);
         detector_samples_out(circuit, 1, true, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(10).show_rate("Samples", circuit.count_measurements());
+    })
+        .goal_millis(10)
+        .show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
@@ -106,7 +113,9 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(12).show_rate("Samples", circuit.count_measurements());
+    })
+        .goal_millis(12)
+        .show_rate("Samples", circuit.count_measurements());
 }
 
 BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
@@ -119,5 +128,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     benchmark_go([&]() {
         rewind(out);
         detector_samples_out(circuit, 256, true, out, SAMPLE_FORMAT_B8, rng);
-    }).goal_millis(12).show_rate("Samples", circuit.count_measurements());
+    })
+        .goal_millis(12)
+        .show_rate("Samples", circuit.count_measurements());
 }

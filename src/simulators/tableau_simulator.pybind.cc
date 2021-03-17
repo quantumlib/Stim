@@ -59,8 +59,7 @@ TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::ar
 
 void pybind_tableau_simulator(pybind11::module &m) {
     pybind11::class_<TableauSimulator>(
-        m,
-        "TableauSimulator",
+        m, "TableauSimulator",
         R"DOC(
             A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
 
@@ -458,7 +457,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "ycz",
             [](TableauSimulator &self, pybind11::args args) {
-                 self.YCZ(args_to_target_pairs(self, args));
+                self.YCZ(args_to_target_pairs(self, args));
             },
             R"DOC(
                 Applies a Y-controlled Z gate to the simulator's state.

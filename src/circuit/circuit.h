@@ -164,11 +164,9 @@ struct Circuit {
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_op(
-        const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
+    void append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(
-        const Gate &gate, ConstPointerRange<uint32_t> targets, double arg);
+    void append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, double arg);
 
     /// Resets the circuit back to an empty circuit.
     void clear();

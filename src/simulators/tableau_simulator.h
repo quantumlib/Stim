@@ -27,8 +27,8 @@
 #include "../circuit/circuit.h"
 #include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
-#include "vector_simulator.h"
 #include "measurement_record.h"
+#include "vector_simulator.h"
 
 struct TableauSimulator {
     Tableau inv_state;
@@ -42,10 +42,9 @@ struct TableauSimulator {
     ///     rng: The random number generator to use for random operations.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
     ///     record: Measurement record configuration.
-    explicit TableauSimulator(size_t num_qubits,
-                              std::mt19937_64 &rng,
-                              int8_t sign_bias = 0,
-                              SingleMeasurementRecord record = SingleMeasurementRecord());
+    explicit TableauSimulator(
+        size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias = 0,
+        SingleMeasurementRecord record = SingleMeasurementRecord());
 
     /// Samples the given circuit in a deterministic fashion.
     ///

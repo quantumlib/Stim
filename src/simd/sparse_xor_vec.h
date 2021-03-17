@@ -17,12 +17,12 @@
 #ifndef SPARSE_XOR_TABLE_H
 #define SPARSE_XOR_TABLE_H
 
+#include <array>
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <sstream>
 #include <vector>
-#include <array>
-#include <functional>
 
 #include "monotonic_buffer.h"
 
@@ -33,11 +33,7 @@
 /// \param out: Where to write the output. Must have size of at least sorted_in1.size() + sorted_in2.size().
 /// \return: A pointer to the end of the output (one past the last place written).
 template <typename T>
-inline T *xor_merge_sort(
-        ConstPointerRange<T> sorted_in1,
-        ConstPointerRange<T> sorted_in2,
-        T *out) {
-
+inline T *xor_merge_sort(ConstPointerRange<T> sorted_in1, ConstPointerRange<T> sorted_in2, T *out) {
     // Interleave sorted src and dst into a sorted work buffer.
     const T *p1 = sorted_in1.ptr_start;
     const T *p2 = sorted_in2.ptr_start;
@@ -62,9 +58,7 @@ inline T *xor_merge_sort(
 
 template <typename T, typename CALLBACK>
 inline void xor_merge_sort_temp_buffer_callback(
-        ConstPointerRange<T> sorted_items_1,
-        ConstPointerRange<T> sorted_items_2,
-        CALLBACK handler) {
+    ConstPointerRange<T> sorted_items_1, ConstPointerRange<T> sorted_items_2, CALLBACK handler) {
     constexpr size_t STACK_SIZE = 64;
     T data[STACK_SIZE];
     size_t max = sorted_items_1.size() + sorted_items_2.size();

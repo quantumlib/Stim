@@ -57,7 +57,9 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
         if (p.gate->flags & GATE_PRODUCES_RESULTS) {
             tick += p.target_data.targets.size();
         } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
-            resolve_into(p, [&](uint32_t k){ jagged_detector_data.append_tail(k); });
+            resolve_into(p, [&](uint32_t k) {
+                jagged_detector_data.append_tail(k);
+            });
             detectors.push_back(jagged_detector_data.commit_tail());
         } else if (p.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
             size_t obs = (size_t)p.target_data.arg;
@@ -67,7 +69,9 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
             while (observables.size() <= obs) {
                 observables.emplace_back();
             }
-            resolve_into(p, [&](uint32_t k){ observables[obs].push_back(k); });
+            resolve_into(p, [&](uint32_t k) {
+                observables[obs].push_back(k);
+            });
         }
     });
 }
@@ -76,8 +80,7 @@ Circuit::Circuit() : jag_targets(), operations(), blocks() {
 }
 
 Circuit::Circuit(const Circuit &circuit)
-    : jag_targets(circuit.jag_targets.total_allocated()), operations(circuit.operations),
-      blocks(circuit.blocks) {
+    : jag_targets(circuit.jag_targets.total_allocated()), operations(circuit.operations), blocks(circuit.blocks) {
     // Keep local copy of operation data.
     for (auto &op : operations) {
         op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
@@ -482,8 +485,7 @@ void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t
     append_operation(gate, vec, arg);
 }
 
-void Circuit::append_operation(
-    const Gate &gate, ConstPointerRange<uint32_t> targets, double arg) {
+void Circuit::append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, double arg) {
     if (gate.flags & GATE_TARGETS_PAIRS) {
         if (targets.size() & 1) {
             throw std::out_of_range(
@@ -717,7 +719,6 @@ DetectorsAndObservables::DetectorsAndObservables(const DetectorsAndObservables &
     : jagged_detector_data(other.jagged_detector_data.total_allocated()),
       detectors(other.detectors),
       observables(other.observables) {
-
     // Keep a local copy of the detector data.
     for (PointerRange<uint32_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
@@ -753,7 +754,7 @@ size_t Circuit::count_qubits() const {
         }
         for (uint32_t t : op.target_data.targets) {
             if (!(t & TARGET_RECORD_BIT)) {
-                n = std::max(n, (t & TARGET_VALUE_MASK) + size_t {1});
+                n = std::max(n, (t & TARGET_VALUE_MASK) + size_t{1});
             }
         }
     }
@@ -769,7 +770,7 @@ size_t Circuit::max_lookback() const {
         if (op.gate->flags & (GATE_CAN_TARGET_MEASUREMENT_RECORD | GATE_ONLY_TARGETS_MEASUREMENT_RECORD)) {
             for (uint32_t t : op.target_data.targets) {
                 if (t & TARGET_RECORD_BIT) {
-                    n = std::max(n, size_t {t & TARGET_VALUE_MASK});
+                    n = std::max(n, size_t{t & TARGET_VALUE_MASK});
                 }
             }
         }

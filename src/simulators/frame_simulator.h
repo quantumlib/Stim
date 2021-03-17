@@ -21,8 +21,8 @@
 
 #include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
-#include "../stabilizers/pauli_string.h"
 #include "../simulators/measurement_record.h"
+#include "../stabilizers/pauli_string.h"
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
@@ -90,14 +90,8 @@ struct FrameSimulator {
 };
 
 void write_table_data(
-        FILE *out,
-        size_t num_shots_raw,
-        size_t num_sample_locations_raw,
-        const simd_bits &reference_sample,
-        const simd_bit_table &table,
-        SampleFormat format,
-        char dets_prefix_1,
-        char dets_prefix_2,
-        size_t dets_prefix_transition);
+    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
+    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
+    size_t dets_prefix_transition);
 
 #endif

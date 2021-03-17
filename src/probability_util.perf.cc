@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "benchmark_util.h"
-
 #include "probability_util.h"
+
+#include "benchmark_util.h"
 #include "simd/simd_bits.h"
 
 BENCHMARK(biased_random_1024_0point1percent) {
@@ -22,9 +22,11 @@ BENCHMARK(biased_random_1024_0point1percent) {
     float p = 0.001;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(70).show_rate("bits", n);
+    })
+        .goal_nanos(70)
+        .show_rate("bits", n);
 }
 
 BENCHMARK(biased_random_1024_0point01percent) {
@@ -32,9 +34,11 @@ BENCHMARK(biased_random_1024_0point01percent) {
     float p = 0.0001;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(35).show_rate("bits", n);
+    })
+        .goal_nanos(35)
+        .show_rate("bits", n);
 }
 
 BENCHMARK(biased_random_1024_1percent) {
@@ -42,9 +46,11 @@ BENCHMARK(biased_random_1024_1percent) {
     float p = 0.01;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(250).show_rate("bits", n);
+    })
+        .goal_nanos(250)
+        .show_rate("bits", n);
 }
 
 BENCHMARK(biased_random_1024_40percent) {
@@ -52,9 +58,11 @@ BENCHMARK(biased_random_1024_40percent) {
     float p = 0.4;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(420).show_rate("bits", n);
+    })
+        .goal_nanos(420)
+        .show_rate("bits", n);
 }
 
 BENCHMARK(biased_random_1024_50percent) {
@@ -62,9 +70,11 @@ BENCHMARK(biased_random_1024_50percent) {
     float p = 0.5;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(40).show_rate("bits", n);
+    })
+        .goal_nanos(40)
+        .show_rate("bits", n);
 }
 
 BENCHMARK(biased_random_1024_90percent) {
@@ -72,9 +82,11 @@ BENCHMARK(biased_random_1024_90percent) {
     float p = 0.9;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(450).show_rate("bits", n);
+    })
+        .goal_nanos(450)
+        .show_rate("bits", n);
 }
 
 BENCHMARK(biased_random_1024_99percent) {
@@ -82,7 +94,9 @@ BENCHMARK(biased_random_1024_99percent) {
     float p = 0.99;
     size_t n = 1024;
     simd_bits data(n);
-    benchmark_go([&](){
+    benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
-    }).goal_nanos(260).show_rate("bits", n);
+    })
+        .goal_nanos(260)
+        .show_rate("bits", n);
 }

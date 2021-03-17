@@ -42,14 +42,14 @@ static std::vector<const char *> detect_mode_known_arguments{
     "--detect", "--append_observables", "--out_format", "--out", "--in",
 };
 static std::vector<const char *> detector_hypergraph_mode_known_arguments{
-    "--detector_hypergraph", "--out", "--in",
+    "--detector_hypergraph",
+    "--out",
+    "--in",
 };
 static std::vector<const char *> repl_mode_known_arguments{
     "--repl",
 };
-static std::vector<const char *> format_names{
-    "01", "b8", "ptb64", "hits", "r8", "dets"
-};
+static std::vector<const char *> format_names{"01", "b8", "ptb64", "hits", "r8", "dets"};
 static std::vector<SampleFormat> format_values{
     SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8, SAMPLE_FORMAT_DETS,
 };

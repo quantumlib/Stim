@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "circuit.pybind.h"
+
 #include "../py/base.pybind.h"
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
-#include "circuit.pybind.h"
 
 std::string circuit_repr(const Circuit &self) {
     if (self.operations.empty()) {
@@ -26,8 +27,7 @@ std::string circuit_repr(const Circuit &self) {
 
 void pybind_circuit(pybind11::module &m) {
     pybind11::class_<Circuit>(
-        m,
-        "Circuit",
+        m, "Circuit",
         R"DOC(
             A mutable stabilizer circuit.
 

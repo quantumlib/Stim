@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "../circuit/circuit.h"
-#include "../simd/sparse_xor_vec.h"
 #include "../simd/monotonic_buffer.h"
+#include "../simd/sparse_xor_vec.h"
 
 struct ErrorFuser {
     std::map<uint32_t, std::vector<uint32_t>> measurement_to_detectors;
@@ -82,7 +82,8 @@ struct ErrorFuser {
 
    private:
     void add_error(double probability, const SparseXorVec<uint32_t> &data);
-    void add_xored_error(double probability, const SparseXorVec<uint32_t> &flipped1, const SparseXorVec<uint32_t> &flipped2);
+    void add_xored_error(
+        double probability, const SparseXorVec<uint32_t> &flipped1, const SparseXorVec<uint32_t> &flipped2);
     void add_error_in_sorted_jagged_tail(double probability);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);

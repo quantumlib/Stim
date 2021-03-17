@@ -17,10 +17,10 @@
 #include <gtest/gtest.h>
 
 TEST(pointer_range, equality) {
-    int data[100] {};
-    PointerRange<int> r1 {&data[0], &data[10]};
-    PointerRange<int> r2 {&data[10], &data[20]};
-    PointerRange<int> r4 {&data[30], &data[50]};
+    int data[100]{};
+    PointerRange<int> r1{&data[0], &data[10]};
+    PointerRange<int> r2{&data[10], &data[20]};
+    PointerRange<int> r4{&data[30], &data[50]};
     ASSERT_TRUE(r1 == r2);
     ASSERT_FALSE(r1 != r2);
     ASSERT_EQ(r1, r2);

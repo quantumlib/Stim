@@ -257,7 +257,7 @@ ErrorFuser::ErrorFuser(size_t num_qubits) : xs(num_qubits), zs(num_qubits) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
-    circuit.for_each_operation_reverse([&](const Operation &op){
+    circuit.for_each_operation_reverse([&](const Operation &op) {
         (this->*op.gate->reverse_error_fuser_function)(op.target_data);
     });
 }
@@ -284,7 +284,7 @@ template <typename T>
 inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src) {
     ConstPointerRange<T> in1 = dst.tail;
     ConstPointerRange<T> in2 = src.range();
-    xor_merge_sort_temp_buffer_callback(in1, in2, [&](ConstPointerRange<T> result){
+    xor_merge_sort_temp_buffer_callback(in1, in2, [&](ConstPointerRange<T> result) {
         dst.discard_tail();
         dst.append_tail(result);
     });
@@ -386,13 +386,10 @@ void ErrorFuser::add_error(double probability, const SparseXorVec<uint32_t> &fli
 }
 
 void ErrorFuser::add_xored_error(
-        double probability,
-        const SparseXorVec<uint32_t> &flipped1,
-        const SparseXorVec<uint32_t> &flipped2) {
+    double probability, const SparseXorVec<uint32_t> &flipped1, const SparseXorVec<uint32_t> &flipped2) {
     jag_flip_data.ensure_available(flipped1.size() + flipped2.size());
-    jag_flip_data.tail.ptr_end = xor_merge_sort<uint32_t>(
-        flipped1.range(),
-        flipped2.range(), jag_flip_data.tail.ptr_end);
+    jag_flip_data.tail.ptr_end =
+        xor_merge_sort<uint32_t>(flipped1.range(), flipped2.range(), jag_flip_data.tail.ptr_end);
     add_error_in_sorted_jagged_tail(probability);
 }
 

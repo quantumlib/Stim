@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-#include <cassert>
-#include <algorithm>
 #include "measurement_record.h"
+
+#include <algorithm>
+#include <cassert>
 
 void SingleResultWriter::set_result_type(char result_type) {
 }
@@ -211,7 +212,8 @@ std::unique_ptr<SingleResultWriter> SingleResultWriter::make(FILE *out, SampleFo
     }
 }
 
-BatchResultWriter::BatchResultWriter(FILE *out, size_t num_shots, SampleFormat output_format) : output_format(output_format), out(out) {
+BatchResultWriter::BatchResultWriter(FILE *out, size_t num_shots, SampleFormat output_format)
+    : output_format(output_format), out(out) {
     auto f = output_format;
     auto s = num_shots;
     if (output_format == SAMPLE_FORMAT_PTB64) {
@@ -262,7 +264,7 @@ void BatchResultWriter::write_table_batch(simd_bit_table slice, size_t num_major
 void BatchResultWriter::write_bit_batch(simd_bits_range_ref bits) {
     if (output_format == SAMPLE_FORMAT_PTB64) {
         uint8_t *p = bits.u8;
-        for (auto & writer : writers) {
+        for (auto &writer : writers) {
             uint8_t *n = p + 8;
             writer->write_bytes({p, n});
             p = n;
@@ -294,7 +296,12 @@ void BatchResultWriter::write_end() {
 }
 
 BatchMeasurementRecord::BatchMeasurementRecord(size_t num_shots, size_t max_lookback, size_t initial_capacity)
-    : max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(initial_capacity, num_shots) {
+    : max_lookback(max_lookback),
+      unwritten(0),
+      stored(0),
+      written(0),
+      shot_mask(num_shots),
+      storage(initial_capacity, num_shots) {
     for (size_t k = 0; k < num_shots; k++) {
         shot_mask[k] = true;
     }
@@ -334,7 +341,8 @@ void BatchMeasurementRecord::mark_all_as_written() {
     }
 }
 
-void BatchMeasurementRecord::intermediate_write_unwritten_results_to(BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
+void BatchMeasurementRecord::intermediate_write_unwritten_results_to(
+    BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
     while (unwritten >= 1024) {
         auto slice = storage.slice_maj(stored - unwritten, stored - unwritten + 1024);
         for (size_t k = 0; k < 1024; k++) {
@@ -356,7 +364,7 @@ void BatchMeasurementRecord::intermediate_write_unwritten_results_to(BatchResult
 }
 
 void BatchMeasurementRecord::final_write_unwritten_results_to(
-        BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
+    BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
     size_t n = stored;
     for (size_t k = n - unwritten; k < n; k++) {
         bool invert = written < ref_sample.num_bits_padded() && ref_sample[written];

@@ -20,10 +20,11 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <vector>
 #include <iostream>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
+#include <vector>
+
 #include "pointer_range.h"
 
 /// A memory resource that can efficiently incrementally accumulate data.
@@ -69,16 +70,14 @@ struct MonotonicBuffer {
         cur.ptr_start = cur.ptr_end = tail.ptr_start = tail.ptr_end = nullptr;
     }
     MonotonicBuffer(MonotonicBuffer &&other) noexcept
-        : tail(other.tail),
-          cur(other.cur),
-          old_areas(std::move(other.old_areas)) {
+        : tail(other.tail), cur(other.cur), old_areas(std::move(other.old_areas)) {
         other.cur.ptr_start = nullptr;
         other.cur.ptr_end = nullptr;
         other.tail.ptr_start = nullptr;
         other.tail.ptr_end = nullptr;
     }
     MonotonicBuffer(const MonotonicBuffer &other) = delete;
-    MonotonicBuffer& operator=(MonotonicBuffer &&other) noexcept {
+    MonotonicBuffer &operator=(MonotonicBuffer &&other) noexcept {
         (*this).~MonotonicBuffer();
         new (this) MonotonicBuffer(std::move(other));
         return *this;
@@ -149,7 +148,7 @@ struct MonotonicBuffer {
         if (cur.ptr_start != nullptr) {
             old_areas.push_back(cur);
         }
-        cur.ptr_start = (T*)malloc(alloc_count * sizeof(T));
+        cur.ptr_start = (T *)malloc(alloc_count * sizeof(T));
         cur.ptr_end = cur.ptr_start + alloc_count;
 
         // Staged data is not complete yet; keep it contiguous by copying it to the new larger memory region.

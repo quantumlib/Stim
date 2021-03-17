@@ -34,8 +34,7 @@ TEST(DetectionSimulator, detector_samples) {
 }
 
 TEST(DetectionSimulator, bad_detector) {
-    ASSERT_THROW(
-        { detector_samples(Circuit::from_text("rec[-1]"), 5, false, SHARED_TEST_RNG()); }, std::out_of_range);
+    ASSERT_THROW({ detector_samples(Circuit::from_text("rec[-1]"), 5, false, SHARED_TEST_RNG()); }, std::out_of_range);
 }
 
 TEST(DetectionSimulator, detector_samples_out) {

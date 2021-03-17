@@ -57,15 +57,9 @@ simd_bit_table transposed_vs_ref(
 }
 
 void write_table_data(
-        FILE *out,
-        size_t num_shots_raw,
-        size_t num_sample_locations_raw,
-        const simd_bits &reference_sample,
-        const simd_bit_table &table,
-        SampleFormat format,
-        char dets_prefix_1,
-        char dets_prefix_2,
-        size_t dets_prefix_transition) {
+    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
+    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
+    size_t dets_prefix_transition) {
     if (format == SAMPLE_FORMAT_01) {
         auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
         for (size_t s = 0; s < num_shots_raw; s++) {
@@ -504,7 +498,8 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 }
 
 void sample_out_helper(
-    const Circuit &circuit, FrameSimulator &sim, simd_bits_range_ref ref_sample, size_t num_samples, FILE *out, SampleFormat format) {
+    const Circuit &circuit, FrameSimulator &sim, simd_bits_range_ref ref_sample, size_t num_samples, FILE *out,
+    SampleFormat format) {
     BatchResultWriter writer(out, num_samples, format);
     sim.reset_all();
     circuit.for_each_operation([&](const Operation &op) {
@@ -515,8 +510,8 @@ void sample_out_helper(
 }
 
 void FrameSimulator::sample_out(
-        const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
-        std::mt19937_64 &rng) {
+    const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+    std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();
