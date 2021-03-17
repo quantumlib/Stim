@@ -792,3 +792,18 @@ uint64_t Circuit::count_measurements() const {
     }
     return n;
 }
+
+uint64_t Circuit::count_detectors_and_observables() const {
+    uint64_t n = 0;
+    for (const auto &op : operations) {
+        assert(op.gate != nullptr);
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            assert(op.target_data.targets.size() == 2);
+            assert(op.target_data.targets[0] < blocks.size());
+            n += blocks[op.target_data.targets[0]].count_detectors_and_observables() * op.target_data.targets[1];
+        } else if (op.gate->id == gate_name_to_id("DETECTOR") || op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+            n++;
+        }
+    }
+    return n;
+}

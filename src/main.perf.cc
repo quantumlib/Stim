@@ -97,7 +97,7 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     simd_bits ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 1, true, out, SAMPLE_FORMAT_B8, rng);
+        detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng);
     })
         .goal_millis(10)
         .show_rate("Samples", circuit.count_measurements());
@@ -118,6 +118,21 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
         .show_rate("Samples", circuit.count_measurements());
 }
 
+BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r1000_stream) {
+    size_t distance = 1000;
+    size_t rounds = 1000;
+    auto circuit = make_rep_code(distance, rounds);
+    FILE *out = tmpfile();
+    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
+    simd_bits ref(0);
+    benchmark_go([&]() {
+        rewind(out);
+        FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
+    })
+        .goal_millis(310)
+        .show_rate("Samples", circuit.count_measurements());
+}
+
 BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     size_t distance = 1000;
     size_t rounds = 100;
@@ -127,8 +142,23 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     simd_bits ref(0);
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 256, true, out, SAMPLE_FORMAT_B8, rng);
+        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng);
     })
         .goal_millis(12)
+        .show_rate("Samples", circuit.count_measurements());
+}
+
+BENCHMARK(main_sample256_detectors_b8_rep_d1000_r1000_stream) {
+    size_t distance = 1000;
+    size_t rounds = 1000;
+    auto circuit = make_rep_code(distance, rounds);
+    FILE *out = tmpfile();
+    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
+    simd_bits ref(0);
+    benchmark_go([&]() {
+        rewind(out);
+        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng);
+    })
+        .goal_millis(310)
         .show_rate("Samples", circuit.count_measurements());
 }

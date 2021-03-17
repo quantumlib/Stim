@@ -30,6 +30,7 @@ static std::vector<const char *> known_arguments{
     "--detector_hypergraph",
 
     "--append_observables",
+    "--prepend_observables",
     "--frame0",
     "--in",
     "--out",
@@ -39,7 +40,7 @@ static std::vector<const char *> sample_mode_known_arguments{
     "--sample", "--frame0", "--out_format", "--out", "--in",
 };
 static std::vector<const char *> detect_mode_known_arguments{
-    "--detect", "--append_observables", "--out_format", "--out", "--in",
+    "--detect", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in",
 };
 static std::vector<const char *> detector_hypergraph_mode_known_arguments{
     "--detector_hypergraph",
@@ -154,14 +155,18 @@ M 0 1 2
         check_for_unknown_arguments(detect_mode_known_arguments, "--detect", argc, argv);
         SampleFormat out_format =
             format_values[find_enum_argument("--out_format", SAMPLE_FORMAT_01, format_names, argc, argv)];
+        bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
         bool append_observables = find_bool_argument("--append_observables", argc, argv);
         auto num_shots = (size_t)find_int_argument("--detect", 1, 0, 1 << 30, argc, argv);
         if (num_shots == 0) {
             return EXIT_SUCCESS;
         }
+        if (out_format == SAMPLE_FORMAT_DETS && !append_observables) {
+            prepend_observables = true;
+        }
 
         auto circuit = Circuit::from_file(in);
-        detector_samples_out(circuit, num_shots, append_observables, out, out_format, rng);
+        detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format, rng);
         return EXIT_SUCCESS;
     }
     if (mode_detector_hypergraph) {

@@ -23,8 +23,11 @@
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit) : dets_obs(circuit), circuit(std::move(circuit)) {
 }
 
-pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(size_t num_shots, bool append_observables) {
-    auto sample = detector_samples(circuit, dets_obs, num_shots, append_observables, PYBIND_SHARED_RNG()).transposed();
+pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
+    size_t num_shots, bool prepend_observables, bool append_observables) {
+    auto sample =
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, PYBIND_SHARED_RNG())
+            .transposed();
 
     const simd_bits &flat = sample.data;
     std::vector<uint8_t> bytes;
@@ -37,18 +40,31 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(size_t num_shots, boo
         }
     }
 
-    size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * append_observables;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(
-        bytes.data(), sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2, {num_shots, n},
-        {(long long)sample.num_minor_bits_padded(), (long long)1}, true));
+    size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
+
+    void *ptr = bytes.data();
+    ssize_t itemsize = sizeof(uint8_t);
+    std::vector<ssize_t> shape{(ssize_t)num_shots, (ssize_t)n};
+    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_bits_padded(), 1};
+    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+    bool readonly = true;
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
-pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(size_t num_shots, bool append_observables) {
-    auto sample = detector_samples(circuit, dets_obs, num_shots, append_observables, PYBIND_SHARED_RNG()).transposed();
-    size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * append_observables;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(
-        sample.data.u8, sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2, {num_shots, (n + 7) / 8},
-        {(long long)sample.num_minor_u8_padded(), (long long)1}, true));
+pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
+    size_t num_shots, bool prepend_observables, bool append_observables) {
+    auto sample =
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, PYBIND_SHARED_RNG())
+            .transposed();
+    size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
+
+    void *ptr = sample.data.u8;
+    ssize_t itemsize = sizeof(uint8_t);
+    std::vector<ssize_t> shape{(ssize_t)num_shots, (ssize_t)(n + 7) / 8};
+    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_u8_padded(), 1};
+    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+    bool readonly = true;
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
 std::string CompiledDetectorSampler::repr() const {
@@ -74,13 +90,16 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 shots: The number of times to sample every detector in the circuit.
                 append_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the end of the results.
+                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the start of the results.
 
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-                `n = num_detectors + num_observables*append_observables`.
+                `n = num_detectors + num_observables*(prepend_observables + append_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, m]`.
             )DOC",
-            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("append_observables") = false)
+            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
+            pybind11::arg("append_observables") = false)
         .def(
             "sample_bit_packed", &CompiledDetectorSampler::sample_bit_packed, R"DOC(
             Returns a numpy array containing bit packed batch of detector samples from the circuit.
@@ -92,12 +111,15 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 shots: The number of times to sample every detector in the circuit.
                 append_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the end of the results.
+                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the start of the results.
 
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-                `n = num_detectors + num_observables*append_observables`.
+                `n = num_detectors + num_observables*(prepend_observables + append_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
             )DOC",
-            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("append_observables") = false)
+            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
+            pybind11::arg("append_observables") = false)
         .def("__repr__", &CompiledDetectorSampler::repr);
 }

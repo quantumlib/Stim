@@ -414,6 +414,36 @@ TEST(circuit, count_qubits) {
         3);
 }
 
+TEST(circuit, count_detectors_and_observables) {
+    ASSERT_EQ(Circuit().count_detectors_and_observables(), 0);
+
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1 2
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(5) rec[-1]
+    )CIRCUIT")
+            .count_detectors_and_observables(),
+        2);
+
+    // Ensure not unrolling to compute.
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1
+        REPEAT 1000 {
+            REPEAT 1000 {
+                REPEAT 1000 {
+                    REPEAT 1000 {
+                        DETECTOR rec[-1]
+                    }
+                }
+            }
+        }
+    )CIRCUIT")
+            .count_detectors_and_observables(),
+        1000000000000ULL);
+}
+
 TEST(circuit, max_lookback) {
     ASSERT_EQ(Circuit().max_lookback(), 0);
     ASSERT_EQ(

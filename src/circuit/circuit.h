@@ -119,6 +119,7 @@ struct Circuit {
 
     size_t count_qubits() const;
     uint64_t count_measurements() const;
+    uint64_t count_detectors_and_observables() const;
     size_t max_lookback() const;
 
     /// Constructs an empty circuit.

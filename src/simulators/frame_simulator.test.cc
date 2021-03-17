@@ -21,6 +21,18 @@
 #include "../test_util.test.h"
 #include "tableau_simulator.h"
 
+static std::string rewind_read_all(FILE *f) {
+    rewind(f);
+    std::string result;
+    while (true) {
+        int c = getc(f);
+        if (c == EOF) {
+            return result;
+        }
+        result.push_back((char)c);
+    }
+}
+
 TEST(FrameSimulator, get_set_frame) {
     FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
     ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));
@@ -89,8 +101,6 @@ TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
     }
 }
 
-#define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << program
-
 bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref output) {
     auto tableau_sim = TableauSimulator(circuit.count_qubits(), SHARED_TEST_RNG());
     size_t out_p = 0;
@@ -148,6 +158,8 @@ bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     }
     return true;
 }
+
+#define EXPECT_SAMPLES_POSSIBLE(program) EXPECT_TRUE(is_sim_frame_consistent_with_sim_tableau(program)) << program
 
 TEST(FrameSimulator, consistency) {
     EXPECT_SAMPLES_POSSIBLE(
@@ -284,16 +296,7 @@ TEST(FrameSimulator, sample_out) {
 
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
-    rewind(tmp);
-    std::stringstream ss;
-    while (true) {
-        auto i = getc(tmp);
-        if (i == EOF) {
-            break;
-        }
-        ss << (char)i;
-    }
-    ASSERT_EQ(ss.str(), "0100\n0100\n0100\n0100\n0100\n");
+    ASSERT_EQ(rewind_read_all(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
@@ -370,17 +373,13 @@ TEST(FrameSimulator, run_length_measurement_formats) {
 
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
-    rewind(tmp);
-    for (char c : "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n") {
-        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
-    }
+    ASSERT_EQ(rewind_read_all(tmp), "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n");
 
     tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
-    rewind(tmp);
-    for (char c : "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n") {
-        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
-    }
+    ASSERT_EQ(
+        rewind_read_all(tmp),
+        "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n");
 
     tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, SHARED_TEST_RNG());
@@ -750,4 +749,21 @@ TEST(FrameSimulator, record_gets_trimmed) {
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }
+}
+
+TEST(FrameSimulator, stream_huge_case) {
+    FILE *tmp = tmpfile();
+    FrameSimulator::sample_out(
+        Circuit::from_text(R"CIRCUIT(
+            X_ERROR(1) 2
+            REPEAT 100000 {
+                M 0 1 2 3
+            }
+        )CIRCUIT"),
+        simd_bits(0), 256, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
+    rewind(tmp);
+    for (size_t k = 0; k < 256 * 100000 * 4 / 8; k++) {
+        ASSERT_EQ(getc(tmp), 0x44);
+    }
+    ASSERT_EQ(getc(tmp), EOF);
 }

@@ -50,15 +50,18 @@ void MeasureRecordWriter::write_bytes(ConstPointerRange<uint8_t> data) {
 
 MeasureRecordWriterFormat01::MeasureRecordWriterFormat01(FILE *out) : out(out) {
 }
+
 void MeasureRecordWriterFormat01::write_bit(bool b) {
     putc('0' + b, out);
 }
+
 void MeasureRecordWriterFormat01::write_end() {
     putc('\n', out);
 }
 
 MeasureRecordWriterFormatB8::MeasureRecordWriterFormatB8(FILE *out) : out(out) {
 }
+
 void MeasureRecordWriterFormatB8::write_bytes(ConstPointerRange<uint8_t> data) {
     if (count == 0) {
         fwrite(data.ptr_start, sizeof(uint8_t), data.ptr_end - data.ptr_start, out);
@@ -66,6 +69,7 @@ void MeasureRecordWriterFormatB8::write_bytes(ConstPointerRange<uint8_t> data) {
         MeasureRecordWriter::write_bytes(data);
     }
 }
+
 void MeasureRecordWriterFormatB8::write_bit(bool b) {
     payload |= uint8_t{b} << count;
     count++;
@@ -75,6 +79,7 @@ void MeasureRecordWriterFormatB8::write_bit(bool b) {
         payload = 0;
     }
 }
+
 void MeasureRecordWriterFormatB8::write_end() {
     if (count > 0) {
         putc(payload, out);
@@ -85,6 +90,7 @@ void MeasureRecordWriterFormatB8::write_end() {
 
 MeasureRecordWriterFormatHits::MeasureRecordWriterFormatHits(FILE *out) : out(out) {
 }
+
 void MeasureRecordWriterFormatHits::write_bytes(ConstPointerRange<uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
@@ -96,6 +102,7 @@ void MeasureRecordWriterFormatHits::write_bytes(ConstPointerRange<uint8_t> data)
         }
     }
 }
+
 void MeasureRecordWriterFormatHits::write_bit(bool b) {
     if (b) {
         if (first) {
@@ -107,6 +114,7 @@ void MeasureRecordWriterFormatHits::write_bit(bool b) {
     }
     position++;
 }
+
 void MeasureRecordWriterFormatHits::write_end() {
     putc('\n', out);
     position = 0;
@@ -115,6 +123,7 @@ void MeasureRecordWriterFormatHits::write_end() {
 
 MeasureRecordFormatR8::MeasureRecordFormatR8(FILE *out) : out(out) {
 }
+
 void MeasureRecordFormatR8::write_bytes(ConstPointerRange<uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
@@ -130,6 +139,7 @@ void MeasureRecordFormatR8::write_bytes(ConstPointerRange<uint8_t> data) {
         }
     }
 }
+
 void MeasureRecordFormatR8::write_bit(bool b) {
     if (b) {
         putc(run_length, out);
@@ -142,6 +152,7 @@ void MeasureRecordFormatR8::write_bit(bool b) {
         }
     }
 }
+
 void MeasureRecordFormatR8::write_end() {
     putc(run_length, out);
     run_length = 0;
@@ -167,6 +178,7 @@ void MeasureRecordFormatDets::write_bytes(ConstPointerRange<uint8_t> data) {
         }
     }
 }
+
 void MeasureRecordFormatDets::write_bit(bool b) {
     if (b) {
         putc(' ', out);
@@ -175,7 +187,76 @@ void MeasureRecordFormatDets::write_bit(bool b) {
     }
     position++;
 }
+
 void MeasureRecordFormatDets::write_end() {
     putc('\n', out);
     position = 0;
+}
+
+simd_bit_table transposed_vs_ref(
+    size_t num_samples_raw, const simd_bit_table &table, const simd_bits &reference_sample) {
+    auto result = table.transposed();
+    for (size_t s = 0; s < num_samples_raw; s++) {
+        result[s].word_range_ref(0, reference_sample.num_simd_words) ^= reference_sample;
+    }
+    return result;
+}
+
+void write_table_data(
+    FILE *out, size_t num_shots, size_t num_measurements, const simd_bits &reference_sample,
+    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
+    size_t dets_prefix_transition) {
+    if (format == SAMPLE_FORMAT_PTB64) {
+        auto f64 = num_shots >> 6;
+        for (size_t s = 0; s < f64; s++) {
+            for (size_t m = 0; m < num_measurements; m++) {
+                uint64_t v = table[m].u64[s];
+                if (m < reference_sample.num_bits_padded() && reference_sample[m]) {
+                    v = ~v;
+                }
+                fwrite(&v, 1, 64 >> 3, out);
+            }
+        }
+        if (num_shots & 63) {
+            uint64_t mask = (uint64_t{1} << (num_shots & 63)) - 1ULL;
+            for (size_t m = 0; m < num_measurements; m++) {
+                uint64_t v = table[m].u64[f64];
+                if (m < reference_sample.num_bits_padded() && reference_sample[m]) {
+                    v = ~v;
+                }
+                v &= mask;
+                fwrite(&v, 1, 64 >> 3, out);
+            }
+        }
+        return;
+    } else {
+        auto result = transposed_vs_ref(num_shots, table, reference_sample);
+        if (dets_prefix_transition == 0) {
+            dets_prefix_transition = num_measurements;
+            dets_prefix_1 = dets_prefix_2;
+        } else if (dets_prefix_1 == dets_prefix_2 || dets_prefix_transition >= num_measurements) {
+            dets_prefix_transition = num_measurements;
+        }
+        for (size_t shot = 0; shot < num_shots; shot++) {
+            auto w = MeasureRecordWriter::make(out, format);
+
+            w->begin_result_type(dets_prefix_1);
+            size_t n8 = dets_prefix_transition >> 3;
+            uint8_t *p = result[shot].u8;
+            w->write_bytes({p, p + n8});
+            size_t m = n8 << 3;
+            while (m < dets_prefix_transition) {
+                w->write_bit(result[shot][m]);
+                m++;
+            }
+
+            w->begin_result_type(dets_prefix_2);
+            while (m < num_measurements) {
+                w->write_bit(result[shot][m]);
+                m++;
+            }
+
+            w->write_end();
+        }
+    }
 }

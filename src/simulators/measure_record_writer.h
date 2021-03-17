@@ -18,8 +18,10 @@
 #define RECORD_WRITER_H
 
 #include <memory>
+
 #include "../circuit/circuit.h"
 #include "../simd/pointer_range.h"
+#include "../simd/simd_bit_table.h"
 
 /// Handles writing measurement data to the outside world.
 ///
@@ -89,5 +91,13 @@ struct MeasureRecordFormatDets : MeasureRecordWriter {
     void write_bit(bool b) override;
     void write_end() override;
 };
+
+simd_bit_table transposed_vs_ref(
+    size_t num_samples_raw, const simd_bit_table &table, const simd_bits &reference_sample);
+
+void write_table_data(
+    FILE *out, size_t num_shots, size_t num_measurements, const simd_bits &reference_sample,
+    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
+    size_t dets_prefix_transition);
 
 #endif

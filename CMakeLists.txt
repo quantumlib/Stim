@@ -75,6 +75,7 @@ set(TEST_FILES
         src/simulators/detection_simulator.test.cc
         src/simulators/error_fuser.test.cc
         src/simulators/frame_simulator.test.cc
+        src/simulators/measure_record_writer.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc

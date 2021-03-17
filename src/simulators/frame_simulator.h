@@ -17,6 +17,8 @@
 #ifndef SIM_FRAME_H
 #define SIM_FRAME_H
 
+#define SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD 100000000
+
 #include <random>
 
 #include "../circuit/circuit.h"
@@ -46,7 +48,7 @@ struct FrameSimulator {
     static simd_bit_table sample(
         const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng);
     static void sample_out(
-        const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+        const Circuit &circuit, const simd_bits &reference_sample, size_t num_shots, FILE *out, SampleFormat format,
         std::mt19937_64 &rng);
 
     PauliString get_frame(size_t sample_index) const;
@@ -88,10 +90,5 @@ struct FrameSimulator {
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
 };
-
-void write_table_data(
-    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
-    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
-    size_t dets_prefix_transition);
 
 #endif

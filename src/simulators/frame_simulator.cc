@@ -14,6 +14,7 @@
 
 #include "frame_simulator.h"
 
+#include <algorithm>
 #include <cstring>
 
 #include "../circuit/gate_data.h"
@@ -45,120 +46,6 @@ FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_
       rng_buffer(batch_size),
       last_correlated_error_occurred(batch_size),
       rng(rng) {
-}
-
-simd_bit_table transposed_vs_ref(
-    size_t num_samples_raw, const simd_bit_table &table, const simd_bits &reference_sample) {
-    auto result = table.transposed();
-    for (size_t s = 0; s < num_samples_raw; s++) {
-        result[s].word_range_ref(0, reference_sample.num_simd_words) ^= reference_sample;
-    }
-    return result;
-}
-
-void write_table_data(
-    FILE *out, size_t num_shots_raw, size_t num_sample_locations_raw, const simd_bits &reference_sample,
-    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
-    size_t dets_prefix_transition) {
-    if (format == SAMPLE_FORMAT_01) {
-        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        for (size_t s = 0; s < num_shots_raw; s++) {
-            for (size_t k = 0; k < num_sample_locations_raw; k++) {
-                putc('0' + result[s][k], out);
-            }
-            putc('\n', out);
-        }
-        return;
-    }
-
-    if (format == SAMPLE_FORMAT_B8) {
-        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        auto n = (num_sample_locations_raw + 7) >> 3;
-        for (size_t s = 0; s < num_shots_raw; s++) {
-            fwrite(result[s].u8, 1, n, out);
-        }
-        return;
-    }
-
-    if (format == SAMPLE_FORMAT_PTB64) {
-        auto f64 = num_shots_raw >> 6;
-        for (size_t s = 0; s < f64; s++) {
-            for (size_t m = 0; m < num_sample_locations_raw; m++) {
-                uint64_t v = table[m].u64[s];
-                if (reference_sample[m]) {
-                    v = ~v;
-                }
-                fwrite(&v, 1, 64 >> 3, out);
-            }
-        }
-        if (num_shots_raw & 63) {
-            uint64_t mask = (uint64_t{1} << (num_shots_raw & 63)) - 1ULL;
-            for (size_t m = 0; m < num_sample_locations_raw; m++) {
-                uint64_t v = table[m].u64[f64];
-                if (reference_sample[m]) {
-                    v = ~v;
-                }
-                v &= mask;
-                fwrite(&v, 1, 64 >> 3, out);
-            }
-        }
-        return;
-    }
-
-    if (format == SAMPLE_FORMAT_HITS) {
-        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        for (size_t s = 0; s < num_shots_raw; s++) {
-            bool rest = false;
-            result[s].for_each_set_bit([&](size_t k) {
-                if (rest) {
-                    putc(',', out);
-                }
-                rest = true;
-                fprintf(out, "%lld", (unsigned long long)(k));
-            });
-            putc('\n', out);
-        }
-        return;
-    }
-
-    if (format == SAMPLE_FORMAT_DETS) {
-        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        for (size_t s = 0; s < num_shots_raw; s++) {
-            fprintf(out, "shot");
-            result[s].for_each_set_bit([&](size_t k) {
-                if (k < dets_prefix_transition) {
-                    fprintf(out, " %c%lld", dets_prefix_1, (unsigned long long)k);
-                } else {
-                    fprintf(out, " %c%lld", dets_prefix_2, (unsigned long long)k - dets_prefix_transition);
-                }
-            });
-            putc('\n', out);
-        }
-        return;
-    }
-
-    if (format == SAMPLE_FORMAT_R8) {
-        auto result = transposed_vs_ref(num_shots_raw, table, reference_sample);
-        for (size_t s = 0; s < num_shots_raw; s++) {
-            size_t prev = 0;
-            auto write_gap = [&](size_t k) {
-                size_t gap = k - prev;
-                while (gap >= 0xFF) {
-                    gap -= 0xFF;
-                    putc(0xFF, out);
-                }
-                putc((char)gap, out);
-                prev = k + 1;
-            };
-            result[s].for_each_set_bit(write_gap);
-
-            // Always encode a trailing 1 just past the end of the measurement results.
-            write_gap(num_sample_locations_raw);
-        }
-        return;
-    }
-
-    throw std::out_of_range("Unrecognized output format.");
 }
 
 simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_target) {
@@ -498,32 +385,43 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 }
 
 void sample_out_helper(
-    const Circuit &circuit, FrameSimulator &sim, simd_bits_range_ref ref_sample, size_t num_samples, FILE *out,
+    const Circuit &circuit, FrameSimulator &sim, simd_bits_range_ref ref_sample, size_t num_shots, FILE *out,
     SampleFormat format) {
-    MeasureRecordBatchWriter writer(out, num_samples, format);
     sim.reset_all();
-    circuit.for_each_operation([&](const Operation &op) {
-        (sim.*op.gate->frame_simulator_function)(op.target_data);
-        sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
-    });
-    sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
+
+    if (std::max(num_shots, size_t{256}) * circuit.count_measurements() > SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD) {
+        // Results getting quite large. Stream them (with buffering to disk) instead of trying to store them all.
+        MeasureRecordBatchWriter writer(out, num_shots, format);
+        circuit.for_each_operation([&](const Operation &op) {
+            (sim.*op.gate->frame_simulator_function)(op.target_data);
+            sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
+        });
+        sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
+    } else {
+        // Small case. Just do everything in memory.
+        circuit.for_each_operation([&](const Operation &op) {
+            (sim.*op.gate->frame_simulator_function)(op.target_data);
+        });
+        write_table_data(
+            out, num_shots, circuit.count_measurements(), ref_sample, sim.m_record.storage, format, 'M', 'M', 0);
+    }
 }
 
 void FrameSimulator::sample_out(
-    const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+    const Circuit &circuit, const simd_bits &reference_sample, size_t num_shots, FILE *out, SampleFormat format,
     std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();
-    if (num_samples >= GOOD_BLOCK_SIZE) {
+    if (num_shots >= GOOD_BLOCK_SIZE) {
         auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, max_lookback, rng);
-        while (num_samples > GOOD_BLOCK_SIZE) {
+        while (num_shots > GOOD_BLOCK_SIZE) {
             sample_out_helper(circuit, sim, reference_sample, GOOD_BLOCK_SIZE, out, format);
-            num_samples -= GOOD_BLOCK_SIZE;
+            num_shots -= GOOD_BLOCK_SIZE;
         }
     }
-    if (num_samples) {
-        auto sim = FrameSimulator(num_qubits, num_samples, max_lookback, rng);
-        sample_out_helper(circuit, sim, reference_sample, num_samples, out, format);
+    if (num_shots) {
+        auto sim = FrameSimulator(num_qubits, num_shots, max_lookback, rng);
+        sample_out_helper(circuit, sim, reference_sample, num_shots, out, format);
     }
 }

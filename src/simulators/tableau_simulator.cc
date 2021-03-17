@@ -17,8 +17,7 @@
 #include "../circuit/gate_data.h"
 #include "../probability_util.h"
 
-TableauSimulator::TableauSimulator(
-    size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias, MeasureRecord record)
+TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias, MeasureRecord record)
     : inv_state(Tableau::identity(num_qubits)),
       rng(rng),
       sign_bias(sign_bias),

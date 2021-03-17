@@ -24,18 +24,23 @@ void xor_measurement_set_into_result(
 }
 
 simd_bit_table detector_samples(
-    const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots, bool append_observables,
-    std::mt19937_64 &rng) {
+    const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots, bool prepend_observables,
+    bool append_observables, std::mt19937_64 &rng) {
     // Start from measurement samples.
     simd_bit_table frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
 
     auto num_detectors = det_obs.detectors.size();
     auto num_obs = det_obs.observables.size();
-    size_t num_results = num_detectors + num_obs * append_observables;
+    size_t num_results = num_detectors + num_obs * (prepend_observables + append_observables);
     simd_bit_table result(num_results, num_shots);
 
     // Xor together measurement samples to form detector samples.
     size_t offset = 0;
+    if (prepend_observables) {
+        for (const auto &obs : det_obs.observables) {
+            xor_measurement_set_into_result(obs, frame_samples, result, offset);
+        }
+    }
     for (const auto &det : det_obs.detectors) {
         xor_measurement_set_into_result(det, frame_samples, result, offset);
     }
@@ -49,11 +54,12 @@ simd_bit_table detector_samples(
 }
 
 simd_bit_table detector_samples(
-    const Circuit &circuit, size_t num_shots, bool append_observables, std::mt19937_64 &rng) {
-    return detector_samples(circuit, DetectorsAndObservables(circuit), num_shots, append_observables, rng);
+    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng) {
+    return detector_samples(
+        circuit, DetectorsAndObservables(circuit), num_shots, prepend_observables, append_observables, rng);
 }
 
-void detector_sample_out_helper(
+void detector_sample_out_helper_stream(
     const Circuit &circuit, FrameSimulator &sim, size_t num_samples, bool append_observables, FILE *out,
     SampleFormat format) {
     MeasureRecordBatchWriter writer(out, num_samples, format);
@@ -102,21 +108,65 @@ void detector_sample_out_helper(
     writer.write_end();
 }
 
+void detector_samples_out_in_memory(
+    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
+    SampleFormat format, std::mt19937_64 &rng) {
+    if (prepend_observables && append_observables) {
+        throw std::out_of_range("Can't have both --prepend_observables and --append_observables");
+    }
+
+    DetectorsAndObservables det_obs(circuit);
+    size_t num_sample_locations =
+        det_obs.detectors.size() + det_obs.observables.size() * ((int)prepend_observables + (int)append_observables);
+
+    char c1, c2;
+    size_t ct;
+    if (prepend_observables) {
+        c1 = 'L';
+        c2 = 'D';
+        ct = det_obs.observables.size();
+    } else if (append_observables) {
+        c1 = 'D';
+        c2 = 'L';
+        ct = det_obs.detectors.size();
+    } else {
+        c1 = 'D';
+        c2 = 'D';
+        ct = 0;
+    }
+
+    auto table = detector_samples(circuit, det_obs, num_shots, prepend_observables, append_observables, rng);
+    write_table_data(out, num_shots, num_sample_locations, simd_bits(0), table, format, c1, c2, ct);
+}
+
+void detector_sample_out_helper(
+    const Circuit &circuit, FrameSimulator &sim, size_t num_shots, bool prepend_observables, bool append_observables,
+    FILE *out, SampleFormat format, std::mt19937_64 &rng) {
+    uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) *
+                                std::max(circuit.count_measurements(), circuit.count_detectors_and_observables());
+    if (!prepend_observables && approx_mem_usage > SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD) {
+        detector_sample_out_helper_stream(circuit, sim, num_shots, append_observables, out, format);
+    } else {
+        detector_samples_out_in_memory(circuit, num_shots, prepend_observables, append_observables, out, format, rng);
+    }
+}
+
 void detector_samples_out(
-    const Circuit &circuit, size_t num_shots, bool append_observables, FILE *out, SampleFormat format,
-    std::mt19937_64 &rng) {
+    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
+    SampleFormat format, std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();
     if (num_shots >= GOOD_BLOCK_SIZE) {
         auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, max_lookback, rng);
         while (num_shots > GOOD_BLOCK_SIZE) {
-            detector_sample_out_helper(circuit, sim, GOOD_BLOCK_SIZE, append_observables, out, format);
+            detector_sample_out_helper(
+                circuit, sim, GOOD_BLOCK_SIZE, prepend_observables, append_observables, out, format, rng);
             num_shots -= GOOD_BLOCK_SIZE;
         }
     }
     if (num_shots) {
         auto sim = FrameSimulator(num_qubits, num_shots, max_lookback, rng);
-        detector_sample_out_helper(circuit, sim, num_shots, append_observables, out, format);
+        detector_sample_out_helper(circuit, sim, num_shots, prepend_observables, append_observables, out, format, rng);
     }
 }
