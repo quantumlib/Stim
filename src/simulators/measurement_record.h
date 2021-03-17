@@ -108,6 +108,7 @@ struct BatchResultWriter {
     BatchResultWriter(FILE *out, size_t num_shots, SampleFormat output_format);
     ~BatchResultWriter();
     void set_result_type(char result_type);
+    void write_table_batch(simd_bit_table slice, size_t num_major_u64);
     void write_bit_batch(simd_bits_range_ref bits);
     void write_end();
 };
@@ -120,8 +121,9 @@ struct BatchMeasurementRecord {
     simd_bits shot_mask;
     simd_bit_table storage;
     BatchMeasurementRecord(size_t num_shots, size_t max_lookback, size_t initial_capacity);
-    void mark_unwritten_results_as_written();
-    void write_unwritten_results_to(BatchResultWriter &writer, simd_bits_range_ref ref_sample);
+    void mark_all_as_written();
+    void intermediate_write_unwritten_results_to(BatchResultWriter &writer, simd_bits_range_ref ref_sample);
+    void final_write_unwritten_results_to(BatchResultWriter &writer, simd_bits_range_ref ref_sample);
     simd_bits_range_ref lookback(size_t lookback) const;
     void record_result(simd_bits_range_ref result);
     void clear();

@@ -37,8 +37,8 @@ find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -
 
 ```bash
 find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -pthread -std=c++11 -O3 -march=native -g -fno-omit-frame-pointer
-perf record ./a.out  # [ADD STIM FLAGS FOR THE CASE YOU WANT TO PROFILE]
-perf report
+sudo perf record -g ./a.out  # [ADD STIM FLAGS FOR THE CASE YOU WANT TO PROFILE]
+sudo perf report
 ```
 
 # Run benchmarks

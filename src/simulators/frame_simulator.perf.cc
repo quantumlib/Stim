@@ -21,7 +21,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_samples = 1000;
     float probability = 0.001f;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, 1, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
 
     std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
@@ -41,7 +41,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     size_t num_samples = 1000;
     float probability = 0.001f;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, 1, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
 
     std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
@@ -61,7 +61,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, 1, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
 
     std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {
@@ -80,7 +80,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    FrameSimulator sim(num_qubits, num_samples, 1, SIZE_MAX, rng);
+    FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
 
     std::vector<uint32_t> targets;
     for (size_t k = 0; k < num_qubits; k++) {

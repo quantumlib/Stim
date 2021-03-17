@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "simd_bit_table.h"
+#include "../test_util.test.h"
 
 #include <gtest/gtest.h>
 
@@ -165,6 +166,24 @@ TEST(bit_mat, transposed) {
     auto trans2 = trans;
     trans2.do_square_transpose();
     ASSERT_EQ(trans2, m);
+}
+
+TEST(bit_mat, random) {
+    auto t = simd_bit_table::random(100, 90, SHARED_TEST_RNG());
+    ASSERT_NE(t[99], simd_bits(90));
+    ASSERT_EQ(t[100], simd_bits(90));
+    t = t.transposed();
+    ASSERT_NE(t[89], simd_bits(100));
+    ASSERT_EQ(t[90], simd_bits(100));
+    ASSERT_NE(simd_bit_table::random(10, 10, SHARED_TEST_RNG()), simd_bit_table::random(10, 10, SHARED_TEST_RNG()));
+}
+
+TEST(bit_mat, slice_maj) {
+    auto m = simd_bit_table::random(100, 64, SHARED_TEST_RNG());
+    auto s = m.slice_maj(5, 15);
+    ASSERT_EQ(s[0], m[5]);
+    ASSERT_EQ(s[9], m[14]);
+    ASSERT_FALSE(s[10].not_zero());
 }
 
 TEST(bit_mat, from_quadrants) {

@@ -242,6 +242,23 @@ void BatchResultWriter::set_result_type(char result_type) {
     }
 }
 
+void BatchResultWriter::write_table_batch(simd_bit_table slice, size_t num_major_u64) {
+    if (output_format == SAMPLE_FORMAT_PTB64) {
+        for (size_t k = 0; k < writers.size(); k++) {
+            for (size_t w = 0; w < num_major_u64; w++) {
+                uint8_t *p = slice.data.u8 + (k * 8) + slice.num_minor_u8_padded() * w;
+                writers[k]->write_bytes({p, p + 8});
+            }
+        }
+    } else {
+        auto transposed = slice.transposed();
+        for (size_t k = 0; k < writers.size(); k++) {
+            uint8_t *p = transposed[k].u8;
+            writers[k]->write_bytes({p, p + num_major_u64 * 8});
+        }
+    }
+}
+
 void BatchResultWriter::write_bit_batch(simd_bits_range_ref bits) {
     if (output_format == SAMPLE_FORMAT_PTB64) {
         uint8_t *p = bits.u8;
@@ -308,18 +325,41 @@ simd_bits_range_ref BatchMeasurementRecord::lookback(size_t lookback) const {
     return storage[stored - lookback];
 }
 
-void BatchMeasurementRecord::mark_unwritten_results_as_written() {
+void BatchMeasurementRecord::mark_all_as_written() {
     unwritten = 0;
-    if ((stored >> 1) > max_lookback) {
-        memcpy(storage.data.u8, storage[stored - max_lookback].u8, max_lookback * storage.num_minor_u8_padded());
-        stored = max_lookback;
+    size_t m = max_lookback;
+    if ((stored >> 1) > m) {
+        memcpy(storage.data.u8, storage[stored - m].u8, m * storage.num_minor_u8_padded());
+        stored = m;
     }
 }
 
-void BatchMeasurementRecord::write_unwritten_results_to(BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
+void BatchMeasurementRecord::intermediate_write_unwritten_results_to(BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
+    while (unwritten >= 1024) {
+        auto slice = storage.slice_maj(stored - unwritten, stored - unwritten + 1024);
+        for (size_t k = 0; k < 1024; k++) {
+            size_t j = written + k;
+            if (j < ref_sample.num_bits_padded() && ref_sample[j]) {
+                slice[k] ^= shot_mask;
+            }
+        }
+        writer.write_table_batch(slice, 1024 >> 6);
+        unwritten -= 1024;
+        written += 1024;
+    }
+
+    size_t m = std::max(max_lookback, unwritten);
+    if ((stored >> 1) > m) {
+        memcpy(storage.data.u8, storage[stored - m].u8, m * storage.num_minor_u8_padded());
+        stored = m;
+    }
+}
+
+void BatchMeasurementRecord::final_write_unwritten_results_to(
+        BatchResultWriter &writer, simd_bits_range_ref ref_sample) {
     size_t n = stored;
     for (size_t k = n - unwritten; k < n; k++) {
-        bool invert = ref_sample.num_bits_padded() > written && ref_sample[written];
+        bool invert = written < ref_sample.num_bits_padded() && ref_sample[written];
         if (invert) {
             storage[k] ^= shot_mask;
         }
@@ -329,7 +369,8 @@ void BatchMeasurementRecord::write_unwritten_results_to(BatchResultWriter &write
         }
         written++;
     }
-    mark_unwritten_results_as_written();
+    unwritten = 0;
+    writer.write_end();
 }
 
 void BatchMeasurementRecord::clear() {

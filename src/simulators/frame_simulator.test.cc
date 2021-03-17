@@ -112,7 +112,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
     return pass;
 }
 
-TEST(PauliFrameSimulation, test_util_is_output_possible) {
+TEST(FrameSimulator, test_util_is_output_possible) {
     auto circuit = Circuit::from_text(
         "H 0\n"
         "CNOT 0 1\n"
@@ -149,7 +149,7 @@ bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     return true;
 }
 
-TEST(PauliFrameSimulation, consistency) {
+TEST(FrameSimulator, consistency) {
     EXPECT_SAMPLES_POSSIBLE(
         "H 0\n"
         "CNOT 0 1\n"
@@ -269,7 +269,7 @@ TEST(PauliFrameSimulation, consistency) {
         "M 6");
 }
 
-TEST(PauliFrameSimulation, sample_out) {
+TEST(FrameSimulator, sample_out) {
     auto circuit = Circuit::from_text(
         "X 0\n"
         "M 1\n"
@@ -319,7 +319,7 @@ TEST(PauliFrameSimulation, sample_out) {
     ASSERT_EQ(getc(tmp), EOF);
 }
 
-TEST(PauliFrameSimulation, big_circuit_measurements) {
+TEST(FrameSimulator, big_circuit_measurements) {
     Circuit circuit;
     for (uint32_t k = 0; k < 1250; k += 3) {
         circuit.append_op("X", {k});
@@ -360,7 +360,7 @@ TEST(PauliFrameSimulation, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 }
 
-TEST(PauliFrameSimulation, run_length_measurement_formats) {
+TEST(FrameSimulator, run_length_measurement_formats) {
     Circuit circuit;
     circuit.append_op("X", {100, 500, 501, 551, 1200});
     for (uint32_t k = 0; k < 1250; k++) {
@@ -399,7 +399,7 @@ TEST(PauliFrameSimulation, run_length_measurement_formats) {
     ASSERT_EQ(getc(tmp), EOF);
 }
 
-TEST(PauliFrameSimulation, big_circuit_random_measurements) {
+TEST(FrameSimulator, big_circuit_random_measurements) {
     Circuit circuit;
     for (uint32_t k = 0; k < 270; k++) {
         circuit.append_op("H_XZ", {k});
@@ -745,9 +745,9 @@ TEST(FrameSimulator, record_gets_trimmed) {
     FrameSimulator sim(100, 1024, 5, SHARED_TEST_RNG());
     Circuit c = Circuit::from_text("M 0 1 2 3 4 5 6 7 8 9");
     BatchResultWriter b(tmpfile(), 1024, SAMPLE_FORMAT_B8);
-    for (size_t k = 0; k < 100; k++) {
+    for (size_t k = 0; k < 1000; k++) {
         sim.measure(c.operations[0].target_data);
-        sim.m_record.write_unwritten_results_to(b, simd_bits(0));
-        ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 500);
+        sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits(0));
+        ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }
 }

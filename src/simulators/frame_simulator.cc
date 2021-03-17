@@ -509,9 +509,9 @@ void sample_out_helper(
     sim.reset_all();
     circuit.for_each_operation([&](const Operation &op) {
         (sim.*op.gate->frame_simulator_function)(op.target_data);
-        sim.m_record.write_unwritten_results_to(writer, ref_sample);
+        sim.m_record.intermediate_write_unwritten_results_to(writer, ref_sample);
     });
-    writer.write_end();
+    sim.m_record.final_write_unwritten_results_to(writer, ref_sample);
 }
 
 void FrameSimulator::sample_out(

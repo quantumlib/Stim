@@ -65,14 +65,20 @@ void detector_sample_out_helper(
     std::vector<simd_bits> observables;
     sim.reset_all();
     writer.set_result_type('D');
+    simd_bit_table detector_buffer(1024, num_samples);
+    size_t buffered_detectors = 0;
     circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->id == gate_name_to_id("DETECTOR")) {
-            simd_bits result(num_samples);
+            simd_bits_range_ref result = detector_buffer[buffered_detectors];
             for (auto t : op.target_data.targets) {
                 assert(t & TARGET_RECORD_BIT);
                 result ^= sim.m_record.lookback(t ^ TARGET_RECORD_BIT);
             }
-            writer.write_bit_batch(result);
+            buffered_detectors++;
+            if (buffered_detectors == 1024) {
+                writer.write_table_batch(detector_buffer, 1024 >> 6);
+                buffered_detectors = 0;
+            }
         } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
             if (append_observables) {
                 size_t id = (size_t)op.target_data.arg;
@@ -88,9 +94,12 @@ void detector_sample_out_helper(
             }
         } else {
             (sim.*op.gate->frame_simulator_function)(op.target_data);
-            sim.m_record.mark_unwritten_results_as_written();
+            sim.m_record.mark_all_as_written();
         }
     });
+    for (size_t k = 0; k < buffered_detectors; k++) {
+        writer.write_bit_batch(detector_buffer[k]);
+    }
     writer.set_result_type('L');
     for (const auto &result : observables) {
         writer.write_bit_batch(result);
