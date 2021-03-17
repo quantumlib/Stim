@@ -128,20 +128,23 @@ def test_circuit_mul():
     c = stim.Circuit()
     c.append_operation("Y", [3])
     c.append_operation("M", [4])
-    expected = """
-Y 3
-M 4
-Y 3
-M 4
+    assert str(c * 2) == str(2 * c) == """
+REPEAT 2 {
+    Y 3
+    M 4
+}
         """.strip()
-    assert str(c * 2) == str(2 * c) == expected
+    assert str((c * 2) * 3) == """
+REPEAT 6 {
+    Y 3
+    M 4
+}
+        """.strip()
     expected = """
-Y 3
-M 4
-Y 3
-M 4
-Y 3
-M 4
+REPEAT 3 {
+    Y 3
+    M 4
+}
     """.strip()
     assert str(c * 3) == str(3 * c) == expected
     c *= 3

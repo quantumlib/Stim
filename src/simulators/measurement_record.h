@@ -92,7 +92,7 @@ struct SingleMeasurementRecord {
     size_t max_lookback;
     size_t unwritten;
   public:
-    std::vector<bool> lookback_storage;
+    std::vector<bool> storage;
     SingleMeasurementRecord(size_t max_lookback = SIZE_MAX);
     void write_unwritten_results_to(SingleResultWriter &writer);
     bool lookback(size_t lookback) const;

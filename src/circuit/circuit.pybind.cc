@@ -70,8 +70,8 @@ void pybind_circuit(pybind11::module &m) {
                 ...    M 1
                 ... ''')
          )DOC")
-        .def_readonly("num_measurements", &Circuit::num_measurements, R"DOC(
-            The number of measurement bits produced when sampling from the circuit.
+        .def_property_readonly("num_measurements", &Circuit::count_measurements, R"DOC(
+            Counts the number of measurement bits produced when sampling from the circuit.
 
             Examples:
                 >>> import stim
@@ -82,8 +82,8 @@ void pybind_circuit(pybind11::module &m) {
                 >>> c.num_measurements
                 3
          )DOC")
-        .def_readonly("num_qubits", &Circuit::num_qubits, R"DOC(
-            The number of qubits used when simulating the circuit.
+        .def_property_readonly("num_qubits", &Circuit::count_qubits, R"DOC(
+            Counts the number of qubits used when simulating the circuit.
 
             Examples:
                 >>> import stim
@@ -242,12 +242,10 @@ void pybind_circuit(pybind11::module &m) {
                      ...    Y 1 2
                      ... ''')
                      >>> print(3 * c)
-                     X 0
-                     Y 1 2
-                     X 0
-                     Y 1 2
-                     X 0
-                     Y 1 2
+                     REPEAT 3 {
+                         X 0
+                         Y 1 2
+                     }
             )DOC")
         .def(
             "append_operation", &Circuit::append_op, R"DOC(

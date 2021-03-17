@@ -22,11 +22,11 @@
 
 TEST(TableauSimulator, identity) {
     auto s = TableauSimulator(1, SHARED_TEST_RNG());
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));
     s.measure(OpDat(0));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{false}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
     s.measure(OpDat::flipped(0));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{false, true}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false, true}));
 }
 
 TEST(TableauSimulator, bit_flip) {
@@ -38,15 +38,15 @@ TEST(TableauSimulator, bit_flip) {
     s.measure(OpDat(0));
     s.X(OpDat(0));
     s.measure(OpDat(0));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{true, false}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{true, false}));
 }
 
 TEST(TableauSimulator, identity2) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
     s.measure(OpDat(0));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{false}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
     s.measure(OpDat(1));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{false, false}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false, false}));
 }
 
 TEST(TableauSimulator, bit_flip_2) {
@@ -56,9 +56,9 @@ TEST(TableauSimulator, bit_flip_2) {
     s.SQRT_Z(OpDat(0));
     s.H_XZ(OpDat(0));
     s.measure(OpDat(0));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{true}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{true}));
     s.measure(OpDat(1));
-    ASSERT_EQ(s.measurement_record.lookback_storage, (std::vector<bool>{true, false}));
+    ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{true, false}));
 }
 
 TEST(TableauSimulator, epr) {
@@ -71,7 +71,7 @@ TEST(TableauSimulator, epr) {
     ASSERT_EQ(s.is_deterministic(0), true);
     ASSERT_EQ(s.is_deterministic(1), true);
     s.measure(OpDat(1));
-    ASSERT_EQ(s.measurement_record.lookback_storage[0], s.measurement_record.lookback_storage[1]);
+    ASSERT_EQ(s.measurement_record.storage[0], s.measurement_record.storage[1]);
 }
 
 TEST(TableauSimulator, big_determinism) {
@@ -92,7 +92,7 @@ TEST(TableauSimulator, phase_kickback_consume_s_state) {
         s.ZCX(OpDat({0, 1}));
         ASSERT_EQ(s.is_deterministic(1), false);
         s.measure(OpDat(1));
-        auto v1 = s.measurement_record.lookback_storage.back();
+        auto v1 = s.measurement_record.storage.back();
         if (v1) {
             s.SQRT_Z(OpDat(0));
             s.SQRT_Z(OpDat(0));
@@ -101,7 +101,7 @@ TEST(TableauSimulator, phase_kickback_consume_s_state) {
         s.H_XZ(OpDat(0));
         ASSERT_EQ(s.is_deterministic(0), true);
         s.measure(OpDat(0));
-        ASSERT_EQ(s.measurement_record.lookback_storage.back(), true);
+        ASSERT_EQ(s.measurement_record.storage.back(), true);
     }
 }
 
@@ -126,12 +126,12 @@ TEST(TableauSimulator, phase_kickback_preserve_s_state) {
     s.H_XZ(OpDat(0));
     ASSERT_EQ(s.is_deterministic(0), true);
     s.measure(OpDat(0));
-    ASSERT_EQ(s.measurement_record.lookback_storage.back(), true);
+    ASSERT_EQ(s.measurement_record.storage.back(), true);
     s.SQRT_Z(OpDat(1));
     s.H_XZ(OpDat(1));
     ASSERT_EQ(s.is_deterministic(1), true);
     s.measure(OpDat(1));
-    ASSERT_EQ(s.measurement_record.lookback_storage.back(), true);
+    ASSERT_EQ(s.measurement_record.storage.back(), true);
 }
 
 TEST(TableauSimulator, kickback_vs_stabilizer) {
@@ -179,7 +179,7 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
             sim.H_XZ(OpDat(anc));
             ASSERT_EQ(sim.is_deterministic(anc), false);
             sim.measure(OpDat(anc));
-            bool v = sim.measurement_record.lookback_storage.back();
+            bool v = sim.measurement_record.storage.back();
             if (v) {
                 sim.X(OpDat(anc));
             }
@@ -191,7 +191,7 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
             sim.SQRT_Z(OpDat(k));
             sim.H_XZ(OpDat(k));
             sim.measure(OpDat(k));
-            qubit_measurements.push_back(sim.measurement_record.lookback_storage.back());
+            qubit_measurements.push_back(sim.measurement_record.storage.back());
         }
 
         bool sum = false;
@@ -209,7 +209,7 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
         sim.H_XZ(OpDat(7));
         ASSERT_EQ(sim.is_deterministic(7), true);
         sim.measure(OpDat(7));
-        ASSERT_EQ(sim.measurement_record.lookback_storage.back(), false);
+        ASSERT_EQ(sim.measurement_record.storage.back(), false);
 
         for (const auto &c : checks) {
             bool r = false;
@@ -255,7 +255,7 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
             sim.H_XZ(OpDat(anc));
             ASSERT_EQ(sim.is_deterministic(anc), false);
             sim.measure(OpDat(anc));
-            bool v = sim.measurement_record.lookback_storage.back();
+            bool v = sim.measurement_record.storage.back();
             if (v) {
                 for (const auto &k : phasor) {
                     sim.X(OpDat(k));
@@ -267,13 +267,13 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
         for (size_t k = 0; k < 3; k++) {
             ASSERT_EQ(sim.is_deterministic(k), true);
             sim.measure(OpDat(k));
-            ASSERT_EQ(sim.measurement_record.lookback_storage.back(), false);
+            ASSERT_EQ(sim.measurement_record.storage.back(), false);
         }
         sim.SQRT_Z(OpDat(3));
         sim.H_XZ(OpDat(3));
         ASSERT_EQ(sim.is_deterministic(3), true);
         sim.measure(OpDat(3));
-        ASSERT_EQ(sim.measurement_record.lookback_storage.back(), true);
+        ASSERT_EQ(sim.measurement_record.storage.back(), true);
     }
 }
 
@@ -364,7 +364,7 @@ bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::v
     size_t k = 0;
     for (auto t : measurement_targets) {
         buf.zs[t] = true;
-        buf.sign = sim_tab.measurement_record.lookback_storage[k++];
+        buf.sign = sim_tab.measurement_record.storage[k++];
         float f = vec_sim.project(buf);
         if (fabs(f - 0.5) > 1e-4 && fabsf(f - 1) > 1e-4) {
             return false;

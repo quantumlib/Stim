@@ -619,6 +619,17 @@ Circuit Circuit::operator*(size_t repetitions) const {
     if (repetitions == 1) {
         return *this;
     }
+    // If the entire circuit is a repeat block, just adjust its repeat count.
+    if (operations.size() == 1 && operations[0].gate->id == gate_name_to_id("REPEAT")) {
+        uint64_t old_reps = operations[0].target_data.targets[1];
+        uint64_t new_reps = old_reps * repetitions;
+        // Don't create an overflowed repeat count.
+        if (new_reps == (new_reps & TARGET_VALUE_MASK)) {
+            Circuit copy = *this;
+            copy.operations[0].target_data.targets[1] *= repetitions;
+            return copy;
+        }
+    }
     Circuit result;
     result.blocks.push_back(*this);
     result.jag_targets.append_tail(0);

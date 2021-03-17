@@ -164,18 +164,18 @@ SingleMeasurementRecord::SingleMeasurementRecord(size_t max_lookback) : max_look
 }
 
 void SingleMeasurementRecord::write_unwritten_results_to(SingleResultWriter &writer) {
-    size_t n = lookback_storage.size();
+    size_t n = storage.size();
     for (size_t k = n - unwritten; k < n; k++) {
-        writer.write_bit(lookback_storage[k]);
+        writer.write_bit(storage[k]);
     }
     unwritten = 0;
-    if ((lookback_storage.size() >> 1) > max_lookback) {
-        lookback_storage.erase(lookback_storage.begin(), lookback_storage.end() - max_lookback);
+    if ((storage.size() >> 1) > max_lookback) {
+        storage.erase(storage.begin(), storage.end() - max_lookback);
     }
 }
 
 bool SingleMeasurementRecord::lookback(size_t lookback) const {
-    if (lookback > lookback_storage.size()) {
+    if (lookback > storage.size()) {
         throw std::out_of_range("Referred to a measurement record before the beginning of time.");
     }
     if (lookback == 0) {
@@ -184,11 +184,11 @@ bool SingleMeasurementRecord::lookback(size_t lookback) const {
     if (lookback > max_lookback) {
         throw std::out_of_range("Referred to a measurement record past the lookback limit.");
     }
-    return *(lookback_storage.end() - lookback);
+    return *(storage.end() - lookback);
 }
 
 void SingleMeasurementRecord::record_result(bool result) {
-    lookback_storage.push_back(result);
+    storage.push_back(result);
     unwritten++;
 }
 

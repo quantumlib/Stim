@@ -384,7 +384,7 @@ simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_
         (sim.*op.gate->tableau_simulator_function)(op.target_data);
     });
 
-    const std::vector<bool> &v = sim.measurement_record.lookback_storage;
+    const std::vector<bool> &v = sim.measurement_record.storage;
     simd_bits result(v.size());
     for (size_t k = 0; k < v.size(); k++) {
         result[k] = v[k];

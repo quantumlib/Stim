@@ -131,7 +131,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "current_measurement_record",
             [](TableauSimulator &self) {
-                return self.measurement_record;
+                return self.measurement_record.storage;
             },
             R"DOC(
                 Returns a copy of the record of all measurements performed by the simulator.
@@ -158,10 +158,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "do",
             [](TableauSimulator &self, const Circuit &circuit) {
-                self.ensure_large_enough_for_qubits(circuit.num_qubits);
-                for (const auto &op : circuit.operations) {
+                self.ensure_large_enough_for_qubits(circuit.count_qubits());
+                circuit.for_each_operation([&](const Operation &op) {
                     (self.*op.gate->tableau_simulator_function)(op.target_data);
-                }
+                });
             },
             pybind11::arg("circuit"),
             R"DOC(
@@ -483,7 +483,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
             "measure",
             [](TableauSimulator &self, uint32_t target) {
                 self.measure(TempViewableData({target}));
-                return (bool)self.measurement_record.back();
+                return (bool)self.measurement_record.storage.back();
             },
             pybind11::arg("target"),
             R"DOC(
@@ -506,7 +506,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
             [](TableauSimulator &self, pybind11::args args) {
                 auto converted_args = args_to_targets(self, args);
                 self.measure(converted_args);
-                auto e = self.measurement_record.end();
+                auto e = self.measurement_record.storage.end();
                 return std::vector<bool>(e - converted_args.targets.size(), e);
             },
             R"DOC(

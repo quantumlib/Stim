@@ -100,7 +100,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
             for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
                 tableau_sim.measure(OpDat(qf));
-                if (output[out_p] != tableau_sim.measurement_record.lookback_storage.back()) {
+                if (output[out_p] != tableau_sim.measurement_record.storage.back()) {
                     pass = false;
                 }
                 out_p++;

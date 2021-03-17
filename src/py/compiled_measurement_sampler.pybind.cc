@@ -40,14 +40,14 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples
 
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(
         bytes.data(), sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2,
-        {num_samples, circuit.num_measurements}, {(long long)sample.num_minor_bits_padded(), (long long)1}, true));
+        {num_samples, circuit.count_measurements()}, {(long long)sample.num_minor_bits_padded(), (long long)1}, true));
 }
 
 pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t num_samples) {
     auto sample = FrameSimulator::sample(circuit, ref, num_samples, PYBIND_SHARED_RNG());
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(
         sample.data.u8, sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2,
-        {num_samples, (circuit.num_measurements + 7) / 8}, {(long long)sample.num_minor_u8_padded(), (long long)1},
+        {num_samples, (circuit.count_measurements() + 7) / 8}, {(long long)sample.num_minor_u8_padded(), (long long)1},
         true));
 }
 
