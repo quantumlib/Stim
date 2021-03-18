@@ -145,10 +145,10 @@ bazel :stim_test
 In a clean virtual environment:
 
 ```bash
-pip install pytest doctest
+pip install pytest
 pip install -e .
 python -m pytest src
-python -c "import stim; import doctest; doctest.testmod(stim)"
+python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
 ```
 
 ### Run stimcirq python package tests
@@ -156,8 +156,8 @@ python -c "import stim; import doctest; doctest.testmod(stim)"
 In a clean virtual environment:
 
 ```bash
-pip install pytest doctest
+pip install pytest
 pip install -e glue/cirq
 python -m pytest glue/cirq
-python -c "import stimcirq; import doctest; doctest.testmod(stimcirq)"
+python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
 ```
