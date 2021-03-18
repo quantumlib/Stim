@@ -57,5 +57,5 @@ BENCHMARK(tableau_cnot_10Kqubits) {
     Tableau t(n);
     benchmark_go([&]() {
         t.prepend_ZCX(5, 20);
-    }).goal_nanos(120);
+    }).goal_nanos(220);
 }

@@ -113,7 +113,6 @@ def test_more_unitary_gate_conversions():
     assert (
         str(c).strip()
         == """
-# Circuit [num_qubits=2, num_measurements=2]
 H 0
 CX 0 1
 M 0 1
@@ -314,7 +313,6 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
 
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert str(stim_circuit).strip() == """
-# Circuit [num_qubits=3, num_measurements=5]
 M 0 1 2
 DETECTOR rec[-2]
 M !1 1

@@ -1,8 +1,8 @@
 # Stim
 
-Stim is a fast simulator for non-adaptive quantum stabilizer circuits.
+Stim is a fast simulator for quantum stabilizer circuits.
 
-API reference: https://github.com/quantumlib/stim/wiki
+API references are available on the stim github wiki: https://github.com/quantumlib/stim/wiki
 
 Stim can be installed into a python 3 environment using pip:
 

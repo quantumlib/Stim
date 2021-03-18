@@ -15,7 +15,6 @@
 #include "tableau_simulator.h"
 
 #include "../benchmark_util.h"
-#include "../circuit/gate_data.h"
 
 BENCHMARK(TableauSimulator_CX_10Kqubits) {
     size_t num_qubits = 10 * 1000;
@@ -26,7 +25,7 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{0, {&targets, 0, targets.size()}};
+    OperationData op_data{0, targets};
 
     benchmark_go([&]() {
         sim.ZCX(op_data);

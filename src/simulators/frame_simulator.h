@@ -17,11 +17,14 @@
 #ifndef SIM_FRAME_H
 #define SIM_FRAME_H
 
+#define SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD 100000000
+
 #include <random>
 
 #include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
 #include "../stabilizers/pauli_string.h"
+#include "measure_record_batch.h"
 
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
@@ -30,23 +33,22 @@
 /// This requires a set of reference measurements to diff against.
 struct FrameSimulator {
     size_t num_qubits;
-    size_t num_samples_raw;
-    size_t num_measurements_raw;
+    size_t batch_size;
     size_t num_recorded_measurements;
     simd_bit_table x_table;
     simd_bit_table z_table;
-    simd_bit_table m_table;
+    MeasureRecordBatch m_record;
     simd_bits rng_buffer;
     simd_bits last_correlated_error_occurred;
     std::mt19937_64 &rng;
 
-    FrameSimulator(size_t num_qubits, size_t num_samples, size_t num_measurements, std::mt19937_64 &rng);
+    FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
 
     static simd_bit_table sample_flipped_measurements(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng);
     static simd_bit_table sample(
         const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng);
     static void sample_out(
-        const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, FILE *out, SampleFormat format,
+        const Circuit &circuit, const simd_bits &reference_sample, size_t num_shots, FILE *out, SampleFormat format,
         std::mt19937_64 &rng);
 
     PauliString get_frame(size_t sample_index) const;
@@ -54,8 +56,6 @@ struct FrameSimulator {
 
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
-
-    void write_measurements(FILE *out, const simd_bits &reference_sample, SampleFormat format) const;
 
     void measure(const OperationData &target_data);
     void reset(const OperationData &target_data);
@@ -90,16 +90,5 @@ struct FrameSimulator {
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
 };
-
-void write_table_data(
-        FILE *out,
-        size_t num_shots_raw,
-        size_t num_sample_locations_raw,
-        const simd_bits &reference_sample,
-        const simd_bit_table &table,
-        SampleFormat format,
-        char dets_prefix_1,
-        char dets_prefix_2,
-        size_t dets_prefix_transition);
 
 #endif

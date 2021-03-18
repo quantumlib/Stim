@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "../circuit/circuit.h"
+#include "../simd/monotonic_buffer.h"
 #include "../simd/sparse_xor_vec.h"
 
 struct ErrorFuser {
@@ -36,10 +37,9 @@ struct ErrorFuser {
     size_t scheduled_measurement_time = 0;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
-    ///
-    /// The backing data for the vector views is in the `jagged_data` field.
-    std::map<VectorView<uint32_t>, double> error_class_probabilities;
-    JaggedDataArena<uint32_t> jagged_detector_sets;
+    std::map<PointerRange<uint32_t>, double> error_class_probabilities;
+    /// Backing datastore for values in error_class_probabilities.
+    MonotonicBuffer<uint32_t> jag_flip_data;
 
     ErrorFuser(size_t num_qubits);
 
@@ -81,10 +81,10 @@ struct ErrorFuser {
     void ISWAP(const OperationData &dat);
 
    private:
-    void independent_error_1(double probability, const SparseXorVec<uint32_t> &detector_set);
-    void independent_error_1(double probability, const uint32_t *begin, size_t size);
-    void independent_error_2(double probability, const SparseXorVec<uint32_t> &d1, const SparseXorVec<uint32_t> &d2);
-    void independent_error_placed_tail(double probability, VectorView<uint32_t> detector_set);
+    void add_error(double probability, const SparseXorVec<uint32_t> &data);
+    void add_xored_error(
+        double probability, const SparseXorVec<uint32_t> &flipped1, const SparseXorVec<uint32_t> &flipped2);
+    void add_error_in_sorted_jagged_tail(double probability);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
     void single_cz(uint32_t c, uint32_t t);

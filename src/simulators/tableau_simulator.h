@@ -27,27 +27,30 @@
 #include "../circuit/circuit.h"
 #include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
+#include "measure_record.h"
 #include "vector_simulator.h"
 
 struct TableauSimulator {
     Tableau inv_state;
     std::mt19937_64 &rng;
     int8_t sign_bias;
-    std::vector<bool> measurement_record;
+    MeasureRecord measurement_record;
     bool last_correlated_error_occurred;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
     ///     rng: The random number generator to use for random operations.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    explicit TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias = 0);
+    ///     record: Measurement record configuration.
+    explicit TableauSimulator(
+        size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
 
     /// Samples the given circuit in a deterministic fashion.
     ///
     /// Discards all noisy operations, and biases all collapse events towards +Z instead of randomly +Z/-Z.
     static simd_bits reference_sample_circuit(const Circuit &circuit);
     static simd_bits sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
-    static void sample_stream(FILE *in, FILE *out, bool newline_after_measurements, std::mt19937_64 &rng);
+    static void sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng);
 
     /// Expands the internal state of the simulator (if needed) to ensure the given qubit exists.
     ///

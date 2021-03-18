@@ -48,7 +48,7 @@ struct RareErrorIterator {
     }
 
     template <typename BODY, typename T>
-    inline static void for_samples(double p, const VectorView<T> &vals, std::mt19937_64 &rng, BODY body) {
+    inline static void for_samples(double p, const PointerRange<T> &vals, std::mt19937_64 &rng, BODY body) {
         RareErrorIterator skipper((float)p);
         while (true) {
             size_t s = skipper.next(rng);

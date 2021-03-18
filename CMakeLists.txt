@@ -45,6 +45,10 @@ set(SOURCE_FILES_NO_MAIN
         src/simulators/detection_simulator.cc
         src/simulators/error_fuser.cc
         src/simulators/frame_simulator.cc
+        src/simulators/measure_record_batch.cc
+        src/simulators/measure_record_batch_writer.cc
+        src/simulators/measure_record.cc
+        src/simulators/measure_record_writer.cc
         src/simulators/tableau_simulator.cc
         src/simulators/vector_simulator.cc
         src/stabilizers/pauli_string.cc
@@ -60,6 +64,7 @@ set(TEST_FILES
         src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
+        src/simd/monotonic_buffer.test.cc
         src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
         src/simd/simd_bits_range_ref.test.cc
@@ -69,6 +74,10 @@ set(TEST_FILES
         src/simulators/detection_simulator.test.cc
         src/simulators/error_fuser.test.cc
         src/simulators/frame_simulator.test.cc
+        src/simulators/measure_record.test.cc
+        src/simulators/measure_record_batch.test.cc
+        src/simulators/measure_record_batch_writer.test.cc
+        src/simulators/measure_record_writer.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
@@ -80,6 +89,7 @@ set(BENCHMARK_FILES
         src/benchmark_util.perf.cc
         src/circuit/circuit.perf.cc
         src/circuit/gate_data.perf.cc
+        src/main.perf.cc
         src/probability_util.perf.cc
         src/simd/simd_bit_table.perf.cc
         src/simd/simd_bits.perf.cc

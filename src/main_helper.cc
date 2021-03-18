@@ -40,17 +40,17 @@ static std::vector<const char *> sample_mode_known_arguments{
     "--sample", "--frame0", "--out_format", "--out", "--in",
 };
 static std::vector<const char *> detect_mode_known_arguments{
-    "--detect", "--append_observables", "--prepend_observables", "--out_format", "--out", "--in",
+    "--detect", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in",
 };
 static std::vector<const char *> detector_hypergraph_mode_known_arguments{
-    "--detector_hypergraph", "--out", "--in",
+    "--detector_hypergraph",
+    "--out",
+    "--in",
 };
 static std::vector<const char *> repl_mode_known_arguments{
     "--repl",
 };
-static std::vector<const char *> format_names{
-    "01", "b8", "ptb64", "hits", "r8", "dets"
-};
+static std::vector<const char *> format_names{"01", "b8", "ptb64", "hits", "r8", "dets"};
 static std::vector<SampleFormat> format_values{
     SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8, SAMPLE_FORMAT_DETS,
 };
@@ -126,7 +126,7 @@ M 0 1 2
     std::mt19937_64 rng = externally_seeded_rng();
     if (mode_interactive) {
         check_for_unknown_arguments(repl_mode_known_arguments, "--repl", argc, argv);
-        TableauSimulator::sample_stream(in, out, mode_interactive, rng);
+        TableauSimulator::sample_stream(in, out, SAMPLE_FORMAT_01, mode_interactive, rng);
         return EXIT_SUCCESS;
     }
     if (mode_sampling) {
@@ -138,13 +138,13 @@ M 0 1 2
         if (num_shots == 0) {
             return EXIT_SUCCESS;
         }
-        if (num_shots == 1 && out_format == SAMPLE_FORMAT_01 && !frame0) {
-            TableauSimulator::sample_stream(in, out, false, rng);
+        if (num_shots == 1 && !frame0) {
+            TableauSimulator::sample_stream(in, out, out_format, false, rng);
             return EXIT_SUCCESS;
         }
 
         auto circuit = Circuit::from_file(in);
-        simd_bits ref(circuit.num_measurements);
+        simd_bits ref(0);
         if (!frame0) {
             ref = TableauSimulator::reference_sample_circuit(circuit);
         }
@@ -166,7 +166,6 @@ M 0 1 2
         }
 
         auto circuit = Circuit::from_file(in);
-        simd_bits ref(circuit.num_measurements);
         detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format, rng);
         return EXIT_SUCCESS;
     }

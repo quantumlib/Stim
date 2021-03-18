@@ -148,6 +148,14 @@ simd_bit_table simd_bit_table::transposed() const {
     return result;
 }
 
+simd_bit_table simd_bit_table::slice_maj(size_t maj_start_bit, size_t maj_stop_bit) const {
+    simd_bit_table result(maj_stop_bit - maj_start_bit, num_minor_bits_padded());
+    for (size_t k = maj_start_bit; k < maj_stop_bit; k++) {
+        result[k - maj_start_bit] = (*this)[k];
+    }
+    return result;
+}
+
 void simd_bit_table::transpose_into(simd_bit_table &out) const {
     assert(out.num_simd_words_minor == num_simd_words_major);
     assert(out.num_simd_words_major == num_simd_words_minor);
@@ -204,4 +212,13 @@ std::string simd_bit_table::str(size_t n) const {
         }
     }
     return out.str();
+}
+
+simd_bit_table simd_bit_table::random(
+    size_t num_randomized_major_bits, size_t num_randomized_minor_bits, std::mt19937_64 &rng) {
+    simd_bit_table result(num_randomized_major_bits, num_randomized_minor_bits);
+    for (size_t maj = 0; maj < num_randomized_major_bits; maj++) {
+        result[maj].randomize(num_randomized_minor_bits, rng);
+    }
+    return result;
 }

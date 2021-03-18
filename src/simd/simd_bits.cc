@@ -134,6 +134,16 @@ simd_bits &simd_bits::operator^=(const simd_bits_range_ref other) {
     return *this;
 }
 
+simd_bits &simd_bits::operator&=(const simd_bits_range_ref other) {
+    simd_bits_range_ref(*this) &= other;
+    return *this;
+}
+
+simd_bits &simd_bits::operator|=(const simd_bits_range_ref other) {
+    simd_bits_range_ref(*this) |= other;
+    return *this;
+}
+
 bool simd_bits::not_zero() const {
     return simd_bits_range_ref(*this).not_zero();
 }

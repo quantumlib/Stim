@@ -14,6 +14,7 @@
 
 #include "compiled_detector_sampler.pybind.h"
 
+#include "../circuit/circuit.pybind.h"
 #include "../simulators/detection_simulator.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
@@ -40,9 +41,14 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
     }
 
     size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(
-        bytes.data(), sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2, {num_shots, n},
-        {(long long)sample.num_minor_bits_padded(), (long long)1}, true));
+
+    void *ptr = bytes.data();
+    ssize_t itemsize = sizeof(uint8_t);
+    std::vector<ssize_t> shape{(ssize_t)num_shots, (ssize_t)n};
+    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_bits_padded(), 1};
+    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+    bool readonly = true;
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
 pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
@@ -51,16 +57,21 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
         detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, PYBIND_SHARED_RNG())
             .transposed();
     size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(
-        sample.data.u8, sizeof(uint8_t), pybind11::format_descriptor<uint8_t>::value, 2, {num_shots, (n + 7) / 8},
-        {(long long)sample.num_minor_u8_padded(), (long long)1}, true));
+
+    void *ptr = sample.data.u8;
+    ssize_t itemsize = sizeof(uint8_t);
+    std::vector<ssize_t> shape{(ssize_t)num_shots, (ssize_t)(n + 7) / 8};
+    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_u8_padded(), 1};
+    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+    bool readonly = true;
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
-std::string CompiledDetectorSampler::str() const {
+std::string CompiledDetectorSampler::repr() const {
     std::stringstream result;
-    result << "# num_detectors: " << dets_obs.detectors.size() << "\n";
-    result << "# num_observables: " << dets_obs.observables.size() << "\n";
-    result << circuit;
+    result << "stim.CompiledDetectorSampler(";
+    result << circuit_repr(circuit);
+    result << ")";
     return result.str();
 }
 
@@ -79,7 +90,7 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 shots: The number of times to sample every detector in the circuit.
                 prepend_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the start of the results.
-                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                append_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the end of the results.
 
             Returns:
@@ -100,7 +111,7 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 shots: The number of times to sample every detector in the circuit.
                 prepend_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the start of the results.
-                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
+                append_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the end of the results.
 
             Returns:
@@ -110,5 +121,5 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
             )DOC",
             pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
             pybind11::arg("append_observables") = false)
-        .def("__str__", &CompiledDetectorSampler::str);
+        .def("__repr__", &CompiledDetectorSampler::repr);
 }

@@ -17,25 +17,28 @@
 #ifndef SPARSE_XOR_TABLE_H
 #define SPARSE_XOR_TABLE_H
 
+#include <array>
+#include <cassert>
 #include <cstdint>
+#include <functional>
 #include <sstream>
 #include <vector>
 
-#include "vector_view.h"
+#include "monotonic_buffer.h"
 
-/// Merge sorts the elements of two sorted buffers into an output buffer while cancelling out duplicate items.
+/// Merges the elements of two sorted buffers into an output buffer while cancelling out duplicate items.
 ///
-/// \param p1: Pointer to the first input buffer.
-/// \param n1: Number of items in the first input buffer.
-/// \param p2: Pointer to the second input buffer.
-/// \param n2: Number of items in the second input buffer.
-/// \param out: Pointer to the output buffer. The output buffer must have a size of at least n1+n2.
-/// \return: The (exclusive) end pointer of the written part of the output buffer.
+/// \param sorted_in1: Pointer range covering the first sorted list.
+/// \param sorted_in2: Pointer range covering the second sorted list.
+/// \param out: Where to write the output. Must have size of at least sorted_in1.size() + sorted_in2.size().
+/// \return: A pointer to the end of the output (one past the last place written).
 template <typename T>
-inline T *xor_merge_sorted_items_into(const T *p1, size_t n1, const T *p2, size_t n2, T *out) {
+inline T *xor_merge_sort(ConstPointerRange<T> sorted_in1, ConstPointerRange<T> sorted_in2, T *out) {
     // Interleave sorted src and dst into a sorted work buffer.
-    auto *end1 = p1 + n1;
-    auto *end2 = p2 + n2;
+    const T *p1 = sorted_in1.ptr_start;
+    const T *p2 = sorted_in2.ptr_start;
+    const T *end1 = sorted_in1.ptr_end;
+    const T *end2 = sorted_in2.ptr_end;
     while (p1 != end1) {
         if (p2 == end2 || *p1 < *p2) {
             *out++ = *p1++;
@@ -53,60 +56,63 @@ inline T *xor_merge_sorted_items_into(const T *p1, size_t n1, const T *p2, size_
     return out;
 }
 
-// HACK: this should be templated, but it's not in order to have compatibility with C++11.
-static std::vector<uint32_t> _shared_buf;
-
-template <typename T>
-inline void vector_tail_view_xor_in_place(VectorView<T> &buf, const T *p2, size_t n2) {
-    size_t max = buf.size() + n2;
-    if (_shared_buf.size() < max) {
-        _shared_buf.resize(2 * max);
+template <typename T, typename CALLBACK>
+inline void xor_merge_sort_temp_buffer_callback(
+    ConstPointerRange<T> sorted_items_1, ConstPointerRange<T> sorted_items_2, CALLBACK handler) {
+    constexpr size_t STACK_SIZE = 64;
+    T data[STACK_SIZE];
+    size_t max = sorted_items_1.size() + sorted_items_2.size();
+    T *begin = max > STACK_SIZE ? new T[max] : &data[0];
+    T *end = xor_merge_sort(sorted_items_1, sorted_items_2, begin);
+    handler(ConstPointerRange<T>(begin, end));
+    if (max > STACK_SIZE) {
+        delete[] begin;
     }
-    auto end = xor_merge_sorted_items_into<T>(buf.begin(), buf.size(), p2, n2, _shared_buf.data());
-    buf.length = end - _shared_buf.data();
-    buf.vec_ptr->resize(buf.offset);
-    buf.vec_ptr->insert(buf.vec_ptr->end(), _shared_buf.data(), _shared_buf.data() + buf.length);
-}
-
-template <typename T>
-inline void xor_into_vector_tail_view(VectorView<T> &buf, const T *p1, size_t n1, const T *p2, size_t n2) {
-    buf.vec_ptr->resize(buf.offset + n1 + n2);
-    auto end = xor_merge_sorted_items_into<T>(p1, n1, p2, n2, buf.begin());
-    buf.length = end - buf.begin();
-    buf.vec_ptr->resize(buf.offset + buf.length);
 }
 
 /// A sparse set of integers that supports efficient xoring (computing the symmetric difference).
 template <typename T>
 struct SparseXorVec {
-   private:
-    inline SparseXorVec xor_helper(const T *src_ptr, size_t src_size) const {
-        SparseXorVec result;
-        result.vec.resize(size() + src_size);
-        auto n = xor_merge_sorted_items_into<T>(begin(), size(), src_ptr, src_size, result.begin()) - result.begin();
-        result.vec.resize(n);
-        return result;
-    }
-
    public:
-    std::vector<T> vec;
+    // Sorted list of entries.
+    std::vector<T> sorted_items;
 
-    inline void inplace_xor_helper(const T *src_ptr, size_t src_size) {
-        VectorView<uint32_t> view{&vec, 0, vec.size()};
-        vector_tail_view_xor_in_place(view, src_ptr, src_size);
+    SparseXorVec() = default;
+    SparseXorVec(std::vector<T> &&vec) : sorted_items(std::move(vec)) {
     }
-    SparseXorVec &operator^=(const T &other) {
-        inplace_xor_helper(&other, 1);
+
+    void set_to_xor_merge_sort(ConstPointerRange<T> sorted_items1, ConstPointerRange<T> sorted_items2) {
+        sorted_items.resize(sorted_items1.size() + sorted_items2.size());
+        auto written = xor_merge_sort(sorted_items, sorted_items1, sorted_items2);
+        sorted_items.resize(written.size());
+    }
+
+    void xor_sorted_items(ConstPointerRange<T> sorted) {
+        xor_merge_sort_temp_buffer_callback(range(), sorted, [&](ConstPointerRange<T> result) {
+            sorted_items.clear();
+            sorted_items.insert(sorted_items.end(), result.begin(), result.end());
+        });
+    }
+
+    void clear() {
+        sorted_items.clear();
+    }
+
+    void xor_item(const T &item) {
+        xor_sorted_items({&item, &item + 1});
+    }
+
+    SparseXorVec &operator^=(const SparseXorVec<T> &other) {
+        xor_sorted_items(other.range());
         return *this;
     }
 
-    SparseXorVec &operator^=(const SparseXorVec &other) {
-        inplace_xor_helper(other.begin(), other.size());
-        return *this;
-    }
-
-    SparseXorVec operator^(const SparseXorVec &other) const {
-        return xor_helper(other.begin(), other.size());
+    SparseXorVec operator^(const SparseXorVec<T> &other) const {
+        SparseXorVec result;
+        result.sorted_items.resize(size() + other.size());
+        auto n = xor_merge_sort<T>(range(), other.range(), result.begin()) - result.begin();
+        result.sorted_items.resize(n);
+        return result;
     }
 
     SparseXorVec operator^(const T &other) const {
@@ -114,46 +120,45 @@ struct SparseXorVec {
     }
 
     bool operator<(const SparseXorVec<T> &other) const {
-        return view() < other.view();
+        return range() < other.range();
     }
 
     inline size_t size() const {
-        return vec.size();
+        return sorted_items.size();
     }
 
     inline T *begin() {
-        return vec.data();
+        return sorted_items.data();
     }
 
     inline T *end() {
-        return vec.data() + size();
+        return sorted_items.data() + size();
     }
 
     inline const T *begin() const {
-        return vec.data();
+        return sorted_items.data();
     }
 
     inline const T *end() const {
-        return vec.data() + size();
+        return sorted_items.data() + size();
     }
 
     bool operator==(const SparseXorVec &other) const {
-        return vec == other.vec;
+        return sorted_items == other.sorted_items;
     }
 
     bool operator!=(const SparseXorVec &other) const {
-        return vec != other.vec;
+        return sorted_items != other.sorted_items;
+    }
+
+    ConstPointerRange<T> range() const {
+        return {begin(), end()};
     }
 
     std::string str() const {
         std::stringstream ss;
         ss << *this;
         return ss.str();
-    }
-
-    const VectorView<T> view() const {
-        // Temporarily remove const correctness but then immediately restore it.
-        return VectorView<T>{(std::vector<uint32_t> *)&vec, 0, vec.size()};
     }
 };
 

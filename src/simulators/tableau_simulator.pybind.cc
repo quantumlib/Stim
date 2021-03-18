@@ -22,10 +22,8 @@ struct TempViewableData {
     std::vector<uint32_t> targets;
     TempViewableData(std::vector<uint32_t> targets) : targets(std::move(targets)) {
     }
-    operator OperationData() const {
-        // Temporarily remove const correctness but then immediately restore it.
-        VectorView<uint32_t> v{(std::vector<uint32_t> *)&targets, 0, targets.size()};
-        return {0, v};
+    operator OperationData() {
+        return {0, targets};
     }
 };
 
@@ -61,8 +59,7 @@ TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::ar
 
 void pybind_tableau_simulator(pybind11::module &m) {
     pybind11::class_<TableauSimulator>(
-        m,
-        "TableauSimulator",
+        m, "TableauSimulator",
         R"DOC(
             A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
 
@@ -133,7 +130,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "current_measurement_record",
             [](TableauSimulator &self) {
-                return self.measurement_record;
+                return self.measurement_record.storage;
             },
             R"DOC(
                 Returns a copy of the record of all measurements performed by the simulator.
@@ -160,10 +157,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "do",
             [](TableauSimulator &self, const Circuit &circuit) {
-                self.ensure_large_enough_for_qubits(circuit.num_qubits);
-                for (const auto &op : circuit.operations) {
+                self.ensure_large_enough_for_qubits(circuit.count_qubits());
+                circuit.for_each_operation([&](const Operation &op) {
                     (self.*op.gate->tableau_simulator_function)(op.target_data);
-                }
+                });
             },
             pybind11::arg("circuit"),
             R"DOC(
@@ -460,7 +457,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "ycz",
             [](TableauSimulator &self, pybind11::args args) {
-                 self.YCZ(args_to_target_pairs(self, args));
+                self.YCZ(args_to_target_pairs(self, args));
             },
             R"DOC(
                 Applies a Y-controlled Z gate to the simulator's state.
@@ -485,7 +482,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
             "measure",
             [](TableauSimulator &self, uint32_t target) {
                 self.measure(TempViewableData({target}));
-                return (bool)self.measurement_record.back();
+                return (bool)self.measurement_record.storage.back();
             },
             pybind11::arg("target"),
             R"DOC(
@@ -508,7 +505,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
             [](TableauSimulator &self, pybind11::args args) {
                 auto converted_args = args_to_targets(self, args);
                 self.measure(converted_args);
-                auto e = self.measurement_record.end();
+                auto e = self.measurement_record.storage.end();
                 return std::vector<bool>(e - converted_args.targets.size(), e);
             },
             R"DOC(

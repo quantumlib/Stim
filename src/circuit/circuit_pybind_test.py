@@ -20,15 +20,12 @@ import pytest
 def test_circuit_init_num_measurements_num_qubits():
     c = stim.Circuit()
     assert c.num_qubits == c.num_measurements == 0
-    assert str(c).strip() == """
-# Circuit [num_qubits=0, num_measurements=0]
-    """.strip()
+    assert str(c).strip() == ""
 
     c.append_operation("X", [3])
     assert c.num_qubits == 4
     assert c.num_measurements == 0
     assert str(c).strip() == """
-# Circuit [num_qubits=4, num_measurements=0]
 X 3
         """.strip()
 
@@ -36,7 +33,6 @@ X 3
     assert c.num_qubits == 4
     assert c.num_measurements == 1
     assert str(c).strip() == """
-# Circuit [num_qubits=4, num_measurements=1]
 X 3
 M 0
         """.strip()
@@ -74,7 +70,6 @@ def test_circuit_append_operation():
     c.append_operation("DETECTOR", [stim.target_rec(-1)])
     c.append_operation("OBSERVABLE_INCLUDE", [stim.target_rec(-1), stim.target_rec(-2)], 5)
     assert str(c).strip() == """
-# Circuit [num_qubits=4, num_measurements=2]
 X 0 1 2 3
 CX 0 1
 M 0 !1
@@ -93,7 +88,6 @@ def test_circuit_iadd():
     c2.append_operation("M", [4])
     c += c2
     assert str(c).strip() == """
-# Circuit [num_qubits=5, num_measurements=1]
 X 1 2
 Y 3
 M 4
@@ -101,7 +95,6 @@ M 4
 
     c += c
     assert str(c).strip() == """
-# Circuit [num_qubits=5, num_measurements=2]
 X 1 2
 Y 3
 M 4
@@ -118,14 +111,12 @@ def test_circuit_add():
     c2.append_operation("Y", [3])
     c2.append_operation("M", [4])
     assert str(c + c2).strip() == """
-    # Circuit [num_qubits=5, num_measurements=1]
 X 1 2
 Y 3
 M 4
             """.strip()
 
     assert str(c2 + c2).strip() == """
-# Circuit [num_qubits=5, num_measurements=2]
 Y 3
 M 4
 Y 3
@@ -137,22 +128,23 @@ def test_circuit_mul():
     c = stim.Circuit()
     c.append_operation("Y", [3])
     c.append_operation("M", [4])
-    expected = """
-# Circuit [num_qubits=5, num_measurements=2]
-Y 3
-M 4
-Y 3
-M 4
+    assert str(c * 2) == str(2 * c) == """
+REPEAT 2 {
+    Y 3
+    M 4
+}
         """.strip()
-    assert str(c * 2) == str(2 * c) == expected
+    assert str((c * 2) * 3) == """
+REPEAT 6 {
+    Y 3
+    M 4
+}
+        """.strip()
     expected = """
-# Circuit [num_qubits=5, num_measurements=3]
-Y 3
-M 4
-Y 3
-M 4
-Y 3
-M 4
+REPEAT 3 {
+    Y 3
+    M 4
+}
     """.strip()
     assert str(c * 3) == str(3 * c) == expected
     c *= 3
@@ -160,7 +152,7 @@ M 4
     c *= 1
     assert str(c) == expected
     c *= 0
-    assert str(c) == "# Circuit [num_qubits=0, num_measurements=0]"
+    assert str(c) == ""
 
 
 def test_circuit_repr():
@@ -169,11 +161,10 @@ def test_circuit_repr():
         M 0
     """)
     r = repr(v)
-    assert r == '''stim.Circuit("""
-# Circuit [num_qubits=1, num_measurements=1]
+    assert r == """stim.Circuit('''
 X 0
 M 0
-""")'''
+''')"""
     assert eval(r, {'stim': stim}) == v
 
 
@@ -208,44 +199,45 @@ def test_circuit_compile_sampler():
     c = stim.Circuit()
     s = c.compile_sampler()
     c.append_operation("M", [0])
-    assert str(s) == """
-# reference sample: 
-# Circuit [num_qubits=0, num_measurements=0]
-    """.strip()
+    print(repr(s))
+    assert repr(s) == "stim.CompiledMeasurementSampler(stim.Circuit())"
     s = c.compile_sampler()
-    assert str(s) == """
-# reference sample: 0
-# Circuit [num_qubits=1, num_measurements=1]
+    assert repr(s) == """
+stim.CompiledMeasurementSampler(stim.Circuit('''
 M 0
+'''))
     """.strip()
 
     c.append_operation("H", [0, 1, 2, 3, 4])
     c.append_operation("M", [0, 1, 2, 3, 4])
     s = c.compile_sampler()
-    assert str(s) == """
-# reference sample: 000000
-# Circuit [num_qubits=5, num_measurements=6]
+    r = repr(s)
+    assert r == """
+stim.CompiledMeasurementSampler(stim.Circuit('''
 M 0
 H 0 1 2 3 4
 M 0 1 2 3 4
+'''))
     """.strip() == str(stim.CompiledMeasurementSampler(c))
+
+    # Check that expression can be evaluated.
+    _ = eval(r, {"stim": stim})
 
 
 def test_circuit_compile_detector_sampler():
     c = stim.Circuit()
     s = c.compile_detector_sampler()
     c.append_operation("M", [0])
-    assert str(s) == """
-# num_detectors: 0
-# num_observables: 0
-# Circuit [num_qubits=0, num_measurements=0]
-    """.strip()
+    assert repr(s) == "stim.CompiledDetectorSampler(stim.Circuit())"
     c.append_operation("DETECTOR", [stim.target_rec(-1)])
     s = c.compile_detector_sampler()
-    assert str(s) == """
-# num_detectors: 1
-# num_observables: 0
-# Circuit [num_qubits=1, num_measurements=1]
+    r = repr(s)
+    assert r == """
+stim.CompiledDetectorSampler(stim.Circuit('''
 M 0
 DETECTOR rec[-1]
+'''))
     """.strip()
+
+    # Check that expression can be evaluated.
+    _ = eval(r, {"stim": stim})

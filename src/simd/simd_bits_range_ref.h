@@ -47,6 +47,9 @@ struct simd_bits_range_ref {
             other);  // NOLINT(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
     /// Xor assignment.
     simd_bits_range_ref operator^=(const simd_bits_range_ref other);
+    /// Mask assignment.
+    simd_bits_range_ref operator&=(const simd_bits_range_ref other);
+    simd_bits_range_ref operator|=(const simd_bits_range_ref other);
     /// Swap assignment.
     void swap_with(simd_bits_range_ref other);
 

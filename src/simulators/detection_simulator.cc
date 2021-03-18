@@ -31,21 +31,21 @@ simd_bit_table detector_samples(
 
     auto num_detectors = det_obs.detectors.size();
     auto num_obs = det_obs.observables.size();
-    size_t num_results = num_detectors + num_obs * ((int)prepend_observables + (int)append_observables);
+    size_t num_results = num_detectors + num_obs * (prepend_observables + append_observables);
     simd_bit_table result(num_results, num_shots);
 
     // Xor together measurement samples to form detector samples.
     size_t offset = 0;
     if (prepend_observables) {
-        for (auto obs : det_obs.observables) {
+        for (const auto &obs : det_obs.observables) {
             xor_measurement_set_into_result(obs, frame_samples, result, offset);
         }
     }
-    for (auto det : det_obs.detectors) {
+    for (const auto &det : det_obs.detectors) {
         xor_measurement_set_into_result(det, frame_samples, result, offset);
     }
     if (append_observables) {
-        for (auto obs : det_obs.observables) {
+        for (const auto &obs : det_obs.observables) {
             xor_measurement_set_into_result(obs, frame_samples, result, offset);
         }
     }
@@ -59,7 +59,56 @@ simd_bit_table detector_samples(
         circuit, DetectorsAndObservables(circuit), num_shots, prepend_observables, append_observables, rng);
 }
 
-void detector_samples_out(
+void detector_sample_out_helper_stream(
+    const Circuit &circuit, FrameSimulator &sim, size_t num_samples, bool append_observables, FILE *out,
+    SampleFormat format) {
+    MeasureRecordBatchWriter writer(out, num_samples, format);
+    std::vector<simd_bits> observables;
+    sim.reset_all();
+    writer.begin_result_type('D');
+    simd_bit_table detector_buffer(1024, num_samples);
+    size_t buffered_detectors = 0;
+    circuit.for_each_operation([&](const Operation &op) {
+        if (op.gate->id == gate_name_to_id("DETECTOR")) {
+            simd_bits_range_ref result = detector_buffer[buffered_detectors];
+            for (auto t : op.target_data.targets) {
+                assert(t & TARGET_RECORD_BIT);
+                result ^= sim.m_record.lookback(t ^ TARGET_RECORD_BIT);
+            }
+            buffered_detectors++;
+            if (buffered_detectors == 1024) {
+                writer.batch_write_bytes(detector_buffer, 1024 >> 6);
+                buffered_detectors = 0;
+            }
+        } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+            if (append_observables) {
+                size_t id = (size_t)op.target_data.arg;
+                while (observables.size() <= id) {
+                    observables.emplace_back(num_samples);
+                }
+                simd_bits_range_ref result = observables[id];
+
+                for (auto t : op.target_data.targets) {
+                    assert(t & TARGET_RECORD_BIT);
+                    result ^= sim.m_record.lookback(t ^ TARGET_RECORD_BIT);
+                }
+            }
+        } else {
+            (sim.*op.gate->frame_simulator_function)(op.target_data);
+            sim.m_record.mark_all_as_written();
+        }
+    });
+    for (size_t k = 0; k < buffered_detectors; k++) {
+        writer.batch_write_bit(detector_buffer[k]);
+    }
+    writer.begin_result_type('L');
+    for (const auto &result : observables) {
+        writer.batch_write_bit(result);
+    }
+    writer.write_end();
+}
+
+void detector_samples_out_in_memory(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
     SampleFormat format, std::mt19937_64 &rng) {
     if (prepend_observables && append_observables) {
@@ -86,15 +135,38 @@ void detector_samples_out(
         ct = 0;
     }
 
+    auto table = detector_samples(circuit, det_obs, num_shots, prepend_observables, append_observables, rng);
+    write_table_data(out, num_shots, num_sample_locations, simd_bits(0), table, format, c1, c2, ct);
+}
+
+void detector_sample_out_helper(
+    const Circuit &circuit, FrameSimulator &sim, size_t num_shots, bool prepend_observables, bool append_observables,
+    FILE *out, SampleFormat format, std::mt19937_64 &rng) {
+    uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) *
+                                std::max(circuit.count_measurements(), circuit.count_detectors_and_observables());
+    if (!prepend_observables && approx_mem_usage > SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD) {
+        detector_sample_out_helper_stream(circuit, sim, num_shots, append_observables, out, format);
+    } else {
+        detector_samples_out_in_memory(circuit, num_shots, prepend_observables, append_observables, out, format, rng);
+    }
+}
+
+void detector_samples_out(
+    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
+    SampleFormat format, std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;
-    simd_bits reference_sample(num_sample_locations);
-    while (num_shots > GOOD_BLOCK_SIZE) {
-        auto table = detector_samples(circuit, det_obs, GOOD_BLOCK_SIZE, prepend_observables, append_observables, rng);
-        write_table_data(out, GOOD_BLOCK_SIZE, num_sample_locations, reference_sample, table, format, c1, c2, ct);
-        num_shots -= GOOD_BLOCK_SIZE;
+    size_t num_qubits = circuit.count_qubits();
+    size_t max_lookback = circuit.max_lookback();
+    if (num_shots >= GOOD_BLOCK_SIZE) {
+        auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, max_lookback, rng);
+        while (num_shots > GOOD_BLOCK_SIZE) {
+            detector_sample_out_helper(
+                circuit, sim, GOOD_BLOCK_SIZE, prepend_observables, append_observables, out, format, rng);
+            num_shots -= GOOD_BLOCK_SIZE;
+        }
     }
     if (num_shots) {
-        auto table = detector_samples(circuit, det_obs, num_shots, prepend_observables, append_observables, rng);
-        write_table_data(out, num_shots, num_sample_locations, reference_sample, table, format, c1, c2, ct);
+        auto sim = FrameSimulator(num_qubits, num_shots, max_lookback, rng);
+        detector_sample_out_helper(circuit, sim, num_shots, prepend_observables, append_observables, out, format, rng);
     }
 }

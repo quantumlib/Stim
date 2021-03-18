@@ -330,8 +330,7 @@ void pybind_pauli_string(pybind11::module &m) {
                 int z = self.zs[u];
                 return (x ^ z) | (z << 1);
             },
-            pybind11::arg("index"),
-            GET_ITEM_DOC)
+            pybind11::arg("index"), GET_ITEM_DOC)
         .def(
             "__getitem__",
             [](const PauliString &self, pybind11::slice slice) {
@@ -347,11 +346,9 @@ void pybind_pauli_string(pybind11::module &m) {
                     return "_XZY"[self.xs[j] + self.zs[j] * 2];
                 });
             },
-            pybind11::arg("slice"),
-            GET_ITEM_DOC)
+            pybind11::arg("slice"), GET_ITEM_DOC)
         .def(
-            pybind11::init(&PauliString::from_str),
-            pybind11::arg("text"),
+            pybind11::init(&PauliString::from_str), pybind11::arg("text"),
             R"DOC(
                 Creates a stim.PauliString from a text string.
 

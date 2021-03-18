@@ -26,6 +26,9 @@ struct simd_bit_table {
 
     /// Creates zero initialized table.
     simd_bit_table(size_t min_bits_major, size_t min_bits_minor);
+    /// Creates a randomly initialized table.
+    static simd_bit_table random(
+        size_t num_randomized_major_bits, size_t num_randomized_minor_bits, std::mt19937_64 &rng);
     /// Creates a square table with 1s down the diagonal.
     static simd_bit_table identity(size_t n);
     /// Concatenates tables together to form a larger table.
@@ -55,8 +58,11 @@ struct simd_bit_table {
     void do_square_transpose();
     /// Transposes the table out of place into a target location.
     void transpose_into(simd_bit_table &out) const;
+    void transpose_into(simd_bit_table &out, size_t major_start_bit, size_t min_major_length_bits) const;
     /// Transposes the table out of place.
     simd_bit_table transposed() const;
+    /// Returns a subset of the table.
+    simd_bit_table slice_maj(size_t maj_start_bit, size_t maj_stop_bit) const;
 
     /// Sets all bits in the table to zero.
     void clear();

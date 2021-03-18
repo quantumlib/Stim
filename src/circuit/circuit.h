@@ -24,7 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../simd/vector_view.h"
+#include "../simd/monotonic_buffer.h"
 #include "gate_data.h"
 
 #define TARGET_VALUE_MASK ((uint32_t{1} << 24) - uint32_t{1})
@@ -50,7 +50,7 @@ enum SampleFormat {
     /// Transposed binary format.
     ///
     /// For each measurement:
-    ///     For each group of 8 shots (padded with 0s if needed):
+    ///     For each group of 64 shots (padded with 0s if needed):
     ///         Output bit packed bytes (least significant bit of first byte has first shot)
     SAMPLE_FORMAT_PTB64,
     /// Human readable compressed format.
@@ -83,7 +83,7 @@ struct OperationData {
     /// The bottom 24 bits of each item always refer to a qubit index.
     /// The top 8 bits are used for additional data such as
     /// Pauli basis, record lookback, and measurement inversion.
-    VectorView<uint32_t> targets;
+    PointerRange<uint32_t> targets;
 
     bool operator==(const OperationData &other) const;
     bool operator!=(const OperationData &other) const;
@@ -111,17 +111,16 @@ struct Operation {
 
 /// A description of a quantum computation.
 struct Circuit {
-    /// Variable-sized operation data is stored as views into this single contiguous array.
-    /// Appending operations will append their target data into this vector, and the operation will reference it.
-    /// This decreases memory fragmentation and the number of allocations during parsing.
-    JaggedDataArena<uint32_t> jagged_target_data;
+    /// Backing data store for variable-sized target data referenced by operations.
+    MonotonicBuffer<uint32_t> jag_targets;
     /// Operations in the circuit, from earliest to latest.
     std::vector<Operation> operations;
-    /// One more than the maximum qubit index seen in the circuit (so far).
-    size_t num_qubits;
-    /// The total number of measurement results the circuit (so far) will produce.
-    size_t num_measurements;
-    size_t min_safe_fusion_index = 0;
+    std::vector<Circuit> blocks;
+
+    size_t count_qubits() const;
+    uint64_t count_measurements() const;
+    uint64_t count_detectors_and_observables() const;
+    size_t max_lookback() const;
 
     /// Constructs an empty circuit.
     Circuit();
@@ -152,35 +151,23 @@ struct Circuit {
     ///         interactive (repl) mode, where measurements should produce results immediately instead of only after the
     ///         circuit is entirely specified. *This has significantly worse performance. It prevents measurement
     ///         batching.*
-    ///
-    /// Returns:
-    ///     true: Operations were read from the file.
-    ///     false: The file has ended, and no operations were read.
-    bool append_from_file(FILE *file, bool stop_asap);
+    void append_from_file(FILE *file, bool stop_asap);
     /// Grows the circuit using operations from a string.
     ///
     /// Note: operations are automatically fused.
-    ///
-    /// Returns:
-    ///     true: Operations were read from the string.
-    ///     false: The string contained no operations.
-    bool append_from_text(const char *text);
+    void append_from_text(const char *text);
 
     Circuit operator+(const Circuit &other) const;
     Circuit operator*(size_t repetitions) const;
     Circuit &operator+=(const Circuit &other);
     Circuit &operator*=(size_t repetitions);
 
-    /// Appends a circuit to the end of this one.
-    void append_circuit(const Circuit &circuit, size_t repetitions);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_op(
-        const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
+    void append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(
-        const Gate &gate, const uint32_t *targets_start, size_t num_targets, double arg);
+    void append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, double arg);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -194,16 +181,48 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
-    /// Updates metadata (e.g. num_qubits) to account for an operation appended via non-standard means.
-    void update_metadata_for_manually_appended_operation();
+    template <typename CALLBACK>
+    void for_each_operation(const CALLBACK &callback) const {
+        for (const auto &op : operations) {
+            assert(op.gate != nullptr);
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets[0] < blocks.size());
+                size_t repeats = op.target_data.targets[1];
+                const auto &block = blocks[op.target_data.targets[0]];
+                for (size_t k = 0; k < repeats; k++) {
+                    block.for_each_operation(callback);
+                }
+            } else {
+                callback(op);
+            }
+        }
+    }
 
-    void fusion_barrier();
+    template <typename CALLBACK>
+    void for_each_operation_reverse(const CALLBACK &callback) const {
+        for (size_t p = operations.size(); p-- > 0;) {
+            const auto &op = operations[p];
+            assert(op.gate != nullptr);
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets[0] < blocks.size());
+                size_t repeats = op.target_data.targets[1];
+                const auto &block = blocks[op.target_data.targets[0]];
+                for (size_t k = 0; k < repeats; k++) {
+                    block.for_each_operation_reverse(callback);
+                }
+            } else {
+                callback(op);
+            }
+        }
+    }
 };
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
 struct DetectorsAndObservables {
-    JaggedDataArena<uint32_t> jagged_data;
-    std::vector<VectorView<uint32_t>> detectors;
+    MonotonicBuffer<uint32_t> jagged_detector_data;
+    std::vector<PointerRange<uint32_t>> detectors;
     std::vector<std::vector<uint32_t>> observables;
     DetectorsAndObservables(const Circuit &circuit);
 

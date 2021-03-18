@@ -217,6 +217,8 @@ TEST(simd_bits_range_ref, for_each_set_bit) {
     ref[5] = true;
     ref[101] = true;
     std::vector<size_t> hits;
-    ref.for_each_set_bit([&](size_t k) { hits.push_back(k); });
+    ref.for_each_set_bit([&](size_t k) {
+        hits.push_back(k);
+    });
     ASSERT_EQ(hits, (std::vector<size_t>{5, 101}));
 }

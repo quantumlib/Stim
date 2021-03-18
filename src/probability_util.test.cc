@@ -56,7 +56,8 @@ TEST(probability_util, biased_random) {
         float dev = sqrtf(p * (1 - p) * n);
         float min_expected = n * p - dev * 5;
         float max_expected = n * p + dev * 5;
-        ASSERT_TRUE( min_expected >= 0 && max_expected <= n) << min_expected << ", " << max_expected;
-        EXPECT_TRUE(min_expected <= t && t <= max_expected) << min_expected/n << " < " << t/(float)n << " < " << max_expected/n << " for p=" << p;
+        ASSERT_TRUE(min_expected >= 0 && max_expected <= n) << min_expected << ", " << max_expected;
+        EXPECT_TRUE(min_expected <= t && t <= max_expected)
+            << min_expected / n << " < " << t / (float)n << " < " << max_expected / n << " for p=" << p;
     }
 }
