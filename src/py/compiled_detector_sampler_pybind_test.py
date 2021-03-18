@@ -38,6 +38,15 @@ def test_compiled_detector_sampler_sample():
             [1, 1, 0],
         ], dtype=np.uint8))
     np.testing.assert_array_equal(
+        c.compile_detector_sampler().sample(5, prepend_observables=True),
+        np.array([
+            [1, 0, 0, 0, 1, 1, 0],
+            [1, 0, 0, 0, 1, 1, 0],
+            [1, 0, 0, 0, 1, 1, 0],
+            [1, 0, 0, 0, 1, 1, 0],
+            [1, 0, 0, 0, 1, 1, 0],
+        ], dtype=np.uint8))
+    np.testing.assert_array_equal(
         c.compile_detector_sampler().sample(5, append_observables=True),
         np.array([
             [1, 1, 0, 1, 0, 0, 0],
@@ -45,6 +54,15 @@ def test_compiled_detector_sampler_sample():
             [1, 1, 0, 1, 0, 0, 0],
             [1, 1, 0, 1, 0, 0, 0],
             [1, 1, 0, 1, 0, 0, 0],
+        ], dtype=np.uint8))
+    np.testing.assert_array_equal(
+        c.compile_detector_sampler().sample(5, append_observables=True, prepend_observables=True),
+        np.array([
+            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+            [1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
         ], dtype=np.uint8))
     np.testing.assert_array_equal(
         c.compile_detector_sampler().sample_bit_packed(5),

@@ -36,7 +36,6 @@ set(SOURCE_FILES_NO_MAIN
         src/main_helper.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
-        src/simd/monotonic_buffer.cc
         src/simd/simd_bit_table.cc
         src/simd/simd_bits.cc
         src/simd/simd_bits_range_ref.cc
@@ -75,6 +74,9 @@ set(TEST_FILES
         src/simulators/detection_simulator.test.cc
         src/simulators/error_fuser.test.cc
         src/simulators/frame_simulator.test.cc
+        src/simulators/measure_record.test.cc
+        src/simulators/measure_record_batch.test.cc
+        src/simulators/measure_record_batch_writer.test.cc
         src/simulators/measure_record_writer.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc

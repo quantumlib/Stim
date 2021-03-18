@@ -42,7 +42,7 @@ FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_
       num_recorded_measurements(0),
       x_table(num_qubits, batch_size),
       z_table(num_qubits, batch_size),
-      m_record(batch_size, max_lookback, 1),
+      m_record(batch_size, max_lookback),
       rng_buffer(batch_size),
       last_correlated_error_occurred(batch_size),
       rng(rng) {

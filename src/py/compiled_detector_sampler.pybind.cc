@@ -88,14 +88,14 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
 
             Args:
                 shots: The number of times to sample every detector in the circuit.
-                append_observables: Defaults to false. When set, observables are included with the detectors and are
-                    placed at the end of the results.
                 prepend_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the start of the results.
+                append_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the end of the results.
 
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-                `n = num_detectors + num_observables*(prepend_observables + append_observables)`.
+                `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, m]`.
             )DOC",
             pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
@@ -109,14 +109,14 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
 
             Args:
                 shots: The number of times to sample every detector in the circuit.
-                append_observables: Defaults to false. When set, observables are included with the detectors and are
-                    placed at the end of the results.
                 prepend_observables: Defaults to false. When set, observables are included with the detectors and are
                     placed at the start of the results.
+                append_observables: Defaults to false. When set, observables are included with the detectors and are
+                    placed at the end of the results.
 
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-                `n = num_detectors + num_observables*(prepend_observables + append_observables)`.
+                `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
             )DOC",
             pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,

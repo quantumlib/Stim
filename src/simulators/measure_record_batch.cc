@@ -20,13 +20,8 @@
 
 #include "measure_record_batch_writer.h"
 
-MeasureRecordBatch::MeasureRecordBatch(size_t num_shots, size_t max_lookback, size_t initial_capacity)
-    : max_lookback(max_lookback),
-      unwritten(0),
-      stored(0),
-      written(0),
-      shot_mask(num_shots),
-      storage(initial_capacity, num_shots) {
+MeasureRecordBatch::MeasureRecordBatch(size_t num_shots, size_t max_lookback)
+    : max_lookback(max_lookback), unwritten(0), stored(0), written(0), shot_mask(num_shots), storage(1, num_shots) {
     for (size_t k = 0; k < num_shots; k++) {
         shot_mask[k] = true;
     }

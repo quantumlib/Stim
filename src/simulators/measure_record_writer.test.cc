@@ -19,7 +19,6 @@
 #include "gtest/gtest.h"
 
 #include "../test_util.test.h"
-#include "frame_simulator.h"
 
 static std::string rewind_read_all(FILE *f) {
     rewind(f);

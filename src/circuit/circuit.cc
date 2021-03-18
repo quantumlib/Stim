@@ -28,6 +28,10 @@ enum READ_CONDITION {
     READ_UNTIL_END_OF_FILE,
 };
 
+/// Concatenates the second pointer range's data into the first.
+/// Typically, the two ranges are contiguous and so this only requires advancing the end of the destination region.
+/// In cases where that doesn't occur, space is created in the given monotonic buffer to store the result and both
+/// the start and end of the destination range move.
 void fuse_data(PointerRange<uint32_t> &dst, PointerRange<uint32_t> src, MonotonicBuffer<uint32_t> &buf) {
     if (dst.ptr_end != src.ptr_start) {
         buf.ensure_available(src.size() + dst.size());

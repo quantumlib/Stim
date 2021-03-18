@@ -30,6 +30,6 @@ setup(
     long_description_content_type='text/markdown',
     python_requires='>=3.6.0',
     data_files=['README.md'],
-    install_requires=['stim', 'cirq>=0.10'],
+    install_requires=['stim', 'cirq'],
     tests_require=['pytest', 'python3-distutils'],
 )

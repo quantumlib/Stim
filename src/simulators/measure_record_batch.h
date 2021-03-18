@@ -41,7 +41,7 @@ struct MeasureRecordBatch {
     simd_bit_table storage;
 
     /// Constructs an empty MeasureRecordBatch configured for the given max_lookback and number of shots.
-    MeasureRecordBatch(size_t num_shots, size_t max_lookback, size_t initial_capacity);
+    MeasureRecordBatch(size_t num_shots, size_t max_lookback);
 
     /// Allows measurements older than max_lookback to be discarded, even though they weren't written out.
     ///

@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <vector>
 
+/// Delineates mutable memory using an inclusive start pointer and exclusive end pointer.
 template <typename T>
 struct PointerRange {
     T *ptr_start;
@@ -92,6 +93,7 @@ struct PointerRange {
     }
 };
 
+/// Delineates readable memory using an inclusive start pointer and exclusive end pointer.
 template <typename T>
 struct ConstPointerRange {
     const T *ptr_start;
