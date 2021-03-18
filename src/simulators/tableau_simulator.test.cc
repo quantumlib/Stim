@@ -299,6 +299,32 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
     }
 }
 
+TEST(TableauSimulator, certain_errors_consistent_with_gates) {
+    TableauSimulator sim1(2, SHARED_TEST_RNG());
+    TableauSimulator sim2(2, SHARED_TEST_RNG());
+    uint32_t targets[] {0};
+    OperationData d0{0, {targets, targets + 1}};
+    OperationData d1{1.0, {targets, targets + 1}};
+
+    sim1.X_ERROR(d1);
+    sim2.X(d0);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+    sim1.X_ERROR(d0);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+
+    sim1.Y_ERROR(d1);
+    sim2.Y(d0);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+    sim1.Y_ERROR(d0);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+
+    sim1.Z_ERROR(d1);
+    sim2.Z(d0);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+    sim1.Z_ERROR(d0);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+}
+
 TEST(TableauSimulator, simulate) {
     auto results = TableauSimulator::sample_circuit(
         Circuit::from_text("H 0\n"

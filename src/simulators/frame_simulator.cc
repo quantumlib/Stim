@@ -22,6 +22,18 @@
 #include "../simd/simd_util.h"
 #include "tableau_simulator.h"
 
+static size_t force_stream_count = 0;
+DebugForceResultStreamingRaii::DebugForceResultStreamingRaii() {
+    force_stream_count++;
+}
+DebugForceResultStreamingRaii::~DebugForceResultStreamingRaii() {
+    force_stream_count--;
+}
+
+bool should_use_streaming_instead_of_memory(uint64_t result_count) {
+    return force_stream_count > 0 || result_count > 100000000;
+}
+
 // Iterates over the X and Z frame components of a pair of qubits, applying a custom FUNC to each.
 //
 // HACK: Templating the body function type makes inlining significantly more likely.
@@ -389,7 +401,7 @@ void sample_out_helper(
     SampleFormat format) {
     sim.reset_all();
 
-    if (std::max(num_shots, size_t{256}) * circuit.count_measurements() > SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD) {
+    if (should_use_streaming_instead_of_memory(std::max(num_shots, size_t{256}) * circuit.count_measurements())) {
         // Results getting quite large. Stream them (with buffering to disk) instead of trying to store them all.
         MeasureRecordBatchWriter writer(out, num_shots, format);
         circuit.for_each_operation([&](const Operation &op) {

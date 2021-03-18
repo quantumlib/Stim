@@ -71,6 +71,7 @@ void detector_sample_out_helper_stream(
     circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->id == gate_name_to_id("DETECTOR")) {
             simd_bits_range_ref result = detector_buffer[buffered_detectors];
+            result.clear();
             for (auto t : op.target_data.targets) {
                 assert(t & TARGET_RECORD_BIT);
                 result ^= sim.m_record.lookback(t ^ TARGET_RECORD_BIT);
@@ -144,7 +145,7 @@ void detector_sample_out_helper(
     FILE *out, SampleFormat format, std::mt19937_64 &rng) {
     uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) *
                                 std::max(circuit.count_measurements(), circuit.count_detectors_and_observables());
-    if (!prepend_observables && approx_mem_usage > SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD) {
+    if (!prepend_observables && should_use_streaming_instead_of_memory(approx_mem_usage)) {
         detector_sample_out_helper_stream(circuit, sim, num_shots, append_observables, out, format);
     } else {
         detector_samples_out_in_memory(circuit, num_shots, prepend_observables, append_observables, out, format, rng);

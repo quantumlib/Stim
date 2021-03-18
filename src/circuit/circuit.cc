@@ -782,6 +782,21 @@ size_t Circuit::max_lookback() const {
     return n;
 }
 
+uint64_t add_saturate(uint64_t a, uint64_t b) {
+    uint64_t r = a + b;
+    if (r < a) {
+        return UINT64_MAX;
+    }
+    return r;
+}
+
+uint64_t mul_saturate(uint64_t a, uint64_t b) {
+    if (b && a > UINT64_MAX / b) {
+        return UINT64_MAX;
+    }
+    return a * b;
+}
+
 uint64_t Circuit::count_measurements() const {
     uint64_t n = 0;
     for (const auto &op : operations) {
@@ -789,9 +804,9 @@ uint64_t Circuit::count_measurements() const {
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 2);
             assert(op.target_data.targets[0] < blocks.size());
-            n += blocks[op.target_data.targets[0]].count_measurements() * op.target_data.targets[1];
+            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_measurements(), op.target_data.targets[1]));
         } else if (op.gate->flags & GATE_PRODUCES_RESULTS) {
-            n += op.target_data.targets.size();
+            n = add_saturate(n, op.target_data.targets.size());
         }
     }
     return n;
@@ -804,9 +819,9 @@ uint64_t Circuit::count_detectors_and_observables() const {
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 2);
             assert(op.target_data.targets[0] < blocks.size());
-            n += blocks[op.target_data.targets[0]].count_detectors_and_observables() * op.target_data.targets[1];
+            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_detectors_and_observables(), op.target_data.targets[1]));
         } else if (op.gate->id == gate_name_to_id("DETECTOR") || op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
-            n++;
+            n = add_saturate(n, 1);
         }
     }
     return n;

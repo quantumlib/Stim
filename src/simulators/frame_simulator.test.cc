@@ -31,6 +31,7 @@ static std::string rewind_read_all(FILE *f) {
         }
         result.push_back((char)c);
     }
+    fclose(f);
 }
 
 TEST(FrameSimulator, get_set_frame) {
@@ -766,4 +767,93 @@ TEST(FrameSimulator, stream_huge_case) {
         ASSERT_EQ(getc(tmp), 0x44);
     }
     ASSERT_EQ(getc(tmp), EOF);
+}
+
+TEST(FrameSimulator, block_results_single_shot) {
+    auto circuit = Circuit::from_text(R"circuit(
+        REPEAT 10000 {
+            X_ERROR(1) 0
+            MR 0
+            M 0 0
+        }
+    )circuit");
+    FILE *tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+
+    auto result = rewind_read_all(tmp);
+    std::cerr << result;
+    for (size_t k = 0; k < 30000; k += 3) {
+        ASSERT_EQ(result[k], '1') << k;
+        ASSERT_EQ(result[k + 1], '0') << (k + 1);
+        ASSERT_EQ(result[k + 2], '0') << (k + 2);
+    }
+    ASSERT_EQ(result[30000], '\n');
+}
+
+TEST(FrameSimulator, block_results_triple_shot) {
+    auto circuit = Circuit::from_text(R"circuit(
+        REPEAT 10000 {
+            X_ERROR(1) 0
+            MR 0
+            M 0 0
+        }
+    )circuit");
+    FILE *tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+
+    auto result = rewind_read_all(tmp);
+    for (size_t rep = 0; rep < 3; rep++) {
+        size_t s = rep * 30001;
+        for (size_t k = 0; k < 30000; k += 3) {
+            ASSERT_EQ(result[s + k], '1') << (s + k);
+            ASSERT_EQ(result[s + k + 1], '0') << (s + k + 1);
+            ASSERT_EQ(result[s + k + 2], '0') << (s + k + 2);
+        }
+        ASSERT_EQ(result[s + 30000], '\n');
+    }
+}
+
+TEST(FrameSimulator, stream_results) {
+    DebugForceResultStreamingRaii force_streaming;
+    auto circuit = Circuit::from_text(R"circuit(
+        REPEAT 10000 {
+            X_ERROR(1) 0
+            MR 0
+            M 0 0
+        }
+    )circuit");
+    FILE *tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+
+    auto result = rewind_read_all(tmp);
+    for (size_t k = 0; k < 30000; k += 3) {
+        ASSERT_EQ(result[k], '1') << k;
+        ASSERT_EQ(result[k + 1], '0') << (k + 1);
+        ASSERT_EQ(result[k + 2], '0') << (k + 2);
+    }
+    ASSERT_EQ(result[30000], '\n');
+}
+
+TEST(FrameSimulator, stream_results_triple_shot) {
+    DebugForceResultStreamingRaii force_streaming;
+    auto circuit = Circuit::from_text(R"circuit(
+        REPEAT 10000 {
+            X_ERROR(1) 0
+            MR 0
+            M 0 0
+        }
+    )circuit");
+    FILE *tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+
+    auto result = rewind_read_all(tmp);
+    for (size_t rep = 0; rep < 3; rep++) {
+        size_t s = rep * 30001;
+        for (size_t k = 0; k < 30000; k += 3) {
+            ASSERT_EQ(result[s + k], '1') << (s + k);
+            ASSERT_EQ(result[s + k + 1], '0') << (s + k + 1);
+            ASSERT_EQ(result[s + k + 2], '0') << (s + k + 2);
+        }
+        ASSERT_EQ(result[s + 30000], '\n');
+    }
 }

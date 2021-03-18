@@ -142,7 +142,7 @@ R 0
         cirq.DepolarizingChannel(0.2, n_qubits=2),
     ],
 )
-def test_noisy_gate_conversions(gate: cirq.Gate):
+def test_noisy_gate_conversions_compiled_sampler(gate: cirq.Gate):
     # Create test circuit that uses superdense coding to quantify arbitrary Pauli error mixtures.
     n = gate.num_qubits()
     qs = cirq.LineQubit.range(n)
@@ -159,6 +159,71 @@ def test_noisy_gate_conversions(gate: cirq.Gate):
     stim_circuit, _ = cirq_circuit_to_stim_data(circuit + cirq.measure(*sorted(circuit.all_qubits())[::-1]))
     sample_count = 10000
     samples = stim_circuit.compile_sampler().sample_bit_packed(sample_count).flat
+    unique, counts = np.unique(samples, return_counts=True)
+
+    # Compare sample rates to expected rates.
+    for value, count in zip(unique, counts):
+        expected_rate = expected_rates[value]
+        actual_rate = count / sample_count
+        allowed_variation = 5 * (expected_rate * (1 - expected_rate) / sample_count) ** 0.5
+        if not 0 <= expected_rate - allowed_variation <= 1:
+            raise ValueError("Not enough samples to bound results away from extremes.")
+        assert abs(expected_rate - actual_rate) < allowed_variation, (
+            f"Sample rate {actual_rate} is over 5 standard deviations away from {expected_rate}.\n"
+            f"Gate: {gate}\n"
+            f"Test circuit:\n{circuit}\n"
+            f"Converted circuit:\n{stim_circuit}\n"
+        )
+
+
+@pytest.mark.parametrize(
+    "gate",
+    [
+        cirq.BitFlipChannel(0.1),
+        cirq.BitFlipChannel(0.2),
+        cirq.PhaseFlipChannel(0.1),
+        cirq.PhaseFlipChannel(0.2),
+        cirq.PhaseDampingChannel(0.1),
+        cirq.PhaseDampingChannel(0.2),
+        cirq.X.with_probability(0.1),
+        cirq.X.with_probability(0.2),
+        cirq.Y.with_probability(0.1),
+        cirq.Y.with_probability(0.2),
+        cirq.Z.with_probability(0.1),
+        cirq.Z.with_probability(0.2),
+        cirq.DepolarizingChannel(0.1),
+        cirq.DepolarizingChannel(0.2),
+        cirq.DepolarizingChannel(0.1, n_qubits=2),
+        cirq.DepolarizingChannel(0.2, n_qubits=2),
+    ],
+)
+def test_tableau_simulator_error_mechanisms(gate: cirq.Gate):
+    # Technically this be a test of the `stim` package itself, but it's so convenient to compare to cirq.
+
+    # Create test circuit that uses superdense coding to quantify arbitrary Pauli error mixtures.
+    n = gate.num_qubits()
+    qs = cirq.LineQubit.range(n)
+    circuit = cirq.Circuit(
+        cirq.H.on_each(qs),
+        [cirq.CNOT(q, q + n) for q in qs],
+        gate(*qs),
+        [cirq.CNOT(q, q + n) for q in qs],
+        cirq.H.on_each(qs),
+    )
+    expected_rates = cirq.final_density_matrix(circuit).diagonal().real
+
+    # Convert test circuit to Stim and sample from it.
+    stim_circuit, _ = cirq_circuit_to_stim_data(circuit + cirq.measure(*sorted(circuit.all_qubits())[::-1]))
+    sample_count = 10000
+    samples = []
+    for _ in range(sample_count):
+        sim = stim.TableauSimulator()
+        sim.do(stim_circuit)
+        s = 0
+        for k, v in enumerate(sim.current_measurement_record()):
+            s |= v << k
+        samples.append(s)
+
     unique, counts = np.unique(samples, return_counts=True)
 
     # Compare sample rates to expected rates.
