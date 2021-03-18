@@ -15,11 +15,10 @@
 #include "error_fuser.h"
 
 #include <gtest/gtest.h>
+#include <regex>
 
 #include "../test_util.test.h"
 #include "frame_simulator.h"
-
-#define ASSERT_APPROX_EQ(c1, c2, atol) ASSERT_TRUE(c1.approx_equals(c2, atol)) << c1
 
 std::string convert(const char *text) {
     FILE *f = tmpfile();
@@ -34,6 +33,13 @@ std::string convert(const char *text) {
         s.push_back(c);
     }
     return s;
+}
+
+bool matches(std::string actual, std::string pattern) {
+    // Hackily work around C++ regex not supporting multiline matching.
+    std::replace(actual.begin(), actual.end(), '\n', 'X');
+    std::replace(pattern.begin(), pattern.end(), '\n', 'X');
+    return std::regex_match(actual, std::regex("^" + pattern + "$"));
 }
 
 TEST(ErrorFuser, convert_circuit) {
@@ -63,14 +69,14 @@ TEST(ErrorFuser, convert_circuit) {
     )circuit"),
         R"graph()graph");
 
-    ASSERT_EQ(
+    ASSERT_TRUE(matches(
         convert(R"circuit(
         DEPOLARIZE1(0.25) 3
         M 3
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.1666666666666666574) D0
-)graph");
+        R"graph(error\(0.1666666\d+\) D0
+)graph"));
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -96,7 +102,7 @@ error(0.25) D0
 error(0.25) D0
 )graph");
 
-    ASSERT_EQ(
+    ASSERT_TRUE(matches(
         convert(R"circuit(
         DEPOLARIZE2(0.25) 3 5
         M 3
@@ -104,12 +110,12 @@ error(0.25) D0
         DETECTOR rec[-1]
         DETECTOR rec[-2]
     )circuit"),
-        R"graph(error(0.07182558071116235121) D0
-error(0.07182558071116235121) D0 D1
-error(0.07182558071116235121) D1
-)graph");
+        R"graph(error\(0.07182558\d+\) D0
+error\(0.07182558\d+\) D0 D1
+error\(0.07182558\d+\) D1
+)graph"));
 
-    ASSERT_EQ(
+    ASSERT_TRUE(matches(
         convert(R"circuit(
         H 0 1
         CNOT 0 2 1 3
@@ -122,22 +128,22 @@ error(0.07182558071116235121) D1
         DETECTOR rec[-3]
         DETECTOR rec[-4]
     )circuit"),
-        R"graph(error(0.01901372644820353841) D0
-error(0.01901372644820353841) D0 D1
-error(0.01901372644820353841) D0 D1 D2
-error(0.01901372644820353841) D0 D1 D2 D3
-error(0.01901372644820353841) D0 D1 D3
-error(0.01901372644820353841) D0 D2
-error(0.01901372644820353841) D0 D2 D3
-error(0.01901372644820353841) D0 D3
-error(0.01901372644820353841) D1
-error(0.01901372644820353841) D1 D2
-error(0.01901372644820353841) D1 D2 D3
-error(0.01901372644820353841) D1 D3
-error(0.01901372644820353841) D2
-error(0.01901372644820353841) D2 D3
-error(0.01901372644820353841) D3
-)graph");
+        R"graph(error\(0.019013\d+\) D0
+error\(0.019013\d+\) D0 D1
+error\(0.019013\d+\) D0 D1 D2
+error\(0.019013\d+\) D0 D1 D2 D3
+error\(0.019013\d+\) D0 D1 D3
+error\(0.019013\d+\) D0 D2
+error\(0.019013\d+\) D0 D2 D3
+error\(0.019013\d+\) D0 D3
+error\(0.019013\d+\) D1
+error\(0.019013\d+\) D1 D2
+error\(0.019013\d+\) D1 D2 D3
+error\(0.019013\d+\) D1 D3
+error\(0.019013\d+\) D2
+error\(0.019013\d+\) D2 D3
+error\(0.019013\d+\) D3
+)graph"));
 }
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
