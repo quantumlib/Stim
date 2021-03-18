@@ -107,7 +107,7 @@ jobs:
       - run: pip install -e .
       - run: pip install pytest
       - run: pytest src
-      - run: python -c "import stim; import doctest; doctest.testmod(stim)"
+      - run: python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
   test_stimcirq:
     runs-on: ubuntu-16.04
     steps:
@@ -120,4 +120,4 @@ jobs:
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
-      - run: python -c "import cirq; import stimcirq; import doctest; doctest.testmod(stimcirq)"
+      - run: python -c "import cirq; import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"

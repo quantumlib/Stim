@@ -206,12 +206,10 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c *= 3
                 >>> print(c)
-                X 0
-                Y 1 2
-                X 0
-                Y 1 2
-                X 0
-                Y 1 2
+                REPEAT 3 {
+                    X 0
+                    Y 1 2
+                }
          )DOC")
         .def("__mul__", &Circuit::operator*, pybind11::arg("repetitions"), R"DOC(
             Creates a circuit by repeating a circuit multiple times.
@@ -223,12 +221,10 @@ void pybind_circuit(pybind11::module &m) {
                 ...    Y 1 2
                 ... ''')
                 >>> print(c * 3)
-                X 0
-                Y 1 2
-                X 0
-                Y 1 2
-                X 0
-                Y 1 2
+                REPEAT 3 {
+                    X 0
+                    Y 1 2
+                }
          )DOC")
         .def(
             "__rmul__", &Circuit::operator*, pybind11::arg("repetitions"),
