@@ -442,6 +442,40 @@ TEST(circuit, count_detectors_and_observables) {
     )CIRCUIT")
             .count_detectors_and_observables(),
         1000000000000ULL);
+
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1
+        REPEAT 999999 {
+         REPEAT 999999 {
+          REPEAT 999999 {
+           REPEAT 999999 {
+            REPEAT 999999 {
+             REPEAT 999999 {
+              REPEAT 999999 {
+               REPEAT 999999 {
+                REPEAT 999999 {
+                 REPEAT 999999 {
+                  REPEAT 999999 {
+                   REPEAT 999999 {
+                    REPEAT 999999 {
+                        DETECTOR rec[-1]
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+    )CIRCUIT")
+            .count_detectors_and_observables(),
+        UINT64_MAX);
 }
 
 TEST(circuit, max_lookback) {
@@ -517,6 +551,30 @@ TEST(circuit, count_measurements) {
     )CIRCUIT")
             .count_measurements(),
         999999ULL * 999999ULL * 999999ULL);
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        REPEAT 999999 {
+         REPEAT 999999 {
+          REPEAT 999999 {
+           REPEAT 999999 {
+            REPEAT 999999 {
+             REPEAT 999999 {
+              REPEAT 999999 {
+               REPEAT 999999 {
+                REPEAT 999999 {
+                    M 0
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+    )CIRCUIT")
+            .count_measurements(),
+        UINT64_MAX);
 }
 
 TEST(circuit, preserves_repetition_blocks) {

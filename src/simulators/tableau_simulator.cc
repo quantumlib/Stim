@@ -316,7 +316,7 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
 
 void TableauSimulator::X_ERROR(const OperationData &target_data) {
     RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
-        inv_state.xs.signs[q] ^= true;
+        inv_state.zs.signs[q] ^= true;
     });
 }
 
@@ -329,7 +329,7 @@ void TableauSimulator::Y_ERROR(const OperationData &target_data) {
 
 void TableauSimulator::Z_ERROR(const OperationData &target_data) {
     RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
-        inv_state.zs.signs[q] ^= true;
+        inv_state.xs.signs[q] ^= true;
     });
 }
 

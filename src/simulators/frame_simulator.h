@@ -17,8 +17,6 @@
 #ifndef SIM_FRAME_H
 #define SIM_FRAME_H
 
-#define SWITCH_TO_STREAMING_MEASUREMENT_THRESHOLD 100000000
-
 #include <random>
 
 #include "../circuit/circuit.h"
@@ -89,6 +87,12 @@ struct FrameSimulator {
     simd_bits_range_ref measurement_record_ref(uint32_t encoded_target);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
+};
+
+bool should_use_streaming_instead_of_memory(uint64_t result_count);
+struct DebugForceResultStreamingRaii {
+    DebugForceResultStreamingRaii();
+    ~DebugForceResultStreamingRaii();
 };
 
 #endif
