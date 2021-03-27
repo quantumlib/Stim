@@ -324,6 +324,10 @@ void pybind_tableau(pybind11::module &m) {
 
                 Examples:
                     >>> import stim
+                    >>> h = stim.Tableau.from_named_gate("H")
+                    >>> h.x_output(0)
+                    stim.PauliString("+Z")
+
                     >>> cnot = stim.Tableau.from_named_gate("CNOT")
                     >>> cnot.x_output(0)
                     stim.PauliString("+XX")
@@ -348,6 +352,10 @@ void pybind_tableau(pybind11::module &m) {
 
                 Examples:
                     >>> import stim
+                    >>> h = stim.Tableau.from_named_gate("H")
+                    >>> h.z_output(0)
+                    stim.PauliString("+X")
+
                     >>> cnot = stim.Tableau.from_named_gate("CNOT")
                     >>> cnot.z_output(0)
                     stim.PauliString("+Z_")
