@@ -38,7 +38,7 @@ jobs:
         env:
           CIBW_SKIP: "cp27-* pp27-* cp35-*"  # skip Python 2.7 and 3.5 wheels
           CIBW_TEST_REQUIRES: stimcirq pytest
-          CIBW_TEST_COMMAND: ls && cd stim && pytest src glue/cirq
+          CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
       - uses: actions/upload-artifact@v2
         with:
           path: ./wheelhouse/*.whl
