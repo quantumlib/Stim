@@ -108,6 +108,31 @@ void TableauSimulator::SQRT_Z_DAG(const OperationData &target_data) {
     }
 }
 
+PauliString TableauSimulator::peek_bloch(uint32_t target) const {
+    PauliStringRef x = inv_state.xs[target];
+    PauliStringRef z = inv_state.zs[target];
+
+    PauliString result(1);
+    if (!x.xs.not_zero()) {
+        result.sign = x.sign;
+        result.xs[0] = true;
+    } else if (!z.xs.not_zero()) {
+        result.sign = z.sign;
+        result.zs[0] = true;
+    } else if (x.xs == z.xs) {
+        PauliString copy = x;
+        uint8_t log_i = 1;
+        log_i += copy.ref().inplace_right_mul_returning_log_i_scalar(z);
+        assert((log_i & 1) == 0);
+        copy.sign ^= (log_i & 2) != 0;
+        result.sign = copy.sign;
+        result.xs[0] = true;
+        result.zs[0] = true;
+    }
+
+    return result;
+}
+
 void TableauSimulator::SQRT_X(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {

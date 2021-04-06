@@ -479,6 +479,48 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     *targets: The indices of the qubits to reset.
             )DOC")
         .def(
+            "peek_bloch",
+            [](TableauSimulator &self, size_t target) {
+                self.ensure_large_enough_for_qubits(target + 1);
+                return self.peek_bloch(target);
+            },
+            pybind11::arg("target"),
+            R"DOC(
+                Returns the current bloch vector of the qubit, represented as a stim.PauliString.
+
+                This is a non-physical operation. It reports information about the qubit without disturbing it.
+
+                Args:
+                    target: The qubit to peek at.
+
+                Returns:
+                    stim.PauliString("I"): The qubit is entangled. Its bloch vector is x=y=z=0.
+                    stim.PauliString("+Z"): The qubit is in the |0> state. Its bloch vector is z=+1, x=y=0.
+                    stim.PauliString("-Z"): The qubit is in the |1> state. Its bloch vector is z=-1, x=y=0.
+                    stim.PauliString("+Y"): The qubit is in the |i> state. Its bloch vector is y=+1, x=z=0.
+                    stim.PauliString("-Y"): The qubit is in the |-i> state. Its bloch vector is y=-1, x=z=0.
+                    stim.PauliString("+X"): The qubit is in the |+> state. Its bloch vector is x=+1, y=z=0.
+                    stim.PauliString("-X"): The qubit is in the |-> state. Its bloch vector is x=-1, y=z=0.
+
+                Examples:
+                    >>> import stim
+                    >>> s = stim.TableauSimulator()
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("+Z")
+                    >>> s.x(0)
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("-Z")
+                    >>> s.h(0)
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("-X")
+                    >>> s.sqrt_x(1)
+                    >>> s.peek_bloch(1)
+                    stim.PauliString("-Y")
+                    >>> s.cz(0, 1)
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("+_")
+            )DOC")
+        .def(
             "measure",
             [](TableauSimulator &self, uint32_t target) {
                 self.ensure_large_enough_for_qubits(target + 1);

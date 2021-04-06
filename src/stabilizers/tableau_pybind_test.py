@@ -58,6 +58,34 @@ def test_identity():
     assert t.z_output(0) == stim.PauliString("Z__")
     assert t.z_output(1) == stim.PauliString("_Z_")
     assert t.z_output(2) == stim.PauliString("__Z")
+    assert t.y_output(0) == stim.PauliString("Y__")
+    assert t.y_output(1) == stim.PauliString("_Y_")
+    assert t.y_output(2) == stim.PauliString("__Y")
+
+
+def test_pauli_output():
+    h = stim.Tableau.from_named_gate("H")
+    assert h.x_output(0) == stim.PauliString("Z")
+    assert h.y_output(0) == stim.PauliString("-Y")
+    assert h.z_output(0) == stim.PauliString("X")
+
+    s = stim.Tableau.from_named_gate("S")
+    assert s.x_output(0) == stim.PauliString("Y")
+    assert s.y_output(0) == stim.PauliString("-X")
+    assert s.z_output(0) == stim.PauliString("Z")
+
+    s_dag = stim.Tableau.from_named_gate("S_DAG")
+    assert s_dag.x_output(0) == stim.PauliString("-Y")
+    assert s_dag.y_output(0) == stim.PauliString("X")
+    assert s_dag.z_output(0) == stim.PauliString("Z")
+
+    cz = stim.Tableau.from_named_gate("CZ")
+    assert cz.x_output(0) == stim.PauliString("XZ")
+    assert cz.y_output(0) == stim.PauliString("YZ")
+    assert cz.z_output(0) == stim.PauliString("Z_")
+    assert cz.x_output(1) == stim.PauliString("ZX")
+    assert cz.y_output(1) == stim.PauliString("ZY")
+    assert cz.z_output(1) == stim.PauliString("_Z")
 
 
 def test_random():

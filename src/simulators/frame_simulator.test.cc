@@ -781,7 +781,6 @@ TEST(FrameSimulator, block_results_single_shot) {
     FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_all(tmp);
-    std::cerr << result;
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);

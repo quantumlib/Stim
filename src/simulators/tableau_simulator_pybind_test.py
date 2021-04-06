@@ -107,3 +107,17 @@ def test_do():
         S 0
     """))
     assert s.current_inverse_tableau() == stim.Tableau.from_named_gate("S_DAG")
+
+
+def test_peek_bloch():
+    s = stim.TableauSimulator()
+    assert s.peek_bloch(0) == stim.PauliString("+Z")
+    s.x(0)
+    assert s.peek_bloch(0) == stim.PauliString("-Z")
+    s.h(0)
+    assert s.peek_bloch(0) == stim.PauliString("-X")
+    s.sqrt_x(1)
+    assert s.peek_bloch(1) == stim.PauliString("-Y")
+    s.cz(0, 1)
+    assert s.peek_bloch(0) == stim.PauliString("+I")
+    assert s.peek_bloch(1) == stim.PauliString("+I")

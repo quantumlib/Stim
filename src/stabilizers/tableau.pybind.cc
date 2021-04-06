@@ -335,6 +335,40 @@ void pybind_tableau(pybind11::module &m) {
                     stim.PauliString("+_X")
             )DOC")
         .def(
+            "y_output",
+            [](Tableau &self, size_t target) {
+                if (target >= self.num_qubits) {
+                    throw std::invalid_argument("target >= len(tableau)");
+                }
+
+                // Compute Y using Y = i*X*Z.
+                uint8_t log_i = 1;
+                PauliString copy = self.xs[target];
+                log_i += copy.ref().inplace_right_mul_returning_log_i_scalar(self.zs[target]);
+                assert((log_i & 1) == 0);
+                copy.sign ^= (log_i & 2) != 0;
+                return copy;
+            },
+            pybind11::arg("target"),
+            R"DOC(
+                Returns the result of conjugating a Pauli Y by the tableau's Clifford operation.
+
+                Args:
+                    target: The qubit targeted by the Pauli Y operation.
+
+                Examples:
+                    >>> import stim
+                    >>> h = stim.Tableau.from_named_gate("H")
+                    >>> h.y_output(0)
+                    stim.PauliString("-Y")
+
+                    >>> cnot = stim.Tableau.from_named_gate("CNOT")
+                    >>> cnot.y_output(0)
+                    stim.PauliString("+YX")
+                    >>> cnot.y_output(1)
+                    stim.PauliString("+ZY")
+            )DOC")
+        .def(
             "z_output",
             [](Tableau &self, size_t target) {
                 if (target >= self.num_qubits) {
