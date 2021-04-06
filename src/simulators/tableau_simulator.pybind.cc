@@ -481,6 +481,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         .def(
             "measure",
             [](TableauSimulator &self, uint32_t target) {
+                self.ensure_large_enough_for_qubits(target + 1);
                 self.measure(TempViewableData({target}));
                 return (bool)self.measurement_record.storage.back();
             },
