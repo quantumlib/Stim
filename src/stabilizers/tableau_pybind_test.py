@@ -270,6 +270,9 @@ def test_repr():
 def test_call():
     t = stim.Tableau.from_named_gate("CNOT")
     assert t(stim.PauliString("__")) == stim.PauliString("__")
+    assert t(stim.PauliString("-__")) == stim.PauliString("-__")
+    assert t(stim.PauliString("i__")) == stim.PauliString("i__")
+    assert t(stim.PauliString("-i__")) == stim.PauliString("-i__")
     assert t(stim.PauliString("X_")) == stim.PauliString("XX")
     assert t(stim.PauliString("Y_")) == stim.PauliString("YX")
     assert t(stim.PauliString("Z_")) == stim.PauliString("Z_")

@@ -14,6 +14,7 @@
 
 #include "tableau.pybind.h"
 
+#include "pauli_string.pybind.h"
 #include "../py/base.pybind.h"
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/pauli_string.h"
@@ -312,8 +313,7 @@ void pybind_tableau(pybind11::module &m) {
                 if (target >= self.num_qubits) {
                     throw std::invalid_argument("target >= len(tableau)");
                 }
-                PauliString copy = self.xs[target];
-                return copy;
+                return PyPauliString(self.xs[target]);
             },
             pybind11::arg("target"),
             R"DOC(
@@ -347,7 +347,7 @@ void pybind_tableau(pybind11::module &m) {
                 log_i += copy.ref().inplace_right_mul_returning_log_i_scalar(self.zs[target]);
                 assert((log_i & 1) == 0);
                 copy.sign ^= (log_i & 2) != 0;
-                return copy;
+                return PyPauliString(std::move(copy));
             },
             pybind11::arg("target"),
             R"DOC(
@@ -374,8 +374,7 @@ void pybind_tableau(pybind11::module &m) {
                 if (target >= self.num_qubits) {
                     throw std::invalid_argument("target >= len(tableau)");
                 }
-                PauliString copy = self.zs[target];
-                return copy;
+                return PyPauliString(self.zs[target]);
             },
             pybind11::arg("target"),
             R"DOC(
@@ -398,25 +397,31 @@ void pybind_tableau(pybind11::module &m) {
             )DOC")
         .def_static(
             "from_conjugated_generators",
-            [](const std::vector<PauliString> &xs, const std::vector<PauliString> &zs) {
+            [](const std::vector<PyPauliString> &xs, const std::vector<PyPauliString> &zs) {
                 size_t n = xs.size();
                 if (n != zs.size()) {
                     throw std::invalid_argument("len(xs) != len(zs)");
                 }
                 for (const auto &p : xs) {
-                    if (p.num_qubits != n) {
+                    if (p.imag) {
+                        throw std::invalid_argument("Conjugated generator can't have imaginary sign.");
+                    }
+                    if (p.value.num_qubits != n) {
                         throw std::invalid_argument("not all(len(p) == len(xs) for p in xs)");
                     }
                 }
                 for (const auto &p : zs) {
-                    if (p.num_qubits != n) {
+                    if (p.imag) {
+                        throw std::invalid_argument("Conjugated generator can't have imaginary sign.");
+                    }
+                    if (p.value.num_qubits != n) {
                         throw std::invalid_argument("not all(len(p) == len(zs) for p in zs)");
                     }
                 }
                 Tableau result(n);
                 for (size_t q = 0; q < n; q++) {
-                    result.xs[q] = xs[q];
-                    result.zs[q] = zs[q];
+                    result.xs[q] = xs[q].value;
+                    result.zs[q] = zs[q].value;
                 }
                 if (!result.satisfies_invariants()) {
                     throw std::invalid_argument(
@@ -477,8 +482,12 @@ void pybind_tableau(pybind11::module &m) {
             })
         .def(
             "__call__",
-            [](const Tableau &self, const PauliString &pauli_string) {
-                return self(pauli_string);
+            [](const Tableau &self, const PyPauliString &pauli_string) {
+                PyPauliString result{self(pauli_string.value)};
+                if (pauli_string.imag) {
+                    result *= std::complex<float>(0, 1);
+                }
+                return result;
             },
             pybind11::arg("pauli_string"),
             R"DOC(
