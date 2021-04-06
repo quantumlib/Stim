@@ -116,6 +116,7 @@ struct TableauSimulator {
     void Z_ERROR(const OperationData &target_data);
     void CORRELATED_ERROR(const OperationData &target_data);
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
+    PauliString peek_bloch(uint32_t target) const;
 
    private:
     bool read_measurement_record(uint32_t encoded_target) const;

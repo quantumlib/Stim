@@ -712,3 +712,61 @@ TEST(TableauSimulator, mr_repeated_target) {
     auto r = TableauSimulator::sample_circuit(Circuit::from_text("X 0\nMR 0 0"), SHARED_TEST_RNG());
     ASSERT_EQ(r, expected);
 }
+
+TEST(TableauSimulator, peek_bloch) {
+    TableauSimulator sim(3, SHARED_TEST_RNG());
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
+
+    sim.H_XZ(OpDat(0));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
+
+    sim.X(OpDat(1));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
+
+    sim.H_YZ(OpDat(2));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Y"));
+
+    sim.X(OpDat(0));
+    sim.X(OpDat(1));
+    sim.X(OpDat(2));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("-Y"));
+
+    sim.Y(OpDat(0));
+    sim.Y(OpDat(1));
+    sim.Y(OpDat(2));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("-Y"));
+
+    sim.ZCZ(OpDat({0, 1}));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("-Y"));
+
+    sim.ZCZ(OpDat({1, 2}));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Y"));
+
+    sim.ZCZ(OpDat({0, 2}));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+I"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+I"));
+
+    sim.X(OpDat(0));
+    sim.X(OpDat(1));
+    sim.X(OpDat(2));
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+I"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+I"));
+}
