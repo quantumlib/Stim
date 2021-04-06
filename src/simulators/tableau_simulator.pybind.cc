@@ -505,16 +505,20 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 Examples:
                     >>> import stim
                     >>> s = stim.TableauSimulator()
-                    >>> assert s.peek_bloch(0) == stim.PauliString("+Z")
-                    s.x(0)
-                    >>> assert s.peek_bloch(0) == stim.PauliString("-Z")
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("+Z")
+                    >>> s.x(0)
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("-Z")
                     >>> s.h(0)
-                    >>> assert s.peek_bloch(0) == stim.PauliString("-X")
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("-X")
                     >>> s.sqrt_x(1)
-                    >>> assert s.peek_bloch(1) == stim.PauliString("-Y")
+                    >>> s.peek_bloch(1)
+                    stim.PauliString("-Y")
                     >>> s.cz(0, 1)
-                    >>> assert s.peek_bloch(0) == stim.PauliString("+I")
-                    >>> assert s.peek_bloch(1) == stim.PauliString("+I")
+                    >>> s.peek_bloch(0)
+                    stim.PauliString("+I")
             )DOC")
         .def(
             "measure",
