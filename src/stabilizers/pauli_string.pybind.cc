@@ -103,8 +103,8 @@ void pybind_pauli_string(pybind11::module &m) {
 
     pybind11::class_<PauliString>(
         m, "PauliString",
-        R"DOC(
-            A signed Pauli product (e.g. "+X ⊗ X ⊗ X" or "-Y ⊗ Z".
+        u8R"DOC(
+            A signed Pauli product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
             Represents a collection of Pauli operations (I, X, Y, Z) applied pairwise to a collection of qubits.
 
