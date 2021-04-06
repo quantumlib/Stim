@@ -518,7 +518,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     stim.PauliString("-Y")
                     >>> s.cz(0, 1)
                     >>> s.peek_bloch(0)
-                    stim.PauliString("+I")
+                    stim.PauliString("+_")
             )DOC")
         .def(
             "measure",
