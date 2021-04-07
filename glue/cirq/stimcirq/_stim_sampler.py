@@ -45,6 +45,96 @@ class StimSampler(cirq.Sampler):
 
 
 def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
+    """Converts a cirq circuit into an equivalent stim circuit.
+
+    Qubits are indexed in sorted order.
+
+    Not all circuits can be converted. In order for a circuit to be convertable,
+    all of its operations must be convertable.
+
+    An operation is convertable if:
+        - It is a stabilizer gate or probabilistic Pauli gate from cirq
+            - cirq.H
+            - cirq.S
+            - cirq.X
+            - cirq.X**0.5
+            - cirq.CNOT
+            - cirq.ResetChannel()
+            - cirq.X.with_probability(p)
+            - cirq.DepolarizingChannel(p, n_qubits=1 or 2)
+            - etc
+        - Or it has a _decompose_ method that yields convertable operations.
+        - Or it has a correctly implemented _stim_conversion_ method.
+
+    Returns:
+        The converted circuit.
+
+    Examples:
+        >>> import stimcirq
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> assert False
+        >>> a = cirq.NamedQubit("one")
+        >>> b = cirq.NamedQubit("two")
+        >>> stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(
+        ...     cirq.H(a),
+        ...     cirq.CNOT(a, b),
+        ...     cirq.X(a).with_probability(0.25),
+        ...     cirq.DepolarizingChannel(0.125, n_qubits=2).on(b, a),
+        ...     cirq.measure(a, b),
+        ... ))
+        stim.Circuit('''
+        H 0
+        CX 0 1
+        X_ERROR(0.25) 0
+        DEPOLARIZE2(0.125) 1 0
+        M 0 1
+        ''')
+
+    Here is an example of a _stim_conversion_ method:
+
+        def _stim_conversion_(
+                self,
+
+                # The stim circuit being built. Add onto it.
+                edit_circuit: stim.Circuit,
+
+                # Metadata about measurement groupings needed by stimcirq.StimSampler.
+                # If your gate contains a measurement, it has to append how many qubits
+                # that measurement measures (and its key) into this list.
+                edit_measurement_key_lengths: List[Tuple[str, int]],
+
+                # The indices of qubits the gate should target.
+                targets: List[int],
+
+                # Forward compatibility with future arguments.
+                **kwargs):
+
+            edit_circuit.append_operation("H", targets)
+    """
     return cirq_circuit_to_stim_data(circuit)[0]
 
 
@@ -105,7 +195,7 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
     return {
         cirq.ResetChannel(): use("R"),
         # Identities.
-        cirq.I: do_nothing,
+        cirq.I: use("I"),
         cirq.H ** 0: do_nothing,
         cirq.X ** 0: do_nothing,
         cirq.Y ** 0: do_nothing,

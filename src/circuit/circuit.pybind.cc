@@ -168,6 +168,67 @@ void pybind_circuit(pybind11::module &m) {
                 Y 1 2
                 M 0 1 2
          )DOC")
+        .def("flattened_operations",
+            [](Circuit &self){
+                pybind11::list result;
+                self.for_each_operation([&](const Operation &op){
+                    pybind11::list targets;
+                    for (auto t : op.target_data.targets) {
+                        auto v = t & TARGET_VALUE_MASK;
+                        if (t & TARGET_INVERTED_BIT) {
+                            targets.append(pybind11::make_tuple("inv", v));
+                        } else if (t & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
+                            if (!(t & TARGET_PAULI_Z_BIT)) {
+                                targets.append(pybind11::make_tuple("X", v));
+                            } else if (!(t & TARGET_PAULI_X_BIT)) {
+                                targets.append(pybind11::make_tuple("Z", v));
+                            } else {
+                                targets.append(pybind11::make_tuple("Y", v));
+                            }
+                        } else if (t & TARGET_RECORD_BIT) {
+                            targets.append(pybind11::make_tuple("rec", -(long long)v));
+                        } else {
+                            targets.append(pybind11::int_(v));
+                        }
+                    }
+                    result.append(pybind11::make_tuple(op.gate->name, targets, op.target_data.arg));
+                });
+                return result;
+            },
+            R"DOC(
+                Flattens the circuit's operations into a list.
+
+                The operations within repeat blocks are actually repeated in the output.
+
+                Returns:
+                    A List[Tuple[name, targets, arg]] of the operations in the circuit.
+                        name: A string with the gate's name.
+                        targets: A list of things acted on by the gate. Each thing can be:
+                            int: The index of a qubit.
+                            Tuple["inv", int]: The index of a qubit to measure with an inverted result.
+                            Tuple["rec", int]: A measurement record target like `rec[-1]`.
+                            Tuple["X", int]: A Pauli X operation to apply during a correlated error.
+                            Tuple["Y", int]: A Pauli Y operation to apply during a correlated error.
+                            Tuple["Z", int]: A Pauli Z operation to apply during a correlated error.
+                        arg: The gate's numeric argument. For most gates this is just 0. For noisy
+                            gates this is the probability of the noise being applied.
+
+                Examples:
+                    >>> import stim
+                    >>> stim.Circuit('''
+                    ...    H 0
+                    ...    X_ERROR(0.125) 1
+                    ...    M 0 !1
+                    ... ''').flattened_operations()
+                    [('H', [0], 0.0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0.0)]
+
+                    >>> stim.Circuit('''
+                    ...    REPEAT 2 {
+                    ...        H 6
+                    ...    }
+                    ... ''').flattened_operations()
+                    [('H', [6], 0.0), ('H', [6], 0.0)]
+            )DOC")
         .def(
             "__eq__",
             [](const Circuit &self, const Circuit &other) {

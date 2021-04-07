@@ -248,3 +248,33 @@ DETECTOR rec[-1]
 
     # Check that expression can be evaluated.
     _ = eval(r, {"stim": stim})
+
+
+def test_circuit_flattened_operations():
+    for e in stim.Circuit('''
+        H 0
+        REPEAT 3 {
+            X_ERROR(0.125) 1
+        }
+        CORRELATED_ERROR(0.25) X3 Y4 Z5
+        M 0 !1
+        DETECTOR rec[-1]
+    ''').flattened_operations():
+        print(e)
+    assert stim.Circuit('''
+        H 0
+        REPEAT 3 {
+            X_ERROR(0.125) 1
+        }
+        CORRELATED_ERROR(0.25) X3 Y4 Z5
+        M 0 !1
+        DETECTOR rec[-1]
+    ''').flattened_operations() == [
+        ("H", [0], 0),
+        ("X_ERROR", [1], 0.125),
+        ("X_ERROR", [1], 0.125),
+        ("X_ERROR", [1], 0.125),
+        ("E", [("X", 3), ("Y", 4), ("Z", 5)], 0.25),
+        ("M", [0, ("inv", 1)], 0),
+        ("DETECTOR", [("rec", -1)], 0),
+    ]

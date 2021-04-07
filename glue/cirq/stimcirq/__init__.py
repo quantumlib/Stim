@@ -1,1 +1,2 @@
 from ._stim_sampler import StimSampler, cirq_circuit_to_stim_circuit
+from ._circuit_conversion import stim_circuit_to_cirq_circuit
