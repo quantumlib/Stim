@@ -159,6 +159,24 @@ def test_from_conjugated_generators():
         ],
     )
 
+    assert stim.Tableau.from_named_gate("S") == stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("Y"),
+        ],
+        zs=[
+            stim.PauliString("Z"),
+        ],
+    )
+
+    assert stim.Tableau.from_named_gate("S_DAG") == stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("-Y"),
+        ],
+        zs=[
+            stim.PauliString("Z"),
+        ],
+    )
+
     assert stim.Tableau(2) == stim.Tableau.from_conjugated_generators(
         xs=[
             stim.PauliString("X_"),
@@ -179,6 +197,29 @@ def test_from_conjugated_generators():
             zs=[
                 stim.PauliString("Z_"),
                 stim.PauliString("_Z_"),
+            ],
+        )
+
+    with pytest.raises(ValueError, match="imag"):
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("iX_"),
+                stim.PauliString("_X"),
+            ],
+            zs=[
+                stim.PauliString("Z_"),
+                stim.PauliString("_Z"),
+            ],
+        )
+    with pytest.raises(ValueError, match="imag"):
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("X_"),
+                stim.PauliString("_X"),
+            ],
+            zs=[
+                stim.PauliString("Z_"),
+                stim.PauliString("i_Z"),
             ],
         )
 
