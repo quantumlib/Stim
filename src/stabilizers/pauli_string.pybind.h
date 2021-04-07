@@ -15,7 +15,25 @@
 #ifndef PAULI_STRING_PYBIND_H
 #define PAULI_STRING_PYBIND_H
 
+#include <complex>
 #include <pybind11/pybind11.h>
+
+#include "pauli_string.h"
+
+struct PyPauliString {
+    PauliString value;
+    bool imag;
+
+    PyPauliString(const PauliStringRef val, bool imag = false);
+    PyPauliString(PauliString&& val, bool imag = false);
+
+    std::complex<float> get_phase() const;
+    PyPauliString operator*(std::complex<float> scale) const;
+    PyPauliString &operator*=(std::complex<float> scale);
+    PyPauliString operator*(const PyPauliString &rhs) const;
+    PyPauliString &operator*=(const PyPauliString &rhs);
+    std::string str() const;
+};
 
 void pybind_pauli_string(pybind11::module &m);
 

@@ -82,11 +82,13 @@ OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
 
 def test_circuit_iadd():
     c = stim.Circuit()
+    alias = c
     c.append_operation("X", [1, 2])
     c2 = stim.Circuit()
     c2.append_operation("Y", [3])
     c2.append_operation("M", [4])
     c += c2
+    assert c is alias
     assert str(c).strip() == """
 X 1 2
 Y 3
@@ -102,6 +104,7 @@ X 1 2
 Y 3
 M 4
     """.strip()
+    assert c is alias
 
 
 def test_circuit_add():
@@ -147,12 +150,16 @@ REPEAT 3 {
 }
     """.strip()
     assert str(c * 3) == str(3 * c) == expected
+    alias = c
     c *= 3
+    assert alias is c
     assert str(c) == expected
     c *= 1
     assert str(c) == expected
+    assert alias is c
     c *= 0
     assert str(c) == ""
+    assert alias is c
 
 
 def test_circuit_repr():

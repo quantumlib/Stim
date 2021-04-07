@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "../simulators/tableau_simulator.h"
+#include "tableau_simulator.pybind.h"
 
+#include "../simulators/tableau_simulator.h"
+#include "../stabilizers/pauli_string.pybind.h"
 #include "../py/base.pybind.h"
 #include "../stabilizers/tableau.h"
-#include "tableau_simulator.pybind.h"
 
 struct TempViewableData {
     std::vector<uint32_t> targets;
@@ -482,7 +483,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
             "peek_bloch",
             [](TableauSimulator &self, size_t target) {
                 self.ensure_large_enough_for_qubits(target + 1);
-                return self.peek_bloch(target);
+                return PyPauliString(self.peek_bloch(target));
             },
             pybind11::arg("target"),
             R"DOC(
