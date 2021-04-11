@@ -71,32 +71,6 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
 
     Examples:
         >>> import cirq, stimcirq
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
-        >>> assert False
         >>> a = cirq.NamedQubit("one")
         >>> b = cirq.NamedQubit("two")
         >>> stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(
