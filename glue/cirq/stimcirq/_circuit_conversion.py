@@ -114,15 +114,15 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
 
         >>> import stimcirq
         >>> import stim
-        >>> stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit('''
+        >>> print(stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit('''
         ...     H 0
         ...     CNOT 0 1
         ...     X_ERROR(0.25) 0
         ...     M !1 0
-        ... ''')).to_text_diagram(use_unicode_characters=False)
-        0: ---H---@---X[prob=0.25]---M('1')---
-                  |
-        1: -------X---!M('0')-----------------
+        ... ''')))
+        0: ───H───@───X[prob=0.25]───M('1')───
+                  │
+        1: ───────X───!M('0')─────────────────
     """
     _next_measure_id = 0
     def get_next_measure_id() -> int:

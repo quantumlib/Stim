@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import stim
 import pytest
 
@@ -192,6 +191,13 @@ def test_circuit_eq():
     assert stim.Circuit(b) == stim.Circuit(b)
     assert stim.Circuit(a) != stim.Circuit(b)
 
+    assert stim.Circuit() != None
+    assert stim.Circuit != object()
+    assert stim.Circuit != "another type"
+    assert not (stim.Circuit == None)
+    assert not (stim.Circuit == object())
+    assert not (stim.Circuit == "another type")
+
 
 def test_circuit_clear():
     c = stim.Circuit("""
@@ -278,3 +284,10 @@ def test_circuit_flattened_operations():
         ("M", [0, ("inv", 1)], 0),
         ("DETECTOR", [("rec", -1)], 0),
     ]
+
+
+def test_hash():
+    # stim.Circuit is mutable. It must not also be value-hashable.
+    # Defining __hash__ requires defining a FrozenCircuit variant instead.
+    with pytest.raises(TypeError, match="unhashable"):
+        _ = hash(stim.Circuit())

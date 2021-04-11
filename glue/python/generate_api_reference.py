@@ -29,6 +29,7 @@ keep = {
     "__pow__",
     "__repr__",
     "__rmul__",
+    "__hash__",
 }
 skip = {
     "__class__",
@@ -38,7 +39,6 @@ skip = {
     "__file__",
     "__format__",
     "__getattribute__",
-    "__hash__",
     "__init_subclass__",
     "__loader__",
     "__module__",

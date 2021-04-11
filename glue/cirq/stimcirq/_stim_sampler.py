@@ -70,7 +70,7 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
         The converted circuit.
 
     Examples:
-        >>> import stimcirq
+        >>> import cirq, stimcirq
         >>> assert False
         >>> assert False
         >>> assert False

@@ -67,6 +67,13 @@ def test_from_str():
 
 
 def test_equality():
+    assert not (stim.PauliString(4) == None)
+    assert not (stim.PauliString(4) == "other object")
+    assert not (stim.PauliString(4) == object())
+    assert stim.PauliString(4) != None
+    assert stim.PauliString(4) != "other object"
+    assert stim.PauliString(4) != object()
+
     assert stim.PauliString(4) == stim.PauliString(4)
     assert stim.PauliString(3) != stim.PauliString(4)
     assert not (stim.PauliString(4) != stim.PauliString(4))
@@ -287,3 +294,10 @@ def test_get_slice():
     assert p[5:3:-1] == stim.PauliString("__")
     assert p[4:2:-1] == stim.PauliString("_X")
     assert p[2:0:-1] == stim.PauliString("XX")
+
+
+def test_hash():
+    # stim.PauliString is mutable. It must not also be value-hashable.
+    # Defining __hash__ requires defining a FrozenPauliString variant instead.
+    with pytest.raises(TypeError, match="unhashable"):
+        _ = hash(stim.PauliString(1))

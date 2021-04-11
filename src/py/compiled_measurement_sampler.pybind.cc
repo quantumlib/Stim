@@ -68,11 +68,19 @@ std::string CompiledMeasurementSampler::repr() const {
 }
 
 void pybind_compiled_measurement_sampler(pybind11::module &m) {
-    pybind11::class_<CompiledMeasurementSampler>(
-        m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.")
-        .def(pybind11::init<Circuit>())
-        .def(
-            "sample", &CompiledMeasurementSampler::sample, R"DOC(
+    auto &&c = pybind11::class_<CompiledMeasurementSampler>(
+        m,
+        "CompiledMeasurementSampler",
+        "An analyzed stabilizer circuit whose measurements can be sampled quickly."
+    );
+
+    c.def(pybind11::init<Circuit>());
+
+    c.def(
+        "sample",
+        &CompiledMeasurementSampler::sample,
+        pybind11::arg("shots"),
+        clean_doc_string(u8R"DOC(
             Returns a numpy array containing a batch of measurement samples from the circuit.
 
             Examples:
@@ -91,10 +99,14 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
                 The bit for measurement `m` in shot `s` is at `result[s, m]`.
-        )DOC",
-            pybind11::arg("shots"))
-        .def(
-            "sample_bit_packed", &CompiledMeasurementSampler::sample_bit_packed, R"DOC(
+        )DOC").data()
+    );
+
+    c.def(
+        "sample_bit_packed",
+        &CompiledMeasurementSampler::sample_bit_packed,
+        pybind11::arg("shots"),
+        clean_doc_string(u8R"DOC(
             Returns a numpy array containing a bit packed batch of measurement samples from the circuit.
 
             Examples:
@@ -113,7 +125,12 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
                 The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
-        )DOC",
-            pybind11::arg("shots"))
-        .def("__repr__", &CompiledMeasurementSampler::repr);
+        )DOC").data()
+    );
+
+    c.def(
+        "__repr__",
+        &CompiledMeasurementSampler::repr,
+        "Returns an eval-able text description."
+    );
 }

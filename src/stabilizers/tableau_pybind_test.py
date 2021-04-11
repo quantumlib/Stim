@@ -18,6 +18,13 @@ import pytest
 
 
 def test_init_equality():
+    assert stim.Tableau(3) != None
+    assert stim.Tableau(3) != object()
+    assert stim.Tableau(3) != "another type"
+    assert not (stim.Tableau(3) == None)
+    assert not (stim.Tableau(3) == object())
+    assert not (stim.Tableau(3) == "another type")
+
     assert stim.Tableau(3) == stim.Tableau(3)
     assert not (stim.Tableau(3) != stim.Tableau(3))
     assert stim.Tableau(3) != stim.Tableau(4)
@@ -365,3 +372,10 @@ def test_composition():
         _ = stim.Tableau(3) * stim.Tableau(4)
     with pytest.raises(ValueError, match="!= len"):
         _ = stim.Tableau(3).then(stim.Tableau(4))
+
+
+def test_hash():
+    # stim.Tableau is mutable. It must not also be value-hashable.
+    # Defining __hash__ requires defining a FrozenTableau variant instead.
+    with pytest.raises(TypeError, match="unhashable"):
+        _ = hash(stim.Tableau(1))

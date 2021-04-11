@@ -22,5 +22,6 @@
 #include <random>
 
 std::mt19937_64 &PYBIND_SHARED_RNG();
+std::string clean_doc_string(const char *c);
 
 #endif
