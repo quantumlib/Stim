@@ -32,6 +32,8 @@ struct PyPauliString {
     PyPauliString &operator*=(std::complex<float> scale);
     PyPauliString operator*(const PyPauliString &rhs) const;
     PyPauliString &operator*=(const PyPauliString &rhs);
+    bool operator==(const PyPauliString &other) const;
+    bool operator!=(const PyPauliString &other) const;
     std::string str() const;
 };
 

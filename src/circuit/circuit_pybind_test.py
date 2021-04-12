@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import stim
 import pytest
 
@@ -192,6 +191,13 @@ def test_circuit_eq():
     assert stim.Circuit(b) == stim.Circuit(b)
     assert stim.Circuit(a) != stim.Circuit(b)
 
+    assert stim.Circuit() != None
+    assert stim.Circuit != object()
+    assert stim.Circuit != "another type"
+    assert not (stim.Circuit == None)
+    assert not (stim.Circuit == object())
+    assert not (stim.Circuit == "another type")
+
 
 def test_circuit_clear():
     c = stim.Circuit("""
@@ -248,3 +254,40 @@ DETECTOR rec[-1]
 
     # Check that expression can be evaluated.
     _ = eval(r, {"stim": stim})
+
+
+def test_circuit_flattened_operations():
+    for e in stim.Circuit('''
+        H 0
+        REPEAT 3 {
+            X_ERROR(0.125) 1
+        }
+        CORRELATED_ERROR(0.25) X3 Y4 Z5
+        M 0 !1
+        DETECTOR rec[-1]
+    ''').flattened_operations():
+        print(e)
+    assert stim.Circuit('''
+        H 0
+        REPEAT 3 {
+            X_ERROR(0.125) 1
+        }
+        CORRELATED_ERROR(0.25) X3 Y4 Z5
+        M 0 !1
+        DETECTOR rec[-1]
+    ''').flattened_operations() == [
+        ("H", [0], 0),
+        ("X_ERROR", [1], 0.125),
+        ("X_ERROR", [1], 0.125),
+        ("X_ERROR", [1], 0.125),
+        ("E", [("X", 3), ("Y", 4), ("Z", 5)], 0.25),
+        ("M", [0, ("inv", 1)], 0),
+        ("DETECTOR", [("rec", -1)], 0),
+    ]
+
+
+def test_hash():
+    # stim.Circuit is mutable. It must not also be value-hashable.
+    # Defining __hash__ requires defining a FrozenCircuit variant instead.
+    with pytest.raises(TypeError, match="unhashable"):
+        _ = hash(stim.Circuit())

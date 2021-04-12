@@ -76,11 +76,22 @@ std::string CompiledDetectorSampler::repr() const {
 }
 
 void pybind_compiled_detector_sampler(pybind11::module &m) {
-    pybind11::class_<CompiledDetectorSampler>(
-        m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.")
-        .def(pybind11::init<Circuit>())
-        .def(
-            "sample", &CompiledDetectorSampler::sample, R"DOC(
+    auto &&c = pybind11::class_<CompiledDetectorSampler>(
+        m,
+        "CompiledDetectorSampler",
+        "An analyzed stabilizer circuit whose detection events can be sampled quickly."
+    );
+
+    c.def(pybind11::init<Circuit>());
+
+    c.def(
+        "sample",
+        &CompiledDetectorSampler::sample,
+        pybind11::arg("shots"),
+        pybind11::kw_only(),
+        pybind11::arg("prepend_observables") = false,
+        pybind11::arg("append_observables") = false,
+        clean_doc_string(u8R"DOC(
             Returns a numpy array containing a batch of detector samples from the circuit.
 
             The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
@@ -97,11 +108,17 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
                 `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, m]`.
-            )DOC",
-            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
-            pybind11::arg("append_observables") = false)
-        .def(
-            "sample_bit_packed", &CompiledDetectorSampler::sample_bit_packed, R"DOC(
+        )DOC").data()
+    );
+
+    c.def(
+        "sample_bit_packed",
+        &CompiledDetectorSampler::sample_bit_packed,
+        pybind11::arg("shots"),
+        pybind11::kw_only(),
+        pybind11::arg("prepend_observables") = false,
+        pybind11::arg("append_observables") = false,
+        clean_doc_string(u8R"DOC(
             Returns a numpy array containing bit packed batch of detector samples from the circuit.
 
             The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
@@ -118,8 +135,11 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
                 `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
-            )DOC",
-            pybind11::arg("shots"), pybind11::kw_only(), pybind11::arg("prepend_observables") = false,
-            pybind11::arg("append_observables") = false)
-        .def("__repr__", &CompiledDetectorSampler::repr);
+        )DOC").data()
+    );
+
+    c.def(
+        "__repr__",
+        &CompiledDetectorSampler::repr
+    );
 }

@@ -122,7 +122,7 @@ make stim_test
 ```
 
 To force AVX vectorization, SSE vectorization, or no vectorization
-pass `-DSIMD_WIDTH=256` or `-DSIMD_WIDTH=128` or -DSIMD_WIDTH=64` to the `cmake` command.
+pass `-DSIMD_WIDTH=256` or `-DSIMD_WIDTH=128` or `-DSIMD_WIDTH=64` to the `cmake` command.
 
 Run tests with optimizations without sanitization:
 

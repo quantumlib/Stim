@@ -26,3 +26,33 @@ std::mt19937_64 &PYBIND_SHARED_RNG() {
     }
     return shared_rng;
 }
+
+std::string clean_doc_string(const char *c) {
+    // Skip leading empty lines.
+    while (*c == '\n') {
+        c++;
+    }
+
+    // Determine indentation using first non-empty line.
+    size_t indent = 0;
+    while (*c == ' ') {
+        indent++;
+        c++;
+    }
+
+    std::string result;
+    while (*c != '\0') {
+        // Skip indentation.
+        for (size_t j = 0; j < indent && *c == ' '; j++) {
+            c++;
+        }
+
+        // Copy rest of line.
+        do {
+            result.push_back(*c);
+            c++;
+        } while (*c != '\n' && *c != '\0');
+    }
+
+    return result;
+}
