@@ -183,8 +183,8 @@ void Tableau::inplace_scatter_prepend(const Tableau &operation, const std::vecto
     new_x.reserve(operation.num_qubits);
     new_z.reserve(operation.num_qubits);
     for (size_t q = 0; q < operation.num_qubits; q++) {
-        new_x.emplace_back(std::move(scatter_eval(operation.xs[q], target_qubits)));
-        new_z.emplace_back(std::move(scatter_eval(operation.zs[q], target_qubits)));
+        new_x.push_back(scatter_eval(operation.xs[q], target_qubits));
+        new_z.push_back(scatter_eval(operation.zs[q], target_qubits));
     }
     for (size_t q = 0; q < operation.num_qubits; q++) {
         xs[target_qubits[q]] = new_x[q];
