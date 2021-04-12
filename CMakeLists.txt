@@ -104,7 +104,7 @@ set(BENCHMARK_FILES
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 if(NOT(MSVC))
-    target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic -Werror ${MACHINE_FLAG})
+    target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic ${MACHINE_FLAG})
     target_link_options(stim PRIVATE -pthread -O3)
 else()
     target_compile_options(stim PRIVATE -DSIMD_WIDTH=${SIMD_WIDTH})
@@ -112,7 +112,7 @@ endif()
 
 add_executable(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
 if(NOT(MSVC))
-    target_compile_options(stim_benchmark PRIVATE -Wall -Wpedantic -Werror -O3 ${MACHINE_FLAG})
+    target_compile_options(stim_benchmark PRIVATE -Wall -Wpedantic -O3 ${MACHINE_FLAG})
     target_link_options(stim_benchmark PRIVATE -pthread)
 else()
     target_compile_options(stim_benchmark PRIVATE ${MACHINE_FLAG})
