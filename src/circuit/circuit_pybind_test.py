@@ -286,6 +286,13 @@ def test_circuit_flattened_operations():
     ]
 
 
+def test_copy():
+    c = stim.Circuit("H 0")
+    c2 = c.copy()
+    assert c == c2
+    assert c is not c2
+
+
 def test_hash():
     # stim.Circuit is mutable. It must not also be value-hashable.
     # Defining __hash__ requires defining a FrozenCircuit variant instead.

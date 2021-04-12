@@ -419,4 +419,25 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def("__str__", &Circuit::str);
     c.def("__repr__", &circuit_repr);
+
+    c.def(
+        "copy",
+        [](Circuit &self) {
+            Circuit copy = self;
+            return copy;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns a copy of the circuit. An independent circuit with the same contents.
+
+            Examples:
+                >>> import stim
+
+                >>> c1 = stim.Circuit("H 0")
+                >>> c2 = c1.copy()
+                >>> c2 is c1
+                False
+                >>> c2 == c1
+                True
+        )DOC").data()
+    );
 }

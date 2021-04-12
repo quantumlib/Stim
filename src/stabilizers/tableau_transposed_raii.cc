@@ -31,6 +31,14 @@ TableauTransposedRaii::~TableauTransposedRaii() {
     tableau.do_transpose_quadrants();
 }
 
+/// Iterates over the Paulis in a row of the tableau.
+///
+/// Args:
+///     trans: The transposed tableau (where rows are contiguous in memory and so operations can be done efficiently).
+///     q: The row to iterate over.
+///     body: A function taking X, Z, and SIGN words.
+///         The X and Z words are chunks of xz-encoded Paulis from the row.
+///         The SIGN word is the corresponding chunk of sign bits from the sign row.
 template <typename FUNC>
 inline void for_each_trans_obs(TableauTransposedRaii &trans, size_t q, FUNC body) {
     for (size_t k = 0; k < 2; k++) {
@@ -111,4 +119,11 @@ void TableauTransposedRaii::append_X(size_t target) {
     for_each_trans_obs(*this, target, [](simd_word &x, simd_word &z, simd_word &s) {
         s ^= z;
     });
+}
+
+PauliString TableauTransposedRaii::unsigned_x_input(size_t q) const {
+    PauliString result(tableau.num_qubits);
+    result.xs = tableau.zs[q].zs;
+    result.zs = tableau.xs[q].zs;
+    return result;
 }

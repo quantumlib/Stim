@@ -97,6 +97,10 @@ struct simd_bits {
     /// Padding bits beyond the minimum number of bits are not randomized.
     static simd_bits random(size_t min_bits, std::mt19937_64 &rng);
 
+    /// Writes bits from another location.
+    /// Bits not part of the write are unchanged.
+    void truncated_overwrite_from(simd_bits_range_ref other, size_t num_bits);
+
     /// Returns a description of the contents of the simd_bits.
     std::string str() const;
 

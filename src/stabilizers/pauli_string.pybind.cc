@@ -176,19 +176,35 @@ void pybind_pauli_string(pybind11::module &m) {
 
     c.def_static(
         "random",
-        [](size_t num_qubits) {
-            return PyPauliString(PauliString::random(num_qubits, PYBIND_SHARED_RNG()));
+        [](size_t num_qubits, bool allow_imaginary) {
+            auto &rng = PYBIND_SHARED_RNG();
+            return PyPauliString(PauliString::random(num_qubits, rng), allow_imaginary ? (rng() & 1) : false);
         },
         pybind11::arg("num_qubits"),
+        pybind11::kw_only(),
+        pybind11::arg("allow_imaginary") = false,
         clean_doc_string(u8R"DOC(
-            Samples a uniformly random Pauli string over the given number of qubits.
+            Samples a uniformly random Hermitian Pauli string over the given number of qubits.
 
             Args:
                 num_qubits: The number of qubits the Pauli string should act on.
+                allow_imaginary: Defaults to False. If True, the sign of the result may be 1j or -1j
+                    in addition to +1 or -1. In other words, setting this to True allows the result
+                    to be non-Hermitian.
 
             Examples:
                 >>> import stim
                 >>> p = stim.PauliString.random(5)
+                >>> len(p)
+                5
+                >>> p.sign in [-1, +1]
+                True
+
+                >>> p2 = stim.PauliString.random(3, allow_imaginary=True)
+                >>> len(p2)
+                3
+                >>> p2.sign in [-1, +1, 1j, -1j]
+                True
 
             Returns:
                 The sampled Pauli string.
@@ -457,6 +473,15 @@ void pybind_pauli_string(pybind11::module &m) {
         },
         clean_doc_string(u8R"DOC(
             Returns the negation of the pauli string.
+
+            Examples:
+                >>> import stim
+                >>> -stim.PauliString("X")
+                stim.PauliString("-X")
+                >>> -stim.PauliString("-Y")
+                stim.PauliString("+Y")
+                >>> -stim.PauliString("iZZZ")
+                stim.PauliString("-iZZZ")
         )DOC").data()
     );
 
@@ -467,7 +492,16 @@ void pybind_pauli_string(pybind11::module &m) {
             return copy;
         },
         clean_doc_string(u8R"DOC(
-            Returns a copy of the pauli string.
+            Returns a copy of the pauli string. An independent pauli string with the same contents.
+
+            Examples:
+                >>> import stim
+                >>> p1 = stim.PauliString.random(2)
+                >>> p2 = p1.copy()
+                >>> p2 is p1
+                False
+                >>> p2 == p1
+                True
         )DOC").data()
     );
 
@@ -478,7 +512,16 @@ void pybind_pauli_string(pybind11::module &m) {
             return copy;
         },
         clean_doc_string(u8R"DOC(
-            Returns a copy of the pauli string.
+            Returns a pauli string with the same contents.
+
+            Examples:
+                >>> import stim
+                >>> +stim.PauliString("+X")
+                stim.PauliString("+X")
+                >>> +stim.PauliString("-YY")
+                stim.PauliString("-YY")
+                >>> +stim.PauliString("iZZZ")
+                stim.PauliString("+iZZZ")
         )DOC").data()
     );
 

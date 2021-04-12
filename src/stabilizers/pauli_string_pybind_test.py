@@ -97,6 +97,12 @@ def test_random():
     p2 = stim.PauliString.random(100)
     assert p1 != p2
 
+    seen_signs = {stim.PauliString.random(1).sign for _ in range(200)}
+    assert seen_signs == {1, -1}
+
+    seen_signs = {stim.PauliString.random(1, allow_imaginary=True).sign for _ in range(200)}
+    assert seen_signs == {1, -1, 1j, -1j}
+
 
 def test_str():
     assert str(stim.PauliString(3)) == "+___"
@@ -294,6 +300,13 @@ def test_get_slice():
     assert p[5:3:-1] == stim.PauliString("__")
     assert p[4:2:-1] == stim.PauliString("_X")
     assert p[2:0:-1] == stim.PauliString("XX")
+
+
+def test_copy():
+    p = stim.PauliString(3)
+    p2 = p.copy()
+    assert p == p2
+    assert p is not p2
 
 
 def test_hash():

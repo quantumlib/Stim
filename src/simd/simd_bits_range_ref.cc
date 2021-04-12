@@ -107,3 +107,13 @@ void simd_bits_range_ref::randomize(size_t num_bits, std::mt19937_64 &rng) {
         u64[n] |= rng() & mask;
     }
 }
+
+void simd_bits_range_ref::truncated_overwrite_from(simd_bits_range_ref other, size_t num_bits) {
+    size_t n8 = num_bits >> 3;
+    memcpy(u8, other.u8, n8);
+    if (num_bits & 7) {
+        uint8_t m8 = uint8_t{0xFF} >> (8 - (num_bits & 7));
+        u8[n8] &= ~m8;
+        u8[n8] |= other.u8[n8] & m8;
+    }
+}

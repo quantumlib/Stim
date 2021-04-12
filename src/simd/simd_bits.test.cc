@@ -263,3 +263,15 @@ TEST(simd_bits, mask_assignment_or) {
     expected[3] = true;
     ASSERT_EQ(b, expected);
 }
+
+TEST(simd_bits, truncated_overwrite_from) {
+    simd_bits dat = simd_bits::random(1024, SHARED_TEST_RNG());
+    simd_bits mut = simd_bits::random(1024, SHARED_TEST_RNG());
+    simd_bits old = mut;
+
+    mut.truncated_overwrite_from(dat, 455);
+
+    for (size_t k = 0; k < 1024; k++) {
+        ASSERT_EQ(mut[k], k < 455 ? dat[k] : old[k]) << k;
+    }
+}

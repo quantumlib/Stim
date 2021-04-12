@@ -121,3 +121,125 @@ def test_peek_bloch():
     s.cz(0, 1)
     assert s.peek_bloch(0) == stim.PauliString("+I")
     assert s.peek_bloch(1) == stim.PauliString("+I")
+
+
+def test_copy():
+    s = stim.TableauSimulator()
+    s.h(0)
+    s2 = s.copy()
+    assert s.current_inverse_tableau() == s2.current_inverse_tableau()
+    assert s is not s2
+
+
+def test_paulis():
+    s = stim.TableauSimulator()
+    s.h(*range(0, 22, 2))
+    s.cnot(*range(22))
+
+    s.do(stim.PauliString("ZZZ_YYY_XXX"))
+    s.z(0, 1, 2)
+    s.y(4, 5, 6)
+    s.x(8, 9, 10)
+
+    s.cnot(*range(22))
+    s.h(*range(0, 22, 2))
+    assert s.measure_many(*range(22)) == [False] * 22
+
+    s = stim.TableauSimulator()
+    s.do(stim.PauliString("Z" * 500))
+    assert s.measure_many(*range(500)) == [False] * 500
+    s.do(stim.PauliString("X" * 500))
+    assert s.measure_many(*range(500)) == [True] * 500
+
+
+def test_measure_kickback():
+    s = stim.TableauSimulator()
+    assert s.measure_kickback(0) == (False, None)
+    assert s.measure_kickback(0) == (False, None)
+
+    s.h(0)
+    v = s.measure_kickback(0)
+    assert isinstance(v[0], bool)
+    assert v[1] == stim.PauliString("X")
+    assert s.measure_kickback(0) == (v[0], None)
+
+    s = stim.TableauSimulator()
+    s.h(0)
+    s.cnot(0, 1)
+    v = s.measure_kickback(0)
+    assert isinstance(v[0], bool)
+    assert v[1] == stim.PauliString("XX")
+    assert s.measure_kickback(0) == (v[0], None)
+
+    s = stim.TableauSimulator()
+    s.h(0)
+    s.cnot(0, 1)
+    v = s.measure_kickback(1)
+    assert isinstance(v[0], bool)
+    assert v[1] == stim.PauliString("XX")
+    assert s.measure_kickback(0) == (v[0], None)
+
+
+def test_post_select_using_measure_kickback():
+    s = stim.TableauSimulator()
+
+    def pseudo_post_select(qubit, desired_result):
+        m, kick = s.measure_kickback(qubit)
+        if m != desired_result:
+            if kick is None:
+                raise ValueError("Deterministic measurement differed from desired result.")
+            s.do(kick)
+
+    s.h(0)
+    s.cnot(0, 1)
+    s.cnot(0, 2)
+    pseudo_post_select(qubit=2, desired_result=True)
+    assert s.measure_many(0, 1, 2) == [True, True, True]
+
+
+def test_measure_kickback_random_branches():
+    s = stim.TableauSimulator()
+    s.set_inverse_tableau(stim.Tableau.random(8))
+
+    r = s.peek_bloch(4)
+    if r[0] == 3:  # +-Z?
+        assert s.measure_kickback(4) == (r.sign == -1, None)
+        return
+
+    post_false = None
+    post_true = None
+    for _ in range(100):
+        if post_false is not None and post_true is not None:
+            break
+        copy = s.copy()
+        if copy.measure(4):
+            post_true = copy
+        else:
+            post_false = copy
+    assert post_false is not None and post_true is not None
+
+    result, kick = s.measure_kickback(4)
+    assert isinstance(kick, stim.PauliString) and len(kick) == 8
+    if result:
+        s.do(kick)
+    assert s.current_inverse_tableau() == post_false.current_inverse_tableau()
+    s.do(kick)
+    assert s.current_inverse_tableau() == post_true.current_inverse_tableau()
+
+
+def test_set_num_qubits():
+    s = stim.TableauSimulator()
+    s.h(0)
+    s.cnot(0, 1)
+    s.cnot(0, 2)
+    s.cnot(0, 3)
+    t = s.current_inverse_tableau()
+    s.set_num_qubits(8)
+    s.set_num_qubits(4)
+    assert s.current_inverse_tableau() == t
+    assert s.peek_bloch(0) == stim.PauliString("_")
+    s.set_num_qubits(8)
+    s.set_num_qubits(4)
+    s.cnot(0, 4)
+    s.set_num_qubits(4)
+    assert s.peek_bloch(0) in [stim.PauliString("+Z"), stim.PauliString("-Z")]

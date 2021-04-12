@@ -58,6 +58,11 @@ struct TableauSimulator {
     /// results in undefined behavior.
     void ensure_large_enough_for_qubits(size_t num_qubits);
 
+    /// Forces the size of the internal state of the simulator.
+    ///
+    /// Shrinking the size will result in qubits beyond the size threshold being collapsed and discarded.
+    void set_num_qubits(size_t new_num_qubits);
+
     /// Finds a state vector satisfying the current stabilizer generators, and returns a vector simulator in that state.
     VectorSimulator to_vector_sim() const;
 
@@ -116,9 +121,19 @@ struct TableauSimulator {
     void Z_ERROR(const OperationData &target_data);
     void CORRELATED_ERROR(const OperationData &target_data);
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
+
+    /// Returns the single-qubit stabilizer of a target or, if it is entangled, the identity operation.
     PauliString peek_bloch(uint32_t target) const;
 
-   private:
+    /// Applies all of the Pauli operations in the given PauliString to the simulator's state.
+    void paulis(const PauliString &paulis);
+
+    /// Performs a measurement and returns a kickback that flips between the possible post-measurement states.
+    ///
+    /// Deterministic measurements have no kickback.
+    /// This is represented by setting the kickback to the empty Pauli string.
+    std::pair<bool, PauliString> measure_kickback(uint32_t target);
+
     bool read_measurement_record(uint32_t encoded_target) const;
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
@@ -134,13 +149,24 @@ struct TableauSimulator {
     ///     target: The index of the qubit to collapse.
     ///     transposed_raii: A RAII value whose existence certifies the tableau data is currently transposed
     ///         (to make operations efficient).
-    void collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii);
+    ///
+    /// Returns:
+    ///    SIZE_MAX: Already collapsed.
+    ///    Else: The pivot index. The start-of-time qubit whose X flips the measurement.
+    size_t collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii);
 
     /// Collapses the given qubits.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse(const OperationData &target_data);
+    void collapse(ConstPointerRange<uint32_t> targets);
+
+    /// Completely isolates a qubit from the other qubits tracked by the simulator, so it can be safely discarded.
+    ///
+    /// After this runs, it is guaranteed that the inverse tableau maps the target qubit's X and Z observables to
+    /// themselves (possibly negated) and that it maps all other qubits to Pauli products not involving the target
+    /// qubit.
+    void collapse_isolate_qubit(size_t target, TableauTransposedRaii &transposed_raii);
 };
 
 #endif

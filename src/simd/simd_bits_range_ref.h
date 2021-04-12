@@ -84,6 +84,10 @@ struct simd_bits_range_ref {
     /// Randomizes the bits in the referenced range, up to the given bit count. Leaves further bits unchanged.
     void randomize(size_t num_bits, std::mt19937_64 &rng);
 
+    /// Writes bits from another location.
+    /// Bits not part of the write are unchanged.
+    void truncated_overwrite_from(simd_bits_range_ref other, size_t num_bits);
+
     /// Returns a description of the contents of the range.
     std::string str() const;
 

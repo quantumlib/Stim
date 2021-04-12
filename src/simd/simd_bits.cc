@@ -113,6 +113,10 @@ void simd_bits::randomize(size_t num_bits, std::mt19937_64 &rng) {
     simd_bits_range_ref(*this).randomize(num_bits, rng);
 }
 
+void simd_bits::truncated_overwrite_from(simd_bits_range_ref other, size_t num_bits) {
+    simd_bits_range_ref(*this).truncated_overwrite_from(other, num_bits);
+}
+
 bit_ref simd_bits::operator[](size_t k) {
     return bit_ref(u64, k);
 }

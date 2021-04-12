@@ -737,3 +737,20 @@ TEST(tableau, raised_to) {
     ASSERT_EQ(p15.raised_to(15 * 47321 + 1), p15);
     ASSERT_EQ(p15.raised_to(15 * -47321 + 1), p15);
 }
+
+TEST(tableau, transposed_xz_input) {
+    Tableau t = Tableau::random(4, SHARED_TEST_RNG());
+    PauliString x0(0);
+    PauliString x1(0);
+    {
+        TableauTransposedRaii tmp(t);
+        x0 = tmp.unsigned_x_input(0);
+        x1 = tmp.unsigned_x_input(1);
+    }
+    auto tx0 = t(x0);
+    auto tx1 = t(x1);
+    tx0.sign = false;
+    tx1.sign = false;
+    ASSERT_EQ(tx0, PauliString::from_str("X___"));
+    ASSERT_EQ(tx1, PauliString::from_str("_X__"));
+}

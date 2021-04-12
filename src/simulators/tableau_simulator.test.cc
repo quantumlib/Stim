@@ -770,3 +770,84 @@ TEST(TableauSimulator, peek_bloch) {
     ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
     ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+I"));
 }
+
+TEST(TableauSimulator, paulis) {
+    TableauSimulator sim1(500, SHARED_TEST_RNG());
+    TableauSimulator sim2(500, SHARED_TEST_RNG());
+    sim1.inv_state = Tableau::random(500, SHARED_TEST_RNG());
+    sim2.inv_state = sim1.inv_state;
+
+    sim1.paulis(PauliString(500));
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+    sim1.paulis(PauliString(5));
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+    sim1.paulis(PauliString(0));
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+
+    sim1.paulis(PauliString::from_str("IXYZ"));
+    sim2.X(OpDat(1));
+    sim2.Y(OpDat(2));
+    sim2.Z(OpDat(3));
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+}
+
+TEST(TableauSimulator, set_num_qubits) {
+    TableauSimulator sim1(10, SHARED_TEST_RNG());
+    TableauSimulator sim2(10, SHARED_TEST_RNG());
+    sim1.inv_state = Tableau::random(10, SHARED_TEST_RNG());
+    sim2.inv_state = sim1.inv_state;
+
+    sim1.set_num_qubits(20);
+    sim1.set_num_qubits(10);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+
+    sim1.set_num_qubits(20);
+    sim1.X(OpDat(10));
+    sim1.Z(OpDat(11));
+    sim1.H_XZ(OpDat(12));
+    sim1.ZCX(OpDat({12, 13}));
+    sim1.set_num_qubits(10);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+
+    sim1.set_num_qubits(20);
+    sim2.ensure_large_enough_for_qubits(20);
+    ASSERT_EQ(sim1.inv_state, sim2.inv_state);
+}
+
+TEST(TableauSimulator, set_num_qubits_reduce_random) {
+    TableauSimulator sim(10, SHARED_TEST_RNG());
+    sim.inv_state = Tableau::random(10, SHARED_TEST_RNG());
+    sim.set_num_qubits(5);
+    ASSERT_EQ(sim.inv_state.num_qubits, 5);
+    ASSERT_TRUE(sim.inv_state.satisfies_invariants());
+}
+
+TEST(TableauSimulator, measure_kickback) {
+    TableauSimulator sim(4, SHARED_TEST_RNG());
+    sim.H_XZ(OpDat({0, 2}));
+    sim.ZCX(OpDat({0, 1, 2, 3}));
+    auto k1 = sim.measure_kickback(1);
+    auto k2 = sim.measure_kickback(2);
+    auto k3 = sim.measure_kickback(3);
+    ASSERT_EQ(k1.second, PauliString::from_str("XX__"));
+    ASSERT_EQ(k2.second, PauliString::from_str("__XX"));
+    ASSERT_EQ(k3.second, PauliString(0));
+    ASSERT_EQ(k2.first, k3.first);
+}
+
+TEST(TableauSimulator, collapse_isolate_completely) {
+    for (size_t k = 0; k < 10; k++) {
+        TableauSimulator sim(6, SHARED_TEST_RNG());
+        sim.inv_state = Tableau::random(6, SHARED_TEST_RNG());
+        {
+            TableauTransposedRaii tmp(sim.inv_state);
+            sim.collapse_isolate_qubit(2, tmp);
+        }
+        PauliString x2 = sim.inv_state.xs[2];
+        PauliString z2 = sim.inv_state.zs[2];
+        x2.sign = false;
+        z2.sign = false;
+        ASSERT_EQ(x2, PauliString::from_str("__X___"));
+        ASSERT_EQ(z2, PauliString::from_str("__Z___"));
+    }
+}

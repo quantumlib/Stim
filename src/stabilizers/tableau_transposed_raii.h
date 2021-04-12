@@ -40,6 +40,8 @@ struct TableauTransposedRaii {
     TableauTransposedRaii(const TableauTransposedRaii &) = delete;
     TableauTransposedRaii(TableauTransposedRaii &&) = delete;
 
+    PauliString unsigned_x_input(size_t q) const;
+
     void append_H_XZ(size_t q);
     void append_H_XY(size_t q);
     void append_H_YZ(size_t q);
