@@ -29,6 +29,7 @@
 struct MeasureRecordWriter {
     /// Creates a MeasureRecordWriter that writes the given format into the given FILE*.
     static std::unique_ptr<MeasureRecordWriter> make(FILE *out, SampleFormat output_format);
+    virtual ~MeasureRecordWriter() = default;
     /// Writes (or buffers) one measurement result.
     virtual void write_bit(bool b) = 0;
     /// Writes (or buffers) multiple measurement results.

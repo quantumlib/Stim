@@ -599,7 +599,7 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
     }
 
     Tableau old_state = std::move(inv_state);
-    inv_state = std::move(Tableau(new_num_qubits));
+    inv_state = Tableau(new_num_qubits);
     inv_state.xs.signs.truncated_overwrite_from(old_state.xs.signs, new_num_qubits);
     inv_state.zs.signs.truncated_overwrite_from(old_state.zs.signs, new_num_qubits);
     for (size_t q = 0; q < new_num_qubits; q++) {
