@@ -374,6 +374,13 @@ def test_composition():
         _ = stim.Tableau(3).then(stim.Tableau(4))
 
 
+def test_copy():
+    t = stim.Tableau(3)
+    t2 = t.copy()
+    assert t == t2
+    assert t is not t2
+
+
 def test_hash():
     # stim.Tableau is mutable. It must not also be value-hashable.
     # Defining __hash__ requires defining a FrozenTableau variant instead.

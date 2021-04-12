@@ -192,6 +192,30 @@ void pybind_tableau_simulator(pybind11::module &m) {
     );
 
     c.def(
+        "do",
+        [](TableauSimulator &self, const PyPauliString &pauli_string) {
+            self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
+            self.paulis(pauli_string.value);
+        },
+        pybind11::arg("pauli_string"),
+        clean_doc_string(u8R"DOC(
+            Applies all the Pauli operations in the given stim.PauliString to the simulator's state.
+
+            The Pauli at offset k is applied to the qubit with index k.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.do(stim.PauliString("IXYZ"))
+                >>> s.measure_many(0, 1, 2, 3)
+                [False, True, True, False]
+
+            Args:
+                pauli_string: A stim.PauliString containing Pauli operations to apply.
+        )DOC").data()
+    );
+
+    c.def(
         "h",
         [](TableauSimulator &self, pybind11::args args) {
             self.H_XZ(args_to_targets(self, args));
@@ -625,6 +649,170 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Returns:
                 The measurement results as a list of bools.
+        )DOC").data()
+    );
+
+    c.def(
+        "set_num_qubits",
+        [](TableauSimulator &self, uint32_t new_num_qubits) {
+            self.set_num_qubits(new_num_qubits);
+        },
+        clean_doc_string(u8R"DOC(
+            Forces the simulator's internal state to track exactly the qubits whose indices are in range(new_num_qubits).
+
+            Note that untracked qubits are always assumed to be in the |0> state. Therefore, calling this method
+            will effectively force any qubit whose index is outside range(new_num_qubits) to be reset to |0>.
+
+            Note that this method does not prevent future operations from implicitly expanding the size of the
+            tracked state (e.g. setting the number of qubits to 5 will not prevent a Hadamard from then being
+            applied to qubit 100, increasing the number of qubits to 101).
+
+            Args:
+                new_num_qubits: The length of the range of qubits the internal simulator should be tracking.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> len(s.current_inverse_tableau())
+                0
+
+                >>> s.set_num_qubits(5)
+                >>> len(s.current_inverse_tableau())
+                5
+
+                >>> s.x(0, 1, 2, 3)
+                >>> s.set_num_qubits(2)
+                >>> s.measure_many(0, 1, 2, 3)
+                [True, True, False, False]
+        )DOC").data()
+    );
+
+    c.def(
+        "set_inverse_tableau",
+        [](TableauSimulator &self, const Tableau &new_inverse_tableau) {
+            self.inv_state = new_inverse_tableau;
+        },
+        clean_doc_string(u8R"DOC(
+            Overwrites the simulator's internal state with a copy of the given inverse tableau.
+
+            The inverse tableau specifies how Pauli product observables of qubits at the current time transform
+            into equivalent Pauli product observables at the beginning of time, when all qubits were in the
+            |0> state. For example, if the Z observable on qubit 5 maps to a product of Z observables at the
+            start of time then a Z basis measurement on qubit 5 will be deterministic and equal to the sign
+            of the product. Whereas if it mapped to a product of observables including an X or a Y then the Z
+            basis measurement would be random.
+
+            Any qubits not within the length of the tableau are implicitly in the |0> state.
+
+            Args:
+                new_inverse_tableau: The tableau to overwrite the internal state with.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> t = stim.Tableau.random(4)
+                >>> s.set_inverse_tableau(t)
+                >>> s.current_inverse_tableau() == t
+                True
+        )DOC").data()
+    );
+
+    c.def(
+        "copy",
+        [](TableauSimulator &self) {
+            TableauSimulator copy = self;
+            return copy;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns a copy of the simulator. A simulator with the same internal state.
+
+            Examples:
+                >>> import stim
+
+                >>> s1 = stim.TableauSimulator()
+                >>> s1.set_inverse_tableau(stim.Tableau.random(1))
+                >>> s2 = s1.copy()
+                >>> s2 is s1
+                False
+                >>> s2.current_inverse_tableau() == s1.current_inverse_tableau()
+                True
+
+                >>> s = stim.TableauSimulator()
+                >>> def brute_force_post_select(qubit, desired_result):
+                ...     global s
+                ...     while True:
+                ...         copy = s.copy()
+                ...         if copy.measure(qubit) == desired_result:
+                ...             s = copy
+                ...             break
+                >>> s.h(0)
+                >>> brute_force_post_select(qubit=0, desired_result=True)
+                >>> s.measure(0)
+                True
+        )DOC").data()
+    );
+
+    c.def(
+        "measure_kickback",
+        [](TableauSimulator &self, uint32_t target) {
+            self.ensure_large_enough_for_qubits(target + 1);
+            auto result = self.measure_kickback(target);
+            if (result.second.num_qubits == 0) {
+                return pybind11::make_tuple(result.first, pybind11::none());
+            }
+            return pybind11::make_tuple(result.first, PyPauliString(result.second));
+        },
+        pybind11::arg("target"),
+        clean_doc_string(u8R"DOC(
+            Measures a qubit and returns the result as well as its Pauli kickback (if any).
+
+            The "Pauli kickback" of a stabilizer circuit measurement is a set of Pauli operations that
+            flip the post-measurement system state between the two possible post-measurement states.
+            For example, consider measuring one of the qubits in the state |00>+|11> in the Z basis.
+            If the measurement result is False, then the system projects into the state |00>.
+            If the measurement result is True, then the system projects into the state |11>.
+            Applying a Pauli X operation to both qubits flips between |00> and |11>.
+            Therefore the Pauli kickback of the measurement is `stim.PauliString("XX")`.
+            Note that there are often many possible equivalent Pauli kickbacks. For example,
+            if in the previous example there was a third qubit in the |0> state, then both
+            `stim.PauliString("XX_")` and `stim.PauliString("XXZ")` are valid kickbacks.
+
+            Measurements with determinist results don't have a Pauli kickback.
+
+            Args:
+                target: The index of the qubit to measure.
+
+            Returns:
+                A (result, kickback) tuple.
+                The result is a bool containing the measurement's output.
+                The kickback is either None (meaning the measurement was deterministic) or a stim.PauliString
+                (meaning the measurement was random, and the operations in the Pauli string flip between the
+                two possible post-measurement states).
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+
+                >>> s.measure_kickback(0)
+                (False, None)
+
+                >>> s.h(0)
+                >>> s.measure_kickback(0)[1]
+                stim.PauliString("+X")
+
+                >>> def pseudo_post_select(qubit, desired_result):
+                ...     m, kick = s.measure_kickback(qubit)
+                ...     if m != desired_result:
+                ...         if kick is None:
+                ...             raise ValueError("Deterministic measurement differed from desired result.")
+                ...         s.do(kick)
+                >>> s = stim.TableauSimulator()
+                >>> s.h(0)
+                >>> s.cnot(0, 1)
+                >>> s.cnot(0, 2)
+                >>> pseudo_post_select(qubit=2, desired_result=True)
+                >>> s.measure_many(0, 1, 2)
+                [True, True, True]
         )DOC").data()
     );
 }

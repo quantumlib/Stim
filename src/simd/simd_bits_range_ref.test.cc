@@ -222,3 +222,15 @@ TEST(simd_bits_range_ref, for_each_set_bit) {
     });
     ASSERT_EQ(hits, (std::vector<size_t>{5, 101}));
 }
+
+TEST(simd_bits_range_ref, truncated_overwrite_from) {
+    simd_bits dat = simd_bits::random(1024, SHARED_TEST_RNG());
+    simd_bits mut = simd_bits::random(1024, SHARED_TEST_RNG());
+    simd_bits old = mut;
+
+    simd_bits_range_ref(mut).truncated_overwrite_from(dat, 455);
+
+    for (size_t k = 0; k < 1024; k++) {
+        ASSERT_EQ(mut[k], k < 455 ? dat[k] : old[k]) << k;
+    }
+}

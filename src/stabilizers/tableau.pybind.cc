@@ -399,6 +399,26 @@ void pybind_tableau(pybind11::module &m) {
     );
 
     c.def(
+        "copy",
+        [](Tableau &self) {
+            Tableau copy = self;
+            return copy;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns a copy of the tableau. An independent tableau with the same contents.
+
+            Examples:
+                >>> import stim
+                >>> t1 = stim.Tableau.random(2)
+                >>> t2 = t1.copy()
+                >>> t2 is t1
+                False
+                >>> t2 == t1
+                True
+        )DOC").data()
+    );
+
+    c.def(
         "z_output",
         [](Tableau &self, size_t target) {
             if (target >= self.num_qubits) {
