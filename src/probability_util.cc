@@ -36,7 +36,13 @@ std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::
 }
 
 std::mt19937_64 externally_seeded_rng() {
-    std::random_device d;
+#if defined(__linux) && defined(__GLIBCXX__) && __GLIBCXX__ >= 20200128
+    // Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94087
+    // See https://github.com/quantumlib/Stim/issues/26
+    std::random_device rd("/dev/urandom");
+#else
+    std::random_device rd;
+#endif
     std::seed_seq seq{d(), d(), d(), d(), d(), d(), d(), d()};
     std::mt19937_64 result(seq);
     return result;
