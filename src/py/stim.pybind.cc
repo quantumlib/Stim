@@ -107,10 +107,10 @@ PYBIND11_MODULE(stim, m) {
         )DOC").data()
     );
 
+    pybind_pauli_string(m);
     pybind_circuit(m);
     pybind_compiled_detector_sampler(m);
     pybind_compiled_measurement_sampler(m);
     pybind_tableau_simulator(m);
     pybind_tableau(m);
-    pybind_pauli_string(m);
 }
