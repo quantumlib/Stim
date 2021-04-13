@@ -613,18 +613,14 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
 std::pair<bool, PauliString> TableauSimulator::measure_kickback(uint32_t target) {
     bool flipped = target & TARGET_INVERTED_BIT;
     uint32_t q = target & TARGET_VALUE_MASK;
-    if (is_deterministic(q)) {
-        return {
-            (bool)(inv_state.zs.signs[q] ^ flipped),
-            PauliString(0)
-        };
+    PauliString kickback(0);
+    if (!is_deterministic(q)) {
+        // TODO: reduce cost so that O(n^2) is worst case instead of guaranteed case.
+        TableauTransposedRaii temp_transposed(inv_state);
+        size_t pivot = collapse_qubit(q, temp_transposed);
+        kickback = temp_transposed.unsigned_x_input(pivot);
     }
-
-    // TODO: reduce cost so that O(n^2) is worst case instead of guaranteed case.
-    TableauTransposedRaii temp_transposed(inv_state);
-    size_t pivot = collapse_qubit(q, temp_transposed);
-    return {
-        (bool)(inv_state.zs.signs[q] ^ flipped),
-        temp_transposed.unsigned_x_input(pivot)
-    };
+    bool result = inv_state.zs.signs[q] ^ flipped;
+    measurement_record.storage.push_back(result);
+    return {result, kickback};
 }
