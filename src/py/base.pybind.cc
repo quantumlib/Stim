@@ -48,10 +48,13 @@ std::string clean_doc_string(const char *c) {
         }
 
         // Copy rest of line.
-        do {
+        while (*c != '\0') {
             result.push_back(*c);
             c++;
-        } while (*c != '\n' && *c != '\0');
+            if (result.back() == '\n') {
+                break;
+            }
+        }
     }
 
     return result;
