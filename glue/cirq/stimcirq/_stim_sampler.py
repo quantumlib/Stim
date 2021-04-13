@@ -120,7 +120,9 @@ def cirq_circuit_to_stim_data(
         q2i = {q: i for i, q in enumerate(sorted(circuit.all_qubits()))}
     out = stim.Circuit()
     key_out: List[Tuple[str, int]] = []
-    _c2s_helper(circuit.all_operations(), q2i, out, key_out)
+    for moment in circuit:
+        _c2s_helper(moment, q2i, out, key_out)
+        out.append_operation("TICK", [])
     return out, key_out
 
 

@@ -1,7 +1,6 @@
-from typing import Dict, Tuple, Sequence, List, Union, Callable
+from typing import Tuple, Union, Callable
 
 import cirq
-import numpy as np
 import pytest
 import stim
 
@@ -50,3 +49,19 @@ def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[float], cirq
     converted = stimcirq.cirq_circuit_to_stim_circuit(original)
     restored = stimcirq.stim_circuit_to_cirq_circuit(converted)
     assert original == restored
+
+
+def test_round_trip_preserves_moment_structure():
+    a, b = cirq.LineQubit.range(2)
+    circuit = cirq.Circuit(
+        cirq.Moment(),
+        cirq.Moment(cirq.H(a)),
+        cirq.Moment(cirq.H(b)),
+        cirq.Moment(),
+        cirq.Moment(),
+        cirq.Moment(cirq.CNOT(a, b)),
+        cirq.Moment(),
+    )
+    converted = stimcirq.cirq_circuit_to_stim_circuit(circuit)
+    restored = stimcirq.stim_circuit_to_cirq_circuit(converted)
+    assert restored == circuit

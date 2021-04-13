@@ -1,8 +1,4 @@
-from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union, Iterator
-
-import functools
-import itertools
-import math
+from typing import Callable, Dict, List, Tuple, Union, Iterator
 
 import cirq
 import stim
@@ -44,6 +40,7 @@ STIM_TO_CIRQ_GATE_TABLE: Dict[str, Union[Tuple, cirq.Gate, Callable[[float], cir
     "OBSERVABLE_INCLUDE": (),
     "TICK": (),
 }
+
 
 def _translate_flattened_operation(
         op: Tuple[str, List, float],
@@ -125,12 +122,22 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
         1: ───────X───!M('0')─────────────────
     """
     _next_measure_id = 0
+
     def get_next_measure_id() -> int:
         nonlocal _next_measure_id
         _next_measure_id += 1
         return _next_measure_id - 1
 
-    return cirq.Circuit(
-        _translate_flattened_operation(op, get_next_measure_id)
-        for op in circuit.flattened_operations()
-    )
+    full_circuit = cirq.Circuit()
+    current_tick = cirq.Circuit()
+    for op in circuit.flattened_operations():
+        if op[0] == 'TICK':
+            if len(current_tick):
+                full_circuit += current_tick
+                current_tick = cirq.Circuit()
+            else:
+                full_circuit += cirq.Moment()
+        else:
+            current_tick += _translate_flattened_operation(op, get_next_measure_id)
+    full_circuit += current_tick
+    return full_circuit
