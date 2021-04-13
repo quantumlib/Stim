@@ -372,7 +372,7 @@ extern const GateDataMap GATE_DATA(
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorFuser::I,
-            GATE_NO_FLAGS,
+            GATE_IS_NOT_FUSABLE,
             {},
             {},
         },

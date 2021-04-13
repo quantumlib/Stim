@@ -122,4 +122,4 @@ jobs:
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
-      - run: python -c "import cirq; import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
+      - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"

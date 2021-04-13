@@ -1,12 +1,11 @@
-from typing import Dict, Tuple, Sequence, List, Union, Callable
+from typing import Tuple, Union, Callable
 
 import cirq
-import numpy as np
 import pytest
 import stim
 
 import stimcirq
-from ._circuit_conversion import STIM_TO_CIRQ_GATE_TABLE
+from ._stim_to_cirq_circuit_conversion import stim_to_cirq_gate_table
 
 
 def test_stim_circuit_to_cirq_circuit():
@@ -35,7 +34,7 @@ def test_stim_circuit_to_cirq_circuit():
     )
 
 
-@pytest.mark.parametrize("handler", STIM_TO_CIRQ_GATE_TABLE.values())
+@pytest.mark.parametrize("handler", stim_to_cirq_gate_table().values())
 def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[float], cirq.Gate], Tuple]):
     if handler == ():
         return
@@ -50,3 +49,19 @@ def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[float], cirq
     converted = stimcirq.cirq_circuit_to_stim_circuit(original)
     restored = stimcirq.stim_circuit_to_cirq_circuit(converted)
     assert original == restored
+
+
+def test_round_trip_preserves_moment_structure():
+    a, b = cirq.LineQubit.range(2)
+    circuit = cirq.Circuit(
+        cirq.Moment(),
+        cirq.Moment(cirq.H(a)),
+        cirq.Moment(cirq.H(b)),
+        cirq.Moment(),
+        cirq.Moment(),
+        cirq.Moment(cirq.CNOT(a, b)),
+        cirq.Moment(),
+    )
+    converted = stimcirq.cirq_circuit_to_stim_circuit(circuit)
+    restored = stimcirq.stim_circuit_to_cirq_circuit(converted)
+    assert restored == circuit

@@ -114,9 +114,13 @@ def test_more_unitary_gate_conversions():
         str(c).strip()
         == """
 H 0
+TICK
 CX 0 1
+TICK
 M 0 1
+TICK
 R 0
+TICK
     """.strip()
     )
 
@@ -379,9 +383,12 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
     assert str(stim_circuit).strip() == """
 M 0 1 2
+TICK
 DETECTOR rec[-2]
+TICK
 M !1 1
 DETECTOR rec[-1]
+TICK
     """.strip()
 
     class BadGate(cirq.Gate):
