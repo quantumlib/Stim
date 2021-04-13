@@ -5,7 +5,7 @@ import pytest
 import stim
 
 import stimcirq
-from ._circuit_conversion import STIM_TO_CIRQ_GATE_TABLE
+from ._stim_to_cirq_circuit_conversion import stim_to_cirq_gate_table
 
 
 def test_stim_circuit_to_cirq_circuit():
@@ -34,7 +34,7 @@ def test_stim_circuit_to_cirq_circuit():
     )
 
 
-@pytest.mark.parametrize("handler", STIM_TO_CIRQ_GATE_TABLE.values())
+@pytest.mark.parametrize("handler", stim_to_cirq_gate_table().values())
 def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[float], cirq.Gate], Tuple]):
     if handler == ():
         return

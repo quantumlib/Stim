@@ -129,7 +129,7 @@ def cirq_circuit_to_stim_data(
 StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int]], None]
 
 
-@functools.lru_cache()
+@functools.lru_cache(maxsize=1)
 def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[int]], None]]:
     """A dictionary mapping specific gate instances to stim circuit appending functions."""
     x = (cirq.X, False)

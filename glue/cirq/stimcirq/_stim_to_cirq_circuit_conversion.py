@@ -1,45 +1,48 @@
+import functools
 from typing import Callable, Dict, List, Tuple, Union, Iterator
 
 import cirq
 import stim
 
 
-STIM_TO_CIRQ_GATE_TABLE: Dict[str, Union[Tuple, cirq.Gate, Callable[[float], cirq.Gate]]] = {
-    "R": cirq.ResetChannel(),
-    "I": cirq.I,
-    "X": cirq.X,
-    "Y": cirq.Y,
-    "Z": cirq.Z,
-    "H_XY": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.Z, True)),
-    "H": cirq.H,
-    "H_YZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False)),
-    "SQRT_X": cirq.X**0.5,
-    "SQRT_X_DAG": cirq.X**-0.5,
-    "SQRT_Y": cirq.Y**0.5,
-    "SQRT_Y_DAG": cirq.Y**-0.5,
-    "S": cirq.S,
-    "S_DAG": cirq.S**-1,
-    "SWAP": cirq.SWAP,
-    "ISWAP": cirq.ISWAP,
-    "ISWAP_DAG": cirq.ISWAP**-1,
-    "XCX": cirq.PauliInteractionGate(cirq.X, False, cirq.X, False),
-    "XCY": cirq.PauliInteractionGate(cirq.X, False, cirq.Y, False),
-    "XCZ": cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False),
-    "YCX": cirq.PauliInteractionGate(cirq.Y, False, cirq.X, False),
-    "YCY": cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False),
-    "YCZ": cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False),
-    "CX": cirq.CNOT,
-    "CY": cirq.Y.controlled(1),
-    "CZ": cirq.CZ,
-    "DEPOLARIZE1": lambda arg: cirq.DepolarizingChannel(arg, 1),
-    "DEPOLARIZE2": lambda arg: cirq.DepolarizingChannel(arg, 2),
-    "X_ERROR": lambda arg: cirq.X.with_probability(arg),
-    "Y_ERROR": lambda arg: cirq.Y.with_probability(arg),
-    "Z_ERROR": lambda arg: cirq.Z.with_probability(arg),
-    "DETECTOR": (),
-    "OBSERVABLE_INCLUDE": (),
-    "TICK": (),
-}
+@functools.lru_cache(maxsize=1)
+def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[float], cirq.Gate]]]:
+    return {
+        "R": cirq.ResetChannel(),
+        "I": cirq.I,
+        "X": cirq.X,
+        "Y": cirq.Y,
+        "Z": cirq.Z,
+        "H_XY": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.Z, True)),
+        "H": cirq.H,
+        "H_YZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False)),
+        "SQRT_X": cirq.X**0.5,
+        "SQRT_X_DAG": cirq.X**-0.5,
+        "SQRT_Y": cirq.Y**0.5,
+        "SQRT_Y_DAG": cirq.Y**-0.5,
+        "S": cirq.S,
+        "S_DAG": cirq.S**-1,
+        "SWAP": cirq.SWAP,
+        "ISWAP": cirq.ISWAP,
+        "ISWAP_DAG": cirq.ISWAP**-1,
+        "XCX": cirq.PauliInteractionGate(cirq.X, False, cirq.X, False),
+        "XCY": cirq.PauliInteractionGate(cirq.X, False, cirq.Y, False),
+        "XCZ": cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False),
+        "YCX": cirq.PauliInteractionGate(cirq.Y, False, cirq.X, False),
+        "YCY": cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False),
+        "YCZ": cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False),
+        "CX": cirq.CNOT,
+        "CY": cirq.Y.controlled(1),
+        "CZ": cirq.CZ,
+        "DEPOLARIZE1": lambda arg: cirq.DepolarizingChannel(arg, 1),
+        "DEPOLARIZE2": lambda arg: cirq.DepolarizingChannel(arg, 2),
+        "X_ERROR": lambda arg: cirq.X.with_probability(arg),
+        "Y_ERROR": lambda arg: cirq.Y.with_probability(arg),
+        "Z_ERROR": lambda arg: cirq.Z.with_probability(arg),
+        "DETECTOR": (),
+        "OBSERVABLE_INCLUDE": (),
+        "TICK": (),
+    }
 
 
 def _translate_flattened_operation(
@@ -47,7 +50,7 @@ def _translate_flattened_operation(
         get_next_measure_id: Callable[[], int]) -> Iterator[cirq.Operation]:
     name, targets, arg = op
 
-    handler = STIM_TO_CIRQ_GATE_TABLE.get(name)
+    handler = stim_to_cirq_gate_table().get(name)
     if handler is not None:
         if isinstance(handler, cirq.Gate):
             gate = handler
