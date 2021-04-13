@@ -163,7 +163,7 @@ def test_measure_kickback():
     assert isinstance(v[0], bool)
     assert v[1] == stim.PauliString("X")
     assert s.measure_kickback(0) == (v[0], None)
-    assert s.current_measurement_record() == [False, False, False, v[0]]
+    assert s.current_measurement_record() == [False, False, v[0], v[0]]
 
     s = stim.TableauSimulator()
     s.h(0)
