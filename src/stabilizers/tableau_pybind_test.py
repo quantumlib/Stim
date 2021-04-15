@@ -386,3 +386,68 @@ def test_hash():
     # Defining __hash__ requires defining a FrozenTableau variant instead.
     with pytest.raises(TypeError, match="unhashable"):
         _ = hash(stim.Tableau(1))
+
+
+def test_add():
+    h = stim.Tableau.from_named_gate("H")
+    swap = stim.Tableau.from_named_gate("SWAP")
+    cnot = stim.Tableau.from_named_gate("CNOT")
+    combo = h + swap + cnot
+    assert str(combo).strip() == """
++-xz-xz-xz-xz-xz-
+| ++ ++ ++ ++ ++
+| ZX __ __ __ __
+| __ __ XZ __ __
+| __ XZ __ __ __
+| __ __ __ XZ _Z
+| __ __ __ X_ XZ
+    """.strip()
+
+    alias = h
+    h += swap
+    h += cnot
+    assert h == combo
+    h += stim.Tableau(0)
+    assert h == combo
+    assert h is alias
+    assert h is not combo
+    assert swap == stim.Tableau.from_named_gate("SWAP")
+
+    assert stim.Tableau(0) + stim.Tableau(0) == stim.Tableau(0)
+    assert stim.Tableau(1) + stim.Tableau(2) == stim.Tableau(3)
+    assert stim.Tableau(100) + stim.Tableau(500) == stim.Tableau(600)
+    assert stim.Tableau(0) + cnot + stim.Tableau(0) == cnot
+
+    x = stim.Tableau.from_named_gate("X")
+    y = stim.Tableau.from_named_gate("Y")
+    z = stim.Tableau.from_named_gate("Z")
+    assert str(y + y).strip() == """
++-xz-xz-
+| -- --
+| XZ __
+| __ XZ
+    """.strip()
+    assert str(x + x).strip() == """
++-xz-xz-
+| +- +-
+| XZ __
+| __ XZ
+    """.strip()
+    assert str(z + z).strip() == """
++-xz-xz-
+| -+ -+
+| XZ __
+| __ XZ
+    """.strip()
+    assert str(x + z).strip() == """
++-xz-xz-
+| +- -+
+| XZ __
+| __ XZ
+    """.strip()
+    assert str(z + x).strip() == """
++-xz-xz-
+| -+ +-
+| XZ __
+| __ XZ
+    """.strip()

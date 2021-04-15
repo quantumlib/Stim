@@ -754,3 +754,27 @@ TEST(tableau, transposed_xz_input) {
     ASSERT_EQ(tx0, PauliString::from_str("X___"));
     ASSERT_EQ(tx1, PauliString::from_str("_X__"));
 }
+
+TEST(tableau, direct_sum) {
+    Tableau t1 = Tableau::random(260, SHARED_TEST_RNG());
+    Tableau t2 = Tableau::random(270, SHARED_TEST_RNG());
+    Tableau t3 = t1;
+    t3 += t2;
+    ASSERT_EQ(t3, t1 + t2);
+
+    PauliString p1 = t1.xs[5];
+    p1.ensure_num_qubits(260 + 270);
+    ASSERT_EQ(t3.xs[5], p1);
+
+    std::string p2 = t2.xs[6].str();
+    std::string p3 = t3.xs[266].str();
+    ASSERT_EQ(p2[0], p3[0]);
+    p2 = p2.substr(1);
+    p3 = p3.substr(1);
+    for (size_t k = 0; k < 260; k++) {
+        ASSERT_EQ(p3[k], '_');
+    }
+    for (size_t k = 0; k < 270; k++) {
+        ASSERT_EQ(p3[260 + k], p2[k]);
+    }
+}
