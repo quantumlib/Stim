@@ -28,10 +28,20 @@ struct PyPauliString {
     PyPauliString(PauliString&& val, bool imag = false);
 
     std::complex<float> get_phase() const;
+
+    PyPauliString operator+(const PyPauliString &rhs) const;
+    PyPauliString &operator+=(const PyPauliString &rhs);
+
+    PyPauliString operator*(pybind11::object rhs) const;
+    PyPauliString operator*(size_t power) const;
     PyPauliString operator*(std::complex<float> scale) const;
-    PyPauliString &operator*=(std::complex<float> scale);
     PyPauliString operator*(const PyPauliString &rhs) const;
+
+    PyPauliString &operator*=(pybind11::object rhs);
+    PyPauliString &operator*=(size_t power);
+    PyPauliString &operator*=(std::complex<float> scale);
     PyPauliString &operator*=(const PyPauliString &rhs);
+
     bool operator==(const PyPauliString &other) const;
     bool operator!=(const PyPauliString &other) const;
     std::string str() const;

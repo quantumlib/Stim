@@ -270,6 +270,10 @@ TEST(pauli_string, commutes) {
     ASSERT_EQ(qb.ref().commutes(qb), true);
     ASSERT_EQ(qa.ref().commutes(qb), false);
     ASSERT_EQ(qb.ref().commutes(qa), false);
+
+    // Differing sizes.
+    ASSERT_EQ(qa.ref().commutes(PauliString(0)), true);
+    ASSERT_EQ(PauliString(0).ref().commutes(qa), true);
 }
 
 TEST(PauliStringPtr, sparse_str) {
@@ -286,4 +290,21 @@ TEST(PauliStringPtr, sparse_str) {
                     .ref()
                     .sparse_str();
     ASSERT_EQ(x501, "+X501");
+}
+
+TEST(PauliString, ensure_num_qubits) {
+    auto p = PauliString::from_str("IXYZ_I");
+    p.ensure_num_qubits(1);
+    ASSERT_EQ(p, PauliString::from_str("IXYZ_I"));
+    p.ensure_num_qubits(6);
+    ASSERT_EQ(p, PauliString::from_str("IXYZ_I"));
+    p.ensure_num_qubits(7);
+    ASSERT_EQ(p, PauliString::from_str("IXYZ_I_"));
+    p.ensure_num_qubits(1000);
+    PauliString p2(1000);
+    p2.xs[1] = true;
+    p2.xs[2] = true;
+    p2.zs[2] = true;
+    p2.zs[3] = true;
+    ASSERT_EQ(p, p2);
 }
