@@ -129,11 +129,9 @@ def test_repr():
 
 
 def test_commutes():
-    def c(a: stim.PauliString, b: stim.PauliString) -> bool:
+    def c(a: str, b: str) -> bool:
         return stim.PauliString(a).commutes(stim.PauliString(b))
 
-    with pytest.raises(ValueError, match="len"):
-        c("", "X")
     assert c("", "")
     assert c("X", "_")
     assert c("X", "X")
@@ -165,10 +163,7 @@ def test_product():
     assert (-x).sign == -1
     assert -(-x) == x
 
-    with pytest.raises(ValueError, match="!= len"):
-        _ = stim.PauliString(10) * stim.PauliString(11)
-    with pytest.raises(ValueError, match="!= len"):
-        _ = stim.PauliString(10).extended_product(stim.PauliString(11))
+    assert stim.PauliString(10) * stim.PauliString(11) == stim.PauliString(11)
 
     assert x * z == stim.PauliString("-iY")
     assert x * x == stim.PauliString(1)
@@ -308,9 +303,138 @@ def test_copy():
     assert p == p2
     assert p is not p2
 
+    p = stim.PauliString("-i_XYZ")
+    p2 = p.copy()
+    assert p == p2
+    assert p is not p2
+
 
 def test_hash():
     # stim.PauliString is mutable. It must not also be value-hashable.
     # Defining __hash__ requires defining a FrozenPauliString variant instead.
     with pytest.raises(TypeError, match="unhashable"):
         _ = hash(stim.PauliString(1))
+
+
+def test_add():
+    ps = stim.PauliString
+    assert ps(0) + ps(0) == ps(0)
+    assert ps(3) + ps(1000) == ps(1003)
+    assert ps(1000) + ps(3) == ps(1003)
+    assert ps("_XYZ") + ps("_ZZZ_") == ps("_XYZ_ZZZ_")
+
+    p = ps("_XYZ")
+    p += p
+    assert p == ps("_XYZ_XYZ")
+    for k in range(1, 8):
+        p += p
+        assert p == ps("_XYZ_XYZ" * 2**k)
+
+    p = ps("_XXX")
+    p += ps("Y")
+    assert p == ps("_XXXY")
+
+    p = ps("")
+    alias = p
+    p += ps("X")
+    assert alias is p
+    assert alias == ps("X")
+    p += p
+    assert alias is p
+    assert alias == ps("XX")
+
+
+def test_mul_different_sizes():
+    ps = stim.PauliString
+    assert ps("") * ps("X" * 1000) == ps("X" * 1000)
+    assert ps("X" * 1000) * ps("") == ps("X" * 1000)
+    assert ps("Z" * 1000) * ps("") == ps("Z" * 1000)
+
+    p = ps("Z")
+    alias = p
+    p *= ps("ZZZ")
+    assert p == ps("_ZZ")
+    p *= ps("Z")
+    assert p == ps("ZZZ")
+    assert alias is p
+
+
+def test_mul_repeat():
+    ps = stim.PauliString
+    assert ps("") * 100 == ps("")
+    assert ps("X") * 100 == ps("X" * 100)
+    assert ps("XYZ_") * 1000 == ps("XYZ_" * 1000)
+    assert ps("XYZ_") * 1 == ps("XYZ_")
+    assert ps("XYZ_") * 0 == ps("")
+
+    assert 100 * ps("") == ps("")
+    assert 100 * ps("X") == ps("X" * 100)
+    assert 1000 * ps("XYZ_") == ps("XYZ_" * 1000)
+    assert 1 * ps("XYZ_") == ps("XYZ_")
+    assert 0 * ps("XYZ_") == ps("")
+
+    assert ps("i") * 0 == ps("+")
+    assert ps("i") * 1 == ps("i")
+    assert ps("i") * 2 == ps("-")
+    assert ps("i") * 3 == ps("-i")
+    assert ps("i") * 4 == ps("+")
+    assert ps("i") * 5 == ps("i")
+
+    assert ps("-i") * 0 == ps("+")
+    assert ps("-i") * 1 == ps("-i")
+    assert ps("-i") * 2 == ps("-")
+    assert ps("-i") * 3 == ps("i")
+    assert ps("-i") * 4 == ps("+")
+    assert ps("-i") * 5 == ps("-i")
+
+    assert ps("-") * 0 == ps("+")
+    assert ps("-") * 1 == ps("-")
+    assert ps("-") * 2 == ps("+")
+    assert ps("-") * 3 == ps("-")
+    assert ps("-") * 4 == ps("+")
+    assert ps("-") * 5 == ps("-")
+
+    p = ps("XYZ")
+    alias = p
+    p *= 1000
+    assert p == ps("XYZ" * 1000)
+    assert alias is p
+
+
+def test_init_list():
+    assert stim.PauliString([]) == stim.PauliString(0)
+    assert stim.PauliString([0, 1, 2, 3]) == stim.PauliString("_XYZ")
+
+    with pytest.raises(ValueError, match="pauli"):
+        _ = stim.PauliString([-1])
+    with pytest.raises(ValueError, match="pauli"):
+        _ = stim.PauliString([4])
+    with pytest.raises(TypeError):
+        _ = stim.PauliString([2**500])
+
+
+def test_init_copy():
+    p = stim.PauliString("_XYZ")
+    p2 = stim.PauliString(p)
+    assert p is not p2
+    assert p == p2
+
+    p = stim.PauliString("-i_XYZ")
+    p2 = stim.PauliString(p)
+    assert p is not p2
+    assert p == p2
+
+
+def test_commutes_different_lengths():
+    x1000 = stim.PauliString("X" * 1000)
+    z1000 = stim.PauliString("Z" * 1000)
+    x1 = stim.PauliString("X")
+    z1 = stim.PauliString("Z")
+    assert x1.commutes(x1000)
+    assert x1000.commutes(x1)
+    assert z1.commutes(z1000)
+    assert z1000.commutes(z1)
+    assert not z1.commutes(x1000)
+    assert not x1000.commutes(z1)
+    assert not x1.commutes(z1000)
+    assert not z1000.commutes(x1)

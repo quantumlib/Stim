@@ -26,10 +26,87 @@ PyPauliString::PyPauliString(const PauliStringRef val, bool imag) : value(val), 
 PyPauliString::PyPauliString(PauliString&& val, bool imag) : value(std::move(val)), imag(imag) {
 }
 
+PyPauliString PyPauliString::operator+(const PyPauliString &rhs) const {
+    PyPauliString copy = *this;
+    copy += rhs;
+    return copy;
+}
+
+PyPauliString &PyPauliString::operator+=(const PyPauliString &rhs) {
+    if (&rhs == this) {
+        *this *= 2;
+        return *this;
+    }
+
+    size_t n = value.num_qubits;
+    value.ensure_num_qubits(value.num_qubits + rhs.value.num_qubits);
+    for (size_t k = 0; k < rhs.value.num_qubits; k++) {
+        value.xs[k + n] = rhs.value.xs[k];
+        value.zs[k + n] = rhs.value.zs[k];
+    }
+    *this *= rhs.get_phase();
+    return *this;
+}
+
 PyPauliString PyPauliString::operator*(std::complex<float> scale) const {
     PyPauliString copy = *this;
     copy *= scale;
     return copy;
+}
+
+PyPauliString PyPauliString::operator*(pybind11::object rhs) const {
+    PyPauliString copy = *this;
+    copy *= rhs;
+    return copy;
+}
+
+PyPauliString PyPauliString::operator*(size_t power) const {
+    PyPauliString copy = *this;
+    copy *= power;
+    return copy;
+}
+
+PyPauliString &PyPauliString::operator*=(size_t power) {
+    switch (power & 3) {
+    case 0:
+        imag = false;
+        value.sign = false;
+        break;
+    case 1:
+        break;
+    case 2:
+        value.sign = imag;
+        imag = false;
+        break;
+    case 3:
+        value.sign ^= imag;
+        break;
+    }
+
+    value = PauliString::from_func(value.sign, value.num_qubits * power, [&](size_t k) {
+        return "_XZY"[value.xs[k % value.num_qubits] + 2 * value.zs[k % value.num_qubits]];
+    });
+    return *this;
+}
+
+PyPauliString &PyPauliString::operator*=(pybind11::object rhs) {
+    if (pybind11::isinstance<PyPauliString>(rhs)) {
+        return *this *= pybind11::cast<PyPauliString>(rhs);
+    } else if (rhs.equal(pybind11::cast(std::complex<float>{+1, 0}))) {
+        return *this;
+    } else if (rhs.equal(pybind11::cast(std::complex<float>{-1, 0}))) {
+        return *this *= std::complex<float>{-1, 0};
+    } else if (rhs.equal(pybind11::cast(std::complex<float>{0, 1}))) {
+        return *this *= std::complex<float>{0, 1};
+    } else if (rhs.equal(pybind11::cast(std::complex<float>{0, -1}))) {
+        return *this *= std::complex<float>{0, -1};
+    } else if (pybind11::isinstance<pybind11::int_>(rhs)) {
+        ssize_t k = pybind11::int_(rhs);
+        if (k >= 0) {
+            return *this *= (size_t)k;
+        }
+    }
+    throw std::out_of_range("need isinstance(rhs, (stim.PauliString, int)) or rhs in (1, -1, 1j, -1j)");
 }
 
 PyPauliString &PyPauliString::operator*=(std::complex<float> scale) {
@@ -70,9 +147,14 @@ PyPauliString PyPauliString::operator*(const PyPauliString &rhs) const {
 }
 
 PyPauliString &PyPauliString::operator*=(const PyPauliString &rhs) {
-    if (value.num_qubits != rhs.value.num_qubits) {
-        throw std::invalid_argument("len(self) != len(other)");
+    value.ensure_num_qubits(rhs.value.num_qubits);
+    if (rhs.value.num_qubits < value.num_qubits) {
+        PyPauliString copy = rhs;
+        copy.value.ensure_num_qubits(value.num_qubits);
+        *this *= copy;
+        return *this;
     }
+
     uint8_t log_i = value.ref().inplace_right_mul_returning_log_i_scalar(rhs.value.ref());
     if (log_i & 2) {
         value.sign ^= true;
@@ -174,6 +256,59 @@ void pybind_pauli_string(pybind11::module &m) {
         )DOC").data()
     );
 
+    c.def(
+        pybind11::init([](const PyPauliString &other){
+            PyPauliString copy = other;
+            return copy;
+        }),
+        pybind11::arg("copy"),
+        clean_doc_string(u8R"DOC(
+            Creates a copy of a stim.PauliString.
+
+            Examples:
+                >>> import stim
+                >>> a = stim.PauliString("YZ")
+                >>> b = stim.PauliString(a)
+                >>> b is a
+                False
+                >>> b == a
+                True
+
+            Args:
+                copy: The pauli string to make a copy of.
+        )DOC").data()
+    );
+
+    c.def(
+        pybind11::init([](const std::vector<ssize_t> &pauli_indices){
+            return PyPauliString(PauliString::from_func(false, pauli_indices.size(), [&](size_t i) {
+                ssize_t p = pauli_indices[i];
+                if (p < 0 || p > 3) {
+                    throw std::invalid_argument("Expected a pauli index (0->I, 1->X, 2->Y, 3->Z) but got " + std::to_string(p));
+                }
+                return "_XYZ"[p];
+            }), false);
+        }),
+        pybind11::arg("pauli_indices"),
+        clean_doc_string(u8R"DOC(
+            Creates a stim.PauliString from a list of integer pauli indices.
+
+            The indexing scheme that is used is:
+                0 -> I
+                1 -> X
+                2 -> Y
+                3 -> Z
+
+            Examples:
+                >>> import stim
+                >>> stim.PauliString([0, 1, 2, 3, 0, 3)
+                stim.PauliString("+_XYZ_Z")
+
+            Args:
+                pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating paulis.
+        )DOC").data()
+    );
+
     c.def_static(
         "random",
         [](size_t num_qubits, bool allow_imaginary) {
@@ -213,9 +348,6 @@ void pybind_pauli_string(pybind11::module &m) {
 
     c.def("commutes",
         [](const PyPauliString &self, const PyPauliString &other){
-            if (self.value.num_qubits != other.value.num_qubits) {
-                throw std::invalid_argument("len(self) != len(other)");
-            }
             return self.value.ref().commutes(other.value.ref());
         },
         pybind11::arg("other"),
@@ -240,6 +372,10 @@ void pybind_pauli_string(pybind11::module &m) {
                 >>> xx.commutes(stim.PauliString("XZ"))
                 False
                 >>> xx.commutes(stim.PauliString("ZZ"))
+                True
+                >>> xx.commutes(stim.PauliString("X_Y__"))
+                True
+                >>> xx.commutes(stim.PauliString(""))
                 True
 
             Returns:
@@ -324,88 +460,152 @@ void pybind_pauli_string(pybind11::module &m) {
     );
 
     c.def(
-        "__mul__",
-        [](const PyPauliString &self, const PyPauliString &rhs) {
-            return self * rhs;
-        },
+        pybind11::self + pybind11::self,
         pybind11::arg("rhs"),
         clean_doc_string(u8R"DOC(
-            Returns the product of two Pauli strings.
+            Returns the tensor product of two Pauli strings.
+
+            Concatenates the Pauli strings and multiplies their signs.
 
             Args:
-                rhs: The right hand side Pauli string.
+                rhs: A second stim.PauliString.
 
             Examples:
                 >>> import stim
 
-                >>> stim.PauliString("X") * stim.PauliString("Y")
-                stim.PauliString("+iZ")
+                >>> stim.PauliString("X") + stim.PauliString("YZ")
+                stim.PauliString("+XYZ")
 
-                >>> stim.PauliString("Y") * stim.PauliString("X")
-                stim.PauliString("-iZ")
-
-                >>> stim.PauliString("_XYZ") * stim.PauliString("ZYX_")
-                stim.PauliString("+ZZZZ")
+                >>> stim.PauliString("iX") + stim.PauliString("-X")
+                stim.PauliString("-iXX")
 
             Returns:
-                The product of the two Pauli strings.
-
-            Raises:
-                ValueError: The Pauli strings have different lengths.
+                The tensor product.
         )DOC").data()
     );
+
     c.def(
-        "__mul__",
-        [](const PyPauliString &self, std::complex<float> rhs) {
-            return self * rhs;
-        },
+        pybind11::self += pybind11::self,
         pybind11::arg("rhs"),
         clean_doc_string(u8R"DOC(
-            Returns the product of a Pauli string and a scalar phase factor.
+            Performs an inplace tensor product.
+
+            Concatenates the given Pauli string onto the receiving string and multiplies their signs.
 
             Args:
-                rhs: A scalar factor (+1, -1, 1j, or -1j).
+                rhs: A second stim.PauliString.
 
             Examples:
                 >>> import stim
 
+                >>> p = stim.PauliString("iX")
+                >>> alias = p
+                >>> p *= stim.PauliString("-YY")
+                stim.PauliString("-iXYY")
+                >>> alias is p
+                True
+
+            Returns:
+                The mutated pauli string.
+        )DOC").data()
+    );
+
+    c.def(
+        pybind11::self * pybind11::object(),
+        pybind11::arg("rhs"),
+        clean_doc_string(u8R"DOC(
+            Right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+
+            Args:
+                rhs: The right hand side of the multiplication. This can be:
+                    - A stim.PauliString to right-multiply term-by-term with the paulis of the pauli string.
+                    - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli string.
+                    - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+
+            Examples:
+                >>> import stim
+
+                >>> stim.PauliString("X") * 1
+                stim.PauliString("+X")
+                >>> stim.PauliString("X") * -1
+                stim.PauliString("-X")
                 >>> stim.PauliString("X") * 1j
                 stim.PauliString("+iX")
 
-                >>> stim.PauliString("X") * -1
-                stim.PauliString("-X")
+                >>> stim.PauliString("X") * 2
+                stim.PauliString("+XX")
+                >>> stim.PauliString("-X") * 2
+                stim.PauliString("+XX")
+                >>> stim.PauliString("iX") * 2
+                stim.PauliString("-XX")
+                >>> stim.PauliString("X") * 3
+                stim.PauliString("+XXX")
+                >>> stim.PauliString("iX") * 3
+                stim.PauliString("-iXXX")
+
+                >>> stim.PauliString("X") * stim.PauliString("Y")
+                stim.PauliString("+iZ")
+                >>> stim.PauliString("X") * stim.PauliString("XX_")
+                stim.PauliString("+_X_")
+                >>> stim.PauliString("XXXX") * stim.PauliString("_XYZ")
+                stim.PauliString("+X_ZY")
 
             Returns:
-                The phased Pauli string.
+                The product or tensor power.
 
             Raises:
-                ValueError: The scalar phase factor isn't 1, -1, 1j, or -1j.
+                TypeError: The right hand side isn't a stim.PauliString, a non-negative integer, or a complex unit (1, -1, 1j, or -1j).
         )DOC").data()
     );
 
     c.def(
         "__rmul__",
-        [](const PyPauliString &self, std::complex<float> lhs) {
+        [](const PyPauliString &self, const pybind11::object &lhs) {
+            if (pybind11::isinstance<PyPauliString>(lhs)) {
+                return pybind11::cast<PyPauliString>(lhs) * self;
+            }
             return self * lhs;
         },
         pybind11::arg("lhs"),
         clean_doc_string(u8R"DOC(
-            Returns the product of a scalar phase factor and a Pauli string.
+            Left-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 
             Args:
-                lhs: A scalar factor (+1, -1, 1j, or -1j).
+                rhs: The left hand side of the multiplication. This can be:
+                    - A stim.PauliString to left-multiply term-by-term into the paulis of the pauli string.
+                    - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
+                    - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
 
             Examples:
                 >>> import stim
 
+                >>> 1 * stim.PauliString("X")
+                stim.PauliString("+X")
+                >>> -1 * stim.PauliString("X")
+                stim.PauliString("-X")
                 >>> 1j * stim.PauliString("X")
                 stim.PauliString("+iX")
 
-                >>> -1 * stim.PauliString("X")
-                stim.PauliString("-X")
+                >>> 2 * stim.PauliString("X")
+                stim.PauliString("+XX")
+                >>> 2 * stim.PauliString("-X")
+                stim.PauliString("+XX")
+                >>> 2 * stim.PauliString("iX")
+                stim.PauliString("-XX")
+                >>> 3 * stim.PauliString("X")
+                stim.PauliString("+XXX")
+                >>> 3 * stim.PauliString("iX")
+                stim.PauliString("-iXXX")
+
+                >>> stim.PauliString("X") * stim.PauliString("Y")
+                stim.PauliString("+iZ")
+                >>> stim.PauliString("X") * stim.PauliString("XX_")
+                stim.PauliString("+_X_")
+                >>> stim.PauliString("XXXX") * stim.PauliString("_XYZ")
+                stim.PauliString("+X_ZY")
 
             Returns:
-                The phased Pauli string.
+                The product.
 
             Raises:
                 ValueError: The scalar phase factor isn't 1, -1, 1j, or -1j.
@@ -413,16 +613,29 @@ void pybind_pauli_string(pybind11::module &m) {
     );
 
     c.def(
-        pybind11::self *= pybind11::self,
+        pybind11::self *= pybind11::object(),
         pybind11::arg("rhs"),
         clean_doc_string(u8R"DOC(
-            Inplace right-multiplies the Pauli string by another Pauli string.
+            Inplace right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 
             Args:
-                rhs: The right hand side Pauli string to multiply by.
+                rhs: The right hand side of the multiplication. This can be:
+                    - A stim.PauliString to right-multiply term-by-term into the paulis of the pauli string.
+                    - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
+                    - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
 
             Examples:
                 >>> import stim
+
+                >>> p = stim.PauliString("X")
+                >>> p *= 1j
+                >>> p
+                stim.PauliString("iX")
+
+                >>> p = stim.PauliString("iXY_")
+                >>> p *= 3
+                >>> p
+                stim.PauliString("-iXY_XY_XY_")
 
                 >>> p = stim.PauliString("X")
                 >>> alias = p
@@ -430,37 +643,15 @@ void pybind_pauli_string(pybind11::module &m) {
                 >>> alias
                 stim.PauliString("+iZ")
 
+                >>> p = stim.PauliString("X")
+                >>> p *= stim.PauliString("_YY")
+                stim.PauliString("+XYY")
+
             Returns:
                 The mutated Pauli string.
 
             Raises:
                 ValueError: The Pauli strings have different lengths.
-        )DOC").data()
-    );
-
-    c.def(
-        pybind11::self *= std::complex<float>(),
-        pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
-            Inplace scales the Pauli string by a scalar phase factor.
-
-            Args:
-                rhs: The scalar factor (+1, -1, 1j, or -1j).
-
-            Examples:
-                >>> import stim
-
-                >>> p = stim.PauliString("X")
-                >>> alias = p
-                >>> p *= 1j
-                >>> alias
-                stim.PauliString("+iX")
-
-            Returns:
-                The mutated Pauli string.
-
-            Raises:
-                ValueError: The scalar phase factor isn't 1, -1, 1j, or -1j.
         )DOC").data()
     );
 

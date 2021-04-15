@@ -68,6 +68,8 @@ struct PauliString {
 
     /// Returns a string describing the given Pauli string, with one character per qubit.
     std::string str() const;
+
+    void ensure_num_qubits(size_t min_num_qubits);
 };
 
 /// Writes a string describing the given Pauli string to an output stream.
