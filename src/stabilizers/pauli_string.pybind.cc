@@ -301,7 +301,7 @@ void pybind_pauli_string(pybind11::module &m) {
 
             Examples:
                 >>> import stim
-                >>> stim.PauliString([0, 1, 2, 3, 0, 3)
+                >>> stim.PauliString([0, 1, 2, 3, 0, 3])
                 stim.PauliString("+_XYZ_Z")
 
             Args:
@@ -501,6 +501,7 @@ void pybind_pauli_string(pybind11::module &m) {
                 >>> p = stim.PauliString("iX")
                 >>> alias = p
                 >>> p *= stim.PauliString("-YY")
+                >>> p
                 stim.PauliString("-iXYY")
                 >>> alias is p
                 True
@@ -630,7 +631,7 @@ void pybind_pauli_string(pybind11::module &m) {
                 >>> p = stim.PauliString("X")
                 >>> p *= 1j
                 >>> p
-                stim.PauliString("iX")
+                stim.PauliString("+iX")
 
                 >>> p = stim.PauliString("iXY_")
                 >>> p *= 3
@@ -645,6 +646,7 @@ void pybind_pauli_string(pybind11::module &m) {
 
                 >>> p = stim.PauliString("X")
                 >>> p *= stim.PauliString("_YY")
+                >>> p
                 stim.PauliString("+XYY")
 
             Returns:
