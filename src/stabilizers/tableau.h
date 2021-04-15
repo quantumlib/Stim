@@ -131,6 +131,11 @@ struct Tableau {
     /// Applies a transpose to the X2X, X2Z, Z2X, and Z2Z bit tables within the tableau.
     void do_transpose_quadrants();
 
+    /// Returns the direct sum of two tableaus.
+    Tableau operator+(const Tableau &second) const;
+    /// Appends the other tableau onto this one, resulting in the direct sum.
+    Tableau &operator+=(const Tableau &second);
+
     /// === Specialized vectorized methods for prepending operations onto the tableau === ///
     void prepend_SWAP(size_t q1, size_t q2);
     void prepend_X(size_t q);

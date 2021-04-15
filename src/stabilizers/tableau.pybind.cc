@@ -570,4 +570,60 @@ void pybind_tableau(pybind11::module &m) {
                  https://arxiv.org/abs/2003.09412
         )DOC").data()
     );
+
+    c.def(
+        pybind11::self + pybind11::self,
+        pybind11::arg("rhs"),
+        clean_doc_string(u8R"DOC(
+            Returns the direct sum (diagonal concatenation) of two Tableaus.
+
+            Args:
+                rhs: A second stim.Tableau.
+
+            Examples:
+                >>> import stim
+
+                >>> s = stim.Tableau.from_named_gate("S")
+                >>> cz = stim.Tableau.from_named_gate("CZ")
+                >>> print(s + cz)
+                +-xz-xz-xz-
+                | ++ ++ ++
+                | YZ __ __
+                | __ XZ Z_
+                | __ Z_ XZ
+
+            Returns:
+                The direct sum.
+        )DOC").data()
+    );
+
+    c.def(
+        pybind11::self += pybind11::self,
+        pybind11::arg("rhs"),
+        clean_doc_string(u8R"DOC(
+            Performs an inplace direct sum (diagonal concatenation).
+
+            Args:
+                rhs: A second stim.Tableau.
+
+            Examples:
+                >>> import stim
+
+                >>> s = stim.Tableau.from_named_gate("S")
+                >>> cz = stim.Tableau.from_named_gate("CZ")
+                >>> alias = s
+                >>> s += cz
+                >>> alias is s
+                True
+                >>> print(s)
+                +-xz-xz-xz-
+                | ++ ++ ++
+                | YZ __ __
+                | __ XZ Z_
+                | __ Z_ XZ
+
+            Returns:
+                The mutated tableau.
+        )DOC").data()
+    );
 }
