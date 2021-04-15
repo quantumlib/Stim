@@ -472,6 +472,8 @@ Tableau &Tableau::operator+=(const Tableau &second) {
     size_t n = num_qubits;
     expand(n + second.num_qubits);
     for (size_t i = 0; i < second.num_qubits; i++) {
+        xs.signs[n + i] = second.xs.signs[i];
+        zs.signs[n + i] = second.zs.signs[i];
         for (size_t j = 0; j < second.num_qubits; j++) {
             xs.xt[n + i][n + j] = second.xs.xt[i][j];
             xs.zt[n + i][n + j] = second.xs.zt[i][j];
