@@ -500,7 +500,7 @@ void pybind_pauli_string(pybind11::module &m) {
 
                 >>> p = stim.PauliString("iX")
                 >>> alias = p
-                >>> p *= stim.PauliString("-YY")
+                >>> p += stim.PauliString("-YY")
                 >>> p
                 stim.PauliString("-iXYY")
                 >>> alias is p
