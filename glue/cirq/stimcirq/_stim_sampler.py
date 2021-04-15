@@ -74,18 +74,31 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
         >>> a = cirq.NamedQubit("one")
         >>> b = cirq.NamedQubit("two")
         >>> stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(
-        ...     cirq.H(a),
-        ...     cirq.CNOT(a, b),
-        ...     cirq.X(a).with_probability(0.25),
-        ...     cirq.DepolarizingChannel(0.125, n_qubits=2).on(b, a),
-        ...     cirq.measure(a, b),
+        ...     cirq.Moment(cirq.H(a)),
+        ...     cirq.Moment(cirq.CNOT(a, b)),
+        ...     cirq.Moment(
+        ...         cirq.X(a).with_probability(0.25),
+        ...         cirq.Z(b).with_probability(0.25),
+        ...     ),
+        ...     cirq.Moment(),
+        ...     cirq.Moment(),
+        ...     cirq.Moment(cirq.DepolarizingChannel(0.125, n_qubits=2).on(b, a)),
+        ...     cirq.Moment(cirq.measure(a, b)),
         ... ))
         stim.Circuit('''
         H 0
+        TICK
         CX 0 1
+        TICK
         X_ERROR(0.25) 0
+        Z_ERROR(0.25) 1
+        TICK
+        TICK
+        TICK
         DEPOLARIZE2(0.125) 1 0
+        TICK
         M 0 1
+        TICK
         ''')
 
     Here is an example of a _stim_conversion_ method:
@@ -120,14 +133,16 @@ def cirq_circuit_to_stim_data(
         q2i = {q: i for i, q in enumerate(sorted(circuit.all_qubits()))}
     out = stim.Circuit()
     key_out: List[Tuple[str, int]] = []
-    _c2s_helper(circuit.all_operations(), q2i, out, key_out)
+    for moment in circuit:
+        _c2s_helper(moment, q2i, out, key_out)
+        out.append_operation("TICK", [])
     return out, key_out
 
 
 StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int]], None]
 
 
-@functools.lru_cache()
+@functools.lru_cache(maxsize=1)
 def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[int]], None]]:
     """A dictionary mapping specific gate instances to stim circuit appending functions."""
     x = (cirq.X, False)
