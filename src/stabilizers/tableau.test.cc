@@ -524,6 +524,15 @@ TEST(tableau, specialized_operations) {
         }));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
+        1,
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            t.inplace_scatter_append(GATE_DATA.at("S").tableau(), targets);
+        },
+        [](Tableau &t, const std::vector<size_t> &targets) {
+            TableauTransposedRaii(t).append_S(targets[0]);
+        }));
+
+    EXPECT_TRUE(are_tableau_mutations_equivalent(
         2,
         [](Tableau &t, const std::vector<size_t> &targets) {
             t.inplace_scatter_append(GATE_DATA.at("ZCX").tableau(), targets);

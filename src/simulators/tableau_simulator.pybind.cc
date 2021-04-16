@@ -136,6 +136,55 @@ void pybind_tableau_simulator(pybind11::module &m) {
     );
 
     c.def(
+        "canonical_stabilizers",
+        [](const TableauSimulator &self) {
+            auto stabilizers = self.canonical_stabilizers();
+            std::vector<PyPauliString> result;
+            result.reserve(stabilizers.size());
+            for (auto &s : stabilizers) {
+                result.emplace_back(std::move(s), false);
+            }
+            return result;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns a list of the stabilizers of the simulator's current state in a standard form.
+
+            Two simulators have the same canonical stabilizers if and only if their current quantum state is equal
+            (and tracking the same number of qubits).
+
+            The canonical form is computed as follows:
+
+                1. Get a list of stabilizers using the `z_output`s of `simulator.current_inverse_tableau()**-1`.
+                2. Perform Gaussian elimination on each generator g (ordered X0, Z0, X1, Z1, X2, Z2, etc).
+                    2a) Pick any stabilizer that uses the generator g. If there are none, go to the next g.
+                    2b) Multiply that stabilizer into all other stabilizers that use the generator g.
+                    2c) Swap that stabilizer with the stabilizer at position `next_output` then increment `next_output`.
+
+            Returns:
+                A List[stim.PauliString] of the simulator's state's stabilizers.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.h(0)
+                >>> s.cnot(0, 1)
+                >>> s.x(2)
+                >>> s.canonical_stabilizers()
+                [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
+
+                >>> # Scramble the stabilizers then check that the canonical form is unchanged.
+                >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
+                >>> s.cnot(0, 1)
+                >>> s.cz(0, 2)
+                >>> s.s(0, 2)
+                >>> s.cy(2, 1)
+                >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
+                >>> s.canonical_stabilizers()
+                [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
+        )DOC").data()
+    );
+
+    c.def(
         "current_measurement_record",
         [](TableauSimulator &self) {
             return self.measurement_record.storage;

@@ -822,6 +822,80 @@ TEST(TableauSimulator, set_num_qubits_reduce_random) {
     ASSERT_TRUE(sim.inv_state.satisfies_invariants());
 }
 
+void scramble_stabilizers(TableauSimulator &s) {
+    auto &rng = SHARED_TEST_RNG();
+    TableauTransposedRaii tmp(s.inv_state);
+    for (size_t i = 0; i < s.inv_state.num_qubits; i++) {
+        for (size_t j = i + 1; j < s.inv_state.num_qubits; j++) {
+            if (rng() & 1) {
+                tmp.append_ZCX(i, j);
+            }
+            if (rng() & 1) {
+                tmp.append_ZCX(j, i);
+            }
+            if (rng() & 1) {
+                tmp.append_ZCZ(i, j);
+            }
+        }
+        if (rng() & 1) {
+            tmp.append_S(i);
+        }
+    }
+}
+
+TEST(TableauSimulator, canonical_stabilizers) {
+    TableauSimulator sim(2, SHARED_TEST_RNG());
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
+        PauliString::from_str("XX"),
+        PauliString::from_str("ZZ"),
+    }));
+    sim.SQRT_Y(OpDat({0, 1}));
+    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
+        PauliString::from_str("XX"),
+        PauliString::from_str("ZZ"),
+    }));
+    sim.SQRT_X(OpDat({0, 1}));
+    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
+        PauliString::from_str("XX"),
+        PauliString::from_str("-ZZ"),
+    }));
+    sim.set_num_qubits(3);
+    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
+        PauliString::from_str("+XX_"),
+        PauliString::from_str("-ZZ_"),
+        PauliString::from_str("+__Z"),
+    }));
+    sim.ZCX(OpDat({2, 0}));
+    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
+        PauliString::from_str("+XX_"),
+        PauliString::from_str("-ZZ_"),
+        PauliString::from_str("+__Z"),
+    }));
+}
+
+TEST(TableauSimulator, canonical_stabilizers_random) {
+    TableauSimulator sim(4, SHARED_TEST_RNG());
+    sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
+    auto s1 = sim.canonical_stabilizers();
+    scramble_stabilizers(sim);
+    auto s2 = sim.canonical_stabilizers();
+    ASSERT_EQ(s1, s2);
+}
+
+TEST(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers) {
+    auto &rng = SHARED_TEST_RNG();
+    TableauSimulator sim(4, rng);
+    sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
+    auto s1 = sim.canonical_stabilizers();
+    sim.inv_state.expand(8);
+    scramble_stabilizers(sim);
+    sim.set_num_qubits(4);
+    auto s2 = sim.canonical_stabilizers();
+    ASSERT_EQ(s1, s2);
+}
+
 TEST(TableauSimulator, measure_kickback) {
     TableauSimulator sim(4, SHARED_TEST_RNG());
     sim.H_XZ(OpDat({0, 2}));
@@ -833,6 +907,18 @@ TEST(TableauSimulator, measure_kickback) {
     ASSERT_EQ(k2.second, PauliString::from_str("__XX"));
     ASSERT_EQ(k3.second, PauliString(0));
     ASSERT_EQ(k2.first, k3.first);
+}
+
+TEST(TableauSimulator, measure_kickback_isolates) {
+    TableauSimulator sim(4, SHARED_TEST_RNG());
+    sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
+    for (size_t k = 0; k < 4; k++) {
+        auto result = sim.measure_kickback(k);
+        for (size_t j = 0; j < result.second.num_qubits && j < k; j++) {
+            ASSERT_FALSE(result.second.xs[j]);
+            ASSERT_FALSE(result.second.zs[j]);
+        }
+    }
 }
 
 TEST(TableauSimulator, collapse_isolate_completely) {

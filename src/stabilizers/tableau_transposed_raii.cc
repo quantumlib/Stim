@@ -108,6 +108,13 @@ void TableauTransposedRaii::append_H_YZ(size_t target) {
     });
 }
 
+void TableauTransposedRaii::append_S(size_t target) {
+    for_each_trans_obs(*this, target, [](simd_word &x, simd_word &z, simd_word &s) {
+        s ^= x & z;
+        z ^= x;
+    });
+}
+
 void TableauTransposedRaii::append_H_XZ(size_t q) {
     for_each_trans_obs(*this, q, [](simd_word &x, simd_word &z, simd_word &s) {
         std::swap(x, z);

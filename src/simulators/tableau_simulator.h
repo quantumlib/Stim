@@ -88,6 +88,8 @@ struct TableauSimulator {
     /// Determines if a qubit's Z observable commutes (vs anti-commutes) with the current stabilizer generators.
     bool is_deterministic(size_t target) const;
 
+    std::vector<PauliString> canonical_stabilizers() const;
+
     /// === SPECIALIZED VECTORIZED OPERATION IMPLEMENTATIONS ===
     void I(const OperationData &target_data);
     void H_XZ(const OperationData &target_data);
