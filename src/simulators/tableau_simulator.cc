@@ -541,7 +541,7 @@ void TableauSimulator::collapse_isolate_qubit(size_t target, TableauTransposedRa
     // Note T(X_target) now contains X_target or Y_target because it has to anti-commute with T(Z_target) = Z_target.
     // Ensure T(X_target) contains X_target instead of Y_target.
     if (transposed_raii.tableau.xs.zt[target][target]) {
-        transposed_raii.append_H_XY(target);
+        transposed_raii.append_S(target);
     }
 
     // Ensure T(X_target) = +-X_target.
@@ -614,13 +614,52 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback(uint32_t target)
     bool flipped = target & TARGET_INVERTED_BIT;
     uint32_t q = target & TARGET_VALUE_MASK;
     PauliString kickback(0);
-    if (!is_deterministic(q)) {
-        // TODO: reduce cost so that O(n^2) is worst case instead of guaranteed case.
+    bool has_kickback = !is_deterministic(q); // Note: do this before transposing the state!
+
+    {
         TableauTransposedRaii temp_transposed(inv_state);
-        size_t pivot = collapse_qubit(q, temp_transposed);
-        kickback = temp_transposed.unsigned_x_input(pivot);
+        if (has_kickback) {
+            size_t pivot = collapse_qubit(q, temp_transposed);
+            kickback = temp_transposed.unsigned_x_input(pivot);
+        }
+        bool result = inv_state.zs.signs[q] ^ flipped;
+        measurement_record.storage.push_back(result);
+
+        // Prevent later measure_kickback calls from unnecessarily targeting this qubit with a Z gate.
+        collapse_isolate_qubit(target, temp_transposed);
+
+        return {result, kickback};
     }
-    bool result = inv_state.zs.signs[q] ^ flipped;
-    measurement_record.storage.push_back(result);
-    return {result, kickback};
+}
+
+std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {
+    Tableau t = inv_state.inverse();
+    size_t n = t.num_qubits;
+    std::vector<PauliString> stabilizers;
+    for (size_t k = 0; k < n; k++) {
+        stabilizers.push_back(t.zs[k]);
+    }
+
+    size_t min_pivot = 0;
+    for (size_t q = 0; q < n; q++) {
+        for (size_t b = 0; b < 2; b++) {
+            size_t pivot = min_pivot;
+            while (pivot < n && !(b ? stabilizers[pivot].zs : stabilizers[pivot].xs)[q]) {
+                pivot++;
+            }
+            if (pivot == n) {
+                continue;
+            }
+            for (size_t s = 0; s < n; s++) {
+                if (s != pivot && (b ? stabilizers[s].zs : stabilizers[s].xs)[q]) {
+                    stabilizers[s].ref() *= stabilizers[pivot];
+                }
+            }
+            if (min_pivot != pivot) {
+                std::swap(stabilizers[min_pivot], stabilizers[pivot]);
+            }
+            min_pivot += 1;
+        }
+    }
+    return stabilizers;
 }

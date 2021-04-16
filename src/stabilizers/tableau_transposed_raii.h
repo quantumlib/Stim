@@ -45,6 +45,7 @@ struct TableauTransposedRaii {
     void append_H_XZ(size_t q);
     void append_H_XY(size_t q);
     void append_H_YZ(size_t q);
+    void append_S(size_t q);
     void append_ZCX(size_t control, size_t target);
     void append_ZCY(size_t control, size_t target);
     void append_ZCZ(size_t control, size_t target);

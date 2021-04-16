@@ -224,9 +224,9 @@ def test_measure_kickback_random_branches():
     assert isinstance(kick, stim.PauliString) and len(kick) == 8
     if result:
         s.do(kick)
-    assert s.current_inverse_tableau() == post_false.current_inverse_tableau()
+    assert s.canonical_stabilizers() == post_false.canonical_stabilizers()
     s.do(kick)
-    assert s.current_inverse_tableau() == post_true.current_inverse_tableau()
+    assert s.canonical_stabilizers() == post_true.canonical_stabilizers()
 
 
 def test_set_num_qubits():
@@ -245,3 +245,23 @@ def test_set_num_qubits():
     s.cnot(0, 4)
     s.set_num_qubits(4)
     assert s.peek_bloch(0) in [stim.PauliString("+Z"), stim.PauliString("-Z")]
+
+
+def test_canonical_stabilizers():
+    s = stim.TableauSimulator()
+    s.h(0)
+    s.h(1)
+    s.h(2)
+    s.cz(0, 1)
+    s.cz(1, 2)
+    assert s.canonical_stabilizers() == [
+        stim.PauliString("+X_X"),
+        stim.PauliString("+ZXZ"),
+        stim.PauliString("+_ZX"),
+    ]
+    s.s(1)
+    assert s.canonical_stabilizers() == [
+        stim.PauliString("+X_X"),
+        stim.PauliString("-ZXY"),
+        stim.PauliString("+_ZX"),
+    ]
