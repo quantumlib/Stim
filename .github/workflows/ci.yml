@@ -123,3 +123,4 @@ jobs:
       - run: pip install pytest
       - run: pytest glue/cirq
       - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
+      - run: pytest glue/zx
