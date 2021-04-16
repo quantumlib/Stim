@@ -27,7 +27,7 @@ TEST_HEADERS = glob.glob("src/**/*.test.h", recursive=True)
 PERF_HEADERS = glob.glob("src/**/*.perf.h", recursive=True)
 RELEVANT_HEADERS = sorted(set(ALL_HEADERS) - set(TEST_HEADERS + PERF_HEADERS))
 
-version = '1.3.dev0'
+version = '1.3.0'
 
 extension_module = Extension(
     'stim',
