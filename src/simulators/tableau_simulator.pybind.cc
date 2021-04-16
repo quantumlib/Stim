@@ -38,7 +38,7 @@ TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &a
     try {
         for (const auto &e : args) {
             size_t q = e.cast<uint32_t>();
-            max_q = std::max(max_q, q);
+            max_q = std::max(max_q, q & TARGET_VALUE_MASK);
             arguments.push_back(q);
         }
     } catch (const pybind11::cast_error &) {
