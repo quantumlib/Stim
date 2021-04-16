@@ -265,3 +265,19 @@ def test_canonical_stabilizers():
         stim.PauliString("-ZXY"),
         stim.PauliString("+_ZX"),
     ]
+
+
+def test_classical_control_cnot():
+    s = stim.TableauSimulator()
+
+    with pytest.raises(IndexError, match="beginning of time"):
+        s.cnot(stim.target_rec(-1), 0)
+
+    assert not s.measure(1)
+    s.cnot(stim.target_rec(-1), 0)
+    assert not s.measure(0)
+
+    s.x(1)
+    assert s.measure(1)
+    s.cnot(stim.target_rec(-1), 0)
+    assert s.measure(0)
