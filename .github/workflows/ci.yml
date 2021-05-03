@@ -132,5 +132,5 @@ jobs:
         with:
           node-version: 12.x
       - run: npm install
-      - run: glue/javascript/build_wasm.sh
+      - run: bash glue/javascript/build_wasm.sh
       - run: node glue/javascript/puppeteer_run_tests.js
