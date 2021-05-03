@@ -1,0 +1,18 @@
+{
+  "name": "stim",
+  "title": "Stim",
+  "description": "A quantum stabilizer circuit simulator.",
+  "license": "Apache-2.0",
+  "version": "1.0.0",
+  "homepage": "https://github.com/quantumlib/stim",
+  "bugs": {
+    "url": "https://github.com/quantumlib/stim/issues"
+  },
+  "devDependencies": {
+    "puppeteer": "^5.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quantumlib/stim.git"
+  }
+}
