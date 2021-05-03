@@ -78,7 +78,13 @@ void ExposedTableauSimulator::do_pauli_string(const ExposedPauliString &pauli_st
     sim.paulis(pauli_string.pauli_string);
 }
 void ExposedTableauSimulator::do_tableau(const ExposedTableau &tableau, const emscripten::val &targets) {
-    sim.inv_state.inplace_scatter_prepend(tableau.tableau.inverse(), emscripten::convertJSArrayToNumberVector<size_t>(targets));
+    auto conv = emscripten::convertJSArrayToNumberVector<size_t>(targets);
+    uint32_t max_q = 0;
+    for (uint32_t q : conv) {
+        max_q = std::max(max_q, q & TARGET_VALUE_MASK);
+    }
+    sim.ensure_large_enough_for_qubits((size_t)max_q + 1);
+    sim.inv_state.inplace_scatter_prepend(tableau.tableau.inverse(), conv);
 }
 
 void ExposedTableauSimulator::X(uint32_t target) {
@@ -110,6 +116,10 @@ void ExposedTableauSimulator::set_inverse_tableau(const ExposedTableau &tableau)
     sim.inv_state = tableau.tableau;
 }
 
+ExposedTableauSimulator ExposedTableauSimulator::copy() const {
+    return *this;
+}
+
 void emscripten_bind_tableau_simulator() {
     auto &&c = emscripten::class_<ExposedTableauSimulator>("TableauSimulator");
     c.constructor();
@@ -127,4 +137,5 @@ void emscripten_bind_tableau_simulator() {
     c.function("CNOT", &ExposedTableauSimulator::CNOT);
     c.function("CY", &ExposedTableauSimulator::CY);
     c.function("CZ", &ExposedTableauSimulator::CZ);
+    c.function("copy", &ExposedTableauSimulator::copy);
 }

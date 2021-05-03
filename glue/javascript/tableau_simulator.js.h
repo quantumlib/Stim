@@ -10,6 +10,7 @@
 struct ExposedTableauSimulator {
     TableauSimulator sim;
     ExposedTableauSimulator();
+    ExposedTableauSimulator copy() const;
     bool measure(size_t target);
     emscripten::val measure_kickback(size_t target);
     ExposedTableau current_inverse_tableau() const;

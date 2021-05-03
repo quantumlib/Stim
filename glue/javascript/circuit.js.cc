@@ -23,8 +23,16 @@ ExposedCircuit ExposedCircuit::repeated(size_t repetitions) const {
     return ExposedCircuit(circuit * repetitions);
 }
 
+ExposedCircuit ExposedCircuit::copy() const {
+    return ExposedCircuit(circuit);
+}
+
 std::string ExposedCircuit::toString() const {
-    return "new stim.Circuit(`\n" + circuit.str() + "\n`)";
+    return circuit.str();
+}
+
+bool ExposedCircuit::isEqualTo(const ExposedCircuit &other) const {
+    return circuit == other.circuit;
 }
 
 void emscripten_bind_circuit() {
@@ -32,6 +40,9 @@ void emscripten_bind_circuit() {
     c.constructor();
     c.constructor<const std::string &>();
     c.function("toString", &ExposedCircuit::toString);
+    c.function("repeated", &ExposedCircuit::repeated);
+    c.function("copy", &ExposedCircuit::copy);
     c.function("append_operation", &ExposedCircuit::append_operation);
     c.function("append_from_stim_program_text", &ExposedCircuit::append_from_stim_program_text);
+    c.function("isEqualTo", &ExposedCircuit::isEqualTo);
 }

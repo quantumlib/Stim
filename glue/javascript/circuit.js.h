@@ -12,6 +12,8 @@ struct ExposedCircuit {
     void append_operation(const std::string &name, const emscripten::val &targets, double arg);
     void append_from_stim_program_text(const std::string &text);
     ExposedCircuit repeated(size_t repetitions) const;
+    ExposedCircuit copy() const;
+    bool isEqualTo(const ExposedCircuit &other) const;
     std::string toString() const;
 };
 
