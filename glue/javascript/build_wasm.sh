@@ -21,6 +21,7 @@ readarray -t js_test_files < <( \
     | grep "\\.test\\.js" \
 )
 
+mkdir -p out
 echo '<script src="stim.js"></script>' > out/all_stim_tests.html
 echo '<script type="text/javascript">' >> out/all_stim_tests.html
 cat "glue/javascript/stim.test_harness.js" "${js_test_files[@]}" >> out/all_stim_tests.html

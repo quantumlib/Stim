@@ -94,3 +94,20 @@ test("tableau.equality", ({stim, assert}) => {
     assert(new stim.Tableau(2).isEqualTo(new stim.Tableau(2)));
     assert(!new stim.Tableau(3).isEqualTo(new stim.Tableau(2)));
 });
+
+test("tableau.INTENTIONAL_FAILURE", ({stim, assert}) => {
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+    assert(false);
+});

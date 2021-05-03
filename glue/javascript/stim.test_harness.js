@@ -1,4 +1,5 @@
 let tests = [];
+let __any_failures = false;
 
 function test(name, handler) {
     tests.push({name, handler});
@@ -28,18 +29,18 @@ async function run_all_tests() {
         });
         results.push({name, result});
     }
-    let failed = false;
     for (let {result, name} of results) {
         try {
             await result;
             console.log(`pass ${name}`);
         } catch (ex) {
-            failed = true;
+            __any_failures = true;
             console.error(`FAIL ${name}: ${ex}`);
         }
     }
-    if (failed) {
+    if (__any_failures) {
         console.error("THERE WERE TEST FAILURES");
+        throw Error("THERE WERE TEST FAILURES");
     } else {
         console.info("All tests passed.");
     }

@@ -124,3 +124,13 @@ jobs:
       - run: pytest glue/cirq
       - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
       - run: pytest glue/zx
+  test_stimjs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - run: npm install
+      - run: glue/javascript/build_wasm.sh
+      - run: node glue/javascript/puppeteer_run_tests.js
