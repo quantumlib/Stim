@@ -38,11 +38,18 @@ async function run_all_tests() {
             console.error(`FAIL ${name}: ${ex}`);
         }
     }
-    if (__any_failures) {
-        console.error("THERE WERE TEST FAILURES");
-        throw Error("THERE WERE TEST FAILURES");
-    } else {
-        console.info("All tests passed.");
+    try {
+        if (__any_failures) {
+            console.error("THERE WERE TEST FAILURES");
+            throw Error("THERE WERE TEST FAILURES");
+        } else {
+            console.info("All tests passed.");
+        }
+    } finally {
+        var doneDiv = document.createElement('div');
+        doneDiv.id = 'done';
+        doneDiv.innerText = 'Done';
+        document.body.appendChild(doneDiv);
     }
 }
 
