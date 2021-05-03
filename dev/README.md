@@ -106,6 +106,34 @@ Output is in the `glue/cirq/dist` directory, and can be uploaded using `twine`.
 twine upload --username="${PROD_TWINE_USERNAME}" --password="${PROD_TWINE_PASSWORD}" glue/cirq/dist/[CREATED_FILE_GOES_HERE]
 ```
 
+# Build javascript bindings
+
+Install and activate enscriptem (`emcc` must be in your PATH).
+Example:
+
+```bash
+# [outside of repo]
+git clone git@github.com:emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source emsdk_env.sh
+```
+
+Run the bash build script:
+
+```bash
+# [from repo root]
+glue/javascript/build_wasm.sh
+```
+
+Outputs are the binary `out/stim.js` and the test runner `out/all_stim_tests.html`.
+Run tests by opening in a browser and checking for an `All tests passed.` message in the browser console:
+
+```bash
+firefox out/all_stim_tests.html
+```
+
 # Testing
 
 ### Run C++ tests using CMAKE
@@ -137,7 +165,7 @@ make stim_test_o3
 Run tests with whatever settings Bazel feels like using:
 
 ```bash
-bazel :stim_test
+bazel test :stim_test
 ```
 
 ### Run stim python package tests
