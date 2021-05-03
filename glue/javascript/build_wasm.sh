@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-set -x
 
 # Get to this script's git repo root.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
@@ -33,7 +32,7 @@ emcc \
     -s NO_DISABLE_EXCEPTION_CATCHING \
     -s EXPORT_NAME="load_stim_module"  \
     -s MODULARIZE=1  \
-    -o out/stim.wasm \
+    -s SINGLE_FILE=1  \
     -o out/stim.js \
     --no-entry \
     --bind \
