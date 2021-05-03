@@ -12,7 +12,7 @@ const puppeteer = require('puppeteer');
         });
 
         const outDirUrl = 'file:///' + __dirname.split('\\').join('/') + '/out/';
-        await page.goto(outDirUrl + 'out/all_stim_tests.html#blocking');
+        await page.goto(outDirUrl + 'all_stim_tests.html#blocking');
         await page.waitForSelector('#done', {timeout: 5 * 60 * 1000});
         let anyFailures = await page.evaluate('__any_failures');
 
