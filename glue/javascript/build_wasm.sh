@@ -20,7 +20,11 @@ readarray -t glue_src_files < <( \
 # Build web assembly module using emscripten.
 emcc \
     -s NO_DISABLE_EXCEPTION_CATCHING \
-    -o out/index.html \
+    -s EXPORT_NAME="load_stim_module"  \
+    -s MODULARIZE=1  \
+    -o out/stim.wasm \
+    -o out/stim.js \
+    --no-entry \
     --bind \
     "${glue_src_files[@]}" \
     "${stim_src_files[@]}"
