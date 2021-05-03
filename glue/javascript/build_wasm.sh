@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 # Get to this script's git repo root.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
