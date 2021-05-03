@@ -1,6 +1,8 @@
 #ifndef TABLEAU_SIMULATOR_JS_H
 #define TABLEAU_SIMULATOR_JS_H
 
+#include <cstddef>
+#include <cstdint>
 #include <emscripten/val.h>
 #include "../../src/simulators/tableau_simulator.h"
 #include "circuit.js.h"

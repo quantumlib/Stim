@@ -1,6 +1,8 @@
 #ifndef TABLEAU_JS_H
 #define TABLEAU_JS_H
 
+#include <cstddef>
+#include <cstdint>
 #include "../../src/stabilizers/tableau.h"
 #include "pauli_string.js.h"
 

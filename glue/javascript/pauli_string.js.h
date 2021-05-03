@@ -1,6 +1,8 @@
 #ifndef PAULI_STRING_JS_H
 #define PAULI_STRING_JS_H
 
+#include <cstddef>
+#include <cstdint>
 #include <emscripten/val.h>
 #include "../../src/stabilizers/pauli_string.h"
 

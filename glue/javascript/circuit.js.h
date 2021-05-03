@@ -1,6 +1,8 @@
 #ifndef CIRCUIT_JS_H
 #define CIRCUIT_JS_H
 
+#include <cstddef>
+#include <cstdint>
 #include <emscripten/val.h>
 #include "../../src/circuit/circuit.h"
 
