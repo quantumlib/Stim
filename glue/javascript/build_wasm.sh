@@ -16,6 +16,15 @@ readarray -t glue_src_files < <( \
     find glue/javascript \
     | grep "\\.js\\.cc" \
 )
+readarray -t js_test_files < <( \
+    find glue/javascript \
+    | grep "\\.test\\.js" \
+)
+
+echo '<script src="stim.js"></script>' > out/all_stim_tests.html
+echo '<script type="text/javascript">' >> out/all_stim_tests.html
+cat "glue/javascript/stim.test_harness.js" "${js_test_files[@]}" >> out/all_stim_tests.html
+echo '</script>' >> out/all_stim_tests.html
 
 # Build web assembly module using emscripten.
 emcc \

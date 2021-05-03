@@ -9,6 +9,13 @@ struct ExposedPauliString {
     explicit ExposedPauliString(PauliString pauli_string);
     explicit ExposedPauliString(const emscripten::val &arg);
     static ExposedPauliString random(size_t n);
+    ExposedPauliString times(const ExposedPauliString &other) const;
+    bool commutes(const ExposedPauliString &other) const;
+    size_t getLength() const;
+    int8_t getSign() const;
+    uint8_t pauli(size_t index) const;
+    ExposedPauliString neg() const;
+    bool isEqualTo(const ExposedPauliString &other) const;
     std::string toString() const;
 };
 

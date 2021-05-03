@@ -1,4 +1,5 @@
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
 
 #include "circuit.js.h"
 #include "pauli_string.js.h"
