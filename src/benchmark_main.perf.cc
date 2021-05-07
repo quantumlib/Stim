@@ -19,6 +19,8 @@
 #include "arg_parse.h"
 #include "benchmark_util.h"
 
+using namespace stim_internal;
+
 RegisteredBenchmark *running_benchmark = nullptr;
 std::vector<RegisteredBenchmark> all_registered_benchmarks{};
 
