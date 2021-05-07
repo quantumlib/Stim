@@ -23,6 +23,8 @@
 
 #include "pauli_string.h"
 
+using namespace stim_internal;
+
 TableauTransposedRaii::TableauTransposedRaii(Tableau &tableau) : tableau(tableau) {
     tableau.do_transpose_quadrants();
 }

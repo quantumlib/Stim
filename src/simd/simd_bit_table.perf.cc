@@ -16,6 +16,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(simd_bit_table_inplace_square_transpose_diam10K) {
     size_t n = 10 * 1000;
     simd_bit_table table(n, n);

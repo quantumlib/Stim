@@ -21,6 +21,8 @@
 
 #include "simd_util.h"
 
+namespace stim_internal {
+
 struct simd_word {
     union {
         __m128i val;
@@ -114,3 +116,5 @@ struct simd_word {
         other.val = t;
     }
 };
+
+}

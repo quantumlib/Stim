@@ -20,6 +20,8 @@
 #include "../circuit/gate_data.h"
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(TableauSimulator, identity) {
     auto s = TableauSimulator(1, SHARED_TEST_RNG());
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));

@@ -16,6 +16,8 @@
 #include "main_helper.h"
 #include "simulators/detection_simulator.h"
 
+using namespace stim_internal;
+
 Circuit make_rep_code(uint32_t distance, uint32_t rounds) {
     Circuit round_ops;
     for (uint32_t k = 0; k < distance - 1; k++) {

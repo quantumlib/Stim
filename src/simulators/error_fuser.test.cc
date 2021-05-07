@@ -20,6 +20,8 @@
 #include "../test_util.test.h"
 #include "frame_simulator.h"
 
+using namespace stim_internal;
+
 std::string convert(const char *text) {
     FILE *f = tmpfile();
     ErrorFuser::convert_circuit_out(Circuit::from_text(text), f);

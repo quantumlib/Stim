@@ -7,8 +7,8 @@
 #include "pauli_string.js.h"
 
 struct ExposedTableau {
-    Tableau tableau;
-    explicit ExposedTableau(Tableau tableau);
+    stim_internal::Tableau tableau;
+    explicit ExposedTableau(stim_internal::Tableau tableau);
     explicit ExposedTableau(int n);
     static ExposedTableau random(int n);
     static ExposedTableau from_named_gate(const std::string &name);

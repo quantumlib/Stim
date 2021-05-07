@@ -18,6 +18,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(gate_data_fast_hash) {
     std::vector<std::string> names;
     for (const auto &gate : GATE_DATA.gates()) {

@@ -24,6 +24,8 @@
 #include "../simd/simd_util.h"
 #include "pauli_string.h"
 
+namespace stim_internal {
+
 struct TableauHalf {
     size_t num_qubits;
     simd_bit_table xt;
@@ -164,6 +166,8 @@ struct Tableau {
     void prepend(const PauliStringRef &op);
 };
 
-std::ostream &operator<<(std::ostream &out, const Tableau &ps);
+}
+
+std::ostream &operator<<(std::ostream &out, const stim_internal::Tableau &ps);
 
 #endif

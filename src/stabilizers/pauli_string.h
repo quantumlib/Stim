@@ -23,6 +23,8 @@
 #include "../simd/simd_bits.h"
 #include "pauli_string_ref.h"
 
+namespace stim_internal {
+
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
 /// In most cases, methods will take a PauliStringRef instead of a PauliString. This is because PauliStringRef can
@@ -72,7 +74,9 @@ struct PauliString {
     void ensure_num_qubits(size_t min_num_qubits);
 };
 
+}
+
 /// Writes a string describing the given Pauli string to an output stream.
-std::ostream &operator<<(std::ostream &out, const PauliString &ps);
+std::ostream &operator<<(std::ostream &out, const stim_internal::PauliString &ps);
 
 #endif

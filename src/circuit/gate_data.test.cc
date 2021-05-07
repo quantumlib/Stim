@@ -18,6 +18,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(gate_data, lookup) {
     ASSERT_TRUE(GATE_DATA.has("H"));
     ASSERT_FALSE(GATE_DATA.has("H2345"));

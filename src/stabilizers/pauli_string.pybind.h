@@ -21,11 +21,11 @@
 #include "pauli_string.h"
 
 struct PyPauliString {
-    PauliString value;
+    stim_internal::PauliString value;
     bool imag;
 
-    PyPauliString(const PauliStringRef val, bool imag = false);
-    PyPauliString(PauliString&& val, bool imag = false);
+    PyPauliString(const stim_internal::PauliStringRef val, bool imag = false);
+    PyPauliString(stim_internal::PauliString&& val, bool imag = false);
 
     std::complex<float> get_phase() const;
 

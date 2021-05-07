@@ -22,6 +22,8 @@
 
 #include "measure_record_writer.h"
 
+namespace stim_internal {
+
 /// Stores a historical record of measurement results that can be looked up and written to the external world.
 ///
 /// Results that have been written and are further back than `max_lookback` may be discarded from memory.
@@ -48,5 +50,7 @@ struct MeasureRecord {
     /// Appends a measurement to the record.
     void record_result(bool result);
 };
+
+}
 
 #endif

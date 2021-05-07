@@ -18,6 +18,8 @@
 
 #include <algorithm>
 
+using namespace stim_internal;
+
 std::unique_ptr<MeasureRecordWriter> MeasureRecordWriter::make(FILE *out, SampleFormat output_format) {
     switch (output_format) {
         case SAMPLE_FORMAT_01:
@@ -193,7 +195,7 @@ void MeasureRecordFormatDets::write_end() {
     position = 0;
 }
 
-simd_bit_table transposed_vs_ref(
+simd_bit_table stim_internal::transposed_vs_ref(
     size_t num_samples_raw, const simd_bit_table &table, const simd_bits &reference_sample) {
     auto result = table.transposed();
     for (size_t s = 0; s < num_samples_raw; s++) {
@@ -202,7 +204,7 @@ simd_bit_table transposed_vs_ref(
     return result;
 }
 
-void write_table_data(
+void stim_internal::write_table_data(
     FILE *out, size_t num_shots, size_t num_measurements, const simd_bits &reference_sample,
     const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
     size_t dets_prefix_transition) {

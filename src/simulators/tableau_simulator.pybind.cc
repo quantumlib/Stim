@@ -19,6 +19,8 @@
 #include "../py/base.pybind.h"
 #include "../stabilizers/tableau.h"
 
+using namespace stim_internal;
+
 struct TempViewableData {
     std::vector<uint32_t> targets;
     TempViewableData(std::vector<uint32_t> targets) : targets(std::move(targets)) {

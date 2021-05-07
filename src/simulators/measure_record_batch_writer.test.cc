@@ -20,6 +20,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(MeasureRecordBatchWriter, basic_usage) {
     FILE *tmp = tmpfile();
     MeasureRecordBatchWriter w(tmp, 5, SAMPLE_FORMAT_01);

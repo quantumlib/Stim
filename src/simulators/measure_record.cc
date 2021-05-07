@@ -20,6 +20,8 @@
 
 #include "measure_record_writer.h"
 
+using namespace stim_internal;
+
 MeasureRecord::MeasureRecord(size_t max_lookback) : max_lookback(max_lookback), unwritten(0) {
 }
 

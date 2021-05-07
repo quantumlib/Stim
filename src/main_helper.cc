@@ -21,6 +21,8 @@
 #include "simulators/frame_simulator.h"
 #include "simulators/tableau_simulator.h"
 
+using namespace stim_internal;
+
 static std::vector<const char *> known_arguments{
     "--help",
 
@@ -65,7 +67,7 @@ struct RaiiFiles {
     }
 };
 
-int main_helper(int argc, const char **argv) {
+int stim_internal::main_helper(int argc, const char **argv) {
     if (find_argument("--help", argc, argv) != nullptr) {
         std::cerr << R"HELP(BASIC USAGE
 ===========

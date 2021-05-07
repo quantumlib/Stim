@@ -23,6 +23,8 @@
 #include "bit_ref.h"
 #include "simd_bits_range_ref.h"
 
+namespace stim_internal {
+
 /// Densely packed bits, allocated with alignment and padding enabling SIMD operations.
 ///
 /// A backing store for a `simd_bits_range_ref`.
@@ -125,5 +127,7 @@ struct simd_bits {
         return num_simd_words * sizeof(simd_word) << 3;
     }
 };
+
+}
 
 #endif

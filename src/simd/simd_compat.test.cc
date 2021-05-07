@@ -18,6 +18,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 union WordOr64 {
     simd_word w;
     uint64_t p[sizeof(simd_word) / sizeof(uint64_t)];

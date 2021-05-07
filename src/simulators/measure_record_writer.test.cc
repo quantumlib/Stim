@@ -20,17 +20,19 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 static std::string rewind_read_all(FILE *f) {
     rewind(f);
     std::string result;
     while (true) {
         int c = getc(f);
         if (c == EOF) {
+            fclose(f);
             return result;
         }
         result.push_back((char)c);
     }
-    fclose(f);
 }
 
 TEST(MeasureRecordWriter, Format01) {
@@ -251,7 +253,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
     auto actual = rewind_read_all(tmp);
     ASSERT_EQ(
-        rewind_read_all(tmp), std::string(
+        actual, std::string(
                                   "\0\0\0\0\0\0\0\0"
                                   "\0\0\0\0\0\0\0\0"
                                   "\x03\0\0\0\0\0\0\0"

@@ -24,6 +24,8 @@
 #include "../stabilizers/pauli_string.h"
 #include "measure_record_batch.h"
 
+namespace stim_internal {
+
 /// A Pauli Frame simulator that computes many samples simultaneously.
 ///
 /// This simulator tracks, for each qubit, whether or not that qubit is bit flipped and/or phase flipped.
@@ -94,5 +96,7 @@ struct DebugForceResultStreamingRaii {
     DebugForceResultStreamingRaii();
     ~DebugForceResultStreamingRaii();
 };
+
+}
 
 #endif

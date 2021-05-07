@@ -21,6 +21,8 @@
 
 #include "simd_util.h"
 
+using namespace stim_internal;
+
 size_t simd_bits::min_bits_to_num_bits_padded(size_t min_bits) {
     constexpr size_t mask = sizeof(simd_word) * 8 - 1;
     return (min_bits + mask) & ~mask;

@@ -16,6 +16,8 @@
 
 #include "probability_util.h"
 
+using namespace stim_internal;
+
 static bool shared_test_rng_initialized;
 static std::mt19937_64 shared_test_rng;
 

@@ -20,6 +20,8 @@
 #include "../stabilizers/tableau.h"
 #include "tableau.pybind.h"
 
+using namespace stim_internal;
+
 PyPauliString::PyPauliString(const PauliStringRef val, bool imag) : value(val), imag(imag) {
 }
 

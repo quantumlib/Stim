@@ -20,6 +20,8 @@
 #include "../simd/simd_bit_table.h"
 #include "measure_record_writer.h"
 
+namespace stim_internal {
+
 /// Handles buffering and writing multiple measurement data streams that ultimately need to be concatenated.
 struct MeasureRecordBatchWriter {
     SampleFormat output_format;
@@ -56,5 +58,7 @@ struct MeasureRecordBatchWriter {
     /// Tells each writer to finish up, then concatenates all of their data into the `out` stream and cleans up.
     void write_end();
 };
+
+}
 
 #endif

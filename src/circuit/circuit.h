@@ -27,6 +27,8 @@
 #include "../simd/monotonic_buffer.h"
 #include "gate_data.h"
 
+namespace stim_internal {
+
 #define TARGET_VALUE_MASK ((uint32_t{1} << 24) - uint32_t{1})
 #define TARGET_INVERTED_BIT (uint32_t{1} << 31)
 #define TARGET_PAULI_X_BIT (uint32_t{1} << 30)
@@ -232,7 +234,10 @@ struct DetectorsAndObservables {
     DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
 };
 
-std::ostream &operator<<(std::ostream &out, const Circuit &c);
-std::ostream &operator<<(std::ostream &out, const Operation &op);
+}
+
+std::ostream &operator<<(std::ostream &out, const stim_internal::Circuit &c);
+std::ostream &operator<<(std::ostream &out, const stim_internal::Operation &op);
+
 
 #endif

@@ -7,8 +7,8 @@
 #include "../../src/stabilizers/pauli_string.h"
 
 struct ExposedPauliString {
-    PauliString pauli_string;
-    explicit ExposedPauliString(PauliString pauli_string);
+    stim_internal::PauliString pauli_string;
+    explicit ExposedPauliString(stim_internal::PauliString pauli_string);
     explicit ExposedPauliString(const emscripten::val &arg);
     static ExposedPauliString random(size_t n);
     ExposedPauliString times(const ExposedPauliString &other) const;

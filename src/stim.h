@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef MAIN_HELPER_H
-#define MAIN_HELPER_H
+#ifndef STIM_H
+#define STIM_H
 
-#include "arg_parse.h"
-#include "probability_util.h"
+#include "simulators/tableau_simulator.h"
+#include "stabilizers/tableau.h"
+#include "stabilizers/pauli_string.h"
 #include "simulators/frame_simulator.h"
 #include "simulators/tableau_simulator.h"
+#include "simulators/tableau_simulator.h"
 
-namespace stim_internal {
-
-int main_helper(int argc, const char **argv);
-
+namespace stim {
+    using Tableau = stim_internal::Tableau;
+    using TableauSimulator = stim_internal::TableauSimulator;
+    using FrameSimulator = stim_internal::FrameSimulator;
+    using Circuit = stim_internal::Circuit;
+    using PauliString = stim_internal::PauliString;
+    const auto &GATE_DATA = stim_internal::GATE_DATA;
 }
 
 #endif

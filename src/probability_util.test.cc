@@ -18,6 +18,8 @@
 
 #include "test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(probability_util, sample_hit_indices_corner_cases) {
     ASSERT_EQ(sample_hit_indices(0, 100000, SHARED_TEST_RNG()), (std::vector<size_t>{}));
     ASSERT_EQ(sample_hit_indices(1, 10, SHARED_TEST_RNG()), (std::vector<size_t>{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));

@@ -26,6 +26,8 @@
 
 #include "monotonic_buffer.h"
 
+namespace stim_internal {
+
 /// Merges the elements of two sorted buffers into an output buffer while cancelling out duplicate items.
 ///
 /// \param sorted_in1: Pointer range covering the first sorted list.
@@ -162,8 +164,10 @@ struct SparseXorVec {
     }
 };
 
+}
+
 template <typename T>
-std::ostream &operator<<(std::ostream &out, const SparseXorVec<T> &v) {
+std::ostream &operator<<(std::ostream &out, const stim_internal::SparseXorVec<T> &v) {
     out << "SparseXorVec{";
     bool first = true;
     for (auto &e : v) {

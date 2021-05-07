@@ -20,6 +20,8 @@
 #include "../simulators/tableau_simulator.h"
 #include "base.pybind.h"
 
+using namespace stim_internal;
+
 CompiledMeasurementSampler::CompiledMeasurementSampler(Circuit circuit)
     : ref(TableauSimulator::reference_sample_circuit(circuit)), circuit(std::move(circuit)) {
 }

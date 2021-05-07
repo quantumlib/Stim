@@ -20,6 +20,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(MeasureRecordBatch, basic_usage) {
     simd_bits s0(5);
     simd_bits s1(5);

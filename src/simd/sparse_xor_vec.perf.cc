@@ -18,6 +18,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(SparseXorTable_SmallRowXor_1000) {
     size_t n = 1000;
     std::vector<SparseXorVec<uint32_t>> table(n);

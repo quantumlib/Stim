@@ -14,6 +14,8 @@
 
 #include "main_helper.h"
 
+using namespace stim_internal;
+
 int main(int argc, const char **argv) {
     return main_helper(argc, argv);
 }

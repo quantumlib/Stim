@@ -20,6 +20,8 @@
 
 #include "measure_record_batch.h"
 
+using namespace stim_internal;
+
 MeasureRecordBatchWriter::MeasureRecordBatchWriter(FILE *out, size_t num_shots, SampleFormat output_format)
     : output_format(output_format), out(out) {
     auto f = output_format;

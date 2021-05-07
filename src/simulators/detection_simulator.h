@@ -22,6 +22,8 @@
 #include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
 
+namespace stim_internal {
+
 simd_bit_table detector_samples(
     const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots, bool prepend_observables,
     bool append_observables, std::mt19937_64 &rng);
@@ -32,5 +34,7 @@ simd_bit_table detector_samples(
 void detector_samples_out(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
     SampleFormat format, std::mt19937_64 &rng);
+
+}
 
 #endif

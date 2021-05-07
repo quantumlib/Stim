@@ -21,6 +21,8 @@
 
 #include "simd_util.h"
 
+using namespace stim_internal;
+
 simd_bit_table::simd_bit_table(size_t min_bits_major, size_t min_bits_minor)
     : num_simd_words_major(simd_bits::min_bits_to_num_simd_words(min_bits_major)),
       num_simd_words_minor(simd_bits::min_bits_to_num_simd_words(min_bits_minor)),

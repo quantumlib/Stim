@@ -22,6 +22,8 @@
 #include "../stabilizers/tableau.h"
 #include "gate_data.h"
 
+using namespace stim_internal;
+
 enum READ_CONDITION {
     READ_AS_LITTLE_AS_POSSIBLE,
     READ_UNTIL_END_OF_BLOCK,

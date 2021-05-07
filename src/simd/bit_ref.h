@@ -20,6 +20,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace stim_internal {
+
 /// A reference to a bit within a byte.
 ///
 /// Conceptually behaves the same as a `bool &`, as opposed to a `bool *`. For example, the `=` operator overwrites the
@@ -73,5 +75,7 @@ struct bit_ref {
         return (*byte >> bit_index) & 1;
     }
 };
+
+}
 
 #endif

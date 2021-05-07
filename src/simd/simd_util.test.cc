@@ -20,6 +20,8 @@
 #include "simd_bit_table.h"
 #include "simd_bits.h"
 
+using namespace stim_internal;
+
 simd_bits reference_transpose_of(size_t bit_width, const simd_bits &data) {
     assert(!(bit_width & 0xFF));
     auto expected = simd_bits(bit_width * bit_width);

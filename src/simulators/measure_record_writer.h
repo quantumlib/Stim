@@ -23,6 +23,8 @@
 #include "../simd/pointer_range.h"
 #include "../simd/simd_bit_table.h"
 
+namespace stim_internal {
+
 /// Handles writing measurement data to the outside world.
 ///
 /// Child classes implement the various output formats.
@@ -100,5 +102,7 @@ void write_table_data(
     FILE *out, size_t num_shots, size_t num_measurements, const simd_bits &reference_sample,
     const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
     size_t dets_prefix_transition);
+
+}
 
 #endif

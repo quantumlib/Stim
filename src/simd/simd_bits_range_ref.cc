@@ -19,6 +19,8 @@
 
 #include "simd_util.h"
 
+using namespace stim_internal;
+
 simd_bits_range_ref::simd_bits_range_ref(simd_word *ptr_simd_init, size_t num_simd_words)
     : ptr_simd(ptr_simd_init), num_simd_words(num_simd_words) {
 }

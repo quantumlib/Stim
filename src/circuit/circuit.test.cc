@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace stim_internal;
+
 OpDat::OpDat(uint32_t target) : targets({target}) {
 }
 

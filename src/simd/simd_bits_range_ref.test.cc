@@ -18,6 +18,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(simd_bits_range_ref, construct) {
     alignas(64) uint64_t data[16]{};
     simd_bits_range_ref ref((simd_word *)data, sizeof(data) / sizeof(simd_word));

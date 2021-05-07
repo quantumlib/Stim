@@ -19,6 +19,8 @@
 #include "../test_util.test.h"
 #include "simd_util.h"
 
+using namespace stim_internal;
+
 TEST(simd_bits, move) {
     simd_bits a(512);
     auto ptr = a.u64;

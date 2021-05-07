@@ -19,6 +19,8 @@
 #include "../circuit/gate_data.h"
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;
     return sqrtf(d.real() * d.real() + d.imag() * d.imag());

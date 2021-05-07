@@ -27,6 +27,8 @@
 
 #include "pointer_range.h"
 
+namespace stim_internal {
+
 /// A memory resource that can efficiently incrementally accumulate data.
 ///
 /// There are three important types of "region" in play: the tail region, the current region, and old regions.
@@ -160,5 +162,7 @@ struct MonotonicBuffer {
         tail = {cur.ptr_start, cur.ptr_start + tail_size};
     }
 };
+
+}
 
 #endif

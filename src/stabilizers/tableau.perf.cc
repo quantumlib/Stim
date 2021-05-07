@@ -16,6 +16,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(tableau_random_10) {
     size_t n = 10;
     Tableau t(n);

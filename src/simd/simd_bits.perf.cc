@@ -18,6 +18,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(simd_bits_randomize_10K) {
     size_t n = 10 * 1000;
     simd_bits data(n);
