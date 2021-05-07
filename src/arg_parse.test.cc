@@ -20,6 +20,8 @@
 
 #include "assert.h"
 
+using namespace stim_internal;
+
 TEST(arg_parse, check_for_unknown_arguments_recognize_arguments) {
     std::vector<const char *> known{
         "--mode",

@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace stim_internal;
+
 TEST(pointer_range, equality) {
     int data[100]{};
     PointerRange<int> r1{&data[0], &data[10]};

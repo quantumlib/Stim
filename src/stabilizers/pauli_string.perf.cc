@@ -16,6 +16,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(PauliString_multiplication_1M) {
     size_t n = 1000 * 1000;
     PauliString p1(n);

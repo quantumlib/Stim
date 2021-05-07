@@ -22,6 +22,8 @@
 #include "../simd/simd_util.h"
 #include "tableau_simulator.h"
 
+using namespace stim_internal;
+
 static size_t force_stream_count = 0;
 DebugForceResultStreamingRaii::DebugForceResultStreamingRaii() {
     force_stream_count++;
@@ -30,7 +32,7 @@ DebugForceResultStreamingRaii::~DebugForceResultStreamingRaii() {
     force_stream_count--;
 }
 
-bool should_use_streaming_instead_of_memory(uint64_t result_count) {
+bool stim_internal::should_use_streaming_instead_of_memory(uint64_t result_count) {
     return force_stream_count > 0 || result_count > 100000000;
 }
 

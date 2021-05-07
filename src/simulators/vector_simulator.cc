@@ -20,6 +20,8 @@
 #include "../simd/simd_util.h"
 #include "../stabilizers/pauli_string.h"
 
+using namespace stim_internal;
+
 VectorSimulator::VectorSimulator(size_t num_qubits) {
     state.resize(size_t{1} << num_qubits, 0.0f);
     state[0] = 1;

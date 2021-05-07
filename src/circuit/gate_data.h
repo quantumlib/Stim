@@ -28,6 +28,8 @@
 #include <unordered_set>
 #include <vector>
 
+namespace stim_internal {
+
 struct TableauSimulator;
 struct FrameSimulator;
 struct OperationData;
@@ -261,5 +263,7 @@ struct GateDataMap {
 };
 
 extern const GateDataMap GATE_DATA;
+
+}
 
 #endif

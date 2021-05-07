@@ -19,6 +19,8 @@
 
 #include "simd_bits.h"
 
+namespace stim_internal {
+
 struct simd_bit_table {
     size_t num_simd_words_major;
     size_t num_simd_words_minor;
@@ -115,6 +117,8 @@ struct simd_bit_table {
 
 constexpr uint8_t lg(size_t k) {
     return k <= 1 ? 0 : lg(k >> 1) + 1;
+}
+
 }
 
 #endif

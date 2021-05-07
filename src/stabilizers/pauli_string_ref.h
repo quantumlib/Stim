@@ -22,6 +22,8 @@
 #include "../simd/bit_ref.h"
 #include "../simd/simd_bits_range_ref.h"
 
+namespace stim_internal {
+
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
 /// A PauliStringRef is a Pauli string whose contents are backed by referenced memory, instead of memory owned by the
@@ -102,7 +104,9 @@ struct PauliStringRef {
     std::string sparse_str() const;
 };
 
+}
+
 /// Writes a string describing the given Pauli string to an output stream.
-std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps);
+std::ostream &operator<<(std::ostream &out, const stim_internal::PauliStringRef &ps);
 
 #endif

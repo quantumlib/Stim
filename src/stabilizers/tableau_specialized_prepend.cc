@@ -16,6 +16,8 @@
 
 #include "tableau.h"
 
+using namespace stim_internal;
+
 void Tableau::prepend_X(size_t q) {
     zs[q].sign ^= 1;
 }

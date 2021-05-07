@@ -30,6 +30,8 @@
 #include "measure_record.h"
 #include "vector_simulator.h"
 
+namespace stim_internal {
+
 struct TableauSimulator {
     Tableau inv_state;
     std::mt19937_64 &rng;
@@ -170,5 +172,7 @@ struct TableauSimulator {
     /// qubit.
     void collapse_isolate_qubit(size_t target, TableauTransposedRaii &transposed_raii);
 };
+
+}
 
 #endif

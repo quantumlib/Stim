@@ -19,6 +19,8 @@
 #include "../test_util.test.h"
 #include "tableau.h"
 
+using namespace stim_internal;
+
 TEST(pauli_string, str) {
     auto p1 = PauliString::from_str("+IXYZ");
     ASSERT_EQ(p1.str(), "+_XYZ");

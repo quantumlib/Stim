@@ -16,6 +16,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(circuit_parse) {
     Circuit c;
     benchmark_go([&]() {

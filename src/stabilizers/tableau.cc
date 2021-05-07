@@ -27,6 +27,8 @@
 #include "pauli_string.h"
 #include "tableau_transposed_raii.h"
 
+using namespace stim_internal;
+
 void Tableau::expand(size_t new_num_qubits) {
     // If the new qubits fit inside the padding, just extend into it.
     assert(new_num_qubits >= num_qubits);

@@ -22,6 +22,8 @@
 
 #include "../circuit/circuit.h"
 
+using namespace stim_internal;
+
 void ErrorFuser::R(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];

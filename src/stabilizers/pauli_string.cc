@@ -19,6 +19,8 @@
 
 #include "../simd/simd_util.h"
 
+using namespace stim_internal;
+
 PauliString::operator const PauliStringRef() const {
     return ref();
 }

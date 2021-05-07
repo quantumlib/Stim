@@ -20,6 +20,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace stim_internal {
+
 constexpr uint64_t tile64_helper(uint64_t val, size_t shift) {
     return shift >= 64 ? val : tile64_helper(val | (val << shift), shift << 1);
 }
@@ -41,6 +43,8 @@ inline uint8_t popcnt64(uint64_t val) {
     val *= 0x101010101010101ULL;
     val >>= 56;
     return val;
+}
+
 }
 
 #endif

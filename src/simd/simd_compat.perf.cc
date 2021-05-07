@@ -18,6 +18,8 @@
 #include "simd_bits.h"
 #include "simd_compat.h"
 
+using namespace stim_internal;
+
 BENCHMARK(simd_compat_popcnt) {
     simd_bits d(1024 * 256);
     std::mt19937_64 rng(0);

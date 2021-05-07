@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace stim_internal;
+
 struct RaiiDeleteFile {
     char *c = nullptr;
     ~RaiiDeleteFile() {

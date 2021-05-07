@@ -2,6 +2,8 @@
 #include <emscripten/val.h>
 #include "circuit.js.h"
 
+using namespace stim_internal;
+
 ExposedCircuit::ExposedCircuit() : circuit() {
 }
 

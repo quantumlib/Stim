@@ -20,6 +20,8 @@
 #include "../simulators/tableau_simulator.h"
 #include "base.pybind.h"
 
+using namespace stim_internal;
+
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit) : dets_obs(circuit), circuit(std::move(circuit)) {
 }
 

@@ -22,6 +22,8 @@
 #include "../test_util.test.h"
 #include "tableau_transposed_raii.h"
 
+using namespace stim_internal;
+
 static float complex_distance(std::complex<float> a, std::complex<float> b) {
     auto d = a - b;
     return sqrtf(d.real() * d.real() + d.imag() * d.imag());

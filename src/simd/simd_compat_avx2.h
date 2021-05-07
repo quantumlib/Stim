@@ -22,6 +22,8 @@
 
 #include "simd_util.h"
 
+namespace stim_internal {
+
 struct simd_word {
     union {
         __m256i val;
@@ -102,7 +104,7 @@ struct simd_word {
     }
 
     inline uint16_t popcount() const {
-        return popcnt64(u64[0]) + popcnt64(u64[1]) + popcnt64(u64[2]) + (uint16_t)popcnt64(u64[3]);
+        return stim_internal::popcnt64(u64[0]) + stim_internal::popcnt64(u64[1]) + stim_internal::popcnt64(u64[2]) + (uint16_t)stim_internal::popcnt64(u64[3]);
     }
 
     /// For each 128 bit word pair between the two registers, the byte order goes from this:
@@ -115,3 +117,5 @@ struct simd_word {
         other.val = t;
     }
 };
+
+}

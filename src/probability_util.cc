@@ -14,6 +14,8 @@
 
 #include "probability_util.h"
 
+using namespace stim_internal;
+
 RareErrorIterator::RareErrorIterator(float probability)
     : next_candidate(0), is_one(probability == 1), dist(probability) {
     if (!(probability >= 0 && probability <= 1)) {
@@ -27,7 +29,7 @@ size_t RareErrorIterator::next(std::mt19937_64 &rng) {
     return result;
 }
 
-std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng) {
+std::vector<size_t> stim_internal::sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng) {
     std::vector<size_t> result;
     RareErrorIterator::for_samples(probability, attempts, rng, [&](size_t s) {
         result.push_back(s);
@@ -35,7 +37,7 @@ std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::
     return result;
 }
 
-std::mt19937_64 externally_seeded_rng() {
+std::mt19937_64 stim_internal::externally_seeded_rng() {
 #if defined(__linux) && defined(__GLIBCXX__) && __GLIBCXX__ >= 20200128
     // Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94087
     // See https://github.com/quantumlib/Stim/issues/26
@@ -48,7 +50,7 @@ std::mt19937_64 externally_seeded_rng() {
     return result;
 }
 
-void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng) {
+void stim_internal::biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng) {
     if (probability > 0.5) {
         // Recurse and invert for probabilities larger than 0.5.
         biased_randomize_bits(1 - probability, start, end, rng);

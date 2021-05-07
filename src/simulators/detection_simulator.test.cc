@@ -19,17 +19,19 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 static std::string rewind_read_all(FILE *f) {
     rewind(f);
     std::string result;
     while (true) {
         int c = getc(f);
         if (c == EOF) {
+            fclose(f);
             return result;
         }
         result.push_back((char)c);
     }
-    fclose(f);
 }
 
 TEST(DetectionSimulator, detector_samples) {

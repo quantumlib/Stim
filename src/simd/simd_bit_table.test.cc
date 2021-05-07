@@ -18,6 +18,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(bit_mat, creation) {
     simd_bit_table a(3, 3);
     ASSERT_EQ(

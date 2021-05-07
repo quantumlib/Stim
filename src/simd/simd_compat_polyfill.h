@@ -20,6 +20,8 @@
 
 #include "simd_util.h"
 
+namespace stim_internal {
+
 struct emu_u128 {
     uint64_t a;
     uint64_t b;
@@ -129,3 +131,5 @@ struct simd_word {
         other.u64[1] = b2 | (d2 << 8);
     }
 };
+
+}

@@ -20,10 +20,12 @@
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 
+using namespace stim_internal;
+
 static constexpr std::complex<float> i = std::complex<float>(0, 1);
 static constexpr std::complex<float> s = 0.7071067811865475244f;
 
-extern const GateDataMap GATE_DATA(
+extern const GateDataMap stim_internal::GATE_DATA(
     {
         // Collapsing gates.
         {

@@ -25,6 +25,8 @@
 #include "pauli_string.h"
 #include "tableau.h"
 
+namespace stim_internal {
+
 /// When this class is constructed, it transposes the tableau given to it.
 /// The transpose is undone on deconstruction.
 ///
@@ -52,5 +54,7 @@ struct TableauTransposedRaii {
     void append_X(size_t q);
     void append_SWAP(size_t q1, size_t q2);
 };
+
+}
 
 #endif

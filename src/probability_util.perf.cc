@@ -17,6 +17,8 @@
 #include "benchmark_util.h"
 #include "simd/simd_bits.h"
 
+using namespace stim_internal;
+
 BENCHMARK(biased_random_1024_0point1percent) {
     std::mt19937_64 rng(0);
     float p = 0.001;

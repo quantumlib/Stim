@@ -26,6 +26,8 @@
 #include "../simd/monotonic_buffer.h"
 #include "../simd/sparse_xor_vec.h"
 
+namespace stim_internal {
+
 struct ErrorFuser {
     std::map<uint32_t, std::vector<uint32_t>> measurement_to_detectors;
     uint32_t num_found_detectors = 0;
@@ -91,5 +93,7 @@ struct ErrorFuser {
     void feedback(uint32_t record_control, size_t target, bool x, bool z);
     void run_circuit(const Circuit &circuit);
 };
+
+}
 
 #endif

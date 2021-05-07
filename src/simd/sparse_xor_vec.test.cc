@@ -20,6 +20,8 @@
 #include "../test_util.test.h"
 #include "simd_util.h"
 
+using namespace stim_internal;
+
 TEST(sparse_xor_table, inplace_xor) {
     SparseXorVec<uint32_t> v1;
     SparseXorVec<uint32_t> v2;

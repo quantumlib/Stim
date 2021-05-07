@@ -20,6 +20,8 @@
 
 #include "../test_util.test.h"
 
+using namespace stim_internal;
+
 TEST(MeasureRecord, basic_usage) {
     MeasureRecord r(20);
     r.record_result(true);

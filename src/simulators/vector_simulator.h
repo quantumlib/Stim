@@ -24,6 +24,8 @@
 
 #include "../stabilizers/pauli_string.h"
 
+namespace stim_internal {
+
 /// A state vector quantum circuit simulator.
 ///
 /// Not intended to be particularly performant. Mostly used as a reference when testing.
@@ -63,7 +65,9 @@ struct VectorSimulator {
     std::string str() const;
 };
 
+}
+
 /// Writes a description of the state vector's state to an output stream.
-std::ostream &operator<<(std::ostream &out, const VectorSimulator &sim);
+std::ostream &operator<<(std::ostream &out, const stim_internal::VectorSimulator &sim);
 
 #endif

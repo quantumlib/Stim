@@ -2,6 +2,8 @@
 #include "common.js.h"
 #include "pauli_string.js.h"
 
+using namespace stim_internal;
+
 ExposedPauliString::ExposedPauliString(PauliString pauli_string) : pauli_string(pauli_string) {
 }
 

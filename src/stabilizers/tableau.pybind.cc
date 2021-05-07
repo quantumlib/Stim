@@ -20,6 +20,8 @@
 #include "../stabilizers/pauli_string.h"
 #include "../stabilizers/tableau.h"
 
+using namespace stim_internal;
+
 void pybind_tableau(pybind11::module &m) {
     auto &&c = pybind11::class_<Tableau>(
         m,

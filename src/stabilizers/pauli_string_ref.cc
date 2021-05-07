@@ -18,6 +18,8 @@
 #include "../simd/simd_util.h"
 #include "pauli_string.h"
 
+using namespace stim_internal;
+
 PauliStringRef::PauliStringRef(
     size_t init_num_qubits, bit_ref init_sign, simd_bits_range_ref init_xs, simd_bits_range_ref init_zs)
     : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {

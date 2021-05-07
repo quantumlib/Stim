@@ -19,6 +19,8 @@
 
 #include "measure_record_batch_writer.h"
 
+namespace stim_internal {
+
 /// Stores a record of multiple measurement streams that can be looked up and written to the external world.
 ///
 /// Results that have been written and are further back than `max_lookback` may be discarded from memory.
@@ -63,5 +65,7 @@ struct MeasureRecordBatch {
     /// Resets the record to an empty state.
     void clear();
 };
+
+}
 
 #endif

@@ -10,7 +10,7 @@
 #include "tableau.js.h"
 
 struct ExposedTableauSimulator {
-    TableauSimulator sim;
+    stim_internal::TableauSimulator sim;
     ExposedTableauSimulator();
     ExposedTableauSimulator copy() const;
     bool measure(size_t target);

@@ -24,6 +24,8 @@
 #include "bit_ref.h"
 #include "simd_compat.h"
 
+namespace stim_internal {
+
 /// A reference to a range of bits that support SIMD operations (e.g. they are aligned and padded correctly).
 ///
 /// Conceptually behaves the same as a reference like `int &`, as opposed to a pointer like `int *`. For example, the
@@ -292,7 +294,9 @@ struct simd_bits_range_ref {
     }
 };
 
+}
+
 /// Writes a description of the contents of the range to `out`.
-std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m);
+std::ostream &operator<<(std::ostream &out, const stim_internal::simd_bits_range_ref m);
 
 #endif

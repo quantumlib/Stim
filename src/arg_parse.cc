@@ -18,7 +18,9 @@
 #include <cstdlib>
 #include <cstring>
 
-const char *require_find_argument(const char *name, int argc, const char **argv) {
+using namespace stim_internal;
+
+const char *stim_internal::require_find_argument(const char *name, int argc, const char **argv) {
     const char *result = find_argument(name, argc, argv);
     if (result == 0) {
         fprintf(stderr, "\033[31mMissing command line argument: '%s'\033[0m\n", name);
@@ -27,7 +29,7 @@ const char *require_find_argument(const char *name, int argc, const char **argv)
     return result;
 }
 
-const char *find_argument(const char *name, int argc, const char **argv) {
+const char *stim_internal::find_argument(const char *name, int argc, const char **argv) {
     // Respect that the "--" argument terminates flags.
     size_t flag_count = 1;
     while (flag_count < (size_t)argc && strcmp(argv[flag_count], "--") != 0) {
@@ -64,7 +66,7 @@ const char *find_argument(const char *name, int argc, const char **argv) {
     return 0;
 }
 
-void check_for_unknown_arguments(
+void stim_internal::check_for_unknown_arguments(
     const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv) {
     for (int i = 1; i < argc; i++) {
         // Respect that the "--" argument terminates flags.
@@ -105,7 +107,7 @@ void check_for_unknown_arguments(
     }
 }
 
-bool find_bool_argument(const char *name, int argc, const char **argv) {
+bool stim_internal::find_bool_argument(const char *name, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {
         return false;
@@ -117,7 +119,7 @@ bool find_bool_argument(const char *name, int argc, const char **argv) {
     exit(EXIT_FAILURE);
 }
 
-int find_int_argument(const char *name, int default_value, int min_value, int max_value, int argc, const char **argv) {
+int stim_internal::find_int_argument(const char *name, int default_value, int min_value, int max_value, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr || text[0] == '\0') {
         if (default_value < min_value || default_value > max_value) {
@@ -151,7 +153,7 @@ int find_int_argument(const char *name, int default_value, int min_value, int ma
     return (int)i;
 }
 
-float find_float_argument(
+float stim_internal::find_float_argument(
     const char *name, float default_value, float min_value, float max_value, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {
@@ -186,7 +188,7 @@ float find_float_argument(
     return f;
 }
 
-int find_enum_argument(
+int stim_internal::find_enum_argument(
     const char *name, int default_index, const std::vector<const char *> &known_values, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {

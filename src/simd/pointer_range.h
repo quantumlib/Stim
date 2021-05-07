@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <vector>
 
+namespace stim_internal {
+
 /// Delineates mutable memory using an inclusive start pointer and exclusive end pointer.
 template <typename T>
 struct PointerRange {
@@ -156,8 +158,10 @@ struct ConstPointerRange {
     }
 };
 
+}
+
 template <typename T>
-std::ostream &operator<<(std::ostream &out, ConstPointerRange<T> v) {
+std::ostream &operator<<(std::ostream &out, stim_internal::ConstPointerRange<T> v) {
     out << "PointerRange{";
     bool first = true;
     for (auto &e : v) {

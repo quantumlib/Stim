@@ -20,6 +20,6 @@
 #include "circuit.h"
 
 void pybind_circuit(pybind11::module &m);
-std::string circuit_repr(const Circuit &self);
+std::string circuit_repr(const stim_internal::Circuit &self);
 
 #endif

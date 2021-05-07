@@ -3,6 +3,8 @@
 #include "common.js.h"
 #include "tableau_simulator.js.h"
 
+using namespace stim_internal;
+
 struct TempArgData {
     std::vector<uint32_t> targets;
     TempArgData(std::vector<uint32_t> targets) : targets(std::move(targets)) {

@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+using namespace stim_internal;
+
 TEST(bit_ref, get) {
     uint64_t word = 0;
     bit_ref b(&word, 5);

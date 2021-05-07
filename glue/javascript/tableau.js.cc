@@ -3,6 +3,8 @@
 #include "common.js.h"
 #include "tableau.js.h"
 
+using namespace stim_internal;
+
 ExposedTableau::ExposedTableau(Tableau tableau) : tableau(tableau) {
 }
 

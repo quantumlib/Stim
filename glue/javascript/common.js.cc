@@ -1,5 +1,7 @@
 #include "common.js.h"
 
+using namespace stim_internal;
+
 static bool shared_rng_initialized;
 static std::mt19937_64 shared_rng;
 

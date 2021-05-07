@@ -16,6 +16,8 @@
 
 #include "../benchmark_util.h"
 
+using namespace stim_internal;
+
 BENCHMARK(TableauSimulator_CX_10Kqubits) {
     size_t num_qubits = 10 * 1000;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)

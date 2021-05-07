@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "frame_simulator.h"
+#include "detection_simulator.h"
+
+using namespace stim_internal;
 
 template <typename T>
 void xor_measurement_set_into_result(
@@ -23,7 +26,7 @@ void xor_measurement_set_into_result(
     }
 }
 
-simd_bit_table detector_samples(
+simd_bit_table stim_internal::detector_samples(
     const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots, bool prepend_observables,
     bool append_observables, std::mt19937_64 &rng) {
     // Start from measurement samples.
@@ -53,7 +56,7 @@ simd_bit_table detector_samples(
     return result;
 }
 
-simd_bit_table detector_samples(
+simd_bit_table stim_internal::detector_samples(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng) {
     return detector_samples(
         circuit, DetectorsAndObservables(circuit), num_shots, prepend_observables, append_observables, rng);
@@ -152,7 +155,7 @@ void detector_sample_out_helper(
     }
 }
 
-void detector_samples_out(
+void stim_internal::detector_samples_out(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
     SampleFormat format, std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 1024;

@@ -25,9 +25,9 @@
 void pybind_compiled_measurement_sampler(pybind11::module &m);
 
 struct CompiledMeasurementSampler {
-    const simd_bits ref;
-    const Circuit circuit;
-    CompiledMeasurementSampler(Circuit circuit);
+    const stim_internal::simd_bits ref;
+    const stim_internal::Circuit circuit;
+    CompiledMeasurementSampler(stim_internal::Circuit circuit);
     pybind11::array_t<uint8_t> sample(size_t num_samples);
     pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples);
     std::string repr() const;

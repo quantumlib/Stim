@@ -27,6 +27,8 @@
 #define xstr(s) str(s)
 #define str(s) #s
 
+using namespace stim_internal;
+
 uint32_t target_rec(int32_t lookback) {
     if (lookback >= 0 || lookback <= -(1 << 24)) {
         throw std::out_of_range("Need -16777215 <= lookback <= -1");

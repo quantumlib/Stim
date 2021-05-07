@@ -20,6 +20,8 @@
 #include <cstddef>
 #include <vector>
 
+namespace stim_internal {
+
 /// Searches through command line flags for a particular flag's argument.
 ///
 /// Args:
@@ -157,5 +159,7 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///         The command line flag is not specified and default_index is negative.
 int find_enum_argument(
     const char *name, int default_index, const std::vector<const char *> &known_values, int argc, const char **argv);
+
+}
 
 #endif

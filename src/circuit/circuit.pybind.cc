@@ -18,6 +18,8 @@
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
 
+using namespace stim_internal;
+
 std::string circuit_repr(const Circuit &self) {
     if (self.operations.empty()) {
         return "stim.Circuit()";
