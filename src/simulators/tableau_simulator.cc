@@ -777,8 +777,8 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(uint32_t targe
     auto result = measure_kickback_z(target);
     H_YZ({0.0, {&target, &target + 1}});
     if (result.second.num_qubits) {
-        result.second.xs[target] = 0;
-        result.second.zs[target] = 1;
+        // Also conjugate the kickback by H_YZ.
+        result.second.xs[target] ^= result.second.zs[target];
     }
     return result;
 }
@@ -788,8 +788,8 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(uint32_t targe
     auto result = measure_kickback_z(target);
     H_XZ({0.0, {&target, &target + 1}});
     if (result.second.num_qubits) {
-        result.second.xs[target] = 0;
-        result.second.zs[target] = 1;
+        // Also conjugate the kickback by H_XZ.
+        result.second.xs[target].swap_with(result.second.zs[target]);
     }
     return result;
 }

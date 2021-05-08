@@ -951,10 +951,10 @@ TEST(TableauSimulator, measure_kickback_y) {
     auto k1 = sim.measure_kickback_y(1);
     auto k2 = sim.measure_kickback_y(2);
     auto k3 = sim.measure_kickback_y(3);
-    ASSERT_EQ(k1.second, PauliString::from_str("ZZ__"));
-    ASSERT_EQ(k2.second, PauliString::from_str("__ZZ"));
+    ASSERT_EQ(k1.second, PauliString::from_str("ZX__"));
+    ASSERT_EQ(k2.second, PauliString::from_str("__ZX"));
     ASSERT_EQ(k3.second, PauliString(0));
-    ASSERT_EQ(k2.first, k3.first);
+    ASSERT_NE(k2.first, k3.first);
     auto p = PauliString::from_str("+Y");
     auto pn = PauliString::from_str("-Y");
     ASSERT_EQ(sim.peek_bloch(0), k1.first ? p : pn);
