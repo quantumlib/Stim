@@ -52,13 +52,13 @@ ExposedTableauSimulator::ExposedTableauSimulator() : sim(0, JS_BIND_SHARED_RNG()
 
 bool ExposedTableauSimulator::measure(size_t target) {
     sim.ensure_large_enough_for_qubits(target + 1);
-    sim.measure(TempArgData({target}));
+    sim.measure_z(TempArgData({target}));
     return (bool)sim.measurement_record.storage.back();
 }
 
 emscripten::val ExposedTableauSimulator::measure_kickback(size_t target) {
     safe_targets(sim, target);
-    auto result = sim.measure_kickback(target);
+    auto result = sim.measure_kickback_z(target);
     emscripten::val returned = emscripten::val::object();
     returned.set("result", result.first);
     if (result.second.num_qubits) {

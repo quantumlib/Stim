@@ -281,3 +281,202 @@ TEST(ErrorFuser, classical_error_propagation) {
         R"graph(error(0.125) D0
 )graph");
 }
+
+TEST(ErrorFuser, measure_reset_basis) {
+    ASSERT_EQ(
+        convert(R"circuit(
+            RZ 0 1 2
+            X_ERROR(0.25) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.25) 2
+            MZ 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D0
+error(0.25) D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            RX 0 1 2
+            X_ERROR(0.25) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.25) 2
+            MX 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D1
+error(0.25) D2
+)graph");
+    ASSERT_EQ(
+        convert(R"circuit(
+            RY 0 1 2
+            X_ERROR(0.25) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.25) 2
+            MY 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D0
+error(0.25) D2
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRZ 0 1 2
+            X_ERROR(0.25) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.25) 2
+            MRZ 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D0
+error(0.25) D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRX 0 1 2
+            X_ERROR(0.25) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.25) 2
+            MRX 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D1
+error(0.25) D2
+)graph");
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRY 0 1 2
+            X_ERROR(0.25) 0
+            Y_ERROR(0.25) 1
+            Z_ERROR(0.25) 2
+            MRY 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D0
+error(0.25) D2
+)graph");
+}
+
+TEST(ErrorFuser, repeated_measure_reset) {
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRZ 0 0
+            X_ERROR(0.25) 0
+            MRZ 0 0
+            DETECTOR rec[-4]
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D2
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRY 0 0
+            X_ERROR(0.25) 0
+            MRY 0 0
+            DETECTOR rec[-4]
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D2
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRX 0 0
+            Z_ERROR(0.25) 0
+            MRX 0 0
+            DETECTOR rec[-4]
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(error(0.25) D2
+)graph");
+}
+
+TEST(ErrorFuser, detect_bad_detectors) {
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            R 0
+            H 0
+            M 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            M 0
+            H 0
+            M 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            MZ 0
+            MX 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            MY 0
+            MX 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            MX 0
+            MZ 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            RX 0
+            MZ 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            RY 0
+            MX 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+
+    ASSERT_ANY_THROW({
+        convert(R"circuit(
+            RZ 0
+            MX 0
+            DETECTOR rec[-1]
+        )circuit");
+    });
+}

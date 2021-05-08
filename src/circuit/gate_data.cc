@@ -29,28 +29,82 @@ extern const GateDataMap stim_internal::GATE_DATA(
     {
         // Collapsing gates.
         {
+            "MX",
+            &TableauSimulator::measure_x,
+            &FrameSimulator::measure_x,
+            &ErrorFuser::MX,
+            GATE_PRODUCES_RESULTS,
+            {},
+            {},
+        },
+        {
+            "MY",
+            &TableauSimulator::measure_y,
+            &FrameSimulator::measure_y,
+            &ErrorFuser::MY,
+            GATE_PRODUCES_RESULTS,
+            {},
+            {},
+        },
+        {
             "M",
-            &TableauSimulator::measure,
-            &FrameSimulator::measure,
-            &ErrorFuser::M,
+            &TableauSimulator::measure_z,
+            &FrameSimulator::measure_z,
+            &ErrorFuser::MZ,
+            GATE_PRODUCES_RESULTS,
+            {},
+            {},
+        },
+        {
+            "MRX",
+            &TableauSimulator::measure_reset_x,
+            &FrameSimulator::measure_reset_x,
+            &ErrorFuser::MRX,
+            GATE_PRODUCES_RESULTS,
+            {},
+            {},
+        },
+        {
+            "MRY",
+            &TableauSimulator::measure_reset_y,
+            &FrameSimulator::measure_reset_y,
+            &ErrorFuser::MRY,
             GATE_PRODUCES_RESULTS,
             {},
             {},
         },
         {
             "MR",
-            &TableauSimulator::measure_reset,
-            &FrameSimulator::measure_reset,
-            &ErrorFuser::MR,
+            &TableauSimulator::measure_reset_z,
+            &FrameSimulator::measure_reset_z,
+            &ErrorFuser::MRZ,
             GATE_PRODUCES_RESULTS,
             {},
             {},
         },
         {
+            "RX",
+            &TableauSimulator::reset_x,
+            &FrameSimulator::reset_x,
+            &ErrorFuser::RX,
+            GATE_NO_FLAGS,
+            {},
+            {},
+        },
+        {
+            "RY",
+            &TableauSimulator::reset_y,
+            &FrameSimulator::reset_y,
+            &ErrorFuser::RY,
+            GATE_NO_FLAGS,
+            {},
+            {},
+        },
+        {
             "R",
-            &TableauSimulator::reset,
-            &FrameSimulator::reset,
-            &ErrorFuser::R,
+            &TableauSimulator::reset_z,
+            &FrameSimulator::reset_z,
+            &ErrorFuser::RZ,
             GATE_NO_FLAGS,
             {},
             {},
@@ -407,14 +461,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
         },
     },
     {
-        {"H", "H_XZ"},
-        {"E", "CORRELATED_ERROR"},
-        {"S", "SQRT_Z"},
-        {"S_DAG", "SQRT_Z_DAG"},
-        {"CZ", "ZCZ"},
-        {"CY", "ZCY"},
-        {"CX", "ZCX"},
-        {"CX", "CNOT"},
+        {"H_XZ", "H"},
+        {"CORRELATED_ERROR", "E"},
+        {"SQRT_Z", "S"},
+        {"SQRT_Z_DAG", "S_DAG"},
+        {"ZCZ", "CZ"},
+        {"ZCY", "CY"},
+        {"ZCX", "CX"},
+        {"CNOT", "CX"},
+        {"MZ", "M"},
+        {"RZ", "R"},
+        {"MRZ", "MR"},
     });
 
 Tableau Gate::tableau() const {
@@ -469,6 +526,7 @@ Gate::Gate(
     TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data,
     TruncatedArray<const char *, 4> tableau_data)
     : name(name),
+      name_len(strlen(name)),
       tableau_simulator_function(tableau_simulator_function),
       frame_simulator_function(frame_simulator_function),
       reverse_error_fuser_function(hit_simulator_function),
@@ -480,27 +538,34 @@ Gate::Gate(
 
 GateDataMap::GateDataMap(
     std::initializer_list<Gate> gates, std::initializer_list<std::pair<const char *, const char *>> alternate_names) {
+
     bool collision = false;
     for (const auto &gate : gates) {
         const char *c = gate.name;
         uint8_t h = gate_name_to_id(c);
-        if (items[h].name != nullptr) {
-            std::cerr << "GATE COLLISION " << gate.name << " vs " << items[h].name << "\n";
+        Gate &g = items[h];
+        if (g.name != nullptr) {
+            std::cerr << "GATE COLLISION " << gate.name << " vs " << g.name << "\n";
             collision = true;
         }
-        items[h] = gate;
+        g = gate;
     }
     for (const auto &alt : alternate_names) {
-        uint8_t h2 = gate_name_to_id(alt.second);
-        if (items[h2].name != nullptr) {
-            std::cerr << "GATE COLLISION " << alt.second << " vs " << items[h2].name << "\n";
+        const auto *alt_name = alt.first;
+        const auto *canon_name = alt.second;
+        uint8_t h_alt = gate_name_to_id(alt_name);
+        Gate &g_alt = items[h_alt];
+        if (g_alt.name != nullptr) {
+            std::cerr << "GATE COLLISION " << alt_name << " vs " << g_alt.name << "\n";
             collision = true;
         }
 
-        uint8_t h1 = gate_name_to_id(alt.first);
-        assert(items[h1].name != nullptr && items[h1].id == h1);
-        items[h2].name = alt.second;
-        items[h2].id = h1;
+        uint8_t h_canon = gate_name_to_id(canon_name);
+        Gate &g_canon = items[h_canon];
+        assert(g_canon.name != nullptr && g_canon.id == h_canon);
+        g_alt.name = alt_name;
+        g_alt.name_len = strlen(alt_name);
+        g_alt.id = h_canon;
     }
     if (collision) {
         exit(EXIT_FAILURE);

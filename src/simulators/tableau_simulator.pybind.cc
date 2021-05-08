@@ -605,7 +605,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
     c.def(
         "reset",
         [](TableauSimulator &self, pybind11::args args) {
-            self.reset(args_to_targets(self, args));
+            self.reset_z(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
             Resets qubits to zero (e.g. by swapping them for zero'd qubit from the environment).
@@ -663,7 +663,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         "measure",
         [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
-            self.measure(TempViewableData({target}));
+            self.measure_z(TempViewableData({target}));
             return (bool)self.measurement_record.storage.back();
         },
         pybind11::arg("target"),
@@ -688,7 +688,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         "measure_many",
         [](TableauSimulator &self, pybind11::args args) {
             auto converted_args = args_to_targets(self, args);
-            self.measure(converted_args);
+            self.measure_z(converted_args);
             auto e = self.measurement_record.storage.end();
             return std::vector<bool>(e - converted_args.targets.size(), e);
         },
@@ -807,7 +807,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         "measure_kickback",
         [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
-            auto result = self.measure_kickback(target);
+            auto result = self.measure_kickback_z(target);
             if (result.second.num_qubits == 0) {
                 return pybind11::make_tuple(result.first, pybind11::none());
             }

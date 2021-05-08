@@ -41,9 +41,15 @@ inline uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
+    constexpr uint8_t c2_factor = 8;
+    constexpr uint8_t clast_rotate = 1;
+
     uint8_t result = 0;
     if (n > 0) {
-        result += (v[0] | 0x20) + ((v[n - 1] | 0x20) << 2);
+        uint8_t c_first = v[0] | 0x20;
+        uint8_t c_last = v[n - 1] | 0x20;
+        c_last = (c_last << clast_rotate) | (c_last >> (8 - clast_rotate));
+        result += c_first ^ c_last;
     }
     if (n > 2) {
         result ^= 1;
@@ -51,7 +57,7 @@ inline uint8_t gate_name_to_id(const char *v, size_t n) {
         char c2 = (char)(v[2] | 0x20);
         result += c1;
         result ^= c1;
-        result += c2 * 5;
+        result += c2 * c2_factor;
         result ^= c2;
     }
     if (n > 5) {
@@ -118,6 +124,7 @@ enum GateFlags : uint16_t {
 
 struct Gate {
     const char *name;
+    uint8_t name_len;
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
     void (ErrorFuser::*reverse_error_fuser_function)(const OperationData &);
@@ -210,16 +217,15 @@ inline std::string operator+(const std::string &a, const StringView &b) {
     return a + b.str();
 }
 
-inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name) {
-    bool failed = false;
-    if (bucket_name == nullptr) {
+inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const char *bucket_name, uint8_t bucket_len) {
+    if (bucket_name == nullptr || bucket_len != text_len) {
         return true;
     }
-    size_t k = 0;
-    for (; k < text_len; k++) {
+    bool failed = false;
+    for (size_t k = 0; k < text_len; k++) {
         failed |= toupper(text[k]) != bucket_name[k];
     }
-    return failed | bucket_name[k];
+    return failed;
 }
 
 struct GateDataMap {
@@ -235,12 +241,12 @@ struct GateDataMap {
 
     inline const Gate &at(const char *text, size_t text_len) const {
         uint8_t h = gate_name_to_id(text, text_len);
-        const char *bucket_name = items[h].name;
-        if (_case_insensitive_mismatch(text, text_len, bucket_name)) {
+        const Gate &gate = items[h];
+        if (_case_insensitive_mismatch(text, text_len, gate.name, gate.name_len)) {
             throw std::out_of_range("Gate not found " + std::string(text, text_len));
         }
         // Canonicalize.
-        return items[items[h].id];
+        return items[gate.id];
     }
 
     inline const Gate &at(const char *text) const {
@@ -257,8 +263,8 @@ struct GateDataMap {
 
     inline bool has(const std::string &text) const {
         uint8_t h = gate_name_to_id(text.data(), text.size());
-        const char *bucket_name = items[h].name;
-        return !_case_insensitive_mismatch(text.data(), text.size(), bucket_name);
+        const Gate &gate = items[h];
+        return !_case_insensitive_mismatch(text.data(), text.size(), gate.name, gate.name_len);
     }
 };
 

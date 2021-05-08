@@ -83,6 +83,10 @@ struct SparseXorVec {
     SparseXorVec(std::vector<T> &&vec) : sorted_items(std::move(vec)) {
     }
 
+    bool empty() const {
+        return sorted_items.empty();
+    }
+
     void set_to_xor_merge_sort(ConstPointerRange<T> sorted_items1, ConstPointerRange<T> sorted_items2) {
         sorted_items.resize(sorted_items1.size() + sorted_items2.size());
         auto written = xor_merge_sort(sorted_items, sorted_items1, sorted_items2);

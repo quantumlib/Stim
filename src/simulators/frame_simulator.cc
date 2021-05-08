@@ -81,23 +81,79 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
     });
 }
 
-void FrameSimulator::measure(const OperationData &target_data) {
+void FrameSimulator::measure_x(const OperationData &target_data) {
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
-        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
-        m_record.record_result(x_table[q]);
+        m_record.record_result(z_table[q]);
+        x_table[q].randomize(x_table[q].num_bits_padded(), rng);
         num_recorded_measurements++;
     }
 }
 
-void FrameSimulator::reset(const OperationData &target_data) {
+void FrameSimulator::measure_y(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
+        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        x_table[q] ^= z_table[q];
+        m_record.record_result(x_table[q]);
+        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
+        x_table[q] = z_table[q];
+        num_recorded_measurements++;
+    }
+}
+
+void FrameSimulator::measure_z(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
+        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        m_record.record_result(x_table[q]);
+        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
+        num_recorded_measurements++;
+    }
+}
+void FrameSimulator::reset_x(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
+        x_table[q].randomize(z_table[q].num_bits_padded(), rng);
+        z_table[q].clear();
+    }
+}
+
+void FrameSimulator::reset_y(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
+        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
+        x_table[q] = z_table[q];
+    }
+}
+
+void FrameSimulator::reset_z(const OperationData &target_data) {
     for (auto q : target_data.targets) {
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
     }
 }
 
-void FrameSimulator::measure_reset(const OperationData &target_data) {
+void FrameSimulator::measure_reset_x(const OperationData &target_data) {
+    // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+    for (auto q : target_data.targets) {
+        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        m_record.record_result(z_table[q]);
+        z_table[q].clear();
+        x_table[q].randomize(x_table[q].num_bits_padded(), rng);
+        num_recorded_measurements++;
+    }
+}
+
+void FrameSimulator::measure_reset_y(const OperationData &target_data) {
+    // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+    for (auto q : target_data.targets) {
+        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+        x_table[q] ^= z_table[q];
+        m_record.record_result(x_table[q]);
+        z_table[q].randomize(z_table[q].num_bits_padded(), rng);
+        x_table[q] = z_table[q];
+        num_recorded_measurements++;
+    }
+}
+
+void FrameSimulator::measure_reset_z(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.

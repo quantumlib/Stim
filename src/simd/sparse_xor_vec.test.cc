@@ -97,3 +97,12 @@ TEST(sparse_xor_table, str) {
     v.xor_item(5000);
     ASSERT_EQ(v.str(), "SparseXorVec{2, 5, 5000}");
 }
+
+TEST(sparse_xor_table, empty) {
+    SparseXorVec<uint32_t> v1;
+    ASSERT_TRUE(v1.empty());
+    v1.xor_item(1);
+    ASSERT_FALSE(v1.empty());
+    v1.xor_item(3);
+    ASSERT_FALSE(v1.empty());
+}

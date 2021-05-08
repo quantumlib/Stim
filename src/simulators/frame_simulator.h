@@ -57,9 +57,15 @@ struct FrameSimulator {
     void reset_all_and_run(const Circuit &circuit);
     void reset_all();
 
-    void measure(const OperationData &target_data);
-    void reset(const OperationData &target_data);
-    void measure_reset(const OperationData &target_data);
+    void measure_x(const OperationData &target_data);
+    void measure_y(const OperationData &target_data);
+    void measure_z(const OperationData &target_data);
+    void reset_x(const OperationData &target_data);
+    void reset_y(const OperationData &target_data);
+    void reset_z(const OperationData &target_data);
+    void measure_reset_x(const OperationData &target_data);
+    void measure_reset_y(const OperationData &target_data);
+    void measure_reset_z(const OperationData &target_data);
 
     void I(const OperationData &target_data);
     void H_XZ(const OperationData &target_data);
