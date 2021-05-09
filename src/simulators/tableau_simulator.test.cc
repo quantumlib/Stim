@@ -25,9 +25,9 @@ using namespace stim_internal;
 TEST(TableauSimulator, identity) {
     auto s = TableauSimulator(1, SHARED_TEST_RNG());
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));
-    s.measure(OpDat(0));
+    s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
-    s.measure(OpDat::flipped(0));
+    s.measure_z(OpDat::flipped(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false, true}));
 }
 
@@ -37,17 +37,17 @@ TEST(TableauSimulator, bit_flip) {
     s.SQRT_Z(OpDat(0));
     s.SQRT_Z(OpDat(0));
     s.H_XZ(OpDat(0));
-    s.measure(OpDat(0));
+    s.measure_z(OpDat(0));
     s.X(OpDat(0));
-    s.measure(OpDat(0));
+    s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{true, false}));
 }
 
 TEST(TableauSimulator, identity2) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
-    s.measure(OpDat(0));
+    s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
-    s.measure(OpDat(1));
+    s.measure_z(OpDat(1));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false, false}));
 }
 
@@ -57,9 +57,9 @@ TEST(TableauSimulator, bit_flip_2) {
     s.SQRT_Z(OpDat(0));
     s.SQRT_Z(OpDat(0));
     s.H_XZ(OpDat(0));
-    s.measure(OpDat(0));
+    s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{true}));
-    s.measure(OpDat(1));
+    s.measure_z(OpDat(1));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{true, false}));
 }
 
@@ -67,21 +67,29 @@ TEST(TableauSimulator, epr) {
     auto s = TableauSimulator(2, SHARED_TEST_RNG());
     s.H_XZ(OpDat(0));
     s.ZCX(OpDat({0, 1}));
-    ASSERT_EQ(s.is_deterministic(0), false);
-    ASSERT_EQ(s.is_deterministic(1), false);
-    s.measure(OpDat(0));
-    ASSERT_EQ(s.is_deterministic(0), true);
-    ASSERT_EQ(s.is_deterministic(1), true);
-    s.measure(OpDat(1));
+    ASSERT_EQ(s.is_deterministic_z(0), false);
+    ASSERT_EQ(s.is_deterministic_z(1), false);
+    s.measure_z(OpDat(0));
+    ASSERT_EQ(s.is_deterministic_z(0), true);
+    ASSERT_EQ(s.is_deterministic_z(1), true);
+    s.measure_z(OpDat(1));
     ASSERT_EQ(s.measurement_record.storage[0], s.measurement_record.storage[1]);
 }
 
 TEST(TableauSimulator, big_determinism) {
     auto s = TableauSimulator(1000, SHARED_TEST_RNG());
     s.H_XZ(OpDat(0));
-    ASSERT_FALSE(s.is_deterministic(0));
-    for (size_t k = 1; k < 1000; k++) {
-        ASSERT_TRUE(s.is_deterministic(k));
+    s.H_YZ(OpDat(1));
+    ASSERT_FALSE(s.is_deterministic_z(0));
+    ASSERT_FALSE(s.is_deterministic_z(1));
+    ASSERT_TRUE(s.is_deterministic_x(0));
+    ASSERT_FALSE(s.is_deterministic_x(1));
+    ASSERT_FALSE(s.is_deterministic_y(0));
+    ASSERT_TRUE(s.is_deterministic_y(1));
+    for (size_t k = 2; k < 1000; k++) {
+        ASSERT_TRUE(s.is_deterministic_z(k));
+        ASSERT_FALSE(s.is_deterministic_x(k));
+        ASSERT_FALSE(s.is_deterministic_y(k));
     }
 }
 
@@ -92,8 +100,8 @@ TEST(TableauSimulator, phase_kickback_consume_s_state) {
         s.SQRT_Z(OpDat(1));
         s.H_XZ(OpDat(0));
         s.ZCX(OpDat({0, 1}));
-        ASSERT_EQ(s.is_deterministic(1), false);
-        s.measure(OpDat(1));
+        ASSERT_EQ(s.is_deterministic_z(1), false);
+        s.measure_z(OpDat(1));
         auto v1 = s.measurement_record.storage.back();
         if (v1) {
             s.SQRT_Z(OpDat(0));
@@ -101,8 +109,8 @@ TEST(TableauSimulator, phase_kickback_consume_s_state) {
         }
         s.SQRT_Z(OpDat(0));
         s.H_XZ(OpDat(0));
-        ASSERT_EQ(s.is_deterministic(0), true);
-        s.measure(OpDat(0));
+        ASSERT_EQ(s.is_deterministic_z(0), true);
+        s.measure_z(OpDat(0));
         ASSERT_EQ(s.measurement_record.storage.back(), true);
     }
 }
@@ -126,13 +134,13 @@ TEST(TableauSimulator, phase_kickback_preserve_s_state) {
     // Check.
     s.SQRT_Z(OpDat(0));
     s.H_XZ(OpDat(0));
-    ASSERT_EQ(s.is_deterministic(0), true);
-    s.measure(OpDat(0));
+    ASSERT_EQ(s.is_deterministic_z(0), true);
+    s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage.back(), true);
     s.SQRT_Z(OpDat(1));
     s.H_XZ(OpDat(1));
-    ASSERT_EQ(s.is_deterministic(1), true);
-    s.measure(OpDat(1));
+    ASSERT_EQ(s.is_deterministic_z(1), true);
+    s.measure_z(OpDat(1));
     ASSERT_EQ(s.measurement_record.storage.back(), true);
 }
 
@@ -179,8 +187,8 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
                 sim.ZCX(OpDat({anc, k}));
             }
             sim.H_XZ(OpDat(anc));
-            ASSERT_EQ(sim.is_deterministic(anc), false);
-            sim.measure(OpDat(anc));
+            ASSERT_EQ(sim.is_deterministic_z(anc), false);
+            sim.measure_z(OpDat(anc));
             bool v = sim.measurement_record.storage.back();
             if (v) {
                 sim.X(OpDat(anc));
@@ -192,7 +200,7 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
         for (size_t k = 0; k < 7; k++) {
             sim.SQRT_Z(OpDat(k));
             sim.H_XZ(OpDat(k));
-            sim.measure(OpDat(k));
+            sim.measure_z(OpDat(k));
             qubit_measurements.push_back(sim.measurement_record.storage.back());
         }
 
@@ -209,8 +217,8 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
 
         sim.SQRT_Z(OpDat(7));
         sim.H_XZ(OpDat(7));
-        ASSERT_EQ(sim.is_deterministic(7), true);
-        sim.measure(OpDat(7));
+        ASSERT_EQ(sim.is_deterministic_z(7), true);
+        sim.measure_z(OpDat(7));
         ASSERT_EQ(sim.measurement_record.storage.back(), false);
 
         for (const auto &c : checks) {
@@ -255,8 +263,8 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
             sim.H_XZ(OpDat(anc));
             sim.SQRT_Z(OpDat(anc));
             sim.H_XZ(OpDat(anc));
-            ASSERT_EQ(sim.is_deterministic(anc), false);
-            sim.measure(OpDat(anc));
+            ASSERT_EQ(sim.is_deterministic_z(anc), false);
+            sim.measure_z(OpDat(anc));
             bool v = sim.measurement_record.storage.back();
             if (v) {
                 for (const auto &k : phasor) {
@@ -267,14 +275,14 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
         }
 
         for (size_t k = 0; k < 3; k++) {
-            ASSERT_EQ(sim.is_deterministic(k), true);
-            sim.measure(OpDat(k));
+            ASSERT_EQ(sim.is_deterministic_z(k), true);
+            sim.measure_z(OpDat(k));
             ASSERT_EQ(sim.measurement_record.storage.back(), false);
         }
         sim.SQRT_Z(OpDat(3));
         sim.H_XZ(OpDat(3));
-        ASSERT_EQ(sim.is_deterministic(3), true);
-        sim.measure(OpDat(3));
+        ASSERT_EQ(sim.is_deterministic_z(3), true);
+        sim.measure_z(OpDat(3));
         ASSERT_EQ(sim.measurement_record.storage.back(), true);
     }
 }
@@ -387,7 +395,7 @@ bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::v
     TableauSimulator sim_tab(2, SHARED_TEST_RNG());
     sim_tab.inv_state = state;
     auto vec_sim = sim_tab.to_vector_sim();
-    sim_tab.measure(OpDat(measurement_targets));
+    sim_tab.measure_z(OpDat(measurement_targets));
     PauliString buf(sim_tab.inv_state.num_qubits);
     size_t k = 0;
     for (auto t : measurement_targets) {
@@ -898,24 +906,68 @@ TEST(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers) {
     ASSERT_EQ(s1, s2);
 }
 
-TEST(TableauSimulator, measure_kickback) {
+TEST(TableauSimulator, measure_kickback_z) {
     TableauSimulator sim(4, SHARED_TEST_RNG());
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
-    auto k1 = sim.measure_kickback(1);
-    auto k2 = sim.measure_kickback(2);
-    auto k3 = sim.measure_kickback(3);
+    auto k1 = sim.measure_kickback_z(1);
+    auto k2 = sim.measure_kickback_z(2);
+    auto k3 = sim.measure_kickback_z(3);
     ASSERT_EQ(k1.second, PauliString::from_str("XX__"));
     ASSERT_EQ(k2.second, PauliString::from_str("__XX"));
     ASSERT_EQ(k3.second, PauliString(0));
     ASSERT_EQ(k2.first, k3.first);
+    auto p = PauliString::from_str("+Z");
+    auto pn = PauliString::from_str("-Z");
+    ASSERT_EQ(sim.peek_bloch(0), k1.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(1), k1.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(2), k2.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(3), k2.first ? pn : p);
+}
+
+TEST(TableauSimulator, measure_kickback_x) {
+    TableauSimulator sim(4, SHARED_TEST_RNG());
+    sim.H_XZ(OpDat({0, 2}));
+    sim.ZCX(OpDat({0, 1, 2, 3}));
+    auto k1 = sim.measure_kickback_x(1);
+    auto k2 = sim.measure_kickback_x(2);
+    auto k3 = sim.measure_kickback_x(3);
+    ASSERT_EQ(k1.second, PauliString::from_str("ZZ__"));
+    ASSERT_EQ(k2.second, PauliString::from_str("__ZZ"));
+    ASSERT_EQ(k3.second, PauliString(0));
+    ASSERT_EQ(k2.first, k3.first);
+    auto p = PauliString::from_str("+X");
+    auto pn = PauliString::from_str("-X");
+    ASSERT_EQ(sim.peek_bloch(0), k1.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(1), k1.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(2), k2.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(3), k2.first ? pn : p);
+}
+
+TEST(TableauSimulator, measure_kickback_y) {
+    TableauSimulator sim(4, SHARED_TEST_RNG());
+    sim.H_XZ(OpDat({0, 2}));
+    sim.ZCX(OpDat({0, 1, 2, 3}));
+    auto k1 = sim.measure_kickback_y(1);
+    auto k2 = sim.measure_kickback_y(2);
+    auto k3 = sim.measure_kickback_y(3);
+    ASSERT_EQ(k1.second, PauliString::from_str("ZX__"));
+    ASSERT_EQ(k2.second, PauliString::from_str("__ZX"));
+    ASSERT_EQ(k3.second, PauliString(0));
+    ASSERT_NE(k2.first, k3.first);
+    auto p = PauliString::from_str("+Y");
+    auto pn = PauliString::from_str("-Y");
+    ASSERT_EQ(sim.peek_bloch(0), k1.first ? p : pn);
+    ASSERT_EQ(sim.peek_bloch(1), k1.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(2), k2.first ? pn : p);
+    ASSERT_EQ(sim.peek_bloch(3), k2.first ? p : pn);
 }
 
 TEST(TableauSimulator, measure_kickback_isolates) {
     TableauSimulator sim(4, SHARED_TEST_RNG());
     sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
     for (size_t k = 0; k < 4; k++) {
-        auto result = sim.measure_kickback(k);
+        auto result = sim.measure_kickback_z(k);
         for (size_t j = 0; j < result.second.num_qubits && j < k; j++) {
             ASSERT_FALSE(result.second.xs[j]);
             ASSERT_FALSE(result.second.zs[j]);
@@ -929,7 +981,7 @@ TEST(TableauSimulator, collapse_isolate_completely) {
         sim.inv_state = Tableau::random(6, SHARED_TEST_RNG());
         {
             TableauTransposedRaii tmp(sim.inv_state);
-            sim.collapse_isolate_qubit(2, tmp);
+            sim.collapse_isolate_qubit_z(2, tmp);
         }
         PauliString x2 = sim.inv_state.xs[2];
         PauliString z2 = sim.inv_state.zs[2];
@@ -938,4 +990,271 @@ TEST(TableauSimulator, collapse_isolate_completely) {
         ASSERT_EQ(x2, PauliString::from_str("__X___"));
         ASSERT_EQ(z2, PauliString::from_str("__Z___"));
     }
+}
+
+TEST(TableauSimulator, reset_pure) {
+    TableauSimulator t(1, SHARED_TEST_RNG());
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+    t.reset_y(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+    t.reset_x(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+X"));
+    t.reset_y(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+    t.reset_z(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+}
+
+TEST(TableauSimulator, reset_random) {
+    TableauSimulator t(5, SHARED_TEST_RNG());
+
+    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.reset_x(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+X"));
+
+    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.reset_y(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+
+    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.reset_z(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+
+    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.measure_reset_x(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+X"));
+
+    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.measure_reset_y(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
+
+    t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
+    t.measure_reset_z(OpDat(0));
+    ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
+}
+
+TEST(TableauSimulator, reset_x_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.reset_x(OpDat(0));
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p2.sign = false;
+    ASSERT_EQ(p1, PauliString::from_str("+X"));
+    ASSERT_EQ(p2, PauliString::from_str("+X"));
+}
+
+TEST(TableauSimulator, reset_y_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.reset_y(OpDat(0));
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p2.sign = false;
+    ASSERT_EQ(p1, PauliString::from_str("+Y"));
+    ASSERT_EQ(p2, PauliString::from_str("+Y"));
+}
+
+TEST(TableauSimulator, reset_z_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.reset_z(OpDat(0));
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p2.sign = false;
+    ASSERT_EQ(p1, PauliString::from_str("+Z"));
+    ASSERT_EQ(p2, PauliString::from_str("+Z"));
+}
+
+TEST(TableauSimulator, measure_x_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.measure_x(OpDat(0));
+    auto b = t.measurement_record.storage.back();
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p1.sign ^= b;
+    p2.sign ^= b;
+    ASSERT_EQ(p1, PauliString::from_str("+X"));
+    ASSERT_EQ(p2, PauliString::from_str("+X"));
+}
+
+TEST(TableauSimulator, measure_y_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.measure_y(OpDat(0));
+    auto b = t.measurement_record.storage.back();
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p1.sign ^= b;
+    p2.sign ^= !b;
+    ASSERT_EQ(p1, PauliString::from_str("+Y"));
+    ASSERT_EQ(p2, PauliString::from_str("+Y"));
+}
+
+TEST(TableauSimulator, measure_z_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.measure_z(OpDat(0));
+    auto b = t.measurement_record.storage.back();
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p1.sign ^= b;
+    p2.sign ^= b;
+    ASSERT_EQ(p1, PauliString::from_str("+Z"));
+    ASSERT_EQ(p2, PauliString::from_str("+Z"));
+}
+
+TEST(TableauSimulator, measure_reset_x_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.measure_reset_x(OpDat(0));
+    auto b = t.measurement_record.storage.back();
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p2.sign ^= b;
+    ASSERT_EQ(p1, PauliString::from_str("+X"));
+    ASSERT_EQ(p2, PauliString::from_str("+X"));
+}
+
+TEST(TableauSimulator, measure_reset_y_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.measure_reset_y(OpDat(0));
+    auto b = t.measurement_record.storage.back();
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p2.sign ^= !b;
+    ASSERT_EQ(p1, PauliString::from_str("+Y"));
+    ASSERT_EQ(p2, PauliString::from_str("+Y"));
+}
+
+TEST(TableauSimulator, measure_reset_z_entangled) {
+    TableauSimulator t(2, SHARED_TEST_RNG());
+    t.H_XZ(OpDat(0));
+    t.ZCX(OpDat({0, 1}));
+    t.measure_reset_z(OpDat(0));
+    auto b = t.measurement_record.storage.back();
+    auto p1 = t.peek_bloch(0);
+    auto p2 = t.peek_bloch(1);
+    p2.sign ^= b;
+    ASSERT_EQ(p1, PauliString::from_str("+Z"));
+    ASSERT_EQ(p2, PauliString::from_str("+Z"));
+}
+
+TEST(TableauSimulator, resets_vs_measurements) {
+    auto check = [&](const char *circuit, std::vector<bool> results) {
+        simd_bits ref(results.size());
+        for (size_t k = 0; k < results.size(); k++) {
+            ref[k] = results[k];
+        }
+        for (size_t reps = 0; reps < 5; reps++) {
+            simd_bits t = TableauSimulator::sample_circuit(Circuit::from_text(circuit), SHARED_TEST_RNG());
+            if (t != ref) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    ASSERT_TRUE(check(R"circuit(
+        RX 0
+        RY 1
+        RZ 2
+        H_XZ 0
+        H_YZ 1
+        M 0 1 2
+    )circuit", {
+                      false, false, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MX 0 1 2
+        MY 3 4 5
+        MZ 6 7 8
+    )circuit", {
+                      false, true, true,
+                      true, false, true,
+                      true, true, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MX !0 !1 !2
+        MY !3 !4 !5
+        MZ !6 !7 !8
+    )circuit", {
+                      true, false, false,
+                      false, true, false,
+                      false, false, true,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MRX 0 1 2
+        MRY 3 4 5
+        MRZ 6 7 8
+        H_XZ 0
+        H_YZ 3
+        M 0 3 6
+    )circuit", {
+                      false, true, true,
+                      true, false, true,
+                      true, true, false,
+                      false, false, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MRX !0 !1 !2
+        MRY !3 !4 !5
+        MRZ !6 !7 !8
+        H_XZ 0
+        H_YZ 3
+        M 0 3 6
+    )circuit", {
+                      true, false, false,
+                      false, true, false,
+                      false, false, true,
+                      false, false, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0
+        H_YZ 1
+        Z_ERROR(1) 0 1
+        X_ERROR(1) 2
+        MRX 0 0
+        MRY 1 1
+        MRZ 2 2
+    )circuit", {
+                      true, false,
+                      true, false,
+                      true, false,
+                  }));
 }

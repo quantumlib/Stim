@@ -68,27 +68,69 @@ struct TableauSimulator {
     /// Finds a state vector satisfying the current stabilizer generators, and returns a vector simulator in that state.
     VectorSimulator to_vector_sim() const;
 
+    /// Collapses then records the X signs of the target qubits. Supports flipping the result.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to invert results.
+    void measure_x(const OperationData &target_data);
+
+    /// Collapses then records the Y signs of the target qubits. Supports flipping the result.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to invert results.
+    void measure_y(const OperationData &target_data);
+
     /// Collapses then records the Z signs of the target qubits. Supports flipping the result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure(const OperationData &target_data);
+    void measure_z(const OperationData &target_data);
 
-    /// Collapses then clears the target qubits.
+    /// Collapses then clears the target qubits to the |+> state.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    void reset(const OperationData &target_data);
+    void reset_x(const OperationData &target_data);
 
-    /// Collapses then records and clears the Z signs of the target qubits. Supports flipping the result.
+    /// Collapses then clears the target qubits to the |i> state.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
+    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
+    void reset_y(const OperationData &target_data);
+
+    /// Collapses then clears the target qubits to the |0> state.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to reset to 1 instead of 0.
+    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
+    void reset_z(const OperationData &target_data);
+
+    /// Collapses then records and clears the target qubits in the X basis. Supports flipping the measurement result.
     ///
     /// Args:
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
-    void measure_reset(const OperationData &target_data);
+    void measure_reset_x(const OperationData &target_data);
 
+    /// Collapses then records and clears the target qubits in the Y basis. Supports flipping the measurement result.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to invert results.
+    void measure_reset_y(const OperationData &target_data);
+
+    /// Collapses then records and clears the target qubits in the Z basis. Supports flipping the measurement result.
+    ///
+    /// Args:
+    ///     target_data: The qubits to target, with flag data indicating whether to invert results.
+    void measure_reset_z(const OperationData &target_data);
+
+    /// Determines if a qubit's X observable commutes (vs anti-commutes) with the current stabilizer generators.
+    bool is_deterministic_x(size_t target) const;
+    /// Determines if a qubit's Y observable commutes (vs anti-commutes) with the current stabilizer generators.
+    bool is_deterministic_y(size_t target) const;
     /// Determines if a qubit's Z observable commutes (vs anti-commutes) with the current stabilizer generators.
-    bool is_deterministic(size_t target) const;
+    bool is_deterministic_z(size_t target) const;
 
     std::vector<PauliString> canonical_stabilizers() const;
 
@@ -136,7 +178,9 @@ struct TableauSimulator {
     ///
     /// Deterministic measurements have no kickback.
     /// This is represented by setting the kickback to the empty Pauli string.
-    std::pair<bool, PauliString> measure_kickback(uint32_t target);
+    std::pair<bool, PauliString> measure_kickback_z(uint32_t target);
+    std::pair<bool, PauliString> measure_kickback_y(uint32_t target);
+    std::pair<bool, PauliString> measure_kickback_x(uint32_t target);
 
     bool read_measurement_record(uint32_t encoded_target) const;
     void single_cx(uint32_t c, uint32_t t);
@@ -157,20 +201,32 @@ struct TableauSimulator {
     /// Returns:
     ///    SIZE_MAX: Already collapsed.
     ///    Else: The pivot index. The start-of-time qubit whose X flips the measurement.
-    size_t collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii);
+    size_t collapse_qubit_z(size_t target, TableauTransposedRaii &transposed_raii);
 
-    /// Collapses the given qubits.
+    /// Collapses the given qubits into the X basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse(ConstPointerRange<uint32_t> targets);
+    void collapse_x(ConstPointerRange<uint32_t> targets);
+
+    /// Collapses the given qubits into the Y basis.
+    ///
+    /// Args:
+    ///     targets: The qubits to collapse.
+    void collapse_y(ConstPointerRange<uint32_t> targets);
+
+    /// Collapses the given qubits into the Z basis.
+    ///
+    /// Args:
+    ///     targets: The qubits to collapse.
+    void collapse_z(ConstPointerRange<uint32_t> targets);
 
     /// Completely isolates a qubit from the other qubits tracked by the simulator, so it can be safely discarded.
     ///
     /// After this runs, it is guaranteed that the inverse tableau maps the target qubit's X and Z observables to
     /// themselves (possibly negated) and that it maps all other qubits to Pauli products not involving the target
     /// qubit.
-    void collapse_isolate_qubit(size_t target, TableauTransposedRaii &transposed_raii);
+    void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii);
 };
 
 }

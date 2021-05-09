@@ -1,14 +1,101 @@
+import dataclasses
 import functools
-from typing import Callable, Dict, List, Tuple, Union, Iterator
+from typing import Callable, Dict, List, Tuple, Union, Iterator, cast
 
 import cirq
 import stim
+
+
+@dataclasses.dataclass(frozen=True)
+class MeasureAndOrReset(cirq.SingleQubitGate):
+    measure: bool
+    reset: bool
+    basis: str
+    invert_measure: bool
+    key: str
+
+    def _decompose_(self, qubits):
+        q, = qubits
+        if self.measure:
+            if self.basis == 'X':
+                yield cirq.H(q)
+            elif self.basis == 'Y':
+                yield cirq.X(q)**0.5
+            yield cirq.measure(q, key=self.key, invert_mask=(True,) if self.invert_measure else ())
+        if self.reset:
+            yield cirq.ResetChannel().on(q)
+            if self.basis == 'X':
+                yield cirq.H(q)
+            elif self.basis == 'Y':
+                yield cirq.X(q)**-0.5
+
+    def with_key(self, key: str) -> 'MeasureAndOrReset':
+        return MeasureAndOrReset(
+            measure=self.measure,
+            reset=self.reset,
+            basis=self.basis,
+            invert_measure=self.invert_measure,
+            key=key,
+        )
+
+    def with_bits_flipped(self, *bit_positions):
+        assert bit_positions == (0,)
+        return MeasureAndOrReset(
+            measure=self.measure,
+            reset=self.reset,
+            basis=self.basis,
+            invert_measure=not self.invert_measure,
+            key=self.key,
+        )
+
+    def _stim_op_name(self) -> str:
+        result = ''
+        if self.measure:
+            result += "M"
+        if self.reset:
+            result += "R"
+        if self.basis != 'Z':
+            result += self.basis
+        return result
+
+    def _stim_conversion_(
+            self,
+            edit_circuit: stim.Circuit,
+            targets: List[int],
+            **kwargs):
+        if self.invert_measure:
+            targets[0] = stim.target_inv(targets[0])
+        edit_circuit.append_operation(self._stim_op_name(), targets)
+
+    def __str__(self) -> str:
+        result = self._stim_op_name()
+        if self.invert_measure:
+            result = "!" + result
+        if self.measure:
+            result += f"('{self.key}')"
+        return result
+
+    def __repr__(self):
+        return (f'stimcirq.MeasureAndOrReset('
+                f'measure={self.measure!r}, '
+                f'reset={self.reset!r}, '
+                f'basis={self.basis!r}, '
+                f'invert_measure={self.invert_measure!r}, '
+                f'key={self.key!r})')
 
 
 @functools.lru_cache(maxsize=1)
 def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[float], cirq.Gate]]]:
     return {
         "R": cirq.ResetChannel(),
+        "RX": MeasureAndOrReset(measure=False, reset=True, basis='X', invert_measure=False, key=''),
+        "RY": MeasureAndOrReset(measure=False, reset=True, basis='Y', invert_measure=False, key=''),
+        "M": cirq.MeasurementGate(num_qubits=1, key='0'),
+        "MX": MeasureAndOrReset(measure=True, reset=False, basis='X', invert_measure=False, key='0'),
+        "MY": MeasureAndOrReset(measure=True, reset=False, basis='Y', invert_measure=False, key='0'),
+        "MR": MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='0'),
+        "MRX": MeasureAndOrReset(measure=True, reset=True, basis='X', invert_measure=False, key='0'),
+        "MRY": MeasureAndOrReset(measure=True, reset=True, basis='Y', invert_measure=False, key='0'),
         "I": cirq.I,
         "X": cirq.X,
         "Y": cirq.Y,
@@ -51,6 +138,7 @@ def _translate_flattened_operation(
     name, targets, arg = op
 
     handler = stim_to_cirq_gate_table().get(name)
+
     if handler is not None:
         if isinstance(handler, cirq.Gate):
             gate = handler
@@ -61,25 +149,22 @@ def _translate_flattened_operation(
         for q in targets:
             if isinstance(q, tuple) and q[0] == "rec":
                 raise NotImplementedError("Measurement record.")
-        m = gate.num_qubits()
-        for k in range(0, len(targets), m):
-            yield gate(*[cirq.LineQubit(q) for q in targets[k:k+m]])
-        return
-
-    if name == "M" or name == "MR":
-        for t in targets:
-            if isinstance(t, int):
-                q = t
-                inv = False
-            elif t[0] == "inv":
-                q = t[1]
-                inv = True
-            else:
-                raise NotImplementedError("Unrecognized measurement target.")
-            q = cirq.LineQubit(q)
-            yield cirq.measure(q, key=str(get_next_measure_id()), invert_mask=(True,) if inv else ())
-            if name == "MR":
-                yield cirq.ResetChannel().on(q)
+        if name[0] == 'M':  # Measurement.
+            for t in targets:
+                if isinstance(t, int):
+                    q = t
+                    g = gate
+                elif t[0] == "inv":
+                    q = t[1]
+                    g = cast(Union[MeasureAndOrReset, cirq.MeasurementGate], gate).with_bits_flipped(0)
+                else:
+                    raise NotImplementedError("Unrecognized measurement target.")
+                key = str(get_next_measure_id())
+                yield g.with_key(key).on(cirq.LineQubit(q))
+        else:
+            m = gate.num_qubits()
+            for k in range(0, len(targets), m):
+                yield gate(*[cirq.LineQubit(q) for q in targets[k:k+m]])
         return
 
     if name == "E":

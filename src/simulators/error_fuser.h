@@ -53,9 +53,15 @@ struct ErrorFuser {
     ErrorFuser &operator=(ErrorFuser &&fuser) noexcept = delete;
     ErrorFuser &operator=(const ErrorFuser &fuser) = delete;
 
-    void R(const OperationData &dat);
-    void M(const OperationData &dat);
-    void MR(const OperationData &dat);
+    void RX(const OperationData &dat);
+    void RY(const OperationData &dat);
+    void RZ(const OperationData &dat);
+    void MX(const OperationData &dat);
+    void MY(const OperationData &dat);
+    void MZ(const OperationData &dat);
+    void MRX(const OperationData &dat);
+    void MRY(const OperationData &dat);
+    void MRZ(const OperationData &dat);
     void H_XZ(const OperationData &dat);
     void H_XY(const OperationData &dat);
     void H_YZ(const OperationData &dat);

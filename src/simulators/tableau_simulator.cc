@@ -16,6 +16,7 @@
 
 #include "../circuit/gate_data.h"
 #include "../probability_util.h"
+#include <set>
 
 using namespace stim_internal;
 
@@ -27,13 +28,47 @@ TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8
       last_correlated_error_occurred(false) {
 }
 
-bool TableauSimulator::is_deterministic(size_t target) const {
+bool TableauSimulator::is_deterministic_x(size_t target) const {
+    return !inv_state.xs[target].xs.not_zero();
+}
+
+bool TableauSimulator::is_deterministic_y(size_t target) const {
+    return inv_state.xs[target].xs == inv_state.zs[target].xs;
+}
+
+bool TableauSimulator::is_deterministic_z(size_t target) const {
     return !inv_state.zs[target].xs.not_zero();
 }
 
-void TableauSimulator::measure(const OperationData &target_data) {
+void TableauSimulator::measure_x(const OperationData &target_data) {
     // Ensure measurement observables are collapsed.
-    collapse(target_data.targets);
+    collapse_x(target_data.targets);
+
+    // Record measurement results.
+    for (auto qf : target_data.targets) {
+        auto q = qf & TARGET_VALUE_MASK;
+        bool flipped = qf & TARGET_INVERTED_BIT;
+        bool b = inv_state.xs.signs[q] ^ flipped;
+        measurement_record.record_result(b);
+    }
+}
+
+void TableauSimulator::measure_y(const OperationData &target_data) {
+    // Ensure measurement observables are collapsed.
+    collapse_y(target_data.targets);
+
+    // Record measurement results.
+    for (auto qf : target_data.targets) {
+        auto q = qf & TARGET_VALUE_MASK;
+        bool flipped = qf & TARGET_INVERTED_BIT;
+        bool b = inv_state.eval_y_obs(q).sign ^ flipped;
+        measurement_record.record_result(b);
+    }
+}
+
+void TableauSimulator::measure_z(const OperationData &target_data) {
+    // Ensure measurement observables are collapsed.
+    collapse_z(target_data.targets);
 
     // Record measurement results.
     for (auto qf : target_data.targets) {
@@ -44,11 +79,45 @@ void TableauSimulator::measure(const OperationData &target_data) {
     }
 }
 
-void TableauSimulator::measure_reset(const OperationData &target_data) {
+void TableauSimulator::measure_reset_x(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
 
     // Ensure measurement observables are collapsed.
-    collapse(target_data.targets);
+    collapse_x(target_data.targets);
+
+    // Record measurement results while triggering resets.
+    for (auto qf : target_data.targets) {
+        auto q = qf & TARGET_VALUE_MASK;
+        bool flipped = qf & TARGET_INVERTED_BIT;
+        bool b = inv_state.xs.signs[q] ^ flipped;
+        measurement_record.record_result(b);
+        inv_state.xs.signs[q] = false;
+        inv_state.zs.signs[q] = false;
+    }
+}
+
+void TableauSimulator::measure_reset_y(const OperationData &target_data) {
+    // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+
+    // Ensure measurement observables are collapsed.
+    collapse_y(target_data.targets);
+
+    // Record measurement results while triggering resets.
+    for (auto qf : target_data.targets) {
+        auto q = qf & TARGET_VALUE_MASK;
+        bool flipped = qf & TARGET_INVERTED_BIT;
+        bool cur_sign = inv_state.eval_y_obs(q).sign;
+        bool b = cur_sign ^ flipped;
+        measurement_record.record_result(b);
+        inv_state.zs.signs[q] ^= cur_sign;
+    }
+}
+
+void TableauSimulator::measure_reset_z(const OperationData &target_data) {
+    // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+
+    // Ensure measurement observables are collapsed.
+    collapse_z(target_data.targets);
 
     // Record measurement results while triggering resets.
     for (auto qf : target_data.targets) {
@@ -56,16 +125,41 @@ void TableauSimulator::measure_reset(const OperationData &target_data) {
         bool flipped = qf & TARGET_INVERTED_BIT;
         bool b = inv_state.zs.signs[q] ^ flipped;
         measurement_record.record_result(b);
+        inv_state.xs.signs[q] = false;
         inv_state.zs.signs[q] = false;
     }
 }
 
-void TableauSimulator::reset(const OperationData &target_data) {
+void TableauSimulator::reset_x(const OperationData &target_data) {
     // Collapse the qubits to be reset.
-    collapse(target_data.targets);
+    collapse_x(target_data.targets);
 
     // Force the collapsed qubits into the ground state.
     for (auto q : target_data.targets) {
+        inv_state.xs.signs[q] = false;
+        inv_state.zs.signs[q] = false;
+    }
+}
+
+void TableauSimulator::reset_y(const OperationData &target_data) {
+    // Collapse the qubits to be reset.
+    collapse_y(target_data.targets);
+
+    // Force the collapsed qubits into the ground state.
+    for (auto q : target_data.targets) {
+        inv_state.xs.signs[q] = false;
+        inv_state.zs.signs[q] = false;
+        inv_state.zs.signs[q] ^= inv_state.eval_y_obs(q).sign;
+    }
+}
+
+void TableauSimulator::reset_z(const OperationData &target_data) {
+    // Collapse the qubits to be reset.
+    collapse_z(target_data.targets);
+
+    // Force the collapsed qubits into the ground state.
+    for (auto q : target_data.targets) {
+        inv_state.xs.signs[q] = false;
         inv_state.zs.signs[q] = false;
     }
 }
@@ -122,12 +216,8 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
         result.sign = z.sign;
         result.zs[0] = true;
     } else if (x.xs == z.xs) {
-        PauliString copy = x;
-        uint8_t log_i = 1;
-        log_i += copy.ref().inplace_right_mul_returning_log_i_scalar(z);
-        assert((log_i & 1) == 0);
-        copy.sign ^= (log_i & 2) != 0;
-        result.sign = copy.sign;
+        PauliString y = inv_state.eval_y_obs(target);
+        result.sign = y.sign;
         result.xs[0] = true;
         result.zs[0] = true;
     }
@@ -459,13 +549,61 @@ VectorSimulator TableauSimulator::to_vector_sim() const {
     return VectorSimulator::from_stabilizers(stabilizers, rng);
 }
 
-void TableauSimulator::collapse(ConstPointerRange<uint32_t> targets) {
+void TableauSimulator::collapse_x(ConstPointerRange<uint32_t> targets) {
+    // Find targets that need to be collapsed.
+    std::set<uint32_t> unique_collapse_targets;
+    for (uint32_t t : targets) {
+        t &= TARGET_VALUE_MASK;
+        if (!is_deterministic_x(t)) {
+            unique_collapse_targets.insert(t);
+        }
+    }
+
+    // Only pay the cost of transposing if collapsing is needed.
+    if (!unique_collapse_targets.empty()) {
+        std::vector<uint32_t> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
+        H_XZ({0, collapse_targets});
+        {
+            TableauTransposedRaii temp_transposed(inv_state);
+            for (auto q : collapse_targets) {
+                collapse_qubit_z(q, temp_transposed);
+            }
+        }
+        H_XZ({0, collapse_targets});
+    }
+}
+
+void TableauSimulator::collapse_y(ConstPointerRange<uint32_t> targets) {
+    // Find targets that need to be collapsed.
+    std::set<uint32_t> unique_collapse_targets;
+    for (uint32_t t : targets) {
+        t &= TARGET_VALUE_MASK;
+        if (!is_deterministic_y(t)) {
+            unique_collapse_targets.insert(t);
+        }
+    }
+
+    // Only pay the cost of transposing if collapsing is needed.
+    if (!unique_collapse_targets.empty()) {
+        std::vector<uint32_t> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
+        H_YZ({0, collapse_targets});
+        {
+            TableauTransposedRaii temp_transposed(inv_state);
+            for (auto q : collapse_targets) {
+                collapse_qubit_z(q, temp_transposed);
+            }
+        }
+        H_YZ({0, collapse_targets});
+    }
+}
+
+void TableauSimulator::collapse_z(ConstPointerRange<uint32_t> targets) {
     // Find targets that need to be collapsed.
     std::vector<size_t> collapse_targets;
     collapse_targets.reserve(targets.size());
     for (uint32_t t : targets) {
         t &= TARGET_VALUE_MASK;
-        if (!is_deterministic(t)) {
+        if (!is_deterministic_z(t)) {
             collapse_targets.push_back(t);
         }
     }
@@ -474,12 +612,12 @@ void TableauSimulator::collapse(ConstPointerRange<uint32_t> targets) {
     if (!collapse_targets.empty()) {
         TableauTransposedRaii temp_transposed(inv_state);
         for (auto target : collapse_targets) {
-            collapse_qubit(target, temp_transposed);
+            collapse_qubit_z(target, temp_transposed);
         }
     }
 }
 
-size_t TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &transposed_raii) {
+size_t TableauSimulator::collapse_qubit_z(size_t target, TableauTransposedRaii &transposed_raii) {
     auto n = inv_state.num_qubits;
 
     // Search for any stabilizer generator that anti-commutes with the measurement observable.
@@ -516,9 +654,9 @@ size_t TableauSimulator::collapse_qubit(size_t target, TableauTransposedRaii &tr
     return pivot;
 }
 
-void TableauSimulator::collapse_isolate_qubit(size_t target, TableauTransposedRaii &transposed_raii) {
+void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii) {
     // Force T(Z_target) to be a product of Z operations.
-    collapse_qubit(target, transposed_raii);
+    collapse_qubit_z(target, transposed_raii);
 
     // Ensure T(Z_target) is a product of Z operations containing Z_target.
     auto n = inv_state.num_qubits;
@@ -596,7 +734,7 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
     {
         TableauTransposedRaii temp_transposed(inv_state);
         for (size_t q = new_num_qubits; q < inv_state.num_qubits; q++) {
-            collapse_isolate_qubit(q, temp_transposed);
+            collapse_isolate_qubit_z(q, temp_transposed);
         }
     }
 
@@ -612,26 +750,48 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback(uint32_t target) {
+std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(uint32_t target) {
     bool flipped = target & TARGET_INVERTED_BIT;
     uint32_t q = target & TARGET_VALUE_MASK;
     PauliString kickback(0);
-    bool has_kickback = !is_deterministic(q); // Note: do this before transposing the state!
+    bool has_kickback = !is_deterministic_z(q); // Note: do this before transposing the state!
 
     {
         TableauTransposedRaii temp_transposed(inv_state);
         if (has_kickback) {
-            size_t pivot = collapse_qubit(q, temp_transposed);
+            size_t pivot = collapse_qubit_z(q, temp_transposed);
             kickback = temp_transposed.unsigned_x_input(pivot);
         }
         bool result = inv_state.zs.signs[q] ^ flipped;
         measurement_record.storage.push_back(result);
 
         // Prevent later measure_kickback calls from unnecessarily targeting this qubit with a Z gate.
-        collapse_isolate_qubit(target, temp_transposed);
+        collapse_isolate_qubit_z(target, temp_transposed);
 
         return {result, kickback};
     }
+}
+
+std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(uint32_t target) {
+    H_YZ({0.0, {&target, &target + 1}});
+    auto result = measure_kickback_z(target);
+    H_YZ({0.0, {&target, &target + 1}});
+    if (result.second.num_qubits) {
+        // Also conjugate the kickback by H_YZ.
+        result.second.xs[target] ^= result.second.zs[target];
+    }
+    return result;
+}
+
+std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(uint32_t target) {
+    H_XZ({0.0, {&target, &target + 1}});
+    auto result = measure_kickback_z(target);
+    H_XZ({0.0, {&target, &target + 1}});
+    if (result.second.num_qubits) {
+        // Also conjugate the kickback by H_XZ.
+        result.second.xs[target].swap_with(result.second.zs[target]);
+    }
+    return result;
 }
 
 std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {

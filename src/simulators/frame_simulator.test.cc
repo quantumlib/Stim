@@ -112,7 +112,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
         if (op.gate->name == std::string("M")) {
             for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure(OpDat(qf));
+                tableau_sim.measure_z(OpDat(qf));
                 if (output[out_p] != tableau_sim.measurement_record.storage.back()) {
                     pass = false;
                 }
@@ -748,7 +748,7 @@ TEST(FrameSimulator, record_gets_trimmed) {
     Circuit c = Circuit::from_text("M 0 1 2 3 4 5 6 7 8 9");
     MeasureRecordBatchWriter b(tmpfile(), 1024, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
-        sim.measure(c.operations[0].target_data);
+        sim.measure_z(c.operations[0].target_data);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }
@@ -857,4 +857,108 @@ TEST(FrameSimulator, stream_results_triple_shot) {
         }
         ASSERT_EQ(result[s + 30000], '\n');
     }
+}
+
+TEST(FrameSimulator, resets_vs_measurements) {
+    auto check = [&](const char *circuit, std::vector<bool> results) {
+        simd_bits ref(results.size());
+        for (size_t k = 0; k < results.size(); k++) {
+            ref[k] = results[k];
+        }
+        simd_bit_table t = FrameSimulator::sample(Circuit::from_text(circuit), ref, 100, SHARED_TEST_RNG());
+        return !t.data.not_zero();
+    };
+
+    ASSERT_TRUE(check(R"circuit(
+        RX 0
+        RY 1
+        RZ 2
+        H_XZ 0
+        H_YZ 1
+        M 0 1 2
+    )circuit", {
+                      false, false, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MX 0 1 2
+        MY 3 4 5
+        MZ 6 7 8
+    )circuit", {
+                      false, true, true,
+                      true, false, true,
+                      true, true, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MX !0 !1 !2
+        MY !3 !4 !5
+        MZ !6 !7 !8
+    )circuit", {
+                      false, true, true,
+                      true, false, true,
+                      true, true, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MRX 0 1 2
+        MRY 3 4 5
+        MRZ 6 7 8
+        H_XZ 0
+        H_YZ 3
+        M 0 3 6
+    )circuit", {
+                      false, true, true,
+                      true, false, true,
+                      true, true, false,
+                      false, false, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0 1 2
+        H_YZ 3 4 5
+        X_ERROR(1) 0 3 6
+        Y_ERROR(1) 1 4 7
+        Z_ERROR(1) 2 5 8
+        MRX !0 !1 !2
+        MRY !3 !4 !5
+        MRZ !6 !7 !8
+        H_XZ 0
+        H_YZ 3
+        M 0 3 6
+    )circuit", {
+                      false, true, true,
+                      true, false, true,
+                      true, true, false,
+                      false, false, false,
+                  }));
+
+    ASSERT_TRUE(check(R"circuit(
+        H_XZ 0
+        H_YZ 1
+        Z_ERROR(1) 0 1
+        X_ERROR(1) 2
+        MRX 0 0
+        MRY 1 1
+        MRZ 2 2
+    )circuit", {
+                      true, false,
+                      true, false,
+                      true, false,
+                  }));
 }

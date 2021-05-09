@@ -38,3 +38,33 @@ def test_compiled_measurement_sampler_sample():
             [0b00010],
             [0b00010],
         ], dtype=np.uint8))
+
+
+def test_measurements_vs_resets():
+    assert not np.any(stim.Circuit("""
+        RX 0
+        RY 1
+        RZ 2
+        H 0
+        H_YZ 1
+        M 0 1 2
+    """).compile_sampler().sample(shots=100))
+
+    assert not np.any(stim.Circuit("""
+        H 0
+        H_YZ 1
+        MRX 0
+        MRY 1
+        MRZ 2
+        H 0
+        H_YZ 1
+        M 0 1 2
+    """).compile_sampler().sample(shots=100))
+
+    assert not np.any(stim.Circuit("""
+        H 0
+        H_YZ 1
+        MRX 0
+        MRY 1
+        MRZ 2
+    """).compile_sampler().sample(shots=100))

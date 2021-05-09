@@ -24,15 +24,67 @@
 
 using namespace stim_internal;
 
-void ErrorFuser::R(const OperationData &dat) {
+void ErrorFuser::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
+        if (!zs[q].empty()) {
+            throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+        }
+        xs[q].clear();
+    }
+}
+
+void ErrorFuser::RY(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        if (xs[q] != zs[q]) {
+            throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+        }
         xs[q].clear();
         zs[q].clear();
     }
 }
 
-void ErrorFuser::M(const OperationData &dat) {
+void ErrorFuser::RZ(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        if (!xs[q].empty()) {
+            throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+        }
+        zs[q].clear();
+    }
+}
+
+void ErrorFuser::MX(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<uint32_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::sort(d.begin(), d.end());
+        xs[q].xor_sorted_items(d);
+        if (!zs[q].empty()) {
+            throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+        }
+    }
+}
+
+void ErrorFuser::MY(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<uint32_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::sort(d.begin(), d.end());
+        xs[q].xor_sorted_items(d);
+        zs[q].xor_sorted_items(d);
+        if (xs[q] != zs[q]) {
+            throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+        }
+    }
+}
+
+void ErrorFuser::MZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
@@ -40,12 +92,37 @@ void ErrorFuser::M(const OperationData &dat) {
         std::vector<uint32_t> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         zs[q].xor_sorted_items(d);
+        if (!xs[q].empty()) {
+            throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+        }
     }
 }
 
-void ErrorFuser::MR(const OperationData &dat) {
-    R(dat);
-    M(dat);
+void ErrorFuser::MRX(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        OperationData d{0, {&q, &q + 1}};
+        RX(d);
+        MX(d);
+    }
+}
+
+void ErrorFuser::MRY(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        OperationData d{0, {&q, &q + 1}};
+        RY(d);
+        MY(d);
+    }
+}
+
+void ErrorFuser::MRZ(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        OperationData d{0, {&q, &q + 1}};
+        RZ(d);
+        MZ(d);
+    }
 }
 
 void ErrorFuser::H_XZ(const OperationData &dat) {
