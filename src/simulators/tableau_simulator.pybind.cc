@@ -55,9 +55,15 @@ TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &a
 
 TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::args &args) {
     if (pybind11::len(args) & 1) {
-        throw std::out_of_range("Two qubit operation requires an even number of targets.");
+        throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }
-    return args_to_targets(self, args);
+    auto result = args_to_targets(self, args);
+    for (size_t k = 0; k < result.targets.size(); k += 2) {
+        if (result.targets[k] == result.targets[k + 1]) {
+            throw std::invalid_argument("Two qubit operation can't target the same qubit twice.");
+        }
+    }
+    return result;
 }
 
 void pybind_tableau_simulator(pybind11::module &m) {
