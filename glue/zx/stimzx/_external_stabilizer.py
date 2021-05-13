@@ -1,18 +1,17 @@
-import dataclasses
-from typing import List
+from typing import List, Any
 
 import stim
 
 
-@dataclasses.dataclass
 class ExternalStabilizer:
     """An input-to-output relationship enforced by a stabilizer circuit."""
 
-    input: stim.PauliString
-    output: stim.PauliString
+    def __init__(self, *, input: stim.PauliString, output: stim.PauliString):
+        self.input = input
+        self.output = output
 
     @staticmethod
-    def from_dual(dual: stim.PauliString, num_inputs: int):
+    def from_dual(dual: stim.PauliString, num_inputs: int) -> 'ExternalStabilizer':
         sign = dual.sign
 
         # Transpose input. Ys get negated.
@@ -56,8 +55,19 @@ class ExternalStabilizer:
     def __mul__(self, other: 'ExternalStabilizer') -> 'ExternalStabilizer':
         return ExternalStabilizer(input=other.input * self.input, output=self.output * other.output)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.input) + ' -> ' + str(self.output)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, ExternalStabilizer):
+            return NotImplemented
+        return self.output == other.output and self.input == other.input
+
+    def __ne__(self, other: Any) -> bool:
+        return not self == other
+
+    def __repr__(self):
+        return f'stimzx.ExternalStabilizer(input={self.input!r}, output={self.output!r})'
 
 
 def _eliminate_stabilizers(stabilizers: List[stim.PauliString], elimination_indices: range):

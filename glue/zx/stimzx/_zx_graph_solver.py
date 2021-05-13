@@ -1,4 +1,3 @@
-import dataclasses
 from typing import Dict, Tuple, List, Any, Union
 import stim
 import networkx as nx
@@ -7,10 +6,26 @@ from ._text_diagram_parsing import text_diagram_to_networkx_graph
 from ._external_stabilizer import ExternalStabilizer
 
 
-@dataclasses.dataclass(frozen=True)
 class ZxType:
-    kind: str
-    quarter_turns: int = 0
+    """Data describing a ZX node."""
+
+    def __init__(self, kind: str, quarter_turns: int = 0):
+        self.kind = kind
+        self.quarter_turns = quarter_turns
+
+    def __eq__(self, other):
+        if not isinstance(other, ZxType):
+            return NotImplemented
+        return self.kind == other.kind and self.quarter_turns == other.quarter_turns
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash((ZxType, self.kind, self.quarter_turns))
+
+    def __repr__(self):
+        return f'ZxType(kind={self.kind!r}, quarter_turns={self.quarter_turns!r})'
 
 
 ZX_TYPES = {
@@ -25,11 +40,54 @@ ZX_TYPES = {
     "H": ZxType("H"),
     "in": ZxType("in"),
     "out": ZxType("out"),
-    "M": ZxType("M"),
 }
 
 
 def text_diagram_to_zx_graph(text_diagram: str) -> nx.MultiGraph:
+    """Converts an ASCII text diagram into a ZX graph (represented as a networkx MultiGraph).
+
+    Supported node types:
+        "X": X spider with angle set to 0.
+        "Z": Z spider with angle set to 0.
+        "X(pi/2)": X spider with angle set to pi/2.
+        "X(pi)": X spider with angle set to pi.
+        "X(-pi/2)": X spider with angle set to -pi/2.
+        "Z(pi/2)": X spider with angle set to pi/2.
+        "Z(pi)": X spider with angle set to pi.
+        "Z(-pi/2)": X spider with angle set to -pi/2.
+        "H": Hadamard node. Must have degree 2.
+        "in": Input node. Must have degree 1.
+        "out": Output node. Must have degree 1.
+
+    Args:
+        text_diagram: A text diagram containing ZX nodes (e.g. "X(pi)") and edges (e.g. "------") connecting them.
+
+    Example:
+        >>> import stimzx
+        >>> import networkx
+        >>> actual: networkx.MultiGraph = stimzx.text_diagram_to_zx_graph(r'''
+        ...     in----X------out
+        ...           |
+        ...     in---Z(pi)---out
+        ... ''')
+        >>> expected = networkx.MultiGraph()
+        >>> expected.add_node(0, value=stimzx.ZxType("in"))
+        >>> expected.add_node(1, value=stimzx.ZxType("X"))
+        >>> expected.add_node(2, value=stimzx.ZxType("out"))
+        >>> expected.add_node(3, value=stimzx.ZxType("in"))
+        >>> expected.add_node(4, value=stimzx.ZxType("Z", quarter_turns=2))
+        >>> expected.add_node(5, value=stimzx.ZxType("out"))
+        >>> _ = expected.add_edge(0, 1)
+        >>> _ = expected.add_edge(1, 2)
+        >>> _ = expected.add_edge(1, 4)
+        >>> _ = expected.add_edge(3, 4)
+        >>> _ = expected.add_edge(4, 5)
+        >>> networkx.testing.assert_graphs_equal(actual, expected)
+
+    Returns:
+        A networkx MultiGraph containing the nodes and edges from the diagram. Nodes are numbered 0, 1, 2, etc in
+            reading ordering from the diagram, and have a "value" attribute of type `stimzx.ZxType`.
+    """
     return text_diagram_to_networkx_graph(text_diagram, value_func=ZX_TYPES.__getitem__)
 
 
@@ -86,7 +144,7 @@ def zx_graph_to_external_stabilizers(graph: Union[nx.Graph, nx.MultiGraph]) -> L
             # Hadamard one input so the H node can be handled as if it were Z type.
             neighbor, _ = graph.neighbors(n)
             sim.h(qubit_ids[(neighbor, n)])
-        elif node_type.kind in ['out', 'in', 'M']:
+        elif node_type.kind in ['out', 'in']:
             continue  # Don't measure qubits leaving the system.
         else:
             raise ValueError(f"Unknown node type {node_type!r}")

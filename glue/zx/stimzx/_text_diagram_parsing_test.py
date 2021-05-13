@@ -1,6 +1,6 @@
 import networkx as nx
 import pytest
-from .text_diagram_parsing import _find_nodes, _text_to_char_map, _find_end_of_edge, _find_all_edges, text_diagram_to_networkx_graph
+from ._text_diagram_parsing import _find_nodes, _text_to_char_map, _find_end_of_edge, _find_all_edges, text_diagram_to_networkx_graph
 
 
 def test_text_to_char_map():

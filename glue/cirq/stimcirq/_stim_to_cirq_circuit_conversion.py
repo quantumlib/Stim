@@ -1,4 +1,3 @@
-import dataclasses
 import functools
 from typing import Callable, Dict, List, Tuple, Union, Iterator, cast
 
@@ -6,13 +5,17 @@ import cirq
 import stim
 
 
-@dataclasses.dataclass(frozen=True)
+@cirq.value_equality
 class MeasureAndOrReset(cirq.SingleQubitGate):
-    measure: bool
-    reset: bool
-    basis: str
-    invert_measure: bool
-    key: str
+    def __init__(self, measure: bool, reset: bool, basis: str, invert_measure: bool, key: str):
+        self.measure = measure
+        self.reset = reset
+        self.basis = basis
+        self.invert_measure = invert_measure
+        self.key = key
+
+    def _value_equality_values_(self):
+        return self.measure, self.reset, self.basis, self.invert_measure, self.key
 
     def _decompose_(self, qubits):
         q, = qubits
