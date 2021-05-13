@@ -121,14 +121,14 @@ test("tableau_simulator.measure_kickback", ({stim, assert}) => {
 test("tableau_simulator.collision", ({stim, assert}) => {
     let s = new stim.TableauSimulator();
     try {
-        s.cnot(0, 0);
+        s.CNOT(0, 0);
         assert(false);
     } catch {
     }
     try {
-        s.swap(2, 2);
+        s.SWAP(2, 2);
         assert(false);
     } catch {
     }
-    s.swap(0, 1);
+    s.SWAP(0, 1);
 });
