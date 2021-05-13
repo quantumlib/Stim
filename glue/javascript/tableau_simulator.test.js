@@ -120,7 +120,15 @@ test("tableau_simulator.measure_kickback", ({stim, assert}) => {
 
 test("tableau_simulator.collision", ({stim, assert}) => {
     let s = new stim.TableauSimulator();
-    assertThrows(() => s.cnot(0, 0));
-    assertThrows(() => s.swap(2, 2));
+    try {
+        s.cnot(0, 0);
+        assert(false);
+    } catch {
+    }
+    try {
+        s.swap(2, 2);
+        assert(false);
+    } catch {
+    }
     s.swap(0, 1);
 });
