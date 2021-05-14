@@ -112,9 +112,9 @@ TEST(gen_color_code, color_code_hard_coded_comparison) {
         }
         Z_ERROR(0.375) 0 1 3 5 6 7 9
         MX 0 1 3 5 6 7 9
-        DETECTOR rec[-2] rec[-4] rec[-6] rec[-7] rec[-9] rec[-12]
-        DETECTOR rec[-3] rec[-4] rec[-5] rec[-6] rec[-10] rec[-13]
-        DETECTOR rec[-1] rec[-2] rec[-3] rec[-4] rec[-8] rec[-11]
+        DETECTOR rec[-2] rec[-4] rec[-6] rec[-7] rec[-12]
+        DETECTOR rec[-3] rec[-4] rec[-5] rec[-6] rec[-13]
+        DETECTOR rec[-1] rec[-2] rec[-3] rec[-4] rec[-11]
         OBSERVABLE_INCLUDE(0) rec[-5] rec[-6] rec[-7]
     )CIRCUIT").str());
 }
