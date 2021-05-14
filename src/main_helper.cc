@@ -63,19 +63,29 @@ Interactive measurement sampling mode:
     stim --repl
 
 Bulk measurement sampling mode:
-    stim --sample[=#shots] [--frame0] [--out_format=01|b8|ptb64|r8|hits|dets] [--in=file] [--out=file]
+    stim --sample[=#shots] \
+         [--frame0] \
+         [--out_format=01|b8|ptb64|r8|hits|dets] \
+         [--in=file] \
+         [--out=file]
 
 Detection event sampling mode:
-    stim --detect[=#shots] [--out_format=01|b8|ptb64] [--in=file] [--out=file]
+    stim --detect[=#shots] \
+         [--out_format=01|b8|ptb64|r8|hits|dets] \
+         [--in=file] \
+         [--out=file]
 
 Error analysis mode:
-    stim --detector_hypergraph [--in=file] [--out=file] [--basis_analysis]
+    stim --detector_hypergraph \
+         [--basis_analysis=irreducible_per_error] \
+         [--in=file] \
+         [--out=file]
 
 Circuit generation mode:
-    stim --gen=repetition_code|surface_code_unrotated|surface_code_rotated \
+    stim --gen=repetition_code|surface_code|color_code \
          --rounds=# \
          --distance=# \
-         [--in=file] \
+         --task=... \
          [--out=file] \
          [--after_clifford_depolarization=0] \
          [--after_reset_flip_probability=0] \

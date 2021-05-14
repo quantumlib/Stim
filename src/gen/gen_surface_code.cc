@@ -1,4 +1,4 @@
-#include "surface_code.h"
+#include "gen_surface_code.h"
 
 #include <algorithm>
 #include <map>
@@ -35,51 +35,59 @@ GeneratedCircuit _finish_surface_code_circuit(
         const std::vector<coord> &x_order,
         const std::vector<coord> &z_order,
         const std::vector<coord> x_observable,
-        const std::vector<coord> z_observable) {
-    if (params.task != "memory_x" && params.task != "memory_z") {
-        throw std::out_of_range("Surface code supports task=memory_x|memory_z, not task='" + params.task + "'.");
+        const std::vector<coord> z_observable,
+        bool is_memory_x) {
+    if (params.rounds < 1) {
+        throw std::out_of_range("Need rounds >= 1.");
     }
-    bool is_memory_x = params.task == "memory_x";
+    if (params.distance < 2) {
+        throw std::out_of_range("Need a distance >= 2.");
+    }
+
     const auto &chosen_basis_observable = is_memory_x ? x_observable : z_observable;
     const auto &chosen_basis_measure_coords = is_memory_x ? x_measure_coords : z_measure_coords;
 
+    // Index the measurement qubits and data qubits.
     std::map<coord, uint32_t> p2q;
-    std::vector<uint32_t> all_qubits;
-    std::vector<uint32_t> data_qubits;
-    std::vector<uint32_t> measurement_qubits;
-    std::vector<uint32_t> x_measurement_qubits;
-    std::array<std::vector<uint32_t>, 4> cnot_targets;
     for (auto q : data_coords) {
-        size_t count = 0;
-        for (auto delta : x_order) {
-            count += x_measure_coords.find(q + delta) != x_measure_coords.end();
-            count += z_measure_coords.find(q + delta) != z_measure_coords.end();
-        }
-        if (count > 1) {
-            p2q[q] = coord_to_index(q);
-            data_qubits.push_back(p2q[q]);
-        }
+        p2q[q] = coord_to_index(q);
     }
     for (auto q : x_measure_coords) {
         p2q[q] = coord_to_index(q);
-        measurement_qubits.push_back(p2q[q]);
-        x_measurement_qubits.push_back(p2q[q]);
     }
     for (auto q : z_measure_coords) {
         p2q[q] = coord_to_index(q);
-        measurement_qubits.push_back(p2q[q]);
     }
+
+    // Reverse index.
     std::map<uint32_t, coord> q2p;
     for (const auto &kv : p2q) {
         q2p[kv.second] = kv.first;
     }
+
+    // Make target lists for various types of qubits.
+    std::vector<uint32_t> data_qubits;
+    std::vector<uint32_t> measurement_qubits;
+    std::vector<uint32_t> x_measurement_qubits;
+    std::vector<uint32_t> all_qubits;
+    for (auto q : data_coords) {
+        data_qubits.push_back(p2q[q]);
+    }
+    for (auto q : x_measure_coords) {
+        measurement_qubits.push_back(p2q[q]);
+        x_measurement_qubits.push_back(p2q[q]);
+    }
+    for (auto q : z_measure_coords) {
+        measurement_qubits.push_back(p2q[q]);
+    }
     all_qubits.insert(all_qubits.end(), data_qubits.begin(), data_qubits.end());
     all_qubits.insert(all_qubits.end(), measurement_qubits.begin(), measurement_qubits.end());
-
     std::sort(all_qubits.begin(), all_qubits.end());
     std::sort(data_qubits.begin(), data_qubits.end());
     std::sort(measurement_qubits.begin(), measurement_qubits.end());
     std::sort(x_measurement_qubits.begin(), x_measurement_qubits.end());
+
+    // Reverse index the measurement order used for defining detectors.
     std::map<coord, uint32_t> data_coord_to_order;
     std::map<coord, uint32_t> measure_coord_to_order;
     for (auto q : data_qubits) {
@@ -89,6 +97,8 @@ GeneratedCircuit _finish_surface_code_circuit(
         measure_coord_to_order[q2p[q]] = measure_coord_to_order.size();
     }
 
+    // List out CNOT gate targets using given interaction orders.
+    std::array<std::vector<uint32_t>, 4> cnot_targets;
     for (size_t k = 0; k < 4; k++) {
         for (auto measure : x_measure_coords) {
             auto data = measure + x_order[k];
@@ -106,37 +116,42 @@ GeneratedCircuit _finish_surface_code_circuit(
         }
     }
 
-    Circuit body;
-    params.append_round_transition(body, data_qubits);
-    params.append_unitary_1(body, "H", x_measurement_qubits);
-    body.append_op("TICK", {});
+    // Build the repeated actions that make up the surface code cycle.
+    Circuit cycle_actions;
+    params.append_begin_round_tick(cycle_actions, data_qubits);
+    params.append_unitary_1(cycle_actions, "H", x_measurement_qubits);
     for (const auto &targets : cnot_targets) {
-        params.append_unitary_2(body, "CNOT", targets);
-        body.append_op("TICK", {});
+        cycle_actions.append_op("TICK", {});
+        params.append_unitary_2(cycle_actions, "CNOT", targets);
     }
-    params.append_unitary_1(body, "H", x_measurement_qubits);
-    body.append_op("TICK", {});
-    params.append_measure_reset(body, measurement_qubits);
-    uint32_t m = measurement_qubits.size();
+    cycle_actions.append_op("TICK", {});
+    params.append_unitary_1(cycle_actions, "H", x_measurement_qubits);
+    cycle_actions.append_op("TICK", {});
+    params.append_measure_reset(cycle_actions, measurement_qubits);
 
+    // Build the start of the circuit, getting a state that's ready to cycle.
+    // In particular, the first cycle has different detectors and so has to be handled special.
     Circuit head;
-    params.append_reset(head, all_qubits);
-    if (is_memory_x) {
-        params.append_unitary_1(head, "H", data_qubits);
-    }
-    head += body;
+    params.append_reset(head, data_qubits, "ZX"[is_memory_x]);
+    params.append_reset(head, measurement_qubits);
+    head += cycle_actions;
     for (auto measure : chosen_basis_measure_coords) {
         head.append_op("DETECTOR", {(uint32_t)(measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT});
     }
+
+    // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
+    Circuit body = cycle_actions;
+    uint32_t m = measurement_qubits.size();
     for (uint32_t k = 0; k < m; k++) {
         body.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT});
     }
 
+    // Build the end of the circuit, getting out of the cycle state and terminating.
+    // In particular, the data measurements create detectors that have to be handled special.
+    // Also, the tail is responsible for identifying the logical observable.
     Circuit tail;
-    if (is_memory_x) {
-        params.append_unitary_1(tail, "H", data_qubits);
-    }
-    params.append_measure(tail, data_qubits);
+    params.append_measure(tail, data_qubits, "ZX"[is_memory_x]);
+    // Detectors.
     for (auto measure : chosen_basis_measure_coords) {
         std::vector<uint32_t> detectors;
         for (auto delta : z_order) {
@@ -149,7 +164,7 @@ GeneratedCircuit _finish_surface_code_circuit(
         std::sort(detectors.begin(), detectors.end());
         tail.append_op("DETECTOR", detectors);
     }
-
+    // Logical observable.
     std::vector<uint32_t> obs_inc;
     for (auto q : chosen_basis_observable) {
         obs_inc.push_back((data_qubits.size() - data_coord_to_order[q]) | TARGET_RECORD_BIT);
@@ -157,8 +172,10 @@ GeneratedCircuit _finish_surface_code_circuit(
     std::sort(obs_inc.begin(), obs_inc.end());
     tail.append_op("OBSERVABLE_INCLUDE", obs_inc, 0);
 
+    // Combine to form final circuit.
+    Circuit full_circuit = head + body * (params.rounds - 1) + tail;
 
-    Circuit result = head + body * (params.rounds - 1) + tail;
+    // Produce a 2d layout.
     std::map<std::pair<uint32_t, uint32_t>, std::pair<std::string, uint32_t>> layout;
     float scale = x_order[0].x == 0.5 ? 2 : 1;
     for (auto q : data_coords) {
@@ -173,16 +190,22 @@ GeneratedCircuit _finish_surface_code_circuit(
     for (auto q : chosen_basis_observable) {
         layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}].first = "L";
     }
-    return {result, layout};
+
+    return {
+        full_circuit,
+            layout,
+        "# Legend:\n"
+            "#     d#: data qubit\n"
+            "#     L# = data qubit with logical observable crossing\n"
+            "#     X# = measurement qubit (X stabilizer)\n"
+            "#     Z# = measurement qubit (Z stabilizer)\n"};
 }
 
-GeneratedCircuit stim_internal::generate_rotated_surface_code_circuit(const CircuitGenParameters &params) {
+GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParameters &params, bool is_memory_x) {
     uint32_t d = params.distance;
-    assert(params.rounds > 0);
 
+    // Place data qubits.
     std::set<coord> data_coords;
-    std::set<coord> x_measure_coords;
-    std::set<coord> z_measure_coords;
     std::vector<coord> x_observable;
     std::vector<coord> z_observable;
     for (float x = 0.5; x <= d; x++) {
@@ -197,6 +220,10 @@ GeneratedCircuit stim_internal::generate_rotated_surface_code_circuit(const Circ
             }
         }
     }
+
+    // Place measurement qubits.
+    std::set<coord> x_measure_coords;
+    std::set<coord> z_measure_coords;
     for (size_t x = 0; x <= d; x++) {
         for (size_t y = 0; y <= d; y++) {
             coord q{(float)x, (float)y};
@@ -217,6 +244,7 @@ GeneratedCircuit stim_internal::generate_rotated_surface_code_circuit(const Circ
         }
     }
 
+    // Define interaction orders so that hook errors run against the error grain instead of with it.
     std::vector<coord> x_order{
         {0.5, 0.5},
         {0.5, -0.5},
@@ -230,6 +258,7 @@ GeneratedCircuit stim_internal::generate_rotated_surface_code_circuit(const Circ
         {-0.5, -0.5},
     };
 
+    // Delegate.
     return _finish_surface_code_circuit(
         [&](coord q) {
             q = q - coord{0, fmodf(q.x, 1)};
@@ -242,13 +271,15 @@ GeneratedCircuit stim_internal::generate_rotated_surface_code_circuit(const Circ
         x_order,
         z_order,
         x_observable,
-        z_observable);
+        z_observable,
+        is_memory_x);
 }
 
-GeneratedCircuit stim_internal::generate_unrotated_surface_code_circuit(const CircuitGenParameters &params) {
+GeneratedCircuit _generate_unrotated_surface_code_circuit(const CircuitGenParameters &params, bool is_memory_x) {
     uint32_t d = params.distance;
     assert(params.rounds > 0);
 
+    // Place qubits.
     std::set<coord> data_coords;
     std::set<coord> x_measure_coords;
     std::set<coord> z_measure_coords;
@@ -276,6 +307,7 @@ GeneratedCircuit stim_internal::generate_unrotated_surface_code_circuit(const Ci
         }
     }
 
+    // Define interaction order. Doesn't matter so much for unrotated.
     std::vector<coord> order{
         {1, 0},
         {0, 1},
@@ -283,6 +315,7 @@ GeneratedCircuit stim_internal::generate_unrotated_surface_code_circuit(const Ci
         {-1, 0},
     };
 
+    // Delegate.
     return _finish_surface_code_circuit(
         [&](coord q) {
             return (uint32_t)(q.x + q.y * (2 * d - 1));
@@ -294,5 +327,26 @@ GeneratedCircuit stim_internal::generate_unrotated_surface_code_circuit(const Ci
         order,
         order,
         x_observable,
-        z_observable);
+        z_observable,
+        is_memory_x);
+}
+
+GeneratedCircuit stim_internal::generate_surface_code_circuit(const CircuitGenParameters &params) {
+    if (params.task == "rotated_memory_x") {
+        return _generate_rotated_surface_code_circuit(params, true);
+    } else if (params.task == "rotated_memory_z") {
+        return _generate_rotated_surface_code_circuit(params, false);
+    } else if (params.task == "unrotated_memory_x") {
+        return _generate_unrotated_surface_code_circuit(params, true);
+    } else if (params.task == "unrotated_memory_z") {
+        return _generate_unrotated_surface_code_circuit(params, false);
+    } else {
+        throw std::out_of_range(
+            "Unrecognized task '" + params.task + "'. Known surface code tasks:\n"
+            "    'rotated_memory_x': Initialize logical |+> in rotated code, protect with parity measurements, measure logical X.\n"
+            "    'rotated_memory_z': Initialize logical |0> in rotated code, protect with parity measurements, measure logical Z.\n"
+            "    'unrotated_memory_x': Initialize logical |+> in unrotated code, protect with parity measurements, measure logical X.\n"
+            "    'unrotated_memory_z': Initialize logical |0> in unrotated code, protect with parity measurements, measure logical Z.\n"
+            "");
+    }
 }

@@ -575,3 +575,18 @@ DETECTOR rec[-1]
 error(0.25) D0
             )output"));
 }
+
+TEST(main_helper, generate_circuits) {
+    ASSERT_TRUE(matches(
+        trim(execute({"--gen=repetition_code", "--rounds=3", "--distance=2", "--task=memory"}, "")),
+        ".+Generated repetition_code.+"));
+    ASSERT_TRUE(matches(
+        trim(execute({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        ".+Generated surface_code.+"));
+    ASSERT_TRUE(matches(
+        trim(execute({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, "")),
+        ".+Generated surface_code.+"));
+    ASSERT_TRUE(matches(
+        trim(execute({"--gen=color_code", "--rounds=3", "--distance=3", "--task=memory_xyz"}, "")),
+        ".+Generated color_code.+"));
+}
