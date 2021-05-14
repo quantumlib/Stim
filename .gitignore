@@ -17,9 +17,7 @@ data/*
 _deps/*
 bazel-*
 python_build_stim/*
-stim.egg*
-stimcirq.egg*
-stim_cirq.egg*
+*.egg-*
 stim.cpython*
 **/dist/*
 MANIFEST

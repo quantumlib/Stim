@@ -281,3 +281,12 @@ def test_classical_control_cnot():
     assert s.measure(1)
     s.cnot(stim.target_rec(-1), 0)
     assert s.measure(0)
+
+
+def test_collision():
+    s = stim.TableauSimulator()
+    with pytest.raises(ValueError, match="same qubit"):
+        s.cnot(0, 0)
+    with pytest.raises(ValueError, match="same qubit"):
+        s.swap(0, 1, 2, 2)
+    s.swap(0, 2, 2, 1)
