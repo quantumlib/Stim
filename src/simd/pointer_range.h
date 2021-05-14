@@ -48,6 +48,9 @@ struct PointerRange {
     const T *end() const {
         return ptr_end;
     }
+    bool empty() const {
+        return ptr_end == ptr_start;
+    }
     T *begin() {
         return ptr_start;
     }
@@ -111,6 +114,9 @@ struct ConstPointerRange {
     ConstPointerRange(const std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
+    bool empty() const {
+        return ptr_end == ptr_start;
+    }
     size_t size() const {
         return ptr_end - ptr_start;
     }

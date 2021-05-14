@@ -15,6 +15,7 @@
 #include "main_helper.h"
 
 #include "arg_parse.h"
+#include "gen/circuit_gen_main.h"
 #include "probability_util.h"
 #include "simulators/detection_simulator.h"
 #include "simulators/error_fuser.h"
@@ -23,21 +24,6 @@
 
 using namespace stim_internal;
 
-static std::vector<const char *> known_arguments{
-    "--help",
-
-    "--repl",
-    "--sample",
-    "--detect",
-    "--detector_hypergraph",
-
-    "--append_observables",
-    "--prepend_observables",
-    "--frame0",
-    "--in",
-    "--out",
-    "--out_format",
-};
 static std::vector<const char *> sample_mode_known_arguments{
     "--sample", "--frame0", "--out_format", "--out", "--in",
 };
@@ -46,6 +32,7 @@ static std::vector<const char *> detect_mode_known_arguments{
 };
 static std::vector<const char *> detector_hypergraph_mode_known_arguments{
     "--detector_hypergraph",
+    "--basis_analysis",
     "--out",
     "--in",
 };
@@ -53,6 +40,7 @@ static std::vector<const char *> repl_mode_known_arguments{
     "--repl",
 };
 static std::vector<const char *> format_names{"01", "b8", "ptb64", "hits", "r8", "dets"};
+static std::vector<const char *> basis_analysis_names{"none", "irreducible_per_error"};
 static std::vector<SampleFormat> format_values{
     SAMPLE_FORMAT_01, SAMPLE_FORMAT_B8, SAMPLE_FORMAT_PTB64, SAMPLE_FORMAT_HITS, SAMPLE_FORMAT_R8, SAMPLE_FORMAT_DETS,
 };
@@ -74,11 +62,25 @@ int stim_internal::main_helper(int argc, const char **argv) {
 Interactive measurement sampling mode:
     stim --repl
 
-Measurement sampling mode:
-    stim --sample[=#samples] [--frame0] [--out_format=01|b8|ptb64] [--in=file] [--out=file]
+Bulk measurement sampling mode:
+    stim --sample[=#shots] [--frame0] [--out_format=01|b8|ptb64|r8|hits|dets] [--in=file] [--out=file]
 
 Detection event sampling mode:
-    stim --detect[=#samples] [--out_format=01|b8|ptb64] [--in=file] [--out=file]
+    stim --detect[=#shots] [--out_format=01|b8|ptb64] [--in=file] [--out=file]
+
+Error analysis mode:
+    stim --detector_hypergraph [--in=file] [--out=file] [--basis_analysis]
+
+Circuit generation mode:
+    stim --gen=repetition_code|surface_code_unrotated|surface_code_rotated \
+         --rounds=# \
+         --distance=# \
+         [--in=file] \
+         [--out=file] \
+         [--after_clifford_depolarization=0] \
+         [--after_reset_flip_probability=0] \
+         [--before_measure_flip_probability=0] \
+         [--before_round_data_depolarization=0]
 
 EXAMPLE CIRCUIT (GHZ)
 =====================
@@ -90,14 +92,20 @@ M 0 1 2
         return EXIT_SUCCESS;
     }
 
-    check_for_unknown_arguments(known_arguments, nullptr, argc, argv);
-
     bool mode_interactive = find_bool_argument("--repl", argc, argv);
     bool mode_sampling = find_argument("--sample", argc, argv) != nullptr;
     bool mode_detecting = find_argument("--detect", argc, argv) != nullptr;
     bool mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
-    if ((int)mode_interactive + (int)mode_sampling + (int)mode_detecting + (int)mode_detector_hypergraph != 1) {
-        std::cerr << "Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph\n";
+    bool mode_gen = find_argument("--gen", argc, argv) != nullptr;
+    if (mode_interactive + mode_sampling + mode_detecting + mode_detector_hypergraph + mode_gen != 1) {
+        std::cerr << "\033[31m"
+                     "Need to pick a mode by giving exactly one of the following command line arguments:\n"
+                     "    --repl: Interactive mode. Eagerly sample measurements in input circuit.\n"
+                     "    --sample #: Measurement sampling mode. Bulk sample measurement results from input circuit.\n"
+                     "    --detect #: Detector sampling mode. Bulk sample detection events from input circuit.\n"
+                     "    --detector_hypergraph: Error analysis mode. Convert circuit into a detector error model.\n"
+                     "    --gen: Circuit generation mode. Produce common error correction circuits.\n"
+                     "\033[0m";
         return EXIT_FAILURE;
     }
 
@@ -108,7 +116,7 @@ M 0 1 2
     if (out_path != nullptr) {
         out = fopen(out_path, "w");
         if (out == nullptr) {
-            std::cerr << "Failed to open '" << out_path << "' to write.";
+            std::cerr << "\033[31mFailed to open '" << out_path << "' to write.\033[0m";
             return EXIT_FAILURE;
         }
         raii_files.files.push_back(out);
@@ -119,13 +127,16 @@ M 0 1 2
     if (in_path != nullptr) {
         in = fopen(in_path, "r");
         if (in == nullptr) {
-            std::cerr << "Failed to open '" << in_path << "' to read.";
+            std::cerr << "\033[31mFailed to open '" << in_path << "' to read.\033[0m";
             return EXIT_FAILURE;
         }
         raii_files.files.push_back(in);
     }
 
     std::mt19937_64 rng = externally_seeded_rng();
+    if (mode_gen) {
+        return main_generate_circuit(argc, argv, out);
+    }
     if (mode_interactive) {
         check_for_unknown_arguments(repl_mode_known_arguments, "--repl", argc, argv);
         TableauSimulator::sample_stream(in, out, SAMPLE_FORMAT_01, mode_interactive, rng);
@@ -156,7 +167,7 @@ M 0 1 2
     if (mode_detecting) {
         check_for_unknown_arguments(detect_mode_known_arguments, "--detect", argc, argv);
         SampleFormat out_format =
-            format_values[find_enum_argument("--out_format", SAMPLE_FORMAT_01, format_names, argc, argv)];
+            format_values[find_enum_argument("--out_format", 0, format_names, argc, argv)];
         bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
         bool append_observables = find_bool_argument("--append_observables", argc, argv);
         auto num_shots = (size_t)find_int_argument("--detect", 1, 0, 1 << 30, argc, argv);
@@ -173,7 +184,8 @@ M 0 1 2
     }
     if (mode_detector_hypergraph) {
         check_for_unknown_arguments(detector_hypergraph_mode_known_arguments, "--detector_hypergraph", argc, argv);
-        ErrorFuser::convert_circuit_out(Circuit::from_file(in), out);
+        bool use_basis_analysis = find_enum_argument("--basis_analysis", 0, basis_analysis_names, argc, argv);
+        ErrorFuser::convert_circuit_out(Circuit::from_file(in), out, use_basis_analysis);
         return EXIT_SUCCESS;
     }
 

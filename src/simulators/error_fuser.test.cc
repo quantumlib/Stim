@@ -22,9 +22,9 @@
 
 using namespace stim_internal;
 
-std::string convert(const char *text) {
+std::string convert(const char *text, bool use_basis_analysis = false) {
     FILE *f = tmpfile();
-    ErrorFuser::convert_circuit_out(Circuit::from_text(text), f);
+    ErrorFuser::convert_circuit_out(Circuit::from_text(text), f, use_basis_analysis);
     rewind(f);
     std::string s;
     while (true) {
@@ -146,11 +146,71 @@ error\(0.019013\d+\) D2
 error\(0.019013\d+\) D2 D3
 error\(0.019013\d+\) D3
 )graph"));
+
+    ASSERT_TRUE(matches(
+        convert(R"circuit(
+        H 0 1
+        CNOT 0 2 1 3
+        DEPOLARIZE2(0.25) 0 1
+        CNOT 0 2 1 3
+        H 0 1
+        M 0 1 2 3
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        DETECTOR rec[-4]
+    )circuit", true),
+        R"graph(edge D0
+error\(0.019013\d+\) D0
+error\(0.019013\d+\) D0 D1
+error\(0.019013\d+\) D0 D1 D2
+error\(0.019013\d+\) D0 D1 D2 D3
+error\(0.019013\d+\) D0 D1 D3
+error\(0.019013\d+\) D0 D2
+error\(0.019013\d+\) D0 D2 D3
+error\(0.019013\d+\) D0 D3
+edge D1
+error\(0.019013\d+\) D1
+error\(0.019013\d+\) D1 D2
+error\(0.019013\d+\) D1 D2 D3
+error\(0.019013\d+\) D1 D3
+edge D2
+error\(0.019013\d+\) D2
+error\(0.019013\d+\) D2 D3
+edge D3
+error\(0.019013\d+\) D3
+)graph"));
+
+    ASSERT_TRUE(matches(
+        convert(R"circuit(
+        H 0 1
+        CNOT 0 2 1 3
+        ZCX 0 10
+        ZCX 0 11
+        XCX 0 12
+        XCX 0 13
+        DEPOLARIZE2(0.25) 0 1
+        ZCX 0 10
+        ZCX 0 11
+        XCX 0 12
+        XCX 0 13
+        M 10 11 12 13
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        DETECTOR rec[-4]
+    )circuit", true),
+        R"graph(edge D0 D1
+error\(0.071825\d+\) D0 D1
+error\(0.071825\d+\) D0 D1 D2 D3
+edge D2 D3
+error\(0.071825\d+\) D2 D3
+)graph"));
 }
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
-    ErrorFuser e(16);
+    ErrorFuser e(16, false);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
             e.xs[q].xor_item(0);
