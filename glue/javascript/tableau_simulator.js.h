@@ -27,6 +27,7 @@ struct ExposedTableauSimulator {
     void CNOT(uint32_t control, uint32_t target);
     void CY(uint32_t control, uint32_t target);
     void CZ(uint32_t control, uint32_t target);
+    void SWAP(uint32_t target1, uint32_t target12);
 };
 
 void emscripten_bind_tableau_simulator();

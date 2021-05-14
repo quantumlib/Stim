@@ -36,6 +36,9 @@ static TempArgData safe_targets(TableauSimulator &self, uint32_t target) {
 static TempArgData safe_targets(TableauSimulator &self, uint32_t target1, uint32_t target2) {
     uint32_t max_q = std::max(target1 & TARGET_VALUE_MASK, target2 & TARGET_VALUE_MASK);
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
+    if (target1 == target2) {
+        throw std::invalid_argument("target1 == target2");
+    }
     return TempArgData({target1, target2});
 }
 
@@ -104,6 +107,9 @@ void ExposedTableauSimulator::H(uint32_t target) {
 void ExposedTableauSimulator::CNOT(uint32_t control, uint32_t target) {
     sim.ZCX(safe_targets(sim, control, target));
 }
+void ExposedTableauSimulator::SWAP(uint32_t target1, uint32_t target2) {
+    sim.SWAP(safe_targets(sim, target1, target2));
+}
 void ExposedTableauSimulator::CY(uint32_t control, uint32_t target) {
     sim.ZCY(safe_targets(sim, control, target));
 }
@@ -139,5 +145,6 @@ void emscripten_bind_tableau_simulator() {
     c.function("CNOT", &ExposedTableauSimulator::CNOT);
     c.function("CY", &ExposedTableauSimulator::CY);
     c.function("CZ", &ExposedTableauSimulator::CZ);
+    c.function("SWAP", &ExposedTableauSimulator::SWAP);
     c.function("copy", &ExposedTableauSimulator::copy);
 }

@@ -18,18 +18,18 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(
-    name='stimcirq',
+    name='stimzx',
     version='1.4.0dev',
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
     license='Apache 2',
-    packages=['stimcirq'],
-    description='Implements a cirq.Sampler backed by stim.',
+    packages=['stimzx'],
+    description='Implements utilities for analyzing ZX calculus graphs using Stim.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     python_requires='>=3.6.0',
     data_files=['README.md'],
-    install_requires=['stim', 'cirq'],
+    install_requires=['stim', 'networkx'],
     tests_require=['pytest', 'python3-distutils'],
 )
