@@ -33,6 +33,11 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit/circuit.cc
         src/circuit/gate_data.cc
+        src/gen/circuit_gen_main.cc
+        src/gen/circuit_gen_params.cc
+        src/gen/gen_color_code.cc
+        src/gen/gen_rep_code.cc
+        src/gen/gen_surface_code.cc
         src/main_helper.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
@@ -61,6 +66,11 @@ set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit/circuit.test.cc
         src/circuit/gate_data.test.cc
+        src/gen/circuit_gen_main.test.cc
+        src/gen/circuit_gen_params.test.cc
+        src/gen/gen_color_code.test.cc
+        src/gen/gen_rep_code.test.cc
+        src/gen/gen_surface_code.test.cc
         src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc

@@ -20,8 +20,6 @@
 #include <queue>
 #include <sstream>
 
-#include "../circuit/circuit.h"
-
 using namespace stim_internal;
 
 void ErrorFuser::RX(const OperationData &dat) {
@@ -332,7 +330,7 @@ void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
     }
 }
 
-ErrorFuser::ErrorFuser(size_t num_qubits) : xs(num_qubits), zs(num_qubits) {
+ErrorFuser::ErrorFuser(size_t num_qubits, bool use_basis_analysis) : xs(num_qubits), zs(num_qubits), use_basis_analysis(use_basis_analysis) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
@@ -343,19 +341,19 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
 
 void ErrorFuser::X_ERROR(const OperationData &dat) {
     for (auto q : dat.targets) {
-        add_error(dat.arg, zs[q]);
+        add_error(dat.arg, zs[q], true);
     }
 }
 
 void ErrorFuser::Y_ERROR(const OperationData &dat) {
     for (auto q : dat.targets) {
-        add_xored_error(dat.arg, xs[q], zs[q]);
+        add_xored_error(dat.arg, xs[q], zs[q], true);
     }
 }
 
 void ErrorFuser::Z_ERROR(const OperationData &dat) {
     for (auto q : dat.targets) {
-        add_error(dat.arg, xs[q]);
+        add_error(dat.arg, xs[q], true);
     }
 }
 
@@ -379,7 +377,7 @@ void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
             inplace_xor_tail(jag_flip_data, zs[q]);
         }
     }
-    add_error_in_sorted_jagged_tail(dat.arg);
+    add_error_in_sorted_jagged_tail(dat.arg, true);
 }
 
 void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
@@ -389,9 +387,11 @@ void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
     }
     double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.arg) / 3);
     for (auto q : dat.targets) {
-        add_error(p, xs[q]);
-        add_error(p, zs[q]);
-        add_xored_error(p, xs[q], zs[q]);
+        std::array<ConstPointerRange<uint32_t>, 3> added;
+        added[0] = add_error(p, xs[q], false);
+        added[1] = add_error(p, zs[q], false);
+        added[2] = add_xored_error(p, xs[q], zs[q], false);
+        add_irreducible_edges(added);
     }
 }
 
@@ -404,6 +404,7 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
         auto a = dat.targets[i];
         auto b = dat.targets[i + 1];
+        std::array<ConstPointerRange<uint32_t>, 15> added;
 
         auto &x1 = xs[a];
         auto &x2 = xs[b];
@@ -413,23 +414,25 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
         auto y2 = x2 ^ z2;
 
         // Isolated errors.
-        add_error(p, x1);
-        add_error(p, y1);
-        add_error(p, z1);
-        add_error(p, x2);
-        add_error(p, y2);
-        add_error(p, z2);
+        added[0] = add_error(p, x1, false);
+        added[1] = add_error(p, y1, false);
+        added[2] = add_error(p, z1, false);
+        added[3] = add_error(p, x2, false);
+        added[4] = add_error(p, y2, false);
+        added[5] = add_error(p, z2, false);
 
         // Paired errors.
-        add_xored_error(p, x1, x2);
-        add_xored_error(p, y1, x2);
-        add_xored_error(p, z1, x2);
-        add_xored_error(p, x1, y2);
-        add_xored_error(p, y1, y2);
-        add_xored_error(p, z1, y2);
-        add_xored_error(p, x1, z2);
-        add_xored_error(p, y1, z2);
-        add_xored_error(p, z1, z2);
+        added[6] = add_xored_error(p, x1, x2, false);
+        added[7] = add_xored_error(p, y1, x2, false);
+        added[8] = add_xored_error(p, z1, x2, false);
+        added[9] = add_xored_error(p, x1, y2, false);
+        added[10] = add_xored_error(p, y1, y2, false);
+        added[11] = add_xored_error(p, z1, y2, false);
+        added[12] = add_xored_error(p, x1, z2, false);
+        added[13] = add_xored_error(p, y1, z2, false);
+        added[14] = add_xored_error(p, z1, z2, false);
+
+        add_irreducible_edges(added);
     }
 }
 
@@ -438,41 +441,54 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
         "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
 }
 
-void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out) {
-    ErrorFuser fuser(circuit.count_qubits());
+void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool use_basis_analysis) {
+    ErrorFuser fuser(circuit.count_qubits(), use_basis_analysis);
     fuser.run_circuit(circuit);
-    std::stringstream ss;
+    std::stringstream ss_buf_err;
+    std::stringstream ss_buf_targets;
 
     uint32_t detector_id_root = UINT32_MAX - fuser.num_found_detectors + 1;
+
     for (const auto &kv : fuser.error_class_probabilities) {
-        ss.str("");
-        ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << kv.second;
-        fprintf(out, "error(%s)", ss.str().data());
+        if (kv.first.empty()) {
+            continue;
+        }
+
+        ss_buf_err.str("");
+        ss_buf_err << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << kv.second;
+
+        ss_buf_targets.str("");
+        size_t num_detectors = 0;
         for (auto e : kv.first) {
             if (e > (UINT32_MAX >> 2)) {
-                fprintf(out, " D%lld", (long long)(e - detector_id_root));
+                ss_buf_targets << " D" << (e - detector_id_root);
+                num_detectors++;
             } else {
-                fprintf(out, " L%lld", (long long)e);
+                ss_buf_targets << " L" << e;
             }
         }
-        fprintf(out, "\n");
+
+        if (num_detectors <= 2 && fuser.edges.find(kv.first) != fuser.edges.end()) {
+            fprintf(out, "edge%s\n", ss_buf_targets.str().data());
+        }
+        fprintf(out, "error(%s)%s\n", ss_buf_err.str().data(), ss_buf_targets.str().data());
     }
 }
 
-void ErrorFuser::add_error(double probability, const SparseXorVec<uint32_t> &flipped) {
+PointerRange<uint32_t> ErrorFuser::add_error(double probability, const SparseXorVec<uint32_t> &flipped, bool is_basis_error) {
     jag_flip_data.append_tail(flipped.range());
-    add_error_in_sorted_jagged_tail(probability);
+    return add_error_in_sorted_jagged_tail(probability, is_basis_error);
 }
 
-void ErrorFuser::add_xored_error(
-    double probability, const SparseXorVec<uint32_t> &flipped1, const SparseXorVec<uint32_t> &flipped2) {
+PointerRange<uint32_t> ErrorFuser::add_xored_error(
+    double probability, const SparseXorVec<uint32_t> &flipped1, const SparseXorVec<uint32_t> &flipped2, bool is_basis_error) {
     jag_flip_data.ensure_available(flipped1.size() + flipped2.size());
     jag_flip_data.tail.ptr_end =
         xor_merge_sort<uint32_t>(flipped1.range(), flipped2.range(), jag_flip_data.tail.ptr_end);
-    add_error_in_sorted_jagged_tail(probability);
+    return add_error_in_sorted_jagged_tail(probability, is_basis_error);
 }
 
-void ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
+PointerRange<uint32_t> ErrorFuser::add_error_in_sorted_jagged_tail(double probability, bool is_basis_error) {
     auto flipped = jag_flip_data.tail;
     if (flipped.size()) {
         if (error_class_probabilities.find(flipped) != error_class_probabilities.end()) {
@@ -483,5 +499,9 @@ void ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
             error_class_probabilities[flipped] = probability;
             jag_flip_data.commit_tail();
         }
+        if (use_basis_analysis && is_basis_error) {
+            edges.insert(flipped);
+        }
     }
+    return flipped;
 }
