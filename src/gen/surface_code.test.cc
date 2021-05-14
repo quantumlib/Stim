@@ -21,7 +21,7 @@
 using namespace stim_internal;
 
 TEST(gen_surface_code, unrotated_surface_code_hard_coded_comparison) {
-    CircuitGenParameters params(5, 2);
+    CircuitGenParameters params(5, 2, "memory_z");
     params.after_clifford_depolarization = 0.125;
     params.after_reset_flip_probability = 0.25;
     params.before_measure_flip_probability = 0.375;
@@ -97,7 +97,7 @@ TEST(gen_surface_code, unrotated_surface_code_hard_coded_comparison) {
     )CIRCUIT"));
 
     params.rounds = 1;
-    params.basis = "X";
+    params.task = "memory_x";
     auto out2 = generate_unrotated_surface_code_circuit(params);
     ASSERT_EQ(out2.layout_str(),
               ""
@@ -145,7 +145,7 @@ TEST(gen_surface_code, unrotated_surface_code_hard_coded_comparison) {
 }
 
 TEST(gen_surface_code, rotated_surface_code_hard_coded_comparison) {
-    CircuitGenParameters params(5, 2);
+    CircuitGenParameters params(5, 2, "memory_z");
     params.after_clifford_depolarization = 0.125;
     params.after_reset_flip_probability = 0.25;
     params.before_measure_flip_probability = 0.375;

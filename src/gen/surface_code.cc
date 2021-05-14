@@ -36,11 +36,12 @@ GeneratedCircuit _finish_surface_code_circuit(
         const std::vector<coord> &z_order,
         const std::vector<coord> x_observable,
         const std::vector<coord> z_observable) {
-    if (params.basis != "X" && params.basis != "Z") {
-        throw std::out_of_range("Surface code supports basis=X and basis=Z, not basis='" + params.basis + "'.");
+    if (params.task != "memory_x" && params.task != "memory_z") {
+        throw std::out_of_range("Surface code supports task=memory_x|memory_z, not task='" + params.task + "'.");
     }
-    const auto &chosen_basis_observable = params.basis == "X" ? x_observable : z_observable;
-    const auto &chosen_basis_measure_coords = params.basis == "X" ? x_measure_coords : z_measure_coords;
+    bool is_memory_x = params.task == "memory_x";
+    const auto &chosen_basis_observable = is_memory_x ? x_observable : z_observable;
+    const auto &chosen_basis_measure_coords = is_memory_x ? x_measure_coords : z_measure_coords;
 
     std::map<coord, uint32_t> p2q;
     std::vector<uint32_t> all_qubits;
@@ -120,7 +121,7 @@ GeneratedCircuit _finish_surface_code_circuit(
 
     Circuit head;
     params.append_reset(head, all_qubits);
-    if (params.basis == "X") {
+    if (is_memory_x) {
         params.append_unitary_1(head, "H", data_qubits);
     }
     head += body;
@@ -132,7 +133,7 @@ GeneratedCircuit _finish_surface_code_circuit(
     }
 
     Circuit tail;
-    if (params.basis == "X") {
+    if (is_memory_x) {
         params.append_unitary_1(tail, "H", data_qubits);
     }
     params.append_measure(tail, data_qubits);

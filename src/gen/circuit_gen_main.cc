@@ -6,9 +6,9 @@
 
 using namespace stim_internal;
 
-std::vector<const char *> basis_names{
-    "Z",
-    "X",
+std::vector<const char *> task_names{
+    "memory_x",
+    "memory_z",
 };
 std::vector<const char *> code_names{
     "repetition_code",
@@ -23,7 +23,7 @@ std::vector<GeneratedCircuit (*)(const CircuitGenParameters &)> code_functions{
 std::vector<const char *> known_commands{
     "--after_clifford_depolarization",
     "--after_reset_flip_probability",
-    "--basis",
+    "--task",
     "--before_measure_flip_probability",
     "--before_round_data_depolarization",
     "--distance",
@@ -38,15 +38,16 @@ int stim_internal::main_generate_circuit(int argc, const char **argv, FILE *out)
     auto func = code_functions[code_index];
     CircuitGenParameters params(
         find_int_argument("--rounds", -1, 1, 16777215, argc, argv),
-        find_int_argument("--distance", -1, 2, 2047, argc, argv));
+        find_int_argument("--distance", -1, 2, 2047, argc, argv),
+        task_names[find_enum_argument("--task", -1, task_names, argc, argv)]);
     params.before_round_data_depolarization = find_float_argument("--before_round_data_depolarization", 0, 0, 1, argc, argv);
     params.before_measure_flip_probability = find_float_argument("--before_measure_flip_probability", 0, 0, 1, argc, argv);
     params.after_reset_flip_probability = find_float_argument("--after_reset_flip_probability", 0, 0, 1, argc, argv);
     params.after_clifford_depolarization = find_float_argument("--after_clifford_depolarization", 0, 0, 1, argc, argv);
-    params.basis = basis_names[find_enum_argument("--basis", 0, basis_names, argc, argv)];
 
     std::stringstream ss;
     ss << "# Generated " << code_names[code_index] << " circuit.\n";
+    ss << "# task: " << params.task << "\n";
     ss << "# rounds: " << params.rounds << "\n";
     ss << "# distance: " << params.distance << "\n";
     ss << "# before_round_data_depolarization: " << params.before_round_data_depolarization << "\n";
@@ -62,7 +63,7 @@ int stim_internal::main_generate_circuit(int argc, const char **argv, FILE *out)
     return 0;
 }
 
-CircuitGenParameters::CircuitGenParameters(size_t rounds, uint32_t distance) : rounds(rounds), distance(distance) {}
+CircuitGenParameters::CircuitGenParameters(size_t rounds, uint32_t distance, std::string task) : rounds(rounds), distance(distance), task(task) {}
 
 void CircuitGenParameters::append_round_transition(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const {
     if (before_round_data_depolarization > 0) {

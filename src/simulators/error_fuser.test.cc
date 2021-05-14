@@ -37,7 +37,7 @@ std::string convert(const char *text, bool use_basis_analysis = false) {
     return s;
 }
 
-bool matches(std::string actual, std::string pattern) {
+static bool matches(std::string actual, std::string pattern) {
     // Hackily work around C++ regex not supporting multiline matching.
     std::replace(actual.begin(), actual.end(), '\n', 'X');
     std::replace(pattern.begin(), pattern.end(), '\n', 'X');

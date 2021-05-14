@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "main_helper.h"
-
 #include <gtest/gtest.h>
+#include <regex>
+
+#include "main_helper.h"
 
 using namespace stim_internal;
 
@@ -132,23 +133,18 @@ std::string deviation(const std::string &sample_content, const std::unordered_ma
     return "";
 }
 
+static bool matches(std::string actual, std::string pattern) {
+    // Hackily work around C++ regex not supporting multiline matching.
+    std::replace(actual.begin(), actual.end(), '\n', 'X');
+    std::replace(pattern.begin(), pattern.end(), '\n', 'X');
+    return std::regex_match(actual, std::regex("^" + pattern + "$"));
+}
+
 TEST(main_helper, help_modes) {
-    ASSERT_EQ(trim(execute({"--help"}, "")).substr(0, 19), "[stderr=BASIC USAGE");
-
-    ASSERT_EQ(trim(execute({}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph
-]
-            )output"));
-
-    ASSERT_EQ(trim(execute({"--sample", "--repl"}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph
-]
-            )output"));
-
-    ASSERT_EQ(trim(execute({"--sample", "--repl", "--detect"}, "")), trim(R"output(
-[stderr=Need to specify exactly one of --sample or --repl or --detect or --detector_hypergraph
-]
-            )output"));
+    ASSERT_TRUE(matches(execute({"--help"}, ""), ".+BASIC USAGE.+"));
+    ASSERT_TRUE(matches(execute({}, ""), ".+stderr.+pick a mode.+"));
+    ASSERT_TRUE(matches(execute({"--sample", "--repl"}, ""), ".+stderr.+pick a mode.+"));
+    ASSERT_TRUE(matches(execute({"--sample", "--repl", "--detect"}, ""), ".+stderr.+pick a mode.+"));
 }
 
 TEST(main_helper, sample_flag) {

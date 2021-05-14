@@ -24,7 +24,7 @@ using namespace stim_internal;
 TEST(circuit_gen_main, no_noise_no_detections) {
     std::vector<uint32_t> distances{2, 3, 4, 5, 6, 7, 15};
     std::vector<uint32_t> rounds{1, 2, 3, 20};
-    std::vector<std::string> bases{"X", "Z"};
+    std::vector<std::string> tasks{"memory_x", "memory_z"};
     std::map<std::string, GeneratedCircuit(*)(const CircuitGenParameters &)> funcs{
         {"unrotated_surface", &generate_unrotated_surface_code_circuit},
         {"rotated_surface", &generate_rotated_surface_code_circuit},
@@ -33,14 +33,13 @@ TEST(circuit_gen_main, no_noise_no_detections) {
     for (const auto &func : funcs) {
         for (auto d : distances) {
             for (auto r : rounds) {
-                for (auto basis : bases) {
-                    CircuitGenParameters params(r, d);
-                    params.basis = basis;
-                    if (basis == "X" && func.first == "rep") {
+                for (auto task : tasks) {
+                    if (task == "memory_x" && func.first == "rep") {
                         continue;
                     }
+                    CircuitGenParameters params(r, d, task);
                     auto samples = detector_samples(func.second(params).circuit, 256, false, true, SHARED_TEST_RNG());
-                    ASSERT_FALSE(samples.data.not_zero()) << "d=" << d << ", r=" << r << ", basis=" << basis << ", func=" << func.first;
+                    EXPECT_FALSE(samples.data.not_zero()) << "d=" << d << ", r=" << r << ", task=" << task << ", func=" << func.first;
                 }
             }
         }

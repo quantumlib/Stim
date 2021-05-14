@@ -3,8 +3,8 @@
 using namespace stim_internal;
 
 GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParameters &params) {
-    if (params.basis != "Z") {
-        throw std::out_of_range("Rep code supports basis=Z, not basis='" + params.basis + "'.");
+    if (params.task != "memory_z") {
+        throw std::out_of_range("Rep code supports task=memory_z, not task='" + params.task + "'.");
     }
     uint32_t d = params.distance;
     size_t n = d * 2 + 1;
