@@ -23,7 +23,11 @@
 using namespace stim_internal;
 
 bool stim_internal::is_encoded_detector_id(uint32_t id) {
-    return id > (UINT32_MAX >> 2);
+    return id < FIRST_OBSERVABLE_ID;
+}
+
+bool stim_internal::is_encoded_observable_id(uint32_t id) {
+    return id >= FIRST_OBSERVABLE_ID && id != COMPOSITE_ERROR_SYGIL;
 }
 
 void ErrorFuser::RX(const OperationData &dat) {
@@ -317,7 +321,7 @@ void ErrorFuser::ISWAP(const OperationData &dat) {
 }
 
 void ErrorFuser::DETECTOR(const OperationData &dat) {
-    uint32_t id = UINT32_MAX - num_found_detectors;
+    uint32_t id = LAST_DETECTOR_ID - num_found_detectors;
     num_found_detectors++;
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
@@ -326,7 +330,7 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
 }
 
 void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
-    uint32_t id = (int)dat.arg;
+    uint32_t id = FIRST_OBSERVABLE_ID + (int)dat.arg;
     num_found_observables = std::max(num_found_observables, id + 1);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
@@ -427,8 +431,6 @@ void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool fin
     std::stringstream ss_buf_err;
     std::stringstream ss_buf_targets;
 
-    uint32_t detector_id_root = UINT32_MAX - fuser.num_found_detectors + 1;
-
     for (const auto &kv : fuser.error_class_probabilities) {
         if (kv.first.empty() || kv.second == 0) {
             continue;
@@ -445,10 +447,10 @@ void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool fin
                 ss_buf_targets << " ^";
                 is_composite = true;
             } else if (is_encoded_detector_id(e)) {
-                ss_buf_targets << " D" << (e - detector_id_root);
+                ss_buf_targets << " D" << (e + fuser.num_found_detectors - LAST_DETECTOR_ID - 1);
                 num_detectors++;
             } else {
-                ss_buf_targets << " L" << e;
+                ss_buf_targets << " L" << (e - FIRST_OBSERVABLE_ID);
             }
         }
 

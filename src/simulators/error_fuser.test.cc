@@ -66,6 +66,17 @@ error(0.25) D0
 
     ASSERT_EQ(
         convert(R"circuit(
+        X_ERROR(0.25) 3
+        M 3
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    )circuit"),
+        R"graph(
+error(0.25) D0 L0
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
         Y_ERROR(0.25) 3
         M 3
         DETECTOR rec[-1]
@@ -101,8 +112,8 @@ error\(0.1666666\d+\) D0
         DETECTOR rec[-2]
     )circuit"),
         R"graph(
-error(0.125) L3
 error(0.25) D0
+error(0.125) L3
 )graph");
 
     ASSERT_EQ(
@@ -114,8 +125,8 @@ error(0.25) D0
         DETECTOR rec[-2]
     )circuit"),
         R"graph(
-error(0.125) L3
 error(0.25) D0
+error(0.125) L3
 )graph");
 
     ASSERT_EQ("", check_matches(
@@ -178,20 +189,20 @@ error\(0.019013\d+\) D3
     )circuit", true),
         R"graph(
 error\(0.019013\d+\) D0
-reducible_error\(0.019013\d+\) D0 \^ D1
-reducible_error\(0.019013\d+\) D0 \^ D1 \^ D2
-reducible_error\(0.019013\d+\) D0 \^ D1 \^ D2 \^ D3
-reducible_error\(0.019013\d+\) D0 \^ D1 \^ D3
-reducible_error\(0.019013\d+\) D0 \^ D2
-reducible_error\(0.019013\d+\) D0 \^ D2 \^ D3
-reducible_error\(0.019013\d+\) D0 \^ D3
 error\(0.019013\d+\) D1
+reducible_error\(0.019013\d+\) D1 \^ D0
 reducible_error\(0.019013\d+\) D1 \^ D2
-reducible_error\(0.019013\d+\) D1 \^ D2 \^ D3
-reducible_error\(0.019013\d+\) D1 \^ D3
+reducible_error\(0.019013\d+\) D1 \^ D2 \^ D0
 error\(0.019013\d+\) D2
-reducible_error\(0.019013\d+\) D2 \^ D3
+reducible_error\(0.019013\d+\) D2 \^ D0
 error\(0.019013\d+\) D3
+reducible_error\(0.019013\d+\) D3 \^ D0
+reducible_error\(0.019013\d+\) D3 \^ D1
+reducible_error\(0.019013\d+\) D3 \^ D1 \^ D0
+reducible_error\(0.019013\d+\) D3 \^ D1 \^ D2
+reducible_error\(0.019013\d+\) D3 \^ D1 \^ D2 \^ D0
+reducible_error\(0.019013\d+\) D3 \^ D2
+reducible_error\(0.019013\d+\) D3 \^ D2 \^ D0
 )graph"));
 
     ASSERT_EQ("", check_matches(

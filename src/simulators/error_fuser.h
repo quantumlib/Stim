@@ -32,9 +32,12 @@
 
 namespace stim_internal {
 
-constexpr uint32_t COMPOSITE_ERROR_SYGIL = uint32_t{(1 << 24) - 1};
+constexpr uint32_t FIRST_OBSERVABLE_ID = (uint32_t{1} << 31);
+constexpr uint32_t LAST_DETECTOR_ID = FIRST_OBSERVABLE_ID - 1;
+constexpr uint32_t COMPOSITE_ERROR_SYGIL = UINT32_MAX;
 
 bool is_encoded_detector_id(uint32_t id);
+bool is_encoded_observable_id(uint32_t id);
 
 struct ErrorFuser {
     std::map<uint32_t, std::vector<uint32_t>> measurement_to_detectors;
@@ -174,7 +177,7 @@ struct ErrorFuser {
             uint32_t solved = 0;
             uint32_t single_detectors_union = 0;
             for (size_t k = 1; k < 1 << s; k++) {
-                if (detector_counts[k] <= 1) {
+                if (detector_counts[k] == 1) {
                     single_detectors_union |= detector_masks[k];
                     solved |= 1 << k;
                 }
@@ -234,22 +237,16 @@ struct ErrorFuser {
 
             // Solve the decomposition of each composite case.
             for (size_t k = 1; k < 1 << s; k++) {
-                if (((solved >> k) & 1) == 0) {
+                if (detector_counts[k] && ((solved >> k) & 1) == 0) {
                     auto remnants = append_involved_pairs_to_jag_tail(k);
 
                     // Finish off the solution using single-detector components.
-                    mono_buf.ensure_available(2 << s);
-                    auto old_end = mono_buf.tail.ptr_end;
                     for (size_t k2 = 0; remnants && k2 < 1 << s; k2++) {
                         if (detector_counts[k2] == 1 && (detector_masks[k2] & ~remnants) == 0) {
+                            remnants &= ~detector_masks[k2];
                             mono_buf.append_tail(stored_ids[k2]);
+                            mono_buf.append_tail(COMPOSITE_ERROR_SYGIL);
                         }
-                    }
-                    mono_buf.append_tail({old_end, mono_buf.tail.ptr_end});
-                    std::sort(old_end, mono_buf.tail.ptr_end);
-                    while (old_end < mono_buf.tail.ptr_end) {
-                        old_end[1] = COMPOSITE_ERROR_SYGIL;
-                        old_end += 2;
                     }
                     if (!mono_buf.tail.empty()) {
                         mono_buf.tail.ptr_end -= 1;
