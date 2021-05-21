@@ -186,7 +186,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
         full_circuit,
             layout,
         "# Legend:\n"
-            "#     d#: data qubit\n"
+            "#     d# = data qubit\n"
             "#     L# = data qubit with logical observable crossing\n"
             "#     R# = measurement qubit (red hex)\n"
             "#     G# = measurement qubit (green hex)\n"

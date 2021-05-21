@@ -197,7 +197,7 @@ GeneratedCircuit _finish_surface_code_circuit(
         full_circuit,
             layout,
         "# Legend:\n"
-            "#     d#: data qubit\n"
+            "#     d# = data qubit\n"
             "#     L# = data qubit with logical observable crossing\n"
             "#     X# = measurement qubit (X stabilizer)\n"
             "#     Z# = measurement qubit (Z stabilizer)\n"};
@@ -247,13 +247,13 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
     }
 
     // Define interaction orders so that hook errors run against the error grain instead of with it.
-    std::vector<coord> x_order{
+    std::vector<coord> z_order{
         {0.5, 0.5},
         {0.5, -0.5},
         {-0.5, 0.5},
         {-0.5, -0.5},
     };
-    std::vector<coord> z_order{
+    std::vector<coord> x_order{
         {0.5, 0.5},
         {-0.5, 0.5},
         {0.5, -0.5},

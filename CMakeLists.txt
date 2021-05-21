@@ -16,7 +16,6 @@ cmake_minimum_required(VERSION 3.15)
 project(stim)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 # Convert desired SIMD_WIDTH into machine architecture flags.
 if(NOT(SIMD_WIDTH))

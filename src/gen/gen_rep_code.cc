@@ -84,7 +84,7 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
         full_circuit,
             layout,
         "# Legend:\n"
-            "#     d#: data qubit\n"
+            "#     d# = data qubit\n"
             "#     L# = data qubit with logical observable crossing\n"
             "#     Z# = measurement qubit\n"};
 }

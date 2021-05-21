@@ -22,9 +22,9 @@
 
 using namespace stim_internal;
 
-std::string convert(const char *text, bool use_basis_analysis = false) {
+std::string convert(const Circuit &circuit, bool find_reducible_errors = false) {
     FILE *f = tmpfile();
-    ErrorFuser::convert_circuit_out(Circuit::from_text(text), f, use_basis_analysis);
+    ErrorFuser::convert_circuit_out(circuit, f, find_reducible_errors);
     rewind(f);
     std::string s;
     while (true) {
@@ -34,14 +34,23 @@ std::string convert(const char *text, bool use_basis_analysis = false) {
         }
         s.push_back(c);
     }
-    return s;
+    return "\n" + s;
 }
 
-static bool matches(std::string actual, std::string pattern) {
+std::string convert(const char *text, bool find_reducible_errors = false) {
+    return convert(Circuit::from_text(text), find_reducible_errors);
+}
+
+static std::string check_matches(std::string actual, std::string pattern) {
+    auto old_actual = actual;
+    auto old_pattern = pattern;
     // Hackily work around C++ regex not supporting multiline matching.
     std::replace(actual.begin(), actual.end(), '\n', 'X');
     std::replace(pattern.begin(), pattern.end(), '\n', 'X');
-    return std::regex_match(actual, std::regex("^" + pattern + "$"));
+    if (!std::regex_match(actual, std::regex("^" + pattern + "$"))) {
+        return "Expected:\n\n" + old_pattern + "\n\nbut got\n\n" + old_actual;
+    }
+    return "";
 }
 
 TEST(ErrorFuser, convert_circuit) {
@@ -51,7 +60,8 @@ TEST(ErrorFuser, convert_circuit) {
         M 3
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.25) D0
+        R"graph(
+error(0.25) D0
 )graph");
 
     ASSERT_EQ(
@@ -60,7 +70,8 @@ TEST(ErrorFuser, convert_circuit) {
         M 3
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.25) D0
+        R"graph(
+error(0.25) D0
 )graph");
 
     ASSERT_EQ(
@@ -69,15 +80,16 @@ TEST(ErrorFuser, convert_circuit) {
         M 3
         DETECTOR rec[-1]
     )circuit"),
-        R"graph()graph");
+        R"graph(
+)graph");
 
-    ASSERT_TRUE(matches(
+    ASSERT_EQ("", check_matches(
         convert(R"circuit(
         DEPOLARIZE1(0.25) 3
         M 3
         DETECTOR rec[-1]
-    )circuit"),
-        R"graph(error\(0.1666666\d+\) D0
+    )circuit"), R"graph(
+error\(0.1666666\d+\) D0
 )graph"));
 
     ASSERT_EQ(
@@ -88,7 +100,8 @@ TEST(ErrorFuser, convert_circuit) {
         OBSERVABLE_INCLUDE(3) rec[-1]
         DETECTOR rec[-2]
     )circuit"),
-        R"graph(error(0.125) L3
+        R"graph(
+error(0.125) L3
 error(0.25) D0
 )graph");
 
@@ -100,11 +113,12 @@ error(0.25) D0
         OBSERVABLE_INCLUDE(3) rec[-1]
         DETECTOR rec[-2]
     )circuit"),
-        R"graph(error(0.125) L3
+        R"graph(
+error(0.125) L3
 error(0.25) D0
 )graph");
 
-    ASSERT_TRUE(matches(
+    ASSERT_EQ("", check_matches(
         convert(R"circuit(
         DEPOLARIZE2(0.25) 3 5
         M 3
@@ -112,12 +126,13 @@ error(0.25) D0
         DETECTOR rec[-1]
         DETECTOR rec[-2]
     )circuit"),
-        R"graph(error\(0.07182558\d+\) D0
+        R"graph(
+error\(0.07182558\d+\) D0
 error\(0.07182558\d+\) D0 D1
 error\(0.07182558\d+\) D1
 )graph"));
 
-    ASSERT_TRUE(matches(
+    ASSERT_EQ("", check_matches(
         convert(R"circuit(
         H 0 1
         CNOT 0 2 1 3
@@ -130,7 +145,8 @@ error\(0.07182558\d+\) D1
         DETECTOR rec[-3]
         DETECTOR rec[-4]
     )circuit"),
-        R"graph(error\(0.019013\d+\) D0
+        R"graph(
+error\(0.019013\d+\) D0
 error\(0.019013\d+\) D0 D1
 error\(0.019013\d+\) D0 D1 D2
 error\(0.019013\d+\) D0 D1 D2 D3
@@ -147,7 +163,7 @@ error\(0.019013\d+\) D2 D3
 error\(0.019013\d+\) D3
 )graph"));
 
-    ASSERT_TRUE(matches(
+    ASSERT_EQ("", check_matches(
         convert(R"circuit(
         H 0 1
         CNOT 0 2 1 3
@@ -160,28 +176,25 @@ error\(0.019013\d+\) D3
         DETECTOR rec[-3]
         DETECTOR rec[-4]
     )circuit", true),
-        R"graph(edge D0
+        R"graph(
 error\(0.019013\d+\) D0
-error\(0.019013\d+\) D0 D1
-error\(0.019013\d+\) D0 D1 D2
-error\(0.019013\d+\) D0 D1 D2 D3
-error\(0.019013\d+\) D0 D1 D3
-error\(0.019013\d+\) D0 D2
-error\(0.019013\d+\) D0 D2 D3
-error\(0.019013\d+\) D0 D3
-edge D1
+reducible_error\(0.019013\d+\) D0 \^ D1
+reducible_error\(0.019013\d+\) D0 \^ D1 \^ D2
+reducible_error\(0.019013\d+\) D0 \^ D1 \^ D2 \^ D3
+reducible_error\(0.019013\d+\) D0 \^ D1 \^ D3
+reducible_error\(0.019013\d+\) D0 \^ D2
+reducible_error\(0.019013\d+\) D0 \^ D2 \^ D3
+reducible_error\(0.019013\d+\) D0 \^ D3
 error\(0.019013\d+\) D1
-error\(0.019013\d+\) D1 D2
-error\(0.019013\d+\) D1 D2 D3
-error\(0.019013\d+\) D1 D3
-edge D2
+reducible_error\(0.019013\d+\) D1 \^ D2
+reducible_error\(0.019013\d+\) D1 \^ D2 \^ D3
+reducible_error\(0.019013\d+\) D1 \^ D3
 error\(0.019013\d+\) D2
-error\(0.019013\d+\) D2 D3
-edge D3
+reducible_error\(0.019013\d+\) D2 \^ D3
 error\(0.019013\d+\) D3
 )graph"));
 
-    ASSERT_TRUE(matches(
+    ASSERT_EQ("", check_matches(
         convert(R"circuit(
         H 0 1
         CNOT 0 2 1 3
@@ -200,10 +213,9 @@ error\(0.019013\d+\) D3
         DETECTOR rec[-3]
         DETECTOR rec[-4]
     )circuit", true),
-        R"graph(edge D0 D1
+        R"graph(
 error\(0.071825\d+\) D0 D1
-error\(0.071825\d+\) D0 D1 D2 D3
-edge D2 D3
+reducible_error\(0.071825\d+\) D0 D1 \^ D2 D3
 error\(0.071825\d+\) D2 D3
 )graph"));
 }
@@ -266,7 +278,8 @@ TEST(ErrorFuser, reversed_operation_order) {
         DETECTOR rec[-2]
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.25) D1
+        R"graph(
+error(0.25) D1
 )graph");
 }
 
@@ -279,7 +292,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         M 1
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.125) D0
+        R"graph(
+error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -292,7 +306,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         M 1
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.125) D0
+        R"graph(
+error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -305,7 +320,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         M 1
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.125) D0
+        R"graph(
+error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -316,7 +332,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         M 1
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.125) D0
+        R"graph(
+error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -327,7 +344,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         M 1
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.125) D0
+        R"graph(
+error(0.125) D0
 )graph");
 
     ASSERT_EQ(
@@ -338,7 +356,8 @@ TEST(ErrorFuser, classical_error_propagation) {
         M 1
         DETECTOR rec[-1]
     )circuit"),
-        R"graph(error(0.125) D0
+        R"graph(
+error(0.125) D0
 )graph");
 }
 
@@ -354,7 +373,8 @@ TEST(ErrorFuser, measure_reset_basis) {
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D0
+        R"graph(
+error(0.25) D0
 error(0.25) D1
 )graph");
 
@@ -369,7 +389,8 @@ error(0.25) D1
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D1
+        R"graph(
+error(0.25) D1
 error(0.25) D2
 )graph");
     ASSERT_EQ(
@@ -383,7 +404,8 @@ error(0.25) D2
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D0
+        R"graph(
+error(0.25) D0
 error(0.25) D2
 )graph");
 
@@ -398,7 +420,8 @@ error(0.25) D2
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D0
+        R"graph(
+error(0.25) D0
 error(0.25) D1
 )graph");
 
@@ -413,7 +436,8 @@ error(0.25) D1
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D1
+        R"graph(
+error(0.25) D1
 error(0.25) D2
 )graph");
     ASSERT_EQ(
@@ -427,7 +451,8 @@ error(0.25) D2
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D0
+        R"graph(
+error(0.25) D0
 error(0.25) D2
 )graph");
 }
@@ -443,7 +468,8 @@ TEST(ErrorFuser, repeated_measure_reset) {
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D2
+        R"graph(
+error(0.25) D2
 )graph");
 
     ASSERT_EQ(
@@ -456,7 +482,8 @@ TEST(ErrorFuser, repeated_measure_reset) {
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D2
+        R"graph(
+error(0.25) D2
 )graph");
 
     ASSERT_EQ(
@@ -469,7 +496,8 @@ TEST(ErrorFuser, repeated_measure_reset) {
             DETECTOR rec[-2]
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(error(0.25) D2
+        R"graph(
+error(0.25) D2
 )graph");
 }
 
@@ -539,4 +567,101 @@ TEST(ErrorFuser, detect_bad_detectors) {
             DETECTOR rec[-1]
         )circuit");
     });
+}
+
+TEST(ErrorFuser, composite_error_analysis) {
+    auto measure_stabilizers = Circuit::from_text(R"circuit(
+        XCX 0 1 0 3 0 4
+        MR 0
+        XCZ 0 1 0 2 0 4 0 5
+        MR 0
+        XCX 0 2 0 5 0 6
+        MR 0
+        XCZ 0 3 0 4 0 7
+        MR 0
+        XCX 0 4 0 5 0 7 0 8
+        MR 0
+        XCZ 0 5 0 6 0 7
+        MR 0
+    )circuit");
+    auto detectors = Circuit::from_text(R"circuit(
+        DETECTOR rec[-6] rec[-12]
+        DETECTOR rec[-5] rec[-11]
+        DETECTOR rec[-4] rec[-10]
+        DETECTOR rec[-3] rec[-9]
+        DETECTOR rec[-2] rec[-8]
+        DETECTOR rec[-1] rec[-7]
+    )circuit");
+    // .  1  2  .
+    //  X0 Z1 X2
+    // 3  4  5  6
+    //  Z3 X4 Z5
+    // .  7  8  .
+
+    auto encode = measure_stabilizers;
+    auto decode = measure_stabilizers + detectors;
+    ASSERT_EQ("", check_matches(
+        convert(
+            encode + Circuit::from_text("DEPOLARIZE1(0.01) 4") + decode,
+            true),
+        R"graph(
+error\(0.0033445\d+\) D0 D4
+reducible_error\(0.0033445\d+\) D0 D4 \^ D1 D3
+error\(0.0033445\d+\) D1 D3
+)graph"));
+
+    ASSERT_EQ("", check_matches(
+        convert(
+            encode + Circuit::from_text("DEPOLARIZE2(0.01) 4 5") + decode,
+            true),
+        R"graph(
+error\(0.000669\d+\) D0 D2
+reducible_error\(0.000669\d+\) D0 D2 \^ D1 D3
+reducible_error\(0.000669\d+\) D0 D2 \^ D1 D5
+reducible_error\(0.000669\d+\) D0 D2 \^ D3 D5
+error\(0.000669\d+\) D0 D4
+reducible_error\(0.000669\d+\) D0 D4 \^ D1 D3
+reducible_error\(0.000669\d+\) D0 D4 \^ D1 D5
+reducible_error\(0.000669\d+\) D0 D4 \^ D3 D5
+error\(0.000669\d+\) D1 D3
+reducible_error\(0.000669\d+\) D1 D3 \^ D2 D4
+error\(0.000669\d+\) D1 D5
+reducible_error\(0.000669\d+\) D1 D5 \^ D2 D4
+error\(0.000669\d+\) D2 D4
+reducible_error\(0.000669\d+\) D2 D4 \^ D3 D5
+error\(0.000669\d+\) D3 D5
+)graph"));
+
+    auto expected = R"graph(
+error\(0.000669\d+\) D0 D1 D2 D3
+error\(0.000669\d+\) D0 D1 D2 D5
+error\(0.000669\d+\) D0 D1 D3 D4
+error\(0.000669\d+\) D0 D1 D4 D5
+error\(0.000669\d+\) D0 D2
+error\(0.000669\d+\) D0 D2 D3 D5
+error\(0.000669\d+\) D0 D3 D4 D5
+error\(0.000669\d+\) D0 D4
+error\(0.000669\d+\) D1 D2 D3 D4
+error\(0.000669\d+\) D1 D2 D4 D5
+error\(0.000669\d+\) D1 D3
+error\(0.000669\d+\) D1 D5
+error\(0.000669\d+\) D2 D3 D4 D5
+error\(0.000669\d+\) D2 D4
+error\(0.000669\d+\) D3 D5
+)graph";
+    ASSERT_EQ("", check_matches(
+        convert(
+            encode + Circuit::from_text("DEPOLARIZE2(0.01) 4 5") + decode,
+            false),
+        expected));
+    ASSERT_EQ("", check_matches(
+        convert(
+            encode + Circuit::from_text("CNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5") + decode,
+            false),
+        expected));
+    ASSERT_EQ("", check_matches(
+        convert(
+            encode + Circuit::from_text("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode,
+            false),
+        expected));
 }
