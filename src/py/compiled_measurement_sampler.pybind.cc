@@ -133,6 +133,6 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
     c.def(
         "__repr__",
         &CompiledMeasurementSampler::repr,
-        "Returns an eval-able text description."
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`."
     );
 }

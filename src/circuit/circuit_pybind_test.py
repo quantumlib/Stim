@@ -14,6 +14,7 @@
 
 import stim
 import pytest
+import numpy as np
 
 
 def test_circuit_init_num_measurements_num_qubits():
@@ -298,3 +299,56 @@ def test_hash():
     # Defining __hash__ requires defining a FrozenCircuit variant instead.
     with pytest.raises(TypeError, match="unhashable"):
         _ = hash(stim.Circuit())
+
+
+def test_circuit_generation():
+    surface_code_circuit = stim.Circuit.generated(
+            "surface_code:rotated_memory_z",
+            distance=5,
+            rounds=10)
+    samples = surface_code_circuit.compile_detector_sampler().sample(5)
+    assert samples.shape == (5, 24 * 10)
+    assert np.count_nonzero(samples) == 0
+
+
+def test_circuit_generation_errors():
+    with pytest.raises(ValueError, match="Known repetition_code tasks"):
+        stim.Circuit.generated(
+            "repetition_code:UNKNOWN",
+            distance=3,
+            rounds=1000)
+    with pytest.raises(ValueError, match="Expected type to start with."):
+        stim.Circuit.generated(
+            "UNKNOWN:memory",
+            distance=0,
+            rounds=1000)
+    with pytest.raises(ValueError, match="distance >= 2"):
+        stim.Circuit.generated(
+            "repetition_code:memory",
+            distance=1,
+            rounds=1000)
+
+    with pytest.raises(ValueError, match="0 <= after_clifford_depolarization <= 1"):
+        stim.Circuit.generated(
+            "repetition_code:memory",
+            distance=3,
+            rounds=1000,
+            after_clifford_depolarization=-1)
+    with pytest.raises(ValueError, match="0 <= before_round_data_depolarization <= 1"):
+        stim.Circuit.generated(
+            "repetition_code:memory",
+            distance=3,
+            rounds=1000,
+            before_round_data_depolarization=-1)
+    with pytest.raises(ValueError, match="0 <= after_reset_flip_probability <= 1"):
+        stim.Circuit.generated(
+            "repetition_code:memory",
+            distance=3,
+            rounds=1000,
+            after_reset_flip_probability=-1)
+    with pytest.raises(ValueError, match="0 <= before_measure_flip_probability <= 1"):
+        stim.Circuit.generated(
+            "repetition_code:memory",
+            distance=3,
+            rounds=1000,
+            before_measure_flip_probability=-1)

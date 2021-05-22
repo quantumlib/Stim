@@ -536,7 +536,7 @@ void pybind_tableau(pybind11::module &m) {
             result << "    ],\n)";
             return result.str();
         },
-        "Returns an eval-able text description."
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.Tableau`."
     );
 
     c.def(
@@ -565,11 +565,6 @@ void pybind_tableau(pybind11::module &m) {
                  >>> result = t(p)
                  >>> print(result)
                  +X_
-
-             References:
-                 "Hadamard-free circuits expose the structure of the Clifford group"
-                 Sergey Bravyi, Dmitri Maslov
-                 https://arxiv.org/abs/2003.09412
         )DOC").data()
     );
 

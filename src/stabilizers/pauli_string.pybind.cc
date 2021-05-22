@@ -396,7 +396,7 @@ void pybind_pauli_string(pybind11::module &m) {
         [](const PyPauliString &self) {
             return "stim.PauliString(\"" + self.str() + "\")";
         },
-        "Returns an eval-able text description."
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.PauliString`."
     );
 
     c.def_property(
