@@ -184,12 +184,7 @@ TEST(tableau, inverse_data) {
             auto &inv_gate = gate.inverse();
             Tableau tab = gate.tableau();
             Tableau inv_tab = inv_gate.tableau();
-            std::vector<size_t> targets{0};
-            while (targets.size() < tab.num_qubits) {
-                targets.push_back(targets.size());
-            }
-            tab.inplace_scatter_append(inv_tab, targets);
-            ASSERT_EQ(tab, Tableau::identity(tab.num_qubits)) << gate.name << " -> " << inv_gate.name;
+            ASSERT_EQ(tab.then(inv_tab), Tableau::identity(tab.num_qubits)) << gate.name << " -> " << inv_gate.name;
         }
     }
 }

@@ -188,6 +188,22 @@ void TableauSimulator::H_YZ(const OperationData &target_data) {
     }
 }
 
+void TableauSimulator::C_XYZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_ZYX(q);
+    }
+}
+
+void TableauSimulator::C_ZYX(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    for (auto q : targets) {
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_C_XYZ(q);
+    }
+}
+
 void TableauSimulator::SQRT_Z(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {

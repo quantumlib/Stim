@@ -107,8 +107,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
     // Build the repeated actions that make up the color code cycle.
     Circuit cycle_actions;
     params.append_begin_round_tick(cycle_actions, data_qubits);
-    cycle_actions.append_op("S_DAG", data_qubits);
-    params.append_unitary_1(cycle_actions, "H", data_qubits);
+    params.append_unitary_1(cycle_actions, "C_XYZ", data_qubits);
     for (const auto &targets : cnot_targets) {
         cycle_actions.append_op("TICK", {});
         params.append_unitary_2(cycle_actions, "CNOT", targets);

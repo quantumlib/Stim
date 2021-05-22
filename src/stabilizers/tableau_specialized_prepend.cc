@@ -57,6 +57,22 @@ void Tableau::prepend_H_XY(const size_t q) {
     x.sign ^= !(m & 2);
 }
 
+void Tableau::prepend_C_XYZ(const size_t q) {
+    PauliStringRef x = xs[q];
+    PauliStringRef z = zs[q];
+    x.swap_with(z);
+    uint8_t m = x.inplace_right_mul_returning_log_i_scalar(z);
+    x.sign ^= (m & 2) != 0;
+}
+
+void Tableau::prepend_C_ZYX(const size_t q) {
+    PauliStringRef x = xs[q];
+    PauliStringRef z = zs[q];
+    x.swap_with(z);
+    uint8_t m = z.inplace_right_mul_returning_log_i_scalar(x);
+    z.sign ^= (m & 2) == 0;
+}
+
 void Tableau::prepend_SQRT_X(size_t q) {
     PauliStringRef z = zs[q];
     uint8_t m = z.inplace_right_mul_returning_log_i_scalar(xs[q]);

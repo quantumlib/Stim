@@ -110,6 +110,8 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[flo
         "SQRT_X_DAG": cirq.X**-0.5,
         "SQRT_Y": cirq.Y**0.5,
         "SQRT_Y_DAG": cirq.Y**-0.5,
+        "C_XYZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, False)),
+        "C_ZYX": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, False)),
         "S": cirq.S,
         "S_DAG": cirq.S**-1,
         "SWAP": cirq.SWAP,

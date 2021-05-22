@@ -152,6 +152,22 @@ void ErrorFuser::H_YZ(const OperationData &dat) {
     }
 }
 
+void ErrorFuser::C_XYZ(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        zs[q] ^= xs[q];
+        xs[q] ^= zs[q];
+    }
+}
+
+void ErrorFuser::C_ZYX(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        xs[q] ^= zs[q];
+        zs[q] ^= xs[q];
+    }
+}
+
 void ErrorFuser::XCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k];

@@ -444,6 +444,8 @@ error(0.003344519141621982161) D1
 - **`SQRT_Y_DAG`**: Adjoint square root of Y gate. Equal to `H_YZ*S_DAG*H_YZ`.
 - **`SQRT_X`**: Principle square root of X gate. Equal to `H*S*H`.
 - **`SQRT_X_DAG`**: Adjoint square root of X gate. Equal to `H*S_DAG*H`.
+- **`C_XYZ`**: Right handed period 3 axis cycling gate. Sends X -> Y -> Z -> X. Rotates +120 degrees around X+Y+Z.
+- **`C_ZYX`**: Left handed period 3 axis cycling gate. Sends Z -> Y -> X -> Z. Rotates -120 degrees around X+Y+Z. Inverse of `C_XYZ`.
 - **`I`**: Identity gate. Does nothing. Why is this even here? Probably out of a misguided desire for closure.
 
 ### Two qubit gates

@@ -204,6 +204,20 @@ void FrameSimulator::H_YZ(const OperationData &target_data) {
     }
 }
 
+void FrameSimulator::C_XYZ(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
+        x_table[q] ^= z_table[q];
+        z_table[q] ^= x_table[q];
+    }
+}
+
+void FrameSimulator::C_ZYX(const OperationData &target_data) {
+    for (auto q : target_data.targets) {
+        z_table[q] ^= x_table[q];
+        x_table[q] ^= z_table[q];
+    }
+}
+
 void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         x_table[c].for_each_word(

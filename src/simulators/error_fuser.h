@@ -77,6 +77,8 @@ struct ErrorFuser {
     void H_XZ(const OperationData &dat);
     void H_XY(const OperationData &dat);
     void H_YZ(const OperationData &dat);
+    void C_XYZ(const OperationData &dat);
+    void C_ZYX(const OperationData &dat);
     void XCX(const OperationData &dat);
     void XCY(const OperationData &dat);
     void XCZ(const OperationData &dat);
