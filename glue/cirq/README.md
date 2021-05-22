@@ -85,15 +85,13 @@ Examples:
     1: ───────X──────────────────!M('0')───
 ```
 
-## `cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit`
+## `def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit, *, qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None) -> stim.Circuit`
 
 ```
 Converts a cirq circuit into an equivalent stim circuit.
 
-Qubits are indexed in sorted order.
-
-Not all circuits can be converted. In order for a circuit to be convertible,
-all of its operations must be convertible.
+Not all circuits can be converted. In order for a circuit to be convertible, all of its operations must be
+convertible.
 
 An operation is convertible if:
     - It is a stabilizer gate or probabilistic Pauli gate from cirq
@@ -109,12 +107,17 @@ An operation is convertible if:
     - Or it has a _decompose_ method that yields convertible operations.
     - Or it has a correctly implemented _stim_conversion_ method.
 
+Args:
+    circuit: The circuit to convert.
+    qubit_to_index_dict: Optional. Which integer each qubit should get mapped to. If not specified, defaults to
+        indexing qubits in the circuit in sorted order.
+
 Returns:
     The converted circuit.
 
 Examples:
     >>> import cirq, stimcirq
-    >>> a = cirq.NamedQubit("one")
+    >>> a = cirq.NamedQubit("zero")
     >>> b = cirq.NamedQubit("two")
     >>> stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(
     ...     cirq.Moment(cirq.H(a)),
@@ -127,20 +130,20 @@ Examples:
     ...     cirq.Moment(),
     ...     cirq.Moment(cirq.DepolarizingChannel(0.125, n_qubits=2).on(b, a)),
     ...     cirq.Moment(cirq.measure(a, b)),
-    ... ))
+    ... ), qubit_to_index_dict={a: 0, b: 2})
     stim.Circuit('''
     H 0
     TICK
-    CX 0 1
+    CX 0 2
     TICK
     X_ERROR(0.25) 0
-    Z_ERROR(0.25) 1
+    Z_ERROR(0.25) 2
     TICK
     TICK
     TICK
-    DEPOLARIZE2(0.125) 1 0
+    DEPOLARIZE2(0.125) 2 0
     TICK
-    M 0 1
+    M 0 2
     TICK
     ''')
 
@@ -164,5 +167,4 @@ Here is an example of a _stim_conversion_ method:
             **kwargs):
 
         edit_circuit.append_operation("H", targets)
-    """
 ```
