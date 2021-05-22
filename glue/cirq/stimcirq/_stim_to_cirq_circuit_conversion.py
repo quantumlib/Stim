@@ -192,7 +192,6 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
     Not all circuits can be converted with perfect 1:1 fidelity:
         - DETECTOR annotations are discarded.
         - OBSERVABLE_INCLUDE annotations are discarded.
-        - MR ops decompose into separate measurement and reset ops.
 
     Args:
         circuit: The stim circuit to convert into a cirq circuit.
@@ -208,11 +207,12 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
         ...     H 0
         ...     CNOT 0 1
         ...     X_ERROR(0.25) 0
+        ...     TICK
         ...     M !1 0
         ... ''')))
-        0: ───H───@───X[prob=0.25]───M('1')───
+        0: ───H───@───X[prob=0.25]───M('1')────
                   │
-        1: ───────X───!M('0')─────────────────
+        1: ───────X──────────────────!M('0')───
     """
     _next_measure_id = 0
 

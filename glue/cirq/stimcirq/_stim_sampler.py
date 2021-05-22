@@ -49,10 +49,10 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
 
     Qubits are indexed in sorted order.
 
-    Not all circuits can be converted. In order for a circuit to be convertable,
-    all of its operations must be convertable.
+    Not all circuits can be converted. In order for a circuit to be convertible,
+    all of its operations must be convertible.
 
-    An operation is convertable if:
+    An operation is convertible if:
         - It is a stabilizer gate or probabilistic Pauli gate from cirq
             - cirq.H
             - cirq.S
@@ -63,7 +63,7 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
             - cirq.X.with_probability(p)
             - cirq.DepolarizingChannel(p, n_qubits=1 or 2)
             - etc
-        - Or it has a _decompose_ method that yields convertable operations.
+        - Or it has a _decompose_ method that yields convertible operations.
         - Or it has a correctly implemented _stim_conversion_ method.
 
     Returns:
@@ -114,7 +114,7 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit) -> stim.Circuit:
                 # that measurement measures (and its key) into this list.
                 edit_measurement_key_lengths: List[Tuple[str, int]],
 
-                # The indices of qubits the gate should target.
+                # The indices of qubits the gate is operating on.
                 targets: List[int],
 
                 # Forward compatibility with future arguments.
