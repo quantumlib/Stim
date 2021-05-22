@@ -4,14 +4,15 @@ using namespace stim_internal;
 
 GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParameters &params) {
     if (params.task != "memory") {
-        throw std::out_of_range("Unrecognized task '" + params.task + "'. Known repetition_code tasks:\n"
-                                "    'memory': Initialize |0>, protect with parity measurements, measure.\n");
+        throw std::invalid_argument(
+            "Unrecognized task '" + params.task + "'. Known repetition_code tasks:\n"
+            "    'memory': Initialize |0>, protect with parity measurements, measure.\n");
     }
     if (params.rounds < 1) {
-        throw std::out_of_range("Need rounds >= 1.");
+        throw std::invalid_argument("Need rounds >= 1.");
     }
     if (params.distance < 2) {
-        throw std::out_of_range("Need a distance >= 2.");
+        throw std::invalid_argument("Need a distance >= 2.");
     }
 
     uint32_t d = params.distance;

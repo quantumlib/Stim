@@ -16,6 +16,8 @@ namespace stim_internal {
         double before_measure_flip_probability = 0;
         double after_reset_flip_probability = 0;
 
+        void validate_params() const;
+
         CircuitGenParameters(size_t rounds, uint32_t distance, std::string task);
         void append_begin_round_tick(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const;
         void append_unitary_1(Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const;

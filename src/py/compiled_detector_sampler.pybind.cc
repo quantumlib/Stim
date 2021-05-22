@@ -142,6 +142,7 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
 
     c.def(
         "__repr__",
-        &CompiledDetectorSampler::repr
+        &CompiledDetectorSampler::repr,
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledDetectorSampler`."
     );
 }

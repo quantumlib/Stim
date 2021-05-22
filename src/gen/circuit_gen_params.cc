@@ -13,6 +13,21 @@ void append_anti_basis_error(Circuit &circuit, const std::vector<uint32_t> &targ
     }
 }
 
+void CircuitGenParameters::validate_params() const {
+    if (before_measure_flip_probability < 0 || before_measure_flip_probability > 1) {
+        throw std::invalid_argument("not 0 <= before_measure_flip_probability <= 1");
+    }
+    if (before_round_data_depolarization < 0 || before_round_data_depolarization > 1) {
+        throw std::invalid_argument("not 0 <= before_round_data_depolarization <= 1");
+    }
+    if (after_clifford_depolarization < 0 || after_clifford_depolarization > 1) {
+        throw std::invalid_argument("not 0 <= after_clifford_depolarization <= 1");
+    }
+    if (after_reset_flip_probability < 0 || after_reset_flip_probability > 1) {
+        throw std::invalid_argument("not 0 <= after_reset_flip_probability <= 1");
+    }
+}
+
 CircuitGenParameters::CircuitGenParameters(size_t rounds, uint32_t distance, std::string task) : rounds(rounds), distance(distance), task(task) {}
 
 void CircuitGenParameters::append_begin_round_tick(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const {

@@ -5,7 +5,7 @@ import pytest
 import stim
 
 import stimcirq
-from ._stim_to_cirq_circuit_conversion import stim_to_cirq_gate_table
+from ._stim_to_cirq import stim_to_cirq_gate_table
 
 
 def test_stim_circuit_to_cirq_circuit():

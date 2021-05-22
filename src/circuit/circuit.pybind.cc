@@ -14,6 +14,10 @@
 
 #include "circuit.pybind.h"
 
+#include "../gen/circuit_gen_params.h"
+#include "../gen/gen_rep_code.h"
+#include "../gen/gen_surface_code.h"
+#include "../gen/gen_color_code.h"
 #include "../py/base.pybind.h"
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
@@ -297,7 +301,13 @@ void pybind_circuit(pybind11::module &m) {
         &Circuit::operator*=,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Mutates the circuit into multiple copies of itself.
+            Mutates the circuit by putting its contents into a REPEAT block.
+
+            Special case: if the repetition count is 0, the circuit is cleared.
+            Special case: if the repetition count is 1, nothing happens.
+
+            Args:
+                repetitions: The number of times the REPEAT block should repeat.
 
             Examples:
                 >>> import stim
@@ -319,7 +329,13 @@ void pybind_circuit(pybind11::module &m) {
         &Circuit::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Creates a circuit by repeating a circuit multiple times.
+            Returns a circuit with a REPEAT block containing the current circuit's instructions.
+
+            Special case: if the repetition count is 0, an empty circuit is returned.
+            Special case: if the repetition count is 1, an equal circuit with no REPEAT block is returned.
+
+            Args:
+                repetitions: The number of times the REPEAT block should repeat.
 
             Examples:
                 >>> import stim
@@ -340,7 +356,13 @@ void pybind_circuit(pybind11::module &m) {
         &Circuit::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Creates a circuit by repeating a circuit multiple times.
+            Returns a circuit with a REPEAT block containing the current circuit's instructions.
+
+            Special case: if the repetition count is 0, an empty circuit is returned.
+            Special case: if the repetition count is 1, an equal circuit with no REPEAT block is returned.
+
+            Args:
+                repetitions: The number of times the REPEAT block should repeat.
 
             Examples:
                 >>> import stim
@@ -419,8 +441,12 @@ void pybind_circuit(pybind11::module &m) {
         )DOC").data()
     );
 
-    c.def("__str__", &Circuit::str);
-    c.def("__repr__", &circuit_repr);
+    c.def("__str__",
+          &Circuit::str,
+          "Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit.");
+    c.def("__repr__",
+          &circuit_repr,
+          "Returns text that is a valid python expression evaluating to an equivalent `stim.Circuit`.");
 
     c.def(
         "copy",
@@ -440,6 +466,135 @@ void pybind_circuit(pybind11::module &m) {
                 False
                 >>> c2 == c1
                 True
+        )DOC").data()
+    );
+
+    c.def_static(
+        "generated",
+        [](const std::string &type,
+           size_t distance,
+           size_t rounds,
+           double after_clifford_depolarization,
+           double before_round_data_depolarization,
+           double before_measure_flip_probability,
+           double after_reset_flip_probability) {
+            auto r = type.find(':');
+            std::string code;
+            std::string task;
+            if (r == std::string::npos) {
+                code = "";
+                task = type;
+            } else {
+                code = type.substr(0, r);
+                task = type.substr(r + 1);
+            }
+
+            CircuitGenParameters params(rounds, distance, task);
+            params.after_clifford_depolarization = after_clifford_depolarization;
+            params.after_reset_flip_probability = after_reset_flip_probability;
+            params.before_measure_flip_probability = before_measure_flip_probability;
+            params.before_round_data_depolarization = before_round_data_depolarization;
+            params.validate_params();
+
+            if (code == "surface_code") {
+                return generate_surface_code_circuit(params).circuit;
+            } else if (code == "repetition_code") {
+                return generate_rep_code_circuit(params).circuit;
+            } else if (code == "color_code") {
+                return generate_color_code_circuit(params).circuit;
+            } else {
+                throw std::invalid_argument("Unrecognized circuit type. Expected type to start with "
+                    "'surface_code:', 'repetition_code:', or 'color_code:");
+            }
+        },
+        pybind11::arg("code_task"),
+        pybind11::kw_only(),
+        pybind11::arg("distance"),
+        pybind11::arg("rounds"),
+        pybind11::arg("after_clifford_depolarization") = 0.0,
+        pybind11::arg("before_round_data_depolarization") = 0.0,
+        pybind11::arg("before_measure_flip_probability") = 0.0,
+        pybind11::arg("after_reset_flip_probability") = 0.0,
+        clean_doc_string(u8R"DOC(
+            Generates common circuits.
+
+            The generated circuits can include configurable noise.
+
+            The generated circuits include DETECTOR and OBSERVABLE_INCLUDE annotations so that their detection events
+            and logical observables can be sampled.
+
+            The generated circuits include TICK annotations to mark the progression of time. (E.g. so that converting
+            them using `stimcirq.stim_circuit_to_cirq_circuit` will produce a `cirq.Circuit` with the intended moment
+            structure.)
+
+            Args:
+                type: A string identifying the type of circuit to generate. Available types are:
+                    - `repetition_code:memory`
+                    - `surface_code:rotated_memory_x`
+                    - `surface_code:rotated_memory_z`
+                    - `surface_code:unrotated_memory_x`
+                    - `surface_code:unrotated_memory_z`
+                    - `color_code:memory_xyz`
+                distance: The desired code distance of the generated circuit. The code distance is the minimum number
+                    of physical errors needed to cause a logical error. This parameter indirectly determines how many
+                    qubits the generated circuit uses.
+                rounds: How many times the measurement qubits in the generated circuit will be measured. Indirectly
+                    determines the duration of the generated circuit.
+                after_clifford_depolarization: Defaults to 0. The probability (p) of `DEPOLARIZE1(p)` operations to add
+                    after every single-qubit Clifford operation and `DEPOLARIZE2(p)` operations to add after every
+                    two-qubit Clifford operation. The after-Clifford depolarizing operations are only included if this
+                    probability is not 0.
+                before_round_data_depolarization: Defaults to 0. The probability (p) of `DEPOLARIZE1(p)` operations to
+                    apply to every data qubit at the start of a round of stabilizer measurements. The start-of-round
+                    depolarizing operations are only included if this probability is not 0.
+                before_measure_flip_probability: Defaults to 0. The probability (p) of `X_ERROR(p)` operations applied
+                    to qubits before each measurement (X basis measurements use `Z_ERROR(p)` instead). The
+                    before-measurement flips are only included if this probability is not 0.
+                after_reset_flip_probability: Defaults to 0. The probability (p) of `X_ERROR(p)` operations applied
+                    to qubits after each reset (X basis resets use `Z_ERROR(p)` instead). The after-reset flips are only
+                    included if this probability is not 0.
+
+            Returns:
+                The generated circuit.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     distance=3,
+                ...     rounds=10000,
+                ...     after_clifford_depolarization=0.0125)
+                >>> print(circuit)
+                R 0 1 2 3 4 5 6
+                TICK
+                CX 0 1 2 3 4 5
+                DEPOLARIZE2(0.0125) 0 1 2 3 4 5
+                TICK
+                CX 2 1 4 3 6 5
+                DEPOLARIZE2(0.0125) 2 1 4 3 6 5
+                TICK
+                MR 1 3 5
+                DETECTOR rec[-1]
+                DETECTOR rec[-2]
+                DETECTOR rec[-3]
+                REPEAT 9999 {
+                    TICK
+                    CX 0 1 2 3 4 5
+                    DEPOLARIZE2(0.0125) 0 1 2 3 4 5
+                    TICK
+                    CX 2 1 4 3 6 5
+                    DEPOLARIZE2(0.0125) 2 1 4 3 6 5
+                    TICK
+                    MR 1 3 5
+                    DETECTOR rec[-1] rec[-4]
+                    DETECTOR rec[-2] rec[-5]
+                    DETECTOR rec[-3] rec[-6]
+                }
+                M 0 2 4 6
+                DETECTOR rec[-1] rec[-2] rec[-5]
+                DETECTOR rec[-2] rec[-3] rec[-6]
+                DETECTOR rec[-3] rec[-4] rec[-7]
+                OBSERVABLE_INCLUDE(0) rec[-1]
         )DOC").data()
     );
 }
