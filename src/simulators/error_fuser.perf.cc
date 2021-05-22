@@ -13,40 +13,32 @@
 // limitations under the License.
 
 #include "error_fuser.h"
-
-#include <unordered_set>
+#include "../gen/gen_surface_code.h"
 
 #include "../benchmark_util.h"
 
-BENCHMARK(SparsePauliFrame_apply_CZ_scattered_10) {
-    //    SparsePauliFrame s1{
-    //        {0, "X"},
-    //        {100, "Y"},
-    //        {200, "Z"},
-    //        {300, "X"},
-    //        {400, "Y"},
-    //        {500, "Z"},
-    //        {600, "X"},
-    //        {700, "Y"},
-    //        {800, "Z"},
-    //        {900, "X"},
-    //    };
-    //    SparsePauliFrame s2{
-    //        {0, "X"},
-    //        {100, "X"},
-    //        {200, "X"},
-    //        {300, "Y"},
-    //        {400, "Y"},
-    //        {500, "Y"},
-    //        {600, "Z"},
-    //        {700, "Z"},
-    //        {800, "Z"},
-    //        {900, "X"},
-    //    };
-    //    benchmark_go([&]() {
-    //        s1.for_each_word(s2, [](size_t k, SparsePauliFrameWord &w1, SparsePauliFrameWord &w2) {
-    //            w1.z ^= w2.x;
-    //            w2.z ^= w1.x;
-    //        });
-    //    }).goal_nanos(120).show_rate("Paulis", 10);
+using namespace stim_internal;
+
+BENCHMARK(ErrorFuser_surface_code_rotated_memory_z_d11_r100) {
+    auto params = CircuitGenParameters(100, 11, "rotated_memory_z");
+    params.before_measure_flip_probability = 0.001;
+    params.after_reset_flip_probability = 0.001;
+    params.after_clifford_depolarization = 0.001;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    benchmark_go([&]() {
+        ErrorFuser fuser(circuit.count_qubits(), false);
+        fuser.run_circuit(circuit);
+    }).goal_millis(320);
+}
+
+BENCHMARK(ErrorFuser_surface_code_rotated_memory_z_d11_r100_find_reducible_errors) {
+    auto params = CircuitGenParameters(100, 11, "rotated_memory_z");
+    params.before_measure_flip_probability = 0.001;
+    params.after_reset_flip_probability = 0.001;
+    params.after_clifford_depolarization = 0.001;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    benchmark_go([&]() {
+        ErrorFuser fuser(circuit.count_qubits(), true);
+        fuser.run_circuit(circuit);
+    }).goal_millis(450);
 }

@@ -53,7 +53,8 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
     for (size_t y = 0; y < w; y++) {
         for (size_t x = 0; x < w - y; x++) {
             coord q{x + y / 2.0f, (float)y};
-            p2q[q] = p2q.size();
+            auto i = p2q.size();
+            p2q[q] = i;
             if ((x + 2 * y) % 3 == 2) {
                 measure_coords.insert(q);
                 measurement_qubits.push_back(p2q[q]);
@@ -80,10 +81,12 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
         q2p[kv.second] = kv.first;
     }
     for (auto q : data_qubits) {
-        data_coord_to_order[q2p[q]] = data_coord_to_order.size();
+        auto i = data_coord_to_order.size();
+        data_coord_to_order[q2p[q]] = i;
     }
     for (auto q : measurement_qubits) {
-        measure_coord_to_order[q2p[q]] = measure_coord_to_order.size();
+        auto i = measure_coord_to_order.size();
+        measure_coord_to_order[q2p[q]] = i;
     }
 
     // Precompute targets for each tick of CNOT gates.
@@ -186,7 +189,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
         full_circuit,
             layout,
         "# Legend:\n"
-            "#     d#: data qubit\n"
+            "#     d# = data qubit\n"
             "#     L# = data qubit with logical observable crossing\n"
             "#     R# = measurement qubit (red hex)\n"
             "#     G# = measurement qubit (green hex)\n"

@@ -15,7 +15,7 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
     }
 
     uint32_t d = params.distance;
-    size_t n = d * 2 + 1;
+    uint32_t n = d * 2 + 1;
 
     // Lay out qubits and determine interaction targets.
     std::vector<uint32_t> all_qubits;
@@ -75,7 +75,7 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
 
     // Produce a 2d layout.
     std::map<std::pair<uint32_t, uint32_t>, std::pair<std::string, uint32_t>> layout;
-    for (size_t k = 0; k < n; k++) {
+    for (uint32_t k = 0; k < n; k++) {
         layout[{k, 0}] = {std::string() + "dZ"[k & 1], k};
     }
     layout[{0, 0}].first = "L";
@@ -84,7 +84,7 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
         full_circuit,
             layout,
         "# Legend:\n"
-            "#     d#: data qubit\n"
+            "#     d# = data qubit\n"
             "#     L# = data qubit with logical observable crossing\n"
             "#     Z# = measurement qubit\n"};
 }

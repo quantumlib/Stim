@@ -168,6 +168,21 @@ struct ConstPointerRange {
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, stim_internal::ConstPointerRange<T> v) {
+    out << "ConstPointerRange{";
+    bool first = true;
+    for (auto &e : v) {
+        if (!first) {
+            out << ", ";
+        }
+        first = false;
+        out << e;
+    }
+    out << "}";
+    return out;
+}
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, stim_internal::PointerRange<T> v) {
     out << "PointerRange{";
     bool first = true;
     for (auto &e : v) {

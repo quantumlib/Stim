@@ -170,11 +170,11 @@ TEST(gen_surface_code, rotated_surface_code_hard_coded_comparison) {
         CX 2 3 8 7
         DEPOLARIZE2(0.125) 2 3 8 7
         TICK
-        CX 12 8 6 7
-        DEPOLARIZE2(0.125) 12 8 6 7
-        TICK
         CX 2 1 3 7
         DEPOLARIZE2(0.125) 2 1 3 7
+        TICK
+        CX 12 8 6 7
+        DEPOLARIZE2(0.125) 12 8 6 7
         TICK
         CX 12 6 1 7
         DEPOLARIZE2(0.125) 12 6 1 7
@@ -195,11 +195,11 @@ TEST(gen_surface_code, rotated_surface_code_hard_coded_comparison) {
             CX 2 3 8 7
             DEPOLARIZE2(0.125) 2 3 8 7
             TICK
-            CX 12 8 6 7
-            DEPOLARIZE2(0.125) 12 8 6 7
-            TICK
             CX 2 1 3 7
             DEPOLARIZE2(0.125) 2 1 3 7
+            TICK
+            CX 12 8 6 7
+            DEPOLARIZE2(0.125) 12 8 6 7
             TICK
             CX 12 6 1 7
             DEPOLARIZE2(0.125) 12 6 1 7
