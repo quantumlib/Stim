@@ -173,8 +173,28 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,
             GATE_IS_UNITARY,
-            {{s, -i *s}, {i * s, -s}},
+            {{s, -i * s}, {i * s, -s}},
             {"-X", "+Y"},
+        },
+
+        // Period 3 gates.
+        {
+            "C_XYZ",
+            &TableauSimulator::C_XYZ,
+            &FrameSimulator::C_XYZ,
+            &ErrorFuser::C_XYZ,
+            GATE_IS_UNITARY,
+            {{0.5f - i * 0.5f, -0.5f - 0.5f*i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+            {"Y", "X"},
+        },
+        {
+            "C_ZYX",
+            &TableauSimulator::C_ZYX,
+            &FrameSimulator::C_ZYX,
+            &ErrorFuser::C_ZYX,
+            GATE_IS_UNITARY,
+            {{0.5f + i * 0.5f, 0.5f + 0.5f*i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+            {"Z", "Y"},
         },
 
         // 90 degree rotation gates.
@@ -510,6 +530,10 @@ const Gate &Gate::inverse() const {
         inv_name += "_DAG";
     } else if (inv_name.size() > 4 && inv_name.substr(inv_name.size() - 4) == "_DAG") {
         inv_name = inv_name.substr(0, inv_name.size() - 4);
+    } else if (id == gate_name_to_id("C_XYZ")) {
+        inv_name = "C_ZYX";
+    } else if (id == gate_name_to_id("C_ZYX")) {
+        inv_name = "C_XYZ";
     } else {
         // Self inverse.
     }

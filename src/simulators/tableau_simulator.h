@@ -139,6 +139,8 @@ struct TableauSimulator {
     void H_XZ(const OperationData &target_data);
     void H_YZ(const OperationData &target_data);
     void H_XY(const OperationData &target_data);
+    void C_XYZ(const OperationData &target_data);
+    void C_ZYX(const OperationData &target_data);
     void SQRT_X(const OperationData &target_data);
     void SQRT_Y(const OperationData &target_data);
     void SQRT_Z(const OperationData &target_data);

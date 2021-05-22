@@ -49,8 +49,7 @@ TEST(gen_color_code, color_code_hard_coded_comparison) {
         REPEAT 2 {
             TICK
             DEPOLARIZE1(0.0625) 0 1 3 5 6 7 9
-            S_DAG 0 1 3 5 6 7 9
-            H 0 1 3 5 6 7 9
+            C_XYZ 0 1 3 5 6 7 9
             DEPOLARIZE1(0.125) 0 1 3 5 6 7 9
             TICK
             CX 5 4 3 2
@@ -81,8 +80,7 @@ TEST(gen_color_code, color_code_hard_coded_comparison) {
         REPEAT 98 {
             TICK
             DEPOLARIZE1(0.0625) 0 1 3 5 6 7 9
-            S_DAG 0 1 3 5 6 7 9
-            H 0 1 3 5 6 7 9
+            C_XYZ 0 1 3 5 6 7 9
             DEPOLARIZE1(0.125) 0 1 3 5 6 7 9
             TICK
             CX 5 4 3 2

@@ -258,7 +258,7 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
             (e.*gate.reverse_error_fuser_function)(targets);
-            (f.*gate.frame_simulator_function)(targets);
+            (f.*gate.inverse().frame_simulator_function)(targets);
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
                 bool zs[2]{};
@@ -509,6 +509,44 @@ error(0.25) D2
         )circuit"),
         R"graph(
 error(0.25) D2
+)graph");
+}
+
+TEST(ErrorFuser, period_3_gates) {
+    ASSERT_EQ(
+        convert(R"circuit(
+            R 0 1 2
+            C_XYZ 0 1 2
+            X_ERROR(1) 0
+            Y_ERROR(1) 1
+            Z_ERROR(1) 2
+            C_ZYX 0 1 2
+            M 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(
+error(1) D1
+error(1) D2
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            R 0 1 2
+            C_ZYX 0 1 2
+            X_ERROR(1) 0
+            Y_ERROR(1) 1
+            Z_ERROR(1) 2
+            C_XYZ 0 1 2
+            M 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+        R"graph(
+error(1) D0
+error(1) D2
 )graph");
 }
 
