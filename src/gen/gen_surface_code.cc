@@ -93,10 +93,12 @@ GeneratedCircuit _finish_surface_code_circuit(
     std::map<coord, uint32_t> data_coord_to_order;
     std::map<coord, uint32_t> measure_coord_to_order;
     for (auto q : data_qubits) {
-        data_coord_to_order[q2p[q]] = data_coord_to_order.size();
+        auto i = data_coord_to_order.size();
+        data_coord_to_order[q2p[q]] = i;
     }
     for (auto q : measurement_qubits) {
-        measure_coord_to_order[q2p[q]] = measure_coord_to_order.size();
+        auto i = measure_coord_to_order.size();
+        measure_coord_to_order[q2p[q]] = i;
     }
 
     // List out CNOT gate targets using given interaction orders.
