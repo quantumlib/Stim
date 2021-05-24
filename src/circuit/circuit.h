@@ -35,6 +35,8 @@ namespace stim_internal {
 #define TARGET_PAULI_Z_BIT (uint32_t{1} << 29)
 #define TARGET_RECORD_BIT (uint32_t{1} << 28)
 
+uint64_t op_data_rep_count(const OperationData &data);
+
 enum SampleFormat {
     /// Human readable format.
     ///
@@ -188,11 +190,11 @@ struct Circuit {
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
-                size_t repeats = op.target_data.targets[1];
+                uint64_t repeats = op_data_rep_count(op.target_data);
                 const auto &block = blocks[op.target_data.targets[0]];
-                for (size_t k = 0; k < repeats; k++) {
+                for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation(callback);
                 }
             } else {
@@ -207,11 +209,11 @@ struct Circuit {
             const auto &op = operations[p];
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
-                size_t repeats = op.target_data.targets[1];
+                uint64_t repeats = op_data_rep_count(op.target_data);
                 const auto &block = blocks[op.target_data.targets[0]];
-                for (size_t k = 0; k < repeats; k++) {
+                for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation_reverse(callback);
                 }
             } else {

@@ -44,6 +44,12 @@ void fuse_data(PointerRange<uint32_t> &dst, PointerRange<uint32_t> src, Monotoni
     dst.ptr_end = src.ptr_end;
 }
 
+uint64_t stim_internal::op_data_rep_count(const OperationData &data) {
+    uint64_t low = data.targets[1];
+    uint64_t high = data.targets[2];
+    return low | (high << 32);
+}
+
 DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
     size_t tick = 0;
     auto resolve_into = [&](const Operation &op, const std::function<void(uint32_t)> &func) {
@@ -260,6 +266,23 @@ uint32_t read_uint24_t(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
+uint64_t read_uint63_t(int &c, SOURCE read_char) {
+    if (!(c >= '0' && c <= '9')) {
+        throw std::out_of_range("Expected a digit but got " + std::string(1, c));
+    }
+    uint64_t result = 0;
+    do {
+        result *= 10;
+        result += c - '0';
+        if (result >= uint64_t{1} << 63) {
+            throw std::out_of_range("Number too large.");
+        }
+        c = read_char();
+    } while (c >= '0' && c <= '9');
+    return result;
+}
+
+template <typename SOURCE>
 bool read_until_next_line_arg(int &c, SOURCE read_char) {
     if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
         throw std::out_of_range("Gate targets must be separated by spacing.");
@@ -348,6 +371,15 @@ inline void read_result_targets_into(int &c, SOURCE read_char, const Gate &gate,
 }
 
 template <typename SOURCE>
+inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
+    while (read_until_next_line_arg(c, read_char)) {
+        uint64_t q = read_uint63_t(c, read_char);
+        circuit.jag_targets.append_tail((uint32_t)(q & 0xFFFFFFFFULL));
+        circuit.jag_targets.append_tail((uint32_t)(q >> 32));
+    }
+}
+
+template <typename SOURCE>
 inline void read_record_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
         read_record_target_into(c, read_char, circuit);
@@ -392,6 +424,8 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
         read_result_targets_into(c, read_char, gate, circuit);
     } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
         read_pauli_targets_into(c, read_char, circuit);
+    } else if (gate.flags & GATE_IS_BLOCK) {
+        read_result_targets64_into(c, read_char, circuit);
     } else {
         while (read_until_next_line_arg(c, read_char)) {
             circuit.jag_targets.append_tail(read_uint24_t(c, read_char));
@@ -443,12 +477,13 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         Operation &new_op = ops.back();
 
         if (new_op.gate->id == gate_name_to_id("REPEAT")) {
-            if (new_op.target_data.targets.size() != 1) {
+            if (new_op.target_data.targets.size() != 2) {
                 throw std::out_of_range("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
             }
-            uint32_t rep_count = new_op.target_data.targets[0];
+            uint32_t rep_count_low = new_op.target_data.targets[0];
+            uint32_t rep_count_high = new_op.target_data.targets[1];
             uint32_t block_id = circuit.blocks.size();
-            if (rep_count == 0) {
+            if (rep_count_low == 0 && rep_count_high == 0) {
                 throw std::out_of_range("Repeating 0 times is not supported.");
             }
 
@@ -459,7 +494,8 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             // Rewrite target data to reference the parsed block.
             circuit.jag_targets.ensure_available(2);
             circuit.jag_targets.append_tail(block_id);
-            circuit.jag_targets.append_tail(rep_count);
+            circuit.jag_targets.append_tail(rep_count_low);
+            circuit.jag_targets.append_tail(rep_count_high);
             new_op.target_data.targets = circuit.jag_targets.commit_tail();
         }
 
@@ -592,8 +628,8 @@ void print_circuit(std::ostream &out, const Circuit &c, const std::string &inden
 
         // Recurse on repeat blocks.
         if (op.gate && op.gate->id == gate_name_to_id("REPEAT")) {
-            if (op.target_data.targets.size() == 2 && op.target_data.targets[0] < c.blocks.size()) {
-                out << indentation << "REPEAT " << op.target_data.targets[1] << " {\n";
+            if (op.target_data.targets.size() == 3 && op.target_data.targets[0] < c.blocks.size()) {
+                out << indentation << "REPEAT " << op_data_rep_count(op.target_data) << " {\n";
                 print_circuit(out, c.blocks[op.target_data.targets[0]], indentation + "    ");
                 out << "\n" << indentation << "}";
                 continue;
@@ -629,19 +665,22 @@ Circuit Circuit::operator*(size_t repetitions) const {
     }
     // If the entire circuit is a repeat block, just adjust its repeat count.
     if (operations.size() == 1 && operations[0].gate->id == gate_name_to_id("REPEAT")) {
-        uint64_t old_reps = operations[0].target_data.targets[1];
+        uint64_t old_reps = op_data_rep_count(operations[0].target_data);
         uint64_t new_reps = old_reps * repetitions;
-        // Don't create an overflowed repeat count.
-        if (new_reps == (new_reps & TARGET_VALUE_MASK)) {
-            Circuit copy = *this;
-            copy.operations[0].target_data.targets[1] *= repetitions;
-            return copy;
+        if (old_reps != new_reps / repetitions) {
+            throw std::out_of_range("Fused repetition count is too large.");
         }
+        Circuit copy = *this;
+        copy.operations[0].target_data.targets[1] = (uint32_t)(new_reps & 0xFFFFFFFFULL);
+        copy.operations[0].target_data.targets[2] = (uint32_t)(new_reps >> 32);
+        return copy;
     }
+
     Circuit result;
     result.blocks.push_back(*this);
     result.jag_targets.append_tail(0);
-    result.jag_targets.append_tail(repetitions);
+    result.jag_targets.append_tail((uint32_t)(repetitions & 0xFFFFFFFFULL));
+    result.jag_targets.append_tail((uint32_t)(repetitions >> 32));
     result.operations.push_back({&GATE_DATA.at("REPEAT"), {0, result.jag_targets.commit_tail()}});
     return result;
 }
@@ -658,7 +697,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
         assert(op.gate != nullptr);
         append_operation(op);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
-            assert(op.target_data.targets.size() == 2);
+            assert(op.target_data.targets.size() == 3);
             operations.back().target_data.targets[0] += block_offset;
         }
     }
@@ -804,9 +843,9 @@ uint64_t Circuit::count_measurements() const {
     for (const auto &op : operations) {
         assert(op.gate != nullptr);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
-            assert(op.target_data.targets.size() == 2);
+            assert(op.target_data.targets.size() == 3);
             assert(op.target_data.targets[0] < blocks.size());
-            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_measurements(), op.target_data.targets[1]));
+            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_measurements(), op_data_rep_count(op.target_data)));
         } else if (op.gate->flags & GATE_PRODUCES_RESULTS) {
             n = add_saturate(n, op.target_data.targets.size());
         }
@@ -819,9 +858,10 @@ uint64_t Circuit::count_detectors_and_observables() const {
     for (const auto &op : operations) {
         assert(op.gate != nullptr);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
-            assert(op.target_data.targets.size() == 2);
+            assert(op.target_data.targets.size() == 3);
             assert(op.target_data.targets[0] < blocks.size());
-            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_detectors_and_observables(), op.target_data.targets[1]));
+            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_detectors_and_observables(),
+                       op_data_rep_count(op.target_data)));
         } else if (op.gate->id == gate_name_to_id("DETECTOR") || op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
             n = add_saturate(n, 1);
         }

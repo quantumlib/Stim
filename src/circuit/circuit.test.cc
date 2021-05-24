@@ -668,3 +668,19 @@ TEST(circuit, addition_shares_blocks) {
     c1 += c2;
     ASSERT_EQ(c1, c3);
 }
+
+TEST(circuit, big_rep_count) {
+    Circuit c = Circuit::from_text(R"CIRCUIT(
+        REPEAT 1234567890123456789 {
+            M 1
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c.operations[0].target_data.targets.size(), 3);
+    ASSERT_EQ(c.operations[0].target_data.targets[0], 0);
+    ASSERT_EQ(c.operations[0].target_data.targets[1], 1234567890123456789ULL & 0xFFFFFFFFULL);
+    ASSERT_EQ(c.operations[0].target_data.targets[2], 1234567890123456789ULL >> 32);
+    ASSERT_EQ(c.str(), "REPEAT 1234567890123456789 {\n    M 1\n}");
+    ASSERT_EQ(c.count_measurements(), 1234567890123456789ULL);
+
+    ASSERT_THROW({ c * 12345ULL; }, std::out_of_range);
+}
