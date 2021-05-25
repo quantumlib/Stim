@@ -156,7 +156,7 @@ M 0 1 2
         SampleFormat out_format =
             format_values[find_enum_argument("--out_format", SAMPLE_FORMAT_01, format_names, argc, argv)];
         bool frame0 = find_bool_argument("--frame0", argc, argv);
-        auto num_shots = (size_t)find_int_argument("--sample", 1, 0, 1 << 30, argc, argv);
+        uint64_t num_shots = (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv);
         if (num_shots == 0) {
             return EXIT_SUCCESS;
         }
@@ -179,7 +179,7 @@ M 0 1 2
             format_values[find_enum_argument("--out_format", 0, format_names, argc, argv)];
         bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
         bool append_observables = find_bool_argument("--append_observables", argc, argv);
-        auto num_shots = (size_t)find_int_argument("--detect", 1, 0, 1 << 30, argc, argv);
+        uint64_t num_shots = (uint64_t)find_int64_argument("--detect", 1, 0, INT64_MAX, argc, argv);
         if (num_shots == 0) {
             return EXIT_SUCCESS;
         }

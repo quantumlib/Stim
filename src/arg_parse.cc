@@ -14,6 +14,7 @@
 
 #include "arg_parse.h"
 
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -47,7 +48,7 @@ const char *stim_internal::find_argument(const char *name, int argc, const char 
 
         // If the flag is alone and followed by the end or another flag, no
         // argument was provided. Return the empty string to indicate this.
-        if (loc[n] == '\0' && ((int)i == argc - 1 || argv[i + 1][0] == '-')) {
+        if (loc[n] == '\0' && ((int)i == argc - 1 || (argv[i + 1][0] == '-' && !isdigit(argv[i + 1][1])))) {
             return argv[i] + n;
         }
 
@@ -119,7 +120,49 @@ bool stim_internal::find_bool_argument(const char *name, int argc, const char **
     exit(EXIT_FAILURE);
 }
 
-int stim_internal::find_int_argument(const char *name, int default_value, int min_value, int max_value, int argc, const char **argv) {
+bool parse_int64(const char *data, int64_t *out) {
+    char c = *data;
+    if (c == 0) {
+        return false;
+    }
+    bool negate = false;
+    if (c == '-') {
+        negate = true;
+        data++;
+        c = *data;
+    }
+
+    uint64_t accumulator = 0;
+    while (c) {
+        if (!(c >= '0' && c <= '9')) {
+            return false;
+        }
+        uint64_t digit = c - '0';
+        uint64_t next = accumulator * 10 + digit;
+        if (accumulator != (next - digit) / 10) {
+            return false; // Overflow.
+        }
+        accumulator = next;
+        data++;
+        c = *data;
+    }
+
+    if (negate && accumulator == (uint64_t)INT64_MAX + uint64_t{1}) {
+        *out = INT64_MIN;
+        return true;
+    }
+    if (accumulator > INT64_MAX) {
+        return false;
+    }
+
+    *out = (int64_t)accumulator;
+    if (negate) {
+        *out *= -1;
+    }
+    return true;
+}
+
+int64_t stim_internal::find_int64_argument(const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr || text[0] == '\0') {
         if (default_value < min_value || default_value > max_value) {
@@ -135,22 +178,23 @@ int stim_internal::find_int_argument(const char *name, int default_value, int mi
     }
 
     // Attempt to parse.
-    char *processed;
-    long i = strtol(text, &processed, 10);
-    if (*processed != '\0') {
-        fprintf(stderr, "\033[31mGot non-integer value '%s' for integer flag '%s'.\033[0m\n", text, name);
+    int64_t i;
+    if (!parse_int64(text, &i)) {
+        fprintf(stderr, "\033[31mGot non-int64 value '%s' for int64 flag '%s'.\033[0m\n", text, name);
         exit(EXIT_FAILURE);
     }
 
     // In range?
     if (i < min_value || i > max_value) {
-        fprintf(
-            stderr, "\033[31mInteger value '%s' for flag '%s' doesn't satisfy %d <= %ld <= %d.\033[0m\n", text, name,
-            min_value, i, max_value);
+        std::cerr
+            << "\033[31mInteger value '" << text
+            << "' for flag '" << name
+            << "' doesn't satisfy " << min_value << " <= " << i << " <= " << max_value
+            << ".\033[0m\n";
         exit(EXIT_FAILURE);
     }
 
-    return (int)i;
+    return i;
 }
 
 float stim_internal::find_float_argument(

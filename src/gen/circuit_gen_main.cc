@@ -36,8 +36,8 @@ int stim_internal::main_generate_circuit(int argc, const char **argv, FILE *out)
     auto code_index = find_enum_argument("--gen", -1, code_names, argc, argv);
     auto func = code_functions[code_index];
     CircuitGenParameters params(
-        find_int_argument("--rounds", -1, 1, 16777215, argc, argv),
-        find_int_argument("--distance", -1, 2, 2047, argc, argv),
+        (uint64_t)find_int64_argument("--rounds", -1, 1, INT64_MAX, argc, argv),
+        (uint32_t)find_int64_argument("--distance", -1, 2, 2047, argc, argv),
         require_find_argument("--task", argc, argv));
     params.before_round_data_depolarization = find_float_argument("--before_round_data_depolarization", 0, 0, 1, argc, argv);
     params.before_measure_flip_probability = find_float_argument("--before_measure_flip_probability", 0, 0, 1, argc, argv);

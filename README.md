@@ -193,6 +193,7 @@ error(0.003344519141621982161) D1
     **Measurement sampling mode**.
     Output measurement results from the given circuit.
     If an integer argument is specified, run that many shots of the circuit.
+    The maximum shot count is 9223372036854775807.
 
     - **`--frame0`**:
         Significantly improve the performance of measurement sampling mode by asserting that it is possible to take a sample
@@ -206,6 +207,7 @@ error(0.003344519141621982161) D1
     Assumes (does not verify) that all `DETECTOR` instructions corresponding to measurement sets with deterministic parity.
     See also `--append_observables`.
     If an integer argument is specified, run that many shots of the circuit.
+    The maximum shot count is 9223372036854775807.
 
     - **`--append_observables`**:
         In addition to outputting the values of detectors, output the values of logical observables
@@ -276,10 +278,13 @@ error(0.003344519141621982161) D1
     - **`--distance=#`**:
         The minimum number of physical errors needed to cause a logical error.
         Determines how large the generated circuit has to be.
+        Different tasks place different constraints on the code distances (e.g. sometimes the code distance must be odd).
 
     - **`--rounds=#`**:
         The number of times the circuit's measurement qubits are measured.
         Different tasks have different minimum numbers of rounds.
+        Maximum rounds is 9223372036854775807.
+        Different tasks place different constraints on the number of rounds (e.g. usually can't be zero).
 
     - **`--after_clifford_depolarization=p`**:
         Adds a `DEPOLARIZE1(p)` operation after every single-qubit Clifford operation
