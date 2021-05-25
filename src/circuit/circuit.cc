@@ -788,42 +788,30 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
 }
 
 size_t Circuit::count_qubits() const {
-    size_t n = 0;
-    for (const auto &block : blocks) {
-        n = std::max(n, block.count_qubits());
-    }
-    for (const auto &op : operations) {
-        if (op.gate->flags & GATE_IS_BLOCK) {
-            // Handled in block case.
-            continue;
-        }
+    return max_operation_property([](const Operation &op) -> size_t {
+        size_t r = 0;
         for (uint32_t t : op.target_data.targets) {
             if (!(t & TARGET_RECORD_BIT)) {
-                n = std::max(n, (t & TARGET_VALUE_MASK) + size_t{1});
+                r = std::max(r, (t & TARGET_VALUE_MASK) + size_t{1});
             }
         }
-    }
-    return n;
+        return r;
+   });
 }
 
 size_t Circuit::max_lookback() const {
-    size_t n = 0;
-    for (const auto &block : blocks) {
-        n = std::max(n, block.max_lookback());
-    }
-    for (const auto &op : operations) {
-        if (op.gate->flags & (GATE_CAN_TARGET_MEASUREMENT_RECORD | GATE_ONLY_TARGETS_MEASUREMENT_RECORD)) {
-            for (uint32_t t : op.target_data.targets) {
-                if (t & TARGET_RECORD_BIT) {
-                    n = std::max(n, size_t{t & TARGET_VALUE_MASK});
-                }
+    return max_operation_property([](const Operation &op) -> size_t {
+        size_t r = 0;
+        for (uint32_t t : op.target_data.targets) {
+            if (t & TARGET_RECORD_BIT) {
+                r = std::max(r, size_t{t & TARGET_VALUE_MASK});
             }
         }
-    }
-    return n;
+        return r;
+   });
 }
 
-uint64_t add_saturate(uint64_t a, uint64_t b) {
+uint64_t stim_internal::add_saturate(uint64_t a, uint64_t b) {
     uint64_t r = a + b;
     if (r < a) {
         return UINT64_MAX;
@@ -831,7 +819,7 @@ uint64_t add_saturate(uint64_t a, uint64_t b) {
     return r;
 }
 
-uint64_t mul_saturate(uint64_t a, uint64_t b) {
+uint64_t stim_internal::mul_saturate(uint64_t a, uint64_t b) {
     if (b && a > UINT64_MAX / b) {
         return UINT64_MAX;
     }
@@ -839,32 +827,21 @@ uint64_t mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    uint64_t n = 0;
-    for (const auto &op : operations) {
-        assert(op.gate != nullptr);
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
-            assert(op.target_data.targets.size() == 3);
-            assert(op.target_data.targets[0] < blocks.size());
-            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_measurements(), op_data_rep_count(op.target_data)));
-        } else if (op.gate->flags & GATE_PRODUCES_RESULTS) {
-            n = add_saturate(n, op.target_data.targets.size());
-        }
-    }
-    return n;
+    return flat_count_operations([](const Operation &op) -> size_t {
+        return (op.gate->flags & GATE_PRODUCES_RESULTS) ? op.target_data.targets.size() : 0;
+    });
 }
 
-uint64_t Circuit::count_detectors_and_observables() const {
-    uint64_t n = 0;
-    for (const auto &op : operations) {
-        assert(op.gate != nullptr);
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
-            assert(op.target_data.targets.size() == 3);
-            assert(op.target_data.targets[0] < blocks.size());
-            n = add_saturate(n, mul_saturate(blocks[op.target_data.targets[0]].count_detectors_and_observables(),
-                       op_data_rep_count(op.target_data)));
-        } else if (op.gate->id == gate_name_to_id("DETECTOR") || op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
-            n = add_saturate(n, 1);
-        }
-    }
-    return n;
+uint64_t Circuit::count_detectors() const {
+    const Gate *detector = &GATE_DATA.at("DETECTOR");
+    return flat_count_operations([=](const Operation &op) -> size_t {
+        return op.gate == detector;
+    });
+}
+
+uint64_t Circuit::num_observables() const {
+    const Gate *obs = &GATE_DATA.at("OBSERVABLE_INCLUDE");
+    return max_operation_property([=](const Operation &op) -> size_t {
+        return op.gate == obs ? (size_t)op.target_data.arg + 1 : 0;
+    });
 }

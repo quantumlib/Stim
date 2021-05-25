@@ -601,6 +601,7 @@ error(0.003344519141621982161) D1
     
 - **`REPEAT N { ... }`**:
     Repeats the instructions in its body N times.
+    The implementation-defined maximum value of N is 9223372036854775807.
     Example:
     ```
     REPEAT 2 {

@@ -416,17 +416,22 @@ TEST(circuit, count_qubits) {
         3);
 }
 
-TEST(circuit, count_detectors_and_observables) {
-    ASSERT_EQ(Circuit().count_detectors_and_observables(), 0);
+TEST(circuit, count_detectors_num_observables) {
+    ASSERT_EQ(Circuit().count_detectors(), 0);
+    ASSERT_EQ(Circuit().num_observables(), 0);
 
     ASSERT_EQ(
         Circuit::from_text(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT")
-            .count_detectors_and_observables(),
-        2);
+    )CIRCUIT").count_detectors(), 1);
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1 2
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(5) rec[-1]
+    )CIRCUIT").num_observables(), 6);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -442,8 +447,21 @@ TEST(circuit, count_detectors_and_observables) {
             }
         }
     )CIRCUIT")
-            .count_detectors_and_observables(),
+            .count_detectors(),
         1000000000000ULL);
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1
+        REPEAT 1000 {
+            REPEAT 1000 {
+                REPEAT 1000 {
+                    REPEAT 1000 {
+                        OBSERVABLE_INCLUDE(2) rec[-1]
+                    }
+                }
+            }
+        }
+    )CIRCUIT").num_observables(), 3);
 
     ASSERT_EQ(
         Circuit::from_text(R"CIRCUIT(
@@ -475,8 +493,7 @@ TEST(circuit, count_detectors_and_observables) {
           }
          }
         }
-    )CIRCUIT")
-            .count_detectors_and_observables(),
+    )CIRCUIT").count_detectors(),
         UINT64_MAX);
 }
 
