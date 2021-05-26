@@ -42,7 +42,7 @@ inline uint8_t popcnt64(uint64_t val) {
     val &= 0xF0F0F0F0F0F0F0FULL;
     val *= 0x101010101010101ULL;
     val >>= 56;
-    return val;
+    return (uint8_t)val;
 }
 
 }

@@ -538,7 +538,7 @@ ConstPointerRange<uint64_t> ErrorFuser::add_error_in_sorted_jagged_tail(double p
     return key;
 }
 
-bool shifted_equals(int32_t shift, const SparseXorVec<uint64_t> &unshifted, const SparseXorVec<uint64_t> &expected) {
+bool shifted_equals(int64_t shift, const SparseXorVec<uint64_t> &unshifted, const SparseXorVec<uint64_t> &expected) {
     if (unshifted.size() != expected.size()) {
         return false;
     }
@@ -564,9 +564,9 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
         return;
     }
 
-    size_t num_loop_detectors = loop.count_detectors();
-    size_t hare_iter = 0;
-    size_t tortoise_iter = 0;
+    uint64_t num_loop_detectors = loop.count_detectors();
+    uint64_t hare_iter = 0;
+    uint64_t tortoise_iter = 0;
     ErrorFuser hare(xs.size(), false, true);
     hare.xs = xs;
     hare.zs = zs;
@@ -680,19 +680,19 @@ void print_indent(FILE *out, size_t indent) {
     }
 }
 
-void FusedErrorRepeatBlock::print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &time_offset) const {
+void FusedErrorRepeatBlock::print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const {
     print_indent(out, indent);
     fprintf(out, "REPEAT %lld {\n", (long long)repetitions);
     for (auto e = errors.crbegin(); e != errors.crend(); e++) {
-        e->print(out, indent + 4, num_found_detectors, time_offset);
+        e->print(out, indent + 4, num_found_detectors, tick_count);
     }
     size_t outer_ticks = outer_ticks_per_iteration();
     if (outer_ticks) {
         print_indent(out, indent + 4);
         fprintf(out, "TICK %lld\n", (long long)outer_ticks);
-        time_offset += outer_ticks;
+        tick_count += outer_ticks;
     }
-    time_offset += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
+    tick_count += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
     print_indent(out, indent);
     fprintf(out, "}\n");
 }
@@ -702,8 +702,8 @@ void FusedErrorRepeatBlock::skip(uint64_t skipped) {
         e.skip(skipped);
     }
 }
-size_t FusedErrorRepeatBlock::outer_ticks_per_iteration() const {
-    size_t result = total_ticks_per_iteration_including_sub_loops;
+uint64_t FusedErrorRepeatBlock::outer_ticks_per_iteration() const {
+    uint64_t result = total_ticks_per_iteration_including_sub_loops;
     for (const auto &e : errors) {
         if (e.block) {
             result -= e.block->total_ticks_per_iteration_including_sub_loops * e.block->repetitions;
@@ -720,7 +720,7 @@ void FusedError::skip(uint64_t skipped) {
     }
 }
 
-void FusedError::print(FILE *out, size_t indent, uint64_t num_found_detectors, size_t &tick_count) const {
+void FusedError::print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const {
     if (block) {
         block->print(out, indent, num_found_detectors, tick_count);
         return;

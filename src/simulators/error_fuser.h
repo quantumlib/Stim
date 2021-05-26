@@ -52,10 +52,10 @@ struct FusedError {
 
 struct FusedErrorRepeatBlock {
     uint64_t repetitions;
-    size_t total_ticks_per_iteration_including_sub_loops;
-    size_t outer_ticks_per_iteration() const;
+    uint64_t total_ticks_per_iteration_including_sub_loops;
+    uint64_t outer_ticks_per_iteration() const;
     std::vector<FusedError> errors;
-    void print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &time_offset) const;
+    void print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const;
     void skip(uint64_t skipped);
 };
 
