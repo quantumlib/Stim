@@ -33,6 +33,7 @@ static std::vector<const char *> detect_mode_known_arguments{
 static std::vector<const char *> detector_hypergraph_mode_known_arguments{
     "--detector_hypergraph",
     "--find_reducible_errors",
+    "--fold_loops",
     "--out",
     "--in",
 };
@@ -194,7 +195,8 @@ M 0 1 2
     if (mode_detector_hypergraph) {
         check_for_unknown_arguments(detector_hypergraph_mode_known_arguments, "--detector_hypergraph", argc, argv);
         bool find_reducible_errors = find_bool_argument("--find_reducible_errors", argc, argv);
-        ErrorFuser::convert_circuit_out(Circuit::from_file(in), out, find_reducible_errors);
+        bool fold_loops = find_bool_argument("--fold_loops", argc, argv);
+        ErrorFuser::convert_circuit_out(Circuit::from_file(in), out, find_reducible_errors, fold_loops);
         return EXIT_SUCCESS;
     }
 

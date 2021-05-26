@@ -22,11 +22,11 @@
 
 using namespace stim_internal;
 
-bool stim_internal::is_encoded_detector_id(uint32_t id) {
+bool stim_internal::is_encoded_detector_id(uint64_t id) {
     return id < FIRST_OBSERVABLE_ID;
 }
 
-bool stim_internal::is_encoded_observable_id(uint32_t id) {
+bool stim_internal::is_encoded_observable_id(uint64_t id) {
     return id >= FIRST_OBSERVABLE_ID && id != COMPOSITE_ERROR_SYGIL;
 }
 
@@ -66,7 +66,7 @@ void ErrorFuser::MX(const OperationData &dat) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
 
-        std::vector<uint32_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         if (!zs[q].empty()) {
@@ -80,7 +80,7 @@ void ErrorFuser::MY(const OperationData &dat) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
 
-        std::vector<uint32_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
@@ -95,7 +95,7 @@ void ErrorFuser::MZ(const OperationData &dat) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
 
-        std::vector<uint32_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         zs[q].xor_sorted_items(d);
         if (!xs[q].empty()) {
@@ -240,12 +240,12 @@ void ErrorFuser::ZCX(const OperationData &dat) {
 }
 
 void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z) {
-    uint32_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
-    std::vector<uint32_t> &dst = measurement_to_detectors[time];
+    uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
+    std::vector<uint64_t> &dst = measurement_to_detectors[time];
 
     // Temporarily move map's vector data into a SparseXorVec for manipulation.
     std::sort(dst.begin(), dst.end());
-    SparseXorVec<uint32_t> tmp(std::move(dst));
+    SparseXorVec<uint64_t> tmp(std::move(dst));
 
     if (x) {
         tmp ^= xs[target];
@@ -337,7 +337,7 @@ void ErrorFuser::ISWAP(const OperationData &dat) {
 }
 
 void ErrorFuser::DETECTOR(const OperationData &dat) {
-    uint32_t id = LAST_DETECTOR_ID - num_found_detectors;
+    uint64_t id = LAST_DETECTOR_ID - num_found_detectors;
     num_found_detectors++;
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
@@ -346,7 +346,7 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
 }
 
 void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
-    uint32_t id = FIRST_OBSERVABLE_ID + (int)dat.arg;
+    uint64_t id = FIRST_OBSERVABLE_ID + (int)dat.arg;
     num_found_observables = std::max(num_found_observables, id + 1);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
@@ -354,28 +354,48 @@ void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
     }
 }
 
-ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors) : xs(num_qubits), zs(num_qubits), find_reducible_errors(find_reducible_errors) {
+ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops)
+    : xs(num_qubits), zs(num_qubits), find_reducible_errors(find_reducible_errors), fold_loops(fold_loops) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
-    circuit.for_each_operation_reverse([&](const Operation &op) {
-        (this->*op.gate->reverse_error_fuser_function)(op.target_data);
-    });
+    for (auto p = circuit.operations.crbegin(); p != circuit.operations.crend(); p++) {
+        const auto &op = *p;
+        assert(op.gate != nullptr);
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            assert(op.target_data.targets.size() == 3);
+            assert(op.target_data.targets[0] < circuit.blocks.size());
+            uint64_t repeats = op_data_rep_count(op.target_data);
+            const auto &block = circuit.blocks[op.target_data.targets[0]];
+            run_loop(block, repeats);
+        } else {
+            (this->*op.gate->reverse_error_fuser_function)(op.target_data);
+        }
+    }
 }
 
 void ErrorFuser::X_ERROR(const OperationData &dat) {
+    if (!accumulate_errors) {
+        return;
+    }
     for (auto q : dat.targets) {
         add_error(dat.arg, zs[q].range());
     }
 }
 
 void ErrorFuser::Y_ERROR(const OperationData &dat) {
+    if (!accumulate_errors) {
+        return;
+    }
     for (auto q : dat.targets) {
         add_xored_error(dat.arg, xs[q].range(), zs[q].range());
     }
 }
 
 void ErrorFuser::Z_ERROR(const OperationData &dat) {
+    if (!accumulate_errors) {
+        return;
+    }
     for (auto q : dat.targets) {
         add_error(dat.arg, xs[q].range());
     }
@@ -392,6 +412,9 @@ inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src
 }
 
 void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
+    if (!accumulate_errors) {
+        return;
+    }
     for (auto qp : dat.targets) {
         auto q = qp & TARGET_VALUE_MASK;
         if (qp & TARGET_PAULI_Z_BIT) {
@@ -405,6 +428,9 @@ void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
 }
 
 void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
+    if (!accumulate_errors) {
+        return;
+    }
     if (dat.arg >= 3.0 / 4.0) {
         throw std::out_of_range(
             "DEPOLARIZE1 must have probability less than 3/4 when converting to a detector hyper graph.");
@@ -419,6 +445,9 @@ void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
 }
 
 void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
+    if (!accumulate_errors) {
+        return;
+    }
     if (dat.arg >= 15.0 / 16.0) {
         throw std::out_of_range(
             "DEPOLARIZE1 must have probability less than 15/16 when converting to a detector hyper graph.");
@@ -441,52 +470,39 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
         "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
 }
 
-void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors) {
-    ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors);
+void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops) {
+    ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops);
     fuser.run_circuit(circuit);
-    std::stringstream ss_buf_err;
-    std::stringstream ss_buf_targets;
+    fuser.flush();
+    fuser.print_flushed(out);
+}
 
-    for (const auto &kv : fuser.error_class_probabilities) {
-        if (kv.first.empty() || kv.second == 0) {
-            continue;
-        }
-
-        ss_buf_err.str("");
-        ss_buf_err << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << kv.second;
-
-        ss_buf_targets.str("");
-        size_t num_detectors = 0;
-        bool is_composite = false;
-        for (auto e : kv.first) {
-            if (e == COMPOSITE_ERROR_SYGIL) {
-                ss_buf_targets << " ^";
-                is_composite = true;
-            } else if (is_encoded_detector_id(e)) {
-                ss_buf_targets << " D" << (e + fuser.num_found_detectors - LAST_DETECTOR_ID - 1);
-                num_detectors++;
-            } else {
-                ss_buf_targets << " L" << (e - FIRST_OBSERVABLE_ID);
-            }
-        }
-
-        fprintf(out,
-                "%s(%s)%s\n",
-                is_composite ? "reducible_error" : "error",
-                ss_buf_err.str().data(),
-                ss_buf_targets.str().data());
+void ErrorFuser::print_flushed(FILE *out) const {
+    uint64_t time_offset = 0;
+    for (auto e = flushed.crbegin(); e != flushed.crend(); e++) {
+        e->print(out, 0, num_found_detectors, time_offset);
     }
 }
 
-ConstPointerRange<uint32_t> ErrorFuser::add_xored_error(
-    double probability, ConstPointerRange<uint32_t> flipped1, ConstPointerRange<uint32_t> flipped2) {
+void ErrorFuser::flush() {
+    for (auto kv = error_class_probabilities.crbegin(); kv != error_class_probabilities.crend(); kv++) {
+        if (kv->first.empty() || kv->second == 0) {
+            continue;
+        }
+        flushed.push_back(FusedError{kv->second, kv->first, 0, nullptr});
+    }
+    error_class_probabilities.clear();
+}
+
+ConstPointerRange<uint64_t> ErrorFuser::add_xored_error(
+    double probability, ConstPointerRange<uint64_t> flipped1, ConstPointerRange<uint64_t> flipped2) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
     mono_buf.tail.ptr_end =
-        xor_merge_sort<uint32_t>(flipped1, flipped2, mono_buf.tail.ptr_end);
+        xor_merge_sort<uint64_t>(flipped1, flipped2, mono_buf.tail.ptr_end);
     return add_error_in_sorted_jagged_tail(probability);
 }
 
-ConstPointerRange<uint32_t> ErrorFuser::mono_dedupe_store_tail() {
+ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store_tail() {
     auto v = error_class_probabilities.find(mono_buf.tail);
     if (v != error_class_probabilities.end()) {
         mono_buf.discard_tail();
@@ -497,7 +513,7 @@ ConstPointerRange<uint32_t> ErrorFuser::mono_dedupe_store_tail() {
     return result;
 }
 
-ConstPointerRange<uint32_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint32_t> data) {
+ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint64_t> data) {
     auto v = error_class_probabilities.find(data);
     if (v != error_class_probabilities.end()) {
         return v->first;
@@ -508,16 +524,227 @@ ConstPointerRange<uint32_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint
     return result;
 }
 
-ConstPointerRange<uint32_t> ErrorFuser::add_error(double probability, ConstPointerRange<uint32_t> flipped) {
+ConstPointerRange<uint64_t> ErrorFuser::add_error(double probability, ConstPointerRange<uint64_t> flipped) {
     auto key = mono_dedupe_store(flipped);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-ConstPointerRange<uint32_t> ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
+ConstPointerRange<uint64_t> ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
     auto key = mono_dedupe_store_tail();
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
+}
+
+bool shifted_equals(int32_t shift, const SparseXorVec<uint64_t> &unshifted, const SparseXorVec<uint64_t> &expected) {
+    if (unshifted.size() != expected.size()) {
+        return false;
+    }
+    for (size_t k = 0; k < unshifted.size(); k++) {
+        auto a = unshifted.sorted_items[k];
+        auto e = expected.sorted_items[k];
+        if (is_encoded_detector_id(a)) {
+            a += shift;
+        }
+        if (a != e) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
+    if (!fold_loops) {
+        // If loop folding is disabled, just manually run each iteration.
+        for (size_t k = 0; k < iterations; k++) {
+            run_circuit(loop);
+        }
+        return;
+    }
+
+    size_t num_loop_detectors = loop.count_detectors();
+    size_t hare_iter = 0;
+    size_t tortoise_iter = 0;
+    ErrorFuser hare(xs.size(), false, true);
+    hare.xs = xs;
+    hare.zs = zs;
+    hare.num_found_detectors = num_found_detectors;
+    hare.num_found_observables = num_found_observables;
+    hare.measurement_to_detectors = measurement_to_detectors;
+    hare.scheduled_measurement_time = scheduled_measurement_time;
+    hare.accumulate_errors = false;
+
+    auto hare_is_colliding_with_tortoise = [&]() -> bool{
+        // When comparing different loop iterations, shift detector ids to account for
+        // detectors being introduced during each iteration.
+        int64_t dt = -(int64_t)((hare_iter - tortoise_iter) * num_loop_detectors);
+        for (size_t k = 0; k < hare.xs.size(); k++) {
+            if (!shifted_equals(dt, xs[k], hare.xs[k])) {
+                return false;
+            }
+            if (!shifted_equals(dt, zs[k], hare.zs[k])) {
+                auto a = zs[k].str();
+                auto b = hare.zs[k].str();
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // Perform tortoise-and-hare cycle finding.
+    while (hare_iter < iterations) {
+        hare.run_circuit(loop);
+        hare_iter++;
+        if (hare_is_colliding_with_tortoise()) {
+            break;
+        }
+
+        if (hare_iter % 2 == 0) {
+            run_circuit(loop);
+            tortoise_iter++;
+            if (hare_is_colliding_with_tortoise()) {
+                break;
+            }
+        }
+    }
+
+    if (hare_iter < iterations) {
+        uint64_t period = hare_iter - tortoise_iter;
+        uint64_t period_iterations = (iterations - tortoise_iter) / period;
+        // Don't bother folding a single iteration into a repeated block.
+        if (period_iterations > 1) {
+            // Put loop body at end of flushed errors list.
+            flush();
+            size_t loop_content_start = flushed.size();
+            for (size_t k = 0; k < period; k++) {
+                run_circuit(loop);
+            }
+            flush();
+
+            // Move loop body errors from end of flushed vector into a block.
+            std::unique_ptr<FusedErrorRepeatBlock> block(new FusedErrorRepeatBlock());
+            block->repetitions = period_iterations;
+            block->total_ticks_per_iteration_including_sub_loops = num_loop_detectors * period;
+            block->errors.reserve(flushed.size() - loop_content_start);
+            for (size_t k = loop_content_start; k < flushed.size(); k++) {
+                block->errors.push_back(std::move(flushed[k]));
+            }
+            flushed.erase(flushed.begin() + loop_content_start, flushed.end());
+
+            // Rewrite state to look like it would if loop had actually executed all iterations.
+            int64_t skipped_detectors = num_loop_detectors * (period_iterations - 1) * period;
+            block->skip(skipped_detectors);
+            flushed.push_back(FusedError{0, {}, 0, std::move(block)});
+            num_found_detectors += skipped_detectors;
+            shift_active_detector_ids(-skipped_detectors);
+            tortoise_iter += period_iterations * period;
+        }
+    }
+
+    // Perform remaining loop iterations leftover after jumping forward by multiples of the recurrence period.
+    while (tortoise_iter < iterations) {
+        run_circuit(loop);
+        tortoise_iter++;
+    }
+}
+
+void ErrorFuser::shift_active_detector_ids(int64_t shift) {
+    for (auto &e : measurement_to_detectors) {
+        for (auto &v : e.second) {
+            if (is_encoded_detector_id(v)) {
+                v += shift;
+            }
+        }
+    }
+    for (auto &x : xs) {
+        for (auto &v : x) {
+            if (is_encoded_detector_id(v)) {
+                v += shift;
+            }
+        }
+    }
+    for (auto &x : zs) {
+        for (auto &v : x) {
+            if (is_encoded_detector_id(v)) {
+                v += shift;
+            }
+        }
+    }
+}
+
+void print_indent(FILE *out, size_t indent) {
+    for (size_t k = 0; k < indent; k++) {
+        putc(' ', out);
+    }
+}
+
+void FusedErrorRepeatBlock::print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &time_offset) const {
+    print_indent(out, indent);
+    fprintf(out, "REPEAT %lld {\n", (long long)repetitions);
+    for (auto e = errors.crbegin(); e != errors.crend(); e++) {
+        e->print(out, indent + 4, num_found_detectors, time_offset);
+    }
+    size_t outer_ticks = outer_ticks_per_iteration();
+    if (outer_ticks) {
+        print_indent(out, indent + 4);
+        fprintf(out, "TICK %lld\n", (long long)outer_ticks);
+        time_offset += outer_ticks;
+    }
+    time_offset += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
+    print_indent(out, indent);
+    fprintf(out, "}\n");
+}
+
+void FusedErrorRepeatBlock::skip(uint64_t skipped) {
+    for (auto &e : errors) {
+        e.skip(skipped);
+    }
+}
+size_t FusedErrorRepeatBlock::outer_ticks_per_iteration() const {
+    size_t result = total_ticks_per_iteration_including_sub_loops;
+    for (const auto &e : errors) {
+        if (e.block) {
+            result -= e.block->total_ticks_per_iteration_including_sub_loops * e.block->repetitions;
+        }
+    }
+    return result;
+}
+
+void FusedError::skip(uint64_t skipped) {
+    if (block) {
+        block->skip(skipped);
+    } else {
+        local_time_shift += skipped;
+    }
+}
+
+void FusedError::print(FILE *out, size_t indent, uint64_t num_found_detectors, size_t &tick_count) const {
+    if (block) {
+        block->print(out, indent, num_found_detectors, tick_count);
+        return;
+    }
+
+    print_indent(out, indent);
+    bool is_composite = std::any_of(flipped.begin(), flipped.end(), [](uint64_t e) { return e == COMPOSITE_ERROR_SYGIL; });
+    if (is_composite) {
+        fprintf(out, "reducible_");
+    }
+    std::stringstream ss;
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << probability;
+    fprintf(out, "error(%s)", ss.str().data());
+    for (size_t k = 0; k < flipped.size(); k++) {
+        auto e = flipped[k];
+        if (e == COMPOSITE_ERROR_SYGIL) {
+            if (k != flipped.size() - 1) {
+                fprintf(out, " ^");
+            }
+        } else if (is_encoded_detector_id(e)) {
+            fprintf(out, " D%lld", (long long)(e + num_found_detectors - LAST_DETECTOR_ID - 1 - tick_count - local_time_shift));
+        } else {
+            fprintf(out, " L%lld", (long long)(e - FIRST_OBSERVABLE_ID));
+        }
+    }
+    fprintf(out, "\n");
 }

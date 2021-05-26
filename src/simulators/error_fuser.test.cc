@@ -19,12 +19,13 @@
 
 #include "../test_util.test.h"
 #include "frame_simulator.h"
+#include "../gen/gen_rep_code.h"
 
 using namespace stim_internal;
 
-std::string convert(const Circuit &circuit, bool find_reducible_errors = false) {
+std::string convert(const Circuit &circuit, bool find_reducible_errors = false, bool fold_loops = false) {
     FILE *f = tmpfile();
-    ErrorFuser::convert_circuit_out(circuit, f, find_reducible_errors);
+    ErrorFuser::convert_circuit_out(circuit, f, find_reducible_errors, fold_loops);
     rewind(f);
     std::string s;
     while (true) {
@@ -37,8 +38,8 @@ std::string convert(const Circuit &circuit, bool find_reducible_errors = false) 
     return "\n" + s;
 }
 
-std::string convert(const char *text, bool find_reducible_errors = false) {
-    return convert(Circuit::from_text(text), find_reducible_errors);
+std::string convert(const char *text, bool find_reducible_errors = false, bool fold_loops = false) {
+    return convert(Circuit::from_text(text), find_reducible_errors, fold_loops);
 }
 
 static std::string check_matches(std::string actual, std::string pattern) {
@@ -233,7 +234,7 @@ error\(0.071825\d+\) D2 D3
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
-    ErrorFuser e(16, false);
+    ErrorFuser e(16, false, false);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
             e.xs[q].xor_item(0);
@@ -713,4 +714,158 @@ error\(0.000669\d+\) D3 D5
             encode + Circuit::from_text("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode,
             false),
         expected));
+}
+
+TEST(ErrorFuser, loop_folding) {
+    ASSERT_EQ(convert(R"CIRCUIT(
+            MR 1
+            REPEAT 12345678987654321 {
+                X_ERROR(0.25) 0
+                CNOT 0 1
+                MR 1
+                DETECTOR rec[-2] rec[-1]
+            }
+            M 0
+            OBSERVABLE_INCLUDE(9) rec[-1]
+        )CIRCUIT", false, true),
+        R"graph(
+error(0.25) D0 L9
+REPEAT 6172839493827159 {
+    error(0.25) D1 L9
+    error(0.25) D2 L9
+    TICK 2
+}
+error(0.25) D1 L9
+error(0.25) D2 L9
+)graph");
+
+    // Solve period 8 logical observable oscillation.
+    ASSERT_EQ(convert(R"CIRCUIT(
+            R 0 1 2 3 4
+            REPEAT 12345678987654321 {
+                CNOT 0 1 1 2 2 3 3 4
+                DETECTOR
+            }
+            M 4
+            OBSERVABLE_INCLUDE(9) rec[-1]
+        )CIRCUIT", false, true),
+        R"graph(
+REPEAT 1543209873456789 {
+    TICK 8
+}
+)graph");
+
+    // Solve period 127 logical observable oscillation.
+    ASSERT_EQ(convert(R"CIRCUIT(
+            R 0 1 2 3 4 5 6
+            REPEAT 12345678987654321 {
+                CNOT 0 1 1 2 2 3 3 4 4 5 5 6 6 0
+                DETECTOR
+            }
+            M 6
+            OBSERVABLE_INCLUDE(9) rec[-1]
+            R 7
+            X_ERROR(1) 7
+            M 7
+            DETECTOR rec[-1]
+        )CIRCUIT", false, true),
+        R"graph(
+REPEAT 97210070768930 {
+    TICK 127
+}
+error(1) D211
+)graph");
+}
+
+TEST(ErrorFuser, loop_folding_nested_loop) {
+    ASSERT_EQ(convert(R"CIRCUIT(
+            MR 1
+            REPEAT 1000 {
+                REPEAT 1000 {
+                    X_ERROR(0.25) 0
+                    CNOT 0 1
+                    MR 1
+                    DETECTOR rec[-2] rec[-1]
+                }
+            }
+            M 0
+            OBSERVABLE_INCLUDE(9) rec[-1]
+        )CIRCUIT", false, true),
+        R"graph(
+REPEAT 999 {
+    REPEAT 1000 {
+        error(0.25) D0 L9
+        TICK 1
+    }
+}
+REPEAT 499 {
+    error(0.25) D0 L9
+    error(0.25) D1 L9
+    TICK 2
+}
+error(0.25) D0 L9
+error(0.25) D1 L9
+)graph");
+}
+
+TEST(ErrorFuser, loop_folding_rep_code_circuit) {
+    CircuitGenParameters params(100000, 3, "memory");
+    params.after_clifford_depolarization = 0.001;
+    auto circuit = generate_rep_code_circuit(params).circuit;
+
+    ASSERT_EQ("", check_matches(
+        convert(
+            circuit,
+            true,
+            true),
+        R"graph(
+error\(0.00026\d+\) D0 D1
+error\(0.00026\d+\) D0 D3
+error\(0.00026\d+\) D0 L0
+error\(0.00026\d+\) D1 D2
+error\(0.00053\d+\) D1 D3
+error\(0.00053\d+\) D1 D4
+error\(0.00026\d+\) D2
+error\(0.00053\d+\) D2 D4
+error\(0.00026\d+\) D2 D5
+error\(0.00026\d+\) D3 D4
+error\(0.00026\d+\) D3 L0
+reducible_error\(0.00026\d+\) D3 L0 \^ D0 L0
+error\(0.00026\d+\) D4 D5
+error\(0.00026\d+\) D5
+reducible_error\(0.00026\d+\) D5 \^ D2
+REPEAT 99998 \{
+    error\(0.00026\d+\) D3 D4
+    error\(0.00026\d+\) D3 D6
+    error\(0.00026\d+\) D3 L0
+    error\(0.00026\d+\) D4 D5
+    error\(0.00053\d+\) D4 D6
+    error\(0.00053\d+\) D4 D7
+    error\(0.00026\d+\) D5
+    error\(0.00053\d+\) D5 D7
+    error\(0.00026\d+\) D5 D8
+    error\(0.00026\d+\) D6 D7
+    error\(0.00026\d+\) D6 L0
+    reducible_error\(0.00026\d+\) D6 L0 \^ D3 L0
+    error\(0.00026\d+\) D7 D8
+    error\(0.00026\d+\) D8
+    reducible_error\(0.00026\d+\) D8 \^ D5
+    TICK 3
+\}
+error\(0.00026\d+\) D3 D4
+error\(0.00026\d+\) D3 D6
+error\(0.00026\d+\) D3 L0
+error\(0.00026\d+\) D4 D5
+error\(0.00053\d+\) D4 D6
+error\(0.00053\d+\) D4 D7
+error\(0.00026\d+\) D5
+error\(0.00053\d+\) D5 D7
+error\(0.00026\d+\) D5 D8
+error\(0.00026\d+\) D6 D7
+error\(0.00026\d+\) D6 L0
+reducible_error\(0.00026\d+\) D6 L0 \^ D3 L0
+error\(0.00026\d+\) D7 D8
+error\(0.00026\d+\) D8
+reducible_error\(0.00026\d+\) D8 \^ D5
+)graph"));
 }
