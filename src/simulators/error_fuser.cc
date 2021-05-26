@@ -732,19 +732,19 @@ void FusedError::print(FILE *out, size_t indent, uint64_t num_found_detectors, s
         fprintf(out, "reducible_");
     }
     std::stringstream ss;
-    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << probability;
-    fprintf(out, "error(%s)", ss.str().data());
+    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << "error(" << probability << ")";
     for (size_t k = 0; k < flipped.size(); k++) {
         auto e = flipped[k];
         if (e == COMPOSITE_ERROR_SYGIL) {
             if (k != flipped.size() - 1) {
-                fprintf(out, " ^");
+                ss << " ^";
             }
         } else if (is_encoded_detector_id(e)) {
-            fprintf(out, " D%lld", (long long)(e + num_found_detectors - LAST_DETECTOR_ID - 1 - tick_count - local_time_shift));
+            ss << " D" << (e + num_found_detectors - LAST_DETECTOR_ID - 1 - tick_count - local_time_shift);
         } else {
-            fprintf(out, " L%lld", (long long)(e - FIRST_OBSERVABLE_ID));
+            ss << " L" <<  (e - FIRST_OBSERVABLE_ID);
         }
     }
+    fprintf(out, "%s", ss.str().data());
     fprintf(out, "\n");
 }
