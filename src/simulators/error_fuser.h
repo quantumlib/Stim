@@ -164,7 +164,7 @@ struct ErrorFuser {
     template <size_t s>
     void add_error_combinations(double p, std::array<ConstPointerRange<uint64_t>, s> basis_errors) {
         // Determine involved detectors while creating basis masks and storing added data.
-        FixedCapVector<uint64_t, 8> involved_detectors{};
+        FixedCapVector<uint64_t, 16> involved_detectors{};
         std::array<uint64_t, 1 << s> detector_masks{};
         std::array<ConstPointerRange<uint64_t>, 1 << s> stored_ids;
         for (size_t k = 0; k < s; k++) {
