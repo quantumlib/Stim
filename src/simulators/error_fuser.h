@@ -172,7 +172,12 @@ struct ErrorFuser {
                 if (is_encoded_detector_id(id)) {
                     auto r = involved_detectors.find(id);
                     if (r == involved_detectors.end()) {
-                        involved_detectors.push_back(id);
+                        try {
+                            involved_detectors.push_back(id);
+                        } catch (const std::out_of_range &ex) {
+                            throw std::out_of_range(
+                                "An error involves too many detectors (>15) to find reducible errors.");
+                        }
                     }
                     detector_masks[1 << k] ^= 1 << (r - involved_detectors.begin());
                 }
