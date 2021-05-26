@@ -656,7 +656,7 @@ Circuit Circuit::operator+(const Circuit &other) const {
     result += other;
     return result;
 }
-Circuit Circuit::operator*(size_t repetitions) const {
+Circuit Circuit::operator*(uint64_t repetitions) const {
     if (repetitions == 0) {
         return Circuit();
     }
@@ -704,7 +704,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
 
     return *this;
 }
-Circuit &Circuit::operator*=(size_t repetitions) {
+Circuit &Circuit::operator*=(uint64_t repetitions) {
     if (repetitions == 0) {
         clear();
     } else {
