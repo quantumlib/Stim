@@ -166,9 +166,9 @@ struct Circuit {
     void append_from_text(const char *text);
 
     Circuit operator+(const Circuit &other) const;
-    Circuit operator*(size_t repetitions) const;
+    Circuit operator*(uint64_t repetitions) const;
     Circuit &operator+=(const Circuit &other);
-    Circuit &operator*=(size_t repetitions);
+    Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
