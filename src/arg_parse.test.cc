@@ -101,17 +101,29 @@ TEST(arg_parse, find_int_argument) {
         "", "-small=-23", "-empty", "-text", "abc", "-zero", "0", "-large", "50", "--", "-okay",
     };
     int n = sizeof(argv) / sizeof(char *);
-    ASSERT_EQ(find_int_argument("-missing", 5, -100, +100, n, argv), 5);
-    ASSERT_EQ(find_int_argument("-small", 5, -100, +100, n, argv), -23);
-    ASSERT_EQ(find_int_argument("-large", 5, -100, +100, n, argv), 50);
-    ASSERT_EQ(find_int_argument("-zero", 5, -100, +100, n, argv), 0);
-    ASSERT_DEATH({ find_int_argument("-large", 0, 0, 49, n, argv); }, "50 <= 49");
-    ASSERT_DEATH({ find_int_argument("-large", 100, 51, 100, n, argv); }, "51 <= 50");
-    ASSERT_DEATH({ find_int_argument("-text", 0, 0, 0, n, argv); }, "non-integer");
+    ASSERT_EQ(find_int64_argument("-missing", 5, -100, +100, n, argv), 5);
+    ASSERT_EQ(find_int64_argument("-small", 5, -100, +100, n, argv), -23);
+    ASSERT_EQ(find_int64_argument("-large", 5, -100, +100, n, argv), 50);
+    ASSERT_EQ(find_int64_argument("-zero", 5, -100, +100, n, argv), 0);
+    ASSERT_DEATH({ find_int64_argument("-large", 0, 0, 49, n, argv); }, "50 <= 49");
+    ASSERT_DEATH({ find_int64_argument("-large", 100, 51, 100, n, argv); }, "51 <= 50");
+    ASSERT_DEATH({ find_int64_argument("-text", 0, 0, 0, n, argv); }, "non-int");
 
-    ASSERT_DEATH({ find_int_argument("-missing", -1, 0, 10, n, argv); }, "Must specify");
-    ASSERT_DEATH({ find_int_argument("-missing", 11, 0, 10, n, argv); }, "Must specify");
-    ASSERT_DEATH({ find_int_argument("-missing", -101, -100, 100, n, argv); }, "Must specify");
+    ASSERT_DEATH({ find_int64_argument("-missing", -1, 0, 10, n, argv); }, "Must specify");
+    ASSERT_DEATH({ find_int64_argument("-missing", 11, 0, 10, n, argv); }, "Must specify");
+    ASSERT_DEATH({ find_int64_argument("-missing", -101, -100, 100, n, argv); }, "Must specify");
+
+    std::vector<const char *> args;
+    args = {"", "-val", "99999999999999999999999999999999999999999999999999"};
+    ASSERT_DEATH({ find_int64_argument("-val", 0, INT64_MIN, INT64_MAX, args.size(), args.data()); }, "non-int64");
+    args = {"", "-val", "9223372036854775807"};
+    ASSERT_EQ(find_int64_argument("-val", 0, INT64_MIN, INT64_MAX, args.size(), args.data()), INT64_MAX);
+    args = {"", "-val", "9223372036854775808"};
+    ASSERT_DEATH({ find_int64_argument("-val", 0, INT64_MIN, INT64_MAX, args.size(), args.data()); }, "non-int64");
+    args = {"", "-val", "-9223372036854775808"};
+    ASSERT_EQ(find_int64_argument("-val", 0, INT64_MIN, INT64_MAX, args.size(), args.data()), INT64_MIN);
+    args = {"", "-val", "-9223372036854775809"};
+    ASSERT_DEATH({ find_int64_argument("-val", 0, INT64_MIN, INT64_MAX, args.size(), args.data()); }, "non-int64");
 }
 
 TEST(arg_parse, find_float_argument) {

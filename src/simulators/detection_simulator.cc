@@ -146,8 +146,8 @@ void detector_samples_out_in_memory(
 void detector_sample_out_helper(
     const Circuit &circuit, FrameSimulator &sim, size_t num_shots, bool prepend_observables, bool append_observables,
     FILE *out, SampleFormat format, std::mt19937_64 &rng) {
-    uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) *
-                                std::max(circuit.count_measurements(), circuit.count_detectors_and_observables());
+    uint64_t d = circuit.count_detectors() + circuit.num_observables();
+    uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) * std::max(circuit.count_measurements(), d);
     if (!prepend_observables && should_use_streaming_instead_of_memory(approx_mem_usage)) {
         detector_sample_out_helper_stream(circuit, sim, num_shots, append_observables, out, format);
     } else {

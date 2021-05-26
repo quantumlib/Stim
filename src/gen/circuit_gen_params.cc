@@ -28,7 +28,7 @@ void CircuitGenParameters::validate_params() const {
     }
 }
 
-CircuitGenParameters::CircuitGenParameters(size_t rounds, uint32_t distance, std::string task) : rounds(rounds), distance(distance), task(task) {}
+CircuitGenParameters::CircuitGenParameters(uint64_t rounds, uint32_t distance, std::string task) : rounds(rounds), distance(distance), task(task) {}
 
 void CircuitGenParameters::append_begin_round_tick(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const {
     circuit.append_op("TICK", {});

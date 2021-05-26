@@ -35,6 +35,11 @@ namespace stim_internal {
 #define TARGET_PAULI_Z_BIT (uint32_t{1} << 29)
 #define TARGET_RECORD_BIT (uint32_t{1} << 28)
 
+uint64_t op_data_rep_count(const OperationData &data);
+
+uint64_t add_saturate(uint64_t a, uint64_t b);
+uint64_t mul_saturate(uint64_t a, uint64_t b);
+
 enum SampleFormat {
     /// Human readable format.
     ///
@@ -121,7 +126,8 @@ struct Circuit {
 
     size_t count_qubits() const;
     uint64_t count_measurements() const;
-    uint64_t count_detectors_and_observables() const;
+    uint64_t count_detectors() const;
+    uint64_t num_observables() const;
     size_t max_lookback() const;
 
     /// Constructs an empty circuit.
@@ -160,9 +166,9 @@ struct Circuit {
     void append_from_text(const char *text);
 
     Circuit operator+(const Circuit &other) const;
-    Circuit operator*(size_t repetitions) const;
+    Circuit operator*(uint64_t repetitions) const;
     Circuit &operator+=(const Circuit &other);
-    Circuit &operator*=(size_t repetitions);
+    Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
@@ -188,11 +194,11 @@ struct Circuit {
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
-                size_t repeats = op.target_data.targets[1];
+                uint64_t repeats = op_data_rep_count(op.target_data);
                 const auto &block = blocks[op.target_data.targets[0]];
-                for (size_t k = 0; k < repeats; k++) {
+                for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation(callback);
                 }
             } else {
@@ -207,17 +213,50 @@ struct Circuit {
             const auto &op = operations[p];
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 2);
+                assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
-                size_t repeats = op.target_data.targets[1];
+                uint64_t repeats = op_data_rep_count(op.target_data);
                 const auto &block = blocks[op.target_data.targets[0]];
-                for (size_t k = 0; k < repeats; k++) {
+                for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation_reverse(callback);
                 }
             } else {
                 callback(op);
             }
         }
+    }
+
+    template <typename COUNT>
+    uint64_t flat_count_operations(const COUNT &count) const {
+        uint64_t n = 0;
+        for (const auto &op : operations) {
+            assert(op.gate != nullptr);
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                assert(op.target_data.targets.size() == 3);
+                assert(op.target_data.targets[0] < blocks.size());
+                auto sub = blocks[op.target_data.targets[0]].flat_count_operations<COUNT>(count);
+                n = add_saturate(n, mul_saturate(sub, op_data_rep_count(op.target_data)));
+            } else {
+                n = add_saturate(n, count(op));
+            }
+        }
+        return n;
+    }
+
+    template <typename MAP>
+    size_t max_operation_property(const MAP &map) const {
+        size_t n = 0;
+        for (const auto &block : blocks) {
+            n = std::max(n, block.max_operation_property<MAP>(map));
+        }
+        for (const auto &op : operations) {
+            if (op.gate->flags & GATE_IS_BLOCK) {
+                // Handled in block case.
+                continue;
+            }
+            n = std::max(n, map(op));
+        }
+        return n;
     }
 };
 

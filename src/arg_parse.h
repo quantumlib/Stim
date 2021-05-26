@@ -18,6 +18,7 @@
 #define MAIN_PARSE_H
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace stim_internal {
@@ -117,7 +118,7 @@ float find_float_argument(
 ///         The command line flag was specified but failed to parse into an int in range.
 ///     EXIT_FAILURE:
 ///         The command line flag was not specified and default_value was not in range.
-int find_int_argument(const char *name, int default_value, int min_value, int max_value, int argc, const char **argv);
+int64_t find_int64_argument(const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv);
 
 ///
 /// Returns a boolean value that can be enabled using a command line argument.

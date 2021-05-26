@@ -416,17 +416,22 @@ TEST(circuit, count_qubits) {
         3);
 }
 
-TEST(circuit, count_detectors_and_observables) {
-    ASSERT_EQ(Circuit().count_detectors_and_observables(), 0);
+TEST(circuit, count_detectors_num_observables) {
+    ASSERT_EQ(Circuit().count_detectors(), 0);
+    ASSERT_EQ(Circuit().num_observables(), 0);
 
     ASSERT_EQ(
         Circuit::from_text(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT")
-            .count_detectors_and_observables(),
-        2);
+    )CIRCUIT").count_detectors(), 1);
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1 2
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(5) rec[-1]
+    )CIRCUIT").num_observables(), 6);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -442,8 +447,21 @@ TEST(circuit, count_detectors_and_observables) {
             }
         }
     )CIRCUIT")
-            .count_detectors_and_observables(),
+            .count_detectors(),
         1000000000000ULL);
+    ASSERT_EQ(
+        Circuit::from_text(R"CIRCUIT(
+        M 0 1
+        REPEAT 1000 {
+            REPEAT 1000 {
+                REPEAT 1000 {
+                    REPEAT 1000 {
+                        OBSERVABLE_INCLUDE(2) rec[-1]
+                    }
+                }
+            }
+        }
+    )CIRCUIT").num_observables(), 3);
 
     ASSERT_EQ(
         Circuit::from_text(R"CIRCUIT(
@@ -475,8 +493,7 @@ TEST(circuit, count_detectors_and_observables) {
           }
          }
         }
-    )CIRCUIT")
-            .count_detectors_and_observables(),
+    )CIRCUIT").count_detectors(),
         UINT64_MAX);
 }
 
@@ -667,4 +684,20 @@ TEST(circuit, addition_shares_blocks) {
     ASSERT_EQ(c1 + c2, c3);
     c1 += c2;
     ASSERT_EQ(c1, c3);
+}
+
+TEST(circuit, big_rep_count) {
+    Circuit c = Circuit::from_text(R"CIRCUIT(
+        REPEAT 1234567890123456789 {
+            M 1
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c.operations[0].target_data.targets.size(), 3);
+    ASSERT_EQ(c.operations[0].target_data.targets[0], 0);
+    ASSERT_EQ(c.operations[0].target_data.targets[1], 1234567890123456789ULL & 0xFFFFFFFFULL);
+    ASSERT_EQ(c.operations[0].target_data.targets[2], 1234567890123456789ULL >> 32);
+    ASSERT_EQ(c.str(), "REPEAT 1234567890123456789 {\n    M 1\n}");
+    ASSERT_EQ(c.count_measurements(), 1234567890123456789ULL);
+
+    ASSERT_THROW({ c * 12345ULL; }, std::out_of_range);
 }

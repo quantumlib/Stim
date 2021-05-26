@@ -576,6 +576,24 @@ error(0.25) D0
             )output"));
 }
 
+TEST(main_helper, detector_hypergraph_fold_loops) {
+    ASSERT_EQ(
+        trim(execute({"--detector_hypergraph", "--fold_loops"}, R"input(
+REPEAT 1000 {
+    R 0
+    X_ERROR(0.25) 0
+    M 0
+    DETECTOR rec[-1]
+}
+            )input")),
+        trim(R"output(
+REPEAT 1000 {
+    error(0.25) D0
+    TICK 1
+}
+            )output"));
+}
+
 TEST(main_helper, generate_circuits) {
     ASSERT_TRUE(matches(
         trim(execute({"--gen=repetition_code", "--rounds=3", "--distance=2", "--task=memory"}, "")),

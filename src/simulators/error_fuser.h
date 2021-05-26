@@ -32,32 +32,55 @@
 
 namespace stim_internal {
 
-constexpr uint32_t FIRST_OBSERVABLE_ID = (uint32_t{1} << 31);
-constexpr uint32_t LAST_DETECTOR_ID = FIRST_OBSERVABLE_ID - 1;
-constexpr uint32_t COMPOSITE_ERROR_SYGIL = UINT32_MAX;
+constexpr uint64_t FIRST_OBSERVABLE_ID = uint64_t{1} << 63;
+constexpr uint64_t LAST_DETECTOR_ID = FIRST_OBSERVABLE_ID - 1;
+constexpr uint64_t COMPOSITE_ERROR_SYGIL = UINT64_MAX;
 
-bool is_encoded_detector_id(uint32_t id);
-bool is_encoded_observable_id(uint32_t id);
+bool is_encoded_detector_id(uint64_t id);
+bool is_encoded_observable_id(uint64_t id);
+
+struct FusedErrorRepeatBlock;
+
+struct FusedError {
+    double probability;
+    ConstPointerRange<uint64_t> flipped;
+    uint64_t local_time_shift;
+    std::unique_ptr<FusedErrorRepeatBlock> block;
+    void print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const;
+    void skip(uint64_t skipped);
+};
+
+struct FusedErrorRepeatBlock {
+    uint64_t repetitions;
+    uint64_t total_ticks_per_iteration_including_sub_loops;
+    uint64_t outer_ticks_per_iteration() const;
+    std::vector<FusedError> errors;
+    void print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const;
+    void skip(uint64_t skipped);
+};
 
 struct ErrorFuser {
-    std::map<uint32_t, std::vector<uint32_t>> measurement_to_detectors;
-    uint32_t num_found_detectors = 0;
-    uint32_t num_found_observables = 0;
+    std::map<uint64_t, std::vector<uint64_t>> measurement_to_detectors;
+    uint64_t num_found_detectors = 0;
+    uint64_t num_found_observables = 0;
     /// For each qubit, at the current time, the set of detectors with X dependence on that qubit.
-    std::vector<SparseXorVec<uint32_t>> xs;
+    std::vector<SparseXorVec<uint64_t>> xs;
     /// For each qubit, at the current time, the set of detectors with Z dependence on that qubit.
-    std::vector<SparseXorVec<uint32_t>> zs;
+    std::vector<SparseXorVec<uint64_t>> zs;
     size_t scheduled_measurement_time = 0;
     bool find_reducible_errors = false;
+    bool accumulate_errors = true;
+    bool fold_loops = false;
+    std::vector<FusedError> flushed;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
-    std::map<ConstPointerRange<uint32_t>, double> error_class_probabilities;
+    std::map<ConstPointerRange<uint64_t>, double> error_class_probabilities;
     /// Backing datastore for values in error_class_probabilities.
-    MonotonicBuffer<uint32_t> mono_buf;
+    MonotonicBuffer<uint64_t> mono_buf;
 
-    ErrorFuser(size_t num_qubits, bool find_reducible_errors);
+    ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops);
 
-    static void convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors);
+    static void convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorFuser(const ErrorFuser &fuser) = delete;
@@ -105,10 +128,14 @@ struct ErrorFuser {
     void run_circuit(const Circuit &circuit);
 
    private:
-    ConstPointerRange<uint32_t> add_error(double probability, ConstPointerRange<uint32_t> data);
-    ConstPointerRange<uint32_t> add_xored_error(
-        double probability, ConstPointerRange<uint32_t> flipped1, ConstPointerRange<uint32_t> flipped2);
-    ConstPointerRange<uint32_t> add_error_in_sorted_jagged_tail(double probability);
+    void shift_active_detector_ids(int64_t shift);
+    void print_flushed(FILE *out) const;
+    void flush();
+    void run_loop(const Circuit &loop, uint64_t iterations);
+    ConstPointerRange<uint64_t> add_error(double probability, ConstPointerRange<uint64_t> data);
+    ConstPointerRange<uint64_t> add_xored_error(
+        double probability, ConstPointerRange<uint64_t> flipped1, ConstPointerRange<uint64_t> flipped2);
+    ConstPointerRange<uint64_t> add_error_in_sorted_jagged_tail(double probability);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
     void single_cz(uint32_t c, uint32_t t);
@@ -117,7 +144,7 @@ struct ErrorFuser {
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<uint32_t> mono_dedupe_store_tail();
+    ConstPointerRange<uint64_t> mono_dedupe_store_tail();
     /// Saves data to the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Args:
@@ -125,7 +152,7 @@ struct ErrorFuser {
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<uint32_t> mono_dedupe_store(ConstPointerRange<uint32_t> data);
+    ConstPointerRange<uint64_t> mono_dedupe_store(ConstPointerRange<uint64_t> data);
 
     /// Adds each given error, and also each possible combination of the given errors, to the possible errors.
     ///
@@ -135,14 +162,11 @@ struct ErrorFuser {
     ///     p: Independent probability of each error combination (other than the empty combination) occurring.
     ///     basis_errors: Building blocks for the error combinations.
     template <size_t s>
-    void add_error_combinations(
-            double p,
-            std::array<ConstPointerRange<uint32_t>, s> basis_errors) {
-
+    void add_error_combinations(double p, std::array<ConstPointerRange<uint64_t>, s> basis_errors) {
         // Determine involved detectors while creating basis masks and storing added data.
-        FixedCapVector<uint32_t, 8> involved_detectors{};
-        std::array<uint32_t, 1 << s> detector_masks{};
-        std::array<ConstPointerRange<uint32_t>, 1 << s> stored_ids;
+        FixedCapVector<uint64_t, 8> involved_detectors{};
+        std::array<uint64_t, 1 << s> detector_masks{};
+        std::array<ConstPointerRange<uint64_t>, 1 << s> stored_ids;
         for (size_t k = 0; k < s; k++) {
             for (auto id : basis_errors[k]) {
                 if (is_encoded_detector_id(id)) {
@@ -176,8 +200,8 @@ struct ErrorFuser {
             }
 
             // Find single-detector errors (and empty errors).
-            uint32_t solved = 0;
-            uint32_t single_detectors_union = 0;
+            uint64_t solved = 0;
+            uint64_t single_detectors_union = 0;
             for (size_t k = 1; k < 1 << s; k++) {
                 if (detector_counts[k] == 1) {
                     single_detectors_union |= detector_masks[k];
@@ -195,7 +219,7 @@ struct ErrorFuser {
             }
 
             auto append_involved_pairs_to_jag_tail = [&](size_t goal_k) {
-                uint32_t goal = detector_masks[goal_k];
+                uint64_t goal = detector_masks[goal_k];
 
                 // If single-detector excitations are sufficient, just use those.
                 if ((goal & ~single_detectors_union) == 0) {
@@ -264,6 +288,8 @@ struct ErrorFuser {
         }
     }
 };
+
+void error_fuser_analyze_loop(const Circuit &behind, uint64_t ahead, ErrorFuser &f);
 
 }
 

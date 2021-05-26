@@ -8,7 +8,7 @@
 
 namespace stim_internal {
     struct CircuitGenParameters {
-        size_t rounds;
+        uint64_t rounds;
         uint32_t distance;
         std::string task;
         double after_clifford_depolarization = 0;
@@ -18,7 +18,7 @@ namespace stim_internal {
 
         void validate_params() const;
 
-        CircuitGenParameters(size_t rounds, uint32_t distance, std::string task);
+        CircuitGenParameters(uint64_t rounds, uint32_t distance, std::string task);
         void append_begin_round_tick(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const;
         void append_unitary_1(Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const;
         void append_unitary_2(Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const;
