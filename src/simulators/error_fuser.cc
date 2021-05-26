@@ -585,8 +585,6 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
                 return false;
             }
             if (!shifted_equals(dt, zs[k], hare.zs[k])) {
-                auto a = zs[k].str();
-                auto b = hare.zs[k].str();
                 return false;
             }
         }
