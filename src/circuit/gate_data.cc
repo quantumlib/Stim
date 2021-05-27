@@ -42,7 +42,7 @@ X-basis measurement.
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
 )MARKDOWN",
                     {},
-                    {"X -> mX"},
+                    {"X -> m", "X -> +X"},
                 };
             },
         },
@@ -60,7 +60,7 @@ Y-basis measurement.
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
 )MARKDOWN",
                     {},
-                    {"Y -> mY"},
+                    {"Y -> m", "Y -> +Y"},
                 };
             },
         },
@@ -78,7 +78,7 @@ Z-basis measurement.
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
 )MARKDOWN",
                     {},
-                    {"Z -> mZ"},
+                    {"Z -> m", "Z -> +Z"},
                 };
             },
         },

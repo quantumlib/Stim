@@ -60,15 +60,19 @@ int stim_internal::main_helper(int argc, const char **argv) {
     const char *help = find_argument("--help", argc, argv);
     if (help != nullptr) {
         auto m = generate_gate_help_markdown();
-        auto p = m.find(std::string(help));
+        auto key = std::string(help);
+        for (auto &c : key) {
+            c = toupper(c);
+        }
+        auto p = m.find(key);
         if (p != m.end()) {
-            std::cerr << p->second;
+            std::cout << p->second;
             return EXIT_SUCCESS;
         } else if (help[0] != '\0') {
             std::cerr << "Unrecognized help topic '" << help << "'.\n";
             return EXIT_FAILURE;
         }
-        std::cerr << R"HELP(BASIC USAGE
+        std::cout << R"HELP(BASIC USAGE
 ===========
 Gate reference:
     stim --help gates
