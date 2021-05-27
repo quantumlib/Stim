@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <cmath>
 #include <cstring>
 #include <map>
 #include <set>
@@ -112,7 +111,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
     out.change_indent(-4);
 }
 
-void print_stabilizer_generators(Acc &out, const char *name, const Gate &gate) {
+void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (gate.flags & GATE_IS_UNITARY) {
         out << "- Stabilizer Generators:\n";
         out.change_indent(+4);
@@ -144,7 +143,7 @@ void print_stabilizer_generators(Acc &out, const char *name, const Gate &gate) {
     }
 }
 
-void print_bloch_vector(Acc &out, const char *name, const Gate &gate) {
+void print_bloch_vector(Acc &out, const Gate &gate) {
     if (!(gate.flags & GATE_IS_UNITARY) || (gate.flags & GATE_TARGETS_PAIRS)) {
         return;
     }
@@ -190,7 +189,7 @@ void print_bloch_vector(Acc &out, const char *name, const Gate &gate) {
     auto ry = y.real();
     auto rz = z.real();
     auto rs = s.real();
-    auto angle = (int)round(acosf(rs) * 360 / M_PI);
+    auto angle = (int)round(acosf(rs) * 360 / 3.14159265359);
     if (angle > 180) {
         angle -= 360;
     }
@@ -210,7 +209,7 @@ void print_bloch_vector(Acc &out, const char *name, const Gate &gate) {
     out.change_indent(-4);
 }
 
-void print_unitary_matrix(Acc &out, const char *name, const Gate &gate) {
+void print_unitary_matrix(Acc &out, const Gate &gate) {
     if (!(gate.flags & GATE_IS_UNITARY)) {
         return;
     }
@@ -229,7 +228,7 @@ void print_unitary_matrix(Acc &out, const char *name, const Gate &gate) {
         }
     }
     out << "```\n";
-    float factor = all_halves ? 2 : all_sqrt_halves ?  1 / s : 1;
+    double factor = all_halves ? 2 : all_sqrt_halves ?  1 / s : 1;
     bool first_row = true;
     for (const auto &row : matrix) {
         if (first_row) {
@@ -286,9 +285,9 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     if (std::string(data.description).find("xample:\n") == std::string::npos) {
         print_example(out, alt_gate.name, gate);
     }
-    print_stabilizer_generators(out, alt_gate.name, gate);
-    print_bloch_vector(out, alt_gate.name, gate);
-    print_unitary_matrix(out, alt_gate.name, gate);
+    print_stabilizer_generators(out, gate);
+    print_bloch_vector(out, gate);
+    print_unitary_matrix(out, gate);
     out.flush();
     return out.settled;
 }
