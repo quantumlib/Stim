@@ -869,3 +869,38 @@ error\(0.00026\d+\) D8
 reducible_error\(0.00026\d+\) D8 \^ D5
 )graph"));
 }
+
+TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
+    ASSERT_THROW({
+        try {
+            convert(
+                R"CIRCUIT(
+                    R 0
+                    DEPOLARIZE1(0.01) 0
+                    M 0
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                    DETECTOR rec[-1]
+                )CIRCUIT",
+                true, false);
+        } catch (const std::out_of_range &e) {
+            EXPECT_EQ("", check_matches(e.what(), ".*error involves too many detectors.*"));
+            throw;
+        }
+    }, std::out_of_range);
+}

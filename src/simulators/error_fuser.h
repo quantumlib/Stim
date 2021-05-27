@@ -164,7 +164,7 @@ struct ErrorFuser {
     template <size_t s>
     void add_error_combinations(double p, std::array<ConstPointerRange<uint64_t>, s> basis_errors) {
         // Determine involved detectors while creating basis masks and storing added data.
-        FixedCapVector<uint64_t, 8> involved_detectors{};
+        FixedCapVector<uint64_t, 16> involved_detectors{};
         std::array<uint64_t, 1 << s> detector_masks{};
         std::array<ConstPointerRange<uint64_t>, 1 << s> stored_ids;
         for (size_t k = 0; k < s; k++) {
@@ -172,7 +172,12 @@ struct ErrorFuser {
                 if (is_encoded_detector_id(id)) {
                     auto r = involved_detectors.find(id);
                     if (r == involved_detectors.end()) {
-                        involved_detectors.push_back(id);
+                        try {
+                            involved_detectors.push_back(id);
+                        } catch (const std::out_of_range &ex) {
+                            throw std::out_of_range(
+                                "An error involves too many detectors (>15) to find reducible errors.");
+                        }
                     }
                     detector_masks[1 << k] ^= 1 << (r - involved_detectors.begin());
                 }

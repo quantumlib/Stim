@@ -28,6 +28,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "../simd/fixed_cap_vector.h"
+
 namespace stim_internal {
 
 struct TableauSimulator;
@@ -77,27 +79,6 @@ inline uint8_t gate_name_to_id(const char *c) {
     return gate_name_to_id(c, strlen(c));
 }
 
-template <typename T, size_t max_length>
-struct TruncatedArray {
-    size_t length;
-    T data[max_length];
-    inline size_t size() const {
-        return length;
-    }
-    TruncatedArray() : length(0), data() {
-    }
-    TruncatedArray(T item) : length(1), data() {
-        data[0] = std::move(item);
-    }
-    TruncatedArray(std::initializer_list<T> values) : length(values.size()), data() {
-        assert(values.size() <= max_length);
-        size_t k = 0;
-        for (auto &v : values) {
-            data[k++] = std::move(v);
-        }
-    }
-};
-
 enum GateFlags : uint16_t {
     GATE_NO_FLAGS = 0,
     // Indicates whether unitary and tableau data is available for the gate, so it can be tested more easily.
@@ -106,7 +87,8 @@ enum GateFlags : uint16_t {
     GATE_IS_NOISE = 1 << 1,
     // Controls parsing and validation of instructions like X_ERROR(0.01) taking an argument.
     GATE_TAKES_PARENS_ARGUMENT = 1 << 2,
-    // Indicates whether the gate puts data into the measurement record or not
+    // Indicates whether the gate puts data into the measurement record or not.
+    // Also determines whether or not inverted targets (like "!3") are permitted.
     GATE_PRODUCES_RESULTS = 1 << 3,
     // Prevents the same gate on adjacent lines from being combined into one longer invocation.
     GATE_IS_NOT_FUSABLE = 1 << 4,
@@ -122,6 +104,13 @@ enum GateFlags : uint16_t {
     GATE_CAN_TARGET_MEASUREMENT_RECORD = 1 << 9,
 };
 
+struct ExtraGateData {
+    const char *category;
+    const char *description;
+    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data;
+    FixedCapVector<const char *, 4> tableau_data;
+};
+
 struct Gate {
     const char *name;
     uint8_t name_len;
@@ -129,8 +118,7 @@ struct Gate {
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
     void (ErrorFuser::*reverse_error_fuser_function)(const OperationData &);
     GateFlags flags;
-    TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data;
-    TruncatedArray<const char *, 4> tableau_data;
+    ExtraGateData (*extra_data_func)(void);
     uint8_t id;
 
     Gate();
@@ -138,8 +126,7 @@ struct Gate {
         const char *name, void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
         void (FrameSimulator::*frame_simulator_function)(const OperationData &),
         void (ErrorFuser::*hit_simulator_function)(const OperationData &), GateFlags flags,
-        TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data,
-        TruncatedArray<const char *, 4> tableau_data);
+        ExtraGateData (*extra_data_func)(void));
 
     const Gate &inverse() const;
     Tableau tableau() const;
