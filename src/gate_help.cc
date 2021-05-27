@@ -17,8 +17,7 @@
 
 #include <algorithm>
 #include <iostream>
-#include <cstdio>
-#include <cstdlib>
+#include <cmath>
 #include <cstring>
 #include <map>
 #include <set>
