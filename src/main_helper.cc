@@ -16,6 +16,7 @@
 
 #include "arg_parse.h"
 #include "gen/circuit_gen_main.h"
+#include "gate_help.h"
 #include "probability_util.h"
 #include "simulators/detection_simulator.h"
 #include "simulators/error_fuser.h"
@@ -56,9 +57,23 @@ struct RaiiFiles {
 };
 
 int stim_internal::main_helper(int argc, const char **argv) {
-    if (find_argument("--help", argc, argv) != nullptr) {
+    const char *help = find_argument("--help", argc, argv);
+    if (help != nullptr) {
+        auto m = generate_gate_help_markdown();
+        auto p = m.find(std::string(help));
+        if (p != m.end()) {
+            std::cerr << p->second;
+            return EXIT_SUCCESS;
+        } else if (help[0] != '\0') {
+            std::cerr << "Unrecognized help topic '" << help << "'.\n";
+            return EXIT_FAILURE;
+        }
         std::cerr << R"HELP(BASIC USAGE
 ===========
+Gate reference:
+    stim --help gates
+    stim --help [gate_name]
+
 Interactive measurement sampling mode:
     stim --repl
 

@@ -34,8 +34,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::measure_x,
             &ErrorFuser::MX,
             GATE_PRODUCES_RESULTS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+X-basis measurement.
+Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
+)MARKDOWN",
+                    {},
+                    {"X -> mX"},
+                };
+            },
         },
         {
             "MY",
@@ -43,8 +52,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::measure_y,
             &ErrorFuser::MY,
             GATE_PRODUCES_RESULTS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Y-basis measurement.
+Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
+)MARKDOWN",
+                    {},
+                    {"Y -> mY"},
+                };
+            },
         },
         {
             "M",
@@ -52,8 +70,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::measure_z,
             &ErrorFuser::MZ,
             GATE_PRODUCES_RESULTS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Z-basis measurement.
+Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
+)MARKDOWN",
+                    {},
+                    {"Z -> mZ"},
+                };
+            },
         },
         {
             "MRX",
@@ -61,8 +88,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::measure_reset_x,
             &ErrorFuser::MRX,
             GATE_PRODUCES_RESULTS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+X-basis demolition measurement.
+Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
+)MARKDOWN",
+                    {},
+                    {"X -> m", "1 -> +X"},
+                };
+            },
         },
         {
             "MRY",
@@ -70,8 +106,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::measure_reset_y,
             &ErrorFuser::MRY,
             GATE_PRODUCES_RESULTS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Y-basis demolition measurement.
+Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
+)MARKDOWN",
+                    {},
+                    {"Y -> m", "1 -> +Y"},
+                };
+            },
         },
         {
             "MR",
@@ -79,8 +124,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::measure_reset_z,
             &ErrorFuser::MRZ,
             GATE_PRODUCES_RESULTS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Z-basis demolition measurement.
+Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
+)MARKDOWN",
+                    {},
+                    {"Z -> m", "1 -> +Z"},
+                };
+            },
         },
         {
             "RX",
@@ -88,8 +142,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::reset_x,
             &ErrorFuser::RX,
             GATE_NO_FLAGS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+X-basis reset.
+Forces each target qubit into the `|+>` state by silently measuring it in the X basis and applying a `Z` gate if it ended up in the `|->` state.
+)MARKDOWN",
+                    {},
+                    {"1 -> +X"},
+                };
+            },
         },
         {
             "RY",
@@ -97,8 +160,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::reset_y,
             &ErrorFuser::RY,
             GATE_NO_FLAGS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Y-basis reset.
+Forces each target qubit into the `|i>` state by silently measuring it in the Y basis and applying an `X` gate if it ended up in the `|-i>` state.
+)MARKDOWN",
+                    {},
+                    {"1 -> +Y"},
+                };
+            },
         },
         {
             "R",
@@ -106,8 +178,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::reset_z,
             &ErrorFuser::RZ,
             GATE_NO_FLAGS,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Z-basis reset.
+Forces each target qubit into the `|0>` state by silently measuring it in the Z basis and applying an `X` gate if it ended up in the `|1>` state.
+)MARKDOWN",
+                    {},
+                    {"1 -> +Z"},
+                };
+            },
         },
 
         // Pauli gates.
@@ -117,8 +198,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::I,
             GATE_IS_UNITARY,
-            {{1, 0}, {0, 1}},
-            {"+X", "+Z"},
+            []() -> ExtraGateData {
+                return {
+                    "A_Pauli Gates",
+                    R"MARKDOWN(
+Identity gate.
+Does nothing to the target qubits.
+)MARKDOWN",
+                    {{1, 0}, {0, 1}},
+                    {"+X", "+Z"},
+                };
+            },
         },
         {
             "X",
@@ -126,8 +216,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::I,
             GATE_IS_UNITARY,
-            {{0, 1}, {1, 0}},
-            {"+X", "-Z"},
+            []() -> ExtraGateData {
+                return {
+                    "A_Pauli Gates",
+                    R"MARKDOWN(
+Pauli X gate.
+The bit flip gate.
+)MARKDOWN",
+                    {{0, 1}, {1, 0}},
+                    {"+X", "-Z"},
+                };
+            },
         },
         {
             "Y",
@@ -135,8 +234,16 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::I,
             GATE_IS_UNITARY,
-            {{0, -i}, {i, 0}},
-            {"-X", "-Z"},
+            []() -> ExtraGateData {
+                return {
+                    "A_Pauli Gates",
+                    R"MARKDOWN(
+Pauli Y gate.
+)MARKDOWN",
+                    {{0, -i}, {i, 0}},
+                    {"-X", "-Z"},
+                };
+            },
         },
         {
             "Z",
@@ -144,8 +251,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::I,
             GATE_IS_UNITARY,
-            {{1, 0}, {0, -1}},
-            {"-X", "+Z"},
+            []() -> ExtraGateData {
+                return {
+                    "A_Pauli Gates",
+                    R"MARKDOWN(
+Pauli Z gate.
+The phase flip gate.
+)MARKDOWN",
+                    {{1, 0}, {0, -1}},
+                    {"-X", "+Z"},
+                };
+            },
         },
 
         // Axis exchange gates.
@@ -155,8 +271,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
             GATE_IS_UNITARY,
-            {{0, s - i *s}, {s + i * s, 0}},
-            {"+Y", "-Z"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
+A 180 degree rotation around the X+Y axis.
+)MARKDOWN",
+                    {{0, s - i *s}, {s + i * s, 0}},
+                    {"+Y", "-Z"},
+                };
+            },
         },
         {
             "H",
@@ -164,8 +289,18 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
             GATE_IS_UNITARY,
-            {{s, s}, {s, -s}},
-            {"+Z", "+X"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Hadamard gate.
+Swaps the X and Z axes.
+A 180 degree rotation around the X+Z axis.
+)MARKDOWN",
+                    {{s, s}, {s, -s}},
+                    {"+Z", "+X"},
+                };
+            },
         },
         {
             "H_YZ",
@@ -173,8 +308,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,
             GATE_IS_UNITARY,
-            {{s, -i * s}, {i * s, -s}},
-            {"-X", "+Y"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
+A 180 degree rotation around the Y+Z axis.
+)MARKDOWN",
+                    {{s, -i * s}, {i * s, -s}},
+                    {"-X", "+Y"},
+                };
+            },
         },
 
         // Period 3 gates.
@@ -184,8 +328,16 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::C_XYZ,
             &ErrorFuser::C_XYZ,
             GATE_IS_UNITARY,
-            {{0.5f - i * 0.5f, -0.5f - 0.5f*i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-            {"Y", "X"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
+)MARKDOWN",
+                    {{0.5f - i * 0.5f, -0.5f - 0.5f*i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+                    {"Y", "X"},
+                };
+            },
         },
         {
             "C_ZYX",
@@ -193,8 +345,16 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::C_ZYX,
             &ErrorFuser::C_ZYX,
             GATE_IS_UNITARY,
-            {{0.5f + i * 0.5f, 0.5f + 0.5f*i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            {"Z", "Y"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
+)MARKDOWN",
+                    {{0.5f + i * 0.5f, 0.5f + 0.5f*i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+                    {"Z", "Y"},
+                };
+            },
         },
 
         // 90 degree rotation gates.
@@ -204,8 +364,18 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,
             GATE_IS_UNITARY,
-            {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
-            {"+X", "-Y"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Principle square root of X gate.
+Phases the amplitude of |-> by i.
+Equivalent to `H` then `S` then `H`.
+)MARKDOWN",
+                    {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
+                    {"+X", "-Y"},
+                };
+            },
         },
         {
             "SQRT_X_DAG",
@@ -213,8 +383,18 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,
             GATE_IS_UNITARY,
-            {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            {"+X", "+Y"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Adjoint square root of X gate.
+Phases the amplitude of |-> by -i.
+Equivalent to `H` then `S_DAG` then `H`.
+)MARKDOWN",
+                    {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+                    {"+X", "+Y"},
+                };
+            },
         },
         {
             "SQRT_Y",
@@ -222,8 +402,18 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
             GATE_IS_UNITARY,
-            {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
-            {"-Z", "+X"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Principle square root of Y gate.
+Phases the amplitude of |-i> by i.
+Equivalent to `S` then `H` then `S` then `H` then `S_DAG`.
+)MARKDOWN",
+                    {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
+                    {"-Z", "+X"},
+                };
+            },
         },
         {
             "SQRT_Y_DAG",
@@ -231,8 +421,18 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
             GATE_IS_UNITARY,
-            {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
-            {"+Z", "-X"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Principle square root of Y gate.
+Phases the amplitude of |-i> by -i.
+Equivalent to `S` then `H` then `S_DAG` then `H` then `S_DAG`.
+)MARKDOWN",
+                    {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
+                    {"+Z", "-X"},
+                };
+            },
         },
         {
             "S",
@@ -240,8 +440,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
             GATE_IS_UNITARY,
-            {{1, 0}, {0, i}},
-            {"+Y", "+Z"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Principle square root of Z gate.
+Phases the amplitude of |1> by i.
+)MARKDOWN",
+                    {{1, 0}, {0, i}},
+                    {"+Y", "+Z"},
+                };
+            },
         },
         {
             "S_DAG",
@@ -249,8 +458,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
             GATE_IS_UNITARY,
-            {{1, 0}, {0, -i}},
-            {"-Y", "+Z"},
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
+Principle square root of Z gate.
+Phases the amplitude of |1> by -i.
+)MARKDOWN",
+                    {{1, 0}, {0, -i}},
+                    {"-Y", "+Z"},
+                };
+            },
         },
 
         // Swap gates.
@@ -260,8 +478,16 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::SWAP,
             &ErrorFuser::SWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
-            {"+IX", "+IZ", "+XI", "+ZI"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+Swaps two qubits.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
+                    {"+IX", "+IZ", "+XI", "+ZI"},
+                };
+            },
         },
         {
             "ISWAP",
@@ -269,8 +495,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::ISWAP,
             &ErrorFuser::ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
-            {"+ZY", "+IZ", "+YZ", "+ZI"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+Swaps two qubits and phases the -1 eigenspace of the ZZ observable by i.
+Equivalent to `SWAP` then `CZ` then `S` on both targets.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
+                    {"+ZY", "+IZ", "+YZ", "+ZI"},
+                };
+            },
         },
         {
             "ISWAP_DAG",
@@ -278,8 +513,17 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::ISWAP,
             &ErrorFuser::ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
-            {"-ZY", "+IZ", "-YZ", "+ZI"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
+Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
+                    {"-ZY", "+IZ", "-YZ", "+ZI"},
+                };
+            },
         },
 
         // Axis interaction gates.
@@ -289,11 +533,24 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::XCX,
             &ErrorFuser::XCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{0.5f, 0.5f, 0.5f, -0.5f},
-             {0.5f, 0.5f, -0.5f, 0.5f},
-             {0.5f, -0.5f, 0.5f, 0.5f},
-             {-0.5f, 0.5f, 0.5f, 0.5f}},
-            {"+XI", "+ZX", "+IX", "+XZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The X-controlled X gate.
+First qubit is the control, second qubit is the target.
+
+Applies an X gate to the target if the control is in the |-> state.
+
+Negates the amplitude of the |->|-> state.
+)MARKDOWN",
+                    {{0.5f, 0.5f, 0.5f, -0.5f},
+                     {0.5f, 0.5f, -0.5f, 0.5f},
+                     {0.5f, -0.5f, 0.5f, 0.5f},
+                     {-0.5f, 0.5f, 0.5f, 0.5f}},
+                    {"+XI", "+ZX", "+IX", "+XZ"},
+                };
+            },
         },
         {
             "XCY",
@@ -301,11 +558,24 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::XCY,
             &ErrorFuser::XCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{0.5f, 0.5f, -0.5f * i, 0.5f * i},
-             {0.5f, 0.5f, 0.5f * i, -0.5f * i},
-             {0.5f * i, -0.5f * i, 0.5f, 0.5f},
-             {-0.5f * i, 0.5f * i, 0.5f, 0.5f}},
-            {"+XI", "+ZY", "+XX", "+XZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The X-controlled Y gate.
+First qubit is the control, second qubit is the target.
+
+Applies a Y gate to the target if the control is in the |-> state.
+
+Negates the amplitude of the |->|-i> state.
+)MARKDOWN",
+                    {{0.5f, 0.5f, -0.5f * i, 0.5f * i},
+                     {0.5f, 0.5f, 0.5f * i, -0.5f * i},
+                     {0.5f * i, -0.5f * i, 0.5f, 0.5f},
+                     {-0.5f * i, 0.5f * i, 0.5f, 0.5f}},
+                    {"+XI", "+ZY", "+XX", "+XZ"},
+                };
+            },
         },
         {
             "XCZ",
@@ -313,8 +583,22 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::XCZ,
             &ErrorFuser::XCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
-            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},
-            {"+XI", "+ZZ", "+XX", "+IZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The X-controlled Z gate.
+First qubit is the control, second qubit is the target.
+The second qubit can be replaced by a measurement record.
+
+Applies a Z gate to the target if the control is in the |-> state.
+
+Negates the amplitude of the |->|1> state.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},
+                    {"+XI", "+ZZ", "+XX", "+IZ"},
+                };
+            },
         },
         {
             "YCX",
@@ -322,11 +606,24 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::YCX,
             &ErrorFuser::YCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{0.5f, -i * 0.5f, 0.5f, i * 0.5f},
-             {i * 0.5f, 0.5f, -i * 0.5f, 0.5f},
-             {0.5f, i * 0.5f, 0.5f, -i * 0.5f},
-             {-i * 0.5f, 0.5f, i * 0.5f, 0.5f}},
-            {"+XX", "+ZX", "+IX", "+YZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Y-controlled X gate.
+First qubit is the control, second qubit is the target.
+
+Applies an X gate to the target if the control is in the |-i> state.
+
+Negates the amplitude of the |-i>|-> state.
+)MARKDOWN",
+                    {{0.5f, -i * 0.5f, 0.5f, i * 0.5f},
+                     {i * 0.5f, 0.5f, -i * 0.5f, 0.5f},
+                     {0.5f, i * 0.5f, 0.5f, -i * 0.5f},
+                     {-i * 0.5f, 0.5f, i * 0.5f, 0.5f}},
+                    {"+XX", "+ZX", "+IX", "+YZ"},
+                };
+            },
         },
         {
             "YCY",
@@ -334,11 +631,24 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::YCY,
             &ErrorFuser::YCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
-            {{0.5f, -i * 0.5f, -i * 0.5f, 0.5f},
-             {i * 0.5f, 0.5f, -0.5f, -i * 0.5f},
-             {i * 0.5f, -0.5f, 0.5f, -i * 0.5f},
-             {0.5f, i * 0.5f, i * 0.5f, 0.5f}},
-            {"+XY", "+ZY", "+YX", "+YZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Y-controlled Y gate.
+First qubit is the control, second qubit is the target.
+
+Applies a Y gate to the target if the control is in the |-i> state.
+
+Negates the amplitude of the |-i>|-i> state.
+)MARKDOWN",
+                    {{0.5f, -i * 0.5f, -i * 0.5f, 0.5f},
+                     {i * 0.5f, 0.5f, -0.5f, -i * 0.5f},
+                     {i * 0.5f, -0.5f, 0.5f, -i * 0.5f},
+                     {0.5f, i * 0.5f, i * 0.5f, 0.5f}},
+                    {"+XY", "+ZY", "+YX", "+YZ"},
+                };
+            },
         },
         {
             "YCZ",
@@ -346,8 +656,22 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::YCZ,
             &ErrorFuser::YCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
-            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}},
-            {"+XZ", "+ZZ", "+YX", "+IZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Y-controlled Z gate.
+First qubit is the control, second qubit is the target.
+The second qubit can be replaced by a measurement record.
+
+Applies a Z gate to the target if the control is in the |-i> state.
+
+Negates the amplitude of the |-i>|1> state.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}},
+                    {"+XZ", "+ZZ", "+YX", "+IZ"},
+                };
+            },
         },
         {
             "CX",
@@ -355,8 +679,22 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::ZCX,
             &ErrorFuser::ZCX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
-            {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}},
-            {"+XX", "+ZI", "+IX", "+ZZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Z-controlled X gate.
+First qubit is the control, second qubit is the target.
+The first qubit can be replaced by a measurement record.
+
+Applies an X gate to the target if the control is in the |1> state.
+
+Negates the amplitude of the |1>|-> state.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}},
+                    {"+XX", "+ZI", "+IX", "+ZZ"},
+                };
+            },
         },
         {
             "CY",
@@ -364,8 +702,22 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::ZCY,
             &ErrorFuser::ZCY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
-            {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}},
-            {"+XY", "+ZI", "+ZX", "+ZZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Z-controlled Y gate.
+First qubit is the control, second qubit is the target.
+The first qubit can be replaced by a measurement record.
+
+Applies a Y gate to the target if the control is in the |1> state.
+
+Negates the amplitude of the |1>|-i> state.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}},
+                    {"+XY", "+ZI", "+ZX", "+ZZ"},
+                };
+            },
         },
         {
             "CZ",
@@ -373,8 +725,22 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::ZCZ,
             &ErrorFuser::ZCZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
-            {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}},
-            {"+XZ", "+ZI", "+ZX", "+IZ"},
+            []() -> ExtraGateData {
+                return {
+                    "C_Two Qubit Clifford Gates",
+                    R"MARKDOWN(
+The Z-controlled Z gate.
+First qubit is the control, second qubit is the target.
+Either qubit can be replaced by a measurement record.
+
+Applies a Z gate to the target if the control is in the |1> state.
+
+Negates the amplitude of the |1>|1> state.
+)MARKDOWN",
+                    {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}},
+                    {"+XZ", "+ZI", "+ZX", "+IZ"},
+                };
+            },
         },
 
         // Noise gates.
@@ -384,8 +750,27 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::DEPOLARIZE1,
             &ErrorFuser::DEPOLARIZE1,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+The single qubit depolarizing channel.
+
+Applies a randomly chosen Pauli with a given probability.
+
+- Pauli Mixture:
+
+    ```
+    1-p: I
+    p/3: X
+    p/3: Y
+    p/3: Z
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "DEPOLARIZE2",
@@ -393,8 +778,39 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::DEPOLARIZE2,
             &ErrorFuser::DEPOLARIZE2,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT | GATE_TARGETS_PAIRS),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+The two qubit depolarizing channel.
+
+Applies a randomly chosen two-qubit Pauli product with a given probability.
+
+- Pauli Mixture:
+
+    ```
+     1-p: II
+    p/15: IX
+    p/15: IY
+    p/15: IZ
+    p/15: XI
+    p/15: XX
+    p/15: XY
+    p/15: XZ
+    p/15: YI
+    p/15: YX
+    p/15: YY
+    p/15: YZ
+    p/15: ZI
+    p/15: ZX
+    p/15: ZY
+    p/15: ZZ
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "X_ERROR",
@@ -402,8 +818,23 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::X_ERROR,
             &ErrorFuser::X_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+Applies a Pauli X with a given probability.
+
+- Pauli Mixture:
+
+    ```
+    1-p: I
+     p : X
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "Y_ERROR",
@@ -411,8 +842,23 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::Y_ERROR,
             &ErrorFuser::Y_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+Applies a Pauli Y with a given probability.
+
+- Pauli Mixture:
+
+    ```
+    1-p: I
+     p : Y
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "Z_ERROR",
@@ -420,8 +866,23 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::Z_ERROR,
             &ErrorFuser::Z_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+Applies a Pauli Z with a given probability.
+
+- Pauli Mixture:
+
+    ```
+    1-p: I
+     p : Z
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
 
         // Annotation gates.
@@ -431,8 +892,28 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::DETECTOR,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "Z_Annotations",
+                    R"MARKDOWN(
+Annotates that a set of measurements have a deterministic result, which can be used to detect errors.
+
+Detectors are ignored in measurement sampling mode.
+In detector sampling mode, detectors produce results (false=expected parity, true=incorrect parity detected).
+
+- Example:
+
+    ```
+    H 0
+    CNOT 0 1
+    M 0 1
+    DETECTOR rec[-1] rec[-2]
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "OBSERVABLE_INCLUDE",
@@ -440,8 +921,34 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::OBSERVABLE_INCLUDE,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_TAKES_PARENS_ARGUMENT | GATE_IS_NOT_FUSABLE),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "Z_Annotations",
+                    R"MARKDOWN(
+Adds measurement results to a given logical observable index.
+
+A logical observable's measurement result is the parity of all physical measurement results added to it.
+
+A logical observable is similar to a Detector, except the measurements making up an observable can be built up
+incrementally over the entire circuit.
+
+Logical observables are ignored in measurement sampling mode.
+In detector sampling mode, observables produce results (false=expected parity, true=incorrect parity detected).
+These results are optionally appended to the detector results, depending on simulator arguments / command line flags.
+
+- Example:
+
+    ```
+    H 0
+    CNOT 0 1
+    M 0 1
+    OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "TICK",
@@ -449,8 +956,26 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::I,
             GATE_IS_NOT_FUSABLE,
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "Z_Annotations",
+                    R"MARKDOWN(
+Indicates the end of a layer of gates, or that time is advancing.
+For example, used by `stimcirq` to preserve the moment structure of cirq circuits converted to/from stim circuits.
+
+- Example:
+
+    ```
+    TICK
+    TICK
+    # Oh, and of course:
+    TICK
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "REPEAT",
@@ -458,8 +983,33 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::I,
             &ErrorFuser::I,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "Y_Control Flow",
+                    R"MARKDOWN(
+Repeats the instructions in its body N times.
+The implementation-defined maximum value of N is 9223372036854775807.
+
+- Example:
+
+    ```
+    REPEAT 2 {
+        CNOT 0 1
+        CNOT 2 1
+        M 1
+    }
+    REPEAT 10000000 {
+        CNOT 0 1
+        CNOT 2 1
+        M 1
+        DETECTOR rec[-1] rec[-3]
+    }
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "E",
@@ -467,8 +1017,29 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::CORRELATED_ERROR,
             &ErrorFuser::CORRELATED_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+Probabilistically applies a Pauli product error with a given probability.
+Sets the "correlated error occurred flag" to true if the error occurred.
+Otherwise sets the flag to false.
+
+See also: `ELSE_CORRELATED_ERROR`.
+
+- Example:
+
+    ```
+    # With 40% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
+    CORRELATED_ERROR(0.2) X1 Y2
+    ELSE_CORRELATED_ERROR(0.25) Z2 Z3
+    ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
         {
             "ELSE_CORRELATED_ERROR",
@@ -476,8 +1047,29 @@ extern const GateDataMap stim_internal::GATE_DATA(
             &FrameSimulator::ELSE_CORRELATED_ERROR,
             &ErrorFuser::ELSE_CORRELATED_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
-            {},
-            {},
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+Probabilistically applies a Pauli product error with a given probability, unless the "correlated error occurred flag" is set.
+If the error occurs, sets the "correlated error occurred flag" to true.
+Otherwise leaves the flag alone.
+
+See also: `CORRELATED_ERROR`.
+
+- Example:
+
+    ```
+    # With 40% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
+    CORRELATED_ERROR(0.2) X1 Y2
+    ELSE_CORRELATED_ERROR(0.25) Z2 Z3
+    ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
         },
     },
     {
@@ -495,7 +1087,8 @@ extern const GateDataMap stim_internal::GATE_DATA(
     });
 
 Tableau Gate::tableau() const {
-    const auto &d = tableau_data.data;
+    const auto &tableau_data = extra_data_func().tableau_data;
+    const auto &d = tableau_data;
     if (tableau_data.size() == 2) {
         return Tableau::gate1(d[0], d[1]);
     }
@@ -506,15 +1099,16 @@ Tableau Gate::tableau() const {
 }
 
 std::vector<std::vector<std::complex<float>>> Gate::unitary() const {
+    const auto &unitary_data = extra_data_func().unitary_data;
     if (unitary_data.size() != 2 && unitary_data.size() != 4) {
         throw std::out_of_range(std::string(name) + " doesn't have 1q or 2q unitary data.");
     }
     std::vector<std::vector<std::complex<float>>> result;
     for (size_t k = 0; k < unitary_data.size(); k++) {
-        const auto &d = unitary_data.data[k];
+        const auto &d = unitary_data[k];
         result.emplace_back();
         for (size_t j = 0; j < d.size(); j++) {
-            result.back().push_back(d.data[j]);
+            result.back().push_back(d[j]);
         }
     }
     return result;
@@ -547,16 +1141,14 @@ Gate::Gate(
     const char *name, void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
     void (FrameSimulator::*frame_simulator_function)(const OperationData &),
     void (ErrorFuser::*hit_simulator_function)(const OperationData &), GateFlags flags,
-    TruncatedArray<TruncatedArray<std::complex<float>, 4>, 4> unitary_data,
-    TruncatedArray<const char *, 4> tableau_data)
+    ExtraGateData (*extra_data_func)(void))
     : name(name),
       name_len(strlen(name)),
       tableau_simulator_function(tableau_simulator_function),
       frame_simulator_function(frame_simulator_function),
       reverse_error_fuser_function(hit_simulator_function),
       flags(flags),
-      unitary_data(unitary_data),
-      tableau_data(tableau_data),
+      extra_data_func(extra_data_func),
       id(gate_name_to_id(name)) {
 }
 

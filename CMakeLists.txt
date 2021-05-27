@@ -32,6 +32,7 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit/circuit.cc
         src/circuit/gate_data.cc
+        src/gate_help.cc
         src/gen/circuit_gen_main.cc
         src/gen/circuit_gen_params.cc
         src/gen/gen_color_code.cc
@@ -116,7 +117,7 @@ if(NOT(MSVC))
     target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic ${MACHINE_FLAG})
     target_link_options(stim PRIVATE -pthread -O3)
 else()
-    target_compile_options(stim PRIVATE -DSIMD_WIDTH=${SIMD_WIDTH})
+    target_compile_options(stim PRIVATE ${MACHINE_FLAG})
 endif()
 
 add_executable(stim_benchmark ${SOURCE_FILES_NO_MAIN} ${BENCHMARK_FILES})
