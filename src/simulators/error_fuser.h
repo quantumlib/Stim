@@ -294,8 +294,6 @@ struct ErrorFuser {
     }
 };
 
-void error_fuser_analyze_loop(const Circuit &behind, uint64_t ahead, ErrorFuser &f);
-
 }
 
 #endif
