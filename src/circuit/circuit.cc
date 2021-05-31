@@ -51,10 +51,10 @@ uint64_t stim_internal::op_data_rep_count(const OperationData &data) {
 }
 
 DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
-    size_t tick = 0;
+    uint32_t tick = 0;
     auto resolve_into = [&](const Operation &op, const std::function<void(uint32_t)> &func) {
         for (auto qb : op.target_data.targets) {
-            auto dt = qb ^ TARGET_RECORD_BIT;
+            uint32_t dt = qb ^ TARGET_RECORD_BIT;
             if (!dt) {
                 throw std::out_of_range("Record lookback can't be 0 (unspecified).");
             }
@@ -67,7 +67,7 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
 
     circuit.for_each_operation([&](const Operation &p) {
         if (p.gate->flags & GATE_PRODUCES_RESULTS) {
-            tick += p.target_data.targets.size();
+            tick += (uint32_t)p.target_data.targets.size();
         } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
             resolve_into(p, [&](uint32_t k) {
                 jagged_detector_data.append_tail(k);
@@ -353,7 +353,7 @@ inline void read_pauli_targets_into(int &c, SOURCE read_char, Circuit &circuit) 
         if (c == ' ') {
             throw std::out_of_range("Unexpected space after Pauli before target qubit index.");
         }
-        size_t q = read_uint24_t(c, read_char);
+        uint32_t q = read_uint24_t(c, read_char);
         circuit.jag_targets.append_tail(q | m);
     }
 }
@@ -487,7 +487,7 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             }
             uint32_t rep_count_low = new_op.target_data.targets[0];
             uint32_t rep_count_high = new_op.target_data.targets[1];
-            uint32_t block_id = circuit.blocks.size();
+            uint32_t block_id = (uint32_t)circuit.blocks.size();
             if (rep_count_low == 0 && rep_count_high == 0) {
                 throw std::out_of_range("Repeating 0 times is not supported.");
             }
@@ -696,7 +696,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
         return *this;
     }
 
-    size_t block_offset = blocks.size();
+    uint32_t block_offset = (uint32_t)blocks.size();
     blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
     for (const auto &op : other.operations) {
         assert(op.gate != nullptr);

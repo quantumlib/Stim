@@ -243,7 +243,7 @@ int stim_internal::find_enum_argument(
     } else {
         for (size_t i = 0; i < known_values.size(); i++) {
             if (!strcmp(text, known_values[i])) {
-                return i;
+                return (int)i;
             }
         }
         fprintf(stderr, "\033[31mUnrecognized value '%s' for enum flag '%s'.\n", text, name);
