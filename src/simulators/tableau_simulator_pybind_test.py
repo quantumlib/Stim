@@ -13,6 +13,7 @@
 # limitations under the License.
 import pytest
 import stim
+import numpy as np
 
 
 def test_basic():
@@ -290,3 +291,49 @@ def test_collision():
     with pytest.raises(ValueError, match="same qubit"):
         s.swap(0, 1, 2, 2)
     s.swap(0, 2, 2, 1)
+
+
+def is_parallel_state_vector(actual, expected) -> bool:
+    actual = np.array(actual, dtype=np.complex64)
+    expected = np.array(expected, dtype=np.complex64)
+    assert len(expected.shape) == 1
+    if actual.shape != expected.shape:
+        return False
+    assert abs(np.linalg.norm(actual) - 1) < 1e-4
+    assert abs(np.linalg.norm(expected) - 1) < 1e-4
+    return abs(abs(np.dot(actual, np.conj(expected))) - 1) < 1e-4
+
+
+def test_is_parallel_state_vector():
+    assert is_parallel_state_vector([1], [1])
+    assert is_parallel_state_vector([1], [1j])
+    assert is_parallel_state_vector([1j], [1])
+    assert not is_parallel_state_vector([1], [1, 2])
+    assert is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5])
+    assert is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [0.5j, 0.5j, 0.5j, 0.5j])
+    assert is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [-0.5j, -0.5j, -0.5j, -0.5j])
+    assert not is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [-0.5j, -0.5j, -0.5j, 0.5j])
+    assert not is_parallel_state_vector([0.5, 0.5, 0.5, 0.5], [1, 0, 0, 0])
+
+
+def test_to_state_vector():
+    s = stim.TableauSimulator()
+    assert is_parallel_state_vector(s.state_vector(), [1])
+    s.set_num_qubits(1)
+    assert is_parallel_state_vector(s.state_vector(), [1, 0])
+    s.set_num_qubits(2)
+    s.x(0)
+    assert is_parallel_state_vector(s.state_vector(), [0, 1, 0, 0])
+    s.h(1)
+    assert is_parallel_state_vector(s.state_vector(), [0, 0.5**0.5, 0, 0.5**0.5])
+    s.h(0)
+    assert is_parallel_state_vector(s.state_vector(), [0.5, -0.5, 0.5, -0.5])
+    s.cnot(1, 0)
+    assert is_parallel_state_vector(s.state_vector(), [0.5, -0.5, -0.5, 0.5])
+    s.x(2)
+    assert is_parallel_state_vector(s.state_vector(), [0, 0, 0, 0, 0.5, -0.5, -0.5, 0.5])
+    v = s.state_vector().reshape((2,) * 3)
+    assert v[0, 0, 0] == 0
+    assert v[1, 0, 0] != 0
+    assert v[0, 1, 0] == 0
+    assert v[0, 0, 1] == 0

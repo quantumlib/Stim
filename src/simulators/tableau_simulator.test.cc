@@ -391,6 +391,20 @@ TEST(TableauSimulator, to_vector_sim) {
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 }
 
+TEST(TableauSimulator, to_state_vector) {
+    auto v = TableauSimulator(0, SHARED_TEST_RNG()).to_state_vector();
+    ASSERT_EQ(v.size(), 1);
+    auto r = v[0].real();
+    auto i = v[0].imag();
+    ASSERT_LT(r*r + i*i - 1, 1e-4);
+
+    TableauSimulator sim_tab(3, SHARED_TEST_RNG());
+    auto sim_vec = sim_tab.to_vector_sim();
+    VectorSimulator sim_vec2(3);
+    sim_vec2.state = sim_tab.to_state_vector();
+    ASSERT_TRUE(sim_vec.approximate_equals(sim_vec2, true));
+}
+
 bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::vector<uint32_t> &measurement_targets) {
     TableauSimulator sim_tab(2, SHARED_TEST_RNG());
     sim_tab.inv_state = state;

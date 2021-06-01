@@ -144,6 +144,62 @@ void pybind_tableau_simulator(pybind11::module &m) {
     );
 
     c.def(
+        "state_vector",
+        [](const TableauSimulator &self) {
+            auto complex_vec = self.to_state_vector();
+            std::vector<float> float_vec;
+            float_vec.reserve(complex_vec.size() * 2);
+            for (const auto &e : complex_vec) {
+                float_vec.push_back(e.real());
+                float_vec.push_back(e.imag());
+            }
+            void *ptr = float_vec.data();
+            ssize_t itemsize = sizeof(float) * 2;
+            std::vector<ssize_t> shape{(ssize_t)complex_vec.size()};
+            std::vector<ssize_t> stride{itemsize};
+            const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
+            bool readonly = true;
+            return pybind11::array_t<float>(pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+        },
+        clean_doc_string(u8R"DOC(
+            Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
+
+            This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
+            done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
+            stabilizer of the state. The global phase of the result is arbitrary (and will vary from call to call).
+
+            The result is in little endian order. The amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
+            qubit with index 1 is storing the bit b_1, etc.
+
+            Returns:
+                A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes in little endian order.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+                >>> s = stim.TableauSimulator()
+                >>> s.h(1)
+                >>> v = s.state_vector()
+                >>> (v / v[0]).round(2)
+                array([1.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],
+                      dtype=complex64)
+
+                >>> s2 = stim.TableauSimulator()
+                >>> s2.x(1)
+                >>> s2.x(4)
+                >>> vector = s2.state_vector()
+                >>> np.abs(vector[0b_10010]).round(2)
+                1.0
+                >>> tensor = vector.reshape((2, 2, 2, 2, 2))
+                >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
+                1.0
+                >>> np.abs(tensor[0, 1, 0, 0, 1]).round(2)
+                0.0
+        )DOC").data()
+    );
+
+    c.def(
         "canonical_stabilizers",
         [](const TableauSimulator &self) {
             auto stabilizers = self.canonical_stabilizers();

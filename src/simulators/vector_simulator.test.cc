@@ -168,6 +168,14 @@ TEST(vector_sim, approximate_equals) {
     ASSERT_FALSE(s1.approximate_equals(s2));
 }
 
+TEST(vector_sim, project_empty) {
+    VectorSimulator sim(0);
+    sim.project(PauliString(0));
+    VectorSimulator ref(0);
+    ref.state = {1};
+    ASSERT_TRUE(sim.approximate_equals(ref, true));
+}
+
 TEST(vector_sim, project) {
     VectorSimulator sim(2);
     VectorSimulator ref(2);

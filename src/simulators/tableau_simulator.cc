@@ -565,6 +565,10 @@ VectorSimulator TableauSimulator::to_vector_sim() const {
     return VectorSimulator::from_stabilizers(stabilizers, rng);
 }
 
+std::vector<std::complex<float>> TableauSimulator::to_state_vector() const {
+    return to_vector_sim().state;
+}
+
 void TableauSimulator::collapse_x(ConstPointerRange<uint32_t> targets) {
     // Find targets that need to be collapsed.
     std::set<uint32_t> unique_collapse_targets;
