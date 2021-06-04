@@ -71,6 +71,7 @@ struct ErrorFuser {
     bool find_reducible_errors = false;
     bool accumulate_errors = true;
     bool fold_loops = false;
+    bool validate_detectors = false;
     std::vector<FusedError> flushed;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
@@ -78,9 +79,9 @@ struct ErrorFuser {
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<uint64_t> mono_buf;
 
-    ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops);
+    ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
 
-    static void convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops);
+    static void convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorFuser(const ErrorFuser &fuser) = delete;
@@ -126,6 +127,7 @@ struct ErrorFuser {
     void ISWAP(const OperationData &dat);
 
     void run_circuit(const Circuit &circuit);
+    void post_check_initialization();
 
    private:
     void shift_active_detector_ids(int64_t shift);

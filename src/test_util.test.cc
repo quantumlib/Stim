@@ -28,3 +28,19 @@ std::mt19937_64 &SHARED_TEST_RNG() {
     }
     return shared_test_rng;
 }
+
+RaiiTempNamedFile::RaiiTempNamedFile() {
+    char tmp_stdin_filename[] = "/tmp/stim_test_named_file_XXXXXX";
+    descriptor = mkstemp(tmp_stdin_filename);
+    if (descriptor == -1) {
+        throw std::runtime_error("Failed to create temporary file.");
+    }
+    path = tmp_stdin_filename;
+}
+
+RaiiTempNamedFile::~RaiiTempNamedFile() {
+    if (!path.empty()) {
+        remove(path.data());
+        path = "";
+    }
+}

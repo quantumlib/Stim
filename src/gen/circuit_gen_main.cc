@@ -8,15 +8,10 @@
 
 using namespace stim_internal;
 
-std::vector<const char *> code_names{
-    "color_code",
-    "repetition_code",
-    "surface_code",
-};
-std::vector<GeneratedCircuit (*)(const CircuitGenParameters &)> code_functions{
-    &generate_color_code_circuit,
-    &generate_rep_code_circuit,
-    &generate_surface_code_circuit,
+std::map<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)> code_name_to_func_map{
+    {"color_code", &generate_color_code_circuit},
+    {"repetition_code", &generate_rep_code_circuit},
+    {"surface_code", &generate_surface_code_circuit}
 };
 std::vector<const char *> known_commands{
     "--after_clifford_depolarization",
@@ -31,10 +26,9 @@ std::vector<const char *> known_commands{
     "--rounds",
 };
 
-int stim_internal::main_generate_circuit(int argc, const char **argv, FILE *out) {
+int stim_internal::main_generate_circuit(int argc, const char **argv) {
     check_for_unknown_arguments(known_commands, "--gen", argc, argv);
-    auto code_index = find_enum_argument("--gen", -1, code_names, argc, argv);
-    auto func = code_functions[code_index];
+    auto func = find_enum_argument("--gen", nullptr, code_name_to_func_map, argc, argv);
     CircuitGenParameters params(
         (uint64_t)find_int64_argument("--rounds", -1, 1, INT64_MAX, argc, argv),
         (uint32_t)find_int64_argument("--distance", -1, 2, 2047, argc, argv),
@@ -43,9 +37,10 @@ int stim_internal::main_generate_circuit(int argc, const char **argv, FILE *out)
     params.before_measure_flip_probability = find_float_argument("--before_measure_flip_probability", 0, 0, 1, argc, argv);
     params.after_reset_flip_probability = find_float_argument("--after_reset_flip_probability", 0, 0, 1, argc, argv);
     params.after_clifford_depolarization = find_float_argument("--after_clifford_depolarization", 0, 0, 1, argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
 
     std::stringstream ss;
-    ss << "# Generated " << code_names[code_index] << " circuit.\n";
+    ss << "# Generated " << find_argument("--gen", argc, argv) << " circuit.\n";
     ss << "# task: " << params.task << "\n";
     ss << "# rounds: " << params.rounds << "\n";
     ss << "# distance: " << params.distance << "\n";
@@ -60,5 +55,8 @@ int stim_internal::main_generate_circuit(int argc, const char **argv, FILE *out)
     ss << generated.circuit;
     ss << "\n";
     fprintf(out, "%s", ss.str().data());
+    if (out != stdout) {
+        fclose(out);
+    }
     return 0;
 }

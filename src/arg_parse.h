@@ -19,6 +19,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
+#include <map>
+#include <string>
 #include <vector>
 
 namespace stim_internal {
@@ -140,26 +143,68 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///
 /// Args:
 ///     name: The name of the enumerated flag.
-///     default_index: The value to return if the flag is not specified. Set to -1 if you want the
-///         program to exit if the command line argument is not specified.
-///     known_values: The known values (in the form of strings) that the command line argument might be.
+///     default_key: The default value of the flag. Set to a key that's not in the map to make the
+///         flag required.
+///     known_values: A map from allowed keys to returned values.
 ///     argc: Number of command line arguments.
 ///     argv: Array of command line argument strings.
 ///
 /// Returns:
-///     If the command line flag is not specified and default_index is non-negative, the result is
-///     default_index.
-///
-///     If the command line flag is specified and its value is in the enumerated list, the result is
-///     the list index where the value was.
+///     The chosen value.
 ///
 /// Exits:
 ///     EXIT_FAILURE:
-///         The command line flag is specified but its value is not in the enumerated list.
+///         The command line flag is specified but its key is not in the map.
 ///     EXIT_FAILURE:
-///         The command line flag is not specified and default_index is negative.
-int find_enum_argument(
-    const char *name, int default_index, const std::vector<const char *> &known_values, int argc, const char **argv);
+///         The command line flag is not specified and the default key is not in the map.
+template <typename T>
+const T &find_enum_argument(
+    const char *name, const char *default_key, const std::map<std::string, T> &values, int argc,
+    const char **argv) {
+  const char *text = find_argument(name, argc, argv);
+  if (text == nullptr) {
+    if (default_key == nullptr) {
+      std::cerr << "\033[31mMust specify a value for enum flag '" << name << "'.\n";
+      exit(EXIT_FAILURE);
+    }
+    return values.at(default_key);
+  }
+  if (values.find(text) == values.end()) {
+    std::cerr << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
+    std::cerr << "Recognized values are:\n";
+    for (const auto &kv : values) {
+      std::cerr << "    '" << kv.first;
+      if (kv.first == default_key) {
+        std::cerr << " (default)";
+      }
+      std::cerr << "\n";
+    }
+    std::cerr << "\033[0m";
+    exit(EXIT_FAILURE);
+  }
+  return values.at(text);
+}
+
+/// Returns an opened file from a command line argument.
+///
+/// Args:
+///     name: The name of the file flag that will specify the file path.
+///     default_file: The file pointer to return if the flag isn't specified (e.g. stdin). Set to
+///         nullptr to make the argument required.
+///     mode: The mode to open the file path in.
+///     argc: Number of command line arguments.
+///     argv: Array of command line argument strings.
+///
+/// Returns:
+///     The default file pointer or the opened file.
+///
+/// Exits:
+///     EXIT_FAILURE:
+///         Failed to open the filepath.
+///     EXIT_FAILURE:
+///         No argument specified and default file is nullptr.
+FILE *find_open_file_argument(
+    const char *name, FILE *default_file, const char *mode, int argc, const char **argv);
 
 }
 

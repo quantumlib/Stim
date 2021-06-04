@@ -20,3 +20,10 @@
 #include "stabilizers/pauli_string.h"
 
 std::mt19937_64 &SHARED_TEST_RNG();
+
+struct RaiiTempNamedFile {
+    int descriptor;
+    std::string path;
+    RaiiTempNamedFile();
+    ~RaiiTempNamedFile();
+};

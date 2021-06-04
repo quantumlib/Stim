@@ -23,9 +23,9 @@
 
 using namespace stim_internal;
 
-std::string convert(const Circuit &circuit, bool find_reducible_errors = false, bool fold_loops = false) {
+std::string convert(const Circuit &circuit, bool find_reducible_errors = false, bool fold_loops = false, bool validate_detectors = true) {
     FILE *f = tmpfile();
-    ErrorFuser::convert_circuit_out(circuit, f, find_reducible_errors, fold_loops);
+    ErrorFuser::convert_circuit_out(circuit, f, find_reducible_errors, fold_loops, validate_detectors);
     rewind(f);
     std::string s;
     while (true) {
@@ -38,8 +38,8 @@ std::string convert(const Circuit &circuit, bool find_reducible_errors = false, 
     return "\n" + s;
 }
 
-std::string convert(const char *text, bool find_reducible_errors = false, bool fold_loops = false) {
-    return convert(Circuit::from_text(text), find_reducible_errors, fold_loops);
+std::string convert(const char *text, bool find_reducible_errors = false, bool fold_loops = false, bool validate_detectors = true) {
+    return convert(Circuit::from_text(text), find_reducible_errors, fold_loops, validate_detectors);
 }
 
 static std::string check_matches(std::string actual, std::string pattern) {
@@ -210,21 +210,23 @@ reducible_error\(0.019013\d+\) D3 \^ D2 \^ D0
         convert(R"circuit(
         H 0 1
         CNOT 0 2 1 3
+        # Perform depolarizing error in a different basis.
         ZCX 0 10
         ZCX 0 11
         XCX 0 12
         XCX 0 13
         DEPOLARIZE2(0.25) 0 1
-        ZCX 0 10
-        ZCX 0 11
-        XCX 0 12
         XCX 0 13
+        XCX 0 12
+        ZCX 0 11
+        ZCX 0 10
+        # Check where error is.
         M 10 11 12 13
         DETECTOR rec[-1]
         DETECTOR rec[-2]
         DETECTOR rec[-3]
         DETECTOR rec[-4]
-    )circuit", true),
+    )circuit", true, false, false),
         R"graph(
 error\(0.071825\d+\) D0 D1
 reducible_error\(0.071825\d+\) D0 D1 \^ D2 D3
@@ -234,7 +236,7 @@ error\(0.071825\d+\) D2 D3
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
-    ErrorFuser e(16, false, false);
+    ErrorFuser e(16, false, false, true);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
             e.xs[q].xor_item(0);
@@ -486,6 +488,7 @@ error(0.25) D2
 
     ASSERT_EQ(
         convert(R"circuit(
+            RY 0 0
             MRY 0 0
             X_ERROR(0.25) 0
             MRY 0 0
@@ -500,6 +503,7 @@ error(0.25) D2
 
     ASSERT_EQ(
         convert(R"circuit(
+            RX 0 0
             MRX 0 0
             Z_ERROR(0.25) 0
             MRX 0 0
@@ -553,70 +557,223 @@ error(1) D2
 
 TEST(ErrorFuser, detect_bad_detectors) {
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             R 0
             H 0
             M 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             M 0
             H 0
             M 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             MZ 0
             MX 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             MY 0
             MX 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             MX 0
             MZ 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             RX 0
             MZ 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             RY 0
             MX 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
 
     ASSERT_ANY_THROW({
-        convert(R"circuit(
+        convert(
+            R"circuit(
             RZ 0
             MX 0
             DETECTOR rec[-1]
-        )circuit");
+        )circuit",
+            false, false, true);
     });
+
+    ASSERT_ANY_THROW({
+        convert(
+            R"circuit(
+            MX 0
+            DETECTOR rec[-1]
+        )circuit",
+            false, false, true);
+    });
+}
+
+TEST(ErrorFuser, handle_gauge_detectors_when_not_validating) {
+    ASSERT_EQ(
+        convert(R"circuit(
+            H 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            R 0
+            H 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            RX 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            RY 0
+            H_XY 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MR 0
+            H 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRX 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MRY 0
+            H_XY 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            M 0
+            H 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MX 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
+
+    ASSERT_EQ(
+        convert(R"circuit(
+            MY 0
+            H_XY 0
+            CNOT 0 1
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        R"graph(
+error(0.5) D0 D1
+)graph");
 }
 
 TEST(ErrorFuser, composite_error_analysis) {

@@ -16,36 +16,21 @@
 #include <regex>
 
 #include "main_helper.h"
+#include "test_util.test.h"
 
 using namespace stim_internal;
 
-struct RaiiDeleteFile {
-    char *c = nullptr;
-    ~RaiiDeleteFile() {
-        if (c != nullptr) {
-            remove(c);
-            c = nullptr;
-        }
-    }
-};
-
 std::string execute(std::vector<const char *> flags, const char *std_in_content) {
     // Setup input.
-    RaiiDeleteFile raii_delete_file;
-    char tmp_stdin_filename[] = "/tmp/stim_test_input_XXXXXX";
+    RaiiTempNamedFile raii_temp_file;
     if (std_in_content != nullptr) {
-        int tmp_stdin_file_descriptor = mkstemp(tmp_stdin_filename);
-        if (tmp_stdin_file_descriptor == -1) {
-            throw std::runtime_error("Failed to create temporary stdin file.");
-        }
-        FILE *tmp_in = fdopen(tmp_stdin_file_descriptor, "w");
+        FILE *tmp_in = fdopen(raii_temp_file.descriptor, "w");
         if (tmp_in == nullptr) {
             throw std::runtime_error("Failed to open temporary stdin file.");
         }
         fprintf(tmp_in, "%s", std_in_content);
         fclose(tmp_in);
-        raii_delete_file.c = tmp_stdin_filename;
-        flags.insert(flags.begin(), tmp_stdin_filename);
+        flags.insert(flags.begin(), raii_temp_file.path.data());
         flags.insert(flags.begin(), "--in");
     }
     flags.insert(flags.begin(), "[PROGRAM_LOCATION_IGNORE]");
@@ -141,10 +126,12 @@ static bool matches(std::string actual, std::string pattern) {
 }
 
 TEST(main_helper, help_modes) {
-    ASSERT_TRUE(matches(execute({"--help"}, ""), ".+BASIC USAGE.+"));
+    ASSERT_TRUE(matches(execute({"--help"}, ""), ".*BASIC USAGE.+"));
     ASSERT_TRUE(matches(execute({}, ""), ".+stderr.+pick a mode.+"));
     ASSERT_TRUE(matches(execute({"--sample", "--repl"}, ""), ".+stderr.+pick a mode.+"));
     ASSERT_TRUE(matches(execute({"--sample", "--repl", "--detect"}, ""), ".+stderr.+pick a mode.+"));
+    ASSERT_TRUE(matches(execute({"--help", "dhnsahddjoidsa"}, ""), ".*Unrecognized.*"));
+    ASSERT_TRUE(matches(execute({"--help", "H"}, ""), ".+Hadamard.+"));
 }
 
 TEST(main_helper, sample_flag) {
@@ -564,9 +551,21 @@ OBSERVABLE_INCLUDE(0) rec[-2]
             )output"));
 }
 
-TEST(main_helper, detector_error_sets) {
+TEST(main_helper, detector_hypergraph_deprecated) {
     ASSERT_EQ(
         trim(execute({"--detector_hypergraph"}, R"input(
+            )input")),
+        trim(R"output(
+[stderr=[DEPRECATION] Use `--analyze_errors` instead of `--detector_hypergraph`
+]
+            )output"));
+}
+
+TEST(main_helper, analyze_errors) {
+    ASSERT_EQ(execute({"--analyze_errors"}, ""), "");
+
+    ASSERT_EQ(
+        trim(execute({"--analyze_errors"}, R"input(
 X_ERROR(0.25) 0
 M 0
 DETECTOR rec[-1]
@@ -576,9 +575,9 @@ error(0.25) D0
             )output"));
 }
 
-TEST(main_helper, detector_hypergraph_fold_loops) {
+TEST(main_helper, analyze_errors_fold_loops) {
     ASSERT_EQ(
-        trim(execute({"--detector_hypergraph", "--fold_loops"}, R"input(
+        trim(execute({"--analyze_errors", "--fold_loops"}, R"input(
 REPEAT 1000 {
     R 0
     X_ERROR(0.25) 0
@@ -591,6 +590,34 @@ REPEAT 1000 {
     error(0.25) D0
     TICK 1
 }
+            )output"));
+}
+
+TEST(main_helper, analyze_errors_allow_gauge_detectors) {
+    ASSERT_EQ(
+        trim(execute({"--analyze_errors", "--allow_gauge_detectors"}, R"input(
+R 0
+H 0
+CNOT 0 1
+M 0 1
+DETECTOR rec[-1]
+DETECTOR rec[-2]
+            )input")),
+        trim(R"output(
+error(0.5) D0 D1
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"--analyze_errors"}, R"input(
+R 0
+H 0
+CNOT 0 1
+M 0 1
+DETECTOR rec[-1]
+DETECTOR rec[-2]
+            )input")),
+        trim(R"output(
+[exception=A detector or observable anti-commuted with a reset.]
             )output"));
 }
 
