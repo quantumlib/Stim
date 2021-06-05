@@ -66,14 +66,16 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
     };
 
     circuit.for_each_operation([&](const Operation &p) {
+        constexpr uint8_t DETECTOR_ID = gate_name_to_id("DETECTOR");
+        constexpr uint8_t OBSERVABLE_ID = gate_name_to_id("OBSERVABLE_INCLUDE");
         if (p.gate->flags & GATE_PRODUCES_RESULTS) {
             tick += (uint32_t)p.target_data.targets.size();
-        } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
+        } else if (p.gate->id == DETECTOR_ID) {
             resolve_into(p, [&](uint32_t k) {
                 jagged_detector_data.append_tail(k);
             });
             detectors.push_back(jagged_detector_data.commit_tail());
-        } else if (p.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+        } else if (p.gate->id == OBSERVABLE_ID) {
             size_t obs = (size_t)p.target_data.arg;
             if (obs != p.target_data.arg) {
                 throw std::out_of_range("Observable index must be an integer.");
@@ -481,7 +483,8 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         circuit_read_single_operation(circuit, c, read_char);
         Operation &new_op = ops.back();
 
-        if (new_op.gate->id == gate_name_to_id("REPEAT")) {
+        constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
+        if (new_op.gate->id == REPEAT_ID) {
             if (new_op.target_data.targets.size() != 2) {
                 throw std::out_of_range("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
             }
@@ -632,7 +635,8 @@ void print_circuit(std::ostream &out, const Circuit &c, const std::string &inden
         }
 
         // Recurse on repeat blocks.
-        if (op.gate && op.gate->id == gate_name_to_id("REPEAT")) {
+        constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
+        if (op.gate && op.gate->id == REPEAT_ID) {
             if (op.target_data.targets.size() == 3 && op.target_data.targets[0] < c.blocks.size()) {
                 out << indentation << "REPEAT " << op_data_rep_count(op.target_data) << " {\n";
                 print_circuit(out, c.blocks[op.target_data.targets[0]], indentation + "    ");
@@ -669,7 +673,8 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
         return *this;
     }
     // If the entire circuit is a repeat block, just adjust its repeat count.
-    if (operations.size() == 1 && operations[0].gate->id == gate_name_to_id("REPEAT")) {
+    constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
+    if (operations.size() == 1 && operations[0].gate->id == REPEAT_ID) {
         uint64_t old_reps = op_data_rep_count(operations[0].target_data);
         uint64_t new_reps = old_reps * repetitions;
         if (old_reps != new_reps / repetitions) {
@@ -701,7 +706,8 @@ Circuit &Circuit::operator+=(const Circuit &other) {
     for (const auto &op : other.operations) {
         assert(op.gate != nullptr);
         append_operation(op);
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
+        constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
+        if (op.gate->id == REPEAT_ID) {
             assert(op.target_data.targets.size() == 3);
             operations.back().target_data.targets[0] += block_offset;
         }

@@ -102,12 +102,11 @@ Gate::Gate(
       reverse_error_fuser_function(hit_simulator_function),
       flags(flags),
       extra_data_func(extra_data_func),
-      id(gate_name_to_id(name)) {
+      id(gate_name_to_id(name, name_len)) {
 }
 
 void GateDataMap::add_gate(bool &failed, const Gate &gate) {
-    const char *c = gate.name;
-    uint8_t h = gate_name_to_id(c);
+    uint8_t h = gate_name_to_id(gate.name, gate.name_len);
     Gate &loc = items[h];
     if (loc.name != nullptr) {
         std::cerr << "GATE COLLISION " << gate.name << " vs " << loc.name << "\n";
@@ -118,7 +117,7 @@ void GateDataMap::add_gate(bool &failed, const Gate &gate) {
 }
 
 void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char *canon_name) {
-    uint8_t h_alt = gate_name_to_id(alt_name);
+    uint8_t h_alt = gate_name_to_id(alt_name, strlen(alt_name));
     Gate &g_alt = items[h_alt];
     if (g_alt.name != nullptr) {
         std::cerr << "GATE COLLISION " << alt_name << " vs " << g_alt.name << "\n";
@@ -126,7 +125,7 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
         return;
     }
 
-    uint8_t h_canon = gate_name_to_id(canon_name);
+    uint8_t h_canon = gate_name_to_id(canon_name, strlen(canon_name));
     Gate &g_canon = items[h_canon];
     assert(g_canon.name != nullptr && g_canon.id == h_canon);
     g_alt.name = alt_name;

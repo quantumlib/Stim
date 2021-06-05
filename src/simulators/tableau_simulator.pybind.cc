@@ -179,13 +179,6 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> import stim
                 >>> import numpy as np
 
-                >>> # Check the state vector of |0>|+>.
-                >>> s = stim.TableauSimulator()
-                >>> s.h(1)
-                >>> v = s.state_vector()
-                >>> (v / v[0]).round(2)
-                array([1.+0.j, 0.+0.j, 1.+0.j, 0.+0.j], dtype=complex64)
-
                 >>> # Check that the qubit-to-amplitude-index ordering is little-endian.
                 >>> s = stim.TableauSimulator()
                 >>> s.x(1)
