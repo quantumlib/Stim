@@ -161,6 +161,14 @@ TEST(tableau, str) {
         "| _X __ XZ __\n"
         "| __ _X __ XZ");
     ASSERT_EQ(
+        t.inverse(true).str(),
+        "+-xz-xz-xz-xz-\n"
+        "| ++ ++ ++ ++\n"
+        "| Z_ ZY _Z _Z\n"
+        "| ZX _X _Z __\n"
+        "| _X __ XZ __\n"
+        "| __ _X __ XZ");
+    ASSERT_EQ(
         t.str(),
         "+-xz-xz-xz-xz-\n"
         "| -+ ++ ++ ++\n"
@@ -783,4 +791,103 @@ TEST(tableau, direct_sum) {
     for (size_t k = 0; k < 270; k++) {
         ASSERT_EQ(p3[260 + k], p2[k]);
     }
+}
+
+TEST(tableau, pauli_acces_methods) {
+    auto t = Tableau::random(3, SHARED_TEST_RNG());
+    auto t_inv = t.inverse();
+    for (size_t i = 0; i < 3; i++) {
+        auto x = t.xs[i];
+        auto y = t.eval_y_obs(i);
+        auto z = t.zs[i];
+        for (size_t j = 0; j < 3; j++) {
+            ASSERT_EQ(t.x_output_pauli_xyz(i, j), pauli_xz_to_xyz(x.xs[j], x.zs[j]));
+            ASSERT_EQ(t.y_output_pauli_xyz(i, j), pauli_xz_to_xyz(y.xs[j], y.zs[j]));
+            ASSERT_EQ(t.z_output_pauli_xyz(i, j), pauli_xz_to_xyz(z.xs[j], z.zs[j]));
+            ASSERT_EQ(t_inv.inverse_x_output_pauli_xyz(i, j), pauli_xz_to_xyz(x.xs[j], x.zs[j]));
+            ASSERT_EQ(t_inv.inverse_y_output_pauli_xyz(i, j), pauli_xz_to_xyz(y.xs[j], y.zs[j]));
+            ASSERT_EQ(t_inv.inverse_z_output_pauli_xyz(i, j), pauli_xz_to_xyz(z.xs[j], z.zs[j]));
+        }
+    }
+
+    t = Tableau(3);
+    t.xs[0] = PauliString::from_str("+XXX");
+    t.xs[1] = PauliString::from_str("-XZY");
+    t.xs[2] = PauliString::from_str("+Z_Z");
+    t.zs[0] = PauliString::from_str("-_XZ");
+    t.zs[1] = PauliString::from_str("-_X_");
+    t.zs[2] = PauliString::from_str("-X__");
+
+    ASSERT_EQ(t.x_output_pauli_xyz(0, 0), 1);
+    ASSERT_EQ(t.x_output_pauli_xyz(0, 1), 1);
+    ASSERT_EQ(t.x_output_pauli_xyz(0, 2), 1);
+    ASSERT_EQ(t.x_output_pauli_xyz(1, 0), 1);
+    ASSERT_EQ(t.x_output_pauli_xyz(1, 1), 3);
+    ASSERT_EQ(t.x_output_pauli_xyz(1, 2), 2);
+    ASSERT_EQ(t.x_output_pauli_xyz(2, 0), 3);
+    ASSERT_EQ(t.x_output_pauli_xyz(2, 1), 0);
+    ASSERT_EQ(t.x_output_pauli_xyz(2, 2), 3);
+
+    ASSERT_EQ(t.z_output_pauli_xyz(0, 0), 0);
+    ASSERT_EQ(t.z_output_pauli_xyz(0, 1), 1);
+    ASSERT_EQ(t.z_output_pauli_xyz(0, 2), 3);
+    ASSERT_EQ(t.z_output_pauli_xyz(1, 0), 0);
+    ASSERT_EQ(t.z_output_pauli_xyz(1, 1), 1);
+    ASSERT_EQ(t.z_output_pauli_xyz(1, 2), 0);
+    ASSERT_EQ(t.z_output_pauli_xyz(2, 0), 1);
+    ASSERT_EQ(t.z_output_pauli_xyz(2, 1), 0);
+    ASSERT_EQ(t.z_output_pauli_xyz(2, 2), 0);
+
+    t = t.inverse();
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(0, 0), 1);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(0, 1), 1);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(0, 2), 1);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(1, 0), 1);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(1, 1), 3);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(1, 2), 2);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(2, 0), 3);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(2, 1), 0);
+    ASSERT_EQ(t.inverse_x_output_pauli_xyz(2, 2), 3);
+
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(0, 0), 0);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(0, 1), 1);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(0, 2), 3);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(1, 0), 0);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(1, 1), 1);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(1, 2), 0);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(2, 0), 1);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(2, 1), 0);
+    ASSERT_EQ(t.inverse_z_output_pauli_xyz(2, 2), 0);
+}
+
+TEST(tableau, inverse_pauli_string_acces_methods) {
+    auto t = Tableau::random(5, SHARED_TEST_RNG());
+    auto t_inv = t.inverse();
+    auto y0 = t_inv.eval_y_obs(0);
+    auto y1 = t_inv.eval_y_obs(1);
+    auto y2 = t_inv.eval_y_obs(2);
+    ASSERT_EQ(t.inverse_x_output(0), t_inv.xs[0]);
+    ASSERT_EQ(t.inverse_x_output(1), t_inv.xs[1]);
+    ASSERT_EQ(t.inverse_x_output(2), t_inv.xs[2]);
+    ASSERT_EQ(t.inverse_y_output(0), y0);
+    ASSERT_EQ(t.inverse_y_output(1), y1);
+    ASSERT_EQ(t.inverse_y_output(2), y2);
+    ASSERT_EQ(t.inverse_z_output(0), t_inv.zs[0]);
+    ASSERT_EQ(t.inverse_z_output(1), t_inv.zs[1]);
+    ASSERT_EQ(t.inverse_z_output(2), t_inv.zs[2]);
+
+    t_inv.xs.signs.clear();
+    t_inv.zs.signs.clear();
+    y0.sign = false;
+    y1.sign = false;
+    y2.sign = false;
+    ASSERT_EQ(t.inverse_x_output(0, true), t_inv.xs[0]);
+    ASSERT_EQ(t.inverse_x_output(1, true), t_inv.xs[1]);
+    ASSERT_EQ(t.inverse_x_output(2, true), t_inv.xs[2]);
+    ASSERT_EQ(t.inverse_y_output(0, true), y0);
+    ASSERT_EQ(t.inverse_y_output(1, true), y1);
+    ASSERT_EQ(t.inverse_y_output(2, true), y2);
+    ASSERT_EQ(t.inverse_z_output(0, true), t_inv.zs[0]);
+    ASSERT_EQ(t.inverse_z_output(1, true), t_inv.zs[1]);
+    ASSERT_EQ(t.inverse_z_output(2, true), t_inv.zs[2]);
 }

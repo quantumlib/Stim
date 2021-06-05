@@ -380,7 +380,7 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
-Tableau Tableau::inverse() const {
+Tableau Tableau::inverse(bool skip_signs) const {
     Tableau result(num_qubits);
 
     // Transpose data with xx zz swap tweak.
@@ -391,17 +391,19 @@ Tableau Tableau::inverse() const {
     result.do_transpose_quadrants();
 
     // Fix signs by checking for consistent round trips.
-    PauliString singleton(num_qubits);
-    for (size_t k = 0; k < num_qubits; k++) {
-        singleton.xs[k] = true;
-        bool x_round_trip_sign = (*this)(result(singleton)).sign;
-        singleton.xs[k] = false;
-        singleton.zs[k] = true;
-        bool z_round_trip_sign = (*this)(result(singleton)).sign;
-        singleton.zs[k] = false;
+    if (!skip_signs) {
+        PauliString singleton(num_qubits);
+        for (size_t k = 0; k < num_qubits; k++) {
+            singleton.xs[k] = true;
+            bool x_round_trip_sign = (*this)(result(singleton)).sign;
+            singleton.xs[k] = false;
+            singleton.zs[k] = true;
+            bool z_round_trip_sign = (*this)(result(singleton)).sign;
+            singleton.zs[k] = false;
 
-        result.xs[k].sign ^= x_round_trip_sign;
-        result.zs[k].sign ^= z_round_trip_sign;
+            result.xs[k].sign ^= x_round_trip_sign;
+            result.zs[k].sign ^= z_round_trip_sign;
+        }
     }
 
     return result;
@@ -484,4 +486,115 @@ Tableau &Tableau::operator+=(const Tableau &second) {
         }
     }
     return *this;
+}
+
+uint8_t Tableau::x_output_pauli_xyz(size_t input_index, size_t output_index) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    if (output_index >= num_qubits) {
+        throw std::invalid_argument("output_index >= len(tableau)");
+    }
+    PauliStringRef x = xs[input_index];
+    return pauli_xz_to_xyz(x.xs[output_index], x.zs[output_index]);
+}
+
+uint8_t Tableau::y_output_pauli_xyz(size_t input_index, size_t output_index) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    if (output_index >= num_qubits) {
+        throw std::invalid_argument("output_index >= len(tableau)");
+    }
+    PauliStringRef x = xs[input_index];
+    PauliStringRef z = zs[input_index];
+    return pauli_xz_to_xyz(x.xs[output_index] ^ z.xs[output_index], x.zs[output_index] ^ z.zs[output_index]);
+}
+
+uint8_t Tableau::z_output_pauli_xyz(size_t input_index, size_t output_index) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    if (output_index >= num_qubits) {
+        throw std::invalid_argument("output_index >= len(tableau)");
+    }
+    PauliStringRef z = zs[input_index];
+    return pauli_xz_to_xyz(z.xs[output_index], z.zs[output_index]);
+}
+
+uint8_t Tableau::inverse_x_output_pauli_xyz(size_t input_index, size_t output_index) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    if (output_index >= num_qubits) {
+        throw std::invalid_argument("output_index >= len(tableau)");
+    }
+    return pauli_xz_to_xyz(zs[output_index].zs[input_index], xs[output_index].zs[input_index]);
+}
+
+uint8_t Tableau::inverse_y_output_pauli_xyz(size_t input_index, size_t output_index) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    if (output_index >= num_qubits) {
+        throw std::invalid_argument("output_index >= len(tableau)");
+    }
+    PauliStringRef x = xs[output_index];
+    PauliStringRef z = zs[output_index];
+    return pauli_xz_to_xyz(z.zs[input_index] ^ z.xs[input_index], x.zs[input_index] ^ x.xs[input_index]);
+}
+
+uint8_t Tableau::inverse_z_output_pauli_xyz(size_t input_index, size_t output_index) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    if (output_index >= num_qubits) {
+        throw std::invalid_argument("output_index >= len(tableau)");
+    }
+    return pauli_xz_to_xyz(zs[output_index].xs[input_index], xs[output_index].xs[input_index]);
+}
+
+PauliString Tableau::inverse_x_output(size_t input_index, bool skip_sign) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    PauliString result(num_qubits);
+    for (size_t k = 0; k < num_qubits; k++) {
+        result.xs[k] = zs[k].zs[input_index];
+        result.zs[k] = xs[k].zs[input_index];
+    }
+    if (!skip_sign) {
+        result.sign = (*this)(result).sign;
+    }
+    return result;
+}
+
+PauliString Tableau::inverse_y_output(size_t input_index, bool skip_sign) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    PauliString result(num_qubits);
+    for (size_t k = 0; k < num_qubits; k++) {
+        result.xs[k] = zs[k].zs[input_index] ^ zs[k].xs[input_index];
+        result.zs[k] = xs[k].zs[input_index] ^ xs[k].xs[input_index];
+    }
+    if (!skip_sign) {
+        result.sign = (*this)(result).sign;
+    }
+    return result;
+}
+
+PauliString Tableau::inverse_z_output(size_t input_index, bool skip_sign) const {
+    if (input_index >= num_qubits) {
+        throw std::invalid_argument("input_index >= len(tableau)");
+    }
+    PauliString result(num_qubits);
+    for (size_t k = 0; k < num_qubits; k++) {
+        result.xs[k] = zs[k].xs[input_index];
+        result.zs[k] = xs[k].xs[input_index];
+    }
+    if (!skip_sign) {
+        result.sign = (*this)(result).sign;
+    }
+    return result;
 }

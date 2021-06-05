@@ -58,7 +58,7 @@ uint8_t ExposedPauliString::pauli(size_t index) const {
     }
     uint8_t x = pauli_string.xs[index];
     uint8_t z = pauli_string.zs[index];
-    return (x ^ z) + z * 2;
+    return pauli_xz_to_xyz(x, z);
 }
 
 size_t ExposedPauliString::getLength() const {

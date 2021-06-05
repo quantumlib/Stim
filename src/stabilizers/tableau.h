@@ -63,7 +63,10 @@ struct Tableau {
     /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
     static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
     /// Returns the inverse Tableau.
-    Tableau inverse() const;
+    ///
+    /// Args:
+    ///     skip_signs: Instead of computing the signs, just set them all to positive.
+    Tableau inverse(bool skip_signs = false) const;
     /// Returns the Tableau raised to an integer power (using repeated squaring).
     Tableau raised_to(int64_t exponent) const;
 
@@ -166,6 +169,16 @@ struct Tableau {
     void prepend_YCY(size_t control, size_t target);
     void prepend_YCZ(size_t control, size_t target);
     void prepend(const PauliStringRef &op);
+
+    uint8_t x_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    uint8_t y_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    uint8_t z_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    uint8_t inverse_x_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    uint8_t inverse_y_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    uint8_t inverse_z_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    PauliString inverse_x_output(size_t input_index, bool skip_sign = false) const;
+    PauliString inverse_y_output(size_t input_index, bool skip_sign = false) const;
+    PauliString inverse_z_output(size_t input_index, bool skip_sign = false) const;
 };
 
 }

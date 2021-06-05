@@ -310,3 +310,10 @@ TEST(PauliString, ensure_num_qubits) {
     p2.zs[3] = true;
     ASSERT_EQ(p, p2);
 }
+
+TEST(PauliString, pauli_xz_to_xyz) {
+    ASSERT_EQ(pauli_xz_to_xyz(false, false), 0);
+    ASSERT_EQ(pauli_xz_to_xyz(true, false), 1);
+    ASSERT_EQ(pauli_xz_to_xyz(true, true), 2);
+    ASSERT_EQ(pauli_xz_to_xyz(false, true), 3);
+}
