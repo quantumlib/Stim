@@ -46,24 +46,24 @@ inline constexpr uint8_t rot8(uint8_t u, uint8_t d) {
     return (u << d) ^ (u >> (8 - d));
 }
 inline constexpr uint8_t up8(char u) {
-    return u | 0x20;
+    return u | uint8_t{0x20};
 }
 inline constexpr uint8_t x0(const char *v, size_t n) {
     return n == 0 ? 0 : up8(v[0]) ^ rot8(up8(v[n - 1]), 1);
 }
 inline constexpr uint8_t x2(uint8_t result, const char *v, size_t n) {
     return n <= 2 ? result : (((((result
-        ^ 1)
+        ^ uint8_t{1})
         + up8(v[1]))
         ^ up8(v[1]))
-        + up8(v[2]) * 8)
+        + up8(v[2]) * uint8_t{8})
         ^ up8(v[2]));
 }
 inline constexpr uint8_t x5(uint8_t result, const char *v, size_t n) {
     return n <= 5 ? result : (((result
-        ^ 5)
-        + up8(v[3]) * 7)
-        + up8(v[5]) * 11);
+        ^ uint8_t{5})
+        + up8(v[3]) * uint8_t{7})
+        + up8(v[5]) * uint8_t{11});
 }
 
 }
@@ -72,7 +72,7 @@ inline constexpr uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision in the defined gate data is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
     return (((gate_data_helpers::x5(gate_data_helpers::x2(gate_data_helpers::x0(v, n), v, n), v, n)
-        & 0x1F)
+        & uint8_t{0x1F})
         | n << 5)
         ^ n);
 }
