@@ -32,6 +32,16 @@ set(SOURCE_FILES_NO_MAIN
         src/arg_parse.cc
         src/circuit/circuit.cc
         src/circuit/gate_data.cc
+        src/circuit/gate_data_annotations.cc
+        src/circuit/gate_data_blocks.cc
+        src/circuit/gate_data_collapsing.cc
+        src/circuit/gate_data_controlled.cc
+        src/circuit/gate_data_hada.cc
+        src/circuit/gate_data_noisy.cc
+        src/circuit/gate_data_pauli.cc
+        src/circuit/gate_data_period_3.cc
+        src/circuit/gate_data_period_4.cc
+        src/circuit/gate_data_swaps.cc
         src/gate_help.cc
         src/gen/circuit_gen_main.cc
         src/gen/circuit_gen_params.cc

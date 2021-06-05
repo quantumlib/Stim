@@ -108,8 +108,7 @@ void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
 }
 
 VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937_64 &rng) {
-    assert(!stabilizers.empty());
-    size_t num_qubits = stabilizers[0].num_qubits;
+    size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
     VectorSimulator result(num_qubits);
 
     // Create an initial state $|A\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
@@ -121,6 +120,9 @@ VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringR
     // Project out the non-overlapping parts.
     for (const auto &p : stabilizers) {
         result.project(p);
+    }
+    if (stabilizers.empty()) {
+        result.project(PauliString(0));
     }
 
     return result;

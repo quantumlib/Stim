@@ -85,16 +85,60 @@ void pybind_circuit(pybind11::module &m) {
         "num_measurements",
         &Circuit::count_measurements,
         clean_doc_string(u8R"DOC(
-            Counts the number of measurement bits produced when sampling from the circuit.
+            Counts the number of bits produced when sampling the circuit's measurements.
 
             Examples:
                 >>> import stim
                 >>> c = stim.Circuit('''
                 ...    M 0
-                ...    M 0 1
+                ...    REPEAT 100 {
+                ...        M 0 1
+                ...    }
                 ... ''')
                 >>> c.num_measurements
-                3
+                201
+        )DOC").data()
+    );
+
+    c.def_property_readonly(
+        "num_detectors",
+        &Circuit::count_detectors,
+        clean_doc_string(u8R"DOC(
+            Counts the number of bits produced when sampling the circuit's detectors.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...    M 0
+                ...    DETECTOR rec[-1]
+                ...    REPEAT 100 {
+                ...        M 0 1 2
+                ...        DETECTOR rec[-1]
+                ...        DETECTOR rec[-2]
+                ...    }
+                ... ''')
+                >>> c.num_detectors
+                201
+        )DOC").data()
+    );
+
+    c.def_property_readonly(
+        "num_observables",
+        &Circuit::num_observables,
+        clean_doc_string(u8R"DOC(
+            Counts the number of bits produced when sampling the circuit's logical observables.
+
+            This is one more than the largest observable index given to OBSERVABLE_INCLUDE.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...    M 0
+                ...    OBSERVABLE_INCLUDE(2) rec[-1]
+                ...    OBSERVABLE_INCLUDE(5) rec[-1]
+                ... ''')
+                >>> c.num_observables
+                6
         )DOC").data()
     );
 

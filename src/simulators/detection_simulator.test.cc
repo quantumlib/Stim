@@ -92,6 +92,27 @@ TEST(DetectionSimulator, detector_samples_out) {
     }
 }
 
+TEST(DetectionSimulator, stream_many_shots) {
+    DebugForceResultStreamingRaii force_streaming;
+    auto circuit = Circuit::from_text(R"circuit(
+        X_ERROR(1) 1
+        M 0 1 2
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+    )circuit");
+    FILE *tmp = tmpfile();
+    detector_samples_out(circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+
+    auto result = rewind_read_all(tmp);
+    for (size_t k = 0; k < 2048*4; k += 4) {
+        ASSERT_EQ(result[k], '0') << k;
+        ASSERT_EQ(result[k + 1], '1') << (k + 1);
+        ASSERT_EQ(result[k + 2], '0') << (k + 2);
+        ASSERT_EQ(result[k + 3], '\n') << (k + 3);
+    }
+}
+
 TEST(DetectionSimulator, block_results_single_shot) {
     auto circuit = Circuit::from_text(R"circuit(
         REPEAT 10000 {

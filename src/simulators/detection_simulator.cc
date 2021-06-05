@@ -158,7 +158,7 @@ void detector_sample_out_helper(
 void stim_internal::detector_samples_out(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
     SampleFormat format, std::mt19937_64 &rng) {
-    constexpr size_t GOOD_BLOCK_SIZE = 1024;
+    constexpr size_t GOOD_BLOCK_SIZE = 768;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();
     if (num_shots >= GOOD_BLOCK_SIZE) {

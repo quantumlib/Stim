@@ -494,7 +494,7 @@ void sample_out_helper(
 void FrameSimulator::sample_out(
     const Circuit &circuit, const simd_bits &reference_sample, uint64_t num_shots, FILE *out, SampleFormat format,
     std::mt19937_64 &rng) {
-    constexpr size_t GOOD_BLOCK_SIZE = 1024;
+    constexpr size_t GOOD_BLOCK_SIZE = 768;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();
     if (num_shots >= GOOD_BLOCK_SIZE) {

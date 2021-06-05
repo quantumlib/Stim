@@ -27,3 +27,5 @@ MANIFEST
 pip-wheel-metadata/*
 wheelhouse/*
 *.pyd
+venv/*
+.venv/*

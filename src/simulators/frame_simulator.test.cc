@@ -744,9 +744,9 @@ TEST(FrameSimulator, classical_controls) {
 }
 
 TEST(FrameSimulator, record_gets_trimmed) {
-    FrameSimulator sim(100, 1024, 5, SHARED_TEST_RNG());
+    FrameSimulator sim(100, 768, 5, SHARED_TEST_RNG());
     Circuit c = Circuit::from_text("M 0 1 2 3 4 5 6 7 8 9");
-    MeasureRecordBatchWriter b(tmpfile(), 1024, SAMPLE_FORMAT_B8);
+    MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.measure_z(c.operations[0].target_data);
         sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits(0));
@@ -833,6 +833,24 @@ TEST(FrameSimulator, stream_results) {
         ASSERT_EQ(result[k + 2], '0') << (k + 2);
     }
     ASSERT_EQ(result[30000], '\n');
+}
+
+TEST(FrameSimulator, stream_many_shots) {
+    DebugForceResultStreamingRaii force_streaming;
+    auto circuit = Circuit::from_text(R"circuit(
+        X_ERROR(1) 1
+        M 0 1 2
+    )circuit");
+    FILE *tmp = tmpfile();
+    FrameSimulator::sample_out(circuit, simd_bits(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+
+    auto result = rewind_read_all(tmp);
+    for (size_t k = 0; k < 2048*4; k += 4) {
+        ASSERT_EQ(result[k], '0') << k;
+        ASSERT_EQ(result[k + 1], '1') << (k + 1);
+        ASSERT_EQ(result[k + 2], '0') << (k + 2);
+        ASSERT_EQ(result[k + 3], '\n') << (k + 3);
+    }
 }
 
 TEST(FrameSimulator, stream_results_triple_shot) {

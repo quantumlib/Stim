@@ -213,7 +213,6 @@ def test_circuit_compile_sampler():
     c = stim.Circuit()
     s = c.compile_sampler()
     c.append_operation("M", [0])
-    print(repr(s))
     assert repr(s) == "stim.CompiledMeasurementSampler(stim.Circuit())"
     s = c.compile_sampler()
     assert repr(s) == """
@@ -258,16 +257,6 @@ DETECTOR rec[-1]
 
 
 def test_circuit_flattened_operations():
-    for e in stim.Circuit('''
-        H 0
-        REPEAT 3 {
-            X_ERROR(0.125) 1
-        }
-        CORRELATED_ERROR(0.25) X3 Y4 Z5
-        M 0 !1
-        DETECTOR rec[-1]
-    ''').flattened_operations():
-        print(e)
     assert stim.Circuit('''
         H 0
         REPEAT 3 {
@@ -352,3 +341,39 @@ def test_circuit_generation_errors():
             distance=3,
             rounds=1000,
             before_measure_flip_probability=-1)
+
+
+def test_num_detectors():
+    assert stim.Circuit().num_detectors == 0
+    assert stim.Circuit("DETECTOR").num_detectors == 1
+    assert stim.Circuit("""
+        REPEAT 1000 {
+            DETECTOR
+        }
+    """).num_detectors == 1000
+    assert stim.Circuit("""
+        DETECTOR
+        REPEAT 1000000 {
+            REPEAT 1000000 {
+                M 0
+                DETECTOR rec[-1]
+            }
+        }
+    """).num_detectors == 1000000**2 + 1
+
+
+def test_num_observables():
+    assert stim.Circuit().num_observables == 0
+    assert stim.Circuit("OBSERVABLE_INCLUDE(0)").num_observables == 1
+    assert stim.Circuit("OBSERVABLE_INCLUDE(1)").num_observables == 2
+    assert stim.Circuit("""
+        M 0
+        OBSERVABLE_INCLUDE(2)
+        REPEAT 1000000 {
+            REPEAT 1000000 {
+                M 0
+                OBSERVABLE_INCLUDE(3) rec[-1]
+            }
+            OBSERVABLE_INCLUDE(4)
+        }
+    """).num_observables == 5

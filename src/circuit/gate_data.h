@@ -17,6 +17,7 @@
 #ifndef GATE_DATA_H
 #define GATE_DATA_H
 
+#include <array>
 #include <cassert>
 #include <complex>
 #include <cstring>
@@ -217,12 +218,22 @@ inline bool _case_insensitive_mismatch(const char *text, size_t text_len, const 
 
 struct GateDataMap {
    private:
-    Gate items[256];
+    std::array<Gate, 256> items;
+    void add_gate(bool &failed, const Gate &data);
+    void add_gate_alias(bool &failed, const char *alt_name, const char *canon_name);
+    void add_gate_data_annotations(bool &failed);
+    void add_gate_data_blocks(bool &failed);
+    void add_gate_data_collapsing(bool &failed);
+    void add_gate_data_controlled(bool &failed);
+    void add_gate_data_hada(bool &failed);
+    void add_gate_data_noisy(bool &failed);
+    void add_gate_data_pauli(bool &failed);
+    void add_gate_data_period_3(bool &failed);
+    void add_gate_data_period_4(bool &failed);
+    void add_gate_data_swaps(bool &failed);
 
    public:
-    GateDataMap(
-        std::initializer_list<Gate> gates,
-        std::initializer_list<std::pair<const char *, const char *>> alternate_names);
+    GateDataMap();
 
     std::vector<Gate> gates() const;
 
