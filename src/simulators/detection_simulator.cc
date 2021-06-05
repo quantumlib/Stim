@@ -72,9 +72,7 @@ void detector_sample_out_helper_stream(
     simd_bit_table detector_buffer(1024, num_samples);
     size_t buffered_detectors = 0;
     circuit.for_each_operation([&](const Operation &op) {
-        constexpr uint8_t DETECTOR_ID = gate_name_to_id("DETECTOR");
-        constexpr uint8_t OBSERVABLE_ID = gate_name_to_id("OBSERVABLE_INCLUDE");
-        if (op.gate->id == DETECTOR_ID) {
+        if (op.gate->id == gate_name_to_id("DETECTOR")) {
             simd_bits_range_ref result = detector_buffer[buffered_detectors];
             result.clear();
             for (auto t : op.target_data.targets) {
@@ -86,7 +84,7 @@ void detector_sample_out_helper_stream(
                 writer.batch_write_bytes(detector_buffer, 1024 >> 6);
                 buffered_detectors = 0;
             }
-        } else if (op.gate->id == OBSERVABLE_ID) {
+        } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
             if (append_observables) {
                 size_t id = (size_t)op.target_data.arg;
                 while (observables.size() <= id) {

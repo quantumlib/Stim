@@ -40,46 +40,44 @@ struct Tableau;
 struct Operation;
 struct ErrorFuser;
 
-namespace gate_data_helpers {
-
-inline constexpr uint8_t rot8(uint8_t u, uint8_t d) {
-    return (u << d) ^ (u >> (8 - d));
-}
-inline constexpr uint8_t up8(char u) {
-    return u | uint8_t{0x20};
-}
-inline constexpr uint8_t x0(const char *v, size_t n) {
-    return n == 0 ? 0 : up8(v[0]) ^ rot8(up8(v[n - 1]), 1);
-}
-inline constexpr uint8_t x2(uint8_t result, const char *v, size_t n) {
-    return n <= 2 ? result : (((((result
-        ^ uint8_t{1})
-        + up8(v[1]))
-        ^ up8(v[1]))
-        + up8(v[2]) * uint8_t{8})
-        ^ up8(v[2]));
-}
-inline constexpr uint8_t x5(uint8_t result, const char *v, size_t n) {
-    return n <= 5 ? result : (((result
-        ^ uint8_t{5})
-        + up8(v[3]) * uint8_t{7})
-        + up8(v[5]) * uint8_t{11});
-}
-
-}
-
-inline constexpr uint8_t gate_name_to_id(const char *v, size_t n) {
-    // HACK: A collision in the defined gate data is considered to be an error.
+inline uint8_t gate_name_to_id(const char *v, size_t n) {
+    // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
-    return (((gate_data_helpers::x5(gate_data_helpers::x2(gate_data_helpers::x0(v, n), v, n), v, n)
-        & uint8_t{0x1F})
-        | n << 5)
-        ^ n);
+
+    constexpr uint8_t c2_factor = 8;
+    constexpr uint8_t clast_rotate = 1;
+
+    uint8_t result = 0;
+    if (n > 0) {
+        uint8_t c_first = v[0] | 0x20;
+        uint8_t c_last = v[n - 1] | 0x20;
+        c_last = (c_last << clast_rotate) | (c_last >> (8 - clast_rotate));
+        result += c_first ^ c_last;
+    }
+    if (n > 2) {
+        result ^= 1;
+        char c1 = (char)(v[1] | 0x20);
+        char c2 = (char)(v[2] | 0x20);
+        result += c1;
+        result ^= c1;
+        result += c2 * c2_factor;
+        result ^= c2;
+    }
+    if (n > 5) {
+        result ^= 5;
+        char c3 = (char)(v[3] | 0x20);
+        char c5 = (char)(v[5] | 0x20);
+        result += c3 * 7;
+        result += c5 * 11;
+    }
+    result &= 0x1F;
+    result |= n << 5;
+    result ^= n;
+    return result;
 }
 
-template<size_t N>
-inline constexpr uint8_t gate_name_to_id(char const (&c)[N]) {
-    return gate_name_to_id(c, N - 1);
+inline uint8_t gate_name_to_id(const char *c) {
+    return gate_name_to_id(c, strlen(c));
 }
 
 enum GateFlags : uint16_t {

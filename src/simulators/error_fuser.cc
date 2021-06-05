@@ -380,8 +380,7 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
     for (auto p = circuit.operations.crbegin(); p != circuit.operations.crend(); p++) {
         const auto &op = *p;
         assert(op.gate != nullptr);
-        constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
-        if (op.gate->id == REPEAT_ID) {
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
             assert(op.target_data.targets[0] < circuit.blocks.size());
             uint64_t repeats = op_data_rep_count(op.target_data);

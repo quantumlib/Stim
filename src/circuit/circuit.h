@@ -193,8 +193,7 @@ struct Circuit {
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
-            constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
-            if (op.gate->id == REPEAT_ID) {
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
                 uint64_t repeats = op_data_rep_count(op.target_data);
@@ -213,8 +212,7 @@ struct Circuit {
         for (size_t p = operations.size(); p-- > 0;) {
             const auto &op = operations[p];
             assert(op.gate != nullptr);
-            constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
-            if (op.gate->id == REPEAT_ID) {
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
                 uint64_t repeats = op_data_rep_count(op.target_data);
@@ -233,8 +231,7 @@ struct Circuit {
         uint64_t n = 0;
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
-            constexpr uint8_t REPEAT_ID = gate_name_to_id("REPEAT");
-            if (op.gate->id == REPEAT_ID) {
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
                 assert(op.target_data.targets[0] < blocks.size());
                 auto sub = blocks[op.target_data.targets[0]].flat_count_operations<COUNT>(count);
