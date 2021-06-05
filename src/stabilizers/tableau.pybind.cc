@@ -196,6 +196,62 @@ void pybind_tableau(pybind11::module &m) {
     );
 
     c.def(
+        "inverse", &Tableau::inverse, pybind11::kw_only(), pybind11::arg("unsigned") = false,
+        clean_doc_string(u8R"DOC(
+            Computes the inverse of the tableau.
+
+            The inverse T^-1 of a tableau T is the unique tableau with the property that T * T^-1 = T^-1 * T = I where
+            I is the identity tableau.
+
+            Args:
+                unsigned: Defaults to false. When set to true, skips computing the signs of the output observables and
+                    instead just set them all to be positive. This is beneficial because computing the signs takes
+                    O(n^3) time and the rest of the inverse computation is O(n^2) where n is the number of qubits in the
+                    tableau. So, if you only need the Pauli terms (not the signs), it is significantly cheaper.
+
+            Returns:
+                The inverse tableau.
+
+            Examples:
+                >>> import stim
+
+                >>> # Check that the inverse agrees with hard-coded tableaus in the gate data.
+                >>> s = stim.Tableau.from_named_gate("S")
+                >>> s_dag = stim.Tableau.from_named_gate("S_DAG")
+                >>> s.inverse() == s_dag
+                True
+                >>> z = stim.Tableau.from_named_gate("Z")
+                >>> z.inverse() == z
+                True
+
+                >>> # Check that multiplying by the inverse produces the identity.
+                >>> t = stim.Tableau.random(10)
+                >>> t_inv = t.inverse()
+                >>> identity = stim.Tableau(10)
+                >>> t * t_inv == t_inv * t == identity
+                True
+
+                >>> # Check a manual case.
+                >>> t = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-__Z"), stim.PauliString("+XZ_"), stim.PauliString("+_ZZ")],
+                ...     zs=[stim.PauliString("-YYY"), stim.PauliString("+Z_Z"), stim.PauliString("-ZYZ")],
+                ... )
+                >>> print(t.inverse())
+                +-xz-xz-xz-
+                | -- +- --
+                | XX XX YX
+                | XZ Z_ X_
+                | X_ YX Y_
+                >>> print(t.inverse(unsigned=True))
+                +-xz-xz-xz-
+                | ++ ++ ++
+                | XX XX YX
+                | XZ Z_ X_
+                | X_ YX Y_
+        )DOC").data()
+    );
+
+    c.def(
         "append",
         [](Tableau &self, const Tableau &gate, const std::vector<size_t> targets) {
             std::vector<bool> use(self.num_qubits, false);
@@ -401,26 +457,6 @@ void pybind_tableau(pybind11::module &m) {
     );
 
     c.def(
-        "copy",
-        [](Tableau &self) {
-            Tableau copy = self;
-            return copy;
-        },
-        clean_doc_string(u8R"DOC(
-            Returns a copy of the tableau. An independent tableau with the same contents.
-
-            Examples:
-                >>> import stim
-                >>> t1 = stim.Tableau.random(2)
-                >>> t2 = t1.copy()
-                >>> t2 is t1
-                False
-                >>> t2 == t1
-                True
-        )DOC").data()
-    );
-
-    c.def(
         "z_output",
         [](Tableau &self, size_t target) {
             if (target >= self.num_qubits) {
@@ -446,6 +482,376 @@ void pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+Z_")
                 >>> cnot.z_output(1)
                 stim.PauliString("+ZZ")
+        )DOC").data()
+    );
+
+    c.def(
+        "x_output_pauli",
+        &Tableau::x_output_pauli_xyz,
+        pybind11::arg("input_index"),
+        pybind11::arg("output_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a Pauli term from the tableau's output pauli string for an input X generator.
+
+            A constant-time equivalent for `tableau.x_output(input_index)[output_index]`.
+
+            Args:
+                input_index: Identifies the tableau column (the qubit of the input X generator).
+                output_index: Identifies the tableau row (the output qubit).
+
+            Returns:
+                An integer identifying Pauli at the given location in the tableau:
+
+                    0: I
+                    1: X
+                    2: Y
+                    3: Z
+
+            Examples:
+                >>> import stim
+
+                >>> t = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-Y_"), stim.PauliString("+YZ")],
+                ...     zs=[stim.PauliString("-ZY"), stim.PauliString("+YX")],
+                ... )
+                >>> t.x_output_pauli(0, 0)
+                2
+                >>> t.x_output_pauli(0, 1)
+                0
+                >>> t.x_output_pauli(1, 0)
+                2
+                >>> t.x_output_pauli(1, 1)
+                3
+        )DOC").data()
+    );
+
+    c.def(
+        "y_output_pauli",
+        &Tableau::y_output_pauli_xyz,
+        pybind11::arg("input_index"),
+        pybind11::arg("output_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a Pauli term from the tableau's output pauli string for an input Y generator.
+
+            A constant-time equivalent for `tableau.y_output(input_index)[output_index]`.
+
+            Args:
+                input_index: Identifies the tableau column (the qubit of the input Y generator).
+                output_index: Identifies the tableau row (the output qubit).
+
+            Returns:
+                An integer identifying Pauli at the given location in the tableau:
+
+                    0: I
+                    1: X
+                    2: Y
+                    3: Z
+
+            Examples:
+                >>> import stim
+
+                >>> t = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-Y_"), stim.PauliString("+YZ")],
+                ...     zs=[stim.PauliString("-ZY"), stim.PauliString("+YX")],
+                ... )
+                >>> t.y_output_pauli(0, 0)
+                1
+                >>> t.y_output_pauli(0, 1)
+                2
+                >>> t.y_output_pauli(1, 0)
+                0
+                >>> t.y_output_pauli(1, 1)
+                2
+        )DOC").data()
+    );
+
+    c.def(
+        "z_output_pauli",
+        &Tableau::z_output_pauli_xyz,
+        pybind11::arg("input_index"),
+        pybind11::arg("output_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a Pauli term from the tableau's output pauli string for an input Z generator.
+
+            A constant-time equivalent for `tableau.z_output(input_index)[output_index]`.
+
+            Args:
+                input_index: Identifies the tableau column (the qubit of the input Z generator).
+                output_index: Identifies the tableau row (the output qubit).
+
+            Returns:
+                An integer identifying Pauli at the given location in the tableau:
+
+                    0: I
+                    1: X
+                    2: Y
+                    3: Z
+
+            Examples:
+                >>> import stim
+
+                >>> t = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-Y_"), stim.PauliString("+YZ")],
+                ...     zs=[stim.PauliString("-ZY"), stim.PauliString("+YX")],
+                ... )
+                >>> t.z_output_pauli(0, 0)
+                3
+                >>> t.z_output_pauli(0, 1)
+                2
+                >>> t.z_output_pauli(1, 0)
+                2
+                >>> t.z_output_pauli(1, 1)
+                1
+        )DOC").data()
+    );
+
+    c.def(
+        "inverse_x_output_pauli",
+        &Tableau::inverse_x_output_pauli_xyz,
+        pybind11::arg("input_index"),
+        pybind11::arg("output_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a Pauli term from the tableau's inverse's output pauli string for an input X generator.
+
+            A constant-time equivalent for `tableau.inverse().x_output(input_index)[output_index]`.
+
+            Args:
+                input_index: Identifies the column (the qubit of the input X generator) in the inverse tableau.
+                output_index: Identifies the row (the output qubit) in the inverse tableau.
+
+            Returns:
+                An integer identifying Pauli at the given location in the inverse tableau:
+
+                    0: I
+                    1: X
+                    2: Y
+                    3: Z
+
+            Examples:
+                >>> import stim
+
+                >>> t_inv = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-Y_"), stim.PauliString("+YZ")],
+                ...     zs=[stim.PauliString("-ZY"), stim.PauliString("+YX")],
+                ... ).inverse()
+                >>> t_inv.inverse_x_output_pauli(0, 0)
+                2
+                >>> t_inv.inverse_x_output_pauli(0, 1)
+                0
+                >>> t_inv.inverse_x_output_pauli(1, 0)
+                2
+                >>> t_inv.inverse_x_output_pauli(1, 1)
+                3
+        )DOC").data()
+    );
+
+    c.def(
+        "inverse_y_output_pauli",
+        &Tableau::inverse_y_output_pauli_xyz,
+        pybind11::arg("input_index"),
+        pybind11::arg("output_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a Pauli term from the tableau's inverse's output pauli string for an input Y generator.
+
+            A constant-time equivalent for `tableau.inverse().y_output(input_index)[output_index]`.
+
+            Args:
+                input_index: Identifies the column (the qubit of the input Y generator) in the inverse tableau.
+                output_index: Identifies the row (the output qubit) in the inverse tableau.
+
+            Returns:
+                An integer identifying Pauli at the given location in the inverse tableau:
+
+                    0: I
+                    1: X
+                    2: Y
+                    3: Z
+
+            Examples:
+                >>> import stim
+
+                >>> t_inv = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-Y_"), stim.PauliString("+YZ")],
+                ...     zs=[stim.PauliString("-ZY"), stim.PauliString("+YX")],
+                ... ).inverse()
+                >>> t_inv.inverse_y_output_pauli(0, 0)
+                1
+                >>> t_inv.inverse_y_output_pauli(0, 1)
+                2
+                >>> t_inv.inverse_y_output_pauli(1, 0)
+                0
+                >>> t_inv.inverse_y_output_pauli(1, 1)
+                2
+        )DOC").data()
+    );
+
+    c.def(
+        "inverse_z_output_pauli",
+        &Tableau::inverse_z_output_pauli_xyz,
+        pybind11::arg("input_index"),
+        pybind11::arg("output_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a Pauli term from the tableau's inverse's output pauli string for an input Z generator.
+
+            A constant-time equivalent for `tableau.inverse().z_output(input_index)[output_index]`.
+
+            Args:
+                input_index: Identifies the column (the qubit of the input Z generator) in the inverse tableau.
+                output_index: Identifies the row (the output qubit) in the inverse tableau.
+
+            Returns:
+                An integer identifying Pauli at the given location in the inverse tableau:
+
+                    0: I
+                    1: X
+                    2: Y
+                    3: Z
+
+            Examples:
+                >>> import stim
+
+                >>> t_inv = stim.Tableau.from_conjugated_generators(
+                ...     xs=[stim.PauliString("-Y_"), stim.PauliString("+YZ")],
+                ...     zs=[stim.PauliString("-ZY"), stim.PauliString("+YX")],
+                ... ).inverse()
+                >>> t_inv.inverse_z_output_pauli(0, 0)
+                3
+                >>> t_inv.inverse_z_output_pauli(0, 1)
+                2
+                >>> t_inv.inverse_z_output_pauli(1, 0)
+                2
+                >>> t_inv.inverse_z_output_pauli(1, 1)
+                1
+        )DOC").data()
+    );
+
+    c.def(
+        "inverse_x_output",
+        [](const Tableau &self, size_t input_index, bool skip_sign) {
+            return PyPauliString(self.inverse_x_output(input_index, skip_sign));
+        },
+        pybind11::arg("input_index"),
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(u8R"DOC(
+            Returns the result of conjugating an X Pauli generator by the inverse of the tableau.
+
+            A faster version of `tableau.inverse(unsigned).x_output(input_index)`.
+
+            Args:
+                input_index: Identifies the column (the qubit of the X generator) to return from the inverse tableau.
+                unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
+                    it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
+                    parts of the computation take O(n) time where n is the number of qubits in the tableau.
+
+            Returns:
+                The result of conjugating an X generator by the inverse of the tableau.
+
+            Examples:
+                >>> import stim
+
+                # Check equivalence with the inverse's x_output.
+                >>> t = stim.Tableau.random(4)
+                >>> expected = t.inverse().x_output(0)
+                >>> t.inverse_x_output(0) == expected
+                True
+                >>> expected.sign = +1;
+                >>> t.inverse_x_output(0, unsigned=True) == expected
+                True
+        )DOC").data()
+    );
+
+    c.def(
+        "inverse_y_output",
+        [](const Tableau &self, size_t input_index, bool skip_sign) {
+            return PyPauliString(self.inverse_y_output(input_index, skip_sign));
+        },
+        pybind11::arg("input_index"),
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(u8R"DOC(
+            Returns the result of conjugating a Y Pauli generator by the inverse of the tableau.
+
+            A faster version of `tableau.inverse(unsigned).y_output(input_index)`.
+
+            Args:
+                input_index: Identifies the column (the qubit of the Y generator) to return from the inverse tableau.
+                unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
+                    it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
+                    parts of the computation take O(n) time where n is the number of qubits in the tableau.
+
+            Returns:
+                The result of conjugating a Y generator by the inverse of the tableau.
+
+            Examples:
+                >>> import stim
+
+                # Check equivalence with the inverse's y_output.
+                >>> t = stim.Tableau.random(4)
+                >>> expected = t.inverse().y_output(0)
+                >>> t.inverse_y_output(0) == expected
+                True
+                >>> expected.sign = +1;
+                >>> t.inverse_y_output(0, unsigned=True) == expected
+                True
+        )DOC").data()
+    );
+
+    c.def(
+        "inverse_z_output",
+        [](const Tableau &self, size_t input_index, bool skip_sign) {
+            return PyPauliString(self.inverse_z_output(input_index, skip_sign));
+        },
+        pybind11::arg("input_index"),
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(u8R"DOC(
+            Returns the result of conjugating a Z Pauli generator by the inverse of the tableau.
+
+            A faster version of `tableau.inverse(unsigned).z_output(input_index)`.
+
+            Args:
+                input_index: Identifies the column (the qubit of the Z generator) to return from the inverse tableau.
+                unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
+                    it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
+                    parts of the computation take O(n) time where n is the number of qubits in the tableau.
+
+            Returns:
+                The result of conjugating a Z generator by the inverse of the tableau.
+
+            Examples:
+                >>> import stim
+
+                >>> import stim
+
+                # Check equivalence with the inverse's z_output.
+                >>> t = stim.Tableau.random(4)
+                >>> expected = t.inverse().z_output(0)
+                >>> t.inverse_z_output(0) == expected
+                True
+                >>> expected.sign = +1;
+                >>> t.inverse_z_output(0, unsigned=True) == expected
+                True
+        )DOC").data()
+    );
+
+    c.def(
+        "copy",
+        [](Tableau &self) {
+            Tableau copy = self;
+            return copy;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns a copy of the tableau. An independent tableau with the same contents.
+
+            Examples:
+                >>> import stim
+                >>> t1 = stim.Tableau.random(2)
+                >>> t2 = t1.copy()
+                >>> t2 is t1
+                False
+                >>> t2 == t1
+                True
         )DOC").data()
     );
 

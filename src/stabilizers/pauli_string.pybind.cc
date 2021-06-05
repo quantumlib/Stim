@@ -56,6 +56,12 @@ PyPauliString PyPauliString::operator*(std::complex<float> scale) const {
     return copy;
 }
 
+PyPauliString PyPauliString::operator/(const std::complex<float> &scale) const {
+    PyPauliString copy = *this;
+    copy /= scale;
+    return copy;
+}
+
 PyPauliString PyPauliString::operator*(pybind11::object rhs) const {
     PyPauliString copy = *this;
     copy *= rhs;
@@ -109,6 +115,19 @@ PyPauliString &PyPauliString::operator*=(pybind11::object rhs) {
         }
     }
     throw std::out_of_range("need isinstance(rhs, (stim.PauliString, int)) or rhs in (1, -1, 1j, -1j)");
+}
+
+PyPauliString &PyPauliString::operator/=(const std::complex<float> &rhs) {
+    if (rhs == std::complex<float>{+1, 0}) {
+        return *this;
+    } else if (rhs == std::complex<float>{-1, 0}) {
+        return *this *= std::complex<float>{-1, 0};
+    } else if (rhs == std::complex<float>{0, 1}) {
+        return *this *= std::complex<float>{0, -1};
+    } else if (rhs == std::complex<float>{0, -1}) {
+        return *this *= std::complex<float>{0, +1};
+    }
+    throw std::invalid_argument("divisor not in (1, -1, 1j, -1j)");
 }
 
 PyPauliString &PyPauliString::operator*=(std::complex<float> scale) {
@@ -660,6 +679,58 @@ void pybind_pauli_string(pybind11::module &m) {
     );
 
     c.def(
+        "__itruediv__",
+        &PyPauliString::operator/=,
+        pybind11::is_operator(),
+        pybind11::arg("rhs"),
+        clean_doc_string(u8R"DOC(
+            Inplace divides the Pauli string by a complex unit.
+
+            Args:
+                rhs: The divisor. Can be 1, -1, 1j, or -1j.
+
+            Examples:
+                >>> import stim
+
+                >>> p = stim.PauliString("X")
+                >>> p /= 1j
+                >>> p
+                stim.PauliString("-iX")
+
+            Returns:
+                The mutated Pauli string.
+
+            Raises:
+                ValueError: The divisor isn't 1, -1, 1j, or -1j.
+        )DOC").data()
+    );
+
+    c.def(
+        "__truediv__",
+        &PyPauliString::operator/,
+        pybind11::is_operator(),
+        pybind11::arg("rhs"),
+        clean_doc_string(u8R"DOC(
+            Divides the Pauli string by a complex unit.
+
+            Args:
+                rhs: The divisor. Can be 1, -1, 1j, or -1j.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.PauliString("X") / 1j
+                stim.PauliString("-iX")
+
+            Returns:
+                The quotient.
+
+            Raises:
+                ValueError: The divisor isn't 1, -1, 1j, or -1j.
+        )DOC").data()
+    );
+
+    c.def(
         "__neg__",
         [](const PyPauliString &self) {
             PyPauliString result = self;
@@ -839,7 +910,7 @@ void pybind_pauli_string(pybind11::module &m) {
             size_t u = (size_t)index;
             int x = self.value.xs[u];
             int z = self.value.zs[u];
-            return (x ^ z) | (z << 1);
+            return pauli_xz_to_xyz(x, z);
         },
         pybind11::arg("index"),
         GET_ITEM_DOC.data()

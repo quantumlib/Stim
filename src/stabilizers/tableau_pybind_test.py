@@ -451,3 +451,226 @@ def test_add():
 | XZ __
 | __ XZ
     """.strip()
+
+
+def test_xyz_output_pauli():
+    t = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("-__Z"),
+            stim.PauliString("+XZ_"),
+            stim.PauliString("+_ZZ"),
+        ],
+        zs=[
+            stim.PauliString("-YYY"),
+            stim.PauliString("+Z_Z"),
+            stim.PauliString("-ZYZ"),
+        ],
+    )
+
+    assert t.x_output_pauli(0, 0) == 0
+    assert t.x_output_pauli(0, 1) == 0
+    assert t.x_output_pauli(0, 2) == 3
+    assert t.x_output_pauli(1, 0) == 1
+    assert t.x_output_pauli(1, 1) == 3
+    assert t.x_output_pauli(1, 2) == 0
+    assert t.x_output_pauli(2, 0) == 0
+    assert t.x_output_pauli(2, 1) == 3
+    assert t.x_output_pauli(2, 2) == 3
+
+    assert t.y_output_pauli(0, 0) == 2
+    assert t.y_output_pauli(0, 1) == 2
+    assert t.y_output_pauli(0, 2) == 1
+    assert t.y_output_pauli(1, 0) == 2
+    assert t.y_output_pauli(1, 1) == 3
+    assert t.y_output_pauli(1, 2) == 3
+    assert t.y_output_pauli(2, 0) == 3
+    assert t.y_output_pauli(2, 1) == 1
+    assert t.y_output_pauli(2, 2) == 0
+
+    assert t.z_output_pauli(0, 0) == 2
+    assert t.z_output_pauli(0, 1) == 2
+    assert t.z_output_pauli(0, 2) == 2
+    assert t.z_output_pauli(1, 0) == 3
+    assert t.z_output_pauli(1, 1) == 0
+    assert t.z_output_pauli(1, 2) == 3
+    assert t.z_output_pauli(2, 0) == 3
+    assert t.z_output_pauli(2, 1) == 2
+    assert t.z_output_pauli(2, 2) == 3
+
+    with pytest.raises(TypeError):
+        t.x_output_pauli(-1, 0)
+    with pytest.raises(ValueError):
+        t.x_output_pauli(3, 0)
+    with pytest.raises(TypeError):
+        t.x_output_pauli(0, -1)
+    with pytest.raises(ValueError):
+        t.x_output_pauli(0, 3)
+
+    with pytest.raises(TypeError):
+        t.y_output_pauli(-1, 0)
+    with pytest.raises(ValueError):
+        t.y_output_pauli(3, 0)
+    with pytest.raises(TypeError):
+        t.y_output_pauli(0, -1)
+    with pytest.raises(ValueError):
+        t.y_output_pauli(0, 3)
+
+    with pytest.raises(TypeError):
+        t.z_output_pauli(-1, 0)
+    with pytest.raises(ValueError):
+        t.z_output_pauli(3, 0)
+    with pytest.raises(TypeError):
+        t.z_output_pauli(0, -1)
+    with pytest.raises(ValueError):
+        t.z_output_pauli(0, 3)
+
+
+def test_inverse_xyz_output_pauli():
+    t = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("-__Z"),
+            stim.PauliString("+XZ_"),
+            stim.PauliString("+_ZZ"),
+        ],
+        zs=[
+            stim.PauliString("-YYY"),
+            stim.PauliString("+Z_Z"),
+            stim.PauliString("-ZYZ"),
+        ],
+    ).inverse()
+
+    assert t.inverse_x_output_pauli(0, 0) == 0
+    assert t.inverse_x_output_pauli(0, 1) == 0
+    assert t.inverse_x_output_pauli(0, 2) == 3
+    assert t.inverse_x_output_pauli(1, 0) == 1
+    assert t.inverse_x_output_pauli(1, 1) == 3
+    assert t.inverse_x_output_pauli(1, 2) == 0
+    assert t.inverse_x_output_pauli(2, 0) == 0
+    assert t.inverse_x_output_pauli(2, 1) == 3
+    assert t.inverse_x_output_pauli(2, 2) == 3
+
+    assert t.inverse_y_output_pauli(0, 0) == 2
+    assert t.inverse_y_output_pauli(0, 1) == 2
+    assert t.inverse_y_output_pauli(0, 2) == 1
+    assert t.inverse_y_output_pauli(1, 0) == 2
+    assert t.inverse_y_output_pauli(1, 1) == 3
+    assert t.inverse_y_output_pauli(1, 2) == 3
+    assert t.inverse_y_output_pauli(2, 0) == 3
+    assert t.inverse_y_output_pauli(2, 1) == 1
+    assert t.inverse_y_output_pauli(2, 2) == 0
+
+    assert t.inverse_z_output_pauli(0, 0) == 2
+    assert t.inverse_z_output_pauli(0, 1) == 2
+    assert t.inverse_z_output_pauli(0, 2) == 2
+    assert t.inverse_z_output_pauli(1, 0) == 3
+    assert t.inverse_z_output_pauli(1, 1) == 0
+    assert t.inverse_z_output_pauli(1, 2) == 3
+    assert t.inverse_z_output_pauli(2, 0) == 3
+    assert t.inverse_z_output_pauli(2, 1) == 2
+    assert t.inverse_z_output_pauli(2, 2) == 3
+
+    with pytest.raises(TypeError):
+        t.inverse_x_output_pauli(-1, 0)
+    with pytest.raises(ValueError):
+        t.inverse_x_output_pauli(3, 0)
+    with pytest.raises(TypeError):
+        t.inverse_x_output_pauli(0, -1)
+    with pytest.raises(ValueError):
+        t.inverse_x_output_pauli(0, 3)
+
+    with pytest.raises(TypeError):
+        t.inverse_y_output_pauli(-1, 0)
+    with pytest.raises(ValueError):
+        t.inverse_y_output_pauli(3, 0)
+    with pytest.raises(TypeError):
+        t.inverse_y_output_pauli(0, -1)
+    with pytest.raises(ValueError):
+        t.inverse_y_output_pauli(0, 3)
+
+    with pytest.raises(TypeError):
+        t.inverse_z_output_pauli(-1, 0)
+    with pytest.raises(ValueError):
+        t.inverse_z_output_pauli(3, 0)
+    with pytest.raises(TypeError):
+        t.inverse_z_output_pauli(0, -1)
+    with pytest.raises(ValueError):
+        t.inverse_z_output_pauli(0, 3)
+
+
+def test_inverse_xyz_output():
+    t = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("-__Z"),
+            stim.PauliString("+XZ_"),
+            stim.PauliString("+_ZZ"),
+        ],
+        zs=[
+            stim.PauliString("-YYY"),
+            stim.PauliString("+Z_Z"),
+            stim.PauliString("-ZYZ"),
+        ],
+    )
+    t_inv = t.inverse()
+
+    for k in range(3):
+        assert t_inv.inverse_x_output(k) == t.x_output(k)
+        assert t_inv.inverse_y_output(k) == t.y_output(k)
+        assert t_inv.inverse_z_output(k) == t.z_output(k)
+        assert t_inv.inverse_x_output(k, unsigned=True) == t.x_output(k) / t.x_output(k).sign
+        assert t_inv.inverse_y_output(k, unsigned=True) == t.y_output(k) / t.y_output(k).sign
+        assert t_inv.inverse_z_output(k, unsigned=True) == t.z_output(k) / t.z_output(k).sign
+
+    with pytest.raises(TypeError):
+        t.inverse_x_output(-1)
+    with pytest.raises(ValueError):
+        t.inverse_x_output(3)
+
+    with pytest.raises(TypeError):
+        t.inverse_y_output(-1)
+    with pytest.raises(ValueError):
+        t.inverse_y_output(3)
+
+    with pytest.raises(TypeError):
+        t.inverse_z_output(-1)
+    with pytest.raises(ValueError):
+        t.inverse_z_output(3)
+
+
+def test_inverse():
+    t = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("+XXX"),
+            stim.PauliString("-XZY"),
+            stim.PauliString("+Z_Z"),
+        ],
+        zs=[
+            stim.PauliString("-_XZ"),
+            stim.PauliString("-_X_"),
+            stim.PauliString("-X__"),
+        ],
+    )
+    assert t.inverse() == t.inverse(unsigned=False) == stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("-__Z"),
+            stim.PauliString("-_Z_"),
+            stim.PauliString("+XZZ"),
+        ],
+        zs=[
+            stim.PauliString("+ZZX"),
+            stim.PauliString("+YX_"),
+            stim.PauliString("+ZZ_"),
+        ],
+    )
+
+    assert t.inverse(unsigned=True) == stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("+__Z"),
+            stim.PauliString("+_Z_"),
+            stim.PauliString("+XZZ"),
+        ],
+        zs=[
+            stim.PauliString("+ZZX"),
+            stim.PauliString("+YX_"),
+            stim.PauliString("+ZZ_"),
+        ],
+    )

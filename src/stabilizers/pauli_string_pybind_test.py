@@ -359,6 +359,27 @@ def test_mul_different_sizes():
     assert alias is p
 
 
+def test_div():
+    assert stim.PauliString("+XYZ") / +1 == stim.PauliString("+XYZ")
+    assert stim.PauliString("+XYZ") / -1 == stim.PauliString("-XYZ")
+    assert stim.PauliString("+XYZ") / 1j == stim.PauliString("-iXYZ")
+    assert stim.PauliString("+XYZ") / -1j == stim.PauliString("iXYZ")
+    assert stim.PauliString("iXYZ") / 1j == stim.PauliString("XYZ")
+    p = stim.PauliString("__")
+    alias = p
+    assert alias == stim.PauliString("__")
+    p /= -1
+    assert alias == stim.PauliString("-__")
+    p /= 1j
+    assert alias == stim.PauliString("i__")
+    p /= 1j
+    assert alias == stim.PauliString("__")
+    p /= -1j
+    assert alias == stim.PauliString("i__")
+    p /= 1
+    assert alias == stim.PauliString("i__")
+
+
 def test_mul_repeat():
     ps = stim.PauliString
     assert ps("") * 100 == ps("")

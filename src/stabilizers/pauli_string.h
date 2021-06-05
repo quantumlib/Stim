@@ -25,6 +25,10 @@
 
 namespace stim_internal {
 
+inline uint8_t pauli_xz_to_xyz(bool x, bool z) {
+    return (uint8_t)(x ^ z) | ((uint8_t)z << 1);
+}
+
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
 /// In most cases, methods will take a PauliStringRef instead of a PauliString. This is because PauliStringRef can
