@@ -178,24 +178,24 @@ void pybind_tableau_simulator(pybind11::module &m) {
             Examples:
                 >>> import stim
                 >>> import numpy as np
+
+                >>> # Check the state vector of |0>|+>.
                 >>> s = stim.TableauSimulator()
                 >>> s.h(1)
                 >>> v = s.state_vector()
                 >>> (v / v[0]).round(2)
-                array([1.+0.j, 0.+0.j, 1.+0.j, 0.+0.j],
-                      dtype=complex64)
+                array([1.+0.j, 0.+0.j, 1.+0.j, 0.+0.j], dtype=complex64)
 
-                >>> s2 = stim.TableauSimulator()
-                >>> s2.x(1)
-                >>> s2.x(4)
-                >>> vector = s2.state_vector()
+                >>> # Check that the qubit-to-amplitude-index ordering is little-endian.
+                >>> s = stim.TableauSimulator()
+                >>> s.x(1)
+                >>> s.x(4)
+                >>> vector = s.state_vector()
                 >>> np.abs(vector[0b_10010]).round(2)
                 1.0
                 >>> tensor = vector.reshape((2, 2, 2, 2, 2))
                 >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
                 1.0
-                >>> np.abs(tensor[0, 1, 0, 0, 1]).round(2)
-                0.0
         )DOC").data()
     );
 
