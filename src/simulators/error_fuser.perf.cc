@@ -26,7 +26,7 @@ BENCHMARK(ErrorFuser_surface_code_rotated_memory_z_d11_r100) {
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
     benchmark_go([&]() {
-        ErrorFuser fuser(circuit.count_qubits(), false, false);
+        ErrorFuser fuser(circuit.count_qubits(), false, false, false);
         fuser.run_circuit(circuit);
     }).goal_millis(320);
 }
@@ -38,7 +38,7 @@ BENCHMARK(ErrorFuser_surface_code_rotated_memory_z_d11_r100_find_reducible_error
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
     benchmark_go([&]() {
-        ErrorFuser fuser(circuit.count_qubits(), true, false);
+        ErrorFuser fuser(circuit.count_qubits(), true, false, false);
         fuser.run_circuit(circuit);
     }).goal_millis(450);
 }
@@ -50,7 +50,7 @@ BENCHMARK(ErrorFuser_surface_code_rotated_memory_z_d11_r100000000_find_loops) {
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
     benchmark_go([&]() {
-        ErrorFuser fuser(circuit.count_qubits(), false, true);
+        ErrorFuser fuser(circuit.count_qubits(), false, true, false);
         fuser.run_circuit(circuit);
     }).goal_millis(15);
 }

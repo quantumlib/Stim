@@ -19,6 +19,7 @@
 #include <string>
 
 #include "assert.h"
+#include "test_util.test.h"
 
 using namespace stim_internal;
 
@@ -154,20 +155,51 @@ TEST(arg_parse, find_enum_argument) {
         "-b",
         "-c=rest",
     };
-    std::vector<const char *> enums{
-        "",
-        "test",
-        "rest",
+    std::map<std::string, int> enums{
+        {"", 10},
+        {"test", 20},
+        {"rest", 30},
     };
-    ASSERT_EQ(find_enum_argument("-a", -1, enums, args.size(), args.data()), 1);
-    ASSERT_EQ(find_enum_argument("-b", -1, enums, args.size(), args.data()), 0);
-    ASSERT_EQ(find_enum_argument("-c", -1, enums, args.size(), args.data()), 2);
-    ASSERT_EQ(find_enum_argument("-d", 0, enums, args.size(), args.data()), 0);
-    ASSERT_EQ(find_enum_argument("-d", 4, enums, args.size(), args.data()), 4);
-    ASSERT_DEATH({ find_enum_argument("-d", -1, enums, args.size(), args.data()); }, "specify a value");
+    ASSERT_EQ(find_enum_argument("-a", nullptr, enums, args.size(), args.data()), 20);
+    ASSERT_EQ(find_enum_argument("-b", nullptr, enums, args.size(), args.data()), 10);
+    ASSERT_EQ(find_enum_argument("-c", nullptr, enums, args.size(), args.data()), 30);
+    ASSERT_EQ(find_enum_argument("-d", "test", enums, args.size(), args.data()), 20);
+    ASSERT_EQ(find_enum_argument("-d", "rest", enums, args.size(), args.data()), 30);
+    ASSERT_DEATH({ find_enum_argument("-d", nullptr, enums, args.size(), args.data()); }, "specify a value");
 
-    enums = {
-        "not in list",
-    };
-    ASSERT_DEATH({ find_enum_argument("-a", -1, enums, args.size(), args.data()); }, "Unrecognized value");
+    enums.erase("test");
+    ASSERT_DEATH({ find_enum_argument("-a", nullptr, enums, args.size(), args.data()); }, "Unrecognized value");
+}
+
+TEST(arg_parse, find_open_file_argument) {
+    std::vector<const char *> args;
+    FILE *tmp = tmpfile();
+
+    args = {""};
+    ASSERT_DEATH({ find_open_file_argument("-arg", nullptr, "r", args.size(), args.data()); }, "Missing");
+    args = {""};
+    ASSERT_EQ(find_open_file_argument("-arg", tmp, "r", args.size(), args.data()), tmp);
+
+    args = {"", "-arg"};
+    ASSERT_DEATH({ find_open_file_argument("-arg", nullptr, "r", args.size(), args.data()); }, "empty");
+    args = {"", "-arg"};
+    ASSERT_DEATH({ find_open_file_argument("-arg", tmp, "r", args.size(), args.data()); }, "empty");
+
+    RaiiTempNamedFile f;
+    FILE *f2 = fdopen(f.descriptor, "w");
+    putc('x', f2);
+    fclose(f2);
+    args = {"", "-arg", f.path.data()};
+    f2 = find_open_file_argument("-arg", nullptr, "r", args.size(), args.data());
+    ASSERT_NE(f2, nullptr);
+    ASSERT_EQ(getc(f2), 'x');
+    fclose(f2);
+
+    remove(f.path.data());
+    args = {"", "-arg", f.path.data()};
+    ASSERT_DEATH({ find_open_file_argument("-arg", nullptr, "r", args.size(), args.data()); }, "Failed to open");
+    f2 = find_open_file_argument("-arg", nullptr, "w", args.size(), args.data());
+    fclose(f2);
+
+    fclose(tmp);
 }
