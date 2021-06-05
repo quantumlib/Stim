@@ -232,27 +232,25 @@ float stim_internal::find_float_argument(
     return f;
 }
 
-int stim_internal::find_enum_argument(
-    const char *name, int default_index, const std::vector<const char *> &known_values, int argc, const char **argv) {
-    const char *text = find_argument(name, argc, argv);
-    if (text == nullptr) {
-        if (default_index >= 0) {
-            return default_index;
-        }
-        fprintf(stderr, "\033[31mMust specify a value for enum flag '%s'.\n", name);
-    } else {
-        for (size_t i = 0; i < known_values.size(); i++) {
-            if (!strcmp(text, known_values[i])) {
-                return i;
-            }
-        }
-        fprintf(stderr, "\033[31mUnrecognized value '%s' for enum flag '%s'.\n", text, name);
+FILE *stim_internal::find_open_file_argument(
+    const char *name, FILE *default_file, const char *mode, int argc, const char **argv) {
+  const char *path = find_argument(name, argc, argv);
+  if (path == nullptr) {
+    if (default_file == nullptr) {
+      std::cerr << "\033[31mMissing command line argument: '" << name << "'\033[0m\n";
+      exit(EXIT_FAILURE);
     }
-
-    fprintf(stderr, "Recognized values are:\n");
-    for (size_t i = 0; i < known_values.size(); i++) {
-        fprintf(stderr, "    '%s'%s\n", known_values[i], i == (size_t)default_index ? " (default)" : "");
-    }
-    fprintf(stderr, "\033[0m");
+    return default_file;
+  }
+  if (*path == '\0') {
+    std::cerr << "\033[31mCommand line argument '" << name
+              << "' can't be empty. It's supposed to be a file path.\033[0m\n";
     exit(EXIT_FAILURE);
+  }
+  FILE *file = fopen(path, mode);
+  if (file == nullptr) {
+    std::cerr << "\033[31mFailed to open '" << path << "'\033[0m\n";
+    exit(EXIT_FAILURE);
+  }
+  return file;
 }

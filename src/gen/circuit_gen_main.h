@@ -7,7 +7,7 @@
 #include "../circuit/circuit.h"
 
 namespace stim_internal {
-    int main_generate_circuit(int argc, const char **argv, FILE *out);
+    int main_generate_circuit(int argc, const char **argv);
 }
 
 #endif

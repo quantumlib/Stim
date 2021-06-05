@@ -171,7 +171,7 @@ echo "
   M 0 1
   DETECTOR rec[-1] rec[-3]
   DETECTOR rec[-2] rec[-4]
-" | ./stim --detector_hypergraph
+" | ./stim --analyze_errors
 ```
 
 ```
@@ -218,7 +218,7 @@ error(0.003344519141621982161) D1
         built up using `OBSERVABLE_INCLUDE` instructions.
         Put these observables' values into the detection event output as if they were additional detectors at the end of the circuit.
 
-- **`--detector_hypergraph`**:
+- **`--analyze_errors`**:
     **Detector error model creation mode**.
     Determines the detectors and logical observables flipped by error channels in the input circuit.
     Outputs lines like `error(p) D2 D3 L5`, which means that there is an independent error
@@ -291,6 +291,26 @@ error(0.003344519141621982161) D1
     
         This mode currently requires that every case of a compound error channel can be reduced to
         single-detector components accompanied by at most two double-detector components.    
+
+    - **`--allow_gauge_detectors`**:
+        Normally, when a detector anti-commutes with a stabilizer of the circuit (forcing the detector
+        to have random results instead of deterministic results), error analysis throws an exception.
+
+        Specifying `--allow_gauge_detectors` instead allows this behavior and reports it as an `error(0.5)`.
+
+        For example, in the following circuit, the two detectors are gauge detector:
+
+        ```
+        R 0
+        H 0
+        CNOT 0 1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        ```
+
+        Without `--allow_gauge_detectors`, stim will raise an exception when analyzing this circuit.
+        With `--allow_gauge_detectors`, stim will report `error(0.5) D1 D2`.
 
 - **`--gen=surface_code|repetition_code|color_code`**:
     **Circuit generation mode**.

@@ -34,7 +34,10 @@ void ErrorFuser::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (!zs[q].empty()) {
-            throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+            }
+            add_error(0.5, zs[q].range());
         }
         xs[q].clear();
     }
@@ -44,7 +47,10 @@ void ErrorFuser::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (xs[q] != zs[q]) {
-            throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+            }
+            add_xored_error(0.5, xs[q].range(), zs[q].range());
         }
         xs[q].clear();
         zs[q].clear();
@@ -55,7 +61,10 @@ void ErrorFuser::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (!xs[q].empty()) {
-            throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
+            }
+            add_error(0.5, xs[q].range());
         }
         zs[q].clear();
     }
@@ -70,7 +79,10 @@ void ErrorFuser::MX(const OperationData &dat) {
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         if (!zs[q].empty()) {
-            throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+            }
+            add_error(0.5, zs[q].range());
         }
     }
 }
@@ -85,7 +97,10 @@ void ErrorFuser::MY(const OperationData &dat) {
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
         if (xs[q] != zs[q]) {
-            throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+            }
+            add_xored_error(0.5, xs[q].range(), zs[q].range());
         }
     }
 }
@@ -99,7 +114,10 @@ void ErrorFuser::MZ(const OperationData &dat) {
         std::sort(d.begin(), d.end());
         zs[q].xor_sorted_items(d);
         if (!xs[q].empty()) {
-            throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
+            }
+            add_error(0.5, xs[q].range());
         }
     }
 }
@@ -354,8 +372,8 @@ void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
     }
 }
 
-ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops)
-    : xs(num_qubits), zs(num_qubits), find_reducible_errors(find_reducible_errors), fold_loops(fold_loops) {
+ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors)
+    : xs(num_qubits), zs(num_qubits), find_reducible_errors(find_reducible_errors), fold_loops(fold_loops), validate_detectors(validate_detectors) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
@@ -370,6 +388,17 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
             run_loop(block, repeats);
         } else {
             (this->*op.gate->reverse_error_fuser_function)(op.target_data);
+        }
+    }
+}
+
+void ErrorFuser::post_check_initialization() {
+    for (const auto &x : xs) {
+        if (!x.empty()) {
+            if (validate_detectors) {
+                throw std::invalid_argument("A detector or observable anti-commuted with an initialization.");
+            }
+            add_error(0.5, x.range());
         }
     }
 }
@@ -470,9 +499,10 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
         "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
 }
 
-void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops) {
-    ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops);
+void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
+    ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops, validate_detectors);
     fuser.run_circuit(circuit);
+    fuser.post_check_initialization();
     fuser.flush();
     fuser.print_flushed(out);
 }
@@ -567,7 +597,7 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     uint64_t num_loop_detectors = loop.count_detectors();
     uint64_t hare_iter = 0;
     uint64_t tortoise_iter = 0;
-    ErrorFuser hare(xs.size(), false, true);
+    ErrorFuser hare(xs.size(), false, true, validate_detectors);
     hare.xs = xs;
     hare.zs = zs;
     hare.num_found_detectors = num_found_detectors;

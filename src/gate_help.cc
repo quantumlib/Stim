@@ -313,7 +313,7 @@ std::map<std::string, std::string> stim_internal::generate_gate_help_markdown() 
     for (const auto &name : gate_names) {
         all << name << "\n";
     }
-    result[std::string("gates")] = all.str();
+    result[std::string("GATES")] = all.str();
 
     all.str("");
     all << "## Index\n\n";
@@ -328,7 +328,7 @@ std::map<std::string, std::string> stim_internal::generate_gate_help_markdown() 
             all << "- " << generate_per_gate_help_markdown(GATE_DATA.at(name), 4, true) << "\n";
         }
     }
-    result[std::string("gates_markdown")] = all.str();
+    result[std::string("GATES_MARKDOWN")] = all.str();
 
     return result;
 }
