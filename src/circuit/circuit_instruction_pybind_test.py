@@ -21,7 +21,7 @@ def test_init_and_equality():
     assert i.name == "X_ERROR"
     assert i.targets_copy() == [stim.GateTarget(5)]
     assert i.gate_arg == 0.5
-    i2 = stim.CircuitInstruction(gate_name="X_ERROR", targets=[stim.GateTarget(5)], gate_arg=0.5)
+    i2 = stim.CircuitInstruction(name="X_ERROR", targets=[stim.GateTarget(5)], gate_arg=0.5)
     assert i == i2
 
     assert i == stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], 0.5)
