@@ -645,6 +645,14 @@ void print_circuit(std::ostream &out, const Circuit &c, const std::string &inden
     }
 }
 
+Circuit &stim_internal::op_data_block_body(Circuit &host, const OperationData &data) {
+    return host.blocks[data.targets[0]];
+}
+
+const Circuit &stim_internal::op_data_block_body(const Circuit &host, const OperationData &data) {
+    return host.blocks[data.targets[0]];
+}
+
 std::ostream &operator<<(std::ostream &out, const Circuit &c) {
     print_circuit(out, c, "");
     return out;

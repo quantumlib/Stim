@@ -21,6 +21,9 @@
 #include "../py/base.pybind.h"
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
+#include "circuit_instruction.pybind.h"
+#include "circuit_repeat_block.pybind.h"
+#include "circuit_gate_target.pybind.h"
 
 using namespace stim_internal;
 
@@ -32,6 +35,10 @@ std::string circuit_repr(const Circuit &self) {
 }
 
 void pybind_circuit(pybind11::module &m) {
+    pybind_circuit_repeat_block(m);
+    pybind_circuit_instruction(m);
+    pybind_circuit_gate_target(m);
+
     auto &&c = pybind11::class_<Circuit>(
         m,
         "Circuit",
@@ -639,6 +646,90 @@ void pybind_circuit(pybind11::module &m) {
                 DETECTOR rec[-2] rec[-3] rec[-6]
                 DETECTOR rec[-3] rec[-4] rec[-7]
                 OBSERVABLE_INCLUDE(0) rec[-1]
+        )DOC").data()
+    );
+
+    c.def(
+        "__len__",
+        [](const Circuit &self) {
+            return self.operations.size();
+        },
+        clean_doc_string(u8R"DOC(
+            Returns the number of top-level instructions and blocks in the circuit.
+
+            Instructions inside of blocks are not included in this count.
+
+            Examples:
+                >>> import stim
+                >>> len(stim.Circuit())
+                0
+                >>> len(stim.Circuit('''
+                ...    X 0
+                ...    X_ERROR(0.5) 1 2
+                ...    TICK
+                ...    M 0
+                ...    DETECTOR rec[-1]
+                ... '''))
+                5
+                >>> len(stim.Circuit('''
+                ...    REPEAT 100 {
+                ...        X 0
+                ...        Y 1 2
+                ...    }
+                ... '''))
+                1
+        )DOC").data()
+    );
+
+    c.def(
+        "__getitem__",
+        [](const Circuit &self, ssize_t index) -> pybind11::object {
+            auto n = (ssize_t)self.operations.size();
+            if (index < 0) {
+                index += (ssize_t)n;
+            }
+            if (index < 0 || index >= n) {
+                throw std::out_of_range("index");
+            }
+            auto &op = self.operations[index];
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                return pybind11::cast(CircuitRepeatBlock{
+                    op_data_rep_count(op.target_data),
+                    op_data_block_body(self, op.target_data)
+                });
+            }
+            std::vector<GateTarget> targets;
+            for (const auto &e : op.target_data.targets) {
+                targets.push_back(GateTarget(e));
+            }
+            return pybind11::cast(CircuitInstruction(
+                *op.gate,
+                targets,
+                op.target_data.arg));
+        },
+        clean_doc_string(u8R"DOC(
+            Returns copies of instructions from the circuit.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...    X 0
+                ...    X_ERROR(0.5) 1 2
+                ...    REPEAT 100 {
+                ...        X 0
+                ...        Y 1 2
+                ...    }
+                ...    TICK
+                ...    M 0
+                ...    DETECTOR rec[-1]
+                ... ''')
+                >>> circuit[1]
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], 0.5)
+                >>> circuit[2]
+                stim.CircuitRepeatBlock(100, stim.Circuit('''
+                X 0
+                Y 1 2
+                '''))
         )DOC").data()
     );
 }

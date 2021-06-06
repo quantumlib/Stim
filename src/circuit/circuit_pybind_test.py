@@ -377,3 +377,40 @@ def test_num_observables():
             OBSERVABLE_INCLUDE(4)
         }
     """).num_observables == 5
+
+
+def test_indexing_operations():
+    c = stim.Circuit()
+    assert len(c) == 0
+    assert list(c) == []
+    with pytest.raises(IndexError):
+        _ = c[0]
+    with pytest.raises(IndexError):
+        _ = c[-1]
+
+    c = stim.Circuit('X 0')
+    assert len(c) == 1
+    assert list(c) == [stim.CircuitInstruction('X', [stim.GateTarget(0)], 0)]
+    assert c[0] == c[-1] == stim.CircuitInstruction('X', [stim.GateTarget(0)], 0)
+    with pytest.raises(IndexError):
+        _ = c[1]
+    with pytest.raises(IndexError):
+        _ = c[-2]
+
+    c = stim.Circuit('''
+        X 5 6
+        REPEAT 1000 {
+            H 5
+        }
+        M !0
+    ''')
+    assert len(c) == 3
+    with pytest.raises(IndexError):
+        _ = c[3]
+    with pytest.raises(IndexError):
+        _ = c[-4]
+    assert list(c) == [
+        stim.CircuitInstruction('X', [stim.GateTarget(5), stim.GateTarget(6)]),
+        stim.CircuitRepeatBlock(1000, stim.Circuit('H 5')),
+        stim.CircuitInstruction('M', [stim.GateTarget(stim.target_inv(0))]),
+    ]

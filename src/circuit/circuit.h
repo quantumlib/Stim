@@ -273,6 +273,9 @@ struct DetectorsAndObservables {
     DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
 };
 
+Circuit &op_data_block_body(Circuit &host, const OperationData &data);
+const Circuit &op_data_block_body(const Circuit &host, const OperationData &data);
+
 }
 
 std::ostream &operator<<(std::ostream &out, const stim_internal::Circuit &c);
