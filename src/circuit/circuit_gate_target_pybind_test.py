@@ -18,7 +18,7 @@ import pytest
 
 def test_init_and_equality():
     assert stim.GateTarget(5) == stim.GateTarget(5)
-    assert stim.GateTarget(5) == stim.GateTarget(target=5)
+    assert stim.GateTarget(5) == stim.GateTarget(value=5)
     assert not (stim.GateTarget(4) == stim.GateTarget(5))
     assert stim.GateTarget(4) != stim.GateTarget(5)
     assert not (stim.GateTarget(5) != stim.GateTarget(5))
