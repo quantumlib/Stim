@@ -276,6 +276,86 @@ struct DetectorsAndObservables {
 Circuit &op_data_block_body(Circuit &host, const OperationData &data);
 const Circuit &op_data_block_body(const Circuit &host, const OperationData &data);
 
+template <typename SOURCE>
+inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {
+    while (c == ' ' || c == '\t') {
+        c = read_char();
+    }
+}
+
+template <typename SOURCE>
+bool read_until_next_line_arg(int &c, SOURCE read_char) {
+    if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
+        throw std::out_of_range("Targets must be separated by spacing.");
+    }
+    while (c == ' ' || c == '\t') {
+        c = read_char();
+    }
+    if (c == '#') {
+        do {
+            c = read_char();
+        } while (c != '\n' && c != EOF);
+    }
+    return c != '\n' && c != '{' && c != EOF;
+}
+
+template <typename SOURCE>
+void read_past_dead_space_between_commands(int &c, SOURCE read_char) {
+    while (true) {
+        while (isspace(c)) {
+            c = read_char();
+        }
+        if (c == EOF) {
+            break;
+        }
+        if (c != '#') {
+            break;
+        }
+        while (c != '\n' && c != EOF) {
+            c = read_char();
+        }
+    }
+}
+
+inline bool is_double_char(int c) {
+    return (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-';
+}
+
+template <typename SOURCE>
+double read_non_negative_double(int &c, SOURCE read_char) {
+    char buf[64];
+    size_t n = 0;
+    while (n < sizeof(buf) - 1 && is_double_char(c)) {
+        buf[n] = (char)c;
+        c = read_char();
+        n++;
+    }
+    buf[n] = '\0';
+
+    char *end;
+    double result = strtod(buf, &end);
+    if (end != buf + n || !(result >= 0)) {
+        throw std::out_of_range("Not a non-negative real number: " + std::string(buf));
+    }
+    return result;
+}
+
+template <typename SOURCE>
+double read_parens_argument(int &c, const char *name, SOURCE read_char) {
+    if (c != '(') {
+        throw std::out_of_range(std::string(name) + "(?) missing a parens argument.");
+    }
+    c = read_char();
+    read_past_within_line_whitespace(c, read_char);
+    double result = read_non_negative_double(c, read_char);
+    read_past_within_line_whitespace(c, read_char);
+    if (c != ')') {
+        throw std::out_of_range(std::string(name) + "(?) missing a closing parens for its argument.");
+    }
+    c = read_char();
+    return result;
+}
+
 }
 
 std::ostream &operator<<(std::ostream &out, const stim_internal::Circuit &c);

@@ -14,10 +14,11 @@
 
 #include "arg_parse.h"
 
-#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <fstream>
 
 using namespace stim_internal;
 
@@ -253,4 +254,38 @@ FILE *stim_internal::find_open_file_argument(
     exit(EXIT_FAILURE);
   }
   return file;
+}
+
+ostream_else_cout::ostream_else_cout(std::unique_ptr<std::ostream> &&held) : held(std::move(held)) {
+}
+
+std::ostream &ostream_else_cout::stream() {
+    if (held) {
+        return *held;
+    } else {
+        return std::cout;
+    }
+}
+
+ostream_else_cout stim_internal::find_output_stream_argument(
+    const char *name, bool default_std_out, int argc, const char **argv) {
+  const char *path = find_argument(name, argc, argv);
+  if (path == nullptr) {
+    if (!default_std_out) {
+      std::cerr << "\033[31mMissing command line argument: '" << name << "'\033[0m\n";
+      exit(EXIT_FAILURE);
+    }
+    return {nullptr};
+  }
+  if (*path == '\0') {
+    std::cerr << "\033[31mCommand line argument '" << name
+              << "' can't be empty. It's supposed to be a file path.\033[0m\n";
+    exit(EXIT_FAILURE);
+  }
+  std::unique_ptr<std::ostream> f(new std::ofstream(path));
+  if (f->fail()) {
+    std::cerr << "\033[31mFailed to open '" << path << "'\033[0m\n";
+    exit(EXIT_FAILURE);
+  }
+  return {std::move(f)};
 }

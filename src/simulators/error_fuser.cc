@@ -20,6 +20,8 @@
 #include <queue>
 #include <sstream>
 
+#include "../dem/detector_error_model.h"
+
 using namespace stim_internal;
 
 bool stim_internal::is_encoded_detector_id(uint64_t id) {
@@ -499,19 +501,21 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
         "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
 }
 
-void ErrorFuser::convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
+DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
     ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops, validate_detectors);
     fuser.run_circuit(circuit);
     fuser.post_check_initialization();
     fuser.flush();
-    fuser.print_flushed(out);
+    return fuser.flushed_to_detector_error_model();
 }
 
-void ErrorFuser::print_flushed(FILE *out) const {
+DetectorErrorModel ErrorFuser::flushed_to_detector_error_model() const {
     uint64_t time_offset = 0;
+    DetectorErrorModel model;
     for (auto e = flushed.crbegin(); e != flushed.crend(); e++) {
-        e->print(out, 0, num_found_detectors, time_offset);
+        e->append_to_detector_error_model(model, num_found_detectors, time_offset, true);
     }
+    return model;
 }
 
 void ErrorFuser::flush() {
@@ -702,27 +706,19 @@ void ErrorFuser::shift_active_detector_ids(int64_t shift) {
     }
 }
 
-void print_indent(FILE *out, size_t indent) {
-    for (size_t k = 0; k < indent; k++) {
-        putc(' ', out);
-    }
-}
-
-void FusedErrorRepeatBlock::print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const {
-    print_indent(out, indent);
-    fprintf(out, "REPEAT %lld {\n", (long long)repetitions);
+void FusedErrorRepeatBlock::append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const {
+    DetectorErrorModel body;
     for (auto e = errors.crbegin(); e != errors.crend(); e++) {
-        e->print(out, indent + 4, num_found_detectors, tick_count);
+        e->append_to_detector_error_model(body, num_found_detectors, tick_count, false);
     }
     size_t outer_ticks = outer_ticks_per_iteration();
     if (outer_ticks) {
-        print_indent(out, indent + 4);
-        fprintf(out, "TICK %lld\n", (long long)outer_ticks);
         tick_count += outer_ticks;
+        body.append_tick(outer_ticks);
     }
     tick_count += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
-    print_indent(out, indent);
-    fprintf(out, "}\n");
+
+    out.append_repeat_block(repetitions, std::move(body));
 }
 
 void FusedErrorRepeatBlock::skip(uint64_t skipped) {
@@ -748,31 +744,34 @@ void FusedError::skip(uint64_t skipped) {
     }
 }
 
-void FusedError::print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const {
+void FusedError::append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const {
     if (block) {
-        block->print(out, indent, num_found_detectors, tick_count);
+        block->append_to_detector_error_model(out, num_found_detectors, tick_count);
         return;
     }
 
-    print_indent(out, indent);
-    bool is_composite = std::any_of(flipped.begin(), flipped.end(), [](uint64_t e) { return e == COMPOSITE_ERROR_SYGIL; });
-    if (is_composite) {
-        fprintf(out, "reducible_");
-    }
-    std::stringstream ss;
-    ss << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << "error(" << probability << ")";
+    std::vector<DemRelativeSymptom> symptoms;
+    bool is_reducible = false;
     for (size_t k = 0; k < flipped.size(); k++) {
         auto e = flipped[k];
         if (e == COMPOSITE_ERROR_SYGIL) {
-            if (k != flipped.size() - 1) {
-                ss << " ^";
+            is_reducible = true;
+            if (k != 0 && k != flipped.size() - 1) {
+                symptoms.push_back(DemRelativeSymptom::separator());
             }
         } else if (is_encoded_detector_id(e)) {
-            ss << " D" << (e + num_found_detectors - LAST_DETECTOR_ID - 1 - tick_count - local_time_shift);
+            auto abs_id = e + num_found_detectors - LAST_DETECTOR_ID - 1;
+            auto rel_id = abs_id - tick_count - local_time_shift;
+            symptoms.push_back(DemRelativeSymptom::detector_id(
+                DemRelValue::unspecified(), DemRelValue::unspecified(),
+                top_level ? DemRelValue::absolute(abs_id) : DemRelValue::relative(rel_id)));
         } else {
-            ss << " L" <<  (e - FIRST_OBSERVABLE_ID);
+            symptoms.push_back(DemRelativeSymptom::observable_id(e - FIRST_OBSERVABLE_ID));
         }
     }
-    fprintf(out, "%s", ss.str().data());
-    fprintf(out, "\n");
+    if (is_reducible) {
+        out.append_reducible_error(probability, symptoms);
+    } else {
+        out.append_error(probability, symptoms);
+    }
 }

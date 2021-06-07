@@ -38,7 +38,6 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
                 R"MARKDOWN(
 The Hadamard gate.
 Swaps the X and Z axes.
-A 180 degree rotation around the X+Z axis.
 )MARKDOWN",
                 {{s, s}, {s, -s}},
                 {"+Z", "+X"},
@@ -58,7 +57,6 @@ A 180 degree rotation around the X+Z axis.
                 "B_Single Qubit Clifford Gates",
                 R"MARKDOWN(
 A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
-A 180 degree rotation around the X+Y axis.
 )MARKDOWN",
                 {{0, s - i *s}, {s + i * s, 0}},
                 {"+Y", "-Z"},
@@ -77,7 +75,6 @@ A 180 degree rotation around the X+Y axis.
                 "B_Single Qubit Clifford Gates",
                 R"MARKDOWN(
 A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
-A 180 degree rotation around the Y+Z axis.
 )MARKDOWN",
                 {{s, -i * s}, {i * s, -s}},
                 {"-X", "+Y"},

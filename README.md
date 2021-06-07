@@ -785,7 +785,6 @@ error(0.003344519141621982161) D1
     
     The Hadamard gate.
     Swaps the X and Z axes.
-    A 180 degree rotation around the X+Z axis.
     
     - Example:
     
@@ -820,7 +819,6 @@ error(0.003344519141621982161) D1
 - <a name="H_XY"></a>**`H_XY`**
     
     A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
-    A 180 degree rotation around the X+Y axis.
     
     - Example:
     
@@ -855,7 +853,6 @@ error(0.003344519141621982161) D1
 - <a name="H_YZ"></a>**`H_YZ`**
     
     A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
-    A 180 degree rotation around the Y+Z axis.
     
     - Example:
     
@@ -1724,7 +1721,8 @@ error(0.003344519141621982161) D1
     - Stabilizer Generators:
     
         ```
-        Z -> mZ
+        Z -> m
+        Z -> +Z
         ```
         
     
@@ -1813,7 +1811,8 @@ error(0.003344519141621982161) D1
     - Stabilizer Generators:
     
         ```
-        X -> mX
+        X -> m
+        X -> +X
         ```
         
     
@@ -1834,7 +1833,8 @@ error(0.003344519141621982161) D1
     - Stabilizer Generators:
     
         ```
-        Y -> mY
+        Y -> m
+        Y -> +Y
         ```
         
     

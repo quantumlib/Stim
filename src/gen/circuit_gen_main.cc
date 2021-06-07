@@ -37,26 +37,21 @@ int stim_internal::main_generate_circuit(int argc, const char **argv) {
     params.before_measure_flip_probability = find_float_argument("--before_measure_flip_probability", 0, 0, 1, argc, argv);
     params.after_reset_flip_probability = find_float_argument("--after_reset_flip_probability", 0, 0, 1, argc, argv);
     params.after_clifford_depolarization = find_float_argument("--after_clifford_depolarization", 0, 0, 1, argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-
-    std::stringstream ss;
-    ss << "# Generated " << find_argument("--gen", argc, argv) << " circuit.\n";
-    ss << "# task: " << params.task << "\n";
-    ss << "# rounds: " << params.rounds << "\n";
-    ss << "# distance: " << params.distance << "\n";
-    ss << "# before_round_data_depolarization: " << params.before_round_data_depolarization << "\n";
-    ss << "# before_measure_flip_probability: " << params.before_measure_flip_probability << "\n";
-    ss << "# after_reset_flip_probability: " << params.after_reset_flip_probability << "\n";
-    ss << "# after_clifford_depolarization: " << params.after_clifford_depolarization << "\n";
-    ss << "# layout:\n";
+    auto out_stream = find_output_stream_argument("--out", true, argc, argv);
+    std::ostream &out = out_stream.stream();
+    out << "# Generated " << find_argument("--gen", argc, argv) << " circuit.\n";
+    out << "# task: " << params.task << "\n";
+    out << "# rounds: " << params.rounds << "\n";
+    out << "# distance: " << params.distance << "\n";
+    out << "# before_round_data_depolarization: " << params.before_round_data_depolarization << "\n";
+    out << "# before_measure_flip_probability: " << params.before_measure_flip_probability << "\n";
+    out << "# after_reset_flip_probability: " << params.after_reset_flip_probability << "\n";
+    out << "# after_clifford_depolarization: " << params.after_clifford_depolarization << "\n";
+    out << "# layout:\n";
     auto generated = func(params);
-    ss << generated.layout_str();
-    ss << generated.hint_str;
-    ss << generated.circuit;
-    ss << "\n";
-    fprintf(out, "%s", ss.str().data());
-    if (out != stdout) {
-        fclose(out);
-    }
+    out << generated.layout_str();
+    out << generated.hint_str;
+    out << generated.circuit;
+    out << "\n";
     return 0;
 }

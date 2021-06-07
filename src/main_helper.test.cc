@@ -586,9 +586,9 @@ REPEAT 1000 {
 }
             )input")),
         trim(R"output(
-REPEAT 1000 {
-    error(0.25) D0
-    TICK 1
+repeat 1000 {
+    error(0.25) D0+t
+    tick 1
 }
             )output"));
 }
