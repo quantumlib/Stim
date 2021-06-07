@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -205,6 +206,34 @@ const T &find_enum_argument(
 ///         No argument specified and default file is nullptr.
 FILE *find_open_file_argument(
     const char *name, FILE *default_file, const char *mode, int argc, const char **argv);
+
+/// Exposes an owned ostream or else falls back to std::cout.
+struct ostream_else_cout {
+   private:
+    std::unique_ptr<std::ostream> held;
+   public:
+    ostream_else_cout(std::unique_ptr<std::ostream> &&held);
+    std::ostream &stream();
+};
+
+/// Returns an opened ostream from a command line argument.
+///
+/// Args:
+///     name: The name of the command line flag that will specify the file path.
+///     default_std_out: If true, defaults to stdout when the command line argument isn't given. Otherwise exits with
+///         failure when the command line argumen tisn't given.
+///     argc: Number of command line arguments.
+///     argv: Array of command line argument strings.
+///
+/// Returns:
+///     The default file pointer or the opened file.
+///
+/// Exits:
+///     EXIT_FAILURE:
+///         Failed to open the filepath.
+///     EXIT_FAILURE:
+///         Command line argument isn't present and default_std_out is false.
+ostream_else_cout find_output_stream_argument(const char *name, bool default_std_out, int argc, const char **argv);
 
 }
 

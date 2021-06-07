@@ -25,10 +25,11 @@
 #include <vector>
 
 #include "../circuit/circuit.h"
-#include "../simd/monotonic_buffer.h"
+#include "../dem/detector_error_model.h"
 #include "../simd/fixed_cap_vector.h"
-#include "../simd/sparse_xor_vec.h"
+#include "../simd/monotonic_buffer.h"
 #include "../simd/simd_util.h"
+#include "../simd/sparse_xor_vec.h"
 
 namespace stim_internal {
 
@@ -46,8 +47,8 @@ struct FusedError {
     ConstPointerRange<uint64_t> flipped;
     uint64_t local_time_shift;
     std::unique_ptr<FusedErrorRepeatBlock> block;
-    void print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const;
     void skip(uint64_t skipped);
+    void append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const;
 };
 
 struct FusedErrorRepeatBlock {
@@ -55,7 +56,7 @@ struct FusedErrorRepeatBlock {
     uint64_t total_ticks_per_iteration_including_sub_loops;
     uint64_t outer_ticks_per_iteration() const;
     std::vector<FusedError> errors;
-    void print(FILE *out, size_t indent, uint64_t num_found_detectors, uint64_t &tick_count) const;
+    void append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const;
     void skip(uint64_t skipped);
 };
 
@@ -81,7 +82,7 @@ struct ErrorFuser {
 
     ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
 
-    static void convert_circuit_out(const Circuit &circuit, FILE *out, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
+    static DetectorErrorModel circuit_to_detector_error_model(const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorFuser(const ErrorFuser &fuser) = delete;
@@ -131,7 +132,7 @@ struct ErrorFuser {
 
    private:
     void shift_active_detector_ids(int64_t shift);
-    void print_flushed(FILE *out) const;
+    DetectorErrorModel flushed_to_detector_error_model() const;
     void flush();
     void run_loop(const Circuit &loop, uint64_t iterations);
     ConstPointerRange<uint64_t> add_error(double probability, ConstPointerRange<uint64_t> data);

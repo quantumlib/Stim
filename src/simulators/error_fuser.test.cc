@@ -24,18 +24,7 @@
 using namespace stim_internal;
 
 std::string convert(const Circuit &circuit, bool find_reducible_errors = false, bool fold_loops = false, bool validate_detectors = true) {
-    FILE *f = tmpfile();
-    ErrorFuser::convert_circuit_out(circuit, f, find_reducible_errors, fold_loops, validate_detectors);
-    rewind(f);
-    std::string s;
-    while (true) {
-        int c = getc(f);
-        if (c == EOF) {
-            break;
-        }
-        s.push_back(c);
-    }
-    return "\n" + s;
+    return "\n" + ErrorFuser::circuit_to_detector_error_model(circuit, find_reducible_errors, fold_loops, validate_detectors).str();
 }
 
 std::string convert(const char *text, bool find_reducible_errors = false, bool fold_loops = false, bool validate_detectors = true) {
@@ -874,7 +863,8 @@ error\(0.000669\d+\) D3 D5
 }
 
 TEST(ErrorFuser, loop_folding) {
-    ASSERT_EQ(convert(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
             MR 1
             REPEAT 12345678987654321 {
                 X_ERROR(0.25) 0
@@ -884,20 +874,21 @@ TEST(ErrorFuser, loop_folding) {
             }
             M 0
             OBSERVABLE_INCLUDE(9) rec[-1]
-        )CIRCUIT", false, true),
-        R"graph(
-error(0.25) D0 L9
-REPEAT 6172839493827159 {
-    error(0.25) D1 L9
-    error(0.25) D2 L9
-    TICK 2
-}
-error(0.25) D1 L9
-error(0.25) D2 L9
-)graph");
+        )CIRCUIT"), false, true, true),
+        DetectorErrorModel(R"MODEL(
+            error(0.25) D0 L9
+            REPEAT 6172839493827159 {
+                error(0.25) D1+t L9
+                error(0.25) D2+t L9
+                TICK 2
+            }
+            error(0.25) D12345678987654319 L9
+            error(0.25) D12345678987654320 L9
+        )MODEL"));
 
     // Solve period 8 logical observable oscillation.
-    ASSERT_EQ(convert(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
             R 0 1 2 3 4
             REPEAT 12345678987654321 {
                 CNOT 0 1 1 2 2 3 3 4
@@ -905,15 +896,16 @@ error(0.25) D2 L9
             }
             M 4
             OBSERVABLE_INCLUDE(9) rec[-1]
-        )CIRCUIT", false, true),
-        R"graph(
-REPEAT 1543209873456789 {
-    TICK 8
-}
-)graph");
+        )CIRCUIT"), false, true, true),
+        DetectorErrorModel(R"MODEL(
+            REPEAT 1543209873456789 {
+                TICK 8
+            }
+        )MODEL"));
 
     // Solve period 127 logical observable oscillation.
-    ASSERT_EQ(convert(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
             R 0 1 2 3 4 5 6
             REPEAT 12345678987654321 {
                 CNOT 0 1 1 2 2 3 3 4 4 5 5 6 6 0
@@ -925,17 +917,18 @@ REPEAT 1543209873456789 {
             X_ERROR(1) 7
             M 7
             DETECTOR rec[-1]
-        )CIRCUIT", false, true),
-        R"graph(
-REPEAT 97210070768930 {
-    TICK 127
-}
-error(1) D211
-)graph");
+        )CIRCUIT"), false, true, true),
+        DetectorErrorModel(R"MODEL(
+            REPEAT 97210070768930 {
+                TICK 127
+            }
+            error(1) D12345678987654321
+        )MODEL"));
 }
 
 TEST(ErrorFuser, loop_folding_nested_loop) {
-    ASSERT_EQ(convert(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
             MR 1
             REPEAT 1000 {
                 REPEAT 1000 {
@@ -947,22 +940,22 @@ TEST(ErrorFuser, loop_folding_nested_loop) {
             }
             M 0
             OBSERVABLE_INCLUDE(9) rec[-1]
-        )CIRCUIT", false, true),
-        R"graph(
-REPEAT 999 {
-    REPEAT 1000 {
-        error(0.25) D0 L9
-        TICK 1
-    }
-}
-REPEAT 499 {
-    error(0.25) D0 L9
-    error(0.25) D1 L9
-    TICK 2
-}
-error(0.25) D0 L9
-error(0.25) D1 L9
-)graph");
+        )CIRCUIT"), false, true, true),
+        DetectorErrorModel(R"MODEL(
+            REPEAT 999 {
+                REPEAT 1000 {
+                    error(0.25) D0+t L9
+                    TICK 1
+                }
+            }
+            REPEAT 499 {
+                error(0.25) D0+t L9
+                error(0.25) D1+t L9
+                TICK 2
+            }
+            error(0.25) D999998 L9
+            error(0.25) D999999 L9
+        )MODEL"));
 }
 
 TEST(ErrorFuser, loop_folding_rep_code_circuit) {
@@ -970,61 +963,58 @@ TEST(ErrorFuser, loop_folding_rep_code_circuit) {
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
-    ASSERT_EQ("", check_matches(
-        convert(
-            circuit,
-            true,
-            true),
-        R"graph(
-error\(0.00026\d+\) D0 D1
-error\(0.00026\d+\) D0 D3
-error\(0.00026\d+\) D0 L0
-error\(0.00026\d+\) D1 D2
-error\(0.00053\d+\) D1 D3
-error\(0.00053\d+\) D1 D4
-error\(0.00026\d+\) D2
-error\(0.00053\d+\) D2 D4
-error\(0.00026\d+\) D2 D5
-error\(0.00026\d+\) D3 D4
-error\(0.00026\d+\) D3 L0
-reducible_error\(0.00026\d+\) D3 L0 \^ D0 L0
-error\(0.00026\d+\) D4 D5
-error\(0.00026\d+\) D5
-reducible_error\(0.00026\d+\) D5 \^ D2
-REPEAT 99998 \{
-    error\(0.00026\d+\) D3 D4
-    error\(0.00026\d+\) D3 D6
-    error\(0.00026\d+\) D3 L0
-    error\(0.00026\d+\) D4 D5
-    error\(0.00053\d+\) D4 D6
-    error\(0.00053\d+\) D4 D7
-    error\(0.00026\d+\) D5
-    error\(0.00053\d+\) D5 D7
-    error\(0.00026\d+\) D5 D8
-    error\(0.00026\d+\) D6 D7
-    error\(0.00026\d+\) D6 L0
-    reducible_error\(0.00026\d+\) D6 L0 \^ D3 L0
-    error\(0.00026\d+\) D7 D8
-    error\(0.00026\d+\) D8
-    reducible_error\(0.00026\d+\) D8 \^ D5
-    TICK 3
-\}
-error\(0.00026\d+\) D3 D4
-error\(0.00026\d+\) D3 D6
-error\(0.00026\d+\) D3 L0
-error\(0.00026\d+\) D4 D5
-error\(0.00053\d+\) D4 D6
-error\(0.00053\d+\) D4 D7
-error\(0.00026\d+\) D5
-error\(0.00053\d+\) D5 D7
-error\(0.00026\d+\) D5 D8
-error\(0.00026\d+\) D6 D7
-error\(0.00026\d+\) D6 L0
-reducible_error\(0.00026\d+\) D6 L0 \^ D3 L0
-error\(0.00026\d+\) D7 D8
-error\(0.00026\d+\) D8
-reducible_error\(0.00026\d+\) D8 \^ D5
-)graph"));
+    auto actual = ErrorFuser::circuit_to_detector_error_model(circuit, true, true, true);
+    auto expected = DetectorErrorModel(R"MODEL(
+        error(0.00026) D0 D1
+        error(0.00026) D0 D3
+        error(0.00026) D0 L0
+        error(0.00026) D1 D2
+        error(0.00053) D1 D3
+        error(0.00053) D1 D4
+        error(0.00026) D2
+        error(0.00053) D2 D4
+        error(0.00026) D2 D5
+        error(0.00026) D3 D4
+        error(0.00026) D3 L0
+        reducible_error(0.00026) D3 L0 ^ D0 L0
+        error(0.00026) D4 D5
+        error(0.00026) D5
+        reducible_error(0.00026) D5 ^ D2
+        REPEAT 99998 {
+            error(0.000266) D3+t D4+t
+            error(0.000266) D3+t D6+t
+            error(0.000266) D3+t L0
+            error(0.000266) D4+t D5+t
+            error(0.000533) D4+t D6+t
+            error(0.000533) D4+t D7+t
+            error(0.000266) D5+t
+            error(0.000533) D5+t D7+t
+            error(0.000266) D5+t D8+t
+            error(0.000266) D6+t D7+t
+            error(0.000266) D6+t L0
+            reducible_error(0.000266) D6+t L0 ^ D3+t L0
+            error(0.000266) D7+t D8+t
+            error(0.000266) D8+t
+            reducible_error(0.000266) D8+t ^ D5+t
+            TICK 3
+        }
+        error(0.000266) D299997 D299998
+        error(0.000266) D299997 D300000
+        error(0.000266) D299997 L0
+        error(0.000266) D299998 D299999
+        error(0.000533) D299998 D300000
+        error(0.000533) D299998 D300001
+        error(0.000266) D299999
+        error(0.000533) D299999 D300001
+        error(0.000266) D299999 D300002
+        error(0.000266) D300000 D300001
+        error(0.000266) D300000 L0
+        reducible_error(0.000266) D300000 L0 ^ D299997 L0
+        error(0.000266) D300001 D300002
+        error(0.000266) D300002
+        reducible_error(0.000266) D300002 ^ D299999
+    )MODEL");
+    ASSERT_TRUE(actual.approx_equals(expected, 0.00001));
 }
 
 TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {

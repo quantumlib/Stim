@@ -116,14 +116,13 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     bool fold_loops = find_bool_argument("--fold_loops", argc, argv);
     bool validate_detectors = !find_bool_argument("--allow_gauge_detectors", argc, argv);
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    ErrorFuser::convert_circuit_out(Circuit::from_file(in), out, find_reducible_errors, fold_loops, validate_detectors);
+    auto out_stream = find_output_stream_argument("--out", true, argc, argv);
+    std::ostream &out = out_stream.stream();
+    auto circuit = Circuit::from_file(in);
     if (in != stdin) {
         fclose(in);
     }
-    if (out != stdout) {
-        fclose(out);
-    }
+    out << ErrorFuser::circuit_to_detector_error_model(circuit, find_reducible_errors, fold_loops, validate_detectors);
     return EXIT_SUCCESS;
 }
 

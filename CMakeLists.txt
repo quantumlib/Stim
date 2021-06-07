@@ -42,6 +42,7 @@ set(SOURCE_FILES_NO_MAIN
         src/circuit/gate_data_period_3.cc
         src/circuit/gate_data_period_4.cc
         src/circuit/gate_data_swaps.cc
+        src/dem/detector_error_model.cc
         src/gate_help.cc
         src/gen/circuit_gen_main.cc
         src/gen/circuit_gen_params.cc
@@ -76,6 +77,7 @@ set(TEST_FILES
         src/arg_parse.test.cc
         src/circuit/circuit.test.cc
         src/circuit/gate_data.test.cc
+        src/dem/detector_error_model.test.cc
         src/gen/circuit_gen_main.test.cc
         src/gen/circuit_gen_params.test.cc
         src/gen/gen_color_code.test.cc

@@ -126,6 +126,12 @@ struct ConstPointerRange {
     const T *end() const {
         return ptr_end;
     }
+    const T &front() const {
+        return &ptr_start;
+    }
+    const T &back() const {
+        return *(ptr_end - 1);
+    }
     const T &operator[](size_t index) const {
         return ptr_start[index];
     }

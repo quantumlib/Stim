@@ -100,13 +100,9 @@ Circuit::Circuit(const Circuit &circuit)
 }
 
 Circuit::Circuit(Circuit &&circuit) noexcept
-    : jag_targets(circuit.jag_targets.total_allocated()),
+    : jag_targets(std::move(circuit.jag_targets)),
       operations(std::move(circuit.operations)),
-      blocks(circuit.blocks) {
-    // Keep local copy of operation data.
-    for (auto &op : operations) {
-        op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
-    }
+      blocks(std::move(circuit.blocks)) {
 }
 
 Circuit &Circuit::operator=(const Circuit &circuit) {
@@ -126,12 +122,7 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
     if (&circuit != this) {
         operations = std::move(circuit.operations);
         blocks = std::move(circuit.blocks);
-
-        // Keep local copy of operation data.
-        jag_targets = MonotonicBuffer<uint32_t>(circuit.jag_targets.total_allocated());
-        for (auto &op : operations) {
-            op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
-        }
+        jag_targets = std::move(circuit.jag_targets);
     }
     return *this;
 }
@@ -185,13 +176,6 @@ bool Circuit::approx_equals(const Circuit &other, double atol) const {
     return true;
 }
 
-template <typename SOURCE>
-inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {
-    while (c == ' ' || c == '\t') {
-        c = read_char();
-    }
-}
-
 inline bool is_name_char(int c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
 }
@@ -207,45 +191,6 @@ inline const Gate &read_gate_name(int &c, SOURCE read_char) {
     }
     // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
     return GATE_DATA.at(name_buf, n);
-}
-
-inline bool is_double_char(int c) {
-    return (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-';
-}
-
-template <typename SOURCE>
-double read_non_negative_double(int &c, SOURCE read_char) {
-    char buf[64];
-    size_t n = 0;
-    while (n < sizeof(buf) - 1 && is_double_char(c)) {
-        buf[n] = (char)c;
-        c = read_char();
-        n++;
-    }
-    buf[n] = '\0';
-
-    char *end;
-    double result = strtod(buf, &end);
-    if (end != buf + n || !(result >= 0)) {
-        throw std::out_of_range("Not a non-negative real number: " + std::string(buf));
-    }
-    return result;
-}
-
-template <typename SOURCE>
-double read_parens_argument(int &c, const Gate &gate, SOURCE read_char) {
-    if (c != '(') {
-        throw std::out_of_range("Gate " + std::string(gate.name) + "(X) missing a parens argument.");
-    }
-    c = read_char();
-    read_past_within_line_whitespace(c, read_char);
-    double result = read_non_negative_double(c, read_char);
-    read_past_within_line_whitespace(c, read_char);
-    if (c != ')') {
-        throw std::out_of_range("Gate " + std::string(gate.name) + "(X) missing a closing parens for its argument.");
-    }
-    c = read_char();
-    return result;
 }
 
 template <typename SOURCE>
@@ -280,22 +225,6 @@ uint64_t read_uint63_t(int &c, SOURCE read_char) {
         c = read_char();
     } while (c >= '0' && c <= '9');
     return result;
-}
-
-template <typename SOURCE>
-bool read_until_next_line_arg(int &c, SOURCE read_char) {
-    if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
-        throw std::out_of_range("Gate targets must be separated by spacing.");
-    }
-    while (c == ' ' || c == '\t') {
-        c = read_char();
-    }
-    if (c == '#') {
-        do {
-            c = read_char();
-        } while (c != '\n' && c != EOF);
-    }
-    return c != '\n' && c != '{' && c != EOF;
 }
 
 template <typename SOURCE>
@@ -392,31 +321,13 @@ inline void read_record_targets_into(int &c, SOURCE read_char, Circuit &circuit)
 }
 
 template <typename SOURCE>
-void read_past_dead_space_between_commands(int &c, SOURCE read_char) {
-    while (true) {
-        while (isspace(c)) {
-            c = read_char();
-        }
-        if (c == EOF) {
-            break;
-        }
-        if (c != '#') {
-            break;
-        }
-        while (c != '\n' && c != EOF) {
-            c = read_char();
-        }
-    }
-}
-
-template <typename SOURCE>
 void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read_char) {
     int c = (int)lead_char;
     const auto &gate = read_gate_name(c, read_char);
     double val = 0;
     if (gate.flags & GATE_TAKES_PARENS_ARGUMENT) {
         read_past_within_line_whitespace(c, read_char);
-        val = read_parens_argument(c, gate, read_char);
+        val = read_parens_argument(c, gate.name, read_char);
     }
     if (!(gate.flags & (GATE_IS_BLOCK | GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_PRODUCES_RESULTS |
                         GATE_TARGETS_PAULI_STRING | GATE_CAN_TARGET_MEASUREMENT_RECORD))) {
