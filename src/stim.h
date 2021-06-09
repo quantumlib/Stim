@@ -17,20 +17,18 @@
 #ifndef STIM_H
 #define STIM_H
 
-#include "simulators/tableau_simulator.h"
-#include "stabilizers/tableau.h"
-#include "stabilizers/pauli_string.h"
 #include "simulators/frame_simulator.h"
 #include "simulators/tableau_simulator.h"
-#include "simulators/tableau_simulator.h"
+#include "stabilizers/pauli_string.h"
+#include "stabilizers/tableau.h"
 
 namespace stim {
-    using Tableau = stim_internal::Tableau;
-    using TableauSimulator = stim_internal::TableauSimulator;
-    using FrameSimulator = stim_internal::FrameSimulator;
-    using Circuit = stim_internal::Circuit;
-    using PauliString = stim_internal::PauliString;
-    const auto &GATE_DATA = stim_internal::GATE_DATA;
-}
+using Tableau = stim_internal::Tableau;
+using TableauSimulator = stim_internal::TableauSimulator;
+using FrameSimulator = stim_internal::FrameSimulator;
+using Circuit = stim_internal::Circuit;
+using PauliString = stim_internal::PauliString;
+const auto &GATE_DATA = stim_internal::GATE_DATA;
+}  // namespace stim
 
 #endif

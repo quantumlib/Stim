@@ -45,6 +45,6 @@ inline uint8_t popcnt64(uint64_t val) {
     return (uint8_t)val;
 }
 
-}
+}  // namespace stim_internal
 
 #endif

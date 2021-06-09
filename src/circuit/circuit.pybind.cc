@@ -15,15 +15,15 @@
 #include "circuit.pybind.h"
 
 #include "../gen/circuit_gen_params.h"
+#include "../gen/gen_color_code.h"
 #include "../gen/gen_rep_code.h"
 #include "../gen/gen_surface_code.h"
-#include "../gen/gen_color_code.h"
 #include "../py/base.pybind.h"
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
+#include "circuit_gate_target.pybind.h"
 #include "circuit_instruction.pybind.h"
 #include "circuit_repeat_block.pybind.h"
-#include "circuit_gate_target.pybind.h"
 
 using namespace stim_internal;
 
@@ -61,8 +61,8 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''').compile_detector_sampler().sample(shots=1)
                 array([[0]], dtype=uint8)
 
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::init([](const char *stim_program_text) {
@@ -85,8 +85,8 @@ void pybind_circuit(pybind11::module &m) {
                 ...    CNOT 0 1
                 ...    M 1
                 ... ''')
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "num_measurements",
@@ -104,8 +104,8 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c.num_measurements
                 201
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "num_detectors",
@@ -126,8 +126,8 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c.num_detectors
                 201
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "num_observables",
@@ -146,8 +146,8 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c.num_observables
                 6
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "num_qubits",
@@ -168,8 +168,8 @@ void pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> c.num_qubits
                 101
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "compile_sampler",
@@ -188,8 +188,8 @@ void pybind_circuit(pybind11::module &m) {
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
                 array([[0, 0, 1]], dtype=uint8)
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "compile_detector_sampler",
@@ -210,8 +210,8 @@ void pybind_circuit(pybind11::module &m) {
                 >>> s = c.compile_detector_sampler()
                 >>> s.sample(shots=1)
                 array([[0]], dtype=uint8)
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "clear",
@@ -228,8 +228,8 @@ void pybind_circuit(pybind11::module &m) {
                 >>> c.clear()
                 >>> c
                 stim.Circuit()
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__iadd__",
@@ -252,14 +252,14 @@ void pybind_circuit(pybind11::module &m) {
                 X 0
                 Y 1 2
                 M 0 1 2
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "flattened_operations",
-        [](Circuit &self){
+        [](Circuit &self) {
             pybind11::list result;
-            self.for_each_operation([&](const Operation &op){
+            self.for_each_operation([&](const Operation &op) {
                 pybind11::list targets;
                 for (auto t : op.target_data.targets) {
                     auto v = t & TARGET_VALUE_MASK;
@@ -316,13 +316,11 @@ void pybind_circuit(pybind11::module &m) {
                 ...    }
                 ... ''').flattened_operations()
                 [('H', [6], 0.0), ('H', [6], 0.0)]
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
-    c.def(pybind11::self == pybind11::self,
-        "Determines if two circuits have identical contents.");
-    c.def(pybind11::self != pybind11::self,
-        "Determines if two circuits have non-identical contents.");
+    c.def(pybind11::self == pybind11::self, "Determines if two circuits have identical contents.");
+    c.def(pybind11::self != pybind11::self, "Determines if two circuits have non-identical contents.");
 
     c.def(
         "__add__",
@@ -344,8 +342,8 @@ void pybind_circuit(pybind11::module &m) {
                 X 0
                 Y 1 2
                 M 0 1 2
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__imul__",
@@ -372,8 +370,8 @@ void pybind_circuit(pybind11::module &m) {
                     X 0
                     Y 1 2
                 }
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__mul__",
@@ -399,8 +397,8 @@ void pybind_circuit(pybind11::module &m) {
                     X 0
                     Y 1 2
                 }
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__rmul__",
@@ -426,8 +424,8 @@ void pybind_circuit(pybind11::module &m) {
                     X 0
                     Y 1 2
                 }
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "append_operation",
@@ -459,8 +457,8 @@ void pybind_circuit(pybind11::module &m) {
                 name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
                 targets: The gate targets. Gates implicitly broadcast over their targets.
                 arg: A modifier for the gate, e.g. the probability of an error. Defaults to 0.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "append_from_stim_program_text",
@@ -489,15 +487,17 @@ void pybind_circuit(pybind11::module &m) {
 
             Args:
                 text: The STIM program text containing the circuit operations to append.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
-    c.def("__str__",
-          &Circuit::str,
-          "Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit.");
-    c.def("__repr__",
-          &circuit_repr,
-          "Returns text that is a valid python expression evaluating to an equivalent `stim.Circuit`.");
+    c.def(
+        "__str__",
+        &Circuit::str,
+        "Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit.");
+    c.def(
+        "__repr__",
+        &circuit_repr,
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.Circuit`.");
 
     c.def(
         "copy",
@@ -517,8 +517,8 @@ void pybind_circuit(pybind11::module &m) {
                 False
                 >>> c2 == c1
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_static(
         "generated",
@@ -554,7 +554,8 @@ void pybind_circuit(pybind11::module &m) {
             } else if (code == "color_code") {
                 return generate_color_code_circuit(params).circuit;
             } else {
-                throw std::invalid_argument("Unrecognized circuit type. Expected type to start with "
+                throw std::invalid_argument(
+                    "Unrecognized circuit type. Expected type to start with "
                     "'surface_code:', 'repetition_code:', or 'color_code:");
             }
         },
@@ -646,8 +647,8 @@ void pybind_circuit(pybind11::module &m) {
                 DETECTOR rec[-2] rec[-3] rec[-6]
                 DETECTOR rec[-3] rec[-4] rec[-7]
                 OBSERVABLE_INCLUDE(0) rec[-1]
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__len__",
@@ -678,8 +679,8 @@ void pybind_circuit(pybind11::module &m) {
                 ...    }
                 ... '''))
                 1
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__getitem__",
@@ -693,19 +694,14 @@ void pybind_circuit(pybind11::module &m) {
             }
             auto &op = self.operations[index];
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                return pybind11::cast(CircuitRepeatBlock{
-                    op_data_rep_count(op.target_data),
-                    op_data_block_body(self, op.target_data)
-                });
+                return pybind11::cast(
+                    CircuitRepeatBlock{op_data_rep_count(op.target_data), op_data_block_body(self, op.target_data)});
             }
             std::vector<GateTarget> targets;
             for (const auto &e : op.target_data.targets) {
                 targets.push_back(GateTarget(e));
             }
-            return pybind11::cast(CircuitInstruction(
-                *op.gate,
-                targets,
-                op.target_data.arg));
+            return pybind11::cast(CircuitInstruction(*op.gate, targets, op.target_data.arg));
         },
         clean_doc_string(u8R"DOC(
             Returns copies of instructions from the circuit.
@@ -730,6 +726,6 @@ void pybind_circuit(pybind11::module &m) {
                 X 0
                 Y 1 2
                 '''))
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 }

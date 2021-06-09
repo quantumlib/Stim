@@ -68,6 +68,6 @@ std::mt19937_64 externally_seeded_rng();
 
 void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng);
 
-}
+}  // namespace stim_internal
 
 #endif

@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #include "gate_help.h"
-#include "stabilizers/tableau.h"
 
 #include <algorithm>
-#include <iostream>
 #include <cstring>
+#include <iostream>
 #include <map>
 #include <set>
+
+#include "stabilizers/tableau.h"
 
 using namespace stim_internal;
 
@@ -51,7 +52,7 @@ struct Acc {
     }
 
     template <typename T>
-    Acc &operator<<(const T& other) {
+    Acc &operator<<(const T &other) {
         working << other;
         return *this;
     }
@@ -228,7 +229,7 @@ void print_unitary_matrix(Acc &out, const Gate &gate) {
         }
     }
     out << "```\n";
-    double factor = all_halves ? 2 : all_sqrt_halves ?  1 / s : 1;
+    double factor = all_halves ? 2 : all_sqrt_halves ? 1 / s : 1;
     bool first_row = true;
     for (const auto &row : matrix) {
         if (first_row) {

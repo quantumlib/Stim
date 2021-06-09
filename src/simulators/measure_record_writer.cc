@@ -205,8 +205,14 @@ simd_bit_table stim_internal::transposed_vs_ref(
 }
 
 void stim_internal::write_table_data(
-    FILE *out, size_t num_shots, size_t num_measurements, const simd_bits &reference_sample,
-    const simd_bit_table &table, SampleFormat format, char dets_prefix_1, char dets_prefix_2,
+    FILE *out,
+    size_t num_shots,
+    size_t num_measurements,
+    const simd_bits &reference_sample,
+    const simd_bit_table &table,
+    SampleFormat format,
+    char dets_prefix_1,
+    char dets_prefix_2,
     size_t dets_prefix_transition) {
     if (format == SAMPLE_FORMAT_PTB64) {
         auto f64 = num_shots >> 6;

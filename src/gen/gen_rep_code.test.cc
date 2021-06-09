@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-
 #include "gen_rep_code.h"
+
+#include <gtest/gtest.h>
 
 using namespace stim_internal;
 
@@ -27,7 +27,9 @@ TEST(gen_surface_code, rep_code) {
     auto out = generate_rep_code_circuit(params);
     ASSERT_EQ(out.layout_str(), R"LAYOUT(# L0 Z1 d2 Z3 d4 Z5 d6
 )LAYOUT");
-    ASSERT_EQ(out.circuit.str(), Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        out.circuit.str(),
+        Circuit::from_text(R"CIRCUIT(
         R 0 1 2 3 4 5 6
         X_ERROR(0.25) 0 1 2 3 4 5 6
         TICK
@@ -66,5 +68,6 @@ TEST(gen_surface_code, rep_code) {
         DETECTOR rec[-2] rec[-3] rec[-6]
         DETECTOR rec[-3] rec[-4] rec[-7]
         OBSERVABLE_INCLUDE(0) rec[-1]
-    )CIRCUIT").str());
+    )CIRCUIT")
+            .str());
 }

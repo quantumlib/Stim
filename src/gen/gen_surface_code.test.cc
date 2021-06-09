@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "gen_surface_code.h"
+
 #include <gtest/gtest.h>
 
 #include "../test_util.test.h"
-#include "gen_surface_code.h"
 
 using namespace stim_internal;
 
@@ -26,12 +27,15 @@ TEST(gen_surface_code, unrotated_surface_code_hard_coded_comparison) {
     params.before_measure_flip_probability = 0.375;
     params.before_round_data_depolarization = 0.0625;
     auto out = generate_surface_code_circuit(params);
-    ASSERT_EQ(out.layout_str(),
-              ""
-              "# L0 X1 L2\n"
-              "# Z3 d4 Z5\n"
-              "# d6 X7 d8\n");
-    ASSERT_EQ(out.circuit.str(), Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        out.layout_str(),
+        ""
+        "# L0 X1 L2\n"
+        "# Z3 d4 Z5\n"
+        "# d6 X7 d8\n");
+    ASSERT_EQ(
+        out.circuit.str(),
+        Circuit::from_text(R"CIRCUIT(
         R 0 2 4 6 8
         X_ERROR(0.25) 0 2 4 6 8
         R 1 3 5 7
@@ -95,17 +99,21 @@ TEST(gen_surface_code, unrotated_surface_code_hard_coded_comparison) {
         DETECTOR rec[-2] rec[-3] rec[-5] rec[-8]
         DETECTOR rec[-1] rec[-3] rec[-4] rec[-7]
         OBSERVABLE_INCLUDE(0) rec[-4] rec[-5]
-    )CIRCUIT").str());
+    )CIRCUIT")
+            .str());
 
     params.rounds = 1;
     params.task = "unrotated_memory_x";
     auto out2 = generate_surface_code_circuit(params);
-    ASSERT_EQ(out2.layout_str(),
-              ""
-              "# L0 X1 d2\n"
-              "# Z3 d4 Z5\n"
-              "# L6 X7 d8\n");
-    ASSERT_EQ(out2.circuit.str(), Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        out2.layout_str(),
+        ""
+        "# L0 X1 d2\n"
+        "# Z3 d4 Z5\n"
+        "# L6 X7 d8\n");
+    ASSERT_EQ(
+        out2.circuit.str(),
+        Circuit::from_text(R"CIRCUIT(
         RX 0 2 4 6 8
         Z_ERROR(0.25) 0 2 4 6 8
         R 1 3 5 7
@@ -140,7 +148,8 @@ TEST(gen_surface_code, unrotated_surface_code_hard_coded_comparison) {
         DETECTOR rec[-3] rec[-4] rec[-5] rec[-9]
         DETECTOR rec[-1] rec[-2] rec[-3] rec[-6]
         OBSERVABLE_INCLUDE(0) rec[-2] rec[-5]
-    )CIRCUIT").str());
+    )CIRCUIT")
+            .str());
 }
 
 TEST(gen_surface_code, rotated_surface_code_hard_coded_comparison) {
@@ -150,14 +159,17 @@ TEST(gen_surface_code, rotated_surface_code_hard_coded_comparison) {
     params.before_measure_flip_probability = 0.375;
     params.before_round_data_depolarization = 0.0625;
     auto out = generate_surface_code_circuit(params);
-    ASSERT_EQ(out.layout_str(),
-              ""
-              "#         X2 \n"
-              "#     L1      L3 \n"
-              "#         Z7 \n"
-              "#     d6      d8 \n"
-              "#         X12\n");
-    ASSERT_EQ(out.circuit.str(), Circuit::from_text(R"CIRCUIT(
+    ASSERT_EQ(
+        out.layout_str(),
+        ""
+        "#         X2 \n"
+        "#     L1      L3 \n"
+        "#         Z7 \n"
+        "#     d6      d8 \n"
+        "#         X12\n");
+    ASSERT_EQ(
+        out.circuit.str(),
+        Circuit::from_text(R"CIRCUIT(
         R 1 3 6 8
         X_ERROR(0.25) 1 3 6 8
         R 2 7 12
@@ -218,5 +230,6 @@ TEST(gen_surface_code, rotated_surface_code_hard_coded_comparison) {
         M 1 3 6 8
         DETECTOR rec[-1] rec[-2] rec[-3] rec[-4] rec[-6]
         OBSERVABLE_INCLUDE(0) rec[-3] rec[-4]
-    )CIRCUIT").str());
+    )CIRCUIT")
+            .str());
 }

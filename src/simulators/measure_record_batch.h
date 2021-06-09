@@ -66,6 +66,6 @@ struct MeasureRecordBatch {
     void clear();
 };
 
-}
+}  // namespace stim_internal
 
 #endif

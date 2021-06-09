@@ -142,6 +142,6 @@ class FixedCapVector {
     }
 };
 
-}
+}  // namespace stim_internal
 
 #endif

@@ -48,7 +48,11 @@ struct FrameSimulator {
     static simd_bit_table sample(
         const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng);
     static void sample_out(
-        const Circuit &circuit, const simd_bits &reference_sample, uint64_t num_shots, FILE *out, SampleFormat format,
+        const Circuit &circuit,
+        const simd_bits &reference_sample,
+        uint64_t num_shots,
+        FILE *out,
+        SampleFormat format,
         std::mt19937_64 &rng);
 
     PauliString get_frame(size_t sample_index) const;
@@ -105,6 +109,6 @@ struct DebugForceResultStreamingRaii {
     ~DebugForceResultStreamingRaii();
 };
 
-}
+}  // namespace stim_internal
 
 #endif

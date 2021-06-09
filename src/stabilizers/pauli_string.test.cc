@@ -285,7 +285,8 @@ TEST(PauliStringPtr, sparse_str) {
     ASSERT_EQ(PauliString::from_str("IYIXZ").ref().sparse_str(), "+Y1*X3*Z4");
     ASSERT_EQ(PauliString::from_str("-IYIXZ").ref().sparse_str(), "-Y1*X3*Z4");
     auto x501 = PauliString::from_func(
-                    false, 1000,
+                    false,
+                    1000,
                     [](size_t k) {
                         return "IX"[k == 501];
                     })

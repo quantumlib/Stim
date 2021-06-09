@@ -65,7 +65,7 @@ struct VectorSimulator {
     std::string str() const;
 };
 
-}
+}  // namespace stim_internal
 
 /// Writes a description of the state vector's state to an output stream.
 std::ostream &operator<<(std::ostream &out, const stim_internal::VectorSimulator &sim);

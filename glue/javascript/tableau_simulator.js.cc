@@ -1,7 +1,9 @@
+#include "tableau_simulator.js.h"
+
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
+
 #include "common.js.h"
-#include "tableau_simulator.js.h"
 
 using namespace stim_internal;
 

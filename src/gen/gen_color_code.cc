@@ -31,13 +31,15 @@ struct coord {
 GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenParameters &params) {
     if (params.task != "memory_xyz") {
         throw std::invalid_argument(
-            "Unrecognized task '" + params.task + "'. Known color_code tasks:\n"
-            "    'memory_xyz': Initialize logical |0>, protect by cycling X then Y then Z stabilizer measurements, measure logical Z.\n");
+            "Unrecognized task '" + params.task +
+            "'. Known color_code tasks:\n"
+            "    'memory_xyz': Initialize logical |0>, protect by cycling X then Y then Z stabilizer measurements, "
+            "measure logical Z.\n");
     }
     if (params.rounds < 2) {
         throw std::invalid_argument("Need rounds >= 2.");
     }
-    if (params.distance < 2 || params.distance  % 2 == 0) {
+    if (params.distance < 2 || params.distance % 2 == 0) {
         throw std::invalid_argument("Need an odd distance >= 3.");
     }
 
@@ -92,7 +94,12 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
     // Precompute targets for each tick of CNOT gates.
     std::array<std::vector<uint32_t>, 6> cnot_targets;
     std::vector<coord> deltas{
-        {1, 0}, {0.5, 1}, {0.5, -1}, {-1, 0}, {-0.5, 1}, {-0.5, -1},
+        {1, 0},
+        {0.5, 1},
+        {0.5, -1},
+        {-1, 0},
+        {-0.5, 1},
+        {-0.5, -1},
     };
     for (size_t k = 0; k < deltas.size(); k++) {
         for (auto measure : measure_coords) {
@@ -146,8 +153,10 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
                 detectors.push_back((data_qubits.size() - data_coord_to_order[data]) | TARGET_RECORD_BIT);
             }
         }
-        uint32_t p = (data_qubits.size() + measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT;
-        // Depending on if the last two rounds were XY, YZ, or ZX, different combinations are equal the data measurements.
+        uint32_t p =
+            (data_qubits.size() + measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT;
+        // Depending on if the last two rounds were XY, YZ, or ZX, different combinations are equal the data
+        // measurements.
         if (params.rounds % 3 == 0) {
             detectors.push_back(p);
         } else if (params.rounds % 3 == 1) {
@@ -186,11 +195,11 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
 
     return {
         full_circuit,
-            layout,
+        layout,
         "# Legend:\n"
-            "#     d# = data qubit\n"
-            "#     L# = data qubit with logical observable crossing\n"
-            "#     R# = measurement qubit (red hex)\n"
-            "#     G# = measurement qubit (green hex)\n"
-            "#     B# = measurement qubit (blue hex)\n"};
+        "#     d# = data qubit\n"
+        "#     L# = data qubit with logical observable crossing\n"
+        "#     R# = measurement qubit (red hex)\n"
+        "#     G# = measurement qubit (green hex)\n"
+        "#     B# = measurement qubit (blue hex)\n"};
 }

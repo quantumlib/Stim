@@ -5,7 +5,7 @@
 #include "circuit_gen_params.h"
 
 namespace stim_internal {
-    GeneratedCircuit generate_rep_code_circuit(const CircuitGenParameters &params);
+GeneratedCircuit generate_rep_code_circuit(const CircuitGenParameters &params);
 }
 
 #endif

@@ -356,10 +356,9 @@ double read_parens_argument(int &c, const char *name, SOURCE read_char) {
     return result;
 }
 
-}
+}  // namespace stim_internal
 
 std::ostream &operator<<(std::ostream &out, const stim_internal::Circuit &c);
 std::ostream &operator<<(std::ostream &out, const stim_internal::Operation &op);
-
 
 #endif

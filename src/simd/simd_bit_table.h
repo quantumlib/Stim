@@ -35,7 +35,10 @@ struct simd_bit_table {
     static simd_bit_table identity(size_t n);
     /// Concatenates tables together to form a larger table.
     static simd_bit_table from_quadrants(
-        size_t n, const simd_bit_table &upper_left, const simd_bit_table &upper_right, const simd_bit_table &lower_left,
+        size_t n,
+        const simd_bit_table &upper_left,
+        const simd_bit_table &upper_right,
+        const simd_bit_table &lower_left,
         const simd_bit_table &lower_right);
 
     /// Equality.
@@ -119,6 +122,6 @@ constexpr uint8_t lg(size_t k) {
     return k <= 1 ? 0 : lg(k >> 1) + 1;
 }
 
-}
+}  // namespace stim_internal
 
 #endif

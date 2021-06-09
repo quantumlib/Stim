@@ -16,6 +16,7 @@
 #define CIRCUIT_REPEAT_BLOCK_PYBIND_H
 
 #include <pybind11/pybind11.h>
+
 #include "circuit.h"
 
 void pybind_circuit_repeat_block(pybind11::module &m);

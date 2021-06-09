@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gate_data.h"
-
 #include <complex>
 
 #include "../simulators/error_fuser.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
+#include "gate_data.h"
 
 using namespace stim_internal;
 
@@ -26,59 +25,65 @@ static constexpr std::complex<float> i = std::complex<float>(0, 1);
 static constexpr std::complex<float> s = 0.7071067811865475244f;
 
 void GateDataMap::add_gate_data_hada(bool &failed) {
-    add_gate(failed, Gate{
-        "H",
-        &TableauSimulator::H_XZ,
-        &FrameSimulator::H_XZ,
-        &ErrorFuser::H_XZ,
-        GATE_IS_UNITARY,
-        []() -> ExtraGateData {
-            return {
-                "B_Single Qubit Clifford Gates",
-                R"MARKDOWN(
+    add_gate(
+        failed,
+        Gate{
+            "H",
+            &TableauSimulator::H_XZ,
+            &FrameSimulator::H_XZ,
+            &ErrorFuser::H_XZ,
+            GATE_IS_UNITARY,
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
 The Hadamard gate.
 Swaps the X and Z axes.
 )MARKDOWN",
-                {{s, s}, {s, -s}},
-                {"+Z", "+X"},
-            };
-        },
-    });
+                    {{s, s}, {s, -s}},
+                    {"+Z", "+X"},
+                };
+            },
+        });
     add_gate_alias(failed, "H_XZ", "H");
 
-    add_gate(failed, Gate{
-        "H_XY",
-        &TableauSimulator::H_XY,
-        &FrameSimulator::H_XY,
-        &ErrorFuser::H_XY,
-        GATE_IS_UNITARY,
-        []() -> ExtraGateData {
-            return {
-                "B_Single Qubit Clifford Gates",
-                R"MARKDOWN(
+    add_gate(
+        failed,
+        Gate{
+            "H_XY",
+            &TableauSimulator::H_XY,
+            &FrameSimulator::H_XY,
+            &ErrorFuser::H_XY,
+            GATE_IS_UNITARY,
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
 A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
 )MARKDOWN",
-                {{0, s - i *s}, {s + i * s, 0}},
-                {"+Y", "-Z"},
-            };
-        },
-    });
+                    {{0, s - i * s}, {s + i * s, 0}},
+                    {"+Y", "-Z"},
+                };
+            },
+        });
 
-    add_gate(failed, Gate{
-        "H_YZ",
-        &TableauSimulator::H_YZ,
-        &FrameSimulator::H_YZ,
-        &ErrorFuser::H_YZ,
-        GATE_IS_UNITARY,
-        []() -> ExtraGateData {
-            return {
-                "B_Single Qubit Clifford Gates",
-                R"MARKDOWN(
+    add_gate(
+        failed,
+        Gate{
+            "H_YZ",
+            &TableauSimulator::H_YZ,
+            &FrameSimulator::H_YZ,
+            &ErrorFuser::H_YZ,
+            GATE_IS_UNITARY,
+            []() -> ExtraGateData {
+                return {
+                    "B_Single Qubit Clifford Gates",
+                    R"MARKDOWN(
 A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
 )MARKDOWN",
-                {{s, -i * s}, {i * s, -s}},
-                {"-X", "+Y"},
-            };
-        },
-    });
+                    {{s, -i * s}, {i * s, -s}},
+                    {"-X", "+Y"},
+                };
+            },
+        });
 }

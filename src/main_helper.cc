@@ -15,8 +15,8 @@
 #include "main_helper.h"
 
 #include "arg_parse.h"
-#include "gen/circuit_gen_main.h"
 #include "gate_help.h"
+#include "gen/circuit_gen_main.h"
 #include "probability_util.h"
 #include "simulators/detection_simulator.h"
 #include "simulators/error_fuser.h"
@@ -66,11 +66,7 @@ int main_mode_detect(int argc, const char **argv) {
 }
 
 int main_mode_sample(int argc, const char **argv) {
-    check_for_unknown_arguments(
-        {"--sample", "--frame0", "--out_format", "--out", "--in"},
-        "--sample",
-        argc,
-        argv);
+    check_for_unknown_arguments({"--sample", "--frame0", "--out_format", "--out", "--in"}, "--sample", argc, argv);
     SampleFormat out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
     bool frame0 = find_bool_argument("--frame0", argc, argv);
     uint64_t num_shots = (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv);

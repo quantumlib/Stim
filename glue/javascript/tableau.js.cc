@@ -1,7 +1,9 @@
+#include "tableau.js.h"
+
 #include <emscripten/bind.h>
+
 #include "../../src/circuit/gate_data.h"
 #include "common.js.h"
-#include "tableau.js.h"
 
 using namespace stim_internal;
 
@@ -55,7 +57,8 @@ ExposedPauliString ExposedTableau::z_output(size_t index) const {
     return ExposedPauliString(tableau.zs[index]);
 }
 
-ExposedTableau ExposedTableau::from_conjugated_generators_xs_zs(const emscripten::val &xs_val, const emscripten::val &zs_val) {
+ExposedTableau ExposedTableau::from_conjugated_generators_xs_zs(
+    const emscripten::val &xs_val, const emscripten::val &zs_val) {
     auto xs = emscripten::vecFromJSArray<ExposedPauliString>(xs_val);
     auto zs = emscripten::vecFromJSArray<ExposedPauliString>(zs_val);
     size_t n = xs.size();

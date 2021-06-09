@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "circuit_gen_params.h"
+
 #include <gtest/gtest.h>
 
 #include "../simulators/detection_simulator.h"
 #include "../test_util.test.h"
-#include "circuit_gen_params.h"
 
 using namespace stim_internal;
 
@@ -80,7 +81,8 @@ TEST(circuit_gen_params, append_reset) {
     ASSERT_EQ(circuit, Circuit::from_text("R 2 3 5\nX_ERROR(0.125) 2 3 5"));
     params.append_reset(circuit, {1}, 'X');
     params.append_reset(circuit, {4}, 'Y');
-    ASSERT_EQ(circuit, Circuit::from_text("R 2 3 5\nX_ERROR(0.125) 2 3 5\nRX 1\nZ_ERROR(0.125) 1\nRY 4\nX_ERROR(0.125) 4"));
+    ASSERT_EQ(
+        circuit, Circuit::from_text("R 2 3 5\nX_ERROR(0.125) 2 3 5\nRX 1\nZ_ERROR(0.125) 1\nRY 4\nX_ERROR(0.125) 4"));
 }
 
 TEST(circuit_gen_params, append_measure) {
@@ -101,7 +103,8 @@ TEST(circuit_gen_params, append_measure) {
     ASSERT_EQ(circuit, Circuit::from_text("X_ERROR(0.125) 2 3 5\nM 2 3 5"));
     params.append_measure(circuit, {1}, 'X');
     params.append_measure(circuit, {4}, 'Y');
-    ASSERT_EQ(circuit, Circuit::from_text("X_ERROR(0.125) 2 3 5\nM 2 3 5\nZ_ERROR(0.125) 1\nMX 1\nX_ERROR(0.125) 4\nMY 4"));
+    ASSERT_EQ(
+        circuit, Circuit::from_text("X_ERROR(0.125) 2 3 5\nM 2 3 5\nZ_ERROR(0.125) 1\nMX 1\nX_ERROR(0.125) 4\nMY 4"));
 }
 
 TEST(circuit_gen_params, append_measure_reset) {

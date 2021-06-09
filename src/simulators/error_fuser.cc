@@ -393,7 +393,11 @@ void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
 }
 
 ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors)
-    : xs(num_qubits), zs(num_qubits), find_reducible_errors(find_reducible_errors), fold_loops(fold_loops), validate_detectors(validate_detectors) {
+    : xs(num_qubits),
+      zs(num_qubits),
+      find_reducible_errors(find_reducible_errors),
+      fold_loops(fold_loops),
+      validate_detectors(validate_detectors) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
@@ -486,10 +490,12 @@ void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
     }
     double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.arg) / 3);
     for (auto q : dat.targets) {
-        add_error_combinations<2>(p, {
-            xs[q].range(),
-            zs[q].range(),
-        });
+        add_error_combinations<2>(
+            p,
+            {
+                xs[q].range(),
+                zs[q].range(),
+            });
     }
 }
 
@@ -505,12 +511,14 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
         auto a = dat.targets[i];
         auto b = dat.targets[i + 1];
-        add_error_combinations<4>(p, {
-            xs[a].range(),
-            zs[a].range(),
-            xs[b].range(),
-            zs[b].range(),
-        });
+        add_error_combinations<4>(
+            p,
+            {
+                xs[a].range(),
+                zs[a].range(),
+                xs[b].range(),
+                zs[b].range(),
+            });
     }
 }
 
@@ -519,7 +527,8 @@ void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
         "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
 }
 
-DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
+DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(
+    const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
     ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops, validate_detectors);
     fuser.run_circuit(circuit);
     fuser.post_check_initialization();
@@ -549,8 +558,7 @@ void ErrorFuser::flush() {
 ConstPointerRange<uint64_t> ErrorFuser::add_xored_error(
     double probability, ConstPointerRange<uint64_t> flipped1, ConstPointerRange<uint64_t> flipped2) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
-    mono_buf.tail.ptr_end =
-        xor_merge_sort<uint64_t>(flipped1, flipped2, mono_buf.tail.ptr_end);
+    mono_buf.tail.ptr_end = xor_merge_sort<uint64_t>(flipped1, flipped2, mono_buf.tail.ptr_end);
     return add_error_in_sorted_jagged_tail(probability);
 }
 
@@ -628,7 +636,7 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     hare.scheduled_measurement_time = scheduled_measurement_time;
     hare.accumulate_errors = false;
 
-    auto hare_is_colliding_with_tortoise = [&]() -> bool{
+    auto hare_is_colliding_with_tortoise = [&]() -> bool {
         // When comparing different loop iterations, shift detector ids to account for
         // detectors being introduced during each iteration.
         int64_t dt = -(int64_t)((hare_iter - tortoise_iter) * num_loop_detectors);
@@ -724,7 +732,8 @@ void ErrorFuser::shift_active_detector_ids(int64_t shift) {
     }
 }
 
-void FusedErrorRepeatBlock::append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const {
+void FusedErrorRepeatBlock::append_to_detector_error_model(
+    DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const {
     DetectorErrorModel body;
     for (auto e = errors.crbegin(); e != errors.crend(); e++) {
         e->append_to_detector_error_model(body, num_found_detectors, tick_count, false);
@@ -762,7 +771,8 @@ void FusedError::skip(uint64_t skipped) {
     }
 }
 
-void FusedError::append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const {
+void FusedError::append_to_detector_error_model(
+    DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const {
     if (block) {
         block->append_to_detector_error_model(out, num_found_detectors, tick_count);
         return;
@@ -781,7 +791,8 @@ void FusedError::append_to_detector_error_model(DetectorErrorModel &out, uint64_
             auto abs_id = e + num_found_detectors - LAST_DETECTOR_ID - 1;
             auto rel_id = abs_id - tick_count - local_time_shift;
             symptoms.push_back(DemRelativeSymptom::detector_id(
-                DemRelValue::unspecified(), DemRelValue::unspecified(),
+                DemRelValue::unspecified(),
+                DemRelValue::unspecified(),
                 top_level ? DemRelValue::absolute(abs_id) : DemRelValue::relative(rel_id)));
         } else {
             symptoms.push_back(DemRelativeSymptom::observable_id(e - FIRST_OBSERVABLE_ID));

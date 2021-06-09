@@ -1,5 +1,6 @@
-#include "../arg_parse.h"
 #include "circuit_gen_params.h"
+
+#include "../arg_parse.h"
 
 using namespace stim_internal;
 
@@ -28,7 +29,9 @@ void CircuitGenParameters::validate_params() const {
     }
 }
 
-CircuitGenParameters::CircuitGenParameters(uint64_t rounds, uint32_t distance, std::string task) : rounds(rounds), distance(distance), task(task) {}
+CircuitGenParameters::CircuitGenParameters(uint64_t rounds, uint32_t distance, std::string task)
+    : rounds(rounds), distance(distance), task(task) {
+}
 
 void CircuitGenParameters::append_begin_round_tick(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const {
     circuit.append_op("TICK", {});
@@ -37,14 +40,16 @@ void CircuitGenParameters::append_begin_round_tick(Circuit &circuit, const std::
     }
 }
 
-void CircuitGenParameters::append_unitary_1(Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
+void CircuitGenParameters::append_unitary_1(
+    Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
     circuit.append_op(name, targets);
     if (after_clifford_depolarization > 0) {
         circuit.append_op("DEPOLARIZE1", targets, after_clifford_depolarization);
     }
 }
 
-void CircuitGenParameters::append_unitary_2(Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
+void CircuitGenParameters::append_unitary_2(
+    Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
     circuit.append_op(name, targets);
     if (after_clifford_depolarization > 0) {
         circuit.append_op("DEPOLARIZE2", targets, after_clifford_depolarization);
@@ -61,7 +66,8 @@ void CircuitGenParameters::append_measure(Circuit &circuit, const std::vector<ui
     circuit.append_op(std::string("M") + basis, targets);
 }
 
-void CircuitGenParameters::append_measure_reset(Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
+void CircuitGenParameters::append_measure_reset(
+    Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
     append_anti_basis_error(circuit, targets, before_measure_flip_probability, basis);
     circuit.append_op(std::string("MR") + basis, targets);
     append_anti_basis_error(circuit, targets, after_reset_flip_probability, basis);

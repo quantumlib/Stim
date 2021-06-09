@@ -259,7 +259,10 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(
-        simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, simd_bits_range_ref other4,
+        simd_bits_range_ref other1,
+        simd_bits_range_ref other2,
+        simd_bits_range_ref other3,
+        simd_bits_range_ref other4,
         FUNC body) const {
         auto *v0 = ptr_simd;
         auto *v1 = other1.ptr_simd;
@@ -294,7 +297,7 @@ struct simd_bits_range_ref {
     }
 };
 
-}
+}  // namespace stim_internal
 
 /// Writes a description of the contents of the range to `out`.
 std::ostream &operator<<(std::ostream &out, const stim_internal::simd_bits_range_ref m);

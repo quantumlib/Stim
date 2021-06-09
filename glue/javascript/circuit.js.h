@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <emscripten/val.h>
+
 #include "../../src/circuit/circuit.h"
 
 struct ExposedCircuit {

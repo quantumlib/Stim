@@ -2,6 +2,7 @@
 #define COMMON_JS_H
 
 #include <emscripten/val.h>
+
 #include "../../src/probability_util.h"
 
 std::mt19937_64 &JS_BIND_SHARED_RNG();

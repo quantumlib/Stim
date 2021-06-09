@@ -53,7 +53,13 @@ TEST(arg_parse, check_for_unknown_arguments_terminator) {
 
 TEST(arg_parse, find_argument) {
     const char *argv[] = {
-        "skipped", "--mode", "2", "--test", "aba", "--a", "-b",
+        "skipped",
+        "--mode",
+        "2",
+        "--test",
+        "aba",
+        "--a",
+        "-b",
     };
     int n = sizeof(argv) / sizeof(char *);
     assert(find_argument("--mode", n, argv) == argv[2]);
@@ -70,7 +76,13 @@ TEST(arg_parse, find_argument) {
 
 TEST(arg_parse, require_find_argument) {
     const char *argv[] = {
-        "skipped", "--mode", "2", "--test", "aba", "--a", "-b",
+        "skipped",
+        "--mode",
+        "2",
+        "--test",
+        "aba",
+        "--a",
+        "-b",
     };
     int n = sizeof(argv) / sizeof(char *);
     assert(require_find_argument("--mode", n, argv) == argv[2]);
@@ -86,7 +98,16 @@ TEST(arg_parse, require_find_argument) {
 
 TEST(arg_parse, find_bool_argument) {
     const char *argv[] = {
-        "", "-other", "2", "do", "-not", "-be", "activate", "-par", "--", "-okay",
+        "",
+        "-other",
+        "2",
+        "do",
+        "-not",
+        "-be",
+        "activate",
+        "-par",
+        "--",
+        "-okay",
     };
     int n = sizeof(argv) / sizeof(char *);
     ASSERT_EQ(find_bool_argument("-activate", n, argv), 0);
@@ -99,7 +120,17 @@ TEST(arg_parse, find_bool_argument) {
 
 TEST(arg_parse, find_int_argument) {
     const char *argv[] = {
-        "", "-small=-23", "-empty", "-text", "abc", "-zero", "0", "-large", "50", "--", "-okay",
+        "",
+        "-small=-23",
+        "-empty",
+        "-text",
+        "abc",
+        "-zero",
+        "0",
+        "-large",
+        "50",
+        "--",
+        "-okay",
     };
     int n = sizeof(argv) / sizeof(char *);
     ASSERT_EQ(find_int64_argument("-missing", 5, -100, +100, n, argv), 5);
@@ -129,8 +160,21 @@ TEST(arg_parse, find_int_argument) {
 
 TEST(arg_parse, find_float_argument) {
     const char *argv[] = {
-        "",    "-small=-23.5", "-empty", "-text",  "abc", "-inf", "inf",   "-nan",
-        "nan", "-zero",        "0",      "-large", "50",  "--",   "-okay",
+        "",
+        "-small=-23.5",
+        "-empty",
+        "-text",
+        "abc",
+        "-inf",
+        "inf",
+        "-nan",
+        "nan",
+        "-zero",
+        "0",
+        "-large",
+        "50",
+        "--",
+        "-okay",
     };
     int n = sizeof(argv) / sizeof(char *);
     ASSERT_EQ(find_float_argument("-missing", 5.5, -100, +100, n, argv), 5.5);

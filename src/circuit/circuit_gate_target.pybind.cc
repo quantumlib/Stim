@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "circuit_gate_target.pybind.h"
+
 #include "../py/base.pybind.h"
 #include "circuit.h"
 
@@ -99,8 +100,8 @@ void pybind_circuit_gate_target(pybind11::module &m) {
                 stim.GateTarget(0)
                 >>> circuit[0].targets_copy()[1]
                 stim.GateTarget(stim.target_inv(1))
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::init<pybind11::object>(),
@@ -110,55 +111,61 @@ void pybind_circuit_gate_target(pybind11::module &m) {
 
             Args:
                 value: A target like `5` or `stim.target_rec(-1)`.
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "value",
         &GateTarget::value,
         clean_doc_string(u8R"DOC(
             The numeric part of the target. Positive for qubit targets, negative for measurement record targets.
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "is_x_target",
         &GateTarget::is_x_target,
         clean_doc_string(u8R"DOC(
             Returns whether or not this is a `stim.target_x` target (e.g. `X5` in a circuit file).
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "is_y_target",
         &GateTarget::is_y_target,
         clean_doc_string(u8R"DOC(
             Returns whether or not this is a `stim.target_y` target (e.g. `Y5` in a circuit file).
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "is_z_target",
         &GateTarget::is_z_target,
         clean_doc_string(u8R"DOC(
             Returns whether or not this is a `stim.target_z` target (e.g. `Z5` in a circuit file).
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "is_inverted_result_target",
         &GateTarget::is_inverted_result_target,
         clean_doc_string(u8R"DOC(
             Returns whether or not this is a `stim.target_inv` target (e.g. `!5` in a circuit file).
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "is_measurement_record_target",
         &GateTarget::is_measurement_record_target,
         clean_doc_string(u8R"DOC(
             Returns whether or not this is a `stim.target_rec` target (e.g. `rec[-5]` in a circuit file).
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.GateTarget`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.GateTarget`s are different.");
     c.def(
         "__repr__",
         &GateTarget::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.GateTarget`."
-    );
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.GateTarget`.");
 }

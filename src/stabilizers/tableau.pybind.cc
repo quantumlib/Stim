@@ -14,11 +14,11 @@
 
 #include "tableau.pybind.h"
 
-#include "pauli_string.pybind.h"
 #include "../py/base.pybind.h"
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/pauli_string.h"
 #include "../stabilizers/tableau.h"
+#include "pauli_string.pybind.h"
 
 using namespace stim_internal;
 
@@ -58,8 +58,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> x2z3 = t.x_output(2) * t.z_output(3)
                 >>> t_inv(x2z3)
                 stim.PauliString("+__XZ_")
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::init<size_t>(),
@@ -79,8 +79,8 @@ void pybind_tableau(pybind11::module &m) {
 
             Args:
                 num_qubits: The number of qubits the tableau's operation acts on.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_static(
         "random",
@@ -105,8 +105,8 @@ void pybind_tableau(pybind11::module &m) {
                 "Hadamard-free circuits expose the structure of the Clifford group"
                 Sergey Bravyi, Dmitri Maslov
                 https://arxiv.org/abs/2003.09412
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_static(
         "from_named_gate",
@@ -142,30 +142,25 @@ void pybind_tableau(pybind11::module &m) {
                 +-xz-
                 | ++
                 | YZ
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__len__",
         [](const Tableau &self) {
             return self.num_qubits;
         },
-        "Returns the number of qubits operated on by the tableau."
-    );
+        "Returns the number of qubits operated on by the tableau.");
+
+    c.def("__str__", &Tableau::str, "Returns a text description.");
+
+    c.def(pybind11::self == pybind11::self, "Determines if two tableaus have identical contents.");
+    c.def(pybind11::self != pybind11::self, "Determines if two tableaus have non-identical contents.");
 
     c.def(
-        "__str__",
-        &Tableau::str,
-        "Returns a text description."
-    );
-
-    c.def(pybind11::self == pybind11::self,
-        "Determines if two tableaus have identical contents.");
-    c.def(pybind11::self != pybind11::self,
-        "Determines if two tableaus have non-identical contents.");
-
-    c.def(
-        "__pow__", &Tableau::raised_to, pybind11::arg("exponent"),
+        "__pow__",
+        &Tableau::raised_to,
+        pybind11::arg("exponent"),
         clean_doc_string(u8R"DOC(
             Raises the tableau to an integer power.
 
@@ -192,11 +187,14 @@ void pybind_tableau(pybind11::module &m) {
                 True
                 >>> s**(-400000000 + 1) == s
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
-        "inverse", &Tableau::inverse, pybind11::kw_only(), pybind11::arg("unsigned") = false,
+        "inverse",
+        &Tableau::inverse,
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
         clean_doc_string(u8R"DOC(
             Computes the inverse of the tableau.
 
@@ -248,8 +246,8 @@ void pybind_tableau(pybind11::module &m) {
                 | XX XX YX
                 | XZ Z_ X_
                 | X_ YX Y_
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "append",
@@ -269,7 +267,8 @@ void pybind_tableau(pybind11::module &m) {
             }
             self.inplace_scatter_append(gate, targets);
         },
-        pybind11::arg("gate"), pybind11::arg("targets"),
+        pybind11::arg("gate"),
+        pybind11::arg("targets"),
         clean_doc_string(u8R"DOC(
             Appends an operation's effect into this tableau, mutating this tableau.
 
@@ -288,8 +287,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> t.append(cnot, [0, 1])
                 >>> t == stim.Tableau.from_named_gate("SWAP")
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "then",
@@ -319,8 +318,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> p = stim.PauliString.random(4)
                 >>> t3(p) == t2(t1(p))
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__mul__",
@@ -349,8 +348,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> p = stim.PauliString.random(4)
                 >>> t3(p) == t2(t1(p))
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "prepend",
@@ -370,7 +369,8 @@ void pybind_tableau(pybind11::module &m) {
             }
             self.inplace_scatter_prepend(gate, targets);
         },
-        pybind11::arg("gate"), pybind11::arg("targets"),
+        pybind11::arg("gate"),
+        pybind11::arg("targets"),
         clean_doc_string(u8R"DOC(
             Prepends an operation's effect into this tableau, mutating this tableau.
 
@@ -388,8 +388,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> t.prepend(stim.Tableau.from_named_gate("X"), [0])
                 >>> t == stim.Tableau.from_named_gate("SQRT_Y_DAG")
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "x_output",
@@ -417,8 +417,8 @@ void pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+XX")
                 >>> cnot.x_output(1)
                 stim.PauliString("+_X")
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "y_output",
@@ -453,8 +453,8 @@ void pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+YX")
                 >>> cnot.y_output(1)
                 stim.PauliString("+ZY")
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "z_output",
@@ -482,8 +482,8 @@ void pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+Z_")
                 >>> cnot.z_output(1)
                 stim.PauliString("+ZZ")
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "x_output_pauli",
@@ -522,8 +522,8 @@ void pybind_tableau(pybind11::module &m) {
                 2
                 >>> t.x_output_pauli(1, 1)
                 3
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "y_output_pauli",
@@ -562,8 +562,8 @@ void pybind_tableau(pybind11::module &m) {
                 0
                 >>> t.y_output_pauli(1, 1)
                 2
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "z_output_pauli",
@@ -602,8 +602,8 @@ void pybind_tableau(pybind11::module &m) {
                 2
                 >>> t.z_output_pauli(1, 1)
                 1
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "inverse_x_output_pauli",
@@ -642,8 +642,8 @@ void pybind_tableau(pybind11::module &m) {
                 2
                 >>> t_inv.inverse_x_output_pauli(1, 1)
                 3
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "inverse_y_output_pauli",
@@ -682,8 +682,8 @@ void pybind_tableau(pybind11::module &m) {
                 0
                 >>> t_inv.inverse_y_output_pauli(1, 1)
                 2
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "inverse_z_output_pauli",
@@ -722,8 +722,8 @@ void pybind_tableau(pybind11::module &m) {
                 2
                 >>> t_inv.inverse_z_output_pauli(1, 1)
                 1
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "inverse_x_output",
@@ -758,8 +758,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> expected.sign = +1;
                 >>> t.inverse_x_output(0, unsigned=True) == expected
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "inverse_y_output",
@@ -794,8 +794,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> expected.sign = +1;
                 >>> t.inverse_y_output(0, unsigned=True) == expected
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "inverse_z_output",
@@ -832,8 +832,8 @@ void pybind_tableau(pybind11::module &m) {
                 >>> expected.sign = +1;
                 >>> t.inverse_z_output(0, unsigned=True) == expected
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "copy",
@@ -852,8 +852,8 @@ void pybind_tableau(pybind11::module &m) {
                 False
                 >>> t2 == t1
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def_static(
         "from_conjugated_generators",
@@ -891,7 +891,9 @@ void pybind_tableau(pybind11::module &m) {
             }
             return result;
         },
-        pybind11::kw_only(), pybind11::arg("xs"), pybind11::arg("zs"),
+        pybind11::kw_only(),
+        pybind11::arg("xs"),
+        pybind11::arg("zs"),
         clean_doc_string(u8R"DOC(
             Creates a tableau from the given outputs for each generator.
 
@@ -924,8 +926,8 @@ void pybind_tableau(pybind11::module &m) {
                 ... )
                 >>> identity3 == stim.Tableau(3)
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__repr__",
@@ -942,8 +944,7 @@ void pybind_tableau(pybind11::module &m) {
             result << "    ],\n)";
             return result.str();
         },
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.Tableau`."
-    );
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.Tableau`.");
 
     c.def(
         "__call__",
@@ -971,8 +972,8 @@ void pybind_tableau(pybind11::module &m) {
                  >>> result = t(p)
                  >>> print(result)
                  +X_
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::self + pybind11::self,
@@ -997,8 +998,8 @@ void pybind_tableau(pybind11::module &m) {
 
             Returns:
                 The direct sum.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::self += pybind11::self,
@@ -1027,6 +1028,6 @@ void pybind_tableau(pybind11::module &m) {
 
             Returns:
                 The mutated tableau.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 }

@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "circuit_repeat_block.pybind.h"
-#include "circuit_instruction.pybind.h"
-#include "circuit.h"
+
 #include "../py/base.pybind.h"
+#include "circuit.h"
+#include "circuit_instruction.pybind.h"
 
 using namespace stim_internal;
 
@@ -29,8 +30,7 @@ bool CircuitRepeatBlock::operator!=(const CircuitRepeatBlock &other) const {
     return !(*this == other);
 }
 std::string CircuitRepeatBlock::repr() const {
-    return "stim.CircuitRepeatBlock(" + std::to_string(repeat_count) + ", stim.Circuit('''\n"
-           + body.str() + "\n'''))";
+    return "stim.CircuitRepeatBlock(" + std::to_string(repeat_count) + ", stim.Circuit('''\n" + body.str() + "\n'''))";
 }
 
 void pybind_circuit_repeat_block(pybind11::module &m) {
@@ -57,8 +57,8 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
                 CX 0 1
                 CZ 1 2
                 ''')
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::init<uint64_t, Circuit>(),
@@ -70,7 +70,8 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
             Args:
                 repeat_count: The number of times to repeat the block.
                 body: The body of the block, as a circuit.
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_readonly(
         "repeat_count",
@@ -90,7 +91,8 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
                 >>> repeat_block = circuit[1]
                 >>> repeat_block.repeat_count
                 5
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(
         "body_copy",
@@ -116,13 +118,13 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
                 CX 0 1
                 CZ 1 2
                 ''')
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.CircuitRepeatBlock`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.CircuitRepeatBlock`s are different.");
     c.def(
         "__repr__",
         &CircuitRepeatBlock::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitRepeatBlock`."
-    );
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitRepeatBlock`.");
 }

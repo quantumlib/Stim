@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "frame_simulator.h"
 #include "detection_simulator.h"
 
 #include <gtest/gtest.h>
 
 #include "../test_util.test.h"
+#include "frame_simulator.h"
 
 using namespace stim_internal;
 
@@ -105,7 +105,7 @@ TEST(DetectionSimulator, stream_many_shots) {
     detector_samples_out(circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_all(tmp);
-    for (size_t k = 0; k < 2048*4; k += 4) {
+    for (size_t k = 0; k < 2048 * 4; k += 4) {
         ASSERT_EQ(result[k], '0') << k;
         ASSERT_EQ(result[k + 1], '1') << (k + 1);
         ASSERT_EQ(result[k + 2], '0') << (k + 2);

@@ -184,7 +184,10 @@ void simd_bit_table::transpose_into(simd_bit_table &out) const {
 }
 
 simd_bit_table simd_bit_table::from_quadrants(
-    size_t n, const simd_bit_table &upper_left, const simd_bit_table &upper_right, const simd_bit_table &lower_left,
+    size_t n,
+    const simd_bit_table &upper_left,
+    const simd_bit_table &upper_right,
+    const simd_bit_table &lower_left,
     const simd_bit_table &lower_right) {
     assert(upper_left.num_minor_bits_padded() >= n && upper_left.num_major_bits_padded() >= n);
     assert(upper_right.num_minor_bits_padded() >= n && upper_right.num_major_bits_padded() >= n);
