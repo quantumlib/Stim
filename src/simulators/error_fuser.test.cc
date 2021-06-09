@@ -1051,3 +1051,145 @@ TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
         }
     }, std::out_of_range);
 }
+
+TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
+            # Distance 2 Bacon-Shor.
+            ZCX 0 10 1 10
+            ZCX 2 11 3 11
+            XCX 0 12 2 12
+            XCX 1 13 3 13
+            MR 10 11 12 13
+            REPEAT 5 {
+                ZCX 0 10 1 10
+                ZCX 2 11 3 11
+                XCX 0 12 2 12
+                XCX 1 13 3 13
+                MR 10 11 12 13
+                DETECTOR rec[-1] rec[-5]
+                DETECTOR rec[-2] rec[-6]
+                DETECTOR rec[-3] rec[-7]
+                DETECTOR rec[-4] rec[-8]
+            }
+        )CIRCUIT"), false, false, false),
+        DetectorErrorModel(R"MODEL(
+            error(0.5) D0 D1
+            error(0.5) D2 D3
+            error(0.5) D4 D5
+            error(0.5) D6 D7
+            error(0.5) D8 D9
+            error(0.5) D10 D11
+            error(0.5) D12 D13
+            error(0.5) D14 D15
+            error(0.5) D16 D17
+            error(0.5) D18 D19
+        )MODEL"));
+
+    ASSERT_TRUE(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
+            # Distance 2 Bacon-Shor.
+            ZCX 0 10 1 10
+            ZCX 2 11 3 11
+            XCX 0 12 2 12
+            XCX 1 13 3 13
+            MR 10 11 12 13
+            REPEAT 5 {
+                DEPOLARIZE1(0.01) 0 1 2 3
+                ZCX 0 10 1 10
+                ZCX 2 11 3 11
+                XCX 0 12 2 12
+                XCX 1 13 3 13
+                MR 10 11 12 13
+                DETECTOR rec[-1] rec[-5]
+                DETECTOR rec[-2] rec[-6]
+                DETECTOR rec[-3] rec[-7]
+                DETECTOR rec[-4] rec[-8]
+            }
+        )CIRCUIT"), false, false, false).approx_equals(DetectorErrorModel(R"MODEL(
+            error(0.00667) D0
+            error(0.5) D0 D1
+            error(0.00334) D0 D2
+            error(0.00334) D0 D3
+            error(0.00667) D1
+            error(0.00334) D1 D2
+            error(0.00334) D1 D3
+            error(0.00667) D2
+            error(0.5) D2 D3
+            error(0.00667) D3
+            error(0.00667) D4
+            error(0.5) D4 D5
+            error(0.00334) D4 D6
+            error(0.00334) D4 D7
+            error(0.00667) D5
+            error(0.00334) D5 D6
+            error(0.00334) D5 D7
+            error(0.00667) D6
+            error(0.5) D6 D7
+            error(0.00667) D7
+            error(0.00667) D8
+            error(0.5) D8 D9
+            error(0.00334) D8 D10
+            error(0.00334) D8 D11
+            error(0.00667) D9
+            error(0.00334) D9 D10
+            error(0.00334) D9 D11
+            error(0.00667) D10
+            error(0.5) D10 D11
+            error(0.00667) D11
+            error(0.00667) D12
+            error(0.5) D12 D13
+            error(0.00334) D12 D14
+            error(0.00334) D12 D15
+            error(0.00667) D13
+            error(0.00334) D13 D14
+            error(0.00334) D13 D15
+            error(0.00667) D14
+            error(0.5) D14 D15
+            error(0.00667) D15
+            error(0.00667) D16
+            error(0.5) D16 D17
+            error(0.00334) D16 D18
+            error(0.00334) D16 D19
+            error(0.00667) D17
+            error(0.00334) D17 D18
+            error(0.00334) D17 D19
+            error(0.00667) D18
+            error(0.5) D18 D19
+            error(0.00667) D19
+        )MODEL"), 0.01));
+
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
+            # Distance 2 Bacon-Shor.
+            ZCX 0 10 1 10
+            ZCX 2 11 3 11
+            XCX 0 12 2 12
+            XCX 1 13 3 13
+            MR 10 11 12 13
+            REPEAT 1000000000000000 {
+                ZCX 0 10 1 10
+                ZCX 2 11 3 11
+                XCX 0 12 2 12
+                XCX 1 13 3 13
+                MR 10 11 12 13
+                DETECTOR rec[-1] rec[-5]
+                DETECTOR rec[-2] rec[-6]
+                DETECTOR rec[-3] rec[-7]
+                DETECTOR rec[-4] rec[-8]
+            }
+        )CIRCUIT"), false, true, false),
+        DetectorErrorModel(R"MODEL(
+            error(0.5) D0 D1
+            error(0.5) D2 D3
+            error(0.5) D6 D7
+            repeat 499999999999999 {
+                error(0.5) D4+t D5+t
+                error(0.5) D8+t D9+t
+                error(0.5) D10+t D11+t
+                error(0.5) D14+t D15+t
+                tick 8
+            }
+            error(0.5) D3999999999999996 D3999999999999997
+        )MODEL"));
+}

@@ -106,3 +106,73 @@ TEST(sparse_xor_table, empty) {
     v1.xor_item(3);
     ASSERT_FALSE(v1.empty());
 }
+
+TEST(sparse_xor_vec, is_subset_of_sorted) {
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{1},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{1}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{1},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{2},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{5},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{6},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{7},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{8},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{9},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 5},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_TRUE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 6},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+    ASSERT_FALSE(is_subset_of_sorted(
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 2, 6},
+        (ConstPointerRange<uint32_t>)std::vector<uint32_t>{0, 1, 5, 6, 8}));
+}
+
+TEST(sparse_xor_vec, is_superset_of) {
+    ASSERT_TRUE((SparseXorVec<uint32_t>{{0}}).is_superset_of(SparseXorVec<uint32_t>{{0}}.range()));
+    ASSERT_TRUE((SparseXorVec<uint32_t>{{0, 1}}).is_superset_of(SparseXorVec<uint32_t>{{0}}.range()));
+    ASSERT_FALSE((SparseXorVec<uint32_t>{{0}}).is_superset_of(SparseXorVec<uint32_t>{{0, 1}}.range()));
+}
+
+TEST(sparse_xor_vec, contains) {
+    ASSERT_TRUE((SparseXorVec<uint32_t>{{0}}).contains(0));
+    ASSERT_TRUE((SparseXorVec<uint32_t>{{2}}).contains(2));
+    ASSERT_TRUE((SparseXorVec<uint32_t>{{0, 2}}).contains(0));
+    ASSERT_TRUE((SparseXorVec<uint32_t>{{0, 2}}).contains(2));
+    ASSERT_FALSE((SparseXorVec<uint32_t>{{0, 2}}).contains(1));
+    ASSERT_FALSE((SparseXorVec<uint32_t>{{}}).contains(0));
+    ASSERT_FALSE((SparseXorVec<uint32_t>{{1}}).contains(0));
+}
