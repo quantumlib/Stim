@@ -131,6 +131,10 @@ struct ErrorFuser {
     void post_check_initialization();
 
    private:
+    /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
+    /// Use that degree of freedom to delete the largest detector in the set from the system.
+    void remove_gauge(ConstPointerRange<uint64_t> sorted);
+
     void shift_active_detector_ids(int64_t shift);
     DetectorErrorModel flushed_to_detector_error_model() const;
     void flush();

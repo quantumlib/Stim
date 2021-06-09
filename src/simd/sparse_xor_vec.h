@@ -17,6 +17,7 @@
 #ifndef SPARSE_XOR_TABLE_H
 #define SPARSE_XOR_TABLE_H
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
@@ -58,6 +59,26 @@ inline T *xor_merge_sort(ConstPointerRange<T> sorted_in1, ConstPointerRange<T> s
     return out;
 }
 
+template <typename T>
+bool is_subset_of_sorted(ConstPointerRange<T> subset, ConstPointerRange<T> superset) {
+    const T *p_sub = subset.ptr_start;
+    const T *p_sup = superset.ptr_start;
+    const T *end_sub = subset.ptr_end;
+    const T *end_sup = superset.ptr_end;
+    while (p_sub != end_sub) {
+        if (p_sup == end_sup || *p_sub < *p_sup) {
+            return false;
+        } else if (*p_sup < *p_sub) {
+            p_sup++;
+        } else {
+            // Same value in both lists. Cancels itself out.
+            p_sub++;
+            p_sup++;
+        }
+    }
+    return true;
+}
+
 template <typename T, typename CALLBACK>
 inline void xor_merge_sort_temp_buffer_callback(
     ConstPointerRange<T> sorted_items_1, ConstPointerRange<T> sorted_items_2, CALLBACK handler) {
@@ -91,6 +112,14 @@ struct SparseXorVec {
         sorted_items.resize(sorted_items1.size() + sorted_items2.size());
         auto written = xor_merge_sort(sorted_items, sorted_items1, sorted_items2);
         sorted_items.resize(written.size());
+    }
+
+    bool is_superset_of(ConstPointerRange<T> subset) const {
+        return is_subset_of_sorted(subset, (ConstPointerRange<T>)sorted_items);
+    }
+
+    bool contains(const T &item) const {
+        return std::find(sorted_items.begin(), sorted_items.end(), item) != sorted_items.end();
     }
 
     void xor_sorted_items(ConstPointerRange<T> sorted) {

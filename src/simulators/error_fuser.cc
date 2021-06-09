@@ -32,6 +32,24 @@ bool stim_internal::is_encoded_observable_id(uint64_t id) {
     return id >= FIRST_OBSERVABLE_ID && id != COMPOSITE_ERROR_SYGIL;
 }
 
+void ErrorFuser::remove_gauge(ConstPointerRange<uint64_t> sorted) {
+    if (sorted.empty()) {
+        return;
+    }
+    const auto &max = sorted.back();
+    // HACK: linear overhead due to not keeping an index of which detectors used where.
+    for (auto &x : xs) {
+        if (x.contains(max)) {
+            x.xor_sorted_items(sorted);
+        }
+    }
+    for (auto &z : zs) {
+        if (z.contains(max)) {
+            z.xor_sorted_items(sorted);
+        }
+    }
+}
+
 void ErrorFuser::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
@@ -39,7 +57,7 @@ void ErrorFuser::RX(const OperationData &dat) {
             if (validate_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
             }
-            add_error(0.5, zs[q].range());
+            remove_gauge(add_error(0.5, zs[q].range()));
         }
         xs[q].clear();
     }
@@ -52,7 +70,7 @@ void ErrorFuser::RY(const OperationData &dat) {
             if (validate_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
             }
-            add_xored_error(0.5, xs[q].range(), zs[q].range());
+            remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
         }
         xs[q].clear();
         zs[q].clear();
@@ -66,7 +84,7 @@ void ErrorFuser::RZ(const OperationData &dat) {
             if (validate_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
             }
-            add_error(0.5, xs[q].range());
+            remove_gauge(add_error(0.5, xs[q].range()));
         }
         zs[q].clear();
     }
@@ -84,7 +102,7 @@ void ErrorFuser::MX(const OperationData &dat) {
             if (validate_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
             }
-            add_error(0.5, zs[q].range());
+            remove_gauge(add_error(0.5, zs[q].range()));
         }
     }
 }
@@ -102,7 +120,7 @@ void ErrorFuser::MY(const OperationData &dat) {
             if (validate_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
             }
-            add_xored_error(0.5, xs[q].range(), zs[q].range());
+            remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
         }
     }
 }
@@ -119,7 +137,7 @@ void ErrorFuser::MZ(const OperationData &dat) {
             if (validate_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
             }
-            add_error(0.5, xs[q].range());
+            remove_gauge(add_error(0.5, xs[q].range()));
         }
     }
 }

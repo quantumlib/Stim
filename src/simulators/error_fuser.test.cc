@@ -1018,36 +1018,202 @@ TEST(ErrorFuser, loop_folding_rep_code_circuit) {
 }
 
 TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
-    ASSERT_THROW({
-        try {
-            convert(
-                R"CIRCUIT(
-                    R 0
-                    DEPOLARIZE1(0.01) 0
-                    M 0
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-1]
-                )CIRCUIT",
-                true, false);
-        } catch (const std::out_of_range &e) {
-            EXPECT_EQ("", check_matches(e.what(), ".*error involves too many detectors.*"));
-            throw;
+    CircuitGenParameters params(100000, 3, "memory");
+    params.after_clifford_depolarization = 0.001;
+    auto circuit = generate_rep_code_circuit(params).circuit;
+
+    auto actual = ErrorFuser::circuit_to_detector_error_model(circuit, true, true, true);
+    auto expected = DetectorErrorModel(R"MODEL(
+        error(0.00026) D0 D1
+        error(0.00026) D0 D3
+        error(0.00026) D0 L0
+        error(0.00026) D1 D2
+        error(0.00053) D1 D3
+        error(0.00053) D1 D4
+        error(0.00026) D2
+        error(0.00053) D2 D4
+        error(0.00026) D2 D5
+        error(0.00026) D3 D4
+        error(0.00026) D3 L0
+        reducible_error(0.00026) D3 L0 ^ D0 L0
+        error(0.00026) D4 D5
+        error(0.00026) D5
+        reducible_error(0.00026) D5 ^ D2
+        REPEAT 99998 {
+            error(0.000266) D3+t D4+t
+            error(0.000266) D3+t D6+t
+            error(0.000266) D3+t L0
+            error(0.000266) D4+t D5+t
+            error(0.000533) D4+t D6+t
+            error(0.000533) D4+t D7+t
+            error(0.000266) D5+t
+            error(0.000533) D5+t D7+t
+            error(0.000266) D5+t D8+t
+            error(0.000266) D6+t D7+t
+            error(0.000266) D6+t L0
+            reducible_error(0.000266) D6+t L0 ^ D3+t L0
+            error(0.000266) D7+t D8+t
+            error(0.000266) D8+t
+            reducible_error(0.000266) D8+t ^ D5+t
+            TICK 3
         }
-    }, std::out_of_range);
+        error(0.000266) D299997 D299998
+        error(0.000266) D299997 D300000
+        error(0.000266) D299997 L0
+        error(0.000266) D299998 D299999
+        error(0.000533) D299998 D300000
+        error(0.000533) D299998 D300001
+        error(0.000266) D299999
+        error(0.000533) D299999 D300001
+        error(0.000266) D299999 D300002
+        error(0.000266) D300000 D300001
+        error(0.000266) D300000 L0
+        reducible_error(0.000266) D300000 L0 ^ D299997 L0
+        error(0.000266) D300001 D300002
+        error(0.000266) D300002
+        reducible_error(0.000266) D300002 ^ D299999
+    )MODEL");
+    ASSERT_TRUE(actual.approx_equals(expected, 0.00001));
+}
+
+TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
+            # Distance 2 Bacon-Shor.
+            ZCX 0 10 1 10
+            ZCX 2 11 3 11
+            XCX 0 12 2 12
+            XCX 1 13 3 13
+            MR 10 11 12 13
+            REPEAT 5 {
+                ZCX 0 10 1 10
+                ZCX 2 11 3 11
+                XCX 0 12 2 12
+                XCX 1 13 3 13
+                MR 10 11 12 13
+                DETECTOR rec[-1] rec[-5]
+                DETECTOR rec[-2] rec[-6]
+                DETECTOR rec[-3] rec[-7]
+                DETECTOR rec[-4] rec[-8]
+            }
+        )CIRCUIT"), false, false, false),
+        DetectorErrorModel(R"MODEL(
+            error(0.5) D0 D1
+            error(0.5) D2 D3
+            error(0.5) D4 D5
+            error(0.5) D6 D7
+            error(0.5) D8 D9
+            error(0.5) D10 D11
+            error(0.5) D12 D13
+            error(0.5) D14 D15
+            error(0.5) D16 D17
+            error(0.5) D18 D19
+        )MODEL"));
+
+    ASSERT_TRUE(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
+            # Distance 2 Bacon-Shor.
+            ZCX 0 10 1 10
+            ZCX 2 11 3 11
+            XCX 0 12 2 12
+            XCX 1 13 3 13
+            MR 10 11 12 13
+            REPEAT 5 {
+                DEPOLARIZE1(0.01) 0 1 2 3
+                ZCX 0 10 1 10
+                ZCX 2 11 3 11
+                XCX 0 12 2 12
+                XCX 1 13 3 13
+                MR 10 11 12 13
+                DETECTOR rec[-1] rec[-5]
+                DETECTOR rec[-2] rec[-6]
+                DETECTOR rec[-3] rec[-7]
+                DETECTOR rec[-4] rec[-8]
+            }
+        )CIRCUIT"), false, false, false).approx_equals(DetectorErrorModel(R"MODEL(
+            error(0.00667) D0
+            error(0.5) D0 D1
+            error(0.00334) D0 D2
+            error(0.00334) D0 D3
+            error(0.00667) D1
+            error(0.00334) D1 D2
+            error(0.00334) D1 D3
+            error(0.00667) D2
+            error(0.5) D2 D3
+            error(0.00667) D3
+            error(0.00667) D4
+            error(0.5) D4 D5
+            error(0.00334) D4 D6
+            error(0.00334) D4 D7
+            error(0.00667) D5
+            error(0.00334) D5 D6
+            error(0.00334) D5 D7
+            error(0.00667) D6
+            error(0.5) D6 D7
+            error(0.00667) D7
+            error(0.00667) D8
+            error(0.5) D8 D9
+            error(0.00334) D8 D10
+            error(0.00334) D8 D11
+            error(0.00667) D9
+            error(0.00334) D9 D10
+            error(0.00334) D9 D11
+            error(0.00667) D10
+            error(0.5) D10 D11
+            error(0.00667) D11
+            error(0.00667) D12
+            error(0.5) D12 D13
+            error(0.00334) D12 D14
+            error(0.00334) D12 D15
+            error(0.00667) D13
+            error(0.00334) D13 D14
+            error(0.00334) D13 D15
+            error(0.00667) D14
+            error(0.5) D14 D15
+            error(0.00667) D15
+            error(0.00667) D16
+            error(0.5) D16 D17
+            error(0.00334) D16 D18
+            error(0.00334) D16 D19
+            error(0.00667) D17
+            error(0.00334) D17 D18
+            error(0.00334) D17 D19
+            error(0.00667) D18
+            error(0.5) D18 D19
+            error(0.00667) D19
+        )MODEL"), 0.01));
+
+    ASSERT_EQ(
+        ErrorFuser::circuit_to_detector_error_model(Circuit::from_text(R"CIRCUIT(
+            # Distance 2 Bacon-Shor.
+            ZCX 0 10 1 10
+            ZCX 2 11 3 11
+            XCX 0 12 2 12
+            XCX 1 13 3 13
+            MR 10 11 12 13
+            REPEAT 1000000000000000 {
+                ZCX 0 10 1 10
+                ZCX 2 11 3 11
+                XCX 0 12 2 12
+                XCX 1 13 3 13
+                MR 10 11 12 13
+                DETECTOR rec[-1] rec[-5]
+                DETECTOR rec[-2] rec[-6]
+                DETECTOR rec[-3] rec[-7]
+                DETECTOR rec[-4] rec[-8]
+            }
+        )CIRCUIT"), false, true, false),
+        DetectorErrorModel(R"MODEL(
+            error(0.5) D0 D1
+            error(0.5) D2 D3
+            error(0.5) D6 D7
+            repeat 499999999999999 {
+                error(0.5) D4+t D5+t
+                error(0.5) D8+t D9+t
+                error(0.5) D10+t D11+t
+                error(0.5) D14+t D15+t
+                tick 8
+            }
+            error(0.5) D3999999999999996 D3999999999999997
+        )MODEL"));
 }
