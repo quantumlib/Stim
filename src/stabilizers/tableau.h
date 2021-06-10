@@ -157,6 +157,12 @@ struct Tableau {
     void prepend_SQRT_Y_DAG(size_t q);
     void prepend_SQRT_Z(size_t q);
     void prepend_SQRT_Z_DAG(size_t q);
+    void prepend_SQRT_XX(size_t q1, size_t q2);
+    void prepend_SQRT_XX_DAG(size_t q1, size_t q2);
+    void prepend_SQRT_YY(size_t q1, size_t q2);
+    void prepend_SQRT_YY_DAG(size_t q1, size_t q2);
+    void prepend_SQRT_ZZ(size_t q1, size_t q2);
+    void prepend_SQRT_ZZ_DAG(size_t q1, size_t q2);
     void prepend_ZCX(size_t control, size_t target);
     void prepend_ZCY(size_t control, size_t target);
     void prepend_ZCZ(size_t control, size_t target);

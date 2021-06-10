@@ -44,35 +44,31 @@ inline uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
 
-    constexpr uint8_t c2_factor = 8;
-    constexpr uint8_t clast_rotate = 1;
-
     uint8_t result = 0;
     if (n > 0) {
         uint8_t c_first = v[0] | 0x20;
         uint8_t c_last = v[n - 1] | 0x20;
-        c_last = (c_last << clast_rotate) | (c_last >> (8 - clast_rotate));
+        c_last = (c_last << 1) | (c_last >> 7);
         result += c_first ^ c_last;
     }
     if (n > 2) {
-        result ^= 1;
         char c1 = (char)(v[1] | 0x20);
         char c2 = (char)(v[2] | 0x20);
-        result += c1;
         result ^= c1;
-        result += c2 * c2_factor;
-        result ^= c2;
+        result += c2 * 9;
     }
     if (n > 5) {
-        result ^= 5;
         char c3 = (char)(v[3] | 0x20);
         char c5 = (char)(v[5] | 0x20);
-        result += c3 * 7;
-        result += c5 * 11;
+        result ^= c3 * 61;
+        result += c5 * 223;
     }
     result &= 0x1F;
-    result |= n << 5;
-    result ^= n;
+    result ^= n << 5;
+    result ^= n >> 3;
+    if (n > 6) {
+        result += 157;
+    }
     return result;
 }
 
@@ -232,6 +228,7 @@ struct GateDataMap {
     void add_gate_data_pauli(bool &failed);
     void add_gate_data_period_3(bool &failed);
     void add_gate_data_period_4(bool &failed);
+    void add_gate_data_pp(bool &failed);
     void add_gate_data_swaps(bool &failed);
 
    public:

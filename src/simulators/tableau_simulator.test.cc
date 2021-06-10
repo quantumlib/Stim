@@ -305,7 +305,7 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
             (sim.*action)(OpDat(5));
             t.inplace_scatter_prepend(inverse_op_tableau, {5});
         }
-        ASSERT_EQ(sim.inv_state, t) << gate.name;
+        EXPECT_EQ(sim.inv_state, t) << gate.name;
     }
 }
 

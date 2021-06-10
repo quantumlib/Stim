@@ -20,6 +20,7 @@
 #include <map>
 #include <set>
 
+#include "arg_parse.h"
 #include "stabilizers/tableau.h"
 
 using namespace stim_internal;
@@ -317,7 +318,37 @@ std::map<std::string, std::string> stim_internal::generate_gate_help_markdown() 
     result[std::string("GATES")] = all.str();
 
     all.str("");
-    all << "## Index\n\n";
+    all << R"MARKDOWN(# Gates in Stim
+
+## General Facts
+
+- **Qubit Targets**:
+    Qubits are referred to by non-negative integers.
+    There is a qubit `0`, a qubit `1`, and so forth (up to an implemented-defined maximum of `16777215`).
+    For example, the line `X 2` says to apply an `X` gate to qubit `2`.
+    Beware that touching qubit `999999` implicitly tells simulators to resize their internal state to accommodate a million qubits.
+
+- **Measurement Record Targets**:
+    Measurement results are referred to by `rec[-#]` arguments, where the index within
+    the square brackets uses python-style negative indices to refer to the end of the
+    growing measurement record.
+    For example, `CNOT rec[-1] 3` says "toggle qubit `3` if the most recent measurement returned `True`
+    and `CZ 1 rec[-2]` means "phase flip qubit `1` if the second most recent measurement returned `True`.
+    There is implementation-defined maximum lookback of `-16777215` when accessing the measurement record.
+    Non-negative indices are not permitted.
+
+    (The reason the measurement record indexing is relative to the present is so that it can be used in loops.)
+
+- **Broadcasting**:
+    Most gates support broadcasting over multiple targets.
+    For example, `H 0 1 2` will broadcast a Hadamard gate over qubits `0`, `1`, and `2`.
+    Two qubit gates can also broadcast, and do so over aligned pair of targets.
+    For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and then `CNOT 2 3`.
+    Broadcasting is always evaluated in left-to-right order.
+
+## Supported Gates
+
+)MARKDOWN";
     for (const auto &name : gate_names) {
         all << "- [" << name << "](#" << name << ")\n";
     }
@@ -331,5 +362,69 @@ std::map<std::string, std::string> stim_internal::generate_gate_help_markdown() 
     }
     result[std::string("GATES_MARKDOWN")] = all.str();
 
+    result[""] = R"HELP(BASIC USAGE
+===========
+Gate reference:
+    stim --help gates
+    stim --help [gate_name]
+
+Interactive measurement sampling mode:
+    stim --repl
+
+Bulk measurement sampling mode:
+    stim --sample[=#shots] \
+         [--frame0] \
+         [--out_format=01|b8|ptb64|r8|hits|dets] \
+         [--in=file] \
+         [--out=file]
+
+Detection event sampling mode:
+    stim --detect[=#shots] \
+         [--out_format=01|b8|ptb64|r8|hits|dets] \
+         [--in=file] \
+         [--out=file]
+
+Error analysis mode:
+    stim --analyze_errors \
+         [--find_reducible_errors] \
+         [--in=file] \
+         [--out=file]
+
+Circuit generation mode:
+    stim --gen=repetition_code|surface_code|color_code \
+         --rounds=# \
+         --distance=# \
+         --task=... \
+         [--out=file] \
+         [--after_clifford_depolarization=0] \
+         [--after_reset_flip_probability=0] \
+         [--before_measure_flip_probability=0] \
+         [--before_round_data_depolarization=0]
+
+EXAMPLE CIRCUIT (GHZ)
+=====================
+H 0
+CNOT 0 1
+CNOT 0 2
+M 0 1 2
+)HELP";
+
     return result;
+}
+
+int stim_internal::main_help(int argc, const char **argv) {
+    const char *help = require_find_argument("--help", argc, argv);
+    auto m = generate_gate_help_markdown();
+    auto key = std::string(help);
+    for (auto &c : key) {
+        c = toupper(c);
+    }
+    auto p = m.find(key);
+    if (p == m.end()) {
+        std::cerr << "Unrecognized help topic '" << help << "'.\n";
+        return EXIT_FAILURE;
+    }
+
+    std::cout << p->second;
+    return EXIT_SUCCESS;
 }

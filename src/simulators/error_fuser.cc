@@ -277,6 +277,43 @@ void ErrorFuser::ZCX(const OperationData &dat) {
     }
 }
 
+void ErrorFuser::SQRT_XX(const OperationData &dat) {
+    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
+        auto a = dat.targets[k];
+        auto b = dat.targets[k + 1];
+        xs[a] ^= zs[a];
+        xs[a] ^= zs[b];
+        xs[b] ^= zs[a];
+        xs[b] ^= zs[b];
+    }
+}
+
+void ErrorFuser::SQRT_YY(const OperationData &dat) {
+    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
+        auto a = dat.targets[k];
+        auto b = dat.targets[k + 1];
+        zs[a] ^= xs[a];
+        zs[b] ^= xs[b];
+        xs[a] ^= zs[a];
+        xs[a] ^= zs[b];
+        xs[b] ^= zs[a];
+        xs[b] ^= zs[b];
+        zs[a] ^= xs[a];
+        zs[b] ^= xs[b];
+    }
+}
+
+void ErrorFuser::SQRT_ZZ(const OperationData &dat) {
+    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
+        auto a = dat.targets[k];
+        auto b = dat.targets[k + 1];
+        zs[a] ^= xs[a];
+        zs[a] ^= xs[b];
+        zs[b] ^= xs[a];
+        zs[b] ^= xs[b];
+    }
+}
+
 void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z) {
     uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
     std::vector<uint64_t> &dst = measurement_to_detectors[time];

@@ -41,6 +41,7 @@ set(SOURCE_FILES_NO_MAIN
         src/circuit/gate_data_pauli.cc
         src/circuit/gate_data_period_3.cc
         src/circuit/gate_data_period_4.cc
+        src/circuit/gate_data_pp.cc
         src/circuit/gate_data_swaps.cc
         src/dem/detector_error_model.cc
         src/gate_help.cc

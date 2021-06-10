@@ -383,6 +383,73 @@ void TableauSimulator::XCX(const OperationData &target_data) {
         inv_state.prepend_XCX(q1, q2);
     }
 }
+
+void TableauSimulator::SQRT_ZZ(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k];
+        auto q2 = targets[k + 1];
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_SQRT_ZZ_DAG(q1, q2);
+    }
+}
+
+void TableauSimulator::SQRT_ZZ_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k];
+        auto q2 = targets[k + 1];
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_SQRT_ZZ(q1, q2);
+    }
+}
+
+void TableauSimulator::SQRT_YY(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k];
+        auto q2 = targets[k + 1];
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_SQRT_YY_DAG(q1, q2);
+    }
+}
+
+void TableauSimulator::SQRT_YY_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k];
+        auto q2 = targets[k + 1];
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_SQRT_YY(q1, q2);
+    }
+}
+
+void TableauSimulator::SQRT_XX(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k];
+        auto q2 = targets[k + 1];
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_SQRT_XX_DAG(q1, q2);
+    }
+}
+
+void TableauSimulator::SQRT_XX_DAG(const OperationData &target_data) {
+    const auto &targets = target_data.targets;
+    assert(!(targets.size() & 1));
+    for (size_t k = 0; k < targets.size(); k += 2) {
+        auto q1 = targets[k];
+        auto q2 = targets[k + 1];
+        // Note: inverted because we're tracking the inverse tableau.
+        inv_state.prepend_SQRT_XX(q1, q2);
+    }
+}
+
 void TableauSimulator::XCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
