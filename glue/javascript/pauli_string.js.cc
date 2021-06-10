@@ -1,6 +1,8 @@
-#include <emscripten/bind.h>
-#include "common.js.h"
 #include "pauli_string.js.h"
+
+#include <emscripten/bind.h>
+
+#include "common.js.h"
 
 using namespace stim_internal;
 

@@ -5,7 +5,8 @@ using namespace stim_internal;
 GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParameters &params) {
     if (params.task != "memory") {
         throw std::invalid_argument(
-            "Unrecognized task '" + params.task + "'. Known repetition_code tasks:\n"
+            "Unrecognized task '" + params.task +
+            "'. Known repetition_code tasks:\n"
             "    'memory': Initialize |0>, protect with parity measurements, measure.\n");
     }
     if (params.rounds < 1) {
@@ -67,7 +68,8 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
     Circuit tail;
     params.append_measure(tail, data_qubits);
     for (uint32_t k = 0; k < d; k++) {
-        tail.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 2) | TARGET_RECORD_BIT, (k + 2 + d) | TARGET_RECORD_BIT});
+        tail.append_op(
+            "DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 2) | TARGET_RECORD_BIT, (k + 2 + d) | TARGET_RECORD_BIT});
     }
     tail.append_op("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
 
@@ -83,9 +85,9 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
 
     return {
         full_circuit,
-            layout,
+        layout,
         "# Legend:\n"
-            "#     d# = data qubit\n"
-            "#     L# = data qubit with logical observable crossing\n"
-            "#     Z# = measurement qubit\n"};
+        "#     d# = data qubit\n"
+        "#     L# = data qubit with logical observable crossing\n"
+        "#     Z# = measurement qubit\n"};
 }

@@ -17,8 +17,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 using namespace stim_internal;
 
@@ -141,7 +141,7 @@ bool parse_int64(const char *data, int64_t *out) {
         uint64_t digit = c - '0';
         uint64_t next = accumulator * 10 + digit;
         if (accumulator != (next - digit) / 10) {
-            return false; // Overflow.
+            return false;  // Overflow.
         }
         accumulator = next;
         data++;
@@ -163,7 +163,8 @@ bool parse_int64(const char *data, int64_t *out) {
     return true;
 }
 
-int64_t stim_internal::find_int64_argument(const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv) {
+int64_t stim_internal::find_int64_argument(
+    const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv) {
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr || text[0] == '\0') {
         if (default_value < min_value || default_value > max_value) {
@@ -187,11 +188,8 @@ int64_t stim_internal::find_int64_argument(const char *name, int64_t default_val
 
     // In range?
     if (i < min_value || i > max_value) {
-        std::cerr
-            << "\033[31mInteger value '" << text
-            << "' for flag '" << name
-            << "' doesn't satisfy " << min_value << " <= " << i << " <= " << max_value
-            << ".\033[0m\n";
+        std::cerr << "\033[31mInteger value '" << text << "' for flag '" << name << "' doesn't satisfy " << min_value
+                  << " <= " << i << " <= " << max_value << ".\033[0m\n";
         exit(EXIT_FAILURE);
     }
 
@@ -225,8 +223,13 @@ float stim_internal::find_float_argument(
     // In range?
     if (f < min_value || f > max_value || f != f) {
         fprintf(
-            stderr, "\033[31mFloat value '%s' for flag '%s' doesn't satisfy %f <= %f <= %f.\033[0m\n", text, name,
-            min_value, f, max_value);
+            stderr,
+            "\033[31mFloat value '%s' for flag '%s' doesn't satisfy %f <= %f <= %f.\033[0m\n",
+            text,
+            name,
+            min_value,
+            f,
+            max_value);
         exit(EXIT_FAILURE);
     }
 
@@ -235,25 +238,25 @@ float stim_internal::find_float_argument(
 
 FILE *stim_internal::find_open_file_argument(
     const char *name, FILE *default_file, const char *mode, int argc, const char **argv) {
-  const char *path = find_argument(name, argc, argv);
-  if (path == nullptr) {
-    if (default_file == nullptr) {
-      std::cerr << "\033[31mMissing command line argument: '" << name << "'\033[0m\n";
-      exit(EXIT_FAILURE);
+    const char *path = find_argument(name, argc, argv);
+    if (path == nullptr) {
+        if (default_file == nullptr) {
+            std::cerr << "\033[31mMissing command line argument: '" << name << "'\033[0m\n";
+            exit(EXIT_FAILURE);
+        }
+        return default_file;
     }
-    return default_file;
-  }
-  if (*path == '\0') {
-    std::cerr << "\033[31mCommand line argument '" << name
-              << "' can't be empty. It's supposed to be a file path.\033[0m\n";
-    exit(EXIT_FAILURE);
-  }
-  FILE *file = fopen(path, mode);
-  if (file == nullptr) {
-    std::cerr << "\033[31mFailed to open '" << path << "'\033[0m\n";
-    exit(EXIT_FAILURE);
-  }
-  return file;
+    if (*path == '\0') {
+        std::cerr << "\033[31mCommand line argument '" << name
+                  << "' can't be empty. It's supposed to be a file path.\033[0m\n";
+        exit(EXIT_FAILURE);
+    }
+    FILE *file = fopen(path, mode);
+    if (file == nullptr) {
+        std::cerr << "\033[31mFailed to open '" << path << "'\033[0m\n";
+        exit(EXIT_FAILURE);
+    }
+    return file;
 }
 
 ostream_else_cout::ostream_else_cout(std::unique_ptr<std::ostream> &&held) : held(std::move(held)) {
@@ -269,23 +272,23 @@ std::ostream &ostream_else_cout::stream() {
 
 ostream_else_cout stim_internal::find_output_stream_argument(
     const char *name, bool default_std_out, int argc, const char **argv) {
-  const char *path = find_argument(name, argc, argv);
-  if (path == nullptr) {
-    if (!default_std_out) {
-      std::cerr << "\033[31mMissing command line argument: '" << name << "'\033[0m\n";
-      exit(EXIT_FAILURE);
+    const char *path = find_argument(name, argc, argv);
+    if (path == nullptr) {
+        if (!default_std_out) {
+            std::cerr << "\033[31mMissing command line argument: '" << name << "'\033[0m\n";
+            exit(EXIT_FAILURE);
+        }
+        return {nullptr};
     }
-    return {nullptr};
-  }
-  if (*path == '\0') {
-    std::cerr << "\033[31mCommand line argument '" << name
-              << "' can't be empty. It's supposed to be a file path.\033[0m\n";
-    exit(EXIT_FAILURE);
-  }
-  std::unique_ptr<std::ostream> f(new std::ofstream(path));
-  if (f->fail()) {
-    std::cerr << "\033[31mFailed to open '" << path << "'\033[0m\n";
-    exit(EXIT_FAILURE);
-  }
-  return {std::move(f)};
+    if (*path == '\0') {
+        std::cerr << "\033[31mCommand line argument '" << name
+                  << "' can't be empty. It's supposed to be a file path.\033[0m\n";
+        exit(EXIT_FAILURE);
+    }
+    std::unique_ptr<std::ostream> f(new std::ofstream(path));
+    if (f->fail()) {
+        std::cerr << "\033[31mFailed to open '" << path << "'\033[0m\n";
+        exit(EXIT_FAILURE);
+    }
+    return {std::move(f)};
 }

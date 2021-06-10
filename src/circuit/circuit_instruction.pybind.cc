@@ -13,15 +13,18 @@
 // limitations under the License.
 
 #include "circuit_instruction.pybind.h"
-#include "circuit_gate_target.pybind.h"
+
 #include "../py/base.pybind.h"
+#include "circuit_gate_target.pybind.h"
 #include "gate_data.h"
 
 using namespace stim_internal;
 
-CircuitInstruction::CircuitInstruction(const char *name, std::vector<GateTarget> targets, double gate_arg) : gate(GATE_DATA.at(name)), targets(targets), gate_arg(gate_arg) {
+CircuitInstruction::CircuitInstruction(const char *name, std::vector<GateTarget> targets, double gate_arg)
+    : gate(GATE_DATA.at(name)), targets(targets), gate_arg(gate_arg) {
 }
-CircuitInstruction::CircuitInstruction(const Gate &gate, std::vector<GateTarget> targets, double gate_arg) : gate(gate), targets(targets), gate_arg(gate_arg) {
+CircuitInstruction::CircuitInstruction(const Gate &gate, std::vector<GateTarget> targets, double gate_arg)
+    : gate(gate), targets(targets), gate_arg(gate_arg) {
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
@@ -73,8 +76,8 @@ void pybind_circuit_instruction(pybind11::module &m) {
                 stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], 0)
                 >>> circuit[2]
                 stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], 0.125)
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         pybind11::init<const char *, std::vector<GateTarget>, double>(),
@@ -90,21 +93,24 @@ void pybind_circuit_instruction(pybind11::module &m) {
                     `stim.target_rec(-1)`, or instances of `stim.GateTarget`.
                 gate_arg: The parens argument given to a gate. For noise gates this is their probability. For
                     OBSERVABLE_INCLUDE it's the logical observable's index.
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_property_readonly(
         "name",
         &CircuitInstruction::name,
         clean_doc_string(u8R"DOC(
             The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`).
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(
         "targets_copy",
         &CircuitInstruction::targets_copy,
         clean_doc_string(u8R"DOC(
             Returns a copy of the targets of the instruction.
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def_readonly(
         "gate_arg",
@@ -113,13 +119,13 @@ void pybind_circuit_instruction(pybind11::module &m) {
             Returns the numeric value given as a parens argument to the instruction.
 
             For noisy gates this is their probability. For OBSERVABLE_INCLUDE it's the logical observable index.
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.CircuitInstruction`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.CircuitInstruction`s are different.");
     c.def(
         "__repr__",
         &CircuitInstruction::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`."
-    );
+        "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`.");
 }

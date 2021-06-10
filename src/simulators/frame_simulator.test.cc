@@ -429,7 +429,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -443,7 +445,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -457,7 +461,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -471,7 +477,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(1) X2 X3
         M 0 1 2 3
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -485,7 +493,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -499,7 +509,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(1) X2 X3
         M 0 1 2 3
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -516,7 +528,9 @@ TEST(FrameSimulator, correlated_error) {
         CORRELATED_ERROR(1) X3 X4
         M 0 1 2 3 4
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     int hits[3]{};
@@ -529,7 +543,9 @@ TEST(FrameSimulator, correlated_error) {
         ELSE_CORRELATED_ERROR(0.75) X2
         M 0 1 2
     )circuit"),
-        ref, n, rng);
+        ref,
+        n,
+        rng);
     for (size_t k = 0; k < n; k++) {
         hits[0] += samples[k][0];
         hits[1] += samples[k][1];
@@ -551,7 +567,9 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
             M 0
             CNOT 1 rec[-1]
         )circuit"),
-                ref, 1, SHARED_TEST_RNG());
+                ref,
+                1,
+                SHARED_TEST_RNG());
         },
         std::out_of_range);
     ASSERT_THROW(
@@ -561,7 +579,9 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
             M 0
             CY 1 rec[-1]
         )circuit"),
-                ref, 1, SHARED_TEST_RNG());
+                ref,
+                1,
+                SHARED_TEST_RNG());
         },
         std::out_of_range);
     ASSERT_THROW(
@@ -571,7 +591,9 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
             M 0
             YCZ rec[-1] 1
         )circuit"),
-                ref, 1, SHARED_TEST_RNG());
+                ref,
+                1,
+                SHARED_TEST_RNG());
         },
         std::out_of_range);
     ASSERT_THROW(
@@ -581,7 +603,9 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
             M 0
             XCZ rec[-1] 1
         )circuit"),
-                ref, 1, SHARED_TEST_RNG());
+                ref,
+                1,
+                SHARED_TEST_RNG());
         },
         std::out_of_range);
     ASSERT_THROW(
@@ -591,7 +615,9 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
             M 0
             SWAP 1 rec[-1]
         )circuit"),
-                ref, 1, SHARED_TEST_RNG());
+                ref,
+                1,
+                SHARED_TEST_RNG());
         },
         std::out_of_range);
 }
@@ -610,7 +636,9 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         CX rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
@@ -620,7 +648,9 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         CY rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
@@ -630,7 +660,9 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         XCZ 1 rec[-1]
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
@@ -640,7 +672,9 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         YCZ 1 rec[-1]
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 }
 
@@ -656,7 +690,9 @@ TEST(FrameSimulator, classical_controls) {
         CX rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -667,7 +703,9 @@ TEST(FrameSimulator, classical_controls) {
         CX rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -681,7 +719,9 @@ TEST(FrameSimulator, classical_controls) {
         CX rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -695,7 +735,9 @@ TEST(FrameSimulator, classical_controls) {
         CX rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
     auto r = FrameSimulator::sample(
         Circuit::from_text(R"circuit(
@@ -704,7 +746,9 @@ TEST(FrameSimulator, classical_controls) {
         CX rec[-1] 1
         M 1
     )circuit"),
-        ref, 1000, SHARED_TEST_RNG());
+        ref,
+        1000,
+        SHARED_TEST_RNG());
     size_t hits = 0;
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_EQ(r[k][0], r[k][1]);
@@ -725,7 +769,9 @@ TEST(FrameSimulator, classical_controls) {
         H 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 
     expected.clear();
@@ -739,7 +785,9 @@ TEST(FrameSimulator, classical_controls) {
         CY rec[-1] 1
         M 1
     )circuit"),
-            ref, 1, SHARED_TEST_RNG())[0],
+            ref,
+            1,
+            SHARED_TEST_RNG())[0],
         expected);
 }
 
@@ -763,7 +811,11 @@ TEST(FrameSimulator, stream_huge_case) {
                 M 0 1 2 3
             }
         )CIRCUIT"),
-        simd_bits(0), 256, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
+        simd_bits(0),
+        256,
+        tmp,
+        SAMPLE_FORMAT_B8,
+        SHARED_TEST_RNG());
     rewind(tmp);
     for (size_t k = 0; k < 256 * 100000 * 4 / 8; k++) {
         ASSERT_EQ(getc(tmp), 0x44);
@@ -845,7 +897,7 @@ TEST(FrameSimulator, stream_many_shots) {
     FrameSimulator::sample_out(circuit, simd_bits(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_all(tmp);
-    for (size_t k = 0; k < 2048*4; k += 4) {
+    for (size_t k = 0; k < 2048 * 4; k += 4) {
         ASSERT_EQ(result[k], '0') << k;
         ASSERT_EQ(result[k + 1], '1') << (k + 1);
         ASSERT_EQ(result[k + 2], '0') << (k + 2);
@@ -887,18 +939,23 @@ TEST(FrameSimulator, resets_vs_measurements) {
         return !t.data.not_zero();
     };
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         RX 0
         RY 1
         RZ 2
         H_XZ 0
         H_YZ 1
         M 0 1 2
-    )circuit", {
-                      false, false, false,
-                  }));
+    )circuit",
+        {
+            false,
+            false,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -907,13 +964,21 @@ TEST(FrameSimulator, resets_vs_measurements) {
         MX 0 1 2
         MY 3 4 5
         MZ 6 7 8
-    )circuit", {
-                      false, true, true,
-                      true, false, true,
-                      true, true, false,
-                  }));
+    )circuit",
+        {
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -922,13 +987,21 @@ TEST(FrameSimulator, resets_vs_measurements) {
         MX !0 !1 !2
         MY !3 !4 !5
         MZ !6 !7 !8
-    )circuit", {
-                      false, true, true,
-                      true, false, true,
-                      true, true, false,
-                  }));
+    )circuit",
+        {
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -940,14 +1013,24 @@ TEST(FrameSimulator, resets_vs_measurements) {
         H_XZ 0
         H_YZ 3
         M 0 3 6
-    )circuit", {
-                      false, true, true,
-                      true, false, true,
-                      true, true, false,
-                      false, false, false,
-                  }));
+    )circuit",
+        {
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -959,14 +1042,24 @@ TEST(FrameSimulator, resets_vs_measurements) {
         H_XZ 0
         H_YZ 3
         M 0 3 6
-    )circuit", {
-                      false, true, true,
-                      true, false, true,
-                      true, true, false,
-                      false, false, false,
-                  }));
+    )circuit",
+        {
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0
         H_YZ 1
         Z_ERROR(1) 0 1
@@ -974,9 +1067,13 @@ TEST(FrameSimulator, resets_vs_measurements) {
         MRX 0 0
         MRY 1 1
         MRZ 2 2
-    )circuit", {
-                      true, false,
-                      true, false,
-                      true, false,
-                  }));
+    )circuit",
+        {
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+        }));
 }

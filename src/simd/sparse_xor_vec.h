@@ -197,7 +197,7 @@ struct SparseXorVec {
     }
 };
 
-}
+}  // namespace stim_internal
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const stim_internal::SparseXorVec<T> &v) {

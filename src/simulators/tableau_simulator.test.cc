@@ -312,7 +312,7 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
 TEST(TableauSimulator, certain_errors_consistent_with_gates) {
     TableauSimulator sim1(2, SHARED_TEST_RNG());
     TableauSimulator sim2(2, SHARED_TEST_RNG());
-    uint32_t targets[] {0};
+    uint32_t targets[]{0};
     OperationData d0{0, {targets, targets + 1}};
     OperationData d1{1.0, {targets, targets + 1}};
 
@@ -396,7 +396,7 @@ TEST(TableauSimulator, to_state_vector) {
     ASSERT_EQ(v.size(), 1);
     auto r = v[0].real();
     auto i = v[0].imag();
-    ASSERT_LT(r*r + i*i - 1, 1e-4);
+    ASSERT_LT(r * r + i * i - 1, 1e-4);
 
     TableauSimulator sim_tab(3, SHARED_TEST_RNG());
     auto sim_vec = sim_tab.to_vector_sim();
@@ -871,32 +871,42 @@ TEST(TableauSimulator, canonical_stabilizers) {
     TableauSimulator sim(2, SHARED_TEST_RNG());
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
-    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
-        PauliString::from_str("XX"),
-        PauliString::from_str("ZZ"),
-    }));
+    ASSERT_EQ(
+        sim.canonical_stabilizers(),
+        (std::vector<PauliString>{
+            PauliString::from_str("XX"),
+            PauliString::from_str("ZZ"),
+        }));
     sim.SQRT_Y(OpDat({0, 1}));
-    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
-        PauliString::from_str("XX"),
-        PauliString::from_str("ZZ"),
-    }));
+    ASSERT_EQ(
+        sim.canonical_stabilizers(),
+        (std::vector<PauliString>{
+            PauliString::from_str("XX"),
+            PauliString::from_str("ZZ"),
+        }));
     sim.SQRT_X(OpDat({0, 1}));
-    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
-        PauliString::from_str("XX"),
-        PauliString::from_str("-ZZ"),
-    }));
+    ASSERT_EQ(
+        sim.canonical_stabilizers(),
+        (std::vector<PauliString>{
+            PauliString::from_str("XX"),
+            PauliString::from_str("-ZZ"),
+        }));
     sim.set_num_qubits(3);
-    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
-        PauliString::from_str("+XX_"),
-        PauliString::from_str("-ZZ_"),
-        PauliString::from_str("+__Z"),
-    }));
+    ASSERT_EQ(
+        sim.canonical_stabilizers(),
+        (std::vector<PauliString>{
+            PauliString::from_str("+XX_"),
+            PauliString::from_str("-ZZ_"),
+            PauliString::from_str("+__Z"),
+        }));
     sim.ZCX(OpDat({2, 0}));
-    ASSERT_EQ(sim.canonical_stabilizers(), (std::vector<PauliString>{
-        PauliString::from_str("+XX_"),
-        PauliString::from_str("-ZZ_"),
-        PauliString::from_str("+__Z"),
-    }));
+    ASSERT_EQ(
+        sim.canonical_stabilizers(),
+        (std::vector<PauliString>{
+            PauliString::from_str("+XX_"),
+            PauliString::from_str("-ZZ_"),
+            PauliString::from_str("+__Z"),
+        }));
 }
 
 TEST(TableauSimulator, canonical_stabilizers_random) {
@@ -1179,18 +1189,23 @@ TEST(TableauSimulator, resets_vs_measurements) {
         return true;
     };
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         RX 0
         RY 1
         RZ 2
         H_XZ 0
         H_YZ 1
         M 0 1 2
-    )circuit", {
-                      false, false, false,
-                  }));
+    )circuit",
+        {
+            false,
+            false,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -1199,13 +1214,21 @@ TEST(TableauSimulator, resets_vs_measurements) {
         MX 0 1 2
         MY 3 4 5
         MZ 6 7 8
-    )circuit", {
-                      false, true, true,
-                      true, false, true,
-                      true, true, false,
-                  }));
+    )circuit",
+        {
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -1214,13 +1237,21 @@ TEST(TableauSimulator, resets_vs_measurements) {
         MX !0 !1 !2
         MY !3 !4 !5
         MZ !6 !7 !8
-    )circuit", {
-                      true, false, false,
-                      false, true, false,
-                      false, false, true,
-                  }));
+    )circuit",
+        {
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            true,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -1232,14 +1263,24 @@ TEST(TableauSimulator, resets_vs_measurements) {
         H_XZ 0
         H_YZ 3
         M 0 3 6
-    )circuit", {
-                      false, true, true,
-                      true, false, true,
-                      true, true, false,
-                      false, false, false,
-                  }));
+    )circuit",
+        {
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0 1 2
         H_YZ 3 4 5
         X_ERROR(1) 0 3 6
@@ -1251,14 +1292,24 @@ TEST(TableauSimulator, resets_vs_measurements) {
         H_XZ 0
         H_YZ 3
         M 0 3 6
-    )circuit", {
-                      true, false, false,
-                      false, true, false,
-                      false, false, true,
-                      false, false, false,
-                  }));
+    )circuit",
+        {
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+        }));
 
-    ASSERT_TRUE(check(R"circuit(
+    ASSERT_TRUE(check(
+        R"circuit(
         H_XZ 0
         H_YZ 1
         Z_ERROR(1) 0 1
@@ -1266,9 +1317,13 @@ TEST(TableauSimulator, resets_vs_measurements) {
         MRX 0 0
         MRY 1 1
         MRZ 2 2
-    )circuit", {
-                      true, false,
-                      true, false,
-                      true, false,
-                  }));
+    )circuit",
+        {
+            true,
+            false,
+            true,
+            false,
+            true,
+            false,
+        }));
 }

@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "error_fuser.h"
-#include "../gen/gen_surface_code.h"
 
 #include "../benchmark_util.h"
+#include "../gen/gen_surface_code.h"
 
 using namespace stim_internal;
 

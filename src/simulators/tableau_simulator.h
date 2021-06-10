@@ -234,6 +234,6 @@ struct TableauSimulator {
     void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii);
 };
 
-}
+}  // namespace stim_internal
 
 #endif

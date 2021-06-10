@@ -48,7 +48,8 @@ struct FusedError {
     uint64_t local_time_shift;
     std::unique_ptr<FusedErrorRepeatBlock> block;
     void skip(uint64_t skipped);
-    void append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const;
+    void append_to_detector_error_model(
+        DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const;
 };
 
 struct FusedErrorRepeatBlock {
@@ -56,7 +57,8 @@ struct FusedErrorRepeatBlock {
     uint64_t total_ticks_per_iteration_including_sub_loops;
     uint64_t outer_ticks_per_iteration() const;
     std::vector<FusedError> errors;
-    void append_to_detector_error_model(DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const;
+    void append_to_detector_error_model(
+        DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const;
     void skip(uint64_t skipped);
 };
 
@@ -82,7 +84,8 @@ struct ErrorFuser {
 
     ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
 
-    static DetectorErrorModel circuit_to_detector_error_model(const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
+    static DetectorErrorModel circuit_to_detector_error_model(
+        const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorFuser(const ErrorFuser &fuser) = delete;
@@ -301,6 +304,6 @@ struct ErrorFuser {
     }
 };
 
-}
+}  // namespace stim_internal
 
 #endif

@@ -55,6 +55,6 @@ struct TableauTransposedRaii {
     void append_SWAP(size_t q1, size_t q2);
 };
 
-}
+}  // namespace stim_internal
 
 #endif

@@ -76,6 +76,6 @@ struct bit_ref {
     }
 };
 
-}
+}  // namespace stim_internal
 
 #endif

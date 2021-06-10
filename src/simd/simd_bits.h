@@ -128,6 +128,6 @@ struct simd_bits {
     }
 };
 
-}
+}  // namespace stim_internal
 
 #endif

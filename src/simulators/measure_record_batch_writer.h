@@ -59,6 +59,6 @@ struct MeasureRecordBatchWriter {
     void write_end();
 };
 
-}
+}  // namespace stim_internal
 
 #endif

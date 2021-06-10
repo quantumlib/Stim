@@ -91,9 +91,11 @@ Gate::Gate() : name(nullptr) {
 }
 
 Gate::Gate(
-    const char *name, void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
+    const char *name,
+    void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
     void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-    void (ErrorFuser::*hit_simulator_function)(const OperationData &), GateFlags flags,
+    void (ErrorFuser::*hit_simulator_function)(const OperationData &),
+    GateFlags flags,
     ExtraGateData (*extra_data_func)(void))
     : name(name),
       name_len(strlen(name)),

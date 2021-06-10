@@ -341,7 +341,8 @@ TEST(tableau, eval_y) {
 }
 
 bool are_tableau_mutations_equivalent(
-    size_t n, const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation1,
+    size_t n,
+    const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation1,
     const std::function<void(Tableau &t, const std::vector<size_t> &)> &mutation2) {
     auto test_tableau_dual = Tableau::identity(2 * n);
     std::vector<size_t> targets1;

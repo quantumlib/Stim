@@ -13,9 +13,10 @@
 // limitations under the License.
 
 #include "detector_error_model.h"
-#include "../test_util.test.h"
 
 #include <gtest/gtest.h>
+
+#include "../test_util.test.h"
 
 using namespace stim_internal;
 
@@ -55,7 +56,8 @@ TEST(detector_error_model, build) {
 
     std::vector<DemRelativeSymptom> symptoms;
     symptoms.push_back(DemRelativeSymptom::observable_id(3));
-    symptoms.push_back(DemRelativeSymptom::detector_id(DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(4)));
+    symptoms.push_back(DemRelativeSymptom::detector_id(
+        DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(4)));
     model.append_error(0.25, symptoms);
     ASSERT_EQ(model.instructions.size(), 2);
     ASSERT_EQ(model.blocks.size(), 0);
@@ -68,9 +70,7 @@ TEST(detector_error_model, build) {
 
     symptoms.push_back(DemRelativeSymptom::separator());
     symptoms.push_back(DemRelativeSymptom::observable_id(4));
-    ASSERT_THROW({
-        model.append_error(0.125, symptoms);
-    }, std::invalid_argument);
+    ASSERT_THROW({ model.append_error(0.125, symptoms); }, std::invalid_argument);
 
     model.append_reducible_error(0.125, symptoms);
     ASSERT_EQ(model.instructions.size(), 1);
@@ -124,43 +124,68 @@ TEST(detector_error_model, parse) {
     DetectorErrorModel expected;
     ASSERT_EQ(DetectorErrorModel(""), expected);
 
-    expected.append_error(0.125, (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(0))}));
-    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+    expected.append_error(
+        0.125,
+        (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(
+            DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(0))}));
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
         error(0.125) D0
-    )MODEL"), expected);
+    )MODEL"),
+        expected);
 
-    expected.append_error(0.125, (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::relative(0))}));
-    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+    expected.append_error(
+        0.125,
+        (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(
+            DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::relative(0))}));
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
         error(0.125) D0
         error(0.125) D0+t
-    )MODEL"), expected);
+    )MODEL"),
+        expected);
 
-    expected.append_error(0.125, (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(DemRelValue::absolute(1), DemRelValue::absolute(2), DemRelValue::relative(3))}));
-    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+    expected.append_error(
+        0.125,
+        (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(
+            DemRelValue::absolute(1), DemRelValue::absolute(2), DemRelValue::relative(3))}));
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
         error(0.125) D0
         error(0.125) D0+t
         error(0.125) D1,2,3+t
-    )MODEL"), expected);
+    )MODEL"),
+        expected);
 
-    expected.append_reducible_error(0.25, (std::vector<DemRelativeSymptom>{DemRelativeSymptom::observable_id(0), DemRelativeSymptom::separator(), DemRelativeSymptom::observable_id(2)}));
-    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+    expected.append_reducible_error(
+        0.25,
+        (std::vector<DemRelativeSymptom>{
+            DemRelativeSymptom::observable_id(0),
+            DemRelativeSymptom::separator(),
+            DemRelativeSymptom::observable_id(2)}));
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
         error(0.125) D0
         error(0.125) D0+t
         error(0.125) D1,2,3+t
         reducible_error(0.25) L0 ^ L2
-    )MODEL"), expected);
+    )MODEL"),
+        expected);
 
     expected.append_tick(60);
-    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
         error(0.125) D0
         error(0.125) D0+t
         error(0.125) D1,2,3+t
         reducible_error(0.25) L0 ^ L2
         tick 60
-    )MODEL"), expected);
+    )MODEL"),
+        expected);
 
     expected.append_repeat_block(100, expected);
-    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
         error(0.125) D0
         error(0.125) D0+t
         error(0.125) D1,2,3+t
@@ -173,7 +198,8 @@ TEST(detector_error_model, parse) {
             reducible_error(0.25) L0 ^ L2
             tick 60
         }
-    )MODEL"), expected);
+    )MODEL"),
+        expected);
 }
 
 TEST(detector_error_model, movement) {
@@ -205,7 +231,6 @@ TEST(detector_error_model, movement) {
     ASSERT_EQ(d2, DetectorErrorModel());
     ASSERT_EQ(d1, DetectorErrorModel(t));
 }
-
 
 TEST(dem_rel_value, general) {
     auto a = DemRelValue::absolute(3);
@@ -266,7 +291,8 @@ TEST(dem_relative_symptom, general) {
     ASSERT_NE(d, DemRelativeSymptom::observable_id(5));
     ASSERT_NE(d, DemRelativeSymptom::separator());
 
-    DemRelativeSymptom d3 = DemRelativeSymptom::detector_id(DemRelValue::absolute(4), DemRelValue::absolute(6), DemRelValue::relative(3));
+    DemRelativeSymptom d3 =
+        DemRelativeSymptom::detector_id(DemRelValue::absolute(4), DemRelValue::absolute(6), DemRelValue::relative(3));
     DemRelativeSymptom s = DemRelativeSymptom::separator();
     DemRelativeSymptom o = DemRelativeSymptom::observable_id(3);
     ASSERT_EQ(d.str(), "D3+t");
@@ -290,7 +316,8 @@ TEST(dem_relative_symptom, general) {
 TEST(dem_instruction, general) {
     std::vector<DemRelativeSymptom> d1;
     d1.push_back(DemRelativeSymptom::observable_id(4));
-    d1.push_back(DemRelativeSymptom::detector_id(DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(3)));
+    d1.push_back(DemRelativeSymptom::detector_id(
+        DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(3)));
     std::vector<DemRelativeSymptom> d2;
     d2.push_back(DemRelativeSymptom::observable_id(4));
     DemInstruction i1{0.125, d1, DEM_ERROR};

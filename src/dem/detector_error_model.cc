@@ -243,7 +243,6 @@ bool DetectorErrorModel::approx_equals(const DetectorErrorModel &other, double a
         }
     }
     return true;
-
 }
 std::string DetectorErrorModel::str() const {
     std::stringstream s;
@@ -288,7 +287,9 @@ DetectorErrorModel::DetectorErrorModel(const DetectorErrorModel &other)
 }
 
 DetectorErrorModel::DetectorErrorModel(DetectorErrorModel &&other) noexcept
-    : symptom_buf(std::move(other.symptom_buf)), instructions(std::move(other.instructions)), blocks(std::move(other.blocks)) {
+    : symptom_buf(std::move(other.symptom_buf)),
+      instructions(std::move(other.instructions)),
+      blocks(std::move(other.blocks)) {
 }
 
 DetectorErrorModel &DetectorErrorModel::operator=(const DetectorErrorModel &other) {
@@ -415,7 +416,8 @@ inline bool read_symptom(int &c, SOURCE read_char, bool allow_separators, Monoto
                 out.append_tail(DemRelativeSymptom::detector_id(v0, DemRelValue::unspecified(), v1));
             }
         } else {
-            out.append_tail(DemRelativeSymptom::detector_id(DemRelValue::unspecified(), DemRelValue::unspecified(), v0));
+            out.append_tail(
+                DemRelativeSymptom::detector_id(DemRelValue::unspecified(), DemRelValue::unspecified(), v0));
         }
         return true;
     }

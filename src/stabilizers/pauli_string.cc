@@ -40,7 +40,9 @@ const PauliStringRef PauliString::ref() const {
     return PauliStringRef(
         num_qubits,
         // HACK: const correctness is temporarily removed, but immediately restored.
-        bit_ref((bool *)&sign, 0), xs, zs);
+        bit_ref((bool *)&sign, 0),
+        xs,
+        zs);
 }
 
 PauliStringRef PauliString::ref() {

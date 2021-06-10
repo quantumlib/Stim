@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <emscripten/val.h>
+
 #include "../../src/stabilizers/pauli_string.h"
 
 struct ExposedPauliString {

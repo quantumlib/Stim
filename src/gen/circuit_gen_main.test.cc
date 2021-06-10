@@ -25,7 +25,7 @@ using namespace stim_internal;
 TEST(circuit_gen_main, no_noise_no_detections) {
     std::vector<uint32_t> distances{2, 3, 4, 5, 6, 7, 15};
     std::vector<uint32_t> rounds{1, 2, 3, 4, 5, 6, 20};
-    std::map<std::string, std::pair<std::string, GeneratedCircuit(*)(const CircuitGenParameters &)>> funcs{
+    std::map<std::string, std::pair<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)>> funcs{
         {"color", {"memory_xyz", &generate_color_code_circuit}},
         {"surface", {"unrotated_memory_x", &generate_surface_code_circuit}},
         {"surface", {"unrotated_memory_z", &generate_surface_code_circuit}},
@@ -40,8 +40,10 @@ TEST(circuit_gen_main, no_noise_no_detections) {
                     continue;
                 }
                 CircuitGenParameters params(r, d, func.second.first);
-                auto samples = detector_samples(func.second.second(params).circuit, 256, false, true, SHARED_TEST_RNG());
-                EXPECT_FALSE(samples.data.not_zero()) << "d=" << d << ", r=" << r << ", task=" << func.second.first << ", func=" << func.first;
+                auto samples =
+                    detector_samples(func.second.second(params).circuit, 256, false, true, SHARED_TEST_RNG());
+                EXPECT_FALSE(samples.data.not_zero())
+                    << "d=" << d << ", r=" << r << ", task=" << func.second.first << ", func=" << func.first;
             }
         }
     }

@@ -16,11 +16,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "base.pybind.h"
 #include "../circuit/circuit.pybind.h"
 #include "../simulators/tableau_simulator.pybind.h"
 #include "../stabilizers/pauli_string.pybind.h"
 #include "../stabilizers/tableau.pybind.h"
+#include "base.pybind.h"
 #include "compiled_detector_sampler.pybind.h"
 #include "compiled_measurement_sampler.pybind.h"
 
@@ -65,8 +65,8 @@ PYBIND11_MODULE(stim, m) {
         clean_doc_string(u8R"DOC(
             Returns a record target that can be passed into Circuit.append_operation.
             For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     m.def(
         "target_inv",
@@ -76,8 +76,8 @@ PYBIND11_MODULE(stim, m) {
             Returns a target flagged as inverted that can be passed into Circuit.append_operation
             For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
             meaning the measurement result from qubit 1 should be inverted when reported.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     m.def(
         "target_x",
@@ -86,8 +86,8 @@ PYBIND11_MODULE(stim, m) {
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
             For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     m.def(
         "target_y",
@@ -96,8 +96,8 @@ PYBIND11_MODULE(stim, m) {
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
             For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     m.def(
         "target_z",
@@ -106,8 +106,8 @@ PYBIND11_MODULE(stim, m) {
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
             For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     pybind_pauli_string(m);
     pybind_circuit(m);

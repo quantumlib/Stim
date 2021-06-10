@@ -132,4 +132,4 @@ struct simd_word {
     }
 };
 
-}
+}  // namespace stim_internal

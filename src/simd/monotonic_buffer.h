@@ -163,6 +163,6 @@ struct MonotonicBuffer {
     }
 };
 
-}
+}  // namespace stim_internal
 
 #endif

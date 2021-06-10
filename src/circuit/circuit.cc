@@ -297,8 +297,8 @@ inline void read_result_targets_into(int &c, SOURCE read_char, const Gate &gate,
         uint32_t q = read_uint24_t(c, read_char);
         if (flipped_flag && !(gate.flags & GATE_PRODUCES_RESULTS)) {
             throw std::invalid_argument(
-                "Gate '" + std::string(gate.name) +
-                "' doesn't take inverted targets like '!" + std::to_string(q) + "'.");
+                "Gate '" + std::string(gate.name) + "' doesn't take inverted targets like '!" + std::to_string(q) +
+                "'.");
         }
         circuit.jag_targets.append_tail(q ^ flipped_flag);
     }
@@ -720,7 +720,7 @@ size_t Circuit::count_qubits() const {
             }
         }
         return r;
-   });
+    });
 }
 
 size_t Circuit::max_lookback() const {
@@ -732,7 +732,7 @@ size_t Circuit::max_lookback() const {
             }
         }
         return r;
-   });
+    });
 }
 
 uint64_t stim_internal::add_saturate(uint64_t a, uint64_t b) {

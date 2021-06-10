@@ -51,6 +51,6 @@ struct MeasureRecord {
     void record_result(bool result);
 };
 
-}
+}  // namespace stim_internal
 
 #endif

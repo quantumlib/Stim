@@ -16,6 +16,7 @@
 #define CIRCUIT_INSTRUCTION_PYBIND_H
 
 #include <pybind11/pybind11.h>
+
 #include "circuit_gate_target.pybind.h"
 #include "gate_data.h"
 

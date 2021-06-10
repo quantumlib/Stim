@@ -168,7 +168,9 @@ TEST(circuit, from_text) {
     expected.clear();
     expected.append_op(
         "CORRELATED_ERROR",
-        {90 | TARGET_PAULI_X_BIT, 91 | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT, 92 | TARGET_PAULI_Z_BIT,
+        {90 | TARGET_PAULI_X_BIT,
+         91 | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT,
+         92 | TARGET_PAULI_Z_BIT,
          93 | TARGET_PAULI_X_BIT},
         0.125);
     ASSERT_EQ(
@@ -425,13 +427,17 @@ TEST(circuit, count_detectors_num_observables) {
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT").count_detectors(), 1);
+    )CIRCUIT")
+            .count_detectors(),
+        1);
     ASSERT_EQ(
         Circuit::from_text(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
-    )CIRCUIT").num_observables(), 6);
+    )CIRCUIT")
+            .num_observables(),
+        6);
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
@@ -461,7 +467,9 @@ TEST(circuit, count_detectors_num_observables) {
                 }
             }
         }
-    )CIRCUIT").num_observables(), 3);
+    )CIRCUIT")
+            .num_observables(),
+        3);
 
     ASSERT_EQ(
         Circuit::from_text(R"CIRCUIT(
@@ -493,7 +501,8 @@ TEST(circuit, count_detectors_num_observables) {
           }
          }
         }
-    )CIRCUIT").count_detectors(),
+    )CIRCUIT")
+            .count_detectors(),
         UINT64_MAX);
 }
 

@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "frame_simulator.h"
 #include "detection_simulator.h"
+
+#include "frame_simulator.h"
 
 using namespace stim_internal;
 
@@ -27,8 +28,12 @@ void xor_measurement_set_into_result(
 }
 
 simd_bit_table stim_internal::detector_samples(
-    const Circuit &circuit, const DetectorsAndObservables &det_obs, size_t num_shots, bool prepend_observables,
-    bool append_observables, std::mt19937_64 &rng) {
+    const Circuit &circuit,
+    const DetectorsAndObservables &det_obs,
+    size_t num_shots,
+    bool prepend_observables,
+    bool append_observables,
+    std::mt19937_64 &rng) {
     // Start from measurement samples.
     simd_bit_table frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
 
@@ -63,7 +68,11 @@ simd_bit_table stim_internal::detector_samples(
 }
 
 void detector_sample_out_helper_stream(
-    const Circuit &circuit, FrameSimulator &sim, size_t num_samples, bool append_observables, FILE *out,
+    const Circuit &circuit,
+    FrameSimulator &sim,
+    size_t num_samples,
+    bool append_observables,
+    FILE *out,
     SampleFormat format) {
     MeasureRecordBatchWriter writer(out, num_samples, format);
     std::vector<simd_bits> observables;
@@ -113,8 +122,13 @@ void detector_sample_out_helper_stream(
 }
 
 void detector_samples_out_in_memory(
-    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
-    SampleFormat format, std::mt19937_64 &rng) {
+    const Circuit &circuit,
+    size_t num_shots,
+    bool prepend_observables,
+    bool append_observables,
+    FILE *out,
+    SampleFormat format,
+    std::mt19937_64 &rng) {
     if (prepend_observables && append_observables) {
         throw std::out_of_range("Can't have both --prepend_observables and --append_observables");
     }
@@ -144,8 +158,14 @@ void detector_samples_out_in_memory(
 }
 
 void detector_sample_out_helper(
-    const Circuit &circuit, FrameSimulator &sim, size_t num_shots, bool prepend_observables, bool append_observables,
-    FILE *out, SampleFormat format, std::mt19937_64 &rng) {
+    const Circuit &circuit,
+    FrameSimulator &sim,
+    size_t num_shots,
+    bool prepend_observables,
+    bool append_observables,
+    FILE *out,
+    SampleFormat format,
+    std::mt19937_64 &rng) {
     uint64_t d = circuit.count_detectors() + circuit.num_observables();
     uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) * std::max(circuit.count_measurements(), d);
     if (!prepend_observables && should_use_streaming_instead_of_memory(approx_mem_usage)) {
@@ -156,8 +176,13 @@ void detector_sample_out_helper(
 }
 
 void stim_internal::detector_samples_out(
-    const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, FILE *out,
-    SampleFormat format, std::mt19937_64 &rng) {
+    const Circuit &circuit,
+    size_t num_shots,
+    bool prepend_observables,
+    bool append_observables,
+    FILE *out,
+    SampleFormat format,
+    std::mt19937_64 &rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 768;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();

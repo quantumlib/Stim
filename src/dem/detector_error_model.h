@@ -113,7 +113,7 @@ struct DetectorErrorModel {
     void clear();
 };
 
-}
+}  // namespace stim_internal
 
 std::ostream &operator<<(std::ostream &out, const stim_internal::DemRelValue &v);
 std::ostream &operator<<(std::ostream &out, const stim_internal::DetectorErrorModel &v);

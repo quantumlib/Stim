@@ -71,10 +71,7 @@ std::string CompiledMeasurementSampler::repr() const {
 
 void pybind_compiled_measurement_sampler(pybind11::module &m) {
     auto &&c = pybind11::class_<CompiledMeasurementSampler>(
-        m,
-        "CompiledMeasurementSampler",
-        "An analyzed stabilizer circuit whose measurements can be sampled quickly."
-    );
+        m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
 
     c.def(pybind11::init<Circuit>());
 
@@ -101,8 +98,8 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
                 The bit for measurement `m` in shot `s` is at `result[s, m]`.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "sample_bit_packed",
@@ -127,12 +124,12 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
                 The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "__repr__",
         &CompiledMeasurementSampler::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`."
-    );
+        "Returns text that is a valid python expression evaluating to an equivalent "
+        "`stim.CompiledMeasurementSampler`.");
 }

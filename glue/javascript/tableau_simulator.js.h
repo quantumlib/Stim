@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <emscripten/val.h>
+
 #include "../../src/simulators/tableau_simulator.h"
 #include "circuit.js.h"
 #include "pauli_string.js.h"

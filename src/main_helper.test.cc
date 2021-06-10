@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "main_helper.h"
+
 #include <gtest/gtest.h>
 #include <regex>
 
-#include "main_helper.h"
 #include "test_util.test.h"
 
 using namespace stim_internal;
@@ -187,155 +188,171 @@ M !0
 
 TEST(main_helper, intentional_failures) {
     ASSERT_EQ(
-        "Sampled 10 which was not expected.", deviation(
-                                                  execute({"--sample=1000"}, R"input(
+        "Sampled 10 which was not expected.",
+        deviation(
+            execute({"--sample=1000"}, R"input(
 X 0
 M 0 1
             )input"),
-                                                  {{"00", 0.5}, {"11", 0.5}}));
+            {{"00", 0.5}, {"11", 0.5}}));
 
     ASSERT_NE(
-        "Sampled 10 which was not expected.", deviation(
-                                                  execute({"--sample=1000"}, R"input(
+        "Sampled 10 which was not expected.",
+        deviation(
+            execute({"--sample=1000"}, R"input(
 H 0
 M 0
             )input"),
-                                                  {{"0", 0.1}, {"1", 0.9}}));
+            {{"0", 0.1}, {"1", 0.9}}));
 }
 
 TEST(main_helper, basic_distributions) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=1000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=1000"}, R"input(
 H 0
 CNOT 0 1
 M 0 1
             )input"),
-                {{"00", 0.5}, {"11", 0.5}}));
+            {{"00", 0.5}, {"11", 0.5}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=1000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=1000"}, R"input(
 H 0
 CNOT 0 1
 SQRT_X 0 1
 M 0 1
             )input"),
-                {{"10", 0.5}, {"01", 0.5}}));
+            {{"10", 0.5}, {"01", 0.5}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=1000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=1000"}, R"input(
 H 0
 CNOT 0 1
 SQRT_Y 0 1
 M 0 1
             )input"),
-                {{"00", 0.5}, {"11", 0.5}}));
+            {{"00", 0.5}, {"11", 0.5}}));
 }
 
 TEST(main_helper, sample_x_error) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 X_ERROR(0.1) 0 1
 M 0 1
             )input"),
-                {{"00", 0.9 * 0.9}, {"01", 0.9 * 0.1}, {"10", 0.9 * 0.1}, {"11", 0.1 * 0.1}}));
+            {{"00", 0.9 * 0.9}, {"01", 0.9 * 0.1}, {"10", 0.9 * 0.1}, {"11", 0.1 * 0.1}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10"}, R"input(
 H 0 1
 X_ERROR(0.1) 0 1
 H 0 1
 M 0 1
             )input"),
-                {{"00", 1}}));
+            {{"00", 1}}));
 }
 
 TEST(main_helper, sample_z_error) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 H 0 1
 Z_ERROR(0.1) 0 1
 H 0 1
 M 0 1
             )input"),
-                {{"00", 0.9 * 0.9}, {"01", 0.9 * 0.1}, {"10", 0.9 * 0.1}, {"11", 0.1 * 0.1}}));
+            {{"00", 0.9 * 0.9}, {"01", 0.9 * 0.1}, {"10", 0.9 * 0.1}, {"11", 0.1 * 0.1}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10"}, R"input(
 Z_ERROR(0.1) 0 1
 M 0 1
             )input"),
-                {{"00", 1}}));
+            {{"00", 1}}));
 }
 
 TEST(main_helper, sample_y_error) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 Y_ERROR(0.1) 0 1
 M 0 1
             )input"),
-                {{"00", 0.9 * 0.9}, {"01", 0.9 * 0.1}, {"10", 0.9 * 0.1}, {"11", 0.1 * 0.1}}));
+            {{"00", 0.9 * 0.9}, {"01", 0.9 * 0.1}, {"10", 0.9 * 0.1}, {"11", 0.1 * 0.1}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10"}, R"input(
 H_YZ 0 1
 Y_ERROR(0.1) 0 1
 H_YZ 0 1
 M 0 1
             )input"),
-                {{"00", 1}}));
+            {{"00", 1}}));
 }
 
 TEST(main_helper, sample_depolarize1_error) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 DEPOLARIZE1(0.3) 0 1
 M 0 1
             )input"),
-                {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
+            {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 H 0 1
 DEPOLARIZE1(0.3) 0 1
 H 0 1
 M 0 1
             )input"),
-                {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
+            {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 H_YZ 0 1
 DEPOLARIZE1(0.3) 0 1
 H_YZ 0 1
 M 0 1
             )input"),
-                {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
+            {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
 }
 
 TEST(main_helper, sample_depolarize2_error) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 DEPOLARIZE2(0.1) 0 1
 M 0 1
             )input"),
-                {{"00", 0.1 * 3 / 15 + 0.9}, {"01", 0.1 * 4 / 15}, {"10", 0.1 * 4 / 15}, {"11", 0.1 * 4 / 15}}));
+            {{"00", 0.1 * 3 / 15 + 0.9}, {"01", 0.1 * 4 / 15}, {"10", 0.1 * 4 / 15}, {"11", 0.1 * 4 / 15}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10000"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10000"}, R"input(
 H 0
 H_YZ 1
 DEPOLARIZE2(0.3) 0 1
@@ -343,7 +360,7 @@ H 0
 H_YZ 1
 M 0 1
             )input"),
-                {{"00", 0.3 * 3 / 15 + 0.7}, {"01", 0.3 * 4 / 15}, {"10", 0.3 * 4 / 15}, {"11", 0.3 * 4 / 15}}));
+            {{"00", 0.3 * 3 / 15 + 0.7}, {"01", 0.3 * 4 / 15}, {"10", 0.3 * 4 / 15}, {"11", 0.3 * 4 / 15}}));
 }
 
 TEST(main_helper, sample_measure_reset) {
@@ -369,48 +386,52 @@ MR 0
 
 TEST(main_helper, frame0_flag) {
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample", "--frame0"}, R"input(
+        "",
+        deviation(
+            execute({"--sample", "--frame0"}, R"input(
 H 0
 S 0
 S 0
 H 0
 M 0
             )input"),
-                {{"0", 1}}));
+            {{"0", 1}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10", "--frame0"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10", "--frame0"}, R"input(
 H 0
 S 0
 S 0
 H 0
 M 0
             )input"),
-                {{"0", 1}}));
+            {{"0", 1}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample"}, R"input(
+        "",
+        deviation(
+            execute({"--sample"}, R"input(
 H 0
 S 0
 S 0
 H 0
 M 0
             )input"),
-                {{"1", 1}}));
+            {{"1", 1}}));
 
     ASSERT_EQ(
-        "", deviation(
-                execute({"--sample=10"}, R"input(
+        "",
+        deviation(
+            execute({"--sample=10"}, R"input(
 H 0
 S 0
 S 0
 H 0
 M 0
             )input"),
-                {{"1", 1}}));
+            {{"1", 1}}));
 }
 
 TEST(main_helper, detect_basic) {

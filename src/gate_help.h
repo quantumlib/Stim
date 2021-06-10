@@ -17,10 +17,10 @@
 #ifndef GATE_HELP_H
 #define GATE_HELP_H
 
-#include "circuit/gate_data.h"
-
 #include <map>
 #include <string>
+
+#include "circuit/gate_data.h"
 
 namespace stim_internal {
 

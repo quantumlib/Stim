@@ -14,9 +14,9 @@
 
 #include "tableau_simulator.pybind.h"
 
+#include "../py/base.pybind.h"
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/pauli_string.pybind.h"
-#include "../py/base.pybind.h"
 #include "../stabilizers/tableau.h"
 
 using namespace stim_internal;
@@ -99,8 +99,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                         stim.PauliString("+XZ"),
                     ],
                 )
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(pybind11::init(&create_tableau_simulator));
 
@@ -140,8 +140,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                         stim.PauliString("+XZ"),
                     ],
                 )
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "state_vector",
@@ -159,7 +159,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
             std::vector<ssize_t> stride{itemsize};
             const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
             bool readonly = true;
-            return pybind11::array_t<float>(pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+            return pybind11::array_t<float>(
+                pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
         },
         clean_doc_string(u8R"DOC(
             Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
@@ -189,8 +190,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> tensor = vector.reshape((2, 2, 2, 2, 2))
                 >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
                 1.0
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "canonical_stabilizers",
@@ -238,8 +239,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
                 >>> s.canonical_stabilizers()
                 [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "current_measurement_record",
@@ -267,8 +268,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Returns:
                 A list of booleans containing the result of every measurement performed by the simulator so far.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "do",
@@ -294,8 +295,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 circuit: A stim.Circuit containing operations to apply.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "do",
@@ -318,8 +319,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 pauli_string: A stim.PauliString containing Pauli operations to apply.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "h",
@@ -331,8 +332,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "h_xy",
@@ -344,8 +345,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "h_yz",
@@ -357,8 +358,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "x",
@@ -370,8 +371,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "y",
@@ -383,8 +384,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "z",
@@ -396,8 +397,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "s",
@@ -409,8 +410,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "s_dag",
@@ -422,8 +423,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "sqrt_x",
@@ -435,8 +436,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "sqrt_x_dag",
@@ -448,8 +449,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "sqrt_y",
@@ -461,8 +462,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "sqrt_y_dag",
@@ -474,8 +475,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "swap",
@@ -489,8 +490,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "iswap",
@@ -504,8 +505,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "iswap_dag",
@@ -519,8 +520,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "cnot",
@@ -534,8 +535,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "cz",
@@ -549,8 +550,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "cy",
@@ -564,8 +565,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "xcx",
@@ -579,8 +580,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "xcy",
@@ -594,8 +595,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "xcz",
@@ -609,8 +610,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "ycx",
@@ -624,8 +625,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "ycy",
@@ -639,8 +640,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "ycz",
@@ -654,8 +655,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 *targets: The indices of the qubits to target with the gate.
                     Applies the gate to the first two targets, then the next two targets, and so forth.
                     There must be an even number of targets.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "reset",
@@ -667,8 +668,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to reset.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "peek_bloch",
@@ -711,8 +712,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.cz(0, 1)
                 >>> s.peek_bloch(0)
                 stim.PauliString("+_")
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "measure",
@@ -736,8 +737,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Returns:
                 The measurement result as a bool.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "measure_many",
@@ -755,8 +756,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Returns:
                 The measurement results as a list of bools.
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "set_num_qubits",
@@ -790,8 +791,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.set_num_qubits(2)
                 >>> s.measure_many(0, 1, 2, 3)
                 [True, True, False, False]
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "set_inverse_tableau",
@@ -820,8 +821,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.set_inverse_tableau(t)
                 >>> s.current_inverse_tableau() == t
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "copy",
@@ -855,8 +856,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> brute_force_post_select(qubit=0, desired_result=True)
                 >>> s.measure(0)
                 True
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 
     c.def(
         "measure_kickback",
@@ -919,6 +920,6 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> pseudo_post_select(qubit=2, desired_result=True)
                 >>> s.measure_many(0, 1, 2)
                 [True, True, True]
-        )DOC").data()
-    );
+        )DOC")
+            .data());
 }

@@ -29,16 +29,16 @@ struct coord {
 };
 
 GeneratedCircuit _finish_surface_code_circuit(
-        std::function<uint32_t(coord)> coord_to_index,
-        const std::set<coord> &data_coords,
-        const std::set<coord> &x_measure_coords,
-        const std::set<coord> &z_measure_coords,
-        const CircuitGenParameters &params,
-        const std::vector<coord> &x_order,
-        const std::vector<coord> &z_order,
-        const std::vector<coord> x_observable,
-        const std::vector<coord> z_observable,
-        bool is_memory_x) {
+    std::function<uint32_t(coord)> coord_to_index,
+    const std::set<coord> &data_coords,
+    const std::set<coord> &x_measure_coords,
+    const std::set<coord> &z_measure_coords,
+    const CircuitGenParameters &params,
+    const std::vector<coord> &x_order,
+    const std::vector<coord> &z_order,
+    const std::vector<coord> x_observable,
+    const std::vector<coord> z_observable,
+    bool is_memory_x) {
     if (params.rounds < 1) {
         throw std::invalid_argument("Need rounds >= 1.");
     }
@@ -140,7 +140,8 @@ GeneratedCircuit _finish_surface_code_circuit(
     params.append_reset(head, measurement_qubits);
     head += cycle_actions;
     for (auto measure : chosen_basis_measure_coords) {
-        head.append_op("DETECTOR", {(uint32_t)(measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT});
+        head.append_op(
+            "DETECTOR", {(uint32_t)(measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
@@ -164,7 +165,8 @@ GeneratedCircuit _finish_surface_code_circuit(
                 detectors.push_back((data_qubits.size() - data_coord_to_order[data]) | TARGET_RECORD_BIT);
             }
         }
-        detectors.push_back((data_qubits.size() + measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT);
+        detectors.push_back(
+            (data_qubits.size() + measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT);
         std::sort(detectors.begin(), detectors.end());
         tail.append_op("DETECTOR", detectors);
     }
@@ -197,12 +199,12 @@ GeneratedCircuit _finish_surface_code_circuit(
 
     return {
         full_circuit,
-            layout,
+        layout,
         "# Legend:\n"
-            "#     d# = data qubit\n"
-            "#     L# = data qubit with logical observable crossing\n"
-            "#     X# = measurement qubit (X stabilizer)\n"
-            "#     Z# = measurement qubit (Z stabilizer)\n"};
+        "#     d# = data qubit\n"
+        "#     L# = data qubit with logical observable crossing\n"
+        "#     X# = measurement qubit (X stabilizer)\n"
+        "#     Z# = measurement qubit (Z stabilizer)\n"};
 }
 
 GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParameters &params, bool is_memory_x) {
@@ -346,11 +348,16 @@ GeneratedCircuit stim_internal::generate_surface_code_circuit(const CircuitGenPa
         return _generate_unrotated_surface_code_circuit(params, false);
     } else {
         throw std::invalid_argument(
-            "Unrecognized task '" + params.task + "'. Known surface_code tasks:\n"
-            "    'rotated_memory_x': Initialize logical |+> in rotated code, protect with parity measurements, measure logical X.\n"
-            "    'rotated_memory_z': Initialize logical |0> in rotated code, protect with parity measurements, measure logical Z.\n"
-            "    'unrotated_memory_x': Initialize logical |+> in unrotated code, protect with parity measurements, measure logical X.\n"
-            "    'unrotated_memory_z': Initialize logical |0> in unrotated code, protect with parity measurements, measure logical Z.\n"
+            "Unrecognized task '" + params.task +
+            "'. Known surface_code tasks:\n"
+            "    'rotated_memory_x': Initialize logical |+> in rotated code, protect with parity measurements, measure "
+            "logical X.\n"
+            "    'rotated_memory_z': Initialize logical |0> in rotated code, protect with parity measurements, measure "
+            "logical Z.\n"
+            "    'unrotated_memory_x': Initialize logical |+> in unrotated code, protect with parity measurements, "
+            "measure logical X.\n"
+            "    'unrotated_memory_z': Initialize logical |0> in unrotated code, protect with parity measurements, "
+            "measure logical Z.\n"
             "");
     }
 }

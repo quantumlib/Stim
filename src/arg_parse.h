@@ -122,7 +122,8 @@ float find_float_argument(
 ///         The command line flag was specified but failed to parse into an int in range.
 ///     EXIT_FAILURE:
 ///         The command line flag was not specified and default_value was not in range.
-int64_t find_int64_argument(const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv);
+int64_t find_int64_argument(
+    const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv);
 
 ///
 /// Returns a boolean value that can be enabled using a command line argument.
@@ -160,30 +161,29 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 ///         The command line flag is not specified and the default key is not in the map.
 template <typename T>
 const T &find_enum_argument(
-    const char *name, const char *default_key, const std::map<std::string, T> &values, int argc,
-    const char **argv) {
-  const char *text = find_argument(name, argc, argv);
-  if (text == nullptr) {
-    if (default_key == nullptr) {
-      std::cerr << "\033[31mMust specify a value for enum flag '" << name << "'.\n";
-      exit(EXIT_FAILURE);
+    const char *name, const char *default_key, const std::map<std::string, T> &values, int argc, const char **argv) {
+    const char *text = find_argument(name, argc, argv);
+    if (text == nullptr) {
+        if (default_key == nullptr) {
+            std::cerr << "\033[31mMust specify a value for enum flag '" << name << "'.\n";
+            exit(EXIT_FAILURE);
+        }
+        return values.at(default_key);
     }
-    return values.at(default_key);
-  }
-  if (values.find(text) == values.end()) {
-    std::cerr << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
-    std::cerr << "Recognized values are:\n";
-    for (const auto &kv : values) {
-      std::cerr << "    '" << kv.first;
-      if (kv.first == default_key) {
-        std::cerr << " (default)";
-      }
-      std::cerr << "\n";
+    if (values.find(text) == values.end()) {
+        std::cerr << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
+        std::cerr << "Recognized values are:\n";
+        for (const auto &kv : values) {
+            std::cerr << "    '" << kv.first;
+            if (kv.first == default_key) {
+                std::cerr << " (default)";
+            }
+            std::cerr << "\n";
+        }
+        std::cerr << "\033[0m";
+        exit(EXIT_FAILURE);
     }
-    std::cerr << "\033[0m";
-    exit(EXIT_FAILURE);
-  }
-  return values.at(text);
+    return values.at(text);
 }
 
 /// Returns an opened file from a command line argument.
@@ -204,13 +204,13 @@ const T &find_enum_argument(
 ///         Failed to open the filepath.
 ///     EXIT_FAILURE:
 ///         No argument specified and default file is nullptr.
-FILE *find_open_file_argument(
-    const char *name, FILE *default_file, const char *mode, int argc, const char **argv);
+FILE *find_open_file_argument(const char *name, FILE *default_file, const char *mode, int argc, const char **argv);
 
 /// Exposes an owned ostream or else falls back to std::cout.
 struct ostream_else_cout {
    private:
     std::unique_ptr<std::ostream> held;
+
    public:
     ostream_else_cout(std::unique_ptr<std::ostream> &&held);
     std::ostream &stream();
@@ -235,6 +235,6 @@ struct ostream_else_cout {
 ///         Command line argument isn't present and default_std_out is false.
 ostream_else_cout find_output_stream_argument(const char *name, bool default_std_out, int argc, const char **argv);
 
-}
+}  // namespace stim_internal
 
 #endif

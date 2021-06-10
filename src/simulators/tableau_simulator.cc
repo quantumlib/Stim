@@ -14,9 +14,10 @@
 
 #include "tableau_simulator.h"
 
+#include <set>
+
 #include "../circuit/gate_data.h"
 #include "../probability_util.h"
-#include <set>
 
 using namespace stim_internal;
 
@@ -707,7 +708,7 @@ void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposed
     // Ensure T(X_target) = +-X_target.
     for (size_t q = 0; q < n; q++) {
         if (q != target) {
-            int p = transposed_raii.tableau.xs.xt[q][target] + 2*transposed_raii.tableau.xs.zt[q][target];
+            int p = transposed_raii.tableau.xs.xt[q][target] + 2 * transposed_raii.tableau.xs.zt[q][target];
             if (p == 1) {
                 transposed_raii.append_ZCX(target, q);
             } else if (p == 2) {
@@ -774,7 +775,7 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(uint32_t targe
     bool flipped = target & TARGET_INVERTED_BIT;
     uint32_t q = target & TARGET_VALUE_MASK;
     PauliString kickback(0);
-    bool has_kickback = !is_deterministic_z(q); // Note: do this before transposing the state!
+    bool has_kickback = !is_deterministic_z(q);  // Note: do this before transposing the state!
 
     {
         TableauTransposedRaii temp_transposed(inv_state);

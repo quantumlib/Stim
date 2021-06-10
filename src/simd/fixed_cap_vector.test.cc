@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
-
 #include "fixed_cap_vector.h"
+
+#include "gtest/gtest.h"
 
 using namespace stim_internal;
 
@@ -12,18 +12,10 @@ TEST(FixedCapVector, basic_usage) {
     ASSERT_EQ(v.size(), 0);
     ASSERT_EQ(v.begin(), v.end());
     ASSERT_EQ(v.find("x"), v.end());
-    ASSERT_THROW({
-        v.front();
-    }, std::out_of_range);
-    ASSERT_THROW({
-        v.back();
-    }, std::out_of_range);
-    ASSERT_THROW({
-        c.front();
-    }, std::out_of_range);
-    ASSERT_THROW({
-        c.back();
-    }, std::out_of_range);
+    ASSERT_THROW({ v.front(); }, std::out_of_range);
+    ASSERT_THROW({ v.back(); }, std::out_of_range);
+    ASSERT_THROW({ c.front(); }, std::out_of_range);
+    ASSERT_THROW({ c.back(); }, std::out_of_range);
 
     v.push_back("test");
     ASSERT_EQ(v.empty(), false);
@@ -50,9 +42,7 @@ TEST(FixedCapVector, basic_usage) {
     v.push_back("2");
     v.push_back("3");
     v.push_back("4");
-    ASSERT_THROW({
-        v.push_back("5");
-    }, std::out_of_range);
+    ASSERT_THROW({ v.push_back("5"); }, std::out_of_range);
 
     ASSERT_EQ(v.find("2"), v.begin() + 2);
 
@@ -71,22 +61,24 @@ TEST(FixedCapVector, push_pop) {
     v2.push_back(4);
     v.push_back(std::move(v2));
     ASSERT_EQ(v2, (std::vector<int>{}));
-    ASSERT_EQ(v, (FixedCapVector<std::vector<int>, 5>{
-        std::vector<int>{1, 2, 3},
-        std::vector<int>{1, 2, 3, 4},
-    }));
+    ASSERT_EQ(
+        v,
+        (FixedCapVector<std::vector<int>, 5>{
+            std::vector<int>{1, 2, 3},
+            std::vector<int>{1, 2, 3, 4},
+        }));
 
     v.pop_back();
-    ASSERT_EQ(v, (FixedCapVector<std::vector<int>, 5>{
-        std::vector<int>{1, 2, 3},
-    }));
+    ASSERT_EQ(
+        v,
+        (FixedCapVector<std::vector<int>, 5>{
+            std::vector<int>{1, 2, 3},
+        }));
 
     v.pop_back();
     ASSERT_EQ(v, (FixedCapVector<std::vector<int>, 5>{}));
 
-    ASSERT_THROW({
-        v.pop_back();
-    }, std::out_of_range);
+    ASSERT_THROW({ v.pop_back(); }, std::out_of_range);
 }
 
 TEST(FixedCapVector, ordering) {
