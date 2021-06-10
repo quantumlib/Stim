@@ -474,6 +474,8 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_prepends_equivalent("X", &Tableau::prepend_X));
     EXPECT_TRUE(are_tableau_prepends_equivalent("Y", &Tableau::prepend_Y));
     EXPECT_TRUE(are_tableau_prepends_equivalent("Z", &Tableau::prepend_Z));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("C_XYZ", &Tableau::prepend_C_XYZ));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("C_ZYX", &Tableau::prepend_C_ZYX));
     EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_X", &Tableau::prepend_SQRT_X));
     EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_Y", &Tableau::prepend_SQRT_Y));
     EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_Z", &Tableau::prepend_SQRT_Z));
@@ -492,6 +494,12 @@ TEST(tableau, specialized_operations) {
     EXPECT_TRUE(are_tableau_prepends_equivalent("YCX", &Tableau::prepend_YCX));
     EXPECT_TRUE(are_tableau_prepends_equivalent("YCY", &Tableau::prepend_YCY));
     EXPECT_TRUE(are_tableau_prepends_equivalent("YCZ", &Tableau::prepend_YCZ));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_XX", &Tableau::prepend_SQRT_XX));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_XX_DAG", &Tableau::prepend_SQRT_XX_DAG));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_YY", &Tableau::prepend_SQRT_YY));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_YY_DAG", &Tableau::prepend_SQRT_YY_DAG));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_ZZ", &Tableau::prepend_SQRT_ZZ));
+    EXPECT_TRUE(are_tableau_prepends_equivalent("SQRT_ZZ_DAG", &Tableau::prepend_SQRT_ZZ_DAG));
 
     EXPECT_TRUE(are_tableau_mutations_equivalent(
         1,

@@ -132,66 +132,7 @@ int main_mode_repl(int argc, const char **argv) {
 int stim_internal::main_helper(int argc, const char **argv) {
     const char *help = find_argument("--help", argc, argv);
     if (help != nullptr) {
-        auto m = generate_gate_help_markdown();
-        auto key = std::string(help);
-        for (auto &c : key) {
-            c = toupper(c);
-        }
-        auto p = m.find(key);
-        if (p != m.end()) {
-            std::cout << p->second;
-            return EXIT_SUCCESS;
-        } else if (help[0] != '\0') {
-            std::cerr << "Unrecognized help topic '" << help << "'.\n";
-            return EXIT_FAILURE;
-        }
-        std::cout << R"HELP(BASIC USAGE
-===========
-Gate reference:
-    stim --help gates
-    stim --help [gate_name]
-
-Interactive measurement sampling mode:
-    stim --repl
-
-Bulk measurement sampling mode:
-    stim --sample[=#shots] \
-         [--frame0] \
-         [--out_format=01|b8|ptb64|r8|hits|dets] \
-         [--in=file] \
-         [--out=file]
-
-Detection event sampling mode:
-    stim --detect[=#shots] \
-         [--out_format=01|b8|ptb64|r8|hits|dets] \
-         [--in=file] \
-         [--out=file]
-
-Error analysis mode:
-    stim --analyze_errors \
-         [--find_reducible_errors] \
-         [--in=file] \
-         [--out=file]
-
-Circuit generation mode:
-    stim --gen=repetition_code|surface_code|color_code \
-         --rounds=# \
-         --distance=# \
-         --task=... \
-         [--out=file] \
-         [--after_clifford_depolarization=0] \
-         [--after_reset_flip_probability=0] \
-         [--before_measure_flip_probability=0] \
-         [--before_round_data_depolarization=0]
-
-EXAMPLE CIRCUIT (GHZ)
-=====================
-H 0
-CNOT 0 1
-CNOT 0 2
-M 0 1 2
-)HELP";
-        return EXIT_SUCCESS;
+        return main_help(argc, argv);
     }
 
     bool mode_repl = find_bool_argument("--repl", argc, argv);

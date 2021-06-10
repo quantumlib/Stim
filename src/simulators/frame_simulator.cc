@@ -53,7 +53,6 @@ inline void for_each_target_pair(FrameSimulator &sim, const OperationData &targe
 FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng)
     : num_qubits(num_qubits),
       batch_size(batch_size),
-      num_recorded_measurements(0),
       x_table(num_qubits, batch_size),
       z_table(num_qubits, batch_size),
       m_record(batch_size, max_lookback),
@@ -68,7 +67,6 @@ simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_targ
 }
 
 void FrameSimulator::reset_all() {
-    num_recorded_measurements = 0;
     x_table.clear();
     z_table.data.randomize(z_table.data.num_bits_padded(), rng);
     m_record.clear();
@@ -86,7 +84,6 @@ void FrameSimulator::measure_x(const OperationData &target_data) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.record_result(z_table[q]);
         x_table[q].randomize(x_table[q].num_bits_padded(), rng);
-        num_recorded_measurements++;
     }
 }
 
@@ -97,7 +94,6 @@ void FrameSimulator::measure_y(const OperationData &target_data) {
         m_record.record_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         x_table[q] = z_table[q];
-        num_recorded_measurements++;
     }
 }
 
@@ -106,7 +102,6 @@ void FrameSimulator::measure_z(const OperationData &target_data) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.record_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
-        num_recorded_measurements++;
     }
 }
 void FrameSimulator::reset_x(const OperationData &target_data) {
@@ -137,7 +132,6 @@ void FrameSimulator::measure_reset_x(const OperationData &target_data) {
         m_record.record_result(z_table[q]);
         z_table[q].clear();
         x_table[q].randomize(x_table[q].num_bits_padded(), rng);
-        num_recorded_measurements++;
     }
 }
 
@@ -149,7 +143,6 @@ void FrameSimulator::measure_reset_y(const OperationData &target_data) {
         m_record.record_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         x_table[q] = z_table[q];
-        num_recorded_measurements++;
     }
 }
 
@@ -160,7 +153,6 @@ void FrameSimulator::measure_reset_z(const OperationData &target_data) {
         m_record.record_result(x_table[q]);
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
-        num_recorded_measurements++;
     }
 }
 
@@ -310,6 +302,32 @@ void FrameSimulator::ISWAP(const OperationData &target_data) {
         z1 = t2;
         z2 = t1;
         std::swap(x1, x2);
+    });
+}
+
+void FrameSimulator::SQRT_XX(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+        simd_word dz = z1 ^ z2;
+        x1 ^= dz;
+        x2 ^= dz;
+    });
+}
+
+void FrameSimulator::SQRT_YY(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+        simd_word d = x1 ^ z1 ^ x2 ^ z2;
+        x1 ^= d;
+        z1 ^= d;
+        x2 ^= d;
+        z2 ^= d;
+    });
+}
+
+void FrameSimulator::SQRT_ZZ(const OperationData &target_data) {
+    for_each_target_pair(*this, target_data, [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
+        auto dx = x1 ^ x2;
+        z1 ^= dx;
+        z2 ^= dx;
     });
 }
 

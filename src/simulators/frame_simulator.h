@@ -32,15 +32,14 @@ namespace stim_internal {
 /// Instead of reporting qubit measurements, it reports whether a measurement is inverted or not.
 /// This requires a set of reference measurements to diff against.
 struct FrameSimulator {
-    size_t num_qubits;
-    size_t batch_size;
-    size_t num_recorded_measurements;
-    simd_bit_table x_table;
-    simd_bit_table z_table;
-    MeasureRecordBatch m_record;
-    simd_bits rng_buffer;
-    simd_bits last_correlated_error_occurred;
-    std::mt19937_64 &rng;
+    size_t num_qubits;            // Number of qubits being tracked.
+    size_t batch_size;            // Number of instances being tracked.
+    simd_bit_table x_table;       // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
+    simd_bit_table z_table;       // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
+    MeasureRecordBatch m_record;  // The measurement record.
+    simd_bits rng_buffer;         // Workspace used when sampling error processes.
+    simd_bits last_correlated_error_occurred;  // correlated error flag for each instance.
+    std::mt19937_64 &rng;                      // Random number generator used for generating entropy.
 
     FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
 
@@ -88,6 +87,10 @@ struct FrameSimulator {
     void YCZ(const OperationData &target_data);
     void SWAP(const OperationData &target_data);
     void ISWAP(const OperationData &target_data);
+
+    void SQRT_XX(const OperationData &target_data);
+    void SQRT_YY(const OperationData &target_data);
+    void SQRT_ZZ(const OperationData &target_data);
 
     void DEPOLARIZE1(const OperationData &target_data);
     void DEPOLARIZE2(const OperationData &target_data);

@@ -150,6 +150,12 @@ struct TableauSimulator {
     void SQRT_X_DAG(const OperationData &target_data);
     void SQRT_Y_DAG(const OperationData &target_data);
     void SQRT_Z_DAG(const OperationData &target_data);
+    void SQRT_XX(const OperationData &target_data);
+    void SQRT_XX_DAG(const OperationData &target_data);
+    void SQRT_YY(const OperationData &target_data);
+    void SQRT_YY_DAG(const OperationData &target_data);
+    void SQRT_ZZ(const OperationData &target_data);
+    void SQRT_ZZ_DAG(const OperationData &target_data);
     void ZCX(const OperationData &target_data);
     void ZCY(const OperationData &target_data);
     void ZCZ(const OperationData &target_data);

@@ -118,6 +118,10 @@ struct ErrorFuser {
     void ZCZ(const OperationData &dat);
     void I(const OperationData &dat);
 
+    void SQRT_XX(const OperationData &dat);
+    void SQRT_YY(const OperationData &dat);
+    void SQRT_ZZ(const OperationData &dat);
+
     void SWAP(const OperationData &dat);
     void DETECTOR(const OperationData &dat);
     void OBSERVABLE_INCLUDE(const OperationData &dat);

@@ -33,6 +33,7 @@ GateDataMap::GateDataMap() {
     add_gate_data_pauli(failed);
     add_gate_data_period_3(failed);
     add_gate_data_period_4(failed);
+    add_gate_data_pp(failed);
     add_gate_data_swaps(failed);
     if (failed) {
         throw std::out_of_range("Failed to initialize gate data.");
@@ -130,7 +131,11 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
 
     uint8_t h_canon = gate_name_to_id(canon_name);
     Gate &g_canon = items[h_canon];
-    assert(g_canon.name != nullptr && g_canon.id == h_canon);
+    if (g_canon.name == nullptr || g_canon.id != h_canon) {
+        std::cerr << "MISSING CANONICAL GATE " << canon_name << "\n";
+        failed = true;
+        return;
+    }
     g_alt.name = alt_name;
     g_alt.name_len = strlen(alt_name);
     g_alt.id = h_canon;
