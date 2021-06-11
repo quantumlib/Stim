@@ -434,9 +434,25 @@ inline bool read_symptom(int &c, SOURCE read_char, bool allow_separators, Monoto
 
 template <typename SOURCE>
 inline void read_error(int &c, SOURCE read_char, DetectorErrorModel &model, bool reducible) {
-    auto p = read_parens_argument(c, reducible ? "reducible_error" : "error", read_char);
+    const char *name = reducible ? "reducible_error" : "error";
+    read_past_within_line_whitespace(c, read_char);
+    if (c != '(') {
+        throw std::invalid_argument("Expected a probability argument for '" + std::string(name) + "'.");
+    }
+    c = read_char();
+
+    read_past_within_line_whitespace(c, read_char);
+    auto p = read_non_negative_double(c, read_char);
+
+    read_past_within_line_whitespace(c, read_char);
+    if (c != ')') {
+        throw std::invalid_argument("Missing close parens for probability argument of '" + std::string(name) + "'.");
+    }
+    c = read_char();
+
     while (read_symptom(c, read_char, reducible, model.symptom_buf)) {
     }
+
     model.instructions.push_back(
         DemInstruction{p, model.symptom_buf.commit_tail(), reducible ? DEM_REDUCIBLE_ERROR : DEM_ERROR});
 }

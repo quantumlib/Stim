@@ -29,12 +29,14 @@ OpDat OpDat::flipped(size_t target) {
 }
 
 OpDat::operator OperationData() {
-    return {0, targets};
+    return {{}, targets};
 }
 
 TEST(circuit, from_text) {
     Circuit expected;
-    const auto &f = Circuit::from_text;
+    const auto &f = [](const char *c) {
+        return Circuit(c);
+    };
     ASSERT_EQ(f("# not an operation"), expected);
 
     expected.clear();
@@ -58,34 +60,33 @@ TEST(circuit, from_text) {
     expected.append_op("ZCX", {5, 6});
     ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), expected);
 
-    ASSERT_THROW({ f("H a"); }, std::out_of_range);
-    ASSERT_THROW({ f("H(1)"); }, std::out_of_range);
-    ASSERT_THROW({ f("X_ERROR 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("H 9999999999999999999999999999999999999999999"); }, std::out_of_range);
-    ASSERT_THROW({ f("H -1"); }, std::out_of_range);
-    ASSERT_THROW({ f("CNOT 0 a"); }, std::out_of_range);
-    ASSERT_THROW({ f("CNOT 0 99999999999999999999999999999999"); }, std::out_of_range);
-    ASSERT_THROW({ f("CNOT 0 -1"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR 1 2"); }, std::out_of_range);
-    ASSERT_THROW({ f("CX 1 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("SWAP 1 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("DEPOLARIZE2(1) 1 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETEstdCTOR rec[-1]"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR rec[0]"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR rec[1]"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR rec[-999999999999]"); }, std::out_of_range);
-    ASSERT_THROW({ f("DETECTOR(2) rec[-1]"); }, std::out_of_range);
-    ASSERT_THROW({ f("OBSERVABLE_INCLUDE rec[-1]"); }, std::out_of_range);
-    ASSERT_THROW({ f("OBSERVABLE_INCLUDE(-1) rec[-1]"); }, std::out_of_range);
-    ASSERT_THROW({ f("CORRELATED_ERROR(1) B1"); }, std::out_of_range);
-    ASSERT_THROW({ f("CORRELATED_ERROR(1) X 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("CORRELATED_ERROR(1) X\n"); }, std::out_of_range);
-    ASSERT_THROW({ f("CORRELATED_ERROR(1) 1"); }, std::out_of_range);
-    ASSERT_THROW({ f("ELSE_CORRELATED_ERROR(1) 1 2"); }, std::out_of_range);
-    ASSERT_THROW({ f("CORRELATED_ERROR(1) 1 2"); }, std::out_of_range);
-    ASSERT_THROW({ f("CORRELATED_ERROR(1) A"); }, std::out_of_range);
+    ASSERT_THROW({ f("H a"); }, std::invalid_argument);
+    ASSERT_THROW({ f("H(1)"); }, std::invalid_argument);
+    ASSERT_THROW({ f("X_ERROR 1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("H 9999999999999999999999999999999999999999999"); }, std::invalid_argument);
+    ASSERT_THROW({ f("H -1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CNOT 0 a"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CNOT 0 99999999999999999999999999999999"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CNOT 0 -1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("DETECTOR 1 2"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CX 1 1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("SWAP 1 1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("DEPOLARIZE2(1) 1 1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("DETEstdCTOR rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ f("DETECTOR rec[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ f("DETECTOR rec[1]"); }, std::invalid_argument);
+    ASSERT_THROW({ f("DETECTOR rec[-999999999999]"); }, std::invalid_argument);
+    ASSERT_THROW({ f("OBSERVABLE_INCLUDE rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ f("OBSERVABLE_INCLUDE(-1) rec[-1]"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CORRELATED_ERROR(1) B1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CORRELATED_ERROR(1) X 1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CORRELATED_ERROR(1) X\n"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CORRELATED_ERROR(1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ f("ELSE_CORRELATED_ERROR(1) 1 2"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CORRELATED_ERROR(1) 1 2"); }, std::invalid_argument);
+    ASSERT_THROW({ f("CORRELATED_ERROR(1) A"); }, std::invalid_argument);
 
-    ASSERT_THROW({ f("CNOT 0\nCNOT 1"); }, std::out_of_range);
+    ASSERT_THROW({ f("CNOT 0\nCNOT 1"); }, std::invalid_argument);
 
     expected.clear();
     ASSERT_EQ(f(""), expected);
@@ -136,7 +137,7 @@ TEST(circuit, from_text) {
 
     expected.clear();
     expected.append_op("X", {0});
-    expected += Circuit::from_text("Y 1 2") * 2;
+    expected += Circuit("Y 1 2") * 2;
     ASSERT_EQ(
         f(R"CIRCUIT(
             X 0
@@ -196,7 +197,7 @@ TEST(circuit, append_circuit) {
     Circuit actual = c1;
     actual += c2;
     ASSERT_EQ(actual.operations.size(), 3);
-    actual = Circuit::from_text(actual.str().data());
+    actual = Circuit(actual.str().data());
     ASSERT_EQ(actual.operations.size(), 2);
     ASSERT_EQ(actual, expected);
 
@@ -210,28 +211,36 @@ TEST(circuit, append_circuit) {
 TEST(circuit, append_op_fuse) {
     Circuit expected;
     Circuit actual;
-    expected.append_op("H", {1, 2, 3});
-    actual.append_op("H", {1}, 0);
-    actual.append_op("H", {2, 3}, 0);
-    ASSERT_EQ(actual, expected);
 
-    actual.append_op("R", {0}, 0);
+    actual.clear();
+    expected.append_op("H", {1, 2, 3});
+    actual.append_op("H", {1});
+    actual.append_op("H", {2, 3});
+    ASSERT_EQ(actual, expected);
+    actual.append_op("R", {0});
+    actual.append_op("R", {});
     expected.append_op("R", {0});
     ASSERT_EQ(actual, expected);
 
-    actual.append_op("DETECTOR", {0, 0}, 0);
-    actual.append_op("DETECTOR", {1, 1}, 0);
-    expected.append_op("DETECTOR", {0, 0});
-    expected.append_op("DETECTOR", {1, 1});
-    ASSERT_EQ(actual, expected);
+    actual.clear();
+    actual.append_op("DETECTOR", {2 | TARGET_RECORD_BIT, 2 | TARGET_RECORD_BIT});
+    actual.append_op("DETECTOR", {1 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT});
+    ASSERT_EQ(actual.operations.size(), 2);
 
-    actual.append_op("M", {0, 1}, 0);
-    actual.append_op("M", {2, 3}, 0);
+    actual.clear();
+    actual.append_op("TICK", {});
+    actual.append_op("TICK", {});
+    ASSERT_EQ(actual.operations.size(), 2);
+
+    actual.clear();
+    expected.clear();
+    actual.append_op("M", {0, 1});
+    actual.append_op("M", {2, 3});
     expected.append_op("M", {0, 1, 2, 3});
     ASSERT_EQ(actual, expected);
 
-    ASSERT_THROW({ actual.append_op("CNOT", {0}); }, std::out_of_range);
-    ASSERT_THROW({ actual.append_op("X", {0}, 0.5); }, std::out_of_range);
+    ASSERT_THROW({ actual.append_op("CNOT", {0}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.append_op("X", {0}, 0.5); }, std::invalid_argument);
 }
 
 TEST(circuit, str) {
@@ -262,45 +271,103 @@ E(0.25) X23 Z27 Y29)circuit");
 
 TEST(circuit, append_op_validation) {
     Circuit c;
-    ASSERT_THROW({ c.append_op("CNOT", {0}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("CNOT", {0}); }, std::invalid_argument);
     c.append_op("CNOT", {0, 1});
 
-    ASSERT_THROW({ c.append_op("REPEAT", {100}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_X_BIT}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_Z_BIT}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_INVERTED_BIT}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("X", {0}, 0.5); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("REPEAT", {100}); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("X", {0 | TARGET_INVERTED_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("X", {0}, 0.5); }, std::invalid_argument);
 
-    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_X_BIT}); }, std::out_of_range);
-    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_Z_BIT}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
     c.append_op("M", {0 | TARGET_INVERTED_BIT});
-    ASSERT_THROW({ c.append_op("M", {0}, 0.5); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("M", {0}, 0.5); }, std::invalid_argument);
 
-    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT});
-    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_BIT});
+    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, 0.1);
+    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_BIT}, 0.1);
+    ASSERT_THROW({ c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, {0.1, 0.2}); }, std::invalid_argument);
     ASSERT_THROW(
-        { c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT | TARGET_INVERTED_BIT}); }, std::out_of_range);
+        { c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT | TARGET_INVERTED_BIT}); }, std::invalid_argument);
     c.append_op("X_ERROR", {0}, 0.5);
 
-    ASSERT_THROW({ c.append_op("CNOT", {0, 0}); }, std::out_of_range);
+    ASSERT_THROW({ c.append_op("CNOT", {0, 0}); }, std::invalid_argument);
+}
+
+TEST(circuit, repeat_validation) {
+    ASSERT_THROW({ Circuit("REPEAT 100 {"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("REPEAT 100 {{\n}"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("REPEAT {\n}"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().append_from_text("REPEAT 100 {"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().append_from_text("REPEAT {\n}"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("H {"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("H {\n}"); }, std::invalid_argument);
+}
+
+TEST(circuit, tick_validation) {
+    ASSERT_THROW({ Circuit("TICK 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().append_op("TICK", {1}); }, std::invalid_argument);
+}
+
+TEST(circuit, detector_validation) {
+    ASSERT_THROW({ Circuit("DETECTOR 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().append_op("DETECTOR", {1}); }, std::invalid_argument);
+}
+
+TEST(circuit, x_error_validation) {
+    Circuit("X_ERROR(0) 1");
+    Circuit("X_ERROR(0.1) 1");
+    Circuit("X_ERROR(1) 1");
+    ASSERT_THROW({ Circuit("X_ERROR 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("X_ERROR(-0.1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("X_ERROR(1.1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("X_ERROR(0.1, 0.1) 1"); }, std::invalid_argument);
+}
+
+TEST(circuit, pauli_err_1_validation) {
+    Circuit("PAULI_CHANNEL_1(0,0,0) 1");
+    Circuit("PAULI_CHANNEL_1(0.1,0.2,0.6) 1");
+    Circuit("PAULI_CHANNEL_1(1,0,0) 1");
+    Circuit("PAULI_CHANNEL_1(0.33333333334,0.33333333334,0.33333333334) 1");
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_1 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_1(0.1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_1(0.1,0.1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_1(0.1,0.1,0.1,0.1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_1(-1,0,0) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_1(0.1,0.5,0.6) 1"); }, std::invalid_argument);
+}
+
+TEST(circuit, pauli_err_2_validation) {
+    Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1");
+    Circuit("PAULI_CHANNEL_2(0.1,0,0,0,0,0,0,0,0,0,0.1,0,0,0,0.1) 1");
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0.4,0,0,0,0,0.4,0,0,0,0,0,0,0,0,0.4) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1"); }, std::invalid_argument);
+}
+
+TEST(circuit, qubit_coords) {
+    ASSERT_THROW({ Circuit("TICK 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().append_op("TICK", {1}); }, std::invalid_argument);
 }
 
 TEST(circuit, classical_controls) {
     ASSERT_THROW(
         {
-            Circuit::from_text(R"circuit(
-            M 0
-            XCX rec[-1] 1
-         )circuit");
+            Circuit(R"circuit(
+                M 0
+                XCX rec[-1] 1
+             )circuit");
         },
-        std::out_of_range);
+        std::invalid_argument);
 
     Circuit expected;
     expected.append_op("CX", {0, 1, 1 | TARGET_RECORD_BIT, 1});
     expected.append_op("CY", {2 | TARGET_RECORD_BIT, 1});
     expected.append_op("CZ", {4 | TARGET_RECORD_BIT, 1});
     ASSERT_EQ(
-        Circuit::from_text(R"circuit(ZCX 0 1
+        Circuit(R"circuit(ZCX 0 1
 ZCX rec[-1] 1
 ZCY rec[-2] 1
 ZCZ rec[-4] 1)circuit"),
@@ -322,7 +389,7 @@ TEST(circuit, for_each_operation) {
 
     Circuit flat;
     auto f = [&](const char *gate, const std::vector<uint32_t> &targets) {
-        flat.append_operation({&GATE_DATA.at(gate), {0, flat.jag_targets.take_copy(targets)}});
+        flat.append_operation({&GATE_DATA.at(gate), {{}, flat.target_buf.take_copy(targets)}});
     };
     f("H", {0});
     f("M", {0, 1});
@@ -357,7 +424,7 @@ TEST(circuit, for_each_operation_reverse) {
 
     Circuit flat;
     auto f = [&](const char *gate, const std::vector<uint32_t> &targets) {
-        flat.append_operation({&GATE_DATA.at(gate), {0, flat.jag_targets.take_copy(targets)}});
+        flat.append_operation({&GATE_DATA.at(gate), {{}, flat.target_buf.take_copy(targets)}});
     };
     f("Y", {2});
     f("Y", {2});
@@ -381,7 +448,7 @@ TEST(circuit, count_qubits) {
     ASSERT_EQ(Circuit().count_qubits(), 0);
 
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -397,7 +464,7 @@ TEST(circuit, count_qubits) {
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 999999 {
@@ -423,7 +490,7 @@ TEST(circuit, count_detectors_num_observables) {
     ASSERT_EQ(Circuit().num_observables(), 0);
 
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
@@ -431,7 +498,7 @@ TEST(circuit, count_detectors_num_observables) {
             .count_detectors(),
         1);
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1 2
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
@@ -441,7 +508,7 @@ TEST(circuit, count_detectors_num_observables) {
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 1000 {
             REPEAT 1000 {
@@ -456,7 +523,7 @@ TEST(circuit, count_detectors_num_observables) {
             .count_detectors(),
         1000000000000ULL);
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 1000 {
             REPEAT 1000 {
@@ -472,7 +539,7 @@ TEST(circuit, count_detectors_num_observables) {
         3);
 
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1
         REPEAT 999999 {
          REPEAT 999999 {
@@ -509,14 +576,14 @@ TEST(circuit, count_detectors_num_observables) {
 TEST(circuit, max_lookback) {
     ASSERT_EQ(Circuit().max_lookback(), 0);
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1 2 3 4 5 6
     )CIRCUIT")
             .max_lookback(),
         0);
 
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1 2 3 4 5 6
         REPEAT 2 {
             CNOT rec[-4] 0
@@ -530,7 +597,7 @@ TEST(circuit, max_lookback) {
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         M 0 1 2 3 4 5
         REPEAT 999999 {
             REPEAT 999999 {
@@ -552,7 +619,7 @@ TEST(circuit, count_measurements) {
     ASSERT_EQ(Circuit().count_measurements(), 0);
 
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -568,7 +635,7 @@ TEST(circuit, count_measurements) {
 
     // Ensure not unrolling to compute.
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         REPEAT 999999 {
             REPEAT 999999 {
                 REPEAT 999999 {
@@ -580,7 +647,7 @@ TEST(circuit, count_measurements) {
             .count_measurements(),
         999999ULL * 999999ULL * 999999ULL);
     ASSERT_EQ(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         REPEAT 999999 {
          REPEAT 999999 {
           REPEAT 999999 {
@@ -606,7 +673,7 @@ TEST(circuit, count_measurements) {
 }
 
 TEST(circuit, preserves_repetition_blocks) {
-    Circuit c = Circuit::from_text(R"CIRCUIT(
+    Circuit c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
         REPEAT 2 {
@@ -627,7 +694,7 @@ TEST(circuit, preserves_repetition_blocks) {
 }
 
 TEST(circuit, multiplication_repeats) {
-    Circuit c = Circuit::from_text(R"CIRCUIT(
+    Circuit c = Circuit(R"CIRCUIT(
         H 0
         M 0 1
     )CIRCUIT");
@@ -646,7 +713,7 @@ TEST(circuit, multiplication_repeats) {
 }
 
 TEST(circuit, self_addition) {
-    Circuit c = Circuit::from_text(R"CIRCUIT(
+    Circuit c = Circuit(R"CIRCUIT(
         X 0
     )CIRCUIT");
     c += c;
@@ -654,7 +721,7 @@ TEST(circuit, self_addition) {
     ASSERT_EQ(c.blocks.size(), 0);
     ASSERT_EQ(c.operations[0], c.operations[1]);
 
-    c = Circuit::from_text(R"CIRCUIT(
+    c = Circuit(R"CIRCUIT(
         X 0
         REPEAT 2 {
             Y 0
@@ -668,19 +735,19 @@ TEST(circuit, self_addition) {
 }
 
 TEST(circuit, addition_shares_blocks) {
-    Circuit c1 = Circuit::from_text(R"CIRCUIT(
+    Circuit c1 = Circuit(R"CIRCUIT(
         X 0
         REPEAT 2 {
             X 1
         }
     )CIRCUIT");
-    Circuit c2 = Circuit::from_text(R"CIRCUIT(
+    Circuit c2 = Circuit(R"CIRCUIT(
         X 2
         REPEAT 2 {
             X 3
         }
     )CIRCUIT");
-    Circuit c3 = Circuit::from_text(R"CIRCUIT(
+    Circuit c3 = Circuit(R"CIRCUIT(
         X 0
         REPEAT 2 {
             X 1
@@ -696,7 +763,7 @@ TEST(circuit, addition_shares_blocks) {
 }
 
 TEST(circuit, big_rep_count) {
-    Circuit c = Circuit::from_text(R"CIRCUIT(
+    Circuit c = Circuit(R"CIRCUIT(
         REPEAT 1234567890123456789 {
             M 1
         }
@@ -708,5 +775,5 @@ TEST(circuit, big_rep_count) {
     ASSERT_EQ(c.str(), "REPEAT 1234567890123456789 {\n    M 1\n}");
     ASSERT_EQ(c.count_measurements(), 1234567890123456789ULL);
 
-    ASSERT_THROW({ c * 12345ULL; }, std::out_of_range);
+    ASSERT_THROW({ c * 12345ULL; }, std::invalid_argument);
 }

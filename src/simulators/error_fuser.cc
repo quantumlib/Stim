@@ -145,7 +145,7 @@ void ErrorFuser::MZ(const OperationData &dat) {
 void ErrorFuser::MRX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{0, {&q, &q + 1}};
+        OperationData d{{}, {&q, &q + 1}};
         RX(d);
         MX(d);
     }
@@ -154,7 +154,7 @@ void ErrorFuser::MRX(const OperationData &dat) {
 void ErrorFuser::MRY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{0, {&q, &q + 1}};
+        OperationData d{{}, {&q, &q + 1}};
         RY(d);
         MY(d);
     }
@@ -163,7 +163,7 @@ void ErrorFuser::MRY(const OperationData &dat) {
 void ErrorFuser::MRZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{0, {&q, &q + 1}};
+        OperationData d{{}, {&q, &q + 1}};
         RZ(d);
         MZ(d);
     }
@@ -421,7 +421,7 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
 }
 
 void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
-    uint64_t id = FIRST_OBSERVABLE_ID + (int)dat.arg;
+    uint64_t id = FIRST_OBSERVABLE_ID + (int)dat.args[0];
     num_found_observables = std::max(num_found_observables, id + 1);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
@@ -469,7 +469,7 @@ void ErrorFuser::X_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.arg, zs[q].range());
+        add_error(dat.args[0], zs[q].range());
     }
 }
 
@@ -478,7 +478,7 @@ void ErrorFuser::Y_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_xored_error(dat.arg, xs[q].range(), zs[q].range());
+        add_xored_error(dat.args[0], xs[q].range(), zs[q].range());
     }
 }
 
@@ -487,7 +487,7 @@ void ErrorFuser::Z_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.arg, xs[q].range());
+        add_error(dat.args[0], xs[q].range());
     }
 }
 
@@ -514,18 +514,18 @@ void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
             inplace_xor_tail(mono_buf, zs[q]);
         }
     }
-    add_error_in_sorted_jagged_tail(dat.arg);
+    add_error_in_sorted_jagged_tail(dat.args[0]);
 }
 
 void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.arg >= 3.0 / 4.0) {
+    if (dat.args[0] >= 3.0 / 4.0) {
         throw std::out_of_range(
             "DEPOLARIZE1 must have probability less than 3/4 when converting to a detector hyper graph.");
     }
-    double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.arg) / 3);
+    double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
     for (auto q : dat.targets) {
         add_error_combinations<2>(
             p,
@@ -540,11 +540,11 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.arg >= 15.0 / 16.0) {
+    if (dat.args[0] >= 15.0 / 16.0) {
         throw std::out_of_range(
             "DEPOLARIZE1 must have probability less than 15/16 when converting to a detector hyper graph.");
     }
-    double p = 0.5 - 0.5 * pow(1 - (16 * dat.arg) / 15, 0.125);
+    double p = 0.5 - 0.5 * pow(1 - (16 * dat.args[0]) / 15, 0.125);
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
         auto a = dat.targets[i];
         auto b = dat.targets[i + 1];
@@ -561,7 +561,17 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
 
 void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
     throw std::out_of_range(
-        "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
+        "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be independent).");
+}
+
+void ErrorFuser::PAULI_CHANNEL_1(const OperationData &dat) {
+    throw std::out_of_range(
+        "PAULI_CHANNEL_1 operations currently not supported in error analysis (cases may not be independent).");
+}
+
+void ErrorFuser::PAULI_CHANNEL_2(const OperationData &dat) {
+    throw std::out_of_range(
+        "PAULI_CHANNEL_2 operations currently not supported in error analysis (cases may not be independent).");
 }
 
 DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(

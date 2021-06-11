@@ -40,6 +40,8 @@ struct Tableau;
 struct Operation;
 struct ErrorFuser;
 
+constexpr uint8_t ARG_COUNT_VARIABLE = uint8_t{0xFF};
+
 inline uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
     // Just do *anything* that makes all the defined gates have different values.
@@ -82,8 +84,8 @@ enum GateFlags : uint16_t {
     GATE_IS_UNITARY = 1 << 0,
     // Determines whether or not the gate is omitted when computing a reference sample.
     GATE_IS_NOISE = 1 << 1,
-    // Controls parsing and validation of instructions like X_ERROR(0.01) taking an argument.
-    GATE_TAKES_PARENS_ARGUMENT = 1 << 2,
+    // Controls validation of probability arguments like X_ERROR(0.01).
+    GATE_ARGS_ARE_DISJOINT_PROBABILITIES = 1 << 2,
     // Indicates whether the gate puts data into the measurement record or not.
     // Also determines whether or not inverted targets (like "!3") are permitted.
     GATE_PRODUCES_RESULTS = 1 << 3,
@@ -99,6 +101,8 @@ enum GateFlags : uint16_t {
     GATE_ONLY_TARGETS_MEASUREMENT_RECORD = 1 << 8,
     // Controls instructions like CX and SWAP operating on measurement record targets like "rec[-1]".
     GATE_CAN_TARGET_MEASUREMENT_RECORD = 1 << 9,
+    // Controls whether the gate takes qubit/record targets.
+    GATE_TAKES_NO_TARGETS = 1 << 10,
 };
 
 struct ExtraGateData {
@@ -110,17 +114,19 @@ struct ExtraGateData {
 
 struct Gate {
     const char *name;
-    uint8_t name_len;
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
     void (ErrorFuser::*reverse_error_fuser_function)(const OperationData &);
-    GateFlags flags;
     ExtraGateData (*extra_data_func)(void);
+    GateFlags flags;
+    uint8_t arg_count;
+    uint8_t name_len;
     uint8_t id;
 
     Gate();
     Gate(
         const char *name,
+        uint8_t arg_count,
         void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
         void (FrameSimulator::*frame_simulator_function)(const OperationData &),
         void (ErrorFuser::*hit_simulator_function)(const OperationData &),

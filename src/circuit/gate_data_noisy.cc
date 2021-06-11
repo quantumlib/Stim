@@ -29,10 +29,11 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
         failed,
         Gate{
             "DEPOLARIZE1",
+            1,
             &TableauSimulator::DEPOLARIZE1,
             &FrameSimulator::DEPOLARIZE1,
             &ErrorFuser::DEPOLARIZE1,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -60,10 +61,11 @@ Applies a randomly chosen Pauli with a given probability.
         failed,
         Gate{
             "DEPOLARIZE2",
+            1,
             &TableauSimulator::DEPOLARIZE2,
             &FrameSimulator::DEPOLARIZE2,
             &ErrorFuser::DEPOLARIZE2,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT | GATE_TARGETS_PAIRS),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -103,10 +105,11 @@ Applies a randomly chosen two-qubit Pauli product with a given probability.
         failed,
         Gate{
             "X_ERROR",
+            1,
             &TableauSimulator::X_ERROR,
             &FrameSimulator::X_ERROR,
             &ErrorFuser::X_ERROR,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -130,10 +133,11 @@ Applies a Pauli X with a given probability.
         failed,
         Gate{
             "Y_ERROR",
+            1,
             &TableauSimulator::Y_ERROR,
             &FrameSimulator::Y_ERROR,
             &ErrorFuser::Y_ERROR,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -157,10 +161,11 @@ Applies a Pauli Y with a given probability.
         failed,
         Gate{
             "Z_ERROR",
+            1,
             &TableauSimulator::Z_ERROR,
             &FrameSimulator::Z_ERROR,
             &ErrorFuser::Z_ERROR,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -183,11 +188,108 @@ Applies a Pauli Z with a given probability.
     add_gate(
         failed,
         Gate{
+            "PAULI_CHANNEL_1",
+            3,
+            &TableauSimulator::PAULI_CHANNEL_1,
+            &FrameSimulator::PAULI_CHANNEL_1,
+            &ErrorFuser::PAULI_CHANNEL_1,
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+A single qubit Pauli error channel with explicitly specified probabilities for each case.
+
+The gate is parameterized by 3 disjoint probabilities, one for each Pauli other than I, ordered as follows:
+
+    X, Y, Z
+
+- Example:
+
+    ```
+    # Sample errors from the distribution 10% X, 15% Y, 20% Z, 55% I.
+    # Apply independently to qubits 1, 2, 4.
+    PAULI_CHANNEL_1(0.1, 0.15, 0.2) 1 2 4
+    ```
+
+- Pauli Mixture:
+
+    ```
+    1-px-py-pz: I
+    px: X
+    py: Y
+    pz: Z
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
+        });
+
+    add_gate(
+        failed,
+        Gate{
+            "PAULI_CHANNEL_2",
+            15,
+            &TableauSimulator::PAULI_CHANNEL_2,
+            &FrameSimulator::PAULI_CHANNEL_2,
+            &ErrorFuser::PAULI_CHANNEL_2,
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            []() -> ExtraGateData {
+                return {
+                    "F_Noise Channels",
+                    R"MARKDOWN(
+A two qubit Pauli error channel with explicitly specified probabilities for each case.
+
+The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair other than II, ordered as follows:
+
+    IX, IY, IZ, XI, XX, XY, XZ, YI, YX, YY, XZ, ZI, ZX, ZY, ZZ
+
+- Example:
+
+    ```
+    # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
+    # Apply independently to qubit pairs (1,2) (5,6) (8,3)
+    PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
+    ```
+
+- Pauli Mixture:
+
+    ```
+    1-pix-piy-piz-pxi-pxx-pxy-pxz-pyi-pyx-pyy-pyz-pzi-pzx-pzy-pzz: II
+    pix: IX
+    piy: IY
+    piz: IZ
+    pxi: XI
+    pxx: XX
+    pxy: XY
+    pxz: XZ
+    pyi: YI
+    pyx: YX
+    pyy: YY
+    pyz: XZ
+    pzi: ZI
+    pzx: ZX
+    pzy: ZY
+    pzz: ZZ
+    ```
+)MARKDOWN",
+                    {},
+                    {},
+                };
+            },
+        });
+
+    add_gate(
+        failed,
+        Gate{
             "E",
+            1,
             &TableauSimulator::CORRELATED_ERROR,
             &FrameSimulator::CORRELATED_ERROR,
             &ErrorFuser::CORRELATED_ERROR,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",
@@ -217,10 +319,11 @@ See also: `ELSE_CORRELATED_ERROR`.
         failed,
         Gate{
             "ELSE_CORRELATED_ERROR",
+            1,
             &TableauSimulator::ELSE_CORRELATED_ERROR,
             &FrameSimulator::ELSE_CORRELATED_ERROR,
             &ErrorFuser::ELSE_CORRELATED_ERROR,
-            (GateFlags)(GATE_IS_NOISE | GATE_TAKES_PARENS_ARGUMENT | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",

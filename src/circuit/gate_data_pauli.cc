@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
         failed,
         Gate{
             "I",
+            0,
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorFuser::I,
@@ -50,6 +51,7 @@ Does nothing to the target qubits.
         failed,
         Gate{
             "X",
+            0,
             &TableauSimulator::X,
             &FrameSimulator::I,
             &ErrorFuser::I,
@@ -71,6 +73,7 @@ The bit flip gate.
         failed,
         Gate{
             "Y",
+            0,
             &TableauSimulator::Y,
             &FrameSimulator::I,
             &ErrorFuser::I,
@@ -91,6 +94,7 @@ Pauli Y gate.
         failed,
         Gate{
             "Z",
+            0,
             &TableauSimulator::Z,
             &FrameSimulator::I,
             &ErrorFuser::I,

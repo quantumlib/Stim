@@ -35,7 +35,7 @@ std::string convert(
 
 std::string convert(
     const char *text, bool find_reducible_errors = false, bool fold_loops = false, bool validate_detectors = true) {
-    return convert(Circuit::from_text(text), find_reducible_errors, fold_loops, validate_detectors);
+    return convert(Circuit(text), find_reducible_errors, fold_loops, validate_detectors);
 }
 
 static std::string check_matches(std::string actual, std::string pattern) {
@@ -270,7 +270,7 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     }
 
     std::vector<uint32_t> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-    OperationData targets = {0, data};
+    OperationData targets = {{}, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
             (e.*gate.reverse_error_fuser_function)(targets);
@@ -848,7 +848,7 @@ error(0.5) D0 D1
 }
 
 TEST(ErrorFuser, composite_error_analysis) {
-    auto measure_stabilizers = Circuit::from_text(R"circuit(
+    auto measure_stabilizers = Circuit(R"circuit(
         XCX 0 1 0 3 0 4
         MR 0
         XCZ 0 1 0 2 0 4 0 5
@@ -862,7 +862,7 @@ TEST(ErrorFuser, composite_error_analysis) {
         XCZ 0 5 0 6 0 7
         MR 0
     )circuit");
-    auto detectors = Circuit::from_text(R"circuit(
+    auto detectors = Circuit(R"circuit(
         DETECTOR rec[-6] rec[-12]
         DETECTOR rec[-5] rec[-11]
         DETECTOR rec[-4] rec[-10]
@@ -881,7 +881,7 @@ TEST(ErrorFuser, composite_error_analysis) {
     ASSERT_EQ(
         "",
         check_matches(
-            convert(encode + Circuit::from_text("DEPOLARIZE1(0.01) 4") + decode, true),
+            convert(encode + Circuit("DEPOLARIZE1(0.01) 4") + decode, true),
             R"graph(
 error\(0.0033445\d+\) D0 D4
 reducible_error\(0.0033445\d+\) D0 D4 \^ D1 D3
@@ -891,7 +891,7 @@ error\(0.0033445\d+\) D1 D3
     ASSERT_EQ(
         "",
         check_matches(
-            convert(encode + Circuit::from_text("DEPOLARIZE2(0.01) 4 5") + decode, true),
+            convert(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode, true),
             R"graph(
 error\(0.000669\d+\) D0 D2
 reducible_error\(0.000669\d+\) D0 D2 \^ D1 D3
@@ -927,26 +927,22 @@ error\(0.000669\d+\) D2 D3 D4 D5
 error\(0.000669\d+\) D2 D4
 error\(0.000669\d+\) D3 D5
 )graph";
-    ASSERT_EQ(
-        "", check_matches(convert(encode + Circuit::from_text("DEPOLARIZE2(0.01) 4 5") + decode, false), expected));
-    ASSERT_EQ(
-        "",
-        check_matches(
-            convert(encode + Circuit::from_text("CNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5") + decode, false),
-            expected));
+    ASSERT_EQ("", check_matches(convert(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode, false), expected));
     ASSERT_EQ(
         "",
         check_matches(
-            convert(
-                encode + Circuit::from_text("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode,
-                false),
+            convert(encode + Circuit("CNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5") + decode, false), expected));
+    ASSERT_EQ(
+        "",
+        check_matches(
+            convert(encode + Circuit("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode, false),
             expected));
 }
 
 TEST(ErrorFuser, loop_folding) {
     ASSERT_EQ(
         ErrorFuser::circuit_to_detector_error_model(
-            Circuit::from_text(R"CIRCUIT(
+            Circuit(R"CIRCUIT(
                 MR 1
                 REPEAT 12345678987654321 {
                     X_ERROR(0.25) 0
@@ -974,7 +970,7 @@ TEST(ErrorFuser, loop_folding) {
     // Solve period 8 logical observable oscillation.
     ASSERT_EQ(
         ErrorFuser::circuit_to_detector_error_model(
-            Circuit::from_text(R"CIRCUIT(
+            Circuit(R"CIRCUIT(
             R 0 1 2 3 4
             REPEAT 12345678987654321 {
                 CNOT 0 1 1 2 2 3 3 4
@@ -995,7 +991,7 @@ TEST(ErrorFuser, loop_folding) {
     // Solve period 127 logical observable oscillation.
     ASSERT_EQ(
         ErrorFuser::circuit_to_detector_error_model(
-            Circuit::from_text(R"CIRCUIT(
+            Circuit(R"CIRCUIT(
             R 0 1 2 3 4 5 6
             REPEAT 12345678987654321 {
                 CNOT 0 1 1 2 2 3 3 4 4 5 5 6 6 0
@@ -1022,7 +1018,7 @@ TEST(ErrorFuser, loop_folding) {
 TEST(ErrorFuser, loop_folding_nested_loop) {
     ASSERT_EQ(
         ErrorFuser::circuit_to_detector_error_model(
-            Circuit::from_text(R"CIRCUIT(
+            Circuit(R"CIRCUIT(
                 MR 1
                 REPEAT 1000 {
                     REPEAT 1000 {
@@ -1062,55 +1058,56 @@ TEST(ErrorFuser, loop_folding_rep_code_circuit) {
 
     auto actual = ErrorFuser::circuit_to_detector_error_model(circuit, true, true, true);
     auto expected = DetectorErrorModel(R"MODEL(
-        error(0.00026) D0 D1
-        error(0.00026) D0 D3
-        error(0.00026) D0 L0
-        error(0.00026) D1 D2
-        error(0.00053) D1 D3
-        error(0.00053) D1 D4
-        error(0.00026) D2
-        error(0.00053) D2 D4
-        error(0.00026) D2 D5
-        error(0.00026) D3 D4
-        error(0.00026) D3 L0
-        reducible_error(0.00026) D3 L0 ^ D0 L0
-        error(0.00026) D4 D5
-        error(0.00026) D5
-        reducible_error(0.00026) D5 ^ D2
-        REPEAT 99998 {
-            error(0.000266) D3+t D4+t
-            error(0.000266) D3+t D6+t
-            error(0.000266) D3+t L0
-            error(0.000266) D4+t D5+t
-            error(0.000533) D4+t D6+t
+        error(0.000267) D0
+        error(0.000267) D0 D1
+        error(0.000267) D0 D3
+        error(0.000533) D0 D4
+        error(0.000267) D1 D2
+        error(0.000533) D1 D4
+        error(0.000533) D1 D5
+        error(0.000267) D2 D5
+        error(0.000267) D2 L0
+        error(0.000267) D3
+        error(0.000267) D3 D4
+        reducible_error(0.000267) D3 ^ D0
+        error(0.000267) D4 D5
+        error(0.000267) D5 L0
+        reducible_error(0.000267) D5 L0 ^ D2 L0
+        repeat 99998 {
+            error(0.000267) D3+t
+            error(0.000267) D5+t D8+t
+            error(0.000267) D5+t L0
+            error(0.000267) D3+t D4+t
+            error(0.000267) D3+t D6+t
+            error(0.000533) D3+t D7+t
+            error(0.000267) D4+t D5+t
             error(0.000533) D4+t D7+t
-            error(0.000266) D5+t
-            error(0.000533) D5+t D7+t
-            error(0.000266) D5+t D8+t
-            error(0.000266) D6+t D7+t
-            error(0.000266) D6+t L0
-            reducible_error(0.000266) D6+t L0 ^ D3+t L0
-            error(0.000266) D7+t D8+t
-            error(0.000266) D8+t
-            reducible_error(0.000266) D8+t ^ D5+t
-            TICK 3
+            error(0.000533) D4+t D8+t
+            error(0.000267) D6+t
+            error(0.000267) D6+t D7+t
+            reducible_error(0.000267) D6+t ^ D3+t
+            error(0.000267) D7+t D8+t
+            error(0.000267) D8+t L0
+            reducible_error(0.000267) D8+t L0 ^ D5+t L0
+            tick 3
         }
-        error(0.000266) D299997 D299998
-        error(0.000266) D299997 D300000
-        error(0.000266) D299997 L0
-        error(0.000266) D299998 D299999
-        error(0.000533) D299998 D300000
+        error(0.000267) D299997
+        error(0.000267) D299997 D299998
+        error(0.000267) D299997 D300000
+        error(0.000533) D299997 D300001
+        error(0.000267) D299998 D299999
         error(0.000533) D299998 D300001
-        error(0.000266) D299999
-        error(0.000533) D299999 D300001
-        error(0.000266) D299999 D300002
-        error(0.000266) D300000 D300001
-        error(0.000266) D300000 L0
-        reducible_error(0.000266) D300000 L0 ^ D299997 L0
-        error(0.000266) D300001 D300002
-        error(0.000266) D300002
-        reducible_error(0.000266) D300002 ^ D299999
+        error(0.000533) D299998 D300002
+        error(0.000267) D299999 D300002
+        error(0.000267) D299999 L0
+        error(0.000267) D300000
+        error(0.000267) D300000 D300001
+        reducible_error(0.000267) D300000 ^ D299997
+        error(0.000267) D300001 D300002
+        error(0.000267) D300002 L0
+        reducible_error(0.000267) D300002 L0 ^ D299999 L0
     )MODEL");
+    std::cerr << actual << "\n";
     ASSERT_TRUE(actual.approx_equals(expected, 0.00001));
 }
 
@@ -1155,7 +1152,7 @@ TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
 TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
     ASSERT_EQ(
         ErrorFuser::circuit_to_detector_error_model(
-            Circuit::from_text(R"CIRCUIT(
+            Circuit(R"CIRCUIT(
                 # Distance 2 Bacon-Shor.
                 ZCX 0 10 1 10
                 ZCX 2 11 3 11
@@ -1191,7 +1188,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
         )MODEL"));
 
     ASSERT_TRUE(ErrorFuser::circuit_to_detector_error_model(
-                    Circuit::from_text(R"CIRCUIT(
+                    Circuit(R"CIRCUIT(
                         # Distance 2 Bacon-Shor.
                         ZCX 0 10 1 10
                         ZCX 2 11 3 11
@@ -1271,7 +1268,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
 
     ASSERT_EQ(
         ErrorFuser::circuit_to_detector_error_model(
-            Circuit::from_text(R"CIRCUIT(
+            Circuit(R"CIRCUIT(
                 # Distance 2 Bacon-Shor.
                 ZCX 0 10 1 10
                 ZCX 2 11 3 11

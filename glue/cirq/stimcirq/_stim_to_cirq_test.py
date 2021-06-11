@@ -8,6 +8,22 @@ import stimcirq
 from ._stim_to_cirq import stim_to_cirq_gate_table
 
 
+def test_two_qubit_asymmetric_depolarizing_channel():
+    r = stimcirq.TwoQubitAsymmetricDepolarizingChannel([0.125, 0, 0, 0, 0, 0, 0.375, 0, 0, 0, 0, 0, 0, 0.25, 0])
+    assert r._dense_mixture_() == [
+        (0.25, cirq.DensePauliString("II")),
+        (0.125, cirq.DensePauliString("IX")),
+        (0.375, cirq.DensePauliString("XZ")),
+        (0.25, cirq.DensePauliString("ZY")),
+    ]
+    cirq.testing.assert_has_diagram(cirq.Circuit(r.on(*cirq.LineQubit.range(2))), """
+0: ───PauliMix(II:0.25,IX:0.125,XZ:0.375,ZY:0.25)───
+      │
+1: ───#2────────────────────────────────────────────
+    """)
+    assert eval(repr(r), {'stimcirq': stimcirq}) == r
+
+
 def test_stim_circuit_to_cirq_circuit():
     circuit = stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
         X 0

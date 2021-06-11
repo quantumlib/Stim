@@ -29,7 +29,7 @@ TEST(gen_surface_code, rep_code) {
 )LAYOUT");
     ASSERT_EQ(
         out.circuit.str(),
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
         R 0 1 2 3 4 5 6
         X_ERROR(0.25) 0 1 2 3 4 5 6
         TICK
@@ -43,9 +43,9 @@ TEST(gen_surface_code, rep_code) {
         X_ERROR(0.375) 1 3 5
         MR 1 3 5
         X_ERROR(0.25) 1 3 5
-        DETECTOR rec[-1]
-        DETECTOR rec[-2]
-        DETECTOR rec[-3]
+        DETECTOR(1, 0) rec[-3]
+        DETECTOR(3, 0) rec[-2]
+        DETECTOR(5, 0) rec[-1]
         REPEAT 4999 {
             TICK
             DEPOLARIZE1(0.0625) 0 2 4 6
@@ -58,15 +58,16 @@ TEST(gen_surface_code, rep_code) {
             X_ERROR(0.375) 1 3 5
             MR 1 3 5
             X_ERROR(0.25) 1 3 5
-            DETECTOR rec[-1] rec[-4]
-            DETECTOR rec[-2] rec[-5]
-            DETECTOR rec[-3] rec[-6]
+            SHIFT_COORDS(0, 1)
+            DETECTOR(1, 0) rec[-3] rec[-6]
+            DETECTOR(3, 0) rec[-2] rec[-5]
+            DETECTOR(5, 0) rec[-1] rec[-4]
         }
         X_ERROR(0.375) 0 2 4 6
         M 0 2 4 6
-        DETECTOR rec[-1] rec[-2] rec[-5]
-        DETECTOR rec[-2] rec[-3] rec[-6]
-        DETECTOR rec[-3] rec[-4] rec[-7]
+        DETECTOR(1, 1) rec[-3] rec[-4] rec[-7]
+        DETECTOR(3, 1) rec[-2] rec[-3] rec[-6]
+        DETECTOR(5, 1) rec[-1] rec[-2] rec[-5]
         OBSERVABLE_INCLUDE(0) rec[-1]
     )CIRCUIT")
             .str());

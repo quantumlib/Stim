@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
         failed,
         Gate{
             "C_XYZ",
+            0,
             &TableauSimulator::C_XYZ,
             &FrameSimulator::C_XYZ,
             &ErrorFuser::C_XYZ,
@@ -49,6 +50,7 @@ Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
         failed,
         Gate{
             "C_ZYX",
+            0,
             &TableauSimulator::C_ZYX,
             &FrameSimulator::C_ZYX,
             &ErrorFuser::C_ZYX,

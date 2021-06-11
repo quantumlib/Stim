@@ -57,6 +57,7 @@ FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_
       z_table(num_qubits, batch_size),
       m_record(batch_size, max_lookback),
       rng_buffer(batch_size),
+      tmp_storage(batch_size),
       last_correlated_error_occurred(batch_size),
       rng(rng) {
 }
@@ -218,7 +219,7 @@ void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
                 x2 ^= x1;
             });
     } else if (t & TARGET_RECORD_BIT) {
-        throw std::out_of_range("Measurement record editing is not supported.");
+        throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         x_table[t] ^= measurement_record_ref(c);
     }
@@ -233,7 +234,7 @@ void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
                 x2 ^= x1;
             });
     } else if (t & TARGET_RECORD_BIT) {
-        throw std::out_of_range("Measurement record editing is not supported.");
+        throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         x_table[t].for_each_word(z_table[t], measurement_record_ref(c), [](simd_word &x, simd_word &z, simd_word &m) {
             x ^= m;
@@ -383,7 +384,7 @@ void FrameSimulator::YCZ(const OperationData &target_data) {
 
 void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto p = 1 + (rng() % 3);
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
@@ -397,7 +398,7 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     auto n = (targets.size() * batch_size) >> 1;
-    RareErrorIterator::for_samples(target_data.arg, n, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.args[0], n, rng, [&](size_t s) {
         auto p = 1 + (rng() % 15);
         auto target_index = (s / batch_size) << 1;
         auto sample_index = s % batch_size;
@@ -412,7 +413,7 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
 
 void FrameSimulator::X_ERROR(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
@@ -422,7 +423,7 @@ void FrameSimulator::X_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::Y_ERROR(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
@@ -433,12 +434,38 @@ void FrameSimulator::Y_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::Z_ERROR(const OperationData &target_data) {
     const auto &targets = target_data.targets;
-    RareErrorIterator::for_samples(target_data.arg, targets.size() * batch_size, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.args[0], targets.size() * batch_size, rng, [&](size_t s) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
         z_table[t][sample_index] ^= true;
     });
+}
+
+void FrameSimulator::PAULI_CHANNEL_1(const OperationData &target_data) {
+    tmp_storage = last_correlated_error_occurred;
+    perform_pauli_errors_via_correlated_errors<1>(
+        target_data,
+        [&]() {
+            last_correlated_error_occurred.clear();
+        },
+        [&](const OperationData &d) {
+            ELSE_CORRELATED_ERROR(d);
+        });
+    last_correlated_error_occurred = tmp_storage;
+}
+
+void FrameSimulator::PAULI_CHANNEL_2(const OperationData &target_data) {
+    tmp_storage = last_correlated_error_occurred;
+    perform_pauli_errors_via_correlated_errors<2>(
+        target_data,
+        [&]() {
+            last_correlated_error_occurred.clear();
+        },
+        [&](const OperationData &d) {
+            ELSE_CORRELATED_ERROR(d);
+        });
+    last_correlated_error_occurred = tmp_storage;
 }
 
 simd_bit_table FrameSimulator::sample_flipped_measurements(
@@ -461,7 +488,7 @@ void FrameSimulator::CORRELATED_ERROR(const OperationData &target_data) {
 
 void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
     // Sample error locations.
-    biased_randomize_bits(target_data.arg, rng_buffer.u64, rng_buffer.u64 + ((batch_size + 63) >> 6), rng);
+    biased_randomize_bits(target_data.args[0], rng_buffer.u64, rng_buffer.u64 + ((batch_size + 63) >> 6), rng);
     if (batch_size & 63) {
         rng_buffer.u64[batch_size >> 6] &= (uint64_t{1} << (batch_size & 63)) - 1;
     }

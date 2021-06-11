@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
         failed,
         Gate{
             "H",
+            0,
             &TableauSimulator::H_XZ,
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
@@ -51,6 +52,7 @@ Swaps the X and Z axes.
         failed,
         Gate{
             "H_XY",
+            0,
             &TableauSimulator::H_XY,
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
@@ -71,6 +73,7 @@ A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
         failed,
         Gate{
             "H_YZ",
+            0,
             &TableauSimulator::H_YZ,
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,

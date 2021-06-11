@@ -27,6 +27,6 @@ namespace stim_internal {
 std::map<std::string, std::string> generate_gate_help_markdown();
 int main_help(int argc, const char **argv);
 
-}
+}  // namespace stim_internal
 
 #endif

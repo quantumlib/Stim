@@ -126,18 +126,26 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
     // In particular, the first cycle has different detectors and so has to be handled special.
     uint32_t m = measurement_qubits.size();
     Circuit head;
+    for (auto q : all_qubits) {
+        coord c = q2p[q];
+        head.append_op("QUBIT_COORDS", {q}, {c.x, c.y});
+    }
     params.append_reset(head, all_qubits);
     head += cycle_actions * 2;
-    for (uint32_t k = 0; k < m; k++) {
-        head.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT});
+    for (uint32_t k = m; k-- > 0;) {
+        coord c = q2p[measurement_qubits[m - k - 1]];
+        head.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT}, {c.x, c.y, 0});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
-    for (uint32_t k = 0; k < m; k++) {
+    body.append_op("SHIFT_COORDS", {}, {0, 0, 1});
+    for (uint32_t k = m; k-- > 0;) {
+        coord c = q2p[measurement_qubits[m - k - 1]];
         body.append_op(
             "DETECTOR",
-            {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT, (k + 1 + 2 * m) | TARGET_RECORD_BIT});
+            {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT, (k + 1 + 2 * m) | TARGET_RECORD_BIT},
+            {c.x, c.y, 0});
     }
 
     // Build the end of the circuit, getting out of the cycle state and terminating.
@@ -145,7 +153,8 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
     // Also, the tail is responsible for identifying the logical observable.
     Circuit tail;
     params.append_measure(tail, data_qubits, "ZXY"[params.rounds % 3]);
-    for (auto measure : measure_coords) {
+    for (auto m_q : measurement_qubits) {
+        auto measure = q2p[m_q];
         std::vector<uint32_t> detectors;
         for (auto delta : deltas) {
             auto data = measure + delta;
@@ -166,7 +175,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
             detectors.push_back(p + m);
         }
         std::sort(detectors.begin(), detectors.end());
-        tail.append_op("DETECTOR", detectors);
+        tail.append_op("DETECTOR", detectors, {measure.x, measure.y, 1});
     }
     // Logical observable.
     std::vector<uint32_t> obs_inc;

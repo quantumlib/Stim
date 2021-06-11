@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
         failed,
         Gate{
             "REPEAT",
+            0,
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorFuser::I,

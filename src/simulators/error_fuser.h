@@ -132,6 +132,8 @@ struct ErrorFuser {
     void DEPOLARIZE1(const OperationData &dat);
     void DEPOLARIZE2(const OperationData &dat);
     void ELSE_CORRELATED_ERROR(const OperationData &dat);
+    void PAULI_CHANNEL_1(const OperationData &dat);
+    void PAULI_CHANNEL_2(const OperationData &dat);
     void ISWAP(const OperationData &dat);
 
     void run_circuit(const Circuit &circuit);

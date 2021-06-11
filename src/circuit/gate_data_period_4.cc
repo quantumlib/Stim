@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
         failed,
         Gate{
             "SQRT_X",
+            0,
             &TableauSimulator::SQRT_X,
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,
@@ -51,6 +52,7 @@ Equivalent to `H` then `S` then `H`.
         failed,
         Gate{
             "SQRT_X_DAG",
+            0,
             &TableauSimulator::SQRT_X_DAG,
             &FrameSimulator::H_YZ,
             &ErrorFuser::H_YZ,
@@ -73,6 +75,7 @@ Equivalent to `H` then `S_DAG` then `H`.
         failed,
         Gate{
             "SQRT_Y",
+            0,
             &TableauSimulator::SQRT_Y,
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
@@ -95,6 +98,7 @@ Equivalent to `S` then `H` then `S` then `H` then `S_DAG`.
         failed,
         Gate{
             "SQRT_Y_DAG",
+            0,
             &TableauSimulator::SQRT_Y_DAG,
             &FrameSimulator::H_XZ,
             &ErrorFuser::H_XZ,
@@ -117,6 +121,7 @@ Equivalent to `S` then `H` then `S_DAG` then `H` then `S_DAG`.
         failed,
         Gate{
             "S",
+            0,
             &TableauSimulator::SQRT_Z,
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,
@@ -139,6 +144,7 @@ Phases the amplitude of |1> by i.
         failed,
         Gate{
             "S_DAG",
+            0,
             &TableauSimulator::SQRT_Z_DAG,
             &FrameSimulator::H_XY,
             &ErrorFuser::H_XY,

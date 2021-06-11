@@ -93,7 +93,8 @@ std::string GeneratedCircuit::layout_str() const {
             max_len = std::max(max_len, entry.size());
         }
     }
-    for (const auto &line : lines) {
+    for (auto p = lines.crbegin(); p != lines.crend(); p++) {
+        const auto &line = *p;
         ss << "#";
         for (const auto &entry : line) {
             ss << ' ' << entry;

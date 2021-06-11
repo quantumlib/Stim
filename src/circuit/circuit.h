@@ -83,8 +83,8 @@ enum SampleFormat {
 ///
 /// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).
 struct OperationData {
-    /// Context-dependent numeric argument (e.g. a probability).
-    double arg;
+    /// Context-dependent numeric arguments (e.g. probabilities).
+    PointerRange<double> args;
     /// Context-dependent data on what to target.
     ///
     /// The bottom 24 bits of each item always refer to a qubit index.
@@ -118,8 +118,9 @@ struct Operation {
 
 /// A description of a quantum computation.
 struct Circuit {
-    /// Backing data store for variable-sized target data referenced by operations.
-    MonotonicBuffer<uint32_t> jag_targets;
+    /// Backing data stores for variable-sized target data referenced by operations.
+    MonotonicBuffer<uint32_t> target_buf;
+    MonotonicBuffer<double> arg_buf;
     /// Operations in the circuit, from earliest to latest.
     std::vector<Operation> operations;
     std::vector<Circuit> blocks;
@@ -141,10 +142,10 @@ struct Circuit {
     /// Move assignment.
     Circuit &operator=(Circuit &&circuit) noexcept;
 
-    /// Parses a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
+    /// Parse constructor. Creates a circuit from text with operations like "H 0 \n CNOT 0 1 \n M 0 1".
     ///
     /// Note: operations are automatically fused.
-    static Circuit from_text(const char *text);
+    Circuit(const char *text);
     /// Parses a circuit from a file containing operations.
     ///
     /// Note: operations are automatically fused.
@@ -173,9 +174,12 @@ struct Circuit {
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg = 0);
+    void append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, double arg);
+    void append_op(
+        const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
+    /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
+    void append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstPointerRange<double> args);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -286,7 +290,7 @@ inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {
 template <typename SOURCE>
 bool read_until_next_line_arg(int &c, SOURCE read_char) {
     if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
-        throw std::out_of_range("Targets must be separated by spacing.");
+        throw std::invalid_argument("Targets must be separated by spacing.");
     }
     while (c == ' ' || c == '\t') {
         c = read_char();
@@ -335,25 +339,51 @@ double read_non_negative_double(int &c, SOURCE read_char) {
     char *end;
     double result = strtod(buf, &end);
     if (end != buf + n || !(result >= 0)) {
-        throw std::out_of_range("Not a non-negative real number: " + std::string(buf));
+        throw std::invalid_argument("Not a non-negative real number: " + std::string(buf));
     }
     return result;
 }
 
 template <typename SOURCE>
-double read_parens_argument(int &c, const char *name, SOURCE read_char) {
+void read_parens_arguments(
+    int &c, const char *name, SOURCE read_char, uint8_t arg_count, MonotonicBuffer<double> &out) {
+    if (arg_count == 0) {
+        if (c == '(') {
+            throw std::invalid_argument("Gate '" + std::string(name) + "' doesn't take parens arguments.");
+        }
+        return;
+    }
+
     if (c != '(') {
-        throw std::out_of_range(std::string(name) + "(?) missing a parens argument.");
+        if (arg_count == ARG_COUNT_VARIABLE) {
+            return;
+        }
+        throw std::invalid_argument(
+            "Expected " + std::to_string(arg_count) + " parens arguments for '" + std::string(name) + "'.");
     }
     c = read_char();
-    read_past_within_line_whitespace(c, read_char);
-    double result = read_non_negative_double(c, read_char);
+
+    for (uint8_t k = 0; k < arg_count; k++) {
+        read_past_within_line_whitespace(c, read_char);
+        if (k > 0) {
+            if (c != ',') {
+                if (arg_count == ARG_COUNT_VARIABLE) {
+                    break;
+                }
+                throw std::invalid_argument(
+                    "Expected " + std::to_string(arg_count) + " parens arguments for '" + std::string(name) + "'.");
+            }
+            c = read_char();
+            read_past_within_line_whitespace(c, read_char);
+        }
+        out.append_tail(read_non_negative_double(c, read_char));
+    }
+
     read_past_within_line_whitespace(c, read_char);
     if (c != ')') {
-        throw std::out_of_range(std::string(name) + "(?) missing a closing parens for its argument.");
+        throw std::invalid_argument("Missing ')' for arguments of '" + std::string(name) + "'.");
     }
     c = read_char();
-    return result;
 }
 
 }  // namespace stim_internal

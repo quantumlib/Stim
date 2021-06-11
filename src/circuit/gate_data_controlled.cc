@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_controlled(bool &failed) {
         failed,
         Gate{
             "XCX",
+            0,
             &TableauSimulator::XCX,
             &FrameSimulator::XCX,
             &ErrorFuser::XCX,
@@ -57,6 +58,7 @@ Negates the amplitude of the |->|-> state.
         failed,
         Gate{
             "XCY",
+            0,
             &TableauSimulator::XCY,
             &FrameSimulator::XCY,
             &ErrorFuser::XCY,
@@ -85,6 +87,7 @@ Negates the amplitude of the |->|-i> state.
         failed,
         Gate{
             "XCZ",
+            0,
             &TableauSimulator::XCZ,
             &FrameSimulator::XCZ,
             &ErrorFuser::XCZ,
@@ -111,6 +114,7 @@ Negates the amplitude of the |->|1> state.
         failed,
         Gate{
             "YCX",
+            0,
             &TableauSimulator::YCX,
             &FrameSimulator::YCX,
             &ErrorFuser::YCX,
@@ -139,6 +143,7 @@ Negates the amplitude of the |-i>|-> state.
         failed,
         Gate{
             "YCY",
+            0,
             &TableauSimulator::YCY,
             &FrameSimulator::YCY,
             &ErrorFuser::YCY,
@@ -167,6 +172,7 @@ Negates the amplitude of the |-i>|-i> state.
         failed,
         Gate{
             "YCZ",
+            0,
             &TableauSimulator::YCZ,
             &FrameSimulator::YCZ,
             &ErrorFuser::YCZ,
@@ -193,6 +199,7 @@ Negates the amplitude of the |-i>|1> state.
         failed,
         Gate{
             "CX",
+            0,
             &TableauSimulator::ZCX,
             &FrameSimulator::ZCX,
             &ErrorFuser::ZCX,
@@ -221,6 +228,7 @@ Negates the amplitude of the |1>|-> state.
         failed,
         Gate{
             "CY",
+            0,
             &TableauSimulator::ZCY,
             &FrameSimulator::ZCY,
             &ErrorFuser::ZCY,
@@ -248,6 +256,7 @@ Negates the amplitude of the |1>|-i> state.
         failed,
         Gate{
             "CZ",
+            0,
             &TableauSimulator::ZCZ,
             &FrameSimulator::ZCZ,
             &ErrorFuser::ZCZ,

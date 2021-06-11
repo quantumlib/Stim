@@ -29,6 +29,7 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
         failed,
         Gate{
             "SQRT_XX",
+            0,
             &TableauSimulator::SQRT_XX,
             &FrameSimulator::SQRT_XX,
             &ErrorFuser::SQRT_XX,
@@ -51,6 +52,7 @@ Phases the -1 eigenspace of the XX observable by i.
         failed,
         Gate{
             "SQRT_XX_DAG",
+            0,
             &TableauSimulator::SQRT_XX_DAG,
             &FrameSimulator::SQRT_XX,
             &ErrorFuser::SQRT_XX,
@@ -74,6 +76,7 @@ Phases the -1 eigenspace of the XX observable by -i.
         failed,
         Gate{
             "SQRT_YY",
+            0,
             &TableauSimulator::SQRT_YY,
             &FrameSimulator::SQRT_YY,
             &ErrorFuser::SQRT_YY,
@@ -96,6 +99,7 @@ Phases the -1 eigenspace of the YY observable by i.
         failed,
         Gate{
             "SQRT_YY_DAG",
+            0,
             &TableauSimulator::SQRT_YY_DAG,
             &FrameSimulator::SQRT_YY,
             &ErrorFuser::SQRT_YY,
@@ -119,6 +123,7 @@ Phases the -1 eigenspace of the YY observable by -i.
         failed,
         Gate{
             "SQRT_ZZ",
+            0,
             &TableauSimulator::SQRT_ZZ,
             &FrameSimulator::SQRT_ZZ,
             &ErrorFuser::SQRT_ZZ,
@@ -138,6 +143,7 @@ Phases the -1 eigenspace of the ZZ observable by i.
         failed,
         Gate{
             "SQRT_ZZ_DAG",
+            0,
             &TableauSimulator::SQRT_ZZ_DAG,
             &FrameSimulator::SQRT_ZZ,
             &ErrorFuser::SQRT_ZZ,

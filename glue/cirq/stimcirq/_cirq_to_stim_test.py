@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Sequence, List
+from typing import Dict, Tuple, Sequence, List, Union
 
 import cirq
 import numpy as np
@@ -125,30 +125,41 @@ TICK
     )
 
 
-@pytest.mark.parametrize(
-    "gate",
-    [
-        cirq.BitFlipChannel(0.1),
-        cirq.BitFlipChannel(0.2),
-        cirq.PhaseFlipChannel(0.1),
-        cirq.PhaseFlipChannel(0.2),
-        cirq.PhaseDampingChannel(0.1),
-        cirq.PhaseDampingChannel(0.2),
-        cirq.X.with_probability(0.1),
-        cirq.X.with_probability(0.2),
-        cirq.Y.with_probability(0.1),
-        cirq.Y.with_probability(0.2),
-        cirq.Z.with_probability(0.1),
-        cirq.Z.with_probability(0.2),
-        cirq.DepolarizingChannel(0.1),
-        cirq.DepolarizingChannel(0.2),
-        cirq.DepolarizingChannel(0.1, n_qubits=2),
-        cirq.DepolarizingChannel(0.2, n_qubits=2),
+ROUND_TRIP_NOISY_GATES = [
+    cirq.BitFlipChannel(0.1),
+    cirq.BitFlipChannel(0.2),
+    cirq.PhaseFlipChannel(0.1),
+    cirq.PhaseFlipChannel(0.2),
+    cirq.PhaseDampingChannel(0.1),
+    cirq.PhaseDampingChannel(0.2),
+    cirq.X.with_probability(0.1),
+    cirq.X.with_probability(0.2),
+    cirq.Y.with_probability(0.1),
+    cirq.Y.with_probability(0.2),
+    cirq.Z.with_probability(0.1),
+    cirq.Z.with_probability(0.2),
+    cirq.DepolarizingChannel(0.1),
+    cirq.DepolarizingChannel(0.2),
+    cirq.DepolarizingChannel(0.1, n_qubits=2),
+    cirq.DepolarizingChannel(0.2, n_qubits=2),
+    cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0, p_z=0),
+    cirq.AsymmetricDepolarizingChannel(p_x=0.2, p_y=0.1, p_z=0.3),
+    cirq.AsymmetricDepolarizingChannel(p_x=0.1, p_y=0, p_z=0),
+    cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0.1, p_z=0),
+    cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0, p_z=0.1),
+    *[
+        stimcirq.TwoQubitAsymmetricDepolarizingChannel(cirq.one_hot(index=k, shape=15, value=0.1, dtype=np.float64))
+        for k in range(15)
     ],
-)
-def test_noisy_gate_conversions_compiled_sampler(gate: cirq.Gate):
+    stimcirq.TwoQubitAsymmetricDepolarizingChannel([k/300 for k in range(1, 16)]),
+    stimcirq.TwoQubitAsymmetricDepolarizingChannel([0]*15),
+]
+
+
+@pytest.mark.parametrize("gate", ROUND_TRIP_NOISY_GATES)
+def test_frame_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq.Gate):
     # Create test circuit that uses superdense coding to quantify arbitrary Pauli error mixtures.
-    n = gate.num_qubits()
+    n = cirq.num_qubits(gate)
     qs = cirq.LineQubit.range(n)
     circuit = cirq.Circuit(
         cirq.H.on_each(qs),
@@ -180,32 +191,12 @@ def test_noisy_gate_conversions_compiled_sampler(gate: cirq.Gate):
         )
 
 
-@pytest.mark.parametrize(
-    "gate",
-    [
-        cirq.BitFlipChannel(0.1),
-        cirq.BitFlipChannel(0.2),
-        cirq.PhaseFlipChannel(0.1),
-        cirq.PhaseFlipChannel(0.2),
-        cirq.PhaseDampingChannel(0.1),
-        cirq.PhaseDampingChannel(0.2),
-        cirq.X.with_probability(0.1),
-        cirq.X.with_probability(0.2),
-        cirq.Y.with_probability(0.1),
-        cirq.Y.with_probability(0.2),
-        cirq.Z.with_probability(0.1),
-        cirq.Z.with_probability(0.2),
-        cirq.DepolarizingChannel(0.1),
-        cirq.DepolarizingChannel(0.2),
-        cirq.DepolarizingChannel(0.1, n_qubits=2),
-        cirq.DepolarizingChannel(0.2, n_qubits=2),
-    ],
-)
-def test_tableau_simulator_error_mechanisms(gate: cirq.Gate):
+@pytest.mark.parametrize("gate", ROUND_TRIP_NOISY_GATES)
+def test_tableau_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq.Gate):
     # Technically this be a test of the `stim` package itself, but it's so convenient to compare to cirq.
 
     # Create test circuit that uses superdense coding to quantify arbitrary Pauli error mixtures.
-    n = gate.num_qubits()
+    n = cirq.num_qubits(gate)
     qs = cirq.LineQubit.range(n)
     circuit = cirq.Circuit(
         cirq.H.on_each(qs),

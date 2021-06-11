@@ -30,6 +30,7 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
         failed,
         Gate{
             "MX",
+            0,
             &TableauSimulator::measure_x,
             &FrameSimulator::measure_x,
             &ErrorFuser::MX,
@@ -50,6 +51,7 @@ Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>
         failed,
         Gate{
             "MY",
+            0,
             &TableauSimulator::measure_y,
             &FrameSimulator::measure_y,
             &ErrorFuser::MY,
@@ -70,6 +72,7 @@ Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i
         failed,
         Gate{
             "M",
+            0,
             &TableauSimulator::measure_z,
             &FrameSimulator::measure_z,
             &ErrorFuser::MZ,
@@ -93,6 +96,7 @@ Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>
         failed,
         Gate{
             "MRX",
+            0,
             &TableauSimulator::measure_reset_x,
             &FrameSimulator::measure_reset_x,
             &ErrorFuser::MRX,
@@ -113,6 +117,7 @@ Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, 
         failed,
         Gate{
             "MRY",
+            0,
             &TableauSimulator::measure_reset_y,
             &FrameSimulator::measure_reset_y,
             &ErrorFuser::MRY,
@@ -133,6 +138,7 @@ Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`,
         failed,
         Gate{
             "MR",
+            0,
             &TableauSimulator::measure_reset_z,
             &FrameSimulator::measure_reset_z,
             &ErrorFuser::MRZ,
@@ -156,6 +162,7 @@ Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, 
         failed,
         Gate{
             "RX",
+            0,
             &TableauSimulator::reset_x,
             &FrameSimulator::reset_x,
             &ErrorFuser::RX,
@@ -176,6 +183,7 @@ Forces each target qubit into the `|+>` state by silently measuring it in the X 
         failed,
         Gate{
             "RY",
+            0,
             &TableauSimulator::reset_y,
             &FrameSimulator::reset_y,
             &ErrorFuser::RY,
@@ -196,6 +204,7 @@ Forces each target qubit into the `|i>` state by silently measuring it in the Y 
         failed,
         Gate{
             "R",
+            0,
             &TableauSimulator::reset_z,
             &FrameSimulator::reset_z,
             &ErrorFuser::RZ,

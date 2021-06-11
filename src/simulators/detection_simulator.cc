@@ -95,7 +95,7 @@ void detector_sample_out_helper_stream(
             }
         } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
             if (append_observables) {
-                size_t id = (size_t)op.target_data.arg;
+                size_t id = (size_t)op.target_data.args[0];
                 while (observables.size() <= id) {
                     observables.emplace_back(num_samples);
                 }

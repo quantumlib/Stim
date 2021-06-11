@@ -11,7 +11,7 @@ ExposedCircuit::ExposedCircuit() : circuit() {
 ExposedCircuit::ExposedCircuit(Circuit circuit) : circuit(circuit) {
 }
 
-ExposedCircuit::ExposedCircuit(const std::string &text) : circuit(Circuit::from_text(text.data())) {
+ExposedCircuit::ExposedCircuit(const std::string &text) : circuit(Circuit(text.data())) {
 }
 
 void ExposedCircuit::append_operation(const std::string &name, const emscripten::val &targets, double arg) {
