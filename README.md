@@ -29,7 +29,7 @@ all operated on simultaneously by individual CPU instructions.
 
 ## Supported Gates
 
-See the [gate documentation](GATES.md).
+See the [gate documentation](README_GATES.md).
 
 # Usage (python)
 
