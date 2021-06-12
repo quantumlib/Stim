@@ -9,15 +9,15 @@ and annotations for tasks such as detection event sampling and drawing the circu
 
 - [Syntax](#Syntax)
 - [Semantics](#Semantics)
-    - [Instruction Types](#Instruction_Types)
+    - [Instruction Types](#Instruction-Types)
     - [Broadcasting](#Broadcasting)
-    - [State Space](#State_Space)
-    - [The Measurement Record](#The_Measurement_Record)
+    - [State Space](#State-Space)
+    - [The Measurement Record](#The-Measurement-Record)
 - [Examples](#Examples)
-    - [Teleportation Circuit](#Teleportation_Circuit)
-    - [Repetition Code Circuit](#Repetition_Code_Circuit)
-    - [Annotated Noisy Repetition Code Circuit](#Annotated_Noisy_Repetition_Code_Circuit)
-    - [Annotated Noisy Surface Code Circuit](#Annotated_Noisy_Surface_Code_Circuit)
+    - [Teleportation Circuit](#Teleportation-Circuit)
+    - [Repetition Code Circuit](#Repetition-Code-Circuit)
+    - [Annotated Noisy Repetition Code Circuit](#Annotated-Noisy-Repetition-Code-Circuit)
+    - [Annotated Noisy Surface Code Circuit](#Annotated-Noisy-Surface-Code-Circuit)
 
 
 ## Syntax
