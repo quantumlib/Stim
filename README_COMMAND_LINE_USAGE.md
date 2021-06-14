@@ -354,7 +354,7 @@ error(0.003344519141621982161) D1
     Specifies a file to create or overwrite with results.
     If not specified, the `stdout` pipe is used.
 
-- **`--out_format=[name]`**: Output format to use.
+- **`--out_format=[name]`**: <a name="out_format"></a>Output format to use.
     Requires measurement sampling mode or detection sample mode.
     Definition: a "sample" is one measurement result in measurement sampling mode or one detector/observable result in detection event sampling mode.
     Definition: a "shot" is composed of all of the samples from a circuit.

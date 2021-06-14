@@ -27,7 +27,13 @@ Pauli string multiplication is a key bottleneck operation when updating a stabil
 Tracking Pauli frames can also benefit from vectorization, by batching the frames into groups of hundreds that are
 all operated on simultaneously by individual CPU instructions.
 
-## Supported Gates
+# Data Formats
+
+Circuits can be specified using the [stim circuit file format (.stim)](README_FILE_FORMAT_CIRCUIT.md).
+
+Error models can be specified using the [detector error model file format (.dem)](README_FILE_FORMAT_DETECTOR_ERROR_MODEL.md).
+
+# Supported Gates
 
 See the [gate documentation](README_GATES.md).
 
