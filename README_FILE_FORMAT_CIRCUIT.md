@@ -27,9 +27,10 @@ Each line is either blank, an instruction, a block initiator, or a block termina
 Also, each line may be indented with spacing characters and may end with a comment indicated by a hash (`#`).
 
 ```
+<CIRCUIT> ::= <LINE>*
 <LINE> ::= <INDENT> (<INSTRUCTION> | <BLOCK_START> | <BLOCK_END>)? <COMMENT>? '\n'
-<INDENT> ::= /\s*/
-<COMMENT> ::= #/[^\n]/*
+<INDENT> ::= /[ \t]*/
+<COMMENT> ::= '#' /[^\n]*/
 ```
 
 An *instruction* is composed of a name,
@@ -41,8 +42,8 @@ three arguments (`0.1`, `0.2`, and `0.3`), and two targets (`5` and `6`).
 ```
 <INSTRUCTION> ::= <NAME> <PARENS_ARGUMENTS>? <TARGETS>
 <PARENS_ARGUMENTS> ::= '(' <ARGUMENTS> ')' 
-<ARGUMENTS> ::= /\s*/ <ARG> /\s*/ (',' <ARGUMENTS>)? 
-<TARGETS> ::= /\s+/ <TARG> <TARGETS>? 
+<ARGUMENTS> ::= /[ \t]*/ <ARG> /[ \t]*/ (',' <ARGUMENTS>)?
+<TARGETS> ::= /[ \t]+/ <TARG> <TARGETS>?
 ```
 
 An instruction *name* starts with a letter and then contains a series of letters, digits, and underscores.
@@ -70,7 +71,7 @@ Every block initiator must be followed, eventually, by a matching *block termina
 The `{` always goes in the same line as its instruction, and the `}` always goes on a line by itself. 
 
 ```
-<BLOCK_START> ::= <INSTRUCTION> /\s*/ '{' 
+<BLOCK_START> ::= <INSTRUCTION> /[ \t]*/ '{'
 <BLOCK_END> ::= '}' 
 ```
 
