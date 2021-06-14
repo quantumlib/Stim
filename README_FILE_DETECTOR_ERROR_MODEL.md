@@ -1,0 +1,321 @@
+# The Detector Error Model File Format (.dem)
+
+A detector error model file (.dem) is a human-readable specification of error mechanisms.
+The intent of the file format is to act as a reasonably flexible configuration language that can be easily consumed by
+*decoders*, which attempt to predict syndromes from symptoms within the context of an error model.
+
+## Index
+
+- [Syntax](#Syntax)
+- [Semantics](#Semantics)
+    - [Instruction Types](#Instruction-Types)
+        - [`detector` instruction](#detector-instruction)
+        - [`logical_observable` instruction](#logical_observable-instruction)
+        - [`shift_detectors` instruction](#shift_detectors-instruction)
+        - [`error` instruction](#error-instruction)
+        - [`repeat` block](#repeat-block)
+    - [Target Types](#State-Space)
+        - [`D#`: relative detector target](#relative-detector-target)
+        - [`L#`: logical observable target](#logical-observable-target)
+        - [`#`: numeric target](#numeric-target)
+        - [`^`: separator target](#separator-target)
+    - [State Space](#State-Space)
+- [Examples](#Examples)
+    - [Circular Error Mode](#circular-error-model)
+    - [Repetition Code Error Model](#repetition-code-error-model)
+    - [Surface Code Error Model](#surface-code-error-model)
+
+
+## Syntax
+
+A detector error model file is made up of a series of lines.
+Each line is either blank, an instruction, a block initiator, or a block terminator.
+Also, each line may be indented with spacing characters and may end with a comment indicated by a hash (`#`).
+
+```
+<LINE> ::= <INDENT> (<INSTRUCTION> | <BLOCK_START> | <BLOCK_END>)? <COMMENT>? '\n'
+<INDENT> ::= /\s*/
+<COMMENT> ::= #/[^\n]/*
+```
+
+An *instruction* is composed of a name,
+then an optional comma-separated list of arguments inside of parentheses,
+then a list of space-separated targets.
+For example, the line `error(0.1) D5 D6 L0` is an instruction with a name (`error`),
+one argument (`0.1`), and three targets (`D5`, `D6`, and `L0`).
+
+```
+<INSTRUCTION> ::= <NAME> <PARENS_ARGUMENTS>? <TARGETS>
+<PARENS_ARGUMENTS> ::= '(' <ARGUMENTS> ')' 
+<ARGUMENTS> ::= /\s*/ <ARG> /\s*/ (',' <ARGUMENTS>)? 
+<TARGETS> ::= /\s+/ <TARG> <TARGETS>? 
+```
+
+An instruction *name* starts with a letter and then contains a series of letters, digits, and underscores.
+Names are case-insensitive.
+
+An *argument* is a double precision floating point number.
+
+A *target* can either be a relative detector target (a non-negative integer prefixed by `D`),
+a logical observable target (a non-negative integer prefixed by `L`),
+a component separator (`^`),
+or an unsigned integer target (a non-negative integer).
+
+```
+<NAME> ::= /[a-zA-Z][a-zA-Z0-9_]*/ 
+<ARG> ::= <double> 
+<TARG> ::= <RELATIVE_DETECTOR_TARGET> | <LOGICAL_OBSERVABLE_TARGET> | <NUMBER_TARGET> | <SEPARATOR>  
+<RELATIVE_DETECTOR_TARGET> ::= 'D' <uint>
+<LOGICAL_OBSERVABLE_TARGET> ::= 'L' <uint>
+<NUMBER_TARGET> = <uint>
+<SEPARATOR> = '^'
+```
+
+A *block initiator* is an instruction suffixed with `{`.
+Every block initiator must be followed, eventually, by a matching *block terminator* which is just a `}`.
+The `{` always goes in the same line as its instruction, and the `}` always goes on a line by itself. 
+
+```
+<BLOCK_START> ::= <INSTRUCTION> /\s*/ '{' 
+<BLOCK_END> ::= '}' 
+```
+
+## Semantics
+
+A *detector error model* is a list of independent error mechanisms.
+Each error mechanism has a *probability*,
+some *symptoms* (the detectors that the error flips),
+and some *syndromes* (the logical observables that the error flips).
+Error mechanisms may also suggest a *decomposition* into simpler error mechanisms.
+
+A detector error model can be sampled by independently keeping or discarding each error mechanism,
+with a keep probability equal to each error mechanism's probability.
+The resulting sample contains the symptoms and syndromes that appeared an odd number of times total in the kept error
+mechanisms.
+
+A detector error model file (.dem) specifies a detector error model by a series of instructions which are interpreted
+one by one, from start to finish. The instructions iteratively build up a detector error model by introducing error
+mechanisms.
+
+### Instruction Types
+
+A detector error model file can contain several different types of instructions and blocks.
+
+#### detector instruction
+
+A `detector` instruction ensures a particular symptom is in the error model,
+even if no error mechanism mentions it.
+(Detectors can also be implicitly introduced by being mentioned in an error mechanism.)
+For example, this is important for when a quantum circuit includes a detector but happens to
+have been annotated with a noise model that never affects the detector, to ensure that the
+tool sampling the detection events in the circuit agrees with the detector error model on exactly
+how many detectors there are.
+A detector instruction may also include coordinate arguments, which hint at the spacetime location
+of the detector.
+
+Note that when the current coordinate offset has more coordinates than the detector the additional coordinates are
+skipped. For example, if the offset is `(1,2,3)` and the detector relative position is `(10,10)` then the
+detector's absolute position would be `11,12`; not `11,12,3`. 
+
+Example: `detector D4` declares a detector with index 4 (relative to the current detector index offset).
+
+Example: `detector D5 D6` declares a detector with index 5 (relative to the current detector index offset)
+and also a detector with index 6 (relative to the current detector index offset).
+
+Example: `detector(2.5,3.5,6) D7` declares a detector with index 7
+(relative to the current detector index offset)
+and coordinates `2.5`, `3.5`, `6` (relative to the current coordinate offset).
+
+#### logical_observable instruction
+
+A `logical_observable` instruction ensures a particular syndrome is in the error model,
+even if no error mechanism mentions it.
+(Logical observables can also be implicitly introduced by being mentioned in an error mechanism.)
+For example, this is important for when a quantum circuit includes a logical observable but happens to
+have been annotated with a noise model that never affects the observable, to ensure that the
+tool sampling the observables in the circuit agrees with the detector error model on exactly
+how many observables there are.
+
+Example: `logical_observable L1` declares a logical observable with index 1.
+
+Example: `logical_observable L1 L2` declares a logical observable with index 1 and also a logical observable with
+index 2.
+
+#### shift_detectors instruction
+
+A `shift_detectors` instruction adds an offset into the current detector offset and the current coordinate offset.
+Takes 1 numeric target indicating the detector offset.
+Takes a variable number of arguments indicating the coordinate offset.
+Shifting is useful when writing loops, because otherwise the detectors declared by each iteration
+of the loop would all lie on top of each other.
+The detector offset can only be increased, not decreased.
+
+Example: `shift_detectors(0, 0.5) 2` leaves the first coordinate's offset alone,
+increases the second coordinate's offset by `0.5`,
+leaves all other coordinate offsets alone,
+and increases the detector offset by 2.
+
+Example: declaring a diagonal line of detectors.
+```
+detector(0, 0) D0
+repeat 1000 {
+    detector(0.5, 0.5) D1
+    error(0.01) D0 D1
+    shift_detectors(0.5, 0.5) 1
+}
+```
+
+#### error instruction
+
+An `error` instruction adds an error mechanism to the error model.
+The error instruction takes 1 argument (the probability of the error) and multiple targets.
+The targets can include detectors, observables, and separators.
+Separators are used to suggest a way to decompose complicated error mechanisms into simpler ones.
+
+For example: `error(0.1) D2 D3 L0` adds an error mechanism with
+probability equal to 10%,
+two symptoms (`D2`, `D3`),
+one syndrome (`L0`),
+and no suggested decomposition.
+
+Another example: `error(0.02) D2 L0 ^ D5 D6` adds an error mechanism with
+probability equal to 2%,
+three symptoms (`D2`, `D5`, `D6`),
+one syndrome (`L0`),
+and a suggested decomposition into `D2 L0` and `D5 D6`.
+
+Yet another example: `error(0.03) D2 L0 ^ D3 L0` adds an error mechanism with
+probability equal to 3%,
+two symptoms (`D2`, `D3`),
+no syndromes (because the two `L0` cancel out),
+and a suggested decomposition into `D2 L0` and `D3 L0`.
+
+An example of a situation where the decomposition is relevant is a surface code with X and Z basis stabilizers.
+In such a surface code, Y errors can be factored into correlated X and Z errors.
+So, error mechanisms in the detector error model corresponding to Y errors in the circuit can suggest decomposing
+into the X and Z parts.
+
+It is valid for multiple error mechanisms to have the exact same targets.
+Typically they would be fused as part of building the error model (via the equation
+`p_{combined} = p_1 (1 - p_2) + p_2 (1 - p_1)`).
+It is also valid for error mechanisms to have the same symptoms but different syndromes
+(though this guarantees the error correcting code has distance at most 2).
+Similarly, an error mechanism may have syndromes with no symptoms (guaranteeing a code distance equal to 1).
+
+#### repeat block
+
+A detector error model file can also contain `REPEAT K { ... }` blocks,
+which indicate that the block's instructions should be iterated over `K` times instead of just once.
+
+Example: declaring a diagonal line of detectors.
+
+```
+detector(0, 0) D0
+repeat 1000 {
+    detector(0.5, 0.5) D1
+    error(0.01) D0 D1
+    shift_detectors(0.5, 0.5) 1
+}
+```
+
+### Target Types
+
+There are four types of targets that can be given to instructions:
+relative detector targets,
+logical observable targets,
+numeric targets,
+and separator targets.
+
+#### relative detector target
+
+A relative detector target is a non-negative integer prefixed by `D`, such as `D5`.
+It refers to a symptom in the error model
+To get the actual detector target specified by the relative detector target, the integer after the `D`
+has to be added into the current relative detector offset.
+
+#### logical observable target
+
+A logical observable target is a non-negative integer prefixed by `L`, such as `L5`.
+It refers to a syndrome in the error model.
+
+#### numeric target
+
+A numeric target is a non-negative integer.
+For example, the `REPEAT` block instruction takes a single numeric target indicating the number of repetitions
+and the `shift_detectors` instruction takes a single numeric target indicating the detector index shift.
+
+
+#### separator target
+
+A separator target (`^`) is not an actual thing to target, but rather a marker used to split up the targets of an error
+mechanism into a suggested decomposition.
+
+### State Space
+
+Interpreting a detector error model file, to produce a detector error model,
+involves tracking several pieces of state.
+
+1. **The Offsets**
+    As the error model file is interpreted, the *relative detector index* and *relative coordinate offset* are shifted
+    by `shift_detectors` instructions.
+    Interpreting relative detector targets and coordinate annotations requires tracking these
+    two values, since they shift the targets and coordinates.
+2. **The Nodes (possible symptoms and syndromes)**.
+    The error model must include every mentioned symptom and syndrome,
+    including ones not involved in any error mechanism
+    (i.e. only declared by `detector` and `logical_observable` instructions).
+3. **The Edges (error mechanisms)**.
+    The error model must include every mentioned error mechanism,
+    and reducible error mechanism.
+
+## Examples
+
+### Circular Error Model
+
+This error model defines 10 symptoms, and 10 error mechanisms with two symptoms.
+One of the error mechanisms, the "bad error", also has a syndrome (`L0`).
+If the symptoms are nodes, and error mechanisms connect two nodes, then the model forms
+the 10 node circular graph.
+
+```
+error(0.1) D9 D0 L0
+error(0.1) D0 D1
+error(0.1) D1 D2
+error(0.1) D2 D3
+error(0.1) D3 D4
+error(0.1) D4 D5
+error(0.1) D5 D6
+error(0.1) D6 D7
+error(0.1) D7 D8
+error(0.1) D8 D9
+```
+
+This model can be defined more succinctly by using a `repeat` block:
+
+```
+error(0.1) D9 D0 L0
+repeat 9 {
+    error(0.1) D0 D1
+    shift_detectors 1
+}
+```
+
+### Repetition Code Error Model
+
+This is the output from
+`stim --gen repetition_code --task memory --rounds 1000 --distance 3 --after_clifford_depolarization 0.001 | stim --analyze_errors --fold_loops`.
+It includes noise operations and annotations for the spacetime layout of the circuit.
+
+```
+[FILL IN]
+```
+
+### Surface Code Error Model
+
+This is the output from
+`stim --gen surface_code --task rotated_memory_x --rounds 1000 --distance 3 --after_clifford_depolarization 0.001 | stim --analyze_errors --fold_loops --decompose_errors`.
+It includes noise operations and annotations for the spacetime layout of the circuit.
+
+```
+[FILL IN]
+```

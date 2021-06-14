@@ -1,4 +1,4 @@
-# The Stim Circuit File Format
+# The Stim Circuit File Format (.stim)
 
 A stim circuit file (.stim) is a human-readable specification of an annotated stabilizer circuit.
 The circuit file includes gates to apply to qubits,
@@ -28,7 +28,7 @@ Also, each line may be indented with spacing characters and may end with a comme
 
 ```
 <LINE> ::= <INDENT> (<INSTRUCTION> | <BLOCK_START> | <BLOCK_END>)? <COMMENT>? '\n'
-<INDENT> ::= /s*/
+<INDENT> ::= /\s*/
 <COMMENT> ::= #/[^\n]/*
 ```
 
@@ -150,7 +150,9 @@ It is an error to give a two qubit operation an odd number of targets.
 A simulator executing a stim circuit is expected to store three things:
 
 1. **The Qubits**.
-    The simulator must track the current state of the qubits that have been operated on so far.
+    By convention, all qubits start in the |0> state.
+    The simulator then tracks the state of any qubits that have been operated on.
+    
     Note that stim circuit files don't explicitly state the number of qubits needed.
     Instead, the number of qubits is implied by the qubit targets present in the file.
     For example, a simulator may look over the circuit and find the largest qubit target `n-1` that is
@@ -169,7 +171,7 @@ A simulator executing a stim circuit is expected to store three things:
 
 (The interpreter of the circuit may also track coordinate offsets accumulated from `SHIFT_COORDS` annotations,
 which affect the meaning of `QUBIT_COORDS` annotations and the coordinate arguments given to `DETECTOR`.
-But these have no effect on simulations, and so are not strictly necessary to track.)
+But these have no effect on simulations, and so are often not strictly necessary to track.)
 
 ## Examples
 
