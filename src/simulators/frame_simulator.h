@@ -38,7 +38,7 @@ struct FrameSimulator {
     simd_bit_table z_table;       // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
     MeasureRecordBatch m_record;  // The measurement record.
     simd_bits rng_buffer;         // Workspace used when sampling error processes.
-    simd_bits tmp_storage;        // Workspace used when sampling error processes.
+    simd_bits tmp_storage;        // Workspace used when sampling compound error processes.
     simd_bits last_correlated_error_occurred;  // correlated error flag for each instance.
     std::mt19937_64 &rng;                      // Random number generator used for generating entropy.
 
