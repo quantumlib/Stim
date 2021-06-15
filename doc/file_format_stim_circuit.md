@@ -10,6 +10,7 @@ and annotations for tasks such as detection event sampling and drawing the circu
 - [Syntax](#Syntax)
 - [Semantics](#Semantics)
     - [Instruction Types](#Instruction-Types)
+        - [Supported Gates](gates.md)
     - [Broadcasting](#Broadcasting)
     - [State Space](#State-Space)
     - [The Measurement Record](#The-Measurement-Record)
@@ -36,8 +37,8 @@ Also, each line may be indented with spacing characters and may end with a comme
 An *instruction* is composed of a name,
 then an optional comma-separated list of arguments inside of parentheses,
 then a list of space-separated targets.
-For example, the line `P_ERROR_1(0.1, 0.2, 0.3) 5 6` is an instruction with a name (`P_ERROR_1`),
-three arguments (`0.1`, `0.2`, and `0.3`), and two targets (`5` and `6`).
+For example, the line `X_ERROR(0.1) 5 6` is an instruction with a name (`X_ERROR`),
+one argument (`0.1`), and two targets (`5` and `6`).
 
 ```
 <INSTRUCTION> ::= <NAME> <PARENS_ARGUMENTS>? <TARGETS>
@@ -82,7 +83,7 @@ A stim circuit file is executed by executing each of its instructions and blocks
 ### Instruction Types
 
 For a complete list of instructions supported by stim and their individual meanings,
-see the [supported gates reference](README_GATES.md).
+see the [gates reference](gates.md).
 
 Generally speaking, the instructions that can appear in a stim circuit file can be divided up into three groups:
 

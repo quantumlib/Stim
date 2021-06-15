@@ -29,13 +29,15 @@ all operated on simultaneously by individual CPU instructions.
 
 # Data Formats
 
-Circuits can be specified using the [stim circuit file format (.stim)](README_FILE_FORMAT_CIRCUIT.md).
+Circuits can be input using the [stim circuit file format (.stim)](doc/file_format_stim_circuit.md).
 
-Error models can be specified using the [detector error model file format (.dem)](README_FILE_FORMAT_DETECTOR_ERROR_MODEL.md).
+Samples can be output using [a variety of text and binary formats](doc/usage_command_line.md#out_format).
+
+Error models can be output using the [detector error model file format (.dem)](doc/file_format_dem_detector_error_model.md).
 
 # Supported Gates
 
-See the [gate documentation](README_GATES.md).
+See the [gate documentation](doc/gates.md).
 
 # Usage (python)
 
@@ -43,8 +45,8 @@ See the [python documentation](glue/python/README.md).
 
 # Usage (command line)
 
-See the [command line documentation](README_COMMAND_LINE_USAGE.md).
+See the [command line documentation](doc/usage_command_line.md).
 
-# Building
+# Building the code
 
 See the [developer documentation](dev/README.md).

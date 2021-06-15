@@ -318,35 +318,7 @@ std::map<std::string, std::string> stim_internal::generate_gate_help_markdown() 
     result[std::string("GATES")] = all.str();
 
     all.str("");
-    all << R"MARKDOWN(# Gates in Stim
-
-## General Facts
-
-- **Qubit Targets**:
-    Qubits are referred to by non-negative integers.
-    There is a qubit `0`, a qubit `1`, and so forth (up to an implemented-defined maximum of `16777215`).
-    For example, the line `X 2` says to apply an `X` gate to qubit `2`.
-    Beware that touching qubit `999999` implicitly tells simulators to resize their internal state to accommodate a million qubits.
-
-- **Measurement Record Targets**:
-    Measurement results are referred to by `rec[-#]` arguments, where the index within
-    the square brackets uses python-style negative indices to refer to the end of the
-    growing measurement record.
-    For example, `CNOT rec[-1] 3` says "toggle qubit `3` if the most recent measurement returned `True`
-    and `CZ 1 rec[-2]` means "phase flip qubit `1` if the second most recent measurement returned `True`.
-    There is implementation-defined maximum lookback of `-16777215` when accessing the measurement record.
-    Non-negative indices are not permitted.
-
-    (The reason the measurement record indexing is relative to the present is so that it can be used in loops.)
-
-- **Broadcasting**:
-    Most gates support broadcasting over multiple targets.
-    For example, `H 0 1 2` will broadcast a Hadamard gate over qubits `0`, `1`, and `2`.
-    Two qubit gates can also broadcast, and do so over aligned pair of targets.
-    For example, `CNOT 0 1 2 3` will apply `CNOT 0 1` and then `CNOT 2 3`.
-    Broadcasting is always evaluated in left-to-right order.
-
-## Supported Gates
+    all << R"MARKDOWN(# Gates supported by Stim
 
 )MARKDOWN";
     for (const auto &name : gate_names) {
