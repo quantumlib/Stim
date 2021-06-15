@@ -29,46 +29,31 @@ namespace stim_internal {
 
 enum DemInstructionType : uint8_t {
     DEM_ERROR,
-    DEM_REDUCIBLE_ERROR,
-    DEM_TICK,
+    DEM_SHIFT_DETECTORS,
+    DEM_DETECTOR,
+    DEM_LOGICAL_OBSERVABLE,
     DEM_REPEAT_BLOCK,
 };
 
-struct DemRelValue {
+struct DemTarget {
     uint64_t data;
-    uint64_t raw_value() const;
-    uint64_t absolute_value(uint64_t t) const;
-    bool is_relative() const;
-    bool is_unspecified() const;
-    bool is_absolute() const;
-    static DemRelValue unspecified();
-    static DemRelValue relative(uint64_t v);
-    static DemRelValue absolute(uint64_t v);
-    bool operator==(const DemRelValue &other) const;
-    bool operator!=(const DemRelValue &other) const;
-    std::string str() const;
-};
 
-struct DemRelativeSymptom {
-    DemRelValue x;
-    DemRelValue y;
-    DemRelValue t;
-
-    static DemRelativeSymptom observable_id(uint32_t id);
-    static DemRelativeSymptom detector_id(DemRelValue x, DemRelValue y, DemRelValue t);
-    static DemRelativeSymptom separator();
+    static DemTarget observable_id(uint32_t id);
+    static DemTarget relative_detector_id(uint64_t id);
+    static DemTarget separator();
+    uint64_t raw_id() const;
     bool is_observable_id() const;
     bool is_separator() const;
-    bool is_detector_id() const;
+    bool is_relative_detector_id() const;
 
-    bool operator==(const DemRelativeSymptom &other) const;
-    bool operator!=(const DemRelativeSymptom &other) const;
+    bool operator==(const DemTarget &other) const;
+    bool operator!=(const DemTarget &other) const;
     std::string str() const;
 };
 
 struct DemInstruction {
-    double probability;
-    PointerRange<DemRelativeSymptom> target_data;
+    ConstPointerRange<double> arg_data;
+    ConstPointerRange<DemTarget> target_data;
     DemInstructionType type;
 
     bool operator==(const DemInstruction &other) const;
@@ -78,7 +63,8 @@ struct DemInstruction {
 };
 
 struct DetectorErrorModel {
-    MonotonicBuffer<DemRelativeSymptom> symptom_buf;
+    MonotonicBuffer<double> arg_buf;
+    MonotonicBuffer<DemTarget> target_buf;
     std::vector<DemInstruction> instructions;
     std::vector<DetectorErrorModel> blocks;
 
@@ -96,11 +82,10 @@ struct DetectorErrorModel {
     /// Move assignment.
     DetectorErrorModel &operator=(DetectorErrorModel &&other) noexcept;
 
-    static DetectorErrorModel from_circuit(const Circuit &circuit);
-
-    void append_error(double probability, ConstPointerRange<DemRelativeSymptom> data);
-    void append_reducible_error(double probability, ConstPointerRange<DemRelativeSymptom> data);
-    void append_tick(uint64_t tick_count);
+    void append_error_instruction(double probability, ConstPointerRange<DemTarget> targets);
+    void append_shift_detectors_instruction(ConstPointerRange<double> coord_shift, uint64_t detector_shift);
+    void append_detector_instruction(ConstPointerRange<double> coords, DemTarget target);
+    void append_logical_observable_instruction(DemTarget target);
     void append_repeat_block(uint64_t repeat_count, DetectorErrorModel &&body);
     void append_repeat_block(uint64_t repeat_count, const DetectorErrorModel &body);
     void append_from_text(const char *text);
@@ -115,9 +100,8 @@ struct DetectorErrorModel {
 
 }  // namespace stim_internal
 
-std::ostream &operator<<(std::ostream &out, const stim_internal::DemRelValue &v);
 std::ostream &operator<<(std::ostream &out, const stim_internal::DetectorErrorModel &v);
-std::ostream &operator<<(std::ostream &out, const stim_internal::DemRelativeSymptom &v);
+std::ostream &operator<<(std::ostream &out, const stim_internal::DemTarget &v);
 std::ostream &operator<<(std::ostream &out, const stim_internal::DemInstruction &v);
 
 #endif

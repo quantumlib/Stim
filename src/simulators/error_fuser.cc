@@ -788,7 +788,7 @@ void FusedErrorRepeatBlock::append_to_detector_error_model(
     size_t outer_ticks = outer_ticks_per_iteration();
     if (outer_ticks) {
         tick_count += outer_ticks;
-        body.append_tick(outer_ticks);
+        body.append_shift_detectors_instruction({}, outer_ticks);
     }
     tick_count += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
 
@@ -825,29 +825,20 @@ void FusedError::append_to_detector_error_model(
         return;
     }
 
-    std::vector<DemRelativeSymptom> symptoms;
-    bool is_reducible = false;
+    std::vector<DemTarget> symptoms;
     for (size_t k = 0; k < flipped.size(); k++) {
         auto e = flipped[k];
         if (e == COMPOSITE_ERROR_SYGIL) {
-            is_reducible = true;
             if (k != 0 && k != flipped.size() - 1) {
-                symptoms.push_back(DemRelativeSymptom::separator());
+                symptoms.push_back(DemTarget::separator());
             }
         } else if (is_encoded_detector_id(e)) {
             auto abs_id = e + num_found_detectors - LAST_DETECTOR_ID - 1;
             auto rel_id = abs_id - tick_count - local_time_shift;
-            symptoms.push_back(DemRelativeSymptom::detector_id(
-                DemRelValue::unspecified(),
-                DemRelValue::unspecified(),
-                top_level ? DemRelValue::absolute(abs_id) : DemRelValue::relative(rel_id)));
+            symptoms.push_back(DemTarget::relative_detector_id(rel_id));
         } else {
-            symptoms.push_back(DemRelativeSymptom::observable_id(e - FIRST_OBSERVABLE_ID));
+            symptoms.push_back(DemTarget::observable_id(e - FIRST_OBSERVABLE_ID));
         }
     }
-    if (is_reducible) {
-        out.append_reducible_error(probability, symptoms);
-    } else {
-        out.append_error(probability, symptoms);
-    }
+    out.append_error_instruction(probability, symptoms);
 }

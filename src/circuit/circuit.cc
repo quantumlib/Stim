@@ -308,7 +308,7 @@ inline const Gate &read_gate_name(int &c, SOURCE read_char) {
 template <typename SOURCE>
 uint32_t read_uint24_t(int &c, SOURCE read_char) {
     if (!(c >= '0' && c <= '9')) {
-        throw std::invalid_argument("Expected a digit but got " + std::string(1, c));
+        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
     }
     uint32_t result = 0;
     do {
@@ -325,7 +325,7 @@ uint32_t read_uint24_t(int &c, SOURCE read_char) {
 template <typename SOURCE>
 uint64_t read_uint63_t(int &c, SOURCE read_char) {
     if (!(c >= '0' && c <= '9')) {
-        throw std::invalid_argument("Expected a digit but got " + std::string(1, c));
+        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
     }
     uint64_t result = 0;
     do {

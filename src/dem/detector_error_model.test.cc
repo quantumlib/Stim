@@ -25,10 +25,10 @@ TEST(detector_error_model, init_equality) {
     DetectorErrorModel model2;
     ASSERT_TRUE(model1 == model2);
     ASSERT_TRUE(!(model1 != model2));
-    model1.append_tick(5);
+    model1.append_shift_detectors_instruction({}, 5);
     ASSERT_TRUE(model1 != model2);
     ASSERT_TRUE(!(model1 == model2));
-    model2.append_tick(4);
+    model2.append_shift_detectors_instruction({}, 4);
     ASSERT_NE(model1, model2);
     model1.clear();
     model2.clear();
@@ -38,71 +38,151 @@ TEST(detector_error_model, init_equality) {
     model2.append_repeat_block(4, {});
     ASSERT_NE(model1, model2);
 
-    model1.append_error(5, {});
+    model1.append_error_instruction(0.2, {});
     model2.append_repeat_block(4, {});
     ASSERT_NE(model1, model2);
 }
 
-TEST(detector_error_model, build) {
+TEST(detector_error_model, append_shift_detectors_instruction) {
     DetectorErrorModel model;
     ASSERT_EQ(model.instructions.size(), 0);
     ASSERT_EQ(model.blocks.size(), 0);
-    model.append_tick(5);
+
+    std::vector<double> arg_data{1.5, 2.5};
+    ConstPointerRange<double> arg_data_ref = arg_data;
+    model.append_shift_detectors_instruction(arg_data_ref, 5);
     ASSERT_EQ(model.instructions.size(), 1);
-    ASSERT_EQ(model.instructions[0].type, DEM_TICK);
+    ASSERT_EQ(model.instructions[0].type, DEM_SHIFT_DETECTORS);
     ASSERT_EQ(model.instructions[0].target_data.size(), 1);
-    ASSERT_EQ(model.instructions[0].target_data[0].t.data, 5);
+    ASSERT_EQ(model.instructions[0].target_data[0].data, 5);
+    ASSERT_EQ(model.instructions[0].arg_data, arg_data_ref);
+    ASSERT_EQ(model.blocks.size(), 0);
+}
+
+TEST(detector_error_model, append_detector_instruction) {
+    DetectorErrorModel model;
+    ASSERT_EQ(model.instructions.size(), 0);
     ASSERT_EQ(model.blocks.size(), 0);
 
-    std::vector<DemRelativeSymptom> symptoms;
-    symptoms.push_back(DemRelativeSymptom::observable_id(3));
-    symptoms.push_back(DemRelativeSymptom::detector_id(
-        DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(4)));
-    model.append_error(0.25, symptoms);
-    ASSERT_EQ(model.instructions.size(), 2);
+    std::vector<double> arg_data{1.5, 2.5};
+    ConstPointerRange<double> arg_data_ref = arg_data;
+    model.append_detector_instruction(arg_data_ref, DemTarget::relative_detector_id(5));
+    ASSERT_EQ(model.instructions.size(), 1);
+    ASSERT_EQ(model.instructions[0].type, DEM_DETECTOR);
+    ASSERT_EQ(model.instructions[0].target_data.size(), 1);
+    ASSERT_EQ(model.instructions[0].target_data[0], DemTarget::relative_detector_id(5));
+    ASSERT_EQ(model.instructions[0].arg_data, arg_data_ref);
     ASSERT_EQ(model.blocks.size(), 0);
-    ASSERT_EQ(model.instructions[1].type, DEM_ERROR);
-    ASSERT_EQ(model.instructions[1].target_data, (PointerRange<DemRelativeSymptom>)symptoms);
-    ASSERT_EQ(model.instructions[1].probability, 0.25);
+
+    ASSERT_THROW({
+        model.append_detector_instruction({}, DemTarget::separator());
+    }, std::invalid_argument);
+    ASSERT_THROW({
+        model.append_detector_instruction({}, DemTarget::observable_id(4));
+    }, std::invalid_argument);
+    model.append_detector_instruction({}, DemTarget::relative_detector_id(4));
+}
+
+TEST(detector_error_model, append_logical_observable_instruction) {
+    DetectorErrorModel model;
+    ASSERT_EQ(model.instructions.size(), 0);
+    ASSERT_EQ(model.blocks.size(), 0);
+
+    model.append_logical_observable_instruction(DemTarget::observable_id(5));
+    ASSERT_EQ(model.instructions.size(), 1);
+    ASSERT_EQ(model.instructions[0].type, DEM_LOGICAL_OBSERVABLE);
+    ASSERT_EQ(model.instructions[0].target_data.size(), 1);
+    ASSERT_EQ(model.instructions[0].target_data[0], DemTarget::observable_id(5));
+    ASSERT_EQ(model.instructions[0].arg_data.size(), 0);
+    ASSERT_EQ(model.blocks.size(), 0);
+
+    ASSERT_THROW({
+        model.append_logical_observable_instruction(DemTarget::separator());
+    }, std::invalid_argument);
+    ASSERT_THROW({
+        model.append_logical_observable_instruction(DemTarget::relative_detector_id(4));
+    }, std::invalid_argument);
+    model.append_logical_observable_instruction(DemTarget::observable_id(4));
+}
+
+TEST(detector_error_model, append_error_instruction) {
+    DetectorErrorModel model;
+    std::vector<DemTarget> symptoms;
+    symptoms.push_back(DemTarget::observable_id(3));
+    symptoms.push_back(DemTarget::relative_detector_id(4));
+    model.append_error_instruction(0.25, symptoms);
+    ASSERT_EQ(model.instructions.size(), 1);
+    ASSERT_EQ(model.blocks.size(), 0);
+    ASSERT_EQ(model.instructions[0].type, DEM_ERROR);
+    ASSERT_EQ(model.instructions[0].target_data, (PointerRange<DemTarget>)symptoms);
+    ASSERT_EQ(model.instructions[0].arg_data.size(), 1);
+    ASSERT_EQ(model.instructions[0].arg_data[0], 0.25);
 
     model.clear();
     ASSERT_EQ(model.instructions.size(), 0);
 
-    symptoms.push_back(DemRelativeSymptom::separator());
-    symptoms.push_back(DemRelativeSymptom::observable_id(4));
-    ASSERT_THROW({ model.append_error(0.125, symptoms); }, std::invalid_argument);
+    symptoms.push_back(DemTarget::separator());
+    symptoms.push_back(DemTarget::observable_id(4));
 
-    model.append_reducible_error(0.125, symptoms);
+    model.append_error_instruction(0.125, symptoms);
     ASSERT_EQ(model.instructions.size(), 1);
     ASSERT_EQ(model.blocks.size(), 0);
-    ASSERT_EQ(model.instructions[0].type, DEM_REDUCIBLE_ERROR);
-    ASSERT_EQ(model.instructions[0].target_data, (PointerRange<DemRelativeSymptom>)symptoms);
-    ASSERT_EQ(model.instructions[0].probability, 0.125);
+    ASSERT_EQ(model.instructions[0].type, DEM_ERROR);
+    ASSERT_EQ(model.instructions[0].target_data, (PointerRange<DemTarget>)symptoms);
+    ASSERT_EQ(model.instructions[0].arg_data.size(), 1);
+    ASSERT_EQ(model.instructions[0].arg_data[0], 0.125);
 
-    model.clear();
+    ASSERT_THROW({
+        model.append_error_instruction(1.5, symptoms);
+    }, std::invalid_argument);
+    ASSERT_THROW({
+        model.append_error_instruction(-0.5, symptoms);
+    }, std::invalid_argument);
 
+    symptoms = {DemTarget::separator()};
+    ASSERT_THROW({
+        model.append_error_instruction(0.25, symptoms);
+    }, std::invalid_argument);
+    symptoms = {DemTarget::separator(), DemTarget::observable_id(0)};
+    ASSERT_THROW({
+        model.append_error_instruction(0.25, symptoms);
+    }, std::invalid_argument);
+    symptoms = {DemTarget::observable_id(0), DemTarget::separator()};
+    ASSERT_THROW({
+        model.append_error_instruction(0.25, symptoms);
+    }, std::invalid_argument);
+    symptoms = {DemTarget::observable_id(0), DemTarget::separator(), DemTarget::separator(), DemTarget::relative_detector_id(4)};
+    ASSERT_THROW({
+        model.append_error_instruction(0.25, symptoms);
+    }, std::invalid_argument);
+    symptoms = {DemTarget::observable_id(0), DemTarget::separator(), DemTarget::relative_detector_id(4)};
+    model.append_error_instruction(0.25, symptoms);
+}
+
+TEST(detector_error_model, append_block) {
+    DetectorErrorModel model;
     DetectorErrorModel block;
-    block.append_tick(3);
+    block.append_shift_detectors_instruction({}, 3);
     DetectorErrorModel block2 = block;
 
     model.append_repeat_block(5, block);
-    block.append_tick(4);
+    block.append_shift_detectors_instruction({}, 4);
     model.append_repeat_block(6, std::move(block));
     model.append_repeat_block(20, block2);
     ASSERT_EQ(model.instructions.size(), 3);
     ASSERT_EQ(model.blocks.size(), 3);
     ASSERT_EQ(model.instructions[0].type, DEM_REPEAT_BLOCK);
-    ASSERT_EQ(model.instructions[0].target_data[0].t.data, 5);
-    ASSERT_EQ(model.instructions[0].target_data[0].x.data, 0);
+    ASSERT_EQ(model.instructions[0].target_data[0].data, 5);
+    ASSERT_EQ(model.instructions[0].target_data[1].data, 0);
     ASSERT_EQ(model.instructions[1].type, DEM_REPEAT_BLOCK);
-    ASSERT_EQ(model.instructions[1].target_data[0].t.data, 6);
-    ASSERT_EQ(model.instructions[1].target_data[0].x.data, 1);
+    ASSERT_EQ(model.instructions[1].target_data[0].data, 6);
+    ASSERT_EQ(model.instructions[1].target_data[1].data, 1);
     ASSERT_EQ(model.instructions[2].type, DEM_REPEAT_BLOCK);
-    ASSERT_EQ(model.instructions[2].target_data[0].t.data, 20);
-    ASSERT_EQ(model.instructions[2].target_data[0].x.data, 2);
+    ASSERT_EQ(model.instructions[2].target_data[0].data, 20);
+    ASSERT_EQ(model.instructions[2].target_data[1].data, 2);
     ASSERT_EQ(model.blocks[0], block2);
     ASSERT_EQ(model.blocks[2], block2);
-    block2.append_tick(4);
+    block2.append_shift_detectors_instruction({}, 4);
     ASSERT_EQ(model.blocks[1], block2);
 }
 
@@ -110,11 +190,14 @@ TEST(detector_error_model, round_trip_str) {
     const char *t = R"MODEL(error(0.125) D0
 repeat 100 {
     repeat 200 {
-        reducible_error(0.25) D0 D1+t,5 L0 ^ D2
-        tick 10
+        error(0.25) D0 D1 L0 ^ D2
+        shift_detectors(1.5, 3) 10
+        detector(0.5) D0
+        detector D1
     }
-    error(0.375) D0 D0,1,2
-    tick 20
+    error(0.375) D0 D1
+    shift_detectors 20
+    logical_observable L0
 }
 )MODEL";
     ASSERT_EQ(DetectorErrorModel(t).str(), std::string(t));
@@ -124,62 +207,43 @@ TEST(detector_error_model, parse) {
     DetectorErrorModel expected;
     ASSERT_EQ(DetectorErrorModel(""), expected);
 
-    expected.append_error(
+    expected.append_error_instruction(
         0.125,
-        (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(
-            DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(0))}));
+        (std::vector<DemTarget>{DemTarget::relative_detector_id(0)}));
     ASSERT_EQ(
         DetectorErrorModel(R"MODEL(
         error(0.125) D0
     )MODEL"),
         expected);
 
-    expected.append_error(
+    expected.append_error_instruction(
         0.125,
-        (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(
-            DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::relative(0))}));
+        (std::vector<DemTarget>{DemTarget::relative_detector_id(5)}));
     ASSERT_EQ(
         DetectorErrorModel(R"MODEL(
         error(0.125) D0
-        error(0.125) D0+t
+        error(0.125) D5
     )MODEL"),
         expected);
 
-    expected.append_error(
-        0.125,
-        (std::vector<DemRelativeSymptom>{DemRelativeSymptom::detector_id(
-            DemRelValue::absolute(1), DemRelValue::absolute(2), DemRelValue::relative(3))}));
-    ASSERT_EQ(
-        DetectorErrorModel(R"MODEL(
-        error(0.125) D0
-        error(0.125) D0+t
-        error(0.125) D1,2,3+t
-    )MODEL"),
-        expected);
-
-    expected.append_reducible_error(
+    expected.append_error_instruction(
         0.25,
-        (std::vector<DemRelativeSymptom>{
-            DemRelativeSymptom::observable_id(0),
-            DemRelativeSymptom::separator(),
-            DemRelativeSymptom::observable_id(2)}));
+        (std::vector<DemTarget>{DemTarget::relative_detector_id(5), DemTarget::separator(), DemTarget::observable_id(4)}));
     ASSERT_EQ(
         DetectorErrorModel(R"MODEL(
         error(0.125) D0
-        error(0.125) D0+t
-        error(0.125) D1,2,3+t
-        reducible_error(0.25) L0 ^ L2
+        error(0.125) D5
+        error(0.25) D5 ^ L4
     )MODEL"),
         expected);
 
-    expected.append_tick(60);
+    expected.append_shift_detectors_instruction(std::vector<double>{1.5, 2}, 60);
     ASSERT_EQ(
         DetectorErrorModel(R"MODEL(
         error(0.125) D0
-        error(0.125) D0+t
-        error(0.125) D1,2,3+t
-        reducible_error(0.25) L0 ^ L2
-        tick 60
+        error(0.125) D5
+        error(0.25) D5 ^ L4
+        shift_detectors(1.5, 2) 60
     )MODEL"),
         expected);
 
@@ -187,16 +251,14 @@ TEST(detector_error_model, parse) {
     ASSERT_EQ(
         DetectorErrorModel(R"MODEL(
         error(0.125) D0
-        error(0.125) D0+t
-        error(0.125) D1,2,3+t
-        reducible_error(0.25) L0 ^ L2
-        tick 60
+        error(0.125) D5
+        error(0.25) D5 ^ L4
+        shift_detectors(1.5, 2) 60
         repeat 100 {
             error(0.125) D0
-            error(0.125) D0+t
-            error(0.125) D1,2,3+t
-            reducible_error(0.25) L0 ^ L2
-            tick 60
+            error(0.125) D5
+            error(0.25) D5 ^ L4
+            shift_detectors(1.5, 2) 60
         }
     )MODEL"),
         expected);
@@ -207,11 +269,11 @@ TEST(detector_error_model, movement) {
         error(0.2) D0
         REPEAT 100 {
             REPEAT 200 {
-                reducible_error(0.1) D0 D1+t,5 L0 ^ D2
-                TICK 10
+                error(0.1) D0 D1 L0 ^ D2
+                shift_detectors 10
             }
-            error(0.1) D0 D0,1,2
-            TICK 20
+            error(0.1) D0 D2
+            shift_detectors 20
         }
     )MODEL";
     DetectorErrorModel d1(t);
@@ -232,71 +294,21 @@ TEST(detector_error_model, movement) {
     ASSERT_EQ(d1, DetectorErrorModel(t));
 }
 
-TEST(dem_rel_value, general) {
-    auto a = DemRelValue::absolute(3);
-    auto u = DemRelValue::unspecified();
-    auto r = DemRelValue::relative(3);
+TEST(dem_target, general) {
+    DemTarget d = DemTarget::relative_detector_id(3);
+    ASSERT_TRUE(d == DemTarget::relative_detector_id(3));
+    ASSERT_TRUE(!(d != DemTarget::relative_detector_id(3)));
+    ASSERT_TRUE(!(d == DemTarget::relative_detector_id(4)));
+    ASSERT_TRUE(d != DemTarget::relative_detector_id(4));
+    ASSERT_EQ(d, DemTarget::relative_detector_id(3));
+    ASSERT_NE(d, DemTarget::observable_id(5));
+    ASSERT_NE(d, DemTarget::separator());
 
-    ASSERT_TRUE(!a.is_unspecified());
-    ASSERT_TRUE(u.is_unspecified());
-    ASSERT_TRUE(!r.is_unspecified());
-
-    ASSERT_TRUE(!a.is_relative());
-    ASSERT_TRUE(!u.is_relative());
-    ASSERT_TRUE(r.is_relative());
-
-    ASSERT_TRUE(a.is_absolute());
-    ASSERT_TRUE(!u.is_absolute());
-    ASSERT_TRUE(!r.is_absolute());
-
-    ASSERT_EQ(u.absolute_value(0), 0);
-    ASSERT_EQ(u.absolute_value(20), 0);
-    ASSERT_EQ(a.absolute_value(0), 3);
-    ASSERT_EQ(a.absolute_value(20), 3);
-    ASSERT_EQ(r.absolute_value(0), 3);
-    ASSERT_EQ(r.absolute_value(20), 23);
-
-    ASSERT_TRUE(a == DemRelValue::absolute(3));
-    ASSERT_TRUE(!(a != DemRelValue::absolute(3)));
-    ASSERT_TRUE(!(a == DemRelValue::absolute(4)));
-    ASSERT_TRUE(a != DemRelValue::absolute(4));
-
-    ASSERT_EQ(u, DemRelValue::unspecified());
-    ASSERT_EQ(a, DemRelValue::absolute(3));
-    ASSERT_EQ(r, DemRelValue::relative(3));
-    ASSERT_NE(u, a);
-    ASSERT_NE(r, a);
-    ASSERT_NE(u, r);
-
-    ASSERT_EQ(u.raw_value(), 0);
-    ASSERT_EQ(a.raw_value(), 3);
-    ASSERT_EQ(r.raw_value(), 3);
-
-    ASSERT_EQ(a.str(), "3");
-    ASSERT_EQ(r.str(), "3+t");
-    ASSERT_EQ(u.str(), "unspecified");
-}
-
-TEST(dem_relative_symptom, general) {
-    auto u = DemRelValue::unspecified();
-    DemRelativeSymptom d = DemRelativeSymptom::detector_id(u, u, DemRelValue::relative(3));
-    ASSERT_TRUE(d == DemRelativeSymptom::detector_id(u, u, DemRelValue::relative(3)));
-    ASSERT_TRUE(!(d != DemRelativeSymptom::detector_id(u, u, DemRelValue::relative(3))));
-    ASSERT_TRUE(!(d == DemRelativeSymptom::detector_id(u, u, DemRelValue::relative(4))));
-    ASSERT_TRUE(d != DemRelativeSymptom::detector_id(u, u, DemRelValue::relative(4)));
-    ASSERT_EQ(d, DemRelativeSymptom::detector_id(u, u, DemRelValue::relative(3)));
-    ASSERT_NE(d, DemRelativeSymptom::detector_id(u, u, u));
-    ASSERT_NE(d, DemRelativeSymptom::detector_id(u, DemRelValue::relative(3), DemRelValue::relative(3)));
-    ASSERT_NE(d, DemRelativeSymptom::detector_id(DemRelValue::relative(3), u, DemRelValue::relative(3)));
-    ASSERT_NE(d, DemRelativeSymptom::observable_id(5));
-    ASSERT_NE(d, DemRelativeSymptom::separator());
-
-    DemRelativeSymptom d3 =
-        DemRelativeSymptom::detector_id(DemRelValue::absolute(4), DemRelValue::absolute(6), DemRelValue::relative(3));
-    DemRelativeSymptom s = DemRelativeSymptom::separator();
-    DemRelativeSymptom o = DemRelativeSymptom::observable_id(3);
-    ASSERT_EQ(d.str(), "D3+t");
-    ASSERT_EQ(d3.str(), "D4,6,3+t");
+    DemTarget d3 = DemTarget::relative_detector_id(72);
+    DemTarget s = DemTarget::separator();
+    DemTarget o = DemTarget::observable_id(3);
+    ASSERT_EQ(d.str(), "D3");
+    ASSERT_EQ(d3.str(), "D72");
     ASSERT_EQ(o.str(), "L3");
     ASSERT_EQ(s.str(), "^");
 
@@ -308,45 +320,42 @@ TEST(dem_relative_symptom, general) {
     ASSERT_TRUE(!d3.is_observable_id());
     ASSERT_TRUE(!s.is_observable_id());
 
-    ASSERT_TRUE(!o.is_detector_id());
-    ASSERT_TRUE(d3.is_detector_id());
-    ASSERT_TRUE(!s.is_detector_id());
+    ASSERT_TRUE(!o.is_relative_detector_id());
+    ASSERT_TRUE(d3.is_relative_detector_id());
+    ASSERT_TRUE(!s.is_relative_detector_id());
 }
 
 TEST(dem_instruction, general) {
-    std::vector<DemRelativeSymptom> d1;
-    d1.push_back(DemRelativeSymptom::observable_id(4));
-    d1.push_back(DemRelativeSymptom::detector_id(
-        DemRelValue::unspecified(), DemRelValue::unspecified(), DemRelValue::absolute(3)));
-    std::vector<DemRelativeSymptom> d2;
-    d2.push_back(DemRelativeSymptom::observable_id(4));
-    DemInstruction i1{0.125, d1, DEM_ERROR};
-    DemInstruction i1a{0.125, d1, DEM_ERROR};
-    DemInstruction i2{0.125, d2, DEM_ERROR};
+    std::vector<DemTarget> d1;
+    d1.push_back(DemTarget::observable_id(4));
+    d1.push_back(DemTarget::relative_detector_id(3));
+    std::vector<DemTarget> d2;
+    d2.push_back(DemTarget::observable_id(4));
+    std::vector<double>p125{0.125};
+    std::vector<double>p25{0.25};
+    std::vector<double>p126{0.126};
+    DemInstruction i1{p125, d1, DEM_ERROR};
+    DemInstruction i1a{p125, d1, DEM_ERROR};
+    DemInstruction i2{p125, d2, DEM_ERROR};
     ASSERT_TRUE(i1 == i1a);
     ASSERT_TRUE(!(i1 != i1a));
     ASSERT_TRUE(!(i2 == i1a));
     ASSERT_TRUE(i2 != i1a);
 
-    ASSERT_EQ(i1, (DemInstruction{0.125, d1, DEM_ERROR}));
-    ASSERT_NE(i1, (DemInstruction{0.125, d2, DEM_ERROR}));
-    ASSERT_NE(i1, (DemInstruction{0.25, d1, DEM_ERROR}));
-    ASSERT_NE(i1, (DemInstruction{0.125, d1, DEM_REDUCIBLE_ERROR}));
+    ASSERT_EQ(i1, (DemInstruction{p125, d1, DEM_ERROR}));
+    ASSERT_NE(i1, (DemInstruction{p125, d2, DEM_ERROR}));
+    ASSERT_NE(i1, (DemInstruction{p25, d1, DEM_ERROR}));
+    ASSERT_NE(((DemInstruction{{}, {}, DEM_DETECTOR})), (DemInstruction{{}, {}, DEM_LOGICAL_OBSERVABLE}));
 
-    ASSERT_TRUE(i1.approx_equals(DemInstruction{0.125, d1, DEM_ERROR}, 0));
-    ASSERT_TRUE(!i1.approx_equals(DemInstruction{0.126, d1, DEM_ERROR}, 0));
-    ASSERT_TRUE(i1.approx_equals(DemInstruction{0.126, d1, DEM_ERROR}, 0.01));
-    ASSERT_TRUE(!i1.approx_equals(DemInstruction{0.125, d1, DEM_REDUCIBLE_ERROR}, 9999));
-    ASSERT_TRUE(!i1.approx_equals(DemInstruction{0.125, d2, DEM_REDUCIBLE_ERROR}, 9999));
+    ASSERT_TRUE(i1.approx_equals(DemInstruction{p125, d1, DEM_ERROR}, 0));
+    ASSERT_TRUE(!i1.approx_equals(DemInstruction{p126, d1, DEM_ERROR}, 0));
+    ASSERT_TRUE(i1.approx_equals(DemInstruction{p126, d1, DEM_ERROR}, 0.01));
+    ASSERT_TRUE(!i1.approx_equals(DemInstruction{p125, d2, DEM_ERROR}, 9999));
 
     ASSERT_EQ(i1.str(), "error(0.125) L4 D3");
     ASSERT_EQ(i2.str(), "error(0.125) L4");
 
-    d1.push_back(DemRelativeSymptom::separator());
-    d1.push_back(DemRelativeSymptom::observable_id(11));
-    ASSERT_EQ((DemInstruction{0.25, d1, DEM_REDUCIBLE_ERROR}).str(), "reducible_error(0.25) L4 D3 ^ L11");
-    d2.clear();
-    d2.push_back({{4}, {5}, {6}});
-    ASSERT_EQ((DemInstruction{0, d2, DEM_TICK}).str(), "tick 6");
-    ASSERT_EQ((DemInstruction{0, d2, DEM_REPEAT_BLOCK}).str(), "repeat 6 { ... }");
+    d1.push_back(DemTarget::separator());
+    d1.push_back(DemTarget::observable_id(11));
+    ASSERT_EQ((DemInstruction{p25, d1, DEM_ERROR}).str(), "error(0.25) L4 D3 ^ L11");
 }

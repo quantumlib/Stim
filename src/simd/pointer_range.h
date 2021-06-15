@@ -127,7 +127,7 @@ struct ConstPointerRange {
         return ptr_end;
     }
     const T &front() const {
-        return &ptr_start;
+        return *ptr_start;
     }
     const T &back() const {
         return *(ptr_end - 1);
