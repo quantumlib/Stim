@@ -99,7 +99,7 @@ struct DetectorErrorModel {
     bool approx_equals(const DetectorErrorModel &other, double atol) const;
     std::string str() const;
 
-    size_t total_detector_shift() const;
+    uint64_t total_detector_shift() const;
 
     void clear();
 };

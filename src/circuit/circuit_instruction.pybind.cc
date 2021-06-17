@@ -84,11 +84,11 @@ void pybind_circuit_instruction(pybind11::module &m) {
                 ...     X_ERROR(0.125) 5 3
                 ... ''')
                 >>> circuit[0]
-                stim.CircuitInstruction('H', [stim.GateTarget(0)], 0)
+                stim.CircuitInstruction('H', [stim.GateTarget(0)], [])
                 >>> circuit[1]
-                stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], 0)
+                stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], [])
                 >>> circuit[2]
-                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], 0.125)
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], [0.125])
         )DOC")
             .data());
 

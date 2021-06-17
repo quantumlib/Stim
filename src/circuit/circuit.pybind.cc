@@ -739,7 +739,7 @@ void pybind_circuit(pybind11::module &m) {
             }
             std::vector<double> args;
             for (const auto &e : op.target_data.args) {
-                targets.push_back(e);
+                args.push_back(e);
             }
             return pybind11::cast(CircuitInstruction(*op.gate, targets, args));
         },
