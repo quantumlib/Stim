@@ -29,14 +29,14 @@ test("circuit.copy", ({stim, assert}) => {
     `);
     let c2 = c.copy();
     assert(c.isEqualTo(c2));
-    c.append_operation("X", [0], 0);
+    c.append_operation("X", [0], []);
     assert(!c.isEqualTo(c2));
 });
 
 test("circuit.append_operation", ({stim, assert}) => {
     let c = new stim.Circuit();
-    c.append_operation("H", [0, 1], 0);
-    c.append_operation("X_ERROR", [0, 1, 2], 0.25);
+    c.append_operation("H", [0, 1], []);
+    c.append_operation("X_ERROR", [0, 1, 2], [0.25]);
     assert(c.toString().trim() === `
 H 0 1
 X_ERROR(0.25) 0 1 2

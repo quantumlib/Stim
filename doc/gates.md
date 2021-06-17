@@ -1,6 +1,4 @@
-# Gates in Stim
-
-## Supported Gates
+# Gates supported by Stim
 
 - [CNOT](#CNOT)
 - [CORRELATED_ERROR](#CORRELATED_ERROR)
@@ -30,12 +28,16 @@
 - [MY](#MY)
 - [MZ](#MZ)
 - [OBSERVABLE_INCLUDE](#OBSERVABLE_INCLUDE)
+- [PAULI_CHANNEL_1](#PAULI_CHANNEL_1)
+- [PAULI_CHANNEL_2](#PAULI_CHANNEL_2)
+- [QUBIT_COORDS](#QUBIT_COORDS)
 - [R](#R)
 - [REPEAT](#REPEAT)
 - [RX](#RX)
 - [RY](#RY)
 - [RZ](#RZ)
 - [S](#S)
+- [SHIFT_COORDS](#SHIFT_COORDS)
 - [SQRT_X](#SQRT_X)
 - [SQRT_XX](#SQRT_XX)
 - [SQRT_XX_DAG](#SQRT_XX_DAG)
@@ -1325,6 +1327,68 @@
         ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
         ```
     
+- <a name="PAULI_CHANNEL_1"></a>**`PAULI_CHANNEL_1`**
+    
+    A single qubit Pauli error channel with explicitly specified probabilities for each case.
+    
+    The gate is parameterized by 3 disjoint probabilities, one for each Pauli other than I, ordered as follows:
+    
+        X, Y, Z
+    
+    - Example:
+    
+        ```
+        # Sample errors from the distribution 10% X, 15% Y, 20% Z, 55% I.
+        # Apply independently to qubits 1, 2, 4.
+        PAULI_CHANNEL_1(0.1, 0.15, 0.2) 1 2 4
+        ```
+    
+    - Pauli Mixture:
+    
+        ```
+        1-px-py-pz: I
+        px: X
+        py: Y
+        pz: Z
+        ```
+    
+- <a name="PAULI_CHANNEL_2"></a>**`PAULI_CHANNEL_2`**
+    
+    A two qubit Pauli error channel with explicitly specified probabilities for each case.
+    
+    The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair other than II, ordered as follows:
+    
+        IX, IY, IZ, XI, XX, XY, XZ, YI, YX, YY, XZ, ZI, ZX, ZY, ZZ
+    
+    - Example:
+    
+        ```
+        # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
+        # Apply independently to qubit pairs (1,2) (5,6) (8,3)
+        PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
+        ```
+    
+    - Pauli Mixture:
+    
+        ```
+        1-pix-piy-piz-pxi-pxx-pxy-pxz-pyi-pyx-pyy-pyz-pzi-pzx-pzy-pzz: II
+        pix: IX
+        piy: IY
+        piz: IZ
+        pxi: XI
+        pxx: XX
+        pxy: XY
+        pxz: XZ
+        pyi: YI
+        pyx: YX
+        pyy: YY
+        pyz: XZ
+        pzi: ZI
+        pzx: ZX
+        pzy: ZY
+        pzz: ZZ
+        ```
+    
 - <a name="X_ERROR"></a>**`X_ERROR`**
     
     Applies a Pauli X with a given probability.
@@ -1590,7 +1654,11 @@
 - <a name="REPEAT"></a>**`REPEAT`**
     
     Repeats the instructions in its body N times.
-    The implementation-defined maximum value of N is 9223372036854775807.
+    N can be any positive integer from 1 to a quintillion (10^18).
+    
+    Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
+    For example, if a logical observable is only given measurements inside a repeat block with a repetition count of 0, it's
+    ambiguous whether the output of sampling the logical observables includes a bit for that logical observable.
     
     - Example:
     
@@ -1617,6 +1685,17 @@
     Detectors are ignored in measurement sampling mode.
     In detector sampling mode, detectors produce results (false=expected parity, true=incorrect parity detected).
     
+    Detectors can optionally be parameterized by coordinates (e.g. `DETECTOR(1,2)` has coordinates 1,2).
+    These coordinates aren't really used for anything in stim, but can act as drawing hints for other tools.
+    Note that the coordinates are relative to accumulated coordinate shifts from SHIFT_COORDS instructions.
+    Also note that putting two detectors at the same coordinate does not fuse them into one detector
+    (beware that OBSERVABLE_INCLUDE does fuse observables at the same index, which looks very similar).
+    See SHIFT_COORDS for more details on using coordinates.
+    
+    Note that detectors are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
+    measurement cannot create detection events on detectors that include that measurement, but placing an `X_ERROR(1)`
+    does create detection events.
+    
     - Example:
     
         ```
@@ -1639,6 +1718,12 @@
     In detector sampling mode, observables produce results (false=expected parity, true=incorrect parity detected).
     These results are optionally appended to the detector results, depending on simulator arguments / command line flags.
     
+    Note that observables are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
+    measurement cannot flip a logical observable that include that measurement, but placing an `X_ERROR(1)` does flip the
+    observable. This is because observables are used for detecting errors, not for verifying noiseless functionality.
+    
+    Note that observable indices are NOT shifted by SHIFT_COORDS.
+    
     - Example:
     
         ```
@@ -1646,6 +1731,59 @@
         CNOT 0 1
         M 0 1
         OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
+        ```
+    
+- <a name="QUBIT_COORDS"></a>**`QUBIT_COORDS`**
+    
+    An annotation used to indicate the intended location of a qubit.
+    The coordinates are double precision floating point numbers, relative to accumulated offsets from SHIFT_COORDS.
+    The coordinates are not in any particular order or number of dimensions.
+    As far as stim is concerned the coordinates are a list of opaque and mysterious numbers.
+    They have no effect on simulations of the circuit, but are potentially useful for tasks such as drawing the circuit.
+    
+    See also: SHIFT_COORDS.
+    
+    Note that a qubit's coordinates can be specified multiple times.
+    The intended interpretation is that the qubit is at the location of the most recent assignment.
+    For example, this could be used to indicate a simulated qubit is iteratively playing the role of many physical qubits.
+    
+    - Example:
+    
+        ```
+        QUBIT_COORDS(100, 101) 0
+        QUBIT_COORDS(100, 101) 1
+        SQRT_XX 0 1
+        MR 0 1
+        QUBIT_COORDS(2.5, 3.5) 2  # Floating point coordinates are allowed.
+        QUBIT_COORDS(2.5, 4.5) 1  # Hint that qubit 1 is now referring to a different physical location.
+        SQRT_XX 1 2
+        M 1 2
+        ```
+    
+- <a name="SHIFT_COORDS"></a>**`SHIFT_COORDS`**
+    
+    Accumulates offsets to apply to qubit coordinates and detector coordinates.
+    
+    See also: QUBIT_COORDS, DETECTOR.
+    
+    Note: when qubit/detector coordinates use fewer dimensions than SHIFT_COORDS, the offsets from the additional dimensions
+    are ignored (i.e. not specifying a dimension is different from specifying it to be 0).
+    
+    - Example:
+    
+        ```
+        SHIFT_COORDS(500.5)
+        QUBIT_COORDS(1510) 0  # Actually at 2010.5
+        SHIFT_COORDS(1500)
+        QUBIT_COORDS(11) 1    # Actually at 2011.5
+        QUBIT_COORDS(10.5) 2  # Actually at 2011.0
+        REPEAT 1000 {
+            CNOT 0 2
+            CNOT 1 2
+            MR 2
+            DETECTOR(10.5, 0) rec[-1] rec[-2]  # Actually at (2011.0, iteration_count).
+            SHIFT_COORDS(0, 1)  # Advance 2nd coordinate to track loop iterations.
+        }
         ```
     
 - <a name="TICK"></a>**`TICK`**

@@ -36,12 +36,11 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
                     "Y_Control Flow",
                     R"MARKDOWN(
 Repeats the instructions in its body N times.
-N is permitted to be 0, 1, or any other non-negative integer up to a quintillion (10^18).
+N can be any positive integer from 1 to a quintillion (10^18).
 
-Note: When a logical observable or a qubit is only mentioned in a repeat block with a repetition count of 0, the
-convention is that they are still "part of the circuit". For example, if you sample the detection events and logical
-observables of a circuit, there will be output bits for the logical observables only mentioned in zero-repetition
-repeat blocks. Those output bits are vacuous (they will always be zero) but they are still produced.
+Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
+For example, if a logical observable is only given measurements inside a repeat block with a repetition count of 0, it's
+ambiguous whether the output of sampling the logical observables includes a bit for that logical observable.
 
 - Example:
 

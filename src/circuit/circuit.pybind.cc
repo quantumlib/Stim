@@ -320,14 +320,14 @@ void pybind_circuit(pybind11::module &m) {
                 ...    X_ERROR(0.125) 1
                 ...    M 0 !1
                 ... ''').flattened_operations()
-                [('H', [0], 0.0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0.0)]
+                [('H', [0], 0.0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0)]
 
                 >>> stim.Circuit('''
                 ...    REPEAT 2 {
                 ...        H 6
                 ...    }
                 ... ''').flattened_operations()
-                [('H', [6], 0.0), ('H', [6], 0.0)]
+                [('H', [6], 0.0), ('H', [6], 0)]
         )DOC")
             .data());
 
@@ -662,9 +662,9 @@ void pybind_circuit(pybind11::module &m) {
                 DEPOLARIZE2(0.0125) 2 1 4 3 6 5
                 TICK
                 MR 1 3 5
-                DETECTOR rec[-1]
-                DETECTOR rec[-2]
-                DETECTOR rec[-3]
+                DETECTOR(1, 0) rec[-3]
+                DETECTOR(3, 0) rec[-2]
+                DETECTOR(5, 0) rec[-1]
                 REPEAT 9999 {
                     TICK
                     CX 0 1 2 3 4 5
@@ -674,14 +674,15 @@ void pybind_circuit(pybind11::module &m) {
                     DEPOLARIZE2(0.0125) 2 1 4 3 6 5
                     TICK
                     MR 1 3 5
-                    DETECTOR rec[-1] rec[-4]
-                    DETECTOR rec[-2] rec[-5]
-                    DETECTOR rec[-3] rec[-6]
+                    SHIFT_COORDS(0, 1)
+                    DETECTOR(1, 0) rec[-3] rec[-6]
+                    DETECTOR(3, 0) rec[-2] rec[-5]
+                    DETECTOR(5, 0) rec[-1] rec[-4]
                 }
                 M 0 2 4 6
-                DETECTOR rec[-1] rec[-2] rec[-5]
-                DETECTOR rec[-2] rec[-3] rec[-6]
-                DETECTOR rec[-3] rec[-4] rec[-7]
+                DETECTOR(1, 1) rec[-3] rec[-4] rec[-7]
+                DETECTOR(3, 1) rec[-2] rec[-3] rec[-6]
+                DETECTOR(5, 1) rec[-1] rec[-2] rec[-5]
                 OBSERVABLE_INCLUDE(0) rec[-1]
         )DOC")
             .data());
@@ -760,7 +761,7 @@ void pybind_circuit(pybind11::module &m) {
                 ...    DETECTOR rec[-1]
                 ... ''')
                 >>> circuit[1]
-                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], 0.5)
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], [0.5])
                 >>> circuit[2]
                 stim.CircuitRepeatBlock(100, stim.Circuit('''
                 X 0
