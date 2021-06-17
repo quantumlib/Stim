@@ -64,6 +64,7 @@ struct ErrorAnalyzer {
     ErrorAnalyzer &operator=(ErrorAnalyzer &&analyzer) noexcept = delete;
     ErrorAnalyzer &operator=(const ErrorAnalyzer &analyzer) = delete;
 
+    void SHIFT_COORDS(const OperationData &dat);
     void RX(const OperationData &dat);
     void RY(const OperationData &dat);
     void RZ(const OperationData &dat);

@@ -402,13 +402,16 @@ void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
+    flushed_reversed_model.append_detector_instruction(dat.args, id);
 }
 
 void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
+    auto id = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
-        measurement_to_detectors[scheduled_measurement_time + delay].push_back(DemTarget::observable_id((int32_t)dat.args[0]));
+        measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
+    flushed_reversed_model.append_logical_observable_instruction(id);
 }
 
 ErrorAnalyzer::ErrorAnalyzer(uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
@@ -555,8 +558,17 @@ void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
         "PAULI_CHANNEL_2 operations currently not supported in error analysis (cases may not be independent).");
 }
 
-DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_detector_id) {
+DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_detector_id, std::set<DemTarget> &seen) {
     DetectorErrorModel out;
+    auto conv_append = [&](const DemInstruction &e){
+        auto stored_targets = out.target_buf.take_copy(e.target_data);
+        auto stored_args = out.arg_buf.take_copy(e.arg_data);
+        for (auto &t : stored_targets) {
+            t.shift_if_detector_id(-(int64_t)base_detector_id);
+        }
+        out.instructions.push_back(DemInstruction{stored_args, stored_targets, e.type});
+    };
+
     for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
         const auto &e = *p;
         switch (e.type) {
@@ -564,15 +576,16 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                 base_detector_id += e.target_data[0].data;
                 out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data);
                 break;
-            case DEM_DETECTOR:
             case DEM_ERROR:
-            case DEM_LOGICAL_OBSERVABLE: {
-                    auto stored_targets = out.target_buf.take_copy(e.target_data);
-                    auto stored_args = out.arg_buf.take_copy(e.arg_data);
-                    for (auto &t : stored_targets) {
-                        t.shift_if_detector_id(-(int64_t)base_detector_id);
-                    }
-                    out.instructions.push_back(DemInstruction{stored_args, stored_targets, e.type});
+                for (auto &t : e.target_data) {
+                    seen.insert(t);
+                }
+                conv_append(e);
+                break;
+            case DEM_DETECTOR:
+            case DEM_LOGICAL_OBSERVABLE:
+                if (!e.arg_data.empty() || seen.find(e.target_data[0]) == seen.end()) {
+                    conv_append(e);
                 }
                 break;
             case DEM_REPEAT_BLOCK: {
@@ -580,7 +593,7 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                     if (repetitions) {
                         uint64_t old_base_detector_id = base_detector_id;
                         out.append_repeat_block(
-                            e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id));
+                            e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id, seen));
                         uint64_t loop_shift = base_detector_id - old_base_detector_id;
                         base_detector_id += loop_shift * (repetitions - 1);
                     }
@@ -600,7 +613,8 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
     analyzer.post_check_initialization();
     analyzer.flush();
     uint64_t t = 0;
-    return unreversed(analyzer.flushed_reversed_model, t);
+    std::set<DemTarget> seen;
+    return unreversed(analyzer.flushed_reversed_model, t, seen);
 }
 
 void ErrorAnalyzer::flush() {
@@ -749,9 +763,15 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             uint64_t lower_level_shifts = body.total_detector_shift();
             DemTarget remaining_shift = {shift_per_iteration - lower_level_shifts};
             if (remaining_shift.data > 0) {
-                auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
-                body.instructions.insert(
-                    body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
+                if (body.instructions.empty() || body.instructions.front().type != DEM_SHIFT_DETECTORS) {
+                    auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                    body.instructions.insert(
+                        body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
+                } else {
+                    remaining_shift.data += body.instructions[0].target_data[0].data;
+                    auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                    body.instructions[0].target_data = shift_targets;
+                }
             }
 
             // Append the loop to the growing error model and put the error model back in its proper place.
@@ -783,4 +803,8 @@ void ErrorAnalyzer::shift_active_detector_ids(int64_t shift) {
             v.shift_if_detector_id(shift);
         }
     }
+}
+
+void ErrorAnalyzer::SHIFT_COORDS(const OperationData &dat) {
+    flushed_reversed_model.append_shift_detectors_instruction(dat.args, 0);
 }

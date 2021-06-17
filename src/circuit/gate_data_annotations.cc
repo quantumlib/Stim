@@ -196,7 +196,7 @@ For example, this could be used to indicate a simulated qubit is iteratively pla
             ARG_COUNT_VARIABLE,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorAnalyzer::I,
+            &ErrorAnalyzer::SHIFT_COORDS,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
             []() -> ExtraGateData {
                 return {

@@ -49,201 +49,193 @@ static std::string check_matches(std::string actual, std::string pattern) {
     return "";
 }
 
-TEST(ErrorAnalyzer, convert_circuit) {
+TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
     ASSERT_EQ(
-        convert(R"circuit(
-                X_ERROR(0.25) 3
-                M 3
-                DETECTOR rec[-1]
-            )circuit"),
-        R"graph(
-error(0.25) D0
-)graph");
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            X_ERROR(0.25) 3
+            M 3
+            DETECTOR rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+        )model"));
 
     ASSERT_EQ(
-        convert(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
                 X_ERROR(0.25) 3
                 M 3
                 DETECTOR rec[-1]
                 OBSERVABLE_INCLUDE(0) rec[-1]
-            )circuit"),
-        R"graph(
-error(0.25) D0 L0
-)graph");
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0 L0
+        )model"));
 
     ASSERT_EQ(
-        convert(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
                 Y_ERROR(0.25) 3
                 M 3
                 DETECTOR rec[-1]
-            )circuit"),
-        R"graph(
-error(0.25) D0
-)graph");
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+        )model"));
 
     ASSERT_EQ(
-        convert(R"circuit(
-        Z_ERROR(0.25) 3
-        M 3
-        DETECTOR rec[-1]
-    )circuit"),
-        R"graph(
-)graph");
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            Z_ERROR(0.25) 3
+            M 3
+            DETECTOR rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            detector D0
+        )model"));
+
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            DEPOLARIZE1(0.25) 3
+            M 3
+            DETECTOR rec[-1]
+        )circuit", false, false, false).approx_equals(
+            DetectorErrorModel(R"model(
+                error(0.166666) D0
+            )model"),
+            1e-4));
 
     ASSERT_EQ(
-        "",
-        check_matches(
-            convert(R"circuit(
-                DEPOLARIZE1(0.25) 3
-                M 3
-                DETECTOR rec[-1]
-            )circuit"),
-            R"graph(
-error\(0.1666666\d+\) D0
-)graph"));
-
-    ASSERT_EQ(
-        convert(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
                 X_ERROR(0.25) 0
                 X_ERROR(0.125) 1
                 M 0 1
                 OBSERVABLE_INCLUDE(3) rec[-1]
                 DETECTOR rec[-2]
-            )circuit"),
-        R"graph(
-error(0.25) D0
-error(0.125) L3
-)graph");
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+            error(0.125) L3
+        )model"));
 
     ASSERT_EQ(
-        convert(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
                 X_ERROR(0.25) 0
                 X_ERROR(0.125) 1
                 M 0 1
                 OBSERVABLE_INCLUDE(3) rec[-1]
                 DETECTOR rec[-2]
-            )circuit"),
-        R"graph(
-error(0.25) D0
-error(0.125) L3
-)graph");
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+            error(0.125) L3
+        )model"));
 
-    ASSERT_EQ(
-        "",
-        check_matches(
-            convert(R"circuit(
-                DEPOLARIZE2(0.25) 3 5
-                M 3
-                M 5
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            DEPOLARIZE2(0.25) 3 5
+            M 3
+            M 5
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false).approx_equals(
+            DetectorErrorModel(R"model(
+                error(0.0718255) D0
+                error(0.0718255) D0 D1
+                error(0.0718255) D1
+            )model"),
+            1e-5));
+
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            H 0 1
+            CNOT 0 2 1 3
+            DEPOLARIZE2(0.25) 0 1
+            CNOT 0 2 1 3
+            H 0 1
+            M 0 1 2 3
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+            DETECTOR rec[-3]
+            DETECTOR rec[-4]
+        )circuit", false, false, false).approx_equals(
+            DetectorErrorModel(R"model(
+                error(0.019013) D0
+                error(0.019013) D0 D1
+                error(0.019013) D0 D1 D2
+                error(0.019013) D0 D1 D2 D3
+                error(0.019013) D0 D1 D3
+                error(0.019013) D0 D2
+                error(0.019013) D0 D2 D3
+                error(0.019013) D0 D3
+                error(0.019013) D1
+                error(0.019013) D1 D2
+                error(0.019013) D1 D2 D3
+                error(0.019013) D1 D3
+                error(0.019013) D2
+                error(0.019013) D2 D3
+                error(0.019013) D3
+            )model"),
+            1e-4));
+
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
+                H 0 1
+                CNOT 0 2 1 3
+                DEPOLARIZE2(0.25) 0 1
+                CNOT 0 2 1 3
+                H 0 1
+                M 0 1 2 3
                 DETECTOR rec[-1]
                 DETECTOR rec[-2]
-            )circuit"),
-            R"graph(
-error\(0.07182558\d+\) D0
-error\(0.07182558\d+\) D0 D1
-error\(0.07182558\d+\) D1
-)graph"));
+                DETECTOR rec[-3]
+                DETECTOR rec[-4]
+        )circuit", true, false, false).approx_equals(
+            DetectorErrorModel(R"model(
+                error(0.019013) D0
+                error(0.019013) D1
+                error(0.019013) D1 ^ D0
+                error(0.019013) D1 ^ D2
+                error(0.019013) D1 ^ D2 ^ D0
+                error(0.019013) D2
+                error(0.019013) D2 ^ D0
+                error(0.019013) D3
+                error(0.019013) D3 ^ D0
+                error(0.019013) D3 ^ D1
+                error(0.019013) D3 ^ D1 ^ D0
+                error(0.019013) D3 ^ D1 ^ D2
+                error(0.019013) D3 ^ D1 ^ D2 ^ D0
+                error(0.019013) D3 ^ D2
+                error(0.019013) D3 ^ D2 ^ D0
+            )model"),
+            1e-4));
 
-    ASSERT_EQ(
-        "",
-        check_matches(
-            convert(R"circuit(
-        H 0 1
-        CNOT 0 2 1 3
-        DEPOLARIZE2(0.25) 0 1
-        CNOT 0 2 1 3
-        H 0 1
-        M 0 1 2 3
-        DETECTOR rec[-1]
-        DETECTOR rec[-2]
-        DETECTOR rec[-3]
-        DETECTOR rec[-4]
-    )circuit"),
-            R"graph(
-error\(0.019013\d+\) D0
-error\(0.019013\d+\) D0 D1
-error\(0.019013\d+\) D0 D1 D2
-error\(0.019013\d+\) D0 D1 D2 D3
-error\(0.019013\d+\) D0 D1 D3
-error\(0.019013\d+\) D0 D2
-error\(0.019013\d+\) D0 D2 D3
-error\(0.019013\d+\) D0 D3
-error\(0.019013\d+\) D1
-error\(0.019013\d+\) D1 D2
-error\(0.019013\d+\) D1 D2 D3
-error\(0.019013\d+\) D1 D3
-error\(0.019013\d+\) D2
-error\(0.019013\d+\) D2 D3
-error\(0.019013\d+\) D3
-)graph"));
-
-    ASSERT_EQ(
-        "",
-        check_matches(
-            convert(
-                R"circuit(
-                    H 0 1
-                    CNOT 0 2 1 3
-                    DEPOLARIZE2(0.25) 0 1
-                    CNOT 0 2 1 3
-                    H 0 1
-                    M 0 1 2 3
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-2]
-                    DETECTOR rec[-3]
-                    DETECTOR rec[-4]
-                )circuit",
-                true),
-            R"graph(
-error\(0.019013\d+\) D0
-error\(0.019013\d+\) D1
-error\(0.019013\d+\) D1 \^ D0
-error\(0.019013\d+\) D1 \^ D2
-error\(0.019013\d+\) D1 \^ D2 \^ D0
-error\(0.019013\d+\) D2
-error\(0.019013\d+\) D2 \^ D0
-error\(0.019013\d+\) D3
-error\(0.019013\d+\) D3 \^ D0
-error\(0.019013\d+\) D3 \^ D1
-error\(0.019013\d+\) D3 \^ D1 \^ D0
-error\(0.019013\d+\) D3 \^ D1 \^ D2
-error\(0.019013\d+\) D3 \^ D1 \^ D2 \^ D0
-error\(0.019013\d+\) D3 \^ D2
-error\(0.019013\d+\) D3 \^ D2 \^ D0
-)graph"));
-
-    ASSERT_EQ(
-        "",
-        check_matches(
-            convert(
-                R"circuit(
-                    H 0 1
-                    CNOT 0 2 1 3
-                    # Perform depolarizing error in a different basis.
-                    ZCX 0 10
-                    ZCX 0 11
-                    XCX 0 12
-                    XCX 0 13
-                    DEPOLARIZE2(0.25) 0 1
-                    XCX 0 13
-                    XCX 0 12
-                    ZCX 0 11
-                    ZCX 0 10
-                    # Check where error is.
-                    M 10 11 12 13
-                    DETECTOR rec[-1]
-                    DETECTOR rec[-2]
-                    DETECTOR rec[-3]
-                    DETECTOR rec[-4]
-                )circuit",
-                true,
-                false,
-                true),
-            R"graph(
-error\(0.071825\d+\) D0 D1
-error\(0.071825\d+\) D0 D1 \^ D2 D3
-error\(0.071825\d+\) D2 D3
-)graph"));
+    ASSERT_TRUE(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
+                H 0 1
+                CNOT 0 2 1 3
+                # Perform depolarizing error in a different basis.
+                ZCX 0 10
+                ZCX 0 11
+                XCX 0 12
+                XCX 0 13
+                DEPOLARIZE2(0.25) 0 1
+                XCX 0 13
+                XCX 0 12
+                ZCX 0 11
+                ZCX 0 10
+                # Check where error is.
+                M 10 11 12 13
+                DETECTOR rec[-1]
+                DETECTOR rec[-2]
+                DETECTOR rec[-3]
+                DETECTOR rec[-4]
+            )circuit", true, false, true).approx_equals(
+            DetectorErrorModel(R"model(
+                error(0.071825) D0 D1
+                error(0.071825) D0 D1 ^ D2 D3
+                error(0.071825) D2 D3
+            )model"),
+            1e-4));
 }
 
 TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
@@ -296,31 +288,46 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
 
 TEST(ErrorAnalyzer, reversed_operation_order) {
     ASSERT_EQ(
-        convert(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
             X_ERROR(0.25) 0
             CNOT 0 1
             CNOT 1 0
             M 0 1
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )circuit"),
-        R"graph(
-error(0.25) D1
-)graph");
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D1
+            detector D0
+        )model"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            X_ERROR(0.25) 0
+            CNOT 0 1
+            CNOT 1 0
+            M 0 1
+            DETECTOR rec[-1]
+            DETECTOR rec[-2]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+            detector D1
+        )model"));
 }
 
 TEST(ErrorAnalyzer, classical_error_propagation) {
     ASSERT_EQ(
-        convert(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
             X_ERROR(0.125) 0
             M 0
             CNOT rec[-1] 1
             M 1
             DETECTOR rec[-1]
-        )circuit"),
-        R"graph(
-error(0.125) D0
-)graph");
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.125) D0
+        )model"));
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -332,9 +339,9 @@ error(0.125) D0
             M 1
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(
+        R"model(
 error(0.125) D0
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -346,9 +353,9 @@ error(0.125) D0
             M 1
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(
+        R"model(
 error(0.125) D0
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -358,9 +365,9 @@ error(0.125) D0
             M 1
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(
+        R"model(
 error(0.125) D0
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -370,9 +377,9 @@ error(0.125) D0
             M 1
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(
+        R"model(
 error(0.125) D0
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -382,9 +389,9 @@ error(0.125) D0
             M 1
             DETECTOR rec[-1]
         )circuit"),
-        R"graph(
+        R"model(
 error(0.125) D0
-)graph");
+)model");
 }
 
 TEST(ErrorAnalyzer, measure_reset_basis) {
@@ -399,10 +406,11 @@ TEST(ErrorAnalyzer, measure_reset_basis) {
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D0
 error(0.25) D1
-)graph");
+detector D2
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -415,10 +423,11 @@ error(0.25) D1
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D1
 error(0.25) D2
-)graph");
+detector D0
+)model");
     ASSERT_EQ(
         convert(R"circuit(
                 RY 0 1 2
@@ -430,10 +439,11 @@ error(0.25) D2
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D0
 error(0.25) D2
-)graph");
+detector D1
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -446,10 +456,11 @@ error(0.25) D2
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D0
 error(0.25) D1
-)graph");
+detector D2
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -462,10 +473,11 @@ error(0.25) D1
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D1
 error(0.25) D2
-)graph");
+detector D0
+)model");
     ASSERT_EQ(
         convert(R"circuit(
                 MRY 0 1 2
@@ -477,10 +489,11 @@ error(0.25) D2
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D0
 error(0.25) D2
-)graph");
+detector D1
+)model");
 }
 
 TEST(ErrorAnalyzer, repeated_measure_reset) {
@@ -494,9 +507,12 @@ TEST(ErrorAnalyzer, repeated_measure_reset) {
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D2
-)graph");
+detector D0
+detector D1
+detector D3
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -509,9 +525,12 @@ error(0.25) D2
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D2
-)graph");
+detector D0
+detector D1
+detector D3
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -524,9 +543,12 @@ error(0.25) D2
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(0.25) D2
-)graph");
+detector D0
+detector D1
+detector D3
+)model");
 }
 
 TEST(ErrorAnalyzer, period_3_gates) {
@@ -543,10 +565,11 @@ TEST(ErrorAnalyzer, period_3_gates) {
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(1) D1
 error(1) D2
-)graph");
+detector D0
+)model");
 
     ASSERT_EQ(
         convert(R"circuit(
@@ -561,10 +584,11 @@ error(1) D2
                 DETECTOR rec[-2]
                 DETECTOR rec[-1]
             )circuit"),
-        R"graph(
+        R"model(
 error(1) D0
 error(1) D2
-)graph");
+detector D1
+)model");
 }
 
 TEST(ErrorAnalyzer, detect_gauge_observables) {
@@ -718,9 +742,9 @@ TEST(ErrorAnalyzer, gauge_detectors) {
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -735,9 +759,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -751,9 +775,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -768,9 +792,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -785,9 +809,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -801,9 +825,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -818,9 +842,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -835,9 +859,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -851,9 +875,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 
     ASSERT_EQ(
         convert(
@@ -868,9 +892,9 @@ error(0.5) D0 D1
             false,
             false,
             true),
-        R"graph(
+        R"model(
 error(0.5) D0 D1
-)graph");
+)model");
 }
 
 TEST(ErrorAnalyzer, composite_error_analysis) {
@@ -908,17 +932,19 @@ TEST(ErrorAnalyzer, composite_error_analysis) {
         "",
         check_matches(
             convert(encode + Circuit("DEPOLARIZE1(0.01) 4") + decode, true),
-            R"graph(
+            R"model(
 error\(0.0033445\d+\) D0 D4
 error\(0.0033445\d+\) D0 D4 \^ D1 D3
 error\(0.0033445\d+\) D1 D3
-)graph"));
+detector D2
+detector D5
+)model"));
 
     ASSERT_EQ(
         "",
         check_matches(
             convert(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode, true),
-            R"graph(
+            R"model(
 error\(0.000669\d+\) D0 D2
 error\(0.000669\d+\) D0 D2 \^ D1 D3
 error\(0.000669\d+\) D0 D2 \^ D1 D5
@@ -934,9 +960,9 @@ error\(0.000669\d+\) D1 D5 \^ D2 D4
 error\(0.000669\d+\) D2 D4
 error\(0.000669\d+\) D2 D4 \^ D3 D5
 error\(0.000669\d+\) D3 D5
-)graph"));
+)model"));
 
-    auto expected = R"graph(
+    auto expected = R"model(
 error\(0.000669\d+\) D0 D1 D2 D3
 error\(0.000669\d+\) D0 D1 D2 D5
 error\(0.000669\d+\) D0 D1 D3 D4
@@ -952,7 +978,7 @@ error\(0.000669\d+\) D1 D5
 error\(0.000669\d+\) D2 D3 D4 D5
 error\(0.000669\d+\) D2 D4
 error\(0.000669\d+\) D3 D5
-)graph";
+)model";
     ASSERT_EQ("", check_matches(convert(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode, false), expected));
     ASSERT_EQ(
         "",
@@ -963,6 +989,14 @@ error\(0.000669\d+\) D3 D5
         check_matches(
             convert(encode + Circuit("H_XY 4\nCNOT 4 5\nDEPOLARIZE2(0.01) 4 5\nCNOT 4 5\nH_XY 4") + decode, false),
             expected));
+}
+
+std::string declare_detectors(size_t min, size_t max) {
+    std::stringstream result;
+    for (size_t k = min; k <= max; k++) {
+        result << "detector D" << k << "\n";
+    }
+    return result.str();
 }
 
 TEST(ErrorAnalyzer, loop_folding) {
@@ -1009,9 +1043,27 @@ TEST(ErrorAnalyzer, loop_folding) {
             true,
             true),
         DetectorErrorModel(R"MODEL(
+            detector D0
+            detector D1
+            detector D2
             REPEAT 1543209873456789 {
+                detector D3
+                detector D4
+                detector D5
+                detector D6
+                detector D7
+                detector D8
+                detector D9
+                detector D10
                 shift_detectors 8
             }
+            detector D3
+            detector D4
+            detector D5
+            detector D6
+            detector D7
+            detector D8
+            logical_observable L9
         )MODEL"));
 
     // Solve period 127 logical observable oscillation.
@@ -1033,12 +1085,15 @@ TEST(ErrorAnalyzer, loop_folding) {
             false,
             true,
             true),
-        DetectorErrorModel(R"MODEL(
+        DetectorErrorModel((declare_detectors(0, 85) + R"MODEL(
             REPEAT 97210070768930 {
+                )MODEL" + declare_detectors(86, 86 + 127 - 1) + R"MODEL(
                 shift_detectors 127
             }
             error(1) D211
-        )MODEL"));
+            )MODEL" + declare_detectors(86, 210) + R"MODEL(
+            logical_observable L9
+        )MODEL").data()));
 }
 
 TEST(ErrorAnalyzer, loop_folding_nested_loop) {
@@ -1099,6 +1154,9 @@ TEST(ErrorAnalyzer, loop_folding_rep_code_circuit) {
         error(0.000267) D4 D5
         error(0.000267) D5 L0
         error(0.000267) D5 L0 ^ D2 L0
+        detector(1, 0) D0
+        detector(3, 0) D1
+        detector(5, 0) D2
         repeat 99998 {
             error(0.000267) D3
             error(0.000267) D3 D4
@@ -1115,6 +1173,10 @@ TEST(ErrorAnalyzer, loop_folding_rep_code_circuit) {
             error(0.000267) D7 D8
             error(0.000267) D8 L0
             error(0.000267) D8 L0 ^ D5 L0
+            shift_detectors(0, 1) 0
+            detector(1, 0) D3
+            detector(3, 0) D4
+            detector(5, 0) D5
             shift_detectors 3
         }
         error(0.000267) D3
@@ -1132,8 +1194,15 @@ TEST(ErrorAnalyzer, loop_folding_rep_code_circuit) {
         error(0.000267) D7 D8
         error(0.000267) D8 L0
         error(0.000267) D8 L0 ^ D5 L0
+        shift_detectors(0, 1) 0
+        detector(1, 0) D3
+        detector(3, 0) D4
+        detector(5, 0) D5
+        detector(1, 1) D6
+        detector(3, 1) D7
+        detector(5, 1) D8
     )MODEL");
-    ASSERT_TRUE(actual.approx_equals(expected, 0.00001));
+    ASSERT_TRUE(actual.approx_equals(expected, 0.00001)) << actual;
 }
 
 TEST(ErrorAnalyzer, reduce_error_detector_dependence_error_message) {
@@ -1327,5 +1396,126 @@ TEST(ErrorAnalyzer, multi_round_gauge_detectors_dont_grow) {
                 shift_detectors 8
             }
             error(0.5) D4 D5
+            detector D0
+            detector D1
+            detector D2
+            detector D3
+            detector D6
+            detector D7
         )MODEL"));
+}
+
+TEST(ErrorAnalyzer, coordinate_tracking) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                DETECTOR(1, 2)
+                SHIFT_COORDS(10, 20)
+                DETECTOR(100, 200)
+            )CIRCUIT"),
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"MODEL(
+            detector(1, 2) D0
+            shift_detectors(10, 20) 0
+            detector(100, 200) D1
+        )MODEL"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                MR 1
+                REPEAT 1000 {
+                    REPEAT 1000 {
+                        X_ERROR(0.25) 0
+                        CNOT 0 1
+                        MR 1
+                        DETECTOR(1,2,3) rec[-2] rec[-1]
+                        SHIFT_COORDS(4,5)
+                    }
+                    SHIFT_COORDS(6,7)
+                }
+                M 0
+                OBSERVABLE_INCLUDE(9) rec[-1]
+            )CIRCUIT"),
+            false,
+            true,
+            true),
+        DetectorErrorModel(R"MODEL(
+                REPEAT 999 {
+                    REPEAT 1000 {
+                        error(0.25) D0 L9
+                        detector(1, 2, 3) D0
+                        shift_detectors(4, 5) 1
+                    }
+                    shift_detectors(6, 7) 0
+                }
+                REPEAT 499 {
+                    error(0.25) D0 L9
+                    error(0.25) D1 L9
+                    detector(1, 2, 3) D0
+                    shift_detectors(4, 5) 0
+                    detector(1, 2, 3) D1
+                    shift_detectors(4, 5) 2
+                }
+                error(0.25) D0 L9
+                error(0.25) D1 L9
+                detector(1, 2, 3) D0
+                shift_detectors(4, 5) 0
+                detector(1, 2, 3) D1
+                shift_detectors(4, 5) 0
+                shift_detectors(6, 7) 0
+            )MODEL"));
+}
+
+TEST(ErrorAnalyzer, omit_vacuous_detector_observable_instructions) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            X_ERROR(0.25) 3
+            M 3
+            DETECTOR rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+        )model"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            X_ERROR(0.25) 3
+            M 3
+            DETECTOR(1, 0) rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) D0
+            detector(1, 0) D0
+        )model"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            M 3
+            DETECTOR rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            detector D0
+        )model"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            X_ERROR(0.25) 3
+            M 3
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            error(0.25) L0
+        )model"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+            M 3
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        )circuit", false, false, false),
+        DetectorErrorModel(R"model(
+            logical_observable L0
+        )model"));
 }
