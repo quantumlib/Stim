@@ -54,7 +54,7 @@ struct ErrorAnalyzer {
     MonotonicBuffer<DemTarget> mono_buf;
 
     ErrorAnalyzer(
-        size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
+        uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     static DetectorErrorModel circuit_to_detector_error_model(
         const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
