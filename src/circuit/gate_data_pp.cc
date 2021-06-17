@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -29,9 +29,10 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
         failed,
         Gate{
             "SQRT_XX",
+            0,
             &TableauSimulator::SQRT_XX,
             &FrameSimulator::SQRT_XX,
-            &ErrorFuser::SQRT_XX,
+            &ErrorAnalyzer::SQRT_XX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -51,9 +52,10 @@ Phases the -1 eigenspace of the XX observable by i.
         failed,
         Gate{
             "SQRT_XX_DAG",
+            0,
             &TableauSimulator::SQRT_XX_DAG,
             &FrameSimulator::SQRT_XX,
-            &ErrorFuser::SQRT_XX,
+            &ErrorAnalyzer::SQRT_XX,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -74,9 +76,10 @@ Phases the -1 eigenspace of the XX observable by -i.
         failed,
         Gate{
             "SQRT_YY",
+            0,
             &TableauSimulator::SQRT_YY,
             &FrameSimulator::SQRT_YY,
-            &ErrorFuser::SQRT_YY,
+            &ErrorAnalyzer::SQRT_YY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -96,9 +99,10 @@ Phases the -1 eigenspace of the YY observable by i.
         failed,
         Gate{
             "SQRT_YY_DAG",
+            0,
             &TableauSimulator::SQRT_YY_DAG,
             &FrameSimulator::SQRT_YY,
-            &ErrorFuser::SQRT_YY,
+            &ErrorAnalyzer::SQRT_YY,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -119,9 +123,10 @@ Phases the -1 eigenspace of the YY observable by -i.
         failed,
         Gate{
             "SQRT_ZZ",
+            0,
             &TableauSimulator::SQRT_ZZ,
             &FrameSimulator::SQRT_ZZ,
-            &ErrorFuser::SQRT_ZZ,
+            &ErrorAnalyzer::SQRT_ZZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -138,9 +143,10 @@ Phases the -1 eigenspace of the ZZ observable by i.
         failed,
         Gate{
             "SQRT_ZZ_DAG",
+            0,
             &TableauSimulator::SQRT_ZZ_DAG,
             &FrameSimulator::SQRT_ZZ,
-            &ErrorFuser::SQRT_ZZ,
+            &ErrorAnalyzer::SQRT_ZZ,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {

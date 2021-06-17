@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -29,9 +29,10 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
         failed,
         Gate{
             "H",
+            0,
             &TableauSimulator::H_XZ,
             &FrameSimulator::H_XZ,
-            &ErrorFuser::H_XZ,
+            &ErrorAnalyzer::H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -51,9 +52,10 @@ Swaps the X and Z axes.
         failed,
         Gate{
             "H_XY",
+            0,
             &TableauSimulator::H_XY,
             &FrameSimulator::H_XY,
-            &ErrorFuser::H_XY,
+            &ErrorAnalyzer::H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -71,9 +73,10 @@ A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
         failed,
         Gate{
             "H_YZ",
+            0,
             &TableauSimulator::H_YZ,
             &FrameSimulator::H_YZ,
-            &ErrorFuser::H_YZ,
+            &ErrorAnalyzer::H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {

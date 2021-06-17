@@ -20,15 +20,15 @@
 
 using namespace stim_internal;
 
-CircuitInstruction::CircuitInstruction(const char *name, std::vector<GateTarget> targets, double gate_arg)
-    : gate(GATE_DATA.at(name)), targets(targets), gate_arg(gate_arg) {
+CircuitInstruction::CircuitInstruction(const char *name, std::vector<GateTarget> targets, std::vector<double> gate_args)
+    : gate(GATE_DATA.at(name)), targets(targets), gate_args(gate_args) {
 }
-CircuitInstruction::CircuitInstruction(const Gate &gate, std::vector<GateTarget> targets, double gate_arg)
-    : gate(gate), targets(targets), gate_arg(gate_arg) {
+CircuitInstruction::CircuitInstruction(const Gate &gate, std::vector<GateTarget> targets, std::vector<double> gate_args)
+    : gate(gate), targets(targets), gate_args(gate_args) {
 }
 
 bool CircuitInstruction::operator==(const CircuitInstruction &other) const {
-    return gate.id == other.gate.id && targets == other.targets && gate_arg == other.gate_arg;
+    return gate.id == other.gate.id && targets == other.targets && gate_args == other.gate_args;
 }
 bool CircuitInstruction::operator!=(const CircuitInstruction &other) const {
     return !(*this == other);
@@ -46,7 +46,17 @@ std::string CircuitInstruction::repr() const {
         }
         result << t.repr();
     }
-    result << "], " << gate_arg << ")";
+    result << "], [";
+    first = true;
+    for (const auto &t : gate_args) {
+        if (first) {
+            first = false;
+        } else {
+            result << ", ";
+        }
+        result << t;
+    }
+    result << "])";
     return result.str();
 }
 std::string CircuitInstruction::name() const {
@@ -54,6 +64,9 @@ std::string CircuitInstruction::name() const {
 }
 std::vector<GateTarget> CircuitInstruction::targets_copy() const {
     return targets;
+}
+std::vector<double> CircuitInstruction::gate_args_copy() const {
+    return gate_args;
 }
 
 void pybind_circuit_instruction(pybind11::module &m) {
@@ -71,19 +84,19 @@ void pybind_circuit_instruction(pybind11::module &m) {
                 ...     X_ERROR(0.125) 5 3
                 ... ''')
                 >>> circuit[0]
-                stim.CircuitInstruction('H', [stim.GateTarget(0)], 0)
+                stim.CircuitInstruction('H', [stim.GateTarget(0)], [])
                 >>> circuit[1]
-                stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], 0)
+                stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], [])
                 >>> circuit[2]
-                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], 0.125)
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], [0.125])
         )DOC")
             .data());
 
     c.def(
-        pybind11::init<const char *, std::vector<GateTarget>, double>(),
+        pybind11::init<const char *, std::vector<GateTarget>, std::vector<double>>(),
         pybind11::arg("name"),
         pybind11::arg("targets"),
-        pybind11::arg("gate_arg") = 0.0,
+        pybind11::arg("gate_args") = std::make_tuple(),
         clean_doc_string(u8R"DOC(
             Initializes a `stim.CircuitInstruction`.
 
@@ -91,8 +104,8 @@ void pybind_circuit_instruction(pybind11::module &m) {
                 name: The name of the instruction being applied.
                 targets: The targets the instruction is being applied to. These can be raw values like `0` and
                     `stim.target_rec(-1)`, or instances of `stim.GateTarget`.
-                gate_arg: The parens argument given to a gate. For noise gates this is their probability. For
-                    OBSERVABLE_INCLUDE it's the logical observable's index.
+                gate_args: The sequence of numeric arguments parameterizing a gate. For noise gates this is their
+                    probabilities. For OBSERVABLE_INCLUDE it's the logical observable's index.
         )DOC")
             .data());
 
@@ -112,13 +125,14 @@ void pybind_circuit_instruction(pybind11::module &m) {
         )DOC")
             .data());
 
-    c.def_readonly(
-        "gate_arg",
-        &CircuitInstruction::gate_arg,
+    c.def(
+        "gate_args_copy",
+        &CircuitInstruction::gate_args_copy,
         clean_doc_string(u8R"DOC(
-            Returns the numeric value given as a parens argument to the instruction.
+            Returns the gate's arguments (numbers parameterizing the instruction).
 
-            For noisy gates this is their probability. For OBSERVABLE_INCLUDE it's the logical observable index.
+            For noisy gates this typically a list of probabilities.
+            For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable index.
         )DOC")
             .data());
 

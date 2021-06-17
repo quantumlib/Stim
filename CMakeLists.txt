@@ -60,7 +60,7 @@ set(SOURCE_FILES_NO_MAIN
         src/simd/simd_util.cc
         src/simd/sparse_xor_vec.cc
         src/simulators/detection_simulator.cc
-        src/simulators/error_fuser.cc
+        src/simulators/error_analyzer.cc
         src/simulators/frame_simulator.cc
         src/simulators/measure_record_batch.cc
         src/simulators/measure_record_batch_writer.cc
@@ -95,7 +95,7 @@ set(TEST_FILES
         src/simd/simd_util.test.cc
         src/simd/sparse_xor_vec.test.cc
         src/simulators/detection_simulator.test.cc
-        src/simulators/error_fuser.test.cc
+        src/simulators/error_analyzer.test.cc
         src/simulators/frame_simulator.test.cc
         src/simulators/measure_record.test.cc
         src/simulators/measure_record_batch.test.cc
@@ -118,7 +118,7 @@ set(BENCHMARK_FILES
         src/simd/simd_bits.perf.cc
         src/simd/simd_compat.perf.cc
         src/simd/sparse_xor_vec.perf.cc
-        src/simulators/error_fuser.perf.cc
+        src/simulators/error_analyzer.perf.cc
         src/simulators/frame_simulator.perf.cc
         src/simulators/tableau_simulator.perf.cc
         src/stabilizers/pauli_string.perf.cc

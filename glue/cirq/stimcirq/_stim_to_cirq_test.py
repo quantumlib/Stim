@@ -1,4 +1,5 @@
-from typing import Tuple, Union, Callable
+import inspect
+from typing import Tuple, Union, Callable, Any
 
 import cirq
 import pytest
@@ -6,6 +7,22 @@ import stim
 
 import stimcirq
 from ._stim_to_cirq import stim_to_cirq_gate_table
+
+
+def test_two_qubit_asymmetric_depolarizing_channel():
+    r = stimcirq.TwoQubitAsymmetricDepolarizingChannel([0.125, 0, 0, 0, 0, 0, 0.375, 0, 0, 0, 0, 0, 0, 0.25, 0])
+    assert r._dense_mixture_() == [
+        (0.25, cirq.DensePauliString("II")),
+        (0.125, cirq.DensePauliString("IX")),
+        (0.375, cirq.DensePauliString("XZ")),
+        (0.25, cirq.DensePauliString("ZY")),
+    ]
+    cirq.testing.assert_has_diagram(cirq.Circuit(r.on(*cirq.LineQubit.range(2))), """
+0: ───PauliMix(II:0.25,IX:0.125,XZ:0.375,ZY:0.25)───
+      │
+1: ───#2────────────────────────────────────────────
+    """)
+    assert eval(repr(r), {'stimcirq': stimcirq}) == r
 
 
 def test_stim_circuit_to_cirq_circuit():
@@ -59,15 +76,20 @@ def test_stim_circuit_to_cirq_circuit():
     cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=()),
     cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=(True,)),
 ])
-def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[float], cirq.Gate], Tuple]):
+def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[Any], cirq.Gate], Tuple]):
     if handler == ():
         return
     if isinstance(handler, cirq.Gate):
         gate = handler
     else:
-        gate = handler(0.125)
-
-    n = gate.num_qubits()
+        try:
+            gate = handler(0.125)
+        except:
+            try:
+                gate = handler([k/128 for k in range(1, 4)])
+            except:
+                gate = handler([k/128 for k in range(1, 16)])
+    n = cirq.num_qubits(gate)
     qs = cirq.LineQubit.range(n)
     original = cirq.Circuit(gate.on(*qs))
     converted = stimcirq.cirq_circuit_to_stim_circuit(original)

@@ -16,7 +16,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 
@@ -93,18 +93,20 @@ Gate::Gate() : name(nullptr) {
 
 Gate::Gate(
     const char *name,
+    uint8_t arg_count,
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
     void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-    void (ErrorFuser::*hit_simulator_function)(const OperationData &),
+    void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
     GateFlags flags,
     ExtraGateData (*extra_data_func)(void))
     : name(name),
-      name_len(strlen(name)),
       tableau_simulator_function(tableau_simulator_function),
       frame_simulator_function(frame_simulator_function),
-      reverse_error_fuser_function(hit_simulator_function),
-      flags(flags),
+      reverse_error_analyzer_function(hit_simulator_function),
       extra_data_func(extra_data_func),
+      flags(flags),
+      arg_count(arg_count),
+      name_len(strlen(name)),
       id(gate_name_to_id(name)) {
 }
 

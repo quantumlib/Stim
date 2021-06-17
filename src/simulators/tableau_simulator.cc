@@ -283,7 +283,7 @@ void TableauSimulator::single_cx(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         inv_state.prepend_ZCX(c, t);
     } else if (t & TARGET_RECORD_BIT) {
-        throw std::out_of_range("Measurement record editing is not supported.");
+        throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         if (read_measurement_record(c)) {
             inv_state.prepend_X(t);
@@ -295,7 +295,7 @@ void TableauSimulator::single_cy(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         inv_state.prepend_ZCY(c, t);
     } else if (t & TARGET_RECORD_BIT) {
-        throw std::out_of_range("Measurement record editing is not supported.");
+        throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         if (read_measurement_record(c)) {
             inv_state.prepend_Y(t);
@@ -493,7 +493,7 @@ void TableauSimulator::YCZ(const OperationData &target_data) {
 }
 
 void TableauSimulator::DEPOLARIZE1(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
         auto p = 1 + (rng() % 3);
         inv_state.xs.signs[q] ^= p & 1;
         inv_state.zs.signs[q] ^= p & 2;
@@ -504,7 +504,7 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     auto n = targets.size() >> 1;
-    RareErrorIterator::for_samples(target_data.arg, n, rng, [&](size_t s) {
+    RareErrorIterator::for_samples(target_data.args[0], n, rng, [&](size_t s) {
         auto p = 1 + (rng() % 15);
         auto q1 = targets[s << 1];
         auto q2 = targets[1 | (s << 1)];
@@ -516,22 +516,48 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
 }
 
 void TableauSimulator::X_ERROR(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
         inv_state.zs.signs[q] ^= true;
     });
 }
 
 void TableauSimulator::Y_ERROR(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
         inv_state.xs.signs[q] ^= true;
         inv_state.zs.signs[q] ^= true;
     });
 }
 
 void TableauSimulator::Z_ERROR(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.arg, target_data.targets, rng, [&](size_t q) {
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
         inv_state.xs.signs[q] ^= true;
     });
+}
+
+void TableauSimulator::PAULI_CHANNEL_1(const OperationData &target_data) {
+    bool tmp = last_correlated_error_occurred;
+    perform_pauli_errors_via_correlated_errors<1>(
+        target_data,
+        [&]() {
+            last_correlated_error_occurred = false;
+        },
+        [&](const OperationData &d) {
+            ELSE_CORRELATED_ERROR(d);
+        });
+    last_correlated_error_occurred = tmp;
+}
+
+void TableauSimulator::PAULI_CHANNEL_2(const OperationData &target_data) {
+    bool tmp = last_correlated_error_occurred;
+    perform_pauli_errors_via_correlated_errors<2>(
+        target_data,
+        [&]() {
+            last_correlated_error_occurred = false;
+        },
+        [&](const OperationData &d) {
+            ELSE_CORRELATED_ERROR(d);
+        });
+    last_correlated_error_occurred = tmp;
 }
 
 void TableauSimulator::CORRELATED_ERROR(const OperationData &target_data) {
@@ -543,7 +569,7 @@ void TableauSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
     if (last_correlated_error_occurred) {
         return;
     }
-    last_correlated_error_occurred = std::bernoulli_distribution(target_data.arg)(rng);
+    last_correlated_error_occurred = std::bernoulli_distribution(target_data.args[0])(rng);
     if (!last_correlated_error_occurred) {
         return;
     }
@@ -650,14 +676,14 @@ void TableauSimulator::collapse_x(ConstPointerRange<uint32_t> targets) {
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
         std::vector<uint32_t> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
-        H_XZ({0, collapse_targets});
+        H_XZ({{}, collapse_targets});
         {
             TableauTransposedRaii temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q, temp_transposed);
             }
         }
-        H_XZ({0, collapse_targets});
+        H_XZ({{}, collapse_targets});
     }
 }
 
@@ -674,14 +700,14 @@ void TableauSimulator::collapse_y(ConstPointerRange<uint32_t> targets) {
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
         std::vector<uint32_t> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
-        H_YZ({0, collapse_targets});
+        H_YZ({{}, collapse_targets});
         {
             TableauTransposedRaii temp_transposed(inv_state);
             for (auto q : collapse_targets) {
                 collapse_qubit_z(q, temp_transposed);
             }
         }
-        H_YZ({0, collapse_targets});
+        H_YZ({{}, collapse_targets});
     }
 }
 
@@ -861,9 +887,9 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(uint32_t targe
 }
 
 std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(uint32_t target) {
-    H_YZ({0.0, {&target, &target + 1}});
+    H_YZ({{}, {&target, &target + 1}});
     auto result = measure_kickback_z(target);
-    H_YZ({0.0, {&target, &target + 1}});
+    H_YZ({{}, {&target, &target + 1}});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_YZ.
         result.second.xs[target] ^= result.second.zs[target];
@@ -872,9 +898,9 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(uint32_t targe
 }
 
 std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(uint32_t target) {
-    H_XZ({0.0, {&target, &target + 1}});
+    H_XZ({{}, {&target, &target + 1}});
     auto result = measure_kickback_z(target);
-    H_XZ({0.0, {&target, &target + 1}});
+    H_XZ({{}, {&target, &target + 1}});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_XZ.
         result.second.xs[target].swap_with(result.second.zs[target]);

@@ -14,31 +14,33 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
 
 using namespace stim_internal;
 
-static constexpr std::complex<float> i = std::complex<float>(0, 1);
-static constexpr std::complex<float> s = 0.7071067811865475244f;
-
 void GateDataMap::add_gate_data_blocks(bool &failed) {
     add_gate(
         failed,
         Gate{
             "REPEAT",
+            0,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::I,
+            &ErrorAnalyzer::I,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
                     "Y_Control Flow",
                     R"MARKDOWN(
 Repeats the instructions in its body N times.
-The implementation-defined maximum value of N is 9223372036854775807.
+N can be any positive integer from 1 to a quintillion (10^18).
+
+Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
+For example, if a logical observable is only given measurements inside a repeat block with a repetition count of 0, it's
+ambiguous whether the output of sampling the logical observables includes a bit for that logical observable.
 
 - Example:
 

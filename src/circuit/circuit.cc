@@ -44,10 +44,100 @@ void fuse_data(PointerRange<uint32_t> &dst, PointerRange<uint32_t> src, Monotoni
     dst.ptr_end = src.ptr_end;
 }
 
+void write_target(std::ostream &out, uint32_t t) {
+    if (t & TARGET_INVERTED_BIT) {
+        out << '!';
+    }
+    if (t & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
+        bool x = t & TARGET_PAULI_X_BIT;
+        bool z = t & TARGET_PAULI_Z_BIT;
+        out << "IXZY"[x + z * 2];
+    }
+    if (t & TARGET_RECORD_BIT) {
+        out << "rec[-" << (t & TARGET_VALUE_MASK) << "]";
+    } else {
+        out << (t & TARGET_VALUE_MASK);
+    }
+}
+
 uint64_t stim_internal::op_data_rep_count(const OperationData &data) {
     uint64_t low = data.targets[1];
     uint64_t high = data.targets[2];
     return low | (high << 32);
+}
+
+void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstPointerRange<double> args) {
+    if (gate.flags & GATE_TARGETS_PAIRS) {
+        if (targets.size() & 1) {
+            throw std::invalid_argument(
+                "Two qubit gate " + std::string(gate.name) + " requires have an even number of targets.");
+        }
+        for (size_t k = 0; k < targets.size(); k += 2) {
+            if (targets[k] == targets[k + 1]) {
+                throw std::invalid_argument(
+                    "Interacting a target with itself " + std::to_string(targets[k] & TARGET_VALUE_MASK) +
+                    " using gate " + std::string(gate.name) + ".");
+            }
+        }
+    }
+
+    if (args.size() != gate.arg_count && gate.arg_count != ARG_COUNT_VARIABLE) {
+        throw std::invalid_argument(
+            "Gate " + std::string(gate.name) + " takes " + std::to_string(gate.arg_count) + " args.");
+    }
+
+    if ((gate.flags & GATE_TAKES_NO_TARGETS) && !targets.empty()) {
+        throw std::invalid_argument("Gate " + std::string(gate.name) + " takes 0 targets.");
+    }
+
+    if (gate.flags & GATE_ARGS_ARE_DISJOINT_PROBABILITIES) {
+        double total = 0;
+        for (const auto p : args) {
+            if (p < 0 || p > 1) {
+                throw std::invalid_argument(
+                    "Argument " + std::to_string(p) + " given to gate " + std::string(gate.name) +
+                    " is not a probability.");
+            }
+            total += p;
+        }
+        if (total > 1.0000001) {
+            throw std::invalid_argument(
+                "The disjoint probability arguments given to gate " + std::string(gate.name) + " sum to more than 1.");
+        }
+    }
+
+    // Check that targets are in range.
+    uint32_t valid_target_mask = TARGET_VALUE_MASK;
+    if (gate.flags & GATE_PRODUCES_RESULTS) {
+        valid_target_mask |= TARGET_INVERTED_BIT;
+    }
+    if (gate.flags & GATE_CAN_TARGET_MEASUREMENT_RECORD) {
+        valid_target_mask |= TARGET_RECORD_BIT;
+    }
+    if (gate.flags & GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
+        for (uint32_t q : targets) {
+            if (!(q & TARGET_RECORD_BIT)) {
+                throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes rec[-k] targets.");
+            }
+        }
+    } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
+        for (uint32_t q : targets) {
+            if (!(q & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT))) {
+                throw std::invalid_argument(
+                    "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
+            }
+        }
+    } else {
+        for (uint32_t q : targets) {
+            if (q != (q & valid_target_mask)) {
+                std::stringstream ss;
+                ss << "Target ";
+                write_target(ss, q);
+                ss << " has invalid modifiers for gate type '" << gate.name << "'.";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+    }
 }
 
 DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
@@ -56,10 +146,10 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
         for (auto qb : op.target_data.targets) {
             uint32_t dt = qb ^ TARGET_RECORD_BIT;
             if (!dt) {
-                throw std::out_of_range("Record lookback can't be 0 (unspecified).");
+                throw std::invalid_argument("Record lookback can't be 0 (unspecified).");
             }
             if (dt > tick) {
-                throw std::out_of_range("Referred to a measurement result before the beginning of time.");
+                throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
             }
             func(tick - dt);
         }
@@ -74,9 +164,9 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
             });
             detectors.push_back(jagged_detector_data.commit_tail());
         } else if (p.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
-            size_t obs = (size_t)p.target_data.arg;
-            if (obs != p.target_data.arg) {
-                throw std::out_of_range("Observable index must be an integer.");
+            size_t obs = (size_t)p.target_data.args[0];
+            if (obs != p.target_data.args[0]) {
+                throw std::invalid_argument("Observable index must be an integer.");
             }
             while (observables.size() <= obs) {
                 observables.emplace_back();
@@ -88,19 +178,26 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
     });
 }
 
-Circuit::Circuit() : jag_targets(), operations(), blocks() {
+Circuit::Circuit() : target_buf(), operations(), blocks() {
 }
 
 Circuit::Circuit(const Circuit &circuit)
-    : jag_targets(circuit.jag_targets.total_allocated()), operations(circuit.operations), blocks(circuit.blocks) {
+    : target_buf(circuit.target_buf.total_allocated()),
+      arg_buf(circuit.arg_buf.total_allocated()),
+      operations(circuit.operations),
+      blocks(circuit.blocks) {
     // Keep local copy of operation data.
     for (auto &op : operations) {
-        op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
+        op.target_data.targets = target_buf.take_copy(op.target_data.targets);
+    }
+    for (auto &op : operations) {
+        op.target_data.args = arg_buf.take_copy(op.target_data.args);
     }
 }
 
 Circuit::Circuit(Circuit &&circuit) noexcept
-    : jag_targets(std::move(circuit.jag_targets)),
+    : target_buf(std::move(circuit.target_buf)),
+      arg_buf(std::move(circuit.arg_buf)),
       operations(std::move(circuit.operations)),
       blocks(std::move(circuit.blocks)) {
 }
@@ -110,9 +207,13 @@ Circuit &Circuit::operator=(const Circuit &circuit) {
         blocks = circuit.blocks;
 
         // Keep local copy of operation data.
-        jag_targets = MonotonicBuffer<uint32_t>(circuit.jag_targets.total_allocated());
+        target_buf = MonotonicBuffer<uint32_t>(circuit.target_buf.total_allocated());
         for (auto &op : operations) {
-            op.target_data.targets = jag_targets.take_copy(op.target_data.targets);
+            op.target_data.targets = target_buf.take_copy(op.target_data.targets);
+        }
+        arg_buf = MonotonicBuffer<double>(circuit.arg_buf.total_allocated());
+        for (auto &op : operations) {
+            op.target_data.args = arg_buf.take_copy(op.target_data.args);
         }
     }
     return *this;
@@ -122,13 +223,14 @@ Circuit &Circuit::operator=(Circuit &&circuit) noexcept {
     if (&circuit != this) {
         operations = std::move(circuit.operations);
         blocks = std::move(circuit.blocks);
-        jag_targets = std::move(circuit.jag_targets);
+        target_buf = std::move(circuit.target_buf);
+        arg_buf = std::move(circuit.arg_buf);
     }
     return *this;
 }
 
 bool Operation::can_fuse(const Operation &other) const {
-    return gate->id == other.gate->id && target_data.arg == other.target_data.arg &&
+    return gate->id == other.gate->id && target_data.args == other.target_data.args &&
            !(gate->flags & GATE_IS_NOT_FUSABLE);
 }
 
@@ -136,10 +238,16 @@ bool Operation::operator==(const Operation &other) const {
     return gate->id == other.gate->id && target_data == other.target_data;
 }
 bool Operation::approx_equals(const Operation &other, double atol) const {
-    if (gate->id != other.gate->id || target_data.targets != other.target_data.targets) {
+    if (gate->id != other.gate->id || target_data.targets != other.target_data.targets ||
+        target_data.args.size() != other.target_data.args.size()) {
         return false;
     }
-    return abs(target_data.arg - other.target_data.arg) <= atol;
+    for (size_t k = 0; k < target_data.args.size(); k++) {
+        if (abs(target_data.args[k] - other.target_data.args[k]) > atol) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Operation::operator!=(const Operation &other) const {
@@ -147,7 +255,7 @@ bool Operation::operator!=(const Operation &other) const {
 }
 
 bool OperationData::operator==(const OperationData &other) const {
-    return arg == other.arg && targets == other.targets;
+    return args == other.args && targets == other.targets;
 }
 bool OperationData::operator!=(const OperationData &other) const {
     return !(*this == other);
@@ -190,20 +298,24 @@ inline const Gate &read_gate_name(int &c, SOURCE read_char) {
         n++;
     }
     // Note: in the name-too-long case, the full buffer name won't match any gate and an exception will fire.
-    return GATE_DATA.at(name_buf, n);
+    try {
+        return GATE_DATA.at(name_buf, n);
+    } catch (const std::out_of_range &ex) {
+        throw std::invalid_argument(ex.what());
+    }
 }
 
 template <typename SOURCE>
 uint32_t read_uint24_t(int &c, SOURCE read_char) {
     if (!(c >= '0' && c <= '9')) {
-        throw std::out_of_range("Expected a digit but got " + std::string(1, c));
+        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
     }
     uint32_t result = 0;
     do {
         result *= 10;
         result += c - '0';
         if (result >= uint32_t{1} << 24) {
-            throw std::out_of_range("Number too large.");
+            throw std::invalid_argument("Number too large.");
         }
         c = read_char();
     } while (c >= '0' && c <= '9');
@@ -213,14 +325,14 @@ uint32_t read_uint24_t(int &c, SOURCE read_char) {
 template <typename SOURCE>
 uint64_t read_uint63_t(int &c, SOURCE read_char) {
     if (!(c >= '0' && c <= '9')) {
-        throw std::out_of_range("Expected a digit but got " + std::string(1, c));
+        throw std::invalid_argument("Expected a digit but got '" + std::string(1, c) + "'");
     }
     uint64_t result = 0;
     do {
         result *= 10;
         result += c - '0';
         if (result >= uint64_t{1} << 63) {
-            throw std::out_of_range("Number too large.");
+            throw std::invalid_argument("Number too large.");
         }
         c = read_char();
     } while (c >= '0' && c <= '9');
@@ -230,77 +342,86 @@ uint64_t read_uint63_t(int &c, SOURCE read_char) {
 template <typename SOURCE>
 inline void read_raw_qubit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     uint32_t q = read_uint24_t(c, read_char);
-    circuit.jag_targets.append_tail(q);
+    circuit.target_buf.append_tail(q);
 }
 
 template <typename SOURCE>
 inline void read_record_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     if (c != 'r' || read_char() != 'e' || read_char() != 'c' || read_char() != '[' || read_char() != '-') {
-        throw std::out_of_range("Expected a record argument like 'rec[-1]'.");
+        throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
     }
     c = read_char();
     uint32_t lookback = read_uint24_t(c, read_char);
     if (c != ']') {
-        throw std::out_of_range("Expected a record argument like 'rec[-1]'.");
+        throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
     }
     c = read_char();
-    circuit.jag_targets.append_tail(lookback | TARGET_RECORD_BIT);
+    circuit.target_buf.append_tail(lookback | TARGET_RECORD_BIT);
 }
 
 template <typename SOURCE>
-inline void read_raw_qubit_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
-    while (read_until_next_line_arg(c, read_char)) {
-        read_raw_qubit_target_into(c, read_char, circuit);
+inline void read_pauli_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+    uint32_t m = 0;
+    if (c == 'x' || c == 'X') {
+        m = TARGET_PAULI_X_BIT;
+    } else if (c == 'y' || c == 'Y') {
+        m = TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT;
+    } else if (c == 'z' || c == 'Z') {
+        m = TARGET_PAULI_Z_BIT;
+    } else {
+        assert(false);
     }
-}
-
-template <typename SOURCE>
-inline void read_classically_controllable_qubit_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
-    while (read_until_next_line_arg(c, read_char)) {
-        if (c == 'r') {
-            read_record_target_into(c, read_char, circuit);
-        } else {
-            read_raw_qubit_target_into(c, read_char, circuit);
-        }
+    c = read_char();
+    if (c == ' ') {
+        throw std::invalid_argument(
+            "Pauli target '" + std::string(1, c) + "' followed by a space instead of a qubit index.");
     }
+    uint32_t q = read_uint24_t(c, read_char);
+
+    circuit.target_buf.append_tail(q | m);
 }
 
 template <typename SOURCE>
-inline void read_pauli_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
-    while (read_until_next_line_arg(c, read_char)) {
-        uint32_t m = 0;
-        if (c == 'X' || c == 'x') {
-            m = TARGET_PAULI_X_BIT;
-        } else if (c == 'Y' || c == 'y') {
-            m = TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT;
-        } else if (c == 'Z' || c == 'z') {
-            m = TARGET_PAULI_Z_BIT;
-        } else {
-            throw std::out_of_range("Expected a Pauli target (like X1, Y2, or Z3) but got " + std::string(c, 1));
-        }
-        c = read_char();
-        if (c == ' ') {
-            throw std::out_of_range("Unexpected space after Pauli before target qubit index.");
-        }
-        uint32_t q = read_uint24_t(c, read_char);
-        circuit.jag_targets.append_tail(q | m);
-    }
+inline void read_inverted_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+    assert(c == '!');
+    c = read_char();
+    uint32_t q = read_uint24_t(c, read_char);
+    circuit.target_buf.append_tail(q | TARGET_INVERTED_BIT);
 }
 
 template <typename SOURCE>
-inline void read_result_targets_into(int &c, SOURCE read_char, const Gate &gate, Circuit &circuit) {
+inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
-        uint32_t flipped_flag = c == '!' ? uint32_t{1} << 31 : 0;
-        if (flipped_flag) {
-            c = read_char();
+        switch (c) {
+            case 'r':
+                read_record_target_into(c, read_char, circuit);
+                break;
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'x':
+            case 'y':
+            case 'z':
+                read_pauli_target_into(c, read_char, circuit);
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                read_raw_qubit_target_into(c, read_char, circuit);
+                break;
+            case '!':
+                read_inverted_target_into(c, read_char, circuit);
+                break;
+            default:
+                throw std::invalid_argument("Unrecognized target prefix '" + std::string(1, c) + "'.");
         }
-        uint32_t q = read_uint24_t(c, read_char);
-        if (flipped_flag && !(gate.flags & GATE_PRODUCES_RESULTS)) {
-            throw std::invalid_argument(
-                "Gate '" + std::string(gate.name) + "' doesn't take inverted targets like '!" + std::to_string(q) +
-                "'.");
-        }
-        circuit.jag_targets.append_tail(q ^ flipped_flag);
     }
 }
 
@@ -308,15 +429,8 @@ template <typename SOURCE>
 inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
         uint64_t q = read_uint63_t(c, read_char);
-        circuit.jag_targets.append_tail((uint32_t)(q & 0xFFFFFFFFULL));
-        circuit.jag_targets.append_tail((uint32_t)(q >> 32));
-    }
-}
-
-template <typename SOURCE>
-inline void read_record_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
-    while (read_until_next_line_arg(c, read_char)) {
-        read_record_target_into(c, read_char, circuit);
+        circuit.target_buf.append_tail((uint32_t)(q & 0xFFFFFFFFULL));
+        circuit.target_buf.append_tail((uint32_t)(q >> 32));
     }
 }
 
@@ -324,51 +438,27 @@ template <typename SOURCE>
 void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read_char) {
     int c = (int)lead_char;
     const auto &gate = read_gate_name(c, read_char);
-    double val = 0;
-    if (gate.flags & GATE_TAKES_PARENS_ARGUMENT) {
-        read_past_within_line_whitespace(c, read_char);
-        val = read_parens_argument(c, gate.name, read_char);
-    }
-    if (!(gate.flags & (GATE_IS_BLOCK | GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_PRODUCES_RESULTS |
-                        GATE_TARGETS_PAULI_STRING | GATE_CAN_TARGET_MEASUREMENT_RECORD))) {
-        read_raw_qubit_targets_into(c, read_char, circuit);
-    } else if (gate.flags & GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
-        read_record_targets_into(c, read_char, circuit);
-    } else if (gate.flags & GATE_CAN_TARGET_MEASUREMENT_RECORD) {
-        read_classically_controllable_qubit_targets_into(c, read_char, circuit);
-    } else if (gate.flags & GATE_PRODUCES_RESULTS) {
-        read_result_targets_into(c, read_char, gate, circuit);
-    } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        read_pauli_targets_into(c, read_char, circuit);
-    } else if (gate.flags & GATE_IS_BLOCK) {
-        read_result_targets64_into(c, read_char, circuit);
-    } else {
-        while (read_until_next_line_arg(c, read_char)) {
-            circuit.jag_targets.append_tail(read_uint24_t(c, read_char));
+    try {
+        read_parens_arguments(c, gate.name, read_char, gate.arg_count, circuit.arg_buf);
+        if (gate.flags & GATE_IS_BLOCK) {
+            read_result_targets64_into(c, read_char, circuit);
+            if (c != '{') {
+                throw std::invalid_argument("Missing '{' at start of " + std::string(gate.name) + " block.");
+            }
+        } else {
+            read_arbitrary_targets_into(c, read_char, circuit);
+            if (c == '{') {
+                throw std::invalid_argument("Unexpected '{'.");
+            }
+            validate_gate(gate, circuit.target_buf.tail, circuit.arg_buf.tail);
         }
-    }
-    if (c != '{' && (gate.flags & GATE_IS_BLOCK)) {
-        throw std::out_of_range("Missing '{' at start of " + std::string(gate.name) + " block.");
-    }
-    if (c == '{' && !(gate.flags & GATE_IS_BLOCK)) {
-        throw std::out_of_range("Unexpected '{' after non-block command " + std::string(gate.name) + ".");
+    } catch (const std::invalid_argument &ex) {
+        circuit.target_buf.discard_tail();
+        circuit.arg_buf.discard_tail();
+        throw ex;
     }
 
-    auto view = circuit.jag_targets.commit_tail();
-    if (gate.flags & GATE_TARGETS_PAIRS) {
-        if (view.size() & 1) {
-            throw std::out_of_range(
-                "Two qubit gate " + std::string(gate.name) + " applied to an odd number of targets.");
-        }
-        for (size_t k = 0; k < view.size(); k += 2) {
-            if (view[k] == view[k + 1]) {
-                throw std::out_of_range(
-                    "Interacting a target with itself " + std::to_string(view[k] & TARGET_VALUE_MASK) + " using gate " +
-                    gate.name + ".");
-            }
-        }
-    }
-    circuit.operations.push_back({&gate, {val, view}});
+    circuit.operations.push_back({&gate, {circuit.arg_buf.commit_tail(), circuit.target_buf.commit_tail()}});
 }
 
 template <typename SOURCE>
@@ -379,13 +469,13 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
         read_past_dead_space_between_commands(c, read_char);
         if (c == EOF) {
             if (read_condition == READ_UNTIL_END_OF_BLOCK) {
-                throw std::out_of_range("Unterminated block. Got a '{' without an eventual '}'.");
+                throw std::invalid_argument("Unterminated block. Got a '{' without an eventual '}'.");
             }
             return;
         }
         if (c == '}') {
             if (read_condition != READ_UNTIL_END_OF_BLOCK) {
-                throw std::out_of_range("Uninitiated block. Got a '}' without a '{'.");
+                throw std::invalid_argument("Uninitiated block. Got a '}' without a '{'.");
             }
             return;
         }
@@ -394,13 +484,13 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
 
         if (new_op.gate->id == gate_name_to_id("REPEAT")) {
             if (new_op.target_data.targets.size() != 2) {
-                throw std::out_of_range("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
+                throw std::invalid_argument("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
             }
             uint32_t rep_count_low = new_op.target_data.targets[0];
             uint32_t rep_count_high = new_op.target_data.targets[1];
             uint32_t block_id = (uint32_t)circuit.blocks.size();
             if (rep_count_low == 0 && rep_count_high == 0) {
-                throw std::out_of_range("Repeating 0 times is not supported.");
+                throw std::invalid_argument("Repeating 0 times is not supported.");
             }
 
             // Read block.
@@ -408,16 +498,16 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             circuit_read_operations(circuit.blocks.back(), read_char, READ_UNTIL_END_OF_BLOCK);
 
             // Rewrite target data to reference the parsed block.
-            circuit.jag_targets.ensure_available(2);
-            circuit.jag_targets.append_tail(block_id);
-            circuit.jag_targets.append_tail(rep_count_low);
-            circuit.jag_targets.append_tail(rep_count_high);
-            new_op.target_data.targets = circuit.jag_targets.commit_tail();
+            circuit.target_buf.ensure_available(2);
+            circuit.target_buf.append_tail(block_id);
+            circuit.target_buf.append_tail(rep_count_low);
+            circuit.target_buf.append_tail(rep_count_high);
+            new_op.target_data.targets = circuit.target_buf.commit_tail();
         }
 
         // Fuse operations.
         while (ops.size() > 1 && ops[ops.size() - 2].can_fuse(new_op)) {
-            fuse_data(ops[ops.size() - 2].target_data.targets, new_op.target_data.targets, circuit.jag_targets);
+            fuse_data(ops[ops.size() - 2].target_data.targets, new_op.target_data.targets, circuit.target_buf);
             ops.pop_back();
         }
     } while (read_condition != READ_AS_LITTLE_AS_POSSIBLE);
@@ -435,59 +525,32 @@ void Circuit::append_from_text(const char *text) {
 
 void Circuit::append_operation(const Operation &operation) {
     operations.push_back(
-        {operation.gate, {operation.target_data.arg, jag_targets.take_copy(operation.target_data.targets)}});
+        {operation.gate,
+         {arg_buf.take_copy(operation.target_data.args), target_buf.take_copy(operation.target_data.targets)}});
 }
 
-void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &vec, double arg) {
+void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
     const auto &gate = GATE_DATA.at(gate_name);
-    append_operation(gate, vec, arg);
+    append_operation(gate, targets, {&singleton_arg, &singleton_arg + 1});
+}
+void Circuit::append_op(
+    const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {
+    const auto &gate = GATE_DATA.at(gate_name);
+    append_operation(gate, targets, args);
 }
 
-void Circuit::append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, double arg) {
-    if (gate.flags & GATE_TARGETS_PAIRS) {
-        if (targets.size() & 1) {
-            throw std::out_of_range(
-                "Two qubit gate " + std::string(gate.name) + " requires have an even number of targets.");
-        }
-        for (size_t k = 0; k < targets.size(); k += 2) {
-            if (targets[k] == targets[k + 1]) {
-                throw std::out_of_range(
-                    "Interacting a target with itself " + std::to_string(targets[k] & TARGET_VALUE_MASK) +
-                    " using gate " + std::string(gate.name) + ".");
-            }
-        }
-    }
-    if (arg != 0 && !(gate.flags & GATE_TAKES_PARENS_ARGUMENT)) {
-        throw std::out_of_range("Gate " + std::string(gate.name) + " doesn't take a parens arg.");
-    }
-
-    // Check that targets are in range.
-    uint32_t valid_target_mask = TARGET_VALUE_MASK;
-    if (gate.flags & GATE_PRODUCES_RESULTS) {
-        valid_target_mask |= TARGET_INVERTED_BIT;
-    }
-    if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        valid_target_mask |= TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT;
-    }
-    if (gate.flags & (GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_CAN_TARGET_MEASUREMENT_RECORD)) {
-        valid_target_mask |= TARGET_RECORD_BIT;
-    }
+void Circuit::append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstPointerRange<double> args) {
     if (gate.flags & GATE_IS_BLOCK) {
-        throw std::out_of_range("Can't append a block as an operation.");
+        throw std::invalid_argument("Can't append a block like a normal operation.");
     }
-    for (uint32_t q : targets) {
-        if (q != (q & valid_target_mask)) {
-            throw std::out_of_range(
-                "Target " + std::to_string(q & TARGET_VALUE_MASK) + " has invalid flags " +
-                std::to_string(q & ~TARGET_VALUE_MASK) + " for gate " + std::string(gate.name) + ".");
-        }
-    }
+    validate_gate(gate, targets, args);
 
-    auto added = jag_targets.take_copy(targets);
-    Operation to_add = {&gate, {arg, added}};
+    auto added_args = arg_buf.take_copy(args);
+    auto added_targets = target_buf.take_copy(targets);
+    Operation to_add = {&gate, {added_args, added_targets}};
     if (!operations.empty() && operations.back().can_fuse(to_add)) {
         // Extend targets of last gate.
-        fuse_data(operations.back().target_data.targets, to_add.target_data.targets, jag_targets);
+        fuse_data(operations.back().target_data.targets, to_add.target_data.targets, target_buf);
     } else {
         // Add a fresh new operation with its own target data.
         operations.push_back(to_add);
@@ -505,30 +568,26 @@ void Circuit::append_from_file(FILE *file, bool stop_asap) {
 
 std::ostream &operator<<(std::ostream &out, const Operation &op) {
     out << op.gate->name;
-    if (op.target_data.arg != 0 || (op.gate->flags & GATE_TAKES_PARENS_ARGUMENT)) {
+    if (!op.target_data.args.empty()) {
         out << '(';
-        if ((size_t)op.target_data.arg == op.target_data.arg) {
-            out << (size_t)op.target_data.arg;
-        } else {
-            out << op.target_data.arg;
+        bool first = true;
+        for (auto e : op.target_data.args) {
+            if (first) {
+                first = false;
+            } else {
+                out << ", ";
+            }
+            if (e > (double)INT64_MIN && e < (double)INT64_MAX && (int64_t)e == e) {
+                out << (int64_t)e;
+            } else {
+                out << e;
+            }
         }
         out << ')';
     }
     for (auto t : op.target_data.targets) {
         out << ' ';
-        if (t & TARGET_INVERTED_BIT) {
-            out << '!';
-        }
-        if (t & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
-            bool x = t & TARGET_PAULI_X_BIT;
-            bool z = t & TARGET_PAULI_Z_BIT;
-            out << "IXZY"[x + z * 2];
-        }
-        if (t & TARGET_RECORD_BIT) {
-            out << "rec[-" << (t & TARGET_VALUE_MASK) << "]";
-        } else {
-            out << (t & TARGET_VALUE_MASK);
-        }
+        write_target(out, t);
     }
     return out;
 }
@@ -570,7 +629,8 @@ std::ostream &operator<<(std::ostream &out, const Circuit &c) {
 }
 
 void Circuit::clear() {
-    jag_targets.clear();
+    target_buf.clear();
+    arg_buf.clear();
     operations.clear();
     blocks.clear();
 }
@@ -592,7 +652,7 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
         uint64_t old_reps = op_data_rep_count(operations[0].target_data);
         uint64_t new_reps = old_reps * repetitions;
         if (old_reps != new_reps / repetitions) {
-            throw std::out_of_range("Fused repetition count is too large.");
+            throw std::invalid_argument("Fused repetition count is too large.");
         }
         Circuit copy = *this;
         copy.operations[0].target_data.targets[1] = (uint32_t)(new_reps & 0xFFFFFFFFULL);
@@ -602,10 +662,10 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
 
     Circuit result;
     result.blocks.push_back(*this);
-    result.jag_targets.append_tail(0);
-    result.jag_targets.append_tail((uint32_t)(repetitions & 0xFFFFFFFFULL));
-    result.jag_targets.append_tail((uint32_t)(repetitions >> 32));
-    result.operations.push_back({&GATE_DATA.at("REPEAT"), {0, result.jag_targets.commit_tail()}});
+    result.target_buf.append_tail(0);
+    result.target_buf.append_tail((uint32_t)(repetitions & 0xFFFFFFFFULL));
+    result.target_buf.append_tail((uint32_t)(repetitions >> 32));
+    result.operations.push_back({&GATE_DATA.at("REPEAT"), {{}, result.target_buf.commit_tail()}});
     return result;
 }
 
@@ -655,10 +715,8 @@ Circuit Circuit::from_file(FILE *file) {
     return result;
 }
 
-Circuit Circuit::from_text(const char *text) {
-    Circuit result;
-    result.append_from_text(text);
-    return result;
+Circuit::Circuit(const char *text) {
+    append_from_text(text);
 }
 
 DetectorsAndObservables::DetectorsAndObservables(DetectorsAndObservables &&other) noexcept
@@ -766,6 +824,6 @@ uint64_t Circuit::count_detectors() const {
 uint64_t Circuit::num_observables() const {
     const Gate *obs = &GATE_DATA.at("OBSERVABLE_INCLUDE");
     return max_operation_property([=](const Operation &op) -> size_t {
-        return op.gate == obs ? (size_t)op.target_data.arg + 1 : 0;
+        return op.gate == obs ? (size_t)op.target_data.args[0] + 1 : 0;
     });
 }

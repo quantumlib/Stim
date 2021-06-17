@@ -53,13 +53,15 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
     params.append_reset(head, all_qubits);
     head += cycle_actions;
     for (uint32_t k = 0; k < d; k++) {
-        head.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT});
+        head.append_op("DETECTOR", {(d - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
+    body.append_op("SHIFT_COORDS", {}, {0, 1});
     for (uint32_t k = 0; k < d; k++) {
-        body.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + d) | TARGET_RECORD_BIT});
+        body.append_op(
+            "DETECTOR", {(d - k) | TARGET_RECORD_BIT, (2 * d - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
     }
 
     // Build the end of the circuit, getting out of the cycle state and terminating.
@@ -69,7 +71,9 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
     params.append_measure(tail, data_qubits);
     for (uint32_t k = 0; k < d; k++) {
         tail.append_op(
-            "DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 2) | TARGET_RECORD_BIT, (k + 2 + d) | TARGET_RECORD_BIT});
+            "DETECTOR",
+            {(d - k) | TARGET_RECORD_BIT, (d - k + 1) | TARGET_RECORD_BIT, (2 * d - k + 1) | TARGET_RECORD_BIT},
+            {(double)2 * k + 1, 1});
     }
     tail.append_op("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
 

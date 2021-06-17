@@ -75,7 +75,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     while (targets.size() > num_targets) {
         targets.pop_back();
     }
-    OperationData op_data{0, targets};
+    OperationData op_data{{}, targets};
     for (size_t k = 7; k < num_samples; k += 101) {
         PauliString test_value = PauliString::random(num_qubits, SHARED_TEST_RNG());
         PauliStringRef test_value_ref(test_value);
@@ -126,7 +126,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
 }
 
 TEST(FrameSimulator, test_util_is_output_possible) {
-    auto circuit = Circuit::from_text(
+    auto circuit = Circuit(
         "H 0\n"
         "CNOT 0 1\n"
         "X 0\n"
@@ -144,7 +144,7 @@ TEST(FrameSimulator, test_util_is_output_possible) {
 }
 
 bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
-    auto circuit = Circuit::from_text(program_text);
+    auto circuit = Circuit(program_text);
     auto reference_sample = TableauSimulator::reference_sample_circuit(circuit);
     auto samples = FrameSimulator::sample(circuit, reference_sample, 10, SHARED_TEST_RNG());
 
@@ -285,7 +285,7 @@ TEST(FrameSimulator, consistency) {
 }
 
 TEST(FrameSimulator, sample_out) {
-    auto circuit = Circuit::from_text(
+    auto circuit = Circuit(
         "X 0\n"
         "M 1\n"
         "M 0\n"
@@ -423,7 +423,7 @@ TEST(FrameSimulator, correlated_error) {
     expected.clear();
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
@@ -439,7 +439,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
@@ -455,7 +455,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[2] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
@@ -471,7 +471,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[3] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
         ELSE_CORRELATED_ERROR(1) X2 X3
@@ -487,7 +487,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
@@ -503,7 +503,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(1) X2 X3
@@ -521,7 +521,7 @@ TEST(FrameSimulator, correlated_error) {
     expected[4] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(1) X2 X3
@@ -537,7 +537,7 @@ TEST(FrameSimulator, correlated_error) {
     std::mt19937_64 rng(0);
     size_t n = 10000;
     auto samples = FrameSimulator::sample(
-        Circuit::from_text(R"circuit(
+        Circuit(R"circuit(
         CORRELATED_ERROR(0.5) X0
         ELSE_CORRELATED_ERROR(0.25) X1
         ELSE_CORRELATED_ERROR(0.75) X2
@@ -563,7 +563,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
     ASSERT_THROW(
         {
             FrameSimulator::sample(
-                Circuit::from_text(R"circuit(
+                Circuit(R"circuit(
             M 0
             CNOT 1 rec[-1]
         )circuit"),
@@ -571,11 +571,11 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
                 1,
                 SHARED_TEST_RNG());
         },
-        std::out_of_range);
+        std::invalid_argument);
     ASSERT_THROW(
         {
             FrameSimulator::sample(
-                Circuit::from_text(R"circuit(
+                Circuit(R"circuit(
             M 0
             CY 1 rec[-1]
         )circuit"),
@@ -583,11 +583,11 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
                 1,
                 SHARED_TEST_RNG());
         },
-        std::out_of_range);
+        std::invalid_argument);
     ASSERT_THROW(
         {
             FrameSimulator::sample(
-                Circuit::from_text(R"circuit(
+                Circuit(R"circuit(
             M 0
             YCZ rec[-1] 1
         )circuit"),
@@ -595,11 +595,11 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
                 1,
                 SHARED_TEST_RNG());
         },
-        std::out_of_range);
+        std::invalid_argument);
     ASSERT_THROW(
         {
             FrameSimulator::sample(
-                Circuit::from_text(R"circuit(
+                Circuit(R"circuit(
             M 0
             XCZ rec[-1] 1
         )circuit"),
@@ -607,11 +607,11 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
                 1,
                 SHARED_TEST_RNG());
         },
-        std::out_of_range);
+        std::invalid_argument);
     ASSERT_THROW(
         {
             FrameSimulator::sample(
-                Circuit::from_text(R"circuit(
+                Circuit(R"circuit(
             M 0
             SWAP 1 rec[-1]
         )circuit"),
@@ -619,7 +619,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
                 1,
                 SHARED_TEST_RNG());
         },
-        std::out_of_range);
+        std::invalid_argument);
 }
 
 TEST(FrameSimulator, classical_can_control_quantum) {
@@ -630,7 +630,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
         CX rec[-1] 1
@@ -642,7 +642,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
         CY rec[-1] 1
@@ -654,7 +654,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
         XCZ 1 rec[-1]
@@ -666,7 +666,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
         YCZ 1 rec[-1]
@@ -685,7 +685,7 @@ TEST(FrameSimulator, classical_controls) {
     expected.clear();
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         M 0
         CX rec[-1] 1
         M 1
@@ -698,7 +698,7 @@ TEST(FrameSimulator, classical_controls) {
     expected.clear();
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         M !0
         CX rec[-1] 1
         M 1
@@ -713,7 +713,7 @@ TEST(FrameSimulator, classical_controls) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M !0
         CX rec[-1] 1
@@ -729,7 +729,7 @@ TEST(FrameSimulator, classical_controls) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M 0
         CX rec[-1] 1
@@ -740,7 +740,7 @@ TEST(FrameSimulator, classical_controls) {
             SHARED_TEST_RNG())[0],
         expected);
     auto r = FrameSimulator::sample(
-        Circuit::from_text(R"circuit(
+        Circuit(R"circuit(
         X_ERROR(0.5) 0
         M 0
         CX rec[-1] 1
@@ -761,7 +761,7 @@ TEST(FrameSimulator, classical_controls) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M 0
         H 1
@@ -779,7 +779,7 @@ TEST(FrameSimulator, classical_controls) {
     expected[1] = true;
     ASSERT_EQ(
         FrameSimulator::sample(
-            Circuit::from_text(R"circuit(
+            Circuit(R"circuit(
         X_ERROR(1) 0
         M 0
         CY rec[-1] 1
@@ -793,7 +793,7 @@ TEST(FrameSimulator, classical_controls) {
 
 TEST(FrameSimulator, record_gets_trimmed) {
     FrameSimulator sim(100, 768, 5, SHARED_TEST_RNG());
-    Circuit c = Circuit::from_text("M 0 1 2 3 4 5 6 7 8 9");
+    Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.measure_z(c.operations[0].target_data);
@@ -805,7 +805,7 @@ TEST(FrameSimulator, record_gets_trimmed) {
 TEST(FrameSimulator, stream_huge_case) {
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(
-        Circuit::from_text(R"CIRCUIT(
+        Circuit(R"CIRCUIT(
             X_ERROR(1) 2
             REPEAT 100000 {
                 M 0 1 2 3
@@ -824,7 +824,7 @@ TEST(FrameSimulator, stream_huge_case) {
 }
 
 TEST(FrameSimulator, block_results_single_shot) {
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             X_ERROR(1) 0
             MR 0
@@ -844,7 +844,7 @@ TEST(FrameSimulator, block_results_single_shot) {
 }
 
 TEST(FrameSimulator, block_results_triple_shot) {
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             X_ERROR(1) 0
             MR 0
@@ -868,7 +868,7 @@ TEST(FrameSimulator, block_results_triple_shot) {
 
 TEST(FrameSimulator, stream_results) {
     DebugForceResultStreamingRaii force_streaming;
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             X_ERROR(1) 0
             MR 0
@@ -889,7 +889,7 @@ TEST(FrameSimulator, stream_results) {
 
 TEST(FrameSimulator, stream_many_shots) {
     DebugForceResultStreamingRaii force_streaming;
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         X_ERROR(1) 1
         M 0 1 2
     )circuit");
@@ -907,7 +907,7 @@ TEST(FrameSimulator, stream_many_shots) {
 
 TEST(FrameSimulator, stream_results_triple_shot) {
     DebugForceResultStreamingRaii force_streaming;
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             X_ERROR(1) 0
             MR 0
@@ -935,7 +935,7 @@ TEST(FrameSimulator, resets_vs_measurements) {
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
-        simd_bit_table t = FrameSimulator::sample(Circuit::from_text(circuit), ref, 100, SHARED_TEST_RNG());
+        simd_bit_table t = FrameSimulator::sample(Circuit(circuit), ref, 100, SHARED_TEST_RNG());
         return !t.data.not_zero();
     };
 

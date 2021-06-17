@@ -12,7 +12,7 @@ struct TempArgData {
     TempArgData(std::vector<uint32_t> targets) : targets(std::move(targets)) {
     }
     operator OperationData() {
-        return {0, targets};
+        return {{}, targets};
     }
 };
 

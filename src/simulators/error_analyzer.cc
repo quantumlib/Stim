@@ -12,27 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "error_fuser.h"
+#include "error_analyzer.h"
 
 #include <algorithm>
 #include <iomanip>
-#include <limits>
 #include <queue>
 #include <sstream>
 
-#include "../dem/detector_error_model.h"
-
 using namespace stim_internal;
 
-bool stim_internal::is_encoded_detector_id(uint64_t id) {
-    return id < FIRST_OBSERVABLE_ID;
-}
-
-bool stim_internal::is_encoded_observable_id(uint64_t id) {
-    return id >= FIRST_OBSERVABLE_ID && id != COMPOSITE_ERROR_SYGIL;
-}
-
-void ErrorFuser::remove_gauge(ConstPointerRange<uint64_t> sorted) {
+void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
     if (sorted.empty()) {
         return;
     }
@@ -50,147 +39,143 @@ void ErrorFuser::remove_gauge(ConstPointerRange<uint64_t> sorted) {
     }
 }
 
-void ErrorFuser::RX(const OperationData &dat) {
+void ErrorAnalyzer::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        if (!zs[q].empty()) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
-            }
-            remove_gauge(add_error(0.5, zs[q].range()));
-        }
-        xs[q].clear();
-    }
-}
-
-void ErrorFuser::RY(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
-        if (xs[q] != zs[q]) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
-            }
-            remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
-        }
+        check_for_gauge(zs[q]);
         xs[q].clear();
         zs[q].clear();
     }
 }
 
-void ErrorFuser::RZ(const OperationData &dat) {
+void ErrorAnalyzer::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        if (!xs[q].empty()) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
-            }
-            remove_gauge(add_error(0.5, xs[q].range()));
-        }
+        check_for_gauge(xs[q], zs[q]);
+        xs[q].clear();
         zs[q].clear();
     }
 }
 
-void ErrorFuser::MX(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
-        scheduled_measurement_time++;
-
-        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
-        std::sort(d.begin(), d.end());
-        xs[q].xor_sorted_items(d);
-        if (!zs[q].empty()) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
-            }
-            remove_gauge(add_error(0.5, zs[q].range()));
-        }
-    }
-}
-
-void ErrorFuser::MY(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
-        scheduled_measurement_time++;
-
-        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
-        std::sort(d.begin(), d.end());
-        xs[q].xor_sorted_items(d);
-        zs[q].xor_sorted_items(d);
-        if (xs[q] != zs[q]) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
-            }
-            remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
-        }
-    }
-}
-
-void ErrorFuser::MZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
-        scheduled_measurement_time++;
-
-        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
-        std::sort(d.begin(), d.end());
-        zs[q].xor_sorted_items(d);
-        if (!xs[q].empty()) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
-            }
-            remove_gauge(add_error(0.5, xs[q].range()));
-        }
-    }
-}
-
-void ErrorFuser::MRX(const OperationData &dat) {
+void ErrorAnalyzer::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{0, {&q, &q + 1}};
+        check_for_gauge(xs[q]);
+        xs[q].clear();
+        zs[q].clear();
+    }
+}
+
+void ErrorAnalyzer::check_for_gauge(
+    SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2) {
+    if (potential_gauge_summand_1 == potential_gauge_summand_2) {
+        return;
+    }
+    potential_gauge_summand_1 ^= potential_gauge_summand_2;
+    check_for_gauge(potential_gauge_summand_1);
+}
+
+void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge) {
+    if (potential_gauge.empty()) {
+        return;
+    }
+    if (!allow_gauge_detectors) {
+        throw std::invalid_argument("A detector or observable anti-commuted with a measurement or reset.");
+    }
+    for (const auto &t : potential_gauge) {
+        if (t.is_observable_id()) {
+            throw std::invalid_argument("An observable anti-commuted with a measurement or reset.");
+        }
+    }
+    remove_gauge(add_error(0.5, potential_gauge.range()));
+}
+
+void ErrorAnalyzer::MX(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::sort(d.begin(), d.end());
+        xs[q].xor_sorted_items(d);
+        check_for_gauge(zs[q]);
+    }
+}
+
+void ErrorAnalyzer::MY(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::sort(d.begin(), d.end());
+        xs[q].xor_sorted_items(d);
+        zs[q].xor_sorted_items(d);
+        check_for_gauge(xs[q], zs[q]);
+    }
+}
+
+void ErrorAnalyzer::MZ(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::sort(d.begin(), d.end());
+        zs[q].xor_sorted_items(d);
+        check_for_gauge(xs[q]);
+    }
+}
+
+void ErrorAnalyzer::MRX(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k];
+        OperationData d{{}, {&q, &q + 1}};
         RX(d);
         MX(d);
     }
 }
 
-void ErrorFuser::MRY(const OperationData &dat) {
+void ErrorAnalyzer::MRY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{0, {&q, &q + 1}};
+        OperationData d{{}, {&q, &q + 1}};
         RY(d);
         MY(d);
     }
 }
 
-void ErrorFuser::MRZ(const OperationData &dat) {
+void ErrorAnalyzer::MRZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{0, {&q, &q + 1}};
+        OperationData d{{}, {&q, &q + 1}};
         RZ(d);
         MZ(d);
     }
 }
 
-void ErrorFuser::H_XZ(const OperationData &dat) {
+void ErrorAnalyzer::H_XZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         std::swap(xs[q], zs[q]);
     }
 }
 
-void ErrorFuser::H_XY(const OperationData &dat) {
+void ErrorAnalyzer::H_XY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         zs[q] ^= xs[q];
     }
 }
 
-void ErrorFuser::H_YZ(const OperationData &dat) {
+void ErrorAnalyzer::H_YZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         xs[q] ^= zs[q];
     }
 }
 
-void ErrorFuser::C_XYZ(const OperationData &dat) {
+void ErrorAnalyzer::C_XYZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         zs[q] ^= xs[q];
@@ -198,7 +183,7 @@ void ErrorFuser::C_XYZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::C_ZYX(const OperationData &dat) {
+void ErrorAnalyzer::C_ZYX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         xs[q] ^= zs[q];
@@ -206,7 +191,7 @@ void ErrorFuser::C_ZYX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::XCX(const OperationData &dat) {
+void ErrorAnalyzer::XCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k];
         auto q2 = dat.targets[k + 1];
@@ -215,7 +200,7 @@ void ErrorFuser::XCX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::XCY(const OperationData &dat) {
+void ErrorAnalyzer::XCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto tx = dat.targets[k];
         auto ty = dat.targets[k + 1];
@@ -226,7 +211,7 @@ void ErrorFuser::XCY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::YCX(const OperationData &dat) {
+void ErrorAnalyzer::YCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto tx = dat.targets[k + 1];
         auto ty = dat.targets[k];
@@ -237,7 +222,7 @@ void ErrorFuser::YCX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ZCY(const OperationData &dat) {
+void ErrorAnalyzer::ZCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto c = dat.targets[k];
         auto t = dat.targets[k + 1];
@@ -245,7 +230,7 @@ void ErrorFuser::ZCY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::YCZ(const OperationData &dat) {
+void ErrorAnalyzer::YCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto t = dat.targets[k];
         auto c = dat.targets[k + 1];
@@ -253,7 +238,7 @@ void ErrorFuser::YCZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::YCY(const OperationData &dat) {
+void ErrorAnalyzer::YCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -269,7 +254,7 @@ void ErrorFuser::YCY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ZCX(const OperationData &dat) {
+void ErrorAnalyzer::ZCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto c = dat.targets[k];
         auto t = dat.targets[k + 1];
@@ -277,7 +262,7 @@ void ErrorFuser::ZCX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::SQRT_XX(const OperationData &dat) {
+void ErrorAnalyzer::SQRT_XX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -288,7 +273,7 @@ void ErrorFuser::SQRT_XX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::SQRT_YY(const OperationData &dat) {
+void ErrorAnalyzer::SQRT_YY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -303,7 +288,7 @@ void ErrorFuser::SQRT_YY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::SQRT_ZZ(const OperationData &dat) {
+void ErrorAnalyzer::SQRT_ZZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -314,13 +299,13 @@ void ErrorFuser::SQRT_ZZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z) {
+void ErrorAnalyzer::feedback(uint32_t record_control, size_t target, bool x, bool z) {
     uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
-    std::vector<uint64_t> &dst = measurement_to_detectors[time];
+    std::vector<DemTarget> &dst = measurement_to_detectors[time];
 
     // Temporarily move map's vector data into a SparseXorVec for manipulation.
     std::sort(dst.begin(), dst.end());
-    SparseXorVec<uint64_t> tmp(std::move(dst));
+    SparseXorVec<DemTarget> tmp(std::move(dst));
 
     if (x) {
         tmp ^= xs[target];
@@ -333,7 +318,7 @@ void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z
     dst = std::move(tmp.sorted_items);
 }
 
-void ErrorFuser::single_cx(uint32_t c, uint32_t t) {
+void ErrorAnalyzer::single_cx(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         zs[c] ^= zs[t];
         xs[t] ^= xs[c];
@@ -344,7 +329,7 @@ void ErrorFuser::single_cx(uint32_t c, uint32_t t) {
     }
 }
 
-void ErrorFuser::single_cy(uint32_t c, uint32_t t) {
+void ErrorAnalyzer::single_cy(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         zs[c] ^= zs[t];
         zs[c] ^= xs[t];
@@ -357,7 +342,7 @@ void ErrorFuser::single_cy(uint32_t c, uint32_t t) {
     }
 }
 
-void ErrorFuser::single_cz(uint32_t c, uint32_t t) {
+void ErrorAnalyzer::single_cz(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         zs[c] ^= xs[t];
         zs[t] ^= xs[c];
@@ -370,7 +355,7 @@ void ErrorFuser::single_cz(uint32_t c, uint32_t t) {
     }
 }
 
-void ErrorFuser::XCZ(const OperationData &dat) {
+void ErrorAnalyzer::XCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto t = dat.targets[k];
         auto c = dat.targets[k + 1];
@@ -378,7 +363,7 @@ void ErrorFuser::XCZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ZCZ(const OperationData &dat) {
+void ErrorAnalyzer::ZCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k];
         auto q2 = dat.targets[k + 1];
@@ -386,10 +371,10 @@ void ErrorFuser::ZCZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::I(const OperationData &dat) {
+void ErrorAnalyzer::I(const OperationData &dat) {
 }
 
-void ErrorFuser::SWAP(const OperationData &dat) {
+void ErrorAnalyzer::SWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -398,7 +383,7 @@ void ErrorFuser::SWAP(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ISWAP(const OperationData &dat) {
+void ErrorAnalyzer::ISWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -411,33 +396,39 @@ void ErrorFuser::ISWAP(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::DETECTOR(const OperationData &dat) {
-    uint64_t id = LAST_DETECTOR_ID - num_found_detectors;
-    num_found_detectors++;
+void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
+    used_detectors++;
+    auto id = DemTarget::relative_detector_id(total_detectors - used_detectors);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
+    flushed_reversed_model.append_detector_instruction(dat.args, id);
 }
 
-void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
-    uint64_t id = FIRST_OBSERVABLE_ID + (int)dat.arg;
-    num_found_observables = std::max(num_found_observables, id + 1);
+void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
+    auto id = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
+    flushed_reversed_model.append_logical_observable_instruction(id);
 }
 
-ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors)
-    : xs(num_qubits),
+ErrorAnalyzer::ErrorAnalyzer(
+    uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
+    : total_detectors(num_detectors),
+      used_detectors(0),
+      xs(num_qubits),
       zs(num_qubits),
-      find_reducible_errors(find_reducible_errors),
+      scheduled_measurement_time(0),
+      decompose_errors(decompose_errors),
+      accumulate_errors(true),
       fold_loops(fold_loops),
-      validate_detectors(validate_detectors) {
+      allow_gauge_detectors(allow_gauge_detectors) {
 }
 
-void ErrorFuser::run_circuit(const Circuit &circuit) {
+void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
     for (auto p = circuit.operations.crbegin(); p != circuit.operations.crend(); p++) {
         const auto &op = *p;
         assert(op.gate != nullptr);
@@ -448,46 +439,41 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
             const auto &block = circuit.blocks[op.target_data.targets[0]];
             run_loop(block, repeats);
         } else {
-            (this->*op.gate->reverse_error_fuser_function)(op.target_data);
+            (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
         }
     }
 }
 
-void ErrorFuser::post_check_initialization() {
+void ErrorAnalyzer::post_check_initialization() {
     for (const auto &x : xs) {
-        if (!x.empty()) {
-            if (validate_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with an initialization.");
-            }
-            add_error(0.5, x.range());
-        }
+        check_for_gauge(x);
     }
 }
 
-void ErrorFuser::X_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::X_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.arg, zs[q].range());
+        add_error(dat.args[0], zs[q].range());
     }
 }
 
-void ErrorFuser::Y_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::Y_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
     for (auto q : dat.targets) {
-        add_xored_error(dat.arg, xs[q].range(), zs[q].range());
+        add_xored_error(dat.args[0], xs[q].range(), zs[q].range());
     }
 }
 
-void ErrorFuser::Z_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::Z_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.arg, xs[q].range());
+        add_error(dat.args[0], xs[q].range());
     }
 }
 
@@ -501,7 +487,7 @@ inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src
     });
 }
 
-void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::CORRELATED_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -514,18 +500,18 @@ void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
             inplace_xor_tail(mono_buf, zs[q]);
         }
     }
-    add_error_in_sorted_jagged_tail(dat.arg);
+    add_error_in_sorted_jagged_tail(dat.args[0]);
 }
 
-void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
+void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.arg >= 3.0 / 4.0) {
+    if (dat.args[0] >= 3.0 / 4.0) {
         throw std::out_of_range(
             "DEPOLARIZE1 must have probability less than 3/4 when converting to a detector hyper graph.");
     }
-    double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.arg) / 3);
+    double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
     for (auto q : dat.targets) {
         add_error_combinations<2>(
             p,
@@ -536,15 +522,15 @@ void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
+void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
-    if (dat.arg >= 15.0 / 16.0) {
+    if (dat.args[0] >= 15.0 / 16.0) {
         throw std::out_of_range(
             "DEPOLARIZE1 must have probability less than 15/16 when converting to a detector hyper graph.");
     }
-    double p = 0.5 - 0.5 * pow(1 - (16 * dat.arg) / 15, 0.125);
+    double p = 0.5 - 0.5 * pow(1 - (16 * dat.args[0]) / 15, 0.125);
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
         auto a = dat.targets[i];
         auto b = dat.targets[i + 1];
@@ -559,47 +545,98 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
     throw std::out_of_range(
-        "ELSE_CORRELATED_ERROR operations not supported when converting to a detector hyper graph.");
+        "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be independent).");
 }
 
-DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(
-    const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
-    ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops, validate_detectors);
-    fuser.run_circuit(circuit);
-    fuser.post_check_initialization();
-    fuser.flush();
-    return fuser.flushed_to_detector_error_model();
+void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
+    throw std::out_of_range(
+        "PAULI_CHANNEL_1 operations currently not supported in error analysis (cases may not be independent).");
 }
 
-DetectorErrorModel ErrorFuser::flushed_to_detector_error_model() const {
-    uint64_t time_offset = 0;
-    DetectorErrorModel model;
-    for (auto e = flushed.crbegin(); e != flushed.crend(); e++) {
-        e->append_to_detector_error_model(model, num_found_detectors, time_offset, true);
+void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
+    throw std::out_of_range(
+        "PAULI_CHANNEL_2 operations currently not supported in error analysis (cases may not be independent).");
+}
+
+DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_detector_id, std::set<DemTarget> &seen) {
+    DetectorErrorModel out;
+    auto conv_append = [&](const DemInstruction &e) {
+        auto stored_targets = out.target_buf.take_copy(e.target_data);
+        auto stored_args = out.arg_buf.take_copy(e.arg_data);
+        for (auto &t : stored_targets) {
+            t.shift_if_detector_id(-(int64_t)base_detector_id);
+        }
+        out.instructions.push_back(DemInstruction{stored_args, stored_targets, e.type});
+    };
+
+    for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
+        const auto &e = *p;
+        switch (e.type) {
+            case DEM_SHIFT_DETECTORS:
+                base_detector_id += e.target_data[0].data;
+                out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data);
+                break;
+            case DEM_ERROR:
+                for (auto &t : e.target_data) {
+                    seen.insert(t);
+                }
+                conv_append(e);
+                break;
+            case DEM_DETECTOR:
+            case DEM_LOGICAL_OBSERVABLE:
+                if (!e.arg_data.empty() || seen.find(e.target_data[0]) == seen.end()) {
+                    conv_append(e);
+                }
+                break;
+            case DEM_REPEAT_BLOCK: {
+                uint64_t repetitions = e.target_data[0].data;
+                if (repetitions) {
+                    uint64_t old_base_detector_id = base_detector_id;
+                    out.append_repeat_block(
+                        e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id, seen));
+                    uint64_t loop_shift = base_detector_id - old_base_detector_id;
+                    base_detector_id += loop_shift * (repetitions - 1);
+                }
+            } break;
+            default:
+                throw std::out_of_range("Unknown instruction type to unreversed.");
+        }
     }
-    return model;
+    return out;
 }
 
-void ErrorFuser::flush() {
+DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
+    const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
+    ErrorAnalyzer analyzer(
+        circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
+    analyzer.run_circuit(circuit);
+    analyzer.post_check_initialization();
+    analyzer.flush();
+    uint64_t t = 0;
+    std::set<DemTarget> seen;
+    return unreversed(analyzer.flushed_reversed_model, t, seen);
+}
+
+void ErrorAnalyzer::flush() {
     for (auto kv = error_class_probabilities.crbegin(); kv != error_class_probabilities.crend(); kv++) {
         if (kv->first.empty() || kv->second == 0) {
             continue;
         }
-        flushed.push_back(FusedError{kv->second, kv->first, 0, nullptr});
+        flushed_reversed_model.append_error_instruction(kv->second, kv->first);
     }
     error_class_probabilities.clear();
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::add_xored_error(
-    double probability, ConstPointerRange<uint64_t> flipped1, ConstPointerRange<uint64_t> flipped2) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_xored_error(
+    double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
-    mono_buf.tail.ptr_end = xor_merge_sort<uint64_t>(flipped1, flipped2, mono_buf.tail.ptr_end);
+    mono_buf.tail.ptr_end = xor_merge_sort(flipped1, flipped2, mono_buf.tail.ptr_end);
     return add_error_in_sorted_jagged_tail(probability);
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store_tail() {
+ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
     auto v = error_class_probabilities.find(mono_buf.tail);
     if (v != error_class_probabilities.end()) {
         mono_buf.discard_tail();
@@ -610,7 +647,7 @@ ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store_tail() {
     return result;
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint64_t> data) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store(ConstPointerRange<DemTarget> data) {
     auto v = error_class_probabilities.find(data);
     if (v != error_class_probabilities.end()) {
         return v->first;
@@ -621,30 +658,28 @@ ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint
     return result;
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::add_error(double probability, ConstPointerRange<uint64_t> flipped) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_error(double probability, ConstPointerRange<DemTarget> flipped) {
     auto key = mono_dedupe_store(flipped);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(double probability) {
     auto key = mono_dedupe_store_tail();
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-bool shifted_equals(int64_t shift, const SparseXorVec<uint64_t> &unshifted, const SparseXorVec<uint64_t> &expected) {
+bool shifted_equals(int64_t shift, const SparseXorVec<DemTarget> &unshifted, const SparseXorVec<DemTarget> &expected) {
     if (unshifted.size() != expected.size()) {
         return false;
     }
     for (size_t k = 0; k < unshifted.size(); k++) {
-        auto a = unshifted.sorted_items[k];
-        auto e = expected.sorted_items[k];
-        if (is_encoded_detector_id(a)) {
-            a += shift;
-        }
+        DemTarget a = unshifted.sorted_items[k];
+        DemTarget e = expected.sorted_items[k];
+        a.shift_if_detector_id(shift);
         if (a != e) {
             return false;
         }
@@ -652,7 +687,7 @@ bool shifted_equals(int64_t shift, const SparseXorVec<uint64_t> &unshifted, cons
     return true;
 }
 
-void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
+void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     if (!fold_loops) {
         // If loop folding is disabled, just manually run each iteration.
         for (size_t k = 0; k < iterations; k++) {
@@ -664,11 +699,9 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     uint64_t num_loop_detectors = loop.count_detectors();
     uint64_t hare_iter = 0;
     uint64_t tortoise_iter = 0;
-    ErrorFuser hare(xs.size(), false, true, validate_detectors);
+    ErrorAnalyzer hare(total_detectors - used_detectors, xs.size(), false, true, allow_gauge_detectors);
     hare.xs = xs;
     hare.zs = zs;
-    hare.num_found_detectors = num_found_detectors;
-    hare.num_found_observables = num_found_observables;
     hare.measurement_to_detectors = measurement_to_detectors;
     hare.scheduled_measurement_time = scheduled_measurement_time;
     hare.accumulate_errors = false;
@@ -706,35 +739,46 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     }
 
     if (hare_iter < iterations) {
+        // Don't bother folding a single iteration into a repeated block.
         uint64_t period = hare_iter - tortoise_iter;
         uint64_t period_iterations = (iterations - tortoise_iter) / period;
-        // Don't bother folding a single iteration into a repeated block.
         if (period_iterations > 1) {
-            // Put loop body at end of flushed errors list.
+            // Stash error model build up so far.
             flush();
-            size_t loop_content_start = flushed.size();
+            DetectorErrorModel tmp = std::move(flushed_reversed_model);
+
+            // Rewrite state to look like it would if loop had executed all but the last iteration.
+            uint64_t shift_per_iteration = period * num_loop_detectors;
+            int64_t detector_shift = (int64_t)((period_iterations - 1) * shift_per_iteration);
+            shift_active_detector_ids(-detector_shift);
+            used_detectors += detector_shift;
+            tortoise_iter += period_iterations * period;
+
+            // Compute the loop's error model.
             for (size_t k = 0; k < period; k++) {
                 run_circuit(loop);
             }
             flush();
+            DetectorErrorModel body = std::move(flushed_reversed_model);
 
-            // Move loop body errors from end of flushed vector into a block.
-            std::unique_ptr<FusedErrorRepeatBlock> block(new FusedErrorRepeatBlock());
-            block->repetitions = period_iterations;
-            block->total_ticks_per_iteration_including_sub_loops = num_loop_detectors * period;
-            block->errors.reserve(flushed.size() - loop_content_start);
-            for (size_t k = loop_content_start; k < flushed.size(); k++) {
-                block->errors.push_back(std::move(flushed[k]));
+            // The loop ends (well, starts because everything is reversed) by shifting the detector coordinates.
+            uint64_t lower_level_shifts = body.total_detector_shift();
+            DemTarget remaining_shift = {shift_per_iteration - lower_level_shifts};
+            if (remaining_shift.data > 0) {
+                if (body.instructions.empty() || body.instructions.front().type != DEM_SHIFT_DETECTORS) {
+                    auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                    body.instructions.insert(
+                        body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
+                } else {
+                    remaining_shift.data += body.instructions[0].target_data[0].data;
+                    auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                    body.instructions[0].target_data = shift_targets;
+                }
             }
-            flushed.erase(flushed.begin() + loop_content_start, flushed.end());
 
-            // Rewrite state to look like it would if loop had actually executed all iterations.
-            int64_t skipped_detectors = num_loop_detectors * (period_iterations - 1) * period;
-            block->skip(skipped_detectors);
-            flushed.push_back(FusedError{0, {}, 0, std::move(block)});
-            num_found_detectors += skipped_detectors;
-            shift_active_detector_ids(-skipped_detectors);
-            tortoise_iter += period_iterations * period;
+            // Append the loop to the growing error model and put the error model back in its proper place.
+            tmp.append_repeat_block(period_iterations, std::move(body));
+            flushed_reversed_model = std::move(tmp);
         }
     }
 
@@ -745,99 +789,24 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     }
 }
 
-void ErrorFuser::shift_active_detector_ids(int64_t shift) {
+void ErrorAnalyzer::shift_active_detector_ids(int64_t shift) {
     for (auto &e : measurement_to_detectors) {
         for (auto &v : e.second) {
-            if (is_encoded_detector_id(v)) {
-                v += shift;
-            }
+            v.shift_if_detector_id(shift);
         }
     }
     for (auto &x : xs) {
         for (auto &v : x) {
-            if (is_encoded_detector_id(v)) {
-                v += shift;
-            }
+            v.shift_if_detector_id(shift);
         }
     }
     for (auto &x : zs) {
         for (auto &v : x) {
-            if (is_encoded_detector_id(v)) {
-                v += shift;
-            }
+            v.shift_if_detector_id(shift);
         }
     }
 }
 
-void FusedErrorRepeatBlock::append_to_detector_error_model(
-    DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const {
-    DetectorErrorModel body;
-    for (auto e = errors.crbegin(); e != errors.crend(); e++) {
-        e->append_to_detector_error_model(body, num_found_detectors, tick_count, false);
-    }
-    size_t outer_ticks = outer_ticks_per_iteration();
-    if (outer_ticks) {
-        tick_count += outer_ticks;
-        body.append_tick(outer_ticks);
-    }
-    tick_count += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
-
-    out.append_repeat_block(repetitions, std::move(body));
-}
-
-void FusedErrorRepeatBlock::skip(uint64_t skipped) {
-    for (auto &e : errors) {
-        e.skip(skipped);
-    }
-}
-uint64_t FusedErrorRepeatBlock::outer_ticks_per_iteration() const {
-    uint64_t result = total_ticks_per_iteration_including_sub_loops;
-    for (const auto &e : errors) {
-        if (e.block) {
-            result -= e.block->total_ticks_per_iteration_including_sub_loops * e.block->repetitions;
-        }
-    }
-    return result;
-}
-
-void FusedError::skip(uint64_t skipped) {
-    if (block) {
-        block->skip(skipped);
-    } else {
-        local_time_shift += skipped;
-    }
-}
-
-void FusedError::append_to_detector_error_model(
-    DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const {
-    if (block) {
-        block->append_to_detector_error_model(out, num_found_detectors, tick_count);
-        return;
-    }
-
-    std::vector<DemRelativeSymptom> symptoms;
-    bool is_reducible = false;
-    for (size_t k = 0; k < flipped.size(); k++) {
-        auto e = flipped[k];
-        if (e == COMPOSITE_ERROR_SYGIL) {
-            is_reducible = true;
-            if (k != 0 && k != flipped.size() - 1) {
-                symptoms.push_back(DemRelativeSymptom::separator());
-            }
-        } else if (is_encoded_detector_id(e)) {
-            auto abs_id = e + num_found_detectors - LAST_DETECTOR_ID - 1;
-            auto rel_id = abs_id - tick_count - local_time_shift;
-            symptoms.push_back(DemRelativeSymptom::detector_id(
-                DemRelValue::unspecified(),
-                DemRelValue::unspecified(),
-                top_level ? DemRelValue::absolute(abs_id) : DemRelValue::relative(rel_id)));
-        } else {
-            symptoms.push_back(DemRelativeSymptom::observable_id(e - FIRST_OBSERVABLE_ID));
-        }
-    }
-    if (is_reducible) {
-        out.append_reducible_error(probability, symptoms);
-    } else {
-        out.append_error(probability, symptoms);
-    }
+void ErrorAnalyzer::SHIFT_COORDS(const OperationData &dat) {
+    flushed_reversed_model.append_shift_detectors_instruction(dat.args, 0);
 }

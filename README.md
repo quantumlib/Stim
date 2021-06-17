@@ -27,9 +27,17 @@ Pauli string multiplication is a key bottleneck operation when updating a stabil
 Tracking Pauli frames can also benefit from vectorization, by batching the frames into groups of hundreds that are
 all operated on simultaneously by individual CPU instructions.
 
-## Supported Gates
+# Data Formats
 
-See the [gate documentation](GATES.md).
+Circuits can be input using the [stim circuit file format (.stim)](doc/file_format_stim_circuit.md).
+
+Samples can be output using [a variety of text and binary formats](doc/usage_command_line.md#out_format).
+
+Error models can be output using the [detector error model file format (.dem)](doc/file_format_dem_detector_error_model.md).
+
+# Supported Gates
+
+See the [gate documentation](doc/gates.md).
 
 # Usage (python)
 
@@ -37,8 +45,8 @@ See the [python documentation](glue/python/README.md).
 
 # Usage (command line)
 
-See the [command line documentation](README_COMMAND_LINE_USAGE.md).
+See the [command line documentation](doc/usage_command_line.md).
 
-# Building
+# Building the code
 
 See the [developer documentation](dev/README.md).

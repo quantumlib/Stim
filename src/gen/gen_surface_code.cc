@@ -136,19 +136,28 @@ GeneratedCircuit _finish_surface_code_circuit(
     // Build the start of the circuit, getting a state that's ready to cycle.
     // In particular, the first cycle has different detectors and so has to be handled special.
     Circuit head;
+    for (const auto &kv : q2p) {
+        head.append_op("QUBIT_COORDS", {kv.first}, {kv.second.x, kv.second.y});
+    }
     params.append_reset(head, data_qubits, "ZX"[is_memory_x]);
     params.append_reset(head, measurement_qubits);
     head += cycle_actions;
     for (auto measure : chosen_basis_measure_coords) {
         head.append_op(
-            "DETECTOR", {(uint32_t)(measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT});
+            "DETECTOR",
+            {(uint32_t)(measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT},
+            {measure.x, measure.y, 0});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
     uint32_t m = measurement_qubits.size();
-    for (uint32_t k = 0; k < m; k++) {
-        body.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT});
+    body.append_op("SHIFT_COORDS", {}, {0, 0, 1});
+    for (auto m_index : measurement_qubits) {
+        auto m_coord = q2p[m_index];
+        auto k = (uint32_t)measurement_qubits.size() - measure_coord_to_order[m_coord] - 1;
+        body.append_op(
+            "DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT}, {m_coord.x, m_coord.y, 0});
     }
 
     // Build the end of the circuit, getting out of the cycle state and terminating.
@@ -168,7 +177,7 @@ GeneratedCircuit _finish_surface_code_circuit(
         detectors.push_back(
             (data_qubits.size() + measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT);
         std::sort(detectors.begin(), detectors.end());
-        tail.append_op("DETECTOR", detectors);
+        tail.append_op("DETECTOR", detectors, {measure.x, measure.y, 1});
     }
     // Logical observable.
     std::vector<uint32_t> obs_inc;
@@ -216,7 +225,7 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
     std::vector<coord> z_observable;
     for (float x = 0.5; x <= d; x++) {
         for (float y = 0.5; y <= d; y++) {
-            coord q{x, y};
+            coord q{x * 2, y * 2};
             data_coords.insert(q);
             if (y == 0.5) {
                 z_observable.push_back(q);
@@ -232,7 +241,7 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
     std::set<coord> z_measure_coords;
     for (size_t x = 0; x <= d; x++) {
         for (size_t y = 0; y <= d; y++) {
-            coord q{(float)x, (float)y};
+            coord q{(float)x * 2, (float)y * 2};
             bool on_boundary_1 = x == 0 || x == d;
             bool on_boundary_2 = y == 0 || y == d;
             bool parity = x % 2 != y % 2;
@@ -252,23 +261,23 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
 
     // Define interaction orders so that hook errors run against the error grain instead of with it.
     std::vector<coord> z_order{
-        {0.5, 0.5},
-        {0.5, -0.5},
-        {-0.5, 0.5},
-        {-0.5, -0.5},
+        {1, 1},
+        {1, -1},
+        {-1, 1},
+        {-1, -1},
     };
     std::vector<coord> x_order{
-        {0.5, 0.5},
-        {-0.5, 0.5},
-        {0.5, -0.5},
-        {-0.5, -0.5},
+        {1, 1},
+        {-1, 1},
+        {1, -1},
+        {-1, -1},
     };
 
     // Delegate.
     return _finish_surface_code_circuit(
         [&](coord q) {
-            q = q - coord{0, fmodf(q.x, 1)};
-            return (uint32_t)(q.x * 2 + q.y * (2 * d + 1));
+            q = q - coord{0, fmodf(q.x, 2)};
+            return (uint32_t)(q.x + q.y * (d + 0.5));
         },
         data_coords,
         x_measure_coords,

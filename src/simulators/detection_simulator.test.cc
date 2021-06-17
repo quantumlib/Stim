@@ -35,7 +35,7 @@ static std::string rewind_read_all(FILE *f) {
 }
 
 TEST(DetectionSimulator, detector_samples) {
-    auto circuit = Circuit::from_text(
+    auto circuit = Circuit(
         "X_ERROR(1) 0\n"
         "M 0\n"
         "DETECTOR rec[-1]\n");
@@ -50,12 +50,11 @@ TEST(DetectionSimulator, detector_samples) {
 }
 
 TEST(DetectionSimulator, bad_detector) {
-    ASSERT_THROW(
-        { detector_samples(Circuit::from_text("rec[-1]"), 5, false, false, SHARED_TEST_RNG()); }, std::out_of_range);
+    ASSERT_THROW({ detector_samples(Circuit("rec[-1]"), 5, false, false, SHARED_TEST_RNG()); }, std::invalid_argument);
 }
 
 TEST(DetectionSimulator, detector_samples_out) {
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         X_ERROR(1) 0
         M 0 1
         DETECTOR rec[-1]
@@ -94,7 +93,7 @@ TEST(DetectionSimulator, detector_samples_out) {
 
 TEST(DetectionSimulator, stream_many_shots) {
     DebugForceResultStreamingRaii force_streaming;
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         X_ERROR(1) 1
         M 0 1 2
         DETECTOR rec[-1]
@@ -114,7 +113,7 @@ TEST(DetectionSimulator, stream_many_shots) {
 }
 
 TEST(DetectionSimulator, block_results_single_shot) {
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             M 0
             X_ERROR(1) 0
@@ -139,7 +138,7 @@ TEST(DetectionSimulator, block_results_single_shot) {
 }
 
 TEST(DetectionSimulator, block_results_triple_shot) {
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             M 0
             X_ERROR(1) 0
@@ -168,7 +167,7 @@ TEST(DetectionSimulator, block_results_triple_shot) {
 
 TEST(DetectionSimulator, stream_results) {
     DebugForceResultStreamingRaii force_streaming;
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             M 0
             X_ERROR(1) 0
@@ -194,7 +193,7 @@ TEST(DetectionSimulator, stream_results) {
 
 TEST(DetectionSimulator, stream_results_triple_shot) {
     DebugForceResultStreamingRaii force_streaming;
-    auto circuit = Circuit::from_text(R"circuit(
+    auto circuit = Circuit(R"circuit(
         REPEAT 10000 {
             M 0
             X_ERROR(1) 0

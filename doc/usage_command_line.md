@@ -237,22 +237,23 @@ error(0.003344519141621982161) D1
         loop folding will fail. This is disastrous for loops with repetition counts in the billions, because in that
         case loop folding is the difference between the error analysis finishing in seconds instead of days.
 
-    - **`--find_reducible_errors`**:
-        Allows the output error model to contain `reducible_error` instructions.
+    - **`--decompose_errors`**:
+        Includes suggested error decompositions in the output error model.
 
-        When applying a compound error channel (e.g. a depolarization channel), check if each case can be
-        reduced to the single-detector and double-detector cases. For example, if the `X` and `Y` parts of
-        the depolarizing channel each produce one detection event (e.g. `D5` and `D6`), and the `Z` part
-        produces both those detections events, then instead of the `Z` part becoming `error(p) D5 D6` it
-        will become `reducible_error(p) D5 ^ D6`.
+        When applying a compound error channel (e.g. a depolarization channel), this option results in the analysis
+        checking if each case can be reduced to the single-detector and double-detector cases. For example, if the `X`
+        and `Y` parts of the depolarizing channel each produce one detection event (e.g. `D5` and `D6`), and the `Z`
+        part produces both those detections events, then instead of the `Z` part becoming an `error(p) D5 D6` it
+        will become an `error(p) D5 ^ D6`; an error with a suggested decomposition.
 
         For example, this mode will automatically decompose errors that cross between the X and Z detector
         graphs of a surface code into components on just the X graph and components on just the Z graph. And
         it does so in a basis-independent fashion (so e.g. it will still do the right thing when using an XY
-        or XZZX surface code instead of an XZ surface code.)
-    
+        or XZZX surface code instead of an XZ surface code).
+
         This mode currently requires that every case of a compound error channel can be reduced to
-        single-detector components accompanied by at most two double-detector components.    
+        single-detector components accompanied by at most two double-detector components. So it is
+        e.g. incompatible with color code circuits.
 
     - **`--allow_gauge_detectors`**:
         Normally, when a detector anti-commutes with a stabilizer of the circuit (forcing the detector
@@ -260,7 +261,7 @@ error(0.003344519141621982161) D1
 
         Specifying `--allow_gauge_detectors` instead allows this behavior and reports it as an `error(0.5)`.
 
-        For example, in the following circuit, the two detectors are gauge detector:
+        For example, in the following circuit, the two detectors are gauge detectors:
 
         ```
         R 0
@@ -272,7 +273,8 @@ error(0.003344519141621982161) D1
         ```
 
         Without `--allow_gauge_detectors`, stim will raise an exception when analyzing this circuit.
-        With `--allow_gauge_detectors`, stim will report `error(0.5) D1 D2`.
+        With `--allow_gauge_detectors`, stim will replace this exception with an `error(0.5) D1 D2` error mechanism in
+        the output.
 
 - **`--gen=surface_code|repetition_code|color_code`**:
     **Circuit generation mode**.
@@ -354,7 +356,7 @@ error(0.003344519141621982161) D1
     Specifies a file to create or overwrite with results.
     If not specified, the `stdout` pipe is used.
 
-- **`--out_format=[name]`**: Output format to use.
+- **`--out_format=[name]`**: <a name="out_format"></a>Output format to use.
     Requires measurement sampling mode or detection sample mode.
     Definition: a "sample" is one measurement result in measurement sampling mode or one detector/observable result in detection event sampling mode.
     Definition: a "shot" is composed of all of the samples from a circuit.

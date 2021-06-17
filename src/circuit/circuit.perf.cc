@@ -21,7 +21,7 @@ using namespace stim_internal;
 BENCHMARK(circuit_parse) {
     Circuit c;
     benchmark_go([&]() {
-        c = Circuit::from_text(R"input(
+        c = Circuit(R"input(
 H 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 CNOT 4 5 6 7
 M 1 2 3 4 5 6 7 8 9 10 11
@@ -41,7 +41,7 @@ BENCHMARK(circuit_parse_sparse) {
     }
     auto text = c.str();
     benchmark_go([&]() {
-        c = Circuit::from_text(text.data());
+        c = Circuit(text.data());
     }).goal_micros(150);
     if (c.count_qubits() == 0) {
         std::cerr << "impossible";

@@ -176,6 +176,8 @@ struct TableauSimulator {
     void X_ERROR(const OperationData &target_data);
     void Y_ERROR(const OperationData &target_data);
     void Z_ERROR(const OperationData &target_data);
+    void PAULI_CHANNEL_1(const OperationData &target_data);
+    void PAULI_CHANNEL_2(const OperationData &target_data);
     void CORRELATED_ERROR(const OperationData &target_data);
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
 
@@ -239,6 +241,41 @@ struct TableauSimulator {
     /// qubit.
     void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii);
 };
+
+template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>
+void perform_pauli_errors_via_correlated_errors(
+    const OperationData &target_data, RESET_FLAG reset_flag, ELSE_CORR else_corr) {
+    double target_p;
+    uint32_t target_t[Q];
+    OperationData data{{&target_p, &target_p + 1}, {&target_t[0], &target_t[Q]}};
+    for (size_t k = 0; k < target_data.targets.size(); k += Q) {
+        reset_flag();
+        double used_probability = 0;
+        for (size_t pauli = 1; pauli < 1 << (2 * Q); pauli++) {
+            double p = target_data.args[pauli - 1];
+            if (p == 0) {
+                continue;
+            }
+            double remaining = 1 - used_probability;
+            double conditional_prob = remaining <= 0 ? 0 : remaining <= p ? 1 : p / remaining;
+            used_probability += p;
+
+            for (size_t q = 0; q < Q; q++) {
+                target_t[q] = target_data.targets[k + q];
+                bool z = (pauli >> (2 * (Q - q - 1))) & 2;
+                bool y = (pauli >> (2 * (Q - q - 1))) & 1;
+                if (z ^ y) {
+                    target_t[q] |= TARGET_PAULI_X_BIT;
+                }
+                if (z) {
+                    target_t[q] |= TARGET_PAULI_Z_BIT;
+                }
+            }
+            target_p = conditional_prob;
+            else_corr(data);
+        }
+    }
+}
 
 }  // namespace stim_internal
 

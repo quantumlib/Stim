@@ -21,7 +21,7 @@ using namespace stim_internal;
 BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    float probability = 0.001f;
+    double probability = 0.001;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
 
@@ -29,8 +29,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{probability, targets};
-    op_data.arg = probability;
+    OperationData op_data{{&probability, &probability + 1}, targets};
     benchmark_go([&]() {
         sim.DEPOLARIZE1(op_data);
     })
@@ -41,7 +40,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
 BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     size_t num_qubits = 100 * 1000;
     size_t num_samples = 1000;
-    float probability = 0.001f;
+    double probability = 0.001;
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     FrameSimulator sim(num_qubits, num_samples, SIZE_MAX, rng);
 
@@ -49,8 +48,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{probability, targets};
-    op_data.arg = probability;
+    OperationData op_data{{&probability, &probability + 1}, targets};
 
     benchmark_go([&]() {
         sim.DEPOLARIZE2(op_data);
@@ -69,7 +67,7 @@ BENCHMARK(FrameSimulator_hadamard_100Kqubits_1Ksamples) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{0, targets};
+    OperationData op_data{{}, targets};
 
     benchmark_go([&]() {
         sim.H_XZ(op_data);
@@ -88,7 +86,7 @@ BENCHMARK(FrameSimulator_CX_100Kqubits_1Ksamples) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{0, targets};
+    OperationData op_data{{}, targets};
 
     benchmark_go([&]() {
         sim.ZCX(op_data);

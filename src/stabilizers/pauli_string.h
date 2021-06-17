@@ -25,6 +25,19 @@
 
 namespace stim_internal {
 
+/// Converts from the xz encoding
+///
+///     0b00: I
+///     0b01: X
+///     0b10: Z
+///     0b11: Y
+///
+/// To the xyz encoding
+///
+///     0: I
+///     1: X
+///     2: Y
+///     3: Z
 inline uint8_t pauli_xz_to_xyz(bool x, bool z) {
     return (uint8_t)(x ^ z) | ((uint8_t)z << 1);
 }

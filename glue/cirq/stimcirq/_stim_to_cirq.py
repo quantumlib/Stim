@@ -1,8 +1,52 @@
 import functools
-from typing import Callable, Dict, List, Tuple, Union, Iterator, cast
+from typing import Callable, Dict, List, Tuple, Union, Iterator, cast, Sequence, Iterable
 
 import cirq
 import stim
+
+
+@cirq.value_equality
+class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
+    def __init__(self, probabilities: Sequence[float]):
+        if len(probabilities) != 15:
+            raise ValueError(len(probabilities) != 15)
+        self.probabilities = tuple(probabilities)
+
+    def _num_qubits_(self):
+        return 2
+
+    def _value_equality_values_(self):
+        return self.probabilities
+
+    def _has_mixture_(self):
+        return True
+
+    def _dense_mixture_(self):
+        result = [(1 - sum(self.probabilities), cirq.DensePauliString([0, 0]))]
+        result.extend([
+            (p, cirq.DensePauliString([((k + 1) >> 2) & 3, (k + 1) & 3]))
+            for k, p in enumerate(self.probabilities)
+        ])
+        return [(p, g) for p, g in result if p]
+
+    def _mixture_(self):
+        return [(p, cirq.unitary(g)) for p, g in self._dense_mixture_()]
+
+    def _circuit_diagram_info_(self, args: cirq.CircuitDiagramInfoArgs):
+        result = []
+        for p, d in self._dense_mixture_():
+            result.append(str(d)[1:] + ":" + args.format_real(p))
+        return "PauliMix(" + ",".join(result) + ")", "#2"
+
+    def _stim_conversion_(
+            self,
+            edit_circuit: stim.Circuit,
+            targets: List[int],
+            **kwargs):
+        edit_circuit.append_operation("PAULI_CHANNEL_2", targets, self.probabilities)
+
+    def __repr__(self):
+        return f"stimcirq.TwoQubitAsymmetricDepolarizingChannel({self.probabilities!r})"
 
 
 @cirq.value_equality
@@ -87,8 +131,14 @@ class MeasureAndOrReset(cirq.SingleQubitGate):
                 f'key={self.key!r})')
 
 
+def args_to_cirq_depolarize_1(args: List[float]) -> cirq.AsymmetricDepolarizingChannel:
+    if len(args) != 3:
+        raise ValueError(f"len(args) != 3: {args!r}")
+    return cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2])
+
+
 @functools.lru_cache(maxsize=1)
-def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[float], cirq.Gate]]]:
+def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Union[float, List[float]]], cirq.Gate]]]:
     return {
         "R": cirq.ResetChannel(),
         "RX": MeasureAndOrReset(measure=False, reset=True, basis='X', invert_measure=False, key=''),
@@ -128,9 +178,11 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[flo
         "CZ": cirq.CZ,
         "DEPOLARIZE1": lambda arg: cirq.DepolarizingChannel(arg, 1),
         "DEPOLARIZE2": lambda arg: cirq.DepolarizingChannel(arg, 2),
-        "X_ERROR": lambda arg: cirq.X.with_probability(arg),
-        "Y_ERROR": lambda arg: cirq.Y.with_probability(arg),
-        "Z_ERROR": lambda arg: cirq.Z.with_probability(arg),
+        "X_ERROR": cirq.X.with_probability,
+        "Y_ERROR": cirq.Y.with_probability,
+        "Z_ERROR": cirq.Z.with_probability,
+        "PAULI_CHANNEL_1": args_to_cirq_depolarize_1,
+        "PAULI_CHANNEL_2": lambda args: TwoQubitAsymmetricDepolarizingChannel(args),
         "DETECTOR": (),
         "OBSERVABLE_INCLUDE": (),
         "TICK": (),
@@ -138,7 +190,7 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[flo
 
 
 def _translate_flattened_operation(
-        op: Tuple[str, List, float],
+        op: Tuple[str, List, Union[float, Iterable[float]]],
         get_next_measure_id: Callable[[], int]) -> Iterator[cirq.Operation]:
     name, targets, arg = op
 
@@ -167,7 +219,7 @@ def _translate_flattened_operation(
                 key = str(get_next_measure_id())
                 yield g.with_key(key).on(cirq.LineQubit(q))
         else:
-            m = gate.num_qubits()
+            m = cirq.num_qubits(gate)
             for k in range(0, len(targets), m):
                 yield gate(*[cirq.LineQubit(q) for q in targets[k:k+m]])
         return

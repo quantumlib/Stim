@@ -43,13 +43,13 @@ def test_circuit_append_operation():
 
     with pytest.raises(IndexError, match="Gate not found"):
         c.append_operation("NOT_A_GATE", [0])
-    with pytest.raises(IndexError, match="even number of targets"):
+    with pytest.raises(ValueError, match="even number of targets"):
         c.append_operation("CNOT", [0])
-    with pytest.raises(IndexError, match="doesn't take"):
+    with pytest.raises(ValueError, match="takes 0"):
         c.append_operation("X", [0], 0.5)
-    with pytest.raises(IndexError, match="invalid flags"):
+    with pytest.raises(ValueError, match="invalid modifiers"):
         c.append_operation("X", [stim.target_inv(0)])
-    with pytest.raises(IndexError, match="invalid flags"):
+    with pytest.raises(ValueError, match="invalid modifiers"):
         c.append_operation("X", [stim.target_x(0)])
     with pytest.raises(IndexError, match="lookback"):
         stim.target_rec(0)
@@ -390,8 +390,8 @@ def test_indexing_operations():
 
     c = stim.Circuit('X 0')
     assert len(c) == 1
-    assert list(c) == [stim.CircuitInstruction('X', [stim.GateTarget(0)], 0)]
-    assert c[0] == c[-1] == stim.CircuitInstruction('X', [stim.GateTarget(0)], 0)
+    assert list(c) == [stim.CircuitInstruction('X', [stim.GateTarget(0)])]
+    assert c[0] == c[-1] == stim.CircuitInstruction('X', [stim.GateTarget(0)])
     with pytest.raises(IndexError):
         _ = c[1]
     with pytest.raises(IndexError):

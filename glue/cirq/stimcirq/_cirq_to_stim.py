@@ -222,6 +222,7 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
         cirq.ControlledGate: cast(StimTypeHandler, _stim_append_controlled_gate),
         cirq.DensePauliString: cast(StimTypeHandler, _stim_append_dense_pauli_string_gate),
         cirq.MutableDensePauliString: cast(StimTypeHandler, _stim_append_dense_pauli_string_gate),
+        cirq.AsymmetricDepolarizingChannel: cast(StimTypeHandler, _stim_append_asymmetric_depolarizing_channel),
         cirq.BitFlipChannel: lambda c, g, t: c.append_operation(
             "X_ERROR", t, cast(cirq.BitFlipChannel, g).p
         ),
@@ -248,6 +249,10 @@ def _stim_append_dense_pauli_string_gate(c: stim.Circuit, g: cirq.BaseDensePauli
     for p, k in zip(g.pauli_mask, t):
         if p:
             c.append_operation(gates[p], [k])
+
+
+def _stim_append_asymmetric_depolarizing_channel(c: stim.Circuit, g: cirq.AsymmetricDepolarizingChannel, t: List[int]):
+    c.append_operation("PAULI_CHANNEL_1", t, [g.p_x, g.p_y, g.p_z])
 
 
 def _stim_append_depolarizing_channel(c: stim.Circuit, g: cirq.DepolarizingChannel, t: List[int]):

@@ -260,6 +260,7 @@ void pybind_circuit(pybind11::module &m) {
         [](Circuit &self) {
             pybind11::list result;
             self.for_each_operation([&](const Operation &op) {
+                pybind11::list args;
                 pybind11::list targets;
                 for (auto t : op.target_data.targets) {
                     auto v = t & TARGET_VALUE_MASK;
@@ -279,7 +280,18 @@ void pybind_circuit(pybind11::module &m) {
                         targets.append(pybind11::int_(v));
                     }
                 }
-                result.append(pybind11::make_tuple(op.gate->name, targets, op.target_data.arg));
+                for (auto t : op.target_data.args) {
+                    args.append(t);
+                }
+                if (op.target_data.args.size() == 0) {
+                    // Backwards compatibility.
+                    result.append(pybind11::make_tuple(op.gate->name, targets, 0));
+                } else if (op.target_data.args.size() == 1) {
+                    // Backwards compatibility.
+                    result.append(pybind11::make_tuple(op.gate->name, targets, op.target_data.args[0]));
+                } else {
+                    result.append(pybind11::make_tuple(op.gate->name, targets, args));
+                }
             });
             return result;
         },
@@ -308,14 +320,14 @@ void pybind_circuit(pybind11::module &m) {
                 ...    X_ERROR(0.125) 1
                 ...    M 0 !1
                 ... ''').flattened_operations()
-                [('H', [0], 0.0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0.0)]
+                [('H', [0], 0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0)]
 
                 >>> stim.Circuit('''
                 ...    REPEAT 2 {
                 ...        H 6
                 ...    }
                 ... ''').flattened_operations()
-                [('H', [6], 0.0), ('H', [6], 0.0)]
+                [('H', [6], 0), ('H', [6], 0)]
         )DOC")
             .data());
 
@@ -429,10 +441,31 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "append_operation",
-        &Circuit::append_op,
+        [](Circuit &self, const std::string &gate_name, const std::vector<uint32_t> &targets, pybind11::object arg) {
+            if (arg.is(pybind11::none())) {
+                if (GATE_DATA.at(gate_name).arg_count == 1) {
+                    arg = pybind11::make_tuple(0.0);
+                } else {
+                    arg = pybind11::make_tuple();
+                }
+            }
+            try {
+                auto d = pybind11::cast<double>(arg);
+                self.append_op(gate_name, targets, d);
+                return;
+            } catch (const pybind11::cast_error &ex) {
+            }
+            try {
+                auto args = pybind11::cast<std::vector<double>>(arg);
+                self.append_op(gate_name, targets, args);
+                return;
+            } catch (const pybind11::cast_error &ex) {
+            }
+            throw std::invalid_argument("Arg must be a double or sequence of doubles.");
+        },
         pybind11::arg("name"),
         pybind11::arg("targets"),
-        pybind11::arg("arg") = 0.0,
+        pybind11::arg("arg") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             Appends an operation into the circuit.
 
@@ -456,7 +489,10 @@ void pybind_circuit(pybind11::module &m) {
             Args:
                 name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
                 targets: The gate targets. Gates implicitly broadcast over their targets.
-                arg: A modifier for the gate, e.g. the probability of an error. Defaults to 0.
+                arg: A double or list of doubles parameterizing the gate. Different gates take different arguments. For
+                    example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and PAULI_CHANNEL_1
+                    takes three disjoint probabilities. For backwards compatibility reasons, defaults to (0,) for gates
+                    that take one argument. Otherwise defaults to no arguments.
         )DOC")
             .data());
 
@@ -626,9 +662,9 @@ void pybind_circuit(pybind11::module &m) {
                 DEPOLARIZE2(0.0125) 2 1 4 3 6 5
                 TICK
                 MR 1 3 5
-                DETECTOR rec[-1]
-                DETECTOR rec[-2]
-                DETECTOR rec[-3]
+                DETECTOR(1, 0) rec[-3]
+                DETECTOR(3, 0) rec[-2]
+                DETECTOR(5, 0) rec[-1]
                 REPEAT 9999 {
                     TICK
                     CX 0 1 2 3 4 5
@@ -638,14 +674,15 @@ void pybind_circuit(pybind11::module &m) {
                     DEPOLARIZE2(0.0125) 2 1 4 3 6 5
                     TICK
                     MR 1 3 5
-                    DETECTOR rec[-1] rec[-4]
-                    DETECTOR rec[-2] rec[-5]
-                    DETECTOR rec[-3] rec[-6]
+                    SHIFT_COORDS(0, 1)
+                    DETECTOR(1, 0) rec[-3] rec[-6]
+                    DETECTOR(3, 0) rec[-2] rec[-5]
+                    DETECTOR(5, 0) rec[-1] rec[-4]
                 }
                 M 0 2 4 6
-                DETECTOR rec[-1] rec[-2] rec[-5]
-                DETECTOR rec[-2] rec[-3] rec[-6]
-                DETECTOR rec[-3] rec[-4] rec[-7]
+                DETECTOR(1, 1) rec[-3] rec[-4] rec[-7]
+                DETECTOR(3, 1) rec[-2] rec[-3] rec[-6]
+                DETECTOR(5, 1) rec[-1] rec[-2] rec[-5]
                 OBSERVABLE_INCLUDE(0) rec[-1]
         )DOC")
             .data());
@@ -701,7 +738,11 @@ void pybind_circuit(pybind11::module &m) {
             for (const auto &e : op.target_data.targets) {
                 targets.push_back(GateTarget(e));
             }
-            return pybind11::cast(CircuitInstruction(*op.gate, targets, op.target_data.arg));
+            std::vector<double> args;
+            for (const auto &e : op.target_data.args) {
+                args.push_back(e);
+            }
+            return pybind11::cast(CircuitInstruction(*op.gate, targets, args));
         },
         clean_doc_string(u8R"DOC(
             Returns copies of instructions from the circuit.
@@ -720,7 +761,7 @@ void pybind_circuit(pybind11::module &m) {
                 ...    DETECTOR rec[-1]
                 ... ''')
                 >>> circuit[1]
-                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], 0.5)
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], [0.5])
                 >>> circuit[2]
                 stim.CircuitRepeatBlock(100, stim.Circuit('''
                 X 0
