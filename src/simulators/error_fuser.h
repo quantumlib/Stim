@@ -34,7 +34,6 @@
 namespace stim_internal {
 
 constexpr uint64_t FIRST_OBSERVABLE_ID = uint64_t{1} << 63;
-constexpr uint64_t LAST_DETECTOR_ID = FIRST_OBSERVABLE_ID - 1;
 constexpr uint64_t COMPOSITE_ERROR_SYGIL = UINT64_MAX;
 
 bool is_encoded_detector_id(uint64_t id);
@@ -49,7 +48,7 @@ struct FusedError {
     std::unique_ptr<FusedErrorRepeatBlock> block;
     void skip(uint64_t skipped);
     void append_to_detector_error_model(
-        DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const;
+        DetectorErrorModel &out, uint64_t &tick_count) const;
 };
 
 struct FusedErrorRepeatBlock {
@@ -58,23 +57,23 @@ struct FusedErrorRepeatBlock {
     uint64_t outer_ticks_per_iteration() const;
     std::vector<FusedError> errors;
     void append_to_detector_error_model(
-        DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const;
+        DetectorErrorModel &out, uint64_t &tick_count) const;
     void skip(uint64_t skipped);
 };
 
 struct ErrorFuser {
     std::map<uint64_t, std::vector<uint64_t>> measurement_to_detectors;
-    uint64_t num_found_detectors = 0;
-    uint64_t num_found_observables = 0;
+    uint64_t total_detectors;
+    uint64_t used_detectors;
     /// For each qubit, at the current time, the set of detectors with X dependence on that qubit.
     std::vector<SparseXorVec<uint64_t>> xs;
     /// For each qubit, at the current time, the set of detectors with Z dependence on that qubit.
     std::vector<SparseXorVec<uint64_t>> zs;
-    size_t scheduled_measurement_time = 0;
-    bool find_reducible_errors = false;
-    bool accumulate_errors = true;
-    bool fold_loops = false;
-    bool validate_detectors = false;
+    size_t scheduled_measurement_time;
+    bool decompose_errors;
+    bool accumulate_errors;
+    bool fold_loops;
+    bool allow_gauge_detectors;
     std::vector<FusedError> flushed;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
@@ -82,10 +81,10 @@ struct ErrorFuser {
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<uint64_t> mono_buf;
 
-    ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
+    ErrorFuser(size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     static DetectorErrorModel circuit_to_detector_error_model(
-        const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors);
+        const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorFuser(const ErrorFuser &fuser) = delete;
@@ -213,7 +212,7 @@ struct ErrorFuser {
             }
         }
 
-        if (find_reducible_errors) {
+        if (decompose_errors) {
             // Count number of detectors affected by each error.
             std::array<uint8_t, 1 << s> detector_counts{};
             for (size_t k = 1; k < 1 << s; k++) {

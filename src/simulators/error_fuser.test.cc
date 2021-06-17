@@ -25,17 +25,17 @@ using namespace stim_internal;
 
 std::string convert(
     const Circuit &circuit,
-    bool find_reducible_errors = false,
+    bool decompose_errors = false,
     bool fold_loops = false,
     bool validate_detectors = true) {
     return "\n" +
-           ErrorFuser::circuit_to_detector_error_model(circuit, find_reducible_errors, fold_loops, validate_detectors)
+           ErrorFuser::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors)
                .str();
 }
 
 std::string convert(
-    const char *text, bool find_reducible_errors = false, bool fold_loops = false, bool validate_detectors = true) {
-    return convert(Circuit(text), find_reducible_errors, fold_loops, validate_detectors);
+    const char *text, bool decompose_errors = false, bool fold_loops = false, bool validate_detectors = true) {
+    return convert(Circuit(text), decompose_errors, fold_loops, validate_detectors);
 }
 
 static std::string check_matches(std::string actual, std::string pattern) {
@@ -198,19 +198,19 @@ error\(0.019013\d+\) D3
             R"graph(
 error\(0.019013\d+\) D0
 error\(0.019013\d+\) D1
-reducible_error\(0.019013\d+\) D1 \^ D0
-reducible_error\(0.019013\d+\) D1 \^ D2
-reducible_error\(0.019013\d+\) D1 \^ D2 \^ D0
+error\(0.019013\d+\) D1 \^ D0
+error\(0.019013\d+\) D1 \^ D2
+error\(0.019013\d+\) D1 \^ D2 \^ D0
 error\(0.019013\d+\) D2
-reducible_error\(0.019013\d+\) D2 \^ D0
+error\(0.019013\d+\) D2 \^ D0
 error\(0.019013\d+\) D3
-reducible_error\(0.019013\d+\) D3 \^ D0
-reducible_error\(0.019013\d+\) D3 \^ D1
-reducible_error\(0.019013\d+\) D3 \^ D1 \^ D0
-reducible_error\(0.019013\d+\) D3 \^ D1 \^ D2
-reducible_error\(0.019013\d+\) D3 \^ D1 \^ D2 \^ D0
-reducible_error\(0.019013\d+\) D3 \^ D2
-reducible_error\(0.019013\d+\) D3 \^ D2 \^ D0
+error\(0.019013\d+\) D3 \^ D0
+error\(0.019013\d+\) D3 \^ D1
+error\(0.019013\d+\) D3 \^ D1 \^ D0
+error\(0.019013\d+\) D3 \^ D1 \^ D2
+error\(0.019013\d+\) D3 \^ D1 \^ D2 \^ D0
+error\(0.019013\d+\) D3 \^ D2
+error\(0.019013\d+\) D3 \^ D2 \^ D0
 )graph"));
 
     ASSERT_EQ(
@@ -242,14 +242,14 @@ reducible_error\(0.019013\d+\) D3 \^ D2 \^ D0
                 false),
             R"graph(
 error\(0.071825\d+\) D0 D1
-reducible_error\(0.071825\d+\) D0 D1 \^ D2 D3
+error\(0.071825\d+\) D0 D1 \^ D2 D3
 error\(0.071825\d+\) D2 D3
 )graph"));
 }
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
-    ErrorFuser e(16, false, false, true);
+    ErrorFuser e(1, 16, false, false, false);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
             e.xs[q].xor_item(0);
@@ -884,7 +884,7 @@ TEST(ErrorFuser, composite_error_analysis) {
             convert(encode + Circuit("DEPOLARIZE1(0.01) 4") + decode, true),
             R"graph(
 error\(0.0033445\d+\) D0 D4
-reducible_error\(0.0033445\d+\) D0 D4 \^ D1 D3
+error\(0.0033445\d+\) D0 D4 \^ D1 D3
 error\(0.0033445\d+\) D1 D3
 )graph"));
 
@@ -894,19 +894,19 @@ error\(0.0033445\d+\) D1 D3
             convert(encode + Circuit("DEPOLARIZE2(0.01) 4 5") + decode, true),
             R"graph(
 error\(0.000669\d+\) D0 D2
-reducible_error\(0.000669\d+\) D0 D2 \^ D1 D3
-reducible_error\(0.000669\d+\) D0 D2 \^ D1 D5
-reducible_error\(0.000669\d+\) D0 D2 \^ D3 D5
+error\(0.000669\d+\) D0 D2 \^ D1 D3
+error\(0.000669\d+\) D0 D2 \^ D1 D5
+error\(0.000669\d+\) D0 D2 \^ D3 D5
 error\(0.000669\d+\) D0 D4
-reducible_error\(0.000669\d+\) D0 D4 \^ D1 D3
-reducible_error\(0.000669\d+\) D0 D4 \^ D1 D5
-reducible_error\(0.000669\d+\) D0 D4 \^ D3 D5
+error\(0.000669\d+\) D0 D4 \^ D1 D3
+error\(0.000669\d+\) D0 D4 \^ D1 D5
+error\(0.000669\d+\) D0 D4 \^ D3 D5
 error\(0.000669\d+\) D1 D3
-reducible_error\(0.000669\d+\) D1 D3 \^ D2 D4
+error\(0.000669\d+\) D1 D3 \^ D2 D4
 error\(0.000669\d+\) D1 D5
-reducible_error\(0.000669\d+\) D1 D5 \^ D2 D4
+error\(0.000669\d+\) D1 D5 \^ D2 D4
 error\(0.000669\d+\) D2 D4
-reducible_error\(0.000669\d+\) D2 D4 \^ D3 D5
+error\(0.000669\d+\) D2 D4 \^ D3 D5
 error\(0.000669\d+\) D3 D5
 )graph"));
 
@@ -959,12 +959,12 @@ TEST(ErrorFuser, loop_folding) {
         DetectorErrorModel(R"MODEL(
                 error(0.25) D0 L9
                 REPEAT 6172839493827159 {
-                    error(0.25) D1+t L9
-                    error(0.25) D2+t L9
-                    TICK 2
+                    error(0.25) D1 L9
+                    error(0.25) D2 L9
+                    shift_detectors 2
                 }
-                error(0.25) D12345678987654319 L9
-                error(0.25) D12345678987654320 L9
+                error(0.25) D1 L9
+                error(0.25) D2 L9
             )MODEL"));
 
     // Solve period 8 logical observable oscillation.
@@ -984,7 +984,7 @@ TEST(ErrorFuser, loop_folding) {
             true),
         DetectorErrorModel(R"MODEL(
             REPEAT 1543209873456789 {
-                TICK 8
+                shift_detectors 8
             }
         )MODEL"));
 
@@ -1009,9 +1009,9 @@ TEST(ErrorFuser, loop_folding) {
             true),
         DetectorErrorModel(R"MODEL(
             REPEAT 97210070768930 {
-                TICK 127
+                shift_detectors 127
             }
-            error(1) D12345678987654321
+            error(1) D211
         )MODEL"));
 }
 
@@ -1037,17 +1037,17 @@ TEST(ErrorFuser, loop_folding_nested_loop) {
         DetectorErrorModel(R"MODEL(
                 REPEAT 999 {
                     REPEAT 1000 {
-                        error(0.25) D0+t L9
-                        TICK 1
+                        error(0.25) D0 L9
+                        shift_detectors 1
                     }
                 }
                 REPEAT 499 {
-                    error(0.25) D0+t L9
-                    error(0.25) D1+t L9
-                    TICK 2
+                    error(0.25) D0 L9
+                    error(0.25) D1 L9
+                    shift_detectors 2
                 }
-                error(0.25) D999998 L9
-                error(0.25) D999999 L9
+                error(0.25) D0 L9
+                error(0.25) D1 L9
             )MODEL"));
 }
 
@@ -1069,45 +1069,44 @@ TEST(ErrorFuser, loop_folding_rep_code_circuit) {
         error(0.000267) D2 L0
         error(0.000267) D3
         error(0.000267) D3 D4
-        reducible_error(0.000267) D3 ^ D0
+        error(0.000267) D3 ^ D0
         error(0.000267) D4 D5
         error(0.000267) D5 L0
-        reducible_error(0.000267) D5 L0 ^ D2 L0
+        error(0.000267) D5 L0 ^ D2 L0
         repeat 99998 {
-            error(0.000267) D3+t
-            error(0.000267) D5+t D8+t
-            error(0.000267) D5+t L0
-            error(0.000267) D3+t D4+t
-            error(0.000267) D3+t D6+t
-            error(0.000533) D3+t D7+t
-            error(0.000267) D4+t D5+t
-            error(0.000533) D4+t D7+t
-            error(0.000533) D4+t D8+t
-            error(0.000267) D6+t
-            error(0.000267) D6+t D7+t
-            reducible_error(0.000267) D6+t ^ D3+t
-            error(0.000267) D7+t D8+t
-            error(0.000267) D8+t L0
-            reducible_error(0.000267) D8+t L0 ^ D5+t L0
-            tick 3
+            error(0.000267) D3
+            error(0.000267) D3 D4
+            error(0.000267) D3 D6
+            error(0.000533) D3 D7
+            error(0.000267) D4 D5
+            error(0.000533) D4 D7
+            error(0.000533) D4 D8
+            error(0.000267) D5 D8
+            error(0.000267) D5 L0
+            error(0.000267) D6
+            error(0.000267) D6 D7
+            error(0.000267) D6 ^ D3
+            error(0.000267) D7 D8
+            error(0.000267) D8 L0
+            error(0.000267) D8 L0 ^ D5 L0
+            shift_detectors 3
         }
-        error(0.000267) D299997
-        error(0.000267) D299997 D299998
-        error(0.000267) D299997 D300000
-        error(0.000533) D299997 D300001
-        error(0.000267) D299998 D299999
-        error(0.000533) D299998 D300001
-        error(0.000533) D299998 D300002
-        error(0.000267) D299999 D300002
-        error(0.000267) D299999 L0
-        error(0.000267) D300000
-        error(0.000267) D300000 D300001
-        reducible_error(0.000267) D300000 ^ D299997
-        error(0.000267) D300001 D300002
-        error(0.000267) D300002 L0
-        reducible_error(0.000267) D300002 L0 ^ D299999 L0
+        error(0.000267) D3
+        error(0.000267) D3 D4
+        error(0.000267) D3 D6
+        error(0.000533) D3 D7
+        error(0.000267) D4 D5
+        error(0.000533) D4 D7
+        error(0.000533) D4 D8
+        error(0.000267) D5 D8
+        error(0.000267) D5 L0
+        error(0.000267) D6
+        error(0.000267) D6 D7
+        error(0.000267) D6 ^ D3
+        error(0.000267) D7 D8
+        error(0.000267) D8 L0
+        error(0.000267) D8 L0 ^ D5 L0
     )MODEL");
-    std::cerr << actual << "\n";
     ASSERT_TRUE(actual.approx_equals(expected, 0.00001));
 }
 
@@ -1295,12 +1294,12 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
             error(0.5) D2 D3
             error(0.5) D6 D7
             repeat 499999999999999 {
-                error(0.5) D4+t D5+t
-                error(0.5) D8+t D9+t
-                error(0.5) D10+t D11+t
-                error(0.5) D14+t D15+t
-                tick 8
+                error(0.5) D4 D5
+                error(0.5) D8 D9
+                error(0.5) D10 D11
+                error(0.5) D14 D15
+                shift_detectors 8
             }
-            error(0.5) D3999999999999996 D3999999999999997
+            error(0.5) D4 D5
         )MODEL"));
 }

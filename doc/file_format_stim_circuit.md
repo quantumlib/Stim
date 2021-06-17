@@ -26,6 +26,7 @@ and annotations for tasks such as detection event sampling and drawing the circu
 A stim circuit file is made up of a series of lines.
 Each line is either blank, an instruction, a block initiator, or a block terminator.
 Also, each line may be indented with spacing characters and may end with a comment indicated by a hash (`#`).
+Comments and indentation are purely decorative; they carry no semantic significance.
 
 ```
 <CIRCUIT> ::= <LINE>*
@@ -69,12 +70,15 @@ or a Pauli target (an integer prefixed by `X`, `Y`, or `Z`).
 
 A *block initiator* is an instruction suffixed with `{`.
 Every block initiator must be followed, eventually, by a matching *block terminator* which is just a `}`.
-The `{` always goes in the same line as its instruction, and the `}` always goes on a line by itself. 
+The `{` always goes in the same line as its instruction, and the `}` always goes on a line by itself.
 
 ```
 <BLOCK_START> ::= <INSTRUCTION> /[ \t]*/ '{'
 <BLOCK_END> ::= '}' 
 ```
+
+Blocks can be nested.
+Block contents are indented by convention, but this is not necessary.
 
 ## Semantics
 
@@ -162,11 +166,12 @@ A simulator executing a stim circuit is expected to store three things:
 2. **The Measurement Record**.
     When a measurement operation is performed, the measurement result is appended to a list of bits
     referred to as the measurement record.
+    The measurement record is an immutable log of all measurement results so far.
     Controlled operations can use a measurement record target as a control, instead of a qubit target.
     For example, `CZ rec[-1] 5` says "if the most recent measurement result was TRUE then apply a Z
     gate to qubit `5`".
     The measurement record is also used when defining detectors and observables.
-3. **The "Correlated Error Occurred" Flag**
+3. **The "Correlated Error Occurred" Flag**.
     The `ELSE_CORRELATED_ERROR` instruction applies an error mechanism conditioned on the preceding
     `CORRELATED_ERROR` instruction (and any intermediate `ELSE_CORRELATED_ERROR` instructions)
     having not occurred. This is tracked by a hidden boolean flag. 
@@ -179,7 +184,7 @@ But these have no effect on simulations, and so are often not strictly necessary
 
 ### Teleportation Circuit
 
-[View equivalent circuit in Quirk](https://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22H%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22H%22%5D%2C%5B1%2C%22Z%5E%C2%BD%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%5D%2C%5B%22H%22%5D%2C%5B%22Measure%22%2C%22Measure%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C1%2C1%2C%22X%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C%22Z%22%5D%5D%7D)
+[View equivalent circuit in Quirk](https://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22H%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22H%22%5D%2C%5B1%2C%22Z%5E%C2%BD%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%5D%2C%5B%22H%22%5D%2C%5B%22Measure%22%2C%22Measure%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Z%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C1%2C%22X%22%5D%5D%7D)
 
 ```
 # Distribute a Bell Pair.

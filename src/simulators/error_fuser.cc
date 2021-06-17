@@ -16,11 +16,8 @@
 
 #include <algorithm>
 #include <iomanip>
-#include <limits>
 #include <queue>
 #include <sstream>
-
-#include "../dem/detector_error_model.h"
 
 using namespace stim_internal;
 
@@ -54,7 +51,7 @@ void ErrorFuser::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (!zs[q].empty()) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
             }
             remove_gauge(add_error(0.5, zs[q].range()));
@@ -67,7 +64,7 @@ void ErrorFuser::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (xs[q] != zs[q]) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
             }
             remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
@@ -81,7 +78,7 @@ void ErrorFuser::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (!xs[q].empty()) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
             }
             remove_gauge(add_error(0.5, xs[q].range()));
@@ -99,7 +96,7 @@ void ErrorFuser::MX(const OperationData &dat) {
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         if (!zs[q].empty()) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
             }
             remove_gauge(add_error(0.5, zs[q].range()));
@@ -117,7 +114,7 @@ void ErrorFuser::MY(const OperationData &dat) {
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
         if (xs[q] != zs[q]) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
             }
             remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
@@ -134,7 +131,7 @@ void ErrorFuser::MZ(const OperationData &dat) {
         std::sort(d.begin(), d.end());
         zs[q].xor_sorted_items(d);
         if (!xs[q].empty()) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
             }
             remove_gauge(add_error(0.5, xs[q].range()));
@@ -412,8 +409,8 @@ void ErrorFuser::ISWAP(const OperationData &dat) {
 }
 
 void ErrorFuser::DETECTOR(const OperationData &dat) {
-    uint64_t id = LAST_DETECTOR_ID - num_found_detectors;
-    num_found_detectors++;
+    used_detectors++;
+    uint64_t id = total_detectors - used_detectors;
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
@@ -422,19 +419,22 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
 
 void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
     uint64_t id = FIRST_OBSERVABLE_ID + (int)dat.args[0];
-    num_found_observables = std::max(num_found_observables, id + 1);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
 }
 
-ErrorFuser::ErrorFuser(size_t num_qubits, bool find_reducible_errors, bool fold_loops, bool validate_detectors)
-    : xs(num_qubits),
+ErrorFuser::ErrorFuser(uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
+    : total_detectors(num_detectors),
+      used_detectors(0),
+      xs(num_qubits),
       zs(num_qubits),
-      find_reducible_errors(find_reducible_errors),
+      scheduled_measurement_time(0),
+      decompose_errors(decompose_errors),
+      accumulate_errors(true),
       fold_loops(fold_loops),
-      validate_detectors(validate_detectors) {
+      allow_gauge_detectors(allow_gauge_detectors) {
 }
 
 void ErrorFuser::run_circuit(const Circuit &circuit) {
@@ -456,7 +456,7 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
 void ErrorFuser::post_check_initialization() {
     for (const auto &x : xs) {
         if (!x.empty()) {
-            if (validate_detectors) {
+            if (allow_gauge_detectors) {
                 throw std::invalid_argument("A detector or observable anti-commuted with an initialization.");
             }
             add_error(0.5, x.range());
@@ -575,8 +575,8 @@ void ErrorFuser::PAULI_CHANNEL_2(const OperationData &dat) {
 }
 
 DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(
-    const Circuit &circuit, bool find_reducible_errors, bool fold_loops, bool validate_detectors) {
-    ErrorFuser fuser(circuit.count_qubits(), find_reducible_errors, fold_loops, validate_detectors);
+    const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
+    ErrorFuser fuser(circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
     fuser.run_circuit(circuit);
     fuser.post_check_initialization();
     fuser.flush();
@@ -587,7 +587,7 @@ DetectorErrorModel ErrorFuser::flushed_to_detector_error_model() const {
     uint64_t time_offset = 0;
     DetectorErrorModel model;
     for (auto e = flushed.crbegin(); e != flushed.crend(); e++) {
-        e->append_to_detector_error_model(model, num_found_detectors, time_offset, true);
+        e->append_to_detector_error_model(model, time_offset);
     }
     return model;
 }
@@ -674,11 +674,9 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     uint64_t num_loop_detectors = loop.count_detectors();
     uint64_t hare_iter = 0;
     uint64_t tortoise_iter = 0;
-    ErrorFuser hare(xs.size(), false, true, validate_detectors);
+    ErrorFuser hare(total_detectors - used_detectors, xs.size(), false, true, allow_gauge_detectors);
     hare.xs = xs;
     hare.zs = zs;
-    hare.num_found_detectors = num_found_detectors;
-    hare.num_found_observables = num_found_observables;
     hare.measurement_to_detectors = measurement_to_detectors;
     hare.scheduled_measurement_time = scheduled_measurement_time;
     hare.accumulate_errors = false;
@@ -742,7 +740,7 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
             int64_t skipped_detectors = num_loop_detectors * (period_iterations - 1) * period;
             block->skip(skipped_detectors);
             flushed.push_back(FusedError{0, {}, 0, std::move(block)});
-            num_found_detectors += skipped_detectors;
+            used_detectors += skipped_detectors;
             shift_active_detector_ids(-skipped_detectors);
             tortoise_iter += period_iterations * period;
         }
@@ -780,10 +778,10 @@ void ErrorFuser::shift_active_detector_ids(int64_t shift) {
 }
 
 void FusedErrorRepeatBlock::append_to_detector_error_model(
-    DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count) const {
+    DetectorErrorModel &out, uint64_t &tick_count) const {
     DetectorErrorModel body;
     for (auto e = errors.crbegin(); e != errors.crend(); e++) {
-        e->append_to_detector_error_model(body, num_found_detectors, tick_count, false);
+        e->append_to_detector_error_model(body, tick_count);
     }
     size_t outer_ticks = outer_ticks_per_iteration();
     if (outer_ticks) {
@@ -819,9 +817,9 @@ void FusedError::skip(uint64_t skipped) {
 }
 
 void FusedError::append_to_detector_error_model(
-    DetectorErrorModel &out, uint64_t num_found_detectors, uint64_t &tick_count, bool top_level) const {
+    DetectorErrorModel &out, uint64_t &tick_count) const {
     if (block) {
-        block->append_to_detector_error_model(out, num_found_detectors, tick_count);
+        block->append_to_detector_error_model(out, tick_count);
         return;
     }
 
@@ -833,8 +831,7 @@ void FusedError::append_to_detector_error_model(
                 symptoms.push_back(DemTarget::separator());
             }
         } else if (is_encoded_detector_id(e)) {
-            auto abs_id = e + num_found_detectors - LAST_DETECTOR_ID - 1;
-            auto rel_id = abs_id - tick_count - local_time_shift;
+            auto rel_id = e - tick_count - local_time_shift;
             symptoms.push_back(DemTarget::relative_detector_id(rel_id));
         } else {
             symptoms.push_back(DemTarget::observable_id(e - FIRST_OBSERVABLE_ID));

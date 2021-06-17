@@ -50,6 +50,10 @@ Also note that putting two detectors at the same coordinate does not fuse them i
 (beware that OBSERVABLE_INCLUDE does fuse observables at the same index, which looks very similar).
 See SHIFT_COORDS for more details on using coordinates.
 
+Note that detectors are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
+measurement cannot create detection events on detectors that include that measurement, but placing an `X_ERROR(1)`
+does create detection events.
+
 - Example:
 
     ```
@@ -88,6 +92,10 @@ incrementally over the entire circuit.
 Logical observables are ignored in measurement sampling mode.
 In detector sampling mode, observables produce results (false=expected parity, true=incorrect parity detected).
 These results are optionally appended to the detector results, depending on simulator arguments / command line flags.
+
+Note that observables are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
+measurement cannot flip a logical observable that include that measurement, but placing an `X_ERROR(1)` does flip the
+observable. This is because observables are used for detecting errors, not for verifying noiseless functionality.
 
 Note that observable indices are NOT shifted by SHIFT_COORDS.
 

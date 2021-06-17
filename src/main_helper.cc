@@ -100,7 +100,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
             "--analyze_errors",
             "--allow_gauge_detectors",
             "--detector_hypergraph",
-            "--find_reducible_errors",
+            "--decompose_errors",
             "--fold_loops",
             "--out",
             "--in",
@@ -108,7 +108,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
         "--analyze_errors",
         argc,
         argv);
-    bool find_reducible_errors = find_bool_argument("--find_reducible_errors", argc, argv);
+    bool decompose_errors = find_bool_argument("--decompose_errors", argc, argv);
     bool fold_loops = find_bool_argument("--fold_loops", argc, argv);
     bool validate_detectors = !find_bool_argument("--allow_gauge_detectors", argc, argv);
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
@@ -118,7 +118,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    out << ErrorFuser::circuit_to_detector_error_model(circuit, find_reducible_errors, fold_loops, validate_detectors);
+    out << ErrorFuser::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors);
     return EXIT_SUCCESS;
 }
 

@@ -358,7 +358,7 @@ Detection event sampling mode:
 
 Error analysis mode:
     stim --analyze_errors \
-         [--find_reducible_errors] \
+         [--decompose_errors] \
          [--in=file] \
          [--out=file]
 

@@ -608,8 +608,8 @@ REPEAT 1000 {
             )input")),
         trim(R"output(
 repeat 1000 {
-    error(0.25) D0+t
-    tick 1
+    error(0.25) D0
+    shift_detectors 1
 }
             )output"));
 }
