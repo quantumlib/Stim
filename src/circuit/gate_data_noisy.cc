@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -32,7 +32,7 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             1,
             &TableauSimulator::DEPOLARIZE1,
             &FrameSimulator::DEPOLARIZE1,
-            &ErrorFuser::DEPOLARIZE1,
+            &ErrorAnalyzer::DEPOLARIZE1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -64,7 +64,7 @@ Applies a randomly chosen Pauli with a given probability.
             1,
             &TableauSimulator::DEPOLARIZE2,
             &FrameSimulator::DEPOLARIZE2,
-            &ErrorFuser::DEPOLARIZE2,
+            &ErrorAnalyzer::DEPOLARIZE2,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -108,7 +108,7 @@ Applies a randomly chosen two-qubit Pauli product with a given probability.
             1,
             &TableauSimulator::X_ERROR,
             &FrameSimulator::X_ERROR,
-            &ErrorFuser::X_ERROR,
+            &ErrorAnalyzer::X_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -136,7 +136,7 @@ Applies a Pauli X with a given probability.
             1,
             &TableauSimulator::Y_ERROR,
             &FrameSimulator::Y_ERROR,
-            &ErrorFuser::Y_ERROR,
+            &ErrorAnalyzer::Y_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -164,7 +164,7 @@ Applies a Pauli Y with a given probability.
             1,
             &TableauSimulator::Z_ERROR,
             &FrameSimulator::Z_ERROR,
-            &ErrorFuser::Z_ERROR,
+            &ErrorAnalyzer::Z_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -192,7 +192,7 @@ Applies a Pauli Z with a given probability.
             3,
             &TableauSimulator::PAULI_CHANNEL_1,
             &FrameSimulator::PAULI_CHANNEL_1,
-            &ErrorFuser::PAULI_CHANNEL_1,
+            &ErrorAnalyzer::PAULI_CHANNEL_1,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -234,7 +234,7 @@ The gate is parameterized by 3 disjoint probabilities, one for each Pauli other 
             15,
             &TableauSimulator::PAULI_CHANNEL_2,
             &FrameSimulator::PAULI_CHANNEL_2,
-            &ErrorFuser::PAULI_CHANNEL_2,
+            &ErrorAnalyzer::PAULI_CHANNEL_2,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -288,7 +288,7 @@ The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair 
             1,
             &TableauSimulator::CORRELATED_ERROR,
             &FrameSimulator::CORRELATED_ERROR,
-            &ErrorFuser::CORRELATED_ERROR,
+            &ErrorAnalyzer::CORRELATED_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -322,7 +322,7 @@ See also: `ELSE_CORRELATED_ERROR`.
             1,
             &TableauSimulator::ELSE_CORRELATED_ERROR,
             &FrameSimulator::ELSE_CORRELATED_ERROR,
-            &ErrorFuser::ELSE_CORRELATED_ERROR,
+            &ErrorAnalyzer::ELSE_CORRELATED_ERROR,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {

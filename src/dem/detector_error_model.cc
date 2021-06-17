@@ -19,7 +19,7 @@
 #include <cmath>
 #include <iomanip>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 
 using namespace stim_internal;
 

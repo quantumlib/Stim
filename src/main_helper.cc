@@ -19,7 +19,7 @@
 #include "gen/circuit_gen_main.h"
 #include "probability_util.h"
 #include "simulators/detection_simulator.h"
-#include "simulators/error_fuser.h"
+#include "simulators/error_analyzer.h"
 #include "simulators/frame_simulator.h"
 #include "simulators/tableau_simulator.h"
 
@@ -118,7 +118,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    out << ErrorFuser::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors);
+    out << ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors);
     return EXIT_SUCCESS;
 }
 

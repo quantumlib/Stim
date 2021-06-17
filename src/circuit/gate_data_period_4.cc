@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -32,7 +32,7 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
             0,
             &TableauSimulator::SQRT_X,
             &FrameSimulator::H_YZ,
-            &ErrorFuser::H_YZ,
+            &ErrorAnalyzer::H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -55,7 +55,7 @@ Equivalent to `H` then `S` then `H`.
             0,
             &TableauSimulator::SQRT_X_DAG,
             &FrameSimulator::H_YZ,
-            &ErrorFuser::H_YZ,
+            &ErrorAnalyzer::H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -78,7 +78,7 @@ Equivalent to `H` then `S_DAG` then `H`.
             0,
             &TableauSimulator::SQRT_Y,
             &FrameSimulator::H_XZ,
-            &ErrorFuser::H_XZ,
+            &ErrorAnalyzer::H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -101,7 +101,7 @@ Equivalent to `S` then `H` then `S` then `H` then `S_DAG`.
             0,
             &TableauSimulator::SQRT_Y_DAG,
             &FrameSimulator::H_XZ,
-            &ErrorFuser::H_XZ,
+            &ErrorAnalyzer::H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -124,7 +124,7 @@ Equivalent to `S` then `H` then `S_DAG` then `H` then `S_DAG`.
             0,
             &TableauSimulator::SQRT_Z,
             &FrameSimulator::H_XY,
-            &ErrorFuser::H_XY,
+            &ErrorAnalyzer::H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -147,7 +147,7 @@ Phases the amplitude of |1> by i.
             0,
             &TableauSimulator::SQRT_Z_DAG,
             &FrameSimulator::H_XY,
-            &ErrorFuser::H_XY,
+            &ErrorAnalyzer::H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {

@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -32,7 +32,7 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
             0,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::I,
+            &ErrorAnalyzer::I,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {

@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -33,7 +33,7 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
             0,
             &TableauSimulator::measure_x,
             &FrameSimulator::measure_x,
-            &ErrorFuser::MX,
+            &ErrorAnalyzer::MX,
             GATE_PRODUCES_RESULTS,
             []() -> ExtraGateData {
                 return {
@@ -54,7 +54,7 @@ Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>
             0,
             &TableauSimulator::measure_y,
             &FrameSimulator::measure_y,
-            &ErrorFuser::MY,
+            &ErrorAnalyzer::MY,
             GATE_PRODUCES_RESULTS,
             []() -> ExtraGateData {
                 return {
@@ -75,7 +75,7 @@ Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i
             0,
             &TableauSimulator::measure_z,
             &FrameSimulator::measure_z,
-            &ErrorFuser::MZ,
+            &ErrorAnalyzer::MZ,
             GATE_PRODUCES_RESULTS,
             []() -> ExtraGateData {
                 return {
@@ -99,7 +99,7 @@ Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>
             0,
             &TableauSimulator::measure_reset_x,
             &FrameSimulator::measure_reset_x,
-            &ErrorFuser::MRX,
+            &ErrorAnalyzer::MRX,
             GATE_PRODUCES_RESULTS,
             []() -> ExtraGateData {
                 return {
@@ -120,7 +120,7 @@ Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, 
             0,
             &TableauSimulator::measure_reset_y,
             &FrameSimulator::measure_reset_y,
-            &ErrorFuser::MRY,
+            &ErrorAnalyzer::MRY,
             GATE_PRODUCES_RESULTS,
             []() -> ExtraGateData {
                 return {
@@ -141,7 +141,7 @@ Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`,
             0,
             &TableauSimulator::measure_reset_z,
             &FrameSimulator::measure_reset_z,
-            &ErrorFuser::MRZ,
+            &ErrorAnalyzer::MRZ,
             GATE_PRODUCES_RESULTS,
             []() -> ExtraGateData {
                 return {
@@ -165,7 +165,7 @@ Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, 
             0,
             &TableauSimulator::reset_x,
             &FrameSimulator::reset_x,
-            &ErrorFuser::RX,
+            &ErrorAnalyzer::RX,
             GATE_NO_FLAGS,
             []() -> ExtraGateData {
                 return {
@@ -186,7 +186,7 @@ Forces each target qubit into the `|+>` state by silently measuring it in the X 
             0,
             &TableauSimulator::reset_y,
             &FrameSimulator::reset_y,
-            &ErrorFuser::RY,
+            &ErrorAnalyzer::RY,
             GATE_NO_FLAGS,
             []() -> ExtraGateData {
                 return {
@@ -207,7 +207,7 @@ Forces each target qubit into the `|i>` state by silently measuring it in the Y 
             0,
             &TableauSimulator::reset_z,
             &FrameSimulator::reset_z,
-            &ErrorFuser::RZ,
+            &ErrorAnalyzer::RZ,
             GATE_NO_FLAGS,
             []() -> ExtraGateData {
                 return {

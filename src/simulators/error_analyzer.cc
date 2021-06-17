@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "error_fuser.h"
+#include "error_analyzer.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -21,7 +21,7 @@
 
 using namespace stim_internal;
 
-void ErrorFuser::remove_gauge(ConstPointerRange<DemTarget> sorted) {
+void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
     if (sorted.empty()) {
         return;
     }
@@ -39,7 +39,7 @@ void ErrorFuser::remove_gauge(ConstPointerRange<DemTarget> sorted) {
     }
 }
 
-void ErrorFuser::RX(const OperationData &dat) {
+void ErrorAnalyzer::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (!zs[q].empty()) {
@@ -52,7 +52,7 @@ void ErrorFuser::RX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::RY(const OperationData &dat) {
+void ErrorAnalyzer::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (xs[q] != zs[q]) {
@@ -66,7 +66,7 @@ void ErrorFuser::RY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::RZ(const OperationData &dat) {
+void ErrorAnalyzer::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         if (!xs[q].empty()) {
@@ -79,7 +79,7 @@ void ErrorFuser::RZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::MX(const OperationData &dat) {
+void ErrorAnalyzer::MX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
@@ -96,7 +96,7 @@ void ErrorFuser::MX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::MY(const OperationData &dat) {
+void ErrorAnalyzer::MY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
@@ -114,7 +114,7 @@ void ErrorFuser::MY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::MZ(const OperationData &dat) {
+void ErrorAnalyzer::MZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
@@ -131,7 +131,7 @@ void ErrorFuser::MZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::MRX(const OperationData &dat) {
+void ErrorAnalyzer::MRX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         OperationData d{{}, {&q, &q + 1}};
@@ -140,7 +140,7 @@ void ErrorFuser::MRX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::MRY(const OperationData &dat) {
+void ErrorAnalyzer::MRY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         OperationData d{{}, {&q, &q + 1}};
@@ -149,7 +149,7 @@ void ErrorFuser::MRY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::MRZ(const OperationData &dat) {
+void ErrorAnalyzer::MRZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         OperationData d{{}, {&q, &q + 1}};
@@ -158,28 +158,28 @@ void ErrorFuser::MRZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::H_XZ(const OperationData &dat) {
+void ErrorAnalyzer::H_XZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         std::swap(xs[q], zs[q]);
     }
 }
 
-void ErrorFuser::H_XY(const OperationData &dat) {
+void ErrorAnalyzer::H_XY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         zs[q] ^= xs[q];
     }
 }
 
-void ErrorFuser::H_YZ(const OperationData &dat) {
+void ErrorAnalyzer::H_YZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         xs[q] ^= zs[q];
     }
 }
 
-void ErrorFuser::C_XYZ(const OperationData &dat) {
+void ErrorAnalyzer::C_XYZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         zs[q] ^= xs[q];
@@ -187,7 +187,7 @@ void ErrorFuser::C_XYZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::C_ZYX(const OperationData &dat) {
+void ErrorAnalyzer::C_ZYX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         xs[q] ^= zs[q];
@@ -195,7 +195,7 @@ void ErrorFuser::C_ZYX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::XCX(const OperationData &dat) {
+void ErrorAnalyzer::XCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k];
         auto q2 = dat.targets[k + 1];
@@ -204,7 +204,7 @@ void ErrorFuser::XCX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::XCY(const OperationData &dat) {
+void ErrorAnalyzer::XCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto tx = dat.targets[k];
         auto ty = dat.targets[k + 1];
@@ -215,7 +215,7 @@ void ErrorFuser::XCY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::YCX(const OperationData &dat) {
+void ErrorAnalyzer::YCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto tx = dat.targets[k + 1];
         auto ty = dat.targets[k];
@@ -226,7 +226,7 @@ void ErrorFuser::YCX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ZCY(const OperationData &dat) {
+void ErrorAnalyzer::ZCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto c = dat.targets[k];
         auto t = dat.targets[k + 1];
@@ -234,7 +234,7 @@ void ErrorFuser::ZCY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::YCZ(const OperationData &dat) {
+void ErrorAnalyzer::YCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto t = dat.targets[k];
         auto c = dat.targets[k + 1];
@@ -242,7 +242,7 @@ void ErrorFuser::YCZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::YCY(const OperationData &dat) {
+void ErrorAnalyzer::YCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -258,7 +258,7 @@ void ErrorFuser::YCY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ZCX(const OperationData &dat) {
+void ErrorAnalyzer::ZCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto c = dat.targets[k];
         auto t = dat.targets[k + 1];
@@ -266,7 +266,7 @@ void ErrorFuser::ZCX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::SQRT_XX(const OperationData &dat) {
+void ErrorAnalyzer::SQRT_XX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -277,7 +277,7 @@ void ErrorFuser::SQRT_XX(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::SQRT_YY(const OperationData &dat) {
+void ErrorAnalyzer::SQRT_YY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -292,7 +292,7 @@ void ErrorFuser::SQRT_YY(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::SQRT_ZZ(const OperationData &dat) {
+void ErrorAnalyzer::SQRT_ZZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -303,7 +303,7 @@ void ErrorFuser::SQRT_ZZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z) {
+void ErrorAnalyzer::feedback(uint32_t record_control, size_t target, bool x, bool z) {
     uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
     std::vector<DemTarget> &dst = measurement_to_detectors[time];
 
@@ -322,7 +322,7 @@ void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z
     dst = std::move(tmp.sorted_items);
 }
 
-void ErrorFuser::single_cx(uint32_t c, uint32_t t) {
+void ErrorAnalyzer::single_cx(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         zs[c] ^= zs[t];
         xs[t] ^= xs[c];
@@ -333,7 +333,7 @@ void ErrorFuser::single_cx(uint32_t c, uint32_t t) {
     }
 }
 
-void ErrorFuser::single_cy(uint32_t c, uint32_t t) {
+void ErrorAnalyzer::single_cy(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         zs[c] ^= zs[t];
         zs[c] ^= xs[t];
@@ -346,7 +346,7 @@ void ErrorFuser::single_cy(uint32_t c, uint32_t t) {
     }
 }
 
-void ErrorFuser::single_cz(uint32_t c, uint32_t t) {
+void ErrorAnalyzer::single_cz(uint32_t c, uint32_t t) {
     if (!((c | t) & TARGET_RECORD_BIT)) {
         zs[c] ^= xs[t];
         zs[t] ^= xs[c];
@@ -359,7 +359,7 @@ void ErrorFuser::single_cz(uint32_t c, uint32_t t) {
     }
 }
 
-void ErrorFuser::XCZ(const OperationData &dat) {
+void ErrorAnalyzer::XCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto t = dat.targets[k];
         auto c = dat.targets[k + 1];
@@ -367,7 +367,7 @@ void ErrorFuser::XCZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ZCZ(const OperationData &dat) {
+void ErrorAnalyzer::ZCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto q1 = dat.targets[k];
         auto q2 = dat.targets[k + 1];
@@ -375,10 +375,10 @@ void ErrorFuser::ZCZ(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::I(const OperationData &dat) {
+void ErrorAnalyzer::I(const OperationData &dat) {
 }
 
-void ErrorFuser::SWAP(const OperationData &dat) {
+void ErrorAnalyzer::SWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -387,7 +387,7 @@ void ErrorFuser::SWAP(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ISWAP(const OperationData &dat) {
+void ErrorAnalyzer::ISWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
         auto a = dat.targets[k];
         auto b = dat.targets[k + 1];
@@ -400,7 +400,7 @@ void ErrorFuser::ISWAP(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::DETECTOR(const OperationData &dat) {
+void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
     used_detectors++;
     auto id = DemTarget::relative_detector_id(total_detectors - used_detectors);
     for (auto t : dat.targets) {
@@ -409,14 +409,14 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
+void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(DemTarget::observable_id((int32_t)dat.args[0]));
     }
 }
 
-ErrorFuser::ErrorFuser(uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
+ErrorAnalyzer::ErrorAnalyzer(uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
     : total_detectors(num_detectors),
       used_detectors(0),
       xs(num_qubits),
@@ -428,7 +428,7 @@ ErrorFuser::ErrorFuser(uint64_t num_detectors, size_t num_qubits, bool decompose
       allow_gauge_detectors(allow_gauge_detectors) {
 }
 
-void ErrorFuser::run_circuit(const Circuit &circuit) {
+void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
     for (auto p = circuit.operations.crbegin(); p != circuit.operations.crend(); p++) {
         const auto &op = *p;
         assert(op.gate != nullptr);
@@ -444,7 +444,7 @@ void ErrorFuser::run_circuit(const Circuit &circuit) {
     }
 }
 
-void ErrorFuser::post_check_initialization() {
+void ErrorAnalyzer::post_check_initialization() {
     for (const auto &x : xs) {
         if (!x.empty()) {
             if (allow_gauge_detectors) {
@@ -455,7 +455,7 @@ void ErrorFuser::post_check_initialization() {
     }
 }
 
-void ErrorFuser::X_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::X_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -464,7 +464,7 @@ void ErrorFuser::X_ERROR(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::Y_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::Y_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -473,7 +473,7 @@ void ErrorFuser::Y_ERROR(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::Z_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::Z_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -492,7 +492,7 @@ inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src
     });
 }
 
-void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::CORRELATED_ERROR(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -508,7 +508,7 @@ void ErrorFuser::CORRELATED_ERROR(const OperationData &dat) {
     add_error_in_sorted_jagged_tail(dat.args[0]);
 }
 
-void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
+void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -527,7 +527,7 @@ void ErrorFuser::DEPOLARIZE1(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
+void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
     if (!accumulate_errors) {
         return;
     }
@@ -550,31 +550,31 @@ void ErrorFuser::DEPOLARIZE2(const OperationData &dat) {
     }
 }
 
-void ErrorFuser::ELSE_CORRELATED_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
     throw std::out_of_range(
         "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be independent).");
 }
 
-void ErrorFuser::PAULI_CHANNEL_1(const OperationData &dat) {
+void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
     throw std::out_of_range(
         "PAULI_CHANNEL_1 operations currently not supported in error analysis (cases may not be independent).");
 }
 
-void ErrorFuser::PAULI_CHANNEL_2(const OperationData &dat) {
+void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
     throw std::out_of_range(
         "PAULI_CHANNEL_2 operations currently not supported in error analysis (cases may not be independent).");
 }
 
-DetectorErrorModel ErrorFuser::circuit_to_detector_error_model(
+DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
     const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
-    ErrorFuser fuser(circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
+    ErrorAnalyzer fuser(circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
     fuser.run_circuit(circuit);
     fuser.post_check_initialization();
     fuser.flush();
     return fuser.flushed_to_detector_error_model();
 }
 
-DetectorErrorModel ErrorFuser::flushed_to_detector_error_model() const {
+DetectorErrorModel ErrorAnalyzer::flushed_to_detector_error_model() const {
     uint64_t time_offset = 0;
     DetectorErrorModel model;
     for (auto e = flushed.crbegin(); e != flushed.crend(); e++) {
@@ -583,7 +583,7 @@ DetectorErrorModel ErrorFuser::flushed_to_detector_error_model() const {
     return model;
 }
 
-void ErrorFuser::flush() {
+void ErrorAnalyzer::flush() {
     for (auto kv = error_class_probabilities.crbegin(); kv != error_class_probabilities.crend(); kv++) {
         if (kv->first.empty() || kv->second == 0) {
             continue;
@@ -593,14 +593,14 @@ void ErrorFuser::flush() {
     error_class_probabilities.clear();
 }
 
-ConstPointerRange<DemTarget> ErrorFuser::add_xored_error(
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_xored_error(
     double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
     mono_buf.tail.ptr_end = xor_merge_sort(flipped1, flipped2, mono_buf.tail.ptr_end);
     return add_error_in_sorted_jagged_tail(probability);
 }
 
-ConstPointerRange<DemTarget> ErrorFuser::mono_dedupe_store_tail() {
+ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
     auto v = error_class_probabilities.find(mono_buf.tail);
     if (v != error_class_probabilities.end()) {
         mono_buf.discard_tail();
@@ -611,7 +611,7 @@ ConstPointerRange<DemTarget> ErrorFuser::mono_dedupe_store_tail() {
     return result;
 }
 
-ConstPointerRange<DemTarget> ErrorFuser::mono_dedupe_store(ConstPointerRange<DemTarget> data) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store(ConstPointerRange<DemTarget> data) {
     auto v = error_class_probabilities.find(data);
     if (v != error_class_probabilities.end()) {
         return v->first;
@@ -622,14 +622,14 @@ ConstPointerRange<DemTarget> ErrorFuser::mono_dedupe_store(ConstPointerRange<Dem
     return result;
 }
 
-ConstPointerRange<DemTarget> ErrorFuser::add_error(double probability, ConstPointerRange<DemTarget> flipped) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_error(double probability, ConstPointerRange<DemTarget> flipped) {
     auto key = mono_dedupe_store(flipped);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-ConstPointerRange<DemTarget> ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(double probability) {
     auto key = mono_dedupe_store_tail();
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
@@ -653,7 +653,7 @@ bool shifted_equals(int64_t shift, const SparseXorVec<DemTarget> &unshifted, con
     return true;
 }
 
-void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
+void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     if (!fold_loops) {
         // If loop folding is disabled, just manually run each iteration.
         for (size_t k = 0; k < iterations; k++) {
@@ -665,7 +665,7 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     uint64_t num_loop_detectors = loop.count_detectors();
     uint64_t hare_iter = 0;
     uint64_t tortoise_iter = 0;
-    ErrorFuser hare(total_detectors - used_detectors, xs.size(), false, true, allow_gauge_detectors);
+    ErrorAnalyzer hare(total_detectors - used_detectors, xs.size(), false, true, allow_gauge_detectors);
     hare.xs = xs;
     hare.zs = zs;
     hare.measurement_to_detectors = measurement_to_detectors;
@@ -744,7 +744,7 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
     }
 }
 
-void ErrorFuser::shift_active_detector_ids(int64_t shift) {
+void ErrorAnalyzer::shift_active_detector_ids(int64_t shift) {
     for (auto &e : measurement_to_detectors) {
         for (auto &v : e.second) {
             if (v.is_relative_detector_id()) {

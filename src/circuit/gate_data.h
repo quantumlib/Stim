@@ -38,7 +38,7 @@ struct FrameSimulator;
 struct OperationData;
 struct Tableau;
 struct Operation;
-struct ErrorFuser;
+struct ErrorAnalyzer;
 
 constexpr uint8_t ARG_COUNT_VARIABLE = uint8_t{0xFF};
 
@@ -116,7 +116,7 @@ struct Gate {
     const char *name;
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
-    void (ErrorFuser::*reverse_error_fuser_function)(const OperationData &);
+    void (ErrorAnalyzer::*reverse_error_fuser_function)(const OperationData &);
     ExtraGateData (*extra_data_func)(void);
     GateFlags flags;
     uint8_t arg_count;
@@ -129,7 +129,7 @@ struct Gate {
         uint8_t arg_count,
         void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
         void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-        void (ErrorFuser::*hit_simulator_function)(const OperationData &),
+        void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
         GateFlags flags,
         ExtraGateData (*extra_data_func)(void));
 

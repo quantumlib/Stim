@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -32,7 +32,7 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
             0,
             &TableauSimulator::SWAP,
             &FrameSimulator::SWAP,
-            &ErrorFuser::SWAP,
+            &ErrorAnalyzer::SWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -53,7 +53,7 @@ Swaps two qubits.
             0,
             &TableauSimulator::ISWAP,
             &FrameSimulator::ISWAP,
-            &ErrorFuser::ISWAP,
+            &ErrorAnalyzer::ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -75,7 +75,7 @@ Equivalent to `SWAP` then `CZ` then `S` on both targets.
             0,
             &TableauSimulator::ISWAP_DAG,
             &FrameSimulator::ISWAP,
-            &ErrorFuser::ISWAP,
+            &ErrorAnalyzer::ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {

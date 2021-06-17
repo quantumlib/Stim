@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -32,7 +32,7 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
             0,
             &TableauSimulator::C_XYZ,
             &FrameSimulator::C_XYZ,
-            &ErrorFuser::C_XYZ,
+            &ErrorAnalyzer::C_XYZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -53,7 +53,7 @@ Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
             0,
             &TableauSimulator::C_ZYX,
             &FrameSimulator::C_ZYX,
-            &ErrorFuser::C_ZYX,
+            &ErrorAnalyzer::C_ZYX,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {

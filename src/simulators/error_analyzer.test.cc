@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "error_fuser.h"
-
 #include <gtest/gtest.h>
 #include <regex>
 
 #include "../gen/gen_rep_code.h"
 #include "../test_util.test.h"
+#include "error_analyzer.h"
 #include "frame_simulator.h"
 
 using namespace stim_internal;
@@ -29,7 +28,7 @@ std::string convert(
     bool fold_loops = false,
     bool validate_detectors = true) {
     return "\n" +
-           ErrorFuser::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors)
+           ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors)
                .str();
 }
 
@@ -249,7 +248,7 @@ error\(0.071825\d+\) D2 D3
 
 TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
-    ErrorFuser e(1, 16, false, false, false);
+    ErrorAnalyzer e(1, 16, false, false, false);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
             e.xs[q].xor_item({0});
@@ -941,7 +940,7 @@ error\(0.000669\d+\) D3 D5
 
 TEST(ErrorFuser, loop_folding) {
     ASSERT_EQ(
-        ErrorFuser::circuit_to_detector_error_model(
+        ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
                 MR 1
                 REPEAT 12345678987654321 {
@@ -969,7 +968,7 @@ TEST(ErrorFuser, loop_folding) {
 
     // Solve period 8 logical observable oscillation.
     ASSERT_EQ(
-        ErrorFuser::circuit_to_detector_error_model(
+        ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
             R 0 1 2 3 4
             REPEAT 12345678987654321 {
@@ -990,7 +989,7 @@ TEST(ErrorFuser, loop_folding) {
 
     // Solve period 127 logical observable oscillation.
     ASSERT_EQ(
-        ErrorFuser::circuit_to_detector_error_model(
+        ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
             R 0 1 2 3 4 5 6
             REPEAT 12345678987654321 {
@@ -1017,7 +1016,7 @@ TEST(ErrorFuser, loop_folding) {
 
 TEST(ErrorFuser, loop_folding_nested_loop) {
     ASSERT_EQ(
-        ErrorFuser::circuit_to_detector_error_model(
+        ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
                 MR 1
                 REPEAT 1000 {
@@ -1056,7 +1055,7 @@ TEST(ErrorFuser, loop_folding_rep_code_circuit) {
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
-    auto actual = ErrorFuser::circuit_to_detector_error_model(circuit, true, true, true);
+    auto actual = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, true);
     auto expected = DetectorErrorModel(R"MODEL(
         error(0.000267) D0
         error(0.000267) D0 D1
@@ -1150,7 +1149,7 @@ TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
 
 TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
     ASSERT_EQ(
-        ErrorFuser::circuit_to_detector_error_model(
+        ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
                 # Distance 2 Bacon-Shor.
                 ZCX 0 10 1 10
@@ -1186,7 +1185,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
             error(0.5) D18 D19
         )MODEL"));
 
-    ASSERT_TRUE(ErrorFuser::circuit_to_detector_error_model(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
                     Circuit(R"CIRCUIT(
                         # Distance 2 Bacon-Shor.
                         ZCX 0 10 1 10
@@ -1266,7 +1265,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
                         0.01));
 
     ASSERT_EQ(
-        ErrorFuser::circuit_to_detector_error_model(
+        ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
                 # Distance 2 Bacon-Shor.
                 ZCX 0 10 1 10

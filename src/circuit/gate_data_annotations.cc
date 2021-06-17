@@ -14,7 +14,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "gate_data.h"
@@ -32,7 +32,7 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
             ARG_COUNT_VARIABLE,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::DETECTOR,
+            &ErrorAnalyzer::DETECTOR,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -76,7 +76,7 @@ does create detection events.
             1,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::OBSERVABLE_INCLUDE,
+            &ErrorAnalyzer::OBSERVABLE_INCLUDE,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -121,7 +121,7 @@ Note that observable indices are NOT shifted by SHIFT_COORDS.
             0,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::I,
+            &ErrorAnalyzer::I,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
             []() -> ExtraGateData {
                 return {
@@ -152,7 +152,7 @@ For example, used by `stimcirq` to preserve the moment structure of cirq circuit
             ARG_COUNT_VARIABLE,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::I,
+            &ErrorAnalyzer::I,
             GATE_IS_NOT_FUSABLE,
             []() -> ExtraGateData {
                 return {
@@ -196,7 +196,7 @@ For example, this could be used to indicate a simulated qubit is iteratively pla
             ARG_COUNT_VARIABLE,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorFuser::I,
+            &ErrorAnalyzer::I,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
             []() -> ExtraGateData {
                 return {

@@ -16,7 +16,7 @@
 
 #include <complex>
 
-#include "../simulators/error_fuser.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 
@@ -96,7 +96,7 @@ Gate::Gate(
     uint8_t arg_count,
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
     void (FrameSimulator::*frame_simulator_function)(const OperationData &),
-    void (ErrorFuser::*hit_simulator_function)(const OperationData &),
+    void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
     GateFlags flags,
     ExtraGateData (*extra_data_func)(void))
     : name(name),

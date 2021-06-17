@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef SPARSE_BITS_H
-#define SPARSE_BITS_H
+#ifndef ERROR_FUSER_H
+#define ERROR_FUSER_H
 
 #include <algorithm>
 #include <map>
@@ -55,7 +55,7 @@ struct FusedErrorRepeatBlock {
     void skip(uint64_t skipped);
 };
 
-struct ErrorFuser {
+struct ErrorAnalyzer {
     std::map<uint64_t, std::vector<DemTarget>> measurement_to_detectors;
     uint64_t total_detectors;
     uint64_t used_detectors;
@@ -75,16 +75,16 @@ struct ErrorFuser {
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
 
-    ErrorFuser(size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
+    ErrorAnalyzer(size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     static DetectorErrorModel circuit_to_detector_error_model(
         const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
-    ErrorFuser(const ErrorFuser &fuser) = delete;
-    ErrorFuser(ErrorFuser &&fuser) noexcept = delete;
-    ErrorFuser &operator=(ErrorFuser &&fuser) noexcept = delete;
-    ErrorFuser &operator=(const ErrorFuser &fuser) = delete;
+    ErrorAnalyzer(const ErrorAnalyzer &fuser) = delete;
+    ErrorAnalyzer(ErrorAnalyzer &&fuser) noexcept = delete;
+    ErrorAnalyzer &operator=(ErrorAnalyzer &&fuser) noexcept = delete;
+    ErrorAnalyzer &operator=(const ErrorAnalyzer &fuser) = delete;
 
     void RX(const OperationData &dat);
     void RY(const OperationData &dat);
