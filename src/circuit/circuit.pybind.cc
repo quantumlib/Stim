@@ -320,14 +320,14 @@ void pybind_circuit(pybind11::module &m) {
                 ...    X_ERROR(0.125) 1
                 ...    M 0 !1
                 ... ''').flattened_operations()
-                [('H', [0], 0.0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0)]
+                [('H', [0], 0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0)]
 
                 >>> stim.Circuit('''
                 ...    REPEAT 2 {
                 ...        H 6
                 ...    }
                 ... ''').flattened_operations()
-                [('H', [6], 0.0), ('H', [6], 0)]
+                [('H', [6], 0), ('H', [6], 0)]
         )DOC")
             .data());
 
