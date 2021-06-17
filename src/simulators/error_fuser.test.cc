@@ -252,19 +252,19 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     ErrorFuser e(1, 16, false, false, false);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
-            e.xs[q].xor_item(0);
+            e.xs[q].xor_item({0});
             f.x_table[q][0] = true;
         }
         if (q & 2) {
-            e.xs[q].xor_item(1);
+            e.xs[q].xor_item({1});
             f.x_table[q][1] = true;
         }
         if (q & 4) {
-            e.zs[q].xor_item(0);
+            e.zs[q].xor_item({0});
             f.z_table[q][0] = true;
         }
         if (q & 8) {
-            e.zs[q].xor_item(1);
+            e.zs[q].xor_item({1});
             f.z_table[q][1] = true;
         }
     }
@@ -279,12 +279,12 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
                 bool xs[2]{};
                 bool zs[2]{};
                 for (auto x : e.xs[q]) {
-                    ASSERT_TRUE(x < 2) << gate.name;
-                    xs[x] = true;
+                    ASSERT_TRUE(x.data < 2) << gate.name;
+                    xs[x.data] = true;
                 }
                 for (auto z : e.zs[q]) {
-                    ASSERT_TRUE(z < 2) << gate.name;
-                    zs[z] = true;
+                    ASSERT_TRUE(z.data < 2) << gate.name;
+                    zs[z.data] = true;
                 }
                 ASSERT_EQ(f.x_table[q][0], xs[0]) << gate.name;
                 ASSERT_EQ(f.x_table[q][1], xs[1]) << gate.name;

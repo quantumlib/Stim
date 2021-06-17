@@ -35,9 +35,6 @@ DemTarget DemTarget::relative_detector_id(uint64_t id) {
     }
     return {id};
 }
-DemTarget DemTarget::separator() {
-    return {SEPARATOR_SYGIL};
-}
 bool DemTarget::is_observable_id() const {
     return data != SEPARATOR_SYGIL && (data & OBSERVABLE_BIT);
 }
@@ -56,6 +53,9 @@ bool DemTarget::operator==(const DemTarget &other) const {
 }
 bool DemTarget::operator!=(const DemTarget &other) const {
     return !(*this == other);
+}
+bool DemTarget::operator<(const DemTarget &other) const {
+    return data < other.data;
 }
 std::ostream &operator<<(std::ostream &out, const DemTarget &v) {
     if (v.is_separator()) {

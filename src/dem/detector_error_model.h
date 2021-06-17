@@ -40,7 +40,9 @@ struct DemTarget {
 
     static DemTarget observable_id(uint32_t id);
     static DemTarget relative_detector_id(uint64_t id);
-    static DemTarget separator();
+    static constexpr DemTarget separator() {
+        return {UINT64_MAX};
+    }
     uint64_t raw_id() const;
     bool is_observable_id() const;
     bool is_separator() const;
@@ -48,6 +50,7 @@ struct DemTarget {
 
     bool operator==(const DemTarget &other) const;
     bool operator!=(const DemTarget &other) const;
+    bool operator<(const DemTarget &other) const;
     std::string str() const;
 };
 

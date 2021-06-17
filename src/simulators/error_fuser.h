@@ -33,17 +33,11 @@
 
 namespace stim_internal {
 
-constexpr uint64_t FIRST_OBSERVABLE_ID = uint64_t{1} << 63;
-constexpr uint64_t COMPOSITE_ERROR_SYGIL = UINT64_MAX;
-
-bool is_encoded_detector_id(uint64_t id);
-bool is_encoded_observable_id(uint64_t id);
-
 struct FusedErrorRepeatBlock;
 
 struct FusedError {
     double probability;
-    ConstPointerRange<uint64_t> flipped;
+    ConstPointerRange<DemTarget> flipped;
     uint64_t local_time_shift;
     std::unique_ptr<FusedErrorRepeatBlock> block;
     void skip(uint64_t skipped);
@@ -62,13 +56,13 @@ struct FusedErrorRepeatBlock {
 };
 
 struct ErrorFuser {
-    std::map<uint64_t, std::vector<uint64_t>> measurement_to_detectors;
+    std::map<uint64_t, std::vector<DemTarget>> measurement_to_detectors;
     uint64_t total_detectors;
     uint64_t used_detectors;
     /// For each qubit, at the current time, the set of detectors with X dependence on that qubit.
-    std::vector<SparseXorVec<uint64_t>> xs;
+    std::vector<SparseXorVec<DemTarget>> xs;
     /// For each qubit, at the current time, the set of detectors with Z dependence on that qubit.
-    std::vector<SparseXorVec<uint64_t>> zs;
+    std::vector<SparseXorVec<DemTarget>> zs;
     size_t scheduled_measurement_time;
     bool decompose_errors;
     bool accumulate_errors;
@@ -77,9 +71,9 @@ struct ErrorFuser {
     std::vector<FusedError> flushed;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
-    std::map<ConstPointerRange<uint64_t>, double> error_class_probabilities;
+    std::map<ConstPointerRange<DemTarget>, double> error_class_probabilities;
     /// Backing datastore for values in error_class_probabilities.
-    MonotonicBuffer<uint64_t> mono_buf;
+    MonotonicBuffer<DemTarget> mono_buf;
 
     ErrorFuser(size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
@@ -141,16 +135,16 @@ struct ErrorFuser {
    private:
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
     /// Use that degree of freedom to delete the largest detector in the set from the system.
-    void remove_gauge(ConstPointerRange<uint64_t> sorted);
+    void remove_gauge(ConstPointerRange<DemTarget> sorted);
 
     void shift_active_detector_ids(int64_t shift);
     DetectorErrorModel flushed_to_detector_error_model() const;
     void flush();
     void run_loop(const Circuit &loop, uint64_t iterations);
-    ConstPointerRange<uint64_t> add_error(double probability, ConstPointerRange<uint64_t> data);
-    ConstPointerRange<uint64_t> add_xored_error(
-        double probability, ConstPointerRange<uint64_t> flipped1, ConstPointerRange<uint64_t> flipped2);
-    ConstPointerRange<uint64_t> add_error_in_sorted_jagged_tail(double probability);
+    ConstPointerRange<DemTarget> add_error(double probability, ConstPointerRange<DemTarget> data);
+    ConstPointerRange<DemTarget> add_xored_error(
+        double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2);
+    ConstPointerRange<DemTarget> add_error_in_sorted_jagged_tail(double probability);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
     void single_cz(uint32_t c, uint32_t t);
@@ -159,7 +153,7 @@ struct ErrorFuser {
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<uint64_t> mono_dedupe_store_tail();
+    ConstPointerRange<DemTarget> mono_dedupe_store_tail();
     /// Saves data to the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Args:
@@ -167,7 +161,7 @@ struct ErrorFuser {
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<uint64_t> mono_dedupe_store(ConstPointerRange<uint64_t> data);
+    ConstPointerRange<DemTarget> mono_dedupe_store(ConstPointerRange<DemTarget> data);
 
     /// Adds each given error, and also each possible combination of the given errors, to the possible errors.
     ///
@@ -177,14 +171,14 @@ struct ErrorFuser {
     ///     p: Independent probability of each error combination (other than the empty combination) occurring.
     ///     basis_errors: Building blocks for the error combinations.
     template <size_t s>
-    void add_error_combinations(double p, std::array<ConstPointerRange<uint64_t>, s> basis_errors) {
+    void add_error_combinations(double p, std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
         // Determine involved detectors while creating basis masks and storing added data.
-        FixedCapVector<uint64_t, 16> involved_detectors{};
+        FixedCapVector<DemTarget, 16> involved_detectors{};
         std::array<uint64_t, 1 << s> detector_masks{};
-        std::array<ConstPointerRange<uint64_t>, 1 << s> stored_ids;
+        std::array<ConstPointerRange<DemTarget>, 1 << s> stored_ids;
         for (size_t k = 0; k < s; k++) {
-            for (auto id : basis_errors[k]) {
-                if (is_encoded_detector_id(id)) {
+            for (const auto &id : basis_errors[k]) {
+                if (id.is_relative_detector_id()) {
                     auto r = involved_detectors.find(id);
                     if (r == involved_detectors.end()) {
                         try {
@@ -251,7 +245,7 @@ struct ErrorFuser {
                     auto m = detector_masks[k];
                     if ((goal & m) == m && (goal & ~(single_detectors_union | m)) == 0) {
                         mono_buf.append_tail(stored_ids[k]);
-                        mono_buf.append_tail(COMPOSITE_ERROR_SYGIL);
+                        mono_buf.append_tail(DemTarget::separator());
                         return goal & ~m;
                     }
                 }
@@ -268,9 +262,9 @@ struct ErrorFuser {
                                 std::swap(k1, k2);
                             }
                             mono_buf.append_tail(stored_ids[k1]);
-                            mono_buf.append_tail(COMPOSITE_ERROR_SYGIL);
+                            mono_buf.append_tail(DemTarget::separator());
                             mono_buf.append_tail(stored_ids[k2]);
-                            mono_buf.append_tail(COMPOSITE_ERROR_SYGIL);
+                            mono_buf.append_tail(DemTarget::separator());
                             return goal & ~(m1 | m2);
                         }
                     }
@@ -291,7 +285,7 @@ struct ErrorFuser {
                         if (detector_counts[k2] == 1 && (detector_masks[k2] & ~remnants) == 0) {
                             remnants &= ~detector_masks[k2];
                             mono_buf.append_tail(stored_ids[k2]);
-                            mono_buf.append_tail(COMPOSITE_ERROR_SYGIL);
+                            mono_buf.append_tail(DemTarget::separator());
                         }
                     }
                     if (!mono_buf.tail.empty()) {

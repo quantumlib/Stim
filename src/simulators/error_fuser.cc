@@ -21,15 +21,7 @@
 
 using namespace stim_internal;
 
-bool stim_internal::is_encoded_detector_id(uint64_t id) {
-    return id < FIRST_OBSERVABLE_ID;
-}
-
-bool stim_internal::is_encoded_observable_id(uint64_t id) {
-    return id >= FIRST_OBSERVABLE_ID && id != COMPOSITE_ERROR_SYGIL;
-}
-
-void ErrorFuser::remove_gauge(ConstPointerRange<uint64_t> sorted) {
+void ErrorFuser::remove_gauge(ConstPointerRange<DemTarget> sorted) {
     if (sorted.empty()) {
         return;
     }
@@ -92,7 +84,7 @@ void ErrorFuser::MX(const OperationData &dat) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
 
-        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         if (!zs[q].empty()) {
@@ -109,7 +101,7 @@ void ErrorFuser::MY(const OperationData &dat) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
 
-        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
@@ -127,7 +119,7 @@ void ErrorFuser::MZ(const OperationData &dat) {
         auto q = dat.targets[k] & TARGET_VALUE_MASK;
         scheduled_measurement_time++;
 
-        std::vector<uint64_t> &d = measurement_to_detectors[scheduled_measurement_time];
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         zs[q].xor_sorted_items(d);
         if (!xs[q].empty()) {
@@ -313,11 +305,11 @@ void ErrorFuser::SQRT_ZZ(const OperationData &dat) {
 
 void ErrorFuser::feedback(uint32_t record_control, size_t target, bool x, bool z) {
     uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
-    std::vector<uint64_t> &dst = measurement_to_detectors[time];
+    std::vector<DemTarget> &dst = measurement_to_detectors[time];
 
     // Temporarily move map's vector data into a SparseXorVec for manipulation.
     std::sort(dst.begin(), dst.end());
-    SparseXorVec<uint64_t> tmp(std::move(dst));
+    SparseXorVec<DemTarget> tmp(std::move(dst));
 
     if (x) {
         tmp ^= xs[target];
@@ -410,7 +402,7 @@ void ErrorFuser::ISWAP(const OperationData &dat) {
 
 void ErrorFuser::DETECTOR(const OperationData &dat) {
     used_detectors++;
-    uint64_t id = total_detectors - used_detectors;
+    auto id = DemTarget::relative_detector_id(total_detectors - used_detectors);
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
@@ -418,10 +410,9 @@ void ErrorFuser::DETECTOR(const OperationData &dat) {
 }
 
 void ErrorFuser::OBSERVABLE_INCLUDE(const OperationData &dat) {
-    uint64_t id = FIRST_OBSERVABLE_ID + (int)dat.args[0];
     for (auto t : dat.targets) {
         auto delay = t & TARGET_VALUE_MASK;
-        measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
+        measurement_to_detectors[scheduled_measurement_time + delay].push_back(DemTarget::observable_id((int32_t)dat.args[0]));
     }
 }
 
@@ -602,14 +593,14 @@ void ErrorFuser::flush() {
     error_class_probabilities.clear();
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::add_xored_error(
-    double probability, ConstPointerRange<uint64_t> flipped1, ConstPointerRange<uint64_t> flipped2) {
+ConstPointerRange<DemTarget> ErrorFuser::add_xored_error(
+    double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2) {
     mono_buf.ensure_available(flipped1.size() + flipped2.size());
-    mono_buf.tail.ptr_end = xor_merge_sort<uint64_t>(flipped1, flipped2, mono_buf.tail.ptr_end);
+    mono_buf.tail.ptr_end = xor_merge_sort(flipped1, flipped2, mono_buf.tail.ptr_end);
     return add_error_in_sorted_jagged_tail(probability);
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store_tail() {
+ConstPointerRange<DemTarget> ErrorFuser::mono_dedupe_store_tail() {
     auto v = error_class_probabilities.find(mono_buf.tail);
     if (v != error_class_probabilities.end()) {
         mono_buf.discard_tail();
@@ -620,7 +611,7 @@ ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store_tail() {
     return result;
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint64_t> data) {
+ConstPointerRange<DemTarget> ErrorFuser::mono_dedupe_store(ConstPointerRange<DemTarget> data) {
     auto v = error_class_probabilities.find(data);
     if (v != error_class_probabilities.end()) {
         return v->first;
@@ -631,29 +622,29 @@ ConstPointerRange<uint64_t> ErrorFuser::mono_dedupe_store(ConstPointerRange<uint
     return result;
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::add_error(double probability, ConstPointerRange<uint64_t> flipped) {
+ConstPointerRange<DemTarget> ErrorFuser::add_error(double probability, ConstPointerRange<DemTarget> flipped) {
     auto key = mono_dedupe_store(flipped);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-ConstPointerRange<uint64_t> ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
+ConstPointerRange<DemTarget> ErrorFuser::add_error_in_sorted_jagged_tail(double probability) {
     auto key = mono_dedupe_store_tail();
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;
 }
 
-bool shifted_equals(int64_t shift, const SparseXorVec<uint64_t> &unshifted, const SparseXorVec<uint64_t> &expected) {
+bool shifted_equals(int64_t shift, const SparseXorVec<DemTarget> &unshifted, const SparseXorVec<DemTarget> &expected) {
     if (unshifted.size() != expected.size()) {
         return false;
     }
     for (size_t k = 0; k < unshifted.size(); k++) {
-        auto a = unshifted.sorted_items[k];
-        auto e = expected.sorted_items[k];
-        if (is_encoded_detector_id(a)) {
-            a += shift;
+        DemTarget a = unshifted.sorted_items[k];
+        DemTarget e = expected.sorted_items[k];
+        if (a.is_relative_detector_id()) {
+            a.data += shift;
         }
         if (a != e) {
             return false;
@@ -756,22 +747,22 @@ void ErrorFuser::run_loop(const Circuit &loop, uint64_t iterations) {
 void ErrorFuser::shift_active_detector_ids(int64_t shift) {
     for (auto &e : measurement_to_detectors) {
         for (auto &v : e.second) {
-            if (is_encoded_detector_id(v)) {
-                v += shift;
+            if (v.is_relative_detector_id()) {
+                v.data += shift;
             }
         }
     }
     for (auto &x : xs) {
         for (auto &v : x) {
-            if (is_encoded_detector_id(v)) {
-                v += shift;
+            if (v.is_relative_detector_id()) {
+                v.data += shift;
             }
         }
     }
     for (auto &x : zs) {
         for (auto &v : x) {
-            if (is_encoded_detector_id(v)) {
-                v += shift;
+            if (v.is_relative_detector_id()) {
+                v.data += shift;
             }
         }
     }
@@ -825,17 +816,15 @@ void FusedError::append_to_detector_error_model(
 
     std::vector<DemTarget> symptoms;
     for (size_t k = 0; k < flipped.size(); k++) {
-        auto e = flipped[k];
-        if (e == COMPOSITE_ERROR_SYGIL) {
-            if (k != 0 && k != flipped.size() - 1) {
-                symptoms.push_back(DemTarget::separator());
+        DemTarget e = flipped[k];
+        if (e.is_separator()) {
+            if (k == 0 || k == flipped.size() - 1) {
+                continue;
             }
-        } else if (is_encoded_detector_id(e)) {
-            auto rel_id = e - tick_count - local_time_shift;
-            symptoms.push_back(DemTarget::relative_detector_id(rel_id));
-        } else {
-            symptoms.push_back(DemTarget::observable_id(e - FIRST_OBSERVABLE_ID));
+        } else if (e.is_relative_detector_id()) {
+            e.data -= tick_count + local_time_shift;
         }
+        symptoms.push_back(e);
     }
     out.append_error_instruction(probability, symptoms);
 }
