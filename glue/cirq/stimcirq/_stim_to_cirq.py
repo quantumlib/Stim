@@ -1,5 +1,5 @@
 import functools
-from typing import Callable, Dict, List, Tuple, Union, Iterator, cast, Sequence
+from typing import Callable, Dict, List, Tuple, Union, Iterator, cast, Sequence, Iterable
 
 import cirq
 import stim
@@ -131,6 +131,12 @@ class MeasureAndOrReset(cirq.SingleQubitGate):
                 f'key={self.key!r})')
 
 
+def args_to_cirq_depolarize_1(args: List[float]) -> cirq.AsymmetricDepolarizingChannel:
+    if len(args) != 3:
+        raise ValueError(f"len(args) != 3: {args!r}")
+    return cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2])
+
+
 @functools.lru_cache(maxsize=1)
 def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Union[float, List[float]]], cirq.Gate]]]:
     return {
@@ -172,10 +178,10 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Uni
         "CZ": cirq.CZ,
         "DEPOLARIZE1": lambda arg: cirq.DepolarizingChannel(arg, 1),
         "DEPOLARIZE2": lambda arg: cirq.DepolarizingChannel(arg, 2),
-        "X_ERROR": lambda arg: cirq.X.with_probability(arg),
-        "Y_ERROR": lambda arg: cirq.Y.with_probability(arg),
-        "Z_ERROR": lambda arg: cirq.Z.with_probability(arg),
-        "PAULI_CHANNEL_1": lambda args: cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2]),
+        "X_ERROR": cirq.X.with_probability,
+        "Y_ERROR": cirq.Y.with_probability,
+        "Z_ERROR": cirq.Z.with_probability,
+        "PAULI_CHANNEL_1": args_to_cirq_depolarize_1,
         "PAULI_CHANNEL_2": lambda args: TwoQubitAsymmetricDepolarizingChannel(args),
         "DETECTOR": (),
         "OBSERVABLE_INCLUDE": (),
@@ -184,7 +190,7 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Uni
 
 
 def _translate_flattened_operation(
-        op: Tuple[str, List, float],
+        op: Tuple[str, List, Union[float, Iterable[float]]],
         get_next_measure_id: Callable[[], int]) -> Iterator[cirq.Operation]:
     name, targets, arg = op
 
@@ -213,7 +219,7 @@ def _translate_flattened_operation(
                 key = str(get_next_measure_id())
                 yield g.with_key(key).on(cirq.LineQubit(q))
         else:
-            m = gate.num_qubits()
+            m = cirq.num_qubits(gate)
             for k in range(0, len(targets), m):
                 yield gate(*[cirq.LineQubit(q) for q in targets[k:k+m]])
         return
