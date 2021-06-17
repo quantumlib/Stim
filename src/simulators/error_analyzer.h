@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ERROR_FUSER_H
-#define ERROR_FUSER_H
+#ifndef ERROR_ANALYZER_H
+#define ERROR_ANALYZER_H
 
 #include <algorithm>
 #include <map>
@@ -33,28 +33,6 @@
 
 namespace stim_internal {
 
-struct FusedErrorRepeatBlock;
-
-struct FusedError {
-    double probability;
-    ConstPointerRange<DemTarget> flipped;
-    uint64_t local_time_shift;
-    std::unique_ptr<FusedErrorRepeatBlock> block;
-    void skip(uint64_t skipped);
-    void append_to_detector_error_model(
-        DetectorErrorModel &out, uint64_t &tick_count) const;
-};
-
-struct FusedErrorRepeatBlock {
-    uint64_t repetitions;
-    uint64_t total_ticks_per_iteration_including_sub_loops;
-    uint64_t outer_ticks_per_iteration() const;
-    std::vector<FusedError> errors;
-    void append_to_detector_error_model(
-        DetectorErrorModel &out, uint64_t &tick_count) const;
-    void skip(uint64_t skipped);
-};
-
 struct ErrorAnalyzer {
     std::map<uint64_t, std::vector<DemTarget>> measurement_to_detectors;
     uint64_t total_detectors;
@@ -68,7 +46,7 @@ struct ErrorAnalyzer {
     bool accumulate_errors;
     bool fold_loops;
     bool allow_gauge_detectors;
-    std::vector<FusedError> flushed;
+    DetectorErrorModel flushed_reversed_model;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
     std::map<ConstPointerRange<DemTarget>, double> error_class_probabilities;
@@ -81,10 +59,10 @@ struct ErrorAnalyzer {
         const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
-    ErrorAnalyzer(const ErrorAnalyzer &fuser) = delete;
-    ErrorAnalyzer(ErrorAnalyzer &&fuser) noexcept = delete;
-    ErrorAnalyzer &operator=(ErrorAnalyzer &&fuser) noexcept = delete;
-    ErrorAnalyzer &operator=(const ErrorAnalyzer &fuser) = delete;
+    ErrorAnalyzer(const ErrorAnalyzer &analyzer) = delete;
+    ErrorAnalyzer(ErrorAnalyzer &&analyzer) noexcept = delete;
+    ErrorAnalyzer &operator=(ErrorAnalyzer &&analyzer) noexcept = delete;
+    ErrorAnalyzer &operator=(const ErrorAnalyzer &analyzer) = delete;
 
     void RX(const OperationData &dat);
     void RY(const OperationData &dat);
@@ -136,9 +114,10 @@ struct ErrorAnalyzer {
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
     /// Use that degree of freedom to delete the largest detector in the set from the system.
     void remove_gauge(ConstPointerRange<DemTarget> sorted);
+    void check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge);
+    void check_for_gauge(SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2);
 
     void shift_active_detector_ids(int64_t shift);
-    DetectorErrorModel flushed_to_detector_error_model() const;
     void flush();
     void run_loop(const Circuit &loop, uint64_t iterations);
     ConstPointerRange<DemTarget> add_error(double probability, ConstPointerRange<DemTarget> data);

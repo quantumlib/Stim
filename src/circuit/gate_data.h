@@ -116,7 +116,7 @@ struct Gate {
     const char *name;
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
-    void (ErrorAnalyzer::*reverse_error_fuser_function)(const OperationData &);
+    void (ErrorAnalyzer::*reverse_error_analyzer_function)(const OperationData &);
     ExtraGateData (*extra_data_func)(void);
     GateFlags flags;
     uint8_t arg_count;

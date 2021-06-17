@@ -359,3 +359,16 @@ TEST(dem_instruction, general) {
     d1.push_back(DemTarget::observable_id(11));
     ASSERT_EQ((DemInstruction{p25, d1, DEM_ERROR}).str(), "error(0.25) L4 D3 ^ L11");
 }
+
+TEST(DetectorModel, total_detector_shift) {
+    ASSERT_EQ(DetectorErrorModel("").total_detector_shift(), 0);
+    ASSERT_EQ(DetectorErrorModel("error(0.3) D2").total_detector_shift(), 0);
+    ASSERT_EQ(DetectorErrorModel("shift_detectors 5").total_detector_shift(), 5);
+    ASSERT_EQ(DetectorErrorModel("shift_detectors 5\nshift_detectors 4").total_detector_shift(), 9);
+    ASSERT_EQ(DetectorErrorModel(R"MODEL(
+        shift_detectors 5
+        repeat 1000 {
+            shift_detectors 4
+        }
+    )MODEL").total_detector_shift(), 4005);
+}

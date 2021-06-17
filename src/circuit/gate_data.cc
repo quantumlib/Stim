@@ -102,7 +102,7 @@ Gate::Gate(
     : name(name),
       tableau_simulator_function(tableau_simulator_function),
       frame_simulator_function(frame_simulator_function),
-      reverse_error_fuser_function(hit_simulator_function),
+      reverse_error_analyzer_function(hit_simulator_function),
       extra_data_func(extra_data_func),
       flags(flags),
       arg_count(arg_count),

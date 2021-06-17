@@ -638,7 +638,7 @@ DETECTOR rec[-1]
 DETECTOR rec[-2]
             )input")),
         trim(R"output(
-[exception=A detector or observable anti-commuted with a reset.]
+[exception=A detector or observable anti-commuted with a measurement or reset.]
             )output"));
 }
 

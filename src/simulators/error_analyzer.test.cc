@@ -26,15 +26,15 @@ std::string convert(
     const Circuit &circuit,
     bool decompose_errors = false,
     bool fold_loops = false,
-    bool validate_detectors = true) {
+    bool allow_gauge_detectors = false) {
     return "\n" +
-           ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors)
+           ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, allow_gauge_detectors)
                .str();
 }
 
 std::string convert(
-    const char *text, bool decompose_errors = false, bool fold_loops = false, bool validate_detectors = true) {
-    return convert(Circuit(text), decompose_errors, fold_loops, validate_detectors);
+    const char *text, bool decompose_errors = false, bool fold_loops = false, bool allow_gauge_detectors = false) {
+    return convert(Circuit(text), decompose_errors, fold_loops, allow_gauge_detectors);
 }
 
 static std::string check_matches(std::string actual, std::string pattern) {
@@ -49,7 +49,7 @@ static std::string check_matches(std::string actual, std::string pattern) {
     return "";
 }
 
-TEST(ErrorFuser, convert_circuit) {
+TEST(ErrorAnalyzer, convert_circuit) {
     ASSERT_EQ(
         convert(R"circuit(
                 X_ERROR(0.25) 3
@@ -238,7 +238,7 @@ error\(0.019013\d+\) D3 \^ D2 \^ D0
                 )circuit",
                 true,
                 false,
-                false),
+                true),
             R"graph(
 error\(0.071825\d+\) D0 D1
 error\(0.071825\d+\) D0 D1 \^ D2 D3
@@ -246,7 +246,7 @@ error\(0.071825\d+\) D2 D3
 )graph"));
 }
 
-TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
+TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
     ErrorAnalyzer e(1, 16, false, false, false);
     for (size_t q = 0; q < 16; q++) {
@@ -272,7 +272,7 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     OperationData targets = {{}, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            (e.*gate.reverse_error_fuser_function)(targets);
+            (e.*gate.reverse_error_analyzer_function)(targets);
             (f.*gate.inverse().frame_simulator_function)(targets);
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
@@ -294,7 +294,7 @@ TEST(ErrorFuser, unitary_gates_match_frame_simulator) {
     }
 }
 
-TEST(ErrorFuser, reversed_operation_order) {
+TEST(ErrorAnalyzer, reversed_operation_order) {
     ASSERT_EQ(
         convert(R"circuit(
             X_ERROR(0.25) 0
@@ -309,7 +309,7 @@ error(0.25) D1
 )graph");
 }
 
-TEST(ErrorFuser, classical_error_propagation) {
+TEST(ErrorAnalyzer, classical_error_propagation) {
     ASSERT_EQ(
         convert(R"circuit(
             X_ERROR(0.125) 0
@@ -387,7 +387,7 @@ error(0.125) D0
 )graph");
 }
 
-TEST(ErrorFuser, measure_reset_basis) {
+TEST(ErrorAnalyzer, measure_reset_basis) {
     ASSERT_EQ(
         convert(R"circuit(
                 RZ 0 1 2
@@ -483,7 +483,7 @@ error(0.25) D2
 )graph");
 }
 
-TEST(ErrorFuser, repeated_measure_reset) {
+TEST(ErrorAnalyzer, repeated_measure_reset) {
     ASSERT_EQ(
         convert(R"circuit(
                 MRZ 0 0
@@ -529,7 +529,7 @@ error(0.25) D2
 )graph");
 }
 
-TEST(ErrorFuser, period_3_gates) {
+TEST(ErrorAnalyzer, period_3_gates) {
     ASSERT_EQ(
         convert(R"circuit(
                 R 0 1 2
@@ -567,7 +567,34 @@ error(1) D2
 )graph");
 }
 
-TEST(ErrorFuser, detect_bad_detectors) {
+TEST(ErrorAnalyzer, detect_gauge_observables) {
+    ASSERT_ANY_THROW({
+        convert(
+            R"circuit(
+                R 0
+                H 0
+                M 0
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            )circuit",
+            false,
+            false,
+            false);
+    });
+    ASSERT_ANY_THROW({
+        convert(
+            R"circuit(
+                R 0
+                H 0
+                M 0
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            )circuit",
+            false,
+            false,
+            true);
+    });
+}
+
+TEST(ErrorAnalyzer, detect_gauge_detectors) {
     ASSERT_ANY_THROW({
         convert(
             R"circuit(
@@ -578,7 +605,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -591,7 +618,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -603,7 +630,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -615,7 +642,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -627,7 +654,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -639,7 +666,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -651,7 +678,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -663,7 +690,7 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 
     ASSERT_ANY_THROW({
@@ -674,11 +701,11 @@ TEST(ErrorFuser, detect_bad_detectors) {
             )circuit",
             false,
             false,
-            true);
+            false);
     });
 }
 
-TEST(ErrorFuser, handle_gauge_detectors_when_not_validating) {
+TEST(ErrorAnalyzer, gauge_detectors) {
     ASSERT_EQ(
         convert(
             R"circuit(
@@ -690,7 +717,7 @@ TEST(ErrorFuser, handle_gauge_detectors_when_not_validating) {
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -707,7 +734,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -723,7 +750,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -740,7 +767,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -757,7 +784,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -773,7 +800,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -790,7 +817,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -807,7 +834,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -823,7 +850,7 @@ error(0.5) D0 D1
             )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
@@ -840,13 +867,13 @@ error(0.5) D0 D1
         )circuit",
             false,
             false,
-            false),
+            true),
         R"graph(
 error(0.5) D0 D1
 )graph");
 }
 
-TEST(ErrorFuser, composite_error_analysis) {
+TEST(ErrorAnalyzer, composite_error_analysis) {
     auto measure_stabilizers = Circuit(R"circuit(
         XCX 0 1 0 3 0 4
         MR 0
@@ -938,7 +965,7 @@ error\(0.000669\d+\) D3 D5
             expected));
 }
 
-TEST(ErrorFuser, loop_folding) {
+TEST(ErrorAnalyzer, loop_folding) {
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
@@ -1014,7 +1041,7 @@ TEST(ErrorFuser, loop_folding) {
         )MODEL"));
 }
 
-TEST(ErrorFuser, loop_folding_nested_loop) {
+TEST(ErrorAnalyzer, loop_folding_nested_loop) {
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
@@ -1050,12 +1077,12 @@ TEST(ErrorFuser, loop_folding_nested_loop) {
             )MODEL"));
 }
 
-TEST(ErrorFuser, loop_folding_rep_code_circuit) {
+TEST(ErrorAnalyzer, loop_folding_rep_code_circuit) {
     CircuitGenParameters params(100000, 3, "memory");
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
-    auto actual = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, true);
+    auto actual = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false);
     auto expected = DetectorErrorModel(R"MODEL(
         error(0.000267) D0
         error(0.000267) D0 D1
@@ -1109,7 +1136,7 @@ TEST(ErrorFuser, loop_folding_rep_code_circuit) {
     ASSERT_TRUE(actual.approx_equals(expected, 0.00001));
 }
 
-TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
+TEST(ErrorAnalyzer, reduce_error_detector_dependence_error_message) {
     ASSERT_THROW(
         {
             try {
@@ -1147,7 +1174,7 @@ TEST(ErrorFuser, reduce_error_detector_dependence_error_message) {
         std::out_of_range);
 }
 
-TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
+TEST(ErrorAnalyzer, multi_round_gauge_detectors_dont_grow) {
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"CIRCUIT(
@@ -1171,7 +1198,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
             )CIRCUIT"),
             false,
             false,
-            false),
+            true),
         DetectorErrorModel(R"MODEL(
             error(0.5) D0 D1
             error(0.5) D2 D3
@@ -1208,7 +1235,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
                     )CIRCUIT"),
                     false,
                     false,
-                    false)
+                    true)
                     .approx_equals(
                         DetectorErrorModel(R"MODEL(
             error(0.00667) D0
@@ -1287,7 +1314,7 @@ TEST(ErrorFuser, multi_round_gauge_detectors_dont_grow) {
             )CIRCUIT"),
             false,
             true,
-            false),
+            true),
         DetectorErrorModel(R"MODEL(
             error(0.5) D0 D1
             error(0.5) D2 D3

@@ -75,6 +75,12 @@ std::string DemTarget::str() const {
     return s.str();
 }
 
+void DemTarget::shift_if_detector_id(int64_t offset) {
+    if (is_relative_detector_id()) {
+        data = (uint64_t)((int64_t)data + offset);
+    }
+}
+
 bool DemInstruction::operator==(const DemInstruction &other) const {
     return approx_equals(other, 0);
 }
@@ -522,4 +528,16 @@ void DetectorErrorModel::clear() {
     arg_buf.clear();
     instructions.clear();
     blocks.clear();
+}
+
+uint64_t DetectorErrorModel::total_detector_shift() const {
+    uint64_t result = 0;
+    for (const auto &e : instructions) {
+        if (e.type == DEM_SHIFT_DETECTORS) {
+            result += e.target_data[0].data;
+        } else if (e.type == DEM_REPEAT_BLOCK) {
+            result += e.target_data[0].data * blocks[e.target_data[1].data].total_detector_shift();
+        }
+    }
+    return result;
 }

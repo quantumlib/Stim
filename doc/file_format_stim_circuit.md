@@ -13,7 +13,7 @@ and annotations for tasks such as detection event sampling and drawing the circu
         - [Supported Gates](gates.md)
     - [Broadcasting](#Broadcasting)
     - [State Space](#State-Space)
-    - [The Measurement Record](#The-Measurement-Record)
+    - [Vacuous repeat blocks are not allowed](#Vacuous-repeat-blocks-are-not-allowed)
 - [Examples](#Examples)
     - [Teleportation Circuit](#Teleportation-Circuit)
     - [Repetition Code Circuit](#Repetition-Code-Circuit)
@@ -179,6 +179,37 @@ A simulator executing a stim circuit is expected to store three things:
 (The interpreter of the circuit may also track coordinate offsets accumulated from `SHIFT_COORDS` annotations,
 which affect the meaning of `QUBIT_COORDS` annotations and the coordinate arguments given to `DETECTOR`.
 But these have no effect on simulations, and so are often not strictly necessary to track.)
+
+### Vacuous repeat blocks are not allowed
+
+It's an error for a circuit to contain a repeat block that is repeated 0 times.
+
+The reason it's an error is because it's ambiguous whether observables and qubits mentioned in the block "exist".
+For example, consider this malformed circuit:
+
+```
+REPEAT 0 {
+    M 0
+    OBSERVABLE_INCLUDE(0) rec[-1]
+}
+```
+
+This circuit mentions a logical observable with index 0, suggesting the circuit has a logical observable.
+So, a tool that samples logical observables should produce 1 bit of information when sampling this circuit.
+But the logical observable is only mentioned in a block that is never run, effectively commenting it out, leaving behind
+an empty circuit with 0 logical observables.
+So, a tool that samples logical observables should produce 0 bits of information when sampling this circuit.
+Is there an observable in the circuit or isn't there?
+Should the tool produce 0 bits or 1 bit?
+That's the ambiguity.
+
+Note that a tool that unrolls loops  indexin the circuit will implicitly delete the ambiguous logical observables.
+Conversely, note that a tool that finds logical observables by iterating over the lines, looking
+for `OBSERVABLE_INCLUDE` instructions, will implicitly keep the ambiguous logical observables.
+Both of these methods seem "obviously correct" on their own, but they disagree about whether or not to keep the
+ambiguous observables.
+It's very easy to write code that accidentally disagrees with itself about the correct behavior, and introduce a bug.
+Which is why vacuous repeat blocks are not allowed. 
 
 ## Examples
 

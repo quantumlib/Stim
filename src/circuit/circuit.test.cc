@@ -777,3 +777,14 @@ TEST(circuit, big_rep_count) {
 
     ASSERT_THROW({ c * 12345ULL; }, std::invalid_argument);
 }
+
+TEST(circuit, zero_repetitions_not_allowed) {
+    ASSERT_ANY_THROW({
+        Circuit(R"CIRCUIT(
+            REPEAT 0 {
+                M 0
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            }
+        )CIRCUIT");
+    });
+}

@@ -21,9 +21,6 @@
 
 using namespace stim_internal;
 
-static constexpr std::complex<float> i = std::complex<float>(0, 1);
-static constexpr std::complex<float> s = 0.7071067811865475244f;
-
 void GateDataMap::add_gate_data_blocks(bool &failed) {
     add_gate(
         failed,
@@ -39,7 +36,12 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
                     "Y_Control Flow",
                     R"MARKDOWN(
 Repeats the instructions in its body N times.
-The implementation-defined maximum value of N is 9223372036854775807.
+N is permitted to be 0, 1, or any other non-negative integer up to a quintillion (10^18).
+
+Note: When a logical observable or a qubit is only mentioned in a repeat block with a repetition count of 0, the
+convention is that they are still "part of the circuit". For example, if you sample the detection events and logical
+observables of a circuit, there will be output bits for the logical observables only mentioned in zero-repetition
+repeat blocks. Those output bits are vacuous (they will always be zero) but they are still produced.
 
 - Example:
 

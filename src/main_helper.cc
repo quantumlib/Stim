@@ -110,7 +110,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
         argv);
     bool decompose_errors = find_bool_argument("--decompose_errors", argc, argv);
     bool fold_loops = find_bool_argument("--fold_loops", argc, argv);
-    bool validate_detectors = !find_bool_argument("--allow_gauge_detectors", argc, argv);
+    bool allow_gauge_detectors = find_bool_argument("--allow_gauge_detectors", argc, argv);
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     std::ostream &out = out_stream.stream();
@@ -118,7 +118,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    out << ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, validate_detectors);
+    out << ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, allow_gauge_detectors);
     return EXIT_SUCCESS;
 }
 

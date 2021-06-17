@@ -23,11 +23,12 @@
 #include "stabilizers/tableau.h"
 
 namespace stim {
+using Circuit = stim_internal::Circuit;
+using ErrorAnalyzer = stim_internal::ErrorAnalyzer;
+using FrameSimulator = stim_internal::FrameSimulator;
+using PauliString = stim_internal::PauliString;
 using Tableau = stim_internal::Tableau;
 using TableauSimulator = stim_internal::TableauSimulator;
-using FrameSimulator = stim_internal::FrameSimulator;
-using Circuit = stim_internal::Circuit;
-using PauliString = stim_internal::PauliString;
 const auto &GATE_DATA = stim_internal::GATE_DATA;
 }  // namespace stim
 

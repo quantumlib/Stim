@@ -42,25 +42,16 @@ void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
 void ErrorAnalyzer::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        if (!zs[q].empty()) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
-            }
-            remove_gauge(add_error(0.5, zs[q].range()));
-        }
+        check_for_gauge(zs[q]);
         xs[q].clear();
+        zs[q].clear();
     }
 }
 
 void ErrorAnalyzer::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        if (xs[q] != zs[q]) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
-            }
-            remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
-        }
+        check_for_gauge(xs[q], zs[q]);
         xs[q].clear();
         zs[q].clear();
     }
@@ -69,14 +60,33 @@ void ErrorAnalyzer::RY(const OperationData &dat) {
 void ErrorAnalyzer::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        if (!xs[q].empty()) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a reset.");
-            }
-            remove_gauge(add_error(0.5, xs[q].range()));
-        }
+        check_for_gauge(xs[q]);
+        xs[q].clear();
         zs[q].clear();
     }
+}
+
+void ErrorAnalyzer::check_for_gauge(SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2) {
+    if (potential_gauge_summand_1 == potential_gauge_summand_2) {
+        return;
+    }
+    potential_gauge_summand_1 ^= potential_gauge_summand_2;
+    check_for_gauge(potential_gauge_summand_1);
+}
+
+void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge) {
+    if (potential_gauge.empty()) {
+        return;
+    }
+    if (!allow_gauge_detectors) {
+        throw std::invalid_argument("A detector or observable anti-commuted with a measurement or reset.");
+    }
+    for (const auto &t : potential_gauge) {
+        if (t.is_observable_id()) {
+            throw std::invalid_argument("An observable anti-commuted with a measurement or reset.");
+        }
+    }
+    remove_gauge(add_error(0.5, potential_gauge.range()));
 }
 
 void ErrorAnalyzer::MX(const OperationData &dat) {
@@ -87,12 +97,7 @@ void ErrorAnalyzer::MX(const OperationData &dat) {
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
-        if (!zs[q].empty()) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
-            }
-            remove_gauge(add_error(0.5, zs[q].range()));
-        }
+        check_for_gauge(zs[q]);
     }
 }
 
@@ -105,12 +110,7 @@ void ErrorAnalyzer::MY(const OperationData &dat) {
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
-        if (xs[q] != zs[q]) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
-            }
-            remove_gauge(add_xored_error(0.5, xs[q].range(), zs[q].range()));
-        }
+        check_for_gauge(xs[q], zs[q]);
     }
 }
 
@@ -122,12 +122,7 @@ void ErrorAnalyzer::MZ(const OperationData &dat) {
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         zs[q].xor_sorted_items(d);
-        if (!xs[q].empty()) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with a measurement.");
-            }
-            remove_gauge(add_error(0.5, xs[q].range()));
-        }
+        check_for_gauge(xs[q]);
     }
 }
 
@@ -439,19 +434,14 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
             const auto &block = circuit.blocks[op.target_data.targets[0]];
             run_loop(block, repeats);
         } else {
-            (this->*op.gate->reverse_error_fuser_function)(op.target_data);
+            (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
         }
     }
 }
 
 void ErrorAnalyzer::post_check_initialization() {
     for (const auto &x : xs) {
-        if (!x.empty()) {
-            if (allow_gauge_detectors) {
-                throw std::invalid_argument("A detector or observable anti-commuted with an initialization.");
-            }
-            add_error(0.5, x.range());
-        }
+        check_for_gauge(x);
     }
 }
 
@@ -565,22 +555,52 @@ void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
         "PAULI_CHANNEL_2 operations currently not supported in error analysis (cases may not be independent).");
 }
 
-DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
-    const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
-    ErrorAnalyzer fuser(circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
-    fuser.run_circuit(circuit);
-    fuser.post_check_initialization();
-    fuser.flush();
-    return fuser.flushed_to_detector_error_model();
+DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_detector_id) {
+    DetectorErrorModel out;
+    for (auto p = rev.instructions.crbegin(); p != rev.instructions.crend(); p++) {
+        const auto &e = *p;
+        switch (e.type) {
+            case DEM_SHIFT_DETECTORS:
+                base_detector_id += e.target_data[0].data;
+                out.append_shift_detectors_instruction(e.arg_data, e.target_data[0].data);
+                break;
+            case DEM_DETECTOR:
+            case DEM_ERROR:
+            case DEM_LOGICAL_OBSERVABLE: {
+                    auto stored_targets = out.target_buf.take_copy(e.target_data);
+                    auto stored_args = out.arg_buf.take_copy(e.arg_data);
+                    for (auto &t : stored_targets) {
+                        t.shift_if_detector_id(-(int64_t)base_detector_id);
+                    }
+                    out.instructions.push_back(DemInstruction{stored_args, stored_targets, e.type});
+                }
+                break;
+            case DEM_REPEAT_BLOCK: {
+                    uint64_t repetitions = e.target_data[0].data;
+                    if (repetitions) {
+                        uint64_t old_base_detector_id = base_detector_id;
+                        out.append_repeat_block(
+                            e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id));
+                        uint64_t loop_shift = base_detector_id - old_base_detector_id;
+                        base_detector_id += loop_shift * (repetitions - 1);
+                    }
+                }
+                break;
+            default:
+                throw std::out_of_range("Unknown instruction type to unreversed.");
+        }
+    }
+    return out;
 }
 
-DetectorErrorModel ErrorAnalyzer::flushed_to_detector_error_model() const {
-    uint64_t time_offset = 0;
-    DetectorErrorModel model;
-    for (auto e = flushed.crbegin(); e != flushed.crend(); e++) {
-        e->append_to_detector_error_model(model, time_offset);
-    }
-    return model;
+DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
+    const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
+    ErrorAnalyzer analyzer(circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
+    analyzer.run_circuit(circuit);
+    analyzer.post_check_initialization();
+    analyzer.flush();
+    uint64_t t = 0;
+    return unreversed(analyzer.flushed_reversed_model, t);
 }
 
 void ErrorAnalyzer::flush() {
@@ -588,7 +608,7 @@ void ErrorAnalyzer::flush() {
         if (kv->first.empty() || kv->second == 0) {
             continue;
         }
-        flushed.push_back(FusedError{kv->second, kv->first, 0, nullptr});
+        flushed_reversed_model.append_error_instruction(kv->second, kv->first);
     }
     error_class_probabilities.clear();
 }
@@ -643,9 +663,7 @@ bool shifted_equals(int64_t shift, const SparseXorVec<DemTarget> &unshifted, con
     for (size_t k = 0; k < unshifted.size(); k++) {
         DemTarget a = unshifted.sorted_items[k];
         DemTarget e = expected.sorted_items[k];
-        if (a.is_relative_detector_id()) {
-            a.data += shift;
-        }
+        a.shift_if_detector_id(shift);
         if (a != e) {
             return false;
         }
@@ -705,35 +723,40 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     }
 
     if (hare_iter < iterations) {
+        // Don't bother folding a single iteration into a repeated block.
         uint64_t period = hare_iter - tortoise_iter;
         uint64_t period_iterations = (iterations - tortoise_iter) / period;
-        // Don't bother folding a single iteration into a repeated block.
         if (period_iterations > 1) {
-            // Put loop body at end of flushed errors list.
+            // Stash error model build up so far.
             flush();
-            size_t loop_content_start = flushed.size();
+            DetectorErrorModel tmp = std::move(flushed_reversed_model);
+
+            // Rewrite state to look like it would if loop had executed all but the last iteration.
+            uint64_t shift_per_iteration = period * num_loop_detectors;
+            int64_t detector_shift = (int64_t)((period_iterations - 1) * shift_per_iteration);
+            shift_active_detector_ids(-detector_shift);
+            used_detectors += detector_shift;
+            tortoise_iter += period_iterations * period;
+
+            // Compute the loop's error model.
             for (size_t k = 0; k < period; k++) {
                 run_circuit(loop);
             }
             flush();
+            DetectorErrorModel body = std::move(flushed_reversed_model);
 
-            // Move loop body errors from end of flushed vector into a block.
-            std::unique_ptr<FusedErrorRepeatBlock> block(new FusedErrorRepeatBlock());
-            block->repetitions = period_iterations;
-            block->total_ticks_per_iteration_including_sub_loops = num_loop_detectors * period;
-            block->errors.reserve(flushed.size() - loop_content_start);
-            for (size_t k = loop_content_start; k < flushed.size(); k++) {
-                block->errors.push_back(std::move(flushed[k]));
+            // The loop ends (well, starts because everything is reversed) by shifting the detector coordinates.
+            uint64_t lower_level_shifts = body.total_detector_shift();
+            DemTarget remaining_shift = {shift_per_iteration - lower_level_shifts};
+            if (remaining_shift.data > 0) {
+                auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                body.instructions.insert(
+                    body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
             }
-            flushed.erase(flushed.begin() + loop_content_start, flushed.end());
 
-            // Rewrite state to look like it would if loop had actually executed all iterations.
-            int64_t skipped_detectors = num_loop_detectors * (period_iterations - 1) * period;
-            block->skip(skipped_detectors);
-            flushed.push_back(FusedError{0, {}, 0, std::move(block)});
-            used_detectors += skipped_detectors;
-            shift_active_detector_ids(-skipped_detectors);
-            tortoise_iter += period_iterations * period;
+            // Append the loop to the growing error model and put the error model back in its proper place.
+            tmp.append_repeat_block(period_iterations, std::move(body));
+            flushed_reversed_model = std::move(tmp);
         }
     }
 
@@ -747,84 +770,17 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
 void ErrorAnalyzer::shift_active_detector_ids(int64_t shift) {
     for (auto &e : measurement_to_detectors) {
         for (auto &v : e.second) {
-            if (v.is_relative_detector_id()) {
-                v.data += shift;
-            }
+            v.shift_if_detector_id(shift);
         }
     }
     for (auto &x : xs) {
         for (auto &v : x) {
-            if (v.is_relative_detector_id()) {
-                v.data += shift;
-            }
+            v.shift_if_detector_id(shift);
         }
     }
     for (auto &x : zs) {
         for (auto &v : x) {
-            if (v.is_relative_detector_id()) {
-                v.data += shift;
-            }
+            v.shift_if_detector_id(shift);
         }
     }
-}
-
-void FusedErrorRepeatBlock::append_to_detector_error_model(
-    DetectorErrorModel &out, uint64_t &tick_count) const {
-    DetectorErrorModel body;
-    for (auto e = errors.crbegin(); e != errors.crend(); e++) {
-        e->append_to_detector_error_model(body, tick_count);
-    }
-    size_t outer_ticks = outer_ticks_per_iteration();
-    if (outer_ticks) {
-        tick_count += outer_ticks;
-        body.append_shift_detectors_instruction({}, outer_ticks);
-    }
-    tick_count += total_ticks_per_iteration_including_sub_loops * (repetitions - 1);
-
-    out.append_repeat_block(repetitions, std::move(body));
-}
-
-void FusedErrorRepeatBlock::skip(uint64_t skipped) {
-    for (auto &e : errors) {
-        e.skip(skipped);
-    }
-}
-uint64_t FusedErrorRepeatBlock::outer_ticks_per_iteration() const {
-    uint64_t result = total_ticks_per_iteration_including_sub_loops;
-    for (const auto &e : errors) {
-        if (e.block) {
-            result -= e.block->total_ticks_per_iteration_including_sub_loops * e.block->repetitions;
-        }
-    }
-    return result;
-}
-
-void FusedError::skip(uint64_t skipped) {
-    if (block) {
-        block->skip(skipped);
-    } else {
-        local_time_shift += skipped;
-    }
-}
-
-void FusedError::append_to_detector_error_model(
-    DetectorErrorModel &out, uint64_t &tick_count) const {
-    if (block) {
-        block->append_to_detector_error_model(out, tick_count);
-        return;
-    }
-
-    std::vector<DemTarget> symptoms;
-    for (size_t k = 0; k < flipped.size(); k++) {
-        DemTarget e = flipped[k];
-        if (e.is_separator()) {
-            if (k == 0 || k == flipped.size() - 1) {
-                continue;
-            }
-        } else if (e.is_relative_detector_id()) {
-            e.data -= tick_count + local_time_shift;
-        }
-        symptoms.push_back(e);
-    }
-    out.append_error_instruction(probability, symptoms);
 }

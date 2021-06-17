@@ -47,6 +47,7 @@ struct DemTarget {
     bool is_observable_id() const;
     bool is_separator() const;
     bool is_relative_detector_id() const;
+    void shift_if_detector_id(int64_t offset);
 
     bool operator==(const DemTarget &other) const;
     bool operator!=(const DemTarget &other) const;
@@ -97,6 +98,8 @@ struct DetectorErrorModel {
     bool operator!=(const DetectorErrorModel &other) const;
     bool approx_equals(const DetectorErrorModel &other, double atol) const;
     std::string str() const;
+
+    size_t total_detector_shift() const;
 
     void clear();
 };
