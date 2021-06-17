@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "error_analyzer.h"
+
 #include "../benchmark_util.h"
 #include "../gen/gen_surface_code.h"
-#include "error_analyzer.h"
 
 using namespace stim_internal;
 

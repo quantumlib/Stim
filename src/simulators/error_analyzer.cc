@@ -66,7 +66,8 @@ void ErrorAnalyzer::RZ(const OperationData &dat) {
     }
 }
 
-void ErrorAnalyzer::check_for_gauge(SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2) {
+void ErrorAnalyzer::check_for_gauge(
+    SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2) {
     if (potential_gauge_summand_1 == potential_gauge_summand_2) {
         return;
     }
@@ -414,7 +415,8 @@ void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
     flushed_reversed_model.append_logical_observable_instruction(id);
 }
 
-ErrorAnalyzer::ErrorAnalyzer(uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
+ErrorAnalyzer::ErrorAnalyzer(
+    uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
     : total_detectors(num_detectors),
       used_detectors(0),
       xs(num_qubits),
@@ -560,7 +562,7 @@ void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
 
 DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_detector_id, std::set<DemTarget> &seen) {
     DetectorErrorModel out;
-    auto conv_append = [&](const DemInstruction &e){
+    auto conv_append = [&](const DemInstruction &e) {
         auto stored_targets = out.target_buf.take_copy(e.target_data);
         auto stored_args = out.arg_buf.take_copy(e.arg_data);
         for (auto &t : stored_targets) {
@@ -589,16 +591,15 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                 }
                 break;
             case DEM_REPEAT_BLOCK: {
-                    uint64_t repetitions = e.target_data[0].data;
-                    if (repetitions) {
-                        uint64_t old_base_detector_id = base_detector_id;
-                        out.append_repeat_block(
-                            e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id, seen));
-                        uint64_t loop_shift = base_detector_id - old_base_detector_id;
-                        base_detector_id += loop_shift * (repetitions - 1);
-                    }
+                uint64_t repetitions = e.target_data[0].data;
+                if (repetitions) {
+                    uint64_t old_base_detector_id = base_detector_id;
+                    out.append_repeat_block(
+                        e.target_data[0].data, unreversed(rev.blocks[e.target_data[1].data], base_detector_id, seen));
+                    uint64_t loop_shift = base_detector_id - old_base_detector_id;
+                    base_detector_id += loop_shift * (repetitions - 1);
                 }
-                break;
+            } break;
             default:
                 throw std::out_of_range("Unknown instruction type to unreversed.");
         }
@@ -608,7 +609,8 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
 
 DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
     const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
-    ErrorAnalyzer analyzer(circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
+    ErrorAnalyzer analyzer(
+        circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
     analyzer.run_circuit(circuit);
     analyzer.post_check_initialization();
     analyzer.flush();

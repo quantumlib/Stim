@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "error_analyzer.h"
+
 #include <gtest/gtest.h>
 #include <regex>
 
 #include "../gen/gen_rep_code.h"
 #include "../test_util.test.h"
-#include "error_analyzer.h"
 #include "frame_simulator.h"
 
 using namespace stim_internal;
@@ -51,100 +52,132 @@ static std::string check_matches(std::string actual, std::string pattern) {
 
 TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.25) 3
             M 3
             DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
                 X_ERROR(0.25) 3
                 M 3
                 DETECTOR rec[-1]
                 OBSERVABLE_INCLUDE(0) rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0 L0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
                 Y_ERROR(0.25) 3
                 M 3
                 DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             Z_ERROR(0.25) 3
             M 3
             DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             detector D0
         )model"));
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    R"circuit(
             DEPOLARIZE1(0.25) 3
             M 3
             DETECTOR rec[-1]
-        )circuit", false, false, false).approx_equals(
-            DetectorErrorModel(R"model(
+        )circuit",
+                    false,
+                    false,
+                    false)
+                    .approx_equals(
+                        DetectorErrorModel(R"model(
                 error(0.166666) D0
             )model"),
-            1e-4));
+                        1e-4));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
                 X_ERROR(0.25) 0
                 X_ERROR(0.125) 1
                 M 0 1
                 OBSERVABLE_INCLUDE(3) rec[-1]
                 DETECTOR rec[-2]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
             error(0.125) L3
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
                 X_ERROR(0.25) 0
                 X_ERROR(0.125) 1
                 M 0 1
                 OBSERVABLE_INCLUDE(3) rec[-1]
                 DETECTOR rec[-2]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
             error(0.125) L3
         )model"));
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    R"circuit(
             DEPOLARIZE2(0.25) 3 5
             M 3
             M 5
             DETECTOR rec[-1]
             DETECTOR rec[-2]
-        )circuit", false, false, false).approx_equals(
-            DetectorErrorModel(R"model(
+        )circuit",
+                    false,
+                    false,
+                    false)
+                    .approx_equals(
+                        DetectorErrorModel(R"model(
                 error(0.0718255) D0
                 error(0.0718255) D0 D1
                 error(0.0718255) D1
             )model"),
-            1e-5));
+                        1e-5));
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    R"circuit(
             H 0 1
             CNOT 0 2 1 3
             DEPOLARIZE2(0.25) 0 1
@@ -155,8 +188,12 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
             DETECTOR rec[-2]
             DETECTOR rec[-3]
             DETECTOR rec[-4]
-        )circuit", false, false, false).approx_equals(
-            DetectorErrorModel(R"model(
+        )circuit",
+                    false,
+                    false,
+                    false)
+                    .approx_equals(
+                        DetectorErrorModel(R"model(
                 error(0.019013) D0
                 error(0.019013) D0 D1
                 error(0.019013) D0 D1 D2
@@ -173,11 +210,10 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                 error(0.019013) D2 D3
                 error(0.019013) D3
             )model"),
-            1e-4));
+                        1e-4));
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            R"circuit(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    R"circuit(
                 H 0 1
                 CNOT 0 2 1 3
                 DEPOLARIZE2(0.25) 0 1
@@ -188,8 +224,12 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                 DETECTOR rec[-2]
                 DETECTOR rec[-3]
                 DETECTOR rec[-4]
-        )circuit", true, false, false).approx_equals(
-            DetectorErrorModel(R"model(
+        )circuit",
+                    true,
+                    false,
+                    false)
+                    .approx_equals(
+                        DetectorErrorModel(R"model(
                 error(0.019013) D0
                 error(0.019013) D1
                 error(0.019013) D1 ^ D0
@@ -206,11 +246,10 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                 error(0.019013) D3 ^ D2
                 error(0.019013) D3 ^ D2 ^ D0
             )model"),
-            1e-4));
+                        1e-4));
 
-    ASSERT_TRUE(
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            R"circuit(
+    ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
+                    R"circuit(
                 H 0 1
                 CNOT 0 2 1 3
                 # Perform depolarizing error in a different basis.
@@ -229,13 +268,17 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
                 DETECTOR rec[-2]
                 DETECTOR rec[-3]
                 DETECTOR rec[-4]
-            )circuit", true, false, true).approx_equals(
-            DetectorErrorModel(R"model(
+            )circuit",
+                    true,
+                    false,
+                    true)
+                    .approx_equals(
+                        DetectorErrorModel(R"model(
                 error(0.071825) D0 D1
                 error(0.071825) D0 D1 ^ D2 D3
                 error(0.071825) D2 D3
             )model"),
-            1e-4));
+                        1e-4));
 }
 
 TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
@@ -288,28 +331,36 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
 
 TEST(ErrorAnalyzer, reversed_operation_order) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.25) 0
             CNOT 0 1
             CNOT 1 0
             M 0 1
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D1
             detector D0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.25) 0
             CNOT 0 1
             CNOT 1 0
             M 0 1
             DETECTOR rec[-1]
             DETECTOR rec[-2]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
             detector D1
@@ -318,13 +369,17 @@ TEST(ErrorAnalyzer, reversed_operation_order) {
 
 TEST(ErrorAnalyzer, classical_error_propagation) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.125) 0
             M 0
             CNOT rec[-1] 1
             M 1
             DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.125) D0
         )model"));
@@ -1087,13 +1142,16 @@ TEST(ErrorAnalyzer, loop_folding) {
             true),
         DetectorErrorModel((declare_detectors(0, 85) + R"MODEL(
             REPEAT 97210070768930 {
-                )MODEL" + declare_detectors(86, 86 + 127 - 1) + R"MODEL(
+                )MODEL" + declare_detectors(86, 86 + 127 - 1) +
+                            R"MODEL(
                 shift_detectors 127
             }
             error(1) D211
-            )MODEL" + declare_detectors(86, 210) + R"MODEL(
+            )MODEL" + declare_detectors(86, 210) +
+                            R"MODEL(
             logical_observable L9
-        )MODEL").data()));
+        )MODEL")
+                               .data()));
 }
 
 TEST(ErrorAnalyzer, loop_folding_nested_loop) {
@@ -1471,50 +1529,70 @@ TEST(ErrorAnalyzer, coordinate_tracking) {
 
 TEST(ErrorAnalyzer, omit_vacuous_detector_observable_instructions) {
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.25) 3
             M 3
             DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.25) 3
             M 3
             DETECTOR(1, 0) rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) D0
             detector(1, 0) D0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             M 3
             DETECTOR rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             detector D0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             X_ERROR(0.25) 3
             M 3
             OBSERVABLE_INCLUDE(0) rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             error(0.25) L0
         )model"));
 
     ASSERT_EQ(
-        ErrorAnalyzer::circuit_to_detector_error_model(R"circuit(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            R"circuit(
             M 3
             OBSERVABLE_INCLUDE(0) rec[-1]
-        )circuit", false, false, false),
+        )circuit",
+            false,
+            false,
+            false),
         DetectorErrorModel(R"model(
             logical_observable L0
         )model"));

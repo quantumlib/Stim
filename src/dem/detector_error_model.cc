@@ -152,50 +152,66 @@ std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
     return out;
 }
 
-void validate_dem_instruction(const DemInstructionType type,
-                              ConstPointerRange<double> arg_data,
-                              ConstPointerRange<DemTarget> target_data) {
+void validate_dem_instruction(
+    const DemInstructionType type, ConstPointerRange<double> arg_data, ConstPointerRange<DemTarget> target_data) {
     switch (type) {
         case DEM_ERROR:
             if (arg_data.size() != 1) {
-                throw std::invalid_argument("'error' instruction takes 1 argument (a probability), but got " + std::to_string(arg_data.size()) + " arguments.");
+                throw std::invalid_argument(
+                    "'error' instruction takes 1 argument (a probability), but got " + std::to_string(arg_data.size()) +
+                    " arguments.");
             }
             if (arg_data[0] < 0 || arg_data[0] > 1) {
-                throw std::invalid_argument("'error' instruction argument must be a probability (0 to 1) but got " + std::to_string(arg_data[0]));
+                throw std::invalid_argument(
+                    "'error' instruction argument must be a probability (0 to 1) but got " +
+                    std::to_string(arg_data[0]));
             }
             if (!target_data.empty()) {
                 if (target_data.front() == DemTarget::separator() || target_data.back() == DemTarget::separator()) {
-                    throw std::invalid_argument("First/last targets of 'error' instruction shouldn't be separators (^).");
+                    throw std::invalid_argument(
+                        "First/last targets of 'error' instruction shouldn't be separators (^).");
                 }
             }
             for (size_t k = 1; k < target_data.size(); k++) {
-                if (target_data[k-1] == DemTarget::separator() && target_data[k] == DemTarget::separator()) {
+                if (target_data[k - 1] == DemTarget::separator() && target_data[k] == DemTarget::separator()) {
                     throw std::invalid_argument("'error' instruction has adjacent separators (^ ^).");
                 }
             }
             break;
         case DEM_SHIFT_DETECTORS:
             if (target_data.size() != 1) {
-                throw std::invalid_argument("'shift_detectors' instruction takes 1 target, but got " + std::to_string(arg_data.size()) + " targets.");
+                throw std::invalid_argument(
+                    "'shift_detectors' instruction takes 1 target, but got " + std::to_string(arg_data.size()) +
+                    " targets.");
             }
             break;
         case DEM_DETECTOR:
             if (target_data.size() != 1) {
-                throw std::invalid_argument("'detector' instruction takes 1 target but got " + std::to_string(target_data.size()) + " arguments.");
+                throw std::invalid_argument(
+                    "'detector' instruction takes 1 target but got " + std::to_string(target_data.size()) +
+                    " arguments.");
             }
             if (!target_data[0].is_relative_detector_id()) {
-                throw std::invalid_argument("'detector' instruction takes a relative detector target (D#) but got " + target_data[0].str() + " arguments.");
+                throw std::invalid_argument(
+                    "'detector' instruction takes a relative detector target (D#) but got " + target_data[0].str() +
+                    " arguments.");
             }
             break;
         case DEM_LOGICAL_OBSERVABLE:
             if (arg_data.size() != 0) {
-                throw std::invalid_argument("'logical_observable' instruction takes 0 arguments but got " + std::to_string(arg_data.size()) + " arguments.");
+                throw std::invalid_argument(
+                    "'logical_observable' instruction takes 0 arguments but got " + std::to_string(arg_data.size()) +
+                    " arguments.");
             }
             if (target_data.size() != 1) {
-                throw std::invalid_argument("'logical_observable' instruction takes 1 target but got " + std::to_string(target_data.size()) + " arguments.");
+                throw std::invalid_argument(
+                    "'logical_observable' instruction takes 1 target but got " + std::to_string(target_data.size()) +
+                    " arguments.");
             }
             if (!target_data[0].is_observable_id()) {
-                throw std::invalid_argument("'logical_observable' instruction takes a logical observable target (L#) but got " + target_data[0].str() + " arguments.");
+                throw std::invalid_argument(
+                    "'logical_observable' instruction takes a logical observable target (L#) but got " +
+                    target_data[0].str() + " arguments.");
             }
             break;
         case DEM_REPEAT_BLOCK:
@@ -214,7 +230,8 @@ void DetectorErrorModel::append_error_instruction(double probability, ConstPoint
     instructions.push_back(DemInstruction{stored_args, stored_targets, DEM_ERROR});
 }
 
-void DetectorErrorModel::append_shift_detectors_instruction(ConstPointerRange<double> coord_shift, uint64_t detector_shift) {
+void DetectorErrorModel::append_shift_detectors_instruction(
+    ConstPointerRange<double> coord_shift, uint64_t detector_shift) {
     DemTarget shift{detector_shift};
     ConstPointerRange<DemTarget> targets = {&shift, &shift + 1};
     validate_dem_instruction(DEM_SHIFT_DETECTORS, coord_shift, targets);

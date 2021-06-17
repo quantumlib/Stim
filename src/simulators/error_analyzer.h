@@ -53,7 +53,8 @@ struct ErrorAnalyzer {
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
 
-    ErrorAnalyzer(size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
+    ErrorAnalyzer(
+        size_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
 
     static DetectorErrorModel circuit_to_detector_error_model(
         const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
@@ -116,7 +117,8 @@ struct ErrorAnalyzer {
     /// Use that degree of freedom to delete the largest detector in the set from the system.
     void remove_gauge(ConstPointerRange<DemTarget> sorted);
     void check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge);
-    void check_for_gauge(SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2);
+    void check_for_gauge(
+        SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2);
 
     void shift_active_detector_ids(int64_t shift);
     void flush();
