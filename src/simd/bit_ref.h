@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef BIT_PTR_H
-#define BIT_PTR_H
+#ifndef STIM_BIT_PTR_H
+#define STIM_BIT_PTR_H
 
 #include <cstddef>
 #include <cstdint>

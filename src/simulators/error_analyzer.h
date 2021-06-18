@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ERROR_ANALYZER_H
-#define ERROR_ANALYZER_H
+#ifndef STIM_ERROR_ANALYZER_H
+#define STIM_ERROR_ANALYZER_H
 
 #include <algorithm>
 #include <map>

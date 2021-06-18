@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TABLEAU_TRANSPOSED_RAII_H
-#define TABLEAU_TRANSPOSED_RAII_H
+#ifndef STIM_TABLEAU_TRANSPOSED_RAII_H
+#define STIM_TABLEAU_TRANSPOSED_RAII_H
 
 #include <iostream>
 #include <unordered_map>

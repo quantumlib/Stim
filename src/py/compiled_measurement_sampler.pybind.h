@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef COMPILED_MEASUREMENT_SAMPLER_PYBIND_H
-#define COMPILED_MEASUREMENT_SAMPLER_PYBIND_H
+#ifndef STIM_COMPILED_MEASUREMENT_SAMPLER_PYBIND_H
+#define STIM_COMPILED_MEASUREMENT_SAMPLER_PYBIND_H
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>

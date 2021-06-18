@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MAIN_PARSE_H
-#define MAIN_PARSE_H
+#ifndef STIM_MAIN_PARSE_H
+#define STIM_MAIN_PARSE_H
 
 #include <cstddef>
 #include <cstdint>

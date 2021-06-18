@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CIRCUIT_H
-#define CIRCUIT_H
+#ifndef STIM_CIRCUIT_H
+#define STIM_CIRCUIT_H
 
 #include <cstring>
 #include <functional>

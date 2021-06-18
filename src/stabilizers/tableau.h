@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TABLEAU_H
-#define TABLEAU_H
+#ifndef STIM_TABLEAU_H
+#define STIM_TABLEAU_H
 
 #include <iostream>
 #include <unordered_map>

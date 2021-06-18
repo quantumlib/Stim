@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef PAULI_STRING_REF_H
-#define PAULI_STRING_REF_H
+#ifndef STIM_PAULI_STRING_REF_H
+#define STIM_PAULI_STRING_REF_H
 
 #include <iostream>
 

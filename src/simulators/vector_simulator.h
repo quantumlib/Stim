@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VECTOR_SIM_H
-#define VECTOR_SIM_H
+#ifndef STIM_VECTOR_SIM_H
+#define STIM_VECTOR_SIM_H
 
 #include <complex>
 #include <iostream>

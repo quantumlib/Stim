@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef RECORD_STORAGE_H
-#define RECORD_STORAGE_H
+#ifndef STIM_RECORD_STORAGE_H
+#define STIM_RECORD_STORAGE_H
 
 #include <cstddef>
 #include <cstdint>

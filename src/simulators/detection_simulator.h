@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DETECTION_SIMULATOR_H
-#define DETECTION_SIMULATOR_H
+#ifndef STIM_DETECTION_SIMULATOR_H
+#define STIM_DETECTION_SIMULATOR_H
 
 #include <random>
 

@@ -1,5 +1,5 @@
-#ifndef CAPPED_VECTOR_H
-#define CAPPED_VECTOR_H
+#ifndef STIM_CAPPED_VECTOR_H
+#define STIM_CAPPED_VECTOR_H
 
 #include <array>
 #include <cstddef>

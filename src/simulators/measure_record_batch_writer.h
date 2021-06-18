@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef RECORD_BATCH_WRITER_H
-#define RECORD_BATCH_WRITER_H
+#ifndef STIM_RECORD_BATCH_WRITER_H
+#define STIM_RECORD_BATCH_WRITER_H
 
 #include "../simd/simd_bit_table.h"
 #include "measure_record_writer.h"

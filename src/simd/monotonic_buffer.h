@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONOTONIC_BUFFER_H
-#define MONOTONIC_BUFFER_H
+#ifndef STIM_MONOTONIC_BUFFER_H
+#define STIM_MONOTONIC_BUFFER_H
 
 #include <cassert>
 #include <cstdlib>

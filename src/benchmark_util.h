@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#ifndef BENCHMARK_UTIL_H
+#ifndef STIM_BENCHMARK_UTIL_H
 
 #include <chrono>
 #include <functional>

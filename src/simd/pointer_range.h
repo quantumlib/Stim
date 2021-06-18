@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef POINTER_RANGE_H
-#define POINTER_RANGE_H
+#ifndef STIM_POINTER_RANGE_H
+#define STIM_POINTER_RANGE_H
 
 #include <cstdlib>
 #include <cstring>

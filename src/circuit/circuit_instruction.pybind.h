@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CIRCUIT_INSTRUCTION_PYBIND_H
-#define CIRCUIT_INSTRUCTION_PYBIND_H
+#ifndef STIM_CIRCUIT_INSTRUCTION_PYBIND_H
+#define STIM_CIRCUIT_INSTRUCTION_PYBIND_H
 
 #include <pybind11/pybind11.h>
 

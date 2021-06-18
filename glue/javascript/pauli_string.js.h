@@ -1,5 +1,5 @@
-#ifndef PAULI_STRING_JS_H
-#define PAULI_STRING_JS_H
+#ifndef STIM_PAULI_STRING_JS_H
+#define STIM_PAULI_STRING_JS_H
 
 #include <cstddef>
 #include <cstdint>
