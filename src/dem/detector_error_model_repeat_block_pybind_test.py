@@ -17,7 +17,7 @@ import stim
 
 def test_init_vs_properties():
     v = stim.DemRepeatBlock(5, stim.DetectorErrorModel('error(0.125) D1 L2'))
-    assert v.repetitions == 5
+    assert v.repeat_count == 5
     assert v.body_copy() == stim.DetectorErrorModel('error(0.125) D1 L2')
     assert v.body_copy() is not v.body_copy()
 
