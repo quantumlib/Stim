@@ -17,6 +17,7 @@
 #include <pybind11/stl.h>
 
 #include "../circuit/circuit.pybind.h"
+#include "../dem/detector_error_model.pybind.h"
 #include "../simulators/tableau_simulator.pybind.h"
 #include "../stabilizers/pauli_string.pybind.h"
 #include "../stabilizers/tableau.pybind.h"
@@ -109,10 +110,11 @@ PYBIND11_MODULE(stim, m) {
         )DOC")
             .data());
 
-    pybind_pauli_string(m);
     pybind_circuit(m);
     pybind_compiled_detector_sampler(m);
     pybind_compiled_measurement_sampler(m);
+    pybind_detector_error_model(m);
+    pybind_pauli_string(m);
     pybind_tableau_simulator(m);
     pybind_tableau(m);
 }

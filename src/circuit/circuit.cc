@@ -531,7 +531,7 @@ void Circuit::append_operation(const Operation &operation) {
 
 void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
     const auto &gate = GATE_DATA.at(gate_name);
-    append_operation(gate, targets, {&singleton_arg, &singleton_arg + 1});
+    append_operation(gate, targets, {&singleton_arg});
 }
 void Circuit::append_op(
     const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {

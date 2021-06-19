@@ -19,6 +19,8 @@
 #include <queue>
 #include <sstream>
 
+#include "../stabilizers/pauli_string.h"
+
 using namespace stim_internal;
 
 void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
@@ -130,7 +132,7 @@ void ErrorAnalyzer::MZ(const OperationData &dat) {
 void ErrorAnalyzer::MRX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{{}, {&q, &q + 1}};
+        OperationData d{{}, {&q}};
         RX(d);
         MX(d);
     }
@@ -139,7 +141,7 @@ void ErrorAnalyzer::MRX(const OperationData &dat) {
 void ErrorAnalyzer::MRY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{{}, {&q, &q + 1}};
+        OperationData d{{}, {&q}};
         RY(d);
         MY(d);
     }
@@ -148,7 +150,7 @@ void ErrorAnalyzer::MRY(const OperationData &dat) {
 void ErrorAnalyzer::MRZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{{}, {&q, &q + 1}};
+        OperationData d{{}, {&q}};
         RZ(d);
         MZ(d);
     }
@@ -416,7 +418,12 @@ void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
 }
 
 ErrorAnalyzer::ErrorAnalyzer(
-    uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors)
+    uint64_t num_detectors,
+    size_t num_qubits,
+    bool decompose_errors,
+    bool fold_loops,
+    bool allow_gauge_detectors,
+    double approximate_disjoint_errors_threshold)
     : total_detectors(num_detectors),
       used_detectors(0),
       xs(num_qubits),
@@ -425,7 +432,8 @@ ErrorAnalyzer::ErrorAnalyzer(
       decompose_errors(decompose_errors),
       accumulate_errors(true),
       fold_loops(fold_loops),
-      allow_gauge_detectors(allow_gauge_detectors) {
+      allow_gauge_detectors(allow_gauge_detectors),
+      approximate_disjoint_errors_threshold(approximate_disjoint_errors_threshold) {
 }
 
 void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
@@ -514,7 +522,7 @@ void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
     double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
     for (auto q : dat.targets) {
         add_error_combinations<2>(
-            p,
+            {0, p, p, p},
             {
                 xs[q].range(),
                 zs[q].range(),
@@ -535,7 +543,7 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
         auto a = dat.targets[i];
         auto b = dat.targets[i + 1];
         add_error_combinations<4>(
-            p,
+            {0, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p},
             {
                 xs[a].range(),
                 zs[a].range(),
@@ -551,13 +559,70 @@ void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
-    throw std::out_of_range(
-        "PAULI_CHANNEL_1 operations currently not supported in error analysis (cases may not be independent).");
+    if (approximate_disjoint_errors_threshold == 0) {
+        throw std::invalid_argument(
+            "Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.");
+    }
+    PointerRange<double> args = dat.args;
+    std::array<double, 4> probabilities;
+    for (size_t k = 0; k < 3; k++) {
+        if (args[k] > approximate_disjoint_errors_threshold) {
+            throw std::invalid_argument(
+                "PAULI_CHANNEL_1 has a component probability '" + std::to_string(args[k]) +
+                "' larger than the "
+                "`approximate_disjoint_errors` threshold of "
+                "'" +
+                std::to_string(approximate_disjoint_errors_threshold) + "'.");
+        }
+        probabilities[pauli_xyz_to_xz(k + 1)] = args[k];
+    }
+    if (!accumulate_errors) {
+        return;
+    }
+    for (auto q : dat.targets) {
+        add_error_combinations<2>(
+            probabilities,
+            {
+                zs[q].range(),
+                xs[q].range(),
+            });
+    }
 }
 
 void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
-    throw std::out_of_range(
-        "PAULI_CHANNEL_2 operations currently not supported in error analysis (cases may not be independent).");
+    if (approximate_disjoint_errors_threshold == 0) {
+        throw std::invalid_argument(
+            "Handling PAULI_CHANNEL_2 requires `approximate_disjoint_errors` argument to be specified.");
+    }
+    PointerRange<double> args = dat.args;
+    std::array<double, 16> probabilities;
+    for (size_t k = 0; k < 15; k++) {
+        if (args[k] > approximate_disjoint_errors_threshold) {
+            throw std::invalid_argument(
+                "PAULI_CHANNEL_2 has a component probability '" + std::to_string(args[k]) +
+                "' larger than the "
+                "`approximate_disjoint_errors` threshold of "
+                "'" +
+                std::to_string(approximate_disjoint_errors_threshold) + "'.");
+        }
+        size_t k2 = pauli_xyz_to_xz((k + 1) & 3) | (pauli_xyz_to_xz(((k + 1) >> 2) & 3) << 2);
+        probabilities[k2] = args[k];
+    }
+    if (!accumulate_errors) {
+        return;
+    }
+    for (size_t i = 0; i < dat.targets.size(); i += 2) {
+        auto a = dat.targets[i];
+        auto b = dat.targets[i + 1];
+        add_error_combinations<4>(
+            probabilities,
+            {
+                zs[b].range(),
+                xs[b].range(),
+                zs[a].range(),
+                xs[a].range(),
+            });
+    }
 }
 
 DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_detector_id, std::set<DemTarget> &seen) {
@@ -608,9 +673,18 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
 }
 
 DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
-    const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors) {
+    const Circuit &circuit,
+    bool decompose_errors,
+    bool fold_loops,
+    bool allow_gauge_detectors,
+    double approximate_disjoint_errors_threshold) {
     ErrorAnalyzer analyzer(
-        circuit.count_detectors(), circuit.count_qubits(), decompose_errors, fold_loops, allow_gauge_detectors);
+        circuit.count_detectors(),
+        circuit.count_qubits(),
+        decompose_errors,
+        fold_loops,
+        allow_gauge_detectors,
+        approximate_disjoint_errors_threshold);
     analyzer.run_circuit(circuit);
     analyzer.post_check_initialization();
     analyzer.flush();
@@ -699,7 +773,13 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     uint64_t num_loop_detectors = loop.count_detectors();
     uint64_t hare_iter = 0;
     uint64_t tortoise_iter = 0;
-    ErrorAnalyzer hare(total_detectors - used_detectors, xs.size(), false, true, allow_gauge_detectors);
+    ErrorAnalyzer hare(
+        total_detectors - used_detectors,
+        xs.size(),
+        false,
+        true,
+        allow_gauge_detectors,
+        approximate_disjoint_errors_threshold);
     hare.xs = xs;
     hare.zs = zs;
     hare.measurement_to_detectors = measurement_to_detectors;
@@ -766,12 +846,12 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             DemTarget remaining_shift = {shift_per_iteration - lower_level_shifts};
             if (remaining_shift.data > 0) {
                 if (body.instructions.empty() || body.instructions.front().type != DEM_SHIFT_DETECTORS) {
-                    auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                    auto shift_targets = body.target_buf.take_copy({&remaining_shift});
                     body.instructions.insert(
                         body.instructions.begin(), DemInstruction{{}, shift_targets, DEM_SHIFT_DETECTORS});
                 } else {
                     remaining_shift.data += body.instructions[0].target_data[0].data;
-                    auto shift_targets = body.target_buf.take_copy({&remaining_shift, &remaining_shift + 1});
+                    auto shift_targets = body.target_buf.take_copy({&remaining_shift});
                     body.instructions[0].target_data = shift_targets;
                 }
             }

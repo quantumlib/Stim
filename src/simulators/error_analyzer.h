@@ -46,6 +46,7 @@ struct ErrorAnalyzer {
     bool accumulate_errors;
     bool fold_loops;
     bool allow_gauge_detectors;
+    double approximate_disjoint_errors_threshold;
     DetectorErrorModel flushed_reversed_model;
 
     /// The final result. Independent probabilities of flipping various sets of detectors.
@@ -54,10 +55,19 @@ struct ErrorAnalyzer {
     MonotonicBuffer<DemTarget> mono_buf;
 
     ErrorAnalyzer(
-        uint64_t num_detectors, size_t num_qubits, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
+        uint64_t num_detectors,
+        size_t num_qubits,
+        bool decompose_errors,
+        bool fold_loops,
+        bool allow_gauge_detectors,
+        double approximate_disjoint_errors_threshold);
 
     static DetectorErrorModel circuit_to_detector_error_model(
-        const Circuit &circuit, bool decompose_errors, bool fold_loops, bool allow_gauge_detectors);
+        const Circuit &circuit,
+        bool decompose_errors,
+        bool fold_loops,
+        bool allow_gauge_detectors,
+        double approximate_disjoint_errors_threshold);
 
     /// Moving is deadly due to the map containing pointers to the jagged data.
     ErrorAnalyzer(const ErrorAnalyzer &analyzer) = delete;
@@ -150,10 +160,13 @@ struct ErrorAnalyzer {
     /// Does analysis of which errors reduce to other errors (in the detector basis, not the given basis).
     ///
     /// Args:
-    ///     p: Independent probability of each error combination (other than the empty combination) occurring.
+    ///     independent_probabilities: Probability of each error combination (including but ignoring the empty
+    ///         combination) occurring, independent of whether or not the others occurred.
     ///     basis_errors: Building blocks for the error combinations.
     template <size_t s>
-    void add_error_combinations(double p, std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
+    void add_error_combinations(
+        std::array<double, 1 << s> independent_probabilities,
+        std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
         // Determine involved detectors while creating basis masks and storing added data.
         FixedCapVector<DemTarget, 16> involved_detectors{};
         std::array<uint64_t, 1 << s> detector_masks{};
@@ -280,7 +293,7 @@ struct ErrorAnalyzer {
 
         // Include errors in the record.
         for (size_t k = 1; k < 1 << s; k++) {
-            add_error(p, stored_ids[k]);
+            add_error(independent_probabilities[k], stored_ids[k]);
         }
     }
 };

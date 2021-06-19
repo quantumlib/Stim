@@ -42,6 +42,24 @@ inline uint8_t pauli_xz_to_xyz(bool x, bool z) {
     return (uint8_t)(x ^ z) | ((uint8_t)z << 1);
 }
 
+/// Converts from the xyz encoding
+///
+///     0: I
+///     1: X
+///     2: Y
+///     3: Z
+///
+/// To the xz encoding
+///
+///     0b00: I
+///     0b01: X
+///     0b10: Z
+///     0b11: Y
+inline uint8_t pauli_xyz_to_xz(uint8_t xyz) {
+    xyz ^= xyz >> 1;
+    return xyz;
+}
+
 /// A Pauli string is a product of Pauli operations (I, X, Y, Z) to apply to various qubits.
 ///
 /// In most cases, methods will take a PauliStringRef instead of a PauliString. This is because PauliStringRef can

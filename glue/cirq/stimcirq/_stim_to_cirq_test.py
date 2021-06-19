@@ -6,7 +6,7 @@ import pytest
 import stim
 
 import stimcirq
-from ._stim_to_cirq import stim_to_cirq_gate_table
+from ._stim_to_cirq import stim_to_cirq_gate_table, not_handled_or_handled_specially_set
 
 
 def test_two_qubit_asymmetric_depolarizing_channel():
@@ -60,23 +60,23 @@ def test_stim_circuit_to_cirq_circuit():
     )
 
 
-@pytest.mark.parametrize("handler", list(stim_to_cirq_gate_table().values()) + [
-    stimcirq.MeasureAndOrReset(
+@pytest.mark.parametrize("key,handler", list(stim_to_cirq_gate_table().items()) + [
+    ("m-case", stimcirq.MeasureAndOrReset(
         measure=True,
         reset=reset,
         basis=basis,
         invert_measure=invert,
         key='0'
-    )
+    ))
     for reset in [False, True]
     for basis in ['X', 'Y', 'Z']
     for invert in [False, True]
     if reset or basis != 'Z'
 ] + [
-    cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=()),
-    cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=(True,)),
+    ("+M", cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=())),
+    ("-M", cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=(True,))),
 ])
-def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[Any], cirq.Gate], Tuple]):
+def test_exact_gate_round_trips(key: str, handler: Union[cirq.Gate, Callable[[Any], cirq.Gate], Tuple]):
     if handler == ():
         return
     if isinstance(handler, cirq.Gate):
@@ -84,6 +84,9 @@ def test_exact_gate_round_trips(handler: Union[cirq.Gate, Callable[[Any], cirq.G
     else:
         try:
             gate = handler(0.125)
+        except NotImplementedError:
+            assert key in not_handled_or_handled_specially_set()
+            return
         except:
             try:
                 gate = handler([k/128 for k in range(1, 4)])
@@ -131,3 +134,80 @@ def test_circuit_diagram():
         """)), """
 0: ───M───MX('1')───MY('2')───M('3')───R───RX───RY───R───MR('4')───MRX('5')───MRY('6')───MR('7')───
         """)
+
+
+def test_all_known_gates_explicitly_handled():
+    output_from_stim_help_gates = """
+CNOT
+CORRELATED_ERROR
+CX
+CY
+CZ
+C_XYZ
+C_ZYX
+DEPOLARIZE1
+DEPOLARIZE2
+DETECTOR
+E
+ELSE_CORRELATED_ERROR
+H
+H_XY
+H_XZ
+H_YZ
+I
+ISWAP
+ISWAP_DAG
+M
+MR
+MRX
+MRY
+MRZ
+MX
+MY
+MZ
+OBSERVABLE_INCLUDE
+PAULI_CHANNEL_1
+PAULI_CHANNEL_2
+QUBIT_COORDS
+R
+REPEAT
+RX
+RY
+RZ
+S
+SHIFT_COORDS
+SQRT_X
+SQRT_XX
+SQRT_XX_DAG
+SQRT_X_DAG
+SQRT_Y
+SQRT_YY
+SQRT_YY_DAG
+SQRT_Y_DAG
+SQRT_Z
+SQRT_ZZ
+SQRT_ZZ_DAG
+SQRT_Z_DAG
+SWAP
+S_DAG
+TICK
+X
+XCX
+XCY
+XCZ
+X_ERROR
+Y
+YCX
+YCY
+YCZ
+Y_ERROR
+Z
+ZCX
+ZCY
+ZCZ
+Z_ERROR
+    """
+    gates = output_from_stim_help_gates.strip().split()
+    handled = stim_to_cirq_gate_table().keys() | not_handled_or_handled_specially_set()
+    for gate_name in gates:
+        assert gate_name in handled, gate_name

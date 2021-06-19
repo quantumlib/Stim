@@ -180,6 +180,12 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
         cirq.X.controlled(1): use("CX"),
         cirq.Y.controlled(1): use("CY"),
         cirq.Z.controlled(1): use("CZ"),
+        cirq.XX**0.5: use("SQRT_XX"),
+        cirq.YY**0.5: use("SQRT_YY"),
+        cirq.ZZ**0.5: use("SQRT_ZZ"),
+        cirq.XX**-0.5: use("SQRT_XX_DAG"),
+        cirq.YY**-0.5: use("SQRT_YY_DAG"),
+        cirq.ZZ**-0.5: use("SQRT_ZZ_DAG"),
         # All 24 cirq.SingleQubitCliffordGate instances.
         sqcg(x, y): use("SQRT_X_DAG"),
         sqcg(x, ny): use("SQRT_X"),

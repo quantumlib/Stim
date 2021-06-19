@@ -21,6 +21,7 @@
 #include "../py/base.pybind.h"
 #include "../py/compiled_detector_sampler.pybind.h"
 #include "../py/compiled_measurement_sampler.pybind.h"
+#include "../simulators/error_analyzer.h"
 #include "circuit_gate_target.pybind.h"
 #include "circuit_instruction.pybind.h"
 #include "circuit_repeat_block.pybind.h"
@@ -767,6 +768,76 @@ void pybind_circuit(pybind11::module &m) {
                 X 0
                 Y 1 2
                 '''))
+        )DOC")
+            .data());
+
+    c.def(
+        "detector_error_model",
+        [](Circuit &self,
+           bool decompose_errors,
+           bool flatten_loops,
+           bool allow_gauge_detectors,
+           double approximate_disjoint_errors) {
+            return ErrorAnalyzer::circuit_to_detector_error_model(
+                self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("decompose_errors") = false,
+        pybind11::arg("flatten_loops") = false,
+        pybind11::arg("allow_gauge_detectors") = false,
+        pybind11::arg("approximate_disjoint_errors") = false,
+        clean_doc_string(u8R"DOC(
+            Returns a stim.DetectorErrorModel describing the error processes in the circuit.
+
+            Args:
+                decompose_errors: Defaults to false. When set to true, the error analysis attempts to decompose the
+                    components of composite error mechanisms (such as depolarization errors) into simpler errors, and
+                    suggest this decomposition via `stim.target_separator()` between the components. For example, in an
+                    XZ surface code, single qubit depolarization has a Y error term which can be decomposed into simpler
+                    X and Z error terms. Decomposition fails (causing this method to throw) if it's not possible to
+                    decompose large errors into simple errors that affect at most two detectors.
+                flatten_loops: Defaults to false. When set to true, the output will not contain any `repeat` blocks.
+                    When set to false, the error analysis watches for loops in the circuit reaching a periodic steady
+                    state with respect to the detectors being introduced, the error mechanisms that affect them, and the
+                    locations of the logical observables. When it identifies such a steady state, it outputs a repeat
+                    block. This is massively more efficient than flattening for circuits that contain loops, but creates
+                    a more complex output.
+                allow_gauge_detectors: Defaults to false. When set to false, the error analysis verifies that detectors
+                    in the circuit are actually deterministic under noiseless execution of the circuit. When set to
+                    true, these detectors are instead considered to be part of degrees freedom that can be removed from
+                    the error model. For example, if detectors D1 and D3 both anti-commute with a reset, then the error
+                    model has a gauge `error(0.5) D1 D3`. When gauges are identified, one of the involved detectors is
+                    removed from the system using Gaussian elimination.
+
+                    Note that logical observables are still verified to be deterministic, even if this option is set.
+                approximate_disjoint_errors: Defaults to false. When set to false, composite error mechanisms with
+                    disjoint components (such as `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`) can cause the error analysis to throw
+                    exceptions (because detector error models can only contain independent error mechanisms). When set
+                    to true, the probabilities of the disjoint cases are instead assumed to be independent
+                    probabilities. For example, a ``PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
+                    `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an approximation, but it is a good
+                    approximation for small probabilities.
+
+                    This argument can also be set to a probability between 0 and 1, setting a threshold below which the
+                    approximation is acceptable. Any error mechanisms that have a component probability above the
+                    threshold will cause an exception to be thrown.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     X_ERROR(0.125) 0
+                ...     X_ERROR(0.25) 1
+                ...     CORRELATED_ERROR(0.375) X0 X1
+                ...     M 0 1
+                ...     DETECTOR rec[-2]
+                ...     DETECTOR rec[-1]
+                ... ''').detector_error_model()
+                stim.DetectorErrorModel('''
+                error(0.125) D0
+                error(0.375) D0 D1
+                error(0.25) D1
+                ''')
         )DOC")
             .data());
 }

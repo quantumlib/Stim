@@ -1,5 +1,5 @@
 import functools
-from typing import Callable, Dict, List, Tuple, Union, Iterator, cast, Sequence, Iterable
+from typing import Callable, Dict, List, Tuple, Union, Iterator, cast, Sequence, Iterable, Set, Any
 
 import cirq
 import stim
@@ -137,24 +137,34 @@ def args_to_cirq_depolarize_1(args: List[float]) -> cirq.AsymmetricDepolarizingC
     return cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2])
 
 
+def thrower(message) -> Callable[[Any], None]:
+    def f(*args, **kwargs):
+        raise NotImplementedError(message)
+    return f
+
+
 @functools.lru_cache(maxsize=1)
 def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Union[float, List[float]]], cirq.Gate]]]:
     return {
         "R": cirq.ResetChannel(),
         "RX": MeasureAndOrReset(measure=False, reset=True, basis='X', invert_measure=False, key=''),
         "RY": MeasureAndOrReset(measure=False, reset=True, basis='Y', invert_measure=False, key=''),
+        "RZ": cirq.ResetChannel(),
         "M": cirq.MeasurementGate(num_qubits=1, key='0'),
         "MX": MeasureAndOrReset(measure=True, reset=False, basis='X', invert_measure=False, key='0'),
         "MY": MeasureAndOrReset(measure=True, reset=False, basis='Y', invert_measure=False, key='0'),
+        "MZ": cirq.MeasurementGate(num_qubits=1, key='0'),
         "MR": MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='0'),
         "MRX": MeasureAndOrReset(measure=True, reset=True, basis='X', invert_measure=False, key='0'),
         "MRY": MeasureAndOrReset(measure=True, reset=True, basis='Y', invert_measure=False, key='0'),
+        "MRZ": MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='0'),
         "I": cirq.I,
         "X": cirq.X,
         "Y": cirq.Y,
         "Z": cirq.Z,
         "H_XY": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.Z, True)),
         "H": cirq.H,
+        "H_XZ": cirq.H,
         "H_YZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False)),
         "SQRT_X": cirq.X**0.5,
         "SQRT_X_DAG": cirq.X**-0.5,
@@ -162,8 +172,16 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Uni
         "SQRT_Y_DAG": cirq.Y**-0.5,
         "C_XYZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, False)),
         "C_ZYX": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, False)),
+        "SQRT_XX": cirq.XX**0.5,
+        "SQRT_YY": cirq.YY**0.5,
+        "SQRT_ZZ": cirq.ZZ**0.5,
+        "SQRT_XX_DAG": cirq.XX**-0.5,
+        "SQRT_YY_DAG": cirq.YY**-0.5,
+        "SQRT_ZZ_DAG": cirq.ZZ**-0.5,
         "S": cirq.S,
         "S_DAG": cirq.S**-1,
+        "SQRT_Z": cirq.S,
+        "SQRT_Z_DAG": cirq.S**-1,
         "SWAP": cirq.SWAP,
         "ISWAP": cirq.ISWAP,
         "ISWAP_DAG": cirq.ISWAP**-1,
@@ -174,8 +192,12 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Uni
         "YCY": cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False),
         "YCZ": cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False),
         "CX": cirq.CNOT,
+        "CNOT": cirq.CNOT,
+        "ZCX": cirq.CNOT,
         "CY": cirq.Y.controlled(1),
+        "ZCY": cirq.Y.controlled(1),
         "CZ": cirq.CZ,
+        "ZCZ": cirq.CZ,
         "DEPOLARIZE1": lambda arg: cirq.DepolarizingChannel(arg, 1),
         "DEPOLARIZE2": lambda arg: cirq.DepolarizingChannel(arg, 2),
         "X_ERROR": cirq.X.with_probability,
@@ -185,8 +207,15 @@ def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Uni
         "PAULI_CHANNEL_2": lambda args: TwoQubitAsymmetricDepolarizingChannel(args),
         "DETECTOR": (),
         "OBSERVABLE_INCLUDE": (),
+        "ELSE_CORRELATED_ERROR": thrower("Converting ELSE_CORRELATED_ERROR to cirq is not supported."),
         "TICK": (),
+        "QUBIT_COORDS": (),
+        "SHIFT_COORDS": (),
     }
+
+
+def not_handled_or_handled_specially_set() -> Set[str]:
+    return {"E", "CORRELATED_ERROR", "REPEAT", "ELSE_CORRELATED_ERROR"}
 
 
 def _translate_flattened_operation(

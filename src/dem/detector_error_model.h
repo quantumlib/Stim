@@ -64,6 +64,8 @@ struct DemInstruction {
     bool operator!=(const DemInstruction &other) const;
     bool approx_equals(const DemInstruction &other, double atol) const;
     std::string str() const;
+
+    void validate() const;
 };
 
 struct DetectorErrorModel {
@@ -100,12 +102,15 @@ struct DetectorErrorModel {
     std::string str() const;
 
     uint64_t total_detector_shift() const;
+    uint64_t count_detectors() const;
+    uint64_t count_observables() const;
 
     void clear();
 };
 
 }  // namespace stim_internal
 
+std::ostream &operator<<(std::ostream &out, const stim_internal::DemInstructionType &type);
 std::ostream &operator<<(std::ostream &out, const stim_internal::DetectorErrorModel &v);
 std::ostream &operator<<(std::ostream &out, const stim_internal::DemTarget &v);
 std::ostream &operator<<(std::ostream &out, const stim_internal::DemInstruction &v);

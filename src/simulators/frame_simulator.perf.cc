@@ -29,7 +29,7 @@ BENCHMARK(FrameSimulator_depolarize1_100Kqubits_1Ksamples_per1000) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{{&probability, &probability + 1}, targets};
+    OperationData op_data{{&probability}, targets};
     benchmark_go([&]() {
         sim.DEPOLARIZE1(op_data);
     })
@@ -48,7 +48,7 @@ BENCHMARK(FrameSimulator_depolarize2_100Kqubits_1Ksamples_per1000) {
     for (size_t k = 0; k < num_qubits; k++) {
         targets.push_back(k);
     }
-    OperationData op_data{{&probability, &probability + 1}, targets};
+    OperationData op_data{{&probability}, targets};
 
     benchmark_go([&]() {
         sim.DEPOLARIZE2(op_data);

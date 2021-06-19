@@ -97,8 +97,9 @@ int main_mode_sample(int argc, const char **argv) {
 int main_mode_analyze_errors(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
-            "--analyze_errors",
             "--allow_gauge_detectors",
+            "--analyze_errors",
+            "--approximate_disjoint_errors",
             "--detector_hypergraph",
             "--decompose_errors",
             "--fold_loops",
@@ -111,6 +112,16 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     bool decompose_errors = find_bool_argument("--decompose_errors", argc, argv);
     bool fold_loops = find_bool_argument("--fold_loops", argc, argv);
     bool allow_gauge_detectors = find_bool_argument("--allow_gauge_detectors", argc, argv);
+
+    const char *approximate_disjoint_errors_arg = find_argument("--approximate_disjoint_errors", argc, argv);
+    float approximate_disjoint_errors_threshold = 0;
+    if (approximate_disjoint_errors_arg != nullptr && *approximate_disjoint_errors_arg == '\0') {
+        approximate_disjoint_errors_threshold = 1;
+    } else {
+        approximate_disjoint_errors_threshold =
+            find_float_argument("--approximate_disjoint_errors", 0, 0, 1, argc, argv);
+    }
+
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     std::ostream &out = out_stream.stream();
@@ -118,7 +129,8 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    out << ErrorAnalyzer::circuit_to_detector_error_model(circuit, decompose_errors, fold_loops, allow_gauge_detectors);
+    out << ErrorAnalyzer::circuit_to_detector_error_model(
+        circuit, decompose_errors, fold_loops, allow_gauge_detectors, approximate_disjoint_errors_threshold);
     return EXIT_SUCCESS;
 }
 

@@ -36,6 +36,8 @@ struct PointerRange {
     PointerRange(T *begin, T *end) : ptr_start(begin), ptr_end(end) {
     }
     // Implicit conversions.
+    PointerRange(T *singleton) : ptr_start(singleton), ptr_end(singleton + 1) {
+    }
     PointerRange(std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
@@ -109,6 +111,8 @@ struct ConstPointerRange {
     ConstPointerRange(const T *begin, const T *end) : ptr_start(begin), ptr_end(end) {
     }
     // Implicit conversions.
+    ConstPointerRange(const T *singleton) : ptr_start(singleton), ptr_end(singleton + 1) {
+    }
     ConstPointerRange(PointerRange<T> items) : ptr_start(items.ptr_start), ptr_end(items.ptr_end) {
     }
     ConstPointerRange(const std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {

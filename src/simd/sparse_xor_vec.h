@@ -134,7 +134,7 @@ struct SparseXorVec {
     }
 
     void xor_item(const T &item) {
-        xor_sorted_items({&item, &item + 1});
+        xor_sorted_items({&item});
     }
 
     SparseXorVec &operator^=(const SparseXorVec<T> &other) {
