@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TABLEAU_PYBIND_H
-#define TABLEAU_PYBIND_H
+#ifndef STIM_TABLEAU_PYBIND_H
+#define STIM_TABLEAU_PYBIND_H
 
 #include <pybind11/pybind11.h>
 

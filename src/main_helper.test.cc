@@ -642,6 +642,41 @@ DETECTOR rec[-2]
             )output"));
 }
 
+TEST(main_helper, analyze_errors_all_approximate_disjoint_errors) {
+    ASSERT_EQ(
+        trim(execute({"--analyze_errors", "--approximate_disjoint_errors"}, R"input(
+R 0
+PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+error(0.3125) D0
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"--analyze_errors"}, R"input(
+R 0
+PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+[exception=Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.]
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"--analyze_errors", "--approximate_disjoint_errors", "0.3"}, R"input(
+R 0
+PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+[exception=PAULI_CHANNEL_1 has a component probability '0.375000' larger than the `approximate_disjoint_errors` threshold of '0.300000'.]
+            )output"));
+}
+
 TEST(main_helper, generate_circuits) {
     ASSERT_TRUE(matches(
         trim(execute({"--gen=repetition_code", "--rounds=3", "--distance=2", "--task=memory"}, "")),

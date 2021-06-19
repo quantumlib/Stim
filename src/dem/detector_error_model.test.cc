@@ -183,8 +183,7 @@ repeat 100 {
     error(0.375) D0 D1
     shift_detectors 20
     logical_observable L0
-}
-)MODEL";
+})MODEL";
     ASSERT_EQ(DetectorErrorModel(t).str(), std::string(t));
 }
 
@@ -356,4 +355,39 @@ TEST(DetectorModel, total_detector_shift) {
     )MODEL")
             .total_detector_shift(),
         4005);
+}
+
+TEST(DetectorModel, count_detectors) {
+    ASSERT_EQ(DetectorErrorModel("").count_detectors(), 0);
+    ASSERT_EQ(DetectorErrorModel("error(0.3) D2 L1000").count_detectors(), 3);
+    ASSERT_EQ(DetectorErrorModel("shift_detectors 5").count_detectors(), 0);
+    ASSERT_EQ(DetectorErrorModel("shift_detectors 5\ndetector D3").count_detectors(), 9);
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
+        shift_detectors 50
+        repeat 1000 {
+            detector D0
+            error(0.1) D0 D1
+            shift_detectors 4
+        }
+    )MODEL")
+            .count_detectors(),
+        4048);
+}
+
+TEST(DetectorModel, count_observables) {
+    ASSERT_EQ(DetectorErrorModel("").count_observables(), 0);
+    ASSERT_EQ(DetectorErrorModel("error(0.3) L2 D9999").count_observables(), 3);
+    ASSERT_EQ(DetectorErrorModel("shift_detectors 5\nlogical_observable L3").count_observables(), 4);
+    ASSERT_EQ(
+        DetectorErrorModel(R"MODEL(
+        shift_detectors 50
+        repeat 1000 {
+            logical_observable L5
+            error(0.1) D0 D1 L6
+            shift_detectors 4
+        }
+    )MODEL")
+            .count_observables(),
+        7);
 }

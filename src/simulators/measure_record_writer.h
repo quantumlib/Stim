@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef RECORD_WRITER_H
-#define RECORD_WRITER_H
+#ifndef STIM_RECORD_WRITER_H
+#define STIM_RECORD_WRITER_H
 
 #include <memory>
 

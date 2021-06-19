@@ -1,5 +1,5 @@
-#ifndef CIRCUIT_JS_H
-#define CIRCUIT_JS_H
+#ifndef STIM_CIRCUIT_JS_H
+#define STIM_CIRCUIT_JS_H
 
 #include <cstddef>
 #include <cstdint>

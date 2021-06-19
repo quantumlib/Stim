@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef GATE_DATA_H
-#define GATE_DATA_H
+#ifndef STIM_GATE_DATA_H
+#define STIM_GATE_DATA_H
 
 #include <array>
 #include <cassert>

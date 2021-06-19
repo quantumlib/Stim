@@ -1,5 +1,5 @@
-#ifndef TABLEAU_JS_H
-#define TABLEAU_JS_H
+#ifndef STIM_TABLEAU_JS_H
+#define STIM_TABLEAU_JS_H
 
 #include <cstddef>
 #include <cstdint>

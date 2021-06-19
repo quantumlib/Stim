@@ -17,6 +17,7 @@
 #include <pybind11/stl.h>
 
 #include "../circuit/circuit.pybind.h"
+#include "../dem/detector_error_model.pybind.h"
 #include "../simulators/tableau_simulator.pybind.h"
 #include "../stabilizers/pauli_string.pybind.h"
 #include "../stabilizers/tableau.pybind.h"
@@ -109,10 +110,16 @@ PYBIND11_MODULE(stim, m) {
         )DOC")
             .data());
 
-    pybind_pauli_string(m);
-    pybind_circuit(m);
+    // CAUTION: The ordering of these is important!
+    // If a class references another before it is registered, method signatures can get messed up.
+    // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
+    // described as `stim_internal::DetectorErrorModel` instead of `stim.DetectorErrorMode`.
+
+    pybind_detector_error_model(m);
     pybind_compiled_detector_sampler(m);
     pybind_compiled_measurement_sampler(m);
-    pybind_tableau_simulator(m);
+    pybind_circuit(m);
+    pybind_pauli_string(m);
     pybind_tableau(m);
+    pybind_tableau_simulator(m);
 }

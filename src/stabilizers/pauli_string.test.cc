@@ -318,3 +318,12 @@ TEST(PauliString, pauli_xz_to_xyz) {
     ASSERT_EQ(pauli_xz_to_xyz(true, true), 2);
     ASSERT_EQ(pauli_xz_to_xyz(false, true), 3);
 }
+
+TEST(PauliString, pauli_xyz_to_xz) {
+    uint8_t x = 1;
+    uint8_t z = 2;
+    ASSERT_EQ(pauli_xyz_to_xz(0), 0);
+    ASSERT_EQ(pauli_xyz_to_xz(1), x);
+    ASSERT_EQ(pauli_xyz_to_xz(2), x + z);
+    ASSERT_EQ(pauli_xyz_to_xz(3), z);
+}

@@ -12,14 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STIM_CIRCUIT_PYBIND_H
-#define STIM_CIRCUIT_PYBIND_H
+#ifndef STIM_DETECTOR_ERROR_MODEL_TARGET_PYBIND_H
+#define STIM_DETECTOR_ERROR_MODEL_TARGET_PYBIND_H
 
 #include <pybind11/pybind11.h>
 
-#include "circuit.h"
+#include "detector_error_model.h"
 
-void pybind_circuit(pybind11::module &m);
-std::string circuit_repr(const stim_internal::Circuit &self);
+struct ExposedDemTarget : stim_internal::DemTarget {
+    std::string repr() const;
+    ExposedDemTarget(stim_internal::DemTarget target);
+    stim_internal::DemTarget internal() const;
+    static ExposedDemTarget observable_id(uint32_t id);
+    static ExposedDemTarget relative_detector_id(uint64_t id);
+    static ExposedDemTarget separator();
+};
+
+void pybind_detector_error_model_target(pybind11::module &m);
 
 #endif

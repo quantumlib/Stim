@@ -276,6 +276,18 @@ error(0.003344519141621982161) D1
         With `--allow_gauge_detectors`, stim will replace this exception with an `error(0.5) D1 D2` error mechanism in
         the output.
 
+    - **`--approximate_disjoint_errors`** or **`--approximate_disjoint_errors=threshold`**:
+        Defaults to 0 (false) when not specified.
+        Defaults to 1 (true) when specified with an empty argument.
+        Specifies a threshold for allowing error mechanisms with disjoint components
+        (such as `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`)
+        to be approximated as having independent components.
+        If any of the component error probabilities that will be approximated as independent is larger than this
+        threshold, error analysis will fail instead of performing the approximation.
+
+        For example, if `--approximate_disjoint_errors` is specified then a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` is
+        approximated as an `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`.
+
 - **`--gen=surface_code|repetition_code|color_code`**:
     **Circuit generation mode**.
     Generates stim circuit files for common circuit constructions.

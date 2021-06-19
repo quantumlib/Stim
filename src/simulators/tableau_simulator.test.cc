@@ -315,8 +315,8 @@ TEST(TableauSimulator, certain_errors_consistent_with_gates) {
     uint32_t targets[]{0};
     double p0 = 0.0;
     double p1 = 1.0;
-    OperationData d0{{&p0, &p0 + 1}, {targets, targets + 1}};
-    OperationData d1{{&p1, &p1 + 1}, {targets, targets + 1}};
+    OperationData d0{{&p0}, {targets}};
+    OperationData d1{{&p1}, {targets}};
 
     sim1.X_ERROR(d1);
     sim2.X(d0);

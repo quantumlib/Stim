@@ -2,7 +2,7 @@
 
 A detector error model file (.dem) is a human-readable specification of error mechanisms.
 The intent of the file format is to act as a reasonably flexible configuration language that can be easily consumed by
-*decoders*, which attempt to predict syndromes from symptoms within the context of an error model.
+*decoders*, which attempt to predict the logical observable frame from symptoms within the context of an error model.
 
 ## Index
 
@@ -85,14 +85,14 @@ The `{` always goes in the same line as its instruction, and the `}` always goes
 
 A *detector error model* is a list of independent error mechanisms.
 Each error mechanism has a *probability*,
-some *symptoms* (the detectors that the error flips),
-and some *syndromes* (the logical observables that the error flips).
+*symptoms* (the detectors that the error flips),
+and *frame changes* (the logical observables that the error flips).
 Error mechanisms may also suggest a *decomposition* into simpler error mechanisms.
 
 A detector error model can be sampled by independently keeping or discarding each error mechanism,
 with a keep probability equal to each error mechanism's probability.
-The resulting sample contains the symptoms and syndromes that appeared an odd number of times total in the kept error
-mechanisms.
+The resulting sample contains the symptoms and frame changes that appeared an odd number of times total in the kept
+error mechanisms.
 
 A detector error model file (.dem) specifies a detector error model by a series of instructions which are interpreted
 one by one, from start to finish. The instructions iteratively build up a detector error model by introducing error
@@ -129,9 +129,9 @@ and coordinates `2.5`, `3.5`, `6` (relative to the current coordinate offset).
 
 #### logical_observable instruction
 
-A `logical_observable` instruction ensures a particular syndrome is in the error model,
-even if no error mechanism mentions it.
-(Logical observables can also be implicitly introduced by being mentioned in an error mechanism.)
+A `logical_observable` instruction ensures a particular frame change's existence is noted by the error model,
+even if no error mechanism affects it.
+(Logical observable frame changes can also be implicitly noted by being mentioned in an error mechanism.)
 For example, this is important for when a quantum circuit includes a logical observable but happens to
 have been annotated with a noise model that never affects the observable, to ensure that the
 tool sampling the observables in the circuit agrees with the detector error model on exactly
@@ -176,19 +176,19 @@ Separators are used to suggest a way to decompose complicated error mechanisms i
 For example: `error(0.1) D2 D3 L0` adds an error mechanism with
 probability equal to 10%,
 two symptoms (`D2`, `D3`),
-one syndrome (`L0`),
+one frame change (`L0`),
 and no suggested decomposition.
 
 Another example: `error(0.02) D2 L0 ^ D5 D6` adds an error mechanism with
 probability equal to 2%,
 three symptoms (`D2`, `D5`, `D6`),
-one syndrome (`L0`),
+one frame change (`L0`),
 and a suggested decomposition into `D2 L0` and `D5 D6`.
 
 Yet another example: `error(0.03) D2 L0 ^ D3 L0` adds an error mechanism with
 probability equal to 3%,
 two symptoms (`D2`, `D3`),
-no syndromes (because the two `L0` cancel out),
+no frame changes (because the two `L0` cancel out),
 and a suggested decomposition into `D2 L0` and `D3 L0`.
 
 An example of a situation where the decomposition is relevant is a surface code with X and Z basis stabilizers.
@@ -199,9 +199,9 @@ into the X and Z parts.
 It is valid for multiple error mechanisms to have the exact same targets.
 Typically they would be fused as part of building the error model (via the equation
 `p_{combined} = p_1 (1 - p_2) + p_2 (1 - p_1)`).
-It is also valid for error mechanisms to have the same symptoms but different syndromes
+It is also valid for error mechanisms to have the same symptoms but different frame changes
 (though this guarantees the error correcting code has distance at most 2).
-Similarly, an error mechanism may have syndromes with no symptoms (guaranteeing a code distance equal to 1).
+Similarly, an error mechanism may have frame changes with no symptoms (guaranteeing a code distance equal to 1).
 
 #### repeat block
 
@@ -237,7 +237,7 @@ has to be added into the current relative detector offset.
 #### logical observable target
 
 A logical observable target is a non-negative integer prefixed by `L`, such as `L5`.
-It refers to a syndrome in the error model.
+It refers to a possible frame change that an error can cause.
 
 #### numeric target
 
@@ -261,8 +261,8 @@ involves tracking several pieces of state.
     by `shift_detectors` instructions.
     Interpreting relative detector targets and coordinate annotations requires tracking these
     two values, since they shift the targets and coordinates.
-2. **The Nodes (possible symptoms and syndromes)**.
-    The error model must include every mentioned symptom and syndrome,
+2. **The Nodes (possible symptoms and frame changes)**.
+    The error model must include every mentioned symptom and frame change,
     including ones not involved in any error mechanism
     (i.e. only declared by `detector` and `logical_observable` instructions).
 3. **The Edges (error mechanisms)**.
@@ -274,7 +274,7 @@ involves tracking several pieces of state.
 ### Circular Error Model
 
 This error model defines 10 symptoms, and 10 error mechanisms with two symptoms.
-One of the error mechanisms, the "bad error", also has a syndrome (`L0`).
+One of the error mechanisms, the "bad error", also has a frame change (`L0`).
 If the symptoms are nodes, and error mechanisms connect two nodes, then the model forms
 the 10 node circular graph.
 

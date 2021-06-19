@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CIRCUIT_TEST_H
-#define CIRCUIT_TEST_H
+#ifndef STIM_CIRCUIT_TEST_H
+#define STIM_CIRCUIT_TEST_H
 
 #include "circuit.h"
 

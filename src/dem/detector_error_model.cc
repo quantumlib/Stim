@@ -27,6 +27,9 @@ constexpr uint64_t OBSERVABLE_BIT = uint64_t{1} << 63;
 constexpr uint64_t SEPARATOR_SYGIL = UINT64_MAX;
 
 DemTarget DemTarget::observable_id(uint32_t id) {
+    if (id >= (uint64_t{1} << 62)) {
+        throw std::invalid_argument("observable id too large.");
+    }
     return {OBSERVABLE_BIT | id};
 }
 DemTarget DemTarget::relative_detector_id(uint64_t id) {
@@ -109,8 +112,9 @@ std::string DemInstruction::str() const {
     s << *this;
     return s.str();
 }
-std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
-    switch (op.type) {
+
+std::ostream &operator<<(std::ostream &out, const DemInstructionType &type) {
+    switch (type) {
         case DEM_ERROR:
             out << "error";
             break;
@@ -130,6 +134,11 @@ std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
             out << "???unknown_instruction_type???";
             break;
     }
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
+    out << op.type;
     if (!op.arg_data.empty()) {
         out << "(";
         for (size_t k = 0; k < op.arg_data.size(); k++) {
@@ -152,8 +161,7 @@ std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
     return out;
 }
 
-void validate_dem_instruction(
-    const DemInstructionType type, ConstPointerRange<double> arg_data, ConstPointerRange<DemTarget> target_data) {
+void DemInstruction::validate() const {
     switch (type) {
         case DEM_ERROR:
             if (arg_data.size() != 1) {
@@ -223,8 +231,8 @@ void validate_dem_instruction(
 }
 
 void DetectorErrorModel::append_error_instruction(double probability, ConstPointerRange<DemTarget> targets) {
-    ConstPointerRange<double> args = {&probability, &probability + 1};
-    validate_dem_instruction(DEM_ERROR, args, targets);
+    ConstPointerRange<double> args = {&probability};
+    DemInstruction{args, targets, DEM_ERROR}.validate();
     auto stored_targets = target_buf.take_copy(targets);
     auto stored_args = arg_buf.take_copy(args);
     instructions.push_back(DemInstruction{stored_args, stored_targets, DEM_ERROR});
@@ -233,8 +241,8 @@ void DetectorErrorModel::append_error_instruction(double probability, ConstPoint
 void DetectorErrorModel::append_shift_detectors_instruction(
     ConstPointerRange<double> coord_shift, uint64_t detector_shift) {
     DemTarget shift{detector_shift};
-    ConstPointerRange<DemTarget> targets = {&shift, &shift + 1};
-    validate_dem_instruction(DEM_SHIFT_DETECTORS, coord_shift, targets);
+    ConstPointerRange<DemTarget> targets = {&shift};
+    DemInstruction{coord_shift, targets, DEM_SHIFT_DETECTORS}.validate();
 
     auto stored_targets = target_buf.take_copy(targets);
     auto stored_args = arg_buf.take_copy(coord_shift);
@@ -242,16 +250,16 @@ void DetectorErrorModel::append_shift_detectors_instruction(
 }
 
 void DetectorErrorModel::append_detector_instruction(ConstPointerRange<double> coords, DemTarget target) {
-    ConstPointerRange<DemTarget> targets = {&target, &target + 1};
-    validate_dem_instruction(DEM_DETECTOR, coords, targets);
+    ConstPointerRange<DemTarget> targets = {&target};
+    DemInstruction{coords, targets, DEM_DETECTOR}.validate();
     auto stored_targets = target_buf.take_copy(targets);
     auto stored_args = arg_buf.take_copy(coords);
     instructions.push_back(DemInstruction{stored_args, stored_targets, DEM_DETECTOR});
 }
 
 void DetectorErrorModel::append_logical_observable_instruction(DemTarget target) {
-    ConstPointerRange<DemTarget> targets = {&target, &target + 1};
-    validate_dem_instruction(DEM_LOGICAL_OBSERVABLE, {}, targets);
+    ConstPointerRange<DemTarget> targets = {&target};
+    DemInstruction{{}, targets, DEM_LOGICAL_OBSERVABLE}.validate();
     auto stored_targets = target_buf.take_copy(targets);
     instructions.push_back(DemInstruction{{}, stored_targets, DEM_LOGICAL_OBSERVABLE});
 }
@@ -303,13 +311,20 @@ std::string DetectorErrorModel::str() const {
 }
 
 void stream_out_indent(std::ostream &out, const DetectorErrorModel &v, size_t indent) {
+    bool first = true;
     for (const auto &e : v.instructions) {
+        if (first) {
+            first = false;
+        } else {
+            out << "\n";
+        }
         for (size_t k = 0; k < indent; k++) {
             out << " ";
         }
         if (e.type == DEM_REPEAT_BLOCK) {
             out << "repeat " << e.target_data[0].data << " {\n";
             stream_out_indent(out, v.blocks[(size_t)e.target_data[1].data], indent + 4);
+            out << "\n";
             for (size_t k = 0; k < indent; k++) {
                 out << " ";
             }
@@ -317,7 +332,6 @@ void stream_out_indent(std::ostream &out, const DetectorErrorModel &v, size_t in
         } else {
             out << e;
         }
-        out << "\n";
     }
 }
 
@@ -481,7 +495,7 @@ void dem_read_instruction(DetectorErrorModel &model, char lead_char, SOURCE read
             if (c == '{') {
                 throw std::invalid_argument("Unexpected '{'.");
             }
-            validate_dem_instruction(type, model.arg_buf.tail, model.target_buf.tail);
+            DemInstruction{model.arg_buf.tail, model.target_buf.tail, type}.validate();
         }
     } catch (const std::invalid_argument &ex) {
         model.target_buf.discard_tail();
@@ -557,4 +571,65 @@ uint64_t DetectorErrorModel::total_detector_shift() const {
         }
     }
     return result;
+}
+
+uint64_t DetectorErrorModel::count_detectors() const {
+    uint64_t offset = 1;
+    uint64_t max_num = 0;
+    for (const auto &e : instructions) {
+        switch (e.type) {
+            case DEM_LOGICAL_OBSERVABLE:
+                break;
+            case DEM_SHIFT_DETECTORS:
+                offset += e.target_data[0].data;
+                break;
+            case DEM_REPEAT_BLOCK: {
+                auto &block = blocks[e.target_data[1].data];
+                auto n = block.count_detectors();
+                auto reps = e.target_data[0].data;
+                auto block_shift = block.total_detector_shift();  // Note: quadratic overhead in nesting level.
+                offset += block_shift * reps;
+                if (reps > 0 && n > 0) {
+                    max_num = std::max(max_num, offset + n - 1 - block_shift);
+                }
+            } break;
+            case DEM_DETECTOR:
+            case DEM_ERROR:
+                for (const auto &t : e.target_data) {
+                    if (t.is_relative_detector_id()) {
+                        max_num = std::max(max_num, offset + t.raw_id());
+                    }
+                }
+                break;
+            default:
+                throw std::invalid_argument("Instruction type not implemented in count_detectors: " + e.str());
+        }
+    }
+    return max_num;
+}
+
+uint64_t DetectorErrorModel::count_observables() const {
+    uint64_t max_num = 0;
+    for (const auto &e : instructions) {
+        switch (e.type) {
+            case DEM_SHIFT_DETECTORS:
+            case DEM_DETECTOR:
+                break;
+            case DEM_REPEAT_BLOCK: {
+                auto &block = blocks[e.target_data[1].data];
+                max_num = std::max(max_num, block.count_observables());
+            } break;
+            case DEM_LOGICAL_OBSERVABLE:
+            case DEM_ERROR:
+                for (const auto &t : e.target_data) {
+                    if (t.is_observable_id()) {
+                        max_num = std::max(max_num, t.raw_id() + 1);
+                    }
+                }
+                break;
+            default:
+                throw std::invalid_argument("Instruction type not implemented in count_observables: " + e.str());
+        }
+    }
+    return max_num;
 }

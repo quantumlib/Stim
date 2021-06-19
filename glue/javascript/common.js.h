@@ -1,5 +1,5 @@
-#ifndef COMMON_JS_H
-#define COMMON_JS_H
+#ifndef STIM_COMMON_JS_H
+#define STIM_COMMON_JS_H
 
 #include <emscripten/val.h>
 

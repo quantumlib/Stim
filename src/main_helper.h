@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MAIN_HELPER_H
-#define MAIN_HELPER_H
+#ifndef STIM_MAIN_HELPER_H
+#define STIM_MAIN_HELPER_H
 
 #include "arg_parse.h"
 #include "probability_util.h"

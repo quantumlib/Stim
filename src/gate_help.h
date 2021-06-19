@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef GATE_HELP_H
-#define GATE_HELP_H
+#ifndef STIM_GATE_HELP_H
+#define STIM_GATE_HELP_H
 
 #include <map>
 #include <string>

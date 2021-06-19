@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef RECORD_BATCH_STORAGE_H
-#define RECORD_BATCH_STORAGE_H
+#ifndef STIM_RECORD_BATCH_STORAGE_H
+#define STIM_RECORD_BATCH_STORAGE_H
 
 #include "measure_record_batch_writer.h"
 
