@@ -45,13 +45,13 @@ void pybind_detector_error_model_repeat_block(pybind11::module &m) {
 
     c.def(
         pybind11::init<uint64_t, DetectorErrorModel>(),
-        pybind11::arg("repetitions"),
+        pybind11::arg("repeat_count"),
         pybind11::arg("block"),
         clean_doc_string(u8R"DOC(
             Creates a stim.DemRepeatBlock.
 
             Args:
-                repetitions: The number of times the repeat block's body is supposed to execute.
+                repeat_count: The number of times the repeat block's body is supposed to execute.
                 body: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
 
             Examples:
@@ -64,8 +64,8 @@ void pybind_detector_error_model_repeat_block(pybind11::module &m) {
             .data());
 
     c.def_readonly(
-        "repetitions",
-        &ExposedDemRepeatBlock::repetitions,
+        "repeat_count",
+        &ExposedDemRepeatBlock::repeat_count,
         "The number of times the repeat block's body is supposed to execute.");
     c.def(
         "body_copy",
@@ -88,11 +88,11 @@ stim_internal::DetectorErrorModel ExposedDemRepeatBlock::body_copy() {
 }
 std::string ExposedDemRepeatBlock::repr() const {
     std::stringstream out;
-    out << "stim.DemRepeatBlock(" << repetitions << ", " << detector_error_model_repr(body) << ")";
+    out << "stim.DemRepeatBlock(" << repeat_count << ", " << detector_error_model_repr(body) << ")";
     return out.str();
 }
 bool ExposedDemRepeatBlock::operator==(const ExposedDemRepeatBlock &other) const {
-    return repetitions == other.repetitions && body == other.body;
+    return repeat_count == other.repeat_count && body == other.body;
 }
 bool ExposedDemRepeatBlock::operator!=(const ExposedDemRepeatBlock &other) const {
     return !(*this == other);

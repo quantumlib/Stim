@@ -73,7 +73,7 @@ bool ExposedDemInstruction::operator==(const ExposedDemInstruction &other) const
 bool ExposedDemInstruction::operator!=(const ExposedDemInstruction &other) const {
     return !(*this == other);
 }
-std::vector<pybind11::object> ExposedDemInstruction::exposed_targets() const {
+std::vector<pybind11::object> ExposedDemInstruction::targets_copy() const {
     std::vector<pybind11::object> result;
     if (type == DEM_SHIFT_DETECTORS) {
         for (const auto &e : targets) {
@@ -85,6 +85,9 @@ std::vector<pybind11::object> ExposedDemInstruction::exposed_targets() const {
         }
     }
     return result;
+}
+std::vector<double> ExposedDemInstruction::args_copy() const {
+    return arguments;
 }
 
 void pybind_detector_error_model_instruction(pybind11::module &m) {
@@ -157,14 +160,14 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
                 return result;
             }),
         pybind11::arg("type"),
-        pybind11::arg("arguments"),
+        pybind11::arg("args"),
         pybind11::arg("targets"),
         clean_doc_string(u8R"DOC(
             Creates a stim.DemInstruction.
 
             Args:
                 type: The name of the instruction type (e.g. "error" or "shift_detectors").
-                arguments: Numeric values parameterizing the instruction (e.g. the 0.1 in "error(0.1)").
+                args: Numeric values parameterizing the instruction (e.g. the 0.1 in "error(0.1)").
                 targets: The objects the instruction involves (e.g. the "D0" and "L1" in "error(0.1) D0 L1").
 
             Examples:
@@ -175,14 +178,14 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
         )DOC")
             .data());
 
-    c.def_readonly(
-        "arguments",
-        &ExposedDemInstruction::arguments,
-        "Numeric values parameterizing the instruction (e.g. the probability of an error).");
-    c.def_property_readonly(
-        "targets",
-        &ExposedDemInstruction::exposed_targets,
-        "Objects the instruction applies to (e.g. the detectors and observables an error affects.");
+    c.def(
+        "args_copy",
+        &ExposedDemInstruction::args_copy,
+        "Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).");
+    c.def(
+        "targets_copy",
+        &ExposedDemInstruction::targets_copy,
+        "Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.");
     c.def_property_readonly(
         "type",
         &ExposedDemInstruction::type_name,

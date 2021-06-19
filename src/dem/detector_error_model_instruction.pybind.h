@@ -25,7 +25,8 @@ struct ExposedDemInstruction {
     std::vector<stim_internal::DemTarget> targets;
     stim_internal::DemInstructionType type;
 
-    std::vector<pybind11::object> exposed_targets() const;
+    std::vector<double> args_copy() const;
+    std::vector<pybind11::object> targets_copy() const;
     stim_internal::DemInstruction as_dem_instruction() const;
     std::string type_name() const;
     std::string str() const;

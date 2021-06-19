@@ -16,19 +16,19 @@ import stim
 import pytest
 
 
-def test_arguments():
-    assert stim.DemInstruction("error", [0.25], [stim.target_relative_detector_id(3)]).arguments == [0.25]
-    assert stim.DemInstruction("error", [0.125], [stim.target_relative_detector_id(3)]).arguments == [0.125]
-    assert stim.DemInstruction("shift_detectors", [], [1]).arguments == []
-    assert stim.DemInstruction("shift_detectors", [0.125, 0.25], [1]).arguments == [0.125, 0.25]
+def test_args_copy():
+    assert stim.DemInstruction("error", [0.25], [stim.target_relative_detector_id(3)]).args_copy() == [0.25]
+    assert stim.DemInstruction("error", [0.125], [stim.target_relative_detector_id(3)]).args_copy() == [0.125]
+    assert stim.DemInstruction("shift_detectors", [], [1]).args_copy() == []
+    assert stim.DemInstruction("shift_detectors", [0.125, 0.25], [1]).args_copy() == [0.125, 0.25]
 
 
-def test_targets():
+def test_targets_copy():
     t1 = [stim.target_relative_detector_id(3), stim.target_separator(), stim.target_logical_observable_id(2)]
-    assert stim.DemInstruction("error", [0.25], t1).targets == t1
-    assert stim.DemInstruction("shift_detectors", [], [1]).targets == [1]
+    assert stim.DemInstruction("error", [0.25], t1).targets_copy() == t1
+    assert stim.DemInstruction("shift_detectors", [], [1]).targets_copy() == [1]
     t2 = [stim.target_logical_observable_id(3)]
-    assert stim.DemInstruction("logical_observable", [], t2).targets == t2
+    assert stim.DemInstruction("logical_observable", [], t2).targets_copy() == t2
 
 
 def test_type():

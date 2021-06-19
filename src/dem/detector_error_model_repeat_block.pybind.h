@@ -20,7 +20,7 @@
 #include "detector_error_model.h"
 
 struct ExposedDemRepeatBlock {
-    uint64_t repetitions;
+    uint64_t repeat_count;
     stim_internal::DetectorErrorModel body;
 
     stim_internal::DetectorErrorModel body_copy();
