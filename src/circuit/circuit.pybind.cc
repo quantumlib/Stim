@@ -36,10 +36,6 @@ std::string circuit_repr(const Circuit &self) {
 }
 
 void pybind_circuit(pybind11::module &m) {
-    pybind_circuit_repeat_block(m);
-    pybind_circuit_instruction(m);
-    pybind_circuit_gate_target(m);
-
     auto &&c = pybind11::class_<Circuit>(
         m,
         "Circuit",
@@ -64,6 +60,10 @@ void pybind_circuit(pybind11::module &m) {
 
         )DOC")
             .data());
+
+    pybind_circuit_repeat_block(m);
+    pybind_circuit_instruction(m);
+    pybind_circuit_gate_target(m);
 
     c.def(
         pybind11::init([](const char *stim_program_text) {

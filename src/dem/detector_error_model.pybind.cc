@@ -29,10 +29,6 @@ std::string detector_error_model_repr(const DetectorErrorModel &self) {
 }
 
 void pybind_detector_error_model(pybind11::module &m) {
-    pybind_detector_error_model_instruction(m);
-    pybind_detector_error_model_target(m);
-    pybind_detector_error_model_repeat_block(m);
-
     auto &&c = pybind11::class_<DetectorErrorModel>(
         m,
         "DetectorErrorModel",
@@ -66,6 +62,10 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ''')
         )DOC")
             .data());
+
+    pybind_detector_error_model_instruction(m);
+    pybind_detector_error_model_target(m);
+    pybind_detector_error_model_repeat_block(m);
 
     c.def(
         pybind11::init([](const char *detector_error_model_text) {

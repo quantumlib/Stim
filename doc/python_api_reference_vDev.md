@@ -448,7 +448,7 @@
 > meaning the measurement result from qubit 1 should be inverted when reported.
 > ```
 
-## `stim.target_logical_observable_id(index: int) -> ExposedDemTarget`<a name="stim.target_logical_observable_id"></a>
+## `stim.target_logical_observable_id(index: int) -> stim.DemTarget`<a name="stim.target_logical_observable_id"></a>
 > ```
 > Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
 > 
@@ -465,7 +465,7 @@
 > For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
 > ```
 
-## `stim.target_relative_detector_id(index: int) -> ExposedDemTarget`<a name="stim.target_relative_detector_id"></a>
+## `stim.target_relative_detector_id(index: int) -> stim.DemTarget`<a name="stim.target_relative_detector_id"></a>
 > ```
 > Returns a relative detector id (e.g. "D5" in a .dem file).
 > 
@@ -476,7 +476,7 @@
 >     The relative detector target.
 > ```
 
-## `stim.target_separator() -> ExposedDemTarget`<a name="stim.target_separator"></a>
+## `stim.target_separator() -> stim.DemTarget`<a name="stim.target_separator"></a>
 > ```
 > Returns a target separator (e.g. "^" in a .dem file).
 > ```
@@ -767,7 +767,7 @@
 >     stim.Circuit()
 > ```
 
-### `stim.Circuit.compile_detector_sampler(self) -> CompiledDetectorSampler`<a name="stim.Circuit.compile_detector_sampler"></a>
+### `stim.Circuit.compile_detector_sampler(self) -> stim.CompiledDetectorSampler`<a name="stim.Circuit.compile_detector_sampler"></a>
 > ```
 > Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
 > 
@@ -784,7 +784,7 @@
 >     array([[0]], dtype=uint8)
 > ```
 
-### `stim.Circuit.compile_sampler(self) -> CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
+### `stim.Circuit.compile_sampler(self) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
 > ```
 > Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
 > 
@@ -814,7 +814,7 @@
 >     True
 > ```
 
-### `stim.Circuit.detector_error_model(self, *, decompose_errors: bool = False, flatten_loops: bool = False, allow_gauge_detectors: bool = False, approximate_disjoint_errors: float = False) -> stim_internal::DetectorErrorModel`<a name="stim.Circuit.detector_error_model"></a>
+### `stim.Circuit.detector_error_model(self, *, decompose_errors: bool = False, flatten_loops: bool = False, allow_gauge_detectors: bool = False, approximate_disjoint_errors: float = False) -> stim.DetectorErrorModel`<a name="stim.Circuit.detector_error_model"></a>
 > ```
 > Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 > 
@@ -1110,7 +1110,7 @@
 > Determines if two `stim.CircuitRepeatBlock`s are identical.
 > ```
 
-### `stim.CircuitRepeatBlock.__init__(self, repeat_count: int, body: stim_internal::Circuit) -> None`<a name="stim.CircuitRepeatBlock.__init__"></a>
+### `stim.CircuitRepeatBlock.__init__(self, repeat_count: int, body: stim.Circuit) -> None`<a name="stim.CircuitRepeatBlock.__init__"></a>
 > ```
 > Initializes a `stim.CircuitRepeatBlock`.
 > 
@@ -1129,7 +1129,7 @@
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitRepeatBlock`.
 > ```
 
-### `stim.CircuitRepeatBlock.body_copy(self) -> stim_internal::Circuit`<a name="stim.CircuitRepeatBlock.body_copy"></a>
+### `stim.CircuitRepeatBlock.body_copy(self) -> stim.Circuit`<a name="stim.CircuitRepeatBlock.body_copy"></a>
 > ```
 > Returns a copy of the body of the repeat block.
 > 
@@ -1321,7 +1321,7 @@
 > Determines if two repeat blocks are identical.
 > ```
 
-### `stim.DemRepeatBlock.__init__(self, repeat_count: int, block: stim_internal::DetectorErrorModel) -> None`<a name="stim.DemRepeatBlock.__init__"></a>
+### `stim.DemRepeatBlock.__init__(self, repeat_count: int, block: stim.DetectorErrorModel) -> None`<a name="stim.DemRepeatBlock.__init__"></a>
 > ```
 > Creates a stim.DemRepeatBlock.
 > 
@@ -1347,7 +1347,7 @@
 > Returns text that is a valid python expression evaluating to an equivalent `stim.DemRepeatBlock`.
 > ```
 
-### `stim.DemRepeatBlock.body_copy(self) -> stim_internal::DetectorErrorModel`<a name="stim.DemRepeatBlock.body_copy"></a>
+### `stim.DemRepeatBlock.body_copy(self) -> stim.DetectorErrorModel`<a name="stim.DemRepeatBlock.body_copy"></a>
 > ```
 > Returns a copy of the block's body, as a stim.DetectorErrorModel.
 > ```
@@ -2978,7 +2978,7 @@
 >     True
 > ```
 
-### `stim.TableauSimulator.current_inverse_tableau(self) -> stim_internal::Tableau`<a name="stim.TableauSimulator.current_inverse_tableau"></a>
+### `stim.TableauSimulator.current_inverse_tableau(self) -> stim.Tableau`<a name="stim.TableauSimulator.current_inverse_tableau"></a>
 > ```
 > Returns a copy of the internal state of the simulator as a stim.Tableau.
 > 
@@ -3281,7 +3281,7 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.set_inverse_tableau(self, arg0: stim_internal::Tableau) -> None`<a name="stim.TableauSimulator.set_inverse_tableau"></a>
+### `stim.TableauSimulator.set_inverse_tableau(self, arg0: stim.Tableau) -> None`<a name="stim.TableauSimulator.set_inverse_tableau"></a>
 > ```
 > Overwrites the simulator's internal state with a copy of the given inverse tableau.
 > 

@@ -20,6 +20,9 @@
 using namespace stim_internal;
 
 void pybind_detector_error_model_target(pybind11::module &m) {
+    auto &&c = pybind11::class_<ExposedDemTarget>(
+        m, "DemTarget", "An instruction target from a detector error model (.dem) file.");
+
     m.def(
         "target_relative_detector_id",
         &ExposedDemTarget::relative_detector_id,
@@ -57,9 +60,6 @@ void pybind_detector_error_model_target(pybind11::module &m) {
             Returns a target separator (e.g. "^" in a .dem file).
         )DOC")
             .data());
-
-    auto &&c = pybind11::class_<ExposedDemTarget>(
-        m, "DemTarget", "An instruction target from a detector error model (.dem) file.");
 
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.DemTarget`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.DemTarget`s are different.");
