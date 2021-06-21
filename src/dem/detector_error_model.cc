@@ -27,9 +27,6 @@ constexpr uint64_t OBSERVABLE_BIT = uint64_t{1} << 63;
 constexpr uint64_t SEPARATOR_SYGIL = UINT64_MAX;
 
 DemTarget DemTarget::observable_id(uint32_t id) {
-    if (id >= (uint64_t{1} << 62)) {
-        throw std::invalid_argument("observable id too large.");
-    }
     return {OBSERVABLE_BIT | id};
 }
 DemTarget DemTarget::relative_detector_id(uint64_t id) {
