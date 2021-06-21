@@ -18,7 +18,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY out)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY out)
-set(CMAKE_SOURCE_DIR src)
 
 # Convert desired SIMD_WIDTH into machine architecture flags.
 if(NOT(SIMD_WIDTH))
@@ -137,6 +136,7 @@ else()
 endif()
 
 add_library(libstim ${SOURCE_FILES_NO_MAIN})
+target_include_directories(libstim PUBLIC src/include)
 set_target_properties(libstim PROPERTIES PREFIX "")
 if(NOT(MSVC))
     target_compile_options(libstim PRIVATE -O3 -Wall -Wpedantic ${MACHINE_FLAG})
