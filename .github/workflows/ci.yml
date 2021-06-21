@@ -54,9 +54,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - run: cmake .
-    - run: make stim_library
+    - run: make libstim
     - run: echo 'namespace stim_internal{bool find_bool_argument(const char *name,int argc,const char **argv);}int main(int argc,const char **argv) {return !stim_internal::find_bool_argument("test", argc, argv);}' > test.cc
-    - run: g++ test.cc libstim_library.a
+    - run: g++ test.cc out/libstim.a
     - run: ./a.out test
   benchmark_windows:
     runs-on: windows-latest
