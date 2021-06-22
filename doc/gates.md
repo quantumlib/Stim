@@ -1719,7 +1719,7 @@
     These results are optionally appended to the detector results, depending on simulator arguments / command line flags.
     
     Note that observables are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
-    measurement cannot flip a logical observable that include that measurement, but placing an `X_ERROR(1)` does flip the
+    measurement cannot flip a logical observable that includes that measurement, but placing an `X_ERROR(1)` does flip the
     observable. This is because observables are used for detecting errors, not for verifying noiseless functionality.
     
     Note that observable indices are NOT shifted by SHIFT_COORDS.

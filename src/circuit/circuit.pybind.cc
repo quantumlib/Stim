@@ -593,7 +593,7 @@ void pybind_circuit(pybind11::module &m) {
             } else {
                 throw std::invalid_argument(
                     "Unrecognized circuit type. Expected type to start with "
-                    "'surface_code:', 'repetition_code:', or 'color_code:");
+                    "'surface_code:', 'repetition_code:', or 'color_code:'.");
             }
         },
         pybind11::arg("code_task"),

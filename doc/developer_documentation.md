@@ -75,7 +75,7 @@ Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 Ensure python environment dependencies are present:
 
 ```bash
-pip install -y pybind11
+pip install pybind11
 ```
 
 Create a source distribution:
@@ -188,4 +188,51 @@ pip install pytest
 pip install -e glue/cirq
 python -m pytest glue/cirq
 python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
+```
+
+## Static Linking (cmake)
+
+**WARNING**.
+Stim's C++ API is not stable.
+It may change in incompatible ways from version to version.
+There's also no API reference, although the basics are essentially identical to the python API.
+You will have to rely on reading method signatures and comments to discover functionality.
+
+Assuming that's acceptable to you...
+
+In your `CMakeLists.txt` file, use `FetchContent` to automatically fetch stim from github:
+
+```
+include(FetchContent)
+FetchContent_Declare(stim
+        GIT_REPOSITORY https://github.com/quantumlib/stim.git
+        GIT_TAG v1.4.0)
+FetchContent_GetProperties(stim)
+if(NOT stim_POPULATED)
+  FetchContent_Populate(stim)
+  add_subdirectory(${stim_SOURCE_DIR})
+endif()
+```
+
+(Replace `v1.4.0` with another version tag as appropriate.)
+
+Then link to `libstim` in targets using stim:
+
+```
+target_link_libraries(some_target_defined_in_your_cmake_file PRIVATE libstim)
+```
+
+And finally `#include "stim.h"` to use stim types and functions:
+
+```
+#include "stim.h"
+
+stim::Circuit make_bell_pair_circuit() {
+    return stim::Circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+    )CIRCUIT");
+}
 ```

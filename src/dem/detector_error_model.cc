@@ -27,9 +27,6 @@ constexpr uint64_t OBSERVABLE_BIT = uint64_t{1} << 63;
 constexpr uint64_t SEPARATOR_SYGIL = UINT64_MAX;
 
 DemTarget DemTarget::observable_id(uint32_t id) {
-    if (id >= (uint64_t{1} << 62)) {
-        throw std::invalid_argument("observable id too large.");
-    }
     return {OBSERVABLE_BIT | id};
 }
 DemTarget DemTarget::relative_detector_id(uint64_t id) {
@@ -49,6 +46,13 @@ bool DemTarget::is_relative_detector_id() const {
 }
 uint64_t DemTarget::raw_id() const {
     return data & ~OBSERVABLE_BIT;
+}
+
+uint64_t DemTarget::val() const {
+    if (data == SEPARATOR_SYGIL) {
+        throw std::invalid_argument("Separator doesn't have an integer value.");
+    }
+    return raw_id();
 }
 
 bool DemTarget::operator==(const DemTarget &other) const {

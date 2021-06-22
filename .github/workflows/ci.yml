@@ -49,6 +49,15 @@ jobs:
     - run: cmake .
     - run: make stim
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
+  build_lib:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - run: cmake .
+    - run: make libstim
+    - run: echo 'namespace stim_internal{bool find_bool_argument(const char *name,int argc,const char **argv);}int main(int argc,const char **argv) {return !stim_internal::find_bool_argument("test", argc, argv);}' > test.cc
+    - run: g++ test.cc out/libstim.a
+    - run: ./a.out test
   benchmark_windows:
     runs-on: windows-latest
     steps:

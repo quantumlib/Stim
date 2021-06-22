@@ -17,10 +17,10 @@
 #ifndef STIM_H
 #define STIM_H
 
-#include "simulators/frame_simulator.h"
-#include "simulators/tableau_simulator.h"
-#include "stabilizers/pauli_string.h"
-#include "stabilizers/tableau.h"
+#include "../simulators/frame_simulator.h"
+#include "../simulators/tableau_simulator.h"
+#include "../stabilizers/pauli_string.h"
+#include "../stabilizers/tableau.h"
 
 namespace stim {
 using Circuit = stim_internal::Circuit;
