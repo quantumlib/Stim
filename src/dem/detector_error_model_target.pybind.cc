@@ -87,6 +87,22 @@ void pybind_detector_error_model_target(pybind11::module &m) {
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "val",
+        &ExposedDemTarget::val,
+        clean_doc_string(u8R"DOC(
+            Returns the target's integer value.
+
+            Example:
+
+                >>> import stim
+                >>> stim.target_relative_detector_id(5).val
+                5
+                >>> stim.target_logical_observable_id(6).val
+                6
+        )DOC")
+            .data());
+
     c.def(
         "is_separator",
         &ExposedDemTarget::is_separator,

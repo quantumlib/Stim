@@ -74,6 +74,7 @@
     - [`stim.DemTarget.is_logical_observable_id`](#stim.DemTarget.is_logical_observable_id)
     - [`stim.DemTarget.is_relative_detector_id`](#stim.DemTarget.is_relative_detector_id)
     - [`stim.DemTarget.is_separator`](#stim.DemTarget.is_separator)
+    - [`stim.DemTarget.val`](#stim.DemTarget.val)
 - [`stim.DetectorErrorModel`](#stim.DetectorErrorModel)
     - [`stim.DetectorErrorModel.__eq__`](#stim.DetectorErrorModel.__eq__)
     - [`stim.DetectorErrorModel.__getitem__`](#stim.DetectorErrorModel.__getitem__)
@@ -1390,6 +1391,19 @@
 ### `stim.DemTarget.is_separator(self) -> bool`<a name="stim.DemTarget.is_separator"></a>
 > ```
 > Determines if the detector error model target is a separator (like "^" in a .dem file).
+> ```
+
+### `stim.DemTarget.val`<a name="stim.DemTarget.val"></a>
+> ```
+> Returns the target's integer value.
+> 
+> Example:
+> 
+>     >>> import stim
+>     >>> stim.target_relative_detector_id(5).val
+>     5
+>     >>> stim.target_logical_observable_id(6).val
+>     6
 > ```
 
 ### `stim.DetectorErrorModel.__eq__(self, arg0: stim.DetectorErrorModel) -> bool`<a name="stim.DetectorErrorModel.__eq__"></a>

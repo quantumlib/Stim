@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import stim
 
 
@@ -34,17 +35,23 @@ def test_str():
 
 
 def test_properties():
-    assert stim.target_relative_detector_id(5).is_relative_detector_id();
-    assert not stim.target_relative_detector_id(5).is_logical_observable_id();
-    assert not stim.target_relative_detector_id(5).is_separator();
+    assert stim.target_relative_detector_id(6).val == 6
+    assert stim.target_relative_detector_id(5).val == 5
+    assert stim.target_relative_detector_id(5).is_relative_detector_id()
+    assert not stim.target_relative_detector_id(5).is_logical_observable_id()
+    assert not stim.target_relative_detector_id(5).is_separator()
 
-    assert not stim.target_logical_observable_id(5).is_relative_detector_id();
-    assert stim.target_logical_observable_id(5).is_logical_observable_id();
-    assert not stim.target_logical_observable_id(5).is_separator();
+    assert stim.target_logical_observable_id(6).val == 6
+    assert stim.target_logical_observable_id(5).val == 5
+    assert not stim.target_logical_observable_id(5).is_relative_detector_id()
+    assert stim.target_logical_observable_id(5).is_logical_observable_id()
+    assert not stim.target_logical_observable_id(5).is_separator()
 
-    assert not stim.target_separator().is_relative_detector_id();
-    assert not stim.target_separator().is_logical_observable_id();
-    assert stim.target_separator().is_separator();
+    assert not stim.target_separator().is_relative_detector_id()
+    assert not stim.target_separator().is_logical_observable_id()
+    assert stim.target_separator().is_separator()
+    with pytest.raises(ValueError, match="Separator"):
+        _ = stim.target_separator().val
 
 
 def test_repr():

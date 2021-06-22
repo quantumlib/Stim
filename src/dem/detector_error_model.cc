@@ -48,6 +48,13 @@ uint64_t DemTarget::raw_id() const {
     return data & ~OBSERVABLE_BIT;
 }
 
+uint64_t DemTarget::val() const {
+    if (data == SEPARATOR_SYGIL) {
+        throw std::invalid_argument("Separator doesn't have an integer value.");
+    }
+    return raw_id();
+}
+
 bool DemTarget::operator==(const DemTarget &other) const {
     return data == other.data;
 }

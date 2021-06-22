@@ -44,6 +44,7 @@ struct DemTarget {
         return {UINT64_MAX};
     }
     uint64_t raw_id() const;
+    uint64_t val() const;
     bool is_observable_id() const;
     bool is_separator() const;
     bool is_relative_detector_id() const;
