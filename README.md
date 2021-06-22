@@ -49,4 +49,4 @@ See the [command line documentation](doc/usage_command_line.md).
 
 # Building the code
 
-See the [developer documentation](dev/README.md).
+See the [developer documentation](doc/developer_documentation.md).
