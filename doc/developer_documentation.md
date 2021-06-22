@@ -75,7 +75,7 @@ Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 Ensure python environment dependencies are present:
 
 ```bash
-pip install -y pybind11
+pip install pybind11
 ```
 
 Create a source distribution:
