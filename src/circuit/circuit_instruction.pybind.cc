@@ -46,17 +46,7 @@ std::string CircuitInstruction::repr() const {
         }
         result << t.repr();
     }
-    result << "], [";
-    first = true;
-    for (const auto &t : gate_args) {
-        if (first) {
-            first = false;
-        } else {
-            result << ", ";
-        }
-        result << t;
-    }
-    result << "])";
+    result << "], [" << comma_sep(gate_args) << "])";
     return result.str();
 }
 std::string CircuitInstruction::name() const {

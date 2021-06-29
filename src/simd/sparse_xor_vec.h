@@ -25,6 +25,7 @@
 #include <sstream>
 #include <vector>
 
+#include "../str_util.h"
 #include "monotonic_buffer.h"
 
 namespace stim_internal {
@@ -201,16 +202,7 @@ struct SparseXorVec {
 
 template <typename T>
 std::ostream &operator<<(std::ostream &out, const stim_internal::SparseXorVec<T> &v) {
-    out << "SparseXorVec{";
-    bool first = true;
-    for (auto &e : v) {
-        if (!first) {
-            out << ", ";
-        }
-        first = false;
-        out << e;
-    }
-    out << "}";
+    out << "SparseXorVec{" << comma_sep(v) << "}";
     return out;
 }
 

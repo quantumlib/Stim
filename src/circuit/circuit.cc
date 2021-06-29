@@ -20,6 +20,7 @@
 
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/tableau.h"
+#include "../str_util.h"
 #include "gate_data.h"
 
 using namespace stim_internal;
@@ -60,6 +61,21 @@ void write_target(std::ostream &out, uint32_t t) {
     }
 }
 
+std::string target_str(uint32_t t) {
+    std::stringstream out;
+    write_target(out, t);
+    return out.str();
+}
+
+std::string targets_str(ConstPointerRange<uint32_t> targets) {
+    std::stringstream out;
+    for (auto t : targets) {
+        out << ' ';
+        write_target(out, t);
+    }
+    return out.str();
+}
+
 uint64_t stim_internal::op_data_rep_count(const OperationData &data) {
     uint64_t low = data.targets[1];
     uint64_t high = data.targets[2];
@@ -70,24 +86,30 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
     if (gate.flags & GATE_TARGETS_PAIRS) {
         if (targets.size() & 1) {
             throw std::invalid_argument(
-                "Two qubit gate " + std::string(gate.name) + " requires have an even number of targets.");
+                "Two qubit gate " + std::string(gate.name) +
+                " requires an even number of targets but was given "
+                "(" +
+                comma_sep(args).str() + ").");
         }
         for (size_t k = 0; k < targets.size(); k += 2) {
             if (targets[k] == targets[k + 1]) {
                 throw std::invalid_argument(
-                    "Interacting a target with itself " + std::to_string(targets[k] & TARGET_VALUE_MASK) +
-                    " using gate " + std::string(gate.name) + ".");
+                    "The two qubit gate " + std::string(gate.name) +
+                    " was applied to a target pair with the same target (" + target_str(targets[k]) +
+                    ") twice. Gates can't interact targets with themselves.");
             }
         }
     }
 
     if (args.size() != gate.arg_count && gate.arg_count != ARG_COUNT_VARIABLE) {
         throw std::invalid_argument(
-            "Gate " + std::string(gate.name) + " takes " + std::to_string(gate.arg_count) + " args.");
+            "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " arguments (" +
+            comma_sep(args).str() + ") but takes " + std::to_string(gate.arg_count) + " arguments.");
     }
 
     if ((gate.flags & GATE_TAKES_NO_TARGETS) && !targets.empty()) {
-        throw std::invalid_argument("Gate " + std::string(gate.name) + " takes 0 targets.");
+        throw std::invalid_argument(
+            "Gate " + std::string(gate.name) + " takes no targets but was given targets" + targets_str(targets) + ".");
     }
 
     if (gate.flags & GATE_ARGS_ARE_DISJOINT_PROBABILITIES) {
@@ -95,14 +117,15 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
         for (const auto p : args) {
             if (p < 0 || p > 1) {
                 throw std::invalid_argument(
-                    "Argument " + std::to_string(p) + " given to gate " + std::string(gate.name) +
-                    " is not a probability.");
+                    "Gate " + std::string(gate.name) + " only takes probability arguments, but one of its arguments (" +
+                    comma_sep(args).str() + ") wasn't a probability.");
             }
             total += p;
         }
         if (total > 1.0000001) {
             throw std::invalid_argument(
-                "The disjoint probability arguments given to gate " + std::string(gate.name) + " sum to more than 1.");
+                "The disjoint probability arguments (" + comma_sep(args).str() + ") given to gate " +
+                std::string(gate.name) + " sum to more than 1.");
         }
     }
 

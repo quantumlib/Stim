@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "../simd/monotonic_buffer.h"
+#include "../simd/pointer_range.h"
 #include "gate_data.h"
 
 namespace stim_internal {
