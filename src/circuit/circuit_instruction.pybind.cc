@@ -15,6 +15,7 @@
 #include "circuit_instruction.pybind.h"
 
 #include "../py/base.pybind.h"
+#include "../str_util.h"
 #include "circuit_gate_target.pybind.h"
 #include "gate_data.h"
 
