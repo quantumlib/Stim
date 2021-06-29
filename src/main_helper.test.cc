@@ -583,7 +583,7 @@ TEST(main_helper, detector_hypergraph_deprecated) {
 }
 
 TEST(main_helper, analyze_errors) {
-    ASSERT_EQ(execute({"--analyze_errors"}, ""), "");
+    ASSERT_EQ(execute({"--analyze_errors"}, ""), "\n");
 
     ASSERT_EQ(
         trim(execute({"--analyze_errors"}, R"input(

@@ -130,7 +130,8 @@ int main_mode_analyze_errors(int argc, const char **argv) {
         fclose(in);
     }
     out << ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit, decompose_errors, fold_loops, allow_gauge_detectors, approximate_disjoint_errors_threshold);
+               circuit, decompose_errors, fold_loops, allow_gauge_detectors, approximate_disjoint_errors_threshold)
+        << "\n";
     return EXIT_SUCCESS;
 }
 

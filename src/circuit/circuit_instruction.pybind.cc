@@ -15,6 +15,7 @@
 #include "circuit_instruction.pybind.h"
 
 #include "../py/base.pybind.h"
+#include "../str_util.h"
 #include "circuit_gate_target.pybind.h"
 #include "gate_data.h"
 
@@ -46,17 +47,7 @@ std::string CircuitInstruction::repr() const {
         }
         result << t.repr();
     }
-    result << "], [";
-    first = true;
-    for (const auto &t : gate_args) {
-        if (first) {
-            first = false;
-        } else {
-            result << ", ";
-        }
-        result << t;
-    }
-    result << "])";
+    result << "], [" << comma_sep(gate_args) << "])";
     return result.str();
 }
 std::string CircuitInstruction::name() const {

@@ -107,6 +107,7 @@ set(TEST_FILES
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
         src/stabilizers/tableau.test.cc
+        src/str_util.test.cc
         src/test_util.test.cc
         )
 set(BENCHMARK_FILES

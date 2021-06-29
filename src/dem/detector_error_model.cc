@@ -20,6 +20,7 @@
 #include <iomanip>
 
 #include "../simulators/error_analyzer.h"
+#include "../str_util.h"
 
 using namespace stim_internal;
 
@@ -144,14 +145,7 @@ std::ostream &operator<<(std::ostream &out, const DemInstructionType &type) {
 std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
     out << op.type;
     if (!op.arg_data.empty()) {
-        out << "(";
-        for (size_t k = 0; k < op.arg_data.size(); k++) {
-            if (k > 0) {
-                out << ", ";
-            }
-            out << op.arg_data[k];
-        }
-        out << ")";
+        out << "(" << comma_sep(op.arg_data) << ")";
     }
     if (op.type == DEM_SHIFT_DETECTORS || op.type == DEM_REPEAT_BLOCK) {
         for (const auto &e : op.target_data) {

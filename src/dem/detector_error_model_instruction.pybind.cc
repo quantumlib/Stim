@@ -36,17 +36,9 @@ std::string ExposedDemInstruction::str() const {
 std::string ExposedDemInstruction::repr() const {
     std::stringstream out;
     out << "stim.DemInstruction('" << type << "', [";
-    bool first = true;
-    for (const auto &e : arguments) {
-        if (first) {
-            first = false;
-        } else {
-            out << ", ";
-        }
-        out << e;
-    }
+    out << comma_sep(arguments);
     out << "], [";
-    first = true;
+    bool first = true;
     for (const auto &e : targets) {
         if (first) {
             first = false;
