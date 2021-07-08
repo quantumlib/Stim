@@ -126,9 +126,11 @@ struct ErrorAnalyzer {
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
     /// Use that degree of freedom to delete the largest detector in the set from the system.
     void remove_gauge(ConstPointerRange<DemTarget> sorted);
-    void check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge);
+    void check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge, const char *context);
     void check_for_gauge(
-        SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2);
+        SparseXorVec<DemTarget> &potential_gauge_summand_1,
+        SparseXorVec<DemTarget> &potential_gauge_summand_2,
+        const char *context);
 
     void shift_active_detector_ids(int64_t shift);
     void flush();

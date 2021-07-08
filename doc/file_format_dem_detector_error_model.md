@@ -230,7 +230,7 @@ and separator targets.
 #### relative detector target
 
 A relative detector target is a non-negative integer prefixed by `D`, such as `D5`.
-It refers to a symptom in the error model
+It refers to a symptom in the error model.
 To get the actual detector target specified by the relative detector target, the integer after the `D`
 has to be added into the current relative detector offset.
 
@@ -266,8 +266,7 @@ involves tracking several pieces of state.
     including ones not involved in any error mechanism
     (i.e. only declared by `detector` and `logical_observable` instructions).
 3. **The Edges (error mechanisms)**.
-    The error model must include every mentioned error mechanism,
-    and reducible error mechanism.
+    The error model must include the mentioned error mechanisms.
 
 ## Examples
 
@@ -305,7 +304,7 @@ repeat 9 {
 
 This is the output from
 `stim --gen repetition_code --task memory --rounds 1000 --distance 3 --after_clifford_depolarization 0.001 | stim --analyze_errors --fold_loops`.
-It includes noise operations and annotations for the spacetime layout of the circuit.
+It includes coordinate annotations for the spacetime layout of the detectors.
 
 ```
 error(0.0002667378157289137966) D0
@@ -370,7 +369,7 @@ detector(5, 1) D8
 
 This is the output from
 `stim --gen surface_code --task rotated_memory_x --rounds 1000 --distance 2 --after_clifford_depolarization 0.001 | stim --analyze_errors --fold_loops --decompose_errors`.
-It includes noise operations and annotations for the spacetime layout of the circuit.
+It includes coordinate annotations for the spacetime layout of the detectors.
 
 ```
 error(0.0002667378157289137966) D0

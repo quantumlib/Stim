@@ -44,7 +44,7 @@ void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
 void ErrorAnalyzer::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        check_for_gauge(zs[q]);
+        check_for_gauge(zs[q], "an X-basis reset");
         xs[q].clear();
         zs[q].clear();
     }
@@ -53,7 +53,7 @@ void ErrorAnalyzer::RX(const OperationData &dat) {
 void ErrorAnalyzer::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        check_for_gauge(xs[q], zs[q]);
+        check_for_gauge(xs[q], zs[q], "a Y-basis reset");
         xs[q].clear();
         zs[q].clear();
     }
@@ -62,32 +62,37 @@ void ErrorAnalyzer::RY(const OperationData &dat) {
 void ErrorAnalyzer::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        check_for_gauge(xs[q]);
+        check_for_gauge(xs[q], "a Z-basis reset");
         xs[q].clear();
         zs[q].clear();
     }
 }
 
 void ErrorAnalyzer::check_for_gauge(
-    SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2) {
+    SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2, const char *context) {
     if (potential_gauge_summand_1 == potential_gauge_summand_2) {
         return;
     }
     potential_gauge_summand_1 ^= potential_gauge_summand_2;
-    check_for_gauge(potential_gauge_summand_1);
+    check_for_gauge(potential_gauge_summand_1, context);
+    potential_gauge_summand_1 ^= potential_gauge_summand_2;
 }
 
-void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge) {
+void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge, const char *context) {
     if (potential_gauge.empty()) {
         return;
     }
-    if (!allow_gauge_detectors) {
-        throw std::invalid_argument("A detector or observable anti-commuted with a measurement or reset.");
-    }
     for (const auto &t : potential_gauge) {
         if (t.is_observable_id()) {
-            throw std::invalid_argument("An observable anti-commuted with a measurement or reset.");
+            throw std::invalid_argument(
+                "The observable " + t.str() + " anti-commuted with " + std::string(context) + ".\n"
+                "All objects anti-commuting with that operation: " + comma_sep(potential_gauge).str());
         }
+    }
+    if (!allow_gauge_detectors) {
+        throw std::invalid_argument(
+            "The detectors " + comma_sep(potential_gauge).str() + " anti-commuted with " + std::string(context) + ","
+            " and allow_gauge_detectors isn't set.");
     }
     remove_gauge(add_error(0.5, potential_gauge.range()));
 }
@@ -100,7 +105,7 @@ void ErrorAnalyzer::MX(const OperationData &dat) {
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
-        check_for_gauge(zs[q]);
+        check_for_gauge(zs[q], "an X-basis measurement");
     }
 }
 
@@ -113,8 +118,24 @@ void ErrorAnalyzer::MY(const OperationData &dat) {
         std::sort(d.begin(), d.end());
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q], zs[q]);
+        check_for_gauge(xs[q], zs[q], "a Y-basis measurement");
     }
+}
+
+void xor_sort(std::vector<DemTarget> &d) {
+    std::sort(d.begin(), d.end());
+
+    // Cancel duplicate pairs.
+    size_t skip = 0;
+    for (size_t k2 = 0; k2 < d.size(); k2++) {
+        if (k2 + 1 < d.size() && d[k2] == d[k2 + 1]) {
+            skip += 2;
+            k2 += 1;
+        } else if (skip) {
+            d[k2 - skip] = d[k2];
+        }
+    }
+    d.resize(d.size() - skip);
 }
 
 void ErrorAnalyzer::MZ(const OperationData &dat) {
@@ -123,9 +144,10 @@ void ErrorAnalyzer::MZ(const OperationData &dat) {
         scheduled_measurement_time++;
 
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        std::sort(d.begin(), d.end());
+        xor_sort(d);
+
         zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q]);
+        check_for_gauge(xs[q], "a Z-basis measurement");
     }
 }
 
@@ -454,7 +476,7 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
 
 void ErrorAnalyzer::post_check_initialization() {
     for (const auto &x : xs) {
-        check_for_gauge(x);
+        check_for_gauge(x, "qubit initialization into |0> at the start of the circuit");
     }
 }
 

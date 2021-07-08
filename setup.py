@@ -27,14 +27,14 @@ TEST_HEADERS = glob.glob("src/**/*.test.h", recursive=True)
 PERF_HEADERS = glob.glob("src/**/*.perf.h", recursive=True)
 RELEVANT_HEADERS = sorted(set(ALL_HEADERS) - set(TEST_HEADERS + PERF_HEADERS))
 
-version = '1.4.dev0'
+version = '1.5.dev0'
 
 extension_module = Extension(
     'stim',
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include()],
     language='c++',
-    extra_compile_args=['-std=c++11', '-march=native', '-O3', f'-DVERSION_INFO={version}']
+    extra_compile_args=['-std=c++11', '-fno-strict-aliasing', '-march=native', '-O3', f'-DVERSION_INFO={version}']
 )
 
 with open('glue/python/README.md') as f:

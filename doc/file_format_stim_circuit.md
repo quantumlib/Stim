@@ -203,8 +203,8 @@ Is there an observable in the circuit or isn't there?
 Should the tool produce 0 bits or 1 bit?
 That's the ambiguity.
 
-Note that a tool that unrolls loops  indexin the circuit will implicitly delete the ambiguous logical observables.
-Conversely, note that a tool that finds logical observables by iterating over the lines, looking
+Note that a tool that unrolls loops in the circuit will implicitly delete the ambiguous logical observables.
+Conversely, note that a tool that finds logical observables by iterating over the lines of the circuit file, looking
 for `OBSERVABLE_INCLUDE` instructions, will implicitly keep the ambiguous logical observables.
 Both of these methods seem "obviously correct" on their own, but they disagree about whether or not to keep the
 ambiguous observables.
