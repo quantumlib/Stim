@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include "../stabilizers/pauli_string.h"
+#include "../str_util.h"
 
 using namespace stim_internal;
 
@@ -69,7 +70,9 @@ void ErrorAnalyzer::RZ(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::check_for_gauge(
-    SparseXorVec<DemTarget> &potential_gauge_summand_1, SparseXorVec<DemTarget> &potential_gauge_summand_2, const char *context) {
+    SparseXorVec<DemTarget> &potential_gauge_summand_1,
+    SparseXorVec<DemTarget> &potential_gauge_summand_2,
+    const char *context) {
     if (potential_gauge_summand_1 == potential_gauge_summand_2) {
         return;
     }
@@ -85,13 +88,16 @@ void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gau
     for (const auto &t : potential_gauge) {
         if (t.is_observable_id()) {
             throw std::invalid_argument(
-                "The observable " + t.str() + " anti-commuted with " + std::string(context) + ".\n"
-                "All objects anti-commuting with that operation: " + comma_sep(potential_gauge).str());
+                "The observable " + t.str() + " anti-commuted with " + std::string(context) +
+                ".\n"
+                "All objects anti-commuting with that operation: " +
+                comma_sep(potential_gauge).str());
         }
     }
     if (!allow_gauge_detectors) {
         throw std::invalid_argument(
-            "The detectors " + comma_sep(potential_gauge).str() + " anti-commuted with " + std::string(context) + ","
+            "The detectors " + comma_sep(potential_gauge).str() + " anti-commuted with " + std::string(context) +
+            ","
             " and allow_gauge_detectors isn't set.");
     }
     remove_gauge(add_error(0.5, potential_gauge.range()));

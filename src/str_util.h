@@ -17,9 +17,9 @@
 #ifndef STIM_STR_UTIL_H
 #define STIM_STR_UTIL_H
 
+#include <ostream>
 #include <sstream>
 #include <string>
-#include <ostream>
 
 namespace stim_internal {
 /// Wraps an iterable object so that its values are printed with comma separators.

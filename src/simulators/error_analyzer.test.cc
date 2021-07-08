@@ -1853,25 +1853,41 @@ TEST(ErrorAnalyzer, duplicate_records_in_detectors) {
             X_ERROR(0.25) 0
             M 0
             DETECTOR
-        )CIRCUIT"), false, false, false, false);
+        )CIRCUIT"),
+        false,
+        false,
+        false,
+        false);
     auto m1 = ErrorAnalyzer::circuit_to_detector_error_model(
         Circuit(R"CIRCUIT(
             X_ERROR(0.25) 0
             M 0
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false);
+        )CIRCUIT"),
+        false,
+        false,
+        false,
+        false);
     auto m2 = ErrorAnalyzer::circuit_to_detector_error_model(
         Circuit(R"CIRCUIT(
             X_ERROR(0.25) 0
             M 0
             DETECTOR rec[-1] rec[-1]
-        )CIRCUIT"), false, false, false, false);
+        )CIRCUIT"),
+        false,
+        false,
+        false,
+        false);
     auto m3 = ErrorAnalyzer::circuit_to_detector_error_model(
         Circuit(R"CIRCUIT(
             X_ERROR(0.25) 0
             M 0
             DETECTOR rec[-1] rec[-1] rec[-1]
-        )CIRCUIT"), false, false, false, false);
+        )CIRCUIT"),
+        false,
+        false,
+        false,
+        false);
     ASSERT_EQ(m0, m2);
     ASSERT_EQ(m1, m3);
 }
