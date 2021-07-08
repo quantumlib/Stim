@@ -20,7 +20,6 @@
 #include <sstream>
 
 #include "../stabilizers/pauli_string.h"
-#include "../str_util.h"
 
 using namespace stim_internal;
 

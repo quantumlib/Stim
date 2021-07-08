@@ -94,6 +94,11 @@ inline void xor_merge_sort_temp_buffer_callback(
     }
 }
 
+template <typename T>
+struct SparseXorVec;
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const stim_internal::SparseXorVec<T> &v);
+
 /// A sparse set of integers that supports efficient xoring (computing the symmetric difference).
 template <typename T>
 struct SparseXorVec {
