@@ -15,6 +15,6 @@
  */
 
 #include "include/stim.h"
-#include "../circuit/gate_data.h"
+#include "circuit/gate_data.h"
 
 const stim_internal::GateDataMap &stim::GATE_DATA = stim_internal::GATE_DATA;
