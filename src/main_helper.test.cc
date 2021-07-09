@@ -638,7 +638,7 @@ DETECTOR rec[-1]
 DETECTOR rec[-2]
             )input")),
         trim(R"output(
-[exception=A detector or observable anti-commuted with a measurement or reset.]
+[exception=The detectors D0, D1 anti-commuted with a Z-basis reset, and allow_gauge_detectors isn't set.]
             )output"));
 }
 

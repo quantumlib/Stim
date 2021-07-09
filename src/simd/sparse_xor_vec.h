@@ -94,6 +94,14 @@ inline void xor_merge_sort_temp_buffer_callback(
     }
 }
 
+template <typename T>
+struct SparseXorVec;
+}
+
+template <typename T>
+std::ostream &operator<<(std::ostream &out, const stim_internal::SparseXorVec<T> &v);
+
+namespace stim_internal {
 /// A sparse set of integers that supports efficient xoring (computing the symmetric difference).
 template <typename T>
 struct SparseXorVec {
@@ -195,6 +203,14 @@ struct SparseXorVec {
         std::stringstream ss;
         ss << *this;
         return ss.str();
+    }
+
+    void check_invariants() const {
+        for (size_t k = 1; k < sorted_items.size(); k++) {
+            if (!(sorted_items[k - 1] < sorted_items[k])) {
+                throw std::invalid_argument(str() + " is not unique and sorted.");
+            }
+        }
     }
 };
 
