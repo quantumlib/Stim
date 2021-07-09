@@ -6,6 +6,7 @@ The intent of the file format is to act as a reasonably flexible configuration l
 
 ## Index
 
+- [Encoding](#Encoding)
 - [Syntax](#Syntax)
 - [Semantics](#Semantics)
     - [Instruction Types](#Instruction-Types)
@@ -25,6 +26,11 @@ The intent of the file format is to act as a reasonably flexible configuration l
     - [Repetition Code Error Model](#repetition-code-error-model)
     - [Surface Code Error Model](#surface-code-error-model)
 
+
+## Encoding
+
+Detector error model files are always encoded using UTF-8.
+Furthermore, the only place in the file where non-ASCII characters are permitted is inside of comments.
 
 ## Syntax
 
@@ -104,18 +110,19 @@ A detector error model file can contain several different types of instructions 
 
 #### detector instruction
 
-A `detector` instruction ensures a particular symptom is in the error model,
-even if no error mechanism mentions it.
-(Detectors can also be implicitly introduced by being mentioned in an error mechanism.)
-For example, this is important for when a quantum circuit includes a detector but happens to
-have been annotated with a noise model that never affects the detector, to ensure that the
-tool sampling the detection events in the circuit agrees with the detector error model on exactly
-how many detectors there are.
-A detector instruction may also include coordinate arguments, which hint at the spacetime location
-of the detector.
+A `detector` instruction declares a particular symptom that is in the error model.
+It is not necessary to explicitly declare detectors using detector instructions.
+Detectors can also be implicitly declared simply by being mentioned in an error mechanism,
+or by a detector with a larger absolute index being declared.
+However, an explicit declaration is the only way to annotate the detector with coordinates,
+suggesting a spacetime location for the detector.
 
-Note that when the current coordinate offset has more coordinates than the detector the additional coordinates are
-skipped. For example, if the offset is `(1,2,3)` and the detector relative position is `(10,10)` then the
+The detector instruction should have a detector target (the detector being declared, relative to the
+current detector index offset) and can include  any number of arguments specifying the detector's
+coordinates (relative to the current coordinate offset).
+Note that when the current coordinate offset has more coordinates than the detector,
+the additional coordinates are skipped.
+For example, if the offset is `(1,2,3)` and the detector relative position is `(10,10)` then the
 detector's absolute position would be `11,12`; not `11,12,3`. 
 
 Example: `detector D4` declares a detector with index 4 (relative to the current detector index offset).
@@ -131,11 +138,8 @@ and coordinates `2.5`, `3.5`, `6` (relative to the current coordinate offset).
 
 A `logical_observable` instruction ensures a particular frame change's existence is noted by the error model,
 even if no error mechanism affects it.
-(Logical observable frame changes can also be implicitly noted by being mentioned in an error mechanism.)
-For example, this is important for when a quantum circuit includes a logical observable but happens to
-have been annotated with a noise model that never affects the observable, to ensure that the
-tool sampling the observables in the circuit agrees with the detector error model on exactly
-how many observables there are.
+Frame changes can also be implicitly declared simply by being mentioned in an error mechanism or other
+instruction, or by a frame change with a larger absolute index being declared.
 
 Example: `logical_observable L1` declares a logical observable with index 1.
 
@@ -262,9 +266,14 @@ involves tracking several pieces of state.
     Interpreting relative detector targets and coordinate annotations requires tracking these
     two values, since they shift the targets and coordinates.
 2. **The Nodes (possible symptoms and frame changes)**.
-    The error model must include every mentioned symptom and frame change,
-    including ones not involved in any error mechanism
-    (i.e. only declared by `detector` and `logical_observable` instructions).
+    The error model must include every explicitly and implicitly declared detector (symptom) and
+    logical observable (frame change).
+    In practice this means computing the absolute index of the largest detector, and including
+    a number of detectors equal to that index plus one.
+    The same is done for frame changes: find the largest mentioned frame change index, and include
+    a number of frame changes equal to that index plus one.
+    Getting the number of nodes correct is important when parsing densely packed data that does not
+    include explicit detector indices or frame change indices.
 3. **The Edges (error mechanisms)**.
     The error model must include the mentioned error mechanisms.
 
