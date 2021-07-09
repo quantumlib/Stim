@@ -14,40 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef STIM_STR_UTIL_H
-#define STIM_STR_UTIL_H
+#ifndef STIM_STR_UTIL_FORWARD_DECLARATION_H
+#define STIM_STR_UTIL_FORWARD_DECLARATION_H
 
 #include <sstream>
 #include <string>
 #include <ostream>
 
-#include "str_util_forward_declaration.h"
+namespace stim_internal {
+/// A wrapper indicating a range of values should be printed with comma separators.
+template <typename TIter>
+struct CommaSep {
+    const TIter &iter;
+    std::string str() const;
+};
 
 template <typename TIter>
-std::string stim_internal::CommaSep<TIter>::str() const {
-    std::stringstream out;
-    out << *this;
-    return out.str();
-}
+CommaSep<TIter> comma_sep(const TIter &v);
 
-/// Wraps an iterable object so that its values are printed with comma separators.
-template <typename TIter>
-stim_internal::CommaSep<TIter> stim_internal::comma_sep(const TIter &v) {
-    return CommaSep<TIter>{v};
-}
+}  // namespace stim_internal
 
 template <typename TIter>
-std::ostream &operator<<(std::ostream &out, const stim_internal::CommaSep<TIter> &v) {
-    bool first = true;
-    for (const auto &t : v.iter) {
-        if (first) {
-            first = false;
-        } else {
-            out << ", ";
-        }
-        out << t;
-    }
-    return out;
-}
+std::ostream &operator<<(std::ostream &out, const stim_internal::CommaSep<TIter> &v);
 
 #endif

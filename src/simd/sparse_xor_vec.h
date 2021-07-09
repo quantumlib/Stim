@@ -25,7 +25,7 @@
 #include <sstream>
 #include <vector>
 
-#include "../str_util.h"
+#include "../str_util_forward_declaration.h"
 #include "monotonic_buffer.h"
 
 namespace stim_internal {
