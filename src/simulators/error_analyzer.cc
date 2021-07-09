@@ -80,6 +80,24 @@ void ErrorAnalyzer::check_for_gauge(
     potential_gauge_summand_1 ^= potential_gauge_summand_2;
 }
 
+// This is redundant with comma_sep from str_util.h, but for reasons I can't figure out
+// (something to do with a dependency cycle involving templates) the compilation fails
+// if I use that one.
+template <typename TIter>
+std::string comma_sep_workaround(const TIter &iterable) {
+    std::stringstream out;
+    bool first = true;
+    for (const auto &t : iterable) {
+        if (first) {
+            first = false;
+        } else {
+            out << ", ";
+        }
+        out << t;
+    }
+    return out.str();
+}
+
 void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge, const char *context) {
     if (potential_gauge.empty()) {
         return;
@@ -88,16 +106,13 @@ void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gau
         if (t.is_observable_id()) {
             throw std::invalid_argument(
                 "The observable " + t.str() + " anti-commuted with " + std::string(context) +
-                ".\n"
-                "All objects anti-commuting with that operation: " +
-                comma_sep(potential_gauge).str());
+                ".\nAll objects anti-commuting with that operation: " + comma_sep_workaround(potential_gauge));
         }
     }
     if (!allow_gauge_detectors) {
         throw std::invalid_argument(
-            "The detectors " + comma_sep(potential_gauge).str() + " anti-commuted with " + std::string(context) +
-            ","
-            " and allow_gauge_detectors isn't set.");
+            "The detectors " + comma_sep_workaround(potential_gauge) + " anti-commuted with " + std::string(context) +
+            ", and allow_gauge_detectors isn't set.");
     }
     remove_gauge(add_error(0.5, potential_gauge.range()));
 }
