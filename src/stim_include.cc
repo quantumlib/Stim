@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-#ifndef STIM_H
-#define STIM_H
+#include "include/stim.h"
+#include "../circuit/gate_data.h"
 
-#include "../simulators/frame_simulator.h"
-#include "../simulators/tableau_simulator.h"
-#include "../stabilizers/pauli_string.h"
-#include "../stabilizers/tableau.h"
-
-namespace stim {
-using Circuit = stim_internal::Circuit;
-using ErrorAnalyzer = stim_internal::ErrorAnalyzer;
-using FrameSimulator = stim_internal::FrameSimulator;
-using PauliString = stim_internal::PauliString;
-using Tableau = stim_internal::Tableau;
-using TableauSimulator = stim_internal::TableauSimulator;
-extern const stim_internal::GateDataMap &GATE_DATA;
-}  // namespace stim
-
-#endif
+const stim_internal::GateDataMap &stim::GATE_DATA = stim_internal::GATE_DATA;

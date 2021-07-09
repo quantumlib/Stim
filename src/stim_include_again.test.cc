@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef STIM_H
-#define STIM_H
+#include "include/stim.h"
 
-#include "../simulators/frame_simulator.h"
-#include "../simulators/tableau_simulator.h"
-#include "../stabilizers/pauli_string.h"
-#include "../stabilizers/tableau.h"
+#include "gtest/gtest.h"
 
-namespace stim {
-using Circuit = stim_internal::Circuit;
-using ErrorAnalyzer = stim_internal::ErrorAnalyzer;
-using FrameSimulator = stim_internal::FrameSimulator;
-using PauliString = stim_internal::PauliString;
-using Tableau = stim_internal::Tableau;
-using TableauSimulator = stim_internal::TableauSimulator;
-extern const stim_internal::GateDataMap &GATE_DATA;
-}  // namespace stim
-
-#endif
+TEST(stim, include2) {
+    stim::Circuit c("H 0");
+    ASSERT_EQ(c.count_qubits(), 1);
+    ASSERT_EQ(stim::GATE_DATA.at("PAULI_CHANNEL_2").arg_count, 15);
+}
