@@ -75,6 +75,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stabilizers/tableau.cc
         src/stabilizers/tableau_specialized_prepend.cc
         src/stabilizers/tableau_transposed_raii.cc
+        src/stim_include.cc
         )
 set(TEST_FILES
         src/arg_parse.test.cc
@@ -107,6 +108,8 @@ set(TEST_FILES
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
         src/stabilizers/tableau.test.cc
+        src/stim_include.test.cc
+        src/stim_include_again.test.cc
         src/str_util.test.cc
         src/test_util.test.cc
         )

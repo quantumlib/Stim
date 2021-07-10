@@ -17,6 +17,7 @@
 #ifndef STIM_H
 #define STIM_H
 
+#include "../dem/detector_error_model.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/pauli_string.h"
@@ -29,7 +30,8 @@ using FrameSimulator = stim_internal::FrameSimulator;
 using PauliString = stim_internal::PauliString;
 using Tableau = stim_internal::Tableau;
 using TableauSimulator = stim_internal::TableauSimulator;
-const auto &GATE_DATA = stim_internal::GATE_DATA;
+using DetectorErrorModel = stim_internal::DetectorErrorModel;
+extern const stim_internal::GateDataMap &GATE_DATA;
 }  // namespace stim
 
 #endif
