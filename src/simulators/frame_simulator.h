@@ -22,7 +22,7 @@
 #include "../circuit/circuit.h"
 #include "../simd/simd_bit_table.h"
 #include "../stabilizers/pauli_string.h"
-#include "measure_record_batch.h"
+#include "../io/measure_record_batch.h"
 
 namespace stim_internal {
 
