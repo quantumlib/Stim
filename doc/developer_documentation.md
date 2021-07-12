@@ -222,7 +222,59 @@ Then link to `libstim` in targets using stim:
 target_link_libraries(some_target_defined_in_your_cmake_file PRIVATE libstim)
 ```
 
-And finally `#include "stim.h"` to use stim types and functions:
+And finally `#include "stim.h"` source files to use stim types and functions:
+
+```
+#include "stim.h"
+
+stim::Circuit make_bell_pair_circuit() {
+    return stim::Circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+    )CIRCUIT");
+}
+```
+
+## Static Linking (bazel)
+
+**WARNING**.
+Stim's C++ API is not stable.
+It may change in incompatible ways from version to version.
+There's also no API reference, although the basics are essentially identical to the python API.
+You will have to rely on reading method signatures and comments to discover functionality.
+
+Assuming that's acceptable to you...
+
+In your `WORKSPACE` file, include stim's git repo using `git_repository`:
+
+```
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "stim",
+    commit = "v1.4.0",
+    remote = "https://github.com/quantumlib/stim.git",
+)
+```
+
+(Replace `v1.4.0` with another version tag or commit SHA as appropriate.)
+
+Then in your `BUILD` file add `@stim//:stim_lib` to the relevant target's `deps`:
+
+```
+cc_binary(
+    ...
+    deps = [
+        ...
+        "@stim//:stim_lib",
+        ...
+    ],
+)
+```
+
+And finally `#include "stim.h"` in source files to use stim types and functions:
 
 ```
 #include "stim.h"

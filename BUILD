@@ -41,6 +41,7 @@ cc_library(
     name = "stim_lib",
     srcs = SOURCE_FILES_NO_MAIN,
     linkopts = ["-lpthread"],
+    includes = ["include/"],
 )
 
 cc_binary(
