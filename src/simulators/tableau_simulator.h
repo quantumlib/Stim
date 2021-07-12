@@ -27,7 +27,7 @@
 #include "../circuit/circuit.h"
 #include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
-#include "measure_record.h"
+#include "../io/measure_record.h"
 #include "vector_simulator.h"
 
 namespace stim_internal {

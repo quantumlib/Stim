@@ -52,6 +52,10 @@ set(SOURCE_FILES_NO_MAIN
         src/gen/gen_color_code.cc
         src/gen/gen_rep_code.cc
         src/gen/gen_surface_code.cc
+        src/io/measure_record_batch.cc
+        src/io/measure_record_batch_writer.cc
+        src/io/measure_record.cc
+        src/io/measure_record_writer.cc
         src/main_helper.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
@@ -64,10 +68,6 @@ set(SOURCE_FILES_NO_MAIN
         src/simulators/detection_simulator.cc
         src/simulators/error_analyzer.cc
         src/simulators/frame_simulator.cc
-        src/simulators/measure_record_batch.cc
-        src/simulators/measure_record_batch_writer.cc
-        src/simulators/measure_record.cc
-        src/simulators/measure_record_writer.cc
         src/simulators/tableau_simulator.cc
         src/simulators/vector_simulator.cc
         src/stabilizers/pauli_string.cc
@@ -87,6 +87,10 @@ set(TEST_FILES
         src/gen/gen_color_code.test.cc
         src/gen/gen_rep_code.test.cc
         src/gen/gen_surface_code.test.cc
+        src/io/measure_record.test.cc
+        src/io/measure_record_batch.test.cc
+        src/io/measure_record_batch_writer.test.cc
+        src/io/measure_record_writer.test.cc
         src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
@@ -100,10 +104,6 @@ set(TEST_FILES
         src/simulators/detection_simulator.test.cc
         src/simulators/error_analyzer.test.cc
         src/simulators/frame_simulator.test.cc
-        src/simulators/measure_record.test.cc
-        src/simulators/measure_record_batch.test.cc
-        src/simulators/measure_record_batch_writer.test.cc
-        src/simulators/measure_record_writer.test.cc
         src/simulators/tableau_simulator.test.cc
         src/simulators/vector_simulator.test.cc
         src/stabilizers/pauli_string.test.cc
