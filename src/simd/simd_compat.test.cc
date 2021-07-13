@@ -63,6 +63,7 @@ TEST(simd_compat, do_interleave8_tile128) {
     auto c1 = t1.u8;
     auto c2 = t2.u8;
     for (uint8_t k = 0; k < (uint8_t)sizeof(uint64_t) * 2; k++) {
+        ASSERT_LT(k, sizeof(t1.u8));
         c1[k] = k + 1;
         c2[k] = k + 128;
     }
