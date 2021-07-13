@@ -74,7 +74,7 @@ does create detection events.
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::OBSERVABLE_INCLUDE,
-            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
+            (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS),
             []() -> ExtraGateData {
                 return {
                     "Z_Annotations",

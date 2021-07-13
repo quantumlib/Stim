@@ -133,6 +133,14 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
                 "The disjoint probability arguments (" + comma_sep(args).str() + ") given to gate " +
                 std::string(gate.name) + " sum to more than 1.");
         }
+    } else if (gate.flags & GATE_ARGS_ARE_UNSIGNED_INTEGERS) {
+        for (const auto p : args) {
+            if (p < 0 || p != round(p)) {
+                throw std::invalid_argument(
+                    "Gate " + std::string(gate.name) + " only takes non-negative integer arguments, but one of its arguments (" +
+                    comma_sep(args).str() + ") wasn't a non-negative integer.");
+            }
+        }
     }
 
     // Check that targets are in range.

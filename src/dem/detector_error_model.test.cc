@@ -341,7 +341,7 @@ TEST(dem_instruction, general) {
     ASSERT_EQ((DemInstruction{p25, d1, DEM_ERROR}).str(), "error(0.25) L4 D3 ^ L11");
 }
 
-TEST(DetectorModel, total_detector_shift) {
+TEST(detector_error_model, total_detector_shift) {
     ASSERT_EQ(DetectorErrorModel("").total_detector_shift(), 0);
     ASSERT_EQ(DetectorErrorModel("error(0.3) D2").total_detector_shift(), 0);
     ASSERT_EQ(DetectorErrorModel("shift_detectors 5").total_detector_shift(), 5);
@@ -357,7 +357,7 @@ TEST(DetectorModel, total_detector_shift) {
         4005);
 }
 
-TEST(DetectorModel, count_detectors) {
+TEST(detector_error_model, count_detectors) {
     ASSERT_EQ(DetectorErrorModel("").count_detectors(), 0);
     ASSERT_EQ(DetectorErrorModel("error(0.3) D2 L1000").count_detectors(), 3);
     ASSERT_EQ(DetectorErrorModel("shift_detectors 5").count_detectors(), 0);
@@ -375,7 +375,7 @@ TEST(DetectorModel, count_detectors) {
         4048);
 }
 
-TEST(DetectorModel, count_observables) {
+TEST(detector_error_model, count_observables) {
     ASSERT_EQ(DetectorErrorModel("").count_observables(), 0);
     ASSERT_EQ(DetectorErrorModel("error(0.3) L2 D9999").count_observables(), 3);
     ASSERT_EQ(DetectorErrorModel("shift_detectors 5\nlogical_observable L3").count_observables(), 4);
@@ -390,4 +390,33 @@ TEST(DetectorModel, count_observables) {
     )MODEL")
             .count_observables(),
         7);
+}
+
+TEST(detector_error_model, from_file) {
+    FILE *f = tmpfile();
+    const char *program = R"MODEL(
+        error(0.125) D1
+        REPEAT 99 {
+            error(0.25) D3 D4
+            shift_detectors 1
+        }
+    )MODEL";
+    fprintf(f, "%s", program);
+    rewind(f);
+    auto d = DetectorErrorModel::from_file(f);
+    ASSERT_EQ(d, DetectorErrorModel(program));
+    d.clear();
+    rewind(f);
+    d.append_from_file(f);
+    ASSERT_EQ(d, DetectorErrorModel(program));
+    d.clear();
+    rewind(f);
+    d.append_from_file(f, false);
+    ASSERT_EQ(d, DetectorErrorModel(program));
+    d.clear();
+    rewind(f);
+    d.append_from_file(f, true);
+    ASSERT_EQ(d, DetectorErrorModel("error(0.125) D1"));
+    d.append_from_file(f, true);
+    ASSERT_EQ(d, DetectorErrorModel(program));
 }

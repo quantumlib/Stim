@@ -168,7 +168,7 @@ struct Circuit {
     ///         interactive (repl) mode, where measurements should produce results immediately instead of only after the
     ///         circuit is entirely specified. *This has significantly worse performance. It prevents measurement
     ///         batching.*
-    void append_from_file(FILE *file, bool stop_asap);
+    void append_from_file(FILE *file, bool stop_asap = false);
     /// Grows the circuit using operations from a string.
     ///
     /// Note: operations are automatically fused.
