@@ -31,7 +31,7 @@ struct TempViewableData {
 };
 
 TableauSimulator create_tableau_simulator() {
-    return TableauSimulator(0, PYBIND_SHARED_RNG());
+    return TableauSimulator(PYBIND_SHARED_RNG(), 0);
 }
 
 TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args) {
@@ -273,7 +273,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "do",
-        TableauSimulator::expand_do_circuit,
+        &TableauSimulator::expand_do_circuit,
         pybind11::arg("circuit"),
         clean_doc_string(u8R"DOC(
             Applies all the operations in the given stim.Circuit to the simulator's state.
