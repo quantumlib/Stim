@@ -30,7 +30,7 @@ struct emu_u128 {
 struct simd_word {
     union {
         uint64_t u64[2];
-        uint8_t u8[8];
+        uint8_t u8[16];
         emu_u128 u128[1];
     };
 

@@ -27,7 +27,7 @@ elseif(SIMD_WIDTH EQUAL 256)
 elseif(SIMD_WIDTH EQUAL 128)
     set(MACHINE_FLAG "-msse2")
 elseif(SIMD_WIDTH EQUAL 64)
-    set(MACHINE_FLAG "")
+    set(MACHINE_FLAG "-mno-avx2" "-mno-sse2")
 endif()
 
 set(SOURCE_FILES_NO_MAIN
