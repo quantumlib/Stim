@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "include/stim.h"
-
 #include "gtest/gtest.h"
+
+#include "include/stim.h"
 
 TEST(stim, include2) {
     stim::Circuit c("H 0");

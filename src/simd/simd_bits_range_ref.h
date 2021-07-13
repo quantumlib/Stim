@@ -85,6 +85,8 @@ struct simd_bits_range_ref {
     void clear();
     /// Randomizes the bits in the referenced range, up to the given bit count. Leaves further bits unchanged.
     void randomize(size_t num_bits, std::mt19937_64 &rng);
+    /// Returns the number of bits that are 1 in the bit range.
+    size_t popcnt() const;
 
     /// Writes bits from another location.
     /// Bits not part of the write are unchanged.

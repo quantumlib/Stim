@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "include/stim.h"
 #include "circuit/gate_data.h"
+#include "include/stim.h"
 
 const stim_internal::GateDataMap &stim::GATE_DATA = stim_internal::GATE_DATA;

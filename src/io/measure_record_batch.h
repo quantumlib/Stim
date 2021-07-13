@@ -60,8 +60,14 @@ struct MeasureRecordBatch {
     /// Returns:
     ///     A reference into the storage table, with the bit at offset k corresponding to the measurement from stream k.
     simd_bits_range_ref lookback(size_t lookback) const;
+    /// Xors a batch measurement result into pre-reserved noisy storage.
+    void xor_record_reserved_result(simd_bits_range_ref result);
     /// Appends a batch measurement result into storage.
     void record_result(simd_bits_range_ref result);
+    /// Reserves space for storing measurement results. Initializes bits to be noisy with the given probability.
+    void reserve_noisy_space_for_results(const OperationData &target_data, std::mt19937_64 &rng);
+    /// Ensures there is enough space for storing a number of measurement results, without moving memory.
+    void reserve_space_for_results(size_t count);
     /// Resets the record to an empty state.
     void clear();
 };

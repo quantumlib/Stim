@@ -20,9 +20,9 @@
 #include <random>
 
 #include "../circuit/circuit.h"
+#include "../io/measure_record_batch.h"
 #include "../simd/simd_bit_table.h"
 #include "../stabilizers/pauli_string.h"
-#include "../io/measure_record_batch.h"
 
 namespace stim_internal {
 
@@ -44,9 +44,32 @@ struct FrameSimulator {
 
     FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
 
-    static simd_bit_table sample_flipped_measurements(const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng);
+    /// Returns a batch of measurement-flipped samples from the circuit.
+    ///
+    /// Args:
+    ///     circuit: The circuit to sample from.
+    ///     num_shots: The number of shots of the circuit to run.
+    ///     rng: Random number generator.
+    ///
+    /// Returns:
+    ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
+    ///     Each bit in the table is whether a specific measurement was flipped in a specific shot.
+    static simd_bit_table sample_flipped_measurements(const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
+
+    /// Returns a batch of samples from the circuit.
+    ///
+    /// Args:
+    ///     circuit: The circuit to sample from.
+    ///     reference_sample: A known-good sample from the circuit, collected without any noise processes.
+    ///     num_shots: The number of shots of the circuit to run.
+    ///     rng: Random number generator.
+    ///
+    /// Returns:
+    ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
+    ///     Each bit in the table is a measurement result.
     static simd_bit_table sample(
         const Circuit &circuit, const simd_bits &reference_sample, size_t num_samples, std::mt19937_64 &rng);
+
     static void sample_out(
         const Circuit &circuit,
         const simd_bits &reference_sample,

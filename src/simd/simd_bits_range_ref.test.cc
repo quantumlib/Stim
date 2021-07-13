@@ -236,3 +236,15 @@ TEST(simd_bits_range_ref, truncated_overwrite_from) {
         ASSERT_EQ(mut[k], k < 455 ? dat[k] : old[k]) << k;
     }
 }
+
+TEST(simd_bits_range_ref, popcnt) {
+    simd_bits data(1024);
+    simd_bits_range_ref ref(data);
+    ASSERT_EQ(ref.popcnt(), 0);
+    data[101] = 1;
+    ASSERT_EQ(ref.popcnt(), 1);
+    data[0] = 1;
+    ASSERT_EQ(ref.popcnt(), 2);
+    data.u64[8] = 0xFFFFFFFFFFFFFFFFULL;
+    ASSERT_EQ(ref.popcnt(), 66);
+}

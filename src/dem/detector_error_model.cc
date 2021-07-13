@@ -483,7 +483,7 @@ void dem_read_instruction(DetectorErrorModel &model, char lead_char, SOURCE read
                 throw std::invalid_argument("Missing '{' at start of repeat block.");
             }
         } else {
-            read_parens_arguments(c, "detector error model instruction", read_char, ARG_COUNT_VARIABLE, model.arg_buf);
+            read_parens_arguments(c, "detector error model instruction", read_char, model.arg_buf);
             if (type == DEM_SHIFT_DETECTORS) {
                 if (read_until_next_line_arg(c, read_char)) {
                     model.target_buf.append_tail(DemTarget{read_uint60_t(c, read_char)});

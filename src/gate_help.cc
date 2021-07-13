@@ -80,7 +80,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
     out << "```\n";
     for (size_t k = 0; k < 3; k++) {
         out << name;
-        if (gate.flags & GATE_IS_NOISE) {
+        if ((gate.flags & GATE_IS_NOISE) || (k == 2 && (gate.flags & GATE_PRODUCES_NOISY_RESULTS))) {
             out << "(" << 0.001 << ")";
         }
         if (k != 1) {
@@ -91,7 +91,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         }
         if (k != 0) {
             out << " ";
-            if (gate.flags & GATE_PRODUCES_RESULTS) {
+            if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
                 out << "!";
             }
             out << 42;
@@ -280,7 +280,12 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     }
     auto data = gate.extra_data_func();
     out << data.description;
-    if (gate.flags & GATE_PRODUCES_RESULTS) {
+    if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
+        out << "If this gate is parameterized by a probability argument, the "
+               "recorded result will be flipped with that probability. "
+               "If not, the recorded result is noiseless. "
+               "Note that the noise only affects the recorded result, not the "
+               "target qubit's state.\n\n";
         out << "Prefixing a target with ! inverts its recorded measurement result.\n";
     }
 

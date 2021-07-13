@@ -119,3 +119,11 @@ void simd_bits_range_ref::truncated_overwrite_from(simd_bits_range_ref other, si
         u8[n8] |= other.u8[n8] & m8;
     }
 }
+size_t simd_bits_range_ref::popcnt() const {
+    auto end = u64 + num_u64_padded();
+    size_t result = 0;
+    for (const uint64_t *p = u64; p != end; p++) {
+        result += popcnt64(*p);
+    }
+    return result;
+}

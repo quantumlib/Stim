@@ -277,3 +277,15 @@ TEST(simd_bits, truncated_overwrite_from) {
         ASSERT_EQ(mut[k], k < 455 ? dat[k] : old[k]) << k;
     }
 }
+
+TEST(simd_bits, popcnt) {
+    simd_bits data(1024);
+    ASSERT_EQ(data.popcnt(), 0);
+    data[101] = 1;
+    ASSERT_EQ(data.popcnt(), 1);
+    data[0] = 1;
+    ASSERT_EQ(data.popcnt(), 2);
+    data.u64[8] = 0xFFFFFFFFFFFFFFFFULL;
+    ASSERT_EQ(data.popcnt(), 66);
+    ASSERT_EQ(simd_bits(0).popcnt(), 0);
+}

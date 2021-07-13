@@ -17,7 +17,6 @@
 #include <gtest/gtest.h>
 
 #include "../circuit/circuit.test.h"
-#include "../circuit/gate_data.h"
 #include "../test_util.test.h"
 #include "tableau_simulator.h"
 
@@ -105,7 +104,7 @@ TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
 }
 
 bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref output) {
-    auto tableau_sim = TableauSimulator(circuit.count_qubits(), SHARED_TEST_RNG());
+    auto tableau_sim = TableauSimulator(SHARED_TEST_RNG(), circuit.count_qubits());
     size_t out_p = 0;
     bool pass = true;
     circuit.for_each_operation([&](const Operation &op) {
@@ -929,6 +928,50 @@ TEST(FrameSimulator, stream_results_triple_shot) {
     }
 }
 
+TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RY 0
+        MY 0
+        MY 0
+        Z_ERROR(1) 0
+        MY 0
+        MY 0
+        Z_ERROR(1) 0
+        MY 0
+        MY 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_EQ(r[0].popcnt(), 0);
+    ASSERT_EQ(r[1].popcnt(), 0);
+    ASSERT_EQ(r[2].popcnt(), 10000);
+    ASSERT_EQ(r[3].popcnt(), 10000);
+    ASSERT_EQ(r[4].popcnt(), 0);
+    ASSERT_EQ(r[5].popcnt(), 0);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RY 0
+        MRY 0
+        MRY 0
+        Z_ERROR(1) 0
+        MRY 0
+        MRY 0
+        Z_ERROR(1) 0
+        MRY 0
+        MRY 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_EQ(r[0].popcnt(), 0);
+    ASSERT_EQ(r[1].popcnt(), 0);
+    ASSERT_EQ(r[2].popcnt(), 10000);
+    ASSERT_EQ(r[3].popcnt(), 0);
+    ASSERT_EQ(r[4].popcnt(), 10000);
+    ASSERT_EQ(r[5].popcnt(), 0);
+}
+
 TEST(FrameSimulator, resets_vs_measurements) {
     auto check = [&](const char *circuit, std::vector<bool> results) {
         simd_bits ref(results.size());
@@ -1076,4 +1119,184 @@ TEST(FrameSimulator, resets_vs_measurements) {
             true,
             false,
         }));
+}
+
+TEST(FrameSimulator, noisy_measurement_x) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RX 0
+        MX(0.05) 0
+        MX 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RX 0 1
+        Z_ERROR(1) 0 1
+        MX(0.05) 0 1
+        MX 0 1
+    )CIRCUIT"),
+        5000,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 5000);
+    ASSERT_EQ(r[3].popcnt(), 5000);
+}
+
+TEST(FrameSimulator, noisy_measurement_y) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RY 0
+        MY(0.05) 0
+        MY 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RY 0 1
+        Z_ERROR(1) 0 1
+        MY(0.05) 0 1
+        MY 0 1
+    )CIRCUIT"),
+        5000,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 5000);
+    ASSERT_EQ(r[3].popcnt(), 5000);
+}
+
+TEST(FrameSimulator, noisy_measurement_z) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RZ 0
+        MZ(0.05) 0
+        MZ 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RZ 0 1
+        X_ERROR(1) 0 1
+        MZ(0.05) 0 1
+        MZ 0 1
+    )CIRCUIT"),
+        5000,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 5000);
+    ASSERT_EQ(r[3].popcnt(), 5000);
+}
+
+TEST(FrameSimulator, noisy_measure_reset_x) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RX 0
+        MRX(0.05) 0
+        MRX 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RX 0 1
+        Z_ERROR(1) 0 1
+        MRX(0.05) 0 1
+        MRX 0 1
+    )CIRCUIT"),
+        5000,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 0);
+    ASSERT_EQ(r[3].popcnt(), 0);
+}
+
+TEST(FrameSimulator, noisy_measure_reset_y) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RY 0
+        MRY(0.05) 0
+        MRY 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RY 0 1
+        Z_ERROR(1) 0 1
+        MRY(0.05) 0 1
+        MRY 0 1
+    )CIRCUIT"),
+        5000,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 0);
+    ASSERT_EQ(r[3].popcnt(), 0);
+}
+
+TEST(FrameSimulator, noisy_measure_reset_z) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RZ 0
+        MRZ(0.05) 0
+        MRZ 0
+    )CIRCUIT"),
+        10000,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        RZ 0 1
+        X_ERROR(1) 0 1
+        MRZ(0.05) 0 1
+        MRZ 0 1
+    )CIRCUIT"),
+        5000,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 0);
+    ASSERT_EQ(r[3].popcnt(), 0);
 }

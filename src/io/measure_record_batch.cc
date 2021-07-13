@@ -18,6 +18,7 @@
 
 #include <algorithm>
 
+#include "../probability_util.h"
 #include "measure_record_batch_writer.h"
 
 using namespace stim_internal;
@@ -29,12 +30,30 @@ MeasureRecordBatch::MeasureRecordBatch(size_t num_shots, size_t max_lookback)
     }
 }
 
-void MeasureRecordBatch::record_result(simd_bits_range_ref result) {
-    if (stored >= storage.num_major_bits_padded()) {
-        simd_bit_table new_storage(storage.num_major_bits_padded() * 2, storage.num_minor_bits_padded());
+void MeasureRecordBatch::reserve_space_for_results(size_t count) {
+    if (stored + count > storage.num_major_bits_padded()) {
+        simd_bit_table new_storage((stored + count) * 2, storage.num_minor_bits_padded());
         new_storage.data.word_range_ref(0, storage.data.num_simd_words) = storage.data;
         storage = std::move(new_storage);
     }
+}
+
+void MeasureRecordBatch::reserve_noisy_space_for_results(const OperationData &target_data, std::mt19937_64 &rng) {
+    size_t count = target_data.targets.size();
+    reserve_space_for_results(count);
+    float p = target_data.args.empty() ? 0 : target_data.args[0];
+    biased_randomize_bits(p, storage[stored].u64, storage[stored + count].u64, rng);
+}
+
+void MeasureRecordBatch::xor_record_reserved_result(simd_bits_range_ref result) {
+    storage[stored] ^= result;
+    storage[stored] &= shot_mask;
+    stored++;
+    unwritten++;
+}
+
+void MeasureRecordBatch::record_result(simd_bits_range_ref result) {
+    reserve_space_for_results(1);
     storage[stored] = result;
     storage[stored] &= shot_mask;
     stored++;

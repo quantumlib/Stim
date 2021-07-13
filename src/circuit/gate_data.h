@@ -40,7 +40,8 @@ struct Tableau;
 struct Operation;
 struct ErrorAnalyzer;
 
-constexpr uint8_t ARG_COUNT_VARIABLE = uint8_t{0xFF};
+constexpr uint8_t ARG_COUNT_SYGIL_ANY = uint8_t{0xFF};
+constexpr uint8_t ARG_COUNT_SYGIL_ZERO_OR_ONE = uint8_t{0xFE};
 
 inline uint8_t gate_name_to_id(const char *v, size_t n) {
     // HACK: A collision is considered to be an error.
@@ -88,7 +89,7 @@ enum GateFlags : uint16_t {
     GATE_ARGS_ARE_DISJOINT_PROBABILITIES = 1 << 2,
     // Indicates whether the gate puts data into the measurement record or not.
     // Also determines whether or not inverted targets (like "!3") are permitted.
-    GATE_PRODUCES_RESULTS = 1 << 3,
+    GATE_PRODUCES_NOISY_RESULTS = 1 << 3,
     // Prevents the same gate on adjacent lines from being combined into one longer invocation.
     GATE_IS_NOT_FUSABLE = 1 << 4,
     // Controls block functionality for instructions like REPEAT.

@@ -219,3 +219,243 @@ TEST(DetectionSimulator, stream_results_triple_shot) {
         ASSERT_EQ(result[s + 30000], '\n');
     }
 }
+
+TEST(DetectorSimulator, noisy_measurement_x) {
+    auto r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RX 0
+        MX(0.05) 0
+        MX 0
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        10000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RX 0 1
+        Z_ERROR(1) 0 1
+        MX(0.05) 0 1
+        MX 0 1
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        5000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 5000);
+    ASSERT_EQ(r[3].popcnt(), 5000);
+}
+
+TEST(DetectorSimulator, noisy_measurement_y) {
+    auto r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RY 0
+        MY(0.05) 0
+        MY 0
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        10000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RY 0 1
+        Z_ERROR(1) 0 1
+        MY(0.05) 0 1
+        MY 0 1
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        5000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 5000);
+    ASSERT_EQ(r[3].popcnt(), 5000);
+}
+
+TEST(DetectorSimulator, noisy_measurement_z) {
+    auto r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RZ 0
+        MZ(0.05) 0
+        MZ 0
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        10000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RZ 0 1
+        X_ERROR(1) 0 1
+        MZ(0.05) 0 1
+        MZ 0 1
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        5000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 5000);
+    ASSERT_EQ(r[3].popcnt(), 5000);
+}
+
+TEST(DetectorSimulator, noisy_measure_reset_x) {
+    auto r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RX 0
+        MRX(0.05) 0
+        MRX 0
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        10000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RX 0 1
+        Z_ERROR(1) 0 1
+        MRX(0.05) 0 1
+        MRX 0 1
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        5000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 0);
+    ASSERT_EQ(r[3].popcnt(), 0);
+}
+
+TEST(DetectorSimulator, noisy_measure_reset_y) {
+    auto r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RY 0
+        MRY(0.05) 0
+        MRY 0
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        10000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RY 0 1
+        Z_ERROR(1) 0 1
+        MRY(0.05) 0 1
+        MRY 0 1
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        5000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 0);
+    ASSERT_EQ(r[3].popcnt(), 0);
+}
+
+TEST(DetectorSimulator, noisy_measure_reset_z) {
+    auto r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RZ 0
+        MRZ(0.05) 0
+        MRZ 0
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        10000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    ASSERT_FALSE(r[1].not_zero());
+    auto m1 = r[0].popcnt();
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+
+    r = detector_samples(
+        Circuit(R"CIRCUIT(
+        RZ 0 1
+        X_ERROR(1) 0 1
+        MRZ(0.05) 0 1
+        MRZ 0 1
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT"),
+        5000,
+        false,
+        false,
+        SHARED_TEST_RNG());
+    auto m2 = r[0].popcnt() + r[1].popcnt();
+    ASSERT_LT(m2, 10000 - 300);
+    ASSERT_GT(m2, 10000 - 700);
+    ASSERT_EQ(r[2].popcnt(), 0);
+    ASSERT_EQ(r[3].popcnt(), 0);
+}
