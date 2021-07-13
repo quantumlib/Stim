@@ -59,7 +59,7 @@ PauliString &PauliString::operator=(const PauliStringRef &other) noexcept {
     return *this;
 }
 
-std::ostream &operator<<(std::ostream &out, const PauliString &ps) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const PauliString &ps) {
     return out << ps.ref();
 }
 

@@ -25,12 +25,6 @@ namespace stim_internal {
 /// Wraps an iterable object so that its values are printed with comma separators.
 template <typename TIter>
 struct CommaSep;
-}  // namespace stim_internal
-
-template <typename TIter>
-std::ostream &operator<<(std::ostream &out, const stim_internal::CommaSep<TIter> &v);
-
-namespace stim_internal {
 
 /// A wrapper indicating a range of values should be printed with comma separators.
 template <typename TIter>
@@ -48,10 +42,8 @@ CommaSep<TIter> comma_sep(const TIter &v) {
     return CommaSep<TIter>{v};
 }
 
-}  // namespace stim_internal
-
 template <typename TIter>
-std::ostream &operator<<(std::ostream &out, const stim_internal::CommaSep<TIter> &v) {
+std::ostream &operator<<(std::ostream &out, const CommaSep<TIter> &v) {
     bool first = true;
     for (const auto &t : v.iter) {
         if (first) {
@@ -63,5 +55,7 @@ std::ostream &operator<<(std::ostream &out, const stim_internal::CommaSep<TIter>
     }
     return out;
 }
+
+}  // namespace stim_internal
 
 #endif

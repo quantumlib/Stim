@@ -65,7 +65,7 @@ bool DemTarget::operator!=(const DemTarget &other) const {
 bool DemTarget::operator<(const DemTarget &other) const {
     return data < other.data;
 }
-std::ostream &operator<<(std::ostream &out, const DemTarget &v) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const DemTarget &v) {
     if (v.is_separator()) {
         out << "^";
         return out;
@@ -118,7 +118,7 @@ std::string DemInstruction::str() const {
     return s.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const DemInstructionType &type) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const DemInstructionType &type) {
     switch (type) {
         case DEM_ERROR:
             out << "error";
@@ -142,7 +142,7 @@ std::ostream &operator<<(std::ostream &out, const DemInstructionType &type) {
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const DemInstruction &op) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const DemInstruction &op) {
     out << op.type;
     if (!op.arg_data.empty()) {
         out << "(" << comma_sep(op.arg_data) << ")";
@@ -333,7 +333,7 @@ void stream_out_indent(std::ostream &out, const DetectorErrorModel &v, size_t in
     }
 }
 
-std::ostream &operator<<(std::ostream &out, const DetectorErrorModel &v) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const DetectorErrorModel &v) {
     out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
     stream_out_indent(out, v, 0);
     return out;

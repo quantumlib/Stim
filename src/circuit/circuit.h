@@ -377,9 +377,9 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
     c = read_char();
 }
 
-}  // namespace stim_internal
+std::ostream &operator<<(std::ostream &out, const Circuit &c);
+std::ostream &operator<<(std::ostream &out, const Operation &op);
 
-std::ostream &operator<<(std::ostream &out, const stim_internal::Circuit &c);
-std::ostream &operator<<(std::ostream &out, const stim_internal::Operation &op);
+}  // namespace stim_internal
 
 #endif

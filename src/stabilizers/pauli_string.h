@@ -109,9 +109,9 @@ struct PauliString {
     void ensure_num_qubits(size_t min_num_qubits);
 };
 
-}  // namespace stim_internal
-
 /// Writes a string describing the given Pauli string to an output stream.
-std::ostream &operator<<(std::ostream &out, const stim_internal::PauliString &ps);
+std::ostream &operator<<(std::ostream &out, const PauliString &ps);
+
+}  // namespace stim_internal
 
 #endif

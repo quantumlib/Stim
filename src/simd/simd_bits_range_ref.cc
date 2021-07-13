@@ -84,7 +84,7 @@ bool simd_bits_range_ref::operator!=(const simd_bits_range_ref other) const {
     return !(*this == other);
 }
 
-std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const simd_bits_range_ref m) {
     for (size_t k = 0; k < m.num_bits_padded(); k++) {
         out << "_1"[m[k]];
     }

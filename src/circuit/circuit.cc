@@ -603,7 +603,7 @@ void Circuit::append_from_file(FILE *file, bool stop_asap) {
         stop_asap ? READ_AS_LITTLE_AS_POSSIBLE : READ_UNTIL_END_OF_FILE);
 }
 
-std::ostream &operator<<(std::ostream &out, const Operation &op) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const Operation &op) {
     out << op.gate->name;
     if (!op.target_data.args.empty()) {
         out << '(';
@@ -660,7 +660,7 @@ const Circuit &stim_internal::op_data_block_body(const Circuit &host, const Oper
     return host.blocks[data.targets[0]];
 }
 
-std::ostream &operator<<(std::ostream &out, const Circuit &c) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const Circuit &c) {
     print_circuit(out, c, "");
     return out;
 }

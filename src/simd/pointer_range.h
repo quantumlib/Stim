@@ -176,8 +176,6 @@ struct ConstPointerRange {
     }
 };
 
-}  // namespace stim_internal
-
 template <typename T>
 std::ostream &operator<<(std::ostream &out, stim_internal::ConstPointerRange<T> v) {
     out << "ConstPointerRange{" << comma_sep(v) << "}";
@@ -189,5 +187,7 @@ std::ostream &operator<<(std::ostream &out, stim_internal::PointerRange<T> v) {
     out << "PointerRange{" << comma_sep(v) << "}";
     return out;
 }
+
+}  // namespace stim_internal
 
 #endif

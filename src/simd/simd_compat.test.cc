@@ -14,6 +14,7 @@
 
 #include "simd_compat.h"
 
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "../test_util.test.h"
