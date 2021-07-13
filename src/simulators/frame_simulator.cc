@@ -17,9 +17,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "../circuit/gate_data.h"
 #include "../probability_util.h"
-#include "../simd/simd_util.h"
 #include "tableau_simulator.h"
 
 using namespace stim_internal;
@@ -81,27 +79,30 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
 }
 
 void FrameSimulator::measure_x(const OperationData &target_data) {
+    m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
-        m_record.record_result(z_table[q]);
+        m_record.xor_record_reserved_result(z_table[q]);
         x_table[q].randomize(x_table[q].num_bits_padded(), rng);
     }
 }
 
 void FrameSimulator::measure_y(const OperationData &target_data) {
+    m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         x_table[q] ^= z_table[q];
-        m_record.record_result(x_table[q]);
+        m_record.xor_record_reserved_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
-        x_table[q] = z_table[q];
+        x_table[q] ^= z_table[q];
     }
 }
 
 void FrameSimulator::measure_z(const OperationData &target_data) {
+    m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
-        m_record.record_result(x_table[q]);
+        m_record.xor_record_reserved_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
     }
 }
@@ -128,9 +129,10 @@ void FrameSimulator::reset_z(const OperationData &target_data) {
 
 void FrameSimulator::measure_reset_x(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+    m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
-        m_record.record_result(z_table[q]);
+        m_record.xor_record_reserved_result(z_table[q]);
         z_table[q].clear();
         x_table[q].randomize(x_table[q].num_bits_padded(), rng);
     }
@@ -138,10 +140,11 @@ void FrameSimulator::measure_reset_x(const OperationData &target_data) {
 
 void FrameSimulator::measure_reset_y(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+    m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
         x_table[q] ^= z_table[q];
-        m_record.record_result(x_table[q]);
+        m_record.xor_record_reserved_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         x_table[q] = z_table[q];
     }
@@ -149,9 +152,10 @@ void FrameSimulator::measure_reset_y(const OperationData &target_data) {
 
 void FrameSimulator::measure_reset_z(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
+    m_record.reserve_noisy_space_for_results(target_data, rng);
     for (auto q : target_data.targets) {
         q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
-        m_record.record_result(x_table[q]);
+        m_record.xor_record_reserved_result(x_table[q]);
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
     }

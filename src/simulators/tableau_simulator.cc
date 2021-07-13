@@ -21,7 +21,7 @@
 
 using namespace stim_internal;
 
-TableauSimulator::TableauSimulator(size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias, MeasureRecord record)
+TableauSimulator::TableauSimulator(std::mt19937_64 &rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
     : inv_state(Tableau::identity(num_qubits)),
       rng(rng),
       sign_bias(sign_bias),
@@ -52,6 +52,7 @@ void TableauSimulator::measure_x(const OperationData &target_data) {
         bool b = inv_state.xs.signs[q] ^ flipped;
         measurement_record.record_result(b);
     }
+    noisify_new_measurements(target_data);
 }
 
 void TableauSimulator::measure_y(const OperationData &target_data) {
@@ -65,6 +66,7 @@ void TableauSimulator::measure_y(const OperationData &target_data) {
         bool b = inv_state.eval_y_obs(q).sign ^ flipped;
         measurement_record.record_result(b);
     }
+    noisify_new_measurements(target_data);
 }
 
 void TableauSimulator::measure_z(const OperationData &target_data) {
@@ -78,6 +80,7 @@ void TableauSimulator::measure_z(const OperationData &target_data) {
         bool b = inv_state.zs.signs[q] ^ flipped;
         measurement_record.record_result(b);
     }
+    noisify_new_measurements(target_data);
 }
 
 void TableauSimulator::measure_reset_x(const OperationData &target_data) {
@@ -95,6 +98,7 @@ void TableauSimulator::measure_reset_x(const OperationData &target_data) {
         inv_state.xs.signs[q] = false;
         inv_state.zs.signs[q] = false;
     }
+    noisify_new_measurements(target_data);
 }
 
 void TableauSimulator::measure_reset_y(const OperationData &target_data) {
@@ -112,6 +116,7 @@ void TableauSimulator::measure_reset_y(const OperationData &target_data) {
         measurement_record.record_result(b);
         inv_state.zs.signs[q] ^= cur_sign;
     }
+    noisify_new_measurements(target_data);
 }
 
 void TableauSimulator::measure_reset_z(const OperationData &target_data) {
@@ -129,6 +134,17 @@ void TableauSimulator::measure_reset_z(const OperationData &target_data) {
         inv_state.xs.signs[q] = false;
         inv_state.zs.signs[q] = false;
     }
+    noisify_new_measurements(target_data);
+}
+
+void TableauSimulator::noisify_new_measurements(const OperationData &target_data) {
+    if (target_data.args.empty()) {
+        return;
+    }
+    size_t last = measurement_record.storage.size() - 1;
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets.size(), rng, [&](size_t k) {
+        measurement_record.storage[last - k] = !measurement_record.storage[last - k];
+    });
 }
 
 void TableauSimulator::reset_x(const OperationData &target_data) {
@@ -606,15 +622,13 @@ void TableauSimulator::Z(const OperationData &target_data) {
 }
 
 simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
-    TableauSimulator sim(circuit.count_qubits(), rng, sign_bias);
-    circuit.for_each_operation([&](const Operation &op) {
-        (sim.*op.gate->tableau_simulator_function)(op.target_data);
-    });
+    TableauSimulator sim(rng, circuit.count_qubits(), sign_bias);
+    sim.expand_do_circuit(circuit);
 
     const std::vector<bool> &v = sim.measurement_record.storage;
     simd_bits result(v.size());
     for (size_t k = 0; k < v.size(); k++) {
-        result[k] = v[k];
+        result[k] ^= v[k];
     }
     return result;
 }
@@ -627,7 +641,7 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
 }
 
 void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
-    TableauSimulator sim(1, rng);
+    TableauSimulator sim(rng, 1);
     auto writer = MeasureRecordWriter::make(out, format);
     Circuit unprocessed;
     while (true) {
@@ -641,7 +655,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
         unprocessed.for_each_operation([&](const Operation &op) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
             sim.measurement_record.write_unwritten_results_to(*writer);
-            if (interactive && (op.gate->flags & GATE_PRODUCES_RESULTS)) {
+            if (interactive && (op.gate->flags & ARG_COUNT_SYGIL_ANY)) {
                 putc('\n', out);
                 fflush(out);
             }
@@ -817,7 +831,11 @@ Circuit aliased_noiseless_subset(const Circuit &circuit) {
     // HACK: result has pointers into `circuit`!
     Circuit result;
     for (const auto &op : circuit.operations) {
-        if (!(op.gate->flags & GATE_IS_NOISE)) {
+        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+            // Drop result flip probability.
+            result.operations.push_back(Operation{op.gate, OperationData{{}, op.target_data.targets}});
+        } else if (!(op.gate->flags & GATE_IS_NOISE)) {
+            // Keep noiseless operations.
             result.operations.push_back(op);
         }
     }
@@ -825,6 +843,13 @@ Circuit aliased_noiseless_subset(const Circuit &circuit) {
         result.blocks.push_back(aliased_noiseless_subset(block));
     }
     return result;
+}
+
+void TableauSimulator::expand_do_circuit(const Circuit &circuit) {
+    ensure_large_enough_for_qubits(circuit.count_qubits());
+    circuit.for_each_operation([&](const Operation &op) {
+        ((*this).*op.gate->tableau_simulator_function)(op.target_data);
+    });
 }
 
 simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {

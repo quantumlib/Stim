@@ -101,7 +101,13 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
         }
     }
 
-    if (args.size() != gate.arg_count && gate.arg_count != ARG_COUNT_VARIABLE) {
+    if (gate.arg_count == ARG_COUNT_SYGIL_ZERO_OR_ONE) {
+        if (args.size() > 1) {
+            throw std::invalid_argument(
+                "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " arguments (" +
+                comma_sep(args).str() + ") but takes 0 or 1 arguments.");
+        }
+    } else if (args.size() != gate.arg_count && gate.arg_count != ARG_COUNT_SYGIL_ANY) {
         throw std::invalid_argument(
             "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " arguments (" +
             comma_sep(args).str() + ") but takes " + std::to_string(gate.arg_count) + " arguments.");
@@ -131,7 +137,7 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
 
     // Check that targets are in range.
     uint32_t valid_target_mask = TARGET_VALUE_MASK;
-    if (gate.flags & GATE_PRODUCES_RESULTS) {
+    if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
         valid_target_mask |= TARGET_INVERTED_BIT;
     }
     if (gate.flags & GATE_CAN_TARGET_MEASUREMENT_RECORD) {
@@ -179,7 +185,7 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
     };
 
     circuit.for_each_operation([&](const Operation &p) {
-        if (p.gate->flags & GATE_PRODUCES_RESULTS) {
+        if (p.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
             tick += (uint32_t)p.target_data.targets.size();
         } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
             resolve_into(p, [&](uint32_t k) {
@@ -462,7 +468,7 @@ void circuit_read_single_operation(Circuit &circuit, char lead_char, SOURCE read
     int c = (int)lead_char;
     const auto &gate = read_gate_name(c, read_char);
     try {
-        read_parens_arguments(c, gate.name, read_char, gate.arg_count, circuit.arg_buf);
+        read_parens_arguments(c, gate.name, read_char, circuit.arg_buf);
         if (gate.flags & GATE_IS_BLOCK) {
             read_result_targets64_into(c, read_char, circuit);
             if (c != '{') {
@@ -833,7 +839,7 @@ uint64_t stim_internal::mul_saturate(uint64_t a, uint64_t b) {
 
 uint64_t Circuit::count_measurements() const {
     return flat_count_operations([](const Operation &op) -> size_t {
-        return (op.gate->flags & GATE_PRODUCES_RESULTS) ? op.target_data.targets.size() : 0;
+        return (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) ? op.target_data.targets.size() : 0;
     });
 }
 

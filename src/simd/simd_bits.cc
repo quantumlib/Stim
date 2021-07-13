@@ -162,3 +162,7 @@ simd_bits &simd_bits::swap_with(simd_bits_range_ref other) {
     simd_bits_range_ref(*this).swap_with(other);
     return *this;
 }
+
+size_t simd_bits::popcnt() const {
+    return simd_bits_range_ref(*this).popcnt();
+}

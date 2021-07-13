@@ -117,32 +117,7 @@ void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gau
     remove_gauge(add_error(0.5, potential_gauge.range()));
 }
 
-void ErrorAnalyzer::MX(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
-        scheduled_measurement_time++;
-
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        std::sort(d.begin(), d.end());
-        xs[q].xor_sorted_items(d);
-        check_for_gauge(zs[q], "an X-basis measurement");
-    }
-}
-
-void ErrorAnalyzer::MY(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
-        scheduled_measurement_time++;
-
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        std::sort(d.begin(), d.end());
-        xs[q].xor_sorted_items(d);
-        zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q], zs[q], "a Y-basis measurement");
-    }
-}
-
-void xor_sort(std::vector<DemTarget> &d) {
+void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const OperationData &dat) {
     std::sort(d.begin(), d.end());
 
     // Cancel duplicate pairs.
@@ -156,6 +131,36 @@ void xor_sort(std::vector<DemTarget> &d) {
         }
     }
     d.resize(d.size() - skip);
+
+    // Measurement error.
+    if (!dat.args.empty()) {
+        add_error(dat.args[0], d);
+    }
+}
+
+void ErrorAnalyzer::MX(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        xor_sort_measurement_error(d, dat);
+        xs[q].xor_sorted_items(d);
+        check_for_gauge(zs[q], "an X-basis measurement");
+    }
+}
+
+void ErrorAnalyzer::MY(const OperationData &dat) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        xor_sort_measurement_error(d, dat);
+        xs[q].xor_sorted_items(d);
+        zs[q].xor_sorted_items(d);
+        check_for_gauge(xs[q], zs[q], "a Y-basis measurement");
+    }
 }
 
 void ErrorAnalyzer::MZ(const OperationData &dat) {
@@ -164,7 +169,7 @@ void ErrorAnalyzer::MZ(const OperationData &dat) {
         scheduled_measurement_time++;
 
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort(d);
+        xor_sort_measurement_error(d, dat);
 
         zs[q].xor_sorted_items(d);
         check_for_gauge(xs[q], "a Z-basis measurement");
@@ -174,7 +179,7 @@ void ErrorAnalyzer::MZ(const OperationData &dat) {
 void ErrorAnalyzer::MRX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{{}, {&q}};
+        OperationData d{dat.args, {&q}};
         RX(d);
         MX(d);
     }
@@ -183,7 +188,7 @@ void ErrorAnalyzer::MRX(const OperationData &dat) {
 void ErrorAnalyzer::MRY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{{}, {&q}};
+        OperationData d{dat.args, {&q}};
         RY(d);
         MY(d);
     }
@@ -192,7 +197,7 @@ void ErrorAnalyzer::MRY(const OperationData &dat) {
 void ErrorAnalyzer::MRZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
-        OperationData d{{}, {&q}};
+        OperationData d{dat.args, {&q}};
         RZ(d);
         MZ(d);
     }
@@ -763,19 +768,19 @@ ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store_tail() {
     return result;
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store(ConstPointerRange<DemTarget> data) {
-    auto v = error_class_probabilities.find(data);
+ConstPointerRange<DemTarget> ErrorAnalyzer::mono_dedupe_store(ConstPointerRange<DemTarget> sorted) {
+    auto v = error_class_probabilities.find(sorted);
     if (v != error_class_probabilities.end()) {
         return v->first;
     }
-    mono_buf.append_tail(data);
+    mono_buf.append_tail(sorted);
     auto result = mono_buf.commit_tail();
     error_class_probabilities.insert({result, 0});
     return result;
 }
 
-ConstPointerRange<DemTarget> ErrorAnalyzer::add_error(double probability, ConstPointerRange<DemTarget> flipped) {
-    auto key = mono_dedupe_store(flipped);
+ConstPointerRange<DemTarget> ErrorAnalyzer::add_error(double probability, ConstPointerRange<DemTarget> flipped_sorted) {
+    auto key = mono_dedupe_store(flipped_sorted);
     auto &old_p = error_class_probabilities[key];
     old_p = old_p * (1 - probability) + (1 - old_p) * probability;
     return key;

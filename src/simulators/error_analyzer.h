@@ -126,6 +126,8 @@ struct ErrorAnalyzer {
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
     /// Use that degree of freedom to delete the largest detector in the set from the system.
     void remove_gauge(ConstPointerRange<DemTarget> sorted);
+    /// Sorts the targets coming out of the measurement queue, then optionally inserts a measurement error.
+    void xor_sort_measurement_error(std::vector<DemTarget> &queued, const OperationData &dat);
     void check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge, const char *context);
     void check_for_gauge(
         SparseXorVec<DemTarget> &potential_gauge_summand_1,
@@ -135,7 +137,7 @@ struct ErrorAnalyzer {
     void shift_active_detector_ids(int64_t shift);
     void flush();
     void run_loop(const Circuit &loop, uint64_t iterations);
-    ConstPointerRange<DemTarget> add_error(double probability, ConstPointerRange<DemTarget> data);
+    ConstPointerRange<DemTarget> add_error(double probability, ConstPointerRange<DemTarget> flipped_sorted);
     ConstPointerRange<DemTarget> add_xored_error(
         double probability, ConstPointerRange<DemTarget> flipped1, ConstPointerRange<DemTarget> flipped2);
     ConstPointerRange<DemTarget> add_error_in_sorted_jagged_tail(double probability);
@@ -155,7 +157,7 @@ struct ErrorAnalyzer {
     ///
     /// Returns:
     ///    A range over the stored data.
-    ConstPointerRange<DemTarget> mono_dedupe_store(ConstPointerRange<DemTarget> data);
+    ConstPointerRange<DemTarget> mono_dedupe_store(ConstPointerRange<DemTarget> sorted);
 
     /// Adds each given error, and also each possible combination of the given errors, to the possible errors.
     ///

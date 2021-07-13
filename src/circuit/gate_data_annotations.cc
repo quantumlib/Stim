@@ -26,7 +26,7 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
         failed,
         Gate{
             "DETECTOR",
-            ARG_COUNT_VARIABLE,
+            ARG_COUNT_SYGIL_ANY,
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::DETECTOR,
@@ -146,7 +146,7 @@ For example, used by `stimcirq` to preserve the moment structure of cirq circuit
         failed,
         Gate{
             "QUBIT_COORDS",
-            ARG_COUNT_VARIABLE,
+            ARG_COUNT_SYGIL_ANY,
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
@@ -190,7 +190,7 @@ For example, this could be used to indicate a simulated qubit is iteratively pla
         failed,
         Gate{
             "SHIFT_COORDS",
-            ARG_COUNT_VARIABLE,
+            ARG_COUNT_SYGIL_ANY,
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::SHIFT_COORDS,

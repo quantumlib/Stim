@@ -25,9 +25,9 @@
 #include <sstream>
 
 #include "../circuit/circuit.h"
+#include "../io/measure_record.h"
 #include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
-#include "../io/measure_record.h"
 #include "vector_simulator.h"
 
 namespace stim_internal {
@@ -45,7 +45,7 @@ struct TableauSimulator {
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
     ///     record: Measurement record configuration.
     explicit TableauSimulator(
-        size_t num_qubits, std::mt19937_64 &rng, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
+        std::mt19937_64 &rng, size_t num_qubits = 0, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
 
     /// Samples the given circuit in a deterministic fashion.
     ///
@@ -134,6 +134,11 @@ struct TableauSimulator {
     bool is_deterministic_y(size_t target) const;
     /// Determines if a qubit's Z observable commutes (vs anti-commutes) with the current stabilizer generators.
     bool is_deterministic_z(size_t target) const;
+
+    /// Runs all of the operations in the given circuit.
+    ///
+    /// Automatically expands the tableau simulator's state, if needed.
+    void expand_do_circuit(const Circuit &circuit);
 
     std::vector<PauliString> canonical_stabilizers() const;
 
@@ -240,6 +245,9 @@ struct TableauSimulator {
     /// themselves (possibly negated) and that it maps all other qubits to Pauli products not involving the target
     /// qubit.
     void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii);
+
+   private:
+    void noisify_new_measurements(const OperationData &target_data);
 };
 
 template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>

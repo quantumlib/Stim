@@ -920,7 +920,7 @@
 > structure.)
 > 
 > Args:
->     type: A string identifying the type of circuit to generate. Available types are:
+>     code_task: A string identifying the type of circuit to generate. Available types are:
 >         - `repetition_code:memory`
 >         - `surface_code:rotated_memory_x`
 >         - `surface_code:rotated_memory_z`

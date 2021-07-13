@@ -49,30 +49,36 @@ enum SampleFormat {
     ///         Output '0' if false, '1' if true
     ///     Output '\n'
     SAMPLE_FORMAT_01,
+
     /// Binary format.
     ///
     /// For each shot:
     ///     For each group of 8 measurement (padded with 0s if needed):
     ///         Output a bit packed byte (least significant bit of byte has first measurement)
     SAMPLE_FORMAT_B8,
+
     /// Transposed binary format.
     ///
     /// For each measurement:
     ///     For each group of 64 shots (padded with 0s if needed):
     ///         Output bit packed bytes (least significant bit of first byte has first shot)
     SAMPLE_FORMAT_PTB64,
+
     /// Human readable compressed format.
     ///
     /// For each shot:
     ///     For each measurement_index where the measurement result was 1:
     ///         Output decimal(measurement_index)
     SAMPLE_FORMAT_HITS,
+
     /// Binary run-length format.
     ///
     /// For each shot:
-    ///     For each run of same-result measurements up to length 128:
-    ///         Output (result ? 0x80 : 0) | (run_length + 1)
+    ///     Append a one to the shot
+    ///     For each run length d of zeros between ones (including runs of length 0):
+    ///         Output [0x255] * (d // 255) + [d % 255]
     SAMPLE_FORMAT_R8,
+
     /// Specific to detection event data.
     ///
     /// For each shot:
@@ -346,43 +352,26 @@ double read_non_negative_double(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-void read_parens_arguments(
-    int &c, const char *name, SOURCE read_char, uint8_t arg_count, MonotonicBuffer<double> &out) {
-    if (arg_count == 0) {
-        if (c == '(') {
-            throw std::invalid_argument("Gate '" + std::string(name) + "' doesn't take parens arguments.");
-        }
-        return;
-    }
-
+void read_parens_arguments(int &c, const char *name, SOURCE read_char, MonotonicBuffer<double> &out) {
     if (c != '(') {
-        if (arg_count == ARG_COUNT_VARIABLE) {
-            return;
-        }
-        throw std::invalid_argument(
-            "Expected " + std::to_string(arg_count) + " parens arguments for '" + std::string(name) + "'.");
+        return;
     }
     c = read_char();
 
-    for (uint8_t k = 0; k < arg_count; k++) {
-        read_past_within_line_whitespace(c, read_char);
-        if (k > 0) {
-            if (c != ',') {
-                if (arg_count == ARG_COUNT_VARIABLE) {
-                    break;
-                }
-                throw std::invalid_argument(
-                    "Expected " + std::to_string(arg_count) + " parens arguments for '" + std::string(name) + "'.");
-            }
-            c = read_char();
-            read_past_within_line_whitespace(c, read_char);
-        }
+    read_past_within_line_whitespace(c, read_char);
+    while (true) {
         out.append_tail(read_non_negative_double(c, read_char));
+        read_past_within_line_whitespace(c, read_char);
+        if (c != ',') {
+            break;
+        }
+        c = read_char();
+        read_past_within_line_whitespace(c, read_char);
     }
 
     read_past_within_line_whitespace(c, read_char);
     if (c != ')') {
-        throw std::invalid_argument("Missing ')' for arguments of '" + std::string(name) + "'.");
+        throw std::invalid_argument("Parens arguments for '" + std::string(name) + "' didn't end with a ')'.");
     }
     c = read_char();
 }

@@ -17,13 +17,12 @@
 #include <gtest/gtest.h>
 
 #include "../circuit/circuit.test.h"
-#include "../circuit/gate_data.h"
 #include "../test_util.test.h"
 
 using namespace stim_internal;
 
 TEST(TableauSimulator, identity) {
-    auto s = TableauSimulator(1, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 1);
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{}));
     s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
@@ -32,7 +31,7 @@ TEST(TableauSimulator, identity) {
 }
 
 TEST(TableauSimulator, bit_flip) {
-    auto s = TableauSimulator(1, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 1);
     s.H_XZ(OpDat(0));
     s.SQRT_Z(OpDat(0));
     s.SQRT_Z(OpDat(0));
@@ -44,7 +43,7 @@ TEST(TableauSimulator, bit_flip) {
 }
 
 TEST(TableauSimulator, identity2) {
-    auto s = TableauSimulator(2, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 2);
     s.measure_z(OpDat(0));
     ASSERT_EQ(s.measurement_record.storage, (std::vector<bool>{false}));
     s.measure_z(OpDat(1));
@@ -52,7 +51,7 @@ TEST(TableauSimulator, identity2) {
 }
 
 TEST(TableauSimulator, bit_flip_2) {
-    auto s = TableauSimulator(2, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 2);
     s.H_XZ(OpDat(0));
     s.SQRT_Z(OpDat(0));
     s.SQRT_Z(OpDat(0));
@@ -64,7 +63,7 @@ TEST(TableauSimulator, bit_flip_2) {
 }
 
 TEST(TableauSimulator, epr) {
-    auto s = TableauSimulator(2, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 2);
     s.H_XZ(OpDat(0));
     s.ZCX(OpDat({0, 1}));
     ASSERT_EQ(s.is_deterministic_z(0), false);
@@ -77,7 +76,7 @@ TEST(TableauSimulator, epr) {
 }
 
 TEST(TableauSimulator, big_determinism) {
-    auto s = TableauSimulator(1000, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 1000);
     s.H_XZ(OpDat(0));
     s.H_YZ(OpDat(1));
     ASSERT_FALSE(s.is_deterministic_z(0));
@@ -95,7 +94,7 @@ TEST(TableauSimulator, big_determinism) {
 
 TEST(TableauSimulator, phase_kickback_consume_s_state) {
     for (size_t k = 0; k < 8; k++) {
-        auto s = TableauSimulator(2, SHARED_TEST_RNG());
+        auto s = TableauSimulator(SHARED_TEST_RNG(), 2);
         s.H_XZ(OpDat(1));
         s.SQRT_Z(OpDat(1));
         s.H_XZ(OpDat(0));
@@ -116,7 +115,7 @@ TEST(TableauSimulator, phase_kickback_consume_s_state) {
 }
 
 TEST(TableauSimulator, phase_kickback_preserve_s_state) {
-    auto s = TableauSimulator(2, SHARED_TEST_RNG());
+    auto s = TableauSimulator(SHARED_TEST_RNG(), 2);
 
     // Prepare S state.
     s.H_XZ(OpDat(1));
@@ -145,7 +144,7 @@ TEST(TableauSimulator, phase_kickback_preserve_s_state) {
 }
 
 TEST(TableauSimulator, kickback_vs_stabilizer) {
-    auto sim = TableauSimulator(3, SHARED_TEST_RNG());
+    auto sim = TableauSimulator(SHARED_TEST_RNG(), 3);
     sim.H_XZ(OpDat(2));
     sim.ZCX(OpDat({2, 0}));
     sim.ZCX(OpDat({2, 1}));
@@ -165,7 +164,7 @@ TEST(TableauSimulator, kickback_vs_stabilizer) {
 
 TEST(TableauSimulator, s_state_distillation_low_depth) {
     for (size_t reps = 0; reps < 10; reps++) {
-        auto sim = TableauSimulator(9, SHARED_TEST_RNG());
+        auto sim = TableauSimulator(SHARED_TEST_RNG(), 9);
 
         std::vector<std::vector<uint8_t>> stabilizers = {
             {0, 1, 2, 3},
@@ -236,7 +235,7 @@ TEST(TableauSimulator, s_state_distillation_low_depth) {
 
 TEST(TableauSimulator, s_state_distillation_low_space) {
     for (size_t rep = 0; rep < 10; rep++) {
-        auto sim = TableauSimulator(5, SHARED_TEST_RNG());
+        auto sim = TableauSimulator(SHARED_TEST_RNG(), 5);
 
         std::vector<std::vector<uint8_t>> phasors = {
             {
@@ -289,7 +288,7 @@ TEST(TableauSimulator, s_state_distillation_low_space) {
 
 TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
     auto t = Tableau::random(10, SHARED_TEST_RNG());
-    TableauSimulator sim(10, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 10);
     sim.inv_state = t;
     for (const auto &gate : GATE_DATA.gates()) {
         if (!(gate.flags & GATE_IS_UNITARY)) {
@@ -310,8 +309,8 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
 }
 
 TEST(TableauSimulator, certain_errors_consistent_with_gates) {
-    TableauSimulator sim1(2, SHARED_TEST_RNG());
-    TableauSimulator sim2(2, SHARED_TEST_RNG());
+    TableauSimulator sim1(SHARED_TEST_RNG(), 2);
+    TableauSimulator sim2(SHARED_TEST_RNG(), 2);
     uint32_t targets[]{0};
     double p0 = 0.0;
     double p1 = 1.0;
@@ -364,7 +363,7 @@ TEST(TableauSimulator, simulate_reset) {
 }
 
 TEST(TableauSimulator, to_vector_sim) {
-    TableauSimulator sim_tab(2, SHARED_TEST_RNG());
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 2);
     VectorSimulator sim_vec(2);
     ASSERT_TRUE(sim_tab.to_vector_sim().approximate_equals(sim_vec, true));
 
@@ -394,13 +393,13 @@ TEST(TableauSimulator, to_vector_sim) {
 }
 
 TEST(TableauSimulator, to_state_vector) {
-    auto v = TableauSimulator(0, SHARED_TEST_RNG()).to_state_vector();
+    auto v = TableauSimulator(SHARED_TEST_RNG(), 0).to_state_vector();
     ASSERT_EQ(v.size(), 1);
     auto r = v[0].real();
     auto i = v[0].imag();
     ASSERT_LT(r * r + i * i - 1, 1e-4);
 
-    TableauSimulator sim_tab(3, SHARED_TEST_RNG());
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 3);
     auto sim_vec = sim_tab.to_vector_sim();
     VectorSimulator sim_vec2(3);
     sim_vec2.state = sim_tab.to_state_vector();
@@ -408,7 +407,7 @@ TEST(TableauSimulator, to_state_vector) {
 }
 
 bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::vector<uint32_t> &measurement_targets) {
-    TableauSimulator sim_tab(2, SHARED_TEST_RNG());
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 2);
     sim_tab.inv_state = state;
     auto vec_sim = sim_tab.to_vector_sim();
     sim_tab.measure_z(OpDat(measurement_targets));
@@ -740,7 +739,7 @@ TEST(TableauSimulator, mr_repeated_target) {
 }
 
 TEST(TableauSimulator, peek_bloch) {
-    TableauSimulator sim(3, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 3);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
     ASSERT_EQ(sim.peek_bloch(2), PauliString::from_str("+Z"));
@@ -798,8 +797,8 @@ TEST(TableauSimulator, peek_bloch) {
 }
 
 TEST(TableauSimulator, paulis) {
-    TableauSimulator sim1(500, SHARED_TEST_RNG());
-    TableauSimulator sim2(500, SHARED_TEST_RNG());
+    TableauSimulator sim1(SHARED_TEST_RNG(), 500);
+    TableauSimulator sim2(SHARED_TEST_RNG(), 500);
     sim1.inv_state = Tableau::random(500, SHARED_TEST_RNG());
     sim2.inv_state = sim1.inv_state;
 
@@ -818,8 +817,8 @@ TEST(TableauSimulator, paulis) {
 }
 
 TEST(TableauSimulator, set_num_qubits) {
-    TableauSimulator sim1(10, SHARED_TEST_RNG());
-    TableauSimulator sim2(10, SHARED_TEST_RNG());
+    TableauSimulator sim1(SHARED_TEST_RNG(), 10);
+    TableauSimulator sim2(SHARED_TEST_RNG(), 10);
     sim1.inv_state = Tableau::random(10, SHARED_TEST_RNG());
     sim2.inv_state = sim1.inv_state;
 
@@ -841,7 +840,7 @@ TEST(TableauSimulator, set_num_qubits) {
 }
 
 TEST(TableauSimulator, set_num_qubits_reduce_random) {
-    TableauSimulator sim(10, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 10);
     sim.inv_state = Tableau::random(10, SHARED_TEST_RNG());
     sim.set_num_qubits(5);
     ASSERT_EQ(sim.inv_state.num_qubits, 5);
@@ -870,7 +869,7 @@ void scramble_stabilizers(TableauSimulator &s) {
 }
 
 TEST(TableauSimulator, canonical_stabilizers) {
-    TableauSimulator sim(2, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 2);
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     ASSERT_EQ(
@@ -912,7 +911,7 @@ TEST(TableauSimulator, canonical_stabilizers) {
 }
 
 TEST(TableauSimulator, canonical_stabilizers_random) {
-    TableauSimulator sim(4, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
     auto s1 = sim.canonical_stabilizers();
     scramble_stabilizers(sim);
@@ -922,7 +921,7 @@ TEST(TableauSimulator, canonical_stabilizers_random) {
 
 TEST(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers) {
     auto &rng = SHARED_TEST_RNG();
-    TableauSimulator sim(4, rng);
+    TableauSimulator sim(rng, 4);
     sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
     auto s1 = sim.canonical_stabilizers();
     sim.inv_state.expand(8);
@@ -933,7 +932,7 @@ TEST(TableauSimulator, set_num_qubits_reduce_preserves_scrambled_stabilizers) {
 }
 
 TEST(TableauSimulator, measure_kickback_z) {
-    TableauSimulator sim(4, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
     auto k1 = sim.measure_kickback_z(1);
@@ -952,7 +951,7 @@ TEST(TableauSimulator, measure_kickback_z) {
 }
 
 TEST(TableauSimulator, measure_kickback_x) {
-    TableauSimulator sim(4, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
     auto k1 = sim.measure_kickback_x(1);
@@ -971,7 +970,7 @@ TEST(TableauSimulator, measure_kickback_x) {
 }
 
 TEST(TableauSimulator, measure_kickback_y) {
-    TableauSimulator sim(4, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
     auto k1 = sim.measure_kickback_y(1);
@@ -990,7 +989,7 @@ TEST(TableauSimulator, measure_kickback_y) {
 }
 
 TEST(TableauSimulator, measure_kickback_isolates) {
-    TableauSimulator sim(4, SHARED_TEST_RNG());
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
     for (size_t k = 0; k < 4; k++) {
         auto result = sim.measure_kickback_z(k);
@@ -1003,7 +1002,7 @@ TEST(TableauSimulator, measure_kickback_isolates) {
 
 TEST(TableauSimulator, collapse_isolate_completely) {
     for (size_t k = 0; k < 10; k++) {
-        TableauSimulator sim(6, SHARED_TEST_RNG());
+        TableauSimulator sim(SHARED_TEST_RNG(), 6);
         sim.inv_state = Tableau::random(6, SHARED_TEST_RNG());
         {
             TableauTransposedRaii tmp(sim.inv_state);
@@ -1019,7 +1018,7 @@ TEST(TableauSimulator, collapse_isolate_completely) {
 }
 
 TEST(TableauSimulator, reset_pure) {
-    TableauSimulator t(1, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 1);
     ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Z"));
     t.reset_y(OpDat(0));
     ASSERT_EQ(t.peek_bloch(0), PauliString::from_str("+Y"));
@@ -1032,7 +1031,7 @@ TEST(TableauSimulator, reset_pure) {
 }
 
 TEST(TableauSimulator, reset_random) {
-    TableauSimulator t(5, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 5);
 
     t.inv_state = Tableau::random(5, SHARED_TEST_RNG());
     t.reset_x(OpDat(0));
@@ -1060,7 +1059,7 @@ TEST(TableauSimulator, reset_random) {
 }
 
 TEST(TableauSimulator, reset_x_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.reset_x(OpDat(0));
@@ -1072,7 +1071,7 @@ TEST(TableauSimulator, reset_x_entangled) {
 }
 
 TEST(TableauSimulator, reset_y_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.reset_y(OpDat(0));
@@ -1084,7 +1083,7 @@ TEST(TableauSimulator, reset_y_entangled) {
 }
 
 TEST(TableauSimulator, reset_z_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.reset_z(OpDat(0));
@@ -1096,7 +1095,7 @@ TEST(TableauSimulator, reset_z_entangled) {
 }
 
 TEST(TableauSimulator, measure_x_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.measure_x(OpDat(0));
@@ -1110,7 +1109,7 @@ TEST(TableauSimulator, measure_x_entangled) {
 }
 
 TEST(TableauSimulator, measure_y_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.measure_y(OpDat(0));
@@ -1124,7 +1123,7 @@ TEST(TableauSimulator, measure_y_entangled) {
 }
 
 TEST(TableauSimulator, measure_z_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.measure_z(OpDat(0));
@@ -1138,7 +1137,7 @@ TEST(TableauSimulator, measure_z_entangled) {
 }
 
 TEST(TableauSimulator, measure_reset_x_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.measure_reset_x(OpDat(0));
@@ -1151,7 +1150,7 @@ TEST(TableauSimulator, measure_reset_x_entangled) {
 }
 
 TEST(TableauSimulator, measure_reset_y_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.measure_reset_y(OpDat(0));
@@ -1164,7 +1163,7 @@ TEST(TableauSimulator, measure_reset_y_entangled) {
 }
 
 TEST(TableauSimulator, measure_reset_z_entangled) {
-    TableauSimulator t(2, SHARED_TEST_RNG());
+    TableauSimulator t(SHARED_TEST_RNG(), 2);
     t.H_XZ(OpDat(0));
     t.ZCX(OpDat({0, 1}));
     t.measure_reset_z(OpDat(0));
@@ -1328,4 +1327,178 @@ TEST(TableauSimulator, resets_vs_measurements) {
             true,
             false,
         }));
+}
+
+TEST(TableauSimulator, noisy_measurement_x) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        RX 0
+        REPEAT 10000 {
+            MX(0.05) 0
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MX 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+
+    t.measurement_record.storage.clear();
+    t.expand_do_circuit(R"CIRCUIT(
+        RX 0 1
+        Y 0 1
+        REPEAT 5000 {
+            MX(0.05) 0 1
+        }
+    )CIRCUIT");
+    m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 10000 - 700);
+    ASSERT_LT(m1, 10000 - 300);
+    t.expand_do_circuit("MX 0");
+    ASSERT_TRUE(t.measurement_record.storage.back());
+}
+
+TEST(TableauSimulator, noisy_measurement_y) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        RY 0
+        REPEAT 10000 {
+            MY(0.05) 0
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MY 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+
+    t.measurement_record.storage.clear();
+    t.expand_do_circuit(R"CIRCUIT(
+        RY 0 1
+        X 0 1
+        REPEAT 5000 {
+            MY(0.05) 0 1
+        }
+    )CIRCUIT");
+    m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 10000 - 700);
+    ASSERT_LT(m1, 10000 - 300);
+    t.expand_do_circuit("MY 0");
+    ASSERT_TRUE(t.measurement_record.storage.back());
+}
+
+TEST(TableauSimulator, noisy_measurement_z) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        RZ 0
+        REPEAT 10000 {
+            MZ(0.05) 0
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MZ 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+
+    t.measurement_record.storage.clear();
+    t.expand_do_circuit(R"CIRCUIT(
+        RZ 0 1
+        X 0 1
+        REPEAT 5000 {
+            MZ(0.05) 0 1
+        }
+    )CIRCUIT");
+    m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 10000 - 700);
+    ASSERT_LT(m1, 10000 - 300);
+    t.expand_do_circuit("MZ 0");
+    ASSERT_TRUE(t.measurement_record.storage.back());
+}
+
+TEST(TableauSimulator, noisy_measure_reset_x) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        RX 0
+        REPEAT 10000 {
+            MRX(0.05) 0
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MX 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+
+    t.measurement_record.storage.clear();
+    t.expand_do_circuit(R"CIRCUIT(
+        RX 0 1
+        REPEAT 5000 {
+            Z 0 1
+            MRX(0.05) 0 1
+        }
+    )CIRCUIT");
+    m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 10000 - 700);
+    ASSERT_LT(m1, 10000 - 300);
+    t.expand_do_circuit("MX 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+}
+
+TEST(TableauSimulator, noisy_measure_reset_y) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        RY 0 1
+        REPEAT 5000 {
+            MRY(0.05) 0 1
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MY 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+
+    t.measurement_record.storage.clear();
+    t.expand_do_circuit(R"CIRCUIT(
+        RY 0 1
+        REPEAT 5000 {
+            X 0 1
+            MRY(0.05) 0 1
+        }
+    )CIRCUIT");
+    m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 10000 - 700);
+    ASSERT_LT(m1, 10000 - 300);
+    t.expand_do_circuit("MY 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+}
+
+TEST(TableauSimulator, noisy_measure_reset_z) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        RZ 0 1
+        REPEAT 5000 {
+            MRZ(0.05) 0 1
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MZ 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
+
+    t.measurement_record.storage.clear();
+    t.expand_do_circuit(R"CIRCUIT(
+        RZ 0 1
+        REPEAT 5000 {
+            X 0 1
+            MRZ(0.05) 0 1
+        }
+    )CIRCUIT");
+    m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 10000 - 700);
+    ASSERT_LT(m1, 10000 - 300);
+    t.expand_do_circuit("MZ 0");
+    ASSERT_FALSE(t.measurement_record.storage.back());
 }

@@ -89,6 +89,9 @@ struct simd_bits {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
     }
 
+    /// Returns the number of bits that are 1 in the bit range.
+    size_t popcnt() const;
+
     /// Inverts all bits in the range.
     void invert_bits();
     /// Sets all bits in the range to zero.

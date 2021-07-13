@@ -283,7 +283,10 @@ TEST(circuit, append_op_validation) {
     ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
     ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
     c.append_op("M", {0 | TARGET_INVERTED_BIT});
-    ASSERT_THROW({ c.append_op("M", {0}, 0.5); }, std::invalid_argument);
+    c.append_op("M", {0 | TARGET_INVERTED_BIT}, 0.125);
+    ASSERT_THROW({ c.append_op("M", {0}, 1.5); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("M", {0}, -1.5); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("M", {0}, {0.125, 0.25}); }, std::invalid_argument);
 
     c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, 0.1);
     c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_BIT}, 0.1);

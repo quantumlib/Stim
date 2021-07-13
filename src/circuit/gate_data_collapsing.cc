@@ -27,20 +27,20 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
         failed,
         Gate{
             "MX",
-            0,
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_x,
             &FrameSimulator::measure_x,
             &ErrorAnalyzer::MX,
-            GATE_PRODUCES_RESULTS,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-X-basis measurement.
+X-basis measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
 )MARKDOWN",
                     {},
-                    {"X -> m", "X -> +X"},
+                    {"X -> +m xor chance(p)", "X -> +X"},
                 };
             },
         });
@@ -48,20 +48,20 @@ Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>
         failed,
         Gate{
             "MY",
-            0,
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_y,
             &FrameSimulator::measure_y,
             &ErrorAnalyzer::MY,
-            GATE_PRODUCES_RESULTS,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-Y-basis measurement.
+Y-basis measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
 )MARKDOWN",
                     {},
-                    {"Y -> m", "Y -> +Y"},
+                    {"Y -> m xor chance(p)", "Y -> +Y"},
                 };
             },
         });
@@ -69,20 +69,20 @@ Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i
         failed,
         Gate{
             "M",
-            0,
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_z,
             &FrameSimulator::measure_z,
             &ErrorAnalyzer::MZ,
-            GATE_PRODUCES_RESULTS,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-Z-basis measurement.
+Z-basis measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
 )MARKDOWN",
                     {},
-                    {"Z -> m", "Z -> +Z"},
+                    {"Z -> m xor chance(p)", "Z -> +Z"},
                 };
             },
         });
@@ -93,20 +93,20 @@ Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>
         failed,
         Gate{
             "MRX",
-            0,
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_reset_x,
             &FrameSimulator::measure_reset_x,
             &ErrorAnalyzer::MRX,
-            GATE_PRODUCES_RESULTS,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-X-basis demolition measurement.
+X-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
 )MARKDOWN",
                     {},
-                    {"X -> m", "1 -> +X"},
+                    {"X -> m xor chance(p)", "1 -> +X"},
                 };
             },
         });
@@ -114,20 +114,20 @@ Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, 
         failed,
         Gate{
             "MRY",
-            0,
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_reset_y,
             &FrameSimulator::measure_reset_y,
             &ErrorAnalyzer::MRY,
-            GATE_PRODUCES_RESULTS,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-Y-basis demolition measurement.
+Y-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
 )MARKDOWN",
                     {},
-                    {"Y -> m", "1 -> +Y"},
+                    {"Y -> m xor chance(p)", "1 -> +Y"},
                 };
             },
         });
@@ -135,20 +135,20 @@ Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`,
         failed,
         Gate{
             "MR",
-            0,
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
             &TableauSimulator::measure_reset_z,
             &FrameSimulator::measure_reset_z,
             &ErrorAnalyzer::MRZ,
-            GATE_PRODUCES_RESULTS,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-Z-basis demolition measurement.
+Z-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
 )MARKDOWN",
                     {},
-                    {"Z -> m", "1 -> +Z"},
+                    {"Z -> m xor chance(p)", "1 -> +Z"},
                 };
             },
         });

@@ -52,7 +52,7 @@ static TempArgData args_to_target_pairs(TableauSimulator &self, const emscripten
     return result;
 }
 
-ExposedTableauSimulator::ExposedTableauSimulator() : sim(0, JS_BIND_SHARED_RNG()) {
+ExposedTableauSimulator::ExposedTableauSimulator() : sim(JS_BIND_SHARED_RNG(), 0) {
 }
 
 bool ExposedTableauSimulator::measure(size_t target) {
