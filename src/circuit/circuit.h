@@ -346,7 +346,7 @@ double read_normal_double(int &c, SOURCE read_char) {
 
     char *end;
     double result = strtod(buf, &end);
-    if (end != buf + n || !std::isnormal(result)) {
+    if (end != buf + n || std::isinf(result) || std::isnan(result)) {
         throw std::invalid_argument("Not a real number: " + std::string(buf));
     }
     return result;
