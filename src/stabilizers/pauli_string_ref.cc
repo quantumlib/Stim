@@ -77,7 +77,7 @@ bool PauliStringRef::operator!=(const PauliStringRef &other) const {
     return !(*this == other);
 }
 
-std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const PauliStringRef &ps) {
     out << "+-"[ps.sign];
     for (size_t k = 0; k < ps.num_qubits; k++) {
         out << "_XZY"[ps.xs[k] + 2 * ps.zs[k]];

@@ -109,11 +109,11 @@ struct DetectorErrorModel {
     void clear();
 };
 
-}  // namespace stim_internal
+std::ostream &operator<<(std::ostream &out, const DemInstructionType &type);
+std::ostream &operator<<(std::ostream &out, const DetectorErrorModel &v);
+std::ostream &operator<<(std::ostream &out, const DemTarget &v);
+std::ostream &operator<<(std::ostream &out, const DemInstruction &v);
 
-std::ostream &operator<<(std::ostream &out, const stim_internal::DemInstructionType &type);
-std::ostream &operator<<(std::ostream &out, const stim_internal::DetectorErrorModel &v);
-std::ostream &operator<<(std::ostream &out, const stim_internal::DemTarget &v);
-std::ostream &operator<<(std::ostream &out, const stim_internal::DemInstruction &v);
+}  // namespace stim_internal
 
 #endif

@@ -116,7 +116,7 @@ Tableau Tableau::gate2(const char *x1, const char *z1, const char *x2, const cha
     return result;
 }
 
-std::ostream &operator<<(std::ostream &out, const Tableau &t) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const Tableau &t) {
     out << "+-";
     for (size_t k = 0; k < t.num_qubits; k++) {
         out << 'x';

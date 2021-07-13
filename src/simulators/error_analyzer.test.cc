@@ -1893,21 +1893,27 @@ TEST(ErrorAnalyzer, duplicate_records_in_detectors) {
 }
 
 TEST(ErrorAnalyzer, noisy_measurement_mx) {
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RX 0
             MX(0.125) 0
             MX 0
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             detector D1
         )MODEL"));
 
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RX 0 1
             Y_ERROR(1) 0 1
             MX(0.125) 0 1
@@ -1916,7 +1922,11 @@ TEST(ErrorAnalyzer, noisy_measurement_mx) {
             DETECTOR rec[-3]
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             error(1) D0 D2
@@ -1926,21 +1936,27 @@ TEST(ErrorAnalyzer, noisy_measurement_mx) {
 }
 
 TEST(ErrorAnalyzer, noisy_measurement_my) {
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RY 0
             MY(0.125) 0
             MY 0
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             detector D1
         )MODEL"));
 
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RY 0 1
             Z_ERROR(1) 0 1
             MY(0.125) 0 1
@@ -1949,7 +1965,11 @@ TEST(ErrorAnalyzer, noisy_measurement_my) {
             DETECTOR rec[-3]
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             error(1) D0 D2
@@ -1959,21 +1979,27 @@ TEST(ErrorAnalyzer, noisy_measurement_my) {
 }
 
 TEST(ErrorAnalyzer, noisy_measurement_mz) {
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RZ 0
             MZ(0.125) 0
             MZ 0
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             detector D1
         )MODEL"));
 
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RZ 0 1
             X_ERROR(1) 0 1
             MZ(0.125) 0 1
@@ -1982,7 +2008,11 @@ TEST(ErrorAnalyzer, noisy_measurement_mz) {
             DETECTOR rec[-3]
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             error(1) D0 D2
@@ -1992,21 +2022,27 @@ TEST(ErrorAnalyzer, noisy_measurement_mz) {
 }
 
 TEST(ErrorAnalyzer, noisy_measurement_mrx) {
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RX 0
             MRX(0.125) 0
             MRX 0
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             detector D1
         )MODEL"));
 
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RX 0 1
             Z_ERROR(1) 0 1
             MRX(0.125) 0 1
@@ -2015,7 +2051,11 @@ TEST(ErrorAnalyzer, noisy_measurement_mrx) {
             DETECTOR rec[-3]
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.875) D0
             error(0.875) D1
@@ -2025,21 +2065,27 @@ TEST(ErrorAnalyzer, noisy_measurement_mrx) {
 }
 
 TEST(ErrorAnalyzer, noisy_measurement_mry) {
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RY 0
             MRY(0.125) 0
             MRY 0
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             detector D1
         )MODEL"));
 
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RY 0 1
             X_ERROR(1) 0 1
             MRY(0.125) 0 1
@@ -2048,7 +2094,11 @@ TEST(ErrorAnalyzer, noisy_measurement_mry) {
             DETECTOR rec[-3]
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.875) D0
             error(0.875) D1
@@ -2058,21 +2108,27 @@ TEST(ErrorAnalyzer, noisy_measurement_mry) {
 }
 
 TEST(ErrorAnalyzer, noisy_measurement_mrz) {
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RZ 0
             MRZ(0.125) 0
             MRZ 0
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.125) D0
             detector D1
         )MODEL"));
 
-    ASSERT_EQ(ErrorAnalyzer::circuit_to_detector_error_model(
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
             RZ 0 1
             X_ERROR(1) 0 1
             MRZ(0.125) 0 1
@@ -2081,7 +2137,11 @@ TEST(ErrorAnalyzer, noisy_measurement_mrz) {
             DETECTOR rec[-3]
             DETECTOR rec[-2]
             DETECTOR rec[-1]
-        )CIRCUIT"), false, false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
         DetectorErrorModel(R"MODEL(
             error(0.875) D0
             error(0.875) D1

@@ -200,7 +200,7 @@ std::string VectorSimulator::str() const {
     return ss.str();
 }
 
-std::ostream &operator<<(std::ostream &out, const VectorSimulator &sim) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const VectorSimulator &sim) {
     out << "VectorSimulator {\n";
     for (size_t k = 0; k < sim.state.size(); k++) {
         out << "    " << k << ": " << sim.state[k] << "\n";

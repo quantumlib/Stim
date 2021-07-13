@@ -104,9 +104,9 @@ struct PauliStringRef {
     std::string sparse_str() const;
 };
 
-}  // namespace stim_internal
-
 /// Writes a string describing the given Pauli string to an output stream.
-std::ostream &operator<<(std::ostream &out, const stim_internal::PauliStringRef &ps);
+std::ostream &operator<<(std::ostream &out, const PauliStringRef &ps);
+
+}  // namespace stim_internal
 
 #endif

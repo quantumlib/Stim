@@ -187,8 +187,8 @@ struct Tableau {
     PauliString inverse_z_output(size_t input_index, bool skip_sign = false) const;
 };
 
-}  // namespace stim_internal
+std::ostream &operator<<(std::ostream &out, const Tableau &ps);
 
-std::ostream &operator<<(std::ostream &out, const stim_internal::Tableau &ps);
+}  // namespace stim_internal
 
 #endif

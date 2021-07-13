@@ -299,9 +299,9 @@ struct simd_bits_range_ref {
     }
 };
 
-}  // namespace stim_internal
-
 /// Writes a description of the contents of the range to `out`.
-std::ostream &operator<<(std::ostream &out, const stim_internal::simd_bits_range_ref m);
+std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m);
+
+}  // namespace stim_internal
 
 #endif
