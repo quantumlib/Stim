@@ -104,6 +104,8 @@ enum GateFlags : uint16_t {
     GATE_CAN_TARGET_MEASUREMENT_RECORD = 1 << 9,
     // Controls whether the gate takes qubit/record targets.
     GATE_TAKES_NO_TARGETS = 1 << 10,
+    // Controls validation of index arguments like OBSERVABLE_INCLUDE(1).
+    GATE_ARGS_ARE_UNSIGNED_INTEGERS = 1 << 11,
 };
 
 struct ExtraGateData {

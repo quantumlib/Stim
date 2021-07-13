@@ -791,3 +791,23 @@ TEST(circuit, zero_repetitions_not_allowed) {
         )CIRCUIT");
     });
 }
+
+TEST(circuit, negative_float_coordinates) {
+    auto c = Circuit(R"CIRCUIT(
+        SHIFT_COORDS(-1, -2, -3)
+        QUBIT_COORDS(1, -2) 1
+        QUBIT_COORDS(-3.5) 1
+    )CIRCUIT");
+    ASSERT_EQ(c.operations[0].target_data.args[2], -3);
+    ASSERT_EQ(c.operations[2].target_data.args[0], -3.5);
+    ASSERT_ANY_THROW({
+        Circuit("M(-0.1) 0");
+    });
+    c = Circuit("QUBIT_COORDS(1e20) 0");
+    ASSERT_EQ(c.operations[0].target_data.args[0], 1e20);
+    c = Circuit("QUBIT_COORDS(1E+20) 0");
+    ASSERT_EQ(c.operations[0].target_data.args[0], 1E+20);
+    ASSERT_ANY_THROW({
+        Circuit("QUBIT_COORDS(1e10000) 0");
+    });
+}
