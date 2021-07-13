@@ -539,6 +539,15 @@ void model_read_operations(DetectorErrorModel &model, SOURCE read_char, DEM_READ
     } while (read_condition != DEM_READ_AS_LITTLE_AS_POSSIBLE);
 }
 
+void DetectorErrorModel::append_from_file(FILE *file, bool stop_asap) {
+    model_read_operations(
+        *this,
+        [&]() {
+            return getc(file);
+        },
+        stop_asap ? DEM_READ_AS_LITTLE_AS_POSSIBLE : DEM_READ_UNTIL_END_OF_FILE);
+}
+
 void DetectorErrorModel::append_from_text(const char *text) {
     size_t k = 0;
     model_read_operations(
@@ -547,6 +556,12 @@ void DetectorErrorModel::append_from_text(const char *text) {
             return text[k] != 0 ? text[k++] : EOF;
         },
         DEM_READ_UNTIL_END_OF_FILE);
+}
+
+DetectorErrorModel DetectorErrorModel::from_file(FILE *file) {
+    DetectorErrorModel result;
+    result.append_from_file(file, false);
+    return result;
 }
 
 DetectorErrorModel::DetectorErrorModel(const char *text) {

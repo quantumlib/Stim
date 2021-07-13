@@ -95,7 +95,18 @@ struct DetectorErrorModel {
     void append_logical_observable_instruction(DemTarget target);
     void append_repeat_block(uint64_t repeat_count, DetectorErrorModel &&body);
     void append_repeat_block(uint64_t repeat_count, const DetectorErrorModel &body);
+
+    /// Grows the detector error model using operations from a string.
     void append_from_text(const char *text);
+    /// Grows the detector error model using operations from a file.
+    ///
+    /// Args:
+    ///     file: The opened file to read from.
+    ///     stop_asap: When set to true, the reading process stops after the next instruction or block is read. This is
+    ///         potentially useful for interactive/streaming usage, where errors are being processed on the fly.
+    void append_from_file(FILE *file, bool stop_asap = false);
+    /// Parses a detector error model from a file.
+    static DetectorErrorModel from_file(FILE *file);
 
     bool operator==(const DetectorErrorModel &other) const;
     bool operator!=(const DetectorErrorModel &other) const;

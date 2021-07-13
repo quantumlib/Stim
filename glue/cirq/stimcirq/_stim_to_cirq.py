@@ -286,6 +286,8 @@ def _translate_flattened_operation(
         args: List[float] = [arg] if isinstance(arg, float) else arg
         for k in range(len(args)):
             args[k] += coord_tracker.origin[k]
+            if args[k] == int(args[k]):
+                args[k] = int(args[k])
         for t in targets:
             if len(args) == 1:
                 coord_tracker.qubit_coords[t] = cirq.LineQubit(*args)
