@@ -17,6 +17,7 @@
 #ifndef STIM_CIRCUIT_H
 #define STIM_CIRCUIT_H
 
+#include <cmath>
 #include <cstring>
 #include <functional>
 #include <iostream>
@@ -333,7 +334,7 @@ inline bool is_double_char(int c) {
 }
 
 template <typename SOURCE>
-double read_non_negative_double(int &c, SOURCE read_char) {
+double read_normal_double(int &c, SOURCE read_char) {
     char buf[64];
     size_t n = 0;
     while (n < sizeof(buf) - 1 && is_double_char(c)) {
@@ -345,8 +346,8 @@ double read_non_negative_double(int &c, SOURCE read_char) {
 
     char *end;
     double result = strtod(buf, &end);
-    if (end != buf + n || !(result >= 0)) {
-        throw std::invalid_argument("Not a non-negative real number: " + std::string(buf));
+    if (end != buf + n || !std::isnormal(result)) {
+        throw std::invalid_argument("Not a real number: " + std::string(buf));
     }
     return result;
 }
@@ -360,7 +361,7 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
 
     read_past_within_line_whitespace(c, read_char);
     while (true) {
-        out.append_tail(read_non_negative_double(c, read_char));
+        out.append_tail(read_normal_double(c, read_char));
         read_past_within_line_whitespace(c, read_char);
         if (c != ',') {
             break;

@@ -1,5 +1,5 @@
 import inspect
-from typing import Tuple, Union, Callable, Any
+from typing import Tuple, Union, Callable, Any, cast
 
 import cirq
 import pytest
@@ -216,20 +216,29 @@ Z_ERROR
 def test_line_grid_qubit_round_trip():
     c = cirq.Circuit(
         cirq.H(cirq.LineQubit(101)),
-        cirq.Z(cirq.LineQubit(200)),
-        cirq.X(cirq.GridQubit(2, 3)),
+        cirq.Z(cirq.LineQubit(200.5)),
+        cirq.X(cirq.GridQubit(2, 3.5)),
+        cirq.Y(cirq.GridQubit(-2, 5)),
     )
     s = stimcirq.cirq_circuit_to_stim_circuit(c)
     assert s == stim.Circuit("""
-        QUBIT_COORDS(2, 3) 0
-        QUBIT_COORDS(101) 1
-        QUBIT_COORDS(200) 2
-        H 1
-        Z 2
-        X 0
+        QUBIT_COORDS(-2, 5) 0
+        QUBIT_COORDS(2, 3.5) 1
+        QUBIT_COORDS(101) 2
+        QUBIT_COORDS(200.5) 3
+        H 2
+        Z 3
+        X 1
+        Y 0
         TICK
     """)
-    assert stimcirq.stim_circuit_to_cirq_circuit(s) == c
+    c2 = stimcirq.stim_circuit_to_cirq_circuit(s)
+    for q in c2.all_qubits():
+        if q == cirq.LineQubit(101):
+            assert isinstance(cast(cirq.LineQubit, q).x, int)
+        if q == cirq.GridQubit(2, 3.5):
+            assert isinstance(cast(cirq.GridQubit, q).row, int)
+    assert c2 == c
 
     assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
         QUBIT_COORDS(10) 0
