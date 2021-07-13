@@ -102,6 +102,15 @@ def cirq_circuit_to_stim_data(
         q2i = {q: i for i, q in enumerate(sorted(circuit.all_qubits()))}
     out = stim.Circuit()
     key_out: List[Tuple[str, int]] = []
+
+    for q in sorted(circuit.all_qubits()):
+        if isinstance(q, cirq.LineQubit):
+            i = q2i[q]
+            if i != q.x:
+                out.append_operation("QUBIT_COORDS", [i], [q.x])
+        elif isinstance(q, cirq.GridQubit):
+            out.append_operation("QUBIT_COORDS", [q2i[q]], [q.row, q.col])
+
     for moment in circuit:
         _c2s_helper(moment, q2i, out, key_out)
         out.append_operation("TICK", [])

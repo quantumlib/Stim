@@ -211,3 +211,52 @@ Z_ERROR
     handled = stim_to_cirq_gate_table().keys() | not_handled_or_handled_specially_set()
     for gate_name in gates:
         assert gate_name in handled, gate_name
+
+
+def test_line_grid_qubit_round_trip():
+    c = cirq.Circuit(
+        cirq.H(cirq.LineQubit(101)),
+        cirq.Z(cirq.LineQubit(200)),
+        cirq.X(cirq.GridQubit(2, 3)),
+    )
+    s = stimcirq.cirq_circuit_to_stim_circuit(c)
+    assert s == stim.Circuit("""
+        QUBIT_COORDS(2, 3) 0
+        QUBIT_COORDS(101) 1
+        QUBIT_COORDS(200) 2
+        H 1
+        Z 2
+        X 0
+        TICK
+    """)
+    assert stimcirq.stim_circuit_to_cirq_circuit(s) == c
+
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit("""
+        QUBIT_COORDS(10) 0
+        SHIFT_COORDS(1, 2, 3)
+        QUBIT_COORDS(20, 30) 1
+        H 0 1
+    """)) == cirq.Circuit(cirq.H(cirq.LineQubit(10)), cirq.H(cirq.GridQubit(21, 32)))
+
+
+def test_noisy_measurements():
+    s = stim.Circuit("""
+        MX(0.125) 0
+        MY(0.125) 1
+        MZ(0.125) 2
+        MRX(0.125) 3
+        MRY(0.125) 4
+        MRZ(0.25) 5
+        TICK
+    """)
+    c = stimcirq.stim_circuit_to_cirq_circuit(s)
+    assert c == cirq.Circuit(
+        stimcirq.MeasureAndOrReset(measure=True, reset=False, basis='X', invert_measure=False, key='0', measure_flip_probability=0.125).on(cirq.LineQubit(0)),
+        stimcirq.MeasureAndOrReset(measure=True, reset=False, basis='Y', invert_measure=False, key='1', measure_flip_probability=0.125).on(cirq.LineQubit(1)),
+        stimcirq.MeasureAndOrReset(measure=True, reset=False, basis='Z', invert_measure=False, key='2', measure_flip_probability=0.125).on(cirq.LineQubit(2)),
+        stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='X', invert_measure=False, key='3', measure_flip_probability=0.125).on(cirq.LineQubit(3)),
+        stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='Y', invert_measure=False, key='4', measure_flip_probability=0.125).on(cirq.LineQubit(4)),
+        stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='5', measure_flip_probability=0.25).on(cirq.LineQubit(5)),
+    )
+    assert stimcirq.cirq_circuit_to_stim_circuit(c) == s
+    cirq.testing.assert_equivalent_repr(c, global_vals={'stimcirq': stimcirq})

@@ -1455,8 +1455,10 @@
     
     Alternate name: <a name="MZ"></a>`MZ`
     
-    Z-basis measurement.
+    Z-basis measurement (optionally noisy).
     Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
     Prefixing a target with ! inverts its recorded measurement result.
     
     - Example:
@@ -1464,13 +1466,13 @@
         ```
         M 5
         M !42
-        M 5 !42
+        M(0.001) 5 !42
         ```
         
     - Stabilizer Generators:
     
         ```
-        Z -> m
+        Z -> m xor chance(p)
         Z -> +Z
         ```
         
@@ -1479,8 +1481,10 @@
     
     Alternate name: <a name="MRZ"></a>`MRZ`
     
-    Z-basis demolition measurement.
+    Z-basis demolition measurement (optionally noisy).
     Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
     Prefixing a target with ! inverts its recorded measurement result.
     
     - Example:
@@ -1488,21 +1492,23 @@
         ```
         MR 5
         MR !42
-        MR 5 !42
+        MR(0.001) 5 !42
         ```
         
     - Stabilizer Generators:
     
         ```
-        Z -> m
+        Z -> m xor chance(p)
         1 -> +Z
         ```
         
     
 - <a name="MRX"></a>**`MRX`**
     
-    X-basis demolition measurement.
+    X-basis demolition measurement (optionally noisy).
     Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
     Prefixing a target with ! inverts its recorded measurement result.
     
     - Example:
@@ -1510,21 +1516,23 @@
         ```
         MRX 5
         MRX !42
-        MRX 5 !42
+        MRX(0.001) 5 !42
         ```
         
     - Stabilizer Generators:
     
         ```
-        X -> m
+        X -> m xor chance(p)
         1 -> +X
         ```
         
     
 - <a name="MRY"></a>**`MRY`**
     
-    Y-basis demolition measurement.
+    Y-basis demolition measurement (optionally noisy).
     Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
     Prefixing a target with ! inverts its recorded measurement result.
     
     - Example:
@@ -1532,21 +1540,23 @@
         ```
         MRY 5
         MRY !42
-        MRY 5 !42
+        MRY(0.001) 5 !42
         ```
         
     - Stabilizer Generators:
     
         ```
-        Y -> m
+        Y -> m xor chance(p)
         1 -> +Y
         ```
         
     
 - <a name="MX"></a>**`MX`**
     
-    X-basis measurement.
+    X-basis measurement (optionally noisy).
     Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
     Prefixing a target with ! inverts its recorded measurement result.
     
     - Example:
@@ -1554,21 +1564,23 @@
         ```
         MX 5
         MX !42
-        MX 5 !42
+        MX(0.001) 5 !42
         ```
         
     - Stabilizer Generators:
     
         ```
-        X -> m
+        X -> +m xor chance(p)
         X -> +X
         ```
         
     
 - <a name="MY"></a>**`MY`**
     
-    Y-basis measurement.
+    Y-basis measurement (optionally noisy).
     Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
     Prefixing a target with ! inverts its recorded measurement result.
     
     - Example:
@@ -1576,13 +1588,13 @@
         ```
         MY 5
         MY !42
-        MY 5 !42
+        MY(0.001) 5 !42
         ```
         
     - Stabilizer Generators:
     
         ```
-        Y -> m
+        Y -> m xor chance(p)
         Y -> +Y
         ```
         
