@@ -858,7 +858,8 @@ void pybind_pauli_string(pybind11::module &m) {
                >>> p[-1] = 'Y'
                >>> print(p)
                +_XYY
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(
         "__getitem__",
@@ -871,8 +872,7 @@ void pybind_pauli_string(pybind11::module &m) {
             }
         },
         pybind11::arg("index_or_slice"),
-        clean_doc_string(
-        u8R"DOC(
+        clean_doc_string(u8R"DOC(
             Returns an individual Pauli or Pauli string slice from the pauli string.
 
             Individual Paulis are returned as an int using the encoding 0=I, 1=X, 2=Y, 3=Z.
@@ -898,5 +898,6 @@ void pybind_pauli_string(pybind11::module &m) {
                 1: Pauli X.
                 2: Pauli Y.
                 3: Pauli Z.
-        )DOC").data());
+        )DOC")
+            .data());
 }

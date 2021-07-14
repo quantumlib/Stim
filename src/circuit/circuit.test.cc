@@ -800,16 +800,12 @@ TEST(circuit, negative_float_coordinates) {
     )CIRCUIT");
     ASSERT_EQ(c.operations[0].target_data.args[2], -3);
     ASSERT_EQ(c.operations[2].target_data.args[0], -3.5);
-    ASSERT_ANY_THROW({
-        Circuit("M(-0.1) 0");
-    });
+    ASSERT_ANY_THROW({ Circuit("M(-0.1) 0"); });
     c = Circuit("QUBIT_COORDS(1e20) 0");
     ASSERT_EQ(c.operations[0].target_data.args[0], 1e20);
     c = Circuit("QUBIT_COORDS(1E+20) 0");
     ASSERT_EQ(c.operations[0].target_data.args[0], 1E+20);
-    ASSERT_ANY_THROW({
-        Circuit("QUBIT_COORDS(1e10000) 0");
-    });
+    ASSERT_ANY_THROW({ Circuit("QUBIT_COORDS(1e10000) 0"); });
 }
 
 TEST(circuit, py_get_slice) {

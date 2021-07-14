@@ -652,7 +652,7 @@ DetectorErrorModel DetectorErrorModel::py_get_slice(int64_t start, int64_t step,
     assert(slice_length >= 0);
     DetectorErrorModel result;
     for (size_t k = 0; k < (size_t)slice_length; k++) {
-        const auto &op = instructions[start + step*k];
+        const auto &op = instructions[start + step * k];
         if (op.type == DEM_REPEAT_BLOCK) {
             result.append_repeat_block(op.target_data[0].data, blocks[op.target_data[1].data]);
         } else {

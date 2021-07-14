@@ -344,12 +344,8 @@ TEST(PauliString, py_get_item) {
     ASSERT_EQ(p.py_get_item(-9), 2);
     ASSERT_EQ(p.py_get_item(-10), 1);
 
-    ASSERT_ANY_THROW({
-        p.py_get_item(10);
-    });
-    ASSERT_ANY_THROW({
-        p.py_get_item(-11);
-    });
+    ASSERT_ANY_THROW({ p.py_get_item(10); });
+    ASSERT_ANY_THROW({ p.py_get_item(-11); });
 }
 
 TEST(PauliString, py_get_slice) {

@@ -137,8 +137,9 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
         for (const auto p : args) {
             if (p < 0 || p != round(p)) {
                 throw std::invalid_argument(
-                    "Gate " + std::string(gate.name) + " only takes non-negative integer arguments, but one of its arguments (" +
-                    comma_sep(args).str() + ") wasn't a non-negative integer.");
+                    "Gate " + std::string(gate.name) +
+                    " only takes non-negative integer arguments, but one of its arguments (" + comma_sep(args).str() +
+                    ") wasn't a non-negative integer.");
             }
         }
     }
@@ -870,7 +871,7 @@ Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length)
     assert(slice_length >= 0);
     Circuit result;
     for (size_t k = 0; k < (size_t)slice_length; k++) {
-        const auto &op = operations[start + step*k];
+        const auto &op = operations[start + step * k];
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             result.target_buf.append_tail(result.blocks.size());
             result.target_buf.append_tail(op.target_data.targets[1]);

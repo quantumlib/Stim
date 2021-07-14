@@ -781,7 +781,8 @@ void pybind_circuit(pybind11::module &m) {
                     TICK
                     DETECTOR rec[-1]
                 ''')
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(
         "detector_error_model",

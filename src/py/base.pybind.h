@@ -23,6 +23,11 @@
 
 std::mt19937_64 &PYBIND_SHARED_RNG();
 std::string clean_doc_string(const char *c);
-bool normalize_index_or_slice(const pybind11::object &index_or_slice, size_t length, pybind11::ssize_t *start, pybind11::ssize_t *step, pybind11::ssize_t *slice_length);
+bool normalize_index_or_slice(
+    const pybind11::object &index_or_slice,
+    size_t length,
+    pybind11::ssize_t *start,
+    pybind11::ssize_t *step,
+    pybind11::ssize_t *slice_length);
 
 #endif

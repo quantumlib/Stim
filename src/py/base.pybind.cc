@@ -62,7 +62,12 @@ std::string clean_doc_string(const char *c) {
     return result;
 }
 
-bool normalize_index_or_slice(const pybind11::object &index_or_slice, size_t length, pybind11::ssize_t *start, pybind11::ssize_t *step, pybind11::ssize_t *slice_length) {
+bool normalize_index_or_slice(
+    const pybind11::object &index_or_slice,
+    size_t length,
+    pybind11::ssize_t *start,
+    pybind11::ssize_t *step,
+    pybind11::ssize_t *slice_length) {
     try {
         *start = pybind11::cast<pybind11::ssize_t>(index_or_slice);
         if (*start < 0) {
