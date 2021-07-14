@@ -217,7 +217,7 @@ def test_circuit_compile_sampler():
     s = c.compile_sampler()
     assert repr(s) == """
 stim.CompiledMeasurementSampler(stim.Circuit('''
-M 0
+    M 0
 '''))
     """.strip()
 
@@ -227,9 +227,9 @@ M 0
     r = repr(s)
     assert r == """
 stim.CompiledMeasurementSampler(stim.Circuit('''
-M 0
-H 0 1 2 3 4
-M 0 1 2 3 4
+    M 0
+    H 0 1 2 3 4
+    M 0 1 2 3 4
 '''))
     """.strip() == str(stim.CompiledMeasurementSampler(c))
 
@@ -247,8 +247,8 @@ def test_circuit_compile_detector_sampler():
     r = repr(s)
     assert r == """
 stim.CompiledDetectorSampler(stim.Circuit('''
-M 0
-DETECTOR rec[-1]
+    M 0
+    DETECTOR rec[-1]
 '''))
     """.strip()
 
@@ -434,6 +434,10 @@ def test_slicing():
         Y 2
     """)
     assert c[::2] == stim.Circuit("""
+        H 0
+        Y 2
+    """)
+    assert c[1::2] == stim.Circuit("""
         REPEAT 5 {
             X 1
         }
