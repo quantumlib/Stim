@@ -21,9 +21,12 @@
 
 std::mt19937_64 &SHARED_TEST_RNG();
 
+std::string rewind_read_all(FILE *f);
+
 struct RaiiTempNamedFile {
     int descriptor;
     std::string path;
     RaiiTempNamedFile();
     ~RaiiTempNamedFile();
 };
+

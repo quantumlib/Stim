@@ -21,19 +21,6 @@
 
 using namespace stim_internal;
 
-static std::string rewind_read_all(FILE *f) {
-    rewind(f);
-    std::string result;
-    while (true) {
-        int c = getc(f);
-        if (c == EOF) {
-            fclose(f);
-            return result;
-        }
-        result.push_back((char)c);
-    }
-}
-
 TEST(DetectionSimulator, detector_samples) {
     auto circuit = Circuit(
         "X_ERROR(1) 0\n"

@@ -22,19 +22,6 @@
 
 using namespace stim_internal;
 
-static std::string rewind_read_all(FILE *f) {
-    rewind(f);
-    std::string result;
-    while (true) {
-        int c = getc(f);
-        if (c == EOF) {
-            fclose(f);
-            return result;
-        }
-        result.push_back((char)c);
-    }
-}
-
 TEST(FrameSimulator, get_set_frame) {
     FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
     ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));

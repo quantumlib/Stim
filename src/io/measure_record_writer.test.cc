@@ -22,19 +22,6 @@
 
 using namespace stim_internal;
 
-static std::string rewind_read_all(FILE *f) {
-    rewind(f);
-    std::string result;
-    while (true) {
-        int c = getc(f);
-        if (c == EOF) {
-            fclose(f);
-            return result;
-        }
-        result.push_back((char)c);
-    }
-}
-
 TEST(MeasureRecordWriter, Format01) {
     FILE *tmp = tmpfile();
     auto writer = MeasureRecordWriter::make(tmp, SAMPLE_FORMAT_01);
