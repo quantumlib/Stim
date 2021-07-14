@@ -29,6 +29,19 @@ std::mt19937_64 &SHARED_TEST_RNG() {
     return shared_test_rng;
 }
 
+std::string rewind_read_all(FILE *f) {
+    rewind(f);
+    std::string result;
+    while (true) {
+        int c = getc(f);
+        if (c == EOF) {
+            fclose(f);
+            return result;
+        }
+        result.push_back((char)c);
+    }
+}
+
 RaiiTempNamedFile::RaiiTempNamedFile() {
     char tmp_stdin_filename[] = "/tmp/stim_test_named_file_XXXXXX";
     descriptor = mkstemp(tmp_stdin_filename);
