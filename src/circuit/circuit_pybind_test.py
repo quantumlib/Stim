@@ -169,8 +169,8 @@ def test_circuit_repr():
     """)
     r = repr(v)
     assert r == """stim.Circuit('''
-X 0
-M 0
+    X 0
+    M 0
 ''')"""
     assert eval(r, {'stim': stim}) == v
 

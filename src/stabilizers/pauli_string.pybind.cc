@@ -834,6 +834,10 @@ void pybind_pauli_string(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
            Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
 
+           Args:
+               index: The index of the pauli to overwrite.
+               new_pauli: Either a character from '_IXYZ' or an integer from range(4).
+
            Examples:
                >>> import stim
                >>> p = stim.PauliString(4)
@@ -854,9 +858,6 @@ void pybind_pauli_string(pybind11::module &m) {
                >>> p[-1] = 'Y'
                >>> print(p)
                +_XYY
-
-           Args:
-               index: The index of the pauli to return.
         )DOC").data());
 
     c.def(
