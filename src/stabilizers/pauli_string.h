@@ -103,6 +103,11 @@ struct PauliString {
     /// Explicit conversion to a const reference.
     const PauliStringRef ref() const;
 
+    /// Returns a python-style slice of the Paulis in the Pauli string.
+    PauliString py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
+    /// Returns a Pauli from the pauli string, allowing python-style negative indices, using IXYZ encoding.
+    uint8_t py_get_item(int64_t index) const;
+
     /// Returns a string describing the given Pauli string, with one character per qubit.
     std::string str() const;
 

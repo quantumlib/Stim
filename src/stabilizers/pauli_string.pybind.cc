@@ -791,37 +791,9 @@ void pybind_pauli_string(pybind11::module &m) {
         )DOC")
             .data());
 
-    std::string SET_ITEM_DOC = clean_doc_string(
-        u8R"DOC(
-       Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
-
-       Examples:
-           >>> import stim
-           >>> p = stim.PauliString(4)
-           >>> p[2] = 1
-           >>> print(p)
-           +__X_
-           >>> p[0] = 3
-           >>> p[1] = 2
-           >>> p[3] = 0
-           >>> print(p)
-           +ZYX_
-           >>> p[0] = 'I'
-           >>> p[1] = 'X'
-           >>> p[2] = 'Y'
-           >>> p[3] = 'Z'
-           >>> print(p)
-           +_XYZ
-           >>> p[-1] = 'Y'
-           >>> print(p)
-           +_XYY
-
-       Args:
-           index: The index of the pauli to return.
-    )DOC");
     c.def(
         "__setitem__",
-        [](PyPauliString &self, pybind11::ssize_t index, char new_pauli) {
+        [](PyPauliString &self, pybind11::ssize_t index, pybind11::object arg_new_pauli) {
             if (index < 0) {
                 index += self.value.num_qubits;
             }
@@ -829,106 +801,101 @@ void pybind_pauli_string(pybind11::module &m) {
                 throw std::out_of_range("index");
             }
             size_t u = (size_t)index;
-            if (new_pauli == 'X') {
-                self.value.xs[u] = 1;
-                self.value.zs[u] = 0;
-            } else if (new_pauli == 'Y') {
-                self.value.xs[u] = 1;
-                self.value.zs[u] = 1;
-            } else if (new_pauli == 'Z') {
-                self.value.xs[u] = 0;
-                self.value.zs[u] = 1;
-            } else if (new_pauli == 'I' || new_pauli == '_') {
-                self.value.xs[u] = 0;
-                self.value.zs[u] = 0;
-            } else {
-                throw std::out_of_range("Expected new_pauli in [0, 1, 2, 3, '_', 'I', 'X', 'Y', 'Z']");
-            }
-        },
-        pybind11::arg("index"),
-        pybind11::arg("new_pauli"),
-        SET_ITEM_DOC.data());
-    c.def(
-        "__setitem__",
-        [](PyPauliString &self, pybind11::ssize_t index, int new_pauli) {
-            if (index < 0) {
-                index += self.value.num_qubits;
-            }
-            if (index < 0 || (size_t)index >= self.value.num_qubits) {
-                throw std::out_of_range("index");
-            }
-            if (new_pauli < 0 || new_pauli > 3) {
-                throw std::out_of_range("Expected new_pauli in [0, 1, 2, 3, '_', 'I', 'X', 'Y', 'Z']");
-            }
-            size_t u = (size_t)index;
-            int z = (new_pauli >> 1) & 1;
-            int x = (new_pauli & 1) ^ z;
-            self.value.xs[u] = x;
-            self.value.zs[u] = z;
-        },
-        pybind11::arg("index"),
-        pybind11::arg("new_pauli"),
-        SET_ITEM_DOC.data());
-
-    std::string GET_ITEM_DOC = clean_doc_string(
-        u8R"DOC(
-        Returns an individual Pauli or Pauli string slice from the pauli string.
-
-        Individual Paulis are returned as an int using the encoding 0=I, 1=X, 2=Y, 3=Z.
-        Slices are returned as a stim.PauliString (always with positive sign).
-
-        Examples:
-            >>> import stim
-            >>> p = stim.PauliString("_XYZ")
-            >>> p[2]
-            2
-            >>> p[-1]
-            3
-            >>> p[:2]
-            stim.PauliString("+_X")
-            >>> p[::-1]
-            stim.PauliString("+ZYX_")
-
-        Args:
-            index: The index of the pauli to return or slice of paulis to return.
-
-        Returns:
-            0: Identity.
-            1: Pauli X.
-            2: Pauli Y.
-            3: Pauli Z.
-    )DOC");
-    c.def(
-        "__getitem__",
-        [](const PyPauliString &self, pybind11::ssize_t index) {
-            if (index < 0) {
-                index += self.value.num_qubits;
-            }
-            if (index < 0 || (size_t)index >= self.value.num_qubits) {
-                throw std::out_of_range("index");
-            }
-            size_t u = (size_t)index;
-            int x = self.value.xs[u];
-            int z = self.value.zs[u];
-            return pauli_xz_to_xyz(x, z);
-        },
-        pybind11::arg("index"),
-        GET_ITEM_DOC.data());
-    c.def(
-        "__getitem__",
-        [](const PyPauliString &self, pybind11::slice slice) {
-            pybind11::ssize_t start, stop, step, n;
-            if (!slice.compute(self.value.num_qubits, &start, &stop, &step, &n)) {
-                throw pybind11::error_already_set();
-            }
-            return PyPauliString(PauliString::from_func(false, (size_t)n, [&](size_t i) {
-                int j = start + i * step;
-                if (j < 0) {
-                    j += n;
+            try {
+                pybind11::ssize_t new_pauli = pybind11::cast<pybind11::ssize_t>(arg_new_pauli);
+                if (new_pauli < 0 || new_pauli > 3) {
+                    throw std::out_of_range("Expected new_pauli in [0, 1, 2, 3, '_', 'I', 'X', 'Y', 'Z']");
                 }
-                return "_XZY"[self.value.xs[j] + self.value.zs[j] * 2];
-            }));
+                int z = (new_pauli >> 1) & 1;
+                int x = (new_pauli & 1) ^ z;
+                self.value.xs[u] = x;
+                self.value.zs[u] = z;
+            } catch (const pybind11::cast_error &) {
+                char new_pauli = pybind11::cast<char>(arg_new_pauli);
+                if (new_pauli == 'X') {
+                    self.value.xs[u] = 1;
+                    self.value.zs[u] = 0;
+                } else if (new_pauli == 'Y') {
+                    self.value.xs[u] = 1;
+                    self.value.zs[u] = 1;
+                } else if (new_pauli == 'Z') {
+                    self.value.xs[u] = 0;
+                    self.value.zs[u] = 1;
+                } else if (new_pauli == 'I' || new_pauli == '_') {
+                    self.value.xs[u] = 0;
+                    self.value.zs[u] = 0;
+                } else {
+                    throw std::out_of_range("Expected new_pauli in [0, 1, 2, 3, '_', 'I', 'X', 'Y', 'Z']");
+                }
+            }
         },
-        pybind11::arg("slice"),
-        GET_ITEM_DOC.data());
+        pybind11::arg("index"),
+        pybind11::arg("new_pauli"),
+        clean_doc_string(u8R"DOC(
+           Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
+
+           Examples:
+               >>> import stim
+               >>> p = stim.PauliString(4)
+               >>> p[2] = 1
+               >>> print(p)
+               +__X_
+               >>> p[0] = 3
+               >>> p[1] = 2
+               >>> p[3] = 0
+               >>> print(p)
+               +ZYX_
+               >>> p[0] = 'I'
+               >>> p[1] = 'X'
+               >>> p[2] = 'Y'
+               >>> p[3] = 'Z'
+               >>> print(p)
+               +_XYZ
+               >>> p[-1] = 'Y'
+               >>> print(p)
+               +_XYY
+
+           Args:
+               index: The index of the pauli to return.
+        )DOC").data());
+
+    c.def(
+        "__getitem__",
+        [](const PyPauliString &self, pybind11::object index_or_slice) -> pybind11::object {
+            pybind11::ssize_t start, step, slice_length;
+            if (normalize_index_or_slice(index_or_slice, self.value.num_qubits, &start, &step, &slice_length)) {
+                return pybind11::cast(PyPauliString(self.value.py_get_slice(start, step, slice_length)));
+            } else {
+                return pybind11::cast(self.value.py_get_item(start));
+            }
+        },
+        pybind11::arg("index_or_slice"),
+        clean_doc_string(
+        u8R"DOC(
+            Returns an individual Pauli or Pauli string slice from the pauli string.
+
+            Individual Paulis are returned as an int using the encoding 0=I, 1=X, 2=Y, 3=Z.
+            Slices are returned as a stim.PauliString (always with positive sign).
+
+            Examples:
+                >>> import stim
+                >>> p = stim.PauliString("_XYZ")
+                >>> p[2]
+                2
+                >>> p[-1]
+                3
+                >>> p[:2]
+                stim.PauliString("+_X")
+                >>> p[::-1]
+                stim.PauliString("+ZYX_")
+
+            Args:
+                index_or_slice: The index of the pauli to return, or the slice of paulis to return.
+
+            Returns:
+                0: Identity.
+                1: Pauli X.
+                2: Pauli Y.
+                3: Pauli Z.
+        )DOC").data());
 }

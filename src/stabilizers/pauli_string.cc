@@ -14,6 +14,7 @@
 
 #include "pauli_string.h"
 
+#include <cassert>
 #include <cstring>
 #include <string>
 
@@ -133,4 +134,25 @@ void PauliString::ensure_num_qubits(size_t min_num_qubits) {
     xs = std::move(new_xs);
     zs = std::move(new_zs);
     num_qubits = min_num_qubits;
+}
+
+uint8_t PauliString::py_get_item(int64_t index) const {
+    if (index < 0) {
+        index += num_qubits;
+    }
+    if (index < 0 || (size_t)index >= num_qubits) {
+        throw std::out_of_range("index");
+    }
+    size_t u = (size_t)index;
+    int x = xs[u];
+    int z = zs[u];
+    return pauli_xz_to_xyz(x, z);
+}
+
+PauliString PauliString::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
+    assert(start >= 0);
+    return PauliString::from_func(false, slice_length, [&](size_t i) {
+        int j = start + i * step;
+        return "_XZY"[xs[j] + zs[j] * 2];
+    });
 }

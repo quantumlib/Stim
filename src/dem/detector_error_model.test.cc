@@ -420,3 +420,65 @@ TEST(detector_error_model, from_file) {
     d.append_from_file(f, true);
     ASSERT_EQ(d, DetectorErrorModel(program));
 }
+
+TEST(detector_error_model, py_get_slice) {
+    DetectorErrorModel d(R"MODEL(
+        detector D2
+        logical_observable L1
+        error(0.125) D0 L1
+        REPEAT 100 {
+            shift_detectors(0.25) 5
+            REPEAT 20 {
+            }
+        }
+        error(0.125) D1 D2
+        REPEAT 999 {
+        }
+    )MODEL");
+    ASSERT_EQ(d.py_get_slice(0, 1, 6), d);
+    ASSERT_EQ(d.py_get_slice(0, 1, 4), DetectorErrorModel(R"MODEL(
+        detector D2
+        logical_observable L1
+        error(0.125) D0 L1
+        REPEAT 100 {
+            shift_detectors(0.25) 5
+            REPEAT 20 {
+            }
+        }
+    )MODEL"));
+    ASSERT_EQ(d.py_get_slice(2, 1, 3), DetectorErrorModel(R"MODEL(
+        error(0.125) D0 L1
+        REPEAT 100 {
+            shift_detectors(0.25) 5
+            REPEAT 20 {
+            }
+        }
+        error(0.125) D1 D2
+    )MODEL"));
+
+    ASSERT_EQ(d.py_get_slice(4, -1, 3), DetectorErrorModel(R"MODEL(
+        error(0.125) D1 D2
+        REPEAT 100 {
+            shift_detectors(0.25) 5
+            REPEAT 20 {
+            }
+        }
+        error(0.125) D0 L1
+    )MODEL"));
+
+    ASSERT_EQ(d.py_get_slice(5, -2, 3), DetectorErrorModel(R"MODEL(
+        REPEAT 999 {
+        }
+        REPEAT 100 {
+            shift_detectors(0.25) 5
+            REPEAT 20 {
+            }
+        }
+        logical_observable L1
+    )MODEL"));
+
+    DetectorErrorModel d2 = d;
+    DetectorErrorModel d3 = d2.py_get_slice(0, 1, 6);
+    d2.clear();
+    ASSERT_EQ(d, d3);
+}

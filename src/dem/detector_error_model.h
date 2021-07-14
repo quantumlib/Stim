@@ -118,8 +118,12 @@ struct DetectorErrorModel {
     uint64_t count_observables() const;
 
     void clear();
+
+    /// Gets a python-style slice of the error model's instructions.
+    DetectorErrorModel py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
 };
 
+void print_detector_error_model(std::ostream &out, const DetectorErrorModel &v, size_t indent);
 std::ostream &operator<<(std::ostream &out, const DemInstructionType &type);
 std::ostream &operator<<(std::ostream &out, const DetectorErrorModel &v);
 std::ostream &operator<<(std::ostream &out, const DemTarget &v);

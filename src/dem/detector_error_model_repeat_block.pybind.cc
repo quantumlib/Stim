@@ -37,8 +37,8 @@ void pybind_detector_error_model_repeat_block(pybind11::module &m) {
                 ... ''')
                 >>> model[0]
                 stim.DemRepeatBlock(100, stim.DetectorErrorModel('''
-                error(0.125) D0 D1
-                shift_detectors 1
+                    error(0.125) D0 D1
+                    shift_detectors 1
                 '''))
         )DOC")
             .data());

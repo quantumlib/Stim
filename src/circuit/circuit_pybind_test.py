@@ -414,3 +414,28 @@ def test_indexing_operations():
         stim.CircuitRepeatBlock(1000, stim.Circuit('H 5')),
         stim.CircuitInstruction('M', [stim.GateTarget(stim.target_inv(0))]),
     ]
+
+
+def test_slicing():
+    c = stim.Circuit("""
+        H 0
+        REPEAT 5 {
+            X 1
+        }
+        Y 2
+        Z 3
+    """)
+    assert c[:] is not c
+    assert c[:] == c
+    assert c[1:-1] == stim.Circuit("""
+        REPEAT 5 {
+            X 1
+        }
+        Y 2
+    """)
+    assert c[::2] == stim.Circuit("""
+        REPEAT 5 {
+            X 1
+        }
+        Z 3
+    """)

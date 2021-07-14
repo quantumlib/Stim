@@ -201,6 +201,9 @@ struct Circuit {
     /// Approximate equality.
     bool approx_equals(const Circuit &other, double atol) const;
 
+    /// Gets a python-style slice of the circuit's instructions.
+    Circuit py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
+
     template <typename CALLBACK>
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {
@@ -379,6 +382,7 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
 std::ostream &operator<<(std::ostream &out, const Operation &op);
+void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation);
 
 }  // namespace stim_internal
 

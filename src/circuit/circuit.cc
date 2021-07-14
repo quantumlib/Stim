@@ -629,7 +629,7 @@ std::ostream &stim_internal::operator<<(std::ostream &out, const Operation &op) 
     return out;
 }
 
-void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation) {
+void stim_internal::print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation) {
     bool first = true;
     for (const auto &op : c.operations) {
         if (first) {
@@ -863,4 +863,26 @@ uint64_t Circuit::num_observables() const {
     return max_operation_property([=](const Operation &op) -> size_t {
         return op.gate == obs ? (size_t)op.target_data.args[0] + 1 : 0;
     });
+}
+
+Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
+    assert(start >= 0);
+    assert(slice_length >= 0);
+    Circuit result;
+    for (size_t k = 0; k < (size_t)slice_length; k++) {
+        const auto &op = operations[start + step*k];
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            result.target_buf.append_tail(result.blocks.size());
+            result.target_buf.append_tail(op.target_data.targets[1]);
+            result.target_buf.append_tail(op.target_data.targets[2]);
+            auto targets = result.target_buf.commit_tail();
+            result.blocks.push_back(op_data_block_body(*this, op.target_data));
+            result.operations.push_back(Operation{op.gate, OperationData{{}, targets}});
+        } else {
+            auto args = result.arg_buf.take_copy(op.target_data.args);
+            auto targets = result.target_buf.take_copy(op.target_data.targets);
+            result.operations.push_back(Operation{op.gate, OperationData{args, targets}});
+        }
+    }
+    return result;
 }
