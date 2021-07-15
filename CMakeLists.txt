@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.13)
 project(stim)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
@@ -160,13 +160,11 @@ endif()
 find_package(GTest QUIET)
 if(${GTest_FOUND})
     add_executable(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
-    add_test(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(stim_test gtest gtest_main)
     target_compile_options(stim_test PRIVATE -Wall -Wpedantic -Werror -fno-strict-aliasing -fsanitize=undefined -fsanitize=address ${MACHINE_FLAG})
     target_link_options(stim_test PRIVATE -fsanitize=undefined -fsanitize=address -pthread)
 
     add_executable(stim_test_o3 ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
-    add_test(stim_test_o3 ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(stim_test_o3 gtest gtest_main)
     target_compile_options(stim_test_o3 PRIVATE -O3 -Wall -Wpedantic -Werror -fno-strict-aliasing ${MACHINE_FLAG})
     target_link_options(stim_test_o3 PRIVATE -pthread)
