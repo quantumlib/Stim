@@ -800,14 +800,79 @@ TEST(circuit, negative_float_coordinates) {
     )CIRCUIT");
     ASSERT_EQ(c.operations[0].target_data.args[2], -3);
     ASSERT_EQ(c.operations[2].target_data.args[0], -3.5);
-    ASSERT_ANY_THROW({
-        Circuit("M(-0.1) 0");
-    });
+    ASSERT_ANY_THROW({ Circuit("M(-0.1) 0"); });
     c = Circuit("QUBIT_COORDS(1e20) 0");
     ASSERT_EQ(c.operations[0].target_data.args[0], 1e20);
     c = Circuit("QUBIT_COORDS(1E+20) 0");
     ASSERT_EQ(c.operations[0].target_data.args[0], 1E+20);
-    ASSERT_ANY_THROW({
-        Circuit("QUBIT_COORDS(1e10000) 0");
-    });
+    ASSERT_ANY_THROW({ Circuit("QUBIT_COORDS(1e10000) 0"); });
+}
+
+TEST(circuit, py_get_slice) {
+    Circuit c(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        M(0.125) 0 1
+        REPEAT 100 {
+            E(0.25) X0 Y5
+            REPEAT 20 {
+                H 0
+            }
+        }
+        H 1
+        REPEAT 999 {
+            H 2
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c.py_get_slice(0, 1, 6), c);
+    ASSERT_EQ(c.py_get_slice(0, 1, 4), Circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        M(0.125) 0 1
+        REPEAT 100 {
+            E(0.25) X0 Y5
+            REPEAT 20 {
+                H 0
+            }
+        }
+    )CIRCUIT"));
+    ASSERT_EQ(c.py_get_slice(2, 1, 3), Circuit(R"CIRCUIT(
+        M(0.125) 0 1
+        REPEAT 100 {
+            E(0.25) X0 Y5
+            REPEAT 20 {
+                H 0
+            }
+        }
+        H 1
+    )CIRCUIT"));
+
+    ASSERT_EQ(c.py_get_slice(4, -1, 3), Circuit(R"CIRCUIT(
+        H 1
+        REPEAT 100 {
+            E(0.25) X0 Y5
+            REPEAT 20 {
+                H 0
+            }
+        }
+        M(0.125) 0 1
+    )CIRCUIT"));
+
+    ASSERT_EQ(c.py_get_slice(5, -2, 3), Circuit(R"CIRCUIT(
+        REPEAT 999 {
+            H 2
+        }
+        REPEAT 100 {
+            E(0.25) X0 Y5
+            REPEAT 20 {
+                H 0
+            }
+        }
+        CNOT 0 1
+    )CIRCUIT"));
+
+    Circuit c2 = c;
+    Circuit c3 = c2.py_get_slice(0, 1, 6);
+    c2.clear();
+    ASSERT_EQ(c, c3);
 }

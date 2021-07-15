@@ -55,19 +55,19 @@ def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit,
         ...     cirq.Moment(cirq.measure(a, b)),
         ... ), qubit_to_index_dict={a: 0, b: 2})
         stim.Circuit('''
-        H 0
-        TICK
-        CX 0 2
-        TICK
-        X_ERROR(0.25) 0
-        Z_ERROR(0.25) 2
-        TICK
-        TICK
-        TICK
-        DEPOLARIZE2(0.125) 2 0
-        TICK
-        M 0 2
-        TICK
+            H 0
+            TICK
+            CX 0 2
+            TICK
+            X_ERROR(0.25) 0
+            Z_ERROR(0.25) 2
+            TICK
+            TICK
+            TICK
+            DEPOLARIZE2(0.125) 2 0
+            TICK
+            M 0 2
+            TICK
         ''')
 
     Here is an example of a _stim_conversion_ method:

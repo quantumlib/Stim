@@ -308,7 +308,7 @@ std::string DetectorErrorModel::str() const {
     return s.str();
 }
 
-void stream_out_indent(std::ostream &out, const DetectorErrorModel &v, size_t indent) {
+void stim_internal::print_detector_error_model(std::ostream &out, const DetectorErrorModel &v, size_t indent) {
     bool first = true;
     for (const auto &e : v.instructions) {
         if (first) {
@@ -321,7 +321,7 @@ void stream_out_indent(std::ostream &out, const DetectorErrorModel &v, size_t in
         }
         if (e.type == DEM_REPEAT_BLOCK) {
             out << "repeat " << e.target_data[0].data << " {\n";
-            stream_out_indent(out, v.blocks[(size_t)e.target_data[1].data], indent + 4);
+            print_detector_error_model(out, v.blocks[(size_t)e.target_data[1].data], indent + 4);
             out << "\n";
             for (size_t k = 0; k < indent; k++) {
                 out << " ";
@@ -335,7 +335,7 @@ void stream_out_indent(std::ostream &out, const DetectorErrorModel &v, size_t in
 
 std::ostream &stim_internal::operator<<(std::ostream &out, const DetectorErrorModel &v) {
     out << std::setprecision(std::numeric_limits<long double>::digits10 + 1);
-    stream_out_indent(out, v, 0);
+    print_detector_error_model(out, v, 0);
     return out;
 }
 
@@ -645,4 +645,21 @@ uint64_t DetectorErrorModel::count_observables() const {
         }
     }
     return max_num;
+}
+
+DetectorErrorModel DetectorErrorModel::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
+    assert(start >= 0);
+    assert(slice_length >= 0);
+    DetectorErrorModel result;
+    for (size_t k = 0; k < (size_t)slice_length; k++) {
+        const auto &op = instructions[start + step * k];
+        if (op.type == DEM_REPEAT_BLOCK) {
+            result.append_repeat_block(op.target_data[0].data, blocks[op.target_data[1].data]);
+        } else {
+            auto args = result.arg_buf.take_copy(op.arg_data);
+            auto targets = result.target_buf.take_copy(op.target_data);
+            result.instructions.push_back(DemInstruction{args, targets, op.type});
+        }
+    }
+    return result;
 }

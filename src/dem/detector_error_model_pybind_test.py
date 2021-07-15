@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import stim
-import pytest
-import numpy as np
 
 
 def test_init_get():

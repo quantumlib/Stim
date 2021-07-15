@@ -258,8 +258,8 @@
 >     5
 >     >>> repeat_block.body_copy()
 >     stim.Circuit('''
->     CX 0 1
->     CZ 1 2
+>         CX 0 1
+>         CZ 1 2
 >     ''')
 > ```
 
@@ -305,8 +305,8 @@
 >     ... ''')
 >     >>> model[0]
 >     stim.DemRepeatBlock(100, stim.DetectorErrorModel('''
->     error(0.125) D0 D1
->     shift_detectors 1
+>         error(0.125) D0 D1
+>         shift_detectors 1
 >     '''))
 > ```
 
@@ -340,9 +340,9 @@
 >     ...     DETECTOR rec[-1]
 >     ... ''').detector_error_model()
 >     stim.DetectorErrorModel('''
->     error(0.125) D0
->     error(0.375) D0 D1
->     error(0.25) D1
+>         error(0.125) D0
+>         error(0.375) D0 D1
+>         error(0.25) D1
 >     ''')
 > ```
 
@@ -524,9 +524,13 @@
 > Determines if two circuits have identical contents.
 > ```
 
-### `stim.Circuit.__getitem__(self, arg0: int) -> object`<a name="stim.Circuit.__getitem__"></a>
+### `stim.Circuit.__getitem__(self, index_or_slice: object) -> object`<a name="stim.Circuit.__getitem__"></a>
 > ```
 > Returns copies of instructions from the circuit.
+> 
+> Args:
+>     index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
+>         of instructions to return as a circuit.
 > 
 > Examples:
 >     >>> import stim
@@ -545,9 +549,15 @@
 >     stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], [0.5])
 >     >>> circuit[2]
 >     stim.CircuitRepeatBlock(100, stim.Circuit('''
->     X 0
->     Y 1 2
+>         X 0
+>         Y 1 2
 >     '''))
+>     >>> circuit[1::2]
+>     stim.Circuit('''
+>         X_ERROR(0.5) 1 2
+>         TICK
+>         DETECTOR rec[-1]
+>     ''')
 > ```
 
 ### `stim.Circuit.__iadd__(self, second: stim.Circuit) -> stim.Circuit`<a name="stim.Circuit.__iadd__"></a>
@@ -864,9 +874,9 @@
 >     ...     DETECTOR rec[-1]
 >     ... ''').detector_error_model()
 >     stim.DetectorErrorModel('''
->     error(0.125) D0
->     error(0.375) D0 D1
->     error(0.25) D1
+>         error(0.125) D0
+>         error(0.375) D0 D1
+>         error(0.25) D1
 >     ''')
 > ```
 
@@ -1149,8 +1159,8 @@
 >     >>> repeat_block = circuit[1]
 >     >>> repeat_block.body_copy()
 >     stim.Circuit('''
->     CX 0 1
->     CZ 1 2
+>         CX 0 1
+>         CZ 1 2
 >     ''')
 > ```
 
@@ -1411,12 +1421,41 @@
 > Determines if two detector error models have identical contents.
 > ```
 
-### `stim.DetectorErrorModel.__getitem__(self, arg0: int) -> object`<a name="stim.DetectorErrorModel.__getitem__"></a>
+### `stim.DetectorErrorModel.__getitem__(self, index_or_slice: object) -> object`<a name="stim.DetectorErrorModel.__getitem__"></a>
 > ```
 > Returns copies of instructions from the detector error model.
 > 
+> Args:
+>     index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
+>         of instructions to return as a detector error model.
+> 
+> Examples:
 > Examples:
 >     >>> import stim
+>     >>> model = stim.DetectorErrorModel('''
+>     ...    error(0.125) D0
+>     ...    error(0.125) D1 L1
+>     ...    REPEAT 100 {
+>     ...        error(0.125) D1 D2
+>     ...        shift_detectors 1
+>     ...    }
+>     ...    error(0.125) D2
+>     ...    logical_observable L0
+>     ...    detector D5
+>     ... ''')
+>     >>> model[1]
+>     stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(1), stim.target_logical_observable_id(1)])
+>     >>> model[2]
+>     stim.DemRepeatBlock(100, stim.DetectorErrorModel('''
+>         error(0.125) D1 D2
+>         shift_detectors 1
+>     '''))
+>     >>> model[1::2]
+>     stim.DetectorErrorModel('''
+>         error(0.125) D1 L1
+>         error(0.125) D2
+>         detector D5
+>     ''')
 > ```
 
 ### `stim.DetectorErrorModel.__init__(self, detector_error_model_text: str = '') -> None`<a name="stim.DetectorErrorModel.__init__"></a>
@@ -1639,12 +1678,8 @@
 > Determines if two Pauli strings have identical contents.
 > ```
 
-### `stim.PauliString.__getitem__(*args, **kwargs)`<a name="stim.PauliString.__getitem__"></a>
+### `stim.PauliString.__getitem__(self, index_or_slice: object) -> object`<a name="stim.PauliString.__getitem__"></a>
 > ```
-> Overloaded function.
-> 
-> 1. __getitem__(self: stim.PauliString, index: int) -> int
-> 
 > Returns an individual Pauli or Pauli string slice from the pauli string.
 > 
 > Individual Paulis are returned as an int using the encoding 0=I, 1=X, 2=Y, 3=Z.
@@ -1663,36 +1698,7 @@
 >     stim.PauliString("+ZYX_")
 > 
 > Args:
->     index: The index of the pauli to return or slice of paulis to return.
-> 
-> Returns:
->     0: Identity.
->     1: Pauli X.
->     2: Pauli Y.
->     3: Pauli Z.
-> 
-> 
-> 2. __getitem__(self: stim.PauliString, slice: slice) -> stim.PauliString
-> 
-> Returns an individual Pauli or Pauli string slice from the pauli string.
-> 
-> Individual Paulis are returned as an int using the encoding 0=I, 1=X, 2=Y, 3=Z.
-> Slices are returned as a stim.PauliString (always with positive sign).
-> 
-> Examples:
->     >>> import stim
->     >>> p = stim.PauliString("_XYZ")
->     >>> p[2]
->     2
->     >>> p[-1]
->     3
->     >>> p[:2]
->     stim.PauliString("+_X")
->     >>> p[::-1]
->     stim.PauliString("+ZYX_")
-> 
-> Args:
->     index: The index of the pauli to return or slice of paulis to return.
+>     index_or_slice: The index of the pauli to return, or the slice of paulis to return.
 > 
 > Returns:
 >     0: Identity.
@@ -1976,13 +1982,13 @@
 >     ValueError: The scalar phase factor isn't 1, -1, 1j, or -1j.
 > ```
 
-### `stim.PauliString.__setitem__(*args, **kwargs)`<a name="stim.PauliString.__setitem__"></a>
+### `stim.PauliString.__setitem__(self, index: int, new_pauli: object) -> None`<a name="stim.PauliString.__setitem__"></a>
 > ```
-> Overloaded function.
-> 
-> 1. __setitem__(self: stim.PauliString, index: int, new_pauli: str) -> None
-> 
 > Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
+> 
+> Args:
+>     index: The index of the pauli to overwrite.
+>     new_pauli: Either a character from '_IXYZ' or an integer from range(4).
 > 
 > Examples:
 >     >>> import stim
@@ -2004,38 +2010,6 @@
 >     >>> p[-1] = 'Y'
 >     >>> print(p)
 >     +_XYY
-> 
-> Args:
->     index: The index of the pauli to return.
-> 
-> 
-> 2. __setitem__(self: stim.PauliString, index: int, new_pauli: int) -> None
-> 
-> Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
-> 
-> Examples:
->     >>> import stim
->     >>> p = stim.PauliString(4)
->     >>> p[2] = 1
->     >>> print(p)
->     +__X_
->     >>> p[0] = 3
->     >>> p[1] = 2
->     >>> p[3] = 0
->     >>> print(p)
->     +ZYX_
->     >>> p[0] = 'I'
->     >>> p[1] = 'X'
->     >>> p[2] = 'Y'
->     >>> p[3] = 'Z'
->     >>> print(p)
->     +_XYZ
->     >>> p[-1] = 'Y'
->     >>> print(p)
->     +_XYY
-> 
-> Args:
->     index: The index of the pauli to return.
 > ```
 
 ### `stim.PauliString.__str__(self) -> str`<a name="stim.PauliString.__str__"></a>

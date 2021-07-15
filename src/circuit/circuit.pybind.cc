@@ -32,7 +32,11 @@ std::string circuit_repr(const Circuit &self) {
     if (self.operations.empty()) {
         return "stim.Circuit()";
     }
-    return "stim.Circuit('''\n" + self.str() + "\n''')";
+    std::stringstream ss;
+    ss << "stim.Circuit('''\n";
+    print_circuit(ss, self, "    ");
+    ss << "\n''')";
+    return ss.str();
 }
 
 void pybind_circuit(pybind11::module &m) {
@@ -722,14 +726,12 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "__getitem__",
-        [](const Circuit &self, ssize_t index) -> pybind11::object {
-            auto n = (ssize_t)self.operations.size();
-            if (index < 0) {
-                index += (ssize_t)n;
+        [](const Circuit &self, pybind11::object index_or_slice) -> pybind11::object {
+            pybind11::ssize_t index, step, slice_length;
+            if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
+                return pybind11::cast(self.py_get_slice(index, step, slice_length));
             }
-            if (index < 0 || index >= n) {
-                throw std::out_of_range("index");
-            }
+
             auto &op = self.operations[index];
             if (op.gate->id == gate_name_to_id("REPEAT")) {
                 return pybind11::cast(
@@ -745,8 +747,13 @@ void pybind_circuit(pybind11::module &m) {
             }
             return pybind11::cast(CircuitInstruction(*op.gate, targets, args));
         },
+        pybind11::arg("index_or_slice"),
         clean_doc_string(u8R"DOC(
             Returns copies of instructions from the circuit.
+
+            Args:
+                index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
+                    of instructions to return as a circuit.
 
             Examples:
                 >>> import stim
@@ -765,9 +772,15 @@ void pybind_circuit(pybind11::module &m) {
                 stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], [0.5])
                 >>> circuit[2]
                 stim.CircuitRepeatBlock(100, stim.Circuit('''
-                X 0
-                Y 1 2
+                    X 0
+                    Y 1 2
                 '''))
+                >>> circuit[1::2]
+                stim.Circuit('''
+                    X_ERROR(0.5) 1 2
+                    TICK
+                    DETECTOR rec[-1]
+                ''')
         )DOC")
             .data());
 
@@ -834,9 +847,9 @@ void pybind_circuit(pybind11::module &m) {
                 ...     DETECTOR rec[-1]
                 ... ''').detector_error_model()
                 stim.DetectorErrorModel('''
-                error(0.125) D0
-                error(0.375) D0 D1
-                error(0.25) D1
+                    error(0.125) D0
+                    error(0.375) D0 D1
+                    error(0.25) D1
                 ''')
         )DOC")
             .data());

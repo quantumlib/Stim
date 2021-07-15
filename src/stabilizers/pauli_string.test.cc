@@ -327,3 +327,33 @@ TEST(PauliString, pauli_xyz_to_xz) {
     ASSERT_EQ(pauli_xyz_to_xz(2), x + z);
     ASSERT_EQ(pauli_xyz_to_xz(3), z);
 }
+
+TEST(PauliString, py_get_item) {
+    auto p = PauliString::from_str("-XYZ_XYZ_XX");
+    ASSERT_EQ(p.py_get_item(0), 1);
+    ASSERT_EQ(p.py_get_item(1), 2);
+    ASSERT_EQ(p.py_get_item(2), 3);
+    ASSERT_EQ(p.py_get_item(3), 0);
+    ASSERT_EQ(p.py_get_item(8), 1);
+    ASSERT_EQ(p.py_get_item(9), 1);
+
+    ASSERT_EQ(p.py_get_item(-1), 1);
+    ASSERT_EQ(p.py_get_item(-2), 1);
+    ASSERT_EQ(p.py_get_item(-3), 0);
+    ASSERT_EQ(p.py_get_item(-4), 3);
+    ASSERT_EQ(p.py_get_item(-9), 2);
+    ASSERT_EQ(p.py_get_item(-10), 1);
+
+    ASSERT_ANY_THROW({ p.py_get_item(10); });
+    ASSERT_ANY_THROW({ p.py_get_item(-11); });
+}
+
+TEST(PauliString, py_get_slice) {
+    auto p = PauliString::from_str("-XYZ_XYZ_YX");
+    ASSERT_EQ(p.py_get_slice(0, 2, 0), PauliString::from_str(""));
+    ASSERT_EQ(p.py_get_slice(0, 2, 1), PauliString::from_str("X"));
+    ASSERT_EQ(p.py_get_slice(0, 2, 2), PauliString::from_str("XZ"));
+    ASSERT_EQ(p.py_get_slice(1, 2, 2), PauliString::from_str("Y_"));
+    ASSERT_EQ(p.py_get_slice(5, 1, 4), PauliString::from_str("YZ_Y"));
+    ASSERT_EQ(p.py_get_slice(5, -1, 4), PauliString::from_str("YX_Z"));
+}

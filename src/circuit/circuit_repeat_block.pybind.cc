@@ -16,6 +16,7 @@
 
 #include "../py/base.pybind.h"
 #include "circuit.h"
+#include "circuit.pybind.h"
 #include "circuit_instruction.pybind.h"
 
 using namespace stim_internal;
@@ -30,7 +31,7 @@ bool CircuitRepeatBlock::operator!=(const CircuitRepeatBlock &other) const {
     return !(*this == other);
 }
 std::string CircuitRepeatBlock::repr() const {
-    return "stim.CircuitRepeatBlock(" + std::to_string(repeat_count) + ", stim.Circuit('''\n" + body.str() + "\n'''))";
+    return "stim.CircuitRepeatBlock(" + std::to_string(repeat_count) + ", " + circuit_repr(body) + ")";
 }
 
 void pybind_circuit_repeat_block(pybind11::module &m) {
@@ -54,8 +55,8 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
                 5
                 >>> repeat_block.body_copy()
                 stim.Circuit('''
-                CX 0 1
-                CZ 1 2
+                    CX 0 1
+                    CZ 1 2
                 ''')
         )DOC")
             .data());
@@ -115,8 +116,8 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
                 >>> repeat_block = circuit[1]
                 >>> repeat_block.body_copy()
                 stim.Circuit('''
-                CX 0 1
-                CZ 1 2
+                    CX 0 1
+                    CZ 1 2
                 ''')
         )DOC")
             .data());

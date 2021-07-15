@@ -61,3 +61,37 @@ std::string clean_doc_string(const char *c) {
 
     return result;
 }
+
+bool normalize_index_or_slice(
+    const pybind11::object &index_or_slice,
+    size_t length,
+    pybind11::ssize_t *start,
+    pybind11::ssize_t *step,
+    pybind11::ssize_t *slice_length) {
+    try {
+        *start = pybind11::cast<pybind11::ssize_t>(index_or_slice);
+        if (*start < 0) {
+            *start += length;
+        }
+        if (*start < 0 || (size_t)*start >= length) {
+            throw std::out_of_range(
+                "Index " + std::to_string(pybind11::cast<pybind11::ssize_t>(index_or_slice)) +
+                " not in range for sequence of length " + std::to_string(length) + ".");
+        }
+        return false;
+    } catch (const pybind11::cast_error &) {
+    }
+
+    pybind11::slice slice;
+    try {
+        slice = pybind11::cast<pybind11::slice>(index_or_slice);
+    } catch (const pybind11::cast_error &ex) {
+        throw pybind11::type_error("Expected an integer index or a slice.");
+    }
+
+    pybind11::ssize_t stop;
+    if (!slice.compute(length, start, &stop, step, slice_length)) {
+        throw pybind11::error_already_set();
+    }
+    return true;
+}

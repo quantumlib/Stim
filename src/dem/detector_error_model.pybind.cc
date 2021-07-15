@@ -25,7 +25,11 @@ std::string detector_error_model_repr(const DetectorErrorModel &self) {
     if (self.instructions.empty()) {
         return "stim.DetectorErrorModel()";
     }
-    return "stim.DetectorErrorModel('''\n" + self.str() + "\n''')";
+    std::stringstream ss;
+    ss << "stim.DetectorErrorModel('''\n";
+    print_detector_error_model(ss, self, 4);
+    ss << "\n''')";
+    return ss.str();
 }
 
 void pybind_detector_error_model(pybind11::module &m) {
@@ -56,9 +60,9 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...     DETECTOR rec[-1]
                 ... ''').detector_error_model()
                 stim.DetectorErrorModel('''
-                error(0.125) D0
-                error(0.375) D0 D1
-                error(0.25) D1
+                    error(0.125) D0
+                    error(0.375) D0 D1
+                    error(0.25) D1
                 ''')
         )DOC")
             .data());
@@ -238,14 +242,12 @@ void pybind_detector_error_model(pybind11::module &m) {
 
     c.def(
         "__getitem__",
-        [](const DetectorErrorModel &self, ssize_t index) -> pybind11::object {
-            auto n = (ssize_t)self.instructions.size();
-            if (index < 0) {
-                index += (ssize_t)n;
+        [](const DetectorErrorModel &self, pybind11::object index_or_slice) -> pybind11::object {
+            pybind11::ssize_t index, step, slice_length;
+            if (normalize_index_or_slice(index_or_slice, self.instructions.size(), &index, &step, &slice_length)) {
+                return pybind11::cast(self.py_get_slice(index, step, slice_length));
             }
-            if (index < 0 || index >= n) {
-                throw std::out_of_range("index");
-            }
+
             auto &op = self.instructions[index];
             if (op.type == DEM_REPEAT_BLOCK) {
                 return pybind11::cast(
@@ -257,11 +259,41 @@ void pybind_detector_error_model(pybind11::module &m) {
             result.type = op.type;
             return pybind11::cast(result);
         },
+        pybind11::arg("index_or_slice"),
         clean_doc_string(u8R"DOC(
             Returns copies of instructions from the detector error model.
 
+            Args:
+                index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
+                    of instructions to return as a detector error model.
+
+            Examples:
             Examples:
                 >>> import stim
+                >>> model = stim.DetectorErrorModel('''
+                ...    error(0.125) D0
+                ...    error(0.125) D1 L1
+                ...    REPEAT 100 {
+                ...        error(0.125) D1 D2
+                ...        shift_detectors 1
+                ...    }
+                ...    error(0.125) D2
+                ...    logical_observable L0
+                ...    detector D5
+                ... ''')
+                >>> model[1]
+                stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(1), stim.target_logical_observable_id(1)])
+                >>> model[2]
+                stim.DemRepeatBlock(100, stim.DetectorErrorModel('''
+                    error(0.125) D1 D2
+                    shift_detectors 1
+                '''))
+                >>> model[1::2]
+                stim.DetectorErrorModel('''
+                    error(0.125) D1 L1
+                    error(0.125) D2
+                    detector D5
+                ''')
         )DOC")
             .data());
 }
