@@ -21,8 +21,6 @@
 
 using namespace stim_internal;
 
-static constexpr std::complex<float> s = 0.7071067811865475244f;
-
 void GateDataMap::add_gate_data_noisy(bool &failed) {
     add_gate(
         failed,
