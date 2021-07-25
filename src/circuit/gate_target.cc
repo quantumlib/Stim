@@ -55,7 +55,7 @@ uint32_t GateTarget::qubit_value() const {
 }
 
 int32_t GateTarget::value() const {
-    ssize_t result = data & TARGET_VALUE_MASK;
+    int32_t result = (int32_t)(data & TARGET_VALUE_MASK);
     if (is_measurement_record_target()) {
         return -result;
     }

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import cast
 
 import stim
 import pytest
@@ -443,3 +444,14 @@ def test_slicing():
         }
         Z 3
     """)
+
+
+def test_reappend_gate_targets():
+    expected = stim.Circuit("""
+        MPP !X0 * X1
+        CX rec[-1] 5
+    """)
+    c = stim.Circuit()
+    c.append_operation("MPP", cast(stim.CircuitInstruction, expected[0]).targets_copy())
+    c.append_operation("CX", cast(stim.CircuitInstruction, expected[1]).targets_copy())
+    assert c == expected

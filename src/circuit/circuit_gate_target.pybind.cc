@@ -120,6 +120,14 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "is_combiner",
+        &GateTarget::is_combiner,
+        clean_doc_string(u8R"DOC(
+            Returns whether or not this is a `stim.target_combiner()` (a `*` in a circuit file).
+        )DOC")
+            .data());
+
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.GateTarget`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.GateTarget`s are different.");
     c.def(

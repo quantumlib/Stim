@@ -24,7 +24,7 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     TableauSimulator sim(rng, num_qubits);
 
     std::vector<GateTarget> targets;
-    for (size_t k = 0; k < num_qubits; k++) {
+    for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
         targets.push_back(GateTarget{k});
     }
     OperationData op_data{{}, targets};

@@ -26,5 +26,4 @@ def test_targets():
     assert stim.target_z(5) & 0xFFFF == 5
     assert stim.target_inv(5) & 0xFFFF == 5
     assert stim.target_rec(-5) & 0xFFFF == 5
-    assert stim.target_separator() & 0xFFFF == 0
-    assert stim.target_combiner() & 0xFFFF == 0
+    assert isinstance(stim.target_combiner(), stim.GateTarget)

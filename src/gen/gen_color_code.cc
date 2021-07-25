@@ -55,7 +55,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
     for (size_t y = 0; y < w; y++) {
         for (size_t x = 0; x < w - y; x++) {
             coord q{x + y / 2.0f, (float)y};
-            auto i = p2q.size();
+            auto i = (uint32_t)p2q.size();
             p2q[q] = i;
             if ((x + 2 * y) % 3 == 2) {
                 measure_coords.insert(q);
@@ -83,11 +83,11 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
         q2p[kv.second] = kv.first;
     }
     for (auto q : data_qubits) {
-        auto i = data_coord_to_order.size();
+        auto i = (uint32_t)data_coord_to_order.size();
         data_coord_to_order[q2p[q]] = i;
     }
     for (auto q : measurement_qubits) {
-        auto i = measure_coord_to_order.size();
+        auto i = (uint32_t)measure_coord_to_order.size();
         measure_coord_to_order[q2p[q]] = i;
     }
 
@@ -124,7 +124,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
 
     // Build the start of the circuit, getting a state that's ready to cycle.
     // In particular, the first cycle has different detectors and so has to be handled special.
-    uint32_t m = measurement_qubits.size();
+    auto m = (uint32_t)measurement_qubits.size();
     Circuit head;
     for (auto q : all_qubits) {
         coord c = q2p[q];
@@ -159,7 +159,7 @@ GeneratedCircuit stim_internal::generate_color_code_circuit(const CircuitGenPara
         for (auto delta : deltas) {
             auto data = measure + delta;
             if (p2q.find(data) != p2q.end()) {
-                detectors.push_back((data_qubits.size() - data_coord_to_order[data]) | TARGET_RECORD_BIT);
+                detectors.push_back((uint32_t)(data_qubits.size() - data_coord_to_order[data]) | TARGET_RECORD_BIT);
             }
         }
         uint32_t p =
