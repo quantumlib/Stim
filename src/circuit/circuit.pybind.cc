@@ -66,8 +66,8 @@ void pybind_circuit(pybind11::module &m) {
             .data());
 
     pybind_circuit_repeat_block(m);
-    pybind_circuit_instruction(m);
     pybind_circuit_gate_target(m);
+    pybind_circuit_instruction(m);
 
     c.def(
         pybind11::init([](const char *stim_program_text) {

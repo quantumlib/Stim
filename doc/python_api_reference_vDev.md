@@ -92,8 +92,10 @@
     - [`stim.GateTarget.__init__`](#stim.GateTarget.__init__)
     - [`stim.GateTarget.__ne__`](#stim.GateTarget.__ne__)
     - [`stim.GateTarget.__repr__`](#stim.GateTarget.__repr__)
+    - [`stim.GateTarget.is_combiner`](#stim.GateTarget.is_combiner)
     - [`stim.GateTarget.is_inverted_result_target`](#stim.GateTarget.is_inverted_result_target)
     - [`stim.GateTarget.is_measurement_record_target`](#stim.GateTarget.is_measurement_record_target)
+    - [`stim.GateTarget.is_qubit_target`](#stim.GateTarget.is_qubit_target)
     - [`stim.GateTarget.is_x_target`](#stim.GateTarget.is_x_target)
     - [`stim.GateTarget.is_y_target`](#stim.GateTarget.is_y_target)
     - [`stim.GateTarget.is_z_target`](#stim.GateTarget.is_z_target)
@@ -190,6 +192,7 @@
     - [`stim.TableauSimulator.ycy`](#stim.TableauSimulator.ycy)
     - [`stim.TableauSimulator.ycz`](#stim.TableauSimulator.ycz)
     - [`stim.TableauSimulator.z`](#stim.TableauSimulator.z)
+- [`stim.target_combiner`](#stim.target_combiner)
 - [`stim.target_inv`](#stim.target_inv)
 - [`stim.target_logical_observable_id`](#stim.target_logical_observable_id)
 - [`stim.target_rec`](#stim.target_rec)
@@ -442,6 +445,11 @@
 >     )
 > ```
 
+## `stim.target_combiner() -> stim.GateTarget`<a name="stim.target_combiner"></a>
+> ```
+> Returns a target combiner (`*` in circuit files) that can be used as an operation target.
+> ```
+
 ## `stim.target_inv(qubit_index: int) -> int`<a name="stim.target_inv"></a>
 > ```
 > Returns a target flagged as inverted that can be passed into Circuit.append_operation
@@ -482,19 +490,19 @@
 > Returns a target separator (e.g. "^" in a .dem file).
 > ```
 
-## `stim.target_x(qubit_index: int) -> int`<a name="stim.target_x"></a>
+## `stim.target_x(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_x"></a>
 > ```
 > Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
 > For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
 > ```
 
-## `stim.target_y(qubit_index: int) -> int`<a name="stim.target_y"></a>
+## `stim.target_y(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_y"></a>
 > ```
 > Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
 > For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
 > ```
 
-## `stim.target_z(qubit_index: int) -> int`<a name="stim.target_z"></a>
+## `stim.target_z(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_z"></a>
 > ```
 > Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
 > For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
@@ -733,7 +741,7 @@
 >     text: The STIM program text containing the circuit operations to append.
 > ```
 
-### `stim.Circuit.append_operation(self, name: str, targets: List[int], arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
+### `stim.Circuit.append_operation(self, name: str, targets: List[object], arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
 > ```
 > Appends an operation into the circuit.
 > 
@@ -1076,7 +1084,7 @@
 > Determines if two `stim.CircuitInstruction`s are identical.
 > ```
 
-### `stim.CircuitInstruction.__init__(self, name: str, targets: List[GateTarget], gate_args: List[float] = ()) -> None`<a name="stim.CircuitInstruction.__init__"></a>
+### `stim.CircuitInstruction.__init__(self, name: str, targets: List[object], gate_args: List[float] = ()) -> None`<a name="stim.CircuitInstruction.__init__"></a>
 > ```
 > Initializes a `stim.CircuitInstruction`.
 > 
@@ -1111,7 +1119,7 @@
 > The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`).
 > ```
 
-### `stim.CircuitInstruction.targets_copy(self) -> List[GateTarget]`<a name="stim.CircuitInstruction.targets_copy"></a>
+### `stim.CircuitInstruction.targets_copy(self) -> List[stim.GateTarget]`<a name="stim.CircuitInstruction.targets_copy"></a>
 > ```
 > Returns a copy of the targets of the instruction.
 > ```
@@ -1621,14 +1629,27 @@
 > Returns text that is a valid python expression evaluating to an equivalent `stim.GateTarget`.
 > ```
 
+### `stim.GateTarget.is_combiner`<a name="stim.GateTarget.is_combiner"></a>
+> ```
+> Returns whether or not this is a `stim.target_combiner()` (a `*` in a circuit file).
+> ```
+
 ### `stim.GateTarget.is_inverted_result_target`<a name="stim.GateTarget.is_inverted_result_target"></a>
 > ```
-> Returns whether or not this is a `stim.target_inv` target (e.g. `!5` in a circuit file).
+> Returns whether or not this is an inverted target.
+> 
+> Inverted targets include inverted qubit targets `stim.target_inv(5)` (`!5` in a circuit file) and
+> inverted Pauli targets like `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
 > ```
 
 ### `stim.GateTarget.is_measurement_record_target`<a name="stim.GateTarget.is_measurement_record_target"></a>
 > ```
 > Returns whether or not this is a `stim.target_rec` target (e.g. `rec[-5]` in a circuit file).
+> ```
+
+### `stim.GateTarget.is_qubit_target`<a name="stim.GateTarget.is_qubit_target"></a>
+> ```
+> Returns true if this is a qubit target (e.g. `5`) or an inverted qubit target (e.g. `stim.target_inv(4)`).
 > ```
 
 ### `stim.GateTarget.is_x_target`<a name="stim.GateTarget.is_x_target"></a>

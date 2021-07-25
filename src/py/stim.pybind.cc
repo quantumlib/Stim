@@ -59,6 +59,19 @@ PYBIND11_MODULE(stim, m) {
         Stim: A fast stabilizer circuit simulator library.
     )pbdoc";
 
+    // CAUTION: The ordering of these is important!
+    // If a class references another before it is registered, method signatures can get messed up.
+    // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
+    // described as `stim_internal::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
+
+    pybind_detector_error_model(m);
+    pybind_compiled_detector_sampler(m);
+    pybind_compiled_measurement_sampler(m);
+    pybind_circuit(m);
+    pybind_pauli_string(m);
+    pybind_tableau(m);
+    pybind_tableau_simulator(m);
+
     m.def(
         "target_rec",
         &target_rec,
@@ -120,17 +133,4 @@ PYBIND11_MODULE(stim, m) {
             For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
         )DOC")
             .data());
-
-    // CAUTION: The ordering of these is important!
-    // If a class references another before it is registered, method signatures can get messed up.
-    // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
-    // described as `stim_internal::DetectorErrorModel` instead of `stim.DetectorErrorMode`.
-
-    pybind_detector_error_model(m);
-    pybind_compiled_detector_sampler(m);
-    pybind_compiled_measurement_sampler(m);
-    pybind_circuit(m);
-    pybind_pauli_string(m);
-    pybind_tableau(m);
-    pybind_tableau_simulator(m);
 }

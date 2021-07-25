@@ -245,7 +245,7 @@ Measure Pauli products.
 
 )MARKDOWN",
                     {},
-                    {"1 -> +Z"},
+                    {"P -> m xor chance(p)", "P -> P"},
                 };
             },
         });
