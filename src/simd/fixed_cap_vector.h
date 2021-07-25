@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <sstream>
 #include <stdexcept>
 
 namespace stim_internal {
@@ -95,6 +96,10 @@ class FixedCapVector {
         return p;
     }
 
+    void clear() {
+        num_used = 0;
+    }
+
     void push_back(const T &item) {
         if (num_used == data.size()) {
             throw std::out_of_range("CappedVector capacity exceeded.");
@@ -130,17 +135,39 @@ class FixedCapVector {
         return !(*this == other);
     }
     bool operator<(const FixedCapVector<T, max_size> &other) const {
-        if (num_used < other.num_used) {
-            return true;
+        if (num_used != other.num_used) {
+            return num_used < other.num_used;
         }
         for (size_t k = 0; k < num_used; k++) {
-            if (data[k] < other.data[k]) {
-                return true;
+            if (data[k] != other.data[k]) {
+                return data[k] < other.data[k];
             }
         }
-        return true;
+        return false;
+    }
+
+    std::string str() const {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
     }
 };
+
+template <typename T, size_t max_size>
+std::ostream &operator<<(std::ostream &out, FixedCapVector<T, max_size> v) {
+    out << "FixedCapVector{";
+    bool first = true;
+    for (const auto &t : v) {
+        if (first) {
+            first = false;
+        } else {
+            out << ", ";
+        }
+        out << t;
+    }
+    out << "}";
+    return out;
+}
 
 }  // namespace stim_internal
 
