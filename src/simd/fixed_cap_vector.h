@@ -135,8 +135,8 @@ class FixedCapVector {
         return !(*this == other);
     }
     bool operator<(const FixedCapVector<T, max_size> &other) const {
-        if (num_used < other.num_used) {
-            return true;
+        if (num_used != other.num_used) {
+            return num_used < other.num_used;
         }
         for (size_t k = 0; k < num_used; k++) {
             if (data[k] != other.data[k]) {
