@@ -81,6 +81,14 @@ PYBIND11_MODULE(stim, m) {
             .data());
 
     m.def(
+        "target_combiner",
+        &GateTarget::combiner,
+        clean_doc_string(u8R"DOC(
+            Returns a target combiner (`*` in circuit files) that can be used as an operation target.
+        )DOC")
+            .data());
+
+    m.def(
         "target_x",
         &target_x,
         pybind11::arg("qubit_index"),

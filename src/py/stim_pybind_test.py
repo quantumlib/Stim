@@ -18,3 +18,13 @@ import re
 
 def test_version():
     assert re.match(r"^\d\.\d+", stim.__version__)
+
+
+def test_targets():
+    assert stim.target_x(5) & 0xFFFF == 5
+    assert stim.target_y(5) == (stim.target_x(5) | stim.target_z(5))
+    assert stim.target_z(5) & 0xFFFF == 5
+    assert stim.target_inv(5) & 0xFFFF == 5
+    assert stim.target_rec(-5) & 0xFFFF == 5
+    assert stim.target_separator() & 0xFFFF == 0
+    assert stim.target_combiner() & 0xFFFF == 0
