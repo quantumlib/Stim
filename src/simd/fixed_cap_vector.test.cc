@@ -51,32 +51,32 @@ TEST(FixedCapVector, basic_usage) {
 }
 
 TEST(FixedCapVector, push_pop) {
-    auto v = FixedCapVector<std::vector<int>, 5>();
-    std::vector<int> v2{1, 2, 3};
+    auto v = FixedCapVector<std::string, 5>();
+    std::string v2 = "123";
 
     v.push_back(v2);
-    ASSERT_EQ(v2, (std::vector<int>{1, 2, 3}));
-    ASSERT_EQ(v, (FixedCapVector<std::vector<int>, 5>{std::vector<int>{1, 2, 3}}));
+    ASSERT_EQ(v2, "123");
+    ASSERT_EQ(v, (FixedCapVector<std::string, 5>{"123"}));
 
-    v2.push_back(4);
+    v2.push_back('4');
     v.push_back(std::move(v2));
-    ASSERT_EQ(v2, (std::vector<int>{}));
+    ASSERT_EQ(v2, "");
     ASSERT_EQ(
         v,
-        (FixedCapVector<std::vector<int>, 5>{
-            std::vector<int>{1, 2, 3},
-            std::vector<int>{1, 2, 3, 4},
+        (FixedCapVector<std::string, 5>{
+            "123",
+            "1234",
         }));
 
     v.pop_back();
     ASSERT_EQ(
         v,
-        (FixedCapVector<std::vector<int>, 5>{
-            std::vector<int>{1, 2, 3},
+        (FixedCapVector<std::string, 5>{
+            "123",
         }));
 
     v.pop_back();
-    ASSERT_EQ(v, (FixedCapVector<std::vector<int>, 5>{}));
+    ASSERT_EQ(v, (FixedCapVector<std::string, 5>{}));
 
     ASSERT_THROW({ v.pop_back(); }, std::out_of_range);
 }
@@ -88,6 +88,12 @@ TEST(FixedCapVector, ordering) {
     auto v423 = FixedCapVector<int, 3>{4, 2, 3};
     ASSERT_LT(v123, v423);
     ASSERT_LT(v12, v123);
+    ASSERT_TRUE((FixedCapVector<int, 3>{4, 2} < FixedCapVector<int, 3>{4, 2, 1}));
+    ASSERT_TRUE((FixedCapVector<int, 3>{4, 2, 0} < FixedCapVector<int, 3>{4, 2, 1}));
+    ASSERT_FALSE((FixedCapVector<int, 3>{4, 2, 2} < FixedCapVector<int, 3>{4, 2, 1}));
+    ASSERT_TRUE((FixedCapVector<int, 3>{4, 1, 2} < FixedCapVector<int, 3>{4, 2, 1}));
+    ASSERT_FALSE((FixedCapVector<int, 3>{4, 3, 2} < FixedCapVector<int, 3>{4, 2, 1}));
+    ASSERT_FALSE((FixedCapVector<int, 3>{4, 3, 1} < FixedCapVector<int, 3>{4, 2, 2}));
     ASSERT_TRUE(v123 < v423);
     ASSERT_FALSE(v423 < v123);
     ASSERT_TRUE(v12 == w12);
@@ -96,4 +102,8 @@ TEST(FixedCapVector, ordering) {
     ASSERT_TRUE(!(v12 == v123));
     ASSERT_TRUE(v423 != v123);
     ASSERT_TRUE(!(v423 == v123));
+}
+
+TEST(FixedCapVector, str) {
+    ASSERT_EQ((FixedCapVector<int, 3>{1, 2, 3}.str()), "FixedCapVector{1, 2, 3}");
 }

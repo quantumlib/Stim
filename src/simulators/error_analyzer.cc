@@ -496,17 +496,16 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
                 run_loop(block, repeats);
             } catch (std::invalid_argument &ex) {
                 throw std::invalid_argument(
-                    std::string(ex.what())
-                    + "\nContext: inside of the REPEAT block at offset " + std::to_string(k) + ".");
+                    std::string(ex.what()) + "\nContext: inside of the REPEAT block at offset " + std::to_string(k) +
+                    ".");
             }
         } else {
             try {
                 (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
             } catch (std::invalid_argument &ex) {
                 throw std::invalid_argument(
-                    std::string(ex.what())
-                    + "\nContext: analyzing the circuit operation at offset "
-                    + std::to_string(k) + " which is '" + op.str() + "'.");
+                    std::string(ex.what()) + "\nContext: analyzing the circuit operation at offset " +
+                    std::to_string(k) + " which is '" + op.str() + "'.");
             }
         }
     }
@@ -952,8 +951,7 @@ void ErrorAnalyzer::SHIFT_COORDS(const OperationData &dat) {
 
 template <size_t s>
 void ErrorAnalyzer::decompose_helper_add_error_combinations(
-        const std::array<uint64_t, 1 << s> &detector_masks,
-        std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids) {
+    const std::array<uint64_t, 1 << s> &detector_masks, std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids) {
     // Count number of detectors affected by each error.
     std::array<uint8_t, 1 << s> detector_counts{};
     for (size_t k = 1; k < 1 << s; k++) {
@@ -1071,16 +1069,16 @@ bool ErrorAnalyzer::has_unflushed_ungraphlike_errors() const {
 }
 
 void ErrorAnalyzer::decompose_and_append_component_to_tail(
-        ConstPointerRange<DemTarget> component,
-        const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms) {
+    ConstPointerRange<DemTarget> component,
+    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms) {
     std::vector<bool> done(component.size(), false);
 
     size_t num_component_detectors = 0;
     for (size_t k = 0; k < component.size(); k++) {
-        if (!component[k].is_relative_detector_id()) {
-            done[k] = true;
-        } else {
+        if (component[k].is_relative_detector_id()) {
             num_component_detectors++;
+        } else {
+            done[k] = true;
         }
     }
     if (num_component_detectors <= 2) {
@@ -1092,19 +1090,6 @@ void ErrorAnalyzer::decompose_and_append_component_to_tail(
     SparseXorVec<DemTarget> sparse;
     sparse.xor_sorted_items(component);
 
-    for (size_t k = 0; k < component.size(); k++) {
-        if (!done[k]) {
-            auto p = known_symptoms.find({component[k]});
-            if (p != known_symptoms.end()) {
-                done[k] = true;
-                mono_buf.append_tail(p->second);
-                mono_buf.append_tail(DemTarget::separator());
-                sparse.xor_sorted_items(p->second);
-            }
-        }
-    }
-
-    size_t missed = 0;
     for (size_t k = 0; k < component.size(); k++) {
         if (!done[k]) {
             for (size_t k2 = k + 1; k2 < component.size(); k2++) {
@@ -1121,8 +1106,22 @@ void ErrorAnalyzer::decompose_and_append_component_to_tail(
                 }
             }
         }
+    }
+
+    size_t missed = 0;
+    for (size_t k = 0; k < component.size(); k++) {
+        if (!done[k]) {
+            auto p = known_symptoms.find({component[k]});
+            if (p != known_symptoms.end()) {
+                done[k] = true;
+                mono_buf.append_tail(p->second);
+                mono_buf.append_tail(DemTarget::separator());
+                sparse.xor_sorted_items(p->second);
+            }
+        }
         missed += !done[k];
     }
+
     if (missed > 2) {
         throw std::invalid_argument(
             "Failed to decompose errors into graphlike components with at most two symptoms.\n"
@@ -1202,9 +1201,7 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
 
 template <size_t s>
 void ErrorAnalyzer::add_error_combinations(
-    std::array<double, 1 << s> independent_probabilities,
-    std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
-
+    std::array<double, 1 << s> independent_probabilities, std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
     std::array<uint64_t, 1 << s> detector_masks{};
     FixedCapVector<DemTarget, 16> involved_detectors{};
     std::array<ConstPointerRange<DemTarget>, 1 << s> stored_ids;
@@ -1218,9 +1215,11 @@ void ErrorAnalyzer::add_error_combinations(
                         involved_detectors.push_back(id);
                     } catch (const std::out_of_range &ex) {
                         std::stringstream message;
-                        message << "An error case in a composite error exceeded that max supported number of symptoms (<=15). ";
-                        message << "\nThe " << std::to_string(s) << " basis error cases (e.g. X, Z) used to form the combined ";
-                        message<< "error cases (e.g. Y = X*Z) are:\n";
+                        message << "An error case in a composite error exceeded that max supported number of symptoms "
+                                   "(<=15). ";
+                        message << "\nThe " << std::to_string(s)
+                                << " basis error cases (e.g. X, Z) used to form the combined ";
+                        message << "error cases (e.g. Y = X*Z) are:\n";
                         for (size_t k2 = 0; k2 < s; k2++) {
                             message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
                         }

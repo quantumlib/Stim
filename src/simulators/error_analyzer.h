@@ -169,8 +169,7 @@ struct ErrorAnalyzer {
     ///     basis_errors: Building blocks for the error combinations.
     template <size_t s>
     void add_error_combinations(
-        std::array<double, 1 << s> independent_probabilities,
-        std::array<ConstPointerRange<DemTarget>, s> basis_errors);
+        std::array<double, 1 << s> independent_probabilities, std::array<ConstPointerRange<DemTarget>, s> basis_errors);
 
     template <size_t s>
     void decompose_helper_add_error_combinations(
@@ -178,8 +177,8 @@ struct ErrorAnalyzer {
         std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids);
 
     void decompose_and_append_component_to_tail(
-            ConstPointerRange<DemTarget> component,
-            const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms);
+        ConstPointerRange<DemTarget> component,
+        const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms);
 
     /// Performs a final check that all errors are decomposed.
     /// If any aren't, attempts to decompose them using other errors in the system.

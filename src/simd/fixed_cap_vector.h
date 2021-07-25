@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>
+#include <sstream>
 #include <stdexcept>
 
 namespace stim_internal {
@@ -138,8 +139,8 @@ class FixedCapVector {
             return true;
         }
         for (size_t k = 0; k < num_used; k++) {
-            if (data[k] < other.data[k]) {
-                return true;
+            if (data[k] != other.data[k]) {
+                return data[k] < other.data[k];
             }
         }
         return false;
@@ -154,7 +155,17 @@ class FixedCapVector {
 
 template <typename T, size_t max_size>
 std::ostream &operator<<(std::ostream &out, FixedCapVector<T, max_size> v) {
-    out << "FixedCapVector{" << comma_sep(v) << "}";
+    out << "FixedCapVector{";
+    bool first = true;
+    for (const auto &t : v) {
+        if (first) {
+            first = false;
+        } else {
+            out << ", ";
+        }
+        out << t;
+    }
+    out << "}";
     return out;
 }
 

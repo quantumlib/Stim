@@ -29,4 +29,3 @@ struct RaiiTempNamedFile {
     RaiiTempNamedFile();
     ~RaiiTempNamedFile();
 };
-

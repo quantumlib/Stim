@@ -94,6 +94,7 @@ set(TEST_FILES
         src/main_helper.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
+        src/simd/fixed_cap_vector.test.cc
         src/simd/monotonic_buffer.test.cc
         src/simd/simd_bit_table.test.cc
         src/simd/simd_bits.test.cc
