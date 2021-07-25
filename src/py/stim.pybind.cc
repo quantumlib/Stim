@@ -38,19 +38,19 @@ uint32_t target_rec(int32_t lookback) {
 }
 
 uint32_t target_inv(uint32_t qubit) {
-    return qubit | TARGET_INVERTED_BIT;
+    return GateTarget::qubit(qubit, true).data;
 }
 
-uint32_t target_x(uint32_t qubit) {
-    return qubit | TARGET_PAULI_X_BIT;
+uint32_t target_x(uint32_t qubit, bool invert) {
+    return GateTarget::x(qubit, invert).data;
 }
 
-uint32_t target_y(uint32_t qubit) {
-    return qubit | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT;
+uint32_t target_y(uint32_t qubit, bool invert) {
+    return GateTarget::y(qubit, invert).data;
 }
 
-uint32_t target_z(uint32_t qubit) {
-    return qubit | TARGET_PAULI_Z_BIT;
+uint32_t target_z(uint32_t qubit, bool invert) {
+    return GateTarget::z(qubit, invert).data;
 }
 
 PYBIND11_MODULE(stim, m) {
@@ -84,6 +84,7 @@ PYBIND11_MODULE(stim, m) {
         "target_x",
         &target_x,
         pybind11::arg("qubit_index"),
+        pybind11::arg("invert") = false,
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
             For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
@@ -94,6 +95,7 @@ PYBIND11_MODULE(stim, m) {
         "target_y",
         &target_y,
         pybind11::arg("qubit_index"),
+        pybind11::arg("invert") = false,
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
             For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
@@ -104,6 +106,7 @@ PYBIND11_MODULE(stim, m) {
         "target_z",
         &target_z,
         pybind11::arg("qubit_index"),
+        pybind11::arg("invert") = false,
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
             For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.

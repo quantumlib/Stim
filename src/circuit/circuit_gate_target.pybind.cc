@@ -17,71 +17,19 @@
 #include "../py/base.pybind.h"
 #include "circuit.h"
 
-GateTarget::GateTarget(uint32_t target) : target(target) {
-}
+using namespace stim_internal;
 
-GateTarget::GateTarget(pybind11::object init_target) {
+GateTarget obj_to_gate_target(const pybind11::object &obj) {
     try {
-        target = pybind11::cast<GateTarget>(init_target).target;
-        return;
+        return pybind11::cast<GateTarget>(obj);
     } catch (const pybind11::cast_error &ex) {
     }
     try {
-        target = pybind11::cast<uint32_t>(init_target);
-        return;
+        return GateTarget{pybind11::cast<uint32_t>(obj)};
     } catch (const pybind11::cast_error &ex) {
     }
     throw std::invalid_argument(
         "target argument wasn't a qubit index, a result from a `stim.target_*` method, or a `stim.GateTarget`.");
-}
-int32_t GateTarget::value() const {
-    ssize_t result = target & TARGET_VALUE_MASK;
-    if (is_measurement_record_target()) {
-        return -result;
-    }
-    return result;
-}
-bool GateTarget::is_x_target() const {
-    return (target & TARGET_PAULI_X_BIT) && !(target & TARGET_PAULI_Z_BIT);
-}
-bool GateTarget::is_y_target() const {
-    return (target & TARGET_PAULI_X_BIT) && (target & TARGET_PAULI_Z_BIT);
-}
-bool GateTarget::is_z_target() const {
-    return !(target & TARGET_PAULI_X_BIT) && (target & TARGET_PAULI_Z_BIT);
-}
-bool GateTarget::is_inverted_result_target() const {
-    return target & TARGET_INVERTED_BIT;
-}
-bool GateTarget::is_measurement_record_target() const {
-    return target & TARGET_RECORD_BIT;
-}
-bool GateTarget::operator==(const GateTarget &other) const {
-    return target == other.target;
-}
-bool GateTarget::operator!=(const GateTarget &other) const {
-    return target != other.target;
-}
-std::string GateTarget::repr_inner() const {
-    if (is_measurement_record_target()) {
-        return "stim.target_rec(" + std::to_string(value()) + ")";
-    }
-    if (is_inverted_result_target()) {
-        return "stim.target_inv(" + std::to_string(value()) + ")";
-    }
-    if (is_x_target()) {
-        return "stim.target_x(" + std::to_string(value()) + ")";
-    }
-    if (is_y_target()) {
-        return "stim.target_y(" + std::to_string(value()) + ")";
-    }
-    if (is_z_target()) {
-        return "stim.target_z(" + std::to_string(value()) + ")";
-    }
-    return std::to_string(value());
-}
-std::string GateTarget::repr() const {
-    return "stim.GateTarget(" + repr_inner() + ")";
 }
 
 void pybind_circuit_gate_target(pybind11::module &m) {
@@ -102,9 +50,8 @@ void pybind_circuit_gate_target(pybind11::module &m) {
                 stim.GateTarget(stim.target_inv(1))
         )DOC")
             .data());
-
     c.def(
-        pybind11::init<pybind11::object>(),
+        pybind11::init(&obj_to_gate_target),
         pybind11::arg("value"),
         clean_doc_string(u8R"DOC(
             Initializes a `stim.GateTarget`.
@@ -119,6 +66,14 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         &GateTarget::value,
         clean_doc_string(u8R"DOC(
             The numeric part of the target. Positive for qubit targets, negative for measurement record targets.
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "is_qubit_target",
+        &GateTarget::is_qubit_target,
+        clean_doc_string(u8R"DOC(
+            Returns true if this is a qubit target (e.g. `5`) or an inverted qubit target (e.g. `stim.target_inv(4)`).
         )DOC")
             .data());
 
@@ -150,7 +105,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_inverted_result_target",
         &GateTarget::is_inverted_result_target,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_inv` target (e.g. `!5` in a circuit file).
+            Returns whether or not this is an inverted target.
+
+            Inverted targets include inverted qubit targets `stim.target_inv(5)` (`!5` in a circuit file) and
+            inverted Pauli targets like `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
         )DOC")
             .data());
 

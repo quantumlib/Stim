@@ -82,6 +82,7 @@ struct ErrorAnalyzer {
     void MX(const OperationData &dat);
     void MY(const OperationData &dat);
     void MZ(const OperationData &dat);
+    void MPP(const OperationData &dat);
     void MRX(const OperationData &dat);
     void MRY(const OperationData &dat);
     void MRZ(const OperationData &dat);

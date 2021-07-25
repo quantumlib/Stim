@@ -311,7 +311,7 @@ TEST(TableauSimulator, unitary_gates_consistent_with_tableau_data) {
 TEST(TableauSimulator, certain_errors_consistent_with_gates) {
     TableauSimulator sim1(SHARED_TEST_RNG(), 2);
     TableauSimulator sim2(SHARED_TEST_RNG(), 2);
-    uint32_t targets[]{0};
+    GateTarget targets[]{GateTarget{0}};
     double p0 = 0.0;
     double p1 = 1.0;
     OperationData d0{{&p0}, {targets}};
@@ -935,9 +935,9 @@ TEST(TableauSimulator, measure_kickback_z) {
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
-    auto k1 = sim.measure_kickback_z(1);
-    auto k2 = sim.measure_kickback_z(2);
-    auto k3 = sim.measure_kickback_z(3);
+    auto k1 = sim.measure_kickback_z(GateTarget::qubit(1));
+    auto k2 = sim.measure_kickback_z(GateTarget::qubit(2));
+    auto k3 = sim.measure_kickback_z(GateTarget::qubit(3));
     ASSERT_EQ(k1.second, PauliString::from_str("XX__"));
     ASSERT_EQ(k2.second, PauliString::from_str("__XX"));
     ASSERT_EQ(k3.second, PauliString(0));
@@ -954,9 +954,9 @@ TEST(TableauSimulator, measure_kickback_x) {
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
-    auto k1 = sim.measure_kickback_x(1);
-    auto k2 = sim.measure_kickback_x(2);
-    auto k3 = sim.measure_kickback_x(3);
+    auto k1 = sim.measure_kickback_x(GateTarget::qubit(1));
+    auto k2 = sim.measure_kickback_x(GateTarget::qubit(2));
+    auto k3 = sim.measure_kickback_x(GateTarget::qubit(3));
     ASSERT_EQ(k1.second, PauliString::from_str("ZZ__"));
     ASSERT_EQ(k2.second, PauliString::from_str("__ZZ"));
     ASSERT_EQ(k3.second, PauliString(0));
@@ -973,9 +973,9 @@ TEST(TableauSimulator, measure_kickback_y) {
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.H_XZ(OpDat({0, 2}));
     sim.ZCX(OpDat({0, 1, 2, 3}));
-    auto k1 = sim.measure_kickback_y(1);
-    auto k2 = sim.measure_kickback_y(2);
-    auto k3 = sim.measure_kickback_y(3);
+    auto k1 = sim.measure_kickback_y(GateTarget::qubit(1));
+    auto k2 = sim.measure_kickback_y(GateTarget::qubit(2));
+    auto k3 = sim.measure_kickback_y(GateTarget::qubit(3));
     ASSERT_EQ(k1.second, PauliString::from_str("ZX__"));
     ASSERT_EQ(k2.second, PauliString::from_str("__ZX"));
     ASSERT_EQ(k3.second, PauliString(0));
@@ -992,7 +992,7 @@ TEST(TableauSimulator, measure_kickback_isolates) {
     TableauSimulator sim(SHARED_TEST_RNG(), 4);
     sim.inv_state = Tableau::random(4, SHARED_TEST_RNG());
     for (size_t k = 0; k < 4; k++) {
-        auto result = sim.measure_kickback_z(k);
+        auto result = sim.measure_kickback_z(GateTarget::qubit(k));
         for (size_t j = 0; j < result.second.num_qubits && j < k; j++) {
             ASSERT_FALSE(result.second.xs[j]);
             ASSERT_FALSE(result.second.zs[j]);
@@ -1501,4 +1501,108 @@ TEST(TableauSimulator, noisy_measure_reset_z) {
     ASSERT_LT(m1, 10000 - 300);
     t.expand_do_circuit("MZ 0");
     ASSERT_FALSE(t.measurement_record.storage.back());
+}
+
+TEST(TableauSimulator, measure_pauli_product_bad) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    ASSERT_THROW({ t.expand_do_circuit("MPP X0*X0"); }, std::invalid_argument);
+    ASSERT_THROW({ t.expand_do_circuit("MPP X0*Z0"); }, std::invalid_argument);
+}
+
+TEST(TableauSimulator, measure_pauli_product_1) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        REPEAT 100 {
+            RX 0
+            RY 1
+            RZ 2
+            MPP X0 Y1 Z2 X0*Y1*Z2
+        }
+    )CIRCUIT");
+    ASSERT_EQ(t.measurement_record.storage.size(), 400);
+    ASSERT_EQ(std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0), 0);
+}
+
+TEST(TableauSimulator, measure_pauli_product_4body) {
+    for (size_t k = 0; k < 10; k++) {
+        TableauSimulator t(SHARED_TEST_RNG());
+        t.expand_do_circuit(R"CIRCUIT(
+            MPP X0*X1*X2*X3
+            MX 0 1 2 3 4 5
+            MPP X2*X3*X4*X5
+            MPP Z0*Z1*Z4*Z5 !Y0*Y1*Y4*Y5
+        )CIRCUIT");
+        auto x0123 = t.measurement_record.storage[0];
+        auto x0 = t.measurement_record.storage[1];
+        auto x1 = t.measurement_record.storage[2];
+        auto x2 = t.measurement_record.storage[3];
+        auto x3 = t.measurement_record.storage[4];
+        auto x4 = t.measurement_record.storage[5];
+        auto x5 = t.measurement_record.storage[6];
+        auto x2345 = t.measurement_record.storage[7];
+        auto mz0145 = t.measurement_record.storage[8];
+        auto y0145 = t.measurement_record.storage[9];
+        ASSERT_EQ(x0123, x0 ^ x1 ^ x2 ^ x3);
+        ASSERT_EQ(x2345, x2 ^ x3 ^ x4 ^ x5);
+        ASSERT_EQ(y0145 ^ mz0145 ^ 1, x0123 ^ x2345);
+    }
+}
+
+TEST(TableauSimulator, measure_pauli_product_epr) {
+    for (size_t k = 0; k < 10; k++) {
+        TableauSimulator t(SHARED_TEST_RNG());
+        t.expand_do_circuit(R"CIRCUIT(
+            MPP X0*X1 Z0*Z1 Y0*Y1
+            CNOT 0 1
+            H 0
+            M 0 1
+        )CIRCUIT");
+        auto x01 = t.measurement_record.storage[0];
+        auto z01 = t.measurement_record.storage[1];
+        auto y01 = t.measurement_record.storage[2];
+        auto m0 = t.measurement_record.storage[3];
+        auto m1 = t.measurement_record.storage[4];
+        ASSERT_EQ(m0, x01);
+        ASSERT_EQ(m1, z01);
+        ASSERT_EQ(x01 ^ z01, y01 ^ 1);
+    }
+}
+
+TEST(TableauSimulator, measure_pauli_product_inversions) {
+    for (size_t k = 0; k < 10; k++) {
+        TableauSimulator t(SHARED_TEST_RNG());
+        t.expand_do_circuit(R"CIRCUIT(
+            MPP !X0*!X1 !X0*X1 X0*!X1 X0*X1 X0 X1 !X0 !X1
+        )CIRCUIT");
+        auto a = t.measurement_record.storage[0];
+        auto b = t.measurement_record.storage[1];
+        auto c = t.measurement_record.storage[2];
+        auto d = t.measurement_record.storage[3];
+        auto e = t.measurement_record.storage[4];
+        auto f = t.measurement_record.storage[5];
+        auto g = t.measurement_record.storage[6];
+        auto h = t.measurement_record.storage[7];
+        ASSERT_EQ(a, d);
+        ASSERT_EQ(b, c);
+        ASSERT_NE(a, b);
+        ASSERT_EQ(a, e ^ f);
+        ASSERT_NE(e, g);
+        ASSERT_NE(f, h);
+    }
+}
+
+TEST(TableauSimulator, measure_pauli_product_noisy) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        REPEAT 5000 {
+            MPP(0.05) X0*X1 Z0*Z1
+        }
+    )CIRCUIT");
+    auto m1 = std::accumulate(t.measurement_record.storage.begin(), t.measurement_record.storage.end(), 0);
+    ASSERT_GT(m1, 300);
+    ASSERT_LT(m1, 700);
+    t.expand_do_circuit("MPP Y0*Y1");
+    ASSERT_EQ(t.measurement_record.storage.back(), true);
 }

@@ -28,14 +28,9 @@
 #include "../simd/monotonic_buffer.h"
 #include "../simd/pointer_range.h"
 #include "gate_data.h"
+#include "gate_target.h"
 
 namespace stim_internal {
-
-#define TARGET_VALUE_MASK ((uint32_t{1} << 24) - uint32_t{1})
-#define TARGET_INVERTED_BIT (uint32_t{1} << 31)
-#define TARGET_PAULI_X_BIT (uint32_t{1} << 30)
-#define TARGET_PAULI_Z_BIT (uint32_t{1} << 29)
-#define TARGET_RECORD_BIT (uint32_t{1} << 28)
 
 uint64_t op_data_rep_count(const OperationData &data);
 
@@ -98,10 +93,12 @@ struct OperationData {
     /// The bottom 24 bits of each item always refer to a qubit index.
     /// The top 8 bits are used for additional data such as
     /// Pauli basis, record lookback, and measurement inversion.
-    PointerRange<uint32_t> targets;
+    PointerRange<GateTarget> targets;
 
     bool operator==(const OperationData &other) const;
     bool operator!=(const OperationData &other) const;
+
+    std::string str() const;
 };
 
 /// A gate applied to targets.
@@ -127,7 +124,7 @@ struct Operation {
 /// A description of a quantum computation.
 struct Circuit {
     /// Backing data stores for variable-sized target data referenced by operations.
-    MonotonicBuffer<uint32_t> target_buf;
+    MonotonicBuffer<GateTarget> target_buf;
     MonotonicBuffer<double> arg_buf;
     /// Operations in the circuit, from earliest to latest.
     std::vector<Operation> operations;
@@ -187,7 +184,7 @@ struct Circuit {
     void append_op(
         const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstPointerRange<double> args);
+    void append_operation(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args);
 
     /// Resets the circuit back to an empty circuit.
     void clear();
@@ -210,9 +207,10 @@ struct Circuit {
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
-                assert(op.target_data.targets[0] < blocks.size());
+                auto b = op.target_data.targets[0].data;
+                assert(b < blocks.size());
                 uint64_t repeats = op_data_rep_count(op.target_data);
-                const auto &block = blocks[op.target_data.targets[0]];
+                const auto &block = blocks[b];
                 for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation(callback);
                 }
@@ -229,9 +227,10 @@ struct Circuit {
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
-                assert(op.target_data.targets[0] < blocks.size());
+                auto b = op.target_data.targets[0].data;
+                assert(b < blocks.size());
                 uint64_t repeats = op_data_rep_count(op.target_data);
-                const auto &block = blocks[op.target_data.targets[0]];
+                const auto &block = blocks[b];
                 for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation_reverse(callback);
                 }
@@ -248,8 +247,9 @@ struct Circuit {
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
-                assert(op.target_data.targets[0] < blocks.size());
-                auto sub = blocks[op.target_data.targets[0]].flat_count_operations<COUNT>(count);
+                auto b = op.target_data.targets[0].data;
+                assert(b < blocks.size());
+                auto sub = blocks[b].flat_count_operations<COUNT>(count);
                 n = add_saturate(n, mul_saturate(sub, op_data_rep_count(op.target_data)));
             } else {
                 n = add_saturate(n, count(op));
@@ -299,9 +299,14 @@ inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {
 }
 
 template <typename SOURCE>
-bool read_until_next_line_arg(int &c, SOURCE read_char) {
-    if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
-        throw std::invalid_argument("Targets must be separated by spacing.");
+bool read_until_next_line_arg(int &c, SOURCE read_char, bool space_required = true) {
+    if (c == '*') {
+        return true;
+    }
+    if (space_required) {
+        if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
+            throw std::invalid_argument("Targets must be separated by spacing.");
+        }
     }
     while (c == ' ' || c == '\t') {
         c = read_char();
@@ -382,6 +387,7 @@ void read_parens_arguments(int &c, const char *name, SOURCE read_char, Monotonic
 
 std::ostream &operator<<(std::ostream &out, const Circuit &c);
 std::ostream &operator<<(std::ostream &out, const Operation &op);
+std::ostream &operator<<(std::ostream &out, const OperationData &dat);
 void print_circuit(std::ostream &out, const Circuit &c, const std::string &indentation);
 
 }  // namespace stim_internal

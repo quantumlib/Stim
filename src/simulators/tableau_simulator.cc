@@ -41,14 +41,32 @@ bool TableauSimulator::is_deterministic_z(size_t target) const {
     return !inv_state.zs[target].xs.not_zero();
 }
 
+void TableauSimulator::MPP(const OperationData &target_data) {
+    decompose_mpp_operation(
+        target_data,
+        inv_state.num_qubits,
+        [&](const OperationData &h_xz,
+            const OperationData &h_yz,
+            const OperationData &cnot,
+            const OperationData &meas) {
+            H_XZ(h_xz);
+            H_YZ(h_yz);
+            ZCX(cnot);
+            measure_z(meas);
+            ZCX(cnot);
+            H_YZ(h_yz);
+            H_XZ(h_xz);
+        });
+}
+
 void TableauSimulator::measure_x(const OperationData &target_data) {
     // Ensure measurement observables are collapsed.
     collapse_x(target_data.targets);
 
     // Record measurement results.
-    for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_VALUE_MASK;
-        bool flipped = qf & TARGET_INVERTED_BIT;
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();
+        bool flipped = t.is_inverted_result_target();
         bool b = inv_state.xs.signs[q] ^ flipped;
         measurement_record.record_result(b);
     }
@@ -60,9 +78,9 @@ void TableauSimulator::measure_y(const OperationData &target_data) {
     collapse_y(target_data.targets);
 
     // Record measurement results.
-    for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_VALUE_MASK;
-        bool flipped = qf & TARGET_INVERTED_BIT;
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();
+        bool flipped = t.is_inverted_result_target();
         bool b = inv_state.eval_y_obs(q).sign ^ flipped;
         measurement_record.record_result(b);
     }
@@ -74,9 +92,9 @@ void TableauSimulator::measure_z(const OperationData &target_data) {
     collapse_z(target_data.targets);
 
     // Record measurement results.
-    for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_VALUE_MASK;
-        bool flipped = qf & TARGET_INVERTED_BIT;
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();
+        bool flipped = t.is_inverted_result_target();
         bool b = inv_state.zs.signs[q] ^ flipped;
         measurement_record.record_result(b);
     }
@@ -90,9 +108,9 @@ void TableauSimulator::measure_reset_x(const OperationData &target_data) {
     collapse_x(target_data.targets);
 
     // Record measurement results while triggering resets.
-    for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_VALUE_MASK;
-        bool flipped = qf & TARGET_INVERTED_BIT;
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();
+        bool flipped = t.is_inverted_result_target();
         bool b = inv_state.xs.signs[q] ^ flipped;
         measurement_record.record_result(b);
         inv_state.xs.signs[q] = false;
@@ -108,9 +126,9 @@ void TableauSimulator::measure_reset_y(const OperationData &target_data) {
     collapse_y(target_data.targets);
 
     // Record measurement results while triggering resets.
-    for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_VALUE_MASK;
-        bool flipped = qf & TARGET_INVERTED_BIT;
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();
+        bool flipped = t.is_inverted_result_target();
         bool cur_sign = inv_state.eval_y_obs(q).sign;
         bool b = cur_sign ^ flipped;
         measurement_record.record_result(b);
@@ -126,9 +144,9 @@ void TableauSimulator::measure_reset_z(const OperationData &target_data) {
     collapse_z(target_data.targets);
 
     // Record measurement results while triggering resets.
-    for (auto qf : target_data.targets) {
-        auto q = qf & TARGET_VALUE_MASK;
-        bool flipped = qf & TARGET_INVERTED_BIT;
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();
+        bool flipped = t.is_inverted_result_target();
         bool b = inv_state.zs.signs[q] ^ flipped;
         measurement_record.record_result(b);
         inv_state.xs.signs[q] = false;
@@ -153,8 +171,8 @@ void TableauSimulator::reset_x(const OperationData &target_data) {
 
     // Force the collapsed qubits into the ground state.
     for (auto q : target_data.targets) {
-        inv_state.xs.signs[q] = false;
-        inv_state.zs.signs[q] = false;
+        inv_state.xs.signs[q.data] = false;
+        inv_state.zs.signs[q.data] = false;
     }
 }
 
@@ -164,9 +182,9 @@ void TableauSimulator::reset_y(const OperationData &target_data) {
 
     // Force the collapsed qubits into the ground state.
     for (auto q : target_data.targets) {
-        inv_state.xs.signs[q] = false;
-        inv_state.zs.signs[q] = false;
-        inv_state.zs.signs[q] ^= inv_state.eval_y_obs(q).sign;
+        inv_state.xs.signs[q.data] = false;
+        inv_state.zs.signs[q.data] = false;
+        inv_state.zs.signs[q.data] ^= inv_state.eval_y_obs(q.data).sign;
     }
 }
 
@@ -176,8 +194,8 @@ void TableauSimulator::reset_z(const OperationData &target_data) {
 
     // Force the collapsed qubits into the ground state.
     for (auto q : target_data.targets) {
-        inv_state.xs.signs[q] = false;
-        inv_state.zs.signs[q] = false;
+        inv_state.xs.signs[q.data] = false;
+        inv_state.zs.signs[q.data] = false;
     }
 }
 
@@ -187,21 +205,21 @@ void TableauSimulator::I(const OperationData &target_data) {
 void TableauSimulator::H_XZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
-        inv_state.prepend_H_XZ(q);
+        inv_state.prepend_H_XZ(q.data);
     }
 }
 
 void TableauSimulator::H_XY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
-        inv_state.prepend_H_XY(q);
+        inv_state.prepend_H_XY(q.data);
     }
 }
 
 void TableauSimulator::H_YZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
-        inv_state.prepend_H_YZ(q);
+        inv_state.prepend_H_YZ(q.data);
     }
 }
 
@@ -209,7 +227,7 @@ void TableauSimulator::C_XYZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_C_ZYX(q);
+        inv_state.prepend_C_ZYX(q.data);
     }
 }
 
@@ -217,7 +235,7 @@ void TableauSimulator::C_ZYX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_C_XYZ(q);
+        inv_state.prepend_C_XYZ(q.data);
     }
 }
 
@@ -225,7 +243,7 @@ void TableauSimulator::SQRT_Z(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_SQRT_Z_DAG(q);
+        inv_state.prepend_SQRT_Z_DAG(q.data);
     }
 }
 
@@ -233,7 +251,7 @@ void TableauSimulator::SQRT_Z_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_SQRT_Z(q);
+        inv_state.prepend_SQRT_Z(q.data);
     }
 }
 
@@ -262,7 +280,7 @@ void TableauSimulator::SQRT_X(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_SQRT_X_DAG(q);
+        inv_state.prepend_SQRT_X_DAG(q.data);
     }
 }
 
@@ -270,7 +288,7 @@ void TableauSimulator::SQRT_X_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_SQRT_X(q);
+        inv_state.prepend_SQRT_X(q.data);
     }
 }
 
@@ -278,7 +296,7 @@ void TableauSimulator::SQRT_Y(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_SQRT_Y_DAG(q);
+        inv_state.prepend_SQRT_Y_DAG(q.data);
     }
 }
 
@@ -286,7 +304,7 @@ void TableauSimulator::SQRT_Y_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
         // Note: inverted because we're tracking the inverse tableau.
-        inv_state.prepend_SQRT_Y(q);
+        inv_state.prepend_SQRT_Y(q.data);
     }
 }
 
@@ -323,7 +341,7 @@ void TableauSimulator::ZCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cx(targets[k], targets[k + 1]);
+        single_cx(targets[k].data, targets[k + 1].data);
     }
 }
 
@@ -331,7 +349,7 @@ void TableauSimulator::ZCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cy(targets[k], targets[k + 1]);
+        single_cy(targets[k].data, targets[k + 1].data);
     }
 }
 
@@ -339,8 +357,8 @@ void TableauSimulator::ZCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         if (!((q1 | q2) & TARGET_RECORD_BIT)) {
             inv_state.prepend_ZCZ(q1, q2);
             continue;
@@ -362,8 +380,8 @@ void TableauSimulator::SWAP(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto c = targets[k];
-        auto t = targets[k + 1];
+        auto c = targets[k].data;
+        auto t = targets[k + 1].data;
         inv_state.prepend_SWAP(c, t);
     }
 }
@@ -372,8 +390,8 @@ void TableauSimulator::ISWAP(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_ISWAP_DAG(q1, q2);
     }
@@ -383,8 +401,8 @@ void TableauSimulator::ISWAP_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_ISWAP(q1, q2);
     }
@@ -394,8 +412,8 @@ void TableauSimulator::XCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         inv_state.prepend_XCX(q1, q2);
     }
 }
@@ -404,8 +422,8 @@ void TableauSimulator::SQRT_ZZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_ZZ_DAG(q1, q2);
     }
@@ -415,8 +433,8 @@ void TableauSimulator::SQRT_ZZ_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_ZZ(q1, q2);
     }
@@ -426,8 +444,8 @@ void TableauSimulator::SQRT_YY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_YY_DAG(q1, q2);
     }
@@ -437,8 +455,8 @@ void TableauSimulator::SQRT_YY_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_YY(q1, q2);
     }
@@ -448,8 +466,8 @@ void TableauSimulator::SQRT_XX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_XX_DAG(q1, q2);
     }
@@ -459,8 +477,8 @@ void TableauSimulator::SQRT_XX_DAG(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         // Note: inverted because we're tracking the inverse tableau.
         inv_state.prepend_SQRT_XX(q1, q2);
     }
@@ -470,8 +488,8 @@ void TableauSimulator::XCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         inv_state.prepend_XCY(q1, q2);
     }
 }
@@ -479,15 +497,15 @@ void TableauSimulator::XCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cx(targets[k + 1], targets[k]);
+        single_cx(targets[k + 1].data, targets[k].data);
     }
 }
 void TableauSimulator::YCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         inv_state.prepend_YCX(q1, q2);
     }
 }
@@ -495,8 +513,8 @@ void TableauSimulator::YCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        auto q1 = targets[k];
-        auto q2 = targets[k + 1];
+        auto q1 = targets[k].data;
+        auto q2 = targets[k + 1].data;
         inv_state.prepend_YCY(q1, q2);
     }
 }
@@ -504,15 +522,15 @@ void TableauSimulator::YCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cy(targets[k + 1], targets[k]);
+        single_cy(targets[k + 1].data, targets[k].data);
     }
 }
 
 void TableauSimulator::DEPOLARIZE1(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         auto p = 1 + (rng() % 3);
-        inv_state.xs.signs[q] ^= p & 1;
-        inv_state.zs.signs[q] ^= p & 2;
+        inv_state.xs.signs[q.data] ^= p & 1;
+        inv_state.zs.signs[q.data] ^= p & 2;
     });
 }
 
@@ -522,8 +540,8 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
     auto n = targets.size() >> 1;
     RareErrorIterator::for_samples(target_data.args[0], n, rng, [&](size_t s) {
         auto p = 1 + (rng() % 15);
-        auto q1 = targets[s << 1];
-        auto q2 = targets[1 | (s << 1)];
+        auto q1 = targets[s << 1].data;
+        auto q2 = targets[1 | (s << 1)].data;
         inv_state.xs.signs[q1] ^= p & 1;
         inv_state.zs.signs[q1] ^= p & 2;
         inv_state.xs.signs[q2] ^= p & 4;
@@ -532,21 +550,21 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
 }
 
 void TableauSimulator::X_ERROR(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
-        inv_state.zs.signs[q] ^= true;
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
+        inv_state.zs.signs[q.data] ^= true;
     });
 }
 
 void TableauSimulator::Y_ERROR(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
-        inv_state.xs.signs[q] ^= true;
-        inv_state.zs.signs[q] ^= true;
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
+        inv_state.xs.signs[q.data] ^= true;
+        inv_state.zs.signs[q.data] ^= true;
     });
 }
 
 void TableauSimulator::Z_ERROR(const OperationData &target_data) {
-    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](size_t q) {
-        inv_state.xs.signs[q] ^= true;
+    RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
+        inv_state.xs.signs[q.data] ^= true;
     });
 }
 
@@ -590,11 +608,11 @@ void TableauSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
         return;
     }
     for (auto qxz : target_data.targets) {
-        auto q = qxz & TARGET_VALUE_MASK;
-        if (qxz & TARGET_PAULI_X_BIT) {
+        auto q = qxz.qubit_value();
+        if (qxz.data & TARGET_PAULI_X_BIT) {
             inv_state.prepend_X(q);
         }
-        if (qxz & TARGET_PAULI_Z_BIT) {
+        if (qxz.data & TARGET_PAULI_Z_BIT) {
             inv_state.prepend_Z(q);
         }
     }
@@ -603,21 +621,21 @@ void TableauSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 void TableauSimulator::X(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
-        inv_state.prepend_X(q);
+        inv_state.prepend_X(q.data);
     }
 }
 
 void TableauSimulator::Y(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
-        inv_state.prepend_Y(q);
+        inv_state.prepend_Y(q.data);
     }
 }
 
 void TableauSimulator::Z(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     for (auto q : targets) {
-        inv_state.prepend_Z(q);
+        inv_state.prepend_Z(q.data);
     }
 }
 
@@ -677,61 +695,61 @@ std::vector<std::complex<float>> TableauSimulator::to_state_vector() const {
     return to_vector_sim().state;
 }
 
-void TableauSimulator::collapse_x(ConstPointerRange<uint32_t> targets) {
+void TableauSimulator::collapse_x(ConstPointerRange<GateTarget> targets) {
     // Find targets that need to be collapsed.
-    std::set<uint32_t> unique_collapse_targets;
-    for (uint32_t t : targets) {
-        t &= TARGET_VALUE_MASK;
-        if (!is_deterministic_x(t)) {
+    std::set<GateTarget> unique_collapse_targets;
+    for (GateTarget t : targets) {
+        t.data &= TARGET_VALUE_MASK;
+        if (!is_deterministic_x(t.data)) {
             unique_collapse_targets.insert(t);
         }
     }
 
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
-        std::vector<uint32_t> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
+        std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
         H_XZ({{}, collapse_targets});
         {
             TableauTransposedRaii temp_transposed(inv_state);
             for (auto q : collapse_targets) {
-                collapse_qubit_z(q, temp_transposed);
+                collapse_qubit_z(q.data, temp_transposed);
             }
         }
         H_XZ({{}, collapse_targets});
     }
 }
 
-void TableauSimulator::collapse_y(ConstPointerRange<uint32_t> targets) {
+void TableauSimulator::collapse_y(ConstPointerRange<GateTarget> targets) {
     // Find targets that need to be collapsed.
-    std::set<uint32_t> unique_collapse_targets;
-    for (uint32_t t : targets) {
-        t &= TARGET_VALUE_MASK;
-        if (!is_deterministic_y(t)) {
+    std::set<GateTarget> unique_collapse_targets;
+    for (GateTarget t : targets) {
+        t.data &= TARGET_VALUE_MASK;
+        if (!is_deterministic_y(t.data)) {
             unique_collapse_targets.insert(t);
         }
     }
 
     // Only pay the cost of transposing if collapsing is needed.
     if (!unique_collapse_targets.empty()) {
-        std::vector<uint32_t> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
+        std::vector<GateTarget> collapse_targets(unique_collapse_targets.begin(), unique_collapse_targets.end());
         H_YZ({{}, collapse_targets});
         {
             TableauTransposedRaii temp_transposed(inv_state);
             for (auto q : collapse_targets) {
-                collapse_qubit_z(q, temp_transposed);
+                collapse_qubit_z(q.data, temp_transposed);
             }
         }
         H_YZ({{}, collapse_targets});
     }
 }
 
-void TableauSimulator::collapse_z(ConstPointerRange<uint32_t> targets) {
+void TableauSimulator::collapse_z(ConstPointerRange<GateTarget> targets) {
     // Find targets that need to be collapsed.
-    std::vector<size_t> collapse_targets;
+    std::vector<GateTarget> collapse_targets;
     collapse_targets.reserve(targets.size());
-    for (uint32_t t : targets) {
-        t &= TARGET_VALUE_MASK;
-        if (!is_deterministic_z(t)) {
+    for (GateTarget t : targets) {
+        t.data &= TARGET_VALUE_MASK;
+        if (!is_deterministic_z(t.data)) {
             collapse_targets.push_back(t);
         }
     }
@@ -740,7 +758,7 @@ void TableauSimulator::collapse_z(ConstPointerRange<uint32_t> targets) {
     if (!collapse_targets.empty()) {
         TableauTransposedRaii temp_transposed(inv_state);
         for (auto target : collapse_targets) {
-            collapse_qubit_z(target, temp_transposed);
+            collapse_qubit_z(target.data, temp_transposed);
         }
     }
 }
@@ -889,9 +907,9 @@ void TableauSimulator::set_num_qubits(size_t new_num_qubits) {
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(uint32_t target) {
-    bool flipped = target & TARGET_INVERTED_BIT;
-    uint32_t q = target & TARGET_VALUE_MASK;
+std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(GateTarget target) {
+    bool flipped = target.is_inverted_result_target();
+    uint32_t q = target.qubit_value();
     PauliString kickback(0);
     bool has_kickback = !is_deterministic_z(q);  // Note: do this before transposing the state!
 
@@ -905,30 +923,30 @@ std::pair<bool, PauliString> TableauSimulator::measure_kickback_z(uint32_t targe
         measurement_record.storage.push_back(result);
 
         // Prevent later measure_kickback calls from unnecessarily targeting this qubit with a Z gate.
-        collapse_isolate_qubit_z(target, temp_transposed);
+        collapse_isolate_qubit_z(q, temp_transposed);
 
         return {result, kickback};
     }
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(uint32_t target) {
+std::pair<bool, PauliString> TableauSimulator::measure_kickback_y(GateTarget target) {
     H_YZ({{}, {&target}});
     auto result = measure_kickback_z(target);
     H_YZ({{}, {&target}});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_YZ.
-        result.second.xs[target] ^= result.second.zs[target];
+        result.second.xs[target.qubit_value()] ^= result.second.zs[target.qubit_value()];
     }
     return result;
 }
 
-std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(uint32_t target) {
+std::pair<bool, PauliString> TableauSimulator::measure_kickback_x(GateTarget target) {
     H_XZ({{}, {&target}});
     auto result = measure_kickback_z(target);
     H_XZ({{}, {&target}});
     if (result.second.num_qubits) {
         // Also conjugate the kickback by H_XZ.
-        result.second.xs[target].swap_with(result.second.zs[target]);
+        result.second.xs[target.qubit_value()].swap_with(result.second.zs[target.qubit_value()]);
     }
     return result;
 }

@@ -18,10 +18,13 @@
 
 using namespace stim_internal;
 
-OpDat::OpDat(uint32_t target) : targets({target}) {
+OpDat::OpDat(uint32_t target) : targets({{target}}) {
 }
 
-OpDat::OpDat(std::vector<uint32_t> targets) : targets(std::move(targets)) {
+OpDat::OpDat(std::vector<uint32_t> int_targets) {
+    for (auto e : int_targets) {
+        targets.push_back({e});
+    }
 }
 
 OpDat OpDat::flipped(size_t target) {
@@ -179,6 +182,35 @@ TEST(circuit, from_text) {
             CORRELATED_ERROR(0.125) X90 Y91 Z92 X93
           )circuit"),
         expected);
+}
+
+TEST(circuit, parse_combiners) {
+    ASSERT_THROW({ Circuit("MPP *"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP * X1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP * X1 *"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X1 *"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X1 * * Y2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X1**Y2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP(1.1) X1**Y2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP(-0.5) X1**Y2"); }, std::invalid_argument);
+    auto c = Circuit("MPP X1*Y2 Z3 * Z4\nMPP Z5");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].target_data.args.size(), 0);
+    ASSERT_EQ(c.operations[0].target_data.targets.size(), 7);
+    std::vector<GateTarget> expected{
+        GateTarget::x(1),
+        GateTarget::combiner(),
+        GateTarget::y(2),
+        GateTarget::z(3),
+        GateTarget::combiner(),
+        GateTarget::z(4),
+        GateTarget::z(5),
+    };
+    ASSERT_EQ(c.operations[0].target_data.targets, (PointerRange<GateTarget>)expected);
+
+    c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
+    ASSERT_EQ(c.operations[0].target_data.args.size(), 1);
+    ASSERT_EQ(c.operations[0].target_data.args[0], 0.125);
 }
 
 TEST(circuit, append_circuit) {
@@ -391,19 +423,16 @@ TEST(circuit, for_each_operation) {
     )CIRCUIT");
 
     Circuit flat;
-    auto f = [&](const char *gate, const std::vector<uint32_t> &targets) {
-        flat.append_operation({&GATE_DATA.at(gate), {{}, flat.target_buf.take_copy(targets)}});
-    };
-    f("H", {0});
-    f("M", {0, 1});
-    f("X", {1});
-    f("Y", {2});
-    f("Y", {2});
-    f("Y", {2});
-    f("X", {1});
-    f("Y", {2});
-    f("Y", {2});
-    f("Y", {2});
+    flat.append_op("H", {0});
+    flat.append_op("M", {0, 1});
+    flat.append_op("X", {1});
+    flat.append_op("Y", {2});
+    flat.operations.push_back(flat.operations.back());
+    flat.operations.push_back(flat.operations.back());
+    flat.append_op("X", {1});
+    flat.append_op("Y", {2});
+    flat.operations.push_back(flat.operations.back());
+    flat.operations.push_back(flat.operations.back());
 
     std::vector<Operation> ops;
     c.for_each_operation([&](const Operation &op) {
@@ -426,19 +455,16 @@ TEST(circuit, for_each_operation_reverse) {
     )CIRCUIT");
 
     Circuit flat;
-    auto f = [&](const char *gate, const std::vector<uint32_t> &targets) {
-        flat.append_operation({&GATE_DATA.at(gate), {{}, flat.target_buf.take_copy(targets)}});
-    };
-    f("Y", {2});
-    f("Y", {2});
-    f("Y", {2});
-    f("X", {1});
-    f("Y", {2});
-    f("Y", {2});
-    f("Y", {2});
-    f("X", {1});
-    f("M", {0, 1});
-    f("H", {0});
+    flat.append_op("Y", {2});
+    flat.operations.push_back(flat.operations.back());
+    flat.operations.push_back(flat.operations.back());
+    flat.append_op("X", {1});
+    flat.append_op("Y", {2});
+    flat.operations.push_back(flat.operations.back());
+    flat.operations.push_back(flat.operations.back());
+    flat.append_op("X", {1});
+    flat.append_op("M", {0, 1});
+    flat.append_op("H", {0});
 
     std::vector<Operation> ops;
     c.for_each_operation_reverse([&](const Operation &op) {
@@ -772,9 +798,9 @@ TEST(circuit, big_rep_count) {
         }
     )CIRCUIT");
     ASSERT_EQ(c.operations[0].target_data.targets.size(), 3);
-    ASSERT_EQ(c.operations[0].target_data.targets[0], 0);
-    ASSERT_EQ(c.operations[0].target_data.targets[1], 1234567890123456789ULL & 0xFFFFFFFFULL);
-    ASSERT_EQ(c.operations[0].target_data.targets[2], 1234567890123456789ULL >> 32);
+    ASSERT_EQ(c.operations[0].target_data.targets[0].data, 0);
+    ASSERT_EQ(c.operations[0].target_data.targets[1].data, 1234567890123456789ULL & 0xFFFFFFFFULL);
+    ASSERT_EQ(c.operations[0].target_data.targets[2].data, 1234567890123456789ULL >> 32);
     ASSERT_EQ(c.str(), "REPEAT 1234567890123456789 {\n    M 1\n}");
     ASSERT_EQ(c.count_measurements(), 1234567890123456789ULL);
 

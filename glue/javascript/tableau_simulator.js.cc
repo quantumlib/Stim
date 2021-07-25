@@ -8,8 +8,13 @@
 using namespace stim_internal;
 
 struct TempArgData {
-    std::vector<uint32_t> targets;
-    TempArgData(std::vector<uint32_t> targets) : targets(std::move(targets)) {
+    std::vector<GateTarget> targets;
+    TempArgData(std::vector<GateTarget> targets) : targets(std::move(targets)) {
+    }
+    TempArgData(std::vector<uint32_t> init_targets) {
+        for (auto e : init_targets) {
+            targets.push_back(GateTarget{e});
+        }
     }
     operator OperationData() {
         return {{}, targets};
@@ -32,7 +37,7 @@ static TempArgData args_to_targets(TableauSimulator &self, const emscripten::val
 static TempArgData safe_targets(TableauSimulator &self, uint32_t target) {
     uint32_t max_q = target & TARGET_VALUE_MASK;
     self.ensure_large_enough_for_qubits((size_t)max_q + 1);
-    return TempArgData({target});
+    return TempArgData({GateTarget{target}});
 }
 
 static TempArgData safe_targets(TableauSimulator &self, uint32_t target1, uint32_t target2) {
@@ -41,7 +46,7 @@ static TempArgData safe_targets(TableauSimulator &self, uint32_t target1, uint32
     if (target1 == target2) {
         throw std::invalid_argument("target1 == target2");
     }
-    return TempArgData({target1, target2});
+    return TempArgData({GateTarget{target1}, GateTarget{target2}});
 }
 
 static TempArgData args_to_target_pairs(TableauSimulator &self, const emscripten::val &args) {
@@ -57,13 +62,13 @@ ExposedTableauSimulator::ExposedTableauSimulator() : sim(JS_BIND_SHARED_RNG(), 0
 
 bool ExposedTableauSimulator::measure(size_t target) {
     sim.ensure_large_enough_for_qubits(target + 1);
-    sim.measure_z(TempArgData({target}));
+    sim.measure_z(TempArgData({GateTarget{target}}));
     return (bool)sim.measurement_record.storage.back();
 }
 
 emscripten::val ExposedTableauSimulator::measure_kickback(size_t target) {
     safe_targets(sim, target);
-    auto result = sim.measure_kickback_z(target);
+    auto result = sim.measure_kickback_z(GateTarget{(uint32_t)target});
     emscripten::val returned = emscripten::val::object();
     returned.set("result", result.first);
     if (result.second.num_qubits) {

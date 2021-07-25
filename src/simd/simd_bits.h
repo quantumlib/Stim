@@ -102,6 +102,9 @@ struct simd_bits {
     /// Padding bits beyond the minimum number of bits are not randomized.
     static simd_bits random(size_t min_bits, std::mt19937_64 &rng);
 
+    /// Returns whether or not the two ranges have set bits in common.
+    bool intersects(const simd_bits_range_ref other) const;
+
     /// Writes bits from another location.
     /// Bits not part of the write are unchanged.
     void truncated_overwrite_from(simd_bits_range_ref other, size_t num_bits);

@@ -21,8 +21,12 @@
 
 using namespace stim_internal;
 
-CircuitInstruction::CircuitInstruction(const char *name, std::vector<GateTarget> targets, std::vector<double> gate_args)
-    : gate(GATE_DATA.at(name)), targets(targets), gate_args(gate_args) {
+CircuitInstruction::CircuitInstruction(
+    const char *name, const std::vector<pybind11::object> &init_targets, const std::vector<double> &gate_args)
+    : gate(GATE_DATA.at(name)), gate_args(gate_args) {
+    for (const auto &obj : init_targets) {
+        targets.push_back(obj_to_gate_target(obj));
+    }
 }
 CircuitInstruction::CircuitInstruction(const Gate &gate, std::vector<GateTarget> targets, std::vector<double> gate_args)
     : gate(gate), targets(targets), gate_args(gate_args) {
@@ -84,7 +88,7 @@ void pybind_circuit_instruction(pybind11::module &m) {
             .data());
 
     c.def(
-        pybind11::init<const char *, std::vector<GateTarget>, std::vector<double>>(),
+        pybind11::init<const char *, std::vector<pybind11::object>, std::vector<double>>(),
         pybind11::arg("name"),
         pybind11::arg("targets"),
         pybind11::arg("gate_args") = std::make_tuple(),

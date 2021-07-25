@@ -287,7 +287,10 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
         }
     }
 
-    std::vector<uint32_t> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    std::vector<GateTarget> data;
+    for (size_t k = 0; k < 16; k++) {
+        data.push_back(GateTarget::qubit(k));
+    }
     OperationData targets = {{}, data};
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
@@ -2420,4 +2423,36 @@ TEST(ErrorAnalyzer, honeycomb_code_decomposes) {
         false,
         false,
         false);
+}
+
+TEST(ErrorAnalyzer, measure_pauli_product_4body) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                RX 0
+                Z_ERROR(0.125) 0
+                MPP X0*Z1
+                DETECTOR rec[-1]
+            )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"MODEL(
+            error(0.125) D0
+        )MODEL"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                MPP(0.25) Z0*Z1
+                DETECTOR rec[-1]
+            )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"MODEL(
+            error(0.25) D0
+        )MODEL"));
 }

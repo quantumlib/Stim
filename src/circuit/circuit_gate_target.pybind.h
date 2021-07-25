@@ -19,22 +19,9 @@
 #include <pybind11/pybind11.h>
 #include <string>
 
-void pybind_circuit_gate_target(pybind11::module &m);
+#include "gate_target.h"
 
-struct GateTarget {
-    uint32_t target;
-    GateTarget(uint32_t target);
-    GateTarget(pybind11::object init_target);
-    int32_t value() const;
-    bool is_x_target() const;
-    bool is_y_target() const;
-    bool is_z_target() const;
-    bool is_inverted_result_target() const;
-    bool is_measurement_record_target() const;
-    bool operator==(const GateTarget &other) const;
-    bool operator!=(const GateTarget &other) const;
-    std::string repr_inner() const;
-    std::string repr() const;
-};
+void pybind_circuit_gate_target(pybind11::module &m);
+stim_internal::GateTarget obj_to_gate_target(const pybind11::object &obj);
 
 #endif

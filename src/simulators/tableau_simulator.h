@@ -185,6 +185,7 @@ struct TableauSimulator {
     void PAULI_CHANNEL_2(const OperationData &target_data);
     void CORRELATED_ERROR(const OperationData &target_data);
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
+    void MPP(const OperationData &target_data);
 
     /// Returns the single-qubit stabilizer of a target or, if it is entangled, the identity operation.
     PauliString peek_bloch(uint32_t target) const;
@@ -196,9 +197,9 @@ struct TableauSimulator {
     ///
     /// Deterministic measurements have no kickback.
     /// This is represented by setting the kickback to the empty Pauli string.
-    std::pair<bool, PauliString> measure_kickback_z(uint32_t target);
-    std::pair<bool, PauliString> measure_kickback_y(uint32_t target);
-    std::pair<bool, PauliString> measure_kickback_x(uint32_t target);
+    std::pair<bool, PauliString> measure_kickback_z(GateTarget target);
+    std::pair<bool, PauliString> measure_kickback_y(GateTarget target);
+    std::pair<bool, PauliString> measure_kickback_x(GateTarget target);
 
     bool read_measurement_record(uint32_t encoded_target) const;
     void single_cx(uint32_t c, uint32_t t);
@@ -225,19 +226,19 @@ struct TableauSimulator {
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_x(ConstPointerRange<uint32_t> targets);
+    void collapse_x(ConstPointerRange<GateTarget> targets);
 
     /// Collapses the given qubits into the Y basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_y(ConstPointerRange<uint32_t> targets);
+    void collapse_y(ConstPointerRange<GateTarget> targets);
 
     /// Collapses the given qubits into the Z basis.
     ///
     /// Args:
     ///     targets: The qubits to collapse.
-    void collapse_z(ConstPointerRange<uint32_t> targets);
+    void collapse_z(ConstPointerRange<GateTarget> targets);
 
     /// Completely isolates a qubit from the other qubits tracked by the simulator, so it can be safely discarded.
     ///
@@ -254,7 +255,7 @@ template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>
 void perform_pauli_errors_via_correlated_errors(
     const OperationData &target_data, RESET_FLAG reset_flag, ELSE_CORR else_corr) {
     double target_p;
-    uint32_t target_t[Q];
+    GateTarget target_t[Q];
     OperationData data{{&target_p}, {&target_t[0], &target_t[Q]}};
     for (size_t k = 0; k < target_data.targets.size(); k += Q) {
         reset_flag();
@@ -273,10 +274,10 @@ void perform_pauli_errors_via_correlated_errors(
                 bool z = (pauli >> (2 * (Q - q - 1))) & 2;
                 bool y = (pauli >> (2 * (Q - q - 1))) & 1;
                 if (z ^ y) {
-                    target_t[q] |= TARGET_PAULI_X_BIT;
+                    target_t[q].data |= TARGET_PAULI_X_BIT;
                 }
                 if (z) {
-                    target_t[q] |= TARGET_PAULI_Z_BIT;
+                    target_t[q].data |= TARGET_PAULI_Z_BIT;
                 }
             }
             target_p = conditional_prob;
