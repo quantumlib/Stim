@@ -95,6 +95,10 @@ class FixedCapVector {
         return p;
     }
 
+    void clear() {
+        num_used = 0;
+    }
+
     void push_back(const T &item) {
         if (num_used == data.size()) {
             throw std::out_of_range("CappedVector capacity exceeded.");
@@ -138,9 +142,21 @@ class FixedCapVector {
                 return true;
             }
         }
-        return true;
+        return false;
+    }
+
+    std::string str() const {
+        std::stringstream ss;
+        ss << *this;
+        return ss.str();
     }
 };
+
+template <typename T, size_t max_size>
+std::ostream &operator<<(std::ostream &out, FixedCapVector<T, max_size> v) {
+    out << "FixedCapVector{" << comma_sep(v) << "}";
+    return out;
+}
 
 }  // namespace stim_internal
 

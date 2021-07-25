@@ -170,137 +170,26 @@ struct ErrorAnalyzer {
     template <size_t s>
     void add_error_combinations(
         std::array<double, 1 << s> independent_probabilities,
-        std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
-        // Determine involved detectors while creating basis masks and storing added data.
-        FixedCapVector<DemTarget, 16> involved_detectors{};
-        std::array<uint64_t, 1 << s> detector_masks{};
-        std::array<ConstPointerRange<DemTarget>, 1 << s> stored_ids;
-        for (size_t k = 0; k < s; k++) {
-            for (const auto &id : basis_errors[k]) {
-                if (id.is_relative_detector_id()) {
-                    auto r = involved_detectors.find(id);
-                    if (r == involved_detectors.end()) {
-                        try {
-                            involved_detectors.push_back(id);
-                        } catch (const std::out_of_range &ex) {
-                            throw std::out_of_range(
-                                "An error involves too many detectors (>15) to find reducible errors.");
-                        }
-                    }
-                    detector_masks[1 << k] ^= 1 << (r - involved_detectors.begin());
-                }
-            }
-            stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
-        }
+        std::array<ConstPointerRange<DemTarget>, s> basis_errors);
 
-        // Fill in all 2**s - 1 possible combinations from the initial basis values.
-        for (size_t k = 3; k < 1 << s; k++) {
-            auto c1 = k & (k - 1);
-            auto c2 = k ^ c1;
-            if (c1) {
-                mono_buf.ensure_available(stored_ids[c1].size() + stored_ids[c2].size());
-                mono_buf.tail.ptr_end = xor_merge_sort(stored_ids[c1], stored_ids[c2], mono_buf.tail.ptr_end);
-                stored_ids[k] = mono_dedupe_store_tail();
-                detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];
-            }
-        }
+    template <size_t s>
+    void decompose_helper_add_error_combinations(
+        const std::array<uint64_t, 1 << s> &detector_masks,
+        std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids);
 
-        if (decompose_errors) {
-            // Count number of detectors affected by each error.
-            std::array<uint8_t, 1 << s> detector_counts{};
-            for (size_t k = 1; k < 1 << s; k++) {
-                detector_counts[k] = popcnt64(detector_masks[k]);
-            }
+    void decompose_and_append_component_to_tail(
+            ConstPointerRange<DemTarget> component,
+            const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms);
 
-            // Find single-detector errors (and empty errors).
-            uint64_t solved = 0;
-            uint64_t single_detectors_union = 0;
-            for (size_t k = 1; k < 1 << s; k++) {
-                if (detector_counts[k] == 1) {
-                    single_detectors_union |= detector_masks[k];
-                    solved |= 1 << k;
-                }
-            }
+    /// Performs a final check that all errors are decomposed.
+    /// If any aren't, attempts to decompose them using other errors in the system.
+    void do_global_error_decomposition_pass();
 
-            // Find irreducible double-detector errors.
-            FixedCapVector<uint8_t, 1 << s> irreducible_pairs{};
-            for (size_t k = 1; k < 1 << s; k++) {
-                if (detector_counts[k] == 2 && (detector_masks[k] & ~single_detectors_union)) {
-                    irreducible_pairs.push_back(k);
-                    solved |= 1 << k;
-                }
-            }
-
-            auto append_involved_pairs_to_jag_tail = [&](size_t goal_k) {
-                uint64_t goal = detector_masks[goal_k];
-
-                // If single-detector excitations are sufficient, just use those.
-                if ((goal & ~single_detectors_union) == 0) {
-                    return goal;
-                }
-
-                // Check if one double-detector excitation can get us into the single-detector region.
-                for (auto k : irreducible_pairs) {
-                    auto m = detector_masks[k];
-                    if ((goal & m) == m && (goal & ~(single_detectors_union | m)) == 0) {
-                        mono_buf.append_tail(stored_ids[k]);
-                        mono_buf.append_tail(DemTarget::separator());
-                        return goal & ~m;
-                    }
-                }
-
-                // Check if two double-detector excitations can get us into the single-detector region.
-                for (size_t i1 = 0; i1 < irreducible_pairs.size(); i1++) {
-                    auto k1 = irreducible_pairs[i1];
-                    auto m1 = detector_masks[k1];
-                    for (size_t i2 = i1 + 1; i2 < irreducible_pairs.size(); i2++) {
-                        auto k2 = irreducible_pairs[i2];
-                        auto m2 = detector_masks[k2];
-                        if ((m1 & m2) == 0 && (goal & ~(single_detectors_union | m1 | m2)) == 0) {
-                            if (stored_ids[k2] < stored_ids[k1]) {
-                                std::swap(k1, k2);
-                            }
-                            mono_buf.append_tail(stored_ids[k1]);
-                            mono_buf.append_tail(DemTarget::separator());
-                            mono_buf.append_tail(stored_ids[k2]);
-                            mono_buf.append_tail(DemTarget::separator());
-                            return goal & ~(m1 | m2);
-                        }
-                    }
-                }
-
-                throw std::out_of_range(
-                    "Failed to reduce an error with more than 2 detection events into single-detection errors "
-                    "and at most 2 double-detection errors.");
-            };
-
-            // Solve the decomposition of each composite case.
-            for (size_t k = 1; k < 1 << s; k++) {
-                if (detector_counts[k] && ((solved >> k) & 1) == 0) {
-                    auto remnants = append_involved_pairs_to_jag_tail(k);
-
-                    // Finish off the solution using single-detector components.
-                    for (size_t k2 = 0; remnants && k2 < 1 << s; k2++) {
-                        if (detector_counts[k2] == 1 && (detector_masks[k2] & ~remnants) == 0) {
-                            remnants &= ~detector_masks[k2];
-                            mono_buf.append_tail(stored_ids[k2]);
-                            mono_buf.append_tail(DemTarget::separator());
-                        }
-                    }
-                    if (!mono_buf.tail.empty()) {
-                        mono_buf.tail.ptr_end -= 1;
-                    }
-                    stored_ids[k] = mono_dedupe_store_tail();
-                }
-            }
-        }
-
-        // Include errors in the record.
-        for (size_t k = 1; k < 1 << s; k++) {
-            add_error(independent_probabilities[k], stored_ids[k]);
-        }
-    }
+    // Checks whether there any errors that need decomposing.
+    bool has_unflushed_ungraphlike_errors() const;
 };
+
+bool is_graphlike(const ConstPointerRange<DemTarget> &components);
 
 }  // namespace stim_internal
 

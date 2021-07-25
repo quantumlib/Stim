@@ -408,10 +408,10 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
         auto sample_index = s % batch_size;
         size_t t1 = targets[target_index];
         size_t t2 = targets[target_index + 1];
-        x_table[t1][sample_index] ^= p & 1;
-        z_table[t1][sample_index] ^= p & 2;
-        x_table[t2][sample_index] ^= p & 4;
-        z_table[t2][sample_index] ^= p & 8;
+        x_table[t1][sample_index] ^= (bool)(p & 1);
+        z_table[t1][sample_index] ^= (bool)(p & 2);
+        x_table[t2][sample_index] ^= (bool)(p & 4);
+        z_table[t2][sample_index] ^= (bool)(p & 8);
     });
 }
 

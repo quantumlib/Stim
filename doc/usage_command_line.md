@@ -191,32 +191,9 @@ error(0.003344519141621982161) D1
     Doesn't support `ELSE_CORRELATED_ERROR`.
     
     - **`--fold_loops`**:
-        Allows the output error model to contain `REPEAT # {}` blocks and `TICK #` instructions.
-        This makes it feasible to get error models for circuits with REPEAT blocks that repeat
+        Allows the output error model to contain `repeat` blocks.
+        This makes it feasible to get error models for circuits with `REPEAT` blocks that repeat
         instructions millions or trillions of times.
-
-        When interpreting the output error model, TICK instructions increase an accumulator
-        which is added into all later detector ids. For example, the following three error models
-        are equivalent:
-
-        1. ```
-           error(0.1) D1 L2
-           error(0.1) D5 L2
-           error(0.1) D9 L2
-           ```
-        2. ```
-           error(0.1) D1 L2
-           TICK 3
-           error(0.1) D2 L2
-           TICK 2
-           error(0.1) D4 L2
-           ```
-        3. ```
-           REPEAT 3 {
-               error(0.1) D1 L2
-               TICK 4
-           }
-           ```
 
         When `--fold_loops` is enabled, stim attempts to turn circuit REPEAT blocks into error model REPEAT blocks.
         It does so by using a ["tortoise and hare"](https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare)
@@ -238,22 +215,17 @@ error(0.003344519141621982161) D1
         case loop folding is the difference between the error analysis finishing in seconds instead of days.
 
     - **`--decompose_errors`**:
-        Includes suggested error decompositions in the output error model.
+        Decomposes errors into components that are "graphlike" (that have at most two detection events).
 
-        When applying a compound error channel (e.g. a depolarization channel), this option results in the analysis
-        checking if each case can be reduced to the single-detector and double-detector cases. For example, if the `X`
-        and `Y` parts of the depolarizing channel each produce one detection event (e.g. `D5` and `D6`), and the `Z`
-        part produces both those detections events, then instead of the `Z` part becoming an `error(p) D5 D6` it
-        will become an `error(p) D5 ^ D6`; an error with a suggested decomposition.
-
-        For example, this mode will automatically decompose errors that cross between the X and Z detector
-        graphs of a surface code into components on just the X graph and components on just the Z graph. And
-        it does so in a basis-independent fashion (so e.g. it will still do the right thing when using an XY
-        or XZZX surface code instead of an XZ surface code).
-
-        This mode currently requires that every case of a compound error channel can be reduced to
-        single-detector components accompanied by at most two double-detector components. So it is
-        e.g. incompatible with color code circuits.
+        Two strategies are used for finding decompositions.
+        Stim starts by trying the *within-error* strategy, which looks at the various cases of a single noise
+        channel and checks if some cases are products of other cases.
+        For example, in a two qubit depolarizing channel, the `X1*Y2` case may produce four detection events but often
+        they will decompose into two detection events produced by the `X1*I2` case and two detection events produced by
+        the `I1*Y2` case.
+        If the within-error strategy fails, Stim falls back to the *future-error* strategy, which checks if any single
+        detection event or pair of detection events in the error happen to occur on their own later in the circuit. If
+        both strategies fail, Stim raise an error saying it failed to find a satisfying decomposition.
 
     - **`--allow_gauge_detectors`**:
         Normally, when a detector anti-commutes with a stabilizer of the circuit (forcing the detector

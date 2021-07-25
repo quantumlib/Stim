@@ -88,6 +88,8 @@ TEST(FixedCapVector, ordering) {
     auto v423 = FixedCapVector<int, 3>{4, 2, 3};
     ASSERT_LT(v123, v423);
     ASSERT_LT(v12, v123);
+    ASSERT_TRUE(v123 < v423);
+    ASSERT_FALSE(v423 < v123);
     ASSERT_TRUE(v12 == w12);
     ASSERT_TRUE(!(v12 != w12));
     ASSERT_TRUE(v12 != v123);

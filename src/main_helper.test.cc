@@ -638,7 +638,8 @@ DETECTOR rec[-1]
 DETECTOR rec[-2]
             )input")),
         trim(R"output(
-[exception=The detectors D0, D1 anti-commuted with a Z-basis reset, and allow_gauge_detectors isn't set.]
+[exception=The detectors D0, D1 anti-commuted with a Z-basis reset, and allow_gauge_detectors isn't set.
+Context: analyzing the circuit operation at offset 0 which is 'R 0'.]
             )output"));
 }
 
@@ -662,7 +663,8 @@ M 0
 DETECTOR rec[-1]
             )input")),
         trim(R"output(
-[exception=Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.]
+[exception=Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.
+Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.]
             )output"));
 
     ASSERT_EQ(
@@ -673,7 +675,8 @@ M 0
 DETECTOR rec[-1]
             )input")),
         trim(R"output(
-[exception=PAULI_CHANNEL_1 has a component probability '0.375000' larger than the `approximate_disjoint_errors` threshold of '0.300000'.]
+[exception=PAULI_CHANNEL_1 has a component probability '0.375000' larger than the `approximate_disjoint_errors` threshold of '0.300000'.
+Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.]
             )output"));
 }
 

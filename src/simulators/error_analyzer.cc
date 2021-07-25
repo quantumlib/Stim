@@ -372,7 +372,7 @@ void ErrorAnalyzer::single_cx(uint32_t c, uint32_t t) {
         zs[c] ^= zs[t];
         xs[t] ^= xs[c];
     } else if (t & TARGET_RECORD_BIT) {
-        throw std::out_of_range("Measurement record editing is not supported.");
+        throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         feedback(c, t, false, true);
     }
@@ -385,7 +385,7 @@ void ErrorAnalyzer::single_cy(uint32_t c, uint32_t t) {
         xs[t] ^= xs[c];
         zs[t] ^= xs[c];
     } else if (t & TARGET_RECORD_BIT) {
-        throw std::out_of_range("Measurement record editing is not supported.");
+        throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         feedback(c, t, true, true);
     }
@@ -484,17 +484,30 @@ ErrorAnalyzer::ErrorAnalyzer(
 }
 
 void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
-    for (auto p = circuit.operations.crbegin(); p != circuit.operations.crend(); p++) {
-        const auto &op = *p;
+    for (size_t k = circuit.operations.size(); k--;) {
+        const auto &op = circuit.operations[k];
         assert(op.gate != nullptr);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
             assert(op.target_data.targets[0] < circuit.blocks.size());
             uint64_t repeats = op_data_rep_count(op.target_data);
             const auto &block = circuit.blocks[op.target_data.targets[0]];
-            run_loop(block, repeats);
+            try {
+                run_loop(block, repeats);
+            } catch (std::invalid_argument &ex) {
+                throw std::invalid_argument(
+                    std::string(ex.what())
+                    + "\nContext: inside of the REPEAT block at offset " + std::to_string(k) + ".");
+            }
         } else {
-            (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
+            try {
+                (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
+            } catch (std::invalid_argument &ex) {
+                throw std::invalid_argument(
+                    std::string(ex.what())
+                    + "\nContext: analyzing the circuit operation at offset "
+                    + std::to_string(k) + " which is '" + op.str() + "'.");
+            }
         }
     }
 }
@@ -563,8 +576,7 @@ void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
         return;
     }
     if (dat.args[0] >= 3.0 / 4.0) {
-        throw std::out_of_range(
-            "DEPOLARIZE1 must have probability less than 3/4 when converting to a detector hyper graph.");
+        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).");
     }
     double p = 0.5 - 0.5 * sqrt(1 - (4 * dat.args[0]) / 3);
     for (auto q : dat.targets) {
@@ -582,8 +594,7 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
         return;
     }
     if (dat.args[0] >= 15.0 / 16.0) {
-        throw std::out_of_range(
-            "DEPOLARIZE1 must have probability less than 15/16 when converting to a detector hyper graph.");
+        throw std::invalid_argument("Can't analyze over-mixing DEPOLARIZE2 errors (probability >= 15/16).");
     }
     double p = 0.5 - 0.5 * pow(1 - (16 * dat.args[0]) / 15, 0.125);
     for (size_t i = 0; i < dat.targets.size(); i += 2) {
@@ -601,7 +612,7 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
-    throw std::out_of_range(
+    throw std::invalid_argument(
         "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be independent).");
 }
 
@@ -713,7 +724,7 @@ DetectorErrorModel unreversed(const DetectorErrorModel &rev, uint64_t &base_dete
                 }
             } break;
             default:
-                throw std::out_of_range("Unknown instruction type to unreversed.");
+                throw std::invalid_argument("Unknown instruction type in 'unreversed'.");
         }
     }
     return out;
@@ -741,6 +752,7 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
 }
 
 void ErrorAnalyzer::flush() {
+    do_global_error_decomposition_pass();
     for (auto kv = error_class_probabilities.crbegin(); kv != error_class_probabilities.crend(); kv++) {
         if (kv->first.empty() || kv->second == 0) {
             continue;
@@ -936,4 +948,310 @@ void ErrorAnalyzer::shift_active_detector_ids(int64_t shift) {
 
 void ErrorAnalyzer::SHIFT_COORDS(const OperationData &dat) {
     flushed_reversed_model.append_shift_detectors_instruction(dat.args, 0);
+}
+
+template <size_t s>
+void ErrorAnalyzer::decompose_helper_add_error_combinations(
+        const std::array<uint64_t, 1 << s> &detector_masks,
+        std::array<ConstPointerRange<DemTarget>, 1 << s> &stored_ids) {
+    // Count number of detectors affected by each error.
+    std::array<uint8_t, 1 << s> detector_counts{};
+    for (size_t k = 1; k < 1 << s; k++) {
+        detector_counts[k] = popcnt64(detector_masks[k]);
+    }
+
+    // Find single-detector errors (and empty errors).
+    uint64_t solved = 0;
+    uint64_t single_detectors_union = 0;
+    for (size_t k = 1; k < 1 << s; k++) {
+        if (detector_counts[k] == 1) {
+            single_detectors_union |= detector_masks[k];
+            solved |= 1 << k;
+        }
+    }
+
+    // Find irreducible double-detector errors.
+    FixedCapVector<uint8_t, 1 << s> irreducible_pairs{};
+    for (size_t k = 1; k < 1 << s; k++) {
+        if (detector_counts[k] == 2 && (detector_masks[k] & ~single_detectors_union)) {
+            irreducible_pairs.push_back(k);
+            solved |= 1 << k;
+        }
+    }
+
+    auto append_involved_pairs_to_jag_tail = [&](size_t goal_k) -> uint64_t {
+        uint64_t goal = detector_masks[goal_k];
+
+        // If single-detector excitations are sufficient, just use those.
+        if ((goal & ~single_detectors_union) == 0) {
+            return goal;
+        }
+
+        // Check if one double-detector excitation can get us into the single-detector region.
+        for (auto k : irreducible_pairs) {
+            auto m = detector_masks[k];
+            if ((goal & m) == m && (goal & ~(single_detectors_union | m)) == 0) {
+                mono_buf.append_tail(stored_ids[k]);
+                mono_buf.append_tail(DemTarget::separator());
+                return goal & ~m;
+            }
+        }
+
+        // Check if two double-detector excitations can get us into the single-detector region.
+        for (size_t i1 = 0; i1 < irreducible_pairs.size(); i1++) {
+            auto k1 = irreducible_pairs[i1];
+            auto m1 = detector_masks[k1];
+            for (size_t i2 = i1 + 1; i2 < irreducible_pairs.size(); i2++) {
+                auto k2 = irreducible_pairs[i2];
+                auto m2 = detector_masks[k2];
+                if ((m1 & m2) == 0 && (goal & ~(single_detectors_union | m1 | m2)) == 0) {
+                    if (stored_ids[k2] < stored_ids[k1]) {
+                        std::swap(k1, k2);
+                    }
+                    mono_buf.append_tail(stored_ids[k1]);
+                    mono_buf.append_tail(DemTarget::separator());
+                    mono_buf.append_tail(stored_ids[k2]);
+                    mono_buf.append_tail(DemTarget::separator());
+                    return goal & ~(m1 | m2);
+                }
+            }
+        }
+
+        // Failed to decompose into other components of the same composite Pauli channel.
+        // Put it into the result undecomposed, to be worked on more later.
+        mono_buf.append_tail(stored_ids[goal_k]);
+        mono_buf.append_tail(DemTarget::separator());
+        return 0;
+    };
+
+    // Solve the decomposition of each composite case.
+    for (size_t k = 1; k < 1 << s; k++) {
+        if (detector_counts[k] && ((solved >> k) & 1) == 0) {
+            auto remnants = append_involved_pairs_to_jag_tail(k);
+
+            // Finish off the solution using single-detector components.
+            for (size_t k2 = 0; remnants && k2 < 1 << s; k2++) {
+                if (detector_counts[k2] == 1 && (detector_masks[k2] & ~remnants) == 0) {
+                    remnants &= ~detector_masks[k2];
+                    mono_buf.append_tail(stored_ids[k2]);
+                    mono_buf.append_tail(DemTarget::separator());
+                }
+            }
+            if (!mono_buf.tail.empty()) {
+                mono_buf.tail.ptr_end -= 1;
+            }
+            stored_ids[k] = mono_dedupe_store_tail();
+        }
+    }
+}
+
+bool stim_internal::is_graphlike(const ConstPointerRange<DemTarget> &components) {
+    size_t symptom_count = 0;
+    for (const auto &t : components) {
+        if (t.is_separator()) {
+            symptom_count = 0;
+        } else if (t.is_relative_detector_id()) {
+            symptom_count++;
+            if (symptom_count > 2) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool ErrorAnalyzer::has_unflushed_ungraphlike_errors() const {
+    for (const auto &kv : error_class_probabilities) {
+        const auto &component = kv.first;
+        if (kv.second != 0 && !is_graphlike(component)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ErrorAnalyzer::decompose_and_append_component_to_tail(
+        ConstPointerRange<DemTarget> component,
+        const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms) {
+    std::vector<bool> done(component.size(), false);
+
+    size_t num_component_detectors = 0;
+    for (size_t k = 0; k < component.size(); k++) {
+        if (!component[k].is_relative_detector_id()) {
+            done[k] = true;
+        } else {
+            num_component_detectors++;
+        }
+    }
+    if (num_component_detectors <= 2) {
+        mono_buf.append_tail(component);
+        mono_buf.append_tail(DemTarget::separator());
+        return;
+    }
+
+    SparseXorVec<DemTarget> sparse;
+    sparse.xor_sorted_items(component);
+
+    for (size_t k = 0; k < component.size(); k++) {
+        if (!done[k]) {
+            auto p = known_symptoms.find({component[k]});
+            if (p != known_symptoms.end()) {
+                done[k] = true;
+                mono_buf.append_tail(p->second);
+                mono_buf.append_tail(DemTarget::separator());
+                sparse.xor_sorted_items(p->second);
+            }
+        }
+    }
+
+    size_t missed = 0;
+    for (size_t k = 0; k < component.size(); k++) {
+        if (!done[k]) {
+            for (size_t k2 = k + 1; k2 < component.size(); k2++) {
+                if (!done[k2]) {
+                    auto p = known_symptoms.find({component[k], component[k2]});
+                    if (p != known_symptoms.end()) {
+                        done[k] = true;
+                        done[k2] = true;
+                        mono_buf.append_tail(p->second);
+                        mono_buf.append_tail(DemTarget::separator());
+                        sparse.xor_sorted_items(p->second);
+                        break;
+                    }
+                }
+            }
+        }
+        missed += !done[k];
+    }
+    if (missed > 2) {
+        throw std::invalid_argument(
+            "Failed to decompose errors into graphlike components with at most two symptoms.\n"
+            "The error component that failed to decompose is '" +
+            comma_sep_workaround(component) + "'.");
+    }
+
+    if (!sparse.empty()) {
+        mono_buf.append_tail({sparse.begin(), sparse.end()});
+        mono_buf.append_tail(DemTarget::separator());
+    }
+}
+
+void ErrorAnalyzer::do_global_error_decomposition_pass() {
+    if (!decompose_errors || !has_unflushed_ungraphlike_errors()) {
+        return;
+    }
+
+    std::vector<DemTarget> component_symptoms;
+
+    // Make a map from all known symptoms singlets and pairs to actual components including frame changes.
+    std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> known_symptoms;
+    for (const auto &kv : error_class_probabilities) {
+        if (kv.second == 0 || kv.first.empty()) {
+            continue;
+        }
+        const auto &targets = kv.first;
+        size_t start = 0;
+        for (size_t k = 0; k <= targets.size(); k++) {
+            if (k == targets.size() || targets[k].is_separator()) {
+                if (component_symptoms.size() == 1) {
+                    known_symptoms[{component_symptoms[0]}] = {&targets[start], &targets[k]};
+                } else if (component_symptoms.size() == 2) {
+                    known_symptoms[{component_symptoms[0], component_symptoms[1]}] = {&targets[start], &targets[k]};
+                }
+                component_symptoms.clear();
+                start = k + 1;
+            } else if (targets[k].is_relative_detector_id()) {
+                component_symptoms.push_back(targets[k]);
+            }
+        }
+    }
+
+    // Find how to rewrite hyper errors into graphlike errors.
+    std::vector<std::pair<ConstPointerRange<DemTarget>, ConstPointerRange<DemTarget>>> rewrites;
+    for (const auto &kv : error_class_probabilities) {
+        if (kv.second == 0 || kv.first.empty()) {
+            continue;
+        }
+
+        const auto &targets = kv.first;
+        if (is_graphlike(targets)) {
+            continue;
+        }
+
+        size_t start = 0;
+        for (size_t k = 0; k <= targets.size(); k++) {
+            if (k == targets.size() || targets[k].is_separator()) {
+                decompose_and_append_component_to_tail({&targets[start], &targets[k]}, known_symptoms);
+                start = k + 1;
+            }
+        }
+
+        if (!mono_buf.tail.empty()) {
+            // Drop final separator.
+            mono_buf.tail.ptr_end -= 1;
+        }
+
+        rewrites.push_back({kv.first, mono_buf.commit_tail()});
+    }
+
+    for (const auto &rewrite : rewrites) {
+        add_error(error_class_probabilities[rewrite.first], rewrite.second);
+        error_class_probabilities.erase(rewrite.first);
+    }
+}
+
+template <size_t s>
+void ErrorAnalyzer::add_error_combinations(
+    std::array<double, 1 << s> independent_probabilities,
+    std::array<ConstPointerRange<DemTarget>, s> basis_errors) {
+
+    std::array<uint64_t, 1 << s> detector_masks{};
+    FixedCapVector<DemTarget, 16> involved_detectors{};
+    std::array<ConstPointerRange<DemTarget>, 1 << s> stored_ids;
+
+    for (size_t k = 0; k < s; k++) {
+        for (const auto &id : basis_errors[k]) {
+            if (id.is_relative_detector_id()) {
+                auto r = involved_detectors.find(id);
+                if (r == involved_detectors.end()) {
+                    try {
+                        involved_detectors.push_back(id);
+                    } catch (const std::out_of_range &ex) {
+                        std::stringstream message;
+                        message << "An error case in a composite error exceeded that max supported number of symptoms (<=15). ";
+                        message << "\nThe " << std::to_string(s) << " basis error cases (e.g. X, Z) used to form the combined ";
+                        message<< "error cases (e.g. Y = X*Z) are:\n";
+                        for (size_t k2 = 0; k2 < s; k2++) {
+                            message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
+                        }
+                        throw std::invalid_argument(message.str());
+                    }
+                }
+                detector_masks[1 << k] ^= 1 << (r - involved_detectors.begin());
+            }
+        }
+        stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
+    }
+
+    // Fill in all 2**s - 1 possible combinations from the initial basis values.
+    for (size_t k = 3; k < 1 << s; k++) {
+        auto c1 = k & (k - 1);
+        auto c2 = k ^ c1;
+        if (c1) {
+            mono_buf.ensure_available(stored_ids[c1].size() + stored_ids[c2].size());
+            mono_buf.tail.ptr_end = xor_merge_sort(stored_ids[c1], stored_ids[c2], mono_buf.tail.ptr_end);
+            stored_ids[k] = mono_dedupe_store_tail();
+            detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];
+        }
+    }
+
+    // Determine involved detectors while creating basis masks and storing added data.
+    if (decompose_errors) {
+        decompose_helper_add_error_combinations<s>(detector_masks, stored_ids);
+    }
+
+    // Include errors in the record.
+    for (size_t k = 1; k < 1 << s; k++) {
+        add_error(independent_probabilities[k], stored_ids[k]);
+    }
 }
