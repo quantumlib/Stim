@@ -694,3 +694,16 @@ TEST(main_helper, generate_circuits) {
         trim(execute({"--gen=color_code", "--rounds=3", "--distance=3", "--task=memory_xyz"}, "")),
         ".+Generated color_code.+"));
 }
+
+TEST(main_helper, detection_event_simulator_counts_measurements_correctly) {
+    auto s = execute({"--detect=1000"}, "MPP Z8*X9\nDETECTOR rec[-1]");
+    size_t zeroes = 0;
+    size_t ones = 0;
+    for (size_t k = 0; k < s.size(); k += 2) {
+        zeroes += s[k] == '0';
+        ones += s[k] == '1';
+        ASSERT_EQ(s[k + 1], '\n');
+    }
+    ASSERT_EQ(zeroes + ones, 1000);
+    ASSERT_TRUE(400 < zeroes && zeroes < 600);
+}
