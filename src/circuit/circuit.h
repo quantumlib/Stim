@@ -274,7 +274,7 @@ struct Circuit {
                 // Handled in block case.
                 continue;
             }
-            n = std::max(n, map(op));
+            n = std::max(n, (uint64_t)map(op));
         }
         return n;
     }

@@ -896,11 +896,11 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
 }
 
 size_t Circuit::count_qubits() const {
-    return max_operation_property([](const Operation &op) -> size_t {
-        size_t r = 0;
+    return (uint32_t)max_operation_property([](const Operation &op) -> uint32_t {
+        uint32_t r = 0;
         for (auto t : op.target_data.targets) {
             if (!(t.data & TARGET_RECORD_BIT)) {
-                r = std::max(r, t.qubit_value() + size_t{1});
+                r = std::max(r, t.qubit_value() + uint32_t {1});
             }
         }
         return r;
@@ -908,7 +908,7 @@ size_t Circuit::count_qubits() const {
 }
 
 size_t Circuit::max_lookback() const {
-    return max_operation_property([](const Operation &op) -> size_t {
+    return max_operation_property([](const Operation &op) -> uint64_t {
         size_t r = 0;
         for (auto t : op.target_data.targets) {
             if (t.data & TARGET_RECORD_BIT) {
