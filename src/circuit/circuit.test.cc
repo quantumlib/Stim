@@ -699,6 +699,39 @@ TEST(circuit, count_measurements) {
     )CIRCUIT")
             .count_measurements(),
         UINT64_MAX);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            MPP X0 Z1 Y2
+        )CIRCUIT")
+            .count_measurements(),
+        3);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            MPP X0 Z1*Y2
+        )CIRCUIT")
+            .count_measurements(),
+        2);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            MPP X0*X1*X2*X3*X4 Z5 Z6
+        )CIRCUIT")
+            .count_measurements(),
+        3);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            MPP X0*X1*X2*X3*X4 Z5 Z6
+        )CIRCUIT").operations[0].count_measurement_results(), 3);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            MPP X0*X1 Z0*Z1 Y0*Y1
+        )CIRCUIT")
+            .count_measurements(),
+        3);
 }
 
 TEST(circuit, preserves_repetition_blocks) {

@@ -1091,6 +1091,20 @@ void ErrorAnalyzer::decompose_and_append_component_to_tail(
     SparseXorVec<DemTarget> sparse;
     sparse.xor_sorted_items(component);
 
+    // Pull off degree 1 pieces.
+    for (size_t k = 0; k < component.size(); k++) {
+        if (!done[k]) {
+            auto p = known_symptoms.find({component[k]});
+            if (p != known_symptoms.end()) {
+                done[k] = true;
+                mono_buf.append_tail(p->second);
+                mono_buf.append_tail(DemTarget::separator());
+                sparse.xor_sorted_items(p->second);
+            }
+        }
+    }
+
+    // Pull off degree 2 pieces.
     for (size_t k = 0; k < component.size(); k++) {
         if (!done[k]) {
             for (size_t k2 = k + 1; k2 < component.size(); k2++) {
@@ -1111,18 +1125,8 @@ void ErrorAnalyzer::decompose_and_append_component_to_tail(
 
     size_t missed = 0;
     for (size_t k = 0; k < component.size(); k++) {
-        if (!done[k]) {
-            auto p = known_symptoms.find({component[k]});
-            if (p != known_symptoms.end()) {
-                done[k] = true;
-                mono_buf.append_tail(p->second);
-                mono_buf.append_tail(DemTarget::separator());
-                sparse.xor_sorted_items(p->second);
-            }
-        }
         missed += !done[k];
     }
-
     if (missed > 2) {
         throw std::invalid_argument(
             "Failed to decompose errors into graphlike components with at most two symptoms.\n"

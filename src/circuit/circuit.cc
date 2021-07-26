@@ -219,10 +219,10 @@ void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, Cons
 }
 
 DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
-    uint32_t tick = 0;
-    auto resolve_into = [&](const Operation &op, const std::function<void(uint32_t)> &func) {
+    uint64_t tick = 0;
+    auto resolve_into = [&](const Operation &op, const std::function<void(uint64_t)> &func) {
         for (auto qb : op.target_data.targets) {
-            uint32_t dt = qb.data ^ TARGET_RECORD_BIT;
+            uint64_t dt = qb.data ^ TARGET_RECORD_BIT;
             if (!dt) {
                 throw std::invalid_argument("Record lookback can't be 0 (unspecified).");
             }
@@ -235,9 +235,9 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
 
     circuit.for_each_operation([&](const Operation &p) {
         if (p.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
-            tick += (uint32_t)p.target_data.targets.size();
+            tick += p.count_measurement_results();
         } else if (p.gate->id == gate_name_to_id("DETECTOR")) {
-            resolve_into(p, [&](uint32_t k) {
+            resolve_into(p, [&](uint64_t k) {
                 jagged_detector_data.append_tail(k);
             });
             detectors.push_back(jagged_detector_data.commit_tail());
@@ -254,6 +254,21 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
             });
         }
     });
+}
+
+uint64_t Operation::count_measurement_results() const {
+    if (!(gate->flags & GATE_PRODUCES_NOISY_RESULTS)) {
+        return 0;
+    }
+    uint64_t n = (uint64_t)target_data.targets.size();
+    if (gate->flags & GATE_TARGETS_COMBINERS) {
+        for (auto e : target_data.targets) {
+            if (e.is_combiner()) {
+                n -= 2;
+            }
+        }
+    }
+    return n;
 }
 
 Circuit::Circuit() : target_buf(), operations(), blocks() {
@@ -835,7 +850,7 @@ DetectorsAndObservables::DetectorsAndObservables(DetectorsAndObservables &&other
       detectors(std::move(other.detectors)),
       observables(std::move(other.observables)) {
     // Keep a local copy of the detector data.
-    for (PointerRange<uint32_t> &e : detectors) {
+    for (PointerRange<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 }
@@ -845,8 +860,8 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(DetectorsAndObservab
     detectors = std::move(other.detectors);
 
     // Keep a local copy of the detector data.
-    jagged_detector_data = MonotonicBuffer<uint32_t>(other.jagged_detector_data.total_allocated());
-    for (PointerRange<uint32_t> &e : detectors) {
+    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
+    for (PointerRange<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 
@@ -858,7 +873,7 @@ DetectorsAndObservables::DetectorsAndObservables(const DetectorsAndObservables &
       detectors(other.detectors),
       observables(other.observables) {
     // Keep a local copy of the detector data.
-    for (PointerRange<uint32_t> &e : detectors) {
+    for (PointerRange<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 }
@@ -872,8 +887,8 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
     detectors = other.detectors;
 
     // Keep a local copy of the detector data.
-    jagged_detector_data = MonotonicBuffer<uint32_t>(other.jagged_detector_data.total_allocated());
-    for (PointerRange<uint32_t> &e : detectors) {
+    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
+    for (PointerRange<uint64_t> &e : detectors) {
         e = jagged_detector_data.take_copy(e);
     }
 
@@ -920,21 +935,21 @@ uint64_t stim_internal::mul_saturate(uint64_t a, uint64_t b) {
 }
 
 uint64_t Circuit::count_measurements() const {
-    return flat_count_operations([](const Operation &op) -> size_t {
-        return (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) ? op.target_data.targets.size() : 0;
+    return flat_count_operations([=](const Operation &op) -> uint64_t {
+        return op.count_measurement_results();
     });
 }
 
 uint64_t Circuit::count_detectors() const {
     const Gate *detector = &GATE_DATA.at("DETECTOR");
-    return flat_count_operations([=](const Operation &op) -> size_t {
+    return flat_count_operations([=](const Operation &op) -> uint64_t {
         return op.gate == detector;
     });
 }
 
 uint64_t Circuit::num_observables() const {
     const Gate *obs = &GATE_DATA.at("OBSERVABLE_INCLUDE");
-    return max_operation_property([=](const Operation &op) -> size_t {
+    return max_operation_property([=](const Operation &op) -> uint64_t {
         return op.gate == obs ? (size_t)op.target_data.args[0] + 1 : 0;
     });
 }

@@ -119,6 +119,11 @@ struct Operation {
     std::string str() const;
     /// Approximate equality.
     bool approx_equals(const Operation &other, double atol) const;
+
+    /// Determines the number of entries added to the measurement record by the operation.
+    ///
+    /// Note: invalid to use this on REPEAT blocks.
+    uint64_t count_measurement_results() const;
 };
 
 /// A description of a quantum computation.
@@ -259,8 +264,8 @@ struct Circuit {
     }
 
     template <typename MAP>
-    size_t max_operation_property(const MAP &map) const {
-        size_t n = 0;
+    uint64_t max_operation_property(const MAP &map) const {
+        uint64_t n = 0;
         for (const auto &block : blocks) {
             n = std::max(n, block.max_operation_property<MAP>(map));
         }
@@ -277,9 +282,9 @@ struct Circuit {
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
 struct DetectorsAndObservables {
-    MonotonicBuffer<uint32_t> jagged_detector_data;
-    std::vector<PointerRange<uint32_t>> detectors;
-    std::vector<std::vector<uint32_t>> observables;
+    MonotonicBuffer<uint64_t> jagged_detector_data;
+    std::vector<PointerRange<uint64_t>> detectors;
+    std::vector<std::vector<uint64_t>> observables;
     DetectorsAndObservables(const Circuit &circuit);
 
     DetectorsAndObservables(DetectorsAndObservables &&other) noexcept;

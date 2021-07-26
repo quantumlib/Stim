@@ -1316,3 +1316,32 @@ TEST(FrameSimulator, measure_pauli_product_4body) {
         ASSERT_EQ(y0145 ^ mz0145, x0123 ^ x2345);
     }
 }
+
+TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
+    auto n = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+            MPP Z8*X9
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        1000,
+        SHARED_TEST_RNG())[0].popcnt();
+    ASSERT_TRUE(400 < n && n < 600);
+
+    n = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+            MPP X9
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        1000,
+        SHARED_TEST_RNG())[0].popcnt();
+    ASSERT_TRUE(400 < n && n < 600);
+
+    n = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+            MX 9
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+        1000,
+        SHARED_TEST_RNG())[0].popcnt();
+    ASSERT_TRUE(400 < n && n < 600);
+}
