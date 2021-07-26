@@ -248,3 +248,26 @@ TEST(simd_bits_range_ref, popcnt) {
     data.u64[8] = 0xFFFFFFFFFFFFFFFFULL;
     ASSERT_EQ(ref.popcnt(), 66);
 }
+
+TEST(simd_bits_range_ref, intersects) {
+    simd_bits data(1024);
+    simd_bits other(512);
+    simd_bits_range_ref ref(data);
+    ASSERT_EQ(data.intersects(other), false);
+    ASSERT_EQ(ref.intersects(other), false);
+    other[511] = true;
+    ASSERT_EQ(data.intersects(other), false);
+    ASSERT_EQ(ref.intersects(other), false);
+    data[513] = true;
+    ASSERT_EQ(data.intersects(other), false);
+    ASSERT_EQ(ref.intersects(other), false);
+    data[511] = true;
+    ASSERT_EQ(data.intersects(other), true);
+    ASSERT_EQ(ref.intersects(other), true);
+    data[101] = true;
+    ASSERT_EQ(data.intersects(other), true);
+    ASSERT_EQ(ref.intersects(other), true);
+    other[101] = true;
+    ASSERT_EQ(data.intersects(other), true);
+    ASSERT_EQ(ref.intersects(other), true);
+}

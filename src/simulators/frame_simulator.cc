@@ -42,8 +42,8 @@ inline void for_each_target_pair(FrameSimulator &sim, const OperationData &targe
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
+        size_t q1 = targets[k].data;
+        size_t q2 = targets[k + 1].data;
         sim.x_table[q1].for_each_word(sim.z_table[q1], sim.x_table[q2], sim.z_table[q2], body);
     }
 }
@@ -80,8 +80,8 @@ void FrameSimulator::reset_all_and_run(const Circuit &circuit) {
 
 void FrameSimulator::measure_x(const OperationData &target_data) {
     m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto q : target_data.targets) {
-        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.xor_record_reserved_result(z_table[q]);
         x_table[q].randomize(x_table[q].num_bits_padded(), rng);
     }
@@ -89,8 +89,8 @@ void FrameSimulator::measure_x(const OperationData &target_data) {
 
 void FrameSimulator::measure_y(const OperationData &target_data) {
     m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto q : target_data.targets) {
-        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         x_table[q] ^= z_table[q];
         m_record.xor_record_reserved_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
@@ -100,28 +100,31 @@ void FrameSimulator::measure_y(const OperationData &target_data) {
 
 void FrameSimulator::measure_z(const OperationData &target_data) {
     m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto q : target_data.targets) {
-        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.xor_record_reserved_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
     }
 }
 void FrameSimulator::reset_x(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         x_table[q].randomize(z_table[q].num_bits_padded(), rng);
         z_table[q].clear();
     }
 }
 
 void FrameSimulator::reset_y(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
         x_table[q] = z_table[q];
     }
 }
 
 void FrameSimulator::reset_z(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
     }
@@ -130,8 +133,8 @@ void FrameSimulator::reset_z(const OperationData &target_data) {
 void FrameSimulator::measure_reset_x(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto q : target_data.targets) {
-        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.xor_record_reserved_result(z_table[q]);
         z_table[q].clear();
         x_table[q].randomize(x_table[q].num_bits_padded(), rng);
@@ -141,8 +144,8 @@ void FrameSimulator::measure_reset_x(const OperationData &target_data) {
 void FrameSimulator::measure_reset_y(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto q : target_data.targets) {
-        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         x_table[q] ^= z_table[q];
         m_record.xor_record_reserved_result(x_table[q]);
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
@@ -153,8 +156,8 @@ void FrameSimulator::measure_reset_y(const OperationData &target_data) {
 void FrameSimulator::measure_reset_z(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
     m_record.reserve_noisy_space_for_results(target_data, rng);
-    for (auto q : target_data.targets) {
-        q &= TARGET_VALUE_MASK;  // Flipping is ignored because it is accounted for in the reference sample.
+    for (auto t : target_data.targets) {
+        auto q = t.qubit_value();  // Flipping is ignored because it is accounted for in the reference sample.
         m_record.xor_record_reserved_result(x_table[q]);
         x_table[q].clear();
         z_table[q].randomize(z_table[q].num_bits_padded(), rng);
@@ -184,32 +187,37 @@ void FrameSimulator::set_frame(size_t sample_index, const PauliStringRef &new_fr
 }
 
 void FrameSimulator::H_XZ(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         x_table[q].swap_with(z_table[q]);
     }
 }
 
 void FrameSimulator::H_XY(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         z_table[q] ^= x_table[q];
     }
 }
 
 void FrameSimulator::H_YZ(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         x_table[q] ^= z_table[q];
     }
 }
 
 void FrameSimulator::C_XYZ(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         x_table[q] ^= z_table[q];
         z_table[q] ^= x_table[q];
     }
 }
 
 void FrameSimulator::C_ZYX(const OperationData &target_data) {
-    for (auto q : target_data.targets) {
+    for (auto t : target_data.targets) {
+        auto q = t.data;
         z_table[q] ^= x_table[q];
         x_table[q] ^= z_table[q];
     }
@@ -251,7 +259,7 @@ void FrameSimulator::ZCX(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cx(targets[k], targets[k + 1]);
+        single_cx(targets[k].data, targets[k + 1].data);
     }
 }
 
@@ -259,7 +267,7 @@ void FrameSimulator::ZCY(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cy(targets[k], targets[k + 1]);
+        single_cy(targets[k].data, targets[k + 1].data);
     }
 }
 
@@ -267,8 +275,8 @@ void FrameSimulator::ZCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t c = targets[k];
-        size_t t = targets[k + 1];
+        size_t c = targets[k].data;
+        size_t t = targets[k + 1].data;
         if (!((c | t) & TARGET_RECORD_BIT)) {
             x_table[c].for_each_word(
                 z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
@@ -289,8 +297,8 @@ void FrameSimulator::SWAP(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        size_t q1 = targets[k];
-        size_t q2 = targets[k + 1];
+        size_t q1 = targets[k].data;
+        size_t q2 = targets[k + 1].data;
         x_table[q1].for_each_word(
             z_table[q1], x_table[q2], z_table[q2], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                 std::swap(z1, z2);
@@ -355,7 +363,7 @@ void FrameSimulator::XCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cx(targets[k + 1], targets[k]);
+        single_cx(targets[k + 1].data, targets[k].data);
     }
 }
 
@@ -382,7 +390,7 @@ void FrameSimulator::YCZ(const OperationData &target_data) {
     const auto &targets = target_data.targets;
     assert((targets.size() & 1) == 0);
     for (size_t k = 0; k < targets.size(); k += 2) {
-        single_cy(targets[k + 1], targets[k]);
+        single_cy(targets[k + 1].data, targets[k].data);
     }
 }
 
@@ -393,8 +401,8 @@ void FrameSimulator::DEPOLARIZE1(const OperationData &target_data) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
-        x_table[t][sample_index] ^= p & 1;
-        z_table[t][sample_index] ^= p & 2;
+        x_table[t.data][sample_index] ^= p & 1;
+        z_table[t.data][sample_index] ^= p & 2;
     });
 }
 
@@ -406,8 +414,8 @@ void FrameSimulator::DEPOLARIZE2(const OperationData &target_data) {
         auto p = 1 + (rng() % 15);
         auto target_index = (s / batch_size) << 1;
         auto sample_index = s % batch_size;
-        size_t t1 = targets[target_index];
-        size_t t2 = targets[target_index + 1];
+        size_t t1 = targets[target_index].data;
+        size_t t2 = targets[target_index + 1].data;
         x_table[t1][sample_index] ^= (bool)(p & 1);
         z_table[t1][sample_index] ^= (bool)(p & 2);
         x_table[t2][sample_index] ^= (bool)(p & 4);
@@ -421,7 +429,7 @@ void FrameSimulator::X_ERROR(const OperationData &target_data) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
-        x_table[t][sample_index] ^= true;
+        x_table[t.data][sample_index] ^= true;
     });
 }
 
@@ -431,8 +439,8 @@ void FrameSimulator::Y_ERROR(const OperationData &target_data) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
-        x_table[t][sample_index] ^= true;
-        z_table[t][sample_index] ^= true;
+        x_table[t.data][sample_index] ^= true;
+        z_table[t.data][sample_index] ^= true;
     });
 }
 
@@ -442,8 +450,26 @@ void FrameSimulator::Z_ERROR(const OperationData &target_data) {
         auto target_index = s / batch_size;
         auto sample_index = s % batch_size;
         auto t = targets[target_index];
-        z_table[t][sample_index] ^= true;
+        z_table[t.data][sample_index] ^= true;
     });
+}
+
+void FrameSimulator::MPP(const OperationData &target_data) {
+    decompose_mpp_operation(
+        target_data,
+        num_qubits,
+        [&](const OperationData &h_xz,
+            const OperationData &h_yz,
+            const OperationData &cnot,
+            const OperationData &meas) {
+            H_XZ(h_xz);
+            H_YZ(h_yz);
+            ZCX(cnot);
+            measure_z(meas);
+            ZCX(cnot);
+            H_YZ(h_yz);
+            H_XZ(h_xz);
+        });
 }
 
 void FrameSimulator::PAULI_CHANNEL_1(const OperationData &target_data) {
@@ -504,14 +530,14 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 
     // Apply error to only the indicated frames.
     for (auto qxz : target_data.targets) {
-        auto q = qxz & TARGET_VALUE_MASK;
-        if (qxz & TARGET_RECORD_BIT) {
-            measurement_record_ref(qxz) ^= rng_buffer;
+        if (qxz.data & TARGET_RECORD_BIT) {
+            measurement_record_ref(qxz.data) ^= rng_buffer;
         }
-        if (qxz & TARGET_PAULI_X_BIT) {
+        auto q = qxz.qubit_value();
+        if (qxz.data & TARGET_PAULI_X_BIT) {
             x_table[q] ^= rng_buffer;
         }
-        if (qxz & TARGET_PAULI_Z_BIT) {
+        if (qxz.data & TARGET_PAULI_Z_BIT) {
             z_table[q] ^= rng_buffer;
         }
     }

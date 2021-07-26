@@ -22,8 +22,8 @@
 using namespace stim_internal;
 
 struct TempViewableData {
-    std::vector<uint32_t> targets;
-    TempViewableData(std::vector<uint32_t> targets) : targets(std::move(targets)) {
+    std::vector<GateTarget> targets;
+    TempViewableData(std::vector<GateTarget> targets) : targets(std::move(targets)) {
     }
     operator OperationData() {
         return {{}, targets};
@@ -35,13 +35,13 @@ TableauSimulator create_tableau_simulator() {
 }
 
 TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args) {
-    std::vector<uint32_t> arguments;
-    size_t max_q = 0;
+    std::vector<GateTarget> arguments;
+    uint32_t max_q = 0;
     try {
         for (const auto &e : args) {
-            size_t q = e.cast<uint32_t>();
+            uint32_t q = e.cast<uint32_t>();
             max_q = std::max(max_q, q & TARGET_VALUE_MASK);
-            arguments.push_back(q);
+            arguments.push_back(GateTarget{q});
         }
     } catch (const pybind11::cast_error &) {
         throw std::out_of_range("Target qubits must be non-negative integers.");
@@ -714,7 +714,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         "measure",
         [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
-            self.measure_z(TempViewableData({target}));
+            self.measure_z(TempViewableData({GateTarget{target}}));
             return (bool)self.measurement_record.storage.back();
         },
         pybind11::arg("target"),
@@ -858,7 +858,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         "measure_kickback",
         [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
-            auto result = self.measure_kickback_z(target);
+            auto result = self.measure_kickback_z({target});
             if (result.second.num_qubits == 0) {
                 return pybind11::make_tuple(result.first, pybind11::none());
             }

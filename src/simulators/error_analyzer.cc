@@ -43,7 +43,7 @@ void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
 
 void ErrorAnalyzer::RX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].qubit_value();
         check_for_gauge(zs[q], "an X-basis reset");
         xs[q].clear();
         zs[q].clear();
@@ -52,7 +52,7 @@ void ErrorAnalyzer::RX(const OperationData &dat) {
 
 void ErrorAnalyzer::RY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].qubit_value();
         check_for_gauge(xs[q], zs[q], "a Y-basis reset");
         xs[q].clear();
         zs[q].clear();
@@ -61,7 +61,7 @@ void ErrorAnalyzer::RY(const OperationData &dat) {
 
 void ErrorAnalyzer::RZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].qubit_value();
         check_for_gauge(xs[q], "a Z-basis reset");
         xs[q].clear();
         zs[q].clear();
@@ -140,7 +140,7 @@ void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const 
 
 void ErrorAnalyzer::MX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        auto q = dat.targets[k].qubit_value();
         scheduled_measurement_time++;
 
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
@@ -152,7 +152,7 @@ void ErrorAnalyzer::MX(const OperationData &dat) {
 
 void ErrorAnalyzer::MY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        auto q = dat.targets[k].qubit_value();
         scheduled_measurement_time++;
 
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
@@ -165,7 +165,7 @@ void ErrorAnalyzer::MY(const OperationData &dat) {
 
 void ErrorAnalyzer::MZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k] & TARGET_VALUE_MASK;
+        auto q = dat.targets[k].qubit_value();
         scheduled_measurement_time++;
 
         std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
@@ -205,28 +205,28 @@ void ErrorAnalyzer::MRZ(const OperationData &dat) {
 
 void ErrorAnalyzer::H_XZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].data;
         std::swap(xs[q], zs[q]);
     }
 }
 
 void ErrorAnalyzer::H_XY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].data;
         zs[q] ^= xs[q];
     }
 }
 
 void ErrorAnalyzer::H_YZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].data;
         xs[q] ^= zs[q];
     }
 }
 
 void ErrorAnalyzer::C_XYZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].data;
         zs[q] ^= xs[q];
         xs[q] ^= zs[q];
     }
@@ -234,7 +234,7 @@ void ErrorAnalyzer::C_XYZ(const OperationData &dat) {
 
 void ErrorAnalyzer::C_ZYX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k];
+        auto q = dat.targets[k].data;
         xs[q] ^= zs[q];
         zs[q] ^= xs[q];
     }
@@ -242,8 +242,8 @@ void ErrorAnalyzer::C_ZYX(const OperationData &dat) {
 
 void ErrorAnalyzer::XCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto q1 = dat.targets[k];
-        auto q2 = dat.targets[k + 1];
+        auto q1 = dat.targets[k].data;
+        auto q2 = dat.targets[k + 1].data;
         xs[q1] ^= zs[q2];
         xs[q2] ^= zs[q1];
     }
@@ -251,8 +251,8 @@ void ErrorAnalyzer::XCX(const OperationData &dat) {
 
 void ErrorAnalyzer::XCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto tx = dat.targets[k];
-        auto ty = dat.targets[k + 1];
+        auto tx = dat.targets[k].data;
+        auto ty = dat.targets[k + 1].data;
         xs[tx] ^= xs[ty];
         xs[tx] ^= zs[ty];
         xs[ty] ^= zs[tx];
@@ -262,8 +262,8 @@ void ErrorAnalyzer::XCY(const OperationData &dat) {
 
 void ErrorAnalyzer::YCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto tx = dat.targets[k + 1];
-        auto ty = dat.targets[k];
+        auto tx = dat.targets[k + 1].data;
+        auto ty = dat.targets[k].data;
         xs[tx] ^= xs[ty];
         xs[tx] ^= zs[ty];
         xs[ty] ^= zs[tx];
@@ -273,24 +273,24 @@ void ErrorAnalyzer::YCX(const OperationData &dat) {
 
 void ErrorAnalyzer::ZCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto c = dat.targets[k];
-        auto t = dat.targets[k + 1];
+        auto c = dat.targets[k].data;
+        auto t = dat.targets[k + 1].data;
         single_cy(c, t);
     }
 }
 
 void ErrorAnalyzer::YCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto t = dat.targets[k];
-        auto c = dat.targets[k + 1];
+        auto t = dat.targets[k].data;
+        auto c = dat.targets[k + 1].data;
         single_cy(c, t);
     }
 }
 
 void ErrorAnalyzer::YCY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k];
-        auto b = dat.targets[k + 1];
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
         zs[a] ^= xs[b];
         zs[a] ^= zs[b];
         xs[a] ^= xs[b];
@@ -305,16 +305,16 @@ void ErrorAnalyzer::YCY(const OperationData &dat) {
 
 void ErrorAnalyzer::ZCX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto c = dat.targets[k];
-        auto t = dat.targets[k + 1];
+        auto c = dat.targets[k].data;
+        auto t = dat.targets[k + 1].data;
         single_cx(c, t);
     }
 }
 
 void ErrorAnalyzer::SQRT_XX(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k];
-        auto b = dat.targets[k + 1];
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
         xs[a] ^= zs[a];
         xs[a] ^= zs[b];
         xs[b] ^= zs[a];
@@ -324,8 +324,8 @@ void ErrorAnalyzer::SQRT_XX(const OperationData &dat) {
 
 void ErrorAnalyzer::SQRT_YY(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k];
-        auto b = dat.targets[k + 1];
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
         zs[a] ^= xs[a];
         zs[b] ^= xs[b];
         xs[a] ^= zs[a];
@@ -339,8 +339,8 @@ void ErrorAnalyzer::SQRT_YY(const OperationData &dat) {
 
 void ErrorAnalyzer::SQRT_ZZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k];
-        auto b = dat.targets[k + 1];
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
         zs[a] ^= xs[a];
         zs[a] ^= xs[b];
         zs[b] ^= xs[a];
@@ -406,16 +406,16 @@ void ErrorAnalyzer::single_cz(uint32_t c, uint32_t t) {
 
 void ErrorAnalyzer::XCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto t = dat.targets[k];
-        auto c = dat.targets[k + 1];
+        auto t = dat.targets[k].data;
+        auto c = dat.targets[k + 1].data;
         single_cx(c, t);
     }
 }
 
 void ErrorAnalyzer::ZCZ(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto q1 = dat.targets[k];
-        auto q2 = dat.targets[k + 1];
+        auto q1 = dat.targets[k].data;
+        auto q2 = dat.targets[k + 1].data;
         single_cz(q1, q2);
     }
 }
@@ -425,8 +425,8 @@ void ErrorAnalyzer::I(const OperationData &dat) {
 
 void ErrorAnalyzer::SWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k];
-        auto b = dat.targets[k + 1];
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
         std::swap(xs[a], xs[b]);
         std::swap(zs[a], zs[b]);
     }
@@ -434,8 +434,8 @@ void ErrorAnalyzer::SWAP(const OperationData &dat) {
 
 void ErrorAnalyzer::ISWAP(const OperationData &dat) {
     for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k];
-        auto b = dat.targets[k + 1];
+        auto a = dat.targets[k].data;
+        auto b = dat.targets[k + 1].data;
         zs[a] ^= xs[a];
         zs[a] ^= xs[b];
         zs[b] ^= xs[a];
@@ -449,7 +449,7 @@ void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
     used_detectors++;
     auto id = DemTarget::relative_detector_id(total_detectors - used_detectors);
     for (auto t : dat.targets) {
-        auto delay = t & TARGET_VALUE_MASK;
+        auto delay = t.qubit_value();
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
     flushed_reversed_model.append_detector_instruction(dat.args, id);
@@ -458,7 +458,7 @@ void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
 void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
     auto id = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
-        auto delay = t & TARGET_VALUE_MASK;
+        auto delay = t.qubit_value();
         measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
     }
     flushed_reversed_model.append_logical_observable_instruction(id);
@@ -489,9 +489,10 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
         assert(op.gate != nullptr);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
-            assert(op.target_data.targets[0] < circuit.blocks.size());
+            auto b = op.target_data.targets[0].data;
+            assert(op.target_data.targets[0].data < circuit.blocks.size());
             uint64_t repeats = op_data_rep_count(op.target_data);
-            const auto &block = circuit.blocks[op.target_data.targets[0]];
+            const auto &block = circuit.blocks[b];
             try {
                 run_loop(block, repeats);
             } catch (std::invalid_argument &ex) {
@@ -522,7 +523,7 @@ void ErrorAnalyzer::X_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.args[0], zs[q].range());
+        add_error(dat.args[0], zs[q.data].range());
     }
 }
 
@@ -531,7 +532,7 @@ void ErrorAnalyzer::Y_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_xored_error(dat.args[0], xs[q].range(), zs[q].range());
+        add_xored_error(dat.args[0], xs[q.data].range(), zs[q.data].range());
     }
 }
 
@@ -540,7 +541,7 @@ void ErrorAnalyzer::Z_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.args[0], xs[q].range());
+        add_error(dat.args[0], xs[q.data].range());
     }
 }
 
@@ -559,11 +560,11 @@ void ErrorAnalyzer::CORRELATED_ERROR(const OperationData &dat) {
         return;
     }
     for (auto qp : dat.targets) {
-        auto q = qp & TARGET_VALUE_MASK;
-        if (qp & TARGET_PAULI_Z_BIT) {
+        auto q = qp.qubit_value();
+        if (qp.data & TARGET_PAULI_Z_BIT) {
             inplace_xor_tail(mono_buf, xs[q]);
         }
-        if (qp & TARGET_PAULI_X_BIT) {
+        if (qp.data & TARGET_PAULI_X_BIT) {
             inplace_xor_tail(mono_buf, zs[q]);
         }
     }
@@ -582,8 +583,8 @@ void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
         add_error_combinations<2>(
             {0, p, p, p},
             {
-                xs[q].range(),
-                zs[q].range(),
+                xs[q.data].range(),
+                zs[q.data].range(),
             });
     }
 }
@@ -602,10 +603,10 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
         add_error_combinations<4>(
             {0, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p},
             {
-                xs[a].range(),
-                zs[a].range(),
-                xs[b].range(),
-                zs[b].range(),
+                xs[a.data].range(),
+                zs[a.data].range(),
+                xs[b.data].range(),
+                zs[b.data].range(),
             });
     }
 }
@@ -640,8 +641,8 @@ void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
         add_error_combinations<2>(
             probabilities,
             {
-                zs[q].range(),
-                xs[q].range(),
+                zs[q.data].range(),
+                xs[q.data].range(),
             });
     }
 }
@@ -674,10 +675,10 @@ void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
         add_error_combinations<4>(
             probabilities,
             {
-                zs[b].range(),
-                xs[b].range(),
-                zs[a].range(),
-                xs[a].range(),
+                zs[b.data].range(),
+                xs[b.data].range(),
+                zs[a.data].range(),
+                xs[a.data].range(),
             });
     }
 }
@@ -1253,4 +1254,22 @@ void ErrorAnalyzer::add_error_combinations(
     for (size_t k = 1; k < 1 << s; k++) {
         add_error(independent_probabilities[k], stored_ids[k]);
     }
+}
+
+void ErrorAnalyzer::MPP(const OperationData &target_data) {
+    decompose_mpp_operation(
+        target_data,
+        xs.size(),
+        [&](const OperationData &h_xz,
+            const OperationData &h_yz,
+            const OperationData &cnot,
+            const OperationData &meas) {
+            H_XZ(h_xz);
+            H_YZ(h_yz);
+            ZCX(cnot);
+            MZ(meas);
+            ZCX(cnot);
+            H_YZ(h_yz);
+            H_XZ(h_xz);
+        });
 }

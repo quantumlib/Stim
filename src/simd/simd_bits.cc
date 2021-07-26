@@ -154,6 +154,10 @@ bool simd_bits::not_zero() const {
     return simd_bits_range_ref(*this).not_zero();
 }
 
+bool simd_bits::intersects(const simd_bits_range_ref other) const {
+    return simd_bits_range_ref(*this).intersects(other);
+}
+
 std::string simd_bits::str() const {
     return simd_bits_range_ref(*this).str();
 }

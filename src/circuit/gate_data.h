@@ -106,6 +106,8 @@ enum GateFlags : uint16_t {
     GATE_TAKES_NO_TARGETS = 1 << 10,
     // Controls validation of index arguments like OBSERVABLE_INCLUDE(1).
     GATE_ARGS_ARE_UNSIGNED_INTEGERS = 1 << 11,
+    // Controls instructions like MPP taking Pauli product combiners ("X1*Y2 Z3").
+    GATE_TARGETS_COMBINERS = 1 << 12,
 };
 
 struct ExtraGateData {
@@ -275,6 +277,13 @@ struct GateDataMap {
 };
 
 extern const GateDataMap GATE_DATA;
+
+void decompose_mpp_operation(
+    const OperationData &target_data,
+    size_t num_qubits,
+    const std::function<void(
+        const OperationData &h_xz, const OperationData &h_yz, const OperationData &cnot, const OperationData &meas)>
+        &callback);
 
 }  // namespace stim_internal
 

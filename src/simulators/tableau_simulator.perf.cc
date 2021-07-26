@@ -23,9 +23,9 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
     TableauSimulator sim(rng, num_qubits);
 
-    std::vector<uint32_t> targets;
-    for (size_t k = 0; k < num_qubits; k++) {
-        targets.push_back(k);
+    std::vector<GateTarget> targets;
+    for (uint32_t k = 0; k < (uint32_t)num_qubits; k++) {
+        targets.push_back(GateTarget{k});
     }
     OperationData op_data{{}, targets};
 

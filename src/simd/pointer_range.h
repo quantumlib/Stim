@@ -61,6 +61,12 @@ struct PointerRange {
     T *end() {
         return ptr_end;
     }
+    T &back() {
+        return *(ptr_end - 1);
+    }
+    T &front() {
+        return *ptr_start;
+    }
     const T &operator[](size_t index) const {
         return ptr_start[index];
     }

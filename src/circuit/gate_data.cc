@@ -106,7 +106,7 @@ Gate::Gate(
       extra_data_func(extra_data_func),
       flags(flags),
       arg_count(arg_count),
-      name_len(strlen(name)),
+      name_len((uint8_t)strlen(name)),
       id(gate_name_to_id(name)) {
 }
 
@@ -139,7 +139,7 @@ void GateDataMap::add_gate_alias(bool &failed, const char *alt_name, const char 
         return;
     }
     g_alt.name = alt_name;
-    g_alt.name_len = strlen(alt_name);
+    g_alt.name_len = (uint8_t)strlen(alt_name);
     g_alt.id = h_canon;
 }
 

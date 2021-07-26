@@ -87,6 +87,8 @@ struct simd_bits_range_ref {
     void randomize(size_t num_bits, std::mt19937_64 &rng);
     /// Returns the number of bits that are 1 in the bit range.
     size_t popcnt() const;
+    /// Returns whether or not the two ranges have set bits in common.
+    bool intersects(const simd_bits_range_ref other) const;
 
     /// Writes bits from another location.
     /// Bits not part of the write are unchanged.

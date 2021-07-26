@@ -111,6 +111,7 @@ struct FrameSimulator {
     void YCZ(const OperationData &target_data);
     void SWAP(const OperationData &target_data);
     void ISWAP(const OperationData &target_data);
+    void MPP(const OperationData &target_data);
 
     void SQRT_XX(const OperationData &target_data);
     void SQRT_YY(const OperationData &target_data);

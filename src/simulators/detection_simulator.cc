@@ -85,8 +85,8 @@ void detector_sample_out_helper_stream(
             simd_bits_range_ref result = detector_buffer[buffered_detectors];
             result.clear();
             for (auto t : op.target_data.targets) {
-                assert(t & TARGET_RECORD_BIT);
-                result ^= sim.m_record.lookback(t ^ TARGET_RECORD_BIT);
+                assert(t.data & TARGET_RECORD_BIT);
+                result ^= sim.m_record.lookback(t.data ^ TARGET_RECORD_BIT);
             }
             buffered_detectors++;
             if (buffered_detectors == 1024) {
@@ -102,8 +102,8 @@ void detector_sample_out_helper_stream(
                 simd_bits_range_ref result = observables[id];
 
                 for (auto t : op.target_data.targets) {
-                    assert(t & TARGET_RECORD_BIT);
-                    result ^= sim.m_record.lookback(t ^ TARGET_RECORD_BIT);
+                    assert(t.data & TARGET_RECORD_BIT);
+                    result ^= sim.m_record.lookback(t.data ^ TARGET_RECORD_BIT);
                 }
             }
         } else {

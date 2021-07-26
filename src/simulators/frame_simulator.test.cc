@@ -57,7 +57,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     FrameSimulator sim(num_qubits, num_samples, max_lookback, SHARED_TEST_RNG());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
-    std::vector<uint32_t> targets{101, 403, 202, 100};
+    std::vector<GateTarget> targets{{101}, {403}, {202}, {100}};
     while (targets.size() > num_targets) {
         targets.pop_back();
     }
@@ -69,9 +69,9 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
         (sim.*bulk_func)(op_data);
         for (size_t k2 = 0; k2 < targets.size(); k2 += num_targets) {
             if (num_targets == 1) {
-                tableau.apply_within(test_value_ref, {targets[k2]});
+                tableau.apply_within(test_value_ref, {targets[k2].data});
             } else {
-                tableau.apply_within(test_value_ref, {targets[k2], targets[k2 + 1]});
+                tableau.apply_within(test_value_ref, {targets[k2].data, targets[k2 + 1].data});
             }
         }
         test_value.sign = false;
@@ -98,7 +98,7 @@ bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const s
         if (op.gate->name == std::string("M")) {
             for (auto qf : op.target_data.targets) {
                 tableau_sim.sign_bias = output[out_p] ? -1 : +1;
-                tableau_sim.measure_z(OpDat(qf));
+                tableau_sim.measure_z(OpDat(qf.data));
                 if (output[out_p] != tableau_sim.measurement_record.storage.back()) {
                     pass = false;
                 }
@@ -1286,4 +1286,33 @@ TEST(FrameSimulator, noisy_measure_reset_z) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 0);
     ASSERT_EQ(r[3].popcnt(), 0);
+}
+
+TEST(FrameSimulator, measure_pauli_product_4body) {
+    auto r = FrameSimulator::sample_flipped_measurements(
+        Circuit(R"CIRCUIT(
+        X_ERROR(0.5) 0 1 2 3
+        Z_ERROR(0.5) 0 1 2 3
+        MPP X0*X1*X2*X3
+        MX 0 1 2 3 4 5
+        MPP X2*X3*X4*X5
+        MPP Z0*Z1*Z4*Z5 !Y0*Y1*Y4*Y5
+    )CIRCUIT"),
+        10,
+        SHARED_TEST_RNG());
+    for (size_t k = 0; k < 10; k++) {
+        auto x0123 = r[0][k];
+        auto x0 = r[1][k];
+        auto x1 = r[2][k];
+        auto x2 = r[3][k];
+        auto x3 = r[4][k];
+        auto x4 = r[5][k];
+        auto x5 = r[6][k];
+        auto x2345 = r[7][k];
+        auto mz0145 = r[8][k];
+        auto y0145 = r[9][k];
+        ASSERT_EQ(x0123, x0 ^ x1 ^ x2 ^ x3);
+        ASSERT_EQ(x2345, x2 ^ x3 ^ x4 ^ x5);
+        ASSERT_EQ(y0145 ^ mz0145, x0123 ^ x2345);
+    }
 }

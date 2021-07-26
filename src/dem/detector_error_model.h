@@ -38,7 +38,7 @@ enum DemInstructionType : uint8_t {
 struct DemTarget {
     uint64_t data;
 
-    static DemTarget observable_id(uint32_t id);
+    static DemTarget observable_id(uint64_t id);
     static DemTarget relative_detector_id(uint64_t id);
     static constexpr DemTarget separator() {
         return {UINT64_MAX};

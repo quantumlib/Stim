@@ -20,6 +20,7 @@
 - [ISWAP](#ISWAP)
 - [ISWAP_DAG](#ISWAP_DAG)
 - [M](#M)
+- [MPP](#MPP)
 - [MR](#MR)
 - [MRX](#MRX)
 - [MRY](#MRY)
@@ -1474,6 +1475,31 @@
         ```
         Z -> m xor chance(p)
         Z -> +Z
+        ```
+        
+    
+- <a name="MPP"></a>**`MPP`**
+    
+    Measure Pauli products.
+    
+    - Example:
+    
+        ```
+        MPP X1*Y2           # Join products using '*'
+        MPP X1*Y2 Z3*Z4     # Separate products using spaces with no '*'.
+        MPP !Z5             # Negate products (invert results) using '!'.
+        MPP !Z5*X4
+        MPP(0.001) Z1*Z2*Z3 # Add result noise using a probability argument.
+        ```
+    
+    If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
+    
+    Prefixing a target with ! inverts its recorded measurement result.
+    - Stabilizer Generators:
+    
+        ```
+        P -> m xor chance(p)
+        P -> P
         ```
         
     

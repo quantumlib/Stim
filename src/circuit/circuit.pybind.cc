@@ -66,8 +66,8 @@ void pybind_circuit(pybind11::module &m) {
             .data());
 
     pybind_circuit_repeat_block(m);
-    pybind_circuit_instruction(m);
     pybind_circuit_gate_target(m);
+    pybind_circuit_instruction(m);
 
     c.def(
         pybind11::init([](const char *stim_program_text) {
@@ -268,18 +268,18 @@ void pybind_circuit(pybind11::module &m) {
                 pybind11::list args;
                 pybind11::list targets;
                 for (auto t : op.target_data.targets) {
-                    auto v = t & TARGET_VALUE_MASK;
-                    if (t & TARGET_INVERTED_BIT) {
+                    auto v = t.qubit_value();
+                    if (t.data & TARGET_INVERTED_BIT) {
                         targets.append(pybind11::make_tuple("inv", v));
-                    } else if (t & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
-                        if (!(t & TARGET_PAULI_Z_BIT)) {
+                    } else if (t.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
+                        if (!(t.data & TARGET_PAULI_Z_BIT)) {
                             targets.append(pybind11::make_tuple("X", v));
-                        } else if (!(t & TARGET_PAULI_X_BIT)) {
+                        } else if (!(t.data & TARGET_PAULI_X_BIT)) {
                             targets.append(pybind11::make_tuple("Z", v));
                         } else {
                             targets.append(pybind11::make_tuple("Y", v));
                         }
-                    } else if (t & TARGET_RECORD_BIT) {
+                    } else if (t.data & TARGET_RECORD_BIT) {
                         targets.append(pybind11::make_tuple("rec", -(long long)v));
                     } else {
                         targets.append(pybind11::int_(v));
@@ -446,7 +446,7 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "append_operation",
-        [](Circuit &self, const std::string &gate_name, const std::vector<uint32_t> &targets, pybind11::object arg) {
+        [](Circuit &self, const std::string &gate_name, const std::vector<pybind11::object> &targets, pybind11::object arg) {
             if (arg.is(pybind11::none())) {
                 if (GATE_DATA.at(gate_name).arg_count == 1) {
                     arg = pybind11::make_tuple(0.0);
@@ -454,15 +454,19 @@ void pybind_circuit(pybind11::module &m) {
                     arg = pybind11::make_tuple();
                 }
             }
+            std::vector<uint32_t> raw_targets;
+            for (const auto &obj : targets) {
+                raw_targets.push_back(obj_to_gate_target(obj).data);
+            }
             try {
                 auto d = pybind11::cast<double>(arg);
-                self.append_op(gate_name, targets, d);
+                self.append_op(gate_name, raw_targets, d);
                 return;
             } catch (const pybind11::cast_error &ex) {
             }
             try {
                 auto args = pybind11::cast<std::vector<double>>(arg);
-                self.append_op(gate_name, targets, args);
+                self.append_op(gate_name, raw_targets, args);
                 return;
             } catch (const pybind11::cast_error &ex) {
             }

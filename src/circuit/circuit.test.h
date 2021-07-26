@@ -21,7 +21,7 @@
 
 // Helper class for creating temporary operation data.
 struct OpDat {
-    std::vector<uint32_t> targets;
+    std::vector<stim_internal::GateTarget> targets;
     OpDat(uint32_t target);
     OpDat(std::vector<uint32_t> targets);
     static OpDat flipped(size_t target);

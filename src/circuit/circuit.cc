@@ -35,7 +35,7 @@ enum READ_CONDITION {
 /// Typically, the two ranges are contiguous and so this only requires advancing the end of the destination region.
 /// In cases where that doesn't occur, space is created in the given monotonic buffer to store the result and both
 /// the start and end of the destination range move.
-void fuse_data(PointerRange<uint32_t> &dst, PointerRange<uint32_t> src, MonotonicBuffer<uint32_t> &buf) {
+void fuse_data(PointerRange<GateTarget> &dst, PointerRange<GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
     if (dst.ptr_end != src.ptr_start) {
         buf.ensure_available(src.size() + dst.size());
         dst = buf.take_copy(dst);
@@ -45,44 +45,59 @@ void fuse_data(PointerRange<uint32_t> &dst, PointerRange<uint32_t> src, Monotoni
     dst.ptr_end = src.ptr_end;
 }
 
-void write_target(std::ostream &out, uint32_t t) {
-    if (t & TARGET_INVERTED_BIT) {
+void write_target(std::ostream &out, GateTarget t) {
+    if (t.data == TARGET_COMBINER) {
+        out << "*";
+        return;
+    }
+    if (t.data & TARGET_INVERTED_BIT) {
         out << '!';
     }
-    if (t & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
-        bool x = t & TARGET_PAULI_X_BIT;
-        bool z = t & TARGET_PAULI_Z_BIT;
+    if (t.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
+        bool x = t.data & TARGET_PAULI_X_BIT;
+        bool z = t.data & TARGET_PAULI_Z_BIT;
         out << "IXZY"[x + z * 2];
     }
-    if (t & TARGET_RECORD_BIT) {
-        out << "rec[-" << (t & TARGET_VALUE_MASK) << "]";
+    if (t.data & TARGET_RECORD_BIT) {
+        out << "rec[-" << (t.data & TARGET_VALUE_MASK) << "]";
     } else {
-        out << (t & TARGET_VALUE_MASK);
+        out << (t.data & TARGET_VALUE_MASK);
     }
 }
 
-std::string target_str(uint32_t t) {
+std::string target_str(GateTarget t) {
     std::stringstream out;
     write_target(out, t);
     return out.str();
 }
 
-std::string targets_str(ConstPointerRange<uint32_t> targets) {
-    std::stringstream out;
+void write_targets(std::ostream &out, ConstPointerRange<GateTarget> targets) {
+    bool skip_space = false;
     for (auto t : targets) {
-        out << ' ';
+        if (t.is_combiner()) {
+            skip_space = true;
+        } else if (!skip_space) {
+            out << ' ';
+        } else {
+            skip_space = false;
+        }
         write_target(out, t);
     }
+}
+
+std::string targets_str(ConstPointerRange<GateTarget> targets) {
+    std::stringstream out;
+    write_targets(out, targets);
     return out.str();
 }
 
 uint64_t stim_internal::op_data_rep_count(const OperationData &data) {
-    uint64_t low = data.targets[1];
-    uint64_t high = data.targets[2];
+    uint64_t low = data.targets[1].data;
+    uint64_t high = data.targets[2].data;
     return low | (high << 32);
 }
 
-void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstPointerRange<double> args) {
+void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args) {
     if (gate.flags & GATE_TARGETS_PAIRS) {
         if (targets.size() & 1) {
             throw std::invalid_argument(
@@ -144,8 +159,33 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
         }
     }
 
-    // Check that targets are in range.
     uint32_t valid_target_mask = TARGET_VALUE_MASK;
+
+    // Check combiners.
+    if (gate.flags & GATE_TARGETS_COMBINERS) {
+        bool combiner_allowed = false;
+        bool just_saw_combiner = false;
+        bool failed = false;
+        for (const auto p : targets) {
+            if (p.is_combiner()) {
+                failed |= !combiner_allowed;
+                combiner_allowed = false;
+                just_saw_combiner = true;
+            } else {
+                combiner_allowed = true;
+                just_saw_combiner = false;
+            }
+        }
+        failed |= just_saw_combiner;
+        if (failed) {
+            throw std::invalid_argument(
+                "Gate " + std::string(gate.name) +
+                " given combiners ('*') that aren't between other targets: " + targets_str(targets) + ".");
+        }
+        valid_target_mask |= TARGET_COMBINER;
+    }
+
+    // Check that targets are in range.
     if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
         valid_target_mask |= TARGET_INVERTED_BIT;
     }
@@ -153,21 +193,21 @@ void validate_gate(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstP
         valid_target_mask |= TARGET_RECORD_BIT;
     }
     if (gate.flags & GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
-        for (uint32_t q : targets) {
-            if (!(q & TARGET_RECORD_BIT)) {
+        for (GateTarget q : targets) {
+            if (!(q.data & TARGET_RECORD_BIT)) {
                 throw std::invalid_argument("Gate " + std::string(gate.name) + " only takes rec[-k] targets.");
             }
         }
     } else if (gate.flags & GATE_TARGETS_PAULI_STRING) {
-        for (uint32_t q : targets) {
-            if (!(q & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT))) {
+        for (GateTarget q : targets) {
+            if (!(q.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_COMBINER))) {
                 throw std::invalid_argument(
                     "Gate " + std::string(gate.name) + " only takes Pauli targets ('X2', 'Y3', 'Z5', etc).");
             }
         }
     } else {
-        for (uint32_t q : targets) {
-            if (q != (q & valid_target_mask)) {
+        for (GateTarget q : targets) {
+            if (q.data != (q.data & valid_target_mask)) {
                 std::stringstream ss;
                 ss << "Target ";
                 write_target(ss, q);
@@ -182,7 +222,7 @@ DetectorsAndObservables::DetectorsAndObservables(const Circuit &circuit) {
     uint32_t tick = 0;
     auto resolve_into = [&](const Operation &op, const std::function<void(uint32_t)> &func) {
         for (auto qb : op.target_data.targets) {
-            uint32_t dt = qb ^ TARGET_RECORD_BIT;
+            uint32_t dt = qb.data ^ TARGET_RECORD_BIT;
             if (!dt) {
                 throw std::invalid_argument("Record lookback can't be 0 (unspecified).");
             }
@@ -245,7 +285,7 @@ Circuit &Circuit::operator=(const Circuit &circuit) {
         blocks = circuit.blocks;
 
         // Keep local copy of operation data.
-        target_buf = MonotonicBuffer<uint32_t>(circuit.target_buf.total_allocated());
+        target_buf = MonotonicBuffer<GateTarget>(circuit.target_buf.total_allocated());
         for (auto &op : operations) {
             op.target_data.targets = target_buf.take_copy(op.target_data.targets);
         }
@@ -379,8 +419,7 @@ uint64_t read_uint63_t(int &c, SOURCE read_char) {
 
 template <typename SOURCE>
 inline void read_raw_qubit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
-    uint32_t q = read_uint24_t(c, read_char);
-    circuit.target_buf.append_tail(q);
+    circuit.target_buf.append_tail(GateTarget::qubit(read_uint24_t(c, read_char)));
 }
 
 template <typename SOURCE>
@@ -394,7 +433,7 @@ inline void read_record_target_into(int &c, SOURCE read_char, Circuit &circuit) 
         throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
     }
     c = read_char();
-    circuit.target_buf.append_tail(lookback | TARGET_RECORD_BIT);
+    circuit.target_buf.append_tail({lookback | TARGET_RECORD_BIT});
 }
 
 template <typename SOURCE>
@@ -416,21 +455,32 @@ inline void read_pauli_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     }
     uint32_t q = read_uint24_t(c, read_char);
 
-    circuit.target_buf.append_tail(q | m);
+    circuit.target_buf.append_tail({q | m});
 }
 
 template <typename SOURCE>
 inline void read_inverted_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     assert(c == '!');
     c = read_char();
-    uint32_t q = read_uint24_t(c, read_char);
-    circuit.target_buf.append_tail(q | TARGET_INVERTED_BIT);
+    if (c == 'X' || c == 'x' || c == 'Y' || c == 'y' || c == 'Z' || c == 'z') {
+        read_pauli_target_into(c, read_char, circuit);
+    } else {
+        read_raw_qubit_target_into(c, read_char, circuit);
+    }
+    circuit.target_buf.tail.back().data ^= TARGET_INVERTED_BIT;
 }
 
 template <typename SOURCE>
 inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circuit) {
-    while (read_until_next_line_arg(c, read_char)) {
+    bool need_space = true;
+    while (read_until_next_line_arg(c, read_char, need_space)) {
+        need_space = true;
         switch (c) {
+            case '*':
+                circuit.target_buf.append_tail(GateTarget::combiner());
+                c = read_char();
+                need_space = false;
+                break;
             case 'r':
                 read_record_target_into(c, read_char, circuit);
                 break;
@@ -467,8 +517,8 @@ template <typename SOURCE>
 inline void read_result_targets64_into(int &c, SOURCE read_char, Circuit &circuit) {
     while (read_until_next_line_arg(c, read_char)) {
         uint64_t q = read_uint63_t(c, read_char);
-        circuit.target_buf.append_tail((uint32_t)(q & 0xFFFFFFFFULL));
-        circuit.target_buf.append_tail((uint32_t)(q >> 32));
+        circuit.target_buf.append_tail({(uint32_t)(q & 0xFFFFFFFFULL)});
+        circuit.target_buf.append_tail({(uint32_t)(q >> 32)});
     }
 }
 
@@ -524,8 +574,8 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             if (new_op.target_data.targets.size() != 2) {
                 throw std::invalid_argument("Invalid instruction. Expected one repetition arg like `REPEAT 100 {`.");
             }
-            uint32_t rep_count_low = new_op.target_data.targets[0];
-            uint32_t rep_count_high = new_op.target_data.targets[1];
+            uint32_t rep_count_low = new_op.target_data.targets[0].data;
+            uint32_t rep_count_high = new_op.target_data.targets[1].data;
             uint32_t block_id = (uint32_t)circuit.blocks.size();
             if (rep_count_low == 0 && rep_count_high == 0) {
                 throw std::invalid_argument("Repeating 0 times is not supported.");
@@ -536,10 +586,10 @@ void circuit_read_operations(Circuit &circuit, SOURCE read_char, READ_CONDITION 
             circuit_read_operations(circuit.blocks.back(), read_char, READ_UNTIL_END_OF_BLOCK);
 
             // Rewrite target data to reference the parsed block.
-            circuit.target_buf.ensure_available(2);
-            circuit.target_buf.append_tail(block_id);
-            circuit.target_buf.append_tail(rep_count_low);
-            circuit.target_buf.append_tail(rep_count_high);
+            circuit.target_buf.ensure_available(3);
+            circuit.target_buf.append_tail({block_id});
+            circuit.target_buf.append_tail({rep_count_low});
+            circuit.target_buf.append_tail({rep_count_high});
             new_op.target_data.targets = circuit.target_buf.commit_tail();
         }
 
@@ -569,15 +619,31 @@ void Circuit::append_operation(const Operation &operation) {
 
 void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
     const auto &gate = GATE_DATA.at(gate_name);
-    append_operation(gate, targets, {&singleton_arg});
+
+    std::vector<GateTarget> converted;
+    converted.reserve(targets.size());
+    for (auto e : targets) {
+        converted.push_back({e});
+    }
+
+    append_operation(gate, converted, {&singleton_arg});
 }
+
 void Circuit::append_op(
     const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {
     const auto &gate = GATE_DATA.at(gate_name);
-    append_operation(gate, targets, args);
+
+    std::vector<GateTarget> converted;
+    converted.reserve(targets.size());
+    for (auto e : targets) {
+        converted.push_back({e});
+    }
+
+    append_operation(gate, converted, args);
 }
 
-void Circuit::append_operation(const Gate &gate, ConstPointerRange<uint32_t> targets, ConstPointerRange<double> args) {
+void Circuit::append_operation(
+    const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args) {
     if (gate.flags & GATE_IS_BLOCK) {
         throw std::invalid_argument("Can't append a block like a normal operation.");
     }
@@ -604,12 +670,11 @@ void Circuit::append_from_file(FILE *file, bool stop_asap) {
         stop_asap ? READ_AS_LITTLE_AS_POSSIBLE : READ_UNTIL_END_OF_FILE);
 }
 
-std::ostream &stim_internal::operator<<(std::ostream &out, const Operation &op) {
-    out << op.gate->name;
-    if (!op.target_data.args.empty()) {
+std::ostream &stim_internal::operator<<(std::ostream &out, const OperationData &dat) {
+    if (!dat.args.empty()) {
         out << '(';
         bool first = true;
-        for (auto e : op.target_data.args) {
+        for (auto e : dat.args) {
             if (first) {
                 first = false;
             } else {
@@ -623,10 +688,12 @@ std::ostream &stim_internal::operator<<(std::ostream &out, const Operation &op) 
         }
         out << ')';
     }
-    for (auto t : op.target_data.targets) {
-        out << ' ';
-        write_target(out, t);
-    }
+    write_targets(out, dat.targets);
+    return out;
+}
+
+std::ostream &stim_internal::operator<<(std::ostream &out, const Operation &op) {
+    out << op.gate->name << op.target_data;
     return out;
 }
 
@@ -641,9 +708,9 @@ void stim_internal::print_circuit(std::ostream &out, const Circuit &c, const std
 
         // Recurse on repeat blocks.
         if (op.gate && op.gate->id == gate_name_to_id("REPEAT")) {
-            if (op.target_data.targets.size() == 3 && op.target_data.targets[0] < c.blocks.size()) {
+            if (op.target_data.targets.size() == 3 && op.target_data.targets[0].data < c.blocks.size()) {
                 out << indentation << "REPEAT " << op_data_rep_count(op.target_data) << " {\n";
-                print_circuit(out, c.blocks[op.target_data.targets[0]], indentation + "    ");
+                print_circuit(out, c.blocks[op.target_data.targets[0].data], indentation + "    ");
                 out << "\n" << indentation << "}";
                 continue;
             }
@@ -654,11 +721,11 @@ void stim_internal::print_circuit(std::ostream &out, const Circuit &c, const std
 }
 
 Circuit &stim_internal::op_data_block_body(Circuit &host, const OperationData &data) {
-    return host.blocks[data.targets[0]];
+    return host.blocks[data.targets[0].data];
 }
 
 const Circuit &stim_internal::op_data_block_body(const Circuit &host, const OperationData &data) {
-    return host.blocks[data.targets[0]];
+    return host.blocks[data.targets[0].data];
 }
 
 std::ostream &stim_internal::operator<<(std::ostream &out, const Circuit &c) {
@@ -693,16 +760,16 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
             throw std::invalid_argument("Fused repetition count is too large.");
         }
         Circuit copy = *this;
-        copy.operations[0].target_data.targets[1] = (uint32_t)(new_reps & 0xFFFFFFFFULL);
-        copy.operations[0].target_data.targets[2] = (uint32_t)(new_reps >> 32);
+        copy.operations[0].target_data.targets[1].data = (uint32_t)(new_reps & 0xFFFFFFFFULL);
+        copy.operations[0].target_data.targets[2].data = (uint32_t)(new_reps >> 32);
         return copy;
     }
 
     Circuit result;
     result.blocks.push_back(*this);
-    result.target_buf.append_tail(0);
-    result.target_buf.append_tail((uint32_t)(repetitions & 0xFFFFFFFFULL));
-    result.target_buf.append_tail((uint32_t)(repetitions >> 32));
+    result.target_buf.append_tail(GateTarget{(uint32_t)0});
+    result.target_buf.append_tail(GateTarget{(uint32_t)(repetitions & 0xFFFFFFFFULL)});
+    result.target_buf.append_tail(GateTarget{(uint32_t)(repetitions >> 32)});
     result.operations.push_back({&GATE_DATA.at("REPEAT"), {{}, result.target_buf.commit_tail()}});
     return result;
 }
@@ -720,7 +787,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
         append_operation(op);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
-            operations.back().target_data.targets[0] += block_offset;
+            operations.back().target_data.targets[0].data += block_offset;
         }
     }
 
@@ -742,6 +809,12 @@ std::string Circuit::str() const {
 }
 
 std::string Operation::str() const {
+    std::stringstream s;
+    s << *this;
+    return s.str();
+}
+
+std::string OperationData::str() const {
     std::stringstream s;
     s << *this;
     return s.str();
@@ -810,9 +883,9 @@ DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndOb
 size_t Circuit::count_qubits() const {
     return max_operation_property([](const Operation &op) -> size_t {
         size_t r = 0;
-        for (uint32_t t : op.target_data.targets) {
-            if (!(t & TARGET_RECORD_BIT)) {
-                r = std::max(r, (t & TARGET_VALUE_MASK) + size_t{1});
+        for (auto t : op.target_data.targets) {
+            if (!(t.data & TARGET_RECORD_BIT)) {
+                r = std::max(r, t.qubit_value() + size_t{1});
             }
         }
         return r;
@@ -822,9 +895,9 @@ size_t Circuit::count_qubits() const {
 size_t Circuit::max_lookback() const {
     return max_operation_property([](const Operation &op) -> size_t {
         size_t r = 0;
-        for (uint32_t t : op.target_data.targets) {
-            if (t & TARGET_RECORD_BIT) {
-                r = std::max(r, size_t{t & TARGET_VALUE_MASK});
+        for (auto t : op.target_data.targets) {
+            if (t.data & TARGET_RECORD_BIT) {
+                r = std::max(r, size_t{t.qubit_value()});
             }
         }
         return r;
@@ -873,7 +946,7 @@ Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length)
     for (size_t k = 0; k < (size_t)slice_length; k++) {
         const auto &op = operations[start + step * k];
         if (op.gate->id == gate_name_to_id("REPEAT")) {
-            result.target_buf.append_tail(result.blocks.size());
+            result.target_buf.append_tail(GateTarget{(uint32_t)result.blocks.size()});
             result.target_buf.append_tail(op.target_data.targets[1]);
             result.target_buf.append_tail(op.target_data.targets[2]);
             auto targets = result.target_buf.commit_tail();

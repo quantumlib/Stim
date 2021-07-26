@@ -127,3 +127,11 @@ size_t simd_bits_range_ref::popcnt() const {
     }
     return result;
 }
+bool simd_bits_range_ref::intersects(const simd_bits_range_ref other) const {
+    size_t n = std::min(num_u64_padded(), other.num_u64_padded());
+    uint64_t v = 0;
+    for (size_t k = 0; k < n; k++) {
+        v |= u64[k] & other.u64[k];
+    }
+    return v != 0;
+}

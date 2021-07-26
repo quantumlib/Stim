@@ -4,7 +4,7 @@
 
 using namespace stim_internal;
 
-void append_anti_basis_error(Circuit &circuit, const std::vector<uint32_t> &targets, float p, char basis) {
+void append_anti_basis_error(Circuit &circuit, const std::vector<uint32_t> &targets, double p, char basis) {
     if (p > 0) {
         if (basis == 'X') {
             circuit.append_op("Z_ERROR", targets, p);

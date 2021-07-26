@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <complex>
-
 #include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
@@ -219,4 +217,110 @@ Forces each target qubit into the `|0>` state by silently measuring it in the Z 
             },
         });
     add_gate_alias(failed, "RZ", "R");
+
+    add_gate(
+        failed,
+        Gate{
+            "MPP",
+            ARG_COUNT_SYGIL_ZERO_OR_ONE,
+            &TableauSimulator::MPP,
+            &FrameSimulator::MPP,
+            &ErrorAnalyzer::MPP,
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_TARGETS_PAULI_STRING | GATE_TARGETS_COMBINERS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            []() -> ExtraGateData {
+                return {
+                    "L_Collapsing Gates",
+                    R"MARKDOWN(
+Measure Pauli products.
+
+- Example:
+
+    ```
+    MPP X1*Y2           # Join products using '*'
+    MPP X1*Y2 Z3*Z4     # Separate products using spaces with no '*'.
+    MPP !Z5             # Negate products (invert results) using '!'.
+    MPP !Z5*X4
+    MPP(0.001) Z1*Z2*Z3 # Add result noise using a probability argument.
+    ```
+
+)MARKDOWN",
+                    {},
+                    {"P -> m xor chance(p)", "P -> P"},
+                };
+            },
+        });
+}
+
+void stim_internal::decompose_mpp_operation(
+    const OperationData &target_data,
+    size_t num_qubits,
+    const std::function<void(
+        const OperationData &h_xz, const OperationData &h_yz, const OperationData &cnot, const OperationData &meas)>
+        &callback) {
+    simd_bits used(num_qubits);
+    simd_bits inner_used(num_qubits);
+    std::vector<GateTarget> h_xz;
+    std::vector<GateTarget> h_yz;
+    std::vector<GateTarget> cnot;
+    std::vector<GateTarget> meas;
+
+    auto op_dat = [](std::vector<GateTarget> &targets, PointerRange<double> args) {
+        return OperationData{args, targets};
+    };
+    size_t start = 0;
+    while (start < target_data.targets.size()) {
+        size_t end = start + 1;
+        while (end < target_data.targets.size() && target_data.targets[end].is_combiner()) {
+            end += 2;
+        }
+
+        // Determine which qubits are being touched by the next group.
+        inner_used.clear();
+        for (size_t i = start; i < end; i += 2) {
+            auto t = target_data.targets[i];
+            if (inner_used[t.qubit_value()]) {
+                throw std::invalid_argument(
+                    "A pauli product specified the same qubit twice.\n"
+                    "The operation: MPP" +
+                    target_data.str());
+            }
+            inner_used[t.qubit_value()] = true;
+        }
+
+        // If there's overlap with previous groups, the previous groups have to be flushed first.
+        if (inner_used.intersects(used)) {
+            callback(op_dat(h_xz, {}), op_dat(h_yz, {}), op_dat(cnot, {}), op_dat(meas, target_data.args));
+            h_xz.clear();
+            h_yz.clear();
+            cnot.clear();
+            meas.clear();
+            used.clear();
+        }
+        used |= inner_used;
+
+        // Append operations that are equivalent to the desired measurement.
+        for (size_t i = start; i < end; i += 2) {
+            auto t = target_data.targets[i];
+            auto q = t.qubit_value();
+            if (t.data & TARGET_PAULI_X_BIT) {
+                if (t.data & TARGET_PAULI_Z_BIT) {
+                    h_yz.push_back({q});
+                } else {
+                    h_xz.push_back({q});
+                }
+            }
+            if (i == start) {
+                meas.push_back({q});
+            } else {
+                cnot.push_back({q});
+                cnot.push_back({meas.back().qubit_value()});
+            }
+            meas.back().data ^= t.data & TARGET_INVERTED_BIT;
+        }
+
+        start = end;
+    }
+
+    // Flush remaining groups.
+    callback(op_dat(h_xz, {}), op_dat(h_yz, {}), op_dat(cnot, {}), op_dat(meas, target_data.args));
 }

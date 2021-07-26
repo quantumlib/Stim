@@ -19,19 +19,22 @@
 
 #include "circuit_gate_target.pybind.h"
 #include "gate_data.h"
+#include "gate_target.h"
 
 void pybind_circuit_instruction(pybind11::module &m);
 
 struct CircuitInstruction {
     const stim_internal::Gate &gate;
-    std::vector<GateTarget> targets;
+    std::vector<stim_internal::GateTarget> targets;
     std::vector<double> gate_args;
 
-    CircuitInstruction(const char *name, std::vector<GateTarget> targets, std::vector<double> gate_args);
-    CircuitInstruction(const stim_internal::Gate &gate, std::vector<GateTarget> targets, std::vector<double> gate_args);
+    CircuitInstruction(
+        const char *name, const std::vector<pybind11::object> &targets, const std::vector<double> &gate_args);
+    CircuitInstruction(
+        const stim_internal::Gate &gate, std::vector<stim_internal::GateTarget> targets, std::vector<double> gate_args);
 
     std::string name() const;
-    std::vector<GateTarget> targets_copy() const;
+    std::vector<stim_internal::GateTarget> targets_copy() const;
     std::vector<double> gate_args_copy() const;
     bool operator==(const CircuitInstruction &other) const;
     bool operator!=(const CircuitInstruction &other) const;

@@ -34,6 +34,8 @@ def test_properties():
     assert not g.is_z_target
     assert not g.is_inverted_result_target
     assert not g.is_measurement_record_target
+    assert not g.is_combiner
+    assert g.is_qubit_target
 
     g = stim.GateTarget(stim.target_rec(-4))
     assert g.value == -4
@@ -42,6 +44,8 @@ def test_properties():
     assert not g.is_z_target
     assert not g.is_inverted_result_target
     assert g.is_measurement_record_target
+    assert not g.is_combiner
+    assert not g.is_qubit_target
 
     g = stim.GateTarget(stim.target_x(3))
     assert g.value == 3
@@ -50,6 +54,8 @@ def test_properties():
     assert not g.is_z_target
     assert not g.is_inverted_result_target
     assert not g.is_measurement_record_target
+    assert not g.is_combiner
+    assert not g.is_qubit_target
 
     g = stim.GateTarget(stim.target_y(3))
     assert g.value == 3
@@ -58,6 +64,8 @@ def test_properties():
     assert not g.is_z_target
     assert not g.is_inverted_result_target
     assert not g.is_measurement_record_target
+    assert not g.is_combiner
+    assert not g.is_qubit_target
 
     g = stim.GateTarget(stim.target_z(3))
     assert g.value == 3
@@ -66,6 +74,18 @@ def test_properties():
     assert g.is_z_target
     assert not g.is_inverted_result_target
     assert not g.is_measurement_record_target
+    assert not g.is_combiner
+    assert not g.is_qubit_target
+
+    g = stim.GateTarget(stim.target_z(3, invert=True))
+    assert g.value == 3
+    assert not g.is_x_target
+    assert not g.is_y_target
+    assert g.is_z_target
+    assert g.is_inverted_result_target
+    assert not g.is_measurement_record_target
+    assert not g.is_combiner
+    assert not g.is_qubit_target
 
     g = stim.GateTarget(stim.target_inv(3))
     assert g.value == 3
@@ -74,6 +94,17 @@ def test_properties():
     assert not g.is_z_target
     assert g.is_inverted_result_target
     assert not g.is_measurement_record_target
+    assert not g.is_combiner
+    assert g.is_qubit_target
+
+    g = stim.target_combiner()
+    assert not g.is_x_target
+    assert not g.is_y_target
+    assert not g.is_z_target
+    assert not g.is_inverted_result_target
+    assert not g.is_measurement_record_target
+    assert not g.is_qubit_target
+    assert g.is_combiner
 
 
 @pytest.mark.parametrize("value", [

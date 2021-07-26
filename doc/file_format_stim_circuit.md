@@ -61,17 +61,19 @@ An *argument* is a double precision floating point number.
 
 A *target* can either be a qubit target (a non-negative integer),
 a measurement record target (a negative integer prefixed by `rec[` and suffixed by `]`),
-an inverted result qubit target (a non-negative integer prefixed by `!`),
-or a Pauli target (an integer prefixed by `X`, `Y`, or `Z`).
+a Pauli target (an integer prefixed by `X`, `Y`, or `Z`),
+or a combiner (`*`).
+Additionally, qubit targets and Pauli targets may be prefixed by a `!` to indicate that
+measurement results should be negated.
 
 ```
 <NAME> ::= /[a-zA-Z][a-zA-Z0-9_]*/ 
 <ARG> ::= <double> 
-<TARG> ::= <QUBIT_TARGET> | <MEASUREMENT_RECORD_TARGET> | <INVERTED_RESULT_QUBIT_TARGET> | <PAULI_TARGET> 
-<QUBIT_TARGET> ::= <uint>
+<TARG> ::= <QUBIT_TARGET> | <MEASUREMENT_RECORD_TARGET> | <PAULI_TARGET> | <COMBINER_TARGET> 
+<QUBIT_TARGET> ::= '!'? <uint>
 <MEASUREMENT_RECORD_TARGET> ::= "rec[-" <uint> "]"
-<PAULI_TARGET> ::= /[XYZ]/ <uint>
-<INVERTED_RESULT_QUBIT_TARGET> ::= "!" <uint> 
+<PAULI_TARGET> ::= '!'? /[XYZ]/ <uint>
+<COMBINER_TARGET> ::= '*'
 ```
 
 A *block initiator* is an instruction suffixed with `{`.
@@ -122,11 +124,15 @@ which indicate that the block's instructions should be iterated over `K` times i
 
 ### Target Types
 
-There are four types of targets that can be given to instructions:
-qubit targets, measurement record targets, inverted result qubit targets, and Pauli targets.
+There are three types of targets that can be given to instructions:
+qubit targets, measurement record targets, and Pauli targets.
 
 A qubit target refers to a qubit by index.
 There's a qubit `0`, a qubit `1`, a qubit `2`, and so forth.
+A qubit target may be prefixed by `!`, like `!2`, to mark it as inverted.
+Inverted qubit targets are only meaningful for operations that produce measurement results.
+They indicate that the recorded measurement result, for the given qubit target, should be inverted.
+For example `M 0 !1` measures qubit `0` and qubit `1`, but also inverts the result recorded for qubit `1`.
 
 A measurement record target refers to a recorded measurement result, relative to the current end of the measurement record.
 For example, `rec[-1]` is the most recent measurement result, `rec[-2]` is the second most recent, and so forth.
@@ -134,14 +140,14 @@ For example, `rec[-1]` is the most recent measurement result, `rec[-2]` is the s
 The reason negative indices are used is to make it possible to write loops.)
 It is an error to refer to a measurement result so far back that it would precede the start of the circuit.
 
-An inverted result qubit target is a qubit target prefixed by `!`, like `!2`.
-These targets are only meaningful for operations that produce measurement results.
-They indicate that the recorded measurement result, for the given qubit target, should be inverted.
-For example `M 0 !1` measures qubit `0` and qubit `1`, but also inverts the result recorded for qubit `1`.
-
 A Pauli target is a qubit target prefixed by a Pauli operation `X`, `Y`, or `Z`.
 They are used when specifying Pauli products.
 For example, `CORRELATED_ERROR(0.1) X1 Y3 Z2` uses Pauli targets to specify the error that is applied.
+Pauli targets may be grouped using combiners (`*`) and may be prefixed by `!` to mark them as inverted.
+Inverted Pauli targets are only meaningful for operations that produce measurement results.
+They indicate that the recorded measurement result, for the given group of Paulis, should be inverted.
+For example `MPP !X1*Z2 Y3` measures the Pauli product `X1*Z2` and inverts the result, then also measures
+the Pauli `Y3`.
 
 ### Broadcasting
 
