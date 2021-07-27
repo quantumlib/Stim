@@ -18,6 +18,7 @@
 #define STIM_H
 
 #include "../dem/detector_error_model.h"
+#include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
 #include "../stabilizers/pauli_string.h"
