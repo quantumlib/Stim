@@ -23,3 +23,7 @@ TEST(stim, include1) {
     ASSERT_EQ(c.count_qubits(), 1);
     ASSERT_EQ(stim::GATE_DATA.at("PAULI_CHANNEL_2").arg_count, 15);
 }
+
+TEST(stim, include3) {
+    stim::ErrorAnalyzer::circuit_to_detector_error_model({}, false, false, false, false);
+}
