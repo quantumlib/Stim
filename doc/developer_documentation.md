@@ -70,7 +70,21 @@ The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 
-# Build stim python package
+# Build all python packages
+
+From the repo root, in a python 3.9+ environment:
+
+```bash
+./glue/python/create_sdists.sh VERSION_SPECIFIER_GOES_HERE
+```
+
+Output is in the `dist` directory from the repo root, and can be uploaded using `twine`.
+
+The version specifier should be like `v1.5.0`, or `v1.5.dev0` for development versions.
+
+Note that the script actually overwrites the version strings in various `setup.py` files.
+
+# Manual build stim python package
 
 Ensure python environment dependencies are present:
 
@@ -90,7 +104,7 @@ Output is in the `dist` directory, and can be uploaded using `twine`.
 twine upload --username="${PROD_TWINE_USERNAME}" --password="${PROD_TWINE_PASSWORD}" dist/[CREATED_FILE_GOES_HERE]
 ```
 
-# Build stimcirq python package
+# Manual build stimcirq python package
 
 Create a source distribution:
 

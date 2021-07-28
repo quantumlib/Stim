@@ -17,9 +17,11 @@ from setuptools import setup
 with open('README.md') as f:
     long_description = f.read()
 
+version = '1.6.dev0'
+
 setup(
     name='stimzx',
-    version='1.5.0dev',
+    version=version,
     author='Craig Gidney',
     author_email='craig.gidney@gmail.com',
     url='https://github.com/quantumlib/stim',
