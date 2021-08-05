@@ -20,6 +20,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <random>
+
 #include "../circuit/circuit.h"
 
 std::mt19937_64 &PYBIND_SHARED_RNG();

@@ -69,7 +69,12 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
-void CompiledDetectorSampler::sample_write(size_t num_samples, const std::string &filepath, const std::string &format, bool prepend_observables, bool append_observables) {
+void CompiledDetectorSampler::sample_write(
+    size_t num_samples,
+    const std::string &filepath,
+    const std::string &format,
+    bool prepend_observables,
+    bool append_observables) {
     auto f = format_to_enum(format);
     FILE *out = fopen(filepath.data(), "w");
     detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out, f, PYBIND_SHARED_RNG());

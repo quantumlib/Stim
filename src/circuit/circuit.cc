@@ -973,6 +973,9 @@ Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length)
 }
 
 void Circuit::append_repeat_block(uint64_t repeat_count, Circuit &&body) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
     target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
     target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
     target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
@@ -982,6 +985,9 @@ void Circuit::append_repeat_block(uint64_t repeat_count, Circuit &&body) {
 }
 
 void Circuit::append_repeat_block(uint64_t repeat_count, const Circuit &body) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
     target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
     target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
     target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});

@@ -61,7 +61,8 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t 
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
-void CompiledMeasurementSampler::sample_write(size_t num_samples, const std::string &filepath, const std::string &format) {
+void CompiledMeasurementSampler::sample_write(
+    size_t num_samples, const std::string &filepath, const std::string &format) {
     auto f = format_to_enum(format);
     FILE *out = fopen(filepath.data(), "w");
     FrameSimulator::sample_out(circuit, ref, num_samples, out, f, PYBIND_SHARED_RNG());

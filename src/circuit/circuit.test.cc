@@ -975,4 +975,7 @@ TEST(circuit, append_repeat_block) {
             X 0
         }
     )CIRCUIT"));
+
+    ASSERT_THROW({ c.append_repeat_block(0, a); }, std::invalid_argument);
+    ASSERT_THROW({ c.append_repeat_block(0, std::move(a)); }, std::invalid_argument);
 }

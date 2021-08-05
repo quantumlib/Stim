@@ -28,6 +28,9 @@ def test_init_and_equality():
     r2 = stim.CircuitRepeatBlock(repeat_count=500, body=stim.Circuit("X 0"))
     assert r == r2
 
+    with pytest.raises(ValueError, match="repeat 0"):
+        stim.CircuitRepeatBlock(0, stim.Circuit())
+
 
 @pytest.mark.parametrize("value", [
     stim.CircuitRepeatBlock(500, stim.Circuit("X 0")),

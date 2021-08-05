@@ -21,6 +21,13 @@
 
 using namespace stim_internal;
 
+CircuitRepeatBlock::CircuitRepeatBlock(uint64_t repeat_count, stim_internal::Circuit body)
+    : repeat_count(repeat_count), body(body) {
+    if (repeat_count == 0) {
+        throw std::invalid_argument("Can't repeat 0 times.");
+    }
+}
+
 Circuit CircuitRepeatBlock::body_copy() {
     return body;
 }
