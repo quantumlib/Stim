@@ -23,7 +23,8 @@
 
 namespace stim_internal {
 
-struct simd_word {
+#define simd_word simd_word_sse2
+struct simd_word_sse2 {
     union {
         __m128i val;
         __m128i u128[1];

@@ -741,7 +741,7 @@
 >     text: The STIM program text containing the circuit operations to append.
 > ```
 
-### `stim.Circuit.append_operation(self, name: str, targets: List[object], arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
+### `stim.Circuit.append_operation(self, name: object, targets: List[object] = (), arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
 > ```
 > Appends an operation into the circuit.
 > 
@@ -764,11 +764,17 @@
 > 
 > Args:
 >     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
+> 
+>         This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
+>         results in the instruction or block being appended to the circuit. The other arguments (targets and
+>         arg) can't be specified when doing so.
+> 
+>         (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
 >     targets: The gate targets. Gates implicitly broadcast over their targets.
 >     arg: A double or list of doubles parameterizing the gate. Different gates take different arguments. For
 >         example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and PAULI_CHANNEL_1
 >         takes three disjoint probabilities. For backwards compatibility reasons, defaults to (0,) for gates
->         that take one argument. Otherwise defaults to no arguments.
+>         that take exactly one argument. Otherwise defaults to no arguments.
 > ```
 
 ### `stim.Circuit.clear(self) -> None`<a name="stim.Circuit.clear"></a>
@@ -971,7 +977,7 @@
 >     >>> import stim
 >     >>> circuit = stim.Circuit.generated(
 >     ...     "repetition_code:memory",
->     ...     distance=3,
+>     ...     distance=4,
 >     ...     rounds=10000,
 >     ...     after_clifford_depolarization=0.0125)
 >     >>> print(circuit)

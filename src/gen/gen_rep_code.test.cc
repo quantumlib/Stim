@@ -18,8 +18,8 @@
 
 using namespace stim_internal;
 
-TEST(gen_surface_code, rep_code) {
-    CircuitGenParameters params(5000, 3, "memory");
+TEST(gen_rep_code, rep_code) {
+    CircuitGenParameters params(5000, 4, "memory");
     params.after_clifford_depolarization = 0.125;
     params.after_reset_flip_probability = 0.25;
     params.before_measure_flip_probability = 0.375;

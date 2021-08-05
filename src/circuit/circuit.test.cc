@@ -724,7 +724,10 @@ TEST(circuit, count_measurements) {
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
             MPP X0*X1*X2*X3*X4 Z5 Z6
-        )CIRCUIT").operations[0].count_measurement_results(), 3);
+        )CIRCUIT")
+            .operations[0]
+            .count_measurement_results(),
+        3);
 
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
@@ -934,4 +937,42 @@ TEST(circuit, py_get_slice) {
     Circuit c3 = c2.py_get_slice(0, 1, 6);
     c2.clear();
     ASSERT_EQ(c, c3);
+}
+
+TEST(circuit, append_repeat_block) {
+    Circuit c;
+    Circuit b("X 0");
+    Circuit a("Y 0");
+
+    c.append_repeat_block(100, b);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            X 0
+        }
+    )CIRCUIT"));
+
+    c.append_repeat_block(200, a);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            X 0
+        }
+        REPEAT 200 {
+            Y 0
+        }
+    )CIRCUIT"));
+
+    c.append_repeat_block(400, std::move(b));
+    ASSERT_TRUE(b.operations.empty());
+    ASSERT_FALSE(a.operations.empty());
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            X 0
+        }
+        REPEAT 200 {
+            Y 0
+        }
+        REPEAT 400 {
+            X 0
+        }
+    )CIRCUIT"));
 }

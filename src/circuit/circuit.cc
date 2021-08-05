@@ -781,11 +781,7 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
     }
 
     Circuit result;
-    result.blocks.push_back(*this);
-    result.target_buf.append_tail(GateTarget{(uint32_t)0});
-    result.target_buf.append_tail(GateTarget{(uint32_t)(repetitions & 0xFFFFFFFFULL)});
-    result.target_buf.append_tail(GateTarget{(uint32_t)(repetitions >> 32)});
-    result.operations.push_back({&GATE_DATA.at("REPEAT"), {{}, result.target_buf.commit_tail()}});
+    result.append_repeat_block(repetitions, *this);
     return result;
 }
 
@@ -900,7 +896,7 @@ size_t Circuit::count_qubits() const {
         uint32_t r = 0;
         for (auto t : op.target_data.targets) {
             if (!(t.data & TARGET_RECORD_BIT)) {
-                r = std::max(r, t.qubit_value() + uint32_t {1});
+                r = std::max(r, t.qubit_value() + uint32_t{1});
             }
         }
         return r;
@@ -974,4 +970,22 @@ Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length)
         }
     }
     return result;
+}
+
+void Circuit::append_repeat_block(uint64_t repeat_count, Circuit &&body) {
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(std::move(body));
+    auto targets = target_buf.commit_tail();
+    operations.push_back({&GATE_DATA.at("REPEAT"), {{}, targets}});
+}
+
+void Circuit::append_repeat_block(uint64_t repeat_count, const Circuit &body) {
+    target_buf.append_tail(GateTarget{(uint32_t)blocks.size()});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count & 0xFFFFFFFFULL)});
+    target_buf.append_tail(GateTarget{(uint32_t)(repeat_count >> 32)});
+    blocks.push_back(body);
+    auto targets = target_buf.commit_tail();
+    operations.push_back({&GATE_DATA.at("REPEAT"), {{}, targets}});
 }

@@ -16,8 +16,8 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
         throw std::invalid_argument("Need a distance >= 2.");
     }
 
-    uint32_t d = params.distance;
-    uint32_t n = d * 2 + 1;
+    uint32_t m = params.distance - 1;
+    uint32_t n = m * 2 + 1;
 
     // Lay out qubits and determine interaction targets.
     std::vector<uint32_t> all_qubits;
@@ -52,16 +52,16 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
     Circuit head;
     params.append_reset(head, all_qubits);
     head += cycle_actions;
-    for (uint32_t k = 0; k < d; k++) {
-        head.append_op("DETECTOR", {(d - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
+    for (uint32_t k = 0; k < m; k++) {
+        head.append_op("DETECTOR", {(m - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
     body.append_op("SHIFT_COORDS", {}, {0, 1});
-    for (uint32_t k = 0; k < d; k++) {
+    for (uint32_t k = 0; k < m; k++) {
         body.append_op(
-            "DETECTOR", {(d - k) | TARGET_RECORD_BIT, (2 * d - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
+            "DETECTOR", {(m - k) | TARGET_RECORD_BIT, (2 * m - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
     }
 
     // Build the end of the circuit, getting out of the cycle state and terminating.
@@ -69,10 +69,10 @@ GeneratedCircuit stim_internal::generate_rep_code_circuit(const CircuitGenParame
     // Also, the tail is responsible for identifying the logical observable.
     Circuit tail;
     params.append_measure(tail, data_qubits);
-    for (uint32_t k = 0; k < d; k++) {
+    for (uint32_t k = 0; k < m; k++) {
         tail.append_op(
             "DETECTOR",
-            {(d - k) | TARGET_RECORD_BIT, (d - k + 1) | TARGET_RECORD_BIT, (2 * d - k + 1) | TARGET_RECORD_BIT},
+            {(m - k) | TARGET_RECORD_BIT, (m - k + 1) | TARGET_RECORD_BIT, (2 * m - k + 1) | TARGET_RECORD_BIT},
             {(double)2 * k + 1, 1});
     }
     tail.append_op("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);

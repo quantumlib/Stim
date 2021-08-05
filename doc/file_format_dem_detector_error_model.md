@@ -312,7 +312,7 @@ repeat 9 {
 ### Repetition Code Error Model
 
 This is the output from
-`stim --gen repetition_code --task memory --rounds 1000 --distance 3 --after_clifford_depolarization 0.001 | stim --analyze_errors --fold_loops`.
+`stim --gen repetition_code --task memory --rounds 1000 --distance 4 --after_clifford_depolarization 0.001 | stim --analyze_errors --fold_loops`.
 It includes coordinate annotations for the spacetime layout of the detectors.
 
 ```
