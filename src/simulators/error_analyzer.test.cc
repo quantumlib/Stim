@@ -1334,7 +1334,7 @@ TEST(ErrorAnalyzer, loop_folding_nested_loop) {
 }
 
 TEST(ErrorAnalyzer, loop_folding_rep_code_circuit) {
-    CircuitGenParameters params(100000, 3, "memory");
+    CircuitGenParameters params(100000, 4, "memory");
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
