@@ -483,11 +483,7 @@ void pybind_circuit(pybind11::module &m) {
                 }
 
                 const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
-                std::vector<uint32_t> raw_targets;
-                for (const auto &t : instruction.targets) {
-                    raw_targets.push_back(t.data);
-                }
-                self.append_op(instruction.gate.name, raw_targets, instruction.gate_args);
+                self.append_op(instruction.gate.name, instruction.raw_targets(), instruction.gate_args);
             } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
                 if (!targets.empty() || !arg.is_none()) {
                     throw std::invalid_argument(

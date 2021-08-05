@@ -54,9 +54,24 @@ std::string CircuitInstruction::repr() const {
     result << "], [" << comma_sep(gate_args) << "])";
     return result.str();
 }
+
+std::string CircuitInstruction::str() {
+    std::stringstream result;
+    result << Operation{&gate, {gate_args, targets}};
+    return result.str();
+}
+
 std::string CircuitInstruction::name() const {
     return gate.name;
 }
+std::vector<uint32_t> CircuitInstruction::raw_targets() const {
+    std::vector<uint32_t> result;
+    for (const auto &t : targets) {
+        result.push_back(t.data);
+    }
+    return result;
+};
+
 std::vector<GateTarget> CircuitInstruction::targets_copy() const {
     return targets;
 }
@@ -137,4 +152,8 @@ void pybind_circuit_instruction(pybind11::module &m) {
         "__repr__",
         &CircuitInstruction::repr,
         "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`.");
+    c.def(
+        "__str__",
+        &CircuitInstruction::str,
+        "Returns a text description of the instruction as a stim circuit file line.");
 }

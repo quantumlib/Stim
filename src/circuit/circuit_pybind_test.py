@@ -463,6 +463,9 @@ def test_append_instructions_and_blocks():
     c.append_operation("TICK")
     assert c == stim.Circuit("TICK")
 
+    with pytest.raises(ValueError, match="no targets"):
+        c.append_operation("TICK", [1, 2, 3])
+
     c.append_operation(stim.Circuit("H 1")[0])
     assert c == stim.Circuit("TICK\nH 1")
 
@@ -508,3 +511,6 @@ def test_append_instructions_and_blocks():
 
     with pytest.raises(ValueError, match="arg"):
         c.append_operation((stim.Circuit("H 1") * 5)[0], [], 0.1)
+
+    with pytest.raises(ValueError, match="repeat 0"):
+        c.append_operation(stim.CircuitRepeatBlock(0, stim.Circuit("H 1")))

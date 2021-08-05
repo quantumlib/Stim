@@ -38,3 +38,7 @@ def test_init_and_equality():
 def test_repr(value):
     assert eval(repr(value), {'stim': stim}) == value
     assert repr(eval(repr(value), {'stim': stim})) == repr(value)
+
+
+def test_str():
+    assert str(stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], [0.5])) == "X_ERROR(0.5) 5"

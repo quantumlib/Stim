@@ -61,6 +61,14 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t 
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
+void CompiledMeasurementSampler::sample_write(
+    size_t num_samples, const std::string &filepath, const std::string &format) {
+    auto f = format_to_enum(format);
+    FILE *out = fopen(filepath.data(), "w");
+    FrameSimulator::sample_out(circuit, ref, num_samples, out, f, PYBIND_SHARED_RNG());
+    fclose(out);
+}
+
 std::string CompiledMeasurementSampler::repr() const {
     std::stringstream result;
     result << "stim.CompiledMeasurementSampler(";
@@ -124,6 +132,45 @@ void pybind_compiled_measurement_sampler(pybind11::module &m) {
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
                 The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+        )DOC")
+            .data());
+
+    c.def(
+        "sample_write",
+        &CompiledMeasurementSampler::sample_write,
+        pybind11::arg("shots"),
+        pybind11::kw_only(),
+        pybind11::arg("filepath"),
+        pybind11::arg("format"),
+        clean_doc_string(u8R"DOC(
+            Samples measurements from the circuit and writes them to a file.
+
+            Examples:
+                >>> import stim
+                >>> import tempfile
+                >>> with tempfile.TemporaryDirectory() as d:
+                ...     path = f"{d}/tmp.dat"
+                ...     c = stim.Circuit('''
+                ...         X 0   2 3
+                ...         M 0 1 2 3
+                ...     ''')
+                ...     c.compile_sampler().sample_write(5, filepath=path, format="01")
+                ...     with open(path) as f:
+                ...         print(f.read(), end='')
+                1011
+                1011
+                1011
+                1011
+                1011
+
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+                filepath: The file to write the results to.
+                format: The output format to write the results with.
+                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+
+            Returns:
+                None.
         )DOC")
             .data());
 
