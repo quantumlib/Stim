@@ -935,3 +935,41 @@ TEST(circuit, py_get_slice) {
     c2.clear();
     ASSERT_EQ(c, c3);
 }
+
+TEST(circuit, append_repeat_block) {
+    Circuit c;
+    Circuit b("X 0");
+    Circuit a("Y 0");
+
+    c.append_repeat_block(100, b);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            X 0
+        }
+    )CIRCUIT"));
+
+    c.append_repeat_block(200, a);
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            X 0
+        }
+        REPEAT 200 {
+            Y 0
+        }
+    )CIRCUIT"));
+
+    c.append_repeat_block(400, std::move(b));
+    ASSERT_TRUE(b.operations.empty());
+    ASSERT_FALSE(a.operations.empty());
+    ASSERT_EQ(c, Circuit(R"CIRCUIT(
+        REPEAT 100 {
+            X 0
+        }
+        REPEAT 200 {
+            Y 0
+        }
+        REPEAT 400 {
+            X 0
+        }
+    )CIRCUIT"));
+}

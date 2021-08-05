@@ -455,3 +455,56 @@ def test_reappend_gate_targets():
     c.append_operation("MPP", cast(stim.CircuitInstruction, expected[0]).targets_copy())
     c.append_operation("CX", cast(stim.CircuitInstruction, expected[1]).targets_copy())
     assert c == expected
+
+
+def test_append_instructions_and_blocks():
+    c = stim.Circuit()
+
+    c.append_operation("TICK")
+    assert c == stim.Circuit("TICK")
+
+    c.append_operation(stim.Circuit("H 1")[0])
+    assert c == stim.Circuit("TICK\nH 1")
+
+    c.append_operation(stim.Circuit("CX 1 2 3 4")[0])
+    assert c == stim.Circuit("""
+        TICK
+        H 1
+        CX 1 2 3 4
+    """)
+
+    c.append_operation((stim.Circuit("X 5") * 100)[0])
+    assert c == stim.Circuit("""
+        TICK
+        H 1
+        CX 1 2 3 4
+        REPEAT 100 {
+            X 5
+        }
+    """)
+
+    c.append_operation(stim.Circuit("PAULI_CHANNEL_1(0.125, 0.25, 0.325) 4 5 6")[0])
+    assert c == stim.Circuit("""
+        TICK
+        H 1
+        CX 1 2 3 4
+        REPEAT 100 {
+            X 5
+        }
+        PAULI_CHANNEL_1(0.125, 0.25, 0.325) 4 5 6
+    """)
+
+    with pytest.raises(ValueError, match="must be a"):
+        c.append_operation(object())
+
+    with pytest.raises(ValueError, match="targets"):
+        c.append_operation(stim.Circuit("H 1")[0], [2])
+
+    with pytest.raises(ValueError, match="arg"):
+        c.append_operation(stim.Circuit("H 1")[0], [], 0.1)
+
+    with pytest.raises(ValueError, match="targets"):
+        c.append_operation((stim.Circuit("H 1") * 5)[0], [2])
+
+    with pytest.raises(ValueError, match="arg"):
+        c.append_operation((stim.Circuit("H 1") * 5)[0], [], 0.1)

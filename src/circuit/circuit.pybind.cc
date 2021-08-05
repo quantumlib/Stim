@@ -446,34 +446,60 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "append_operation",
-        [](Circuit &self, const std::string &gate_name, const std::vector<pybind11::object> &targets, pybind11::object arg) {
-            if (arg.is(pybind11::none())) {
-                if (GATE_DATA.at(gate_name).arg_count == 1) {
-                    arg = pybind11::make_tuple(0.0);
-                } else {
-                    arg = pybind11::make_tuple();
+        [](Circuit &self, const pybind11::object &obj, const std::vector<pybind11::object> &targets, pybind11::object arg) {
+            if (pybind11::isinstance<pybind11::str>(obj)) {
+                const std::string &gate_name = pybind11::cast<std::string>(obj);
+                if (arg.is(pybind11::none())) {
+                    if (GATE_DATA.at(gate_name).arg_count == 1) {
+                        arg = pybind11::make_tuple(0.0);
+                    } else {
+                        arg = pybind11::make_tuple();
+                    }
                 }
+                std::vector<uint32_t> raw_targets;
+                for (const auto &t : targets) {
+                    raw_targets.push_back(obj_to_gate_target(t).data);
+                }
+                try {
+                    auto d = pybind11::cast<double>(arg);
+                    self.append_op(gate_name, raw_targets, d);
+                    return;
+                } catch (const pybind11::cast_error &ex) {
+                }
+                try {
+                    auto args = pybind11::cast<std::vector<double>>(arg);
+                    self.append_op(gate_name, raw_targets, args);
+                    return;
+                } catch (const pybind11::cast_error &ex) {
+                }
+                throw std::invalid_argument("Arg must be a double or sequence of doubles.");
+            } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
+                if (!targets.empty() || !arg.is_none()) {
+                    throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+                }
+
+                const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
+                std::vector<uint32_t> raw_targets;
+                for (const auto &t : instruction.targets) {
+                    raw_targets.push_back(t.data);
+                }
+                self.append_op(instruction.gate.name, raw_targets, instruction.gate_args);
+            } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
+                if (!targets.empty() || !arg.is_none()) {
+                    throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+                }
+
+                const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
+                self.append_repeat_block(block.repeat_count, block.body);
+            } else {
+                throw std::invalid_argument(
+                    "First argument of append_operation must be a str (a gate name), "
+                    "a stim.CircuitInstruction, "
+                    "or a stim.Circuit");
             }
-            std::vector<uint32_t> raw_targets;
-            for (const auto &obj : targets) {
-                raw_targets.push_back(obj_to_gate_target(obj).data);
-            }
-            try {
-                auto d = pybind11::cast<double>(arg);
-                self.append_op(gate_name, raw_targets, d);
-                return;
-            } catch (const pybind11::cast_error &ex) {
-            }
-            try {
-                auto args = pybind11::cast<std::vector<double>>(arg);
-                self.append_op(gate_name, raw_targets, args);
-                return;
-            } catch (const pybind11::cast_error &ex) {
-            }
-            throw std::invalid_argument("Arg must be a double or sequence of doubles.");
         },
         pybind11::arg("name"),
-        pybind11::arg("targets"),
+        pybind11::arg("targets") = pybind11::make_tuple(),
         pybind11::arg("arg") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             Appends an operation into the circuit.
