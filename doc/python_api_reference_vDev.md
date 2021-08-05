@@ -32,6 +32,7 @@
     - [`stim.CircuitInstruction.__init__`](#stim.CircuitInstruction.__init__)
     - [`stim.CircuitInstruction.__ne__`](#stim.CircuitInstruction.__ne__)
     - [`stim.CircuitInstruction.__repr__`](#stim.CircuitInstruction.__repr__)
+    - [`stim.CircuitInstruction.__str__`](#stim.CircuitInstruction.__str__)
     - [`stim.CircuitInstruction.gate_args_copy`](#stim.CircuitInstruction.gate_args_copy)
     - [`stim.CircuitInstruction.name`](#stim.CircuitInstruction.name)
     - [`stim.CircuitInstruction.targets_copy`](#stim.CircuitInstruction.targets_copy)
@@ -46,10 +47,12 @@
     - [`stim.CompiledDetectorSampler.__repr__`](#stim.CompiledDetectorSampler.__repr__)
     - [`stim.CompiledDetectorSampler.sample`](#stim.CompiledDetectorSampler.sample)
     - [`stim.CompiledDetectorSampler.sample_bit_packed`](#stim.CompiledDetectorSampler.sample_bit_packed)
+    - [`stim.CompiledDetectorSampler.sample_write`](#stim.CompiledDetectorSampler.sample_write)
 - [`stim.CompiledMeasurementSampler`](#stim.CompiledMeasurementSampler)
     - [`stim.CompiledMeasurementSampler.__repr__`](#stim.CompiledMeasurementSampler.__repr__)
     - [`stim.CompiledMeasurementSampler.sample`](#stim.CompiledMeasurementSampler.sample)
     - [`stim.CompiledMeasurementSampler.sample_bit_packed`](#stim.CompiledMeasurementSampler.sample_bit_packed)
+    - [`stim.CompiledMeasurementSampler.sample_write`](#stim.CompiledMeasurementSampler.sample_write)
 - [`stim.DemInstruction`](#stim.DemInstruction)
     - [`stim.DemInstruction.__eq__`](#stim.DemInstruction.__eq__)
     - [`stim.DemInstruction.__init__`](#stim.DemInstruction.__init__)
@@ -1112,6 +1115,11 @@
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`.
 > ```
 
+### `stim.CircuitInstruction.__str__(self) -> str`<a name="stim.CircuitInstruction.__str__"></a>
+> ```
+> Returns a text description of the instruction as a stim circuit file line.
+> ```
+
 ### `stim.CircuitInstruction.gate_args_copy(self) -> List[float]`<a name="stim.CircuitInstruction.gate_args_copy"></a>
 > ```
 > Returns the gate's arguments (numbers parameterizing the instruction).
@@ -1241,6 +1249,42 @@
 >     The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
 > ```
 
+### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str, prepend_observables: bool = False, append_observables: bool = False) -> None`<a name="stim.CompiledDetectorSampler.sample_write"></a>
+> ```
+> Samples detection events from the circuit and writes them to a file.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+>     >>> with tempfile.TemporaryDirectory() as d:
+>     ...     path = f"{d}/tmp.dat"
+>     ...     c = stim.Circuit('''
+>     ...         X_ERROR(1) 0
+>     ...         M 0 1
+>     ...         DETECTOR rec[-2]
+>     ...         DETECTOR rec[-1]
+>     ...     ''')
+>     ...     c.compile_detector_sampler().sample_write(3, filepath=path, format="dets")
+>     ...     with open(path) as f:
+>     ...         print(f.read(), end='')
+>     shot D0
+>     shot D0
+>     shot D0
+> 
+> Args:
+>     shots: The number of times to sample every measurement in the circuit.
+>     filepath: The file to write the results to.
+>     format: The output format to write the results with.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>     prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
+>         data.
+>     append_observables: Sample observables as part of each shot, and put them at the end of the detector
+>         data.
+> 
+> Returns:
+>     None.
+> ```
+
 ### `stim.CompiledMeasurementSampler.__repr__(self) -> str`<a name="stim.CompiledMeasurementSampler.__repr__"></a>
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`.
@@ -1288,6 +1332,38 @@
 > Returns:
 >     A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
 >     The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+> ```
+
+### `stim.CompiledMeasurementSampler.sample_write(self, shots: int, *, filepath: str, format: str) -> None`<a name="stim.CompiledMeasurementSampler.sample_write"></a>
+> ```
+> Samples measurements from the circuit and writes them to a file.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+>     >>> with tempfile.TemporaryDirectory() as d:
+>     ...     path = f"{d}/tmp.dat"
+>     ...     c = stim.Circuit('''
+>     ...         X 0   2 3
+>     ...         M 0 1 2 3
+>     ...     ''')
+>     ...     c.compile_sampler().sample_write(5, filepath=path, format="01")
+>     ...     with open(path) as f:
+>     ...         print(f.read(), end='')
+>     1011
+>     1011
+>     1011
+>     1011
+>     1011
+> 
+> Args:
+>     shots: The number of times to sample every measurement in the circuit.
+>     filepath: The file to write the results to.
+>     format: The output format to write the results with.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+> 
+> Returns:
+>     None.
 > ```
 
 ### `stim.DemInstruction.__eq__(self, arg0: stim.DemInstruction) -> bool`<a name="stim.DemInstruction.__eq__"></a>

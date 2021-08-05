@@ -36,10 +36,12 @@ struct CircuitInstruction {
     std::string name() const;
     std::vector<stim_internal::GateTarget> targets_copy() const;
     std::vector<double> gate_args_copy() const;
+    std::vector<uint32_t> raw_targets() const;
     bool operator==(const CircuitInstruction &other) const;
     bool operator!=(const CircuitInstruction &other) const;
 
     std::string repr() const;
+    std::string str();
 };
 
 #endif

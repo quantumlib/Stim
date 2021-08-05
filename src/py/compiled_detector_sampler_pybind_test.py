@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import tempfile
 
 import numpy as np
 import stim
@@ -73,3 +74,17 @@ def test_compiled_detector_sampler_sample():
             [0b011],
             [0b011],
         ], dtype=np.uint8))
+
+    with tempfile.TemporaryDirectory() as d:
+        path = f"{d}/tmp.dat"
+        c.compile_detector_sampler().sample_write(5, filepath=path, format='b8')
+        with open(path, 'rb') as f:
+            assert f.read() == b'\x03' * 5
+
+        c.compile_detector_sampler().sample_write(5, filepath=path, format='01', prepend_observables=True)
+        with open(path, 'r') as f:
+            assert f.readlines() == ['1000110\n'] * 5
+
+        c.compile_detector_sampler().sample_write(5, filepath=path, format='01', append_observables=True)
+        with open(path, 'r') as f:
+            assert f.readlines() == ['1101000\n'] * 5

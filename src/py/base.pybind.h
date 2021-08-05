@@ -20,9 +20,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <random>
+#include "../circuit/circuit.h"
 
 std::mt19937_64 &PYBIND_SHARED_RNG();
 std::string clean_doc_string(const char *c);
+stim_internal::SampleFormat format_to_enum(const std::string &format);
 bool normalize_index_or_slice(
     const pybind11::object &index_or_slice,
     size_t length,

@@ -30,6 +30,7 @@ struct CompiledMeasurementSampler {
     CompiledMeasurementSampler(stim_internal::Circuit circuit);
     pybind11::array_t<uint8_t> sample(size_t num_samples);
     pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples);
+    void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
     std::string repr() const;
 };
 

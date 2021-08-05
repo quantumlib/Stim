@@ -69,6 +69,13 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }
 
+void CompiledDetectorSampler::sample_write(size_t num_samples, const std::string &filepath, const std::string &format, bool prepend_observables, bool append_observables) {
+    auto f = format_to_enum(format);
+    FILE *out = fopen(filepath.data(), "w");
+    detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out, f, PYBIND_SHARED_RNG());
+    fclose(out);
+}
+
 std::string CompiledDetectorSampler::repr() const {
     std::stringstream result;
     result << "stim.CompiledDetectorSampler(";
@@ -134,6 +141,51 @@ void pybind_compiled_detector_sampler(pybind11::module &m) {
                 A numpy array with `dtype=uint8` and `shape=(shots, n)` where
                 `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
                 The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+        )DOC")
+            .data());
+
+    c.def(
+        "sample_write",
+        &CompiledDetectorSampler::sample_write,
+        pybind11::arg("shots"),
+        pybind11::kw_only(),
+        pybind11::arg("filepath"),
+        pybind11::arg("format"),
+        pybind11::arg("prepend_observables") = false,
+        pybind11::arg("append_observables") = false,
+        clean_doc_string(u8R"DOC(
+            Samples detection events from the circuit and writes them to a file.
+
+            Examples:
+                >>> import stim
+                >>> import tempfile
+                >>> with tempfile.TemporaryDirectory() as d:
+                ...     path = f"{d}/tmp.dat"
+                ...     c = stim.Circuit('''
+                ...         X_ERROR(1) 0
+                ...         M 0 1
+                ...         DETECTOR rec[-2]
+                ...         DETECTOR rec[-1]
+                ...     ''')
+                ...     c.compile_detector_sampler().sample_write(3, filepath=path, format="dets")
+                ...     with open(path) as f:
+                ...         print(f.read(), end='')
+                shot D0
+                shot D0
+                shot D0
+
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+                filepath: The file to write the results to.
+                format: The output format to write the results with.
+                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
+                    data.
+                append_observables: Sample observables as part of each shot, and put them at the end of the detector
+                    data.
+
+            Returns:
+                None.
         )DOC")
             .data());
 

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import tempfile
 
 import numpy as np
 import stim
@@ -68,3 +69,19 @@ def test_measurements_vs_resets():
         MRY 1
         MRZ 2
     """).compile_sampler().sample(shots=100))
+
+
+def test_sample_write():
+    c = stim.Circuit("""
+        X 0 4 5
+        M 0 1 2 3 4 5 6
+    """)
+    with tempfile.TemporaryDirectory() as d:
+        path = f"{d}/tmp.dat"
+        c.compile_sampler().sample_write(5, filepath=path, format='b8')
+        with open(path, 'rb') as f:
+            assert f.read() == b'\x31' * 5
+
+        c.compile_sampler().sample_write(5, filepath=path, format='01')
+        with open(path, 'r') as f:
+            assert f.readlines() == ['1000110\n'] * 5
