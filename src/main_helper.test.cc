@@ -682,7 +682,7 @@ Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0
 
 TEST(main_helper, generate_circuits) {
     ASSERT_TRUE(matches(
-        trim(execute({"--gen=repetition_code", "--rounds=3", "--distance=2", "--task=memory"}, "")),
+        trim(execute({"--gen=repetition_code", "--rounds=3", "--distance=4", "--task=memory"}, "")),
         ".+Generated repetition_code.+"));
     ASSERT_TRUE(matches(
         trim(execute({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),

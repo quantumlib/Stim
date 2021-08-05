@@ -971,7 +971,7 @@
 >     >>> import stim
 >     >>> circuit = stim.Circuit.generated(
 >     ...     "repetition_code:memory",
->     ...     distance=3,
+>     ...     distance=4,
 >     ...     rounds=10000,
 >     ...     after_clifford_depolarization=0.0125)
 >     >>> print(circuit)

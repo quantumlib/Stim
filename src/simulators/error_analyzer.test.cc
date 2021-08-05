@@ -670,6 +670,29 @@ TEST(ErrorAnalyzer, period_3_gates) {
     ASSERT_EQ(
         ErrorAnalyzer::circuit_to_detector_error_model(
             Circuit(R"circuit(
+            RY 0 1 2
+            X_ERROR(1) 0
+            Y_ERROR(1) 1
+            Z_ERROR(1) 2
+            C_XYZ 0 1 2
+            M 0 1 2
+            DETECTOR rec[-3]
+            DETECTOR rec[-2]
+            DETECTOR rec[-1]
+        )circuit"),
+            false,
+            false,
+            false,
+            0.0),
+        DetectorErrorModel(R"model(
+            error(1) D0
+            error(1) D2
+            detector D1
+        )model"));
+
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"circuit(
             R 0 1 2
             C_XYZ 0 1 2
             X_ERROR(1) 0

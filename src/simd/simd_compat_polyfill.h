@@ -27,7 +27,8 @@ struct emu_u128 {
     uint64_t b;
 };
 
-struct simd_word {
+#define simd_word simd_word_polyfill
+struct simd_word_polyfill {
     union {
         uint64_t u64[2];
         uint8_t u8[16];
