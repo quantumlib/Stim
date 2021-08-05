@@ -446,7 +446,10 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "append_operation",
-        [](Circuit &self, const pybind11::object &obj, const std::vector<pybind11::object> &targets, pybind11::object arg) {
+        [](Circuit &self,
+           const pybind11::object &obj,
+           const std::vector<pybind11::object> &targets,
+           pybind11::object arg) {
             if (pybind11::isinstance<pybind11::str>(obj)) {
                 const std::string &gate_name = pybind11::cast<std::string>(obj);
                 if (arg.is(pybind11::none())) {
@@ -475,7 +478,8 @@ void pybind_circuit(pybind11::module &m) {
                 throw std::invalid_argument("Arg must be a double or sequence of doubles.");
             } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
                 if (!targets.empty() || !arg.is_none()) {
-                    throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+                    throw std::invalid_argument(
+                        "Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
                 }
 
                 const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
@@ -486,7 +490,8 @@ void pybind_circuit(pybind11::module &m) {
                 self.append_op(instruction.gate.name, raw_targets, instruction.gate_args);
             } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
                 if (!targets.empty() || !arg.is_none()) {
-                    throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+                    throw std::invalid_argument(
+                        "Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
                 }
 
                 const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);

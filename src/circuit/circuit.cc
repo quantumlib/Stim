@@ -896,7 +896,7 @@ size_t Circuit::count_qubits() const {
         uint32_t r = 0;
         for (auto t : op.target_data.targets) {
             if (!(t.data & TARGET_RECORD_BIT)) {
-                r = std::max(r, t.qubit_value() + uint32_t {1});
+                r = std::max(r, t.qubit_value() + uint32_t{1});
             }
         }
         return r;

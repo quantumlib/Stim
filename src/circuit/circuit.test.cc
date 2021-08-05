@@ -724,7 +724,10 @@ TEST(circuit, count_measurements) {
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
             MPP X0*X1*X2*X3*X4 Z5 Z6
-        )CIRCUIT").operations[0].count_measurement_results(), 3);
+        )CIRCUIT")
+            .operations[0]
+            .count_measurement_results(),
+        3);
 
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
