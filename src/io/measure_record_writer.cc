@@ -27,13 +27,13 @@ std::unique_ptr<MeasureRecordWriter> MeasureRecordWriter::make(FILE *out, Sample
         case SAMPLE_FORMAT_B8:
             return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatB8(out));
         case SAMPLE_FORMAT_DETS:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordFormatDets(out));
+            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatDets(out));
         case SAMPLE_FORMAT_HITS:
             return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatHits(out));
         case SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
         case SAMPLE_FORMAT_R8:
-            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordFormatR8(out));
+            return std::unique_ptr<MeasureRecordWriter>(new MeasureRecordWriterFormatR8(out));
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
@@ -123,10 +123,10 @@ void MeasureRecordWriterFormatHits::write_end() {
     first = true;
 }
 
-MeasureRecordFormatR8::MeasureRecordFormatR8(FILE *out) : out(out) {
+MeasureRecordWriterFormatR8::MeasureRecordWriterFormatR8(FILE *out) : out(out) {
 }
 
-void MeasureRecordFormatR8::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriterFormatR8::write_bytes(ConstPointerRange<uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
             run_length += 8;
@@ -142,7 +142,7 @@ void MeasureRecordFormatR8::write_bytes(ConstPointerRange<uint8_t> data) {
     }
 }
 
-void MeasureRecordFormatR8::write_bit(bool b) {
+void MeasureRecordWriterFormatR8::write_bit(bool b) {
     if (b) {
         putc(run_length, out);
         run_length = 0;
@@ -155,21 +155,21 @@ void MeasureRecordFormatR8::write_bit(bool b) {
     }
 }
 
-void MeasureRecordFormatR8::write_end() {
+void MeasureRecordWriterFormatR8::write_end() {
     putc(run_length, out);
     run_length = 0;
 }
 
-MeasureRecordFormatDets::MeasureRecordFormatDets(FILE *out) : out(out) {
+MeasureRecordWriterFormatDets::MeasureRecordWriterFormatDets(FILE *out) : out(out) {
     fprintf(out, "shot");
 }
 
-void MeasureRecordFormatDets::begin_result_type(char new_result_type) {
+void MeasureRecordWriterFormatDets::begin_result_type(char new_result_type) {
     result_type = new_result_type;
     position = 0;
 }
 
-void MeasureRecordFormatDets::write_bytes(ConstPointerRange<uint8_t> data) {
+void MeasureRecordWriterFormatDets::write_bytes(ConstPointerRange<uint8_t> data) {
     for (uint8_t b : data) {
         if (!b) {
             position += 8;
@@ -181,7 +181,7 @@ void MeasureRecordFormatDets::write_bytes(ConstPointerRange<uint8_t> data) {
     }
 }
 
-void MeasureRecordFormatDets::write_bit(bool b) {
+void MeasureRecordWriterFormatDets::write_bit(bool b) {
     if (b) {
         putc(' ', out);
         putc(result_type, out);
@@ -190,7 +190,7 @@ void MeasureRecordFormatDets::write_bit(bool b) {
     position++;
 }
 
-void MeasureRecordFormatDets::write_end() {
+void MeasureRecordWriterFormatDets::write_end() {
     putc('\n', out);
     position = 0;
 }

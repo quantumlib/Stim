@@ -73,22 +73,22 @@ struct MeasureRecordWriterFormatHits : MeasureRecordWriter {
     void write_end() override;
 };
 
-struct MeasureRecordFormatR8 : MeasureRecordWriter {
+struct MeasureRecordWriterFormatR8 : MeasureRecordWriter {
     FILE *out;
     uint16_t run_length = 0;
 
-    MeasureRecordFormatR8(FILE *out);
+    MeasureRecordWriterFormatR8(FILE *out);
     void write_bytes(ConstPointerRange<uint8_t> data) override;
     void write_bit(bool b) override;
     void write_end() override;
 };
 
-struct MeasureRecordFormatDets : MeasureRecordWriter {
+struct MeasureRecordWriterFormatDets : MeasureRecordWriter {
     FILE *out;
     uint64_t position = 0;
     char result_type = 'M';
 
-    MeasureRecordFormatDets(FILE *out);
+    MeasureRecordWriterFormatDets(FILE *out);
     void begin_result_type(char result_type) override;
     void write_bytes(ConstPointerRange<uint8_t> data) override;
     void write_bit(bool b) override;
