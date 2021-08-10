@@ -119,9 +119,9 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
 struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     FILE *in;
     char result_type = 'M';
-    char separator;
-    size_t next_shot;
-    uint64_t position = 0;
+    char separator = '\n';
+    size_t next_shot = 0;
+    uint64_t position = 1;
     size_t bits_returned = 0;
     const size_t max_bits;
 
@@ -132,7 +132,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     bool is_end_of_file() override;
     char current_result_type() override;
   private:
-    void read_next_shot();
+    void maybe_read_next_shot();
 };
 
 }  // namespace stim_internal

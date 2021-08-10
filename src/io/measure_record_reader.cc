@@ -44,11 +44,11 @@ size_t MeasureRecordReader::read_bytes(PointerRange<uint8_t> data) {
     for (uint8_t &b : data) {
         b = 0;
         for (size_t k = 0; k < 8; k++) {
+            b |= uint8_t(read_bit()) << k;
+            ++n;
             if (is_end_of_record()) {
                 return n;
             }
-            b |= uint8_t(read_bit()) << k;
-            ++n;
         }
     }
     return n;
@@ -68,6 +68,9 @@ MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(FILE *in, size_t max_bi
 }
 
 bool MeasureRecordReaderFormat01::read_bit() {
+    if (payload == '\n') {
+        payload = getc(in);
+    }
     // We assume here that in practice bits_returned will never reach SIZE_MAX.
     if (payload == EOF or bits_returned >= max_bits) {
         throw std::out_of_range("Attempt to read past end-of-file");
@@ -87,13 +90,13 @@ bool MeasureRecordReaderFormat01::read_bit() {
 
 bool MeasureRecordReaderFormat01::is_end_of_record() {
     bool eor = payload == EOF or bits_returned >= max_bits or payload == '\n';
-    if (payload == '\n') {
-        payload = getc(in);
-    }
     return eor;
 }
 
 bool MeasureRecordReaderFormat01::is_end_of_file() {
+    if (payload == '\n') {
+        payload = getc(in);
+    }
     return payload == EOF or bits_returned >= max_bits;
 }
 
@@ -245,26 +248,25 @@ bool MeasureRecordReaderFormatR8::update_run_length() {
 
 MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in, size_t max_bits) : in(in), max_bits(max_bits) {
     fscanf(in, "shot ");
-    read_next_shot();
+    maybe_read_next_shot();
 }
 
 bool MeasureRecordReaderFormatDets::read_bit() {
     if (bits_returned >= max_bits) throw std::out_of_range("Attempt to read past end-of-file");
-    if (position > next_shot) read_next_shot();
 
-    bool b = position == next_shot;
+    maybe_read_next_shot();
+
+    bool bit = position == next_shot;
     ++bits_returned;
     ++position;
-    return b;
+
+    if (bit and separator == '\n') fscanf(in, "shot ");
+
+    return bit;
 }
 
 bool MeasureRecordReaderFormatDets::is_end_of_record() {
-    if (position <= next_shot) return false;
-    bool eor = bits_returned >= max_bits or separator == '\n';
-    if (separator == '\n') {
-        fscanf(in, "shot ");
-    }
-    return eor;
+    return bits_returned >= max_bits or feof(in) or (separator == '\n' and position == next_shot + 1);
 }
 
 bool MeasureRecordReaderFormatDets::is_end_of_file() {
@@ -275,24 +277,35 @@ char MeasureRecordReaderFormatDets::current_result_type() {
     return result_type;
 }
 
-void MeasureRecordReaderFormatDets::read_next_shot() {
+void MeasureRecordReaderFormatDets::maybe_read_next_shot() {
+    // Skip read if we still have a shot to produce.
+    if (position <= next_shot) return;
+
+    // Reset position if the current record has ended.
+    if (position == next_shot + 1 and separator == '\n') {
+        position = 0;
+    }
+
+    // Try to read another shot.
     char next_result_type;
     int status = fscanf(in, "%c%zu%c", &next_result_type, &next_shot, &separator);
-    if (status == EOF) {
-        bits_returned = max_bits;
-        result_type = next_result_type;
-        return;
-    }
+    if (status == EOF) return;
+
+    // Validate the read.
     if (status != 3) {
         throw std::runtime_error("Failed to parse input");
     }
     if (separator != ' ' and separator != '\n') {
         throw std::invalid_argument("Unexpected separator: [" + std::to_string(separator) + "]");
     }
+
+    // Reset position if result type has changed.
     if (next_result_type != result_type) {
         position = 0;
         result_type = next_result_type;
     }
+
+    // Validate new shot.
     if (next_shot < position) {
         throw std::invalid_argument("New shot " + std::to_string(next_shot) + " is in the past of " + std::to_string(bits_returned));
     }
