@@ -78,7 +78,7 @@ bool MeasureRecordReaderFormat01::read_bit() {
     if (payload == '\n') {
         throw std::out_of_range("Attempt to read past end-of-record");
     }
-    if (payload != '0' and payload != '1') {
+    if (payload != '0' && payload != '1') {
         throw std::runtime_error("Character code " + std::to_string(payload) + " does not encode a bit");
     }
 
@@ -88,13 +88,13 @@ bool MeasureRecordReaderFormat01::read_bit() {
 }
 
 bool MeasureRecordReaderFormat01::next_record() {
-    while (payload != EOF and payload != '\n') payload = getc(in);
+    while (payload != EOF && payload != '\n') payload = getc(in);
     payload = getc(in);
     return payload != EOF;
 }
 
 bool MeasureRecordReaderFormat01::is_end_of_record() {
-    return payload == EOF or payload == '\n';
+    return payload == EOF || payload == '\n';
 }
 
 /// B8 format
@@ -125,7 +125,7 @@ bool MeasureRecordReaderFormatB8::read_bit() {
 
 bool MeasureRecordReaderFormatB8::is_end_of_record() {
     maybe_update_payload();
-    return bits_available == 0 and payload == EOF;
+    return bits_available == 0 && payload == EOF;
 }
 
 void MeasureRecordReaderFormatB8::maybe_update_payload() {
@@ -141,13 +141,13 @@ MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(FILE *in) : in(in) 
 }
 
 bool MeasureRecordReaderFormatHits::read_bit() {
-    if (position > next_hit and separator ==',') update_next_hit();
+    if (position > next_hit && separator ==',') update_next_hit();
     return next_hit == position++;
 }
 
 bool MeasureRecordReaderFormatHits::next_record() {
     bool success = true;
-    while (separator == ',' and success) success = update_next_hit();
+    while (separator == ',' && success) success = update_next_hit();
     if (separator == '\n') position = 0;
     return update_next_hit();
 }
@@ -160,7 +160,7 @@ bool MeasureRecordReaderFormatHits::update_next_hit() {
     if (status != 2) {
         throw std::runtime_error("Failed to parse input");
     }
-    if (separator != ',' and separator != '\n') {
+    if (separator != ',' && separator != '\n') {
         throw std::runtime_error("Invalid separator character " + std::to_string(separator));
     }
     if (next_hit < position) {
@@ -243,13 +243,13 @@ MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in) : in(in) 
 }
 
 bool MeasureRecordReaderFormatDets::read_bit() {
-    if (position > next_shot and separator == ' ') update_next_shot();
+    if (position > next_shot && separator == ' ') update_next_shot();
     return next_shot == position++;
 }
 
 bool MeasureRecordReaderFormatDets::next_record() {
     bool success = true;
-    while (separator == ' ' and success) success = update_next_shot();
+    while (separator == ' ' && success) success = update_next_shot();
     if (separator == '\n') {
         if (fscanf(in, "shot ") == EOF) return false;
         position = 0;
@@ -270,7 +270,7 @@ bool MeasureRecordReaderFormatDets::update_next_shot() {
     if (status != 3) {
         throw std::runtime_error("Failed to parse input");
     }
-    if (separator != ' ' and separator != '\n') {
+    if (separator != ' ' && separator != '\n') {
         throw std::invalid_argument("Unexpected separator: [" + std::to_string(separator) + "]");
     }
     if (next_result_type != result_type) {
