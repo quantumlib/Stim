@@ -41,7 +41,6 @@ TEST(MeasureRecordReader, Format01) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bytes(bytes));
@@ -55,7 +54,6 @@ TEST(MeasureRecordReader, Format01) {
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
 }
 
 TEST(MeasureRecordReader, FormatB8) {
@@ -63,7 +61,6 @@ TEST(MeasureRecordReader, FormatB8) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_B8);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bytes(bytes));
@@ -79,19 +76,16 @@ TEST(MeasureRecordReader, FormatB8) {
     // bits 18..24 == 0
     for (int i = 0; i < 6; ++i) {
         ASSERT_FALSE(reader->is_end_of_record());
-        ASSERT_FALSE(reader->is_end_of_file());
         ASSERT_FALSE(reader->read_bit());
     }
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
 }
 
 TEST(MeasureRecordReader, FormatHits) {
     FILE *tmp = tmpfile_with_contents("3,4,5,6,7,12,13,14,15,16,17\n");
     ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 18);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bytes(bytes));
@@ -104,8 +98,14 @@ TEST(MeasureRecordReader, FormatHits) {
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
+    // bit 18 == 0
+    ASSERT_FALSE(reader->read_bit());
+    // bits 19..26 == 0
+    bytes[0] = 0xFF;
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(0, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
 }
 
 TEST(MeasureRecordReader, FormatR8) {
@@ -114,7 +114,6 @@ TEST(MeasureRecordReader, FormatR8) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bytes(bytes));
@@ -128,7 +127,6 @@ TEST(MeasureRecordReader, FormatR8) {
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
 }
 
 TEST(MeasureRecordReader, FormatR8_LongGap) {
@@ -136,7 +134,6 @@ TEST(MeasureRecordReader, FormatR8_LongGap) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     uint8_t bytes[]{1, 2, 3, 4, 5, 6, 7, 8};
     for (int i = 0; i < 8; ++i) {
         ASSERT_EQ(64, reader->read_bytes({bytes, bytes + 8}));
@@ -152,14 +149,12 @@ TEST(MeasureRecordReader, FormatR8_LongGap) {
     ASSERT_EQ(0, bytes[2]);
     ASSERT_EQ(0, bytes[3]);
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
 }
 
 TEST(MeasureRecordReader, FormatDets) {
     FILE *tmp = tmpfile_with_contents("shot D3 D4 D5 D6 D7 D12 D13 D14 D15 D16 L1\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 19);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
 
     // Detection events:
     // bits 0..7 == 0xF8
@@ -181,8 +176,14 @@ TEST(MeasureRecordReader, FormatDets) {
     // bit 1 == 1
     ASSERT_TRUE(reader->read_bit());
 
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
+
+    // bit 2 == 0
+    ASSERT_FALSE(reader->read_bit());
+    // bits 3..10 == 0
+    bytes[0] = 0xFF;
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(0, bytes[0]);
 }
 
 FILE *write_records(ConstPointerRange<uint8_t> data, SampleFormat format) {
@@ -193,8 +194,8 @@ FILE *write_records(ConstPointerRange<uint8_t> data, SampleFormat format) {
     return tmp;
 }
 
-size_t read_records_as_bytes(FILE *in, PointerRange<uint8_t> buf, SampleFormat format, size_t num_bits) {
-    auto reader = MeasureRecordReader::make(in, format, num_bits);
+size_t read_records_as_bytes(FILE *in, PointerRange<uint8_t> buf, SampleFormat format) {
+    auto reader = MeasureRecordReader::make(in, format);
     return reader->read_bytes(buf);
 }
 
@@ -205,7 +206,7 @@ TEST(MeasureRecordReader, Format01_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_01);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_01, num_bytes * 8));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_01));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -218,7 +219,7 @@ TEST(MeasureRecordReader, FormatB8_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_B8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_B8, num_bytes * 8));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_B8));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -231,7 +232,7 @@ TEST(MeasureRecordReader, FormatR8_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_R8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, num_bytes * 8));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -244,7 +245,7 @@ TEST(MeasureRecordReader, FormatHits_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_HITS);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, num_bytes * 8));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -257,8 +258,7 @@ TEST(MeasureRecordReader, FormatDets_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_DETS);
     rewind(tmp);
-    // TODO: Use max_bits for record size rather than overall size
-    ASSERT_EQ(101, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, num_bytes * 8));
+    ASSERT_EQ(num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -269,27 +269,26 @@ TEST(MeasureRecordReader, Format01_MultipleRecords) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // first record (9 bits)
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(0x37, bytes[0]);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // second_record (2 bits)
+    ASSERT_TRUE(reader->next_record());
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // third record (1 bit)
+    ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
     ASSERT_EQ(1, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
+    // no more records
+    ASSERT_FALSE(reader->next_record());
 }
 
 TEST(MeasureRecordReader, Format01_MultipleShortRecords) {
@@ -297,24 +296,76 @@ TEST(MeasureRecordReader, Format01_MultipleShortRecords) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // first record (1 bit)
     uint8_t bytes[]{0};
     ASSERT_EQ(1, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // second_record (2 bits)
+    ASSERT_TRUE(reader->next_record());
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // third record (1 bit)
+    ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
     ASSERT_EQ(1, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
+    // no more records
+    ASSERT_FALSE(reader->next_record());
+}
+
+TEST(MeasureRecordReader, FormatHits_MultipleRecords) {
+    FILE *tmp = tmpfile_with_contents("0,1,2,4,5,8\n1\n0\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // first record (9 bits)
+    uint8_t bytes[]{0};
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(0x37, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
+    ASSERT_TRUE(reader->read_bit());
+    ASSERT_FALSE(reader->is_end_of_record());
+    // second_record (2 bits)
+    ASSERT_TRUE(reader->next_record());
+    ASSERT_FALSE(reader->read_bit());
+    ASSERT_TRUE(reader->read_bit());
+    ASSERT_FALSE(reader->is_end_of_record());
+    // third record (1 bit)
+    ASSERT_TRUE(reader->next_record());
+    bytes[0] = 0;
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(1, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // no more records
+    ASSERT_FALSE(reader->next_record());
+}
+
+TEST(MeasureRecordReader, FormatHits_MultipleShortRecords) {
+    FILE *tmp = tmpfile_with_contents("0\n1\n0\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // first record (1 bit)
+    uint8_t bytes[]{0};
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(1, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // second_record (2 bits)
+    ASSERT_TRUE(reader->next_record());
+    ASSERT_FALSE(reader->read_bit());
+    ASSERT_TRUE(reader->read_bit());
+    ASSERT_FALSE(reader->is_end_of_record());
+    // third record (1 bit)
+    ASSERT_TRUE(reader->next_record());
+    bytes[0] = 0;
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(1, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // no more records
+    ASSERT_FALSE(reader->next_record());
 }
 
 TEST(MeasureRecordReader, FormatDets_MultipleRecords) {
@@ -322,27 +373,25 @@ TEST(MeasureRecordReader, FormatDets_MultipleRecords) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // first record
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(0x37, bytes[0]);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
     // second_record
+    ASSERT_TRUE(reader->next_record());
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
     // third record
+    ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(1, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
+    // no more recocrds
+    ASSERT_FALSE(reader->next_record());
 }
 
 TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
@@ -350,149 +399,22 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(1, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
     // second_record
+    ASSERT_TRUE(reader->next_record());
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
+    ASSERT_FALSE(reader->is_end_of_record());
     // third record
+    ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(1, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, Format01_Limit_ReadBytes) {
-    FILE *tmp = tmpfile_with_contents("01111111\n");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, 5);
     ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    uint8_t bytes[]{0};
-    ASSERT_EQ(5, reader->read_bytes(bytes));
-    ASSERT_EQ(0x1E, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatB8_Limit_ReadBytes) {
-    FILE *tmp = tmpfile_with_contents("\xFE");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_B8, 5);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    uint8_t bytes[]{0};
-    ASSERT_EQ(5, reader->read_bytes(bytes));
-    ASSERT_EQ(0x1E, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatHits_Limit_ReadBytes) {
-    FILE *tmp = tmpfile_with_contents("1,2,3,4,5,6,7\n");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 5);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    uint8_t bytes[]{0};
-    ASSERT_EQ(5, reader->read_bytes(bytes));
-    ASSERT_EQ(0x1E, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatR8_Limit_ReadBytes) {
-    char tmp_data[]{1, 0, 0, 0, 0, 0, 0, 0};
-    FILE *tmp = tmpfile_with_contents(std::string(std::begin(tmp_data), std::end(tmp_data)));
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8, 5);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    uint8_t bytes[]{0};
-    ASSERT_EQ(5, reader->read_bytes(bytes));
-    ASSERT_EQ(0x1E, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatDets_Limit_ReadBytes) {
-    FILE *tmp = tmpfile_with_contents("shot M1 M2 M3 M4 M5 M6 M7\n");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 5);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    uint8_t bytes[]{0};
-    ASSERT_EQ(5, reader->read_bytes(bytes));
-    ASSERT_EQ(0x1E, bytes[0]);
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, Format01_Limit_ReadBits) {
-    FILE *tmp = tmpfile_with_contents("01111111\n");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, 2);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    ASSERT_FALSE(reader->read_bit());
-    ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatB8_Limit_ReadBits) {
-    FILE *tmp = tmpfile_with_contents("\xFE");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_B8, 2);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    ASSERT_FALSE(reader->read_bit());
-    ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatHits_Limit_ReadBits) {
-    FILE *tmp = tmpfile_with_contents("1,2,3,4,5,6,7\n");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 2);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    ASSERT_FALSE(reader->read_bit());
-    ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatR8_Limit_ReadBits) {
-    char tmp_data[]{1, 0, 0, 0, 0, 0, 0, 0};
-    FILE *tmp = tmpfile_with_contents(std::string(std::begin(tmp_data), std::end(tmp_data)));
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8, 2);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    ASSERT_FALSE(reader->read_bit());
-    ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
-}
-
-TEST(MeasureRecordReader, FormatDets_Limit_ReadBits) {
-    FILE *tmp = tmpfile_with_contents("shot M1 M2 M3 M4 M5 M6 M7\n");
-    ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 2);
-    ASSERT_FALSE(reader->is_end_of_record());
-    ASSERT_FALSE(reader->is_end_of_file());
-    ASSERT_FALSE(reader->read_bit());
-    ASSERT_TRUE(reader->read_bit());
-    ASSERT_TRUE(reader->is_end_of_record());
-    ASSERT_TRUE(reader->is_end_of_file());
+    // no more recocrds
+    ASSERT_FALSE(reader->next_record());
 }

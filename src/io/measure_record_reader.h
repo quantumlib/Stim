@@ -27,75 +27,79 @@ namespace stim_internal {
 
 /// Handles reading measurement data from the outside world.
 ///
-/// Child classes implement the various input formats.
+/// Child classes implement the various input formats. Each file format encodes a certain number of records.
+/// Each record is a sequence of 0s and 1s. File formats B8 and R8 encode a single record. File formats 01,
+/// HITS and DETS encode any number of records. File formats 01, B8 and R8 encode the length of each record.
+/// By contrast, records in file formats HITS and DETS have unknown length. Records encoded by the two formats
+/// can be viewed as eventually-0 infinite sequences of 0s and 1s. Reading such a record will always return
+/// data when requested. It is assumed that the client has external knowledge of the appropriate truncation
+/// length for records in HITS and DETS formats via other means.
 struct MeasureRecordReader {
-    /// Creates a MeasureRecordReader that reads the given number of bits in the given format from the given FILE*.
-    /// Number of bits SIZE_MAX indicates that the reader is to determine the appropriate number on its own. Note
-    /// that some input formats do not provide any means to infer appropriate stream length. In this case, the
-    /// caller should treat the stream as essentially infinite and use other information to determine when to stop
-    /// reading from the stream.
-    static std::unique_ptr<MeasureRecordReader> make(FILE *in, SampleFormat input_format, size_t max_bits = SIZE_MAX);
+    /// Creates a MeasureRecordReader that reads measurement records in the given format from the given FILE*.
+    static std::unique_ptr<MeasureRecordReader> make(FILE *in, SampleFormat input_format);
     virtual ~MeasureRecordReader() = default;
 
-    /// Reads and returns one measurement result.
-    /// If no result is available, exception is thrown.
+    /// Reads and returns one measurement result. If no result is available, exception is thrown.
     /// If is_end_of_record() just returned false, then a result is available and no exception is thrown.
     virtual bool read_bit() = 0;
-    /// Reads multiple measurement results. Returns the number of results read.
-    /// If no results are available, zero is returned.
-    /// Read terminates at end-of-record marker (e.g. a newline), at end-of-file or when data is filled up.
-    virtual size_t read_bytes(PointerRange<uint8_t> data);
+    /// Reads multiple measurement results. Returns the number of results read. If no results are available,
+    /// zero is returned. Read terminates when data is filled up or when the current record ends. Note that
+    /// records encoded in HITS and DETS file formats never end.
+    virtual size_t read_bytes(PointerRange<uint8_t> buf);
 
-    /// Returns true when the stream is at enf-of-file or max_bits have already been read.
-    virtual bool is_end_of_file() = 0;
-    /// Returns true when the stream is at end-of-record marker (e.g. a newline), at end-of-file or max_bits have
-    /// been read. If the stream is at end-of-record marker, the function advances the stream to the next position.
+    /// Advances the reader to the next record (i.e. the next sequence of 0s and 1s). Skips the remainder
+    /// of the current record and an end-of-record marker (such as a newline). Returns true if a new record
+    /// has been found. Returns false if end of file has been reached.
+    virtual bool next_record();
+
+    /// Returns true when the current record has ended. Beyond this point read_bit() throws an exception
+    /// and read_bytes() returns no data. Note that records in file formats HITS and DETS never end.
     virtual bool is_end_of_record();
 
-    /// Used to obtain the DETS format prefix character (M for measurement, D for detector, L for logical observable).
-    /// Readers of other formats always return 'M'.
+    /// Used to obtain the DETS format prefix character (M for measurement, D for detector, L for logical
+    /// observable). Readers of other formats always return 'M'.
     virtual char current_result_type();
 };
 
 struct MeasureRecordReaderFormat01 : MeasureRecordReader {
     FILE *in;
     int payload;
-    size_t bits_returned = 0;
-    const size_t max_bits;
 
-    MeasureRecordReaderFormat01(FILE *in, size_t max_bits = SIZE_MAX);
+    explicit MeasureRecordReaderFormat01(FILE *in);
 
     bool read_bit() override;
+    bool next_record() override;
     bool is_end_of_record() override;
-    bool is_end_of_file() override;
 };
 
 struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
     FILE *in;
     int payload = 0;
     uint8_t bits_available = 0;
-    size_t bits_returned = 0;
-    const size_t max_bits;
 
-    MeasureRecordReaderFormatB8(FILE *in, size_t max_bits = SIZE_MAX);
+    explicit MeasureRecordReaderFormatB8(FILE *in);
 
     size_t read_bytes(PointerRange<uint8_t> data) override;
     bool read_bit() override;
-    bool is_end_of_file() override;
+    bool is_end_of_record() override;
+
+  private:
+    void maybe_update_payload();
 };
 
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
+    char separator;
     size_t next_hit = 0;
-    size_t bits_returned = 0;
-    const size_t max_bits;
+    size_t position = 0;
 
-    MeasureRecordReaderFormatHits(FILE *in, size_t max_bits = SIZE_MAX);
+    explicit MeasureRecordReaderFormatHits(FILE *in);
 
     bool read_bit() override;
-    bool is_end_of_file() override;
+    bool next_record() override;
+
   private:
-    void update_next_hit();
+    bool update_next_hit();
 };
 
 struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
@@ -104,14 +108,13 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     size_t run_length_1s = 0;
     size_t generated_0s = 0;
     size_t generated_1s = 1;
-    size_t bits_returned = 0;
-    const size_t max_bits;
 
-    MeasureRecordReaderFormatR8(FILE *in, size_t max_bits = SIZE_MAX);
+    explicit MeasureRecordReaderFormatR8(FILE *in);
 
     size_t read_bytes(PointerRange<uint8_t> data) override;
     bool read_bit() override;
-    bool is_end_of_file() override;
+    bool is_end_of_record() override;
+
   private:
     bool update_run_length();
 };
@@ -121,18 +124,16 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     char result_type = 'M';
     char separator = '\n';
     size_t next_shot = 0;
-    uint64_t position = 1;
-    size_t bits_returned = 0;
-    const size_t max_bits;
+    uint64_t position = 0;
 
-    MeasureRecordReaderFormatDets(FILE *in, size_t max_bits = SIZE_MAX);
+    explicit MeasureRecordReaderFormatDets(FILE *in);
 
     bool read_bit() override;
-    bool is_end_of_record() override;
-    bool is_end_of_file() override;
+    bool next_record() override;
     char current_result_type() override;
+
   private:
-    void maybe_read_next_shot();
+    bool update_next_shot();
 };
 
 }  // namespace stim_internal
