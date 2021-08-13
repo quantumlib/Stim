@@ -117,7 +117,7 @@ bool MeasureRecordReaderFormat01::read_bit() {
         throw std::out_of_range("Attempt to read past end-of-record");
     }
     if (payload != '0' && payload != '1') {
-        throw std::runtime_error("Character code " + std::to_string(payload) + " does not encode a bit");
+        throw std::runtime_error("Expected '0' or '1' because input format was specified as '01'");
     }
 
     bool bit = payload == '1';
