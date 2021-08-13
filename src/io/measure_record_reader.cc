@@ -20,6 +20,42 @@
 
 using namespace stim_internal;
 
+namespace {
+
+// Returns true if keyword is found at current position.
+// Returns false if EOF is found at current position.
+// Throws otherwise.
+bool maybe_consume_keyword(FILE *in, const std::string& keyword, int &next) {
+    next = getc(in);
+    if (next == EOF) return false;
+
+    size_t i = 0;
+    while (i < keyword.size() && next == (int)keyword[i++]) {
+        next = getc(in);
+    }
+
+    if (i != keyword.size()) throw std::runtime_error("Failed to find expected string \"" + keyword + "\"");
+
+    return true;
+}
+
+// Returns true if an integer value is found at current position.
+// Returns false otherwise.
+bool read_unsigned_int(FILE* in, long &value, int &next) {
+    next = getc(in);
+    if (!isdigit(next)) return false;
+
+    value = 0;
+    while (isdigit(next)) {
+        value *= 10;
+        value += next - '0';
+        next = getc(in);
+    }
+    return true;
+}
+
+}  // namespace
+
 std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(FILE *in, SampleFormat input_format) {
     switch (input_format) {
         case SAMPLE_FORMAT_01:
@@ -146,19 +182,19 @@ bool MeasureRecordReaderFormatHits::read_bit() {
 }
 
 bool MeasureRecordReaderFormatHits::next_record() {
-    bool success = true;
-    while (separator == ',' && success) success = update_next_hit();
-    if (separator == '\n') position = 0;
-    return update_next_hit();
+    while (separator == ',') update_next_hit();
+    next_hit = -1;
+    position = 0;
+    update_next_hit();
+    return separator != EOF;
 }
 
-bool MeasureRecordReaderFormatHits::update_next_hit() {
-    int status = fscanf(in, "%zu%c", &next_hit, &separator);
-    if (status == EOF) {
-        return false;
-    }
-    if (status != 2) {
-        throw std::runtime_error("Failed to parse input");
+void MeasureRecordReaderFormatHits::update_next_hit() {
+    if(!read_unsigned_int(in, next_hit, separator)) {
+        if (separator != '\n' && separator != EOF) {
+            throw std::runtime_error("Unexpected character " + std::to_string(separator));
+        }
+        return;
     }
     if (separator != ',' && separator != '\n') {
         throw std::runtime_error("Invalid separator character " + std::to_string(separator));
@@ -166,7 +202,6 @@ bool MeasureRecordReaderFormatHits::update_next_hit() {
     if (next_hit < position) {
         throw std::runtime_error("New hit " + std::to_string(next_hit) + " is in the past of " + std::to_string(position));
     }
-    return true;
 }
 
 /// R8 format
@@ -238,7 +273,9 @@ bool MeasureRecordReaderFormatR8::update_run_length() {
 /// DETS format
 
 MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in) : in(in) {
-    fscanf(in, "shot ");
+    if (!maybe_consume_keyword(in, "shot", separator)) {
+        throw std::runtime_error("Need a \"shot\" to begin record");
+    }
     update_next_shot();
 }
 
@@ -248,26 +285,31 @@ bool MeasureRecordReaderFormatDets::read_bit() {
 }
 
 bool MeasureRecordReaderFormatDets::next_record() {
-    bool success = true;
-    while (separator == ' ' && success) success = update_next_shot();
-    if (separator == '\n') {
-        if (fscanf(in, "shot ") == EOF) return false;
-        position = 0;
-    }
-    return update_next_shot();
+    while (separator == ' ') update_next_shot();
+    if (!maybe_consume_keyword(in, "shot", separator)) return false;
+    next_shot = -1;
+    position = 0;
+    update_next_shot();
+    return true;
 }
 
 char MeasureRecordReaderFormatDets::current_result_type() {
     return result_type;
 }
 
-bool MeasureRecordReaderFormatDets::update_next_shot() {
-    char next_result_type;
-    int status = fscanf(in, "%c%zu%c", &next_result_type, &next_shot, &separator);
-    if (status == EOF) {
-        return false;
+void MeasureRecordReaderFormatDets::update_next_shot() {
+    // Read and validate result type.
+    char next_result_type = getc(in);
+    if (next_result_type == EOF) {
+        separator = EOF;
+        return;
     }
-    if (status != 3) {
+    if (next_result_type != 'M' && next_result_type != 'D' && next_result_type != 'L') {
+        throw std::runtime_error("Unknown result type " + std::to_string(next_result_type) + ", expected M, D or L");
+    }
+
+    // Read and validate shot number and separator.
+    if (!read_unsigned_int(in, next_shot, separator)) {
         throw std::runtime_error("Failed to parse input");
     }
     if (separator != ' ' && separator != '\n') {
@@ -280,5 +322,4 @@ bool MeasureRecordReaderFormatDets::update_next_shot() {
     if (next_shot < position) {
         throw std::invalid_argument("New shot " + std::to_string(next_shot) + " is in the past of " + std::to_string(position));
     }
-    return true;
 }

@@ -89,9 +89,9 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
-    char separator;
-    size_t next_hit = 0;
-    size_t position = 0;
+    int separator;
+    long next_hit = -1;
+    long position = 0;
 
     explicit MeasureRecordReaderFormatHits(FILE *in);
 
@@ -99,7 +99,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     bool next_record() override;
 
   private:
-    bool update_next_hit();
+    void update_next_hit();
 };
 
 struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
@@ -122,9 +122,9 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
 struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     FILE *in;
     char result_type = 'M';
-    char separator = '\n';
-    size_t next_shot = 0;
-    uint64_t position = 0;
+    int separator = '\n';
+    long next_shot = -1;
+    long position = 0;
 
     explicit MeasureRecordReaderFormatDets(FILE *in);
 
@@ -133,7 +133,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     char current_result_type() override;
 
   private:
-    bool update_next_shot();
+    void update_next_shot();
 };
 
 }  // namespace stim_internal

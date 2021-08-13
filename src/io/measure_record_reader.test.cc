@@ -344,7 +344,7 @@ TEST(MeasureRecordReader, FormatHits_MultipleRecords) {
 }
 
 TEST(MeasureRecordReader, FormatHits_MultipleShortRecords) {
-    FILE *tmp = tmpfile_with_contents("0\n1\n0\n");
+    FILE *tmp = tmpfile_with_contents("0\n1\n0\n\n");
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS);
     ASSERT_FALSE(reader->is_end_of_record());
@@ -363,6 +363,12 @@ TEST(MeasureRecordReader, FormatHits_MultipleShortRecords) {
     bytes[0] = 0;
     ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // fourth record (0 bits)
+    ASSERT_TRUE(reader->next_record());
+    bytes[0] = 0xFF;
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(0, bytes[0]);
     ASSERT_FALSE(reader->is_end_of_record());
     // no more records
     ASSERT_FALSE(reader->next_record());
@@ -395,7 +401,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleRecords) {
 }
 
 TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
-    FILE *tmp = tmpfile_with_contents("shot M0\nshot M1\nshot M0\n");
+    FILE *tmp = tmpfile_with_contents("shot M0\nshot M1\nshot M0\nshot\n");
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS);
     ASSERT_FALSE(reader->is_end_of_record());
@@ -415,6 +421,36 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_EQ(8, reader->read_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_FALSE(reader->is_end_of_record());
+    // fourth record (0 bits)
+    ASSERT_TRUE(reader->next_record());
+    bytes[0] = 0xFF;
+    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(0, bytes[0]);
+    ASSERT_FALSE(reader->is_end_of_record());
     // no more recocrds
     ASSERT_FALSE(reader->next_record());
+}
+
+TEST(MeasureRecordReader, Format01_InvalidInput) {
+    FILE *tmp = tmpfile_with_contents("012\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01);
+    ASSERT_FALSE(reader->read_bit());
+    ASSERT_TRUE(reader->read_bit());
+    ASSERT_THROW({ reader->read_bit(); }, std::runtime_error);
+}
+
+TEST(MeasureRecordReader, FormatHits_InvalidInput) {
+    FILE *tmp = tmpfile_with_contents("1,1\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS);
+    ASSERT_FALSE(reader->read_bit());
+    ASSERT_TRUE(reader->read_bit());
+    ASSERT_THROW({ reader->read_bit(); }, std::runtime_error);
+}
+
+TEST(MeasureRecordReader, FormatDets_InvalidInput) {
+    FILE *tmp = tmpfile_with_contents("D2\n");
+    ASSERT_NE(tmp, nullptr);
+    ASSERT_THROW({ MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS); }, std::runtime_error);
 }
