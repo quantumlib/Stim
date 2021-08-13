@@ -57,20 +57,27 @@ bool read_unsigned_int(FILE* in, long &value, int &next) {
 
 }  // namespace
 
-std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(FILE *in, SampleFormat input_format, size_t bits_per_record) {
+std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(FILE *in, SampleFormat input_format, size_t n_measurements, size_t n_detection_events, size_t n_logical_observables) {
+    if (input_format != SAMPLE_FORMAT_DETS && n_detection_events != 0) {
+        throw std::invalid_argument("Only DETS format support detection event records");
+    }
+    if (input_format != SAMPLE_FORMAT_DETS && n_logical_observables != 0) {
+        throw std::invalid_argument("Only DETS format support logical observable records");
+    }
+
     switch (input_format) {
         case SAMPLE_FORMAT_01:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in, bits_per_record));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in, n_measurements));
         case SAMPLE_FORMAT_B8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in, bits_per_record));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in, n_measurements));
         case SAMPLE_FORMAT_DETS:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatDets(in, bits_per_record));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatDets(in, n_measurements, n_detection_events, n_logical_observables));
         case SAMPLE_FORMAT_HITS:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in, bits_per_record));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in, n_measurements));
         case SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
         case SAMPLE_FORMAT_R8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in, bits_per_record));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in, n_measurements));
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
@@ -302,7 +309,7 @@ bool MeasureRecordReaderFormatR8::update_run_length() {
 
 /// DETS format
 
-MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in, size_t bits_per_record) : MeasureRecordReader(bits_per_record), in(in) {
+MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in, size_t n_measurements, size_t n_detection_events, size_t n_logical_observables) : MeasureRecordReader(n_measurements), in(in) {
     if (!maybe_consume_keyword(in, "shot", separator)) {
         throw std::runtime_error("Need a \"shot\" to begin record");
     }

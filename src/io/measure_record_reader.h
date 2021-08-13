@@ -36,7 +36,15 @@ struct MeasureRecordReader {
     ssize_t bits_per_record;
 
     /// Creates a MeasureRecordReader that reads measurement records in the given format from the given FILE*.
-    static std::unique_ptr<MeasureRecordReader> make(FILE *in, SampleFormat input_format, size_t bits_per_record);
+    /// Record size must be specified upfront. The DETS format supports three different types of records
+    /// and size of each is specified independently. All other formats support one type of record. It is
+    /// an error to specify non-zero size of detection event records or logical observable records unless
+    /// the input format is DETS.
+    static std::unique_ptr<MeasureRecordReader> make(FILE *in,
+                                                     SampleFormat input_format,
+                                                     size_t n_measurements,
+                                                     size_t n_detection_events = 0,
+                                                     size_t n_logical_observables = 0);
 
     MeasureRecordReader(size_t bits_per_record);
     virtual ~MeasureRecordReader() = default;
@@ -125,8 +133,10 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     char result_type = 'M';
     int separator = '\n';
     ssize_t next_shot = -1;
+    ssize_t next_d_shot = -1;
+    ssize_t next_l_shot = -1;
 
-    MeasureRecordReaderFormatDets(FILE *in, size_t bits_per_record);
+    MeasureRecordReaderFormatDets(FILE *in, size_t n_measurements, size_t n_detection_events = 0, size_t n_logical_observables = 0);
 
     bool read_bit() override;
     bool next_record() override;

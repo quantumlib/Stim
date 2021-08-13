@@ -417,6 +417,25 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_FALSE(reader->next_record());
 }
 
+TEST(MeasureRecordReader, FormatDets_MultipleResultTypes) {
+    FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 L1 L2\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // Detection events
+    uint8_t bytes[]{0};
+    ASSERT_EQ('D', reader->current_result_type());
+    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(0x29, bytes[0]);
+    // Logiacl observables
+    bytes[0] = 0;
+    ASSERT_EQ('L', reader->current_result_type());
+    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(6, bytes[0]);
+
+    ASSERT_FALSE(reader->next_record());
+}
+
 TEST(MeasureRecordReader, Format01_InvalidInput) {
     FILE *tmp = tmpfile_with_contents("012\n");
     ASSERT_NE(tmp, nullptr);
