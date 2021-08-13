@@ -29,14 +29,16 @@ namespace stim_internal {
 ///
 /// Child classes implement the various input formats. Each file format encodes a certain number of records.
 /// Each record is a sequence of 0s and 1s. File formats B8 and R8 encode a single record. File formats 01,
-/// HITS and DETS encode any number of records. File formats 01, B8 and R8 encode the length of each record.
-/// By contrast, records in file formats HITS and DETS have unknown length. Records encoded by the two formats
-/// can be viewed as eventually-0 infinite sequences of 0s and 1s. Reading such a record will always return
-/// data when requested. It is assumed that the client has external knowledge of the appropriate truncation
-/// length for records in HITS and DETS formats via other means.
+/// HITS and DETS encode any number of records. Record size in bits is fixed for each file and the client
+/// must specify it upfront.
 struct MeasureRecordReader {
+    size_t bits_returned = 0;
+    size_t bits_per_record;
+
     /// Creates a MeasureRecordReader that reads measurement records in the given format from the given FILE*.
-    static std::unique_ptr<MeasureRecordReader> make(FILE *in, SampleFormat input_format);
+    static std::unique_ptr<MeasureRecordReader> make(FILE *in, SampleFormat input_format, size_t bits_per_record);
+
+    MeasureRecordReader(size_t bits_per_record) : bits_per_record(bits_per_record) {}
     virtual ~MeasureRecordReader() = default;
 
     /// Reads and returns one measurement result. If no result is available, exception is thrown.
@@ -65,7 +67,7 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
     FILE *in;
     int payload;
 
-    explicit MeasureRecordReaderFormat01(FILE *in);
+    MeasureRecordReaderFormat01(FILE *in, size_t bits_per_record);
 
     bool read_bit() override;
     bool next_record() override;
@@ -77,7 +79,7 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
     int payload = 0;
     uint8_t bits_available = 0;
 
-    explicit MeasureRecordReaderFormatB8(FILE *in);
+    MeasureRecordReaderFormatB8(FILE *in, size_t bits_per_record);
 
     size_t read_bytes(PointerRange<uint8_t> data) override;
     bool read_bit() override;
@@ -93,7 +95,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     long next_hit = -1;
     long position = 0;
 
-    explicit MeasureRecordReaderFormatHits(FILE *in);
+    MeasureRecordReaderFormatHits(FILE *in, size_t bits_per_record);
 
     bool read_bit() override;
     bool next_record() override;
@@ -109,7 +111,7 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     size_t generated_0s = 0;
     size_t generated_1s = 1;
 
-    explicit MeasureRecordReaderFormatR8(FILE *in);
+    MeasureRecordReaderFormatR8(FILE *in, size_t bits_per_record);
 
     size_t read_bytes(PointerRange<uint8_t> data) override;
     bool read_bit() override;
@@ -126,7 +128,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     long next_shot = -1;
     long position = 0;
 
-    explicit MeasureRecordReaderFormatDets(FILE *in);
+    MeasureRecordReaderFormatDets(FILE *in, size_t bits_per_record);
 
     bool read_bit() override;
     bool next_record() override;

@@ -56,26 +56,27 @@ bool read_unsigned_int(FILE* in, long &value, int &next) {
 
 }  // namespace
 
-std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(FILE *in, SampleFormat input_format) {
+std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(FILE *in, SampleFormat input_format, size_t bits_per_record) {
     switch (input_format) {
         case SAMPLE_FORMAT_01:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in, bits_per_record));
         case SAMPLE_FORMAT_B8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in, bits_per_record));
         case SAMPLE_FORMAT_DETS:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatDets(in));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatDets(in, bits_per_record));
         case SAMPLE_FORMAT_HITS:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in, bits_per_record));
         case SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
         case SAMPLE_FORMAT_R8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in, bits_per_record));
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
 }
 
 size_t MeasureRecordReader::read_bytes(PointerRange<uint8_t> data) {
+    if (bits_returned >= bits_per_record) return 0;
     size_t n = 0;
     for (uint8_t &b : data) {
         b = 0;
@@ -91,11 +92,12 @@ size_t MeasureRecordReader::read_bytes(PointerRange<uint8_t> data) {
 }
 
 bool MeasureRecordReader::next_record() {
+    bits_returned = 0;
     return false;
 }
 
 bool MeasureRecordReader::is_end_of_record() {
-    return false;
+    return bits_returned >= bits_per_record;
 }
 
 char MeasureRecordReader::current_result_type() {
@@ -104,14 +106,14 @@ char MeasureRecordReader::current_result_type() {
 
 /// 01 format
 
-MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(FILE *in) : in(in), payload(getc(in)) {
+MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(FILE *in, size_t bits_per_record) : MeasureRecordReader(bits_per_record), in(in), payload(getc(in)) {
 }
 
 bool MeasureRecordReaderFormat01::read_bit() {
     if (payload == EOF) {
         throw std::out_of_range("Attempt to read past end-of-file");
     }
-    if (payload == '\n') {
+    if (payload == '\n' || bits_returned >= bits_per_record) {
         throw std::out_of_range("Attempt to read past end-of-record");
     }
     if (payload != '0' && payload != '1') {
@@ -120,48 +122,59 @@ bool MeasureRecordReaderFormat01::read_bit() {
 
     bool bit = payload == '1';
     payload = getc(in);
+    ++bits_returned;
     return bit;
 }
 
 bool MeasureRecordReaderFormat01::next_record() {
-    while (payload != EOF && payload != '\n') payload = getc(in);
+    while (payload != EOF && payload != '\n' && ++bits_returned < bits_per_record) payload = getc(in);
+
+    if (bits_returned > bits_per_record) throw std::runtime_error("Record too long");
+
+    bits_returned = 0;
     payload = getc(in);
     return payload != EOF;
 }
 
 bool MeasureRecordReaderFormat01::is_end_of_record() {
-    return payload == EOF || payload == '\n';
+    return payload == EOF || payload == '\n' || bits_returned >= bits_per_record;
 }
 
 /// B8 format
 
-MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in) : in(in) {
+MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in, size_t bits_per_record) : MeasureRecordReader(bits_per_record), in(in) {
 }
 
 size_t MeasureRecordReaderFormatB8::read_bytes(PointerRange<uint8_t> data) {
+    if (bits_returned >= bits_per_record) return 0;
+
     if (bits_available > 0) return MeasureRecordReader::read_bytes(data);
 
-    size_t k = data.ptr_end - data.ptr_start;
-    k = 8 * fread(data.ptr_start, sizeof(uint8_t), k, in);
-    return k;
+    size_t n_bits = std::min<size_t>(8 * data.size(), bits_per_record - bits_returned);
+    size_t n_bytes = (n_bits + 7) / 8;
+    n_bytes = fread(data.ptr_start, sizeof(uint8_t), n_bytes, in);
+    n_bits = std::min<size_t>(8 * n_bytes, n_bits);
+    bits_returned += n_bits;
+    return n_bits;
 }
 
 bool MeasureRecordReaderFormatB8::read_bit() {
+    if (bits_returned >= bits_per_record) throw std::out_of_range("Attempt to read past end-of-record");
+
     maybe_update_payload();
 
-    if (payload == EOF) {
-        throw std::out_of_range("Attempt to read past end-of-file");
-    }
+    if (payload == EOF) throw std::out_of_range("Attempt to read past end-of-file");
 
     bool b = payload & 1;
     payload >>= 1;
     --bits_available;
+    ++bits_returned;
     return b;
 }
 
 bool MeasureRecordReaderFormatB8::is_end_of_record() {
     maybe_update_payload();
-    return bits_available == 0 && payload == EOF;
+    return (bits_available == 0 && payload == EOF) || bits_returned >= bits_per_record;
 }
 
 void MeasureRecordReaderFormatB8::maybe_update_payload() {
@@ -172,17 +185,20 @@ void MeasureRecordReaderFormatB8::maybe_update_payload() {
 
 /// Hits format
 
-MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(FILE *in) : in(in) {
+MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(FILE *in, size_t bits_per_record) : MeasureRecordReader(bits_per_record), in(in) {
     update_next_hit();
 }
 
 bool MeasureRecordReaderFormatHits::read_bit() {
+    if (bits_returned >= bits_per_record) throw std::out_of_range("Attempt to read past end-of-record");
     if (position > next_hit && separator ==',') update_next_hit();
+    ++bits_returned;
     return next_hit == position++;
 }
 
 bool MeasureRecordReaderFormatHits::next_record() {
     while (separator == ',') update_next_hit();
+    bits_returned = 0;
     next_hit = -1;
     position = 0;
     update_next_hit();
@@ -206,16 +222,18 @@ void MeasureRecordReaderFormatHits::update_next_hit() {
 
 /// R8 format
 
-MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(FILE *in) : in(in) {
+MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(FILE *in, size_t bits_per_record) : MeasureRecordReader(bits_per_record), in(in) {
     update_run_length();
     run_length_1s = 0;
 }
 
 size_t MeasureRecordReaderFormatR8::read_bytes(PointerRange<uint8_t> data) {
+    if (bits_returned >= bits_per_record) return 0;
     size_t n = 0;
     for (uint8_t &b : data) {
-        if (run_length_0s >= generated_0s + 8) {
+        if (run_length_0s >= generated_0s + 8 && bits_per_record >= bits_returned + 8) {
             b = 0;
+            bits_returned += 8;
             generated_0s += 8;
             n += 8;
             continue;
@@ -233,23 +251,28 @@ size_t MeasureRecordReaderFormatR8::read_bytes(PointerRange<uint8_t> data) {
 }
 
 bool MeasureRecordReaderFormatR8::read_bit() {
+    if (bits_returned >= bits_per_record) throw std::out_of_range("Attempt to read past end-of-record");
     if (generated_1s < run_length_1s) {
         ++generated_1s;
+        ++bits_returned;
         return true;
     }
     if (generated_0s < run_length_0s) {
         ++generated_0s;
+        ++bits_returned;
         return false;
     }
     if (!update_run_length()) {
         throw std::out_of_range("Attempt to read past end-of-file");
     } else {
         ++generated_1s;
+        ++bits_returned;
         return true;
     }
 }
 
 bool MeasureRecordReaderFormatR8::is_end_of_record() {
+    if (bits_returned >= bits_per_record) return true;
     if (generated_0s < run_length_0s) return false;
     if (generated_1s < run_length_1s) return false;
     return !update_run_length();
@@ -272,7 +295,7 @@ bool MeasureRecordReaderFormatR8::update_run_length() {
 
 /// DETS format
 
-MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in) : in(in) {
+MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in, size_t bits_per_record) : MeasureRecordReader(bits_per_record), in(in) {
     if (!maybe_consume_keyword(in, "shot", separator)) {
         throw std::runtime_error("Need a \"shot\" to begin record");
     }
@@ -280,13 +303,16 @@ MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(FILE *in) : in(in) 
 }
 
 bool MeasureRecordReaderFormatDets::read_bit() {
+    if (bits_returned >= bits_per_record) throw std::out_of_range("Attempt to read past end-of-record");
     if (position > next_shot && separator == ' ') update_next_shot();
+    ++bits_returned;
     return next_shot == position++;
 }
 
 bool MeasureRecordReaderFormatDets::next_record() {
     while (separator == ' ') update_next_shot();
     if (!maybe_consume_keyword(in, "shot", separator)) return false;
+    bits_returned = 0;
     next_shot = -1;
     position = 0;
     update_next_shot();
