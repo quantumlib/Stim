@@ -32,13 +32,13 @@ namespace stim_internal {
 /// HITS and DETS encode any number of records. Record size in bits is fixed for each file and the client
 /// must specify it upfront.
 struct MeasureRecordReader {
-    size_t bits_returned = 0;
-    size_t bits_per_record;
+    ssize_t position = 0;
+    ssize_t bits_per_record;
 
     /// Creates a MeasureRecordReader that reads measurement records in the given format from the given FILE*.
     static std::unique_ptr<MeasureRecordReader> make(FILE *in, SampleFormat input_format, size_t bits_per_record);
 
-    MeasureRecordReader(size_t bits_per_record) : bits_per_record(bits_per_record) {}
+    MeasureRecordReader(size_t bits_per_record);
     virtual ~MeasureRecordReader() = default;
 
     /// Reads and returns one measurement result. If no result is available, exception is thrown.
@@ -92,8 +92,7 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
     int separator;
-    long next_hit = -1;
-    long position = 0;
+    ssize_t next_hit = -1;
 
     MeasureRecordReaderFormatHits(FILE *in, size_t bits_per_record);
 
@@ -125,8 +124,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     FILE *in;
     char result_type = 'M';
     int separator = '\n';
-    long next_shot = -1;
-    long position = 0;
+    ssize_t next_shot = -1;
 
     MeasureRecordReaderFormatDets(FILE *in, size_t bits_per_record);
 
