@@ -18,6 +18,7 @@
 #define STIM_RECORD_READER_H
 
 #include <memory>
+#include <sys/types.h>
 
 #include "../circuit/circuit.h"
 #include "../simd/pointer_range.h"
