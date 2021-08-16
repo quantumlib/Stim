@@ -87,6 +87,7 @@ struct MeasureRecordWriterFormatDets : MeasureRecordWriter {
     FILE *out;
     uint64_t position = 0;
     char result_type = 'M';
+    bool first = true;
 
     MeasureRecordWriterFormatDets(FILE *out);
     void begin_result_type(char result_type) override;
