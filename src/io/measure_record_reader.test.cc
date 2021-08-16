@@ -141,7 +141,7 @@ TEST(MeasureRecordReader, FormatR8_LongGap) {
 
 TEST(MeasureRecordReader, FormatDets) {
     FILE *tmp = tmpfile_with_contents("shot D3 D4 D5 D6 D7 D12 D13 D14 D15 D16 L1\n");
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 17 + 2);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 17, 2);
     ASSERT_FALSE(reader->is_end_of_record());
 
     // Detection events:
@@ -417,7 +417,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_FALSE(reader->next_record());
 }
 
-TEST(MeasureRecordReader, FormatDets_MultipleResultTypes) {
+TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
     FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 L1 L2\n");
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
@@ -432,6 +432,63 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes) {
     ASSERT_EQ('L', reader->current_result_type());
     ASSERT_EQ(4, reader->read_bytes(bytes));
     ASSERT_EQ(6, bytes[0]);
+
+    ASSERT_FALSE(reader->next_record());
+}
+
+TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L0) {
+    FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 D6 L1 L2\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // Detection events
+    uint8_t bytes[]{0};
+    ASSERT_EQ('D', reader->current_result_type());
+    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(0x69, bytes[0]);
+    // Logiacl observables
+    bytes[0] = 0;
+    ASSERT_EQ('L', reader->current_result_type());
+    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(6, bytes[0]);
+
+    ASSERT_FALSE(reader->next_record());
+}
+
+TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L1) {
+    FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 L0 L1 L2\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // Detection events
+    uint8_t bytes[]{0};
+    ASSERT_EQ('D', reader->current_result_type());
+    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(0x29, bytes[0]);
+    // Logiacl observables
+    bytes[0] = 0;
+    ASSERT_EQ('L', reader->current_result_type());
+    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(7, bytes[0]);
+
+    ASSERT_FALSE(reader->next_record());
+}
+
+TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L1) {
+    FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 D6 L0 L1 L2\n");
+    ASSERT_NE(tmp, nullptr);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
+    ASSERT_FALSE(reader->is_end_of_record());
+    // Detection events
+    uint8_t bytes[]{0};
+    ASSERT_EQ('D', reader->current_result_type());
+    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(0x69, bytes[0]);
+    // Logiacl observables
+    bytes[0] = 0;
+    ASSERT_EQ('L', reader->current_result_type());
+    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(7, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
 }
