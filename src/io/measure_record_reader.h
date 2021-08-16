@@ -18,7 +18,6 @@
 #define STIM_RECORD_READER_H
 
 #include <memory>
-#include <sys/types.h>
 
 #include "../circuit/circuit.h"
 #include "../simd/pointer_range.h"
@@ -104,9 +103,10 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
     int separator;
-    ssize_t next_hit = -1;
-    ssize_t position = 0;
-    ssize_t bits_per_record;
+    bool no_next_hit = true;
+    size_t next_hit = 0;
+    size_t position = 0;
+    size_t bits_per_record;
 
     MeasureRecordReaderFormatHits(FILE *in, size_t bits_per_record);
 
@@ -143,14 +143,15 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     int separator = '\n';
     char result_type = 'M';
     char next_shot_result_type = 'M';
-    ssize_t next_shot = -1;
+    bool no_next_shot = true;
+    size_t next_shot = -1;
 
-    ssize_t position_m = 0;
-    ssize_t position_d = 0;
-    ssize_t position_l = 0;
-    ssize_t bits_per_m_record;
-    ssize_t bits_per_d_record;
-    ssize_t bits_per_l_record;
+    size_t position_m = 0;
+    size_t position_d = 0;
+    size_t position_l = 0;
+    size_t bits_per_m_record;
+    size_t bits_per_d_record;
+    size_t bits_per_l_record;
 
     MeasureRecordReaderFormatDets(FILE *in, size_t n_measurements, size_t n_detection_events = 0, size_t n_logical_observables = 0);
 
@@ -160,8 +161,8 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     char current_result_type() override;
 
   private:
-    ssize_t& position();
-    ssize_t& bits_per_record();
+    size_t& position();
+    size_t& bits_per_record();
 
     void update_next_shot();
 };
