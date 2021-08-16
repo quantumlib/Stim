@@ -127,9 +127,10 @@ bool MeasureRecordReaderFormat01::read_bit() {
 }
 
 bool MeasureRecordReaderFormat01::next_record() {
-    while (payload != EOF && payload != '\n' && ++position < bits_per_record) payload = getc(in);
-
-    if (position > bits_per_record) throw std::runtime_error("Record too long");
+    while (payload != EOF && payload != '\n') {
+        payload = getc(in);
+        if (position++ > bits_per_record) throw std::runtime_error("Record too long");
+    }
 
     position = 0;
     payload = getc(in);
