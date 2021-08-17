@@ -61,9 +61,6 @@ struct MeasureRecordReader {
     /// and read_bytes() returns no data. Note that records in file formats HITS and DETS never end.
     virtual bool is_end_of_record() = 0;
 
-    /// Returns true when there are no more results of the current result type in the current record.
-    //virtual bool is_end_of_result_type();
-
     /// Used to obtain the DETS format prefix character (M for measurement, D for detector, L for logical
     /// observable). Readers of other formats always return 'M'.
     virtual char current_result_type();
