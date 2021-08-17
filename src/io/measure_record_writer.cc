@@ -161,7 +161,6 @@ void MeasureRecordWriterFormatR8::write_end() {
 }
 
 MeasureRecordWriterFormatDets::MeasureRecordWriterFormatDets(FILE *out) : out(out) {
-    fprintf(out, "shot");
 }
 
 void MeasureRecordWriterFormatDets::begin_result_type(char new_result_type) {
@@ -183,6 +182,10 @@ void MeasureRecordWriterFormatDets::write_bytes(ConstPointerRange<uint8_t> data)
 
 void MeasureRecordWriterFormatDets::write_bit(bool b) {
     if (b) {
+        if (first) {
+            fprintf(out, "shot");
+            first = false;
+        }
         putc(' ', out);
         putc(result_type, out);
         fprintf(out, "%lld", (unsigned long long)(position));
@@ -193,6 +196,7 @@ void MeasureRecordWriterFormatDets::write_bit(bool b) {
 void MeasureRecordWriterFormatDets::write_end() {
     putc('\n', out);
     position = 0;
+    first = true;
 }
 
 simd_bit_table stim_internal::transposed_vs_ref(
