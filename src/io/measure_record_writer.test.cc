@@ -77,6 +77,35 @@ TEST(MeasureRecordWriter, FormatDets) {
     ASSERT_EQ(rewind_read_all(tmp), "shot D3 D4 D5 D6 D7 D12 D13 D14 D15 D16 L1\n");
 }
 
+TEST(MeasureRecordWriter, FormatDets_MultipleRecords) {
+    FILE *tmp = tmpfile();
+    auto writer = MeasureRecordWriter::make(tmp, SAMPLE_FORMAT_DETS);
+
+    // First record
+    writer->begin_result_type('D');
+    writer->write_bit(false);
+    writer->write_bit(false);
+    writer->write_bit(true);
+    writer->begin_result_type('L');
+    writer->write_bit(false);
+    writer->write_bit(true);
+    writer->write_end();
+
+    // Second record
+    writer->begin_result_type('D');
+    writer->write_bit(true);
+    writer->write_bit(false);
+    writer->write_bit(false);
+    writer->write_bit(true);
+    writer->begin_result_type('L');
+    writer->write_bit(true);
+    writer->write_bit(false);
+    writer->write_bit(true);
+    writer->write_end();
+
+    ASSERT_EQ(rewind_read_all(tmp), "shot D2 L1\nshot D0 D3 L0 L2\n");
+}
+
 TEST(MeasureRecordWriter, FormatR8) {
     FILE *tmp = tmpfile();
     auto writer = MeasureRecordWriter::make(tmp, SAMPLE_FORMAT_R8);
