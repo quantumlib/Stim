@@ -160,8 +160,8 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     char current_result_type() override;
 
    private:
-    size_t &position();
-    size_t &bits_per_record();
+    uint64_t &position();
+    uint64_t &bits_per_record();
 
     void update_next_shot();
 };
