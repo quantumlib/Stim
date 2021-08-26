@@ -101,9 +101,9 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
     int separator;
     bool no_next_hit = true;
-    size_t next_hit = 0;
-    size_t position = 0;
-    size_t bits_per_record;
+    uint64_t next_hit = 0;
+    uint64_t position = 0;
+    uint64_t bits_per_record;
 
     MeasureRecordReaderFormatHits(FILE *in, size_t bits_per_record);
 
@@ -141,14 +141,14 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     char result_type = 'M';
     char next_shot_result_type = 'M';
     bool no_next_shot = true;
-    size_t next_shot = -1;
+    uint64_t next_shot = -1;
 
-    size_t position_m = 0;
-    size_t position_d = 0;
-    size_t position_l = 0;
-    size_t bits_per_m_record;
-    size_t bits_per_d_record;
-    size_t bits_per_l_record;
+    uint64_t position_m = 0;
+    uint64_t position_d = 0;
+    uint64_t position_l = 0;
+    uint64_t bits_per_m_record;
+    uint64_t bits_per_d_record;
+    uint64_t bits_per_l_record;
 
     MeasureRecordReaderFormatDets(FILE *in, size_t n_measurements, size_t n_detection_events = 0, size_t n_logical_observables = 0);
 

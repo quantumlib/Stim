@@ -21,41 +21,42 @@
 
 using namespace stim_internal;
 
-namespace {
-
-// Returns true if keyword is found at current position.
-// Returns false if EOF is found at current position.
-// Throws otherwise.
+// Returns true if keyword is found at current position. Returns false if EOF is found at current
+// position. Throws otherwise. Uses next output variable for the next character or EOF.
 bool maybe_consume_keyword(FILE *in, const std::string& keyword, int &next) {
     next = getc(in);
     if (next == EOF) return false;
 
-    size_t i = 0;
-    while (i < keyword.size() && next == (int)keyword[i++]) {
+    for (char c : keyword) {
+        if (c != next) {
+            throw std::runtime_error("Failed to find expected string \"" + keyword + "\"");
+        }
         next = getc(in);
     }
-
-    if (i != keyword.size()) throw std::runtime_error("Failed to find expected string \"" + keyword + "\"");
 
     return true;
 }
 
-// Returns true if an integer value is found at current position.
-// Returns false otherwise.
-bool read_unsigned_int(FILE* in, size_t &value, int &next) {
+// Returns true if an integer value is found at current position. Returns false otherwise.
+// Uses two output variables: value to return the integer value read and next for the next
+// character or EOF.
+bool read_uint64(FILE* in, uint64_t &value, int &next) {
     next = getc(in);
     if (!isdigit(next)) return false;
 
     value = 0;
+    uint64_t prev_value = 0;
     while (isdigit(next)) {
+        prev_value = value;
         value *= 10;
         value += next - '0';
+        if (value < prev_value) {
+            throw std::runtime_error("Integer value read from file was too big");
+        }
         next = getc(in);
     }
     return true;
 }
-
-}  // namespace
 
 std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(FILE *in, SampleFormat input_format, size_t n_measurements, size_t n_detection_events, size_t n_logical_observables) {
     if (input_format != SAMPLE_FORMAT_DETS && n_detection_events != 0) {
@@ -129,7 +130,11 @@ bool MeasureRecordReaderFormat01::read_bit() {
 bool MeasureRecordReaderFormat01::next_record() {
     while (payload != EOF && payload != '\n') {
         payload = getc(in);
-        if (position++ > bits_per_record) throw std::runtime_error("Record too long");
+        if (position++ > bits_per_record) {
+            throw std::runtime_error(
+                    "Line was too long for input file in 01 format. Expected "
+                    + std::to_string(bits_per_record) + " characters but got " + std::to_string(position));
+        }
     }
 
     position = 0;
@@ -220,7 +225,7 @@ bool MeasureRecordReaderFormatHits::is_end_of_record() {
 
 void MeasureRecordReaderFormatHits::update_next_hit() {
     no_next_hit = true;
-    if(!read_unsigned_int(in, next_hit, separator)) {
+    if(!read_uint64(in, next_hit, separator)) {
         if (separator != '\n' && separator != EOF) {
             throw std::runtime_error("Unexpected character " + std::to_string(separator));
         }
@@ -365,14 +370,14 @@ char MeasureRecordReaderFormatDets::current_result_type() {
     return result_type;
 }
 
-size_t& MeasureRecordReaderFormatDets::bits_per_record() {
+uint64_t& MeasureRecordReaderFormatDets::bits_per_record() {
     if (result_type == 'M') return bits_per_m_record;
     if (result_type == 'D') return bits_per_d_record;
     if (result_type == 'L') return bits_per_l_record;
     throw std::runtime_error("Unknown result type " + result_type);
 }
 
-size_t& MeasureRecordReaderFormatDets::position() {
+uint64_t& MeasureRecordReaderFormatDets::position() {
     if (result_type == 'M') return position_m;
     if (result_type == 'D') return position_d;
     if (result_type == 'L') return position_l;
@@ -393,7 +398,7 @@ void MeasureRecordReaderFormatDets::update_next_shot() {
     }
 
     // Read and validate shot number and separator.
-    if (!read_unsigned_int(in, next_shot, separator)) {
+    if (!read_uint64(in, next_shot, separator)) {
         throw std::runtime_error("Failed to parse input");
     }
     if (separator != ' ' && separator != '\n') {

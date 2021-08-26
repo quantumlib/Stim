@@ -35,6 +35,50 @@ FILE* tmpfile_with_contents(const std::string &contents) {
     return tmp;
 }
 
+bool maybe_consume_keyword(FILE *in, const std::string& keyword, int &next);
+bool read_uint64(FILE* in, uint64_t &value, int &next);
+
+TEST(maybe_consume_keyword, FoundKeyword) {
+    int next = 0;
+    FILE *tmp = tmpfile_with_contents("shot\n");
+    ASSERT_NE(tmp, nullptr);
+    ASSERT_TRUE(maybe_consume_keyword(tmp, "shot", next));
+    ASSERT_EQ(next, '\n');
+}
+
+TEST(maybe_consume_keyword, NotFoundKeyword) {
+    int next = 0;
+    FILE *tmp = tmpfile_with_contents("hit\n");
+    ASSERT_NE(tmp, nullptr);
+    ASSERT_THROW({ maybe_consume_keyword(tmp, "shot", next); }, std::runtime_error);
+}
+
+TEST(maybe_consume_keyword, FoundEOF) {
+    int next = 0;
+    FILE *tmp = tmpfile_with_contents("");
+    ASSERT_NE(tmp, nullptr);
+    ASSERT_FALSE(maybe_consume_keyword(tmp, "shot", next));
+    ASSERT_EQ(next, EOF);
+}
+
+TEST(read_unsigned_int, BasicUsage) {
+    int next = 0;
+    uint64_t value = 0;
+    FILE *tmp = tmpfile_with_contents("105\n");
+    ASSERT_NE(tmp, nullptr);
+    ASSERT_TRUE(read_uint64(tmp, value, next));
+    ASSERT_EQ(next, '\n');
+    ASSERT_EQ(value, 105);
+}
+
+TEST(read_unsigned_int, ValueTooBig) {
+    int next = 0;
+    uint64_t value = 0;
+    FILE *tmp = tmpfile_with_contents("18446744073709551616\n");
+    ASSERT_NE(tmp, nullptr);
+    ASSERT_THROW({ read_uint64(tmp, value, next); }, std::runtime_error);
+}
+
 TEST(MeasureRecordReader, Format01) {
     // We'll read the data like this:  |-0xF8-|0|-0xF8-|1|
     FILE *tmp = tmpfile_with_contents("000111110000111111\n");
@@ -547,7 +591,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
     ASSERT_EQ('D', reader->current_result_type());
     ASSERT_EQ(7, reader->read_bytes(bytes));
     ASSERT_EQ(0x29, bytes[0]);
-    // Logiacl observables
+    // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
     ASSERT_EQ(4, reader->read_bytes(bytes));
@@ -566,7 +610,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L0) {
     ASSERT_EQ('D', reader->current_result_type());
     ASSERT_EQ(7, reader->read_bytes(bytes));
     ASSERT_EQ(0x69, bytes[0]);
-    // Logiacl observables
+    // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
     ASSERT_EQ(4, reader->read_bytes(bytes));
@@ -585,7 +629,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L1) {
     ASSERT_EQ('D', reader->current_result_type());
     ASSERT_EQ(7, reader->read_bytes(bytes));
     ASSERT_EQ(0x29, bytes[0]);
-    // Logiacl observables
+    // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
     ASSERT_EQ(4, reader->read_bytes(bytes));
@@ -604,7 +648,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L1) {
     ASSERT_EQ('D', reader->current_result_type());
     ASSERT_EQ(7, reader->read_bytes(bytes));
     ASSERT_EQ(0x69, bytes[0]);
-    // Logiacl observables
+    // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
     ASSERT_EQ(4, reader->read_bytes(bytes));
@@ -636,3 +680,4 @@ TEST(MeasureRecordReader, FormatDets_InvalidInput) {
     ASSERT_NE(tmp, nullptr);
     ASSERT_THROW({ MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 3); }, std::runtime_error);
 }
+
