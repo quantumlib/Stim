@@ -37,11 +37,12 @@ struct MeasureRecordReader {
     /// and size of each is specified independently. All other formats support one type of record. It is
     /// an error to specify non-zero size of detection event records or logical observable records unless
     /// the input format is DETS.
-    static std::unique_ptr<MeasureRecordReader> make(FILE *in,
-                                                     SampleFormat input_format,
-                                                     size_t n_measurements,
-                                                     size_t n_detection_events = 0,
-                                                     size_t n_logical_observables = 0);
+    static std::unique_ptr<MeasureRecordReader> make(
+        FILE *in,
+        SampleFormat input_format,
+        size_t n_measurements,
+        size_t n_detection_events = 0,
+        size_t n_logical_observables = 0);
     virtual ~MeasureRecordReader() = default;
 
     /// Reads and returns one measurement result. If no result is available, exception is thrown.
@@ -93,7 +94,7 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
     bool next_record() override;
     bool is_end_of_record() override;
 
-  private:
+   private:
     void maybe_update_payload();
 };
 
@@ -111,7 +112,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     bool next_record() override;
     bool is_end_of_record() override;
 
-  private:
+   private:
     void update_next_hit();
 };
 
@@ -131,7 +132,7 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     bool next_record() override;
     bool is_end_of_record() override;
 
-  private:
+   private:
     bool update_run_length();
 };
 
@@ -150,16 +151,17 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     uint64_t bits_per_d_record;
     uint64_t bits_per_l_record;
 
-    MeasureRecordReaderFormatDets(FILE *in, size_t n_measurements, size_t n_detection_events = 0, size_t n_logical_observables = 0);
+    MeasureRecordReaderFormatDets(
+        FILE *in, size_t n_measurements, size_t n_detection_events = 0, size_t n_logical_observables = 0);
 
     bool read_bit() override;
     bool next_record() override;
     bool is_end_of_record() override;
     char current_result_type() override;
 
-  private:
-    size_t& position();
-    size_t& bits_per_record();
+   private:
+    size_t &position();
+    size_t &bits_per_record();
 
     void update_next_shot();
 };

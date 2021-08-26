@@ -15,16 +15,16 @@
  */
 
 #include "measure_record_reader.h"
-#include "measure_record_writer.h"
 
 #include "gtest/gtest.h"
 
 #include "../test_util.test.h"
+#include "measure_record_writer.h"
 
 using namespace stim_internal;
 
-FILE* tmpfile_with_contents(const std::string &contents) {
-    FILE* tmp = tmpfile();
+FILE *tmpfile_with_contents(const std::string &contents) {
+    FILE *tmp = tmpfile();
     size_t written = fwrite(contents.c_str(), 1, contents.size(), tmp);
     if (written != contents.size()) {
         int en = errno;
@@ -35,8 +35,8 @@ FILE* tmpfile_with_contents(const std::string &contents) {
     return tmp;
 }
 
-bool maybe_consume_keyword(FILE *in, const std::string& keyword, int &next);
-bool read_uint64(FILE* in, uint64_t &value, int &next);
+bool maybe_consume_keyword(FILE *in, const std::string &keyword, int &next);
+bool read_uint64(FILE *in, uint64_t &value, int &next);
 
 TEST(maybe_consume_keyword, FoundKeyword) {
     int next = 0;
@@ -231,7 +231,8 @@ TEST(MeasureRecordReader, Format01_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_01);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_01, 8 * num_bytes - 1));
+    ASSERT_EQ(
+        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_01, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -244,7 +245,8 @@ TEST(MeasureRecordReader, FormatB8_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_B8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_B8, 8 * num_bytes - 1));
+    ASSERT_EQ(
+        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_B8, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -257,7 +259,8 @@ TEST(MeasureRecordReader, FormatR8_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_R8);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, 8 * num_bytes - 1));
+    ASSERT_EQ(
+        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -270,7 +273,8 @@ TEST(MeasureRecordReader, FormatHits_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_HITS);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, 8 * num_bytes - 1));
+    ASSERT_EQ(
+        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_HITS, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -283,7 +287,8 @@ TEST(MeasureRecordReader, FormatDets_WriteRead) {
     memset(dst, 0, num_bytes);
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_DETS);
     rewind(tmp);
-    ASSERT_EQ(num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, 8 * num_bytes - 1));
+    ASSERT_EQ(
+        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_DETS, 8 * num_bytes - 1));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -312,19 +317,22 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record1[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record1[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record2[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record2[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record3[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record3[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_FALSE(reader->next_record());
 }
@@ -352,19 +360,22 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record1[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record1[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record2[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record2[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record3[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record3[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_FALSE(reader->next_record());
 }
@@ -392,19 +403,22 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record1[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record1[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record2[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record2[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
     ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
-    for (size_t i = 0; i < num_bytes; ++i) ASSERT_EQ(buf[i], record3[i]);
+    for (size_t i = 0; i < num_bytes; ++i)
+        ASSERT_EQ(buf[i], record3[i]);
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_FALSE(reader->next_record());
 }
@@ -680,4 +694,3 @@ TEST(MeasureRecordReader, FormatDets_InvalidInput) {
     ASSERT_NE(tmp, nullptr);
     ASSERT_THROW({ MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 3); }, std::runtime_error);
 }
-
