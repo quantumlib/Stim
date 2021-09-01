@@ -38,9 +38,22 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Swaps two qubits.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}},
                     {"+IX", "+IZ", "+XI", "+ZI"},
+                    R"CIRCUIT(
+CNOT 0 1
+CNOT 1 0
+CNOT 0 1
+)CIRCUIT",
                 };
             },
         });
@@ -60,9 +73,23 @@ Swaps two qubits.
                     R"MARKDOWN(
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by i.
 Equivalent to `SWAP` then `CZ` then `S` on both targets.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, i, 0}, {0, i, 0, 0}, {0, 0, 0, 1}},
                     {"+ZY", "+IZ", "+YZ", "+ZI"},
+                    R"CIRCUIT(
+CNOT 0 1
+S 1
+CNOT 1 0
+CNOT 0 1
+)CIRCUIT",
                 };
             },
         });
@@ -82,9 +109,25 @@ Equivalent to `SWAP` then `CZ` then `S` on both targets.
                     R"MARKDOWN(
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
 Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, -i, 0}, {0, -i, 0, 0}, {0, 0, 0, 1}},
                     {"-ZY", "+IZ", "-YZ", "+ZI"},
+                    R"CIRCUIT(
+CNOT 0 1
+S 1
+S 1
+S 1
+CNOT 1 0
+CNOT 0 1
+)CIRCUIT",
                 };
             },
         });

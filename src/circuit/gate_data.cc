@@ -153,4 +153,17 @@ std::vector<Gate> GateDataMap::gates() const {
     return result;
 }
 
+ExtraGateData::ExtraGateData(
+    const char *category,
+    const char *help,
+    FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
+    FixedCapVector<const char *, 4> tableau_data,
+    const char *h_s_cx_m_r_decomposition)
+    : category(category),
+      help(help),
+      unitary_data(unitary_data),
+      tableau_data(tableau_data),
+      h_s_cx_m_r_decomposition(h_s_cx_m_r_decomposition) {
+}
+
 extern const GateDataMap stim_internal::GATE_DATA = GateDataMap();

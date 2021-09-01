@@ -43,12 +43,25 @@ First qubit is the control, second qubit is the target.
 Applies an X gate to the target if the control is in the |-> state.
 
 Negates the amplitude of the |->|-> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f, 0.5f, 0.5f, -0.5f},
                      {0.5f, 0.5f, -0.5f, 0.5f},
                      {0.5f, -0.5f, 0.5f, 0.5f},
                      {-0.5f, 0.5f, 0.5f, 0.5f}},
                     {"+XI", "+ZX", "+IX", "+XZ"},
+                    R"CIRCUIT(
+H 0
+CNOT 0 1
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -72,12 +85,29 @@ First qubit is the control, second qubit is the target.
 Applies a Y gate to the target if the control is in the |-> state.
 
 Negates the amplitude of the |->|-i> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f, 0.5f, -0.5f * i, 0.5f * i},
                      {0.5f, 0.5f, 0.5f * i, -0.5f * i},
                      {0.5f * i, -0.5f * i, 0.5f, 0.5f},
                      {-0.5f * i, 0.5f * i, 0.5f, 0.5f}},
                     {"+XI", "+ZY", "+XX", "+XZ"},
+                    R"CIRCUIT(
+S 1
+S 1
+S 1
+H 1
+CNOT 1 0
+H 1
+S 1
+)CIRCUIT",
                 };
             },
         });
@@ -102,9 +132,20 @@ The second qubit can be replaced by a measurement record.
 Applies a Z gate to the target if the control is in the |-> state.
 
 Negates the amplitude of the |->|1> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},
                     {"+XI", "+ZZ", "+XX", "+IZ"},
+                    R"CIRCUIT(
+CNOT 1 0
+)CIRCUIT",
                 };
             },
         });
@@ -128,12 +169,29 @@ First qubit is the control, second qubit is the target.
 Applies an X gate to the target if the control is in the |-i> state.
 
 Negates the amplitude of the |-i>|-> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f, -i * 0.5f, 0.5f, i * 0.5f},
                      {i * 0.5f, 0.5f, -i * 0.5f, 0.5f},
                      {0.5f, i * 0.5f, 0.5f, -i * 0.5f},
                      {-i * 0.5f, 0.5f, i * 0.5f, 0.5f}},
                     {"+XX", "+ZX", "+IX", "+YZ"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+H 0
+CNOT 0 1
+H 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -157,12 +215,33 @@ First qubit is the control, second qubit is the target.
 Applies a Y gate to the target if the control is in the |-i> state.
 
 Negates the amplitude of the |-i>|-i> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f, -i * 0.5f, -i * 0.5f, 0.5f},
                      {i * 0.5f, 0.5f, -0.5f, -i * 0.5f},
                      {i * 0.5f, -0.5f, 0.5f, -i * 0.5f},
                      {0.5f, i * 0.5f, i * 0.5f, 0.5f}},
                     {"+XY", "+ZY", "+YX", "+YZ"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+S 1
+S 1
+S 1
+H 0
+CNOT 0 1
+S 1
+H 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -187,9 +266,24 @@ The second qubit can be replaced by a measurement record.
 Applies a Z gate to the target if the control is in the |-i> state.
 
 Negates the amplitude of the |-i>|1> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, -i}, {0, 0, i, 0}},
                     {"+XZ", "+ZZ", "+YX", "+IZ"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+CNOT 1 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -214,9 +308,20 @@ The first qubit can be replaced by a measurement record.
 Applies an X gate to the target if the control is in the |1> state.
 
 Negates the amplitude of the |1>|-> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}, {0, 1, 0, 0}},
                     {"+XX", "+ZI", "+IX", "+ZZ"},
+                    R"CIRCUIT(
+CNOT 0 1
+)CIRCUIT",
                 };
             },
         });
@@ -243,9 +348,24 @@ The first qubit can be replaced by a measurement record.
 Applies a Y gate to the target if the control is in the |1> state.
 
 Negates the amplitude of the |1>|-i> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 0, 0, -i}, {0, 0, 1, 0}, {0, i, 0, 0}},
                     {"+XY", "+ZI", "+ZX", "+ZZ"},
+                    R"CIRCUIT(
+S 1
+S 1
+S 1
+CNOT 0 1
+S 1
+)CIRCUIT",
                 };
             },
         });
@@ -271,9 +391,22 @@ Either qubit can be replaced by a measurement record.
 Applies a Z gate to the target if the control is in the |1> state.
 
 Negates the amplitude of the |1>|1> state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, -1}},
                     {"+XZ", "+ZI", "+ZX", "+IZ"},
+                    R"CIRCUIT(
+H 1
+CNOT 0 1
+H 1
+)CIRCUIT",
                 };
             },
         });

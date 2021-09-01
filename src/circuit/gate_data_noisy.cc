@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <complex>
-
 #include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
@@ -39,6 +37,14 @@ The single qubit depolarizing channel.
 
 Applies a randomly chosen Pauli with a given probability.
 
+- Parens Arguments:
+
+    A single float specifying the depolarization strength.
+
+- Targets:
+
+    Qubits to apply single-qubit depolarizing noise to.
+
 - Pauli Mixture:
 
     ```
@@ -50,6 +56,7 @@ Applies a randomly chosen Pauli with a given probability.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -70,6 +77,14 @@ Applies a randomly chosen Pauli with a given probability.
 The two qubit depolarizing channel.
 
 Applies a randomly chosen two-qubit Pauli product with a given probability.
+
+- Parens Arguments:
+
+    A single float specifying the depolarization strength.
+
+- Targets:
+
+    Qubit pairs to apply two-qubit depolarizing noise to.
 
 - Pauli Mixture:
 
@@ -94,6 +109,7 @@ Applies a randomly chosen two-qubit Pauli product with a given probability.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -113,6 +129,14 @@ Applies a randomly chosen two-qubit Pauli product with a given probability.
                     R"MARKDOWN(
 Applies a Pauli X with a given probability.
 
+- Parens Arguments:
+
+    A single float specifying the probability of applying an X operation.
+
+- Targets:
+
+    Qubits to apply bit flip noise to.
+
 - Pauli Mixture:
 
     ```
@@ -122,6 +146,7 @@ Applies a Pauli X with a given probability.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -141,6 +166,14 @@ Applies a Pauli X with a given probability.
                     R"MARKDOWN(
 Applies a Pauli Y with a given probability.
 
+- Parens Arguments:
+
+    A single float specifying the probability of applying a Y operation.
+
+- Targets:
+
+    Qubits to apply Y flip noise to.
+
 - Pauli Mixture:
 
     ```
@@ -150,6 +183,7 @@ Applies a Pauli Y with a given probability.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -169,6 +203,14 @@ Applies a Pauli Y with a given probability.
                     R"MARKDOWN(
 Applies a Pauli Z with a given probability.
 
+- Parens Arguments:
+
+    A single float specifying the probability of applying a Z operation.
+
+- Targets:
+
+    Qubits to apply phase flip noise to.
+
 - Pauli Mixture:
 
     ```
@@ -178,6 +220,7 @@ Applies a Pauli Z with a given probability.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -197,9 +240,16 @@ Applies a Pauli Z with a given probability.
                     R"MARKDOWN(
 A single qubit Pauli error channel with explicitly specified probabilities for each case.
 
-The gate is parameterized by 3 disjoint probabilities, one for each Pauli other than I, ordered as follows:
+- Parens Arguments:
 
-    X, Y, Z
+    Three floats specifying disjoint Pauli case probabilities.
+    px: Probability of applying an X operation.
+    py: Probability of applying a Y operation.
+    pz: Probability of applying a Z operation.
+
+- Targets:
+
+    Qubits to apply the custom noise channel to.
 
 - Example:
 
@@ -220,6 +270,7 @@ The gate is parameterized by 3 disjoint probabilities, one for each Pauli other 
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -239,9 +290,28 @@ The gate is parameterized by 3 disjoint probabilities, one for each Pauli other 
                     R"MARKDOWN(
 A two qubit Pauli error channel with explicitly specified probabilities for each case.
 
-The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair other than II, ordered as follows:
+- Parens Arguments:
 
-    IX, IY, IZ, XI, XX, XY, XZ, YI, YX, YY, XZ, ZI, ZX, ZY, ZZ
+    Fifteen floats specifying disjoint non-identity Pauli pair case probabilities.
+    pix: Probability of applying an IX operation.
+    piy: Probability of applying an IY operation.
+    piz: Probability of applying an IZ operation.
+    pxi: Probability of applying an XI operation.
+    pxx: Probability of applying an XX operation.
+    pxy: Probability of applying an XY operation.
+    pxz: Probability of applying an XZ operation.
+    pyi: Probability of applying a YI operation.
+    pyx: Probability of applying a YX operation.
+    pyy: Probability of applying a YY operation.
+    pyz: Probability of applying a YZ operation.
+    pzi: Probability of applying a ZI operation.
+    pzx: Probability of applying a ZX operation.
+    pzy: Probability of applying a ZY operation.
+    pzz: Probability of applying a ZZ operation.
+
+- Targets:
+
+    Qubit pairs to apply the custom noise channel to.
 
 - Example:
 
@@ -265,7 +335,7 @@ The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair 
     pyi: YI
     pyx: YX
     pyy: YY
-    pyz: XZ
+    pyz: YZ
     pzi: ZI
     pzx: ZX
     pzy: ZY
@@ -274,6 +344,7 @@ The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair 
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -297,6 +368,16 @@ Otherwise sets the flag to false.
 
 See also: `ELSE_CORRELATED_ERROR`.
 
+- Parens Arguments:
+
+    A single float specifying the probability of applying the Paulis making up the error.
+
+- Targets:
+
+    Pauli targets specifying the Paulis to apply when the error occurs.
+    Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
+    They are implicitly all combined.
+
 - Example:
 
     ```
@@ -308,6 +389,7 @@ See also: `ELSE_CORRELATED_ERROR`.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -331,6 +413,17 @@ Otherwise leaves the flag alone.
 
 See also: `CORRELATED_ERROR`.
 
+- Parens Arguments:
+
+    A single float specifying the probability of applying the Paulis making up the error, conditioned on the "correlated
+    error occurred flag" being False.
+
+- Targets:
+
+    Pauli targets specifying the Paulis to apply when the error occurs.
+    Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
+    They are implicitly all combined.
+
 - Example:
 
     ```
@@ -342,6 +435,7 @@ See also: `CORRELATED_ERROR`.
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });

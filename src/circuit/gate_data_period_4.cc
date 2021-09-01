@@ -39,10 +39,22 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
                     R"MARKDOWN(
 Principle square root of X gate.
 Phases the amplitude of |-> by i.
-Equivalent to `H` then `S` then `H`.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0.5f + 0.5f * i, 0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
                     {"+X", "-Y"},
+                    R"CIRCUIT(
+H 0
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -62,10 +74,24 @@ Equivalent to `H` then `S` then `H`.
                     R"MARKDOWN(
 Adjoint square root of X gate.
 Phases the amplitude of |-> by -i.
-Equivalent to `H` then `S_DAG` then `H`.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
                     {"+X", "+Y"},
+                    R"CIRCUIT(
+H 0
+S 0
+S 0
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -85,10 +111,22 @@ Equivalent to `H` then `S_DAG` then `H`.
                     R"MARKDOWN(
 Principle square root of Y gate.
 Phases the amplitude of |-i> by i.
-Equivalent to `S` then `H` then `S` then `H` then `S_DAG`.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0.5f + 0.5f * i, -0.5f - 0.5f * i}, {0.5f + 0.5f * i, 0.5f + 0.5f * i}},
                     {"-Z", "+X"},
+                    R"CIRCUIT(
+S 0
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -108,10 +146,22 @@ Equivalent to `S` then `H` then `S` then `H` then `S_DAG`.
                     R"MARKDOWN(
 Principle square root of Y gate.
 Phases the amplitude of |-i> by -i.
-Equivalent to `S` then `H` then `S_DAG` then `H` then `S_DAG`.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0.5f - 0.5f * i, 0.5f - 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
                     {"+Z", "-X"},
+                    R"CIRCUIT(
+H 0
+S 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -131,9 +181,20 @@ Equivalent to `S` then `H` then `S_DAG` then `H` then `S_DAG`.
                     R"MARKDOWN(
 Principle square root of Z gate.
 Phases the amplitude of |1> by i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{1, 0}, {0, i}},
                     {"+Y", "+Z"},
+                    R"CIRCUIT(
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -154,9 +215,22 @@ Phases the amplitude of |1> by i.
                     R"MARKDOWN(
 Principle square root of Z gate.
 Phases the amplitude of |1> by -i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{1, 0}, {0, -i}},
                     {"-Y", "+Z"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+)CIRCUIT",
                 };
             },
         });

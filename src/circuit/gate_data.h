@@ -111,10 +111,23 @@ enum GateFlags : uint16_t {
 };
 
 struct ExtraGateData {
+    /// A word describing what sort of gate this is.
     const char *category;
-    const char *description;
+    /// Prose summary of what the gate is, how it fits into Stim, and how to use it.
+    const char *help;
+    /// A unitary matrix describing the gate. (Size 0 if the gate is not unitary.)
     FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data;
+    /// A shorthand description of the Clifford tableau describing the gate. (Size 0 if the gate is not Clifford.)
     FixedCapVector<const char *, 4> tableau_data;
+    /// Stim circuit file contents of a decomposition into H+S+CX+M+R operations. (nullptr if not decomposable.)
+    const char *h_s_cx_m_r_decomposition;
+
+    ExtraGateData(
+        const char *category,
+        const char *help,
+        FixedCapVector<FixedCapVector<std::complex<float>, 4>, 4> unitary_data,
+        FixedCapVector<const char *, 4> tableau_data,
+        const char *h_s_cx_m_r_decomposition);
 };
 
 struct Gate {

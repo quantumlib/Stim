@@ -302,3 +302,11 @@ stim::Circuit make_bell_pair_circuit() {
     )CIRCUIT");
 }
 ```
+
+### Auto-format Code
+
+Run the following command from the repo root to auto-format all C++ code:
+
+```bash
+find src | grep "\.\(cc\|h\)$" | xargs clang-format -i
+```

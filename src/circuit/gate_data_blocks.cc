@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <complex>
-
 #include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
@@ -36,11 +34,18 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
                     "Y_Control Flow",
                     R"MARKDOWN(
 Repeats the instructions in its body N times.
-N can be any positive integer from 1 to a quintillion (10^18).
 
 Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
 For example, if a logical observable is only given measurements inside a repeat block with a repetition count of 0, it's
 ambiguous whether the output of sampling the logical observables includes a bit for that logical observable.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    A positive integer in [1, 10^18] specifying the number of repetitions.
 
 - Example:
 
@@ -60,6 +65,7 @@ ambiguous whether the output of sampling the logical observables includes a bit 
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });

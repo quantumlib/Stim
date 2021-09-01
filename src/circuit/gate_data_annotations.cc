@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <complex>
-
 #include "../simulators/error_analyzer.h"
 #include "../simulators/frame_simulator.h"
 #include "../simulators/tableau_simulator.h"
@@ -35,33 +33,80 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
                 return {
                     "Z_Annotations",
                     R"MARKDOWN(
-Annotates that a set of measurements have a deterministic result, which can be used to detect errors.
+Annotates that a set of measurements can be used to detect errors, because the set's parity should be deterministic.
 
-Detectors are ignored in measurement sampling mode.
-In detector sampling mode, detectors produce results (false=expected parity, true=incorrect parity detected).
+Note that it is not necessary to say whether the measurement set's parity is even or odd; all that matters is that the
+parity should be *consistent* when running the circuit and omitting all noisy operations. Note that, for example, this
+means that even though `X` and `X_ERROR(1)` have equivalent effects on the measurements making up a detector, they have
+differing effects on the detector (because `X` is intended, determining the expected value, and `X_ERROR` is noise,
+causing deviations from the expected value).
 
-Detectors can optionally be parameterized by coordinates (e.g. `DETECTOR(1,2)` has coordinates 1,2).
-These coordinates aren't really used for anything in stim, but can act as drawing hints for other tools.
-Note that the coordinates are relative to accumulated coordinate shifts from SHIFT_COORDS instructions.
-Also note that putting two detectors at the same coordinate does not fuse them into one detector
-(beware that OBSERVABLE_INCLUDE does fuse observables at the same index, which looks very similar).
-See SHIFT_COORDS for more details on using coordinates.
+Detectors are ignored when sampling measurements, but produce results when sampling detection events. In detector
+sampling mode, each detector produces a result bit (where 0 means "measurement set had expected parity" and 1 means
+"measurement set had incorrect parity"). When converting a circuit into a detector error model, errors are grouped based
+on the detectors they flip (the "symptoms" of the error) and the observables they flip (the "frame changes" of the
+error).
 
-Note that detectors are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
-measurement cannot create detection events on detectors that include that measurement, but placing an `X_ERROR(1)`
-does create detection events.
+It is permitted, though not recommended, for the measurement set given to a `DETECTOR` instruction to have inconsistent
+parity. When a detector's measurement set is inconsistent, the detector is called a "gauge detector" and the expected
+parity of the measurement set is chosen arbitrarily (in an implementation-defined way). Some circuit analysis tools
+(such as the circuit-to-detector-error-model conversion) will by default refuse to process circuits containing gauge
+detectors. Gauge detectors produce random results when sampling detection events, though these results will be
+appropriately correlated with other gauge detectors. For example, if `DETECTOR rec[-1]` and `DETECTOR rec[-2]` are gauge
+detectors but `DETECTOR rec[-1] rec[-2]` is not, then under noiseless execution the two gauge detectors would either
+always produce the same result or always produce opposite results.
+
+Detectors can specify coordinates using their parens arguments. Coordinates have no effect on simulations, but can be
+useful to tools consuming the circuit. For example, a tool drawing how the detectors in a circuit relate to each other
+can use the coordinates as hints for where to place the detectors in the drawing.
+
+- Parens Arguments:
+
+    Optional.
+    Coordinate metadata, relative to the current coordinate offset accumulated from `SHIFT_COORDS` instructions.
+    Can be any number of coordinates from 1 to 16.
+    There is no required convention for which coordinate is which.
+
+- Targets:
+
+    The measurement records to XOR together to get the deterministic-under-noiseless-execution parity.
 
 - Example:
 
     ```
+    R 0
+    X_ERROR(0.1) 0
+    M 0  # This measurement is always False under noiseless execution.
+    # Annotate that most recent measurement should be deterministic.
+    DETECTOR rec[-1]
+
+    R 0
+    X 0
+    X_ERROR(0.1) 0
+    M 0  # This measurement is always True under noiseless execution.
+    # Annotate that most recent measurement should be deterministic.
+    DETECTOR rec[-1]
+
+    R 0 1
     H 0
     CNOT 0 1
-    M 0 1
+    DEPOLARIZE2(0.001) 0 1
+    M 0 1  # These two measurements are always equal under noiseless execution.
+    # Annotate that the parity of the previous two measurements should be consistent.
     DETECTOR rec[-1] rec[-2]
+
+    # A series of trivial detectors with hinted coordinates along the diagonal line Y = 2X + 3.
+    REPEAT 100 {
+        R 0
+        M 0
+        SHIFT_COORDS(1, 2)
+        DETECTOR(0, 3) rec[-1]
+    }
     ```
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -79,34 +124,66 @@ does create detection events.
                 return {
                     "Z_Annotations",
                     R"MARKDOWN(
-Adds measurement results to a given logical observable index.
+Adds measurement records to a specified logical observable.
 
-A logical observable's measurement result is the parity of all physical measurement results added to it.
+A potential point of confusion here is that Stim's notion of a logical observable is nothing more than a set of
+measurements, potentially spanning across the entire circuit, that together produce a deterministic result. It's more
+akin to the "boundary of a parity sheet" in a topological spacetime diagram than it is to the notion of a qubit
+observable. For example, consider a surface code memory experiment that initializes a logical |0>, preserves the state
+noise, and eventually performs a logical Z basis measurement. The circuit representing this experiment would use
+`OBSERVABLE_INCLUDE` instructions to specifying which physical measurements within the logical Z basis measurement
+should be XOR'd together to get the logical measurement result. This effectively identifies the logical Z observable.
+But the circuit would *not* declare an X observable, because the X observable is not deterministic in a Z basis memory
+experiment; it has no corresponding deterministic measurement set.
 
-A logical observable is similar to a Detector, except the measurements making up an observable can be built up
-incrementally over the entire circuit.
+Logical observables are ignored when sampling measurements, but can produce results (if requested) when sampling
+detection events. In detector sampling mode, each observable can produce a result bit (where 0 means "measurement set
+had expected parity" and 1 means "measurement set had incorrect parity"). When converting a circuit into a detector
+error model, errors are grouped based on the detectors they flip (the "symptoms" of the error) and the observables they
+flip (the "frame changes" of the error).
 
-Logical observables are ignored in measurement sampling mode.
-In detector sampling mode, observables produce results (false=expected parity, true=incorrect parity detected).
-These results are optionally appended to the detector results, depending on simulator arguments / command line flags.
+Another potential point of confusion is that when sampling logical measurement results, as part of sampling detection
+events in the circuit, the reported results are not measurements of the logical observable but rather whether those
+measurement results *were flipped*. This has significant simulation speed benefits, and also makes it so that it is not
+necessary to say whether the logical measurement result is supposed to be False or True. Note that, for example, this
+means that even though `X` and `X_ERROR(1)` have equivalent effects on the measurements making up an observable, they
+have differing effects on the reported value of an observable when sampling detection events (because `X` is intended,
+determining the expected value, and `X_ERROR` is noise, causing deviations from the expected value).
 
-Note that observables are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
-measurement cannot flip a logical observable that includes that measurement, but placing an `X_ERROR(1)` does flip the
-observable. This is because observables are used for detecting errors, not for verifying noiseless functionality.
+It is not recommended for the measurement set of an observable to have inconsistent parity. For example, the
+circuit-to-detector-error-model conversion will refuse to operate on circuits containing such observables.
 
-Note that observable indices are NOT shifted by SHIFT_COORDS.
+- Parens Arguments:
+
+    A non-negative integer specifying the index of the logical observable to add the measurement records to.
+
+- Targets:
+
+    The measurement records to add to the specified observable.
 
 - Example:
 
     ```
+    R 0 1
     H 0
     CNOT 0 1
     M 0 1
-    OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
+    # Observable 0 is the parity of the previous two measurements.
+    OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
+
+    R 0 1
+    H 0
+    CNOT 0 1
+    M 0 1
+    # Observable 1 is the parity of the previous measurement...
+    OBSERVABLE_INCLUDE(1) rec[-1]
+    # ...and the one before that.
+    OBSERVABLE_INCLUDE(1) rec[-2]
     ```
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -124,20 +201,42 @@ Note that observable indices are NOT shifted by SHIFT_COORDS.
                 return {
                     "Z_Annotations",
                     R"MARKDOWN(
-Indicates the end of a layer of gates, or that time is advancing.
-For example, used by `stimcirq` to preserve the moment structure of cirq circuits converted to/from stim circuits.
+Annotates the end of a layer of gates, or that time is advancing.
+
+This instruction is not necessary, it has no effect on simulations, but it can be used by tools that are transforming or
+visualizing the circuit. For example, a tool that adds noise to a circuit may include cross-talk terms that require
+knowing whether or not operations are happening in the same time step or not.
+
+TICK instructions are added, and checked for, by `stimcirq` in order to preserve the moment structure of cirq circuits
+converted between stim circuits and cirq circuits.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    This instruction takes no targets.
 
 - Example:
 
     ```
+    # First time step.
+    H 0
+    CZ 1 2
     TICK
+
+    # Second time step.
+    H 1
     TICK
-    # Oh, and of course:
+
+    # Empty time step.
     TICK
     ```
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -155,33 +254,41 @@ For example, used by `stimcirq` to preserve the moment structure of cirq circuit
                 return {
                     "Z_Annotations",
                     R"MARKDOWN(
-An annotation used to indicate the intended location of a qubit.
-The coordinates are double precision floating point numbers, relative to accumulated offsets from SHIFT_COORDS.
-The coordinates are not in any particular order or number of dimensions.
-As far as stim is concerned the coordinates are a list of opaque and mysterious numbers.
-They have no effect on simulations of the circuit, but are potentially useful for tasks such as drawing the circuit.
+Annotates the location of a qubit.
 
-See also: SHIFT_COORDS.
+Coordinates are not required and have no effect on simulations, but can be useful to tools consuming the circuit. For
+example, a tool drawing the circuit  can use the coordinates as hints for where to place the qubits in the drawing.
+`stimcirq` uses `QUBIT_COORDS` instructions to preserve `cirq.LineQubit` and `cirq.GridQubit` coordinates when
+converting between stim circuits and cirq circuits
 
-Note that a qubit's coordinates can be specified multiple times.
-The intended interpretation is that the qubit is at the location of the most recent assignment.
-For example, this could be used to indicate a simulated qubit is iteratively playing the role of many physical qubits.
+A qubit's coordinates can be specified multiple times, with the intended interpretation being that the qubit is at the
+location of the most recent assignment. For example, this could be used to indicate a simulated qubit is iteratively
+playing the role of many physical qubits.
+
+- Parens Arguments:
+
+    Optional.
+    The latest coordinates of the qubit, relative to accumulated offsets from `SHIFT_COORDS` instructions.
+    Can be any number of coordinates from 1 to 16.
+    There is no required convention for which coordinate is which.
+
+- Targets:
+
+    The qubit or qubits the coordinates apply to.
 
 - Example:
 
     ```
-    QUBIT_COORDS(100, 101) 0
-    QUBIT_COORDS(100, 101) 1
-    SQRT_XX 0 1
-    MR 0 1
-    QUBIT_COORDS(2.5, 3.5) 2  # Floating point coordinates are allowed.
-    QUBIT_COORDS(2.5, 4.5) 1  # Hint that qubit 1 is now referring to a different physical location.
-    SQRT_XX 1 2
-    M 1 2
+    # Annotate that qubits 0 to 3 are at the corners of a square.
+    QUBIT_COORDS(0, 0) 0
+    QUBIT_COORDS(0, 1) 1
+    QUBIT_COORDS(1, 0) 2
+    QUBIT_COORDS(1, 1) 3
     ```
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });
@@ -199,12 +306,22 @@ For example, this could be used to indicate a simulated qubit is iteratively pla
                 return {
                     "Z_Annotations",
                     R"MARKDOWN(
-Accumulates offsets to apply to qubit coordinates and detector coordinates.
-
-See also: QUBIT_COORDS, DETECTOR.
+Accumulates offsets that affect qubit coordinates and detector coordinates.
 
 Note: when qubit/detector coordinates use fewer dimensions than SHIFT_COORDS, the offsets from the additional dimensions
 are ignored (i.e. not specifying a dimension is different from specifying it to be 0).
+
+See also: `QUBIT_COORDS`, `DETECTOR`.
+
+- Parens Arguments:
+
+    Offsets to add into the current coordinate offset.
+    Can be any number of coordinate offsets from 1 to 16.
+    There is no required convention for which coordinate is which.
+
+- Targets:
+
+    This instruction takes no targets.
 
 - Example:
 
@@ -214,6 +331,8 @@ are ignored (i.e. not specifying a dimension is different from specifying it to 
     SHIFT_COORDS(1500)
     QUBIT_COORDS(11) 1    # Actually at 2011.5
     QUBIT_COORDS(10.5) 2  # Actually at 2011.0
+
+    # Declare some detectors with coordinates along a diagonal line.
     REPEAT 1000 {
         CNOT 0 2
         CNOT 1 2
@@ -225,6 +344,7 @@ are ignored (i.e. not specifying a dimension is different from specifying it to 
 )MARKDOWN",
                     {},
                     {},
+                    nullptr,
                 };
             },
         });

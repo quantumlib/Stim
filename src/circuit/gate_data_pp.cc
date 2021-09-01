@@ -38,12 +38,29 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i},
                      {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
                      {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
                      {0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
                     {"+XI", "-YX", "+IX", "-XY"},
+                    R"CIRCUIT(
+H 0
+CX 0 1
+H 1
+S 1
+H 1
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -61,12 +78,33 @@ Phases the -1 eigenspace of the XX observable by i.
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by -i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f - 0.5f * i, 0, 0, 0.5f + 0.5f * i},
                      {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
                      {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
                      {0.5f + 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
                     {"+XI", "+YX", "+IX", "+XY"},
+                    R"CIRCUIT(
+H 0
+CX 0 1
+H 1
+S 1
+S 1
+S 1
+H 1
+S 0
+S 0
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -85,12 +123,37 @@ Phases the -1 eigenspace of the XX observable by -i.
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f + 0.5f * i, 0, 0, -0.5f + 0.5f * i},
                      {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
                      {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
                      {-0.5f + 0.5f * i, 0, 0, 0.5f + 0.5f * i}},
                     {"-ZY", "+XY", "-YZ", "+YX"},
+                    R"CIRCUIT(
+S 0
+H 0
+S 0
+S 1
+H 1
+S 1
+H 1
+CX 0 1
+S 1
+S 1
+S 1
+H 0
+S 0
+S 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -108,12 +171,37 @@ Phases the -1 eigenspace of the YY observable by i.
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by -i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{0.5f - 0.5f * i, 0, 0, -0.5f - 0.5f * i},
                      {0, 0.5f - 0.5f * i, 0.5f + 0.5f * i, 0},
                      {0, 0.5f + 0.5f * i, 0.5f - 0.5f * i, 0},
                      {-0.5f - 0.5f * i, 0, 0, 0.5f - 0.5f * i}},
                     {"+ZY", "-XY", "+YZ", "-YX"},
+                    R"CIRCUIT(
+S 0
+H 0
+S 1
+S 1
+S 1
+H 1
+S 1
+H 1
+CX 0 1
+S 1
+S 0
+H 0
+S 0
+S 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -132,9 +220,24 @@ Phases the -1 eigenspace of the YY observable by -i.
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, i, 0, 0}, {0, 0, i, 0}, {0, 0, 0, 1}},
                     {"+YZ", "+ZI", "+ZY", "+IZ"},
+                    R"CIRCUIT(
+H 1
+CX 0 1
+H 1
+S 0
+S 1
+)CIRCUIT",
                 };
             },
         });
@@ -152,9 +255,28 @@ Phases the -1 eigenspace of the ZZ observable by i.
                     "C_Two Qubit Clifford Gates",
                     R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by -i.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubit pairs to operate on.
 )MARKDOWN",
                     {{1, 0, 0, 0}, {0, -i, 0, 0}, {0, 0, -i, 0}, {0, 0, 0, 1}},
                     {"-YZ", "+ZI", "-ZY", "+IZ"},
+                    R"CIRCUIT(
+H 1
+CX 0 1
+H 1
+S 0
+S 0
+S 0
+S 1
+S 1
+S 1
+)CIRCUIT",
                 };
             },
         });
