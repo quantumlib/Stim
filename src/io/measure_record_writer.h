@@ -36,7 +36,7 @@ struct MeasureRecordWriter {
     virtual void write_bit(bool b) = 0;
     /// Writes (or buffers) multiple measurement results.
     virtual void write_bytes(ConstPointerRange<uint8_t> data);
-    /// Flushes all buffered measurement results and writes any end-of-result markers that are needed (e.g. a newline).
+    /// Flushes all buffered measurement results and writes any end-of-record markers that are needed (e.g. a newline).
     virtual void write_end() = 0;
     /// Used to control the DETS format prefix character (M for measurement, D for detector, L for logical observable).
     ///
