@@ -36,9 +36,24 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
                     R"MARKDOWN(
 X-basis measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
+
+- Parens Arguments:
+
+    Optional.
+    A single float specifying A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    The qubits to measure in the X basis.
+    Prefixing a qubit target with `!` flips its reported measurement result.
 )MARKDOWN",
                     {},
                     {"X -> +m xor chance(p)", "X -> +X"},
+                    R"CIRCUIT(
+H 0
+M 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -57,9 +72,28 @@ Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>
                     R"MARKDOWN(
 Y-basis measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
+
+- Parens Arguments:
+
+    Optional.
+    A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    The qubits to measure in the Y basis.
+    Prefixing a qubit target with `!` flips its reported measurement result.
 )MARKDOWN",
                     {},
                     {"Y -> m xor chance(p)", "Y -> +Y"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+H 0
+M 0
+H 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -78,9 +112,22 @@ Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i
                     R"MARKDOWN(
 Z-basis measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
+
+- Parens Arguments:
+
+    Optional.
+    A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    The qubits to measure in the Z basis.
+    Prefixing a qubit target with `!` flips its reported measurement result.
 )MARKDOWN",
                     {},
                     {"Z -> m xor chance(p)", "Z -> +Z"},
+                    R"CIRCUIT(
+M 0
+)CIRCUIT",
                 };
             },
         });
@@ -102,9 +149,25 @@ Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>
                     R"MARKDOWN(
 X-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
+
+- Parens Arguments:
+
+    Optional.
+    A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    The qubits to measure and reset in the X basis.
+    Prefixing a qubit target with `!` flips its reported measurement result.
 )MARKDOWN",
                     {},
                     {"X -> m xor chance(p)", "1 -> +X"},
+                    R"CIRCUIT(
+H 0
+M 0
+R 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -123,9 +186,29 @@ Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, 
                     R"MARKDOWN(
 Y-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
+
+- Parens Arguments:
+
+    Optional.
+    A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    The qubits to measure and reset in the Y basis.
+    Prefixing a qubit target with `!` flips its reported measurement result.
 )MARKDOWN",
                     {},
                     {"Y -> m xor chance(p)", "1 -> +Y"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+H 0
+R 0
+M 0
+H 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -144,9 +227,23 @@ Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`,
                     R"MARKDOWN(
 Z-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
+
+- Parens Arguments:
+
+    Optional.
+    A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    The qubits to measure and reset in the Z basis.
+    Prefixing a qubit target with `!` flips its reported measurement result.
 )MARKDOWN",
                     {},
                     {"Z -> m xor chance(p)", "1 -> +Z"},
+                    R"CIRCUIT(
+M 0
+R 0
+)CIRCUIT",
                 };
             },
         });
@@ -168,9 +265,22 @@ Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, 
                     R"MARKDOWN(
 X-basis reset.
 Forces each target qubit into the `|+>` state by silently measuring it in the X basis and applying a `Z` gate if it ended up in the `|->` state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    The qubits to reset in the X basis.
 )MARKDOWN",
                     {},
                     {"1 -> +X"},
+                    R"CIRCUIT(
+H 0
+R 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -189,9 +299,26 @@ Forces each target qubit into the `|+>` state by silently measuring it in the X 
                     R"MARKDOWN(
 Y-basis reset.
 Forces each target qubit into the `|i>` state by silently measuring it in the Y basis and applying an `X` gate if it ended up in the `|-i>` state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    The qubits to reset in the Y basis.
 )MARKDOWN",
                     {},
                     {"1 -> +Y"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+H 0
+R 0
+H 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -210,9 +337,20 @@ Forces each target qubit into the `|i>` state by silently measuring it in the Y 
                     R"MARKDOWN(
 Z-basis reset.
 Forces each target qubit into the `|0>` state by silently measuring it in the Z basis and applying an `X` gate if it ended up in the `|1>` state.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    The qubits to reset in the Z basis.
 )MARKDOWN",
                     {},
                     {"1 -> +Z"},
+                    R"CIRCUIT(
+R 0
+)CIRCUIT",
                 };
             },
         });
@@ -233,19 +371,38 @@ Forces each target qubit into the `|0>` state by silently measuring it in the Z 
                     R"MARKDOWN(
 Measure Pauli products.
 
+- Parens Arguments:
+
+    Optional.
+    A single float specifying the probability of flipping each reported measurement result.
+
+- Targets:
+
+    A series of Pauli products to measure.
+
+    Each Pauli product is a series of Pauli targets (`[XYZ]#`) separated by combiners (`*`).
+    Products can be negated by prefixing a Pauli target in the product with an inverter (`!`)
+
 - Example:
 
     ```
-    MPP X1*Y2           # Join products using '*'
-    MPP X1*Y2 Z3*Z4     # Separate products using spaces with no '*'.
-    MPP !Z5             # Negate products (invert results) using '!'.
-    MPP !Z5*X4
-    MPP(0.001) Z1*Z2*Z3 # Add result noise using a probability argument.
+    # Measure the two-body +X1*Y2 observable.
+    MPP X1*Y2
+
+    # Measure the one-body -Z5 observable.
+    MPP !Z5
+
+    # Measure the two-body +X1*Y2 observable and also the three-body -Z3*Z4*Z5 observable.
+    MPP X1*Y2 !Z3*Z4*Z5
+
+    # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
+    MPP(0.001) Z1*Z2 X1*X2
     ```
 
 )MARKDOWN",
                     {},
                     {"P -> m xor chance(p)", "P -> P"},
+                    nullptr,
                 };
             },
         });

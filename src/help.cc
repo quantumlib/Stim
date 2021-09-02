@@ -124,6 +124,28 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
     out.change_indent(-4);
 }
 
+void print_decomposition(Acc &out, const Gate &gate) {
+    const char *decomposition = gate.extra_data_func().h_s_cx_m_r_decomposition;
+    if (decomposition != nullptr) {
+        out << "- Decomposition (into H, S, CX, M, R):\n";
+        out.change_indent(+4);
+        out << "```\n";
+        out << gate.name << " 0";
+        if (gate.flags & GATE_TARGETS_PAIRS) {
+            out << " 1";
+        }
+        out << '\n';
+        out << "```\n";
+        out << "\n";
+        out << "is equivalent to:\n";
+        out << "\n";
+        out << "```";
+        out << decomposition;
+        out << "```\n";
+        out.change_indent(-4);
+    }
+}
+
 void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (gate.flags & GATE_IS_UNITARY) {
         out << "- Stabilizer Generators:\n";
@@ -290,7 +312,7 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
         }
     }
     auto data = gate.extra_data_func();
-    out << data.description;
+    out << data.help;
     if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
         out << "If this gate is parameterized by a probability argument, the "
                "recorded result will be flipped with that probability. "
@@ -300,12 +322,13 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
         out << "Prefixing a target with ! inverts its recorded measurement result.\n";
     }
 
-    if (std::string(data.description).find("xample:\n") == std::string::npos) {
+    if (std::string(data.help).find("xample:\n") == std::string::npos) {
         print_example(out, alt_gate.name, gate);
     }
     print_stabilizer_generators(out, gate);
     print_bloch_vector(out, gate);
     print_unitary_matrix(out, gate);
+    print_decomposition(out, gate);
     out.flush();
     return out.settled;
 }

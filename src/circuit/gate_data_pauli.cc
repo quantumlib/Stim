@@ -39,9 +39,20 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
                     R"MARKDOWN(
 Identity gate.
 Does nothing to the target qubits.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to do nothing to.
 )MARKDOWN",
                     {{1, 0}, {0, 1}},
                     {"+X", "+Z"},
+                    R"CIRCUIT(
+# (no operations)
+)CIRCUIT",
                 };
             },
         });
@@ -61,9 +72,23 @@ Does nothing to the target qubits.
                     R"MARKDOWN(
 Pauli X gate.
 The bit flip gate.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0, 1}, {1, 0}},
                     {"+X", "-Z"},
+                    R"CIRCUIT(
+H 0
+S 0
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -82,9 +107,27 @@ The bit flip gate.
                     "A_Pauli Gates",
                     R"MARKDOWN(
 Pauli Y gate.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0, -i}, {i, 0}},
                     {"-X", "-Z"},
+                    R"CIRCUIT(
+S 0
+H 0
+S 0
+S 0
+H 0
+S 0
+S 0
+S 0
+)CIRCUIT",
                 };
             },
         });
@@ -104,9 +147,21 @@ Pauli Y gate.
                     R"MARKDOWN(
 Pauli Z gate.
 The phase flip gate.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{1, 0}, {0, -1}},
                     {"-X", "+Z"},
+                    R"CIRCUIT(
+S 0
+S 0
+)CIRCUIT",
                 };
             },
         });

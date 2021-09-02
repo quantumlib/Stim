@@ -77,6 +77,14 @@
     Identity gate.
     Does nothing to the target qubits.
     
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to do nothing to.
+    
     - Example:
     
         ```
@@ -106,11 +114,31 @@
         [    , +1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        I 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        # (no operations)
+        ```
+        
     
 - <a name="X"></a>**`X`**
     
     Pauli X gate.
     The bit flip gate.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -141,10 +169,33 @@
         [+1  ,     ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        X 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        S 0
+        H 0
+        ```
+        
     
 - <a name="Y"></a>**`Y`**
     
     Pauli Y gate.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -175,11 +226,38 @@
         [  +i,     ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        Y 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        H 0
+        S 0
+        S 0
+        H 0
+        S 0
+        S 0
+        S 0
+        ```
+        
     
 - <a name="Z"></a>**`Z`**
     
     Pauli Z gate.
     The phase flip gate.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -210,12 +288,33 @@
         [    , -1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        Z 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        ```
+        
     
 ## Single Qubit Clifford Gates
 
 - <a name="C_XYZ"></a>**`C_XYZ`**
     
     Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -246,10 +345,33 @@
         [+1-i, +1+i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        C_XYZ 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        H 0
+        ```
+        
     
 - <a name="C_ZYX"></a>**`C_ZYX`**
     
     Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -280,6 +402,19 @@
         [-1+i, +1-i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        C_ZYX 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        ```
+        
     
 - <a name="H"></a>**`H`**
     
@@ -287,6 +422,14 @@
     
     The Hadamard gate.
     Swaps the X and Z axes.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -317,10 +460,30 @@
         [+1  , -1  ] / sqrt(2)
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        H 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        ```
+        
     
 - <a name="H_XY"></a>**`H_XY`**
     
     A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -351,10 +514,34 @@
         [+1+i,     ] / sqrt(2)
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        H_XY 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        S 0
+        H 0
+        S 0
+        ```
+        
     
 - <a name="H_YZ"></a>**`H_YZ`**
     
     A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -385,6 +572,22 @@
         [  +i, -1  ] / sqrt(2)
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        H_YZ 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        H 0
+        S 0
+        S 0
+        ```
+        
     
 - <a name="S"></a>**`S`**
     
@@ -392,6 +595,14 @@
     
     Principle square root of Z gate.
     Phases the amplitude of |1> by i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -422,12 +633,31 @@
         [    ,   +i]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        S 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        ```
+        
     
 - <a name="SQRT_X"></a>**`SQRT_X`**
     
     Principle square root of X gate.
     Phases the amplitude of |-> by i.
-    Equivalent to `H` then `S` then `H`.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -458,12 +688,33 @@
         [+1-i, +1+i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_X 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        H 0
+        ```
+        
     
 - <a name="SQRT_X_DAG"></a>**`SQRT_X_DAG`**
     
     Adjoint square root of X gate.
     Phases the amplitude of |-> by -i.
-    Equivalent to `H` then `S_DAG` then `H`.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -494,12 +745,35 @@
         [+1+i, +1-i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_X_DAG 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        S 0
+        S 0
+        H 0
+        ```
+        
     
 - <a name="SQRT_Y"></a>**`SQRT_Y`**
     
     Principle square root of Y gate.
     Phases the amplitude of |-i> by i.
-    Equivalent to `S` then `H` then `S` then `H` then `S_DAG`.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -530,12 +804,33 @@
         [+1+i, +1+i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_Y 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        H 0
+        ```
+        
     
 - <a name="SQRT_Y_DAG"></a>**`SQRT_Y_DAG`**
     
     Principle square root of Y gate.
     Phases the amplitude of |-i> by -i.
-    Equivalent to `S` then `H` then `S_DAG` then `H` then `S_DAG`.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -566,6 +861,20 @@
         [-1+i, +1-i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_Y_DAG 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        S 0
+        S 0
+        ```
+        
     
 - <a name="S_DAG"></a>**`S_DAG`**
     
@@ -573,6 +882,14 @@
     
     Principle square root of Z gate.
     Phases the amplitude of |1> by -i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubits to operate on.
     
     - Example:
     
@@ -603,6 +920,20 @@
         [    ,   -i]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        S_DAG 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        ```
+        
     
 ## Two Qubit Clifford Gates
 
@@ -619,6 +950,14 @@
     Applies an X gate to the target if the control is in the |1> state.
     
     Negates the amplitude of the |1>|-> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -647,6 +986,18 @@
         [    , +1  ,     ,     ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        CX 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        CNOT 0 1
+        ```
+        
     
 - <a name="CY"></a>**`CY`**
     
@@ -659,6 +1010,14 @@
     Applies a Y gate to the target if the control is in the |1> state.
     
     Negates the amplitude of the |1>|-i> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -687,6 +1046,22 @@
         [    ,   +i,     ,     ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        CY 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 1
+        S 1
+        S 1
+        CNOT 0 1
+        S 1
+        ```
+        
     
 - <a name="CZ"></a>**`CZ`**
     
@@ -699,6 +1074,14 @@
     Applies a Z gate to the target if the control is in the |1> state.
     
     Negates the amplitude of the |1>|1> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -728,11 +1111,33 @@
         [    ,     ,     , -1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        CZ 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 1
+        CNOT 0 1
+        H 1
+        ```
+        
     
 - <a name="ISWAP"></a>**`ISWAP`**
     
     Swaps two qubits and phases the -1 eigenspace of the ZZ observable by i.
     Equivalent to `SWAP` then `CZ` then `S` on both targets.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -760,11 +1165,34 @@
         [    ,     ,     , +1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        ISWAP 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        CNOT 0 1
+        S 1
+        CNOT 1 0
+        CNOT 0 1
+        ```
+        
     
 - <a name="ISWAP_DAG"></a>**`ISWAP_DAG`**
     
     Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
     Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -792,10 +1220,35 @@
         [    ,     ,     , +1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        ISWAP_DAG 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        CNOT 0 1
+        S 1
+        S 1
+        S 1
+        CNOT 1 0
+        CNOT 0 1
+        ```
+        
     
 - <a name="SQRT_XX"></a>**`SQRT_XX`**
     
     Phases the -1 eigenspace of the XX observable by i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -823,10 +1276,36 @@
         [+1-i,     ,     , +1+i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_XX 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        CX 0 1
+        H 1
+        S 1
+        H 1
+        S 0
+        H 0
+        ```
+        
     
 - <a name="SQRT_XX_DAG"></a>**`SQRT_XX_DAG`**
     
     Phases the -1 eigenspace of the XX observable by -i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -854,10 +1333,40 @@
         [+1+i,     ,     , +1-i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_XX_DAG 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        CX 0 1
+        H 1
+        S 1
+        S 1
+        S 1
+        H 1
+        S 0
+        S 0
+        S 0
+        H 0
+        ```
+        
     
 - <a name="SQRT_YY"></a>**`SQRT_YY`**
     
     Phases the -1 eigenspace of the YY observable by i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -885,10 +1394,44 @@
         [-1+i,     ,     , +1+i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_YY 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        H 0
+        S 0
+        S 1
+        H 1
+        S 1
+        H 1
+        CX 0 1
+        S 1
+        S 1
+        S 1
+        H 0
+        S 0
+        S 0
+        S 0
+        ```
+        
     
 - <a name="SQRT_YY_DAG"></a>**`SQRT_YY_DAG`**
     
     Phases the -1 eigenspace of the YY observable by -i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -916,10 +1459,44 @@
         [-1-i,     ,     , +1-i] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_YY_DAG 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        H 0
+        S 1
+        S 1
+        S 1
+        H 1
+        S 1
+        H 1
+        CX 0 1
+        S 1
+        S 0
+        H 0
+        S 0
+        S 0
+        S 0
+        ```
+        
     
 - <a name="SQRT_ZZ"></a>**`SQRT_ZZ`**
     
     Phases the -1 eigenspace of the ZZ observable by i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -947,10 +1524,34 @@
         [    ,     ,     , +1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_ZZ 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 1
+        CX 0 1
+        H 1
+        S 0
+        S 1
+        ```
+        
     
 - <a name="SQRT_ZZ_DAG"></a>**`SQRT_ZZ_DAG`**
     
     Phases the -1 eigenspace of the ZZ observable by -i.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -978,10 +1579,38 @@
         [    ,     ,     , +1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SQRT_ZZ_DAG 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 1
+        CX 0 1
+        H 1
+        S 0
+        S 0
+        S 0
+        S 1
+        S 1
+        S 1
+        ```
+        
     
 - <a name="SWAP"></a>**`SWAP`**
     
     Swaps two qubits.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1009,6 +1638,20 @@
         [    ,     ,     , +1  ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        SWAP 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        CNOT 0 1
+        CNOT 1 0
+        CNOT 0 1
+        ```
+        
     
 - <a name="XCX"></a>**`XCX`**
     
@@ -1018,6 +1661,14 @@
     Applies an X gate to the target if the control is in the |-> state.
     
     Negates the amplitude of the |->|-> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1045,6 +1696,20 @@
         [-1  , +1  , +1  , +1  ] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        XCX 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        CNOT 0 1
+        H 0
+        ```
+        
     
 - <a name="XCY"></a>**`XCY`**
     
@@ -1054,6 +1719,14 @@
     Applies a Y gate to the target if the control is in the |-> state.
     
     Negates the amplitude of the |->|-i> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1081,6 +1754,24 @@
         [  -i,   +i, +1  , +1  ] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        XCY 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 1
+        S 1
+        S 1
+        H 1
+        CNOT 1 0
+        H 1
+        S 1
+        ```
+        
     
 - <a name="XCZ"></a>**`XCZ`**
     
@@ -1091,6 +1782,14 @@
     Applies a Z gate to the target if the control is in the |-> state.
     
     Negates the amplitude of the |->|1> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1119,6 +1818,18 @@
         [    ,     , +1  ,     ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        XCZ 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        CNOT 1 0
+        ```
+        
     
 - <a name="YCX"></a>**`YCX`**
     
@@ -1128,6 +1839,14 @@
     Applies an X gate to the target if the control is in the |-i> state.
     
     Negates the amplitude of the |-i>|-> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1155,6 +1874,24 @@
         [  -i, +1  ,   +i, +1  ] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        YCX 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        H 0
+        CNOT 0 1
+        H 0
+        S 0
+        ```
+        
     
 - <a name="YCY"></a>**`YCY`**
     
@@ -1164,6 +1901,14 @@
     Applies a Y gate to the target if the control is in the |-i> state.
     
     Negates the amplitude of the |-i>|-i> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1191,6 +1936,28 @@
         [+1  ,   +i,   +i, +1  ] / 2
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        YCY 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        S 1
+        S 1
+        S 1
+        H 0
+        CNOT 0 1
+        S 1
+        H 0
+        S 0
+        ```
+        
     
 - <a name="YCZ"></a>**`YCZ`**
     
@@ -1201,6 +1968,14 @@
     Applies a Z gate to the target if the control is in the |-i> state.
     
     Negates the amplitude of the |-i>|1> state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        Qubit pairs to operate on.
     
     - Example:
     
@@ -1229,6 +2004,22 @@
         [    ,     ,   +i,     ]
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        YCZ 0 1
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        CNOT 1 0
+        S 0
+        ```
+        
     
 ## Noise Channels
 
@@ -1237,6 +2028,14 @@
     The single qubit depolarizing channel.
     
     Applies a randomly chosen Pauli with a given probability.
+    
+    - Parens Arguments:
+    
+        A single float specifying the depolarization strength.
+    
+    - Targets:
+    
+        Qubits to apply single-qubit depolarizing noise to.
     
     - Pauli Mixture:
     
@@ -1261,6 +2060,14 @@
     The two qubit depolarizing channel.
     
     Applies a randomly chosen two-qubit Pauli product with a given probability.
+    
+    - Parens Arguments:
+    
+        A single float specifying the depolarization strength.
+    
+    - Targets:
+    
+        Qubit pairs to apply two-qubit depolarizing noise to.
     
     - Pauli Mixture:
     
@@ -1302,6 +2109,16 @@
     
     See also: `ELSE_CORRELATED_ERROR`.
     
+    - Parens Arguments:
+    
+        A single float specifying the probability of applying the Paulis making up the error.
+    
+    - Targets:
+    
+        Pauli targets specifying the Paulis to apply when the error occurs.
+        Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
+        They are implicitly all combined.
+    
     - Example:
     
         ```
@@ -1319,6 +2136,17 @@
     
     See also: `CORRELATED_ERROR`.
     
+    - Parens Arguments:
+    
+        A single float specifying the probability of applying the Paulis making up the error, conditioned on the "correlated
+        error occurred flag" being False.
+    
+    - Targets:
+    
+        Pauli targets specifying the Paulis to apply when the error occurs.
+        Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
+        They are implicitly all combined.
+    
     - Example:
     
         ```
@@ -1332,9 +2160,16 @@
     
     A single qubit Pauli error channel with explicitly specified probabilities for each case.
     
-    The gate is parameterized by 3 disjoint probabilities, one for each Pauli other than I, ordered as follows:
+    - Parens Arguments:
     
-        X, Y, Z
+        Three floats specifying disjoint Pauli case probabilities.
+        px: Probability of applying an X operation.
+        py: Probability of applying a Y operation.
+        pz: Probability of applying a Z operation.
+    
+    - Targets:
+    
+        Qubits to apply the custom noise channel to.
     
     - Example:
     
@@ -1357,9 +2192,28 @@
     
     A two qubit Pauli error channel with explicitly specified probabilities for each case.
     
-    The gate is parameterized by 15 disjoint probabilities, one for each Pauli pair other than II, ordered as follows:
+    - Parens Arguments:
     
-        IX, IY, IZ, XI, XX, XY, XZ, YI, YX, YY, XZ, ZI, ZX, ZY, ZZ
+        Fifteen floats specifying disjoint non-identity Pauli pair case probabilities.
+        pix: Probability of applying an IX operation.
+        piy: Probability of applying an IY operation.
+        piz: Probability of applying an IZ operation.
+        pxi: Probability of applying an XI operation.
+        pxx: Probability of applying an XX operation.
+        pxy: Probability of applying an XY operation.
+        pxz: Probability of applying an XZ operation.
+        pyi: Probability of applying a YI operation.
+        pyx: Probability of applying a YX operation.
+        pyy: Probability of applying a YY operation.
+        pyz: Probability of applying a YZ operation.
+        pzi: Probability of applying a ZI operation.
+        pzx: Probability of applying a ZX operation.
+        pzy: Probability of applying a ZY operation.
+        pzz: Probability of applying a ZZ operation.
+    
+    - Targets:
+    
+        Qubit pairs to apply the custom noise channel to.
     
     - Example:
     
@@ -1383,7 +2237,7 @@
         pyi: YI
         pyx: YX
         pyy: YY
-        pyz: XZ
+        pyz: YZ
         pzi: ZI
         pzx: ZX
         pzy: ZY
@@ -1393,6 +2247,14 @@
 - <a name="X_ERROR"></a>**`X_ERROR`**
     
     Applies a Pauli X with a given probability.
+    
+    - Parens Arguments:
+    
+        A single float specifying the probability of applying an X operation.
+    
+    - Targets:
+    
+        Qubits to apply bit flip noise to.
     
     - Pauli Mixture:
     
@@ -1414,6 +2276,14 @@
     
     Applies a Pauli Y with a given probability.
     
+    - Parens Arguments:
+    
+        A single float specifying the probability of applying a Y operation.
+    
+    - Targets:
+    
+        Qubits to apply Y flip noise to.
+    
     - Pauli Mixture:
     
         ```
@@ -1433,6 +2303,14 @@
 - <a name="Z_ERROR"></a>**`Z_ERROR`**
     
     Applies a Pauli Z with a given probability.
+    
+    - Parens Arguments:
+    
+        A single float specifying the probability of applying a Z operation.
+    
+    - Targets:
+    
+        Qubits to apply phase flip noise to.
     
     - Pauli Mixture:
     
@@ -1458,6 +2336,16 @@
     
     Z-basis measurement (optionally noisy).
     Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
+    
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        The qubits to measure in the Z basis.
+        Prefixing a qubit target with `!` flips its reported measurement result.
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
     
     Prefixing a target with ! inverts its recorded measurement result.
@@ -1477,19 +2365,49 @@
         Z -> +Z
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        M 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        M 0
+        ```
+        
     
 - <a name="MPP"></a>**`MPP`**
     
     Measure Pauli products.
     
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        A series of Pauli products to measure.
+    
+        Each Pauli product is a series of Pauli targets (`[XYZ]#`) separated by combiners (`*`).
+        Products can be negated by prefixing a Pauli target in the product with an inverter (`!`)
+    
     - Example:
     
         ```
-        MPP X1*Y2           # Join products using '*'
-        MPP X1*Y2 Z3*Z4     # Separate products using spaces with no '*'.
-        MPP !Z5             # Negate products (invert results) using '!'.
-        MPP !Z5*X4
-        MPP(0.001) Z1*Z2*Z3 # Add result noise using a probability argument.
+        # Measure the two-body +X1*Y2 observable.
+        MPP X1*Y2
+    
+        # Measure the one-body -Z5 observable.
+        MPP !Z5
+    
+        # Measure the two-body +X1*Y2 observable and also the three-body -Z3*Z4*Z5 observable.
+        MPP X1*Y2 !Z3*Z4*Z5
+    
+        # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
+        MPP(0.001) Z1*Z2 X1*X2
         ```
     
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
@@ -1509,6 +2427,16 @@
     
     Z-basis demolition measurement (optionally noisy).
     Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
+    
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        The qubits to measure and reset in the Z basis.
+        Prefixing a qubit target with `!` flips its reported measurement result.
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
     
     Prefixing a target with ! inverts its recorded measurement result.
@@ -1528,11 +2456,34 @@
         1 -> +Z
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        MR 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        M 0
+        R 0
+        ```
+        
     
 - <a name="MRX"></a>**`MRX`**
     
     X-basis demolition measurement (optionally noisy).
     Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
+    
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        The qubits to measure and reset in the X basis.
+        Prefixing a qubit target with `!` flips its reported measurement result.
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
     
     Prefixing a target with ! inverts its recorded measurement result.
@@ -1552,11 +2503,36 @@
         1 -> +X
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        MRX 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        M 0
+        R 0
+        H 0
+        ```
+        
     
 - <a name="MRY"></a>**`MRY`**
     
     Y-basis demolition measurement (optionally noisy).
     Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
+    
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        The qubits to measure and reset in the Y basis.
+        Prefixing a qubit target with `!` flips its reported measurement result.
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
     
     Prefixing a target with ! inverts its recorded measurement result.
@@ -1576,11 +2552,40 @@
         1 -> +Y
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        MRY 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        H 0
+        R 0
+        M 0
+        H 0
+        S 0
+        ```
+        
     
 - <a name="MX"></a>**`MX`**
     
     X-basis measurement (optionally noisy).
     Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
+    
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        The qubits to measure in the X basis.
+        Prefixing a qubit target with `!` flips its reported measurement result.
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
     
     Prefixing a target with ! inverts its recorded measurement result.
@@ -1600,11 +2605,35 @@
         X -> +X
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        MX 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        M 0
+        H 0
+        ```
+        
     
 - <a name="MY"></a>**`MY`**
     
     Y-basis measurement (optionally noisy).
     Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
+    
+    - Parens Arguments:
+    
+        Optional.
+        A single float specifying the probability of flipping each reported measurement result.
+    
+    - Targets:
+    
+        The qubits to measure in the Y basis.
+        Prefixing a qubit target with `!` flips its reported measurement result.
     If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
     
     Prefixing a target with ! inverts its recorded measurement result.
@@ -1624,6 +2653,24 @@
         Y -> +Y
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        MY 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        H 0
+        M 0
+        H 0
+        S 0
+        ```
+        
     
 - <a name="R"></a>**`R`**
     
@@ -1631,6 +2678,14 @@
     
     Z-basis reset.
     Forces each target qubit into the `|0>` state by silently measuring it in the Z basis and applying an `X` gate if it ended up in the `|1>` state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        The qubits to reset in the Z basis.
     
     - Example:
     
@@ -1646,11 +2701,31 @@
         1 -> +Z
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        R 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        R 0
+        ```
+        
     
 - <a name="RX"></a>**`RX`**
     
     X-basis reset.
     Forces each target qubit into the `|+>` state by silently measuring it in the X basis and applying a `Z` gate if it ended up in the `|->` state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        The qubits to reset in the X basis.
     
     - Example:
     
@@ -1666,11 +2741,33 @@
         1 -> +X
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        RX 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        H 0
+        R 0
+        H 0
+        ```
+        
     
 - <a name="RY"></a>**`RY`**
     
     Y-basis reset.
     Forces each target qubit into the `|i>` state by silently measuring it in the Y basis and applying an `X` gate if it ended up in the `|-i>` state.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        The qubits to reset in the Y basis.
     
     - Example:
     
@@ -1686,17 +2783,42 @@
         1 -> +Y
         ```
         
+    - Decomposition (into H, S, CX, M, R):
+    
+        ```
+        RY 0
+        ```
+        
+        is equivalent to:
+        
+        ```
+        S 0
+        S 0
+        S 0
+        H 0
+        R 0
+        H 0
+        S 0
+        ```
+        
     
 ## Control Flow
 
 - <a name="REPEAT"></a>**`REPEAT`**
     
     Repeats the instructions in its body N times.
-    N can be any positive integer from 1 to a quintillion (10^18).
     
     Currently, repetition counts of 0 are not allowed because they create corner cases with ambiguous resolutions.
     For example, if a logical observable is only given measurements inside a repeat block with a repetition count of 0, it's
     ambiguous whether the output of sampling the logical observables includes a bit for that logical observable.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        A positive integer in [1, 10^18] specifying the number of repetitions.
     
     - Example:
     
@@ -1718,94 +2840,188 @@
 
 - <a name="DETECTOR"></a>**`DETECTOR`**
     
-    Annotates that a set of measurements have a deterministic result, which can be used to detect errors.
+    Annotates that a set of measurements can be used to detect errors, because the set's parity should be deterministic.
     
-    Detectors are ignored in measurement sampling mode.
-    In detector sampling mode, detectors produce results (false=expected parity, true=incorrect parity detected).
+    Note that it is not necessary to say whether the measurement set's parity is even or odd; all that matters is that the
+    parity should be *consistent* when running the circuit and omitting all noisy operations. Note that, for example, this
+    means that even though `X` and `X_ERROR(1)` have equivalent effects on the measurements making up a detector, they have
+    differing effects on the detector (because `X` is intended, determining the expected value, and `X_ERROR` is noise,
+    causing deviations from the expected value).
     
-    Detectors can optionally be parameterized by coordinates (e.g. `DETECTOR(1,2)` has coordinates 1,2).
-    These coordinates aren't really used for anything in stim, but can act as drawing hints for other tools.
-    Note that the coordinates are relative to accumulated coordinate shifts from SHIFT_COORDS instructions.
-    Also note that putting two detectors at the same coordinate does not fuse them into one detector
-    (beware that OBSERVABLE_INCLUDE does fuse observables at the same index, which looks very similar).
-    See SHIFT_COORDS for more details on using coordinates.
+    Detectors are ignored when sampling measurements, but produce results when sampling detection events. In detector
+    sampling mode, each detector produces a result bit (where 0 means "measurement set had expected parity" and 1 means
+    "measurement set had incorrect parity"). When converting a circuit into a detector error model, errors are grouped based
+    on the detectors they flip (the "symptoms" of the error) and the observables they flip (the "frame changes" of the
+    error).
     
-    Note that detectors are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
-    measurement cannot create detection events on detectors that include that measurement, but placing an `X_ERROR(1)`
-    does create detection events.
+    It is permitted, though not recommended, for the measurement set given to a `DETECTOR` instruction to have inconsistent
+    parity. When a detector's measurement set is inconsistent, the detector is called a "gauge detector" and the expected
+    parity of the measurement set is chosen arbitrarily (in an implementation-defined way). Some circuit analysis tools
+    (such as the circuit-to-detector-error-model conversion) will by default refuse to process circuits containing gauge
+    detectors. Gauge detectors produce random results when sampling detection events, though these results will be
+    appropriately correlated with other gauge detectors. For example, if `DETECTOR rec[-1]` and `DETECTOR rec[-2]` are gauge
+    detectors but `DETECTOR rec[-1] rec[-2]` is not, then under noiseless execution the two gauge detectors would either
+    always produce the same result or always produce opposite results.
+    
+    Detectors can specify coordinates using their parens arguments. Coordinates have no effect on simulations, but can be
+    useful to tools consuming the circuit. For example, a tool drawing how the detectors in a circuit relate to each other
+    can use the coordinates as hints for where to place the detectors in the drawing.
+    
+    - Parens Arguments:
+    
+        Optional.
+        Coordinate metadata, relative to the current coordinate offset accumulated from `SHIFT_COORDS` instructions.
+        Can be any number of coordinates from 1 to 16.
+        There is no required convention for which coordinate is which.
+    
+    - Targets:
+    
+        The measurement records to XOR together to get the deterministic-under-noiseless-execution parity.
     
     - Example:
     
         ```
+        R 0
+        X_ERROR(0.1) 0
+        M 0  # This measurement is always False under noiseless execution.
+        # Annotate that most recent measurement should be deterministic.
+        DETECTOR rec[-1]
+    
+        R 0
+        X 0
+        X_ERROR(0.1) 0
+        M 0  # This measurement is always True under noiseless execution.
+        # Annotate that most recent measurement should be deterministic.
+        DETECTOR rec[-1]
+    
+        R 0 1
         H 0
         CNOT 0 1
-        M 0 1
+        DEPOLARIZE2(0.001) 0 1
+        M 0 1  # These two measurements are always equal under noiseless execution.
+        # Annotate that the parity of the previous two measurements should be consistent.
         DETECTOR rec[-1] rec[-2]
+    
+        # A series of trivial detectors with hinted coordinates along the diagonal line Y = 2X + 3.
+        REPEAT 100 {
+            R 0
+            M 0
+            SHIFT_COORDS(1, 2)
+            DETECTOR(0, 3) rec[-1]
+        }
         ```
     
 - <a name="OBSERVABLE_INCLUDE"></a>**`OBSERVABLE_INCLUDE`**
     
-    Adds measurement results to a given logical observable index.
+    Adds measurement records to a specified logical observable.
     
-    A logical observable's measurement result is the parity of all physical measurement results added to it.
+    A potential point of confusion here is that Stim's notion of a logical observable is nothing more than a set of
+    measurements, potentially spanning across the entire circuit, that together produce a deterministic result. It's more
+    akin to the "boundary of a parity sheet" in a topological spacetime diagram than it is to the notion of a qubit
+    observable. For example, consider a surface code memory experiment that initializes a logical |0>, preserves the state
+    noise, and eventually performs a logical Z basis measurement. The circuit representing this experiment would use
+    `OBSERVABLE_INCLUDE` instructions to specifying which physical measurements within the logical Z basis measurement
+    should be XOR'd together to get the logical measurement result. This effectively identifies the logical Z observable.
+    But the circuit would *not* declare an X observable, because the X observable is not deterministic in a Z basis memory
+    experiment; it has no corresponding deterministic measurement set.
     
-    A logical observable is similar to a Detector, except the measurements making up an observable can be built up
-    incrementally over the entire circuit.
+    Logical observables are ignored when sampling measurements, but can produce results (if requested) when sampling
+    detection events. In detector sampling mode, each observable can produce a result bit (where 0 means "measurement set
+    had expected parity" and 1 means "measurement set had incorrect parity"). When converting a circuit into a detector
+    error model, errors are grouped based on the detectors they flip (the "symptoms" of the error) and the observables they
+    flip (the "frame changes" of the error).
     
-    Logical observables are ignored in measurement sampling mode.
-    In detector sampling mode, observables produce results (false=expected parity, true=incorrect parity detected).
-    These results are optionally appended to the detector results, depending on simulator arguments / command line flags.
+    Another potential point of confusion is that when sampling logical measurement results, as part of sampling detection
+    events in the circuit, the reported results are not measurements of the logical observable but rather whether those
+    measurement results *were flipped*. This has significant simulation speed benefits, and also makes it so that it is not
+    necessary to say whether the logical measurement result is supposed to be False or True. Note that, for example, this
+    means that even though `X` and `X_ERROR(1)` have equivalent effects on the measurements making up an observable, they
+    have differing effects on the reported value of an observable when sampling detection events (because `X` is intended,
+    determining the expected value, and `X_ERROR` is noise, causing deviations from the expected value).
     
-    Note that observables are always defined with respect to *noiseless behavior*. For example, placing an `X` gate before a
-    measurement cannot flip a logical observable that includes that measurement, but placing an `X_ERROR(1)` does flip the
-    observable. This is because observables are used for detecting errors, not for verifying noiseless functionality.
+    It is not recommended for the measurement set of an observable to have inconsistent parity. For example, the
+    circuit-to-detector-error-model conversion will refuse to operate on circuits containing such observables.
     
-    Note that observable indices are NOT shifted by SHIFT_COORDS.
+    - Parens Arguments:
+    
+        A non-negative integer specifying the index of the logical observable to add the measurement records to.
+    
+    - Targets:
+    
+        The measurement records to add to the specified observable.
     
     - Example:
     
         ```
+        R 0 1
         H 0
         CNOT 0 1
         M 0 1
-        OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
+        # Observable 0 is the parity of the previous two measurements.
+        OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
+    
+        R 0 1
+        H 0
+        CNOT 0 1
+        M 0 1
+        # Observable 1 is the parity of the previous measurement...
+        OBSERVABLE_INCLUDE(1) rec[-1]
+        # ...and the one before that.
+        OBSERVABLE_INCLUDE(1) rec[-2]
         ```
     
 - <a name="QUBIT_COORDS"></a>**`QUBIT_COORDS`**
     
-    An annotation used to indicate the intended location of a qubit.
-    The coordinates are double precision floating point numbers, relative to accumulated offsets from SHIFT_COORDS.
-    The coordinates are not in any particular order or number of dimensions.
-    As far as stim is concerned the coordinates are a list of opaque and mysterious numbers.
-    They have no effect on simulations of the circuit, but are potentially useful for tasks such as drawing the circuit.
+    Annotates the location of a qubit.
     
-    See also: SHIFT_COORDS.
+    Coordinates are not required and have no effect on simulations, but can be useful to tools consuming the circuit. For
+    example, a tool drawing the circuit  can use the coordinates as hints for where to place the qubits in the drawing.
+    `stimcirq` uses `QUBIT_COORDS` instructions to preserve `cirq.LineQubit` and `cirq.GridQubit` coordinates when
+    converting between stim circuits and cirq circuits
     
-    Note that a qubit's coordinates can be specified multiple times.
-    The intended interpretation is that the qubit is at the location of the most recent assignment.
-    For example, this could be used to indicate a simulated qubit is iteratively playing the role of many physical qubits.
+    A qubit's coordinates can be specified multiple times, with the intended interpretation being that the qubit is at the
+    location of the most recent assignment. For example, this could be used to indicate a simulated qubit is iteratively
+    playing the role of many physical qubits.
+    
+    - Parens Arguments:
+    
+        Optional.
+        The latest coordinates of the qubit, relative to accumulated offsets from `SHIFT_COORDS` instructions.
+        Can be any number of coordinates from 1 to 16.
+        There is no required convention for which coordinate is which.
+    
+    - Targets:
+    
+        The qubit or qubits the coordinates apply to.
     
     - Example:
     
         ```
-        QUBIT_COORDS(100, 101) 0
-        QUBIT_COORDS(100, 101) 1
-        SQRT_XX 0 1
-        MR 0 1
-        QUBIT_COORDS(2.5, 3.5) 2  # Floating point coordinates are allowed.
-        QUBIT_COORDS(2.5, 4.5) 1  # Hint that qubit 1 is now referring to a different physical location.
-        SQRT_XX 1 2
-        M 1 2
+        # Annotate that qubits 0 to 3 are at the corners of a square.
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(0, 1) 1
+        QUBIT_COORDS(1, 0) 2
+        QUBIT_COORDS(1, 1) 3
         ```
     
 - <a name="SHIFT_COORDS"></a>**`SHIFT_COORDS`**
     
-    Accumulates offsets to apply to qubit coordinates and detector coordinates.
-    
-    See also: QUBIT_COORDS, DETECTOR.
+    Accumulates offsets that affect qubit coordinates and detector coordinates.
     
     Note: when qubit/detector coordinates use fewer dimensions than SHIFT_COORDS, the offsets from the additional dimensions
     are ignored (i.e. not specifying a dimension is different from specifying it to be 0).
+    
+    See also: `QUBIT_COORDS`, `DETECTOR`.
+    
+    - Parens Arguments:
+    
+        Offsets to add into the current coordinate offset.
+        Can be any number of coordinate offsets from 1 to 16.
+        There is no required convention for which coordinate is which.
+    
+    - Targets:
+    
+        This instruction takes no targets.
     
     - Example:
     
@@ -1815,6 +3031,8 @@
         SHIFT_COORDS(1500)
         QUBIT_COORDS(11) 1    # Actually at 2011.5
         QUBIT_COORDS(10.5) 2  # Actually at 2011.0
+    
+        # Declare some detectors with coordinates along a diagonal line.
         REPEAT 1000 {
             CNOT 0 2
             CNOT 1 2
@@ -1826,15 +3044,36 @@
     
 - <a name="TICK"></a>**`TICK`**
     
-    Indicates the end of a layer of gates, or that time is advancing.
-    For example, used by `stimcirq` to preserve the moment structure of cirq circuits converted to/from stim circuits.
+    Annotates the end of a layer of gates, or that time is advancing.
+    
+    This instruction is not necessary, it has no effect on simulations, but it can be used by tools that are transforming or
+    visualizing the circuit. For example, a tool that adds noise to a circuit may include cross-talk terms that require
+    knowing whether or not operations are happening in the same time step or not.
+    
+    TICK instructions are added, and checked for, by `stimcirq` in order to preserve the moment structure of cirq circuits
+    converted between stim circuits and cirq circuits.
+    
+    - Parens Arguments:
+    
+        This instruction takes no parens arguments.
+    
+    - Targets:
+    
+        This instruction takes no targets.
     
     - Example:
     
         ```
+        # First time step.
+        H 0
+        CZ 1 2
         TICK
+    
+        # Second time step.
+        H 1
         TICK
-        # Oh, and of course:
+    
+        # Empty time step.
         TICK
         ```
     

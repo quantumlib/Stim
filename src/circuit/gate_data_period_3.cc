@@ -38,9 +38,23 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
 Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0.5f - i * 0.5f, -0.5f - 0.5f * i}, {0.5f - 0.5f * i, 0.5f + 0.5f * i}},
                     {"Y", "X"},
+                    R"CIRCUIT(
+S 0
+S 0
+S 0
+H 0
+)CIRCUIT",
                 };
             },
         });
@@ -59,9 +73,21 @@ Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
 Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
+
+- Parens Arguments:
+
+    This instruction takes no parens arguments.
+
+- Targets:
+
+    Qubits to operate on.
 )MARKDOWN",
                     {{0.5f + i * 0.5f, 0.5f + 0.5f * i}, {-0.5f + 0.5f * i, 0.5f - 0.5f * i}},
                     {"Z", "Y"},
+                    R"CIRCUIT(
+H 0
+S 0
+)CIRCUIT",
                 };
             },
         });
