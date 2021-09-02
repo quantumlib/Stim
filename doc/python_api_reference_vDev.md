@@ -49,6 +49,7 @@
     - [`stim.CompiledDetectorSampler.sample_bit_packed`](#stim.CompiledDetectorSampler.sample_bit_packed)
     - [`stim.CompiledDetectorSampler.sample_write`](#stim.CompiledDetectorSampler.sample_write)
 - [`stim.CompiledMeasurementSampler`](#stim.CompiledMeasurementSampler)
+    - [`stim.CompiledMeasurementSampler.__init__`](#stim.CompiledMeasurementSampler.__init__)
     - [`stim.CompiledMeasurementSampler.__repr__`](#stim.CompiledMeasurementSampler.__repr__)
     - [`stim.CompiledMeasurementSampler.sample`](#stim.CompiledMeasurementSampler.sample)
     - [`stim.CompiledMeasurementSampler.sample_bit_packed`](#stim.CompiledMeasurementSampler.sample_bit_packed)
@@ -812,9 +813,23 @@
 >     array([[0]], dtype=uint8)
 > ```
 
-### `stim.Circuit.compile_sampler(self) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
+### `stim.Circuit.compile_sampler(self, *, skip_reference_sample: bool = False) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
 > ```
 > Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
+> 
+> Args:
+>     skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
+>         initialized to all-zeroes instead of being collected from the circuit. This means that the results
+>         returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
+>         measurement results.
+> 
+>         Forcing an all-zero reference sample is useful when you are only interested in error propagation and
+>         don't want to have to deal with the fact that some measurements want to be On when no errors occur.
+>         It is also useful when you know for sure that the all-zero result is actually a possible result from
+>         the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
+>         other. Computing the reference sample is the most time consuming and memory intensive part of
+>         simulating the circuit, so promising that the simulator can safely skip that step is an effective
+>         optimization.
 > 
 > Examples:
 >     >>> import stim
@@ -1283,6 +1298,44 @@
 > 
 > Returns:
 >     None.
+> ```
+
+### `stim.CompiledMeasurementSampler.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False) -> None`<a name="stim.CompiledMeasurementSampler.__init__"></a>
+> ```
+> Creates a measurement sampler for the given circuit.
+> 
+> The sampler uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
+> during initialization of the sampler, as a baseline for deriving more samples using an error propagation
+> simulator.
+> 
+> Args:
+>     circuit: The stim circuit to sample from.
+>     skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
+>         initialized to all-zeroes instead of being collected from the circuit. This means that the results
+>         returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
+>         measurement results.
+> 
+>         Forcing an all-zero reference sample is useful when you are only interested in error propagation and
+>         don't want to have to deal with the fact that some measurements want to be On when no errors occur.
+>         It is also useful when you know for sure that the all-zero result is actually a possible result from
+>         the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
+>         other. Computing the reference sample is the most time consuming and memory intensive part of
+>         simulating the circuit, so promising that the simulator can safely skip that step is an effective
+>         optimization.
+> 
+> Returns:
+>     A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
+>     The bit for measurement `m` in shot `s` is at `result[s, m]`.
+> 
+> Examples:
+>     >>> import stim
+>     >>> c = stim.Circuit('''
+>     ...    X 0   2 3
+>     ...    M 0 1 2 3
+>     ... ''')
+>     >>> s = c.compile_sampler()
+>     >>> s.sample(shots=1)
+>     array([[1, 0, 1, 1]], dtype=uint8)
 > ```
 
 ### `stim.CompiledMeasurementSampler.__repr__(self) -> str`<a name="stim.CompiledMeasurementSampler.__repr__"></a>

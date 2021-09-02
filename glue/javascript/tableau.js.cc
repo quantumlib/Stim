@@ -98,7 +98,7 @@ bool ExposedTableau::isEqualTo(const ExposedTableau &other) const {
 }
 
 void emscripten_bind_tableau() {
-    auto &&c = emscripten::class_<ExposedTableau>("Tableau");
+    auto c = emscripten::class_<ExposedTableau>("Tableau");
     c.constructor<int>();
     c.class_function("random", &ExposedTableau::random);
     c.class_function("from_named_gate", &ExposedTableau::from_named_gate);

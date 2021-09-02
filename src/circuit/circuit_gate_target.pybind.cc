@@ -33,7 +33,7 @@ GateTarget obj_to_gate_target(const pybind11::object &obj) {
 }
 
 void pybind_circuit_gate_target(pybind11::module &m) {
-    auto &&c = pybind11::class_<GateTarget>(
+    auto c = pybind11::class_<GateTarget>(
         m,
         "GateTarget",
         clean_doc_string(u8R"DOC(

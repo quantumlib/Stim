@@ -43,7 +43,7 @@ bool ExposedCircuit::isEqualTo(const ExposedCircuit &other) const {
 }
 
 void emscripten_bind_circuit() {
-    auto &&c = emscripten::class_<ExposedCircuit>("Circuit");
+    auto c = emscripten::class_<ExposedCircuit>("Circuit");
     c.constructor();
     c.constructor<const std::string &>();
     c.function("toString", &ExposedCircuit::toString);

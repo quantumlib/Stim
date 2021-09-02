@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef STIM_GATE_HELP_H
-#define STIM_GATE_HELP_H
+#ifndef STIM_HELP_H
+#define STIM_HELP_H
 
 #include <map>
 #include <string>
 
-#include "circuit/gate_data.h"
-
 namespace stim_internal {
 
-std::map<std::string, std::string> generate_gate_help_markdown();
 int main_help(int argc, const char **argv);
 
 }  // namespace stim_internal

@@ -198,7 +198,7 @@ std::string PyPauliString::str() const {
 }
 
 void pybind_pauli_string(pybind11::module &m) {
-    auto &&c = pybind11::class_<PyPauliString>(
+    auto c = pybind11::class_<PyPauliString>(
         m,
         "PauliString",
         clean_doc_string(u8R"DOC(

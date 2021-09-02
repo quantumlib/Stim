@@ -20,6 +20,7 @@
 #include "../dem/detector_error_model.pybind.h"
 #include "../simulators/tableau_simulator.pybind.h"
 #include "../stabilizers/pauli_string.pybind.h"
+#include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau.pybind.h"
 #include "base.pybind.h"
 #include "compiled_detector_sampler.pybind.h"
@@ -53,6 +54,48 @@ uint32_t target_z(uint32_t qubit, bool invert) {
     return GateTarget::z(qubit, invert).data;
 }
 
+pybind11::object raw_gate_data_solo(const Gate &gate) {
+    pybind11::dict result;
+    auto f = gate.extra_data_func;
+    if (f == nullptr) {
+        f = GATE_DATA.at(gate.name).extra_data_func;
+    }
+    auto extra = f();
+    result["name"] = gate.name;
+    result["category"] = extra.category;
+    result["help"] = extra.description;
+    if (gate.flags & GATE_IS_UNITARY) {
+        result["unitary_matrix"] = gate.unitary();
+        result["stabilizer_tableau"] = gate.tableau();
+    }
+    return result;
+}
+
+pybind11::object raw_format_data_solo(const FileFormatData &data) {
+    pybind11::dict result;
+    result["name"] = data.name;
+    result["parse_example"] = data.help_python_parse;
+    result["save_example"] = data.help_python_save;
+    result["help"] = data.help;
+    return result;
+}
+
+pybind11::dict raw_gate_data() {
+    pybind11::dict result;
+    for (const auto &gate : GATE_DATA.gates()) {
+        result[gate.name] = raw_gate_data_solo(gate);
+    }
+    return result;
+}
+
+pybind11::dict raw_format_data() {
+    pybind11::dict result;
+    for (const auto &kv : format_name_to_enum_map) {
+        result[kv.first.data()] = raw_format_data_solo(kv.second);
+    }
+    return result;
+}
+
 PYBIND11_MODULE(stim, m) {
     m.attr("__version__") = xstr(VERSION_INFO);
     m.doc() = R"pbdoc(
@@ -66,8 +109,9 @@ PYBIND11_MODULE(stim, m) {
 
     pybind_detector_error_model(m);
     pybind_compiled_detector_sampler(m);
-    pybind_compiled_measurement_sampler(m);
+    auto c1 = pybind_compiled_measurement_sampler_class(m);
     pybind_circuit(m);
+    pybind_compiled_measurement_sampler_methods(c1);
     pybind_pauli_string(m);
     pybind_tableau(m);
     pybind_tableau_simulator(m);
@@ -133,4 +177,7 @@ PYBIND11_MODULE(stim, m) {
             For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
         )DOC")
             .data());
+
+    m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
+    m.def("_UNSTABLE_raw_format_data", &raw_format_data);
 }

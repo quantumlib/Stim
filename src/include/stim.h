@@ -17,6 +17,8 @@
 #ifndef STIM_H
 #define STIM_H
 
+#include "../arg_parse.h"
+#include "../benchmark_util.h"
 #include "../circuit/circuit.h"
 #include "../circuit/gate_data.h"
 #include "../circuit/gate_target.h"
@@ -26,12 +28,19 @@
 #include "../gen/gen_color_code.h"
 #include "../gen/gen_rep_code.h"
 #include "../gen/gen_surface_code.h"
+#include "../help.h"
 #include "../io/measure_record.h"
 #include "../io/measure_record_batch.h"
 #include "../io/measure_record_batch_writer.h"
+#include "../io/measure_record_reader.h"
 #include "../io/measure_record_writer.h"
+#include "../io/stim_data_formats.h"
+#include "../main_namespaced.h"
 #include "../probability_util.h"
 #include "../simd/bit_ref.h"
+#include "../simd/fixed_cap_vector.h"
+#include "../simd/monotonic_buffer.h"
+#include "../simd/pointer_range.h"
 #include "../simd/simd_bit_table.h"
 #include "../simd/simd_bits.h"
 #include "../simd/simd_bits_range_ref.h"
@@ -47,6 +56,7 @@
 #include "../stabilizers/pauli_string_ref.h"
 #include "../stabilizers/tableau.h"
 #include "../stabilizers/tableau_transposed_raii.h"
+#include "../str_util.h"
 
 namespace stim {
 using Circuit = stim_internal::Circuit;

@@ -22,6 +22,7 @@
 #include "../circuit/circuit.h"
 #include "../simd/pointer_range.h"
 #include "../simd/simd_bit_table.h"
+#include "stim_data_formats.h"
 
 namespace stim_internal {
 
