@@ -23,7 +23,7 @@
 using namespace stim_internal;
 
 void pybind_tableau(pybind11::module &m) {
-    auto &&c = pybind11::class_<Tableau>(
+    auto c = pybind11::class_<Tableau>(
         m,
         "Tableau",
         clean_doc_string(u8R"DOC(

@@ -12,18 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gate_help.h"
+#include "help.h"
 
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <set>
+#include <sstream>
 
 #include "arg_parse.h"
+#include "circuit/gate_data.h"
+#include "io/stim_data_formats.h"
 #include "stabilizers/tableau.h"
 
 using namespace stim_internal;
+
+std::string upper(const std::string &val) {
+    std::string copy = val;
+    for (char &c : copy) {
+        c = toupper(c);
+    }
+    return copy;
+}
 
 struct Acc {
     std::string settled;
@@ -322,7 +333,66 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     return out.settled;
 }
 
-std::map<std::string, std::string> stim_internal::generate_gate_help_markdown() {
+std::string generate_per_format_markdown(const FileFormatData &format_data, int indent, bool anchor) {
+    Acc out;
+    out.indent = indent;
+    if (anchor) {
+        out << "<a name=\"" << format_data.name << "\"></a>";
+    }
+    out << "**`" << format_data.name << "`**\n";
+    out << format_data.help;
+    out << "\n";
+
+    out << "- Sample parsing code (python):\n";
+    out.change_indent(+4);
+    out << "```python";
+    out << format_data.help_python_parse;
+    out << "```\n";
+    out.change_indent(-4);
+
+    out << "- Sample saving code (python):\n";
+    out.change_indent(+4);
+    out << "```python";
+    out << format_data.help_python_save;
+    out << "```\n";
+    out.change_indent(-4);
+
+    out.flush();
+    return out.settled;
+}
+
+std::map<std::string, std::string> generate_format_help_markdown() {
+    std::map<std::string, std::string> result;
+
+    std::stringstream all;
+    all << "Result data formats supported by Stim\n";
+    all << "=====================================\n";
+    for (const auto &kv : format_name_to_enum_map) {
+        all << kv.first << "\n";
+    }
+    result[std::string("FORMATS")] = all.str();
+
+    for (const auto &kv : format_name_to_enum_map) {
+        result[upper(kv.first)] = generate_per_format_markdown(kv.second, 0, false);
+    }
+
+    all.str("");
+    all << R"MARKDOWN(# Result formats supported by Stim
+
+)MARKDOWN";
+    for (const auto &kv : format_name_to_enum_map) {
+        all << "- [" << kv.first << "](#" << kv.first << ")\n";
+    }
+    all << "\n";
+    for (const auto &kv : format_name_to_enum_map) {
+        all << "- " << generate_per_format_markdown(kv.second, 4, true) << "\n";
+    }
+    result[std::string("FORMATS_MARKDOWN")] = all.str();
+
+    return result;
+}
+
+std::map<std::string, std::string> generate_gate_help_markdown() {
     std::map<std::string, std::string> result;
     for (const auto &g : GATE_DATA.gates()) {
         result[g.name] = generate_per_gate_help_markdown(g, 0, false);
@@ -373,7 +443,7 @@ Interactive measurement sampling mode:
 
 Bulk measurement sampling mode:
     stim --sample[=#shots] \
-         [--frame0] \
+         [--skip_reference_sample] \
          [--out_format=01|b8|ptb64|r8|hits|dets] \
          [--in=file] \
          [--out=file]
@@ -414,15 +484,16 @@ M 0 1 2
 
 int stim_internal::main_help(int argc, const char **argv) {
     const char *help = require_find_argument("--help", argc, argv);
-    auto m = generate_gate_help_markdown();
-    auto key = std::string(help);
-    for (auto &c : key) {
-        c = toupper(c);
-    }
-    auto p = m.find(key);
-    if (p == m.end()) {
-        std::cerr << "Unrecognized help topic '" << help << "'.\n";
-        return EXIT_FAILURE;
+    auto m1 = generate_gate_help_markdown();
+    auto m2 = generate_format_help_markdown();
+    auto key = upper(help);
+    auto p = m1.find(key);
+    if (p == m1.end()) {
+        p = m2.find(key);
+        if (p == m2.end()) {
+            std::cerr << "Unrecognized help topic '" << help << "'.\n";
+            return EXIT_FAILURE;
+        }
     }
 
     std::cout << p->second;

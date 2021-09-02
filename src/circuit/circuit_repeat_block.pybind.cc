@@ -42,7 +42,7 @@ std::string CircuitRepeatBlock::repr() const {
 }
 
 void pybind_circuit_repeat_block(pybind11::module &m) {
-    auto &&c = pybind11::class_<CircuitRepeatBlock>(
+    auto c = pybind11::class_<CircuitRepeatBlock>(
         m,
         "CircuitRepeatBlock",
         clean_doc_string(u8R"DOC(

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -42,8 +43,6 @@ const char *find_argument(const char *name, int argc, const char **argv);
 
 /// Searches through command line flags for a particular flag's argument.
 ///
-/// If the flag is not present, the program is terminated with EXIT_FAILURE.
-///
 /// Args:
 ///     name: The flag's name, including any hyphens. For example, "-mode".
 ///     argc: Number of command line arguments.
@@ -54,20 +53,20 @@ const char *find_argument(const char *name, int argc, const char **argv);
 ///     without specifying a value will cause the method to return a pointer to
 ///     an empty string.
 ///
-/// Terminates Program:
-///     The argument is not present.
+/// Raises:
+///     std::invalid_argument: The argument isn't present.
 const char *require_find_argument(const char *name, int argc, const char **argv);
 
 /// Checks that all command line arguments are recognized.
-///
-/// If the check fails, the program exits with a non-zero return code and prints
-/// a message containing the known arguments to stderr.
 ///
 /// Args:
 ///     known_arguments: Names of known arguments.
 ///     for_mode: Can be set to nullptr. Modifies error message.
 ///     argc: Number of command line arguments.
 ///     argv: Array of command line argument strings.
+///
+/// Raises:
+///     std::invalid_argument: Unknown arguments are present.
 void check_for_unknown_arguments(
     const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv);
 
@@ -90,10 +89,10 @@ void check_for_unknown_arguments(
 /// Returns:
 ///     The floating point value.
 ///
-/// Exits:
-///     EXIT_FAILURE:
+/// Raises:
+///     std::invalid_argument:
 ///         The command line flag was specified but failed to parse into a float in range.
-///     EXIT_FAILURE:
+///     std::invalid_argument:
 ///         The command line flag was not specified and default_value was not in range.
 float find_float_argument(
     const char *name, float default_value, float min_value, float max_value, int argc, const char **argv);
@@ -117,10 +116,10 @@ float find_float_argument(
 /// Returns:
 ///     The integer value.
 ///
-/// Exits:
-///     EXIT_FAILURE:
+/// Raises:
+///     std::invalid_argument:
 ///         The command line flag was specified but failed to parse into an int in range.
-///     EXIT_FAILURE:
+///     std::invalid_argument:
 ///         The command line flag was not specified and default_value was not in range.
 int64_t find_int64_argument(
     const char *name, int64_t default_value, int64_t min_value, int64_t max_value, int argc, const char **argv);
@@ -154,10 +153,10 @@ bool find_bool_argument(const char *name, int argc, const char **argv);
 /// Returns:
 ///     The chosen value.
 ///
-/// Exits:
-///     EXIT_FAILURE:
+/// Raises:
+///     std::invalid_argument:
 ///         The command line flag is specified but its key is not in the map.
-///     EXIT_FAILURE:
+///     std::invalid_argument:
 ///         The command line flag is not specified and the default key is not in the map.
 template <typename T>
 const T &find_enum_argument(
@@ -165,23 +164,25 @@ const T &find_enum_argument(
     const char *text = find_argument(name, argc, argv);
     if (text == nullptr) {
         if (default_key == nullptr) {
-            std::cerr << "\033[31mMust specify a value for enum flag '" << name << "'.\n";
-            exit(EXIT_FAILURE);
+            std::stringstream msg;
+            msg << "\033[31mMust specify a value for enum flag '" << name << "'.\n";
+            throw std::invalid_argument(msg.str());
         }
         return values.at(default_key);
     }
     if (values.find(text) == values.end()) {
-        std::cerr << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
-        std::cerr << "Recognized values are:\n";
+        std::stringstream msg;
+        msg << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
+        msg << "Recognized values are:\n";
         for (const auto &kv : values) {
-            std::cerr << "    '" << kv.first;
-            if (kv.first == default_key) {
-                std::cerr << " (default)";
+            msg << "    '" << kv.first;
+            if (default_key != nullptr && kv.first == default_key) {
+                msg << " (default)";
             }
-            std::cerr << "\n";
+            msg << "\n";
         }
-        std::cerr << "\033[0m";
-        exit(EXIT_FAILURE);
+        msg << "\033[0m";
+        throw std::invalid_argument(msg.str());
     }
     return values.at(text);
 }
@@ -199,10 +200,10 @@ const T &find_enum_argument(
 /// Returns:
 ///     The default file pointer or the opened file.
 ///
-/// Exits:
-///     EXIT_FAILURE:
+/// Raises:
+///     std::invalid_argument:
 ///         Failed to open the filepath.
-///     EXIT_FAILURE:
+///     std::invalid_argument:
 ///         No argument specified and default file is nullptr.
 FILE *find_open_file_argument(const char *name, FILE *default_file, const char *mode, int argc, const char **argv);
 
@@ -228,10 +229,10 @@ struct ostream_else_cout {
 /// Returns:
 ///     The default file pointer or the opened file.
 ///
-/// Exits:
-///     EXIT_FAILURE:
+/// Raises:
+///     std::invalid_argument:
 ///         Failed to open the filepath.
-///     EXIT_FAILURE:
+///     std::invalid_argument:
 ///         Command line argument isn't present and default_std_out is false.
 ostream_else_cout find_output_stream_argument(const char *name, bool default_std_out, int argc, const char **argv);
 

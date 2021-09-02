@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "main_namespaced.h"
+
 #include "benchmark_util.h"
-#include "main_helper.h"
 #include "simulators/detection_simulator.h"
+#include "simulators/frame_simulator.h"
+#include "simulators/tableau_simulator.h"
 
 using namespace stim_internal;
 

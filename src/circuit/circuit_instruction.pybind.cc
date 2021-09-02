@@ -80,7 +80,7 @@ std::vector<double> CircuitInstruction::gate_args_copy() const {
 }
 
 void pybind_circuit_instruction(pybind11::module &m) {
-    auto &&c = pybind11::class_<CircuitInstruction>(
+    auto c = pybind11::class_<CircuitInstruction>(
         m,
         "CircuitInstruction",
         clean_doc_string(u8R"DOC(

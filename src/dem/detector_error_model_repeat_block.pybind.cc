@@ -21,7 +21,7 @@
 using namespace stim_internal;
 
 void pybind_detector_error_model_repeat_block(pybind11::module &m) {
-    auto &&c = pybind11::class_<ExposedDemRepeatBlock>(
+    auto c = pybind11::class_<ExposedDemRepeatBlock>(
         m,
         "DemRepeatBlock",
         clean_doc_string(u8R"DOC(

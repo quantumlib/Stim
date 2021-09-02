@@ -77,6 +77,9 @@ void CompiledDetectorSampler::sample_write(
     bool append_observables) {
     auto f = format_to_enum(format);
     FILE *out = fopen(filepath.data(), "w");
+    if (out == nullptr) {
+        throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
+    }
     detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out, f, PYBIND_SHARED_RNG());
     fclose(out);
 }
@@ -90,7 +93,7 @@ std::string CompiledDetectorSampler::repr() const {
 }
 
 void pybind_compiled_detector_sampler(pybind11::module &m) {
-    auto &&c = pybind11::class_<CompiledDetectorSampler>(
+    auto c = pybind11::class_<CompiledDetectorSampler>(
         m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
 
     c.def(pybind11::init<Circuit>());

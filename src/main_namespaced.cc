@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "main_helper.h"
+#include "main_namespaced.h"
 
 #include "arg_parse.h"
-#include "gate_help.h"
 #include "gen/circuit_gen_main.h"
+#include "help.h"
+#include "io/stim_data_formats.h"
 #include "probability_util.h"
 #include "simulators/detection_simulator.h"
 #include "simulators/error_analyzer.h"
@@ -25,29 +26,20 @@
 
 using namespace stim_internal;
 
-static std::map<std::string, SampleFormat> format_name_to_enum_map{
-    {"01", SAMPLE_FORMAT_01},
-    {"b8", SAMPLE_FORMAT_B8},
-    {"ptb64", SAMPLE_FORMAT_PTB64},
-    {"hits", SAMPLE_FORMAT_HITS},
-    {"r8", SAMPLE_FORMAT_R8},
-    {"dets", SAMPLE_FORMAT_DETS},
-};
-
 int main_mode_detect(int argc, const char **argv) {
     check_for_unknown_arguments(
         {"--detect", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in"},
         "--detect",
         argc,
         argv);
-    SampleFormat out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
     bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     uint64_t num_shots = (uint64_t)find_int64_argument("--detect", 1, 0, INT64_MAX, argc, argv);
     if (num_shots == 0) {
         return EXIT_SUCCESS;
     }
-    if (out_format == SAMPLE_FORMAT_DETS && !append_observables) {
+    if (out_format.id == SAMPLE_FORMAT_DETS && !append_observables) {
         prepend_observables = true;
     }
 
@@ -58,7 +50,7 @@ int main_mode_detect(int argc, const char **argv) {
         fclose(in);
     }
     auto rng = externally_seeded_rng();
-    detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format, rng);
+    detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format.id, rng);
     if (out != stdout) {
         fclose(out);
     }
@@ -66,32 +58,46 @@ int main_mode_detect(int argc, const char **argv) {
 }
 
 int main_mode_sample(int argc, const char **argv) {
-    check_for_unknown_arguments({"--sample", "--frame0", "--out_format", "--out", "--in"}, "--sample", argc, argv);
-    SampleFormat out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-    bool frame0 = find_bool_argument("--frame0", argc, argv);
-    uint64_t num_shots = (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv);
-    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    auto rng = externally_seeded_rng();
-
-    if (num_shots == 1 && !frame0) {
-        TableauSimulator::sample_stream(in, out, out_format, false, rng);
-    } else if (num_shots > 0) {
-        auto circuit = Circuit::from_file(in);
-        simd_bits ref(0);
-        if (!frame0) {
-            ref = TableauSimulator::reference_sample_circuit(circuit);
+    try {
+        check_for_unknown_arguments(
+            {"--sample", "--skip_reference_sample", "--frame0", "--out_format", "--out", "--in"},
+            "--sample",
+            argc,
+            argv);
+        const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+        bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
+        uint64_t num_shots = (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv);
+        FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
+        FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+        auto rng = externally_seeded_rng();
+        bool deprecated_frame0 = find_bool_argument("--frame0", argc, argv);
+        if (deprecated_frame0) {
+            std::cerr << "[DEPRECATION] Use `--skip_reference_sample` instead of `--frame0`\n";
+            skip_reference_sample = true;
         }
-        FrameSimulator::sample_out(circuit, ref, num_shots, out, out_format, rng);
-    }
 
-    if (in != stdin) {
-        fclose(in);
+        if (num_shots == 1 && !skip_reference_sample) {
+            TableauSimulator::sample_stream(in, out, out_format.id, false, rng);
+        } else if (num_shots > 0) {
+            auto circuit = Circuit::from_file(in);
+            simd_bits ref(0);
+            if (!skip_reference_sample) {
+                ref = TableauSimulator::reference_sample_circuit(circuit);
+            }
+            FrameSimulator::sample_out(circuit, ref, num_shots, out, out_format.id, rng);
+        }
+
+        if (in != stdin) {
+            fclose(in);
+        }
+        if (out != stdout) {
+            fclose(out);
+        }
+        return EXIT_SUCCESS;
+    } catch (const std::invalid_argument &ex) {
+        std::cerr << ex.what();
+        return EXIT_FAILURE;
     }
-    if (out != stdout) {
-        fclose(out);
-    }
-    return EXIT_SUCCESS;
 }
 
 int main_mode_analyze_errors(int argc, const char **argv) {
@@ -142,7 +148,7 @@ int main_mode_repl(int argc, const char **argv) {
     return EXIT_SUCCESS;
 }
 
-int stim_internal::main_helper(int argc, const char **argv) {
+int stim_internal::main(int argc, const char **argv) {
     const char *help = find_argument("--help", argc, argv);
     if (help != nullptr) {
         return main_help(argc, argv);

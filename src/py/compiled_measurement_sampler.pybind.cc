@@ -22,8 +22,11 @@
 
 using namespace stim_internal;
 
-CompiledMeasurementSampler::CompiledMeasurementSampler(Circuit circuit)
-    : ref(TableauSimulator::reference_sample_circuit(circuit)), circuit(std::move(circuit)) {
+CompiledMeasurementSampler::CompiledMeasurementSampler(Circuit circuit, bool skip_reference_sample)
+    : ref(skip_reference_sample ? simd_bits(circuit.count_measurements())
+                                : TableauSimulator::reference_sample_circuit(circuit)),
+      circuit(circuit),
+      skip_reference_sample(skip_reference_sample) {
 }
 
 pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples) {
@@ -65,6 +68,9 @@ void CompiledMeasurementSampler::sample_write(
     size_t num_samples, const std::string &filepath, const std::string &format) {
     auto f = format_to_enum(format);
     FILE *out = fopen(filepath.data(), "w");
+    if (out == nullptr) {
+        throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
+    }
     FrameSimulator::sample_out(circuit, ref, num_samples, out, f, PYBIND_SHARED_RNG());
     fclose(out);
 }
@@ -73,15 +79,61 @@ std::string CompiledMeasurementSampler::repr() const {
     std::stringstream result;
     result << "stim.CompiledMeasurementSampler(";
     result << circuit_repr(circuit);
+    if (skip_reference_sample) {
+        result << ", skip_reference_sample=True";
+    }
     result << ")";
     return result.str();
 }
 
-void pybind_compiled_measurement_sampler(pybind11::module &m) {
-    auto &&c = pybind11::class_<CompiledMeasurementSampler>(
+pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler_class(pybind11::module &m) {
+    return pybind11::class_<CompiledMeasurementSampler>(
         m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
+}
 
-    c.def(pybind11::init<Circuit>());
+void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c) {
+    c.def(
+        pybind11::init<Circuit, bool>(),
+        pybind11::arg("circuit"),
+        pybind11::kw_only(),
+        pybind11::arg("skip_reference_sample") = false,
+        clean_doc_string(u8R"DOC(
+            Creates a measurement sampler for the given circuit.
+
+            The sampler uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
+            during initialization of the sampler, as a baseline for deriving more samples using an error propagation
+            simulator.
+
+            Args:
+                circuit: The stim circuit to sample from.
+                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
+                    initialized to all-zeroes instead of being collected from the circuit. This means that the results
+                    returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
+                    measurement results.
+
+                    Forcing an all-zero reference sample is useful when you are only interested in error propagation and
+                    don't want to have to deal with the fact that some measurements want to be On when no errors occur.
+                    It is also useful when you know for sure that the all-zero result is actually a possible result from
+                    the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
+                    other. Computing the reference sample is the most time consuming and memory intensive part of
+                    simulating the circuit, so promising that the simulator can safely skip that step is an effective
+                    optimization.
+
+            Returns:
+                A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
+                The bit for measurement `m` in shot `s` is at `result[s, m]`.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...    X 0   2 3
+                ...    M 0 1 2 3
+                ... ''')
+                >>> s = c.compile_sampler()
+                >>> s.sample(shots=1)
+                array([[1, 0, 1, 1]], dtype=uint8)
+        )DOC")
+            .data());
 
     c.def(
         "sample",

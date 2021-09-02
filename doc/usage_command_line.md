@@ -161,7 +161,10 @@ error(0.003344519141621982161) D1
     If an integer argument is specified, run that many shots of the circuit.
     The maximum shot count is 9223372036854775807.
 
-    - **`--frame0`**:
+    - **`--out_format=[name]`**: <a name="out_format"></a>Output format to use for result data from shots.
+        See the [result formats reference](result_formats.md) for supported formats.
+
+    - **`--skip_reference_sample`**:
         Significantly improve the performance of measurement sampling mode by asserting that it is possible to take a sample
         from the given circuit where all measurement results are 0.
         Allows the frame simulator to start immediately, without waiting for a reference sample from the tableau simulator.
@@ -175,10 +178,14 @@ error(0.003344519141621982161) D1
     If an integer argument is specified, run that many shots of the circuit.
     The maximum shot count is 9223372036854775807.
 
+    - **`--out_format=[name]`**: <a name="out_format"></a>Output format to use for result data from shots.
+        See the [result formats reference](result_formats.md) for supported formats.
+
     - **`--append_observables`**:
         In addition to outputting the values of detectors, output the values of logical observables
         built up using `OBSERVABLE_INCLUDE` instructions.
-        Put these observables' values into the detection event output as if they were additional detectors at the end of the circuit.
+        Put these observables' values into the detection event output as if they were additional detectors at the end of the circuit
+        (except for `out_format=dets` where observables are indexed normally and prefixed with `L` instead of `D`).
 
 - **`--analyze_errors`**:
     **Detector error model creation mode**.
@@ -339,90 +346,3 @@ error(0.003344519141621982161) D1
 - **`--out=FILEPATH`**:
     Specifies a file to create or overwrite with results.
     If not specified, the `stdout` pipe is used.
-
-- **`--out_format=[name]`**: <a name="out_format"></a>Output format to use.
-    Requires measurement sampling mode or detection sample mode.
-    Definition: a "sample" is one measurement result in measurement sampling mode or one detector/observable result in detection event sampling mode.
-    Definition: a "shot" is composed of all of the samples from a circuit.
-    Definition: a "sample location" is a measurement gate in measurement sampling mode, or a detector/observable in detection event sampling mode.
-    - `01` (default):
-        Human readable ASCII format.
-        Prints all the samples from one shot before moving on to the next.
-        Prints '0' or '1' for each sample.
-        Prints '\n' at the end of each shot.
-        Example all-true ASCII data (for 10 measurements, 4 shots):
-        ```
-        1111111111
-        1111111111
-        1111111111
-        1111111111
-        ```
-    - `hits`:
-        Human readable ASCII format.
-        Writes the decimal indices of samples equal to 1, separated by a comma.
-        Shots are separated by a newline.
-        This format is more useful in `--detect` mode, where `1`s are rarer.
-        Example all-true output data (for 10 measurements, 4 shots):
-        ```
-        0,1,2,3,4,5,6,7,8,9
-        0,1,2,3,4,5,6,7,8,9
-        0,1,2,3,4,5,6,7,8,9
-        0,1,2,3,4,5,6,7,8,9
-        ```
-    - `dets`:
-        Human readable ASCII format.
-        Similar to `hits`, except each line is prefixed by `shot `, hits are separated by spaces, and each hit is
-        prefixed by a character indicating its type (`M` for measurement, `D` for detector, `L` for logical observable).
-        Example output data (for 3 detectors, 2 observables):
-        ```
-        shot
-        shot L0 L1 D0 D1 D2
-        shot L0 D0
-        ```
-    - `b8`:
-        Binary format.
-        Writes all the samples from one shot before moving on to the next.
-        The number of samples is padded up to a multiple of 8 using fake samples set to 0.
-        Samples are combined into groups of 8.
-        The sample results for a group are bit packed into a byte, ordered from least significant bit to most significant bit.
-        The byte for the first sample group is printed, then the second, and so forth for all groups in order.
-        There is no separator between shots (other than the fake zero sample padding up to a multiple of 8).
-        Example all-true output hex data (for 10 measurements, 4 shots):
-        ```
-        FF 30 FF 30 FF 30 FF 30
-        ```
-    - `ptb64`:
-        Partially transposed binary format.
-        The number of shots is padded up to a multiple of 64 using fake shots where all samples are 0.
-        Shots are combined into groups of 64.
-        All the samples from one shot group are written before moving on to the next group.
-        Within a shot group, each of the circuit sample locations has 64 results (one from each shot).
-        These 64 bits of information are packed into 8 bytes, ordered from first file byte to last file byte and then least significant bit to most significant bit.
-        The 8 bytes for the first sample location are output, then the 8 bytes for the next, and so forth for all sample locations.
-        There is no separator between shot groups (the reader must know how many measurements are expected).
-        Example all-true output hex data (for 3 measurements, 81 shots):
-        ```
-        FF FF FF FF FF FF FF FF
-        FF FF FF FF FF FF FF FF
-        FF FF FF FF FF FF FF FF
-        FF FF F1 00 00 00 00 00
-        FF FF F1 00 00 00 00 00
-        FF FF F1 00 00 00 00 00
-        ```
-    - `r8`:
-        Binary run-length format.
-        Each byte is the length of a run of samples that were all False.
-        If the run length is non-maximal (less than 255), the next measurement result is a 1.
-        For example, `0x00` means `[1]`, `0x03` means `[0, 0, 0, 1]`,
-        `0xFE` means `[0] * 254 + [1]`,
-        and `0xFF`   means `[0] * 255`.
-        A fake "True" sample is appended to the end of each shot, and the data for a shot ends on the byte that decodes
-        to produce this fake appended True.
-        Note that this means the reader must know how many measurement results are expected,
-        and that the data will never end with a `0xFF`.
-        There is no separator between shots, other than padding implicit in appending the fake "True" samples.
-        Example data for an all-false shot then an all-true shot then an all-false shot (with 5 measurements per shot):
-        ```
-        0x05 0x00 0x00 0x00 0x00 0x00 0x00 0x05
-        ```
-      Note the sixth `0x00` due to the fake appended True.

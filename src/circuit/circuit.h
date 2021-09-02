@@ -37,51 +37,6 @@ uint64_t op_data_rep_count(const OperationData &data);
 uint64_t add_saturate(uint64_t a, uint64_t b);
 uint64_t mul_saturate(uint64_t a, uint64_t b);
 
-enum SampleFormat {
-    /// Human readable format.
-    ///
-    /// For each shot:
-    ///     For each measurement:
-    ///         Output '0' if false, '1' if true
-    ///     Output '\n'
-    SAMPLE_FORMAT_01,
-
-    /// Binary format.
-    ///
-    /// For each shot:
-    ///     For each group of 8 measurement (padded with 0s if needed):
-    ///         Output a bit packed byte (least significant bit of byte has first measurement)
-    SAMPLE_FORMAT_B8,
-
-    /// Transposed binary format.
-    ///
-    /// For each measurement:
-    ///     For each group of 64 shots (padded with 0s if needed):
-    ///         Output bit packed bytes (least significant bit of first byte has first shot)
-    SAMPLE_FORMAT_PTB64,
-
-    /// Human readable compressed format.
-    ///
-    /// For each shot:
-    ///     For each measurement_index where the measurement result was 1:
-    ///         Output decimal(measurement_index)
-    SAMPLE_FORMAT_HITS,
-
-    /// Binary run-length format.
-    ///
-    /// For each shot:
-    ///     Append a one to the shot
-    ///     For each run length d of zeros between ones (including runs of length 0):
-    ///         Output [0x255] * (d // 255) + [d % 255]
-    SAMPLE_FORMAT_R8,
-
-    /// Specific to detection event data.
-    ///
-    /// For each shot:
-    ///     Output "shot" + " D#" for each detector that fired + " L#" for each observable that was inverted + "\n".
-    SAMPLE_FORMAT_DETS,
-};
-
 /// The data that describes how a gate is being applied to qubits (or other targets).
 ///
 /// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).

@@ -20,6 +20,7 @@
 #include <random>
 
 #include "../circuit/circuit.h"
+#include "../io/stim_data_formats.h"
 #include "../simd/simd_bit_table.h"
 
 namespace stim_internal {

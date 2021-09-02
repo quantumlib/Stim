@@ -20,7 +20,7 @@
 using namespace stim_internal;
 
 void pybind_detector_error_model_target(pybind11::module &m) {
-    auto &&c = pybind11::class_<ExposedDemTarget>(
+    auto c = pybind11::class_<ExposedDemTarget>(
         m, "DemTarget", "An instruction target from a detector error model (.dem) file.");
 
     m.def(

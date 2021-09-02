@@ -40,7 +40,7 @@ std::string circuit_repr(const Circuit &self) {
 }
 
 void pybind_circuit(pybind11::module &m) {
-    auto &&c = pybind11::class_<Circuit>(
+    auto c = pybind11::class_<Circuit>(
         m,
         "Circuit",
         clean_doc_string(u8R"DOC(
@@ -178,11 +178,27 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "compile_sampler",
-        [](const Circuit &self) {
-            return CompiledMeasurementSampler(self);
+        [](const Circuit &self, bool skip_reference_sample) {
+            return CompiledMeasurementSampler(self, skip_reference_sample);
         },
+        pybind11::kw_only(),
+        pybind11::arg("skip_reference_sample") = false,
         clean_doc_string(u8R"DOC(
             Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
+
+            Args:
+                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
+                    initialized to all-zeroes instead of being collected from the circuit. This means that the results
+                    returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
+                    measurement results.
+
+                    Forcing an all-zero reference sample is useful when you are only interested in error propagation and
+                    don't want to have to deal with the fact that some measurements want to be On when no errors occur.
+                    It is also useful when you know for sure that the all-zero result is actually a possible result from
+                    the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
+                    other. Computing the reference sample is the most time consuming and memory intensive part of
+                    simulating the circuit, so promising that the simulator can safely skip that step is an effective
+                    optimization.
 
             Examples:
                 >>> import stim

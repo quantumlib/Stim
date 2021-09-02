@@ -22,16 +22,18 @@
 #include "../circuit/circuit.h"
 #include "../simd/simd_bits.h"
 
-void pybind_compiled_measurement_sampler(pybind11::module &m);
-
 struct CompiledMeasurementSampler {
     const stim_internal::simd_bits ref;
     const stim_internal::Circuit circuit;
-    CompiledMeasurementSampler(stim_internal::Circuit circuit);
+    const bool skip_reference_sample;
+    CompiledMeasurementSampler(stim_internal::Circuit circuit, bool skip_reference_sample);
     pybind11::array_t<uint8_t> sample(size_t num_samples);
     pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples);
     void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
     std::string repr() const;
 };
+
+pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler_class(pybind11::module &m);
+void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c);
 
 #endif
