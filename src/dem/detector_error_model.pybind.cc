@@ -33,7 +33,7 @@ std::string detector_error_model_repr(const DetectorErrorModel &self) {
 }
 
 void pybind_detector_error_model(pybind11::module &m) {
-    auto &&c = pybind11::class_<DetectorErrorModel>(
+    auto c = pybind11::class_<DetectorErrorModel>(
         m,
         "DetectorErrorModel",
         clean_doc_string(u8R"DOC(

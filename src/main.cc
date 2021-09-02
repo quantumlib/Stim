@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "main_helper.h"
+#include "main_namespaced.h"
 
 using namespace stim_internal;
 
 int main(int argc, const char **argv) {
-    return main_helper(argc, argv);
+    return stim_internal::main(argc, argv);
 }

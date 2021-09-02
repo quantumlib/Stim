@@ -47,7 +47,7 @@ set(SOURCE_FILES_NO_MAIN
         src/circuit/gate_data_swaps.cc
         src/circuit/gate_target.cc
         src/dem/detector_error_model.cc
-        src/gate_help.cc
+        src/help.cc
         src/gen/circuit_gen_main.cc
         src/gen/circuit_gen_params.cc
         src/gen/gen_color_code.cc
@@ -58,7 +58,8 @@ set(SOURCE_FILES_NO_MAIN
         src/io/measure_record.cc
         src/io/measure_record_reader.cc
         src/io/measure_record_writer.cc
-        src/main_helper.cc
+        src/io/stim_data_formats.cc
+        src/main_namespaced.cc
         src/probability_util.cc
         src/simd/bit_ref.cc
         src/simd/simd_bit_table.cc
@@ -95,7 +96,7 @@ set(TEST_FILES
         src/io/measure_record_batch_writer.test.cc
         src/io/measure_record_reader.test.cc
         src/io/measure_record_writer.test.cc
-        src/main_helper.test.cc
+        src/main_namespaced.test.cc
         src/probability_util.test.cc
         src/simd/bit_ref.test.cc
         src/simd/fixed_cap_vector.test.cc
@@ -123,7 +124,7 @@ set(BENCHMARK_FILES
         src/benchmark_util.perf.cc
         src/circuit/circuit.perf.cc
         src/circuit/gate_data.perf.cc
-        src/main.perf.cc
+        src/main_namespaced.perf.cc
         src/probability_util.perf.cc
         src/simd/simd_bit_table.perf.cc
         src/simd/simd_bits.perf.cc

@@ -34,6 +34,8 @@ keep = {
     "__hash__",
 }
 skip = {
+    "_UNSTABLE_raw_gate_data",
+    "_UNSTABLE_raw_format_data",
     "__class__",
     "__delattr__",
     "__dir__",

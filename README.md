@@ -31,7 +31,7 @@ all operated on simultaneously by individual CPU instructions.
 
 Circuits can be input using the [stim circuit file format (.stim)](doc/file_format_stim_circuit.md).
 
-Samples can be output using [a variety of text and binary formats](doc/usage_command_line.md#out_format).
+Samples can be output using [a variety of text and binary formats](doc/result_formats.md).
 
 Error models can be output using the [detector error model file format (.dem)](doc/file_format_dem_detector_error_model.md).
 

@@ -17,15 +17,11 @@
 #ifndef STIM_MAIN_HELPER_H
 #define STIM_MAIN_HELPER_H
 
-#include "arg_parse.h"
-#include "probability_util.h"
-#include "simulators/frame_simulator.h"
-#include "simulators/tableau_simulator.h"
-
 namespace stim_internal {
 
-int main_helper(int argc, const char **argv);
+/// Stim's main method (in a namespace; not the global entrypoint main!).
+int main(int argc, const char **argv);
 
-}
+}  // namespace stim_internal
 
 #endif

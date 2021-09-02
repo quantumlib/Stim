@@ -97,19 +97,14 @@ bool normalize_index_or_slice(
 }
 
 SampleFormat format_to_enum(const std::string &format) {
-    if (format == "01") {
-        return SAMPLE_FORMAT_01;
-    } else if (format == "hits") {
-        return SAMPLE_FORMAT_HITS;
-    } else if (format == "b8") {
-        return SAMPLE_FORMAT_B8;
-    } else if (format == "r8") {
-        return SAMPLE_FORMAT_R8;
-    } else if (format == "dets") {
-        return SAMPLE_FORMAT_DETS;
-    } else if (format == "ptb64") {
-        return SAMPLE_FORMAT_PTB64;
-    } else {
-        throw std::invalid_argument("Unrecognized format. Expected '01', 'hits', 'b8', 'r8', 'dets', or 'ptb64'.");
+    auto found_format = format_name_to_enum_map.find(format);
+    if (found_format == format_name_to_enum_map.end()) {
+        std::stringstream msg;
+        msg << "Unrecognized output format: '" << format << "'. Recognized formats are:\n";
+        for (const auto &kv : format_name_to_enum_map) {
+            msg << "    " << kv.first << "\n";
+        }
+        throw std::invalid_argument(msg.str());
     }
+    return found_format->second.id;
 }

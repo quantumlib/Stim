@@ -22,6 +22,7 @@
 #include <random>
 
 #include "../circuit/circuit.h"
+#include "../io/stim_data_formats.h"
 
 std::mt19937_64 &PYBIND_SHARED_RNG();
 std::string clean_doc_string(const char *c);

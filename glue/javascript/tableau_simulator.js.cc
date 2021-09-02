@@ -136,7 +136,7 @@ ExposedTableauSimulator ExposedTableauSimulator::copy() const {
 }
 
 void emscripten_bind_tableau_simulator() {
-    auto &&c = emscripten::class_<ExposedTableauSimulator>("TableauSimulator");
+    auto c = emscripten::class_<ExposedTableauSimulator>("TableauSimulator");
     c.constructor();
     c.function("current_inverse_tableau", &ExposedTableauSimulator::current_inverse_tableau);
     c.function("set_inverse_tableau", &ExposedTableauSimulator::set_inverse_tableau);

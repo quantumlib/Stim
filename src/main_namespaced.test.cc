@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "main_helper.h"
+#include "main_namespaced.h"
 
 #include <gtest/gtest.h>
 #include <regex>
+#include <unordered_map>
 
 #include "test_util.test.h"
 
@@ -41,7 +42,7 @@ std::string execute(std::vector<const char *> flags, const char *std_in_content)
     testing::internal::CaptureStderr();
     int result;
     try {
-        result = main_helper(flags.size(), flags.data());
+        result = stim_internal::main(flags.size(), flags.data());
     } catch (const std::exception &e) {
         return "[exception=" + std::string(e.what()) + "]" + testing::internal::GetCapturedStdout() +
                testing::internal::GetCapturedStderr();
@@ -126,7 +127,7 @@ static bool matches(std::string actual, std::string pattern) {
     return std::regex_match(actual, std::regex("^" + pattern + "$"));
 }
 
-TEST(main_helper, help_modes) {
+TEST(main, help_modes) {
     ASSERT_TRUE(matches(execute({"--help"}, ""), ".*BASIC USAGE.+"));
     ASSERT_TRUE(matches(execute({}, ""), ".+stderr.+pick a mode.+"));
     ASSERT_TRUE(matches(execute({"--sample", "--repl"}, ""), ".+stderr.+pick a mode.+"));
@@ -135,7 +136,25 @@ TEST(main_helper, help_modes) {
     ASSERT_TRUE(matches(execute({"--help", "H"}, ""), ".+Hadamard.+"));
 }
 
-TEST(main_helper, sample_flag) {
+TEST(main, bad_flag) {
+    ASSERT_EQ(
+        trim(execute({"--gen", "--unknown"}, "")),
+        trim("[exception=\033[31mUnrecognized command line argument --unknown for mode --gen.\n"
+             "Recognized command line arguments for mode --gen:\n"
+             "    --after_clifford_depolarization\n"
+             "    --after_reset_flip_probability\n"
+             "    --task\n"
+             "    --before_measure_flip_probability\n"
+             "    --before_round_data_depolarization\n"
+             "    --distance\n"
+             "    --gen\n"
+             "    --out\n"
+             "    --in\n"
+             "    --rounds\n"
+             "\033[0m]\n"));
+}
+
+TEST(main, sample_flag) {
     ASSERT_EQ(
         trim(execute({"--sample"}, R"input(
 M 0
@@ -186,7 +205,7 @@ M !0
             )output"));
 }
 
-TEST(main_helper, intentional_failures) {
+TEST(main, intentional_failures) {
     ASSERT_EQ(
         "Sampled 10 which was not expected.",
         deviation(
@@ -206,7 +225,7 @@ M 0
             {{"0", 0.1}, {"1", 0.9}}));
 }
 
-TEST(main_helper, basic_distributions) {
+TEST(main, basic_distributions) {
     ASSERT_EQ(
         "",
         deviation(
@@ -240,7 +259,7 @@ M 0 1
             {{"00", 0.5}, {"11", 0.5}}));
 }
 
-TEST(main_helper, sample_x_error) {
+TEST(main, sample_x_error) {
     ASSERT_EQ(
         "",
         deviation(
@@ -262,7 +281,7 @@ M 0 1
             {{"00", 1}}));
 }
 
-TEST(main_helper, sample_z_error) {
+TEST(main, sample_z_error) {
     ASSERT_EQ(
         "",
         deviation(
@@ -284,7 +303,7 @@ M 0 1
             {{"00", 1}}));
 }
 
-TEST(main_helper, sample_y_error) {
+TEST(main, sample_y_error) {
     ASSERT_EQ(
         "",
         deviation(
@@ -306,7 +325,7 @@ M 0 1
             {{"00", 1}}));
 }
 
-TEST(main_helper, sample_depolarize1_error) {
+TEST(main, sample_depolarize1_error) {
     ASSERT_EQ(
         "",
         deviation(
@@ -339,7 +358,7 @@ M 0 1
             {{"00", 0.8 * 0.8}, {"01", 0.8 * 0.2}, {"10", 0.8 * 0.2}, {"11", 0.2 * 0.2}}));
 }
 
-TEST(main_helper, sample_depolarize2_error) {
+TEST(main, sample_depolarize2_error) {
     ASSERT_EQ(
         "",
         deviation(
@@ -363,7 +382,7 @@ M 0 1
             {{"00", 0.3 * 3 / 15 + 0.7}, {"01", 0.3 * 4 / 15}, {"10", 0.3 * 4 / 15}, {"11", 0.3 * 4 / 15}}));
 }
 
-TEST(main_helper, sample_measure_reset) {
+TEST(main, sample_measure_reset) {
     ASSERT_EQ(
         trim(execute({"--sample"}, R"input(
 X 0
@@ -384,11 +403,11 @@ MR 0
             )output"));
 }
 
-TEST(main_helper, frame0_flag) {
+TEST(main, skip_reference_sample_flag) {
     ASSERT_EQ(
         "",
         deviation(
-            execute({"--sample", "--frame0"}, R"input(
+            execute({"--sample", "--skip_reference_sample"}, R"input(
 H 0
 S 0
 S 0
@@ -400,7 +419,7 @@ M 0
     ASSERT_EQ(
         "",
         deviation(
-            execute({"--sample=10", "--frame0"}, R"input(
+            execute({"--sample=10", "--skip_reference_sample"}, R"input(
 H 0
 S 0
 S 0
@@ -434,7 +453,7 @@ M 0
             {{"1", 1}}));
 }
 
-TEST(main_helper, detect_basic) {
+TEST(main, detect_basic) {
     ASSERT_EQ(
         trim(execute({"--detect"}, R"input(
 M 0
@@ -572,7 +591,7 @@ OBSERVABLE_INCLUDE(0) rec[-2]
             )output"));
 }
 
-TEST(main_helper, detector_hypergraph_deprecated) {
+TEST(main, detector_hypergraph_deprecated) {
     ASSERT_EQ(
         trim(execute({"--detector_hypergraph"}, R"input(
             )input")),
@@ -582,7 +601,7 @@ TEST(main_helper, detector_hypergraph_deprecated) {
             )output"));
 }
 
-TEST(main_helper, analyze_errors) {
+TEST(main, analyze_errors) {
     ASSERT_EQ(execute({"--analyze_errors"}, ""), "\n");
 
     ASSERT_EQ(
@@ -596,7 +615,7 @@ error(0.25) D0
             )output"));
 }
 
-TEST(main_helper, analyze_errors_fold_loops) {
+TEST(main, analyze_errors_fold_loops) {
     ASSERT_EQ(
         trim(execute({"--analyze_errors", "--fold_loops"}, R"input(
 REPEAT 1000 {
@@ -614,7 +633,7 @@ repeat 1000 {
             )output"));
 }
 
-TEST(main_helper, analyze_errors_allow_gauge_detectors) {
+TEST(main, analyze_errors_allow_gauge_detectors) {
     ASSERT_EQ(
         trim(execute({"--analyze_errors", "--allow_gauge_detectors"}, R"input(
 R 0
@@ -643,7 +662,7 @@ Context: analyzing the circuit operation at offset 0 which is 'R 0'.]
             )output"));
 }
 
-TEST(main_helper, analyze_errors_all_approximate_disjoint_errors) {
+TEST(main, analyze_errors_all_approximate_disjoint_errors) {
     ASSERT_EQ(
         trim(execute({"--analyze_errors", "--approximate_disjoint_errors"}, R"input(
 R 0
@@ -680,7 +699,7 @@ Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0
             )output"));
 }
 
-TEST(main_helper, generate_circuits) {
+TEST(main, generate_circuits) {
     ASSERT_TRUE(matches(
         trim(execute({"--gen=repetition_code", "--rounds=3", "--distance=4", "--task=memory"}, "")),
         ".+Generated repetition_code.+"));
@@ -695,7 +714,7 @@ TEST(main_helper, generate_circuits) {
         ".+Generated color_code.+"));
 }
 
-TEST(main_helper, detection_event_simulator_counts_measurements_correctly) {
+TEST(main, detection_event_simulator_counts_measurements_correctly) {
     auto s = execute({"--detect=1000"}, "MPP Z8*X9\nDETECTOR rec[-1]");
     size_t zeroes = 0;
     size_t ones = 0;

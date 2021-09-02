@@ -83,7 +83,7 @@ std::vector<double> ExposedDemInstruction::args_copy() const {
 }
 
 void pybind_detector_error_model_instruction(pybind11::module &m) {
-    auto &&c = pybind11::class_<ExposedDemInstruction>(
+    auto c = pybind11::class_<ExposedDemInstruction>(
         m,
         "DemInstruction",
         clean_doc_string(u8R"DOC(

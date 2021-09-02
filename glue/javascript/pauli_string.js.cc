@@ -72,7 +72,7 @@ int8_t ExposedPauliString::getSign() const {
 }
 
 void emscripten_bind_pauli_string() {
-    auto &&c = emscripten::class_<ExposedPauliString>("PauliString");
+    auto c = emscripten::class_<ExposedPauliString>("PauliString");
     c.constructor<const emscripten::val &>();
     c.class_function("random", &ExposedPauliString::random);
     c.function("neg", &ExposedPauliString::neg);

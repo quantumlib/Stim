@@ -85,3 +85,44 @@ def test_sample_write():
         c.compile_sampler().sample_write(5, filepath=path, format='01')
         with open(path, 'r') as f:
             assert f.readlines() == ['1000110\n'] * 5
+
+
+def test_skip_reference_sample():
+    np.testing.assert_array_equal(
+        stim.Circuit("X 0\nM 0").compile_sampler().sample(1),
+        [[True]],
+    )
+    np.testing.assert_array_equal(
+        stim.Circuit("X 0\nM 0").compile_sampler(skip_reference_sample=False).sample(1),
+        [[True]],
+    )
+    np.testing.assert_array_equal(
+        stim.Circuit("X 0\nM 0").compile_sampler(skip_reference_sample=True).sample(1),
+        [[False]],
+    )
+    np.testing.assert_array_equal(
+        stim.Circuit("X_ERROR(1) 0\nM 0").compile_sampler(skip_reference_sample=False).sample(1),
+        [[True]],
+    )
+    np.testing.assert_array_equal(
+        stim.Circuit("X_ERROR(1) 0\nM 0").compile_sampler(skip_reference_sample=True).sample(1),
+        [[True]],
+    )
+
+
+def test_repr():
+    assert repr(stim.Circuit("""
+        X 0
+        M 0
+    """).compile_sampler()) == """stim.CompiledMeasurementSampler(stim.Circuit('''
+    X 0
+    M 0
+'''))"""
+
+    assert repr(stim.Circuit("""
+        X 0
+        M 0
+    """).compile_sampler(skip_reference_sample=True)) == """stim.CompiledMeasurementSampler(stim.Circuit('''
+    X 0
+    M 0
+'''), skip_reference_sample=True)"""
