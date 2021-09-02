@@ -18,13 +18,17 @@
     
     Example:
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> import pathlib
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
         ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-        ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="01")
-        ...     with open(t.name) as f:
-        ...         print(f.read())
+        ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="01")
+        ...     with open(path) as f:
+        ...         print(f.read().strip())
         00001111001101
         00001111001101
         00001111001101
@@ -44,6 +48,8 @@
         def parse_01(data: str) -> List[List[bool]]:
             shots = []
             for line in data.split('\n'):
+                if not line:
+                    continue
                 shot = []
                 for c in line:
                     assert c in '01'
@@ -80,12 +86,16 @@
     
     Example:
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> import pathlib
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
         ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-        ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="01")
-        ...     with open(t.name, 'rb') as f:
+        ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="b8")
+        ...     with open(path, 'rb') as f:
         ...         print(' '.join(hex(e)[2:] for e in f.read()))
         f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c
     
@@ -114,8 +124,8 @@
         
         def save_b8(shots: List[List[bool]]) -> bytes:
             output = b""
-            bytes_per_shot = (len(shot) + 7) // 8
             for shot in shots:
+                bytes_per_shot = (len(shot) + 7) // 8
                 v = 0
                 for b in reversed(shot):
                     v <<= 1
@@ -139,18 +149,23 @@
     
     Example:
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> import pathlib
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
         ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1 0 1
-        ...     """).compile_sampler().sample_write(shots=3, filepath=t.name, format="dets")
-        ...     with open(t.name) as f:
-        ...         print(f.read())
+        ...     """).compile_sampler().sample_write(shots=3, filepath=path, format="dets")
+        ...     with open(path) as f:
+        ...         print(f.read().strip())
         shot M4 M5 M6 M7 M10 M11 M13 M15
         shot M4 M5 M6 M7 M10 M11 M13 M15
         shot M4 M5 M6 M7 M10 M11 M13 M15
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X_ERROR(1) 1
         ...         M 0 1 2
@@ -158,9 +173,9 @@
         ...         DETECTOR rec[-2]
         ...         DETECTOR rec[-3]
         ...         OBSERVABLE_INCLUDE(5) rec[-2]
-        ...     """).compile_detector_sampler().sample_write(shots=2, filepath=t.name, format="dets", append_observables=True)
-        ...     with open(t.name) as f:
-        ...         print(f.read())
+        ...     """).compile_detector_sampler().sample_write(shots=2, filepath=path, format="dets", append_observables=True)
+        ...     with open(path) as f:
+        ...         print(f.read().strip())
         shot D1 L5
         shot D1 L5
     
@@ -172,23 +187,24 @@
         def parse_dets(data: str, num_detectors: int, num_observables: int) -> List[List[bool]]:
             shots = []
             for line in data.split('\n'):
-                if not line:
+                if not line.strip():
                     continue
                 assert line.startswith('shot')
                 line = line[4:].strip()
         
                 shot = [False] * (num_detectors + num_observables)
-                for term in line.split(' '):
-                    c = term[0]
-                    v = int(term[1:])
-                    if c == 'D':
-                        assert 0 <= v < num_detectors
-                        shot[v] = True
-                    elif c == 'L':
-                        assert 0 <= v < num_observables
-                        shot[num_detectors + v] = True
-                    else:
-                        raise NotImplementedError(c)
+                if line:
+                    for term in line.split(' '):
+                        c = term[0]
+                        v = int(term[1:])
+                        if c == 'D':
+                            assert 0 <= v < num_detectors
+                            shot[v] = True
+                        elif c == 'L':
+                            assert 0 <= v < num_observables
+                            shot[num_detectors + v] = True
+                        else:
+                            raise NotImplementedError(c)
                 shots.append(shot)
             return shots
         ```
@@ -224,19 +240,25 @@
     separated by commas, with each integer indicating a bit from the shot that was true.
     
     This format requires the reader to know the number of bits in each shot (if they want to get a list instead of a set).
+    This format requires the reader to know how many trailing newlines, that don't correspond to shots with no hit, are in
+    the text data.
     
     This format is useful in contexts where the number of set bits is expected to be low, e.g. when sampling detection
     events.
     
     Example:
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> import pathlib
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
-        ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1 0 1
-        ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="hits")
-        ...     with open(t.name) as f:
-        ...         print(f.read())
+        ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
+        ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="hits")
+        ...     with open(path) as f:
+        ...         print(f.read().strip())
         4,5,6,7,10,11,13
         4,5,6,7,10,11,13
         4,5,6,7,10,11,13
@@ -255,10 +277,13 @@
         
         def parse_hits(data: str, bits_per_shot: int) -> List[List[bool]]:
             shots = []
+            if data.endswith('\n'):
+                data = data[:-1]
             for line in data.split('\n'):
                 shot = [False] * bits_per_shot
-                for term in line.split(','):
-                    shot[int(term)] = True
+                if line:
+                    for term in line.split(','):
+                        shot[int(term)] = True
                 shots.append(shot)
             return shots
         ```
@@ -271,8 +296,7 @@
         def save_hits(shots: List[List[bool]]) -> str:
             output = ""
             for shot in shots:
-                hits = [index for index, bit in enumerate(shot) if bit]
-                output += ','.join(hits) + '\n'
+                output += ",".join(str(index) for index, bit in enumerate(shot) if bit) + "\n"
             return output
         ```
         
@@ -298,12 +322,16 @@
     
     Example:
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> import pathlib
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
-        ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1 0 1
-        ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="ptb64")
-        ...     with open(t.name, 'rb') as f:
+        ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
+        ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="ptb64")
+        ...     with open(path, 'rb') as f:
         ...         print(' '.join(hex(e)[2:] for e in f.read()))
         0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0
     
@@ -318,8 +346,8 @@
             for shot_offset in range(num_shots):
                 shot_group = shot_offset // 64
                 shot_stripe = shot_offset % 64
-                for bit_index in range(bits_per_shot):
-                    byte_offset = group_byte_stride*shot_group + bit_index * 8 + shot_stripe // 8
+                for measure_index in range(bits_per_shot):
+                    byte_offset = group_byte_stride*shot_group + measure_index * 8 + shot_stripe // 8
                     bit = (data[byte_offset] >> (shot_stripe % 8)) % 2 == 1
                     result[shot_offset][measure_index] = bit
             return result
@@ -330,16 +358,16 @@
         ```python
         from typing import List
         
-        def print_ptb64(shots: List[List[bool]]):
+        def save_ptb64(shots: List[List[bool]]):
             output = b""
             for shot_offset in range(0, len(shots), 64):
                 bits_per_shot = len(shots[0])
                 for measure_index in range(bits_per_shot):
                     v = 0
-                    for k in reversed(range(64)):
+                    for k in reversed(range(min(64, len(shots) - shot_offset))):
                         v <<= 1
                         v += shots[shot_offset + k][measure_index]
-                    output += v.to_bytes(bytes_per_shot, 'little')
+                    output += v.to_bytes(8, 'little')
             return output
         ```
         
@@ -360,21 +388,26 @@
     
     Example:
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> import pathlib
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
-        ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1 0 1
-        ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="01")
-        ...     with open(t.name, 'rb') as f:
+        ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
+        ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="r8")
+        ...     with open(path, 'rb') as f:
         ...         print(' '.join(hex(e)[2:] for e in f.read()))
         4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0
     
-        >>> with tempfile.NamedTemporaryFile() as t:
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = str(pathlib.Path(d) / "tmp.dat")
         ...     stim.Circuit("""
         ...         X 1
         ...         M 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-        ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="01")
-        ...     with open(t.name, 'rb') as f:
+        ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="r8")
+        ...     with open(path, 'rb') as f:
         ...         print(' '.join(hex(e)[2:] for e in f.read()))
         9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f
     
@@ -405,7 +438,7 @@
         from typing import List
         
         def save_r8(shots: List[List[bool]]) -> bytes:
-            output = ""
+            output = b""
             for shot in shots:
                 gap = 0
                 for b in shot + [True]:

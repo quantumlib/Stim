@@ -18,14 +18,16 @@ This is the default format used when saving to files.
 
 Example:
 
+    >>> import pathlib
     >>> import stim
     >>> import tempfile
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-    ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="01")
-    ...     with open(t.name) as f:
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="01")
+    ...     with open(path) as f:
     ...         print(f.read().strip())
     00001111001101
     00001111001101
@@ -84,14 +86,16 @@ This format requires the reader to know the number of bits in each shot.
 
 Example:
 
+    >>> import pathlib
     >>> import stim
     >>> import tempfile
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-    ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="b8")
-    ...     with open(t.name, 'rb') as f:
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="b8")
+    ...     with open(path, 'rb') as f:
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c f0 2c
 )HELP",
@@ -152,14 +156,16 @@ where it is possible to parallelize across shots using SIMD instructions.
 
 Example:
 
+    >>> import pathlib
     >>> import stim
     >>> import tempfile
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-    ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="ptb64")
-    ...     with open(t.name, 'rb') as f:
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="ptb64")
+    ...     with open(path, 'rb') as f:
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0
 )HELP",
@@ -216,14 +222,16 @@ events.
 
 Example:
 
+    >>> import pathlib
     >>> import stim
     >>> import tempfile
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-    ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="hits")
-    ...     with open(t.name) as f:
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="hits")
+    ...     with open(path) as f:
     ...         print(f.read().strip())
     4,5,6,7,10,11,13
     4,5,6,7,10,11,13
@@ -283,23 +291,26 @@ events.
 
 Example:
 
+    >>> import pathlib
     >>> import stim
     >>> import tempfile
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
-    ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="r8")
-    ...     with open(t.name, 'rb') as f:
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="r8")
+    ...     with open(path, 'rb') as f:
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0 4 0 0 0 2 0 1 0
 
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
-    ...     """).compile_sampler().sample_write(shots=10, filepath=t.name, format="r8")
-    ...     with open(t.name, 'rb') as f:
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="r8")
+    ...     with open(path, 'rb') as f:
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
     9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f 9 1f
 )HELP",
@@ -360,20 +371,23 @@ wants to produce vectors of bits instead of sets.
 
 Example:
 
+    >>> import pathlib
     >>> import stim
     >>> import tempfile
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
     ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1 0 1
-    ...     """).compile_sampler().sample_write(shots=3, filepath=t.name, format="dets")
-    ...     with open(t.name) as f:
+    ...     """).compile_sampler().sample_write(shots=3, filepath=path, format="dets")
+    ...     with open(path) as f:
     ...         print(f.read().strip())
     shot M4 M5 M6 M7 M10 M11 M13 M15
     shot M4 M5 M6 M7 M10 M11 M13 M15
     shot M4 M5 M6 M7 M10 M11 M13 M15
 
-    >>> with tempfile.NamedTemporaryFile() as t:
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X_ERROR(1) 1
     ...         M 0 1 2
@@ -381,8 +395,8 @@ Example:
     ...         DETECTOR rec[-2]
     ...         DETECTOR rec[-3]
     ...         OBSERVABLE_INCLUDE(5) rec[-2]
-    ...     """).compile_detector_sampler().sample_write(shots=2, filepath=t.name, format="dets", append_observables=True)
-    ...     with open(t.name) as f:
+    ...     """).compile_detector_sampler().sample_write(shots=2, filepath=path, format="dets", append_observables=True)
+    ...     with open(path) as f:
     ...         print(f.read().strip())
     shot D1 L5
     shot D1 L5
