@@ -63,10 +63,13 @@ pybind11::object raw_gate_data_solo(const Gate &gate) {
     auto extra = f();
     result["name"] = gate.name;
     result["category"] = extra.category;
-    result["help"] = extra.description;
+    result["help"] = extra.help;
     if (gate.flags & GATE_IS_UNITARY) {
         result["unitary_matrix"] = gate.unitary();
         result["stabilizer_tableau"] = gate.tableau();
+    }
+    if (extra.h_s_cx_m_r_decomposition != nullptr) {
+        result["h_s_cx_m_r_decomposition"] = Circuit(extra.h_s_cx_m_r_decomposition);
     }
     return result;
 }
