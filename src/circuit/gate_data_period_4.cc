@@ -37,7 +37,7 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
                 return {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
-Principle square root of X gate.
+Principal square root of X gate.
 Phases the amplitude of |-> by i.
 
 - Parens Arguments:
@@ -109,7 +109,7 @@ H 0
                 return {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
-Principle square root of Y gate.
+Principal square root of Y gate.
 Phases the amplitude of |-i> by i.
 
 - Parens Arguments:
@@ -144,7 +144,7 @@ H 0
                 return {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
-Principle square root of Y gate.
+Adjoint of the principal square root of Y gate.
 Phases the amplitude of |-i> by -i.
 
 - Parens Arguments:
@@ -179,7 +179,7 @@ S 0
                 return {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
-Principle square root of Z gate.
+Principal square root of Z gate.
 Phases the amplitude of |1> by i.
 
 - Parens Arguments:
@@ -213,7 +213,7 @@ S 0
                 return {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
-Principle square root of Z gate.
+Adjoint of the principal square root of Z gate.
 Phases the amplitude of |1> by -i.
 
 - Parens Arguments:
