@@ -705,7 +705,7 @@
     
 - <a name="SQRT_X_DAG"></a>**`SQRT_X_DAG`**
     
-    Adjoint square root of X gate.
+    Adjoint of the principal square root of X gate.
     Phases the amplitude of |-> by -i.
     
     - Parens Arguments:
