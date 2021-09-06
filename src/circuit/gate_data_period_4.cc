@@ -72,7 +72,7 @@ H 0
                 return {
                     "B_Single Qubit Clifford Gates",
                     R"MARKDOWN(
-Adjoint square root of X gate.
+Adjoint of the principal square root of X gate.
 Phases the amplitude of |-> by -i.
 
 - Parens Arguments:
