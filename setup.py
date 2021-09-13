@@ -32,7 +32,7 @@ version = '1.6.dev0'
 extension_module = Extension(
     'stim',
     sources=RELEVANT_SOURCE_FILES,
-    include_dirs=[pybind11.get_include()],
+    include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=['-std=c++11', '-fno-strict-aliasing', '-march=native', '-O3', f'-DVERSION_INFO={version}']
 )
