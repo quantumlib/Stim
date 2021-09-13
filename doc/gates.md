@@ -593,7 +593,7 @@
     
     Alternate name: <a name="SQRT_Z"></a>`SQRT_Z`
     
-    Principle square root of Z gate.
+    Principal square root of Z gate.
     Phases the amplitude of |1> by i.
     
     - Parens Arguments:
@@ -648,7 +648,7 @@
     
 - <a name="SQRT_X"></a>**`SQRT_X`**
     
-    Principle square root of X gate.
+    Principal square root of X gate.
     Phases the amplitude of |-> by i.
     
     - Parens Arguments:
@@ -705,7 +705,7 @@
     
 - <a name="SQRT_X_DAG"></a>**`SQRT_X_DAG`**
     
-    Adjoint square root of X gate.
+    Adjoint of the principal square root of X gate.
     Phases the amplitude of |-> by -i.
     
     - Parens Arguments:
@@ -764,7 +764,7 @@
     
 - <a name="SQRT_Y"></a>**`SQRT_Y`**
     
-    Principle square root of Y gate.
+    Principal square root of Y gate.
     Phases the amplitude of |-i> by i.
     
     - Parens Arguments:
@@ -821,7 +821,7 @@
     
 - <a name="SQRT_Y_DAG"></a>**`SQRT_Y_DAG`**
     
-    Principle square root of Y gate.
+    Adjoint of the principal square root of Y gate.
     Phases the amplitude of |-i> by -i.
     
     - Parens Arguments:
@@ -880,7 +880,7 @@
     
     Alternate name: <a name="SQRT_Z_DAG"></a>`SQRT_Z_DAG`
     
-    Principle square root of Z gate.
+    Adjoint of the principal square root of Z gate.
     Phases the amplitude of |1> by -i.
     
     - Parens Arguments:
