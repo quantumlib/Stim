@@ -236,10 +236,10 @@ Then link to `libstim` in targets using stim:
 target_link_libraries(some_target_defined_in_your_cmake_file PRIVATE libstim)
 ```
 
-And finally `#include "stim.h"` source files to use stim types and functions:
+And finally `#include "stim/stim.h"` source files to use stim types and functions:
 
 ```
-#include "stim.h"
+#include "stim/stim.h"
 
 stim::Circuit make_bell_pair_circuit() {
     return stim::Circuit(R"CIRCUIT(
@@ -288,10 +288,10 @@ cc_binary(
 )
 ```
 
-And finally `#include "stim.h"` in source files to use stim types and functions:
+And finally `#include "stim/stim.h"` in source files to use stim types and functions:
 
 ```
-#include "stim.h"
+#include "stim/stim.h"
 
 stim::Circuit make_bell_pair_circuit() {
     return stim::Circuit(R"CIRCUIT(

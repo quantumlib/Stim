@@ -11,6 +11,7 @@ AllowShortLoopsOnASingleLine: false
 AllowShortLambdasOnASingleLine: None
 BinPackArguments: false
 BinPackParameters: false
+
 IncludeCategories:
   - Regex:           '^<.*>$'
     Priority:        1

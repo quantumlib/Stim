@@ -5,13 +5,13 @@
 #include <cstdint>
 #include <emscripten/val.h>
 
-#include "../../src/simulators/tableau_simulator.h"
 #include "circuit.js.h"
 #include "pauli_string.js.h"
+#include "stim/simulators/tableau_simulator.h"
 #include "tableau.js.h"
 
 struct ExposedTableauSimulator {
-    stim_internal::TableauSimulator sim;
+    stim::TableauSimulator sim;
     ExposedTableauSimulator();
     ExposedTableauSimulator copy() const;
     bool measure(size_t target);
