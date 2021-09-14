@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <emscripten/val.h>
 
-#include "../../src/stabilizers/pauli_string.h"
+#include "stim/stabilizers/pauli_string.h"
 
 struct ExposedPauliString {
-    stim_internal::PauliString pauli_string;
-    explicit ExposedPauliString(stim_internal::PauliString pauli_string);
+    stim::PauliString pauli_string;
+    explicit ExposedPauliString(stim::PauliString pauli_string);
     explicit ExposedPauliString(const emscripten::val &arg);
     static ExposedPauliString random(size_t n);
     ExposedPauliString times(const ExposedPauliString &other) const;

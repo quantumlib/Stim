@@ -36,5 +36,6 @@ emcc \
     -o out/stim.js \
     --no-entry \
     --bind \
+    -I src \
     "${glue_src_files[@]}" \
     "${stim_src_files[@]}"

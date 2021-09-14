@@ -209,7 +209,7 @@ python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).fai
 **WARNING**.
 Stim's C++ API is not stable.
 It may change in incompatible ways from version to version.
-There's also no API reference, although the basics are essentially identical to the python API.
+There's also no API reference, although the basics are somewhat similar to the python API.
 You will have to rely on reading method signatures and comments to discover functionality.
 
 Assuming that's acceptable to you...
@@ -256,7 +256,7 @@ stim::Circuit make_bell_pair_circuit() {
 **WARNING**.
 Stim's C++ API is not stable.
 It may change in incompatible ways from version to version.
-There's also no API reference, although the basics are essentially identical to the python API.
+There's also no API reference, although the basics are somewhat similar to the python API.
 You will have to rely on reading method signatures and comments to discover functionality.
 
 Assuming that's acceptable to you...

@@ -4,12 +4,12 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "../../src/stabilizers/tableau.h"
 #include "pauli_string.js.h"
+#include "stim/stabilizers/tableau.h"
 
 struct ExposedTableau {
-    stim_internal::Tableau tableau;
-    explicit ExposedTableau(stim_internal::Tableau tableau);
+    stim::Tableau tableau;
+    explicit ExposedTableau(stim::Tableau tableau);
     explicit ExposedTableau(int n);
     static ExposedTableau random(int n);
     static ExposedTableau from_named_gate(const std::string &name);

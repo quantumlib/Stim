@@ -85,7 +85,7 @@ def print_doc(*, full_name: str, obj: object, level: int, outs: DefaultDict[int,
                 k2 = sig_name.index(", " if ", " in sig_name[k1:] else ")", k1)
                 sig_name = sig_name[:k1] + sig_name[k2:]
         text = f"{level * '#'} `{sig_name}`<a name=\"{full_name}\"></a>"
-        if "Exposed" in sig_name or "stim_internal" in sig_name or "::" in sig_name:
+        if "Exposed" in sig_name or "::" in sig_name:
             raise ValueError("Bad type annotation came out of pybind11:\n" + sig_name)
         if doc:
             text += "\n" + indented(paragraph=f"""```

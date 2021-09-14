@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <emscripten/val.h>
 
-#include "../../src/circuit/circuit.h"
+#include "stim/circuit/circuit.h"
 
 struct ExposedCircuit {
-    stim_internal::Circuit circuit;
+    stim::Circuit circuit;
     ExposedCircuit();
-    explicit ExposedCircuit(stim_internal::Circuit circuit);
+    explicit ExposedCircuit(stim::Circuit circuit);
     explicit ExposedCircuit(const std::string &text);
     void append_operation(const std::string &name, const emscripten::val &targets, const emscripten::val &args);
     void append_from_stim_program_text(const std::string &text);

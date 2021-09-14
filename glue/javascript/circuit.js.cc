@@ -3,7 +3,7 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 
-using namespace stim_internal;
+using namespace stim;
 
 ExposedCircuit::ExposedCircuit() : circuit() {
 }

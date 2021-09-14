@@ -5,7 +5,7 @@
 
 #include "common.js.h"
 
-using namespace stim_internal;
+using namespace stim;
 
 struct TempArgData {
     std::vector<GateTarget> targets;

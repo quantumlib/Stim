@@ -2,10 +2,10 @@
 
 #include <emscripten/bind.h>
 
-#include "../../src/circuit/gate_data.h"
 #include "common.js.h"
+#include "stim/circuit/gate_data.h"
 
-using namespace stim_internal;
+using namespace stim;
 
 ExposedTableau::ExposedTableau(Tableau tableau) : tableau(tableau) {
 }

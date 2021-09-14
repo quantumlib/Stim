@@ -14,6 +14,7 @@
 
 cmake_minimum_required(VERSION 3.13)
 project(stim)
+include_directories(src)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY out)
@@ -31,113 +32,113 @@ elseif(SIMD_WIDTH EQUAL 64)
 endif()
 
 set(SOURCE_FILES_NO_MAIN
-        src/arg_parse.cc
-        src/circuit/circuit.cc
-        src/circuit/gate_data.cc
-        src/circuit/gate_data_annotations.cc
-        src/circuit/gate_data_blocks.cc
-        src/circuit/gate_data_collapsing.cc
-        src/circuit/gate_data_controlled.cc
-        src/circuit/gate_data_hada.cc
-        src/circuit/gate_data_noisy.cc
-        src/circuit/gate_data_pauli.cc
-        src/circuit/gate_data_period_3.cc
-        src/circuit/gate_data_period_4.cc
-        src/circuit/gate_data_pp.cc
-        src/circuit/gate_data_swaps.cc
-        src/circuit/gate_target.cc
-        src/dem/detector_error_model.cc
-        src/help.cc
-        src/gen/circuit_gen_main.cc
-        src/gen/circuit_gen_params.cc
-        src/gen/gen_color_code.cc
-        src/gen/gen_rep_code.cc
-        src/gen/gen_surface_code.cc
-        src/io/measure_record_batch.cc
-        src/io/measure_record_batch_writer.cc
-        src/io/measure_record.cc
-        src/io/measure_record_reader.cc
-        src/io/measure_record_writer.cc
-        src/io/stim_data_formats.cc
-        src/main_namespaced.cc
-        src/probability_util.cc
-        src/simd/bit_ref.cc
-        src/simd/simd_bit_table.cc
-        src/simd/simd_bits.cc
-        src/simd/simd_bits_range_ref.cc
-        src/simd/simd_compat.cc
-        src/simd/simd_util.cc
-        src/simd/sparse_xor_vec.cc
-        src/simulators/detection_simulator.cc
-        src/simulators/error_analyzer.cc
-        src/simulators/frame_simulator.cc
-        src/simulators/tableau_simulator.cc
-        src/simulators/vector_simulator.cc
-        src/stabilizers/pauli_string.cc
-        src/stabilizers/pauli_string_ref.cc
-        src/stabilizers/tableau.cc
-        src/stabilizers/tableau_specialized_prepend.cc
-        src/stabilizers/tableau_transposed_raii.cc
-        src/stim_include.cc
+        src/stim/arg_parse.cc
+        src/stim/circuit/circuit.cc
+        src/stim/circuit/gate_data.cc
+        src/stim/circuit/gate_data_annotations.cc
+        src/stim/circuit/gate_data_blocks.cc
+        src/stim/circuit/gate_data_collapsing.cc
+        src/stim/circuit/gate_data_controlled.cc
+        src/stim/circuit/gate_data_hada.cc
+        src/stim/circuit/gate_data_noisy.cc
+        src/stim/circuit/gate_data_pauli.cc
+        src/stim/circuit/gate_data_period_3.cc
+        src/stim/circuit/gate_data_period_4.cc
+        src/stim/circuit/gate_data_pp.cc
+        src/stim/circuit/gate_data_swaps.cc
+        src/stim/circuit/gate_target.cc
+        src/stim/dem/detector_error_model.cc
+        src/stim/help.cc
+        src/stim/gen/circuit_gen_main.cc
+        src/stim/gen/circuit_gen_params.cc
+        src/stim/gen/gen_color_code.cc
+        src/stim/gen/gen_rep_code.cc
+        src/stim/gen/gen_surface_code.cc
+        src/stim/io/measure_record_batch.cc
+        src/stim/io/measure_record_batch_writer.cc
+        src/stim/io/measure_record.cc
+        src/stim/io/measure_record_reader.cc
+        src/stim/io/measure_record_writer.cc
+        src/stim/io/stim_data_formats.cc
+        src/stim/main_namespaced.cc
+        src/stim/mem/bit_ref.cc
+        src/stim/mem/simd_bit_table.cc
+        src/stim/mem/simd_bits.cc
+        src/stim/mem/simd_bits_range_ref.cc
+        src/stim/mem/simd_compat.cc
+        src/stim/mem/simd_util.cc
+        src/stim/mem/sparse_xor_vec.cc
+        src/stim/probability_util.cc
+        src/stim/simulators/detection_simulator.cc
+        src/stim/simulators/error_analyzer.cc
+        src/stim/simulators/frame_simulator.cc
+        src/stim/simulators/tableau_simulator.cc
+        src/stim/simulators/vector_simulator.cc
+        src/stim/stabilizers/pauli_string.cc
+        src/stim/stabilizers/pauli_string_ref.cc
+        src/stim/stabilizers/tableau.cc
+        src/stim/stabilizers/tableau_specialized_prepend.cc
+        src/stim/stabilizers/tableau_transposed_raii.cc
+        src/stim.cc
         )
 set(TEST_FILES
-        src/arg_parse.test.cc
-        src/circuit/circuit.test.cc
-        src/circuit/gate_data.test.cc
-        src/circuit/gate_target.test.cc
-        src/dem/detector_error_model.test.cc
-        src/gen/circuit_gen_main.test.cc
-        src/gen/circuit_gen_params.test.cc
-        src/gen/gen_color_code.test.cc
-        src/gen/gen_rep_code.test.cc
-        src/gen/gen_surface_code.test.cc
-        src/io/measure_record.test.cc
-        src/io/measure_record_batch.test.cc
-        src/io/measure_record_batch_writer.test.cc
-        src/io/measure_record_reader.test.cc
-        src/io/measure_record_writer.test.cc
-        src/main_namespaced.test.cc
-        src/probability_util.test.cc
-        src/simd/bit_ref.test.cc
-        src/simd/fixed_cap_vector.test.cc
-        src/simd/monotonic_buffer.test.cc
-        src/simd/simd_bit_table.test.cc
-        src/simd/simd_bits.test.cc
-        src/simd/simd_bits_range_ref.test.cc
-        src/simd/simd_compat.test.cc
-        src/simd/simd_util.test.cc
-        src/simd/sparse_xor_vec.test.cc
-        src/simulators/detection_simulator.test.cc
-        src/simulators/error_analyzer.test.cc
-        src/simulators/frame_simulator.test.cc
-        src/simulators/tableau_simulator.test.cc
-        src/simulators/vector_simulator.test.cc
-        src/stabilizers/pauli_string.test.cc
-        src/stabilizers/tableau.test.cc
-        src/stim_include.test.cc
-        src/stim_include_again.test.cc
-        src/str_util.test.cc
-        src/test_util.test.cc
+        src/stim/arg_parse.test.cc
+        src/stim/circuit/circuit.test.cc
+        src/stim/circuit/gate_data.test.cc
+        src/stim/circuit/gate_target.test.cc
+        src/stim/dem/detector_error_model.test.cc
+        src/stim/gen/circuit_gen_main.test.cc
+        src/stim/gen/circuit_gen_params.test.cc
+        src/stim/gen/gen_color_code.test.cc
+        src/stim/gen/gen_rep_code.test.cc
+        src/stim/gen/gen_surface_code.test.cc
+        src/stim/io/measure_record.test.cc
+        src/stim/io/measure_record_batch.test.cc
+        src/stim/io/measure_record_batch_writer.test.cc
+        src/stim/io/measure_record_reader.test.cc
+        src/stim/io/measure_record_writer.test.cc
+        src/stim/main_namespaced.test.cc
+        src/stim/mem/bit_ref.test.cc
+        src/stim/mem/fixed_cap_vector.test.cc
+        src/stim/mem/monotonic_buffer.test.cc
+        src/stim/mem/simd_bit_table.test.cc
+        src/stim/mem/simd_bits.test.cc
+        src/stim/mem/simd_bits_range_ref.test.cc
+        src/stim/mem/simd_compat.test.cc
+        src/stim/mem/simd_util.test.cc
+        src/stim/mem/sparse_xor_vec.test.cc
+        src/stim/probability_util.test.cc
+        src/stim/simulators/detection_simulator.test.cc
+        src/stim/simulators/error_analyzer.test.cc
+        src/stim/simulators/frame_simulator.test.cc
+        src/stim/simulators/tableau_simulator.test.cc
+        src/stim/simulators/vector_simulator.test.cc
+        src/stim/stabilizers/pauli_string.test.cc
+        src/stim/stabilizers/tableau.test.cc
+        src/stim.test.cc
+        src/stim_included_twice.test.cc
+        src/stim/str_util.test.cc
+        src/stim/test_util.test.cc
         )
 set(BENCHMARK_FILES
-        src/benchmark_main.perf.cc
-        src/benchmark_util.perf.cc
-        src/circuit/circuit.perf.cc
-        src/circuit/gate_data.perf.cc
-        src/main_namespaced.perf.cc
-        src/probability_util.perf.cc
-        src/simd/simd_bit_table.perf.cc
-        src/simd/simd_bits.perf.cc
-        src/simd/simd_compat.perf.cc
-        src/simd/sparse_xor_vec.perf.cc
-        src/simulators/error_analyzer.perf.cc
-        src/simulators/frame_simulator.perf.cc
-        src/simulators/tableau_simulator.perf.cc
-        src/stabilizers/pauli_string.perf.cc
-        src/stabilizers/tableau.perf.cc
+        src/stim/benchmark_main.perf.cc
+        src/stim/benchmark_util.perf.cc
+        src/stim/circuit/circuit.perf.cc
+        src/stim/circuit/gate_data.perf.cc
+        src/stim/main_namespaced.perf.cc
+        src/stim/mem/simd_bit_table.perf.cc
+        src/stim/mem/simd_bits.perf.cc
+        src/stim/mem/simd_compat.perf.cc
+        src/stim/mem/sparse_xor_vec.perf.cc
+        src/stim/probability_util.perf.cc
+        src/stim/simulators/error_analyzer.perf.cc
+        src/stim/simulators/frame_simulator.perf.cc
+        src/stim/simulators/tableau_simulator.perf.cc
+        src/stim/stabilizers/pauli_string.perf.cc
+        src/stim/stabilizers/tableau.perf.cc
         )
 
-add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
+add_executable(stim src/stim/main.cc ${SOURCE_FILES_NO_MAIN})
 if(NOT(MSVC))
     target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic -fno-strict-aliasing ${MACHINE_FLAG})
     target_link_options(stim PRIVATE -pthread -O3)
@@ -146,7 +147,6 @@ else()
 endif()
 
 add_library(libstim ${SOURCE_FILES_NO_MAIN})
-target_include_directories(libstim PUBLIC src/include)
 set_target_properties(libstim PROPERTIES PREFIX "")
 if(NOT(MSVC))
     target_compile_options(libstim PRIVATE -O3 -Wall -Wpedantic -fno-strict-aliasing ${MACHINE_FLAG})

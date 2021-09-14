@@ -40,8 +40,8 @@ PYBIND_FILES = glob(
 cc_library(
     name = "stim_lib",
     srcs = SOURCE_FILES_NO_MAIN,
+    includes = ["src/"],
     linkopts = ["-lpthread"],
-    includes = ["src/include/"],
 )
 
 cc_binary(
@@ -84,6 +84,7 @@ cc_binary(
         "-O3",
         "-fvisibility=hidden",
     ],
+    includes = ["src/"],
     linkopts = ["-lpthread"],
     linkshared = 1,
     deps = [
