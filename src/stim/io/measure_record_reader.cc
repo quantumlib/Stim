@@ -71,7 +71,7 @@ size_t MeasureRecordReader::read_records_into(simd_bit_table &out, bool major_in
     size_t rec = 0;
     max_shots = std::min(max_shots, out.num_major_bits_padded());
     while (rec < max_shots) {
-        size_t n = read_bytes({out[rec].u8, out[rec].u8 + out[rec].num_u8_padded()});
+        size_t n = read_bits_into_bytes({out[rec].u8, out[rec].u8 + out[rec].num_u8_padded()});
         if (n == 0) {
             break;
         }
@@ -118,13 +118,13 @@ std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
     }
 }
 
-size_t MeasureRecordReader::read_bytes(PointerRange<uint8_t> data) {
+size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
     if (is_end_of_record()) {
         return 0;
     }
     char result_type = current_result_type();
     size_t n = 0;
-    for (uint8_t &b : data) {
+    for (uint8_t &b : out_buffer) {
         b = 0;
         for (size_t k = 0; k < 8; k++) {
             b |= uint8_t(read_bit()) << k;
@@ -189,18 +189,18 @@ MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in, size_t bits_p
     : in(in), bits_per_record(bits_per_record) {
 }
 
-size_t MeasureRecordReaderFormatB8::read_bytes(PointerRange<uint8_t> data) {
+size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
     if (position >= bits_per_record) {
         return 0;
     }
 
     if (bits_available > 0) {
-        return MeasureRecordReader::read_bytes(data);
+        return MeasureRecordReader::read_bits_into_bytes(out_buffer);
     }
 
-    size_t n_bits = std::min<size_t>(8 * data.size(), bits_per_record - position);
+    size_t n_bits = std::min<size_t>(8 * out_buffer.size(), bits_per_record - position);
     size_t n_bytes = (n_bits + 7) / 8;
-    n_bytes = fread(data.ptr_start, sizeof(uint8_t), n_bytes, in);
+    n_bytes = fread(out_buffer.ptr_start, sizeof(uint8_t), n_bytes, in);
     n_bits = std::min<size_t>(8 * n_bytes, n_bits);
     position += n_bits;
     return n_bits;
@@ -316,9 +316,9 @@ MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(FILE *in, size_t bits_p
     : in(in), bits_per_record(bits_per_record) {
 }
 
-size_t MeasureRecordReaderFormatR8::read_bytes(PointerRange<uint8_t> data) {
+size_t MeasureRecordReaderFormatR8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
     size_t n = 0;
-    for (uint8_t &b : data) {
+    for (uint8_t &b : out_buffer) {
         b = 0;
         if (buffered_0s >= 8) {
             position += 8;

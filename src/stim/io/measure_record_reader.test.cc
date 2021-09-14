@@ -88,13 +88,13 @@ TEST(MeasureRecordReader, Format01) {
     ASSERT_FALSE(reader->is_end_of_record());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 8 == 0
     ASSERT_FALSE(reader->read_bit());
     // bits 9..16 == 0xF8
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
@@ -108,13 +108,13 @@ TEST(MeasureRecordReader, FormatB8) {
     ASSERT_FALSE(reader->is_end_of_record());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 8 == 0
     ASSERT_FALSE(reader->read_bit());
     // bits 9..16 == 0xF8
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
@@ -128,13 +128,13 @@ TEST(MeasureRecordReader, FormatHits) {
     ASSERT_FALSE(reader->is_end_of_record());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 8 == 0
     ASSERT_FALSE(reader->read_bit());
     // bits 9..16 == 0xF8
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
@@ -149,13 +149,13 @@ TEST(MeasureRecordReader, FormatR8) {
     ASSERT_FALSE(reader->is_end_of_record());
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 8 == 0
     ASSERT_FALSE(reader->read_bit());
     // bits 9..16 == 0xF8
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     // bit 17 == 1
     ASSERT_TRUE(reader->read_bit());
@@ -165,23 +165,28 @@ TEST(MeasureRecordReader, FormatR8) {
 TEST(MeasureRecordReader, FormatR8_LongGap) {
     FILE *tmp = tmpfile_with_contents("\xFF\xFF\x02\x20");
     ASSERT_NE(tmp, nullptr);
-    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8, 8 * 64 + 4 * 32 + 1);
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_R8, 8 * 64 + 32 + 1);
     ASSERT_FALSE(reader->is_end_of_record());
     uint8_t bytes[]{1, 2, 3, 4, 5, 6, 7, 8};
     for (int i = 0; i < 8; ++i) {
-        ASSERT_EQ(64, reader->read_bytes({bytes, bytes + 8}));
+        ASSERT_EQ(64, reader->read_bits_into_bytes({bytes, bytes + 8}));
         for (int j = 0; j < 8; ++j) {
             ASSERT_EQ(0, bytes[j]);
             bytes[j] = 123;
         }
     }
     ASSERT_TRUE(reader->read_bit());
-    ASSERT_EQ(32, reader->read_bytes({bytes, bytes + 4}));
+    ASSERT_EQ(32, reader->read_bits_into_bytes({bytes, bytes + 4}));
     ASSERT_EQ(0, bytes[0]);
     ASSERT_EQ(0, bytes[1]);
     ASSERT_EQ(0, bytes[2]);
     ASSERT_EQ(0, bytes[3]);
     ASSERT_TRUE(reader->is_end_of_record());
+
+    // Read past end of record.
+    ASSERT_THROW({reader->read_bit();}, std::invalid_argument);
+    // No next record.
+    ASSERT_FALSE(reader->next_record());
 }
 
 TEST(MeasureRecordReader, FormatDets) {
@@ -192,14 +197,14 @@ TEST(MeasureRecordReader, FormatDets) {
     // Detection events:
     // bits 0..7 == 0xF8
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
     ASSERT_EQ(reader->current_result_type(), 'D');
     // bit 8 == 0
     ASSERT_FALSE(reader->read_bit());
     // bits 9..16 == 0xF8
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
 
     // Logical observables:
@@ -222,7 +227,7 @@ FILE *write_records(ConstPointerRange<uint8_t> data, SampleFormat format) {
 
 size_t read_records_as_bytes(FILE *in, PointerRange<uint8_t> buf, SampleFormat format, size_t bits_per_record) {
     auto reader = MeasureRecordReader::make(in, format, bits_per_record);
-    return reader->read_bytes(buf);
+    return reader->read_bits_into_bytes(buf);
 }
 
 TEST(MeasureRecordReader, Format01_WriteRead) {
@@ -256,12 +261,11 @@ TEST(MeasureRecordReader, FormatB8_WriteRead) {
 TEST(MeasureRecordReader, FormatR8_WriteRead) {
     uint8_t src[]{0, 1, 2, 3, 4, 0xFF, 0xBF, 0xFE, 80, 0, 0, 1, 20};
     constexpr size_t num_bytes = sizeof(src) / sizeof(uint8_t);
-    uint8_t dst[num_bytes];
-    memset(dst, 0, num_bytes);
+    uint8_t dst[num_bytes]{};
     FILE *tmp = write_records({src, src + num_bytes}, SAMPLE_FORMAT_R8);
     rewind(tmp);
     ASSERT_EQ(
-        num_bytes * 8 - 1, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, 8 * num_bytes - 1));
+        num_bytes * 8, read_records_as_bytes(tmp, {dst, dst + num_bytes}, SAMPLE_FORMAT_R8, 8 * num_bytes));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(src[i], dst[i]);
     }
@@ -317,7 +321,7 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, bits_per_record);
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record1[i]);
     }
@@ -325,7 +329,7 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record2[i]);
     }
@@ -333,7 +337,7 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record3[i]);
     }
@@ -363,7 +367,7 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, bits_per_record);
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record1[i]);
     }
@@ -371,7 +375,7 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record2[i]);
     }
@@ -379,7 +383,7 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record3[i]);
     }
@@ -409,7 +413,7 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, bits_per_record);
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record1[i]);
     }
@@ -417,7 +421,7 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record2[i]);
     }
@@ -425,7 +429,7 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
     ASSERT_TRUE(reader->next_record());
 
     memset(buf, 0, num_bytes);
-    ASSERT_EQ(bits_per_record, reader->read_bytes({buf, buf + num_bytes}));
+    ASSERT_EQ(bits_per_record, reader->read_bits_into_bytes({buf, buf + num_bytes}));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf[i], record3[i]);
     }
@@ -440,7 +444,7 @@ TEST(MeasureRecordReader, Format01_MultipleRecords) {
     ASSERT_FALSE(reader->is_end_of_record());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x37, bytes[0]);
     ASSERT_FALSE(reader->is_end_of_record());
     ASSERT_TRUE(reader->read_bit());
@@ -454,7 +458,7 @@ TEST(MeasureRecordReader, Format01_MultipleRecords) {
     // third record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x8D, bytes[0]);
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
@@ -469,7 +473,7 @@ TEST(MeasureRecordReader, Format01_MultipleShortRecords) {
     ASSERT_FALSE(reader->is_end_of_record());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // second_record
@@ -480,7 +484,7 @@ TEST(MeasureRecordReader, Format01_MultipleShortRecords) {
     // third record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // no more records
@@ -494,7 +498,7 @@ TEST(MeasureRecordReader, FormatHits_MultipleRecords) {
     ASSERT_FALSE(reader->is_end_of_record());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x37, bytes[0]);
     ASSERT_FALSE(reader->is_end_of_record());
     ASSERT_TRUE(reader->read_bit());
@@ -508,7 +512,7 @@ TEST(MeasureRecordReader, FormatHits_MultipleRecords) {
     // third record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
@@ -523,7 +527,7 @@ TEST(MeasureRecordReader, FormatHits_MultipleShortRecords) {
     ASSERT_FALSE(reader->is_end_of_record());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // second_record
@@ -534,13 +538,13 @@ TEST(MeasureRecordReader, FormatHits_MultipleShortRecords) {
     // third record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // fourth record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0xFF;
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // no more records
@@ -554,7 +558,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleRecords) {
     ASSERT_FALSE(reader->is_end_of_record());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x37, bytes[0]);
     ASSERT_TRUE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
@@ -566,7 +570,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleRecords) {
     // third record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(8, reader->read_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
@@ -581,7 +585,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_FALSE(reader->is_end_of_record());
     // first record
     uint8_t bytes[]{0};
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // second_record
@@ -592,13 +596,13 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     // third record
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0;
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(1, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // fourth record (0 bits)
     ASSERT_TRUE(reader->next_record());
     bytes[0] = 0xFF;
-    ASSERT_EQ(2, reader->read_bytes(bytes));
+    ASSERT_EQ(2, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
     // no more records
@@ -613,12 +617,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
     // Detection events
     uint8_t bytes[]{0};
     ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x29, bytes[0]);
     // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(6, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
@@ -632,12 +636,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L0) {
     // Detection events
     uint8_t bytes[]{0};
     ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x69, bytes[0]);
     // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(6, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
@@ -651,12 +655,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L1) {
     // Detection events
     uint8_t bytes[]{0};
     ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x29, bytes[0]);
     // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(7, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
@@ -670,12 +674,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L1) {
     // Detection events
     uint8_t bytes[]{0};
     ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bytes(bytes));
+    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x69, bytes[0]);
     // Logical observables
     bytes[0] = 0;
     ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bytes(bytes));
+    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(7, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
