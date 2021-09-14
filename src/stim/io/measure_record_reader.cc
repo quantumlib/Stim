@@ -387,7 +387,7 @@ void MeasureRecordReaderFormatR8::buffer_data() {
     do {
         r = getc(in);
         if (r == EOF) {
-            throw std::invalid_argument("r8 data hit end-of-file without seeing a 1 encoded at end of data.");
+            throw std::invalid_argument("r8 data ended on a continuation (a 0xFF byte) which is not allowed.");
         }
         buffered_0s += r;
     } while (r == 0xFF);
@@ -396,8 +396,17 @@ void MeasureRecordReaderFormatR8::buffer_data() {
     // Check if the 1 is the one at end of data.
     size_t total_data = position + buffered_0s + buffered_1s;
     if (total_data == bits_per_record) {
-        if (getc(in) != 0) {
-            throw std::invalid_argument("r8 data ending in an encoded 1 didn't include a 0x00 byte encoding the extra 1 at end of data.");
+        int t = getc(in);
+        if (t == EOF) {
+            throw std::invalid_argument(
+                "r8 data ended too early. "
+                "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
+                "'fake encoded 1 just after the end of the data' before the input ended.");
+        } else if (t != 0) {
+            throw std::invalid_argument(
+                "r8 data ended too early. "
+                "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
+                "'fake encoded 1 just after the end of the data' before any additional data.");
         }
         have_seen_terminal_1 = true;
     } else if (total_data == bits_per_record + 1) {
