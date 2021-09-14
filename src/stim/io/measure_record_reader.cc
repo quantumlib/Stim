@@ -399,7 +399,7 @@ void MeasureRecordReaderFormatR8::buffer_data() {
         int t = getc(in);
         if (t == EOF) {
             throw std::invalid_argument(
-                "r8 data ended too early. "
+                "r8 data ended too early.  "
                 "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
                 "'fake encoded 1 just after the end of the data' before the input ended.");
         } else if (t != 0) {
