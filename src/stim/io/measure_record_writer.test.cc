@@ -376,3 +376,57 @@ TEST(MeasureRecordWriter, write_table_data_large) {
             "\0\0\0\0\0\0\0\0",
             8 * 100));
 }
+
+TEST(MeasureRecordWriter, write_bits_01_a) {
+    FILE *f = tmpfile();
+    uint8_t data[]{0x0, 0xFF};
+    auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_01);
+    writer->write_bits(&data[0], 11);
+    writer->write_end();
+    ASSERT_EQ(rewind_read_all(f), "00000000111\n");
+}
+
+TEST(MeasureRecordWriter, write_bits_01_b) {
+    FILE *f = tmpfile();
+    uint8_t data[] {0xFF, 0x0};
+    auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_01);
+    writer->write_bits(&data[0], 11);
+    writer->write_end();
+    ASSERT_EQ(rewind_read_all(f), "11111111000\n");
+}
+
+TEST(MeasureRecordWriter, write_bits_b8_a) {
+    FILE *f = tmpfile();
+    uint8_t data[]{0x0, 0xFF};
+    auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_B8);
+    writer->write_bits(&data[0], 11);
+    writer->write_end();
+    ASSERT_EQ(rewind_read_all(f), std::string("\x00\x07", 2));
+}
+
+TEST(MeasureRecordWriter, write_bits_b8_b) {
+    FILE *f = tmpfile();
+    uint8_t data[] {0xFF, 0x0};
+    auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_B8);
+    writer->write_bits(&data[0], 11);
+    writer->write_end();
+    ASSERT_EQ(rewind_read_all(f), std::string("\xFF\x00", 2));
+}
+
+TEST(MeasureRecordWriter, write_bits_r8_a) {
+    FILE *f = tmpfile();
+    uint8_t data[]{0x0, 0xFF};
+    auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_R8);
+    writer->write_bits(&data[0], 11);
+    writer->write_end();
+    ASSERT_EQ(rewind_read_all(f), std::string("\x08\x00\x00\x00", 4));
+}
+
+TEST(MeasureRecordWriter, write_bits_r8_b) {
+    FILE *f = tmpfile();
+    uint8_t data[] {0xFF, 0x0};
+    auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_R8);
+    writer->write_bits(&data[0], 11);
+    writer->write_end();
+    ASSERT_EQ(rewind_read_all(f), std::string("\x00\x00\x00\x00\x00\x00\x00\x00\x03", 9));
+}

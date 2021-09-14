@@ -54,6 +54,29 @@ struct MeasureRecordReader {
     /// records encoded in HITS and DETS file formats never end.
     virtual size_t read_bytes(PointerRange<uint8_t> buf);
 
+    /// Reads entire records into the given bit table.
+    ///
+    /// This method must only be called when the reader is at the start of a record.
+    ///
+    /// Args:
+    ///     out: The bit table to write the records into.
+    ///         The major axis indexes shots.
+    ///         The minor axis indexes results within a shot.
+    ///     major_index_is_shot_index: Whether or not the data should be transposed.
+    ///     max_shots: Maximum number of shots to read. Automatically clamped down based on the size of `out`.
+    ///
+    /// Returns:
+    ///     The number of records that were read.
+    ///     Cannot be larger than the capacity of the output table.
+    ///     If this value is 0, there are no more records to read.
+    ///
+    /// Throws:
+    ///     std::invalid_argument:
+    ///         The minor axis of the table has a length that's too short to hold an entire record.
+    ///         The major axis of the table has length zero.
+    ///         The reader is not at the start of a record.
+    virtual size_t read_records_into(simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
+
     /// Advances the reader to the next record (i.e. the next sequence of 0s and 1s). Skips the remainder
     /// of the current record and an end-of-record marker (such as a newline). Returns true if a new record
     /// has been found. Returns false if end of file has been reached.
@@ -119,11 +142,10 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     FILE *in;
-    size_t run_length_0s = 0;
-    size_t run_length_1s = 0;
-    size_t generated_0s = 0;
-    size_t generated_1s = 1;
     size_t position = 0;
+    bool have_seen_terminal_1 = false;
+    size_t buffered_0s = 0;
+    size_t buffered_1s = 0;
     size_t bits_per_record;
 
     MeasureRecordReaderFormatR8(FILE *in, size_t bits_per_record);
@@ -134,7 +156,7 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     bool is_end_of_record() override;
 
    private:
-    bool update_run_length();
+    void buffer_data();
 };
 
 struct MeasureRecordReaderFormatDets : MeasureRecordReader {

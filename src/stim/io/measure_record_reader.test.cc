@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/io/measure_record_writer.h"
+#include "stim/io/measure_record_batch_writer.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -569,7 +570,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleRecords) {
     ASSERT_EQ(1, bytes[0]);
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->is_end_of_record());
-    // no more recocrds
+    // no more records
     ASSERT_FALSE(reader->next_record());
 }
 
@@ -600,7 +601,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     ASSERT_EQ(2, reader->read_bytes(bytes));
     ASSERT_EQ(0, bytes[0]);
     ASSERT_TRUE(reader->is_end_of_record());
-    // no more recocrds
+    // no more records
     ASSERT_FALSE(reader->next_record());
 }
 
@@ -702,4 +703,51 @@ TEST(MeasureRecordReader, FormatDets_InvalidInput) {
     FILE *tmp = tmpfile_with_contents("D2\n");
     ASSERT_NE(tmp, nullptr);
     ASSERT_THROW({ MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 3); }, std::runtime_error);
+}
+
+TEST(MeasureRecordReader, read_records_into_RoundTrip) {
+    size_t n_shots = 100;
+    size_t n_results = 512 - 8;
+
+    simd_bit_table shot_maj_data = simd_bit_table::random(n_shots, n_results, SHARED_TEST_RNG());
+    simd_bit_table shot_min_data = shot_maj_data.transposed();
+    for (const auto &kv : format_name_to_enum_map) {
+        SampleFormat format = kv.second.id;
+        if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
+            // TODO: support this format.
+            continue;
+        }
+
+        // Write data to file.
+        FILE *f = tmpfile();
+        {
+            auto writer = MeasureRecordWriter::make(f, format);
+            for (size_t k = 0; k < n_shots; k++) {
+                writer->write_bytes({shot_maj_data[k].u8, shot_maj_data[k].u8 + n_results / 8});
+                writer->write_end();
+            }
+        }
+
+        // Check that read shot-min data matches written data.
+        rewind(f);
+        {
+            auto reader = MeasureRecordReader::make(f, format, n_results, 0, 0);
+            simd_bit_table read_shot_min_data(n_results, n_shots);
+            size_t n = reader->read_records_into(read_shot_min_data, false);
+            EXPECT_EQ(n, n_shots) << kv.second.name << " (not striped)";
+            EXPECT_EQ(read_shot_min_data, shot_min_data) << kv.second.name << " (not striped)";
+        }
+
+        // Check that read shot-maj data matches written data when transposing.
+        rewind(f);
+        {
+            auto reader = MeasureRecordReader::make(f, format, n_results, 0, 0);
+            simd_bit_table read_shot_maj_data(n_shots, n_results);
+            size_t n = reader->read_records_into(read_shot_maj_data, true);
+            EXPECT_EQ(n, n_shots) << kv.second.name << " (striped)";
+            EXPECT_EQ(read_shot_maj_data, shot_maj_data) << kv.second.name << " (striped)";
+        }
+
+        fclose(f);
+    }
 }

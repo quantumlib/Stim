@@ -42,6 +42,14 @@ std::unique_ptr<MeasureRecordWriter> MeasureRecordWriter::make(FILE *out, Sample
 void MeasureRecordWriter::begin_result_type(char result_type) {
 }
 
+void MeasureRecordWriter::write_bits(uint8_t *data, size_t num_bits) {
+    size_t num_bytes = num_bits >> 3;
+    write_bytes({data, data + num_bytes});
+    for (size_t b = 0; b < (num_bits & 7); b++) {
+        write_bit((data[num_bytes] >> b) & 1);
+    }
+}
+
 void MeasureRecordWriter::write_bytes(ConstPointerRange<uint8_t> data) {
     for (uint8_t b : data) {
         for (size_t k = 0; k < 8; k++) {
