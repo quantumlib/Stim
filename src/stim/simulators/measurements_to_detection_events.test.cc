@@ -206,6 +206,7 @@ TEST(measurements_to_detection_events, big_data) {
 TEST(measurements_to_detection_events, append_observables) {
     simd_bit_table measurement_data(256, 256);
     simd_bit_table converted(256, 256);
+    size_t min_bits = sizeof(simd_word) * 8;
 
     // Appended.
     converted = measurements_to_detection_events(
@@ -217,8 +218,8 @@ TEST(measurements_to_detection_events, append_observables) {
         )CIRCUIT"),
         true,
         false);
-    ASSERT_EQ(converted.num_major_bits_padded(), 256);
-    ASSERT_EQ(converted.num_minor_bits_padded(), 256);
+    ASSERT_EQ(converted.num_major_bits_padded(), min_bits);
+    ASSERT_EQ(converted.num_minor_bits_padded(), min_bits);
     ASSERT_EQ(converted[0][0], 0);
     ASSERT_EQ(converted[1][0], 0);
     ASSERT_EQ(converted[9][0], 1);
@@ -234,8 +235,8 @@ TEST(measurements_to_detection_events, append_observables) {
         )CIRCUIT"),
         true,
         false);
-    ASSERT_EQ(converted.num_major_bits_padded(), 256);
-    ASSERT_EQ(converted.num_minor_bits_padded(), 256);
+    ASSERT_EQ(converted.num_major_bits_padded(), min_bits);
+    ASSERT_EQ(converted.num_minor_bits_padded(), min_bits);
     ASSERT_EQ(converted[0][0], 1);
     ASSERT_EQ(converted[1][0], 1);
     ASSERT_EQ(converted[9][0], 0);
@@ -252,7 +253,7 @@ TEST(measurements_to_detection_events, append_observables) {
         false,
         false);
     ASSERT_EQ(converted.num_major_bits_padded(), 0);
-    ASSERT_EQ(converted.num_minor_bits_padded(), 256);
+    ASSERT_EQ(converted.num_minor_bits_padded(), min_bits);
     converted = measurements_to_detection_events(
         measurement_data,
         Circuit(R"CIRCUIT(
