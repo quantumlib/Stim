@@ -219,7 +219,7 @@ TEST(measurements_to_detection_events, append_observables) {
         true,
         false);
     ASSERT_EQ(converted.num_major_bits_padded(), min_bits);
-    ASSERT_EQ(converted.num_minor_bits_padded(), min_bits);
+    ASSERT_EQ(converted.num_minor_bits_padded(), 256);
     ASSERT_EQ(converted[0][0], 0);
     ASSERT_EQ(converted[1][0], 0);
     ASSERT_EQ(converted[9][0], 1);
@@ -236,7 +236,7 @@ TEST(measurements_to_detection_events, append_observables) {
         true,
         false);
     ASSERT_EQ(converted.num_major_bits_padded(), min_bits);
-    ASSERT_EQ(converted.num_minor_bits_padded(), min_bits);
+    ASSERT_EQ(converted.num_minor_bits_padded(), 256);
     ASSERT_EQ(converted[0][0], 1);
     ASSERT_EQ(converted[1][0], 1);
     ASSERT_EQ(converted[9][0], 0);
