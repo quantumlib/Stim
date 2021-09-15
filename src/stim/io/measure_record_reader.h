@@ -52,7 +52,30 @@ struct MeasureRecordReader {
     /// Reads multiple measurement results. Returns the number of results read. If no results are available,
     /// zero is returned. Read terminates when data is filled up or when the current record ends. Note that
     /// records encoded in HITS and DETS file formats never end.
-    virtual size_t read_bytes(PointerRange<uint8_t> buf);
+    virtual size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer);
+
+    /// Reads entire records into the given bit table.
+    ///
+    /// This method must only be called when the reader is at the start of a record.
+    ///
+    /// Args:
+    ///     out: The bit table to write the records into.
+    ///         The major axis indexes shots.
+    ///         The minor axis indexes results within a shot.
+    ///     major_index_is_shot_index: Whether or not the data should be transposed.
+    ///     max_shots: Maximum number of shots to read. Automatically clamped down based on the size of `out`.
+    ///
+    /// Returns:
+    ///     The number of records that were read.
+    ///     Cannot be larger than the capacity of the output table.
+    ///     If this value is 0, there are no more records to read.
+    ///
+    /// Throws:
+    ///     std::invalid_argument:
+    ///         The minor axis of the table has a length that's too short to hold an entire record.
+    ///         The major axis of the table has length zero.
+    ///         The reader is not at the start of a record.
+    virtual size_t read_records_into(simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
 
     /// Advances the reader to the next record (i.e. the next sequence of 0s and 1s). Skips the remainder
     /// of the current record and an end-of-record marker (such as a newline). Returns true if a new record
@@ -60,7 +83,7 @@ struct MeasureRecordReader {
     virtual bool next_record() = 0;
 
     /// Returns true when the current record has ended. Beyond this point read_bit() throws an exception
-    /// and read_bytes() returns no data. Note that records in file formats HITS and DETS never end.
+    /// and read_bits_into_bytes() returns no data. Note that records in file formats HITS and DETS never end.
     virtual bool is_end_of_record() = 0;
 
     /// Used to obtain the DETS format prefix character (M for measurement, D for detector, L for logical
@@ -90,7 +113,7 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
 
     MeasureRecordReaderFormatB8(FILE *in, size_t bits_per_record);
 
-    size_t read_bytes(PointerRange<uint8_t> data) override;
+    size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer) override;
     bool read_bit() override;
     bool next_record() override;
     bool is_end_of_record() override;
@@ -119,22 +142,21 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     FILE *in;
-    size_t run_length_0s = 0;
-    size_t run_length_1s = 0;
-    size_t generated_0s = 0;
-    size_t generated_1s = 1;
     size_t position = 0;
+    bool have_seen_terminal_1 = false;
+    size_t buffered_0s = 0;
+    size_t buffered_1s = 0;
     size_t bits_per_record;
 
     MeasureRecordReaderFormatR8(FILE *in, size_t bits_per_record);
 
-    size_t read_bytes(PointerRange<uint8_t> data) override;
+    size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer) override;
     bool read_bit() override;
     bool next_record() override;
     bool is_end_of_record() override;
 
    private:
-    bool update_run_length();
+    void buffer_data();
 };
 
 struct MeasureRecordReaderFormatDets : MeasureRecordReader {

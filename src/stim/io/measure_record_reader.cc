@@ -17,7 +17,6 @@
 #include "stim/io/measure_record_reader.h"
 
 #include <algorithm>
-#include <limits.h>
 
 using namespace stim;
 
@@ -49,9 +48,8 @@ bool read_uint64(FILE *in, uint64_t &value, int &next) {
     }
 
     value = 0;
-    uint64_t prev_value = 0;
     while (isdigit(next)) {
-        prev_value = value;
+        uint64_t prev_value = value;
         value *= 10;
         value += next - '0';
         if (value < prev_value) {
@@ -60,6 +58,32 @@ bool read_uint64(FILE *in, uint64_t &value, int &next) {
         next = getc(in);
     }
     return true;
+}
+
+size_t MeasureRecordReader::read_records_into(simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots) {
+    if (!major_index_is_shot_index) {
+        simd_bit_table buf(out.num_minor_bits_padded(), out.num_major_bits_padded());
+        size_t r = read_records_into(buf, true, max_shots);
+        buf.transpose_into(out);
+        return r;
+    }
+
+    size_t rec = 0;
+    max_shots = std::min(max_shots, out.num_major_bits_padded());
+    while (rec < max_shots) {
+        size_t n = read_bits_into_bytes({out[rec].u8, out[rec].u8 + out[rec].num_u8_padded()});
+        if (n == 0) {
+            break;
+        }
+        if (!is_end_of_record()) {
+            throw std::invalid_argument("Failed to read data. A shot contained more bits than expected.");
+        }
+        rec++;
+        if (!next_record()) {
+            break;
+        }
+    }
+    return rec;
 }
 
 std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
@@ -94,13 +118,13 @@ std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
     }
 }
 
-size_t MeasureRecordReader::read_bytes(PointerRange<uint8_t> data) {
+size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
     if (is_end_of_record()) {
         return 0;
     }
     char result_type = current_result_type();
     size_t n = 0;
-    for (uint8_t &b : data) {
+    for (uint8_t &b : out_buffer) {
         b = 0;
         for (size_t k = 0; k < 8; k++) {
             b |= uint8_t(read_bit()) << k;
@@ -165,18 +189,18 @@ MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in, size_t bits_p
     : in(in), bits_per_record(bits_per_record) {
 }
 
-size_t MeasureRecordReaderFormatB8::read_bytes(PointerRange<uint8_t> data) {
+size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
     if (position >= bits_per_record) {
         return 0;
     }
 
     if (bits_available > 0) {
-        return MeasureRecordReader::read_bytes(data);
+        return MeasureRecordReader::read_bits_into_bytes(out_buffer);
     }
 
-    size_t n_bits = std::min<size_t>(8 * data.size(), bits_per_record - position);
+    size_t n_bits = std::min<size_t>(8 * out_buffer.size(), bits_per_record - position);
     size_t n_bytes = (n_bits + 7) / 8;
-    n_bytes = fread(data.ptr_start, sizeof(uint8_t), n_bytes, in);
+    n_bytes = fread(out_buffer.ptr_start, sizeof(uint8_t), n_bytes, in);
     n_bits = std::min<size_t>(8 * n_bytes, n_bits);
     position += n_bits;
     return n_bits;
@@ -201,8 +225,16 @@ bool MeasureRecordReaderFormatB8::read_bit() {
 }
 
 bool MeasureRecordReaderFormatB8::next_record() {
+    while (!is_end_of_record()) {
+        read_bit();
+    }
     position = 0;
-    return false;
+    int i = fgetc(in);
+    if (i == EOF) {
+        return false;
+    }
+    ungetc(i, in);
+    return true;
 }
 
 bool MeasureRecordReaderFormatB8::is_end_of_record() {
@@ -282,25 +314,22 @@ void MeasureRecordReaderFormatHits::update_next_hit() {
 
 MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(FILE *in, size_t bits_per_record)
     : in(in), bits_per_record(bits_per_record) {
-    update_run_length();
-    run_length_1s = 0;
 }
 
-size_t MeasureRecordReaderFormatR8::read_bytes(PointerRange<uint8_t> data) {
-    if (position >= bits_per_record) {
-        return 0;
-    }
+size_t MeasureRecordReaderFormatR8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
     size_t n = 0;
-    for (uint8_t &b : data) {
-        if (run_length_0s >= generated_0s + 8 && bits_per_record >= position + 8) {
-            b = 0;
+    for (uint8_t &b : out_buffer) {
+        b = 0;
+        if (buffered_0s >= 8) {
             position += 8;
-            generated_0s += 8;
+            buffered_0s -= 8;
             n += 8;
             continue;
         }
-        b = 0;
         for (size_t k = 0; k < 8; k++) {
+            if (!buffered_0s && !buffered_1s && !have_seen_terminal_1) {
+                buffer_data();
+            }
             if (is_end_of_record()) {
                 return n;
             }
@@ -312,63 +341,80 @@ size_t MeasureRecordReaderFormatR8::read_bytes(PointerRange<uint8_t> data) {
 }
 
 bool MeasureRecordReaderFormatR8::read_bit() {
-    if (position >= bits_per_record) {
-        throw std::out_of_range("Attempt to read past end-of-record");
+    if (!buffered_0s && !buffered_1s) {
+        buffer_data();
     }
-    if (generated_1s < run_length_1s) {
-        ++generated_1s;
-        ++position;
-        return true;
-    }
-    if (generated_0s < run_length_0s) {
-        ++generated_0s;
-        ++position;
+    if (buffered_0s) {
+        buffered_0s--;
+        position++;
         return false;
-    }
-    if (!update_run_length()) {
-        throw std::out_of_range("Attempt to read past end-of-file");
-    } else {
-        ++generated_1s;
-        ++position;
+    } else if (buffered_1s) {
+        buffered_1s--;
+        position++;
         return true;
+    } else {
+        throw std::invalid_argument("Read past end-of-record.");
     }
 }
 
 bool MeasureRecordReaderFormatR8::next_record() {
+    while (!is_end_of_record()) {
+        read_bit();
+    }
     position = 0;
-    return false;
+    have_seen_terminal_1 = false;
+    int i = fgetc(in);
+    if (i == EOF) {
+        return false;
+    }
+    ungetc(i, in);
+    return true;
 }
 
 bool MeasureRecordReaderFormatR8::is_end_of_record() {
-    if (position >= bits_per_record) {
-        return true;
-    }
-    if (generated_0s < run_length_0s) {
-        return false;
-    }
-    if (generated_1s < run_length_1s) {
-        return false;
-    }
-    return !update_run_length();
+    return position == bits_per_record && have_seen_terminal_1;
 }
 
-bool MeasureRecordReaderFormatR8::update_run_length() {
-    int r = getc(in);
-    if (r == EOF) {
-        return false;
+void MeasureRecordReaderFormatR8::buffer_data() {
+    assert(buffered_0s == 0);
+    assert(buffered_1s == 0);
+    if (is_end_of_record()) {
+        throw std::invalid_argument("Attempted to read past end-of-record.");
     }
-    run_length_0s = 0;
-    while (r == 0xFF) {
-        run_length_0s += 0xFF;
+
+    // Count zeroes until a one is found.
+    int r;
+    do {
         r = getc(in);
+        if (r == EOF) {
+            throw std::invalid_argument("r8 data ended on a continuation (a 0xFF byte) which is not allowed.");
+        }
+        buffered_0s += r;
+    } while (r == 0xFF);
+    buffered_1s = 1;
+
+    // Check if the 1 is the one at end of data.
+    size_t total_data = position + buffered_0s + buffered_1s;
+    if (total_data == bits_per_record) {
+        int t = getc(in);
+        if (t == EOF) {
+            throw std::invalid_argument(
+                "r8 data ended too early. "
+                "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
+                "'fake encoded 1 just after the end of the data' before the input ended.");
+        } else if (t != 0) {
+            throw std::invalid_argument(
+                "r8 data ended too early. "
+                "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
+                "'fake encoded 1 just after the end of the data' before any additional data.");
+        }
+        have_seen_terminal_1 = true;
+    } else if (total_data == bits_per_record + 1) {
+        have_seen_terminal_1 = true;
+        buffered_1s = 0;
+    } else if (total_data > bits_per_record + 1) {
+        throw std::invalid_argument("r8 data encoded a jump past the expected end of encoded data.");
     }
-    if (r > 0) {
-        run_length_0s += r;
-    }
-    run_length_1s = 1;
-    generated_0s = 0;
-    generated_1s = 0;
-    return true;
 }
 
 /// DETS format

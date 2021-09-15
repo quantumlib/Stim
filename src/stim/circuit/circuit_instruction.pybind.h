@@ -30,8 +30,7 @@ struct CircuitInstruction {
 
     CircuitInstruction(
         const char *name, const std::vector<pybind11::object> &targets, const std::vector<double> &gate_args);
-    CircuitInstruction(
-        const stim::Gate &gate, std::vector<stim::GateTarget> targets, std::vector<double> gate_args);
+    CircuitInstruction(const stim::Gate &gate, std::vector<stim::GateTarget> targets, std::vector<double> gate_args);
 
     std::string name() const;
     std::vector<stim::GateTarget> targets_copy() const;
