@@ -253,7 +253,7 @@ TEST(measurements_to_detection_events, append_observables) {
         false,
         false);
     ASSERT_EQ(converted.num_major_bits_padded(), 0);
-    ASSERT_EQ(converted.num_minor_bits_padded(), min_bits);
+    ASSERT_EQ(converted.num_minor_bits_padded(), 256);
     converted = measurements_to_detection_events(
         measurement_data,
         Circuit(R"CIRCUIT(
