@@ -1925,7 +1925,7 @@
     - Example:
     
         ```
-        # With 40% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
+        # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
         CORRELATED_ERROR(0.2) X1 Y2
         ELSE_CORRELATED_ERROR(0.25) Z2 Z3
         ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
@@ -1953,7 +1953,7 @@
     - Example:
     
         ```
-        # With 40% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
+        # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
         CORRELATED_ERROR(0.2) X1 Y2
         ELSE_CORRELATED_ERROR(0.25) Z2 Z3
         ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
