@@ -21,6 +21,15 @@
 
 namespace stim {
 
+/// A 2d array of bit-packed booleans, padded and aligned to make simd operations more efficient.
+///
+/// The table contents are indexed by a major axis (not contiguous in memory) then a minor axis (contiguous in memory).
+///
+/// Note that, due to the padding, the smallest table you can have is 256x256 bits (8 KiB).
+/// Technically the padding of the major axis is not necessary, but it's included so that transposing preserves size.
+///
+/// Similar to simd_bits, simd_bit_table has no notion of the "intended" size of data, only the padded size. The
+/// intended size has to be stored separately.
 struct simd_bit_table {
     size_t num_simd_words_major;
     size_t num_simd_words_minor;
@@ -63,7 +72,6 @@ struct simd_bit_table {
     void do_square_transpose();
     /// Transposes the table out of place into a target location.
     void transpose_into(simd_bit_table &out) const;
-    void transpose_into(simd_bit_table &out, size_t major_start_bit, size_t min_major_length_bits) const;
     /// Transposes the table out of place.
     simd_bit_table transposed() const;
     /// Returns a subset of the table.
