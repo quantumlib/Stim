@@ -51,31 +51,19 @@ TEST(DetectionSimulator, detector_samples_out) {
 
     FILE *tmp = tmpfile();
     detector_samples_out(circuit, 2, false, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
-    rewind(tmp);
-    for (char c : "shot D1\nshot D1\n") {
-        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
-    }
+    ASSERT_EQ(rewind_read_close(tmp), "shot D1\nshot D1\n");
 
     tmp = tmpfile();
     detector_samples_out(circuit, 2, true, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
-    rewind(tmp);
-    for (char c : "shot L4 D1\nshot L4 D1\n") {
-        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
-    }
+    ASSERT_EQ(rewind_read_close(tmp), "shot L4 D1\nshot L4 D1\n");
 
     tmp = tmpfile();
     detector_samples_out(circuit, 2, false, true, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
-    rewind(tmp);
-    for (char c : "shot D1 L4\nshot D1 L4\n") {
-        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
-    }
+    ASSERT_EQ(rewind_read_close(tmp), "shot D1 L4\nshot D1 L4\n");
 
     tmp = tmpfile();
     detector_samples_out(circuit, 2, false, true, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
-    rewind(tmp);
-    for (char c : "1,6\n1,6\n") {
-        ASSERT_EQ(getc(tmp), c == '\0' ? EOF : c);
-    }
+    ASSERT_EQ(rewind_read_close(tmp), "1,6\n1,6\n");
 }
 
 TEST(DetectionSimulator, stream_many_shots) {
@@ -90,7 +78,7 @@ TEST(DetectionSimulator, stream_many_shots) {
     FILE *tmp = tmpfile();
     detector_samples_out(circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {
         ASSERT_EQ(result[k], '0') << k;
         ASSERT_EQ(result[k + 1], '1') << (k + 1);
@@ -115,7 +103,7 @@ TEST(DetectionSimulator, block_results_single_shot) {
     FILE *tmp = tmpfile();
     detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);
@@ -140,7 +128,7 @@ TEST(DetectionSimulator, block_results_triple_shot) {
     FILE *tmp = tmpfile();
     detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
         size_t s = rep * 30001;
         for (size_t k = 0; k < 30000; k += 3) {
@@ -169,7 +157,7 @@ TEST(DetectionSimulator, stream_results) {
     FILE *tmp = tmpfile();
     detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);
@@ -195,7 +183,7 @@ TEST(DetectionSimulator, stream_results_triple_shot) {
     FILE *tmp = tmpfile();
     detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
         size_t s = rep * 30001;
         for (size_t k = 0; k < 30000; k += 3) {

@@ -75,12 +75,20 @@ struct MeasureRecordReader {
     ///         The minor axis of the table has a length that's too short to hold an entire record.
     ///         The major axis of the table has length zero.
     ///         The reader is not at the start of a record.
-    virtual size_t read_records_into(simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
+    virtual size_t read_records_into(
+        simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
 
     /// Advances the reader to the next record (i.e. the next sequence of 0s and 1s). Skips the remainder
     /// of the current record and an end-of-record marker (such as a newline). Returns true if a new record
     /// has been found. Returns false if end of file has been reached.
     virtual bool next_record() = 0;
+
+    /// Checks if there is another record present. The reader must be between records.
+    ///
+    /// Returns:
+    //      True: there is another record to read and we have begun reading it.
+    //      False: there are no more records to read.
+    virtual bool start_record() = 0;
 
     /// Returns true when the current record has ended. Beyond this point read_bit() throws an exception
     /// and read_bits_into_bytes() returns no data. Note that records in file formats HITS and DETS never end.
@@ -94,28 +102,30 @@ struct MeasureRecordReader {
 struct MeasureRecordReaderFormat01 : MeasureRecordReader {
     FILE *in;
     int payload;
-    size_t position = 0;
+    size_t position;
     size_t bits_per_record;
 
     MeasureRecordReaderFormat01(FILE *in, size_t bits_per_record);
 
     bool read_bit() override;
     bool next_record() override;
+    bool start_record() override;
     bool is_end_of_record() override;
 };
 
 struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
     FILE *in;
-    int payload = 0;
-    uint8_t bits_available = 0;
-    size_t position = 0;
     size_t bits_per_record;
+    int payload;
+    uint8_t bits_available;
+    size_t position;
 
     MeasureRecordReaderFormatB8(FILE *in, size_t bits_per_record);
 
     size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer) override;
     bool read_bit() override;
     bool next_record() override;
+    bool start_record() override;
     bool is_end_of_record() override;
 
    private:
@@ -124,20 +134,16 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
-    int separator;
-    bool no_next_hit = true;
-    uint64_t next_hit = 0;
-    uint64_t position = 0;
     uint64_t bits_per_record;
+    simd_bits buffer;
+    size_t position_in_buffer;
 
     MeasureRecordReaderFormatHits(FILE *in, size_t bits_per_record);
 
     bool read_bit() override;
     bool next_record() override;
+    bool start_record() override;
     bool is_end_of_record() override;
-
-   private:
-    void update_next_hit();
 };
 
 struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
@@ -153,40 +159,29 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer) override;
     bool read_bit() override;
     bool next_record() override;
+    bool start_record() override;
     bool is_end_of_record() override;
 
    private:
-    void buffer_data();
+    bool maybe_buffer_data();
 };
 
 struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     FILE *in;
-    int separator = '\n';
-    char result_type = 'M';
-    char next_shot_result_type = 'M';
-    bool no_next_shot = true;
-    uint64_t next_shot = -1;
-
-    uint64_t position_m = 0;
-    uint64_t position_d = 0;
-    uint64_t position_l = 0;
-    uint64_t bits_per_m_record;
-    uint64_t bits_per_d_record;
-    uint64_t bits_per_l_record;
+    simd_bits buffer;
+    size_t position_in_buffer;
+    uint64_t m_bits_per_record;
+    uint64_t d_bits_per_record;
+    uint64_t l_bits_per_record;
 
     MeasureRecordReaderFormatDets(
         FILE *in, size_t n_measurements, size_t n_detection_events = 0, size_t n_logical_observables = 0);
 
     bool read_bit() override;
     bool next_record() override;
+    bool start_record() override;
     bool is_end_of_record() override;
     char current_result_type() override;
-
-   private:
-    uint64_t &position();
-    uint64_t &bits_per_record();
-
-    void update_next_shot();
 };
 
 }  // namespace stim

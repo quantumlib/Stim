@@ -31,7 +31,7 @@ TEST(MeasureRecordWriter, Format01) {
     writer->write_bytes({bytes});
     writer->write_bit(true);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(tmp), "000111110000111111\n");
+    ASSERT_EQ(rewind_read_close(tmp), "000111110000111111\n");
 }
 
 TEST(MeasureRecordWriter, FormatB8) {
@@ -43,7 +43,7 @@ TEST(MeasureRecordWriter, FormatB8) {
     writer->write_bytes({bytes});
     writer->write_bit(true);
     writer->write_end();
-    auto s = rewind_read_all(tmp);
+    auto s = rewind_read_close(tmp);
     ASSERT_EQ(s.size(), 3);
     ASSERT_EQ(s[0], (char)0xF8);
     ASSERT_EQ(s[1], (char)0xF0);
@@ -59,7 +59,7 @@ TEST(MeasureRecordWriter, FormatHits) {
     writer->write_bytes({bytes});
     writer->write_bit(true);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(tmp), "3,4,5,6,7,12,13,14,15,16,17\n");
+    ASSERT_EQ(rewind_read_close(tmp), "3,4,5,6,7,12,13,14,15,16,17\n");
 }
 
 TEST(MeasureRecordWriter, FormatDets) {
@@ -74,7 +74,16 @@ TEST(MeasureRecordWriter, FormatDets) {
     writer->write_bit(false);
     writer->write_bit(true);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(tmp), "shot D3 D4 D5 D6 D7 D12 D13 D14 D15 D16 L1\n");
+    ASSERT_EQ(rewind_read_close(tmp), "shot D3 D4 D5 D6 D7 D12 D13 D14 D15 D16 L1\n");
+}
+
+TEST(MeasureRecordWriter, FormatDets_EmptyRecords) {
+    FILE *tmp = tmpfile();
+    auto writer = MeasureRecordWriter::make(tmp, SAMPLE_FORMAT_DETS);
+    writer->write_end();
+    writer->write_end();
+    writer->write_end();
+    ASSERT_EQ(rewind_read_close(tmp), "shot\nshot\nshot\n");
 }
 
 TEST(MeasureRecordWriter, FormatDets_MultipleRecords) {
@@ -103,7 +112,7 @@ TEST(MeasureRecordWriter, FormatDets_MultipleRecords) {
     writer->write_bit(true);
     writer->write_end();
 
-    ASSERT_EQ(rewind_read_all(tmp), "shot D2 L1\nshot D0 D3 L0 L2\n");
+    ASSERT_EQ(rewind_read_close(tmp), "shot D2 L1\nshot D0 D3 L0 L2\n");
 }
 
 TEST(MeasureRecordWriter, FormatR8) {
@@ -115,7 +124,7 @@ TEST(MeasureRecordWriter, FormatR8) {
     writer->write_bytes({bytes});
     writer->write_bit(true);
     writer->write_end();
-    auto s = rewind_read_all(tmp);
+    auto s = rewind_read_close(tmp);
     ASSERT_EQ(s.size(), 12);
     ASSERT_EQ(s[0], (char)3);
     ASSERT_EQ(s[1], (char)0);
@@ -146,7 +155,7 @@ TEST(MeasureRecordWriter, FormatR8_LongGap) {
     writer->write_bit(true);
     writer->write_bytes({bytes, bytes + 4});
     writer->write_end();
-    auto s = rewind_read_all(tmp);
+    auto s = rewind_read_close(tmp);
     ASSERT_EQ(s.size(), 4);
     ASSERT_EQ(s[0], (char)255);
     ASSERT_EQ(s[1], (char)255);
@@ -167,32 +176,32 @@ TEST(MeasureRecordWriter, write_table_data_small) {
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_01, 'M', 'M', 0);
-    ASSERT_EQ(rewind_read_all(tmp), "0100\n0100\n0100\n0100\n0100\n");
+    ASSERT_EQ(rewind_read_close(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_HITS, 'M', 'M', 0);
-    ASSERT_EQ(rewind_read_all(tmp), "1\n1\n1\n1\n1\n");
+    ASSERT_EQ(rewind_read_close(tmp), "1\n1\n1\n1\n1\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_DETS, 'M', 'M', 0);
-    ASSERT_EQ(rewind_read_all(tmp), "shot M1\nshot M1\nshot M1\nshot M1\nshot M1\n");
+    ASSERT_EQ(rewind_read_close(tmp), "shot M1\nshot M1\nshot M1\nshot M1\nshot M1\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 1);
-    ASSERT_EQ(rewind_read_all(tmp), "shot L0\nshot L0\nshot L0\nshot L0\nshot L0\n");
+    ASSERT_EQ(rewind_read_close(tmp), "shot L0\nshot L0\nshot L0\nshot L0\nshot L0\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_R8, 'M', 'M', 0);
-    ASSERT_EQ(rewind_read_all(tmp), "\x01\x02\x01\x02\x01\x02\x01\x02\x01\x02");
+    ASSERT_EQ(rewind_read_close(tmp), "\x01\x02\x01\x02\x01\x02\x01\x02\x01\x02");
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_B8, 'M', 'M', 0);
-    ASSERT_EQ(rewind_read_all(tmp), "\x02\x02\x02\x02\x02");
+    ASSERT_EQ(rewind_read_close(tmp), "\x02\x02\x02\x02\x02");
 
     tmp = tmpfile();
     write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
     ASSERT_EQ(
-        rewind_read_all(tmp),
+        rewind_read_close(tmp),
         std::string(
             "\0\0\0\0\0\0\0\0"
             "\x1F\0\0\0\0\0\0\0"
@@ -216,7 +225,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_01, 'M', 'M', 0);
     ASSERT_EQ(
-        rewind_read_all(tmp),
+        rewind_read_close(tmp),
         "0011010100"
         "0100000000"
         "0000000000"
@@ -240,20 +249,20 @@ TEST(MeasureRecordWriter, write_table_data_large) {
 
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_HITS, 'M', 'M', 0);
-    ASSERT_EQ(rewind_read_all(tmp), "2,3,5,7,11\n2,3,5,11\n");
+    ASSERT_EQ(rewind_read_close(tmp), "2,3,5,7,11\n2,3,5,11\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 5);
-    ASSERT_EQ(rewind_read_all(tmp), "shot D2 D3 L0 L2 L6\nshot D2 D3 L0 L6\n");
+    ASSERT_EQ(rewind_read_close(tmp), "shot D2 D3 L0 L2 L6\nshot D2 D3 L0 L6\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_DETS, 'D', 'L', 90);
-    ASSERT_EQ(rewind_read_all(tmp), "shot D2 D3 D5 D7 D11\nshot D2 D3 D5 D11\n");
+    ASSERT_EQ(rewind_read_close(tmp), "shot D2 D3 D5 D7 D11\nshot D2 D3 D5 D11\n");
 
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_R8, 'M', 'M', 0);
     ASSERT_EQ(
-        rewind_read_all(tmp),
+        rewind_read_close(tmp),
         std::string(
             "\x02\x00\x01\x01\x03\x58"
             "\x02\x00\x01\x05\x58",
@@ -262,7 +271,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_B8, 'M', 'M', 0);
     ASSERT_EQ(
-        rewind_read_all(tmp),
+        rewind_read_close(tmp),
         std::string(
             "\xAC\x08\0\0\0\0\0\0\0\0\0\0\0"
             "\x2C\x08\0\0\0\0\0\0\0\0\0\0\0",
@@ -270,7 +279,7 @@ TEST(MeasureRecordWriter, write_table_data_large) {
 
     tmp = tmpfile();
     write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
-    auto actual = rewind_read_all(tmp);
+    auto actual = rewind_read_close(tmp);
     ASSERT_EQ(
         actual,
         std::string(
@@ -383,16 +392,16 @@ TEST(MeasureRecordWriter, write_bits_01_a) {
     auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_01);
     writer->write_bits(&data[0], 11);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(f), "00000000111\n");
+    ASSERT_EQ(rewind_read_close(f), "00000000111\n");
 }
 
 TEST(MeasureRecordWriter, write_bits_01_b) {
     FILE *f = tmpfile();
-    uint8_t data[] {0xFF, 0x0};
+    uint8_t data[]{0xFF, 0x0};
     auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_01);
     writer->write_bits(&data[0], 11);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(f), "11111111000\n");
+    ASSERT_EQ(rewind_read_close(f), "11111111000\n");
 }
 
 TEST(MeasureRecordWriter, write_bits_b8_a) {
@@ -401,16 +410,16 @@ TEST(MeasureRecordWriter, write_bits_b8_a) {
     auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_B8);
     writer->write_bits(&data[0], 11);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(f), std::string("\x00\x07", 2));
+    ASSERT_EQ(rewind_read_close(f), std::string("\x00\x07", 2));
 }
 
 TEST(MeasureRecordWriter, write_bits_b8_b) {
     FILE *f = tmpfile();
-    uint8_t data[] {0xFF, 0x0};
+    uint8_t data[]{0xFF, 0x0};
     auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_B8);
     writer->write_bits(&data[0], 11);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(f), std::string("\xFF\x00", 2));
+    ASSERT_EQ(rewind_read_close(f), std::string("\xFF\x00", 2));
 }
 
 TEST(MeasureRecordWriter, write_bits_r8_a) {
@@ -419,14 +428,14 @@ TEST(MeasureRecordWriter, write_bits_r8_a) {
     auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_R8);
     writer->write_bits(&data[0], 11);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(f), std::string("\x08\x00\x00\x00", 4));
+    ASSERT_EQ(rewind_read_close(f), std::string("\x08\x00\x00\x00", 4));
 }
 
 TEST(MeasureRecordWriter, write_bits_r8_b) {
     FILE *f = tmpfile();
-    uint8_t data[] {0xFF, 0x0};
+    uint8_t data[]{0xFF, 0x0};
     auto writer = MeasureRecordWriter::make(f, SampleFormat::SAMPLE_FORMAT_R8);
     writer->write_bits(&data[0], 11);
     writer->write_end();
-    ASSERT_EQ(rewind_read_all(f), std::string("\x00\x00\x00\x00\x00\x00\x00\x00\x03", 9));
+    ASSERT_EQ(rewind_read_close(f), std::string("\x00\x00\x00\x00\x00\x00\x00\x00\x03", 9));
 }

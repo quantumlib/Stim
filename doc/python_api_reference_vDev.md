@@ -491,7 +491,7 @@
 
 ## `stim.target_separator() -> stim.DemTarget`<a name="stim.target_separator"></a>
 > ```
-> Returns a target separator (e.g. "^" in a .dem file).
+> Returns a target last_read_char (e.g. "^" in a .dem file).
 > ```
 
 ## `stim.target_x(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_x"></a>
@@ -1543,7 +1543,7 @@
 
 ### `stim.DemTarget.is_separator(self) -> bool`<a name="stim.DemTarget.is_separator"></a>
 > ```
-> Determines if the detector error model target is a separator (like "^" in a .dem file).
+> Determines if the detector error model target is a last_read_char (like "^" in a .dem file).
 > ```
 
 ### `stim.DemTarget.val`<a name="stim.DemTarget.val"></a>

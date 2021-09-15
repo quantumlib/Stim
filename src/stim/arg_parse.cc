@@ -73,6 +73,9 @@ const char *stim::find_argument(const char *name, int argc, const char **argv) {
 void stim::check_for_unknown_arguments(
     const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv) {
     for (int i = 1; i < argc; i++) {
+        if (for_mode != nullptr && i == 1 && strcmp(argv[i], for_mode) == 0) {
+            continue;
+        }
         // Respect that the "--" argument terminates flags.
         if (!strcmp(argv[i], "--")) {
             break;
@@ -100,8 +103,8 @@ void stim::check_for_unknown_arguments(
                 msg << "\033[31mUnrecognized command line argument " << argv[i] << ".\n";
                 msg << "Recognized command line arguments:\n";
             } else {
-                msg << "\033[31mUnrecognized command line argument " << argv[i] << " for mode " << for_mode << ".\n";
-                msg << "Recognized command line arguments for mode " << for_mode << ":\n";
+                msg << "\033[31mUnrecognized command line argument " << argv[i] << " for `stim " << for_mode << "`.\n";
+                msg << "Recognized command line arguments for `stim " << for_mode << "`:\n";
             }
             for (size_t j = 0; j < known_arguments.size(); j++) {
                 msg << "    " << known_arguments[j] << "\n";

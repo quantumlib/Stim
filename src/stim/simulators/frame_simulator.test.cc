@@ -285,7 +285,7 @@ TEST(FrameSimulator, sample_out) {
 
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
-    ASSERT_EQ(rewind_read_all(tmp), "0100\n0100\n0100\n0100\n0100\n");
+    ASSERT_EQ(rewind_read_close(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
@@ -362,12 +362,12 @@ TEST(FrameSimulator, run_length_measurement_formats) {
 
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
-    ASSERT_EQ(rewind_read_all(tmp), "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n");
+    ASSERT_EQ(rewind_read_close(tmp), "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n");
 
     tmp = tmpfile();
     FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
     ASSERT_EQ(
-        rewind_read_all(tmp),
+        rewind_read_close(tmp),
         "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n");
 
     tmp = tmpfile();
@@ -820,7 +820,7 @@ TEST(FrameSimulator, block_results_single_shot) {
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);
@@ -840,7 +840,7 @@ TEST(FrameSimulator, block_results_triple_shot) {
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
         size_t s = rep * 30001;
         for (size_t k = 0; k < 30000; k += 3) {
@@ -864,7 +864,7 @@ TEST(FrameSimulator, stream_results) {
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
         ASSERT_EQ(result[k], '1') << k;
         ASSERT_EQ(result[k + 1], '0') << (k + 1);
@@ -882,7 +882,7 @@ TEST(FrameSimulator, stream_many_shots) {
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, simd_bits(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {
         ASSERT_EQ(result[k], '0') << k;
         ASSERT_EQ(result[k + 1], '1') << (k + 1);
@@ -903,7 +903,7 @@ TEST(FrameSimulator, stream_results_triple_shot) {
     FILE *tmp = tmpfile();
     FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
-    auto result = rewind_read_all(tmp);
+    auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
         size_t s = rep * 30001;
         for (size_t k = 0; k < 30000; k += 3) {

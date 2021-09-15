@@ -23,6 +23,7 @@
 namespace stim {
 
 int main_help(int argc, const char **argv);
+std::string help_for(std::string help_key);
 
 }  // namespace stim
 

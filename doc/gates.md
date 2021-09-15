@@ -117,12 +117,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        I 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `I 0`
         # (no operations)
         ```
         
@@ -172,12 +167,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        X 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `X 0`
         H 0
         S 0
         S 0
@@ -229,20 +219,13 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        Y 0
-        ```
-        
-        is equivalent to:
-        
-        ```
-        S 0
-        H 0
+        # The following circuit is equivalent (up to global phase) to `Y 0`
         S 0
         S 0
         H 0
         S 0
         S 0
-        S 0
+        H 0
         ```
         
     
@@ -291,12 +274,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        Z 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `Z 0`
         S 0
         S 0
         ```
@@ -348,12 +326,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        C_XYZ 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `C_XYZ 0`
         S 0
         S 0
         S 0
@@ -405,12 +378,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        C_ZYX 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `C_ZYX 0`
         H 0
         S 0
         ```
@@ -463,13 +431,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
+        # The following circuit is equivalent (up to global phase) to `H 0`
         H 0
-        ```
         
-        is equivalent to:
-        
-        ```
-        H 0
+        # (The decomposition is trivial because this gate is in the target gate set.)
         ```
         
     
@@ -517,12 +482,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        H_XY 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `H_XY 0`
         H 0
         S 0
         S 0
@@ -575,12 +535,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        H_YZ 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `H_YZ 0`
         H 0
         S 0
         H 0
@@ -636,13 +591,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
+        # The following circuit is equivalent (up to global phase) to `S 0`
         S 0
-        ```
         
-        is equivalent to:
-        
-        ```
-        S 0
+        # (The decomposition is trivial because this gate is in the target gate set.)
         ```
         
     
@@ -691,12 +643,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_X 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_X 0`
         H 0
         S 0
         H 0
@@ -748,17 +695,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_X_DAG 0
-        ```
-        
-        is equivalent to:
-        
-        ```
-        H 0
-        S 0
-        S 0
+        # The following circuit is equivalent (up to global phase) to `SQRT_X_DAG 0`
         S 0
         H 0
+        S 0
         ```
         
     
@@ -807,12 +747,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_Y 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_Y 0`
         S 0
         S 0
         H 0
@@ -864,12 +799,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_Y_DAG 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_Y_DAG 0`
         H 0
         S 0
         S 0
@@ -923,12 +853,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        S_DAG 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `S_DAG 0`
         S 0
         S 0
         S 0
@@ -989,13 +914,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        CX 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `CX 0 1`
         CNOT 0 1
+        
+        # (The decomposition is trivial because this gate is in the target gate set.)
         ```
         
     
@@ -1049,12 +971,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        CY 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `CY 0 1`
         S 1
         S 1
         S 1
@@ -1114,12 +1031,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        CZ 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `CZ 0 1`
         H 1
         CNOT 0 1
         H 1
@@ -1168,12 +1080,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        ISWAP 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `ISWAP 0 1`
         CNOT 0 1
         S 1
         CNOT 1 0
@@ -1223,12 +1130,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        ISWAP_DAG 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `ISWAP_DAG 0 1`
         CNOT 0 1
         S 1
         S 1
@@ -1279,19 +1181,12 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_XX 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_XX 0 1`
+        CNOT 0 1
         H 0
-        CX 0 1
-        H 1
-        S 1
-        H 1
         S 0
         H 0
+        CNOT 0 1
         ```
         
     
@@ -1336,23 +1231,12 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_XX_DAG 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_XX_DAG 0 1`
+        S 0
+        CNOT 0 1
         H 0
-        CX 0 1
-        H 1
-        S 1
-        S 1
-        S 1
-        H 1
         S 0
-        S 0
-        S 0
-        H 0
+        CNOT 0 1
         ```
         
     
@@ -1397,26 +1281,13 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_YY 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_YY 0 1`
         S 0
-        H 0
+        CNOT 1 0
         S 0
-        S 1
+        S 0
         H 1
-        S 1
-        H 1
-        CX 0 1
-        S 1
-        S 1
-        S 1
-        H 0
-        S 0
-        S 0
+        CNOT 1 0
         S 0
         ```
         
@@ -1462,27 +1333,14 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_YY_DAG 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
-        S 0
-        H 0
+        # The following circuit is equivalent (up to global phase) to `SQRT_YY_DAG 0 1`
+        CNOT 0 1
         S 1
-        S 1
-        S 1
-        H 1
-        S 1
-        H 1
-        CX 0 1
-        S 1
-        S 0
         H 0
         S 0
-        S 0
-        S 0
+        H 0
+        CNOT 1 0
+        CNOT 0 1
         ```
         
     
@@ -1527,17 +1385,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_ZZ 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
-        H 1
-        CX 0 1
-        H 1
-        S 0
+        # The following circuit is equivalent (up to global phase) to `SQRT_ZZ 0 1`
+        CNOT 0 1
         S 1
+        CNOT 0 1
         ```
         
     
@@ -1582,14 +1433,9 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SQRT_ZZ_DAG 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SQRT_ZZ_DAG 0 1`
         H 1
-        CX 0 1
+        CNOT 0 1
         H 1
         S 0
         S 0
@@ -1641,12 +1487,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        SWAP 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `SWAP 0 1`
         CNOT 0 1
         CNOT 1 0
         CNOT 0 1
@@ -1699,12 +1540,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        XCX 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `XCX 0 1`
         H 0
         CNOT 0 1
         H 0
@@ -1757,19 +1593,12 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        XCY 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
-        S 1
-        S 1
-        S 1
-        H 1
+        # The following circuit is equivalent (up to global phase) to `XCY 0 1`
         CNOT 1 0
-        H 1
-        S 1
+        H 0
+        S 0
+        CNOT 0 1
+        H 0
         ```
         
     
@@ -1821,12 +1650,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        XCZ 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `XCZ 0 1`
         CNOT 1 0
         ```
         
@@ -1877,19 +1701,12 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        YCX 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
-        S 0
-        S 0
-        S 0
-        H 0
-        CNOT 0 1
-        H 0
-        S 0
+        # The following circuit is equivalent (up to global phase) to `YCX 0 1`
+        CX 0 1
+        H 1
+        S 1
+        CX 1 0
+        H 1
         ```
         
     
@@ -1939,22 +1756,13 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        YCY 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
-        S 0
-        S 0
-        S 0
-        S 1
-        S 1
-        S 1
+        # The following circuit is equivalent (up to global phase) to `YCY 0 1`
         H 0
-        CNOT 0 1
-        S 1
+        S 0
         H 0
+        CX 0 1
+        H 0
+        CX 1 0
         S 0
         ```
         
@@ -2007,12 +1815,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        YCZ 0 1
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `YCZ 0 1`
         S 0
         S 0
         S 0
@@ -2368,13 +2171,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
+        # The following circuit is equivalent (up to global phase) to `M 0`
         M 0
-        ```
         
-        is equivalent to:
-        
-        ```
-        M 0
+        # (The decomposition is trivial because this gate is in the target gate set.)
         ```
         
     
@@ -2459,12 +2259,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        MR 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `MR 0`
         M 0
         R 0
         ```
@@ -2506,12 +2301,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        MRX 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `MRX 0`
         H 0
         M 0
         R 0
@@ -2555,12 +2345,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        MRY 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `MRY 0`
         S 0
         S 0
         S 0
@@ -2608,12 +2393,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        MX 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `MX 0`
         H 0
         M 0
         H 0
@@ -2656,12 +2436,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        MY 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `MY 0`
         S 0
         S 0
         S 0
@@ -2704,13 +2479,10 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
+        # The following circuit is equivalent (up to global phase) to `R 0`
         R 0
-        ```
         
-        is equivalent to:
-        
-        ```
-        R 0
+        # (The decomposition is trivial because this gate is in the target gate set.)
         ```
         
     
@@ -2744,12 +2516,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        RX 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `RX 0`
         H 0
         R 0
         H 0
@@ -2786,12 +2553,7 @@
     - Decomposition (into H, S, CX, M, R):
     
         ```
-        RY 0
-        ```
-        
-        is equivalent to:
-        
-        ```
+        # The following circuit is equivalent (up to global phase) to `RY 0`
         S 0
         S 0
         S 0
