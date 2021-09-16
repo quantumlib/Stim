@@ -306,14 +306,18 @@ TEST(MeasureRecordReader, FormatDets_OutOfOrder) {
     FILE *tmp = tmpfile_with_contents("shot L2 D3 D1\n");
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 4, 4);
     ASSERT_TRUE(reader->start_record());
+    ASSERT_EQ(reader->current_result_type(), 'D');
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_FALSE(reader->read_bit());
+    ASSERT_EQ(reader->current_result_type(), 'D');
+    ASSERT_TRUE(reader->read_bit());
+    ASSERT_EQ(reader->current_result_type(), 'L');
+    ASSERT_FALSE(reader->read_bit());
+    ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_FALSE(reader->read_bit());
-    ASSERT_FALSE(reader->read_bit());
-    ASSERT_TRUE(reader->read_bit());
-    ASSERT_FALSE(reader->read_bit());
+    ASSERT_EQ(reader->current_result_type(), 'L');
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_FALSE(reader->start_record());
 }
