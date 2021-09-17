@@ -264,7 +264,7 @@ struct GateDataMap {
         uint8_t h = gate_name_to_id(text, text_len);
         const Gate &gate = items[h];
         if (_case_insensitive_mismatch(text, text_len, gate.name, gate.name_len)) {
-            throw std::out_of_range("Gate not found " + std::string(text, text_len));
+            throw std::out_of_range("Gate not found: '" + std::string(text, text_len) + "'");
         }
         // Canonicalize.
         return items[gate.id];

@@ -613,7 +613,8 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
 
 void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
     throw std::invalid_argument(
-        "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be independent).");
+        "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be "
+        "independent).");
 }
 
 void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {

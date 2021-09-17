@@ -175,7 +175,7 @@ const T &find_enum_argument(
         msg << "\033[31mUnrecognized value '" << text << "' for enum flag '" << name << "'.\n";
         msg << "Recognized values are:\n";
         for (const auto &kv : values) {
-            msg << "    '" << kv.first;
+            msg << "    '" << kv.first << "'";
             if (default_key != nullptr && kv.first == default_key) {
                 msg << " (default)";
             }

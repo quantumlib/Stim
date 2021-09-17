@@ -1803,7 +1803,8 @@ TEST(ErrorAnalyzer, pauli_channel_composite_errors) {
     ASSERT_TRUE(ErrorAnalyzer::circuit_to_detector_error_model(
                     Circuit(
                         encode +
-                        Circuit("PAULI_CHANNEL_2(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010,0.011,0."
+                        Circuit("PAULI_CHANNEL_2(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010,0."
+                                "011,0."
                                 "012,0.013,0.014,0.015) 4 5") +
                         decode),
                     true,

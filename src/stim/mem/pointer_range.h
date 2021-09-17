@@ -183,13 +183,13 @@ struct ConstPointerRange {
 };
 
 template <typename T>
-std::ostream &operator<<(std::ostream &out, stim::ConstPointerRange<T> v) {
+std::ostream &operator<<(std::ostream &out, const stim::ConstPointerRange<T> &v) {
     out << "ConstPointerRange{" << comma_sep(v) << "}";
     return out;
 }
 
 template <typename T>
-std::ostream &operator<<(std::ostream &out, stim::PointerRange<T> v) {
+std::ostream &operator<<(std::ostream &out, const stim::PointerRange<T> &v) {
     out << "PointerRange{" << comma_sep(v) << "}";
     return out;
 }

@@ -15,6 +15,7 @@ std::map<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)> code_n
 std::vector<const char *> known_commands{
     "--after_clifford_depolarization",
     "--after_reset_flip_probability",
+    "--code",
     "--task",
     "--before_measure_flip_probability",
     "--before_round_data_depolarization",
@@ -26,8 +27,9 @@ std::vector<const char *> known_commands{
 };
 
 int stim::main_generate_circuit(int argc, const char **argv) {
-    check_for_unknown_arguments(known_commands, "--gen", argc, argv);
-    auto func = find_enum_argument("--gen", nullptr, code_name_to_func_map, argc, argv);
+    check_for_unknown_arguments(known_commands, "gen", argc, argv);
+    const char *code_flag_name = find_argument("--gen", argc, argv) ? "--gen" : "--code";
+    auto func = find_enum_argument(code_flag_name, nullptr, code_name_to_func_map, argc, argv);
     CircuitGenParameters params(
         (uint64_t)find_int64_argument("--rounds", -1, 1, INT64_MAX, argc, argv),
         (uint32_t)find_int64_argument("--distance", -1, 2, 2047, argc, argv),
@@ -40,7 +42,7 @@ int stim::main_generate_circuit(int argc, const char **argv) {
     params.after_clifford_depolarization = find_float_argument("--after_clifford_depolarization", 0, 0, 1, argc, argv);
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     std::ostream &out = out_stream.stream();
-    out << "# Generated " << find_argument("--gen", argc, argv) << " circuit.\n";
+    out << "# Generated " << find_argument(code_flag_name, argc, argv) << " circuit.\n";
     out << "# task: " << params.task << "\n";
     out << "# rounds: " << params.rounds << "\n";
     out << "# distance: " << params.distance << "\n";

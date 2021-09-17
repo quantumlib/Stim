@@ -32,8 +32,8 @@ std::string execute(std::vector<const char *> flags, const char *std_in_content)
         }
         fprintf(tmp_in, "%s", std_in_content);
         fclose(tmp_in);
-        flags.insert(flags.begin(), raii_temp_file.path.data());
-        flags.insert(flags.begin(), "--in");
+        flags.push_back("--in");
+        flags.push_back(raii_temp_file.path.data());
     }
     flags.insert(flags.begin(), "[PROGRAM_LOCATION_IGNORE]");
 
@@ -128,21 +128,25 @@ static bool matches(std::string actual, std::string pattern) {
 }
 
 TEST(main, help_modes) {
-    ASSERT_TRUE(matches(execute({"--help"}, ""), ".*BASIC USAGE.+"));
-    ASSERT_TRUE(matches(execute({}, ""), ".+stderr.+pick a mode.+"));
-    ASSERT_TRUE(matches(execute({"--sample", "--repl"}, ""), ".+stderr.+pick a mode.+"));
-    ASSERT_TRUE(matches(execute({"--sample", "--repl", "--detect"}, ""), ".+stderr.+pick a mode.+"));
+    ASSERT_TRUE(matches(execute({"--help"}, ""), ".*Available stim commands.+"));
+    ASSERT_TRUE(matches(execute({"help"}, ""), ".*Available stim commands.+"));
+    ASSERT_TRUE(matches(execute({}, ""), ".+stderr.+No mode.+"));
+    ASSERT_TRUE(matches(execute({"--sample", "--repl"}, ""), ".+stderr.+More than one mode.+"));
+    ASSERT_TRUE(matches(execute({"--sample", "--repl", "--detect"}, ""), ".+stderr.+More than one mode.+"));
     ASSERT_TRUE(matches(execute({"--help", "dhnsahddjoidsa"}, ""), ".*Unrecognized.*"));
     ASSERT_TRUE(matches(execute({"--help", "H"}, ""), ".+Hadamard.+"));
+    ASSERT_TRUE(matches(execute({"--help", "--sample"}, ""), ".*Samples measurements from a circuit.+"));
+    ASSERT_TRUE(matches(execute({"--help", "sample"}, ""), ".*Samples measurements from a circuit.+"));
 }
 
 TEST(main, bad_flag) {
     ASSERT_EQ(
         trim(execute({"--gen", "--unknown"}, "")),
-        trim("[exception=\033[31mUnrecognized command line argument --unknown for mode --gen.\n"
-             "Recognized command line arguments for mode --gen:\n"
+        trim("[exception=\033[31mUnrecognized command line argument --unknown for `stim gen`.\n"
+             "Recognized command line arguments for `stim gen`:\n"
              "    --after_clifford_depolarization\n"
              "    --after_reset_flip_probability\n"
+             "    --code\n"
              "    --task\n"
              "    --before_measure_flip_probability\n"
              "    --before_round_data_depolarization\n"
@@ -168,6 +172,22 @@ M 0
 M 0
             )input")),
         trim(R"output(
+0
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"sample", "--shots", "1"}, R"input(
+M 0
+            )input")),
+        trim(R"output(
+0
+            )output"));
+    ASSERT_EQ(
+        trim(execute({"sample", "--shots", "2"}, R"input(
+M 0
+            )input")),
+        trim(R"output(
+0
 0
             )output"));
 
@@ -481,6 +501,28 @@ DETECTOR rec[-1]
             )output"));
 
     ASSERT_EQ(
+        trim(execute({"--detect", "2"}, R"input(
+X_ERROR(1) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+1
+1
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"detect", "--shots", "2"}, R"input(
+X_ERROR(1) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+1
+1
+            )output"));
+
+    ASSERT_EQ(
         trim(execute({"--detect"}, R"input(
 DETECTOR
             )input")),
@@ -596,7 +638,7 @@ TEST(main, detector_hypergraph_deprecated) {
         trim(execute({"--detector_hypergraph"}, R"input(
             )input")),
         trim(R"output(
-[stderr=[DEPRECATION] Use `--analyze_errors` instead of `--detector_hypergraph`
+[stderr=[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`
 ]
             )output"));
 }
@@ -606,6 +648,16 @@ TEST(main, analyze_errors) {
 
     ASSERT_EQ(
         trim(execute({"--analyze_errors"}, R"input(
+X_ERROR(0.25) 0
+M 0
+DETECTOR rec[-1]
+            )input")),
+        trim(R"output(
+error(0.25) D0
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"analyze_errors"}, R"input(
 X_ERROR(0.25) 0
 M 0
 DETECTOR rec[-1]
@@ -707,6 +759,9 @@ TEST(main, generate_circuits) {
         trim(execute({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
+        trim(execute({"gen", "--code=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        ".+Generated surface_code.+"));
+    ASSERT_TRUE(matches(
         trim(execute({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, "")),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
@@ -725,4 +780,47 @@ TEST(main, detection_event_simulator_counts_measurements_correctly) {
     }
     ASSERT_EQ(zeroes + ones, 1000);
     ASSERT_TRUE(400 < zeroes && zeroes < 600);
+}
+
+TEST(main, m2d) {
+    RaiiTempNamedFile tmp;
+    FILE *f = fopen(tmp.path.data(), "w");
+    fprintf(f, "%s", R"CIRCUIT(
+        X 0
+        M 0 1
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(2) rec[-1]
+    )CIRCUIT");
+
+    ASSERT_EQ(
+        trim(execute(
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data(), "--append_observables"},
+            "00\n01\n10\n11\n")),
+        trim(R"output(
+shot D0
+shot D0 D1 L2
+shot
+shot D1 L2
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute({"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data()}, "00\n01\n10\n11\n")),
+        trim(R"output(
+shot D0
+shot D0 D1
+shot
+shot D1
+            )output"));
+
+    ASSERT_EQ(
+        trim(execute(
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data(), "--skip_reference_sample"},
+            "00\n01\n10\n11\n")),
+        trim(R"output(
+shot
+shot D1
+shot D0
+shot D0 D1
+            )output"));
 }

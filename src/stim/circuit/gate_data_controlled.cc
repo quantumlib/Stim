@@ -100,13 +100,11 @@ Negates the amplitude of the |->|-i> state.
                      {-0.5f * i, 0.5f * i, 0.5f, 0.5f}},
                     {"+XI", "+ZY", "+XX", "+XZ"},
                     R"CIRCUIT(
-S 1
-S 1
-S 1
-H 1
 CNOT 1 0
-H 1
-S 1
+H 0
+S 0
+CNOT 0 1
+H 0
 )CIRCUIT",
                 };
             },
@@ -184,13 +182,11 @@ Negates the amplitude of the |-i>|-> state.
                      {-i * 0.5f, 0.5f, i * 0.5f, 0.5f}},
                     {"+XX", "+ZX", "+IX", "+YZ"},
                     R"CIRCUIT(
-S 0
-S 0
-S 0
-H 0
-CNOT 0 1
-H 0
-S 0
+CX 0 1
+H 1
+S 1
+CX 1 0
+H 1
 )CIRCUIT",
                 };
             },
@@ -230,16 +226,12 @@ Negates the amplitude of the |-i>|-i> state.
                      {0.5f, i * 0.5f, i * 0.5f, 0.5f}},
                     {"+XY", "+ZY", "+YX", "+YZ"},
                     R"CIRCUIT(
-S 0
-S 0
-S 0
-S 1
-S 1
-S 1
 H 0
-CNOT 0 1
-S 1
+S 0
 H 0
+CX 0 1
+H 0
+CX 1 0
 S 0
 )CIRCUIT",
                 };

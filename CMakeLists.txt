@@ -72,6 +72,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/simulators/detection_simulator.cc
         src/stim/simulators/error_analyzer.cc
         src/stim/simulators/frame_simulator.cc
+        src/stim/simulators/measurements_to_detection_events.cc
         src/stim/simulators/tableau_simulator.cc
         src/stim/simulators/vector_simulator.cc
         src/stim/stabilizers/pauli_string.cc
@@ -111,6 +112,7 @@ set(TEST_FILES
         src/stim/simulators/detection_simulator.test.cc
         src/stim/simulators/error_analyzer.test.cc
         src/stim/simulators/frame_simulator.test.cc
+        src/stim/simulators/measurements_to_detection_events.test.cc
         src/stim/simulators/tableau_simulator.test.cc
         src/stim/simulators/vector_simulator.test.cc
         src/stim/stabilizers/pauli_string.test.cc

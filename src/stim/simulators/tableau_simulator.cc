@@ -664,7 +664,16 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
     Circuit unprocessed;
     while (true) {
         unprocessed.clear();
-        unprocessed.append_from_file(in, true);
+        if (interactive) {
+            try {
+                unprocessed.append_from_file(in, true);
+            } catch (const std::exception &ex) {
+                std::cerr << "\033[31m" << ex.what() << "\033[0m\n";
+                continue;
+            }
+        } else {
+            unprocessed.append_from_file(in, true);
+        }
         if (unprocessed.operations.empty()) {
             break;
         }
@@ -673,7 +682,7 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
         unprocessed.for_each_operation([&](const Operation &op) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
             sim.measurement_record.write_unwritten_results_to(*writer);
-            if (interactive && (op.gate->flags & ARG_COUNT_SYGIL_ANY)) {
+            if (interactive && op.count_measurement_results()) {
                 putc('\n', out);
                 fflush(out);
             }

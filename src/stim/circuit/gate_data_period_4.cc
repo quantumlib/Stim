@@ -86,11 +86,9 @@ Phases the amplitude of |-> by -i.
                     {{0.5f - 0.5f * i, 0.5f + 0.5f * i}, {0.5f + 0.5f * i, 0.5f - 0.5f * i}},
                     {"+X", "+Y"},
                     R"CIRCUIT(
-H 0
-S 0
-S 0
 S 0
 H 0
+S 0
 )CIRCUIT",
                 };
             },

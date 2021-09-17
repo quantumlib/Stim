@@ -154,7 +154,7 @@ class FixedCapVector {
 };
 
 template <typename T, size_t max_size>
-std::ostream &operator<<(std::ostream &out, FixedCapVector<T, max_size> v) {
+std::ostream &operator<<(std::ostream &out, const FixedCapVector<T, max_size> &v) {
     out << "FixedCapVector{";
     bool first = true;
     for (const auto &t : v) {

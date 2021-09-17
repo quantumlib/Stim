@@ -202,6 +202,9 @@ void MeasureRecordWriterFormatDets::write_bit(bool b) {
 }
 
 void MeasureRecordWriterFormatDets::write_end() {
+    if (first) {
+        fprintf(out, "shot");
+    }
     putc('\n', out);
     position = 0;
     first = true;

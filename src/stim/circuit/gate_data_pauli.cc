@@ -120,13 +120,11 @@ Pauli Y gate.
                     {"-X", "-Z"},
                     R"CIRCUIT(
 S 0
-H 0
-S 0
 S 0
 H 0
 S 0
 S 0
-S 0
+H 0
 )CIRCUIT",
                 };
             },

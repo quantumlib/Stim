@@ -27,10 +27,17 @@ namespace stim {
 
 /// Densely packed bits, allocated with alignment and padding enabling SIMD operations.
 ///
-/// A backing store for a `simd_bits_range_ref`.
+/// Note that, due to the padding, the smallest simd_bits you can have is 256 bits (32 bytes) long.
+///
+/// For performance, simd_bits does not store the "intended" size of the data, only the padded size. Any intended size
+/// has to be tracked separately.
 struct simd_bits {
     size_t num_simd_words;
     union {
+        // It is fair to say that this is the most dangerous block, or danger-enabling block, in the entire codebase.
+        // C++ is very particular when it comes to touching the same memory as if it had multiple different types.
+        // If you know how to make something *for sure work as a flexibly-accessible bag of bits*, please fix this.
+        // In the meantime, always build with `-fno-strict-aliasing` and a short ritual prayer to the compiler gods.
         uint8_t *u8;
         uint16_t *u16;
         uint32_t *u32;

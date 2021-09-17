@@ -22,20 +22,24 @@
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 
 int main_mode_detect(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--detect", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in"},
-        "--detect",
+        {"--detect", "--shots", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in"},
+        "detect",
         argc,
         argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
     bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
-    uint64_t num_shots = (uint64_t)find_int64_argument("--detect", 1, 0, INT64_MAX, argc, argv);
+    uint64_t num_shots =
+        find_argument("--shots", argc, argv)    ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
+        : find_argument("--detect", argc, argv) ? (uint64_t)find_int64_argument("--detect", 1, 0, INT64_MAX, argc, argv)
+                                                : 1;
     if (num_shots == 0) {
         return EXIT_SUCCESS;
     }
@@ -60,13 +64,20 @@ int main_mode_detect(int argc, const char **argv) {
 int main_mode_sample(int argc, const char **argv) {
     try {
         check_for_unknown_arguments(
-            {"--sample", "--skip_reference_sample", "--frame0", "--out_format", "--out", "--in"},
-            "--sample",
+            {"--sample", "--skip_reference_sample", "--frame0", "--out_format", "--out", "--in", "--shots"},
+            "sample",
             argc,
             argv);
         const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
         bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
-        uint64_t num_shots = (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv);
+        uint64_t num_shots = find_argument("--shots", argc, argv)
+                                 ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
+                             : find_argument("--sample", argc, argv)
+                                 ? (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv)
+                                 : 1;
+        if (num_shots == 0) {
+            return EXIT_SUCCESS;
+        }
         FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
         FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
         auto rng = externally_seeded_rng();
@@ -100,6 +111,41 @@ int main_mode_sample(int argc, const char **argv) {
     }
 }
 
+int main_mode_convert(int argc, const char **argv) {
+    check_for_unknown_arguments(
+        {"--m2d",
+         "--circuit",
+         "--in_format",
+         "--append_observables",
+         "--out_format",
+         "--out",
+         "--in",
+         "--skip_reference_sample"},
+        "m2d",
+        argc,
+        argv);
+    const auto &in_format = find_enum_argument("--in_format", nullptr, format_name_to_enum_map, argc, argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+    bool append_observables = find_bool_argument("--append_observables", argc, argv);
+    bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
+    FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "r", argc, argv);
+    auto circuit = Circuit::from_file(circuit_file);
+    fclose(circuit_file);
+
+    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+
+    measurements_to_detection_events(
+        in, in_format.id, out, out_format.id, circuit, append_observables, skip_reference_sample);
+    if (in != stdin) {
+        fclose(in);
+    }
+    if (out != stdout) {
+        fclose(out);
+    }
+    return EXIT_SUCCESS;
+}
+
 int main_mode_analyze_errors(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
@@ -112,7 +158,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
             "--out",
             "--in",
         },
-        "--analyze_errors",
+        "analyze_errors",
         argc,
         argv);
     bool decompose_errors = find_bool_argument("--decompose_errors", argc, argv);
@@ -142,37 +188,46 @@ int main_mode_analyze_errors(int argc, const char **argv) {
 }
 
 int main_mode_repl(int argc, const char **argv) {
-    check_for_unknown_arguments({"--repl"}, "--repl", argc, argv);
+    check_for_unknown_arguments({"--repl"}, "repl", argc, argv);
     auto rng = externally_seeded_rng();
     TableauSimulator::sample_stream(stdin, stdout, SAMPLE_FORMAT_01, true, rng);
     return EXIT_SUCCESS;
 }
 
 int stim::main(int argc, const char **argv) {
-    const char *help = find_argument("--help", argc, argv);
-    if (help != nullptr) {
+    const char *mode = argc > 1 ? argv[1] : "";
+    if (mode[0] == '-') {
+        mode = "";
+    }
+    auto is_mode = [&](const char *name) {
+        return find_argument(name, argc, argv) != nullptr || strcmp(mode, name + 2) == 0;
+    };
+
+    if (is_mode("--help")) {
         return main_help(argc, argv);
     }
 
-    bool mode_repl = find_bool_argument("--repl", argc, argv);
-    bool mode_sample = find_argument("--sample", argc, argv) != nullptr;
-    bool mode_detect = find_argument("--detect", argc, argv) != nullptr;
-    bool mode_analyze_errors = find_bool_argument("--analyze_errors", argc, argv);
-    bool mode_gen = find_argument("--gen", argc, argv) != nullptr;
+    bool mode_repl = is_mode("--repl");
+    bool mode_sample = is_mode("--sample");
+    bool mode_detect = is_mode("--detect");
+    bool mode_analyze_errors = is_mode("--analyze_errors");
+    bool mode_gen = is_mode("--gen");
+    bool mode_convert = is_mode("--m2d");
     bool old_mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
     if (old_mode_detector_hypergraph) {
-        std::cerr << "[DEPRECATION] Use `--analyze_errors` instead of `--detector_hypergraph`\n";
+        std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
         mode_analyze_errors = true;
     }
-    if (mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen != 1) {
-        std::cerr << "\033[31m"
-                     "Need to pick a mode by giving exactly one of the following command line arguments:\n"
-                     "    --repl: Interactive mode. Eagerly sample measurements in input circuit.\n"
-                     "    --sample #: Measurement sampling mode. Bulk sample measurement results from input circuit.\n"
-                     "    --detect #: Detector sampling mode. Bulk sample detection events from input circuit.\n"
-                     "    --analyze_errors: Error analysis mode. Convert circuit into a detector error model.\n"
-                     "    --gen: Circuit generation mode. Produce common error correction circuits.\n"
-                     "\033[0m";
+    int modes_picked = mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert;
+    if (modes_picked != 1) {
+        if (modes_picked > 1) {
+            std::cerr << "More than one mode was specified.\n\n";
+        } else {
+            std::cerr << "No mode was given.\n\n";
+        }
+        std::cerr << "\033[31m";
+        std::cerr << help_for("");
+        std::cerr << "\033[0m";
         return EXIT_FAILURE;
     }
 
@@ -190,6 +245,9 @@ int stim::main(int argc, const char **argv) {
     }
     if (mode_analyze_errors) {
         return main_mode_analyze_errors(argc, argv);
+    }
+    if (mode_convert) {
+        return main_mode_convert(argc, argv);
     }
 
     throw std::out_of_range("Mode not handled.");
