@@ -1,358 +1,231 @@
+# Stim command line reference
 
-# Using Stim from the command line
+## Index
 
-[Command line flags reference](#Stim_command_line_flags_reference)
-
-Stim reads a quantum circuit from `stdin` and writes measurement results to `stdout`.
-The circuit input format is a series of lines, each starting with an optional gate (e.g. `CNOT 0 1`)
-and ending with an optional comment prefixed by `#`.
-The default output format is a string of "0" and "1" characters, indicating measurement results.
-The order of the results is the same as the order of the measurement commands in the input.
-
-# Example Usage
-
-Bit flip and measure a qubit:
-
-```bash
-echo "
-  X 0
-  M 0
-" | stim sample
-```
-
-```
-1
-```
-
-Create and measure a GHZ state, five times:
-
-```bash
-echo "
-  H 0
-  CNOT 0 1 0 2
-  M 0 1 2
-" | stim sample --shots 5
-```
-
-```
-111
-111
-000
-111
-000
-```
-
-Sample several runs of a small noisy surface code with phenomenological type noise:
-
-```bash
-echo "
-  REPEAT 20 {
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
-    H 3 5
-    CNOT 4 1 3 6 5 8
-    CNOT 2 1 8 7 3 4
-    CNOT 0 1 6 7 5 4
-    CNOT 4 7 3 0 5 2
-    H 3 5
-    M 1 7 3 5
-    R 1 7 3 5
-  }
-  M 0 2 4 6 8
-" | stim sample --shots 10
-```
-
-```
-0010001000100010001000100010001000100010001000100010001000100010011011000101010111010
-0000000000000000000000000000000000000000000000000000000000001001100110011001100110011
-0010001000100010001000100010001000100010001000100110001000100010001000100010001010110
-0001000100010001000100010001000100010001000100010001000100010001000100010001000101101
-0010001000100010001000100010001000100010001000100011001100110011001100110011001110110
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0010001000100010001000100010001000100010001000101000100010001000100010001000001000000
-0010001000100010101000100010001000110001000100010001000100000001000100010001000100000
-0010001000100010001000100010001000100010001100100010101010101010101010101010101010011
-0000000000000000000000000000000000000000000001000100010001001000100011001100110000100
-```
-
-Sample detection events in a repetition code with circuit level noise,
-include two qubit depolarizing noise when performing a CNOT.
-Instead of listing all 0s and 1s, print the locations of the 1s in each line:
-
-```bash
-echo "
-  M 1 3 5 7
-  REPEAT 100 {
-    DEPOLARIZE2(0.001) 0 1 2 3 4 5 6 7
-    DEPOLARIZE1(0.001) 8
-    CNOT 0 1 2 3 4 5 6 7
-    DEPOLARIZE2(0.001) 8 7 6 5 4 3 2 1
-    DEPOLARIZE1(0.001) 0
-    CNOT 8 7 6 5 4 3 2 1
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
-    MR 1 3 5 7
-    # Parity measurements should stay consistent over time.
-    DETECTOR rec[-1] rec[-5]
-    DETECTOR rec[-2] rec[-6]
-    DETECTOR rec[-3] rec[-7]
-    DETECTOR rec[-4] rec[-8]
-  }
-  M 0 2 4 6 8
-  # Data measurements should agree with parity measurements.
-  DETECTOR rec[-1] rec[-2] rec[-6]
-  DETECTOR rec[-2] rec[-3] rec[-7]
-  DETECTOR rec[-3] rec[-4] rec[-8]
-  DETECTOR rec[-4] rec[-5] rec[-9]
-  # Any one of the data qubit measurements can be the logical measurement result.
-  OBSERVABLE_INCLUDE(0) rec[-1]
-" | stim detect --shots=10 --out_format=hits
-```
-
-```
-85,89
-83
-
-
-98,103,242,243
-125,129,241,245
-144,152,153,176,180,238,242
-162,166
-147
-204
-```
-
-Compute the circuit's detector hypergraph (the graph whose nodes are detectors/observables and
-whose edges are errors grouped into equivalence classes based on which detectors and observables they invert).
-Output the graph's hyper edges as a series of lines like `error(probability) D0 D1 L2`:
-
-```bash
-echo "
-  M 0 1
-  H 0
-  CNOT 0 1
-  DEPOLARIZE1(0.01) 0
-  X_ERROR(0.1) 1
-  CNOT 0 1
-  H 0
-  M 0 1
-  DETECTOR rec[-1] rec[-3]
-  DETECTOR rec[-2] rec[-4]
-" | stim analyze_errors
-```
-
-```
-error(0.1026756153132975941) D0
-error(0.003344519141621982161) D0 D1
-error(0.003344519141621982161) D1
-```
-# Stim command line flags reference:
 - **(mode)** [stim analyze_errors](#analyze_errors)
     - [--allow_gauge_detectors](#--allow_gauge_detectors)
     - [--approximate_disjoint_errors](#--approximate_disjoint_errors)
     - [--decompose_errors](#--decompose_errors)
     - [--fold_loops](#--fold_loops)
-    - [--out](#--out)
     - [--in](#--in)
+    - [--out](#--out)
 - **(mode)** [stim detect](#detect)
-    - [--out_format](#--out_format)
     - [--append_observables](#--append_observables)
     - [--in](#--in)
     - [--out](#--out)
+    - [--out_format](#--out_format)
     - [--shots](#--shots)
 - **(mode)** [stim gen](#gen)
     - [--after_clifford_depolarization](#--after_clifford_depolarization)
     - [--after_reset_flip_probability](#--after_reset_flip_probability)
-    - [--task](#--task)
     - [--before_measure_flip_probability](#--before_measure_flip_probability)
     - [--before_round_data_depolarization](#--before_round_data_depolarization)
     - [--distance](#--distance)
-    - [--out](#--out)
     - [--in](#--in)
+    - [--out](#--out)
     - [--rounds](#--rounds)
+    - [--task](#--task)
 - **(mode)** [stim help](#help)
 - **(mode)** [stim m2d](#m2d)
-    - [--out_format](#--out_format)
-    - [--in](#--in)
-    - [--out](#--out)
-    - [--in_format](#--in_format)
     - [--circuit](#--circuit)
+    - [--in](#--in)
+    - [--in_format](#--in_format)
+    - [--out](#--out)
+    - [--out_format](#--out_format)
     - [--skip_reference_sample](#--skip_reference_sample)
 - **(mode)** [stim repl](#repl)
 - **(mode)** [stim sample](#sample)
-    - [--out_format](#--out_format)
     - [--in](#--in)
     - [--out](#--out)
-    - [--skip_reference_sample](#--skip_reference_sample)
+    - [--out_format](#--out_format)
     - [--shots](#--shots)
-- <a name="analyze_errors"></a>**`stim analyze_errors`**
-    
-    *Converts a circuit into a detector error model.*
-    
-    Determines the detectors and logical observables that are flipped by each error channel in the given circuit, and
-    summarizes this information as an error model framed entirely in terms of independent error mechanisms that flip sets of
-    detectors and observables.
-    
-    stdin: The circuit to convert into a detector error model.
-    
-    stdout: The detector error model in [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
-    
-    stderr:
-        Circuit failed to parse.
-        Failed to produce a graphlike detector error model but `--decompose_errors` was set.
-        Circuit contained gauge detectors but `--allow_gauge_detectors` wasn't set.
-        Circuit contained disjoint error channels but `--approximate_disjoint_errors` wasn't set.
-    
-    Note: currently, the `ELSE_CORRELATED_ERROR` instruction is not supported by this mode.
-    
-    - Example:
-    
-        ```
-        >>> stim analyze_errors
-        ... # Single-shot X-basis rep code circuit.
-        ... RX 0 1 2 3 4 5 6
-        ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-        ... Z_ERROR(0.125) 0 1 2 3 4 5 6
-        ... MPP X0 X1 X2 X3 X4 X5 X6
-        ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-        ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-        ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-        ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-        ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-        ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-        ... OBSERVABLE_INCLUDE(0) rec[-1]
-        error(0.125) D0 D1
-        error(0.125) D0 L0
-        error(0.125) D1 D2
-        error(0.125) D2 D3
-        error(0.125) D3 D4
-        error(0.125) D4 D5
-        error(0.125) D5
-        ```
-    
-    Flags used with this mode:
-        - [--allow_gauge_detectors](#--allow_gauge_detectors)
-        - [--approximate_disjoint_errors](#--approximate_disjoint_errors)
-        - [--decompose_errors](#--decompose_errors)
-        - [--fold_loops](#--fold_loops)
-        - [--out](#--out)
-        - [--in](#--in)
-    
-- <a name="detect"></a>**`stim detect`**
-    
-    *Samples detection events from a circuit.*
-    
-    stdin: The circuit, specified using the stim circuit file format, to sample detection events from.
-    
-    stdout: The sampled detection event data. Each output bit corresponds to a `DETECTOR` instruction or (if
-        `--append_observables` is specified) accumulated results from `OBSERVABLE_INCLUDE` instructions.
-    
-    See also: `stim help DETECTOR` and `stim help OBSERVABLE_INCLUDE`.
-    
-    - Examples:
-    
-        ```
-        >>> stim detect --shots 5
-        ... H 0
-        ... CNOT 0 1
-        ... X_ERROR(0.1) 0 1
-        ... M 0 1
-        ... DETECTOR rec[-1] rec[-2]
-        0
-        1
-        0
-        0
-        0
-        ```
-    
-        ```
-        >>> stim detect --shots 10 --append_observables
-        ... # Single-shot X-basis rep code circuit.
-        ... RX 0 1 2 3 4 5 6
-        ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-        ... Z_ERROR(0.1) 0 1 2 3 4 5 6
-        ... MPP X0 X1 X2 X3 X4 X5 X6
-        ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-        ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-        ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-        ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-        ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-        ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-        ... OBSERVABLE_INCLUDE(0) rec[-1]
-        0110000
-        0000000
-        1000001
-        0110010
-        1100000
-        0000010
-        1000001
-        0110000
-        0000000
-        0011000
-        ```
-    
-        ```
-        >>> stim detect --shots 10 --append_observables --out_format=dets
-        ... # Single-shot X-basis rep code circuit.
-        ... RX 0 1 2 3 4 5 6
-        ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-        ... Z_ERROR(0.1) 0 1 2 3 4 5 6
-        ... MPP X0 X1 X2 X3 X4 X5 X6
-        ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-        ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-        ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-        ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-        ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-        ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-        ... OBSERVABLE_INCLUDE(0) rec[-1]
-        shot D1 D2
-        shot
-        shot D0 L0
-        shot D1 D2 D5
-        shot D0 D1
-        shot D5
-        shot D0 L0
-        shot D1 D2
-        shot
-        shot D2 D3
-        ```
-    
-    Flags used with this mode:
-        - [--out_format](#--out_format)
-        - [--append_observables](#--append_observables)
-        - [--in](#--in)
-        - [--out](#--out)
-        - [--shots](#--shots)
-    
-- <a name="gen"></a>**`stim gen`**
-    
-    *Generates example circuits.*
-    
-    The generated circuits include annotations for noise, detectors, logical observables, the spacetial locations of qubits,
-    the spacetime locations of detectors, and the inexorable passage of time steps.
-    
-    stdout: A circuit in [stim's circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-    
-    The type of circuit to generate is specified using the `--code` and `--task` flags. Each code supports different tasks.
-    Other information that must be specified is the number of `--rounds`, the `--distance`, and any desired noise.
-    
-    - Example:
-    
-        ```
-        >>> stim gen --code repetition_code --task memory --distance 3 --rounds 100 --after_clifford_depolarization 0.001
-        # Generated repetition_code circuit.
-        # task: memory
-        # rounds: 100
-        # distance: 3
-        # before_round_data_depolarization: 0
-        # before_measure_flip_probability: 0
-        # after_reset_flip_probability: 0
-        # after_clifford_depolarization: 0.001
-        # layout:
-        # L0 Z1 d2 Z3 d4
-        # Legend:
-        #     d# = data qubit
-        #     L# = data qubit with logical observable crossing
-        #     Z# = measurement qubit
-        R 0 1 2 3 4
+    - [--skip_reference_sample](#--skip_reference_sample)
+## Modes
+
+<a name="analyze_errors"></a>
+### stim analyze_errors
+
+*Converts a circuit into a detector error model.*
+
+Determines the detectors and logical observables that are flipped by each error channel in the given circuit, and
+summarizes this information as an error model framed entirely in terms of independent error mechanisms that flip sets of
+detectors and observables.
+
+stdin: The circuit to convert into a detector error model.
+
+stdout: The detector error model in [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
+
+stderr:
+    Circuit failed to parse.
+    Failed to produce a graphlike detector error model but `--decompose_errors` was set.
+    Circuit contained gauge detectors but `--allow_gauge_detectors` wasn't set.
+    Circuit contained disjoint error channels but `--approximate_disjoint_errors` wasn't set.
+
+Note: currently, the `ELSE_CORRELATED_ERROR` instruction is not supported by this mode.
+
+- Example:
+
+    ```
+    >>> stim analyze_errors
+    ... # Single-shot X-basis rep code circuit.
+    ... RX 0 1 2 3 4 5 6
+    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
+    ... Z_ERROR(0.125) 0 1 2 3 4 5 6
+    ... MPP X0 X1 X2 X3 X4 X5 X6
+    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
+    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
+    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
+    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
+    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
+    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
+    ... OBSERVABLE_INCLUDE(0) rec[-1]
+    error(0.125) D0 D1
+    error(0.125) D0 L0
+    error(0.125) D1 D2
+    error(0.125) D2 D3
+    error(0.125) D3 D4
+    error(0.125) D4 D5
+    error(0.125) D5
+    ```
+
+Flags used with this mode:
+- [--allow_gauge_detectors](#--allow_gauge_detectors)
+- [--approximate_disjoint_errors](#--approximate_disjoint_errors)
+- [--decompose_errors](#--decompose_errors)
+- [--fold_loops](#--fold_loops)
+- [--in](#--in)
+- [--out](#--out)
+
+<a name="detect"></a>
+### stim detect
+
+*Samples detection events from a circuit.*
+
+stdin: The circuit, specified using the stim circuit file format, to sample detection events from.
+
+stdout: The sampled detection event data. Each output bit corresponds to a `DETECTOR` instruction or (if
+    `--append_observables` is specified) accumulated results from `OBSERVABLE_INCLUDE` instructions.
+
+See also: `stim help DETECTOR` and `stim help OBSERVABLE_INCLUDE`.
+
+- Examples:
+
+    ```
+    >>> stim detect --shots 5
+    ... H 0
+    ... CNOT 0 1
+    ... X_ERROR(0.1) 0 1
+    ... M 0 1
+    ... DETECTOR rec[-1] rec[-2]
+    0
+    1
+    0
+    0
+    0
+    ```
+
+    ```
+    >>> stim detect --shots 10 --append_observables
+    ... # Single-shot X-basis rep code circuit.
+    ... RX 0 1 2 3 4 5 6
+    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
+    ... Z_ERROR(0.1) 0 1 2 3 4 5 6
+    ... MPP X0 X1 X2 X3 X4 X5 X6
+    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
+    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
+    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
+    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
+    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
+    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
+    ... OBSERVABLE_INCLUDE(0) rec[-1]
+    0110000
+    0000000
+    1000001
+    0110010
+    1100000
+    0000010
+    1000001
+    0110000
+    0000000
+    0011000
+    ```
+
+    ```
+    >>> stim detect --shots 10 --append_observables --out_format=dets
+    ... # Single-shot X-basis rep code circuit.
+    ... RX 0 1 2 3 4 5 6
+    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
+    ... Z_ERROR(0.1) 0 1 2 3 4 5 6
+    ... MPP X0 X1 X2 X3 X4 X5 X6
+    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
+    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
+    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
+    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
+    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
+    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
+    ... OBSERVABLE_INCLUDE(0) rec[-1]
+    shot D1 D2
+    shot
+    shot D0 L0
+    shot D1 D2 D5
+    shot D0 D1
+    shot D5
+    shot D0 L0
+    shot D1 D2
+    shot
+    shot D2 D3
+    ```
+
+Flags used with this mode:
+- [--append_observables](#--append_observables)
+- [--in](#--in)
+- [--out](#--out)
+- [--out_format](#--out_format)
+- [--shots](#--shots)
+
+<a name="gen"></a>
+### stim gen
+
+*Generates example circuits.*
+
+The generated circuits include annotations for noise, detectors, logical observables, the spacetial locations of qubits,
+the spacetime locations of detectors, and the inexorable passage of time steps.
+
+stdout: A circuit in [stim's circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+
+The type of circuit to generate is specified using the `--code` and `--task` flags. Each code supports different tasks.
+Other information that must be specified is the number of `--rounds`, the `--distance`, and any desired noise.
+
+- Example:
+
+    ```
+    >>> stim gen --code repetition_code --task memory --distance 3 --rounds 100 --after_clifford_depolarization 0.001
+    # Generated repetition_code circuit.
+    # task: memory
+    # rounds: 100
+    # distance: 3
+    # before_round_data_depolarization: 0
+    # before_measure_flip_probability: 0
+    # after_reset_flip_probability: 0
+    # after_clifford_depolarization: 0.001
+    # layout:
+    # L0 Z1 d2 Z3 d4
+    # Legend:
+    #     d# = data qubit
+    #     L# = data qubit with logical observable crossing
+    #     Z# = measurement qubit
+    R 0 1 2 3 4
+    TICK
+    CX 0 1 2 3
+    DEPOLARIZE2(0.001) 0 1 2 3
+    TICK
+    CX 2 1 4 3
+    DEPOLARIZE2(0.001) 2 1 4 3
+    TICK
+    MR 1 3
+    DETECTOR(1, 0) rec[-2]
+    DETECTOR(3, 0) rec[-1]
+    REPEAT 99 {
         TICK
         CX 0 1 2 3
         DEPOLARIZE2(0.001) 0 1 2 3
@@ -361,160 +234,155 @@ error(0.003344519141621982161) D1
         DEPOLARIZE2(0.001) 2 1 4 3
         TICK
         MR 1 3
-        DETECTOR(1, 0) rec[-2]
-        DETECTOR(3, 0) rec[-1]
-        REPEAT 99 {
-            TICK
-            CX 0 1 2 3
-            DEPOLARIZE2(0.001) 0 1 2 3
-            TICK
-            CX 2 1 4 3
-            DEPOLARIZE2(0.001) 2 1 4 3
-            TICK
-            MR 1 3
-            SHIFT_COORDS(0, 1)
-            DETECTOR(1, 0) rec[-2] rec[-4]
-            DETECTOR(3, 0) rec[-1] rec[-3]
-        }
-        M 0 2 4
-        DETECTOR(1, 1) rec[-2] rec[-3] rec[-5]
-        DETECTOR(3, 1) rec[-1] rec[-2] rec[-4]
-        OBSERVABLE_INCLUDE(0) rec[-1]
-        ```
-    
-    Flags used with this mode:
-        - [--after_clifford_depolarization](#--after_clifford_depolarization)
-        - [--after_reset_flip_probability](#--after_reset_flip_probability)
-        - [--task](#--task)
-        - [--before_measure_flip_probability](#--before_measure_flip_probability)
-        - [--before_round_data_depolarization](#--before_round_data_depolarization)
-        - [--distance](#--distance)
-        - [--out](#--out)
-        - [--in](#--in)
-        - [--rounds](#--rounds)
-    
-- <a name="help"></a>**`stim help`**
-    
-    *Prints helpful information about stim.*
-    
-    Use `stim help [topic]` for information about specific topics. Available topics include:
-    
-        stim help gates    # List all circuit instructions supported by stim.
-        stim help formats  # List all result formats supported by stim.
-        stim help modes    # List all tasks performed by stim.
-        stim help flags    # List all command line flags supported by stim.
-        stim help [mode]   # Print information about a mode, such as `sample` or `analyze_errors`.
-        stim help [flag]   # Print information about a command line flag, such as `--out` or `--in_format`.
-        stim help [gate]   # Print information about a circuit instruction, such as the `CNOT` gate.
-        stim help [format] # Print information about a supported result format, such as the `01` format.
-    
-- <a name="m2d"></a>**`stim m2d`**
-    
-    *Convert measurement data to detection event data.*
-    
-    Note that this conversion requires taking a reference sample from the circuit, in order to determine whether the
-    measurement sets defining the detectors and observables have an expected parity of 0 or an expected parity of 1.
-    
-    stdin: The measurement data, in the format specified by --in_format.
-    
-    stdout: The detection event data, in the format specified by --out_format (defaults to '01').
-    
-    - Examples:
-    
-        ```
-        >>> echo -e "X 0\nM 0 1\nDETECTOR rec[-2]\nDETECTOR rec[-1]\nOBSERVABLE_INCLUDE(2) rec[-1]" > tmp.stim
-        >>> stim m2d --in_format 01 --out_format dets --circuit tmp.stim --append_observables
-        ... 00
-        ... 01
-        ... 10
-        ... 11
-        shot D0
-        shot D0 D1 L2
-        shot
-        shot D1 L2
-        ```
-    
-    Flags used with this mode:
-        - [--out_format](#--out_format)
-        - [--in](#--in)
-        - [--out](#--out)
-        - [--in_format](#--in_format)
-        - [--circuit](#--circuit)
-        - [--skip_reference_sample](#--skip_reference_sample)
-    
-- <a name="repl"></a>**`stim repl`**
-    
-    *Read-eval-print-loop mode.*
-    
-    Reads operations from stdin while immediately writing measurement results to stdout.
-    
-    stdin: A circuit to execute.
-    
-    stdout: Measurement results.
-    
-    stderr: Ignored errors encountered while parsing/simulating the circuit arriving via stdin.
-    
-    - Example:
-    
-        ```
-        >>> stim repl
-        ... M 0
-        0
-        ... X 0
-        ... M 0
-        1
-        ... X 2 3 9
-        ... M 0 1 2 3 4 5 6 7 8 9
-        1 0 1 1 0 0 0 0 0 1
-        ... REPEAT 5 {
-        ...     R 0 1
-        ...     H 0
-        ...     CNOT 0 1
-        ...     M 0 1
-        ... }
-        00
-        11
-        11
-        00
-        11
-        ```
-    
-- <a name="sample"></a>**`stim sample`**
-    
-    *Samples measurements from a circuit.*
-    
-    stdin: The circuit to sample from, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-    
-    stdout: The sample data.
-    
-    - Examples:
-    
-        ```
-        >>> stim sample --shots 5
-        ... H 0
-        ... CNOT 0 1
-        ... M 0 1
-        00
-        11
-        11
-        00
-        11
-        ```
-    
-        ```
-        >>> stim sample --out_format dets
-        ... X 2 3 5
-        ... M 0 1 2 3 4 5 6 7 8 9
-        shot M2 M3 M5
-        ```
-    
-    Flags used with this mode:
-        - [--out_format](#--out_format)
-        - [--in](#--in)
-        - [--out](#--out)
-        - [--skip_reference_sample](#--skip_reference_sample)
-        - [--shots](#--shots)
-    
+        SHIFT_COORDS(0, 1)
+        DETECTOR(1, 0) rec[-2] rec[-4]
+        DETECTOR(3, 0) rec[-1] rec[-3]
+    }
+    M 0 2 4
+    DETECTOR(1, 1) rec[-2] rec[-3] rec[-5]
+    DETECTOR(3, 1) rec[-1] rec[-2] rec[-4]
+    OBSERVABLE_INCLUDE(0) rec[-1]
+    ```
+
+Flags used with this mode:
+- [--after_clifford_depolarization](#--after_clifford_depolarization)
+- [--after_reset_flip_probability](#--after_reset_flip_probability)
+- [--before_measure_flip_probability](#--before_measure_flip_probability)
+- [--before_round_data_depolarization](#--before_round_data_depolarization)
+- [--distance](#--distance)
+- [--in](#--in)
+- [--out](#--out)
+- [--rounds](#--rounds)
+- [--task](#--task)
+
+<a name="help"></a>
+### stim help
+
+*Prints helpful information about stim.*
+
+Use `stim help [topic]` for information about specific topics. Available topics include:
+
+    stim help gates    # List all circuit instructions supported by stim.
+    stim help formats  # List all result formats supported by stim.
+    stim help modes    # List all tasks performed by stim.
+    stim help flags    # List all command line flags supported by stim.
+    stim help [mode]   # Print information about a mode, such as `sample` or `analyze_errors`.
+    stim help [flag]   # Print information about a command line flag, such as `--out` or `--in_format`.
+    stim help [gate]   # Print information about a circuit instruction, such as the `CNOT` gate.
+    stim help [format] # Print information about a supported result format, such as the `01` format.
+
+<a name="m2d"></a>
+### stim m2d
+
+*Convert measurement data to detection event data.*
+
+Note that this conversion requires taking a reference sample from the circuit, in order to determine whether the
+measurement sets defining the detectors and observables have an expected parity of 0 or an expected parity of 1.
+
+stdin: The measurement data, in the format specified by --in_format.
+
+stdout: The detection event data, in the format specified by --out_format (defaults to '01').
+
+- Examples:
+
+    ```
+    >>> echo -e "X 0\nM 0 1\nDETECTOR rec[-2]\nDETECTOR rec[-1]\nOBSERVABLE_INCLUDE(2) rec[-1]" > tmp.stim
+    >>> stim m2d --in_format 01 --out_format dets --circuit tmp.stim --append_observables
+    ... 00
+    ... 01
+    ... 10
+    ... 11
+    shot D0
+    shot D0 D1 L2
+    shot
+    shot D1 L2
+    ```
+
+Flags used with this mode:
+- [--circuit](#--circuit)
+- [--in](#--in)
+- [--in_format](#--in_format)
+- [--out](#--out)
+- [--out_format](#--out_format)
+- [--skip_reference_sample](#--skip_reference_sample)
+
+<a name="repl"></a>
+### stim repl
+
+*Read-eval-print-loop mode.*
+
+Reads operations from stdin while immediately writing measurement results to stdout.
+
+stdin: A circuit to execute.
+
+stdout: Measurement results.
+
+stderr: Ignored errors encountered while parsing/simulating the circuit arriving via stdin.
+
+- Example:
+
+    ```
+    >>> stim repl
+    ... M 0
+    0
+    ... X 0
+    ... M 0
+    1
+    ... X 2 3 9
+    ... M 0 1 2 3 4 5 6 7 8 9
+    1 0 1 1 0 0 0 0 0 1
+    ... REPEAT 5 {
+    ...     R 0 1
+    ...     H 0
+    ...     CNOT 0 1
+    ...     M 0 1
+    ... }
+    00
+    11
+    11
+    00
+    11
+    ```
+
+<a name="sample"></a>
+### stim sample
+
+*Samples measurements from a circuit.*
+
+stdin: The circuit to sample from, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+
+stdout: The sample data.
+
+- Examples:
+
+    ```
+    >>> stim sample --shots 5
+    ... H 0
+    ... CNOT 0 1
+    ... M 0 1
+    00
+    11
+    11
+    00
+    11
+    ```
+
+    ```
+    >>> stim sample --out_format dets
+    ... X 2 3 5
+    ... M 0 1 2 3 4 5 6 7 8 9
+    shot M2 M3 M5
+    ```
+
+Flags used with this mode:
+- [--in](#--in)
+- [--out](#--out)
+- [--out_format](#--out_format)
+- [--shots](#--shots)
+- [--skip_reference_sample](#--skip_reference_sample)
+
+## Flags
+
 - <a name="--after_clifford_depolarization"></a>**`--after_clifford_depolarization`**
     Adds depolarizing noise after Clifford operations.
     
