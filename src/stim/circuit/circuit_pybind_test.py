@@ -514,3 +514,54 @@ def test_append_instructions_and_blocks():
 
     with pytest.raises(ValueError, match="repeat 0"):
         c.append_operation(stim.CircuitRepeatBlock(0, stim.Circuit("H 1")))
+
+
+def test_circuit_measurement_sampling_seeded():
+    c = stim.Circuit("""
+        H 0
+        M 0
+    """)
+    with pytest.raises(ValueError, match="seed"):
+        c.compile_sampler(seed=-1)
+    with pytest.raises(ValueError, match="seed"):
+        c.compile_sampler(seed=object())
+
+    s1 = c.compile_sampler().sample(256)
+    s2 = c.compile_sampler().sample(256)
+    assert not np.array_equal(s1, s2)
+
+    s1 = c.compile_sampler(seed=None).sample(256)
+    s2 = c.compile_sampler(seed=None).sample(256)
+    assert not np.array_equal(s1, s2)
+
+    s1 = c.compile_sampler(seed=5).sample(256)
+    s2 = c.compile_sampler(seed=5).sample(256)
+    s3 = c.compile_sampler(seed=6).sample(256)
+    assert np.array_equal(s1, s2)
+    assert not np.array_equal(s1, s3)
+
+
+def test_circuit_detector_sampling_seeded():
+    c = stim.Circuit("""
+        X_ERROR(0.5) 0
+        M 0
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="seed"):
+        c.compile_detector_sampler(seed=-1)
+    with pytest.raises(ValueError, match="seed"):
+        c.compile_detector_sampler(seed=object())
+
+    s1 = c.compile_detector_sampler().sample(256)
+    s2 = c.compile_detector_sampler().sample(256)
+    assert not np.array_equal(s1, s2)
+
+    s1 = c.compile_detector_sampler(seed=None).sample(256)
+    s2 = c.compile_detector_sampler(seed=None).sample(256)
+    assert not np.array_equal(s1, s2)
+
+    s1 = c.compile_detector_sampler(seed=5).sample(256)
+    s2 = c.compile_detector_sampler(seed=5).sample(256)
+    s3 = c.compile_detector_sampler(seed=6).sample(256)
+    assert np.array_equal(s1, s2)
+    assert not np.array_equal(s1, s3)
