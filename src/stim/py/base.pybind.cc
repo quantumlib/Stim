@@ -22,9 +22,6 @@ using namespace stim;
 
 static std::shared_ptr<std::mt19937_64> shared_rng;
 
-// Change this number from version to version.
-constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF1234ULL;
-
 std::shared_ptr<std::mt19937_64> PYBIND_SHARED_RNG(const pybind11::object &seed) {
     if (seed.is(pybind11::none())) {
         if (!shared_rng) {

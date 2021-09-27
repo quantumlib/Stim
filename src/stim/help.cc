@@ -31,7 +31,7 @@ using namespace stim;
 struct CommandLineSingleModeData {
     std::string mode_summary;
     std::string mode_description;
-    std::vector<std::string> flags;
+    std::set<std::string> flags;
 };
 
 struct CommandLineFlagData {
@@ -924,16 +924,16 @@ std::string generate_per_mode_markdown(
     Acc out;
     out.indent = indent;
     if (anchor) {
-        out << "<a name=\"" << mode_name << "\"></a>";
+        out << "<a name=\"" << mode_name << "\"></a>\n";
     }
-    out << "**`stim " << mode_name << "`**\n\n";
+    out << "### stim " << mode_name << "\n\n";
     out << "*" << data.mode_summary << "*\n";
     out << data.mode_description;
     if (!data.flags.empty()) {
         out << "\nFlags used with this mode:\n";
         for (const auto &e : data.flags) {
             if (anchor) {
-                out << "    - [" << e << "](#" << e << ")\n";
+                out << "- [" << e << "](#" << e << ")\n";
             } else {
                 out << "    " << e << "\n";
             }
@@ -1024,154 +1024,8 @@ std::map<std::string, std::string> generate_flag_help_markdown() {
 
     std::stringstream markdown;
 
-    markdown << R"PARAGRAPH(
-# Using Stim from the command line
-
-[Command line flags reference](#Stim_command_line_flags_reference)
-
-Stim reads a quantum circuit from `stdin` and writes measurement results to `stdout`.
-The circuit input format is a series of lines, each starting with an optional gate (e.g. `CNOT 0 1`)
-and ending with an optional comment prefixed by `#`.
-The default output format is a string of "0" and "1" characters, indicating measurement results.
-The order of the results is the same as the order of the measurement commands in the input.
-
-# Example Usage
-
-Bit flip and measure a qubit:
-
-```bash
-echo "
-  X 0
-  M 0
-" | stim sample
-```
-
-```
-1
-```
-
-Create and measure a GHZ state, five times:
-
-```bash
-echo "
-  H 0
-  CNOT 0 1 0 2
-  M 0 1 2
-" | stim sample --shots 5
-```
-
-```
-111
-111
-000
-111
-000
-```
-
-Sample several runs of a small noisy surface code with phenomenological type noise:
-
-```bash
-echo "
-  REPEAT 20 {
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
-    H 3 5
-    CNOT 4 1 3 6 5 8
-    CNOT 2 1 8 7 3 4
-    CNOT 0 1 6 7 5 4
-    CNOT 4 7 3 0 5 2
-    H 3 5
-    M 1 7 3 5
-    R 1 7 3 5
-  }
-  M 0 2 4 6 8
-" | stim sample --shots 10
-```
-
-```
-0010001000100010001000100010001000100010001000100010001000100010011011000101010111010
-0000000000000000000000000000000000000000000000000000000000001001100110011001100110011
-0010001000100010001000100010001000100010001000100110001000100010001000100010001010110
-0001000100010001000100010001000100010001000100010001000100010001000100010001000101101
-0010001000100010001000100010001000100010001000100011001100110011001100110011001110110
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0010001000100010001000100010001000100010001000101000100010001000100010001000001000000
-0010001000100010101000100010001000110001000100010001000100000001000100010001000100000
-0010001000100010001000100010001000100010001100100010101010101010101010101010101010011
-0000000000000000000000000000000000000000000001000100010001001000100011001100110000100
-```
-
-Sample detection events in a repetition code with circuit level noise,
-include two qubit depolarizing noise when performing a CNOT.
-Instead of listing all 0s and 1s, print the locations of the 1s in each line:
-
-```bash
-echo "
-  M 1 3 5 7
-  REPEAT 100 {
-    DEPOLARIZE2(0.001) 0 1 2 3 4 5 6 7
-    DEPOLARIZE1(0.001) 8
-    CNOT 0 1 2 3 4 5 6 7
-    DEPOLARIZE2(0.001) 8 7 6 5 4 3 2 1
-    DEPOLARIZE1(0.001) 0
-    CNOT 8 7 6 5 4 3 2 1
-    DEPOLARIZE1(0.001) 0 1 2 3 4 5 6 7 8
-    MR 1 3 5 7
-    # Parity measurements should stay consistent over time.
-    DETECTOR rec[-1] rec[-5]
-    DETECTOR rec[-2] rec[-6]
-    DETECTOR rec[-3] rec[-7]
-    DETECTOR rec[-4] rec[-8]
-  }
-  M 0 2 4 6 8
-  # Data measurements should agree with parity measurements.
-  DETECTOR rec[-1] rec[-2] rec[-6]
-  DETECTOR rec[-2] rec[-3] rec[-7]
-  DETECTOR rec[-3] rec[-4] rec[-8]
-  DETECTOR rec[-4] rec[-5] rec[-9]
-  # Any one of the data qubit measurements can be the logical measurement result.
-  OBSERVABLE_INCLUDE(0) rec[-1]
-" | stim detect --shots=10 --out_format=hits
-```
-
-```
-85,89
-83
-
-
-98,103,242,243
-125,129,241,245
-144,152,153,176,180,238,242
-162,166
-147
-204
-```
-
-Compute the circuit's detector hypergraph (the graph whose nodes are detectors/observables and
-whose edges are errors grouped into equivalence classes based on which detectors and observables they invert).
-Output the graph's hyper edges as a series of lines like `error(probability) D0 D1 L2`:
-
-```bash
-echo "
-  M 0 1
-  H 0
-  CNOT 0 1
-  DEPOLARIZE1(0.01) 0
-  X_ERROR(0.1) 1
-  CNOT 0 1
-  H 0
-  M 0 1
-  DETECTOR rec[-1] rec[-3]
-  DETECTOR rec[-2] rec[-4]
-" | stim analyze_errors
-```
-
-```
-error(0.1026756153132975941) D0
-error(0.003344519141621982161) D0 D1
-error(0.003344519141621982161) D1
-```
-)PARAGRAPH";
-    markdown << "# Stim command line flags reference:\n";
+    markdown << "# Stim command line reference\n\n";
+    markdown << "## Index\n\n";
     for (const auto &kv : data.mode_help) {
         markdown << "- **(mode)** [stim " << kv.first << "](#" << kv.first << ")\n";
         for (const auto &e : kv.second.flags) {
@@ -1179,6 +1033,7 @@ error(0.003344519141621982161) D1
         }
     }
 
+    markdown << "## Modes\n\n";
     for (const auto &kv : data.mode_help) {
         std::string key = upper(kv.first);
         while (true) {
@@ -1189,8 +1044,9 @@ error(0.003344519141621982161) D1
                 break;
             }
         }
-        markdown << "- " << generate_per_mode_markdown(kv.first, kv.second, 4, true) << "\n";
+        markdown << generate_per_mode_markdown(kv.first, kv.second, 0, true) << "\n";
     }
+    markdown << "## Flags\n\n";
     for (const auto &kv : data.non_mode_help) {
         std::string key = upper(kv.first);
         while (true) {
@@ -1229,34 +1085,39 @@ std::map<std::string, std::string> generate_gate_help_markdown() {
         result[g.name] = generate_per_gate_help_markdown(g, 0, false);
     }
 
-    std::map<std::string, std::vector<std::string>> categories;
-    std::set<std::string> gate_names;
+    std::map<std::string, std::set<std::string>> categories;
     for (const auto &g : GATE_DATA.gates()) {
-        if (g.name == GATE_DATA.at(g.name).name) {
-            categories[std::string(g.extra_data_func().category)].push_back(g.name);
-        }
-        gate_names.insert(g.name);
+        const auto &rep = GATE_DATA.at(g.name);
+        categories[std::string(rep.extra_data_func().category)].insert(g.name);
     }
 
     std::stringstream all;
     all << "Gates supported by Stim\n";
     all << "=======================\n";
-    for (const auto &name : gate_names) {
-        all << name << "\n";
+    for (auto &category : categories) {
+        all << category.first.substr(2) << ":\n";
+        for (const auto &name : category.second) {
+            all << "    " << name << "\n";
+        }
     }
+
     result["GATES"] = all.str();
 
     all.str("");
     all << "# Gates supported by Stim\n\n";
-    for (const auto &name : gate_names) {
-        all << "- [" << name << "](#" << name << ")\n";
+    for (auto &category : categories) {
+        all << "- " << category.first.substr(2) << "\n";
+        for (const auto &name : category.second) {
+            all << "    - [" << name << "](#" << name << ")\n";
+        }
     }
     all << "\n";
     for (auto &category : categories) {
         all << "## " << category.first.substr(2) << "\n\n";
-        std::sort(category.second.begin(), category.second.end());
         for (const auto &name : category.second) {
-            all << "- " << generate_per_gate_help_markdown(GATE_DATA.at(name), 4, true) << "\n";
+            if (name == GATE_DATA.at(name).name) {
+                all << "- " << generate_per_gate_help_markdown(GATE_DATA.at(name), 4, true) << "\n";
+            }
         }
     }
     result[std::string("GATES_MARKDOWN")] = all.str();

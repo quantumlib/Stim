@@ -32,7 +32,7 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
         return externally_seeded_rng();
     }
     uint64_t seed = (uint64_t)find_int64_argument("--seed", 0, 0, INT64_MAX, argc, argv);
-    return std::mt19937_64(seed);
+    return std::mt19937_64(seed ^ INTENTIONAL_VERSION_SEED_INCOMPATIBILITY);
 }
 
 int main_mode_detect(int argc, const char **argv) {

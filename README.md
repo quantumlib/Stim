@@ -1,52 +1,77 @@
-# Stim
+# What is Stim?
 
-Stim is a fast simulator for quantum stabilizer circuits.
-Stim is based on the stabilizer tableau representation introduced in
-[Scott Aaronson et al's CHP simulator](https://arxiv.org/abs/quant-ph/0406196).
-Stim makes three key improvements over CHP.
+Stim is a tool for high performance simulation and analysis of quantum stabilizer circuits,
+intended to help with research into quantum error correcting codes.
+Stim can be used as a python package (`pip install stim`),
+as a command line tool (built from source in this repo),
+or as a C++ library (also built from source in this repo).
 
-First, the stabilizer tableau that is being tracked is inverted.
-The tableau tracked by Stim indexes how each qubit's X and Z observables at the current time map to compound observables
-at the start of time (instead of mapping from the start of time to the current time).
-This is done so that the sign of the tracked observables directly store the measurement result to return
-when a measurement is deterministic.
-As a result, deterministic measurements can be completed in linear time instead of quadratic time.
+- [Watch the 15 minute lightning talk presenting Stim at QPL2021](https://youtu.be/7m_JrJIskPM?t=895).
 
-Second, when producing multiple samples, the initial stabilizer simulation is executed without noise in order
-to create a reference sample.
-Once a reference sample from the circuit is available, more samples can be derived by propagating Pauli frames through the circuit,
-using the original sample as a template whose results are flipped or not flipped by the passing Pauli frame.
-As long as all errors are probabilistic Pauli operations, and as long as 50/50 probability Z errors are placed after
-every reset and every measurement, the derived samples will come from the same distribution as a full stabilizer simulation.
-This ensures every gate has a worst case complexity of O(1), instead of O(n) or O(n^2).
+- [Watch Stim used to estimate the threshold of the honeycomb code within days of it being published](https://www.youtube.com/watch?v=E9yj0o1LGII).
 
-Third, data is laid out in a cache friendly way and operated on using vectorized 256-bit-wide SIMD instructions.
-This makes key operations fast.
-For example, Stim can multiply a Pauli string with a *hundred billion terms* into another in *under a second*.
-Pauli string multiplication is a key bottleneck operation when updating a stabilizer tableau.
-Tracking Pauli frames can also benefit from vectorization, by batching the frames into groups of hundreds that are
-all operated on simultaneously by individual CPU instructions.
+Important Stim features include:
 
-# Data Formats
+1. **Really** fast simulation of stabilizer circuits.
+   As in thousands of times faster than what came before.
+   Stim can pull thousands of full shots out of circuits with millions of operations in seconds.
+2. Support for annotating noise, detection events, and logical observables directly into circuits.
+3. The ability to convert circuits into detector error models,
+   which is a convenient format for configuring syndrome decoders.
 
-Circuits can be input using the [stim circuit file format (.stim)](doc/file_format_stim_circuit.md).
+The main limitations of Stim are:
 
+1. All circuits must be stabilizer circuits (eg. no Toffoli gates).
+2. All error channels must be probabilistic Pauli channels (eg. no amplitude decay).
+3. All feedback must be Pauli feedback (eg. no classically controlled S gates).
+
+# How do I use Stim?
+
+See the [Getting Started Notebook](doc/getting_started.ipynb).
+
+For using Stim from python, see the [python documentation](glue/python/README.md) and the [python API reference](doc/python_api_reference_vDev.md).
+For using Stim from the command line, see the [command line documentation](doc/usage_command_line.md).
+For building Stim for yourself, see the [developer documentation](doc/developer_documentation.md).
+
+Circuits are specified using the [stim circuit file format (.stim)](doc/file_format_stim_circuit.md).
+See the [supported gate reference](doc/gates.md) for a list of available circuit instructions, and details on what they do.
 Samples can be output using [a variety of text and binary formats](doc/result_formats.md).
 
-Error models can be output using the [detector error model file format (.dem)](doc/file_format_dem_detector_error_model.md).
+Error models are specified using the [detector error model file format (.dem)](doc/file_format_dem_detector_error_model.md).
 
-# Supported Gates
+# How does Stim work?
 
-See the [gate documentation](doc/gates.md).
+See [the paper describing Stim published in Quantum](https://quantum-journal.org/papers/q-2021-07-06-497/).
 
-# Usage (python)
+In terms of performance, Stim makes three core improvements over previous stabilizer simulators:
 
-See the [python documentation](glue/python/README.md).
+1. Stim's hot loops are heavily vectorized, using 256 bit wide AVX instructions.
+   This makes them very fast.
+   For example, Stim can multiply Pauli strings with 100 billion terms in one second.
+2. When bulk sampling, Stim only uses a general stabilizer simulator for an initial reference sample.
+   After that, it cheaply derives as many samples as needed by propagating simulated errors diffed against the reference.
+   This simple trick is *ridiculously* cheaper than the alternative: constant cost per gate, instead of linear cost or even quadratic cost.
+3. When doing general stabilizer simulation, Stim tracks the inverse of the stabilizer tableau that was historically used.
+   This has the unexpected benefit of making measurements with a deterministic result (given previous measurements) take
+   linear time instead of quadratic time.
 
-# Usage (command line)
 
-See the [command line documentation](doc/usage_command_line.md).
+# Attribution
 
-# Building the code
+When using Stim for research, [please cite](https://quantum-journal.org/papers/q-2021-07-06-497/):
 
-See the [developer documentation](doc/developer_documentation.md).
+```
+@article{gidney2021stim,
+  doi = {10.22331/q-2021-07-06-497},
+  url = {https://doi.org/10.22331/q-2021-07-06-497},
+  title = {Stim: a fast stabilizer circuit simulator},
+  author = {Gidney, Craig},
+  journal = {{Quantum}},
+  issn = {2521-327X},
+  publisher = {{Verein zur F{\"{o}}rderung des Open Access Publizierens in den Quantenwissenschaften}},
+  volume = {5},
+  pages = {497},
+  month = jul,
+  year = {2021}
+}
+```
