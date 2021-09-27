@@ -14,19 +14,28 @@
 
 #include "stim/py/base.pybind.h"
 
+#include <memory>
+
 #include "stim/probability_util.h"
 
 using namespace stim;
 
-static bool shared_rng_initialized;
-static std::mt19937_64 shared_rng;
+static std::shared_ptr<std::mt19937_64> shared_rng;
 
-std::mt19937_64 &PYBIND_SHARED_RNG() {
-    if (!shared_rng_initialized) {
-        shared_rng = externally_seeded_rng();
-        shared_rng_initialized = true;
+std::shared_ptr<std::mt19937_64> PYBIND_SHARED_RNG(const pybind11::object &seed) {
+    if (seed.is(pybind11::none())) {
+        if (!shared_rng) {
+            shared_rng = std::make_shared<std::mt19937_64>(std::move(externally_seeded_rng()));
+        }
+        return shared_rng;
     }
-    return shared_rng;
+
+    try {
+        uint64_t s = pybind11::cast<uint64_t>(seed) ^ INTENTIONAL_VERSION_SEED_INCOMPATIBILITY;
+        return std::make_shared<std::mt19937_64>(s);
+    } catch (const pybind11::cast_error &) {
+        throw std::invalid_argument("Expected seed to be None or a 64 bit unsigned integer.");
+    }
 }
 
 std::string clean_doc_string(const char *c) {

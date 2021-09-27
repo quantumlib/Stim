@@ -339,8 +339,8 @@ void pybind_pauli_string(pybind11::module &m) {
     c.def_static(
         "random",
         [](size_t num_qubits, bool allow_imaginary) {
-            auto &rng = PYBIND_SHARED_RNG();
-            return PyPauliString(PauliString::random(num_qubits, rng), allow_imaginary ? (rng() & 1) : false);
+            std::shared_ptr<std::mt19937_64> rng = PYBIND_SHARED_RNG(pybind11::none());
+            return PyPauliString(PauliString::random(num_qubits, *rng), allow_imaginary ? ((*rng)() & 1) : false);
         },
         pybind11::arg("num_qubits"),
         pybind11::kw_only(),

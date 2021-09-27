@@ -111,9 +111,11 @@ PYBIND11_MODULE(stim, m) {
     // described as `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
 
     pybind_detector_error_model(m);
-    pybind_compiled_detector_sampler(m);
+
+    auto c0 = pybind_compiled_detector_sampler_class(m);
     auto c1 = pybind_compiled_measurement_sampler_class(m);
     pybind_circuit(m);
+    pybind_compiled_detector_sampler_methods(c0);
     pybind_compiled_measurement_sampler_methods(c1);
     pybind_pauli_string(m);
     pybind_tableau(m);

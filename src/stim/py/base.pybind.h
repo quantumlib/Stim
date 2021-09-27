@@ -24,7 +24,7 @@
 #include "stim/circuit/circuit.h"
 #include "stim/io/stim_data_formats.h"
 
-std::mt19937_64 &PYBIND_SHARED_RNG();
+std::shared_ptr<std::mt19937_64> PYBIND_SHARED_RNG(const pybind11::object &seed);
 std::string clean_doc_string(const char *c);
 stim::SampleFormat format_to_enum(const std::string &format);
 bool normalize_index_or_slice(
