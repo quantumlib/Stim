@@ -1292,9 +1292,9 @@
 > Examples:
 >     >>> import stim
 >     >>> c = stim.Circuit('''
->     ...    H 2
->     ...    CNOT 2 3
->     ...    X_ERROR(1.0) 2
+>     ...    H 0
+>     ...    CNOT 0 1
+>     ...    X_ERROR(1.0) 0
 >     ...    M 0 1
 >     ...    DETECTOR rec[-1] rec[-2]
 >     ... ''')
