@@ -150,6 +150,7 @@ endif()
 
 add_library(libstim ${SOURCE_FILES_NO_MAIN})
 set_target_properties(libstim PROPERTIES PREFIX "")
+target_include_directories(libstim PUBLIC src)
 if(NOT(MSVC))
     target_compile_options(libstim PRIVATE -O3 -Wall -Wpedantic -fno-strict-aliasing ${MACHINE_FLAG})
     target_link_options(libstim PRIVATE -pthread -O3)
