@@ -37,7 +37,14 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
 
 int main_mode_detect(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--detect", "--seed", "--shots", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in"},
+        {"--detect",
+         "--seed",
+         "--shots",
+         "--prepend_observables",
+         "--append_observables",
+         "--out_format",
+         "--out",
+         "--in"},
         "detect",
         argc,
         argv);

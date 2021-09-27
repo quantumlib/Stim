@@ -22,11 +22,9 @@
 
 using namespace stim;
 
-CompiledMeasurementSampler::CompiledMeasurementSampler(simd_bits ref_sample, Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng)
-    : ref_sample(ref_sample),
-      circuit(circuit),
-      skip_reference_sample(skip_reference_sample),
-      prng(prng) {
+CompiledMeasurementSampler::CompiledMeasurementSampler(
+    simd_bits ref_sample, Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng)
+    : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), prng(prng) {
 }
 
 pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples) {
@@ -91,10 +89,10 @@ pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler
         m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
 }
 
-CompiledMeasurementSampler py_init_compiled_sampler(const Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed) {
-    simd_bits ref_sample = skip_reference_sample
-                         ? simd_bits(circuit.count_measurements())
-                         : TableauSimulator::reference_sample_circuit(circuit);
+CompiledMeasurementSampler py_init_compiled_sampler(
+    const Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed) {
+    simd_bits ref_sample = skip_reference_sample ? simd_bits(circuit.count_measurements())
+                                                 : TableauSimulator::reference_sample_circuit(circuit);
     return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, PYBIND_SHARED_RNG(seed));
 }
 

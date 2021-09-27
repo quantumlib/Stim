@@ -30,7 +30,11 @@ struct CompiledMeasurementSampler {
     CompiledMeasurementSampler() = delete;
     CompiledMeasurementSampler(const CompiledMeasurementSampler &) = delete;
     CompiledMeasurementSampler(CompiledMeasurementSampler &&) = default;
-    CompiledMeasurementSampler(stim::simd_bits ref_sample, stim::Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng);
+    CompiledMeasurementSampler(
+        stim::simd_bits ref_sample,
+        stim::Circuit circuit,
+        bool skip_reference_sample,
+        std::shared_ptr<std::mt19937_64> prng);
     pybind11::array_t<uint8_t> sample(size_t num_samples);
     pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples);
     void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
@@ -39,6 +43,7 @@ struct CompiledMeasurementSampler {
 
 pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler_class(pybind11::module &m);
 void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c);
-CompiledMeasurementSampler py_init_compiled_sampler(const stim::Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed);
+CompiledMeasurementSampler py_init_compiled_sampler(
+    const stim::Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed);
 
 #endif

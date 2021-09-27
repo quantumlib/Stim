@@ -22,14 +22,14 @@
 
 using namespace stim;
 
-CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng) : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
+CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng)
+    : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
 }
 
 pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
     size_t num_shots, bool prepend_observables, bool append_observables) {
     auto sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng)
-            .transposed();
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
 
     const simd_bits &flat = sample.data;
     std::vector<uint8_t> bytes;
@@ -56,8 +56,7 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
 pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
     size_t num_shots, bool prepend_observables, bool append_observables) {
     auto sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng)
-            .transposed();
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
     size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
 
     void *ptr = sample.data.u8;

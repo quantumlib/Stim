@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "stim/py/base.pybind.h"
+
 #include <memory>
 
 #include "stim/probability_util.h"
