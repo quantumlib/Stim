@@ -809,6 +809,7 @@ TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type)
     auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_DETS, 0, 3, 3);
     simd_bit_table read(6, 1);
     size_t n = reader->read_records_into(read, false);
+    fclose(f);
     ASSERT_EQ(n, 1);
     ASSERT_EQ(read[0][0], false);
     ASSERT_EQ(read[1][0], true);
@@ -816,4 +817,29 @@ TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type)
     ASSERT_EQ(read[3][0], false);
     ASSERT_EQ(read[4][0], true);
     ASSERT_EQ(read[5][0], false);
+}
+
+TEST(MeasureRecordReader, read_r8_detection_event_data) {
+    FILE *f = tmpfile();
+    putc(6, f);
+    putc(1, f);
+    putc(4, f);
+    rewind(f);
+    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_R8, 0, 3, 3);
+    simd_bit_table read(6, 2);
+    size_t n = reader->read_records_into(read, false);
+    fclose(f);
+    ASSERT_EQ(n, 2);
+    ASSERT_EQ(read[0][0], false);
+    ASSERT_EQ(read[1][0], false);
+    ASSERT_EQ(read[2][0], false);
+    ASSERT_EQ(read[3][0], false);
+    ASSERT_EQ(read[4][0], false);
+    ASSERT_EQ(read[5][0], false);
+    ASSERT_EQ(read[0][1], false);
+    ASSERT_EQ(read[1][1], true);
+    ASSERT_EQ(read[2][1], false);
+    ASSERT_EQ(read[3][1], false);
+    ASSERT_EQ(read[4][1], false);
+    ASSERT_EQ(read[5][1], false);
 }
