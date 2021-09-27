@@ -132,10 +132,6 @@ size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffe
     return n;
 }
 
-char MeasureRecordReader::current_result_type() {
-    return 'M';
-}
-
 /// 01 format
 
 MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(FILE *in, size_t bits_per_record)
@@ -493,20 +489,4 @@ bool MeasureRecordReaderFormatDets::start_record() {
 
 bool MeasureRecordReaderFormatDets::is_end_of_record() {
     return position_in_buffer == m_bits_per_record + d_bits_per_record + l_bits_per_record;
-}
-
-char MeasureRecordReaderFormatDets::current_result_type() {
-    if (position_in_buffer < m_bits_per_record && m_bits_per_record) {
-        return 'M';
-    }
-    if (position_in_buffer < m_bits_per_record + d_bits_per_record && d_bits_per_record) {
-        return 'D';
-    }
-    if (l_bits_per_record) {
-        return 'L';
-    }
-    if (d_bits_per_record) {
-        return 'D';
-    }
-    return 'M';
 }
