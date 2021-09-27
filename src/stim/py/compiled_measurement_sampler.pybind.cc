@@ -22,15 +22,13 @@
 
 using namespace stim;
 
-CompiledMeasurementSampler::CompiledMeasurementSampler(Circuit circuit, bool skip_reference_sample)
-    : ref(skip_reference_sample ? simd_bits(circuit.count_measurements())
-                                : TableauSimulator::reference_sample_circuit(circuit)),
-      circuit(circuit),
-      skip_reference_sample(skip_reference_sample) {
+CompiledMeasurementSampler::CompiledMeasurementSampler(
+    simd_bits ref_sample, Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng)
+    : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), prng(prng) {
 }
 
 pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples) {
-    auto sample = FrameSimulator::sample(circuit, ref, num_samples, PYBIND_SHARED_RNG());
+    auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
 
     const simd_bits &flat = sample.data;
     std::vector<uint8_t> bytes;
@@ -53,7 +51,7 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples
 }
 
 pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t num_samples) {
-    auto sample = FrameSimulator::sample(circuit, ref, num_samples, PYBIND_SHARED_RNG());
+    auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
 
     void *ptr = sample.data.u8;
     ssize_t itemsize = sizeof(uint8_t);
@@ -71,7 +69,7 @@ void CompiledMeasurementSampler::sample_write(
     if (out == nullptr) {
         throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
     }
-    FrameSimulator::sample_out(circuit, ref, num_samples, out, f, PYBIND_SHARED_RNG());
+    FrameSimulator::sample_out(circuit, ref_sample, num_samples, out, f, *prng);
     fclose(out);
 }
 
@@ -91,12 +89,20 @@ pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler
         m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
 }
 
+CompiledMeasurementSampler py_init_compiled_sampler(
+    const Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed) {
+    simd_bits ref_sample = skip_reference_sample ? simd_bits(circuit.count_measurements())
+                                                 : TableauSimulator::reference_sample_circuit(circuit);
+    return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, PYBIND_SHARED_RNG(seed));
+}
+
 void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c) {
     c.def(
-        pybind11::init<Circuit, bool>(),
+        pybind11::init(&py_init_compiled_sampler),
         pybind11::arg("circuit"),
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
+        pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             Creates a measurement sampler for the given circuit.
 
@@ -118,6 +124,25 @@ void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasur
                     other. Computing the reference sample is the most time consuming and memory intensive part of
                     simulating the circuit, so promising that the simulator can safely skip that step is an effective
                     optimization.
+                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+
+                    When set to an integer, making the exact same series calls on the exact same machine with the exact
+                    same version of Stim will produce the exact same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+                    present to make it possible to have future optimizations to the random sampling, and is enforced by
+                    introducing intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+                    instructions and one that only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+                    call.
 
             Returns:
                 A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.

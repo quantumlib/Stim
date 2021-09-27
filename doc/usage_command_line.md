@@ -154,6 +154,7 @@ error(0.003344519141621982161) D1
     - [--in](#--in)
 - **(mode)** [stim detect](#detect)
     - [--out_format](#--out_format)
+    - [--seed](#--seed)
     - [--append_observables](#--append_observables)
     - [--in](#--in)
     - [--out](#--out)
@@ -179,6 +180,7 @@ error(0.003344519141621982161) D1
 - **(mode)** [stim repl](#repl)
 - **(mode)** [stim sample](#sample)
     - [--out_format](#--out_format)
+    - [--seed](#--seed)
     - [--in](#--in)
     - [--out](#--out)
     - [--skip_reference_sample](#--skip_reference_sample)
@@ -317,6 +319,7 @@ error(0.003344519141621982161) D1
     
     Flags used with this mode:
         - [--out_format](#--out_format)
+        - [--seed](#--seed)
         - [--append_observables](#--append_observables)
         - [--in](#--in)
         - [--out](#--out)
@@ -510,6 +513,7 @@ error(0.003344519141621982161) D1
     
     Flags used with this mode:
         - [--out_format](#--out_format)
+        - [--seed](#--seed)
         - [--in](#--in)
         - [--out](#--out)
         - [--skip_reference_sample](#--skip_reference_sample)
@@ -708,6 +712,29 @@ error(0.003344519141621982161) D1
     
     The number of rounds must be an integer between 1 and a quintillion (10^18). Different codes/tasks may place additional
     constraints on the number of rounds (e.g. enough rounds to have measured all the stabilizers at least once).
+    
+    
+- <a name="--seed"></a>**`--seed`**
+    Make simulation results PARTIALLY deterministic.
+    
+    When not set, the random number generator is seeded with external system entropy.
+    
+    When set to an integer, using the exact same other flags on the exact same machine with the exact
+    same version of Stim will produce the exact same simulation results.
+    The integer must be a non-negative 64 bit signed integer.
+    
+    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+    present to make it possible to have future optimizations to the random sampling, and is enforced by
+    introducing intentional differences in the seeding strategy from version to version.
+    
+    CAUTION: simulation results *MAY NOT* be consistent across machines. For example, using the same
+    seed on a machine that supports AVX instructions and one that only supports SSE instructions may
+    produce different simulation results.
+    
+    CAUTION: simulation results *MAY NOT* be consistent if you vary other flags and modes. For example,
+    `--skip_reference_sample` may result in fewer calls the to the random number generator before reported
+    sampling begins. More generally, using the same seed for `stim sample` and `stim detect` will not
+    result in detection events corresponding to the measurement results.
     
     
 - <a name="--shots"></a>**`--shots`**

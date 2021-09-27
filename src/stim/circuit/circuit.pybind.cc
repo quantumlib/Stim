@@ -178,11 +178,10 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "compile_sampler",
-        [](const Circuit &self, bool skip_reference_sample) {
-            return CompiledMeasurementSampler(self, skip_reference_sample);
-        },
+        &py_init_compiled_sampler,
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
+        pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
 
@@ -199,6 +198,25 @@ void pybind_circuit(pybind11::module &m) {
                     other. Computing the reference sample is the most time consuming and memory intensive part of
                     simulating the circuit, so promising that the simulator can safely skip that step is an effective
                     optimization.
+                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+
+                    When set to an integer, making the exact same series calls on the exact same machine with the exact
+                    same version of Stim will produce the exact same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+                    present to make it possible to have future optimizations to the random sampling, and is enforced by
+                    introducing intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+                    instructions and one that only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+                    call.
 
             Examples:
                 >>> import stim
@@ -214,11 +232,32 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "compile_detector_sampler",
-        [](Circuit &self) {
-            return CompiledDetectorSampler(self);
-        },
+        &py_init_compiled_detector_sampler,
+        pybind11::kw_only(),
+        pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
+
+            Args:
+                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+
+                    When set to an integer, making the exact same series calls on the exact same machine with the exact
+                    same version of Stim will produce the exact same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+                    present to make it possible to have future optimizations to the random sampling, and is enforced by
+                    introducing intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+                    instructions and one that only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+                    call.
 
             Examples:
                 >>> import stim

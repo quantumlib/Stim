@@ -824,3 +824,73 @@ shot D0
 shot D0 D1
             )output"));
 }
+
+TEST(main, seeded_sampling) {
+    ASSERT_EQ(
+        execute({"sample", "--shots=256", "--seed 5"}, R"input(
+                H 0
+                M 0
+            )input"),
+        execute({"sample", "--shots=256", "--seed 5"}, R"input(
+                H 0
+                M 0
+            )input"));
+
+    ASSERT_NE(
+        execute({"sample", "--shots=256"}, R"input(
+                H 0
+                M 0
+            )input"),
+        execute({"sample", "--shots=256"}, R"input(
+                H 0
+                M 0
+            )input"));
+
+    ASSERT_NE(
+        execute({"sample", "--shots=256", "--seed 5"}, R"input(
+                H 0
+                M 0
+            )input"),
+        execute({"sample", "--shots=256", "--seed 6"}, R"input(
+                H 0
+                M 0
+            )input"));
+}
+
+TEST(main, seeded_detecting) {
+    ASSERT_EQ(
+        execute({"detect", "--shots=256", "--seed 5"}, R"input(
+                X_ERROR(0.5) 0
+                M 0
+                DETECTOR rec[-1]
+            )input"),
+        execute({"detect", "--shots=256", "--seed 5"}, R"input(
+                X_ERROR(0.5) 0
+                M 0
+                DETECTOR rec[-1]
+            )input"));
+
+    ASSERT_NE(
+        execute({"detect", "--shots=256"}, R"input(
+                X_ERROR(0.5) 0
+                M 0
+                DETECTOR rec[-1]
+            )input"),
+        execute({"detect", "--shots=256"}, R"input(
+                X_ERROR(0.5) 0
+                M 0
+                DETECTOR rec[-1]
+            )input"));
+
+    ASSERT_NE(
+        execute({"detect", "--shots=256", "--seed 5"}, R"input(
+                X_ERROR(0.5) 0
+                M 0
+                DETECTOR rec[-1]
+            )input"),
+        execute({"detect", "--shots=256", "--seed 6"}, R"input(
+                X_ERROR(0.5) 0
+                M 0
+                DETECTOR rec[-1]
+            )input"));
+}

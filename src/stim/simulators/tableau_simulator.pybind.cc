@@ -31,7 +31,9 @@ struct TempViewableData {
 };
 
 TableauSimulator create_tableau_simulator() {
-    return TableauSimulator(PYBIND_SHARED_RNG(), 0);
+    std::shared_ptr<std::mt19937_64> rng = PYBIND_SHARED_RNG(pybind11::none());
+    // Note: there is a global shared_ptr to the unseeded rng so it won't deallocate.
+    return TableauSimulator(*rng, 0);
 }
 
 TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args) {

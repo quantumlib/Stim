@@ -22,14 +22,14 @@
 
 using namespace stim;
 
-CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit) : dets_obs(circuit), circuit(std::move(circuit)) {
+CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng)
+    : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
 }
 
 pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
     size_t num_shots, bool prepend_observables, bool append_observables) {
     auto sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, PYBIND_SHARED_RNG())
-            .transposed();
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
 
     const simd_bits &flat = sample.data;
     std::vector<uint8_t> bytes;
@@ -56,8 +56,7 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
 pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
     size_t num_shots, bool prepend_observables, bool append_observables) {
     auto sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, PYBIND_SHARED_RNG())
-            .transposed();
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
     size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
 
     void *ptr = sample.data.u8;
@@ -80,7 +79,7 @@ void CompiledDetectorSampler::sample_write(
     if (out == nullptr) {
         throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
     }
-    detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out, f, PYBIND_SHARED_RNG());
+    detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out, f, *prng);
     fclose(out);
 }
 
@@ -92,11 +91,63 @@ std::string CompiledDetectorSampler::repr() const {
     return result.str();
 }
 
-void pybind_compiled_detector_sampler(pybind11::module &m) {
-    auto c = pybind11::class_<CompiledDetectorSampler>(
-        m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
+CompiledDetectorSampler py_init_compiled_detector_sampler(const Circuit &circuit, const pybind11::object &seed) {
+    return CompiledDetectorSampler(circuit, PYBIND_SHARED_RNG(seed));
+}
 
-    c.def(pybind11::init<Circuit>());
+pybind11::class_<CompiledDetectorSampler> pybind_compiled_detector_sampler_class(pybind11::module &m) {
+    return pybind11::class_<CompiledDetectorSampler>(
+        m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
+}
+
+void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c) {
+    c.def(
+        pybind11::init(&py_init_compiled_detector_sampler),
+        pybind11::arg("circuit"),
+        pybind11::kw_only(),
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            Creates a detector sampler, which can sample the detectors (and optionally observables) in a circuit.
+
+            Args:
+                circuit: The circuit to sample from.
+                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+
+                    When set to an integer, making the exact same series calls on the exact same machine with the exact
+                    same version of Stim will produce the exact same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+                    present to make it possible to have future optimizations to the random sampling, and is enforced by
+                    introducing intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+                    instructions and one that only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+                    call.
+
+            Returns:
+                An initialized stim.CompiledDetectorSampler.
+
+            Examples:
+                >>> import stim
+                >>> c = stim.Circuit('''
+                ...    H 0
+                ...    CNOT 0 1
+                ...    X_ERROR(1.0) 0
+                ...    M 0 1
+                ...    DETECTOR rec[-1] rec[-2]
+                ... ''')
+                >>> s = c.compile_detector_sampler()
+                >>> s.sample(shots=1)
+                array([[1]], dtype=uint8)
+        )DOC")
+            .data());
 
     c.def(
         "sample",
