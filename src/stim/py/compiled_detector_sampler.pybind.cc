@@ -96,10 +96,12 @@ CompiledDetectorSampler py_init_compiled_detector_sampler(const Circuit &circuit
     return CompiledDetectorSampler(circuit, PYBIND_SHARED_RNG(seed));
 }
 
-void pybind_compiled_detector_sampler(pybind11::module &m) {
-    auto c = pybind11::class_<CompiledDetectorSampler>(
+pybind11::class_<CompiledDetectorSampler> pybind_compiled_detector_sampler_class(pybind11::module &m) {
+    return pybind11::class_<CompiledDetectorSampler>(
         m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
+}
 
+void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c) {
     c.def(
         pybind11::init(&py_init_compiled_detector_sampler),
         pybind11::arg("circuit"),

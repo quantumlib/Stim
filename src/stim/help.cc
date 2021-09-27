@@ -126,7 +126,7 @@ stdout: The sample data.
     shot M2 M3 M5
     ```
 )PARAGRAPH",
-        {"--out_format", "--in", "--out", "--skip_reference_sample", "--shots"},
+        {"--out_format", "--seed", "--in", "--out", "--skip_reference_sample", "--shots"},
     };
 
     modes["m2d"] = CommandLineSingleModeData{
@@ -271,7 +271,7 @@ See also: `stim help DETECTOR` and `stim help OBSERVABLE_INCLUDE`.
     shot D2 D3
     ```
 )PARAGRAPH",
-        {"--out_format", "--append_observables", "--in", "--out", "--shots"}};
+        {"--out_format", "--seed", "--append_observables", "--in", "--out", "--shots"}};
 
     flags["--append_observables"] = R"PARAGRAPH(Treat observables as extra detectors at the end of the circuit.
 
@@ -280,7 +280,29 @@ be reported as if they were detectors. For example, if there are 100 detectors a
 the output will contain 110 detectors and the last 10 are the observables. A notable exception to the "observables are
 just extra detectors" behavior of this flag is that, when using `out_format=dets`, the observables are distinguished
 from detectors by being named e.g. `L0` through `L9` instead of `D100` through `D109`.
-)PARAGRAPH",
+)PARAGRAPH";
+
+    flags["--seed"] = R"PARAGRAPH(Make simulation results PARTIALLY deterministic.
+
+When not set, the random number generator is seeded with external system entropy.
+
+When set to an integer, using the exact same other flags on the exact same machine with the exact
+same version of Stim will produce the exact same simulation results.
+The integer must be a non-negative 64 bit signed integer.
+
+CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+present to make it possible to have future optimizations to the random sampling, and is enforced by
+introducing intentional differences in the seeding strategy from version to version.
+
+CAUTION: simulation results *MAY NOT* be consistent across machines. For example, using the same
+seed on a machine that supports AVX instructions and one that only supports SSE instructions may
+produce different simulation results.
+
+CAUTION: simulation results *MAY NOT* be consistent if you vary other flags and modes. For example,
+`--skip_reference_sample` may result in fewer calls the to the random number generator before reported
+sampling begins. More generally, using the same seed for `stim sample` and `stim detect` will not
+result in detection events corresponding to the measurement results.
+)PARAGRAPH";
 
     modes["analyze_errors"] = CommandLineSingleModeData{
         "Converts a circuit into a detector error model.",

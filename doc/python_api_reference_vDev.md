@@ -44,6 +44,7 @@
     - [`stim.CircuitRepeatBlock.body_copy`](#stim.CircuitRepeatBlock.body_copy)
     - [`stim.CircuitRepeatBlock.repeat_count`](#stim.CircuitRepeatBlock.repeat_count)
 - [`stim.CompiledDetectorSampler`](#stim.CompiledDetectorSampler)
+    - [`stim.CompiledDetectorSampler.__init__`](#stim.CompiledDetectorSampler.__init__)
     - [`stim.CompiledDetectorSampler.__repr__`](#stim.CompiledDetectorSampler.__repr__)
     - [`stim.CompiledDetectorSampler.sample`](#stim.CompiledDetectorSampler.sample)
     - [`stim.CompiledDetectorSampler.sample_bit_packed`](#stim.CompiledDetectorSampler.sample_bit_packed)
@@ -796,9 +797,30 @@
 >     stim.Circuit()
 > ```
 
-### `stim.Circuit.compile_detector_sampler(self) -> stim.CompiledDetectorSampler`<a name="stim.Circuit.compile_detector_sampler"></a>
+### `stim.Circuit.compile_detector_sampler(self, *, seed: object = None) -> stim.CompiledDetectorSampler`<a name="stim.Circuit.compile_detector_sampler"></a>
 > ```
 > Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
+> 
+> Args:
+>     seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+>         Must be None or an integer in range(2**64).
+> 
+>         Defaults to None. When set to None, a prng seeded by system entropy is used.
+> 
+>         When set to an integer, making the exact same series calls on the exact same machine with the exact
+>         same version of Stim will produce the exact same simulation results.
+> 
+>         CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+>         present to make it possible to have future optimizations to the random sampling, and is enforced by
+>         introducing intentional differences in the seeding strategy from version to version.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+>         supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+>         instructions and one that only supports SSE instructions may produce different simulation results.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+>         example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+>         call.
 > 
 > Examples:
 >     >>> import stim
@@ -813,7 +835,7 @@
 >     array([[0]], dtype=uint8)
 > ```
 
-### `stim.Circuit.compile_sampler(self, *, skip_reference_sample: bool = False) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
+### `stim.Circuit.compile_sampler(self, *, skip_reference_sample: bool = False, seed: object = None) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
 > ```
 > Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
 > 
@@ -830,6 +852,25 @@
 >         other. Computing the reference sample is the most time consuming and memory intensive part of
 >         simulating the circuit, so promising that the simulator can safely skip that step is an effective
 >         optimization.
+>     seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+>         Must be None or an integer in range(2**64).
+> 
+>         Defaults to None. When set to None, a prng seeded by system entropy is used.
+> 
+>         When set to an integer, making the exact same series calls on the exact same machine with the exact
+>         same version of Stim will produce the exact same simulation results.
+> 
+>         CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+>         present to make it possible to have future optimizations to the random sampling, and is enforced by
+>         introducing intentional differences in the seeding strategy from version to version.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+>         supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+>         instructions and one that only supports SSE instructions may produce different simulation results.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+>         example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+>         call.
 > 
 > Examples:
 >     >>> import stim
@@ -1219,6 +1260,49 @@
 >     5
 > ```
 
+### `stim.CompiledDetectorSampler.__init__(self, circuit: stim.Circuit, *, seed: object = None) -> None`<a name="stim.CompiledDetectorSampler.__init__"></a>
+> ```
+> Creates a detector sampler, which can sample the detectors (and optionally observables) in a circuit.
+> 
+> Args:
+>     circuit: The circuit to sample from.
+>     seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+>         Must be None or an integer in range(2**64).
+> 
+>         Defaults to None. When set to None, a prng seeded by system entropy is used.
+> 
+>         When set to an integer, making the exact same series calls on the exact same machine with the exact
+>         same version of Stim will produce the exact same simulation results.
+> 
+>         CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+>         present to make it possible to have future optimizations to the random sampling, and is enforced by
+>         introducing intentional differences in the seeding strategy from version to version.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+>         supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+>         instructions and one that only supports SSE instructions may produce different simulation results.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+>         example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+>         call.
+> 
+> Returns:
+>     An initialized stim.CompiledDetectorSampler.
+> 
+> Examples:
+>     >>> import stim
+>     >>> c = stim.Circuit('''
+>     ...    H 2
+>     ...    CNOT 2 3
+>     ...    X_ERROR(1.0) 2
+>     ...    M 0 1
+>     ...    DETECTOR rec[-1] rec[-2]
+>     ... ''')
+>     >>> s = c.compile_detector_sampler()
+>     >>> s.sample(shots=1)
+>     array([[1]], dtype=uint8)
+> ```
+
 ### `stim.CompiledDetectorSampler.__repr__(self) -> str`<a name="stim.CompiledDetectorSampler.__repr__"></a>
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledDetectorSampler`.
@@ -1300,7 +1384,7 @@
 >     None.
 > ```
 
-### `stim.CompiledMeasurementSampler.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False) -> None`<a name="stim.CompiledMeasurementSampler.__init__"></a>
+### `stim.CompiledMeasurementSampler.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False, seed: object = None) -> None`<a name="stim.CompiledMeasurementSampler.__init__"></a>
 > ```
 > Creates a measurement sampler for the given circuit.
 > 
@@ -1322,6 +1406,25 @@
 >         other. Computing the reference sample is the most time consuming and memory intensive part of
 >         simulating the circuit, so promising that the simulator can safely skip that step is an effective
 >         optimization.
+>     seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+>         Must be None or an integer in range(2**64).
+> 
+>         Defaults to None. When set to None, a prng seeded by system entropy is used.
+> 
+>         When set to an integer, making the exact same series calls on the exact same machine with the exact
+>         same version of Stim will produce the exact same simulation results.
+> 
+>         CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+>         present to make it possible to have future optimizations to the random sampling, and is enforced by
+>         introducing intentional differences in the seeding strategy from version to version.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+>         supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+>         instructions and one that only supports SSE instructions may produce different simulation results.
+> 
+>         CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+>         example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+>         call.
 > 
 > Returns:
 >     A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.

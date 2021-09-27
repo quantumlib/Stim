@@ -27,9 +27,17 @@
 
 using namespace stim;
 
+std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
+    if (find_argument("--seed", argc, argv) == nullptr) {
+        return externally_seeded_rng();
+    }
+    uint64_t seed = (uint64_t)find_int64_argument("--seed", 0, 0, INT64_MAX, argc, argv);
+    return std::mt19937_64(seed);
+}
+
 int main_mode_detect(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--detect", "--shots", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in"},
+        {"--detect", "--seed", "--shots", "--prepend_observables", "--append_observables", "--out_format", "--out", "--in"},
         "detect",
         argc,
         argv);
@@ -53,7 +61,7 @@ int main_mode_detect(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    auto rng = externally_seeded_rng();
+    auto rng = optionally_seeded_rng(argc, argv);
     detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format.id, rng);
     if (out != stdout) {
         fclose(out);
@@ -64,7 +72,7 @@ int main_mode_detect(int argc, const char **argv) {
 int main_mode_sample(int argc, const char **argv) {
     try {
         check_for_unknown_arguments(
-            {"--sample", "--skip_reference_sample", "--frame0", "--out_format", "--out", "--in", "--shots"},
+            {"--sample", "--seed", "--skip_reference_sample", "--frame0", "--out_format", "--out", "--in", "--shots"},
             "sample",
             argc,
             argv);
@@ -80,7 +88,7 @@ int main_mode_sample(int argc, const char **argv) {
         }
         FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
         FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-        auto rng = externally_seeded_rng();
+        auto rng = optionally_seeded_rng(argc, argv);
         bool deprecated_frame0 = find_bool_argument("--frame0", argc, argv);
         if (deprecated_frame0) {
             std::cerr << "[DEPRECATION] Use `--skip_reference_sample` instead of `--frame0`\n";
