@@ -202,7 +202,6 @@ TEST(MeasureRecordReader, FormatDets) {
     uint8_t bytes[]{0};
     ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0xF8, bytes[0]);
-    ASSERT_EQ(reader->current_result_type(), 'D');
     // bit 8 == 0
     ASSERT_FALSE(reader->read_bit());
     // bits 9..16 == 0xF8
@@ -213,7 +212,6 @@ TEST(MeasureRecordReader, FormatDets) {
     // Logical observables:
     // bit 0 == 0
     ASSERT_FALSE(reader->read_bit());
-    ASSERT_EQ(reader->current_result_type(), 'L');
     // bit 1 == 1
     ASSERT_TRUE(reader->read_bit());
 
@@ -306,18 +304,14 @@ TEST(MeasureRecordReader, FormatDets_OutOfOrder) {
     FILE *tmp = tmpfile_with_contents("shot L2 D3 D1\n");
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 4, 4);
     ASSERT_TRUE(reader->start_record());
-    ASSERT_EQ(reader->current_result_type(), 'D');
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_FALSE(reader->read_bit());
-    ASSERT_EQ(reader->current_result_type(), 'D');
     ASSERT_TRUE(reader->read_bit());
-    ASSERT_EQ(reader->current_result_type(), 'L');
     ASSERT_FALSE(reader->read_bit());
     ASSERT_FALSE(reader->read_bit());
     ASSERT_TRUE(reader->read_bit());
     ASSERT_FALSE(reader->read_bit());
-    ASSERT_EQ(reader->current_result_type(), 'L');
     ASSERT_TRUE(reader->is_end_of_record());
     ASSERT_FALSE(reader->start_record());
 }
@@ -663,14 +657,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
     ASSERT_FALSE(reader->is_end_of_record());
     // Detection events
     uint8_t bytes[]{0};
-    ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x29, bytes[0]);
     // Logical observables
     bytes[0] = 0;
-    ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
-    ASSERT_EQ(6, bytes[0]);
+    ASSERT_EQ(3, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(3, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
 }
@@ -683,14 +675,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L0) {
     ASSERT_FALSE(reader->is_end_of_record());
     // Detection events
     uint8_t bytes[]{0};
-    ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
     ASSERT_EQ(0x69, bytes[0]);
     // Logical observables
     bytes[0] = 0;
-    ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
-    ASSERT_EQ(6, bytes[0]);
+    ASSERT_EQ(3, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(3, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
 }
@@ -703,14 +693,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L1) {
     ASSERT_FALSE(reader->is_end_of_record());
     // Detection events
     uint8_t bytes[]{0};
-    ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
-    ASSERT_EQ(0x29, bytes[0]);
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(0xA9, bytes[0]);
     // Logical observables
     bytes[0] = 0;
-    ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
-    ASSERT_EQ(7, bytes[0]);
+    ASSERT_EQ(3, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(3, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
 }
@@ -723,14 +711,12 @@ TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D1L1) {
     ASSERT_FALSE(reader->is_end_of_record());
     // Detection events
     uint8_t bytes[]{0};
-    ASSERT_EQ('D', reader->current_result_type());
-    ASSERT_EQ(7, reader->read_bits_into_bytes(bytes));
-    ASSERT_EQ(0x69, bytes[0]);
+    ASSERT_EQ(8, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(0xE9, bytes[0]);
     // Logical observables
     bytes[0] = 0;
-    ASSERT_EQ('L', reader->current_result_type());
-    ASSERT_EQ(4, reader->read_bits_into_bytes(bytes));
-    ASSERT_EQ(7, bytes[0]);
+    ASSERT_EQ(3, reader->read_bits_into_bytes(bytes));
+    ASSERT_EQ(3, bytes[0]);
 
     ASSERT_FALSE(reader->next_record());
 }
@@ -816,4 +802,18 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
 
         fclose(f);
     }
+}
+
+TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type) {
+    FILE *f = tmpfile_with_contents("shot D1 L1");
+    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_DETS, 0, 3, 3);
+    simd_bit_table read(6, 1);
+    size_t n = reader->read_records_into(read, false);
+    ASSERT_EQ(n, 1);
+    ASSERT_EQ(read[0][0], false);
+    ASSERT_EQ(read[1][0], true);
+    ASSERT_EQ(read[2][0], false);
+    ASSERT_EQ(read[3][0], false);
+    ASSERT_EQ(read[4][0], true);
+    ASSERT_EQ(read[5][0], false);
 }

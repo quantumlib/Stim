@@ -93,10 +93,6 @@ struct MeasureRecordReader {
     /// Returns true when the current record has ended. Beyond this point read_bit() throws an exception
     /// and read_bits_into_bytes() returns no data. Note that records in file formats HITS and DETS never end.
     virtual bool is_end_of_record() = 0;
-
-    /// Used to obtain the DETS format prefix character (M for measurement, D for detector, L for logical
-    /// observable). Readers of other formats always return 'M'.
-    virtual char current_result_type();
 };
 
 struct MeasureRecordReaderFormat01 : MeasureRecordReader {
@@ -181,7 +177,6 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     bool next_record() override;
     bool start_record() override;
     bool is_end_of_record() override;
-    char current_result_type() override;
 };
 
 }  // namespace stim
