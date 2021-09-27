@@ -817,3 +817,17 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
         fclose(f);
     }
 }
+
+TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type) {
+    FILE *f = tmpfile_with_contents("shot D1 L1");
+    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_DETS, 0, 3, 3);
+    simd_bit_table read(6, 1);
+    size_t n = reader->read_records_into(read, false);
+    ASSERT_EQ(n, 1);
+    ASSERT_EQ(read[0][0], false);
+    ASSERT_EQ(read[1][0], true);
+    ASSERT_EQ(read[2][0], false);
+    ASSERT_EQ(read[3][0], false);
+    ASSERT_EQ(read[4][0], true);
+    ASSERT_EQ(read[5][0], false);
+}

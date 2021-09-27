@@ -118,14 +118,13 @@ size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffe
     if (is_end_of_record()) {
         return 0;
     }
-    char result_type = current_result_type();
     size_t n = 0;
     for (uint8_t &b : out_buffer) {
         b = 0;
         for (size_t k = 0; k < 8; k++) {
             b |= uint8_t(read_bit()) << k;
             ++n;
-            if (is_end_of_record() || current_result_type() != result_type) {
+            if (is_end_of_record()) {
                 return n;
             }
         }
