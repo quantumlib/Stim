@@ -17,6 +17,7 @@
 #include "stim/io/sparse_shot.h"
 
 #include "gtest/gtest.h"
+
 #include "stim/test_util.test.h"
 
 using namespace stim;
