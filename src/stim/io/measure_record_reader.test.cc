@@ -843,3 +843,22 @@ TEST(MeasureRecordReader, read_r8_detection_event_data) {
     ASSERT_EQ(read[4][1], false);
     ASSERT_EQ(read[5][1], false);
 }
+
+TEST(MeasureRecordReader, read_b8_detection_event_data_full_run_together) {
+    FILE *f = tmpfile();
+    putc(0, f);
+    putc(1, f);
+    putc(2, f);
+    putc(3, f);
+    rewind(f);
+    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_B8, 0, 27, 0);
+    simd_bit_table read(27, 1);
+    size_t n = reader->read_records_into(read, false);
+    fclose(f);
+    ASSERT_EQ(n, 1);
+    auto t = read.transposed();
+    ASSERT_EQ(t[0].u8[0], 0);
+    ASSERT_EQ(t[0].u8[1], 1);
+    ASSERT_EQ(t[0].u8[2], 2);
+    ASSERT_EQ(t[0].u8[3], 3);
+}

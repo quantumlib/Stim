@@ -110,18 +110,15 @@ std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
 }
 
 size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
-    if (is_end_of_record()) {
-        return 0;
-    }
     size_t n = 0;
     for (uint8_t &b : out_buffer) {
         b = 0;
         for (size_t k = 0; k < 8; k++) {
-            b |= uint8_t(read_bit()) << k;
-            ++n;
             if (is_end_of_record()) {
                 return n;
             }
+            b |= uint8_t(read_bit()) << k;
+            ++n;
         }
     }
     return n;
@@ -188,12 +185,25 @@ MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in, size_t bits_p
 }
 
 size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
+    if (out_buffer.empty()) {
+        return 0;
+    }
     if (position >= bits_per_record) {
         return 0;
     }
 
-    if (bits_available > 0) {
+    if (bits_available & 7) {
+        // Partial read from before still had trailing bits.
         return MeasureRecordReader::read_bits_into_bytes(out_buffer);
+    }
+
+    size_t total_read = 0;
+    if (bits_available) {
+        *out_buffer.ptr_start = payload & 0xFF;
+        out_buffer.ptr_start++;
+        bits_available = 0;
+        position += 8;
+        total_read += 8;
     }
 
     size_t n_bits = std::min<size_t>(8 * out_buffer.size(), bits_per_record - position);
@@ -201,7 +211,9 @@ size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> o
     n_bytes = fread(out_buffer.ptr_start, sizeof(uint8_t), n_bytes, in);
     n_bits = std::min<size_t>(8 * n_bytes, n_bits);
     position += n_bits;
-    return n_bits;
+    total_read += n_bits;
+
+    return total_read;
 }
 
 bool MeasureRecordReaderFormatB8::read_bit() {
