@@ -146,15 +146,14 @@ TEST(main, bad_flag) {
              "Recognized command line arguments for `stim gen`:\n"
              "    --after_clifford_depolarization\n"
              "    --after_reset_flip_probability\n"
-             "    --code\n"
-             "    --task\n"
              "    --before_measure_flip_probability\n"
              "    --before_round_data_depolarization\n"
+             "    --code\n"
              "    --distance\n"
-             "    --gen\n"
-             "    --out\n"
              "    --in\n"
+             "    --out\n"
              "    --rounds\n"
+             "    --task\n"
              "\033[0m]\n"));
 }
 

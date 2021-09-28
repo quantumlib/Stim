@@ -19,6 +19,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <sstream>
 
 using namespace stim;
@@ -71,7 +72,11 @@ const char *stim::find_argument(const char *name, int argc, const char **argv) {
 }
 
 void stim::check_for_unknown_arguments(
-    const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv) {
+    const std::vector<const char *> &known_arguments,
+    const std::vector<const char *> &known_but_deprecated_arguments,
+    const char *for_mode,
+    int argc,
+    const char **argv) {
     for (int i = 1; i < argc; i++) {
         if (for_mode != nullptr && i == 1 && strcmp(argv[i], for_mode) == 0) {
             continue;
@@ -83,16 +88,19 @@ void stim::check_for_unknown_arguments(
 
         // Check if there's a matching command line argument.
         int matched = 0;
-        for (size_t j = 0; j < known_arguments.size(); j++) {
-            const char *loc = strstr(argv[i], known_arguments[j]);
-            size_t n = strlen(known_arguments[j]);
-            if (loc == argv[i] && (loc[n] == '\0' || loc[n] == '=')) {
-                // Skip words that are values for a previous flag.
-                if (loc[n] == '\0' && i < argc - 1 && argv[i + 1][0] != '-') {
-                    i++;
+        std::array<const std::vector<const char *> *, 2> both{&known_arguments, &known_but_deprecated_arguments};
+        for (const auto &knowns : both) {
+            for (const auto &known : *knowns) {
+                const char *loc = strstr(argv[i], known);
+                size_t n = strlen(known);
+                if (loc == argv[i] && (loc[n] == '\0' || loc[n] == '=')) {
+                    // Skip words that are values for a previous flag.
+                    if (loc[n] == '\0' && i < argc - 1 && argv[i + 1][0] != '-') {
+                        i++;
+                    }
+                    matched = 1;
+                    break;
                 }
-                matched = 1;
-                break;
             }
         }
 
@@ -106,8 +114,12 @@ void stim::check_for_unknown_arguments(
                 msg << "\033[31mUnrecognized command line argument " << argv[i] << " for `stim " << for_mode << "`.\n";
                 msg << "Recognized command line arguments for `stim " << for_mode << "`:\n";
             }
-            for (size_t j = 0; j < known_arguments.size(); j++) {
-                msg << "    " << known_arguments[j] << "\n";
+            std::set<std::string> known_sorted;
+            for (const auto &v : known_arguments) {
+                known_sorted.insert(v);
+            }
+            for (const auto &v : known_sorted) {
+                msg << "    " << v << "\n";
             }
             msg << "\033[0m";
             throw std::invalid_argument(msg.str());

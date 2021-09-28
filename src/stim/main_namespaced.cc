@@ -37,21 +37,16 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
 
 int main_mode_detect(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--detect",
-         "--seed",
-         "--shots",
-         "--prepend_observables",
-         "--append_observables",
-         "--out_format",
-         "--out",
-         "--in"},
+        {"--seed", "--shots", "--append_observables", "--out_format", "--out", "--in"},
+        {"--detect", "--prepend_observables"},
         "detect",
         argc,
         argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
     bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
     if (prepend_observables) {
-        std::cerr << "[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, not prepended.\n";
+        std::cerr << "[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, "
+                     "not prepended.\n";
     }
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     uint64_t num_shots =
@@ -82,7 +77,8 @@ int main_mode_detect(int argc, const char **argv) {
 int main_mode_sample(int argc, const char **argv) {
     try {
         check_for_unknown_arguments(
-            {"--sample", "--seed", "--skip_reference_sample", "--frame0", "--out_format", "--out", "--in", "--shots"},
+            {"--seed", "--skip_reference_sample", "--out_format", "--out", "--in", "--shots"},
+            {"--sample", "--frame0"},
             "sample",
             argc,
             argv);
@@ -131,14 +127,14 @@ int main_mode_sample(int argc, const char **argv) {
 
 int main_mode_convert(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--m2d",
-         "--circuit",
+        {"--circuit",
          "--in_format",
          "--append_observables",
          "--out_format",
          "--out",
          "--in",
          "--skip_reference_sample"},
+        {"--m2d"},
         "m2d",
         argc,
         argv);
@@ -168,14 +164,13 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
             "--allow_gauge_detectors",
-            "--analyze_errors",
             "--approximate_disjoint_errors",
-            "--detector_hypergraph",
             "--decompose_errors",
             "--fold_loops",
             "--out",
             "--in",
         },
+        {"--analyze_errors", "--detector_hypergraph"},
         "analyze_errors",
         argc,
         argv);
@@ -206,7 +201,7 @@ int main_mode_analyze_errors(int argc, const char **argv) {
 }
 
 int main_mode_repl(int argc, const char **argv) {
-    check_for_unknown_arguments({"--repl"}, "repl", argc, argv);
+    check_for_unknown_arguments({}, {"--repl"}, "repl", argc, argv);
     auto rng = externally_seeded_rng();
     TableauSimulator::sample_stream(stdin, stdout, SAMPLE_FORMAT_01, true, rng);
     return EXIT_SUCCESS;
