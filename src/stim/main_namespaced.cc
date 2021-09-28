@@ -50,6 +50,9 @@ int main_mode_detect(int argc, const char **argv) {
         argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
     bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
+    if (prepend_observables) {
+        std::cerr << "[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, not prepended.\n";
+    }
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     uint64_t num_shots =
         find_argument("--shots", argc, argv)    ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)

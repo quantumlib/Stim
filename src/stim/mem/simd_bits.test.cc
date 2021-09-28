@@ -64,7 +64,7 @@ TEST(simd_bits, aliased_editing_and_bit_refs) {
 }
 
 TEST(simd_util, min_bits_to_num_bits_padded) {
-    const auto &f = &simd_bits::min_bits_to_num_bits_padded;
+    const auto &f = &min_bits_to_num_bits_padded;
     if (sizeof(simd_word) == 256 / 8) {
         ASSERT_EQ(f(0), 0);
         ASSERT_EQ(f(1), 256);
@@ -288,4 +288,14 @@ TEST(simd_bits, popcnt) {
     data.u64[8] = 0xFFFFFFFFFFFFFFFFULL;
     ASSERT_EQ(data.popcnt(), 66);
     ASSERT_EQ(simd_bits(0).popcnt(), 0);
+}
+
+TEST(simd_bits, prefix_ref) {
+    simd_bits data(1024);
+    auto prefix = data.prefix_ref(257);
+    ASSERT_TRUE(prefix.num_bits_padded() >= 257);
+    ASSERT_TRUE(prefix.num_bits_padded() < 1024);
+    ASSERT_FALSE(data[0]);
+    prefix[0] = true;
+    ASSERT_TRUE(data[0]);
 }

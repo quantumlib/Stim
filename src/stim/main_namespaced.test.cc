@@ -50,7 +50,7 @@ std::string execute(std::vector<const char *> flags, const char *std_in_content)
     std::string out = testing::internal::GetCapturedStdout();
     std::string err = testing::internal::GetCapturedStderr();
     if (!err.empty()) {
-        return "[stderr=" + err + "]";
+        return out + "[stderr=" + err + "]";
     }
     if (result != EXIT_SUCCESS) {
         return "[exit code != EXIT_SUCCESS]";
@@ -594,6 +594,8 @@ OBSERVABLE_INCLUDE(0) rec[-2] rec[-1]
             )input")),
         trim(R"output(
 0000
+[stderr=[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, not prepended.
+]
             )output"));
 
     ASSERT_EQ(
@@ -612,6 +614,8 @@ OBSERVABLE_INCLUDE(0) rec[-2]
             )input")),
         trim(R"output(
 1000
+[stderr=[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, not prepended.
+]
             )output"));
 
     ASSERT_EQ(

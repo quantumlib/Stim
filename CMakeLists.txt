@@ -60,6 +60,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/io/measure_record_reader.cc
         src/stim/io/measure_record_writer.cc
         src/stim/io/stim_data_formats.cc
+        src/stim/io/sparse_shot.cc
         src/stim/main_namespaced.cc
         src/stim/mem/bit_ref.cc
         src/stim/mem/simd_bit_table.cc
@@ -98,6 +99,7 @@ set(TEST_FILES
         src/stim/io/measure_record_batch_writer.test.cc
         src/stim/io/measure_record_reader.test.cc
         src/stim/io/measure_record_writer.test.cc
+        src/stim/io/sparse_shot.test.cc
         src/stim/main_namespaced.test.cc
         src/stim/mem/bit_ref.test.cc
         src/stim/mem/fixed_cap_vector.test.cc
@@ -127,6 +129,7 @@ set(BENCHMARK_FILES
         src/stim/benchmark_util.perf.cc
         src/stim/circuit/circuit.perf.cc
         src/stim/circuit/gate_data.perf.cc
+        src/stim/io/measure_record_reader.perf.cc
         src/stim/main_namespaced.perf.cc
         src/stim/mem/simd_bit_table.perf.cc
         src/stim/mem/simd_bits.perf.cc

@@ -44,8 +44,6 @@ struct simd_bits {
         uint64_t *u64;
         simd_word *ptr_simd;
     };
-    static size_t min_bits_to_num_simd_words(size_t min_bits);
-    static size_t min_bits_to_num_bits_padded(size_t min_bits);
 
     /// Constructs a zero-initialized simd_bits with at least the given number of bits.
     explicit simd_bits(size_t min_bits);
@@ -90,6 +88,10 @@ struct simd_bits {
     /// Returns a reference to a sub-range of the bits in this simd_bits.
     inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
         return simd_bits_range_ref(ptr_simd + word_offset, sub_num_simd_words);
+    }
+    /// Returns a reference to a sub-range of the bits at the start of this simd_bits.
+    inline simd_bits_range_ref prefix_ref(size_t unpadded_bit_length) {
+        return simd_bits_range_ref(ptr_simd, min_bits_to_num_simd_words(unpadded_bit_length));
     }
     /// Returns a const reference to a sub-range of the bits in this simd_bits.
     inline const simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) const {
