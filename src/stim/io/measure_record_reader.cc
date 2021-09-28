@@ -88,45 +88,37 @@ std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
     size_t n_measurements,
     size_t n_detection_events,
     size_t n_logical_observables) {
-    if (input_format != SAMPLE_FORMAT_DETS && n_detection_events != 0) {
-        throw std::invalid_argument("Only DETS format support detection event records");
-    }
-    if (input_format != SAMPLE_FORMAT_DETS && n_logical_observables != 0) {
-        throw std::invalid_argument("Only DETS format support logical observable records");
-    }
+    size_t n_total = n_measurements + n_detection_events + n_logical_observables;
 
     switch (input_format) {
         case SAMPLE_FORMAT_01:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in, n_measurements));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in, n_total));
         case SAMPLE_FORMAT_B8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in, n_measurements));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in, n_total));
         case SAMPLE_FORMAT_DETS:
             return std::unique_ptr<MeasureRecordReader>(
                 new MeasureRecordReaderFormatDets(in, n_measurements, n_detection_events, n_logical_observables));
         case SAMPLE_FORMAT_HITS:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in, n_measurements));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in, n_total));
         case SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
         case SAMPLE_FORMAT_R8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in, n_measurements));
+            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in, n_total));
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
 }
 
 size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
-    if (is_end_of_record()) {
-        return 0;
-    }
     size_t n = 0;
     for (uint8_t &b : out_buffer) {
         b = 0;
         for (size_t k = 0; k < 8; k++) {
-            b |= uint8_t(read_bit()) << k;
-            ++n;
             if (is_end_of_record()) {
                 return n;
             }
+            b |= uint8_t(read_bit()) << k;
+            ++n;
         }
     }
     return n;
@@ -193,12 +185,25 @@ MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in, size_t bits_p
 }
 
 size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
+    if (out_buffer.empty()) {
+        return 0;
+    }
     if (position >= bits_per_record) {
         return 0;
     }
 
-    if (bits_available > 0) {
+    if (bits_available & 7) {
+        // Partial read from before still had trailing bits.
         return MeasureRecordReader::read_bits_into_bytes(out_buffer);
+    }
+
+    size_t total_read = 0;
+    if (bits_available) {
+        *out_buffer.ptr_start = payload & 0xFF;
+        out_buffer.ptr_start++;
+        bits_available = 0;
+        position += 8;
+        total_read += 8;
     }
 
     size_t n_bits = std::min<size_t>(8 * out_buffer.size(), bits_per_record - position);
@@ -206,7 +211,9 @@ size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> o
     n_bytes = fread(out_buffer.ptr_start, sizeof(uint8_t), n_bytes, in);
     n_bits = std::min<size_t>(8 * n_bytes, n_bits);
     position += n_bits;
-    return n_bits;
+    total_read += n_bits;
+
+    return total_read;
 }
 
 bool MeasureRecordReaderFormatB8::read_bit() {
@@ -324,9 +331,6 @@ size_t MeasureRecordReaderFormatR8::read_bits_into_bytes(PointerRange<uint8_t> o
             continue;
         }
         for (size_t k = 0; k < 8; k++) {
-            if (!buffered_0s && !buffered_1s && !have_seen_terminal_1) {
-                assert(maybe_buffer_data());
-            }
             if (is_end_of_record()) {
                 return n;
             }
@@ -339,7 +343,8 @@ size_t MeasureRecordReaderFormatR8::read_bits_into_bytes(PointerRange<uint8_t> o
 
 bool MeasureRecordReaderFormatR8::read_bit() {
     if (!buffered_0s && !buffered_1s) {
-        assert(maybe_buffer_data());
+        bool read_any = maybe_buffer_data();
+        assert(read_any);
     }
     if (buffered_0s) {
         buffered_0s--;
