@@ -271,3 +271,14 @@ TEST(simd_bits_range_ref, intersects) {
     ASSERT_EQ(data.intersects(other), true);
     ASSERT_EQ(ref.intersects(other), true);
 }
+
+TEST(simd_bits_range_ref, prefix_ref) {
+    simd_bits data(1024);
+    simd_bits_range_ref ref(data);
+    auto prefix = ref.prefix_ref(257);
+    ASSERT_TRUE(prefix.num_bits_padded() >= 257);
+    ASSERT_TRUE(prefix.num_bits_padded() < 1024);
+    ASSERT_FALSE(data[0]);
+    prefix[0] = true;
+    ASSERT_TRUE(data[0]);
+}

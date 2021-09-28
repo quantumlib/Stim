@@ -24,11 +24,11 @@
 using namespace stim;
 
 simd_bit_table::simd_bit_table(size_t min_bits_major, size_t min_bits_minor)
-    : num_simd_words_major(simd_bits::min_bits_to_num_simd_words(min_bits_major)),
-      num_simd_words_minor(simd_bits::min_bits_to_num_simd_words(min_bits_minor)),
+    : num_simd_words_major(min_bits_to_num_simd_words(min_bits_major)),
+      num_simd_words_minor(min_bits_to_num_simd_words(min_bits_minor)),
       data(
-          simd_bits::min_bits_to_num_bits_padded(min_bits_minor) *
-          simd_bits::min_bits_to_num_bits_padded(min_bits_major)) {
+          min_bits_to_num_bits_padded(min_bits_minor) *
+          min_bits_to_num_bits_padded(min_bits_major)) {
 }
 
 simd_bit_table simd_bit_table::identity(size_t n) {

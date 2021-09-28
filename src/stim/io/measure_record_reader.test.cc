@@ -20,6 +20,7 @@
 
 #include "stim/io/measure_record_writer.h"
 #include "stim/test_util.test.h"
+#include "stim/probability_util.h"
 
 using namespace stim;
 
@@ -36,7 +37,6 @@ FILE *tmpfile_with_contents(const std::string &contents) {
 }
 
 bool maybe_consume_keyword(FILE *in, const std::string &keyword, int &next);
-bool read_uint64(FILE *in, uint64_t &value, int &next, bool include_next = false);
 
 TEST(maybe_consume_keyword, FoundKeyword) {
     int next = 0;
@@ -861,4 +861,109 @@ TEST(MeasureRecordReader, read_b8_detection_event_data_full_run_together) {
     ASSERT_EQ(t[0].u8[1], 1);
     ASSERT_EQ(t[0].u8[2], 2);
     ASSERT_EQ(t[0].u8[3], 3);
+}
+
+TEST(MeasureRecordReader, start_and_read_entire_record) {
+    size_t n = 512 - 8;
+    size_t no = 5;
+    size_t nd = n - no;
+
+    // Compute expected data.
+    simd_bits test_data(n);
+    biased_randomize_bits(0.1, test_data.u64, test_data.u64 + test_data.num_u64_padded(), SHARED_TEST_RNG());
+    SparseShot sparse_test_data;
+    for (size_t k = 0; k < nd; k++) {
+        if (test_data[k]) {
+            sparse_test_data.hits.push_back(k);
+        }
+    }
+    for (size_t k = 0; k < no; k++) {
+        if (test_data[k + nd]) {
+            sparse_test_data.obs_mask |= 1 << k;
+        }
+    }
+
+    for (const auto &kv : format_name_to_enum_map) {
+        SampleFormat format = kv.second.id;
+        if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
+            // TODO: support this format.
+            continue;
+        }
+
+        // Write data to file.
+        FILE *f = tmpfile();
+        {
+            auto writer = MeasureRecordWriter::make(f, format);
+            writer->begin_result_type('D');
+            for (size_t k = 0; k < nd; k++) {
+                writer->write_bit(test_data[k]);
+            }
+            writer->begin_result_type('L');
+            for (size_t k = 0; k < no; k++) {
+                writer->write_bit(test_data[k + nd]);
+            }
+            writer->write_end();
+        }
+
+        {
+            auto reader = MeasureRecordReader::make(f, format, 0, nd, no);
+
+            // Check sparse record read.
+            SparseShot sparse_out;
+            rewind(f);
+            ASSERT_TRUE(reader->start_and_read_entire_record(sparse_out));
+            ASSERT_EQ(sparse_out, sparse_test_data);
+            ASSERT_FALSE(reader->start_and_read_entire_record(sparse_out));
+
+            rewind(f);
+            simd_bits dense_out(n);
+            ASSERT_TRUE(reader->start_and_read_entire_record(dense_out));
+            for (size_t k = 0; k < n; k++) {
+                ASSERT_EQ(dense_out[k], test_data[k]);
+            }
+            ASSERT_FALSE(reader->start_and_read_entire_record(dense_out));
+        }
+
+        fclose(f);
+    }
+}
+
+TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
+    simd_bits test_data(256);
+    SparseShot sparse_test_data;
+
+    for (const auto &kv : format_name_to_enum_map) {
+        SampleFormat format = kv.second.id;
+        if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
+            // TODO: support this format.
+            continue;
+        }
+
+        // Write data to file.
+        FILE *f = tmpfile();
+        {
+            auto writer = MeasureRecordWriter::make(f, format);
+            writer->write_bytes({test_data.u8, test_data.u8 + 32});
+            writer->write_end();
+        }
+
+        {
+            auto reader = MeasureRecordReader::make(f, format, 256, 0, 0);
+
+            // Check sparse record read.
+            SparseShot sparse_out;
+            rewind(f);
+            ASSERT_TRUE(reader->start_and_read_entire_record(sparse_out));
+            ASSERT_EQ(sparse_out, sparse_test_data);
+            ASSERT_FALSE(reader->start_and_read_entire_record(sparse_out));
+
+            rewind(f);
+            simd_bits dense_out(256);
+            ASSERT_TRUE(reader->start_and_read_entire_record(dense_out));
+            ASSERT_EQ(dense_out, test_data);
+            ASSERT_FALSE(reader->start_and_read_entire_record(dense_out));
+        }
+
+        fclose(f);
+    }
 }

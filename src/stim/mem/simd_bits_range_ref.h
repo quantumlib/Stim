@@ -26,6 +26,14 @@
 
 namespace stim {
 
+constexpr size_t min_bits_to_num_bits_padded(size_t min_bits) {
+    return (min_bits + (sizeof(simd_word) * 8 - 1)) & ~(sizeof(simd_word) * 8 - 1);
+}
+
+constexpr size_t min_bits_to_num_simd_words(size_t min_bits) {
+    return (min_bits_to_num_bits_padded(min_bits) / sizeof(simd_word)) >> 3;
+}
+
 /// A reference to a range of bits that support SIMD operations (e.g. they are aligned and padded correctly).
 ///
 /// Conceptually behaves the same as a reference like `int &`, as opposed to a pointer like `int *`. For example, the
@@ -73,6 +81,10 @@ struct simd_bits_range_ref {
     /// Returns a const reference to a given bit within the referenced range.
     inline const bit_ref operator[](size_t k) const {
         return bit_ref(u8, k);
+    }
+    /// Returns a reference to a sub-range of the bits at the start of this simd_bits.
+    inline simd_bits_range_ref prefix_ref(size_t unpadded_bit_length) {
+        return simd_bits_range_ref(ptr_simd, min_bits_to_num_simd_words(unpadded_bit_length));
     }
     /// Returns a reference to a sub-range of the bits in the referenced range.
     inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
