@@ -278,9 +278,11 @@ TEST(measurements_to_detection_events, file_01_to_dets_no_obs) {
     rewind(in);
     FILE *out = tmpfile();
 
-    measurements_to_detection_events(
+    stream_measurements_to_detection_events(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
+        nullptr,
+        (SampleFormat)0,
         out,
         SampleFormat::SAMPLE_FORMAT_DETS,
         Circuit(R"CIRCUIT(
@@ -303,9 +305,11 @@ TEST(measurements_to_detection_events, file_01_to_dets_yes_obs) {
     rewind(in);
     FILE *out = tmpfile();
 
-    measurements_to_detection_events(
+    stream_measurements_to_detection_events(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
+        nullptr,
+        (SampleFormat)0,
         out,
         SampleFormat::SAMPLE_FORMAT_DETS,
         Circuit(R"CIRCUIT(
@@ -322,6 +326,74 @@ TEST(measurements_to_detection_events, file_01_to_dets_yes_obs) {
     ASSERT_EQ(rewind_read_close(out), "shot D0 D2 L9\nshot D0 D2 L9\nshot\n");
 }
 
+TEST(measurements_to_detection_events, with_error_propagation) {
+    FILE *in = tmpfile();
+    fprintf(in, "%s",
+            "00\n"
+            "00\n"
+            "00\n"
+            "00\n"
+            "00\n"
+            "00\n"
+
+            "01\n"
+            "01\n"
+
+            "11\n"
+            "11\n"
+            );
+    rewind(in);
+    FILE *in_frames = tmpfile();
+    fprintf(in_frames, "%s",
+            "00\n00\n"
+            "10\n00\n"
+            "01\n00\n"
+            "00\n10\n"
+            "00\n01\n"
+            "11\n11\n"
+
+            "00\n00\n"
+            "11\n11\n"
+
+            "00\n00\n"
+            "11\n11\n");
+    rewind(in_frames);
+    FILE *out = tmpfile();
+
+    stream_measurements_to_detection_events(
+        in,
+        SampleFormat::SAMPLE_FORMAT_01,
+        in_frames,
+        SampleFormat::SAMPLE_FORMAT_01,
+        out,
+        SampleFormat::SAMPLE_FORMAT_DETS,
+        Circuit(R"CIRCUIT(
+            H 0 1
+            CZ 0 1
+            M 0
+            MX 1
+            DETECTOR rec[-1] rec[-2]
+        )CIRCUIT"),
+        true,
+        false);
+    fclose(in);
+    fclose(in_frames);
+    ASSERT_EQ(rewind_read_close(out),
+              "shot\n" // No error no flip.
+              "shot\n" // X0 doesn't flip.
+              "shot D0\n" // X1 does flip.
+              "shot\n" // Z0 doesn't flip.
+              "shot\n" // Z1 doesn't flip.
+              "shot D0\n"  // All together flips.
+
+              "shot D0\n" // One excited measurement causes a detection event.
+              "shot\n" // All together restores.
+
+              "shot\n" // Two excited measurements is not a detection.
+              "shot D0\n" // All together still flips.
+              );
+}
+
 TEST(measurements_to_detection_events, many_shots) {
     FILE *in = tmpfile();
     std::string expected;
@@ -332,9 +404,11 @@ TEST(measurements_to_detection_events, many_shots) {
     rewind(in);
     FILE *out = tmpfile();
 
-    measurements_to_detection_events(
+    stream_measurements_to_detection_events(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
+        nullptr,
+        (SampleFormat)0,
         out,
         SampleFormat::SAMPLE_FORMAT_DETS,
         Circuit(R"CIRCUIT(
@@ -361,9 +435,11 @@ TEST(measurements_to_detection_events, many_measurements_and_detectors) {
     rewind(in);
     FILE *out = tmpfile();
 
-    measurements_to_detection_events(
+    stream_measurements_to_detection_events(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
+        nullptr,
+        (SampleFormat)0,
         out,
         SampleFormat::SAMPLE_FORMAT_DETS,
         Circuit(R"CIRCUIT(
@@ -385,9 +461,11 @@ TEST(measurements_to_detection_events, file_01_to_01_yes_obs) {
     rewind(in);
     FILE *out = tmpfile();
 
-    measurements_to_detection_events(
+    stream_measurements_to_detection_events(
         in,
         SampleFormat::SAMPLE_FORMAT_01,
+        nullptr,
+        (SampleFormat)0,
         out,
         SampleFormat::SAMPLE_FORMAT_01,
         Circuit(R"CIRCUIT(

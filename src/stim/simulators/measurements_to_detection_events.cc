@@ -133,34 +133,69 @@ simd_bit_table stim::measurements_to_detection_events(
     return out;
 }
 
-void stim::measurements_to_detection_events(
+void stim::stream_measurements_to_detection_events(
     FILE *measurements_in,
-    SampleFormat input_format,
+    SampleFormat measurements_in_format,
+    FILE *optional_initial_error_frames_in,
+    SampleFormat initial_error_frames_in_format,
     FILE *results_out,
-    SampleFormat output_format,
+    SampleFormat results_out_format,
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample) {
+
+    // Circuit metadata.
     size_t num_measurements = circuit.count_measurements();
     size_t num_observables = circuit.num_observables();
     size_t num_detectors = circuit.count_detectors();
     size_t num_od = num_detectors + num_observables * append_observables;
+    size_t num_f_qubits = optional_initial_error_frames_in == nullptr ? 0 : circuit.count_qubits();
     size_t num_buffered_shots = 1024;
-    auto reader = MeasureRecordReader::make(measurements_in, input_format, num_measurements);
-    auto writer = MeasureRecordWriter::make(results_out, output_format);
+    Circuit noiseless = circuit.aliased_noiseless_circuit();
+    simd_bits reference_sample(num_measurements);
+    if (!skip_reference_sample) {
+        reference_sample = TableauSimulator::reference_sample_circuit(noiseless);
+    }
+
+    // Readers / writers.
+    auto reader = MeasureRecordReader::make(measurements_in, measurements_in_format, num_measurements);
+    std::unique_ptr<MeasureRecordReader> initial_frame_reader;
+    auto writer = MeasureRecordWriter::make(results_out, results_out_format);
+    if (optional_initial_error_frames_in != nullptr) {
+        initial_frame_reader = MeasureRecordReader::make(optional_initial_error_frames_in, initial_error_frames_in_format, num_f_qubits);
+    }
+
+    // Buffers and transposed buffers.
     simd_bit_table m_buffer_minor_shots(num_measurements, num_buffered_shots);
     simd_bit_table d_buffer_minor_shots(num_od, num_buffered_shots);
     simd_bit_table d_buffer_major_shots(num_buffered_shots, num_od);
-    simd_bits reference_sample(num_measurements);
-    if (!skip_reference_sample) {
-        reference_sample = TableauSimulator::reference_sample_circuit(circuit);
-    }
+    simd_bit_table f_buffer_major_shots_x(num_buffered_shots, num_f_qubits);
+    simd_bit_table f_buffer_minor_shots_x(num_f_qubits, num_buffered_shots);
+    simd_bit_table f_buffer_major_shots_z(num_buffered_shots, num_f_qubits);
+    simd_bit_table f_buffer_minor_shots_z(num_f_qubits, num_buffered_shots);
 
+    // Data streaming loop.
     while (true) {
         // Read measurement data.
         size_t record_count = reader->read_records_into(m_buffer_minor_shots, false);
         if (record_count == 0) {
             break;
+        }
+
+        // Adjust measurement results based on errors injected into initial frame.
+        if (initial_frame_reader != nullptr) {
+            for (size_t k = 0; k < record_count; k++) {
+                bool bx = initial_frame_reader->start_and_read_entire_record(f_buffer_major_shots_x[k]);
+                bool bz = initial_frame_reader->start_and_read_entire_record(f_buffer_major_shots_z[k]);
+                if (!bx || !bz) {
+                    throw std::invalid_argument(
+                        "The frame data contained fewer frames than the number of shots in the measurement data.");
+                }
+            }
+            f_buffer_major_shots_x.transpose_into(f_buffer_minor_shots_x);
+            f_buffer_major_shots_z.transpose_into(f_buffer_minor_shots_z);
+            auto r = initial_errors_to_flipped_measurements_raw(f_buffer_minor_shots_x, f_buffer_minor_shots_z, noiseless, num_f_qubits, num_measurements);
+            m_buffer_minor_shots.data ^= initial_errors_to_flipped_measurements_raw(f_buffer_minor_shots_x, f_buffer_minor_shots_z, noiseless, num_f_qubits, num_measurements).data;
         }
 
         // Convert measurement data into detection event data.
