@@ -50,7 +50,7 @@ simd_bit_table stim::initial_errors_to_flipped_measurements_raw(
     noiseless_circuit.for_each_operation([&](const Operation &op) {
         (f.*op.gate->frame_simulator_function)(op.target_data);
     });
-    assert(rng1() == rng2()); // Verify no randomness used.
+    assert(rng1() == rng2());  // Verify no randomness used.
     return f.m_record.storage;
 }
 
@@ -143,7 +143,6 @@ void stim::stream_measurements_to_detection_events(
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample) {
-
     // Circuit metadata.
     size_t num_measurements = circuit.count_measurements();
     size_t num_observables = circuit.num_observables();
@@ -162,7 +161,8 @@ void stim::stream_measurements_to_detection_events(
     std::unique_ptr<MeasureRecordReader> initial_frame_reader;
     auto writer = MeasureRecordWriter::make(results_out, results_out_format);
     if (optional_initial_error_frames_in != nullptr) {
-        initial_frame_reader = MeasureRecordReader::make(optional_initial_error_frames_in, initial_error_frames_in_format, num_f_qubits);
+        initial_frame_reader =
+            MeasureRecordReader::make(optional_initial_error_frames_in, initial_error_frames_in_format, num_f_qubits);
     }
 
     // Buffers and transposed buffers.
@@ -194,8 +194,12 @@ void stim::stream_measurements_to_detection_events(
             }
             f_buffer_major_shots_x.transpose_into(f_buffer_minor_shots_x);
             f_buffer_major_shots_z.transpose_into(f_buffer_minor_shots_z);
-            auto r = initial_errors_to_flipped_measurements_raw(f_buffer_minor_shots_x, f_buffer_minor_shots_z, noiseless, num_f_qubits, num_measurements);
-            m_buffer_minor_shots.data ^= initial_errors_to_flipped_measurements_raw(f_buffer_minor_shots_x, f_buffer_minor_shots_z, noiseless, num_f_qubits, num_measurements).data;
+            auto r = initial_errors_to_flipped_measurements_raw(
+                f_buffer_minor_shots_x, f_buffer_minor_shots_z, noiseless, num_f_qubits, num_measurements);
+            m_buffer_minor_shots.data ^=
+                initial_errors_to_flipped_measurements_raw(
+                    f_buffer_minor_shots_x, f_buffer_minor_shots_z, noiseless, num_f_qubits, num_measurements)
+                    .data;
         }
 
         // Convert measurement data into detection event data.

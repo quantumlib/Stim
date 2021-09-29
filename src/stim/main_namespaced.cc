@@ -146,7 +146,8 @@ int main_mode_convert(int argc, const char **argv) {
         argv);
     const auto &in_format = find_enum_argument("--in_format", nullptr, format_name_to_enum_map, argc, argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-    const auto &frame_in_format = find_enum_argument("--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &frame_in_format = find_enum_argument(
+        "--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in_format", "01", format_name_to_enum_map, argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
     FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "r", argc, argv);
@@ -155,16 +156,22 @@ int main_mode_convert(int argc, const char **argv) {
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    FILE *frame_in = find_open_file_argument("--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in", stdin, "r", argc, argv);
+    FILE *frame_in =
+        find_open_file_argument("--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in", stdin, "r", argc, argv);
     if (frame_in == stdin) {
         frame_in = nullptr;
     }
 
     stream_measurements_to_detection_events(
-        in, in_format.id,
-        frame_in, frame_in_format.id,
-        out, out_format.id,
-        circuit, append_observables, skip_reference_sample);
+        in,
+        in_format.id,
+        frame_in,
+        frame_in_format.id,
+        out,
+        out_format.id,
+        circuit,
+        append_observables,
+        skip_reference_sample);
     if (in != stdin) {
         fclose(in);
     }

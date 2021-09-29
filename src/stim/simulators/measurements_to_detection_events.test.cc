@@ -328,35 +328,38 @@ TEST(measurements_to_detection_events, file_01_to_dets_yes_obs) {
 
 TEST(measurements_to_detection_events, with_error_propagation) {
     FILE *in = tmpfile();
-    fprintf(in, "%s",
-            "00\n"
-            "00\n"
-            "00\n"
-            "00\n"
-            "00\n"
-            "00\n"
+    fprintf(
+        in,
+        "%s",
+        "00\n"
+        "00\n"
+        "00\n"
+        "00\n"
+        "00\n"
+        "00\n"
 
-            "01\n"
-            "01\n"
+        "01\n"
+        "01\n"
 
-            "11\n"
-            "11\n"
-            );
+        "11\n"
+        "11\n");
     rewind(in);
     FILE *in_frames = tmpfile();
-    fprintf(in_frames, "%s",
-            "00\n00\n"
-            "10\n00\n"
-            "01\n00\n"
-            "00\n10\n"
-            "00\n01\n"
-            "11\n11\n"
+    fprintf(
+        in_frames,
+        "%s",
+        "00\n00\n"
+        "10\n00\n"
+        "01\n00\n"
+        "00\n10\n"
+        "00\n01\n"
+        "11\n11\n"
 
-            "00\n00\n"
-            "11\n11\n"
+        "00\n00\n"
+        "11\n11\n"
 
-            "00\n00\n"
-            "11\n11\n");
+        "00\n00\n"
+        "11\n11\n");
     rewind(in_frames);
     FILE *out = tmpfile();
 
@@ -378,20 +381,21 @@ TEST(measurements_to_detection_events, with_error_propagation) {
         false);
     fclose(in);
     fclose(in_frames);
-    ASSERT_EQ(rewind_read_close(out),
-              "shot\n" // No error no flip.
-              "shot\n" // X0 doesn't flip.
-              "shot D0\n" // X1 does flip.
-              "shot\n" // Z0 doesn't flip.
-              "shot\n" // Z1 doesn't flip.
-              "shot D0\n"  // All together flips.
+    ASSERT_EQ(
+        rewind_read_close(out),
+        "shot\n"     // No error no flip.
+        "shot\n"     // X0 doesn't flip.
+        "shot D0\n"  // X1 does flip.
+        "shot\n"     // Z0 doesn't flip.
+        "shot\n"     // Z1 doesn't flip.
+        "shot D0\n"  // All together flips.
 
-              "shot D0\n" // One excited measurement causes a detection event.
-              "shot\n" // All together restores.
+        "shot D0\n"  // One excited measurement causes a detection event.
+        "shot\n"     // All together restores.
 
-              "shot\n" // Two excited measurements is not a detection.
-              "shot D0\n" // All together still flips.
-              );
+        "shot\n"     // Two excited measurements is not a detection.
+        "shot D0\n"  // All together still flips.
+    );
 }
 
 TEST(measurements_to_detection_events, many_shots) {
@@ -494,11 +498,7 @@ TEST(measurements_to_detection_events, initial_errors_to_flipped_measurements_tr
     errors_z[0][3] = 1;
 
     auto result = initial_errors_to_flipped_measurements_raw(
-        errors_x,
-        errors_z,
-        circuit.aliased_noiseless_circuit(),
-        circuit.count_qubits(),
-        circuit.count_measurements());
+        errors_x, errors_z, circuit.aliased_noiseless_circuit(), circuit.count_qubits(), circuit.count_measurements());
 
     ASSERT_EQ(result[0][0], true);
     ASSERT_EQ(result[0][1], false);
@@ -530,11 +530,7 @@ TEST(measurements_to_detection_events, initial_errors_to_flipped_measurements_ra
     }
 
     auto result = initial_errors_to_flipped_measurements_raw(
-        errors_x,
-        errors_z,
-        circuit.aliased_noiseless_circuit(),
-        circuit.count_qubits(),
-        circuit.count_measurements());
+        errors_x, errors_z, circuit.aliased_noiseless_circuit(), circuit.count_qubits(), circuit.count_measurements());
 
     for (size_t k = 0; k < 17; k++) {
         bool x0 = k & 1;
@@ -543,7 +539,7 @@ TEST(measurements_to_detection_events, initial_errors_to_flipped_measurements_ra
         bool z1 = k & 8;
         // H 0.
         std::swap(x0, z0);
-        //SQRT_X 1.
+        // SQRT_X 1.
         x1 ^= z1;
         // CZ 0 1.
         z0 ^= x1;
