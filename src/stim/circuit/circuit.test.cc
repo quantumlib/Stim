@@ -979,3 +979,25 @@ TEST(circuit, append_repeat_block) {
     ASSERT_THROW({ c.append_repeat_block(0, a); }, std::invalid_argument);
     ASSERT_THROW({ c.append_repeat_block(0, std::move(a)); }, std::invalid_argument);
 }
+
+TEST(circuit, aliased_noiseless_circuit) {
+    Circuit initial(R"CIRCUIT(
+        H 0
+        X_ERROR(0.1) 0
+        M(0.05) 0
+        REPEAT 100 {
+            CNOT 0 1
+            DEPOLARIZE2(0.1) 0 1
+            MPP(0.1) X0*X1 Z0 Z1
+        }
+    )CIRCUIT");
+    Circuit noiseless = initial.aliased_noiseless_circuit();
+    ASSERT_EQ(noiseless, Circuit(R"CIRCUIT(
+        H 0
+        M 0
+        REPEAT 100 {
+            CNOT 0 1
+            MPP X0*X1 Z0 Z1
+        }
+    )CIRCUIT"));
+}

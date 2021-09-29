@@ -75,6 +75,32 @@ simd_bit_table measurements_to_detection_events(
     bool append_observables,
     bool skip_reference_sample);
 
+/// Propagates errors from the start of a circuit to its end, determining which measurements they flip.
+///
+/// Args:
+///     errors_x: A table of X error frames.
+///         Major index: qubit index.
+///         Minor index: shot index.
+///     errors_Z: A table of Z error frames.
+///         Major index: qubit index.
+///         Minor index: shot index.
+///     noiseless_circuit: The `circuit.aliased_noiseless_circuit()` of the circuit to propagate through.
+///     num_qubits: The number of qubits in the circuit.
+///         This noiseless circuit usually shouldn't disagree on the number of qubits vs the original noisy circuit, but
+///         if they do this is supposed to be the number of qubits in the original noisy circuit.
+///     num_measurements: The number of measurements in the circuit.
+///
+/// Returns:
+///     Measurement flip data.
+///         Major index: measurement index.
+///         Minor index: shot index.
+simd_bit_table initial_errors_to_flipped_measurements_raw(
+    const simd_bit_table &errors_x,
+    const simd_bit_table &errors_z,
+    const Circuit &noiseless_circuit,
+    size_t num_qubits,
+    size_t num_measurements);
+
 }  // namespace stim
 
 #endif

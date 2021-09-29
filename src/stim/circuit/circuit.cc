@@ -995,3 +995,21 @@ void Circuit::append_repeat_block(uint64_t repeat_count, const Circuit &body) {
     auto targets = target_buf.commit_tail();
     operations.push_back({&GATE_DATA.at("REPEAT"), {{}, targets}});
 }
+
+const Circuit Circuit::aliased_noiseless_circuit() const {
+    // HACK: result has pointers into `circuit`!
+    Circuit result;
+    for (const auto &op : operations) {
+        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+            // Drop result flip probability.
+            result.operations.push_back(Operation{op.gate, OperationData{{}, op.target_data.targets}});
+        } else if (!(op.gate->flags & GATE_IS_NOISE)) {
+            // Keep noiseless operations.
+            result.operations.push_back(op);
+        }
+    }
+    for (const auto &block : blocks) {
+        result.blocks.push_back(block.aliased_noiseless_circuit());
+    }
+    return result;
+}

@@ -168,6 +168,12 @@ struct Circuit {
     /// Gets a python-style slice of the circuit's instructions.
     Circuit py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
 
+    /// Returns a noiseless version of the given circuit. The result must live for less time than the given circuit.
+    ///
+    /// CAUTION: for performance, the returned circuit contains pointers into the given circuit!
+    /// The result's lifetime must be shorter than the given circuit's lifetime!
+    const Circuit aliased_noiseless_circuit() const;
+
     template <typename CALLBACK>
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {

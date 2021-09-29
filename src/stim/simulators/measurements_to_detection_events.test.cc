@@ -15,6 +15,7 @@
 #include "stim/simulators/measurements_to_detection_events.h"
 
 #include <gtest/gtest.h>
+#include <stim/gen/gen_surface_code.h>
 
 #include "stim/test_util.test.h"
 
@@ -401,4 +402,75 @@ TEST(measurements_to_detection_events, file_01_to_01_yes_obs) {
         false);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), "1010000000001\n1010000000001\n0000000000000\n");
+}
+
+TEST(measurements_to_detection_events, initial_errors_to_flipped_measurements_trivial) {
+    Circuit circuit(R"CIRCUIT(
+        CNOT 0 1
+        M 1
+    )CIRCUIT");
+    simd_bit_table errors_x(circuit.count_qubits(), 4);
+    simd_bit_table errors_z(circuit.count_qubits(), 4);
+    errors_x[0][0] = 1;
+    errors_x[0][2] = 1;
+    errors_z[0][3] = 1;
+
+    auto result = initial_errors_to_flipped_measurements_raw(
+        errors_x,
+        errors_z,
+        circuit.aliased_noiseless_circuit(),
+        circuit.count_qubits(),
+        circuit.count_measurements());
+
+    ASSERT_EQ(result[0][0], true);
+    ASSERT_EQ(result[0][1], false);
+    ASSERT_EQ(result[0][2], true);
+    ASSERT_EQ(result[0][3], false);
+}
+
+TEST(measurements_to_detection_events, initial_errors_to_flipped_measurements_raw_vs_rewritten) {
+    Circuit circuit(R"CIRCUIT(
+        H 0
+        SQRT_X 1
+        X_ERROR(0.1) 0 1
+        DEPOLARIZE2(0.1) 0 1
+        CZ 0 1
+        MX 1
+        M(0.1) 0
+    )CIRCUIT");
+    simd_bit_table errors_x(circuit.count_qubits(), 17);
+    simd_bit_table errors_z(circuit.count_qubits(), 17);
+    for (size_t k = 0; k < 16; k++) {
+        bool x0 = k & 1;
+        bool x1 = k & 2;
+        bool z0 = k & 4;
+        bool z1 = k & 8;
+        errors_x[0][k] = x0;
+        errors_x[1][k] = x1;
+        errors_z[0][k] = z0;
+        errors_z[1][k] = z1;
+    }
+
+    auto result = initial_errors_to_flipped_measurements_raw(
+        errors_x,
+        errors_z,
+        circuit.aliased_noiseless_circuit(),
+        circuit.count_qubits(),
+        circuit.count_measurements());
+
+    for (size_t k = 0; k < 17; k++) {
+        bool x0 = k & 1;
+        bool x1 = k & 2;
+        bool z0 = k & 4;
+        bool z1 = k & 8;
+        // H 0.
+        std::swap(x0, z0);
+        //SQRT_X 1.
+        x1 ^= z1;
+        // CZ 0 1.
+        z0 ^= x1;
+        z1 ^= x0;
+        ASSERT_EQ(result[0][k], z1);
+        ASSERT_EQ(result[1][k], x0);
+    }
 }

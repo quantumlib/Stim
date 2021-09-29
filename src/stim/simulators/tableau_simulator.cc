@@ -854,24 +854,6 @@ void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposed
     }
 }
 
-Circuit aliased_noiseless_subset(const Circuit &circuit) {
-    // HACK: result has pointers into `circuit`!
-    Circuit result;
-    for (const auto &op : circuit.operations) {
-        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
-            // Drop result flip probability.
-            result.operations.push_back(Operation{op.gate, OperationData{{}, op.target_data.targets}});
-        } else if (!(op.gate->flags & GATE_IS_NOISE)) {
-            // Keep noiseless operations.
-            result.operations.push_back(op);
-        }
-    }
-    for (const auto &block : circuit.blocks) {
-        result.blocks.push_back(aliased_noiseless_subset(block));
-    }
-    return result;
-}
-
 void TableauSimulator::expand_do_circuit(const Circuit &circuit) {
     ensure_large_enough_for_qubits(circuit.count_qubits());
     circuit.for_each_operation([&](const Operation &op) {
@@ -881,7 +863,7 @@ void TableauSimulator::expand_do_circuit(const Circuit &circuit) {
 
 simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
     std::mt19937_64 irrelevant_rng(0);
-    return TableauSimulator::sample_circuit(aliased_noiseless_subset(circuit), irrelevant_rng, +1);
+    return TableauSimulator::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
 }
 
 void TableauSimulator::paulis(const PauliString &paulis) {

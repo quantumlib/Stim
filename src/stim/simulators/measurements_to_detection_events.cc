@@ -16,6 +16,7 @@
 
 #include <cassert>
 
+#include "frame_simulator.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_reader.h"
@@ -25,6 +26,33 @@
 #include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
+
+simd_bit_table stim::initial_errors_to_flipped_measurements_raw(
+    const simd_bit_table &errors_x,
+    const simd_bit_table &errors_z,
+    const Circuit &noiseless_circuit,
+    size_t num_qubits,
+    size_t num_measurements) {
+    size_t batch_size = errors_x.num_minor_bits_padded();
+    assert(errors_z.num_minor_bits_padded() == batch_size);
+    assert(errors_x.num_major_bits_padded() >= num_qubits);
+    assert(errors_x.num_major_bits_padded() == errors_z.num_major_bits_padded());
+
+    // Not simulating, only propagating; no need to seed.
+    std::mt19937_64 rng1(0);
+    std::mt19937_64 rng2(0);
+    FrameSimulator f(num_qubits, batch_size, num_measurements, rng1);
+
+    f.guarantee_anticommutation_via_frame_randomization = false;
+    f.m_record.clear();
+    f.x_table = errors_x;
+    f.z_table = errors_z;
+    noiseless_circuit.for_each_operation([&](const Operation &op) {
+        (f.*op.gate->frame_simulator_function)(op.target_data);
+    });
+    assert(rng1() == rng2()); // Verify no randomness used.
+    return f.m_record.storage;
+}
 
 void measurements_to_detection_events_raw(
     const simd_bit_table &measurement_results_minor_shots,

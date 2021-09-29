@@ -42,6 +42,12 @@ struct FrameSimulator {
     simd_bits last_correlated_error_occurred;  // correlated error flag for each instance.
     std::mt19937_64 &rng;                      // Random number generator used for generating entropy.
 
+    // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
+    // This is necessary for correct sampling.
+    // It should only be disabled when e.g. using the frame simulator to understand how a fixed set of errors will
+    // propagate, without interference from other effects.
+    bool guarantee_anticommutation_via_frame_randomization = true;
+
     FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
 
     /// Returns a batch of measurement-flipped samples from the circuit.
