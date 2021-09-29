@@ -14,6 +14,7 @@
 
 #include "stim/arg_parse.h"
 
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
