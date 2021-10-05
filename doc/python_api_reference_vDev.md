@@ -18,6 +18,7 @@
     - [`stim.Circuit.append_operation`](#stim.Circuit.append_operation)
     - [`stim.Circuit.clear`](#stim.Circuit.clear)
     - [`stim.Circuit.compile_detector_sampler`](#stim.Circuit.compile_detector_sampler)
+    - [`stim.Circuit.compile_m2d_converter`](#stim.Circuit.compile_m2d_converter)
     - [`stim.Circuit.compile_sampler`](#stim.Circuit.compile_sampler)
     - [`stim.Circuit.copy`](#stim.Circuit.copy)
     - [`stim.Circuit.detector_error_model`](#stim.Circuit.detector_error_model)
@@ -27,6 +28,7 @@
     - [`stim.Circuit.num_measurements`](#stim.Circuit.num_measurements)
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
+    - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
 - [`stim.CircuitInstruction`](#stim.CircuitInstruction)
     - [`stim.CircuitInstruction.__eq__`](#stim.CircuitInstruction.__eq__)
     - [`stim.CircuitInstruction.__init__`](#stim.CircuitInstruction.__init__)
@@ -55,6 +57,11 @@
     - [`stim.CompiledMeasurementSampler.sample`](#stim.CompiledMeasurementSampler.sample)
     - [`stim.CompiledMeasurementSampler.sample_bit_packed`](#stim.CompiledMeasurementSampler.sample_bit_packed)
     - [`stim.CompiledMeasurementSampler.sample_write`](#stim.CompiledMeasurementSampler.sample_write)
+- [`stim.CompiledMeasurementsToDetectionEventsConverter`](#stim.CompiledMeasurementsToDetectionEventsConverter)
+    - [`stim.CompiledMeasurementsToDetectionEventsConverter.__init__`](#stim.CompiledMeasurementsToDetectionEventsConverter.__init__)
+    - [`stim.CompiledMeasurementsToDetectionEventsConverter.__repr__`](#stim.CompiledMeasurementsToDetectionEventsConverter.__repr__)
+    - [`stim.CompiledMeasurementsToDetectionEventsConverter.convert`](#stim.CompiledMeasurementsToDetectionEventsConverter.convert)
+    - [`stim.CompiledMeasurementsToDetectionEventsConverter.convert_files`](#stim.CompiledMeasurementsToDetectionEventsConverter.convert_files)
 - [`stim.DemInstruction`](#stim.DemInstruction)
     - [`stim.DemInstruction.__eq__`](#stim.DemInstruction.__eq__)
     - [`stim.DemInstruction.__init__`](#stim.DemInstruction.__init__)
@@ -203,6 +210,7 @@
 - [`stim.target_rec`](#stim.target_rec)
 - [`stim.target_relative_detector_id`](#stim.target_relative_detector_id)
 - [`stim.target_separator`](#stim.target_separator)
+- [`stim.target_sweep_bit`](#stim.target_sweep_bit)
 - [`stim.target_x`](#stim.target_x)
 - [`stim.target_y`](#stim.target_y)
 - [`stim.target_z`](#stim.target_z)
@@ -279,6 +287,11 @@
 ## `stim.CompiledMeasurementSampler`<a name="stim.CompiledMeasurementSampler"></a>
 > ```
 > An analyzed stabilizer circuit whose measurements can be sampled quickly.
+> ```
+
+## `stim.CompiledMeasurementsToDetectionEventsConverter`<a name="stim.CompiledMeasurementsToDetectionEventsConverter"></a>
+> ```
+> A tool for quickly converting measurements from an analyzed stabilizer circuit into detection events.
 > ```
 
 ## `stim.DemInstruction`<a name="stim.DemInstruction"></a>
@@ -493,6 +506,12 @@
 ## `stim.target_separator() -> stim.DemTarget`<a name="stim.target_separator"></a>
 > ```
 > Returns a target separator (e.g. "^" in a .dem file).
+> ```
+
+## `stim.target_sweep_bit(sweep_bit_index: int) -> int`<a name="stim.target_sweep_bit"></a>
+> ```
+> Returns a sweep bit target that can be passed into Circuit.append_operation
+> For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
 > ```
 
 ## `stim.target_x(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_x"></a>
@@ -835,6 +854,43 @@
 >     array([[0]], dtype=uint8)
 > ```
 
+### `stim.Circuit.compile_m2d_converter(self, *, skip_reference_sample: bool = False) -> stim.CompiledMeasurementsToDetectionEventsConverter`<a name="stim.Circuit.compile_m2d_converter"></a>
+> ```
+> Returns an object that can efficiently convert measurements into detection events for the given circuit.
+> 
+> The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
+> during initialization of the converter, as a baseline for determining what the expected value of a detector
+> is.
+> 
+> Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
+> noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
+> the same reference sample for a given circuit.
+> 
+> Args:
+>     skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
+>         is initialized to all-zeroes instead of being collected from the circuit. This should only be used
+>         if it's known that the all-zeroes sample is actually a possible result from the circuit (under
+>         noiseless execution).
+> 
+> Returns:
+>     An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import numpy as np
+>     >>> converter = stim.Circuit('''
+>     ...    X 0
+>     ...    M 0
+>     ...    DETECTOR rec[-1]
+>     ... ''').compile_m2d_converter()
+>     >>> converter.convert(
+>     ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+>     ...     append_observables=False,
+>     ... )
+>     array([[ True],
+>            [False]])
+> ```
+
 ### `stim.Circuit.compile_sampler(self, *, skip_reference_sample: bool = False, seed: object = None) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
 > ```
 > Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
@@ -1129,19 +1185,40 @@
 > ```
 > Counts the number of qubits used when simulating the circuit.
 > 
+> This is always one more than the largest qubit index used by the circuit.
+> 
 > Examples:
 >     >>> import stim
->     >>> c = stim.Circuit('''
->     ...    M 0
+>     >>> stim.Circuit('''
+>     ...    X 0
 >     ...    M 0 1
->     ... ''')
->     >>> c.num_qubits
+>     ... ''').num_qubits
 >     2
->     >>> c.append_from_stim_program_text('''
->     ...    X 100
->     ... ''')
->     >>> c.num_qubits
+>     >>> stim.Circuit('''
+>     ...    X 0
+>     ...    M 0 1
+>     ...    H 100
+>     ... ''').num_qubits
 >     101
+> ```
+
+### `stim.Circuit.num_sweep_bits`<a name="stim.Circuit.num_sweep_bits"></a>
+> ```
+> Returns the number of sweep bits needed to completely configure the circuit.
+> 
+> This is always one more than the largest sweep bit index used by the circuit.
+> 
+> Examples:
+>     >>> import stim
+>     >>> stim.Circuit('''
+>     ...    CX sweep[2] 0
+>     ... ''').num_sweep_bits
+>     3
+>     >>> stim.Circuit('''
+>     ...    CZ sweep[5] 0
+>     ...    CX sweep[2] 0
+>     ... ''').num_sweep_bits
+>     6
 > ```
 
 ### `stim.CircuitInstruction.__eq__(self, arg0: stim.CircuitInstruction) -> bool`<a name="stim.CircuitInstruction.__eq__"></a>
@@ -1348,7 +1425,7 @@
 >     The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
 > ```
 
-### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str, prepend_observables: bool = False, append_observables: bool = False) -> None`<a name="stim.CompiledDetectorSampler.sample_write"></a>
+### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01', prepend_observables: bool = False, append_observables: bool = False) -> None`<a name="stim.CompiledDetectorSampler.sample_write"></a>
 > ```
 > Samples detection events from the circuit and writes them to a file.
 > 
@@ -1375,6 +1452,7 @@
 >     filepath: The file to write the results to.
 >     format: The output format to write the results with.
 >         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
 >     prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
 >         data.
 >     append_observables: Sample observables as part of each shot, and put them at the end of the detector
@@ -1427,8 +1505,7 @@
 >         call.
 > 
 > Returns:
->     A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
->     The bit for measurement `m` in shot `s` is at `result[s, m]`.
+>     An initialized stim.CompiledMeasurementSampler.
 > 
 > Examples:
 >     >>> import stim
@@ -1490,7 +1567,7 @@
 >     The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
 > ```
 
-### `stim.CompiledMeasurementSampler.sample_write(self, shots: int, *, filepath: str, format: str) -> None`<a name="stim.CompiledMeasurementSampler.sample_write"></a>
+### `stim.CompiledMeasurementSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01') -> None`<a name="stim.CompiledMeasurementSampler.sample_write"></a>
 > ```
 > Samples measurements from the circuit and writes them to a file.
 > 
@@ -1517,9 +1594,137 @@
 >     filepath: The file to write the results to.
 >     format: The output format to write the results with.
 >         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
 > 
 > Returns:
 >     None.
+> ```
+
+### `stim.CompiledMeasurementsToDetectionEventsConverter.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False) -> None`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.__init__"></a>
+> ```
+> Creates a measurement-to-detection-events converter for the given circuit.
+> 
+> The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
+> during initialization of the converter, as a baseline for determining what the expected value of a detector
+> is.
+> 
+> Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
+> noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
+> the same reference sample for a given circuit.
+> 
+> Args:
+>     circuit: The stim circuit to use for conversions.
+>     skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
+>         is initialized to all-zeroes instead of being collected from the circuit. This should only be used
+>         if it's known that the all-zeroes sample is actually a possible result from the circuit (under
+>         noiseless execution).
+> 
+> Returns:
+>     An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import numpy as np
+>     >>> converter = stim.Circuit('''
+>     ...    X 0
+>     ...    M 0
+>     ...    DETECTOR rec[-1]
+>     ... ''').compile_m2d_converter()
+>     >>> converter.convert(
+>     ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+>     ...     append_observables=False,
+>     ... )
+>     array([[ True],
+>            [False]])
+> ```
+
+### `stim.CompiledMeasurementsToDetectionEventsConverter.__repr__(self) -> str`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.__repr__"></a>
+> ```
+> Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementsToDetectionEventsConverter`.
+> ```
+
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert(self, *, measurements: numpy.ndarray[bool], sweep_bits: numpy.ndarray[bool] = None, append_observables: bool) -> numpy.ndarray[bool]`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert"></a>
+> ```
+> Reads measurement data from a file, converts it, and writes the detection events to another file.
+> 
+> Args:
+>     measurements: A numpy array containing measurement data:
+>         dtype=bool8
+>         shape=(num_shots, circuit.num_measurements)
+>     sweep_bits_filepath: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
+>         dtype=bool8
+>         shape=(num_shots, circuit.num_sweep_bits)
+>         Defaults to None (all sweep bits False).
+>     append_observables: When True, the observables in the circuit are included as part of the detection
+>         event data. Specifically, they are treated as if they were additional detectors at the end of the
+>         circuit. When False, observable data is not output.
+> 
+> Returns:
+>     The detection event data in a numpy array:
+>         dtype=bool8
+>         shape=(num_shots, circuit.num_detectors + circuit.num_observables * append_observables)
+> 
+> Examples:
+>     >>> import stim
+>     >>> import numpy as np
+>     >>> converter = stim.Circuit('''
+>     ...    X 0
+>     ...    M 0
+>     ...    DETECTOR rec[-1]
+>     ... ''').compile_m2d_converter()
+>     >>> converter.convert(
+>     ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+>     ...     append_observables=False,
+>     ... )
+>     array([[ True],
+>            [False]])
+> ```
+
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_files(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool) -> None`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert_files"></a>
+> ```
+> Reads measurement data from a file, converts it, and writes the detection events to another file.
+> 
+> Args:
+>     measurements_filepath: A file containing measurement data to be converted.
+>     measurements_format: The format the measurement data is stored in.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
+>     detection_events_filepath: Where to save detection event data to.
+>     detection_events_format: The format to save the detection event data in.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
+>     sweep_bits_filepath: Defaults to None. A file containing sweep data, or None.
+>         When specified, sweep data (used for `sweep[k]` controls in the circuit, which can vary from shot to
+>         shot) will be read from the given file.
+>         When not specified, all sweep bits default to False and no sweep-controlled operations occur.
+>     sweep_bits_format: The format the sweep data is stored in.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
+>     append_observables: When True, the observables in the circuit are included as part of the detection
+>         event data. Specifically, they are treated as if they were additional detectors at the end of the
+>         circuit. When False, observable data is not output.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+>     >>> converter = stim.Circuit('''
+>     ...    X 0
+>     ...    M 0
+>     ...    DETECTOR rec[-1]
+>     ... ''').compile_m2d_converter()
+>     >>> with tempfile.TemporaryDirectory() as d:
+>     ...    with open(f"{d}/measurements.01", "w") as f:
+>     ...        print("0", file=f)
+>     ...        print("1", file=f)
+>     ...    converter.convert_files(
+>     ...        measurements_filepath=f"{d}/measurements.01",
+>     ...        detection_events_filepath=f"{d}/detections.01",
+>     ...        append_observables=False,
+>     ...    )
+>     ...    with open(f"{d}/detections.01", "r") as f:
+>     ...        print(f.read(), end="")
+>     1
+>     0
 > ```
 
 ### `stim.DemInstruction.__eq__(self, arg0: stim.DemInstruction) -> bool`<a name="stim.DemInstruction.__eq__"></a>
