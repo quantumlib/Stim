@@ -697,7 +697,7 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
         }
         out << "\n";
     }
-    if (gate.flags & GATE_CAN_TARGET_MEASUREMENT_RECORD) {
+    if (gate.flags & GATE_CAN_TARGET_BITS) {
         if (gate.name[0] == 'C' || gate.name[0] == 'Z') {
             out << gate.name << " rec[-1] 111\n";
         }

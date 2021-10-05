@@ -23,12 +23,13 @@
 
 namespace stim {
 
-#define TARGET_VALUE_MASK ((uint32_t{1} << 24) - uint32_t{1})
-#define TARGET_INVERTED_BIT (uint32_t{1} << 31)
-#define TARGET_PAULI_X_BIT (uint32_t{1} << 30)
-#define TARGET_PAULI_Z_BIT (uint32_t{1} << 29)
-#define TARGET_RECORD_BIT (uint32_t{1} << 28)
-#define TARGET_COMBINER (uint32_t{1} << 27)
+constexpr uint32_t TARGET_VALUE_MASK = (uint32_t{1} << 24) - uint32_t{1};
+constexpr uint32_t TARGET_INVERTED_BIT = uint32_t{1} << 31;
+constexpr uint32_t TARGET_PAULI_X_BIT = uint32_t{1} << 30;
+constexpr uint32_t TARGET_PAULI_Z_BIT = uint32_t{1} << 29;
+constexpr uint32_t TARGET_RECORD_BIT = uint32_t{1} << 28;
+constexpr uint32_t TARGET_COMBINER = uint32_t{1} << 27;
+constexpr uint32_t TARGET_SWEEP_BIT = uint32_t{1} << 26;
 
 struct GateTarget {
     uint32_t data;
@@ -39,6 +40,7 @@ struct GateTarget {
     static GateTarget z(uint32_t qubit, bool inverted = false);
     static GateTarget qubit(uint32_t qubit, bool inverted = false);
     static GateTarget rec(int32_t lookback);
+    static GateTarget sweep_bit(uint32_t index);
     static GateTarget combiner();
 
     bool is_combiner() const;
@@ -48,6 +50,7 @@ struct GateTarget {
     bool is_inverted_result_target() const;
     bool is_measurement_record_target() const;
     bool is_qubit_target() const;
+    bool is_sweep_bit_target() const;
     uint32_t qubit_value() const;
     bool operator==(const GateTarget &other) const;
     bool operator!=(const GateTarget &other) const;

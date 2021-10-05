@@ -145,8 +145,7 @@ void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasur
                     call.
 
             Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-                The bit for measurement `m` in shot `s` is at `result[s, m]`.
+                An initialized stim.CompiledMeasurementSampler.
 
             Examples:
                 >>> import stim
@@ -218,7 +217,7 @@ void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasur
         pybind11::arg("shots"),
         pybind11::kw_only(),
         pybind11::arg("filepath"),
-        pybind11::arg("format"),
+        pybind11::arg("format") = "01",
         clean_doc_string(u8R"DOC(
             Samples measurements from the circuit and writes them to a file.
 
@@ -245,6 +244,7 @@ void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasur
                 filepath: The file to write the results to.
                 format: The output format to write the results with.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                    Defaults to "01".
 
             Returns:
                 None.

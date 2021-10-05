@@ -209,7 +209,7 @@ void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorS
         pybind11::arg("shots"),
         pybind11::kw_only(),
         pybind11::arg("filepath"),
-        pybind11::arg("format"),
+        pybind11::arg("format") = "01",
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
         clean_doc_string(u8R"DOC(
@@ -238,6 +238,7 @@ void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorS
                 filepath: The file to write the results to.
                 format: The output format to write the results with.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                    Defaults to "01".
                 prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
                     data.
                 append_observables: Sample observables as part of each shot, and put them at the end of the detector

@@ -75,57 +75,51 @@ int main_mode_detect(int argc, const char **argv) {
 }
 
 int main_mode_sample(int argc, const char **argv) {
-    try {
-        check_for_unknown_arguments(
-            {"--seed", "--skip_reference_sample", "--out_format", "--out", "--in", "--shots"},
-            {"--sample", "--frame0"},
-            "sample",
-            argc,
-            argv);
-        const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-        bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
-        uint64_t num_shots = find_argument("--shots", argc, argv)
-                                 ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
-                             : find_argument("--sample", argc, argv)
-                                 ? (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv)
-                                 : 1;
-        if (num_shots == 0) {
-            return EXIT_SUCCESS;
-        }
-        FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
-        FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-        auto rng = optionally_seeded_rng(argc, argv);
-        bool deprecated_frame0 = find_bool_argument("--frame0", argc, argv);
-        if (deprecated_frame0) {
-            std::cerr << "[DEPRECATION] Use `--skip_reference_sample` instead of `--frame0`\n";
-            skip_reference_sample = true;
-        }
-
-        if (num_shots == 1 && !skip_reference_sample) {
-            TableauSimulator::sample_stream(in, out, out_format.id, false, rng);
-        } else if (num_shots > 0) {
-            auto circuit = Circuit::from_file(in);
-            simd_bits ref(0);
-            if (!skip_reference_sample) {
-                ref = TableauSimulator::reference_sample_circuit(circuit);
-            }
-            FrameSimulator::sample_out(circuit, ref, num_shots, out, out_format.id, rng);
-        }
-
-        if (in != stdin) {
-            fclose(in);
-        }
-        if (out != stdout) {
-            fclose(out);
-        }
+    check_for_unknown_arguments(
+        {"--seed", "--skip_reference_sample", "--out_format", "--out", "--in", "--shots"},
+        {"--sample", "--frame0"},
+        "sample",
+        argc,
+        argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+    bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
+    uint64_t num_shots =
+        find_argument("--shots", argc, argv)    ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
+        : find_argument("--sample", argc, argv) ? (uint64_t)find_int64_argument("--sample", 1, 0, INT64_MAX, argc, argv)
+                                                : 1;
+    if (num_shots == 0) {
         return EXIT_SUCCESS;
-    } catch (const std::invalid_argument &ex) {
-        std::cerr << ex.what();
-        return EXIT_FAILURE;
     }
+    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    auto rng = optionally_seeded_rng(argc, argv);
+    bool deprecated_frame0 = find_bool_argument("--frame0", argc, argv);
+    if (deprecated_frame0) {
+        std::cerr << "[DEPRECATION] Use `--skip_reference_sample` instead of `--frame0`\n";
+        skip_reference_sample = true;
+    }
+
+    if (num_shots == 1 && !skip_reference_sample) {
+        TableauSimulator::sample_stream(in, out, out_format.id, false, rng);
+    } else if (num_shots > 0) {
+        auto circuit = Circuit::from_file(in);
+        simd_bits ref(0);
+        if (!skip_reference_sample) {
+            ref = TableauSimulator::reference_sample_circuit(circuit);
+        }
+        FrameSimulator::sample_out(circuit, ref, num_shots, out, out_format.id, rng);
+    }
+
+    if (in != stdin) {
+        fclose(in);
+    }
+    if (out != stdout) {
+        fclose(out);
+    }
+    return EXIT_SUCCESS;
 }
 
-int main_mode_convert(int argc, const char **argv) {
+int main_mode_measurements_to_detections(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
             "--circuit",
@@ -138,16 +132,17 @@ int main_mode_convert(int argc, const char **argv) {
         },
         {
             "--m2d",
-            "--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in_format",
-            "--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in",
+            // Not deprecated but still experimental:
+            "--sweep_data_in_format",
+            "--sweep_data_in",
         },
         "m2d",
         argc,
         argv);
     const auto &in_format = find_enum_argument("--in_format", nullptr, format_name_to_enum_map, argc, argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-    const auto &frame_in_format = find_enum_argument(
-        "--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &frame_in_format =
+        find_enum_argument("--sweep_data_in_format", "01", format_name_to_enum_map, argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
     FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "r", argc, argv);
@@ -156,8 +151,7 @@ int main_mode_convert(int argc, const char **argv) {
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    FILE *frame_in =
-        find_open_file_argument("--__EXPERIMENTAL_UNSTABLE__initial_error_frames_in", stdin, "r", argc, argv);
+    FILE *frame_in = find_open_file_argument("--sweep_data_in", stdin, "r", argc, argv);
     if (frame_in == stdin) {
         frame_in = nullptr;
     }
@@ -229,60 +223,65 @@ int main_mode_repl(int argc, const char **argv) {
 }
 
 int stim::main(int argc, const char **argv) {
-    const char *mode = argc > 1 ? argv[1] : "";
-    if (mode[0] == '-') {
-        mode = "";
-    }
-    auto is_mode = [&](const char *name) {
-        return find_argument(name, argc, argv) != nullptr || strcmp(mode, name + 2) == 0;
-    };
-
-    if (is_mode("--help")) {
-        return main_help(argc, argv);
-    }
-
-    bool mode_repl = is_mode("--repl");
-    bool mode_sample = is_mode("--sample");
-    bool mode_detect = is_mode("--detect");
-    bool mode_analyze_errors = is_mode("--analyze_errors");
-    bool mode_gen = is_mode("--gen");
-    bool mode_convert = is_mode("--m2d");
-    bool old_mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
-    if (old_mode_detector_hypergraph) {
-        std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
-        mode_analyze_errors = true;
-    }
-    int modes_picked = mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert;
-    if (modes_picked != 1) {
-        if (modes_picked > 1) {
-            std::cerr << "More than one mode was specified.\n\n";
-        } else {
-            std::cerr << "No mode was given.\n\n";
+    try {
+        const char *mode = argc > 1 ? argv[1] : "";
+        if (mode[0] == '-') {
+            mode = "";
         }
-        std::cerr << "\033[31m";
-        std::cerr << help_for("");
-        std::cerr << "\033[0m";
+        auto is_mode = [&](const char *name) {
+            return find_argument(name, argc, argv) != nullptr || strcmp(mode, name + 2) == 0;
+        };
+
+        if (is_mode("--help")) {
+            return main_help(argc, argv);
+        }
+
+        bool mode_repl = is_mode("--repl");
+        bool mode_sample = is_mode("--sample");
+        bool mode_detect = is_mode("--detect");
+        bool mode_analyze_errors = is_mode("--analyze_errors");
+        bool mode_gen = is_mode("--gen");
+        bool mode_convert = is_mode("--m2d");
+        bool old_mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
+        if (old_mode_detector_hypergraph) {
+            std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
+            mode_analyze_errors = true;
+        }
+        int modes_picked = mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert;
+        if (modes_picked != 1) {
+            if (modes_picked > 1) {
+                std::cerr << "More than one mode was specified.\n\n";
+            } else {
+                std::cerr << "No mode was given.\n\n";
+            }
+            std::cerr << "\033[31m";
+            std::cerr << help_for("");
+            std::cerr << "\033[0m";
+            return EXIT_FAILURE;
+        }
+
+        if (mode_gen) {
+            return main_generate_circuit(argc, argv);
+        }
+        if (mode_repl) {
+            return main_mode_repl(argc, argv);
+        }
+        if (mode_sample) {
+            return main_mode_sample(argc, argv);
+        }
+        if (mode_detect) {
+            return main_mode_detect(argc, argv);
+        }
+        if (mode_analyze_errors) {
+            return main_mode_analyze_errors(argc, argv);
+        }
+        if (mode_convert) {
+            return main_mode_measurements_to_detections(argc, argv);
+        }
+
+        throw std::out_of_range("Mode not handled.");
+    } catch (const std::invalid_argument &ex) {
+        std::cerr << ex.what();
         return EXIT_FAILURE;
     }
-
-    if (mode_gen) {
-        return main_generate_circuit(argc, argv);
-    }
-    if (mode_repl) {
-        return main_mode_repl(argc, argv);
-    }
-    if (mode_sample) {
-        return main_mode_sample(argc, argv);
-    }
-    if (mode_detect) {
-        return main_mode_detect(argc, argv);
-    }
-    if (mode_analyze_errors) {
-        return main_mode_analyze_errors(argc, argv);
-    }
-    if (mode_convert) {
-        return main_mode_convert(argc, argv);
-    }
-
-    throw std::out_of_range("Mode not handled.");
 }

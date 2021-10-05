@@ -14,8 +14,6 @@
 
 #include "stim/main_namespaced.h"
 
-using namespace stim;
-
 int main(int argc, const char **argv) {
     return stim::main(argc, argv);
 }

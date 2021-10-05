@@ -166,7 +166,7 @@ void detector_sample_out_helper(
     FILE *out,
     SampleFormat format,
     std::mt19937_64 &rng) {
-    uint64_t d = circuit.count_detectors() + circuit.num_observables();
+    uint64_t d = circuit.count_detectors() + circuit.count_observables();
     uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) * std::max(circuit.count_measurements(), d);
     if (!prepend_observables && should_use_streaming_instead_of_memory(approx_mem_usage)) {
         detector_sample_out_helper_stream(circuit, sim, num_shots, append_observables, out, format);

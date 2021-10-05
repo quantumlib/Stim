@@ -143,7 +143,7 @@ set(BENCHMARK_FILES
         src/stim/stabilizers/tableau.perf.cc
         )
 
-add_executable(stim src/stim/main.cc ${SOURCE_FILES_NO_MAIN})
+add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 if(NOT(MSVC))
     target_compile_options(stim PRIVATE -O3 -Wall -Wpedantic -fno-strict-aliasing ${MACHINE_FLAG})
     target_link_options(stim PRIVATE -pthread -O3)

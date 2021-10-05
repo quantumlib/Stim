@@ -309,14 +309,18 @@ void TableauSimulator::SQRT_Y_DAG(const OperationData &target_data) {
 }
 
 bool TableauSimulator::read_measurement_record(uint32_t encoded_target) const {
+    if (encoded_target & TARGET_SWEEP_BIT) {
+        // Shot-to-shot variation currently not supported by the tableau simulator. Use frame simulator.
+        return false;
+    }
     assert(encoded_target & TARGET_RECORD_BIT);
     return measurement_record.lookback(encoded_target ^ TARGET_RECORD_BIT);
 }
 
 void TableauSimulator::single_cx(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         inv_state.prepend_ZCX(c, t);
-    } else if (t & TARGET_RECORD_BIT) {
+    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
         throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         if (read_measurement_record(c)) {
@@ -326,9 +330,9 @@ void TableauSimulator::single_cx(uint32_t c, uint32_t t) {
 }
 
 void TableauSimulator::single_cy(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         inv_state.prepend_ZCY(c, t);
-    } else if (t & TARGET_RECORD_BIT) {
+    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
         throw std::invalid_argument("Measurement record editing is not supported.");
     } else {
         if (read_measurement_record(c)) {
@@ -359,19 +363,19 @@ void TableauSimulator::ZCZ(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         auto q1 = targets[k].data;
         auto q2 = targets[k + 1].data;
-        if (!((q1 | q2) & TARGET_RECORD_BIT)) {
+        if (!((q1 | q2) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             inv_state.prepend_ZCZ(q1, q2);
             continue;
-        } else if ((q1 & q2) & TARGET_RECORD_BIT) {
-            // No-op.
-        } else if (q1 & TARGET_RECORD_BIT) {
+        } else if (!(q2 & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             if (read_measurement_record(q1)) {
                 inv_state.prepend_Z(q2);
             }
-        } else if (q2 & TARGET_RECORD_BIT) {
+        } else if (!(q1 & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             if (read_measurement_record(q2)) {
                 inv_state.prepend_Z(q1);
             }
+        } else {
+            // Both targets are bits. No effect.
         }
     }
 }

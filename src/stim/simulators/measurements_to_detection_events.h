@@ -57,18 +57,39 @@ namespace stim {
 void stream_measurements_to_detection_events(
     FILE *measurements_in,
     SampleFormat measurements_in_format,
-    FILE *optional_initial_error_frames_in,
-    SampleFormat initial_error_frames_in_format,
+    FILE *optional_sweep_bits_in,
+    SampleFormat sweep_bits_in_format,
     FILE *results_out,
     SampleFormat results_out_format,
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample);
+/// A variant of `stim::stream_measurements_to_detection_events` with derived values passed in, not recomputed.
+void stream_measurements_to_detection_events_helper(
+    FILE *measurements_in,
+    SampleFormat measurements_in_format,
+    FILE *optional_sweep_bits_in,
+    SampleFormat sweep_bits_in_format,
+    FILE *results_out,
+    SampleFormat results_out_format,
+    const Circuit &circuit,
+    bool append_observables,
+    simd_bits_range_ref reference_sample,
+    size_t num_measurements,
+    size_t num_observables,
+    size_t num_detectors,
+    size_t num_qubits,
+    size_t num_sweep_bits);
 
 /// Converts measurement data into detection event data based on a circuit.
 ///
 /// Args:
-///     measurement_results_minor_shots: Measurement data. Major axis is measurement index. Minor axis is shot index.
+///     measurements__minor_shot_index: Recorded measurement data.
+///         Major axis: measurement bit index.
+///         Minor axis: shot index.
+///     sweep_bits__minor_shot_index: Per-shot configuration data controlling operations like `CNOT sweep[0] 1`.
+///         Major axis: sweep bit index.
+///         Minor axis: shot index.
 ///     circuit: The circuit that the measurement data corresponds to, with DETECTOR and OBSERVABLE_INCLUDE annotations
 ///         indicating how to perform the conversion.
 ///     append_observables: Whether or not to include observable flip data in the detection event data.
@@ -80,36 +101,23 @@ void stream_measurements_to_detection_events(
 /// Returns:
 ///     Detection event data. Major axis is detector index (+ observable index). Minor axis is shot index.
 simd_bit_table measurements_to_detection_events(
-    const simd_bit_table &measurement_results_minor_shots,
+    const simd_bit_table &measurements__minor_shot_index,
+    const simd_bit_table &sweep_bits__minor_shot_index,
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample);
-
-/// Propagates errors from the start of a circuit to its end, determining which measurements they flip.
-///
-/// Args:
-///     errors_x: A table of X error frames.
-///         Major index: qubit index.
-///         Minor index: shot index.
-///     errors_Z: A table of Z error frames.
-///         Major index: qubit index.
-///         Minor index: shot index.
-///     noiseless_circuit: The `circuit.aliased_noiseless_circuit()` of the circuit to propagate through.
-///     num_qubits: The number of qubits in the circuit.
-///         This noiseless circuit usually shouldn't disagree on the number of qubits vs the original noisy circuit, but
-///         if they do this is supposed to be the number of qubits in the original noisy circuit.
-///     num_measurements: The number of measurements in the circuit.
-///
-/// Returns:
-///     Measurement flip data.
-///         Major index: measurement index.
-///         Minor index: shot index.
-simd_bit_table initial_errors_to_flipped_measurements_raw(
-    const simd_bit_table &errors_x,
-    const simd_bit_table &errors_z,
+/// A variant of `stim::measurements_to_detection_events` with derived values passed in, not recomputed.
+void measurements_to_detection_events_helper(
+    const simd_bit_table &measurements__minor_shot_index,
+    const simd_bit_table &sweep_bits__minor_shot_index,
+    simd_bit_table &out_detection_results__minor_shot_index,
     const Circuit &noiseless_circuit,
-    size_t num_qubits,
-    size_t num_measurements);
+    const simd_bits &reference_sample,
+    bool append_observables,
+    size_t num_measurements,
+    size_t num_detectors,
+    size_t num_observables,
+    size_t num_qubits);
 
 }  // namespace stim
 

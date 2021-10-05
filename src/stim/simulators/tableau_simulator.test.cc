@@ -1606,3 +1606,13 @@ TEST(TableauSimulator, measure_pauli_product_noisy) {
     t.expand_do_circuit("MPP Y0*Y1");
     ASSERT_EQ(t.measurement_record.storage.back(), true);
 }
+
+TEST(TableauSimulator, ignores_sweep_controls) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        X 0
+        CNOT sweep[0] 0
+        M 0
+    )CIRCUIT");
+    ASSERT_EQ(t.measurement_record.lookback(1), true);
+}

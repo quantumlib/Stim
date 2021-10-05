@@ -45,13 +45,13 @@ uint64_t mul_saturate(uint64_t a, uint64_t b);
 /// This struct is not self-sufficient. It points into data stored elsewhere (e.g. in a Circuit's jagged_data).
 struct OperationData {
     /// Context-dependent numeric arguments (e.g. probabilities).
-    PointerRange<double> args;
+    ConstPointerRange<double> args;
     /// Context-dependent data on what to target.
     ///
     /// The bottom 24 bits of each item always refer to a qubit index.
     /// The top 8 bits are used for additional data such as
     /// Pauli basis, record lookback, and measurement inversion.
-    PointerRange<GateTarget> targets;
+    ConstPointerRange<GateTarget> targets;
 
     bool operator==(const OperationData &other) const;
     bool operator!=(const OperationData &other) const;
@@ -93,11 +93,18 @@ struct Circuit {
     std::vector<Operation> operations;
     std::vector<Circuit> blocks;
 
+    // Returns one more than the largest `k` from any qubit target `k` or `!k` or `{X,Y,Z}k`.
     size_t count_qubits() const;
+    // Returns the number of measurement bits produced by the circuit.
     uint64_t count_measurements() const;
+    // Returns the number of detection event bits produced by the circuit.
     uint64_t count_detectors() const;
-    uint64_t num_observables() const;
+    // Returns one more than the largest `k` from any `OBSERVABLE_INCLUDE(k)` instruction.
+    uint64_t count_observables() const;
+    // Returns the largest `k` from any `rec[-k]` target.
     size_t max_lookback() const;
+    // Returns one more than the largest `k` from any `sweep[k]` target.
+    size_t count_sweep_bits() const;
 
     /// Constructs an empty circuit.
     Circuit();
@@ -140,7 +147,7 @@ struct Circuit {
     Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(const Operation &operation);
+    PointerRange<stim::GateTarget> append_operation(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.

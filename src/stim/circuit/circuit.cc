@@ -35,7 +35,8 @@ enum READ_CONDITION {
 /// Typically, the two ranges are contiguous and so this only requires advancing the end of the destination region.
 /// In cases where that doesn't occur, space is created in the given monotonic buffer to store the result and both
 /// the start and end of the destination range move.
-void fuse_data(PointerRange<GateTarget> &dst, PointerRange<GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
+void fuse_data(
+    ConstPointerRange<GateTarget> &dst, ConstPointerRange<GateTarget> src, MonotonicBuffer<GateTarget> &buf) {
     if (dst.ptr_end != src.ptr_start) {
         buf.ensure_available(src.size() + dst.size());
         dst = buf.take_copy(dst);
@@ -60,6 +61,8 @@ void write_target(std::ostream &out, GateTarget t) {
     }
     if (t.data & TARGET_RECORD_BIT) {
         out << "rec[-" << (t.data & TARGET_VALUE_MASK) << "]";
+    } else if (t.data & TARGET_SWEEP_BIT) {
+        out << "sweep[" << (t.data & TARGET_VALUE_MASK) << "]";
     } else {
         out << (t.data & TARGET_VALUE_MASK);
     }
@@ -189,8 +192,8 @@ void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, Cons
     if (gate.flags & GATE_PRODUCES_NOISY_RESULTS) {
         valid_target_mask |= TARGET_INVERTED_BIT;
     }
-    if (gate.flags & GATE_CAN_TARGET_MEASUREMENT_RECORD) {
-        valid_target_mask |= TARGET_RECORD_BIT;
+    if (gate.flags & GATE_CAN_TARGET_BITS) {
+        valid_target_mask |= TARGET_RECORD_BIT | TARGET_SWEEP_BIT;
     }
     if (gate.flags & GATE_ONLY_TARGETS_MEASUREMENT_RECORD) {
         for (GateTarget q : targets) {
@@ -438,7 +441,7 @@ inline void read_raw_qubit_target_into(int &c, SOURCE read_char, Circuit &circui
 }
 
 template <typename SOURCE>
-inline void read_record_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+inline void read_measurement_record_target_into(int &c, SOURCE read_char, Circuit &circuit) {
     if (c != 'r' || read_char() != 'e' || read_char() != 'c' || read_char() != '[' || read_char() != '-') {
         throw std::invalid_argument("Target started with 'r' but wasn't a record argument like 'rec[-1]'.");
     }
@@ -449,6 +452,21 @@ inline void read_record_target_into(int &c, SOURCE read_char, Circuit &circuit) 
     }
     c = read_char();
     circuit.target_buf.append_tail({lookback | TARGET_RECORD_BIT});
+}
+
+template <typename SOURCE>
+inline void read_sweep_bit_target_into(int &c, SOURCE read_char, Circuit &circuit) {
+    if (c != 's' || read_char() != 'w' || read_char() != 'e' || read_char() != 'e' || read_char() != 'p' ||
+        read_char() != '[') {
+        throw std::invalid_argument("Target started with 's' but wasn't a sweep bit argument like 'sweep[5]'.");
+    }
+    c = read_char();
+    uint32_t lookback = read_uint24_t(c, read_char);
+    if (c != ']') {
+        throw std::invalid_argument("Target started with 's' but wasn't a sweep bit argument like 'sweep[5]'.");
+    }
+    c = read_char();
+    circuit.target_buf.append_tail({lookback | TARGET_SWEEP_BIT});
 }
 
 template <typename SOURCE>
@@ -491,22 +509,6 @@ inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circu
     while (read_until_next_line_arg(c, read_char, need_space)) {
         need_space = true;
         switch (c) {
-            case '*':
-                circuit.target_buf.append_tail(GateTarget::combiner());
-                c = read_char();
-                need_space = false;
-                break;
-            case 'r':
-                read_record_target_into(c, read_char, circuit);
-                break;
-            case 'X':
-            case 'Y':
-            case 'Z':
-            case 'x':
-            case 'y':
-            case 'z':
-                read_pauli_target_into(c, read_char, circuit);
-                break;
             case '0':
             case '1':
             case '2':
@@ -519,8 +521,27 @@ inline void read_arbitrary_targets_into(int &c, SOURCE read_char, Circuit &circu
             case '9':
                 read_raw_qubit_target_into(c, read_char, circuit);
                 break;
+            case 'r':
+                read_measurement_record_target_into(c, read_char, circuit);
+                break;
             case '!':
                 read_inverted_target_into(c, read_char, circuit);
+                break;
+            case 'X':
+            case 'Y':
+            case 'Z':
+            case 'x':
+            case 'y':
+            case 'z':
+                read_pauli_target_into(c, read_char, circuit);
+                break;
+            case '*':
+                circuit.target_buf.append_tail(GateTarget::combiner());
+                c = read_char();
+                need_space = false;
+                break;
+            case 's':
+                read_sweep_bit_target_into(c, read_char, circuit);
                 break;
             default:
                 throw std::invalid_argument("Unrecognized target prefix '" + std::string(1, c) + "'.");
@@ -626,10 +647,11 @@ void Circuit::append_from_text(const char *text) {
         READ_UNTIL_END_OF_FILE);
 }
 
-void Circuit::append_operation(const Operation &operation) {
-    operations.push_back(
-        {operation.gate,
-         {arg_buf.take_copy(operation.target_data.args), target_buf.take_copy(operation.target_data.targets)}});
+PointerRange<stim::GateTarget> Circuit::append_operation(const Operation &operation) {
+    PointerRange<stim::GateTarget> target_data = target_buf.take_copy(operation.target_data.targets);
+    OperationData op_data{arg_buf.take_copy(operation.target_data.args), target_data};
+    operations.push_back({operation.gate, op_data});
+    return target_data;
 }
 
 void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
@@ -774,9 +796,8 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
         if (old_reps != new_reps / repetitions) {
             throw std::invalid_argument("Fused repetition count is too large.");
         }
-        Circuit copy = *this;
-        copy.operations[0].target_data.targets[1].data = (uint32_t)(new_reps & 0xFFFFFFFFULL);
-        copy.operations[0].target_data.targets[2].data = (uint32_t)(new_reps >> 32);
+        Circuit copy;
+        copy.append_repeat_block(new_reps, op_data_block_body(*this, operations[0].target_data));
         return copy;
     }
 
@@ -795,10 +816,10 @@ Circuit &Circuit::operator+=(const Circuit &other) {
     blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
     for (const auto &op : other.operations) {
         assert(op.gate != nullptr);
-        append_operation(op);
+        auto target_data = append_operation(op);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
-            operations.back().target_data.targets[0].data += block_offset;
+            target_data[0].data += block_offset;
         }
     }
 
@@ -895,7 +916,7 @@ size_t Circuit::count_qubits() const {
     return (uint32_t)max_operation_property([](const Operation &op) -> uint32_t {
         uint32_t r = 0;
         for (auto t : op.target_data.targets) {
-            if (!(t.data & TARGET_RECORD_BIT)) {
+            if (!(t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
                 r = std::max(r, t.qubit_value() + uint32_t{1});
             }
         }
@@ -904,11 +925,11 @@ size_t Circuit::count_qubits() const {
 }
 
 size_t Circuit::max_lookback() const {
-    return max_operation_property([](const Operation &op) -> uint64_t {
-        size_t r = 0;
+    return max_operation_property([](const Operation &op) -> uint32_t {
+        uint32_t r = 0;
         for (auto t : op.target_data.targets) {
             if (t.data & TARGET_RECORD_BIT) {
-                r = std::max(r, size_t{t.qubit_value()});
+                r = std::max(r, t.qubit_value());
             }
         }
         return r;
@@ -943,10 +964,22 @@ uint64_t Circuit::count_detectors() const {
     });
 }
 
-uint64_t Circuit::num_observables() const {
+uint64_t Circuit::count_observables() const {
     const Gate *obs = &GATE_DATA.at("OBSERVABLE_INCLUDE");
     return max_operation_property([=](const Operation &op) -> uint64_t {
         return op.gate == obs ? (size_t)op.target_data.args[0] + 1 : 0;
+    });
+}
+
+size_t Circuit::count_sweep_bits() const {
+    return max_operation_property([](const Operation &op) -> uint32_t {
+        uint32_t r = 0;
+        for (auto t : op.target_data.targets) {
+            if (t.data & TARGET_SWEEP_BIT) {
+                r = std::max(r, t.qubit_value() + 1);
+            }
+        }
+        return r;
     });
 }
 

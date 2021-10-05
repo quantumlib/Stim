@@ -349,6 +349,12 @@ void ErrorAnalyzer::SQRT_ZZ(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::feedback(uint32_t record_control, size_t target, bool x, bool z) {
+    if (record_control & TARGET_SWEEP_BIT) {
+        // Sweep bits have no effect on error propagation.
+        return;
+    }
+    assert(record_control & TARGET_RECORD_BIT);
+
     uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
     std::vector<DemTarget> &dst = measurement_to_detectors[time];
 
@@ -368,39 +374,41 @@ void ErrorAnalyzer::feedback(uint32_t record_control, size_t target, bool x, boo
 }
 
 void ErrorAnalyzer::single_cx(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         zs[c] ^= zs[t];
         xs[t] ^= xs[c];
-    } else if (t & TARGET_RECORD_BIT) {
-        throw std::invalid_argument("Measurement record editing is not supported.");
+    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
+        throw std::invalid_argument(
+            "Controlled X had a bit (" + GateTarget{t}.str() + ") as its target, instead of its control.");
     } else {
         feedback(c, t, false, true);
     }
 }
 
 void ErrorAnalyzer::single_cy(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         zs[c] ^= zs[t];
         zs[c] ^= xs[t];
         xs[t] ^= xs[c];
         zs[t] ^= xs[c];
-    } else if (t & TARGET_RECORD_BIT) {
-        throw std::invalid_argument("Measurement record editing is not supported.");
+    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
+        throw std::invalid_argument(
+            "Controlled Y had a bit (" + GateTarget{t}.str() + ") as its target, instead of its control.");
     } else {
         feedback(c, t, true, true);
     }
 }
 
 void ErrorAnalyzer::single_cz(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         zs[c] ^= xs[t];
         zs[t] ^= xs[c];
-    } else if (c & TARGET_RECORD_BIT) {
+    } else if (!(t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         feedback(c, t, true, false);
-    } else if (t & TARGET_RECORD_BIT) {
+    } else if (!(c & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         feedback(t, c, true, false);
     } else {
-        // No effect.
+        // Both targets are classical. No effect.
     }
 }
 
@@ -622,7 +630,7 @@ void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
         throw std::invalid_argument(
             "Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.");
     }
-    PointerRange<double> args = dat.args;
+    ConstPointerRange<double> args = dat.args;
     std::array<double, 4> probabilities;
     for (size_t k = 0; k < 3; k++) {
         if (args[k] > approximate_disjoint_errors_threshold) {
@@ -653,7 +661,7 @@ void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
         throw std::invalid_argument(
             "Handling PAULI_CHANNEL_2 requires `approximate_disjoint_errors` argument to be specified.");
     }
-    PointerRange<double> args = dat.args;
+    ConstPointerRange<double> args = dat.args;
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {
         if (args[k] > approximate_disjoint_errors_threshold) {

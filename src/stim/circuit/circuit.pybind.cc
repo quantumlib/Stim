@@ -25,6 +25,7 @@
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/simulators/measurements_to_detection_events.pybind.h"
 
 using namespace stim;
 
@@ -136,7 +137,7 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def_property_readonly(
         "num_observables",
-        &Circuit::num_observables,
+        &Circuit::count_observables,
         clean_doc_string(u8R"DOC(
             Counts the number of bits produced when sampling the circuit's logical observables.
 
@@ -160,19 +161,43 @@ void pybind_circuit(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Counts the number of qubits used when simulating the circuit.
 
+            This is always one more than the largest qubit index used by the circuit.
+
             Examples:
                 >>> import stim
-                >>> c = stim.Circuit('''
-                ...    M 0
+                >>> stim.Circuit('''
+                ...    X 0
                 ...    M 0 1
-                ... ''')
-                >>> c.num_qubits
+                ... ''').num_qubits
                 2
-                >>> c.append_from_stim_program_text('''
-                ...    X 100
-                ... ''')
-                >>> c.num_qubits
+                >>> stim.Circuit('''
+                ...    X 0
+                ...    M 0 1
+                ...    H 100
+                ... ''').num_qubits
                 101
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "num_sweep_bits",
+        &Circuit::count_sweep_bits,
+        clean_doc_string(u8R"DOC(
+            Returns the number of sweep bits needed to completely configure the circuit.
+
+            This is always one more than the largest sweep bit index used by the circuit.
+
+            Examples:
+                >>> import stim
+                >>> stim.Circuit('''
+                ...    CX sweep[2] 0
+                ... ''').num_sweep_bits
+                3
+                >>> stim.Circuit('''
+                ...    CZ sweep[5] 0
+                ...    CX sweep[2] 0
+                ... ''').num_sweep_bits
+                6
         )DOC")
             .data());
 
@@ -227,6 +252,48 @@ void pybind_circuit(pybind11::module &m) {
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
                 array([[0, 0, 1]], dtype=uint8)
+        )DOC")
+            .data());
+
+    c.def(
+        "compile_m2d_converter",
+        &py_init_compiled_measurements_to_detection_events_converter,
+        pybind11::kw_only(),
+        pybind11::arg("skip_reference_sample") = false,
+        clean_doc_string(u8R"DOC(
+            Returns an object that can efficiently convert measurements into detection events for the given circuit.
+
+            The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
+            during initialization of the converter, as a baseline for determining what the expected value of a detector
+            is.
+
+            Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
+            noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
+            the same reference sample for a given circuit.
+
+            Args:
+                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
+                    is initialized to all-zeroes instead of being collected from the circuit. This should only be used
+                    if it's known that the all-zeroes sample is actually a possible result from the circuit (under
+                    noiseless execution).
+
+            Returns:
+                An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+                >>> converter = stim.Circuit('''
+                ...    X 0
+                ...    M 0
+                ...    DETECTOR rec[-1]
+                ... ''').compile_m2d_converter()
+                >>> converter.convert(
+                ...     measurements=np.array([[0], [1]], dtype=np.bool8),
+                ...     append_observables=False,
+                ... )
+                array([[ True],
+                       [False]])
         )DOC")
             .data());
 
@@ -336,6 +403,8 @@ void pybind_circuit(pybind11::module &m) {
                         }
                     } else if (t.data & TARGET_RECORD_BIT) {
                         targets.append(pybind11::make_tuple("rec", -(long long)v));
+                    } else if (t.data & TARGET_SWEEP_BIT) {
+                        targets.append(pybind11::make_tuple("sweep", v));
                     } else {
                         targets.append(pybind11::int_(v));
                     }

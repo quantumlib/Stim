@@ -57,12 +57,20 @@ FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_
       rng_buffer(batch_size),
       tmp_storage(batch_size),
       last_correlated_error_occurred(batch_size),
+      sweep_table(0, batch_size),
       rng(rng) {
 }
 
-simd_bits_range_ref FrameSimulator::measurement_record_ref(uint32_t encoded_target) {
-    assert(encoded_target & TARGET_RECORD_BIT);
-    return m_record.lookback(encoded_target ^ TARGET_RECORD_BIT);
+void FrameSimulator::xor_control_bit_into(uint32_t control, simd_bits_range_ref target) {
+    uint32_t raw_control = control & ~(TARGET_RECORD_BIT | TARGET_SWEEP_BIT);
+    assert(control != raw_control);
+    if (control & TARGET_RECORD_BIT) {
+        target ^= m_record.lookback(raw_control);
+    } else {
+        if (raw_control < sweep_table.num_major_bits_padded()) {
+            target ^= sweep_table[raw_control];
+        }
+    }
 }
 
 void FrameSimulator::reset_all() {
@@ -244,34 +252,34 @@ void FrameSimulator::C_ZYX(const OperationData &target_data) {
 }
 
 void FrameSimulator::single_cx(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
             z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                 z1 ^= z2;
                 x2 ^= x1;
             });
-    } else if (t & TARGET_RECORD_BIT) {
-        throw std::invalid_argument("Measurement record editing is not supported.");
+    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
+        throw std::invalid_argument(
+            "Controlled X had a bit (" + GateTarget{t}.str() + ") as its target, instead of its control.");
     } else {
-        x_table[t] ^= measurement_record_ref(c);
+        xor_control_bit_into(c, x_table[t]);
     }
 }
 
 void FrameSimulator::single_cy(uint32_t c, uint32_t t) {
-    if (!((c | t) & TARGET_RECORD_BIT)) {
+    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
         x_table[c].for_each_word(
             z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                 z1 ^= x2 ^ z2;
                 z2 ^= x1;
                 x2 ^= x1;
             });
-    } else if (t & TARGET_RECORD_BIT) {
-        throw std::invalid_argument("Measurement record editing is not supported.");
+    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
+        throw std::invalid_argument(
+            "Controlled Y had a bit (" + GateTarget{t}.str() + ") as its target, instead of its control.");
     } else {
-        x_table[t].for_each_word(z_table[t], measurement_record_ref(c), [](simd_word &x, simd_word &z, simd_word &m) {
-            x ^= m;
-            z ^= m;
-        });
+        xor_control_bit_into(c, x_table[t]);
+        xor_control_bit_into(c, z_table[t]);
     }
 }
 
@@ -297,18 +305,18 @@ void FrameSimulator::ZCZ(const OperationData &target_data) {
     for (size_t k = 0; k < targets.size(); k += 2) {
         size_t c = targets[k].data;
         size_t t = targets[k + 1].data;
-        if (!((c | t) & TARGET_RECORD_BIT)) {
+        if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
             x_table[c].for_each_word(
                 z_table[c], x_table[t], z_table[t], [](simd_word &x1, simd_word &z1, simd_word &x2, simd_word &z2) {
                     z1 ^= x2;
                     z2 ^= x1;
                 });
-        } else if (c & t & TARGET_RECORD_BIT) {
-            // No op.
-        } else if (c & TARGET_RECORD_BIT) {
-            z_table[t] ^= measurement_record_ref(c);
+        } else if (!(t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+            xor_control_bit_into(c, z_table[t]);
+        } else if (!(c & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
+            xor_control_bit_into(t, z_table[c]);
         } else {
-            z_table[c] ^= measurement_record_ref(t);
+            // Both targets are bits. No effect.
         }
     }
 }
@@ -550,9 +558,6 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
 
     // Apply error to only the indicated frames.
     for (auto qxz : target_data.targets) {
-        if (qxz.data & TARGET_RECORD_BIT) {
-            measurement_record_ref(qxz.data) ^= rng_buffer;
-        }
         auto q = qxz.qubit_value();
         if (qxz.data & TARGET_PAULI_X_BIT) {
             x_table[q] ^= rng_buffer;
