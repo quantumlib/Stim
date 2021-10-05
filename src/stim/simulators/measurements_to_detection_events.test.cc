@@ -22,9 +22,9 @@
 using namespace stim;
 
 TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
-    simd_bit_table measurement_data(256, 256);
+    simd_bit_table measurement_data(1, 256);
     simd_bit_table sweep_data(0, 256);
-    simd_bit_table converted(256, 256);
+    simd_bit_table converted(1, 256);
 
     // Matches false expectation.
     ASSERT_EQ(
@@ -37,7 +37,7 @@ TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
             )CIRCUIT"),
             false,
             false),
-        simd_bit_table::from_text("0", 256, 256));
+        simd_bit_table::from_text("0", 1, 256));
 
     // Violates true expectation.
     converted = measurements_to_detection_events(
