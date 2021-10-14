@@ -19,6 +19,7 @@ keep = {
     "__imul__",
     "__init__",
     "__truediv__",
+    "__itruediv__",
     "__ne__",
     "__neg__",
     "__le__",
