@@ -367,6 +367,7 @@ def test_div():
     assert stim.PauliString("iXYZ") / 1j == stim.PauliString("XYZ")
     p = stim.PauliString("__")
     alias = p
+    assert p / -1 == stim.PauliString("-__")
     assert alias == stim.PauliString("__")
     p /= -1
     assert alias == stim.PauliString("-__")
