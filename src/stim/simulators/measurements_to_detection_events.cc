@@ -201,19 +201,28 @@ void stim::stream_measurements_to_detection_events_helper(
     simd_bit_table sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
 
     // Data streaming loop.
+    size_t total_read = 0;
     while (true) {
         // Read measurement data and sweep data for a batch of shots.
         size_t record_count = reader->read_records_into(measurements__minor_shot_index, false);
         if (sweep_data_reader != nullptr) {
             size_t sweep_data_count = sweep_data_reader->read_records_into(sweep_bits__minor_shot_index, false);
             if (sweep_data_count != record_count) {
-                throw std::invalid_argument(
-                    "The sweep data contained a different number of shots than the measurement data.");
+                std::stringstream ss;
+                ss << "The sweep data contained a different number of shots than the measurement data.\n";
+                ss << "There was " << (record_count + total_read) << " shot records total.\n";
+                if (sweep_data_count < record_count) {
+                    ss << "But there was " << (record_count + sweep_data_count) << " sweep records total.";
+                } else {
+                    ss << "But there was at least " << (record_count + sweep_data_count) << " sweep records.";
+                }
+                throw std::invalid_argument(ss.str());
             }
         }
         if (record_count == 0) {
             break;
         }
+        total_read += record_count;
 
         // Convert measurement data into detection event data.
         measurements_to_detection_events_helper(

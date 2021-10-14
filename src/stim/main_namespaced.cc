@@ -281,7 +281,7 @@ int stim::main(int argc, const char **argv) {
 
         throw std::out_of_range("Mode not handled.");
     } catch (const std::invalid_argument &ex) {
-        std::cerr << ex.what();
+        std::cerr << ex.what() << "\n";
         return EXIT_FAILURE;
     }
 }

@@ -77,7 +77,7 @@ struct RaiiFile {
     }
 };
 
-void CompiledMeasurementsToDetectionEventsConverter::convert_files(
+void CompiledMeasurementsToDetectionEventsConverter::convert_file(
     const std::string &measurements_filepath,
     const std::string &measurements_format,
     const char *sweep_bits_filepath,
@@ -241,8 +241,8 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
             .data());
 
     c.def(
-        "convert_files",
-        &CompiledMeasurementsToDetectionEventsConverter::convert_files,
+        "convert_file",
+        &CompiledMeasurementsToDetectionEventsConverter::convert_file,
         pybind11::kw_only(),
         pybind11::arg("measurements_filepath"),
         pybind11::arg("measurements_format") = "01",
@@ -286,7 +286,7 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
                 ...    with open(f"{d}/measurements.01", "w") as f:
                 ...        print("0", file=f)
                 ...        print("1", file=f)
-                ...    converter.convert_files(
+                ...    converter.convert_file(
                 ...        measurements_filepath=f"{d}/measurements.01",
                 ...        detection_events_filepath=f"{d}/detections.01",
                 ...        append_observables=False,

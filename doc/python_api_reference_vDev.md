@@ -61,7 +61,7 @@
     - [`stim.CompiledMeasurementsToDetectionEventsConverter.__init__`](#stim.CompiledMeasurementsToDetectionEventsConverter.__init__)
     - [`stim.CompiledMeasurementsToDetectionEventsConverter.__repr__`](#stim.CompiledMeasurementsToDetectionEventsConverter.__repr__)
     - [`stim.CompiledMeasurementsToDetectionEventsConverter.convert`](#stim.CompiledMeasurementsToDetectionEventsConverter.convert)
-    - [`stim.CompiledMeasurementsToDetectionEventsConverter.convert_files`](#stim.CompiledMeasurementsToDetectionEventsConverter.convert_files)
+    - [`stim.CompiledMeasurementsToDetectionEventsConverter.convert_file`](#stim.CompiledMeasurementsToDetectionEventsConverter.convert_file)
 - [`stim.DemInstruction`](#stim.DemInstruction)
     - [`stim.DemInstruction.__eq__`](#stim.DemInstruction.__eq__)
     - [`stim.DemInstruction.__init__`](#stim.DemInstruction.__init__)
@@ -1680,7 +1680,7 @@
 >            [False]])
 > ```
 
-### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_files(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool) -> None`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert_files"></a>
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool) -> None`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert_file"></a>
 > ```
 > Reads measurement data from a file, converts it, and writes the detection events to another file.
 > 
@@ -1716,7 +1716,7 @@
 >     ...    with open(f"{d}/measurements.01", "w") as f:
 >     ...        print("0", file=f)
 >     ...        print("1", file=f)
->     ...    converter.convert_files(
+>     ...    converter.convert_file(
 >     ...        measurements_filepath=f"{d}/measurements.01",
 >     ...        detection_events_filepath=f"{d}/detections.01",
 >     ...        append_observables=False,

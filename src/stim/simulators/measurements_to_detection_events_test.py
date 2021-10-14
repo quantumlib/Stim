@@ -17,7 +17,7 @@ import numpy as np
 import stim
 
 
-def test_convert_files_without_sweep_bits():
+def test_convert_file_without_sweep_bits():
     converter = stim.Circuit('''
        X 0
        CNOT sweep[0] 0
@@ -31,7 +31,7 @@ def test_convert_files_without_sweep_bits():
             print("0", file=f)
             print("1", file=f)
 
-        converter.convert_files(
+        converter.convert_file(
             measurements_filepath=f"{d}/measurements.01",
             detection_events_filepath=f"{d}/detections.01",
             append_observables=False,
@@ -52,7 +52,7 @@ def test_convert_files_without_sweep_bits():
             print("0", file=f)
             print("0", file=f)
 
-        converter.convert_files(
+        converter.convert_file(
             measurements_filepath=f"{d}/measurements.b8",
             measurements_format="b8",
             sweep_bits_filepath=f"{d}/sweep.hits",
