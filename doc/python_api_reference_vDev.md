@@ -108,6 +108,7 @@
     - [`stim.GateTarget.is_inverted_result_target`](#stim.GateTarget.is_inverted_result_target)
     - [`stim.GateTarget.is_measurement_record_target`](#stim.GateTarget.is_measurement_record_target)
     - [`stim.GateTarget.is_qubit_target`](#stim.GateTarget.is_qubit_target)
+    - [`stim.GateTarget.is_sweep_bit_target`](#stim.GateTarget.is_sweep_bit_target)
     - [`stim.GateTarget.is_x_target`](#stim.GateTarget.is_x_target)
     - [`stim.GateTarget.is_y_target`](#stim.GateTarget.is_y_target)
     - [`stim.GateTarget.is_z_target`](#stim.GateTarget.is_z_target)
@@ -2095,6 +2096,11 @@
 ### `stim.GateTarget.is_qubit_target`<a name="stim.GateTarget.is_qubit_target"></a>
 > ```
 > Returns true if this is a qubit target (e.g. `5`) or an inverted qubit target (e.g. `stim.target_inv(4)`).
+> ```
+
+### `stim.GateTarget.is_sweep_bit_target`<a name="stim.GateTarget.is_sweep_bit_target"></a>
+> ```
+> Returns whether or not this is a `stim.target_sweep_bit` target (e.g. `sweep[5]` in a circuit file).
 > ```
 
 ### `stim.GateTarget.is_x_target`<a name="stim.GateTarget.is_x_target"></a>

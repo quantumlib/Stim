@@ -1615,6 +1615,7 @@ TEST(TableauSimulator, ignores_sweep_controls) {
         M 0
     )CIRCUIT");
     ASSERT_EQ(t.measurement_record.lookback(1), true);
+}
 
 TEST(TableauSimulator, peek_observable_expectation) {
     TableauSimulator t(SHARED_TEST_RNG());
