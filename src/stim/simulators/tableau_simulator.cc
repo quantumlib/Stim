@@ -999,8 +999,9 @@ int8_t TableauSimulator::peek_observable_expectation(const stim::PauliString &ob
     auto n = (uint32_t)std::max(state.inv_state.num_qubits, observable.num_qubits);
     state.ensure_large_enough_for_qubits(n + 1);
     GateTarget anc{n};
+    stim::OperationData anc_op_data{{}, &anc};
     if (observable.sign) {
-        state.X(stim::OperationData{{}, &anc});
+        state.X(anc_op_data);
     }
     for (size_t i = 0; i < observable.num_qubits; i++) {
         int p = observable.xs[i] + (observable.zs[i] << 1);
@@ -1016,9 +1017,9 @@ int8_t TableauSimulator::peek_observable_expectation(const stim::PauliString &ob
     }
 
     // Use simulator features to determines if the measurement is deterministic.
-    auto result_kickback = state.measure_kickback_z(anc);
-    if (result_kickback.second.num_qubits) {
+    if (!state.is_deterministic_z(anc.data)) {
         return 0;
     }
-    return result_kickback.first ? -1 : +1;
+    state.measure_z(anc_op_data);
+    return state.measurement_record.storage.back() ? -1 : +1;
 }
