@@ -61,6 +61,7 @@ An *argument* is a double precision floating point number.
 
 A *target* can either be a qubit target (a non-negative integer),
 a measurement record target (a negative integer prefixed by `rec[` and suffixed by `]`),
+a sweep bit target (a non-negative integer prefixed by `sweep[` and suffixed by `]`),
 a Pauli target (an integer prefixed by `X`, `Y`, or `Z`),
 or a combiner (`*`).
 Additionally, qubit targets and Pauli targets may be prefixed by a `!` to indicate that
@@ -69,9 +70,10 @@ measurement results should be negated.
 ```
 <NAME> ::= /[a-zA-Z][a-zA-Z0-9_]*/ 
 <ARG> ::= <double> 
-<TARG> ::= <QUBIT_TARGET> | <MEASUREMENT_RECORD_TARGET> | <PAULI_TARGET> | <COMBINER_TARGET> 
+<TARG> ::= <QUBIT_TARGET> | <MEASUREMENT_RECORD_TARGET> | <SWEEP_BIT_TARGET> | <PAULI_TARGET> | <COMBINER_TARGET> 
 <QUBIT_TARGET> ::= '!'? <uint>
 <MEASUREMENT_RECORD_TARGET> ::= "rec[-" <uint> "]"
+<SWEEP_BIT_TARGET> ::= "sweep[" <uint> "]"
 <PAULI_TARGET> ::= '!'? /[XYZ]/ <uint>
 <COMBINER_TARGET> ::= '*'
 ```
@@ -125,7 +127,7 @@ which indicate that the block's instructions should be iterated over `K` times i
 ### Target Types
 
 There are three types of targets that can be given to instructions:
-qubit targets, measurement record targets, and Pauli targets.
+qubit targets, measurement record targets, sweep bit targets, and Pauli targets.
 
 A qubit target refers to a qubit by index.
 There's a qubit `0`, a qubit `1`, a qubit `2`, and so forth.
@@ -139,6 +141,11 @@ For example, `rec[-1]` is the most recent measurement result, `rec[-2]` is the s
 (The semantics of the negative indices into the measurement record match the semantics of negative indices into lists in Python.
 The reason negative indices are used is to make it possible to write loops.)
 It is an error to refer to a measurement result so far back that it would precede the start of the circuit.
+
+A sweep bit target refers to a column in a data table where each row refers to a separate shots of the circuit, and each column refers to configuration bits that vary from shot to shot.
+For example, when using randomized spin echo, the spin echo operations that actually occurred could be recording into a table.
+For example, `CNOT sweep[5] 1` says an X operation was applied (or should be applied) to qubit 1 for shots where the sweep bit in the column with index 5 is set.
+Sweep bits default to False when running in a context where no table is provided, and sweep bits past the end of the provided table also default to False.
 
 A Pauli target is a qubit target prefixed by a Pauli operation `X`, `Y`, or `Z`.
 They are used when specifying Pauli products.

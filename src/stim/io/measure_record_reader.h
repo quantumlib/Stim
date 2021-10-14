@@ -182,7 +182,8 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
             }
         }
         if (getc(in) != '\n') {
-            throw std::invalid_argument("01 data didn't end with a newline after the expected data length of '" + std::to_string(n) + "'.");
+            throw std::invalid_argument(
+                "01 data didn't end with a newline after the expected data length of '" + std::to_string(n) + "'.");
         }
         return true;
     }
@@ -257,8 +258,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
                 if (first && next_char == '\n') {
                     return true;
                 }
-                throw std::invalid_argument(
-                    "HITS data wasn't comma-separated integers terminated by a newline.");
+                throw std::invalid_argument("HITS data wasn't comma-separated integers terminated by a newline.");
             }
             handle_hit(value);
             first = false;
@@ -266,8 +266,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
                 return true;
             }
             if (next_char != ',') {
-                throw std::invalid_argument(
-                    "HITS data wasn't comma-separated integers terminated by a newline.");
+                throw std::invalid_argument("HITS data wasn't comma-separated integers terminated by a newline.");
             }
         }
     }
@@ -311,12 +310,16 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
                 } else if (pos == n) {
                     return true;
                 } else {
-                    throw std::invalid_argument("r8 data jumped past expected end of encoded data. Expected to decode " + std::to_string(bits_per_record()) + " bits.");
+                    throw std::invalid_argument(
+                        "r8 data jumped past expected end of encoded data. Expected to decode " +
+                        std::to_string(bits_per_record()) + " bits.");
                 }
             }
             next_char = getc(in);
             if (next_char == EOF) {
-                throw std::invalid_argument("End of file before end of r8 data. Expected to decode " + std::to_string(bits_per_record()) + " bits.");
+                throw std::invalid_argument(
+                    "End of file before end of r8 data. Expected to decode " + std::to_string(bits_per_record()) +
+                    " bits.");
             }
         }
     }
@@ -377,7 +380,8 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
                 offset = num_measurements + num_detectors;
                 length = num_observables;
             } else {
-                throw std::invalid_argument("Unrecognized DETS prefix. Expected M or D or L not '" + std::to_string(next_char) + "'");
+                throw std::invalid_argument(
+                    "Unrecognized DETS prefix. Expected M or D or L not '" + std::to_string(next_char) + "'");
             }
             char prefix = next_char;
 
@@ -388,7 +392,8 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
             if (value >= length) {
                 std::stringstream msg;
                 msg << "DETS data had a value that larger than expected. ";
-                msg << "Got " << prefix << value << " but expected length of " << prefix << " space to be " << length << ".";
+                msg << "Got " << prefix << value << " but expected length of " << prefix << " space to be " << length
+                    << ".";
                 throw std::invalid_argument(msg.str());
             }
             handle_hit(offset + value);

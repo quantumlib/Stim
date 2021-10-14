@@ -118,7 +118,7 @@ H 0
             &TableauSimulator::XCZ,
             &FrameSimulator::XCZ,
             &ErrorAnalyzer::XCZ,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
                     "C_Two Qubit Clifford Gates",
@@ -246,7 +246,7 @@ S 0
             &TableauSimulator::YCZ,
             &FrameSimulator::YCZ,
             &ErrorAnalyzer::YCZ,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
                     "C_Two Qubit Clifford Gates",
@@ -288,7 +288,7 @@ S 0
             &TableauSimulator::ZCX,
             &FrameSimulator::ZCX,
             &ErrorAnalyzer::ZCX,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
                     "C_Two Qubit Clifford Gates",
@@ -328,7 +328,7 @@ CNOT 0 1
             &TableauSimulator::ZCY,
             &FrameSimulator::ZCY,
             &ErrorAnalyzer::ZCY,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
                     "C_Two Qubit Clifford Gates",
@@ -371,7 +371,7 @@ S 1
             &TableauSimulator::ZCZ,
             &FrameSimulator::ZCZ,
             &ErrorAnalyzer::ZCZ,
-            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_MEASUREMENT_RECORD),
+            (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS | GATE_CAN_TARGET_BITS),
             []() -> ExtraGateData {
                 return {
                     "C_Two Qubit Clifford Gates",

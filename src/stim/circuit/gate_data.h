@@ -100,8 +100,8 @@ enum GateFlags : uint16_t {
     GATE_TARGETS_PAULI_STRING = 1 << 7,
     // Controls instructions like DETECTOR taking measurement record targets ("rec[-1]").
     GATE_ONLY_TARGETS_MEASUREMENT_RECORD = 1 << 8,
-    // Controls instructions like CX and SWAP operating on measurement record targets like "rec[-1]".
-    GATE_CAN_TARGET_MEASUREMENT_RECORD = 1 << 9,
+    // Controls instructions like CX operating allowing measurement record targets and sweep bit targets.
+    GATE_CAN_TARGET_BITS = 1 << 9,
     // Controls whether the gate takes qubit/record targets.
     GATE_TAKES_NO_TARGETS = 1 << 10,
     // Controls validation of index arguments like OBSERVABLE_INCLUDE(1).

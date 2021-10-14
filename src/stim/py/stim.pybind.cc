@@ -21,6 +21,7 @@
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
+#include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
@@ -52,6 +53,10 @@ uint32_t target_y(uint32_t qubit, bool invert) {
 
 uint32_t target_z(uint32_t qubit, bool invert) {
     return GateTarget::z(qubit, invert).data;
+}
+
+uint32_t target_sweep_bit(uint32_t qubit) {
+    return GateTarget::sweep_bit(qubit).data;
 }
 
 pybind11::object raw_gate_data_solo(const Gate &gate) {
@@ -114,9 +119,11 @@ PYBIND11_MODULE(stim, m) {
 
     auto c0 = pybind_compiled_detector_sampler_class(m);
     auto c1 = pybind_compiled_measurement_sampler_class(m);
+    auto c2 = pybind_compiled_measurements_to_detection_events_converter_class(m);
     pybind_circuit(m);
     pybind_compiled_detector_sampler_methods(c0);
     pybind_compiled_measurement_sampler_methods(c1);
+    pybind_compiled_measurements_to_detection_events_converter_methods(c2);
     pybind_pauli_string(m);
     pybind_tableau(m);
     pybind_tableau_simulator(m);
@@ -180,6 +187,16 @@ PYBIND11_MODULE(stim, m) {
         clean_doc_string(u8R"DOC(
             Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
             For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
+        )DOC")
+            .data());
+
+    m.def(
+        "target_sweep_bit",
+        &target_sweep_bit,
+        pybind11::arg("sweep_bit_index"),
+        clean_doc_string(u8R"DOC(
+            Returns a sweep bit target that can be passed into Circuit.append_operation
+            For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
         )DOC")
             .data());
 

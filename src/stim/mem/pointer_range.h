@@ -17,6 +17,7 @@
 #ifndef _STIM_MEM_POINTER_RANGE_H
 #define _STIM_MEM_POINTER_RANGE_H
 
+#include <array>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -41,6 +42,9 @@ struct PointerRange {
     PointerRange(T *singleton) : ptr_start(singleton), ptr_end(singleton + 1) {
     }
     PointerRange(std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    }
+    template <size_t K>
+    PointerRange(std::array<T, K> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
     size_t size() const {
@@ -124,6 +128,9 @@ struct ConstPointerRange {
     ConstPointerRange(PointerRange<T> items) : ptr_start(items.ptr_start), ptr_end(items.ptr_end) {
     }
     ConstPointerRange(const std::vector<T> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
+    }
+    template <size_t K>
+    ConstPointerRange(const std::array<T, K> &items) : ptr_start(items.data()), ptr_end(items.data() + items.size()) {
     }
 
     bool empty() const {

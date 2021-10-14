@@ -185,6 +185,7 @@ TEST(circuit, from_text) {
 }
 
 TEST(circuit, parse_combiners) {
+    ASSERT_THROW({ Circuit("H *"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP *"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1"); }, std::invalid_argument);
     ASSERT_THROW({ Circuit("MPP * X1 *"); }, std::invalid_argument);
@@ -211,6 +212,21 @@ TEST(circuit, parse_combiners) {
     c = Circuit("MPP(0.125) X1*Y2 Z3 * Z4\nMPP Z5");
     ASSERT_EQ(c.operations[0].target_data.args.size(), 1);
     ASSERT_EQ(c.operations[0].target_data.args[0], 0.125);
+}
+
+TEST(circuit, parse_sweep_bits) {
+    ASSERT_THROW({ Circuit("H sweep[0]"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("X sweep[0]"); }, std::invalid_argument);
+
+    std::vector<GateTarget> expected{
+        GateTarget::sweep_bit(2),
+        GateTarget::qubit(5),
+    };
+
+    Circuit c("CNOT sweep[2] 5");
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c.operations[0].target_data.targets, (PointerRange<GateTarget>)expected);
+    ASSERT_TRUE(c.operations[0].target_data.args.empty());
 }
 
 TEST(circuit, append_circuit) {
@@ -280,6 +296,7 @@ TEST(circuit, str) {
     c.append_op("tick", {});
     c.append_op("CNOT", {2, 3});
     c.append_op("CNOT", {5 | TARGET_RECORD_BIT, 3});
+    c.append_op("CY", {6 | TARGET_SWEEP_BIT, 4});
     c.append_op("M", {1, 3, 2});
     c.append_op("DETECTOR", {7 | TARGET_RECORD_BIT});
     c.append_op("OBSERVABLE_INCLUDE", {11 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT}, 17);
@@ -294,6 +311,7 @@ TEST(circuit, str) {
         0.25);
     ASSERT_EQ(c.str(), R"circuit(TICK
 CX 2 3 rec[-5] 3
+CY sweep[6] 4
 M 1 3 2
 DETECTOR rec[-7]
 OBSERVABLE_INCLUDE(17) rec[-11] rec[-1]
@@ -514,9 +532,67 @@ TEST(circuit, count_qubits) {
         3);
 }
 
+TEST(circuit, count_sweep_bits) {
+    ASSERT_EQ(Circuit().count_sweep_bits(), 0);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                CY 100 3
+                CY 80 3
+                M 2
+            }
+        }
+    )CIRCUIT")
+            .count_sweep_bits(),
+        0);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 2 {
+            X 1
+            REPEAT 3 {
+                CY sweep[100] 3
+                CY sweep[80] 3
+                M 2
+            }
+        }
+    )CIRCUIT")
+            .count_sweep_bits(),
+        101);
+
+    // Ensure not unrolling to compute.
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+        H 0
+        M 0 1
+        REPEAT 999999 {
+            REPEAT 999999 {
+                REPEAT 999999 {
+                    REPEAT 999999 {
+                        X 1
+                        REPEAT 999999 {
+                            CY sweep[77] 3
+                            M 2
+                        }
+                    }
+                }
+            }
+        }
+    )CIRCUIT")
+            .count_sweep_bits(),
+        78);
+}
+
 TEST(circuit, count_detectors_num_observables) {
     ASSERT_EQ(Circuit().count_detectors(), 0);
-    ASSERT_EQ(Circuit().num_observables(), 0);
+    ASSERT_EQ(Circuit().count_observables(), 0);
 
     ASSERT_EQ(
         Circuit(R"CIRCUIT(
@@ -532,7 +608,7 @@ TEST(circuit, count_detectors_num_observables) {
         DETECTOR rec[-1]
         OBSERVABLE_INCLUDE(5) rec[-1]
     )CIRCUIT")
-            .num_observables(),
+            .count_observables(),
         6);
 
     // Ensure not unrolling to compute.
@@ -564,7 +640,7 @@ TEST(circuit, count_detectors_num_observables) {
             }
         }
     )CIRCUIT")
-            .num_observables(),
+            .count_observables(),
         3);
 
     ASSERT_EQ(
@@ -978,4 +1054,26 @@ TEST(circuit, append_repeat_block) {
 
     ASSERT_THROW({ c.append_repeat_block(0, a); }, std::invalid_argument);
     ASSERT_THROW({ c.append_repeat_block(0, std::move(a)); }, std::invalid_argument);
+}
+
+TEST(circuit, aliased_noiseless_circuit) {
+    Circuit initial(R"CIRCUIT(
+        H 0
+        X_ERROR(0.1) 0
+        M(0.05) 0
+        REPEAT 100 {
+            CNOT 0 1
+            DEPOLARIZE2(0.1) 0 1
+            MPP(0.1) X0*X1 Z0 Z1
+        }
+    )CIRCUIT");
+    Circuit noiseless = initial.aliased_noiseless_circuit();
+    ASSERT_EQ(noiseless, Circuit(R"CIRCUIT(
+        H 0
+        M 0
+        REPEAT 100 {
+            CNOT 0 1
+            MPP X0*X1 Z0 Z1
+        }
+    )CIRCUIT"));
 }

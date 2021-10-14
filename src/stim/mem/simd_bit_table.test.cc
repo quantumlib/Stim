@@ -20,7 +20,7 @@
 
 using namespace stim;
 
-TEST(bit_mat, creation) {
+TEST(simd_bit_table, creation) {
     simd_bit_table a(3, 3);
     ASSERT_EQ(
         a.str(3),
@@ -44,9 +44,36 @@ TEST(bit_mat, creation) {
         simd_bit_table::identity(2).str(2),
         "1.\n"
         ".1");
+
+    ASSERT_EQ(
+        simd_bit_table::identity(2).str(3, 4),
+        "1...\n"
+        ".1..\n"
+        "....");
+
+    ASSERT_EQ(simd_bit_table::identity(2).str().substr(0, 5), "1....");
+    ASSERT_EQ(simd_bit_table(0, 5).str(), "");
+    ASSERT_EQ(simd_bit_table(5, 0).str().substr(0, 3), "\n\n\n");
+
+    ASSERT_EQ(
+        simd_bit_table::from_text(R"TABLE(
+            1.
+            0._1
+            .1..
+        )TABLE")
+            .str(5),
+        "1....\n"
+        "...1.\n"
+        ".1...\n"
+        ".....\n"
+        ".....");
+
+    simd_bit_table t = simd_bit_table::from_text("", 512, 256);
+    ASSERT_EQ(t.num_minor_bits_padded(), 256);
+    ASSERT_EQ(t.num_major_bits_padded(), 512);
 }
 
-TEST(bit_mat, equality) {
+TEST(simd_bit_table, equality) {
     simd_bit_table a(3, 3);
     simd_bit_table b(3, 3);
     simd_bit_table c(511, 1000);
@@ -60,7 +87,7 @@ TEST(bit_mat, equality) {
     ASSERT_NE(c, d);
 }
 
-TEST(bit_mat, multiplication) {
+TEST(simd_bit_table, multiplication) {
     simd_bit_table m1(3, 3);
     simd_bit_table m2(3, 3);
     m1[0][2] = true;
@@ -84,7 +111,7 @@ TEST(bit_mat, multiplication) {
         "...");
 }
 
-TEST(bit_mat, xor_row_into) {
+TEST(simd_bit_table, xor_row_into) {
     simd_bit_table m(500, 500);
     m[0][10] = true;
     m[0][490] = true;
@@ -95,7 +122,7 @@ TEST(bit_mat, xor_row_into) {
     ASSERT_EQ(m[1][490], false);
 }
 
-TEST(bit_mat, inverse_assuming_lower_triangular) {
+TEST(simd_bit_table, inverse_assuming_lower_triangular) {
     auto m = simd_bit_table::identity(4);
     m[3][1] = true;
     ASSERT_EQ(
@@ -149,7 +176,7 @@ TEST(bit_mat, inverse_assuming_lower_triangular) {
         ".1.1");
 }
 
-TEST(bit_mat, transposed) {
+TEST(simd_bit_table, transposed) {
     auto m = simd_bit_table::identity(4);
     m[3][1] = true;
     ASSERT_EQ(
@@ -171,7 +198,7 @@ TEST(bit_mat, transposed) {
     ASSERT_EQ(trans2, m);
 }
 
-TEST(bit_mat, random) {
+TEST(simd_bit_table, random) {
     auto t = simd_bit_table::random(100, 90, SHARED_TEST_RNG());
     ASSERT_NE(t[99], simd_bits(90));
     ASSERT_EQ(t[100], simd_bits(90));
@@ -181,7 +208,7 @@ TEST(bit_mat, random) {
     ASSERT_NE(simd_bit_table::random(10, 10, SHARED_TEST_RNG()), simd_bit_table::random(10, 10, SHARED_TEST_RNG()));
 }
 
-TEST(bit_mat, slice_maj) {
+TEST(simd_bit_table, slice_maj) {
     auto m = simd_bit_table::random(100, 64, SHARED_TEST_RNG());
     auto s = m.slice_maj(5, 15);
     ASSERT_EQ(s[0], m[5]);
@@ -189,7 +216,7 @@ TEST(bit_mat, slice_maj) {
     ASSERT_FALSE(s[10].not_zero());
 }
 
-TEST(bit_mat, from_quadrants) {
+TEST(simd_bit_table, from_quadrants) {
     simd_bit_table t(2, 2);
     simd_bit_table z(2, 2);
     t[1][0] = true;

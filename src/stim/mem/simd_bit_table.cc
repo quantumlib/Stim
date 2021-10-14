@@ -26,9 +26,7 @@ using namespace stim;
 simd_bit_table::simd_bit_table(size_t min_bits_major, size_t min_bits_minor)
     : num_simd_words_major(min_bits_to_num_simd_words(min_bits_major)),
       num_simd_words_minor(min_bits_to_num_simd_words(min_bits_minor)),
-      data(
-          min_bits_to_num_bits_padded(min_bits_minor) *
-          min_bits_to_num_bits_padded(min_bits_major)) {
+      data(min_bits_to_num_bits_padded(min_bits_minor) * min_bits_to_num_bits_padded(min_bits_major)) {
 }
 
 simd_bit_table simd_bit_table::identity(size_t n) {
@@ -206,17 +204,74 @@ simd_bit_table simd_bit_table::from_quadrants(
     return result;
 }
 
-std::string simd_bit_table::str(size_t n) const {
+std::string simd_bit_table::str(size_t rows, size_t cols) const {
     std::stringstream out;
-    for (size_t row = 0; row < n; row++) {
+    for (size_t row = 0; row < rows; row++) {
         if (row) {
             out << "\n";
         }
-        for (size_t col = 0; col < n; col++) {
+        for (size_t col = 0; col < cols; col++) {
             out << ".1"[(*this)[row][col]];
         }
     }
     return out.str();
+}
+
+std::string simd_bit_table::str(size_t n) const {
+    return str(n, n);
+}
+
+std::string simd_bit_table::str() const {
+    return str(num_major_bits_padded(), num_minor_bits_padded());
+}
+
+simd_bit_table simd_bit_table::from_text(const char *text, size_t min_rows, size_t min_cols) {
+    std::vector<std::vector<bool>> lines;
+    lines.push_back({});
+
+    // Skip indentation.
+    while (*text == '\n' || *text == ' ') {
+        text++;
+    }
+
+    for (const char *c = text; *c;) {
+        if (*c == '\n') {
+            lines.push_back({});
+            c++;
+            // Skip indentation.
+            while (*c == ' ') {
+                c++;
+            }
+        } else if (*c == '0' || *c == '.' || *c == '_') {
+            lines.back().push_back(false);
+            c++;
+        } else if (*c == '1') {
+            lines.back().push_back(true);
+            c++;
+        } else {
+            throw std::invalid_argument(
+                "Expected indented characters from \"10._\\n\". Got '" + std::string(1, *c) + "'.");
+        }
+    }
+
+    // Remove trailing newline.
+    if (!lines.empty() && lines.back().empty()) {
+        lines.pop_back();
+    }
+
+    size_t num_cols = min_cols;
+    for (const auto &v : lines) {
+        num_cols = std::max(v.size(), num_cols);
+    }
+    size_t num_rows = std::max(min_rows, lines.size());
+    simd_bit_table out(num_rows, num_cols);
+    for (size_t row = 0; row < lines.size(); row++) {
+        for (size_t col = 0; col < lines[row].size(); col++) {
+            out[row][col] = lines[row][col];
+        }
+    }
+
+    return out;
 }
 
 simd_bit_table simd_bit_table::random(
@@ -226,4 +281,14 @@ simd_bit_table simd_bit_table::random(
         result[maj].randomize(num_randomized_minor_bits, rng);
     }
     return result;
+}
+
+std::ostream &stim::operator<<(std::ostream &out, const stim::simd_bit_table &v) {
+    for (size_t k = 0; k < v.num_major_bits_padded(); k++) {
+        if (k) {
+            out << '\n';
+        }
+        out << v[k];
+    }
+    return out;
 }

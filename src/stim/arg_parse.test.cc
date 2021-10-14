@@ -29,7 +29,8 @@ TEST(arg_parse, check_for_unknown_arguments_recognize_arguments) {
         "--other",
     };
     const char *argv[] = {"skipped", "--mode", "2", "--test", "5"};
-    check_for_unknown_arguments(known, nullptr, sizeof(argv) / sizeof(char *), argv);
+    check_for_unknown_arguments(known, {}, nullptr, sizeof(argv) / sizeof(char *), argv);
+    check_for_unknown_arguments({}, known, nullptr, sizeof(argv) / sizeof(char *), argv);
 }
 
 TEST(arg_parse, check_for_unknown_arguments_bad_arguments) {
@@ -40,7 +41,11 @@ TEST(arg_parse, check_for_unknown_arguments_bad_arguments) {
     const char *argv[] = {"skipped", "--mode", "2", "--unknown", "5"};
 
     ASSERT_THROW(
-        { check_for_unknown_arguments(known, nullptr, sizeof(argv) / sizeof(char *), argv); }, std::invalid_argument);
+        { check_for_unknown_arguments(known, {}, nullptr, sizeof(argv) / sizeof(char *), argv); },
+        std::invalid_argument);
+    ASSERT_THROW(
+        { check_for_unknown_arguments({}, known, nullptr, sizeof(argv) / sizeof(char *), argv); },
+        std::invalid_argument);
 }
 
 TEST(arg_parse, check_for_unknown_arguments_terminator) {
@@ -48,7 +53,7 @@ TEST(arg_parse, check_for_unknown_arguments_terminator) {
         "--mode",
     };
     const char *argv[] = {"skipped", "--mode", "2", "--", "--unknown"};
-    check_for_unknown_arguments(known, nullptr, sizeof(argv) / sizeof(char *), argv);
+    check_for_unknown_arguments(known, {}, nullptr, sizeof(argv) / sizeof(char *), argv);
 }
 
 TEST(arg_parse, find_argument) {

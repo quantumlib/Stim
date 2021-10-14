@@ -46,6 +46,9 @@ GateTarget GateTarget::rec(int32_t lookback) {
     }
     return {((uint32_t)-lookback) | TARGET_RECORD_BIT};
 }
+GateTarget GateTarget::sweep_bit(uint32_t index) {
+    return {index | TARGET_SWEEP_BIT};
+}
 GateTarget GateTarget::combiner() {
     return {TARGET_COMBINER};
 }
@@ -77,10 +80,13 @@ bool GateTarget::is_measurement_record_target() const {
     return data & TARGET_RECORD_BIT;
 }
 bool GateTarget::is_qubit_target() const {
-    return !(data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_RECORD_BIT | TARGET_COMBINER));
+    return !(data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER));
 }
 bool GateTarget::is_combiner() const {
     return data == TARGET_COMBINER;
+}
+bool GateTarget::is_sweep_bit_target() const {
+    return data & TARGET_SWEEP_BIT;
 }
 bool GateTarget::operator==(const GateTarget &other) const {
     return data == other.data;
@@ -104,6 +110,9 @@ std::ostream &stim::operator<<(std::ostream &out, const GateTarget &t) {
     }
     if (t.is_measurement_record_target()) {
         return out << "stim.target_rec(" << t.value() << ")";
+    }
+    if (t.is_sweep_bit_target()) {
+        return out << "stim.target_sweep_bit(" << t.value() << ")";
     }
     if (t.is_x_target()) {
         out << "stim.target_x(" << t.value();

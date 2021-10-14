@@ -49,6 +49,21 @@ struct simd_bit_table {
         const simd_bit_table &upper_right,
         const simd_bit_table &lower_left,
         const simd_bit_table &lower_right);
+    /// Parses a bit table from some text.
+    ///
+    /// Args:
+    ///     text: A paragraph of characters specifying the contents of a bit table.
+    ///         Each line is a row (a major index) of the table.
+    ///         Each position within a line is a column (a minor index) of the table.
+    ///         A '1' at character C of line L (counting from 0) indicates out[L][C] will be set.
+    ///         A '0', '.', or '_' indicates out[L][C] will not be set.
+    ///         Leading newlines and spaces at the beginning of the text are ignored.
+    ///         Leading spaces at the beginning of a line are ignored.
+    ///         Other characters result in errors.
+    ///
+    /// Returns:
+    ///     A simd_bit_table with cell contents corresponding to the text.
+    static simd_bit_table from_text(const char *text, size_t min_rows = 0, size_t min_cols = 0);
 
     /// Equality.
     bool operator==(const simd_bit_table &other) const;
@@ -122,9 +137,15 @@ struct simd_bit_table {
         return num_simd_words_minor * sizeof(simd_word) << 3;
     }
 
-    /// Returns a truncated description of the table's contents.
+    /// Returns a padded description of the table's contents.
+    std::string str() const;
+    /// Returns a truncated square description of the table's contents.
     std::string str(size_t n) const;
+    /// Returns a truncated rectangle description of the table's contents.
+    std::string str(size_t rows, size_t cols) const;
 };
+
+std::ostream &operator<<(std::ostream &out, const stim::simd_bit_table &v);
 
 constexpr uint8_t lg(size_t k) {
     return k <= 1 ? 0 : lg(k >> 1) + 1;

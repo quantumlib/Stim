@@ -1348,3 +1348,16 @@ TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
             .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 }
+
+TEST(FrameSimulator, ignores_sweep_controls_when_given_no_sweep_data) {
+    auto n = FrameSimulator::sample_flipped_measurements(
+                 Circuit(R"CIRCUIT(
+            CNOT sweep[0] 0
+            M 0
+            DETECTOR rec[-1]
+        )CIRCUIT"),
+                 1000,
+                 SHARED_TEST_RNG())[0]
+                 .popcnt();
+    ASSERT_EQ(n, 0);
+}

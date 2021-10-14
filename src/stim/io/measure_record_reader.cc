@@ -59,8 +59,8 @@ bool stim::read_uint64(FILE *in, uint64_t &value, int &next, bool include_next) 
     return true;
 }
 
-MeasureRecordReader::MeasureRecordReader(size_t num_measurements, size_t num_detectors, size_t num_observables) :
-      num_measurements(num_measurements), num_detectors(num_detectors), num_observables(num_observables) {
+MeasureRecordReader::MeasureRecordReader(size_t num_measurements, size_t num_detectors, size_t num_observables)
+    : num_measurements(num_measurements), num_detectors(num_detectors), num_observables(num_observables) {
 }
 
 size_t MeasureRecordReader::read_records_into(simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots) {
@@ -80,26 +80,25 @@ size_t MeasureRecordReader::read_records_into(simd_bit_table &out, bool major_in
 }
 
 std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
-    FILE *in,
-    SampleFormat input_format,
-    size_t num_measurements,
-    size_t num_detectors,
-    size_t num_observables) {
-
+    FILE *in, SampleFormat input_format, size_t num_measurements, size_t num_detectors, size_t num_observables) {
     switch (input_format) {
         case SAMPLE_FORMAT_01:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormat01(in, num_measurements, num_detectors, num_observables));
+            return std::unique_ptr<MeasureRecordReader>(
+                new MeasureRecordReaderFormat01(in, num_measurements, num_detectors, num_observables));
         case SAMPLE_FORMAT_B8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatB8(in, num_measurements, num_detectors, num_observables));
+            return std::unique_ptr<MeasureRecordReader>(
+                new MeasureRecordReaderFormatB8(in, num_measurements, num_detectors, num_observables));
         case SAMPLE_FORMAT_DETS:
             return std::unique_ptr<MeasureRecordReader>(
                 new MeasureRecordReaderFormatDets(in, num_measurements, num_detectors, num_observables));
         case SAMPLE_FORMAT_HITS:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatHits(in, num_measurements, num_detectors, num_observables));
+            return std::unique_ptr<MeasureRecordReader>(
+                new MeasureRecordReaderFormatHits(in, num_measurements, num_detectors, num_observables));
         case SAMPLE_FORMAT_PTB64:
             throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
         case SAMPLE_FORMAT_R8:
-            return std::unique_ptr<MeasureRecordReader>(new MeasureRecordReaderFormatR8(in, num_measurements, num_detectors, num_observables));
+            return std::unique_ptr<MeasureRecordReader>(
+                new MeasureRecordReaderFormatR8(in, num_measurements, num_detectors, num_observables));
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
@@ -147,24 +146,29 @@ void MeasureRecordReader::move_obs_in_shots_to_mask_assuming_sorted(SparseShot &
 
 /// 01 format
 
-MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in), payload('\n'), position(bits_per_record()) {
+MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(
+    FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
+      in(in),
+      payload('\n'),
+      position(bits_per_record()) {
 }
 
 bool MeasureRecordReaderFormat01::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
     return start_and_read_entire_record_helper(
-        [&](size_t k){
+        [&](size_t k) {
             dirty_out_buffer[k] = false;
         },
-        [&](size_t k){
+        [&](size_t k) {
             dirty_out_buffer[k] = true;
         });
 }
 
 bool MeasureRecordReaderFormat01::start_and_read_entire_record(SparseShot &cleared_out) {
     bool result = start_and_read_entire_record_helper(
-        [&](size_t k){},
-        [&](size_t k){
+        [&](size_t k) {
+        },
+        [&](size_t k) {
             cleared_out.hits.push_back((uint64_t)k);
         });
     move_obs_in_shots_to_mask_assuming_sorted(cleared_out);
@@ -221,27 +225,30 @@ bool MeasureRecordReaderFormat01::is_end_of_record() {
 
 /// B8 format
 
-MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in), payload(0), bits_available(0), position(bits_per_record()) {
+MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(
+    FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
+      in(in),
+      payload(0),
+      bits_available(0),
+      position(bits_per_record()) {
 }
 
 bool MeasureRecordReaderFormatB8::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
-    return start_and_read_entire_record_helper(
-        [&](size_t byte_index, uint8_t byte) {
-            dirty_out_buffer.u8[byte_index] = (uint8_t)byte;
-        });
+    return start_and_read_entire_record_helper([&](size_t byte_index, uint8_t byte) {
+        dirty_out_buffer.u8[byte_index] = (uint8_t)byte;
+    });
 }
 
 bool MeasureRecordReaderFormatB8::start_and_read_entire_record(SparseShot &cleared_out) {
-    bool result = start_and_read_entire_record_helper(
-        [&](size_t byte_index, uint8_t byte) {
-            size_t bit_offset = byte_index << 3;
-            for (size_t r = 0; r < 8; r++) {
-                if (byte & (1 << r)) {
-                    cleared_out.hits.push_back(bit_offset + r);
-                }
+    bool result = start_and_read_entire_record_helper([&](size_t byte_index, uint8_t byte) {
+        size_t bit_offset = byte_index << 3;
+        for (size_t r = 0; r < 8; r++) {
+            if (byte & (1 << r)) {
+                cleared_out.hits.push_back(bit_offset + r);
             }
-        });
+        }
+    });
     move_obs_in_shots_to_mask_assuming_sorted(cleared_out);
     return result;
 }
@@ -327,23 +334,25 @@ void MeasureRecordReaderFormatB8::maybe_update_payload() {
 
 /// Hits format
 
-MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in), buffer(bits_per_record()), position_in_buffer(bits_per_record()) {
+MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(
+    FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
+      in(in),
+      buffer(bits_per_record()),
+      position_in_buffer(bits_per_record()) {
 }
 
 bool MeasureRecordReaderFormatHits::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
-    return start_and_read_entire_record_helper(
-        [&](size_t bit_index) {
-            dirty_out_buffer[bit_index] = true;
-        });
+    return start_and_read_entire_record_helper([&](size_t bit_index) {
+        dirty_out_buffer[bit_index] = true;
+    });
 }
 
 bool MeasureRecordReaderFormatHits::start_and_read_entire_record(SparseShot &cleared_out) {
     size_t m = bits_per_record();
     size_t nmd = num_measurements + num_detectors;
-    return start_and_read_entire_record_helper(
-    [&](size_t bit_index) {
+    return start_and_read_entire_record_helper([&](size_t bit_index) {
         if (bit_index >= m) {
             throw std::invalid_argument("hit index is too large.");
         }
@@ -402,7 +411,8 @@ bool MeasureRecordReaderFormatHits::is_end_of_record() {
 
 /// R8 format
 
-MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
+MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(
+    FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
     : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
@@ -447,13 +457,13 @@ bool MeasureRecordReaderFormatR8::read_bit() {
 
 bool MeasureRecordReaderFormatR8::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
-    return start_and_read_entire_record_helper([&](size_t bit_index){
+    return start_and_read_entire_record_helper([&](size_t bit_index) {
         dirty_out_buffer[bit_index] = 1;
     });
 }
 
 bool MeasureRecordReaderFormatR8::start_and_read_entire_record(SparseShot &cleared_out) {
-    bool result = start_and_read_entire_record_helper([&](size_t bit_index){
+    bool result = start_and_read_entire_record_helper([&](size_t bit_index) {
         cleared_out.hits.push_back(bit_index);
     });
     move_obs_in_shots_to_mask_assuming_sorted(cleared_out);
@@ -526,16 +536,14 @@ bool MeasureRecordReaderFormatR8::maybe_buffer_data() {
 
 bool MeasureRecordReaderFormatDets::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
-    return start_and_read_entire_record_helper(
-        [&](size_t bit_index) {
-            dirty_out_buffer[bit_index] = true;
-        });
+    return start_and_read_entire_record_helper([&](size_t bit_index) {
+        dirty_out_buffer[bit_index] = true;
+    });
 }
 
 bool MeasureRecordReaderFormatDets::start_and_read_entire_record(SparseShot &cleared_out) {
     size_t obs_start = num_measurements + num_detectors;
-    return start_and_read_entire_record_helper(
-    [&](size_t bit_index) {
+    return start_and_read_entire_record_helper([&](size_t bit_index) {
         if (bit_index < obs_start) {
             cleared_out.hits.push_back(bit_index);
         } else {

@@ -19,8 +19,8 @@
 #include "gtest/gtest.h"
 
 #include "stim/io/measure_record_writer.h"
-#include "stim/test_util.test.h"
 #include "stim/probability_util.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 

@@ -109,7 +109,7 @@ void find_benchmarks(const std::string &filter, std::vector<RegisteredBenchmark>
 double BENCHMARK_CONFIG_TARGET_SECONDS = 0.5;
 
 int main(int argc, const char **argv) {
-    check_for_unknown_arguments(known_arguments, nullptr, argc, argv);
+    check_for_unknown_arguments(known_arguments, {}, nullptr, argc, argv);
     const char *only = find_argument("--only", argc, argv);
     BENCHMARK_CONFIG_TARGET_SECONDS = find_float_argument("--target_seconds", 0.5, 0, 10000, argc, argv);
 

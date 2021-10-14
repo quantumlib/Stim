@@ -2480,3 +2480,21 @@ TEST(ErrorAnalyzer, measure_pauli_product_4body) {
             error(0.25) D0
         )MODEL"));
 }
+
+TEST(ErrorAnalyzer, ignores_sweep_controls) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                X_ERROR(0.25) 0
+                CNOT sweep[0] 0
+                M 0
+                DETECTOR rec[-1]
+            )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"MODEL(
+            error(0.25) D0
+        )MODEL"));
+}

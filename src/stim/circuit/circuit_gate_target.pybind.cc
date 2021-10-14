@@ -128,6 +128,14 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         )DOC")
             .data());
 
+    c.def_property_readonly(
+        "is_sweep_bit_target",
+        &GateTarget::is_sweep_bit_target,
+        clean_doc_string(u8R"DOC(
+            Returns whether or not this is a `stim.target_sweep_bit` target (e.g. `sweep[5]` in a circuit file).
+        )DOC")
+            .data());
+
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.GateTarget`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.GateTarget`s are different.");
     c.def(

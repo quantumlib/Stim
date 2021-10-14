@@ -1607,6 +1607,16 @@ TEST(TableauSimulator, measure_pauli_product_noisy) {
     ASSERT_EQ(t.measurement_record.storage.back(), true);
 }
 
+TEST(TableauSimulator, ignores_sweep_controls) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        X 0
+        CNOT sweep[0] 0
+        M 0
+    )CIRCUIT");
+    ASSERT_EQ(t.measurement_record.lookback(1), true);
+}
+
 TEST(TableauSimulator, peek_observable_expectation) {
     TableauSimulator t(SHARED_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(

@@ -40,7 +40,14 @@ struct FrameSimulator {
     simd_bits rng_buffer;         // Workspace used when sampling error processes.
     simd_bits tmp_storage;        // Workspace used when sampling compound error processes.
     simd_bits last_correlated_error_occurred;  // correlated error flag for each instance.
+    simd_bit_table sweep_table;                // Shot-to-shot configuration data.
     std::mt19937_64 &rng;                      // Random number generator used for generating entropy.
+
+    // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
+    // This is necessary for correct sampling.
+    // It should only be disabled when e.g. using the frame simulator to understand how a fixed set of errors will
+    // propagate, without interference from other effects.
+    bool guarantee_anticommutation_via_frame_randomization = true;
 
     FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
 
@@ -128,7 +135,7 @@ struct FrameSimulator {
     void ELSE_CORRELATED_ERROR(const OperationData &target_data);
 
    private:
-    simd_bits_range_ref measurement_record_ref(uint32_t encoded_target);
+    void xor_control_bit_into(uint32_t control, simd_bits_range_ref target);
     void single_cx(uint32_t c, uint32_t t);
     void single_cy(uint32_t c, uint32_t t);
 };

@@ -68,7 +68,11 @@ const char *require_find_argument(const char *name, int argc, const char **argv)
 /// Raises:
 ///     std::invalid_argument: Unknown arguments are present.
 void check_for_unknown_arguments(
-    const std::vector<const char *> &known_arguments, const char *for_mode, int argc, const char **argv);
+    const std::vector<const char *> &known_arguments,
+    const std::vector<const char *> &known_but_deprecated_arguments,
+    const char *for_mode,
+    int argc,
+    const char **argv);
 
 /// Returns a floating point value that can be modified using command line arguments.
 ///
