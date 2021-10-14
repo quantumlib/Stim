@@ -679,7 +679,7 @@ void pybind_pauli_string(pybind11::module &m) {
             .data());
 
     c.def(
-        "__truediv__",
+        "__itruediv__",
         &PyPauliString::operator/=,
         pybind11::is_operator(),
         pybind11::arg("rhs"),

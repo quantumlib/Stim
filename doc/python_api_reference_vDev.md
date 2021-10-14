@@ -119,6 +119,7 @@
     - [`stim.PauliString.__iadd__`](#stim.PauliString.__iadd__)
     - [`stim.PauliString.__imul__`](#stim.PauliString.__imul__)
     - [`stim.PauliString.__init__`](#stim.PauliString.__init__)
+    - [`stim.PauliString.__itruediv__`](#stim.PauliString.__itruediv__)
     - [`stim.PauliString.__len__`](#stim.PauliString.__len__)
     - [`stim.PauliString.__mul__`](#stim.PauliString.__mul__)
     - [`stim.PauliString.__ne__`](#stim.PauliString.__ne__)
@@ -184,6 +185,7 @@
     - [`stim.TableauSimulator.measure_kickback`](#stim.TableauSimulator.measure_kickback)
     - [`stim.TableauSimulator.measure_many`](#stim.TableauSimulator.measure_many)
     - [`stim.TableauSimulator.peek_bloch`](#stim.TableauSimulator.peek_bloch)
+    - [`stim.TableauSimulator.peek_observable_expectation`](#stim.TableauSimulator.peek_observable_expectation)
     - [`stim.TableauSimulator.reset`](#stim.TableauSimulator.reset)
     - [`stim.TableauSimulator.s`](#stim.TableauSimulator.s)
     - [`stim.TableauSimulator.s_dag`](#stim.TableauSimulator.s_dag)
@@ -2313,6 +2315,28 @@
 >     pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating paulis.
 > ```
 
+### `stim.PauliString.__itruediv__(self, rhs: complex) -> stim.PauliString`<a name="stim.PauliString.__itruediv__"></a>
+> ```
+> Inplace divides the Pauli string by a complex unit.
+> 
+> Args:
+>     rhs: The divisor. Can be 1, -1, 1j, or -1j.
+> 
+> Examples:
+>     >>> import stim
+> 
+>     >>> p = stim.PauliString("X")
+>     >>> p /= 1j
+>     >>> p
+>     stim.PauliString("-iX")
+> 
+> Returns:
+>     The mutated Pauli string.
+> 
+> Raises:
+>     ValueError: The divisor isn't 1, -1, 1j, or -1j.
+> ```
+
 ### `stim.PauliString.__len__(self) -> int`<a name="stim.PauliString.__len__"></a>
 > ```
 > Returns the length the pauli string; the number of qubits it operates on.
@@ -2481,34 +2505,8 @@
 > Returns a text description.
 > ```
 
-### `stim.PauliString.__truediv__(*args, **kwargs)`<a name="stim.PauliString.__truediv__"></a>
+### `stim.PauliString.__truediv__(self, rhs: complex) -> stim.PauliString`<a name="stim.PauliString.__truediv__"></a>
 > ```
-> Overloaded function.
-> 
-> 1. __truediv__(self: stim.PauliString, rhs: complex) -> stim.PauliString
-> 
-> Inplace divides the Pauli string by a complex unit.
-> 
-> Args:
->     rhs: The divisor. Can be 1, -1, 1j, or -1j.
-> 
-> Examples:
->     >>> import stim
-> 
->     >>> p = stim.PauliString("X")
->     >>> p /= 1j
->     >>> p
->     stim.PauliString("-iX")
-> 
-> Returns:
->     The mutated Pauli string.
-> 
-> Raises:
->     ValueError: The divisor isn't 1, -1, 1j, or -1j.
-> 
-> 
-> 2. __truediv__(self: stim.PauliString, rhs: complex) -> stim.PauliString
-> 
 > Divides the Pauli string by a complex unit.
 > 
 > Args:
@@ -3707,6 +3705,48 @@
 >     >>> s.cz(0, 1)
 >     >>> s.peek_bloch(0)
 >     stim.PauliString("+_")
+> ```
+
+### `stim.TableauSimulator.peek_observable_expectation(self, observable: stim.PauliString) -> int`<a name="stim.TableauSimulator.peek_observable_expectation"></a>
+> ```
+> Determines the expected value of an observable (which will always be -1, 0, or +1).
+> 
+> This is a non-physical operation.
+> It reports information about the quantum state without disturbing it.
+> 
+> Args:
+>     observable: The observable to determine the expected value of.
+>         This observable must have a real sign, not an imaginary sign.
+> 
+> Returns:
+>     +1: Observable will be deterministically false when measured.
+>     -1: Observable will be deterministically true when measured.
+>     0: Observable will be random when measured.
+> 
+> Examples:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.peek_observable_expectation(stim.PauliString("+Z"))
+>     1
+>     >>> s.peek_observable_expectation(stim.PauliString("+X"))
+>     0
+>     >>> s.peek_observable_expectation(stim.PauliString("-Z"))
+>     -1
+> 
+>     >>> s.do(stim.Circuit('''
+>     ...     H 0
+>     ...     CNOT 0 1
+>     ... '''))
+>     >>> queries = ['XX', 'YY', 'ZZ', '-ZZ', 'ZI', 'II', 'IIZ']
+>     >>> for q in queries:
+>     ...     print(q, s.peek_observable_expectation(stim.PauliString(q)))
+>     XX 1
+>     YY -1
+>     ZZ 1
+>     -ZZ -1
+>     ZI 0
+>     II 1
+>     IIZ 1
 > ```
 
 ### `stim.TableauSimulator.reset(self, *args) -> None`<a name="stim.TableauSimulator.reset"></a>

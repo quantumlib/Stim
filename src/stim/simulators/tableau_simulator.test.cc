@@ -1615,4 +1615,27 @@ TEST(TableauSimulator, ignores_sweep_controls) {
         M 0
     )CIRCUIT");
     ASSERT_EQ(t.measurement_record.lookback(1), true);
+
+TEST(TableauSimulator, peek_observable_expectation) {
+    TableauSimulator t(SHARED_TEST_RNG());
+    t.expand_do_circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        X 0
+    )CIRCUIT");
+
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("XX")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("YY")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZ")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("-XX")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("-ZZ")), 1);
+
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("")), 1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("-I")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("X")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("Z")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("Z_")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZZ")), -1);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("XXX")), 0);
+    ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZZZZZZZ")), -1);
 }

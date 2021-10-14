@@ -337,3 +337,31 @@ def test_to_state_vector():
     assert v[1, 0, 0] != 0
     assert v[0, 1, 0] == 0
     assert v[0, 0, 1] == 0
+
+
+def test_peek_observable_expectation():
+    s = stim.TableauSimulator()
+    s.do(stim.Circuit('''
+        H 0
+        CNOT 0 1 0 2
+        X 0
+    '''))
+
+    assert s.peek_observable_expectation(stim.PauliString("ZZ_")) == -1
+    assert s.peek_observable_expectation(stim.PauliString("_ZZ")) == 1
+    assert s.peek_observable_expectation(stim.PauliString("Z_Z")) == -1
+    assert s.peek_observable_expectation(stim.PauliString("XXX")) == 1
+    assert s.peek_observable_expectation(stim.PauliString("-XXX")) == -1
+    assert s.peek_observable_expectation(stim.PauliString("YYX")) == +1
+    assert s.peek_observable_expectation(stim.PauliString("XYY")) == -1
+
+    assert s.peek_observable_expectation(stim.PauliString("")) == 1
+    assert s.peek_observable_expectation(stim.PauliString("-I")) == -1
+    assert s.peek_observable_expectation(stim.PauliString("_____")) == 1
+    assert s.peek_observable_expectation(stim.PauliString("XXXZZZZZ")) == 1
+    assert s.peek_observable_expectation(stim.PauliString("XXXZZZZX")) == 0
+
+    with pytest.raises(ValueError, match="imaginary sign"):
+        s.peek_observable_expectation(stim.PauliString("iZZ"))
+    with pytest.raises(ValueError, match="imaginary sign"):
+        s.peek_observable_expectation(stim.PauliString("-iZZ"))
