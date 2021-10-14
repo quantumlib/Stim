@@ -249,12 +249,12 @@ int stim::main(int argc, const char **argv) {
         }
         int modes_picked = mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert;
         if (modes_picked != 1) {
+            std::cerr << "\033[31m";
             if (modes_picked > 1) {
                 std::cerr << "More than one mode was specified.\n\n";
             } else {
                 std::cerr << "No mode was given.\n\n";
             }
-            std::cerr << "\033[31m";
             std::cerr << help_for("");
             std::cerr << "\033[0m";
             return EXIT_FAILURE;
@@ -281,7 +281,13 @@ int stim::main(int argc, const char **argv) {
 
         throw std::out_of_range("Mode not handled.");
     } catch (const std::invalid_argument &ex) {
-        std::cerr << ex.what() << "\n";
+        const std::string &s = ex.what();
+        std::cerr << "\033[31m";
+        std::cerr << s;
+        if (s.empty() || s.back() != '\n') {
+            std::cerr << '\n';
+        }
+        std::cerr << "\033[0m";
         return EXIT_FAILURE;
     }
 }

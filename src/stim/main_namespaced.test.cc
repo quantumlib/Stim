@@ -711,10 +711,10 @@ M 0 1
 DETECTOR rec[-1]
 DETECTOR rec[-2]
             )input")),
-        trim(R"output(
-[stderr=The detectors D0, D1 anti-commuted with a Z-basis reset, and allow_gauge_detectors isn't set.
-Context: analyzing the circuit operation at offset 0 which is 'R 0'.]
-            )output"));
+        trim("[stderr=\x1B[31mThe detectors D0, D1 anti-commuted with a Z-basis reset, and allow_gauge_detectors isn't "
+             "set.\n"
+             "Context: analyzing the circuit operation at offset 0 which is 'R 0'.\n"
+             "\x1B[0m]"));
 }
 
 TEST(main, analyze_errors_all_approximate_disjoint_errors) {
@@ -736,10 +736,10 @@ PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
 M 0
 DETECTOR rec[-1]
             )input")),
-        trim(R"output(
-[stderr=Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.
-Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.]
-            )output"));
+        trim("[stderr=\x1B[31mHandling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be "
+             "specified.\n"
+             "Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.\n"
+             "\x1B[0m]"));
 
     ASSERT_EQ(
         trim(execute({"--analyze_errors", "--approximate_disjoint_errors", "0.3"}, R"input(
@@ -748,10 +748,10 @@ PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
 M 0
 DETECTOR rec[-1]
             )input")),
-        trim(R"output(
-[stderr=PAULI_CHANNEL_1 has a component probability '0.375000' larger than the `approximate_disjoint_errors` threshold of '0.300000'.
-Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.]
-            )output"));
+        trim("[stderr=\x1B[31mPAULI_CHANNEL_1 has a component probability '0.375000' larger than the "
+             "`approximate_disjoint_errors` threshold of '0.300000'.\n"
+             "Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.\n"
+             "\x1B[0m]"));
 }
 
 TEST(main, generate_circuits) {
