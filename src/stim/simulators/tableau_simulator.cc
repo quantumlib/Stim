@@ -991,3 +991,34 @@ std::vector<PauliString> TableauSimulator::canonical_stabilizers() const {
     }
     return stabilizers;
 }
+
+int8_t TableauSimulator::peek_observable_expectation(const stim::PauliString &observable) const {
+    stim::TableauSimulator state = *this;
+
+    // Kick the observable onto an ancilla qubit's Z observable.
+    auto n = (uint32_t)std::max(state.inv_state.num_qubits, observable.num_qubits);
+    state.ensure_large_enough_for_qubits(n + 1);
+    GateTarget anc{n};
+    if (observable.sign) {
+        state.X(stim::OperationData{{}, &anc});
+    }
+    for (size_t i = 0; i < observable.num_qubits; i++) {
+        int p = observable.xs[i] + (observable.zs[i] << 1);
+        std::array<GateTarget, 2> targets{GateTarget{(uint32_t)i}, anc};
+        stim::OperationData pair_dat{{}, {targets.data(), targets.data() + targets.size()}};
+        if (p == 1) {
+            state.XCX(pair_dat);
+        } else if (p == 2) {
+            state.ZCX(pair_dat);
+        } else if (p == 3) {
+            state.YCX(pair_dat);
+        }
+    }
+
+    // Use simulator features to determines if the measurement is deterministic.
+    auto result_kickback = state.measure_kickback_z(anc);
+    if (result_kickback.second.num_qubits) {
+        return 0;
+    }
+    return result_kickback.first ? -1 : +1;
+}

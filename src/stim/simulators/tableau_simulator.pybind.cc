@@ -713,6 +713,58 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "peek_observable_expectation",
+        [](const TableauSimulator &self, const PyPauliString &observable) -> int8_t {
+            if (observable.imag) {
+                throw std::invalid_argument(
+                    "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
+            }
+            return self.peek_observable_expectation(observable.value);
+        },
+        pybind11::arg("observable"),
+        clean_doc_string(u8R"DOC(
+            Determines the expected value of an observable (which will always be -1, 0, or +1).
+
+            This is a non-physical operation.
+            It reports information about the quantum state without disturbing it.
+
+            Args:
+                observable: The observable to determine the expected value of.
+                    This observable must have a real sign, not an imaginary sign.
+
+            Returns:
+                +1: Observable will be deterministically false when measured.
+                -1: Observable will be deterministically true when measured.
+                0: Observable will be random when measured.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.peek_observable_expectation(stim.PauliString("+Z"))
+                1
+                >>> s.peek_observable_expectation(stim.PauliString("+X"))
+                0
+                >>> s.peek_observable_expectation(stim.PauliString("-Z"))
+                -1
+
+                >>> s.do(stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1
+                ... '''))
+                >>> queries = ['XX', 'YY', 'ZZ', '-ZZ', 'ZI', 'II', 'IIZ']
+                >>> for q in queries:
+                ...     print(q, s.peek_observable_expectation(stim.PauliString(q)))
+                XX 1
+                YY -1
+                ZZ 1
+                -ZZ -1
+                ZI 0
+                II 1
+                IIZ 1
+        )DOC")
+            .data());
+
+    c.def(
         "measure",
         [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);

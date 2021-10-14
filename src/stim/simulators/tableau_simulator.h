@@ -247,6 +247,20 @@ struct TableauSimulator {
     /// qubit.
     void collapse_isolate_qubit_z(size_t target, TableauTransposedRaii &transposed_raii);
 
+    /// Determines the expected value of an observable (which will always be -1, 0, or +1).
+    ///
+    /// This is a non-physical operation.
+    /// It reports information about the quantum state without disturbing it.
+    ///
+    /// Args:
+    ///     observable: The observable to determine the expected value of.
+    ///
+    /// Returns:
+    ///     +1: Observable will be deterministically false when measured.
+    ///     -1: Observable will be deterministically true when measured.
+    ///     0: Observable will be random when measured.
+    int8_t peek_observable_expectation(const stim::PauliString &observable) const;
+
    private:
     void noisify_new_measurements(const OperationData &target_data);
 };
