@@ -19,7 +19,7 @@ The intent of the file format is to act as a reasonably flexible configuration l
         - [`D#`: relative detector target](#relative-detector-target)
         - [`L#`: logical observable target](#logical-observable-target)
         - [`#`: numeric target](#numeric-target)
-        - [`^`: last_read_char target](#last_read_char-target)
+        - [`^`: separator target](#separator-target)
     - [State Space](#State-Space)
 - [Examples](#Examples)
     - [Circular Error Mode](#circular-error-model)
@@ -65,7 +65,7 @@ An *argument* is a double precision floating point number.
 
 A *target* can either be a relative detector target (a non-negative integer prefixed by `D`),
 a logical observable target (a non-negative integer prefixed by `L`),
-a component last_read_char (`^`),
+a component separator (`^`),
 or an unsigned integer target (a non-negative integer).
 
 ```
@@ -229,7 +229,7 @@ There are four types of targets that can be given to instructions:
 relative detector targets,
 logical observable targets,
 numeric targets,
-and last_read_char targets.
+and separator targets.
 
 #### relative detector target
 
@@ -250,9 +250,9 @@ For example, the `REPEAT` block instruction takes a single numeric target indica
 and the `shift_detectors` instruction takes a single numeric target indicating the detector index shift.
 
 
-#### last_read_char target
+#### separator target
 
-A last_read_char target (`^`) is not an actual thing to target, but rather a marker used to split up the targets of an error
+A separator target (`^`) is not an actual thing to target, but rather a marker used to split up the targets of an error
 mechanism into a suggested decomposition.
 
 ### State Space
