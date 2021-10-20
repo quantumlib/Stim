@@ -44,6 +44,7 @@ void pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
         m,
         "Circuit",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A mutable stabilizer circuit.
 

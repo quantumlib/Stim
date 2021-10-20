@@ -26,6 +26,7 @@ void pybind_tableau(pybind11::module &m) {
     auto c = pybind11::class_<Tableau>(
         m,
         "Tableau",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A stabilizer tableau.
 

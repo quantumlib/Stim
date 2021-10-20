@@ -24,6 +24,7 @@ void pybind_detector_error_model_repeat_block(pybind11::module &m) {
     auto c = pybind11::class_<ExposedDemRepeatBlock>(
         m,
         "DemRepeatBlock",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A repeat block from a detector error model.
 

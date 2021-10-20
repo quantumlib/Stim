@@ -36,6 +36,7 @@ void pybind_circuit_gate_target(pybind11::module &m) {
     auto c = pybind11::class_<GateTarget>(
         m,
         "GateTarget",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             Represents a gate target, like `0` or `rec[-1]`, from a circuit.
 

@@ -21,6 +21,7 @@
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
+#include "stim/py/march.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
@@ -104,7 +105,7 @@ pybind11::dict raw_format_data() {
     return result;
 }
 
-PYBIND11_MODULE(stim, m) {
+PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.attr("__version__") = xstr(VERSION_INFO);
     m.doc() = R"pbdoc(
         Stim: A fast stabilizer circuit simulator library.
@@ -202,4 +203,5 @@ PYBIND11_MODULE(stim, m) {
 
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
+    m.def("_UNSTABLE_detect_march", &detect_march);
 }

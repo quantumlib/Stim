@@ -72,6 +72,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
     auto c = pybind11::class_<TableauSimulator>(
         m,
         "TableauSimulator",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
 
