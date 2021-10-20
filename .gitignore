@@ -30,4 +30,4 @@ wheelhouse/*
 venv/*
 .venv/*
 **/LastTest.log
-stim.so
+*.so

@@ -189,6 +189,7 @@ In a clean virtual environment:
 ```bash
 pip install pytest
 pip install -e .
+python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
 python -m pytest src
 python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
 ```
