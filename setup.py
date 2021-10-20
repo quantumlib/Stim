@@ -83,7 +83,7 @@ setup(
     python_requires='>=3.6.0',
     data_files=[('', ['glue/python/README.md'])],
     packages=['stim'],
-    package_dir={'stim': 'glue/python/stim'},
+    package_dir={'stim': 'glue/python'},
     install_requires=['numpy'],
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     options={'build': {'build_base': 'python_build_stim'}},

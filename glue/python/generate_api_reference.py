@@ -35,8 +35,9 @@ keep = {
     "__hash__",
 }
 skip = {
-    "_UNSTABLE_raw_gate_data",
-    "_UNSTABLE_raw_format_data",
+    "__builtins__",
+    "__cached__",
+    "__path__",
     "__class__",
     "__delattr__",
     "__dir__",
@@ -106,6 +107,10 @@ def generate_documentation(*, obj: object, level: int, full_name: str, outs: Def
     for sub_name in dir(obj):
         if sub_name in skip:
             continue
+        if sub_name.startswith("__pybind11"):
+            continue
+        if sub_name.startswith('_') and not sub_name.startswith('__'):
+            continue
         if sub_name.endswith("__") and sub_name not in keep:
             raise ValueError("Need to classify " + sub_name + " as keep or skip.")
         sub_full_name = full_name + "." + sub_name
@@ -144,7 +149,7 @@ def main():
     for k in sorted(level_entries.keys()):
         for entry in level_entries[k]:
             print()
-            print(entry)
+            print(entry.replace("stim._stim_march_avx2", "stim"))
 
 
 if __name__ == '__main__':
