@@ -16,12 +16,12 @@
 
 #include <cassert>
 
-#include "frame_simulator.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/mem/simd_util.h"
+#include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
 

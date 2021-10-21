@@ -8,19 +8,19 @@
 
 using namespace stim;
 
-struct coord {
+struct color_coord {
     float x;
     float y;
-    coord operator+(coord other) const {
+    color_coord operator+(color_coord other) const {
         return {x + other.x, y + other.y};
     }
-    coord operator-(coord other) const {
+    color_coord operator-(color_coord other) const {
         return {x - other.x, y - other.y};
     }
-    bool operator==(coord other) const {
+    bool operator==(color_coord other) const {
         return x == other.x && y == other.y;
     }
-    bool operator<(coord other) const {
+    bool operator<(color_coord other) const {
         if (x != other.x) {
             return x < other.x;
         }
@@ -47,14 +47,14 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     uint32_t w = d + (d - 1) / 2;
 
     // Lay out and index qubits.
-    std::set<coord> data_coords;
-    std::set<coord> measure_coords;
-    std::map<coord, uint32_t> p2q;
+    std::set<color_coord> data_coords;
+    std::set<color_coord> measure_coords;
+    std::map<color_coord, uint32_t> p2q;
     std::vector<uint32_t> data_qubits;
     std::vector<uint32_t> measurement_qubits;
     for (size_t y = 0; y < w; y++) {
         for (size_t x = 0; x < w - y; x++) {
-            coord q{x + y / 2.0f, (float)y};
+            color_coord q{x + y / 2.0f, (float)y};
             auto i = (uint32_t)p2q.size();
             p2q[q] = i;
             if ((x + 2 * y) % 3 == 2) {
@@ -76,9 +76,9 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     std::sort(measurement_qubits.begin(), measurement_qubits.end());
 
     // Reverse indices.
-    std::map<coord, uint32_t> data_coord_to_order;
-    std::map<coord, uint32_t> measure_coord_to_order;
-    std::map<uint32_t, coord> q2p;
+    std::map<color_coord, uint32_t> data_coord_to_order;
+    std::map<color_coord, uint32_t> measure_coord_to_order;
+    std::map<uint32_t, color_coord> q2p;
     for (const auto &kv : p2q) {
         q2p[kv.second] = kv.first;
     }
@@ -93,7 +93,7 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
 
     // Precompute targets for each tick of CNOT gates.
     std::array<std::vector<uint32_t>, 6> cnot_targets;
-    std::vector<coord> deltas{
+    std::vector<color_coord> deltas{
         {1, 0},
         {0.5, 1},
         {0.5, -1},
@@ -127,13 +127,13 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     auto m = (uint32_t)measurement_qubits.size();
     Circuit head;
     for (auto q : all_qubits) {
-        coord c = q2p[q];
+        color_coord c = q2p[q];
         head.append_op("QUBIT_COORDS", {q}, {c.x, c.y});
     }
     params.append_reset(head, all_qubits);
     head += cycle_actions * 2;
     for (uint32_t k = m; k-- > 0;) {
-        coord c = q2p[measurement_qubits[m - k - 1]];
+        color_coord c = q2p[measurement_qubits[m - k - 1]];
         head.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT}, {c.x, c.y, 0});
     }
 
@@ -141,7 +141,7 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     Circuit body = cycle_actions;
     body.append_op("SHIFT_COORDS", {}, {0, 0, 1});
     for (uint32_t k = m; k-- > 0;) {
-        coord c = q2p[measurement_qubits[m - k - 1]];
+        color_coord c = q2p[measurement_qubits[m - k - 1]];
         body.append_op(
             "DETECTOR",
             {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT, (k + 1 + 2 * m) | TARGET_RECORD_BIT},

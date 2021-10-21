@@ -29,14 +29,14 @@ bazel build stim
 ### Manual Build
 
 ```bash
-find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -pthread -std=c++11 -O3 -march=native
+find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -I src -pthread -std=c++11 -O3 -march=native
 # ./a.out
 ```
 
 # Profile stim command line tool
 
 ```bash
-find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -pthread -std=c++11 -O3 -march=native -g -fno-omit-frame-pointer
+find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -I src -pthread -std=c++11 -O3 -march=native -g -fno-omit-frame-pointer
 sudo perf record -g ./a.out  # [ADD STIM FLAGS FOR THE CASE YOU WANT TO PROFILE]
 sudo perf report
 ```

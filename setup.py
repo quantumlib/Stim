@@ -35,7 +35,10 @@ stim_polyfill = Extension(
         '-O3',
         f'-DVERSION_INFO={version}',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_polyfill',
-    ]
+    ],
+    extra_link_args=[
+        '-strip-all',
+    ],
 )
 stim_sse = Extension(
     'stim._stim_march_sse2',
@@ -49,7 +52,10 @@ stim_sse = Extension(
         '-msse2',
         f'-DVERSION_INFO={version}',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_sse2',
-    ]
+    ],
+    extra_link_args=[
+        '-strip-all',
+    ],
 )
 stim_avx = Extension(
     'stim._stim_march_avx2',
@@ -63,7 +69,10 @@ stim_avx = Extension(
         '-mavx2',
         f'-DVERSION_INFO={version}',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_avx2',
-    ]
+    ],
+    extra_link_args=[
+        '-Wl,-strip-all',
+    ],
 )
 
 with open('glue/python/README.md') as f:
