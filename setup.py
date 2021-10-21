@@ -38,7 +38,6 @@ stim_polyfill = Extension(
     language='c++',
     extra_compile_args=[
         *common_compile_args,
-        '-mno-sse2',
         '-mno-avx2',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_polyfill',
     ],
