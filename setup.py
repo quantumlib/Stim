@@ -24,54 +24,47 @@ RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FIL
 
 version = '1.7.dev1'
 
+common_compile_args = [
+    '-std=c++11',
+    '-fno-strict-aliasing',
+    '-O3',
+    '-g0',
+    f'-DVERSION_INFO={version}',
+]
 stim_polyfill = Extension(
     'stim._stim_march_polyfill',
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
-        '-std=c++11',
-        '-fno-strict-aliasing',
-        '-O3',
-        f'-DVERSION_INFO={version}',
+        *common_compile_args,
+        '-mno-sse2',
+        '-mno-avx2',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_polyfill',
     ],
-    extra_link_args=[
-        '-Wl,-strip-all',
-    ],
 )
-stim_sse = Extension(
+stim_sse2 = Extension(
     'stim._stim_march_sse2',
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
-        '-std=c++11',
-        '-fno-strict-aliasing',
-        '-O3',
+        *common_compile_args,
         '-msse2',
-        f'-DVERSION_INFO={version}',
+        '-mno-avx2',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_sse2',
     ],
-    extra_link_args=[
-        '-Wl,-strip-all',
-    ],
 )
-stim_avx = Extension(
+stim_avx2 = Extension(
     'stim._stim_march_avx2',
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
-        '-std=c++11',
-        '-fno-strict-aliasing',
-        '-O3',
+        *common_compile_args,
+        '-msse2',
         '-mavx2',
-        f'-DVERSION_INFO={version}',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_avx2',
-    ],
-    extra_link_args=[
-        '-Wl,-strip-all',
     ],
 )
 
@@ -88,7 +81,7 @@ setup(
     description='A fast quantum stabilizer circuit simulator.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    ext_modules=[stim_polyfill, stim_sse, stim_avx],
+    ext_modules=[stim_polyfill, stim_sse2, stim_avx2],
     python_requires='>=3.6.0',
     data_files=[('', ['glue/python/README.md'])],
     packages=['stim'],
