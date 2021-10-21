@@ -37,7 +37,7 @@ stim_polyfill = Extension(
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_polyfill',
     ],
     extra_link_args=[
-        '-strip-all',
+        '-Wl,-strip-all',
     ],
 )
 stim_sse = Extension(
@@ -54,7 +54,7 @@ stim_sse = Extension(
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_sse2',
     ],
     extra_link_args=[
-        '-strip-all',
+        '-Wl,-strip-all',
     ],
 )
 stim_avx = Extension(
