@@ -37,7 +37,7 @@ jobs:
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_SKIP: "cp27-* cp35-* pp*"
-          CIBW_TEST_REQUIRES: cirq-core pytest Pillow==8.3.1  # build breaks for pillow 8.4.0?
+          CIBW_TEST_REQUIRES: cirq-core pytest Pillow==8.3.1  # workaround for build breakage in pillow 8.4
           CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
       - uses: actions/upload-artifact@v2
         with:

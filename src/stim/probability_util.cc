@@ -19,7 +19,7 @@ using namespace stim;
 RareErrorIterator::RareErrorIterator(float probability)
     : next_candidate(0), is_one(probability == 1), dist(probability) {
     if (!(probability >= 0 && probability <= 1)) {
-        throw std::out_of_range("Invalid probability.");
+        throw std::out_of_range("Invalid probability: " + std::to_string(probability));
     }
 }
 

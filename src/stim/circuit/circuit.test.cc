@@ -1077,3 +1077,10 @@ TEST(circuit, aliased_noiseless_circuit) {
         }
     )CIRCUIT"));
 }
+
+TEST(circuit, validate_nan_probability) {
+    Circuit c;
+    ASSERT_THROW({
+        c.append_op("X_ERROR", {0}, NAN);
+    }, std::invalid_argument);
+}

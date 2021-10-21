@@ -139,7 +139,7 @@ void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, Cons
     if (gate.flags & GATE_ARGS_ARE_DISJOINT_PROBABILITIES) {
         double total = 0;
         for (const auto p : args) {
-            if (p < 0 || p > 1) {
+            if (!(p >= 0 && p <= 1)) {
                 throw std::invalid_argument(
                     "Gate " + std::string(gate.name) + " only takes probability arguments, but one of its arguments (" +
                     comma_sep(args).str() + ") wasn't a probability.");
