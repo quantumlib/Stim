@@ -1031,4 +1031,56 @@ void pybind_tableau(pybind11::module &m) {
                 The mutated tableau.
         )DOC")
             .data());
+
+    c.def(pybind11::pickle(
+        [](const Tableau &self) {
+            pybind11::dict d;
+            std::vector<PyPauliString> xs;
+            std::vector<PyPauliString> zs;
+            for (size_t q = 0; q < self.num_qubits; q++) {
+                xs.push_back(PyPauliString(self.xs[q]));
+            }
+            for (size_t q = 0; q < self.num_qubits; q++) {
+                zs.push_back(PyPauliString(self.zs[q]));
+            }
+            d["xs"] = xs;
+            d["zs"] = zs;
+            return d;
+        },
+        [](const pybind11::dict &d) {
+            std::vector<PyPauliString> xs;
+            std::vector<PyPauliString> zs;
+            for (const auto &e : d["xs"]) {
+                xs.push_back(pybind11::cast<PyPauliString>(e));
+            }
+            for (const auto &e : d["zs"]) {
+                zs.push_back(pybind11::cast<PyPauliString>(e));
+            }
+
+            size_t n = xs.size();
+            bool correct_shape = zs.size() == n;
+            for (const auto &e : xs) {
+                correct_shape &= !e.imag;
+                correct_shape &= e.value.num_qubits == n;
+            }
+            for (const auto &e : zs) {
+                correct_shape &= !e.imag;
+                correct_shape &= e.value.num_qubits == n;
+            }
+            if (!correct_shape) {
+                throw std::invalid_argument("Invalid pickle.");
+            }
+
+            Tableau result(n);
+            for (size_t q = 0; q < n; q++) {
+                result.xs[q] = xs[q].value;
+                result.zs[q] = zs[q].value;
+            }
+            if (!result.satisfies_invariants()) {
+                throw std::invalid_argument(
+                    "Pickled tableau was invalid. It doesn't preserve commutativity.");
+            }
+            return result;
+        }
+    ));
 }

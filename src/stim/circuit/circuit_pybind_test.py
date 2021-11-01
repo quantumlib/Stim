@@ -565,3 +565,17 @@ def test_circuit_detector_sampling_seeded():
     s3 = c.compile_detector_sampler(seed=6).sample(256)
     assert np.array_equal(s1, s2)
     assert not np.array_equal(s1, s3)
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.Circuit("""
+        H 0
+        REPEAT 100 {
+            M 0
+            CNOT rec[-1] 2
+        }
+    """)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t

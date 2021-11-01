@@ -196,6 +196,23 @@ std::string PyPauliString::str() const {
     }
     return sub;
 }
+PyPauliString PyPauliString::from_text(const char *text) {
+    std::complex<float> factor{1, 0};
+    int offset = 0;
+    if (text[0] == 'i') {
+        factor = {0, 1};
+        offset = 1;
+    } else if (text[0] == '-' && text[1] == 'i') {
+        factor = {0, -1};
+        offset = 2;
+    } else if (text[0] == '+' && text[1] == 'i') {
+        factor = {0, 1};
+        offset = 2;
+    }
+    PyPauliString value{PauliString::from_str(text + offset), false};
+    value *= factor;
+    return value;
+}
 
 void pybind_pauli_string(pybind11::module &m) {
     auto c = pybind11::class_<PyPauliString>(
@@ -237,23 +254,7 @@ void pybind_pauli_string(pybind11::module &m) {
             .data());
 
     c.def(
-        pybind11::init([](const char *text) {
-            std::complex<float> factor{1, 0};
-            int offset = 0;
-            if (text[0] == 'i') {
-                factor = {0, 1};
-                offset = 1;
-            } else if (text[0] == '-' && text[1] == 'i') {
-                factor = {0, -1};
-                offset = 2;
-            } else if (text[0] == '+' && text[1] == 'i') {
-                factor = {0, 1};
-                offset = 2;
-            }
-            PyPauliString value{PauliString::from_str(text + offset), false};
-            value *= factor;
-            return value;
-        }),
+        pybind11::init(&PyPauliString::from_text),
         pybind11::arg("text"),
         clean_doc_string(u8R"DOC(
             Creates a stim.PauliString from a text string.
@@ -901,4 +902,13 @@ void pybind_pauli_string(pybind11::module &m) {
                 3: Pauli Z.
         )DOC")
             .data());
+
+    c.def(pybind11::pickle(
+        [](const PyPauliString &self) -> pybind11::str {
+            return self.str();
+        },
+        [](const pybind11::str &d) {
+            return PyPauliString::from_text(pybind11::cast<std::string>(d).data());
+        }
+    ));
 }

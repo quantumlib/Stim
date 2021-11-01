@@ -97,3 +97,16 @@ def test_repr():
     assert eval(repr(v), {"stim": stim}) == v
     v = stim.DetectorErrorModel("error(0.125) D0 D1")
     assert eval(repr(v), {"stim": stim}) == v
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.DetectorErrorModel("""
+        repeat 100 {
+            error(0.25) D0 L1
+            shift_detectors(1, 2) 3
+        }
+    """)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t
