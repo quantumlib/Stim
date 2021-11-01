@@ -31,3 +31,6 @@ venv/*
 .venv/*
 **/LastTest.log
 *.so
+result
+result*
+*.drv
