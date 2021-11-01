@@ -297,4 +297,64 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ''')
         )DOC")
             .data());
+
+
+    c.def(
+        "approx_equals",
+        [](const DetectorErrorModel &self, const pybind11::object &obj, double atol) -> bool {
+            try {
+                return self.approx_equals(pybind11::cast<DetectorErrorModel>(obj), atol);
+            } catch (const pybind11::cast_error &ex) {
+                return false;
+            }
+        },
+        pybind11::arg("other"),
+        pybind11::kw_only(),
+        pybind11::arg("atol"),
+        clean_doc_string(u8R"DOC(
+            Checks if a detector error model is approximately equal to another detector error model.
+
+            Two detector error model are approximately equal if they are equal up to slight perturbations of instruction
+            arguments such as probabilities. For example `error(0.100) D0` is approximately equal to `error(0.099) D0`
+            within an absolute tolerance of 0.002. All other details of the models (such as the ordering of errors and
+            their targets) must be exactly the same.
+
+            Args:
+                other: The detector error model, or other object, to compare to this one.
+                atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+
+            Returns:
+                True if the given object is a detector error model approximately equal up to the receiving circuit up to
+                the given tolerance, otherwise False.
+
+            Examples:
+                >>> import stim
+                >>> base = stim.DetectorErrorModel('''
+                ...    error(0.099) D0 D1
+                ... ''')
+
+                >>> base.approx_equals(base, atol=0)
+                True
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    error(0.101) D0 D1
+                ... '''), atol=0)
+                False
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    error(0.101) D0 D1
+                ... '''), atol=0.0001)
+                False
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    error(0.101) D0 D1
+                ... '''), atol=0.01)
+                True
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    error(0.099) D0 D1 L0 L1 L2 L3 L4
+                ... '''), atol=9999)
+                False
+        )DOC")
+            .data());
 }

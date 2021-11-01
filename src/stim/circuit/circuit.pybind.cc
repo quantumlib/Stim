@@ -1015,4 +1015,68 @@ void pybind_circuit(pybind11::module &m) {
                 ''')
         )DOC")
             .data());
+
+    c.def(
+        "approx_equals",
+        [](const Circuit &self, const pybind11::object &obj, double atol) -> bool {
+            try {
+                return self.approx_equals(pybind11::cast<Circuit>(obj), atol);
+            } catch (const pybind11::cast_error &ex) {
+                return false;
+            }
+        },
+        pybind11::arg("other"),
+        pybind11::kw_only(),
+        pybind11::arg("atol"),
+        clean_doc_string(u8R"DOC(
+            Checks if a circuit is approximately equal to another circuit.
+
+            Two circuits are approximately equal if they are equal up to slight perturbations of instruction arguments
+            such as probabilities. For example `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an
+            absolute tolerance of 0.002. All other details of the circuits (such as the ordering of instructions and
+            targets) must be exactly the same.
+
+            Args:
+                other: The circuit, or other object, to compare to this one.
+                atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+
+            Returns:
+                True if the given object is a circuit approximately equal up to the receiving circuit up to the given
+                tolerance, otherwise False.
+
+            Examples:
+                >>> import stim
+                >>> base = stim.Circuit('''
+                ...    X_ERROR(0.099) 0 1 2
+                ...    M 0 1 2
+                ... ''')
+
+                >>> base.approx_equals(base, atol=0)
+                True
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    X_ERROR(0.101) 0 1 2
+                ...    M 0 1 2
+                ... '''), atol=0)
+                False
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    X_ERROR(0.101) 0 1 2
+                ...    M 0 1 2
+                ... '''), atol=0.0001)
+                False
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    X_ERROR(0.101) 0 1 2
+                ...    M 0 1 2
+                ... '''), atol=0.01)
+                True
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    DEPOLARIZE1(0.099) 0 1 2
+                ...    MRX 0 1 2
+                ... '''), atol=9999)
+                False
+        )DOC")
+            .data());
 }

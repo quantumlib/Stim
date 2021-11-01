@@ -97,3 +97,15 @@ def test_repr():
     assert eval(repr(v), {"stim": stim}) == v
     v = stim.DetectorErrorModel("error(0.125) D0 D1")
     assert eval(repr(v), {"stim": stim}) == v
+
+
+def test_approx_equals():
+    base = stim.DetectorErrorModel("error(0.099) D0")
+    assert not base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=0)
+    assert not base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=0.00001)
+    assert base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=0.01)
+    assert base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=999)
+    assert not base.approx_equals(stim.DetectorErrorModel("error(0.101) D0 D1"), atol=999)
+
+    assert not base.approx_equals(object(), atol=999)
+    assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
