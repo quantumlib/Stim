@@ -83,6 +83,8 @@ cc_binary(
     copts = [
         "-O3",
         "-fvisibility=hidden",
+        "-march=native",
+        "-DSTIM_PYBIND11_MODULE_NAME=stim",
     ],
     includes = ["src/"],
     linkopts = ["-lpthread"],

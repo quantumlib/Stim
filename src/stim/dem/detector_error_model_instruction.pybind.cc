@@ -86,6 +86,7 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
     auto c = pybind11::class_<ExposedDemInstruction>(
         m,
         "DemInstruction",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             An instruction from a detector error model.
 

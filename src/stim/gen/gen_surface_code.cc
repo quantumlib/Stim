@@ -8,19 +8,19 @@
 
 using namespace stim;
 
-struct coord {
+struct surface_coord {
     float x;
     float y;
-    coord operator+(coord other) const {
+    surface_coord operator+(surface_coord other) const {
         return {x + other.x, y + other.y};
     }
-    coord operator-(coord other) const {
+    surface_coord operator-(surface_coord other) const {
         return {x - other.x, y - other.y};
     }
-    bool operator==(coord other) const {
+    bool operator==(surface_coord other) const {
         return x == other.x && y == other.y;
     }
-    bool operator<(coord other) const {
+    bool operator<(surface_coord other) const {
         if (x != other.x) {
             return x < other.x;
         }
@@ -29,15 +29,15 @@ struct coord {
 };
 
 GeneratedCircuit _finish_surface_code_circuit(
-    std::function<uint32_t(coord)> coord_to_index,
-    const std::set<coord> &data_coords,
-    const std::set<coord> &x_measure_coords,
-    const std::set<coord> &z_measure_coords,
+    std::function<uint32_t(surface_coord)> coord_to_index,
+    const std::set<surface_coord> &data_coords,
+    const std::set<surface_coord> &x_measure_coords,
+    const std::set<surface_coord> &z_measure_coords,
     const CircuitGenParameters &params,
-    const std::vector<coord> &x_order,
-    const std::vector<coord> &z_order,
-    const std::vector<coord> x_observable,
-    const std::vector<coord> z_observable,
+    const std::vector<surface_coord> &x_order,
+    const std::vector<surface_coord> &z_order,
+    const std::vector<surface_coord> x_observable,
+    const std::vector<surface_coord> z_observable,
     bool is_memory_x) {
     if (params.rounds < 1) {
         throw std::invalid_argument("Need rounds >= 1.");
@@ -50,7 +50,7 @@ GeneratedCircuit _finish_surface_code_circuit(
     const auto &chosen_basis_measure_coords = is_memory_x ? x_measure_coords : z_measure_coords;
 
     // Index the measurement qubits and data qubits.
-    std::map<coord, uint32_t> p2q;
+    std::map<surface_coord, uint32_t> p2q;
     for (auto q : data_coords) {
         p2q[q] = coord_to_index(q);
     }
@@ -62,7 +62,7 @@ GeneratedCircuit _finish_surface_code_circuit(
     }
 
     // Reverse index.
-    std::map<uint32_t, coord> q2p;
+    std::map<uint32_t, surface_coord> q2p;
     for (const auto &kv : p2q) {
         q2p[kv.second] = kv.first;
     }
@@ -90,8 +90,8 @@ GeneratedCircuit _finish_surface_code_circuit(
     std::sort(x_measurement_qubits.begin(), x_measurement_qubits.end());
 
     // Reverse index the measurement order used for defining detectors.
-    std::map<coord, uint32_t> data_coord_to_order;
-    std::map<coord, uint32_t> measure_coord_to_order;
+    std::map<surface_coord, uint32_t> data_coord_to_order;
+    std::map<surface_coord, uint32_t> measure_coord_to_order;
     for (auto q : data_qubits) {
         auto i = data_coord_to_order.size();
         data_coord_to_order[q2p[q]] = i;
@@ -220,12 +220,12 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
     uint32_t d = params.distance;
 
     // Place data qubits.
-    std::set<coord> data_coords;
-    std::vector<coord> x_observable;
-    std::vector<coord> z_observable;
+    std::set<surface_coord> data_coords;
+    std::vector<surface_coord> x_observable;
+    std::vector<surface_coord> z_observable;
     for (float x = 0.5; x <= d; x++) {
         for (float y = 0.5; y <= d; y++) {
-            coord q{x * 2, y * 2};
+            surface_coord q{x * 2, y * 2};
             data_coords.insert(q);
             if (y == 0.5) {
                 z_observable.push_back(q);
@@ -237,11 +237,11 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
     }
 
     // Place measurement qubits.
-    std::set<coord> x_measure_coords;
-    std::set<coord> z_measure_coords;
+    std::set<surface_coord> x_measure_coords;
+    std::set<surface_coord> z_measure_coords;
     for (size_t x = 0; x <= d; x++) {
         for (size_t y = 0; y <= d; y++) {
-            coord q{(float)x * 2, (float)y * 2};
+            surface_coord q{(float)x * 2, (float)y * 2};
             bool on_boundary_1 = x == 0 || x == d;
             bool on_boundary_2 = y == 0 || y == d;
             bool parity = x % 2 != y % 2;
@@ -260,13 +260,13 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
     }
 
     // Define interaction orders so that hook errors run against the error grain instead of with it.
-    std::vector<coord> z_order{
+    std::vector<surface_coord> z_order{
         {1, 1},
         {1, -1},
         {-1, 1},
         {-1, -1},
     };
-    std::vector<coord> x_order{
+    std::vector<surface_coord> x_order{
         {1, 1},
         {-1, 1},
         {1, -1},
@@ -275,8 +275,8 @@ GeneratedCircuit _generate_rotated_surface_code_circuit(const CircuitGenParamete
 
     // Delegate.
     return _finish_surface_code_circuit(
-        [&](coord q) {
-            q = q - coord{0, fmodf(q.x, 2)};
+        [&](surface_coord q) {
+            q = q - surface_coord{0, fmodf(q.x, 2)};
             return (uint32_t)(q.x + q.y * (d + 0.5));
         },
         data_coords,
@@ -295,14 +295,14 @@ GeneratedCircuit _generate_unrotated_surface_code_circuit(const CircuitGenParame
     assert(params.rounds > 0);
 
     // Place qubits.
-    std::set<coord> data_coords;
-    std::set<coord> x_measure_coords;
-    std::set<coord> z_measure_coords;
-    std::vector<coord> x_observable;
-    std::vector<coord> z_observable;
+    std::set<surface_coord> data_coords;
+    std::set<surface_coord> x_measure_coords;
+    std::set<surface_coord> z_measure_coords;
+    std::vector<surface_coord> x_observable;
+    std::vector<surface_coord> z_observable;
     for (size_t x = 0; x < 2 * d - 1; x++) {
         for (size_t y = 0; y < 2 * d - 1; y++) {
-            coord q{(float)x, (float)y};
+            surface_coord q{(float)x, (float)y};
             bool parity = x % 2 != y % 2;
             if (parity) {
                 if (x % 2 == 0) {
@@ -323,7 +323,7 @@ GeneratedCircuit _generate_unrotated_surface_code_circuit(const CircuitGenParame
     }
 
     // Define interaction order. Doesn't matter so much for unrotated.
-    std::vector<coord> order{
+    std::vector<surface_coord> order{
         {1, 0},
         {0, 1},
         {0, -1},
@@ -332,7 +332,7 @@ GeneratedCircuit _generate_unrotated_surface_code_circuit(const CircuitGenParame
 
     // Delegate.
     return _finish_surface_code_circuit(
-        [&](coord q) {
+        [&](surface_coord q) {
             return (uint32_t)(q.x + q.y * (2 * d - 1));
         },
         data_coords,

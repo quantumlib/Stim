@@ -22,19 +22,49 @@ PERF_FILES = glob.glob("src/**/*.perf.cc", recursive=True)
 MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
 RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES))
 
-ALL_HEADERS = glob.glob("src/**/*.h", recursive=True)
-TEST_HEADERS = glob.glob("src/**/*.test.h", recursive=True)
-PERF_HEADERS = glob.glob("src/**/*.perf.h", recursive=True)
-RELEVANT_HEADERS = sorted(set(ALL_HEADERS) - set(TEST_HEADERS + PERF_HEADERS))
+version = '1.7.dev1'
 
-version = '1.7.dev0'
-
-extension_module = Extension(
-    'stim',
+common_compile_args = [
+    '-std=c++11',
+    '-fno-strict-aliasing',
+    '-O3',
+    '-g0',
+    f'-DVERSION_INFO={version}',
+]
+stim_polyfill = Extension(
+    'stim._stim_march_polyfill',
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
-    extra_compile_args=['-std=c++11', '-fno-strict-aliasing', '-march=native', '-O3', f'-DVERSION_INFO={version}']
+    extra_compile_args=[
+        *common_compile_args,
+        '-mno-avx2',
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_polyfill',
+    ],
+)
+stim_sse2 = Extension(
+    'stim._stim_march_sse2',
+    sources=RELEVANT_SOURCE_FILES,
+    include_dirs=[pybind11.get_include(), "src"],
+    language='c++',
+    extra_compile_args=[
+        *common_compile_args,
+        '-msse2',
+        '-mno-avx2',
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_sse2',
+    ],
+)
+stim_avx2 = Extension(
+    'stim._stim_march_avx2',
+    sources=RELEVANT_SOURCE_FILES,
+    include_dirs=[pybind11.get_include(), "src"],
+    language='c++',
+    extra_compile_args=[
+        *common_compile_args,
+        '-msse2',
+        '-mavx2',
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_avx2',
+    ],
 )
 
 with open('glue/python/README.md') as f:
@@ -50,9 +80,11 @@ setup(
     description='A fast quantum stabilizer circuit simulator.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    ext_modules=[extension_module],
+    ext_modules=[stim_polyfill, stim_sse2, stim_avx2],
     python_requires='>=3.6.0',
-    data_files=['pyproject.toml', 'glue/python/README.md'] + RELEVANT_HEADERS,
+    data_files=[('', ['glue/python/README.md'])],
+    packages=['stim'],
+    package_dir={'stim': 'glue/python/src/stim'},
     install_requires=['numpy'],
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     options={'build': {'build_base': 'python_build_stim'}},

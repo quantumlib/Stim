@@ -45,6 +45,7 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
     auto c = pybind11::class_<CircuitRepeatBlock>(
         m,
         "CircuitRepeatBlock",
+        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A REPEAT block from a circuit.
 
