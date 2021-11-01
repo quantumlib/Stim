@@ -482,3 +482,122 @@ TEST(detector_error_model, py_get_slice) {
     d2.clear();
     ASSERT_EQ(d, d3);
 }
+
+TEST(detector_error_model, mul) {
+    DetectorErrorModel original(R"MODEL(
+        error(0.25) D0
+        REPEAT 999 {
+            error(0.25) D1
+        }
+    )MODEL");
+    DetectorErrorModel d = original;
+    ASSERT_EQ(d * 3, DetectorErrorModel(R"MODEL(
+        REPEAT 3 {
+            error(0.25) D0
+            REPEAT 999 {
+                error(0.25) D1
+            }
+        }
+    )MODEL"));
+    ASSERT_EQ(d * 1, d);
+    ASSERT_EQ(d * 0, DetectorErrorModel());
+    ASSERT_EQ(d, original);
+}
+
+TEST(detector_error_model, imul) {
+    DetectorErrorModel original(R"MODEL(
+        error(0.25) D0
+        REPEAT 999 {
+            error(0.25) D1
+        }
+    )MODEL");
+    DetectorErrorModel d = original;
+    d *= 3;
+    ASSERT_EQ(d, DetectorErrorModel(R"MODEL(
+        REPEAT 3 {
+            error(0.25) D0
+            REPEAT 999 {
+                error(0.25) D1
+            }
+        }
+    )MODEL"));
+    d = original;
+    d *= 1;
+    ASSERT_EQ(d, original);
+    d = original;
+    d *= 0;
+    ASSERT_EQ(d, DetectorErrorModel());
+}
+
+TEST(detector_error_model, add) {
+    DetectorErrorModel a(R"MODEL(
+        error(0.25) D0
+        REPEAT 999 {
+            error(0.25) D1
+        }
+    )MODEL");
+    DetectorErrorModel b(R"MODEL(
+        error(0.125) D1
+        REPEAT 2 {
+            REPEAT 3 {
+                error(0.125) D1
+            }
+        }
+    )MODEL");
+
+    ASSERT_EQ(a + b, DetectorErrorModel(R"MODEL(
+        error(0.25) D0
+        REPEAT 999 {
+            error(0.25) D1
+        }
+        error(0.125) D1
+        REPEAT 2 {
+            REPEAT 3 {
+                error(0.125) D1
+            }
+        }
+    )MODEL"));
+
+    ASSERT_EQ(a + DetectorErrorModel(), a);
+    ASSERT_EQ(DetectorErrorModel() + a, a);
+    ASSERT_EQ(b + DetectorErrorModel(), b);
+    ASSERT_EQ(DetectorErrorModel() + b, b);
+    ASSERT_EQ(DetectorErrorModel() + DetectorErrorModel(), DetectorErrorModel());
+}
+
+TEST(detector_error_model, iadd) {
+    DetectorErrorModel a(R"MODEL(
+        error(0.25) D0
+        REPEAT 999 {
+            error(0.25) D1
+        }
+    )MODEL");
+    DetectorErrorModel b(R"MODEL(
+        error(0.125) D1
+        REPEAT 2 {
+            REPEAT 3 {
+                error(0.125) D1
+            }
+        }
+    )MODEL");
+
+    a += b;
+    ASSERT_EQ(a, DetectorErrorModel(R"MODEL(
+        error(0.25) D0
+        REPEAT 999 {
+            error(0.25) D1
+        }
+        error(0.125) D1
+        REPEAT 2 {
+            REPEAT 3 {
+                error(0.125) D1
+            }
+        }
+    )MODEL"));
+
+    DetectorErrorModel original = b;
+    b += DetectorErrorModel();
+    ASSERT_EQ(b, original);
+    b += a;
+    ASSERT_NE(b, original);
+}

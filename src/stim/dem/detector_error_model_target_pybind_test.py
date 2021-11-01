@@ -61,3 +61,9 @@ def test_repr():
     assert eval(repr(v), {"stim": stim}) == v
     v = stim.target_separator()
     assert eval(repr(v), {"stim": stim}) == v
+
+
+def test_static_constructors():
+    assert stim.DemTarget.relative_detectorr_id(5) == stim.target_relative_detector_id(5)
+    assert stim.DemTarget.logical_observable_id(5) == stim.target_logical_observable_id(5)
+    assert stim.DemTarget.separator(5) == stim.target_separator(5)

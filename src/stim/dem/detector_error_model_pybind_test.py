@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import stim
 
 
@@ -109,3 +111,63 @@ def test_approx_equals():
 
     assert not base.approx_equals(object(), atol=999)
     assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
+
+
+def test_append():
+    m = stim.DetectorErrorModel()
+    m.append("error", 0.125, [
+        stim.DemTarget.relative_detector_id(1),
+    ])
+    m.append("error", 0.25, [
+        stim.DemTarget.relative_detector_id(1),
+        stim.DemTarget.separator(),
+        stim.DemTarget.relative_detector_id(2),
+        stim.DemTarget.logical_observable_id(3),
+    ])
+    m.append("shift_detectors", (1, 2, 3), [5])
+    m += m * 3
+    m.append(m[0])
+    m.append(m[-2])
+    assert m == stim.DetectorErrorModel("""
+        error(0.125) D1
+        error(0.25) D1 ^ D2 L3
+        shift_detectors(1, 2, 3) 5
+        repeat 3 {
+            error(0.125) D1
+            error(0.25) D1 ^ D2 L3
+            shift_detectors(1, 2, 3) 5
+        }
+        error(0.125) D1
+        repeat 3 {
+            error(0.125) D1
+            error(0.25) D1 ^ D2 L3
+            shift_detectors(1, 2, 3) 5
+        }
+    """)
+
+
+def test_append_bad():
+    m = stim.DetectorErrorModel()
+    m.append("error", 0.125, [stim.target_relative_detector_id(0)])
+    m.append("error", [0.125], [stim.target_relative_detector_id(0)])
+    m.append("shift_detectors", [], [5])
+    m += m * 3
+
+    with pytest.raises(ValueError, match="Bad target 'D0' for instruction 'shift_detectors'"):
+        m.append("shift_detectors", [0.125, 0.25], [stim.target_relative_detector_id(0)])
+    with pytest.raises(ValueError, match="takes 1 argument"):
+        m.append("error", [0.125, 0.25], [stim.target_relative_detector_id(0)])
+
+    with pytest.raises(ValueError, match="Bad target '0' for instruction 'error'"):
+        m.append("error", [0.125], [0])
+
+    with pytest.raises(ValueError, match="First argument"):
+        m.append(None)
+    with pytest.raises(ValueError, match="First argument"):
+        m.append(object())
+    with pytest.raises(ValueError, match="Must specify.*instruction name"):
+        m.append("error")
+    with pytest.raises(ValueError, match="Can't specify.*instruction is a"):
+        m.append(m[0], 0.125, [])
+    with pytest.raises(ValueError, match="Can't specify.*instruction is a"):
+        m.append(m[-1], 0.125, [])

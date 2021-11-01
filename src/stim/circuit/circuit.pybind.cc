@@ -360,30 +360,6 @@ void pybind_circuit(pybind11::module &m) {
             .data());
 
     c.def(
-        "__iadd__",
-        &Circuit::operator+=,
-        pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
-            Appends a circuit into the receiving circuit (mutating it).
-
-            Examples:
-                >>> import stim
-                >>> c1 = stim.Circuit('''
-                ...    X 0
-                ...    Y 1 2
-                ... ''')
-                >>> c2 = stim.Circuit('''
-                ...    M 0 1 2
-                ... ''')
-                >>> c1 += c2
-                >>> print(c1)
-                X 0
-                Y 1 2
-                M 0 1 2
-        )DOC")
-            .data());
-
-    c.def(
         "flattened_operations",
         [](Circuit &self) {
             pybind11::list result;
@@ -481,6 +457,30 @@ void pybind_circuit(pybind11::module &m) {
                 ...    M 0 1 2
                 ... ''')
                 >>> print(c1 + c2)
+                X 0
+                Y 1 2
+                M 0 1 2
+        )DOC")
+            .data());
+
+    c.def(
+        "__iadd__",
+        &Circuit::operator+=,
+        pybind11::arg("second"),
+        clean_doc_string(u8R"DOC(
+            Appends a circuit into the receiving circuit (mutating it).
+
+            Examples:
+                >>> import stim
+                >>> c1 = stim.Circuit('''
+                ...    X 0
+                ...    Y 1 2
+                ... ''')
+                >>> c2 = stim.Circuit('''
+                ...    M 0 1 2
+                ... ''')
+                >>> c1 += c2
+                >>> print(c1)
                 X 0
                 Y 1 2
                 M 0 1 2
@@ -621,7 +621,7 @@ void pybind_circuit(pybind11::module &m) {
                 throw std::invalid_argument(
                     "First argument of append_operation must be a str (a gate name), "
                     "a stim.CircuitInstruction, "
-                    "or a stim.Circuit");
+                    "or a stim.CircuitRepeatBlock");
             }
         },
         pybind11::arg("name"),
