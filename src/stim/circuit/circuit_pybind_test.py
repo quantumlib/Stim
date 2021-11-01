@@ -577,3 +577,17 @@ def test_approx_equals():
 
     assert not base.approx_equals(object(), atol=999)
     assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.Circuit("""
+        H 0
+        REPEAT 100 {
+            M 0
+            CNOT rec[-1] 2
+        }
+    """)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t

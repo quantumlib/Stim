@@ -313,7 +313,7 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
                 measurements: A numpy array containing measurement data:
                     dtype=bool8
                     shape=(num_shots, circuit.num_measurements)
-                sweep_bits_filepath: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
+                sweep_bits: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
                     dtype=bool8
                     shape=(num_shots, circuit.num_sweep_bits)
                     Defaults to None (all sweep bits False).

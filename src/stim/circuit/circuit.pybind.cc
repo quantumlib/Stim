@@ -1079,4 +1079,13 @@ void pybind_circuit(pybind11::module &m) {
                 False
         )DOC")
             .data());
+
+    c.def(pybind11::pickle(
+        [](const Circuit &self) -> pybind11::str {
+            return self.str();
+        },
+        [](const pybind11::str &text) {
+            return Circuit(pybind11::cast<std::string>(text).data());
+        }
+    ));
 }

@@ -171,3 +171,16 @@ def test_append_bad():
         m.append(m[0], 0.125, [])
     with pytest.raises(ValueError, match="Can't specify.*instruction is a"):
         m.append(m[-1], 0.125, [])
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.DetectorErrorModel("""
+        repeat 100 {
+            error(0.25) D0 L1
+            shift_detectors(1, 2) 3
+        }
+    """)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t

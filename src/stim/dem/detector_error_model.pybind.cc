@@ -330,7 +330,6 @@ void pybind_detector_error_model(pybind11::module &m) {
         )DOC")
             .data());
 
-
     c.def(
         "approx_equals",
         [](const DetectorErrorModel &self, const pybind11::object &obj, double atol) -> bool {
@@ -639,4 +638,13 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ''')
         )DOC")
             .data());
+
+    c.def(pybind11::pickle(
+        [](const DetectorErrorModel &self) -> pybind11::str {
+            return self.str();
+        },
+        [](const pybind11::str &text) -> DetectorErrorModel {
+            return DetectorErrorModel(pybind11::cast<std::string>(text).data());
+        }
+    ));
 }

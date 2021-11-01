@@ -37,6 +37,8 @@ keep = {
 skip = {
     "__builtins__",
     "__cached__",
+    "__getstate__",
+    "__setstate__",
     "__path__",
     "__class__",
     "__delattr__",

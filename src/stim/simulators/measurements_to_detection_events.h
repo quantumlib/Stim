@@ -37,14 +37,8 @@ namespace stim {
 /// Args:
 ///     measurements_in: The file to read measurement data from.
 ///     input_format: The format of the measurement data in the file.
-///     optional_initial_error_frames_in: An optional file containing initial error frame data. Each record in the file
-///         should have a size equal to the number of qubits in the circuit. The first record is the X bits for the
-///         first shot's error frame, the second record is the Z bits for that frame, then the next two records are the
-///         X and Z bits for the next frame, and etc. These initial error frames are propagated through the circuit, and
-///         any measurements flipped by the propagated errors are also flipped in the read measurement data before
-///         computing detector/observable flips.
-///     initial_error_frames_in_format: The format of the records in the error frame file. Ignored when
-///         optional_initial_error_frames_in == nullptr.
+///     optional_sweep_bits_in: An optional file containing sweep data for each shot in the measurements file.
+///     sweep_bits_in_format: The format of the sweep data file. Ignored when optional_sweep_bits_in == nullptr.
 ///     results_out: The file to write detection event data to.
 ///     output_format: The format to use when writing the detection event data.
 ///     circuit: The circuit that the measurement data corresponds to, with DETECTOR and OBSERVABLE_INCLUDE annotations
@@ -90,6 +84,10 @@ void stream_measurements_to_detection_events_helper(
 ///     sweep_bits__minor_shot_index: Per-shot configuration data controlling operations like `CNOT sweep[0] 1`.
 ///         Major axis: sweep bit index.
 ///         Minor axis: shot index.
+///
+///         To not specify sweep data, set the major axis length of sweep_bits__minor_shot_index to 0 (the minor axis
+///         length must still match the number of shots). The major axis can also be partially truncated. Sweep bits
+///         beyond that length default to False.
 ///     circuit: The circuit that the measurement data corresponds to, with DETECTOR and OBSERVABLE_INCLUDE annotations
 ///         indicating how to perform the conversion.
 ///     append_observables: Whether or not to include observable flip data in the detection event data.
@@ -107,7 +105,7 @@ simd_bit_table measurements_to_detection_events(
     bool append_observables,
     bool skip_reference_sample);
 /// A variant of `stim::measurements_to_detection_events` with derived values passed in, not recomputed.
-void measurements_to_detection_events_helper(
+    void measurements_to_detection_events_helper(
     const simd_bit_table &measurements__minor_shot_index,
     const simd_bit_table &sweep_bits__minor_shot_index,
     simd_bit_table &out_detection_results__minor_shot_index,
