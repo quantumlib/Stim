@@ -16,6 +16,7 @@
     - [`stim.Circuit.__str__`](#stim.Circuit.__str__)
     - [`stim.Circuit.append_from_stim_program_text`](#stim.Circuit.append_from_stim_program_text)
     - [`stim.Circuit.append_operation`](#stim.Circuit.append_operation)
+    - [`stim.Circuit.approx_equals`](#stim.Circuit.approx_equals)
     - [`stim.Circuit.clear`](#stim.Circuit.clear)
     - [`stim.Circuit.compile_detector_sampler`](#stim.Circuit.compile_detector_sampler)
     - [`stim.Circuit.compile_m2d_converter`](#stim.Circuit.compile_m2d_converter)
@@ -86,18 +87,29 @@
     - [`stim.DemTarget.is_logical_observable_id`](#stim.DemTarget.is_logical_observable_id)
     - [`stim.DemTarget.is_relative_detector_id`](#stim.DemTarget.is_relative_detector_id)
     - [`stim.DemTarget.is_separator`](#stim.DemTarget.is_separator)
+    - [`stim.DemTarget.logical_observable_id`](#stim.DemTarget.logical_observable_id)
+    - [`stim.DemTarget.relative_detector_id`](#stim.DemTarget.relative_detector_id)
+    - [`stim.DemTarget.separator`](#stim.DemTarget.separator)
     - [`stim.DemTarget.val`](#stim.DemTarget.val)
 - [`stim.DetectorErrorModel`](#stim.DetectorErrorModel)
+    - [`stim.DetectorErrorModel.__add__`](#stim.DetectorErrorModel.__add__)
     - [`stim.DetectorErrorModel.__eq__`](#stim.DetectorErrorModel.__eq__)
     - [`stim.DetectorErrorModel.__getitem__`](#stim.DetectorErrorModel.__getitem__)
+    - [`stim.DetectorErrorModel.__iadd__`](#stim.DetectorErrorModel.__iadd__)
+    - [`stim.DetectorErrorModel.__imul__`](#stim.DetectorErrorModel.__imul__)
     - [`stim.DetectorErrorModel.__init__`](#stim.DetectorErrorModel.__init__)
     - [`stim.DetectorErrorModel.__len__`](#stim.DetectorErrorModel.__len__)
+    - [`stim.DetectorErrorModel.__mul__`](#stim.DetectorErrorModel.__mul__)
     - [`stim.DetectorErrorModel.__ne__`](#stim.DetectorErrorModel.__ne__)
     - [`stim.DetectorErrorModel.__repr__`](#stim.DetectorErrorModel.__repr__)
+    - [`stim.DetectorErrorModel.__rmul__`](#stim.DetectorErrorModel.__rmul__)
     - [`stim.DetectorErrorModel.__str__`](#stim.DetectorErrorModel.__str__)
+    - [`stim.DetectorErrorModel.append`](#stim.DetectorErrorModel.append)
+    - [`stim.DetectorErrorModel.approx_equals`](#stim.DetectorErrorModel.approx_equals)
     - [`stim.DetectorErrorModel.clear`](#stim.DetectorErrorModel.clear)
     - [`stim.DetectorErrorModel.copy`](#stim.DetectorErrorModel.copy)
     - [`stim.DetectorErrorModel.num_detectors`](#stim.DetectorErrorModel.num_detectors)
+    - [`stim.DetectorErrorModel.num_errors`](#stim.DetectorErrorModel.num_errors)
     - [`stim.DetectorErrorModel.num_observables`](#stim.DetectorErrorModel.num_observables)
 - [`stim.GateTarget`](#stim.GateTarget)
     - [`stim.GateTarget.__eq__`](#stim.GateTarget.__eq__)
@@ -487,6 +499,17 @@
 > 
 > Returns:
 >     The logical observable target.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.25, [
+>     ...     stim.target_logical_observable_id(13)
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.25) L13
+>     ''')
 > ```
 
 ## `stim.target_rec(lookback_index: int) -> int`<a name="stim.target_rec"></a>
@@ -504,11 +527,35 @@
 > 
 > Returns:
 >     The relative detector target.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.25, [
+>     ...     stim.target_relative_detector_id(13)
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.25) D13
+>     ''')
 > ```
 
 ## `stim.target_separator() -> stim.DemTarget`<a name="stim.target_separator"></a>
 > ```
 > Returns a target separator (e.g. "^" in a .dem file).
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.25, [
+>     ...     stim.target_relative_detector_id(1),
+>     ...     stim.target_separator(),
+>     ...     stim.target_relative_detector_id(2),
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.25) D1 ^ D2
+>     ''')
 > ```
 
 ## `stim.target_sweep_bit(sweep_bit_index: int) -> int`<a name="stim.target_sweep_bit"></a>
@@ -802,6 +849,58 @@
 >         example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and PAULI_CHANNEL_1
 >         takes three disjoint probabilities. For backwards compatibility reasons, defaults to (0,) for gates
 >         that take exactly one argument. Otherwise defaults to no arguments.
+> ```
+
+### `stim.Circuit.approx_equals(self, other: object, *, atol: float) -> bool`<a name="stim.Circuit.approx_equals"></a>
+> ```
+> Checks if a circuit is approximately equal to another circuit.
+> 
+> Two circuits are approximately equal if they are equal up to slight perturbations of instruction arguments
+> such as probabilities. For example `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an
+> absolute tolerance of 0.002. All other details of the circuits (such as the ordering of instructions and
+> targets) must be exactly the same.
+> 
+> Args:
+>     other: The circuit, or other object, to compare to this one.
+>     atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+> 
+> Returns:
+>     True if the given object is a circuit approximately equal up to the receiving circuit up to the given
+>     tolerance, otherwise False.
+> 
+> Examples:
+>     >>> import stim
+>     >>> base = stim.Circuit('''
+>     ...    X_ERROR(0.099) 0 1 2
+>     ...    M 0 1 2
+>     ... ''')
+> 
+>     >>> base.approx_equals(base, atol=0)
+>     True
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    X_ERROR(0.101) 0 1 2
+>     ...    M 0 1 2
+>     ... '''), atol=0)
+>     False
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    X_ERROR(0.101) 0 1 2
+>     ...    M 0 1 2
+>     ... '''), atol=0.0001)
+>     False
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    X_ERROR(0.101) 0 1 2
+>     ...    M 0 1 2
+>     ... '''), atol=0.01)
+>     True
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    DEPOLARIZE1(0.099) 0 1 2
+>     ...    MRX 0 1 2
+>     ... '''), atol=9999)
+>     False
 > ```
 
 ### `stim.Circuit.clear(self) -> None`<a name="stim.Circuit.clear"></a>
@@ -1654,7 +1753,7 @@
 >     measurements: A numpy array containing measurement data:
 >         dtype=bool8
 >         shape=(num_shots, circuit.num_measurements)
->     sweep_bits_filepath: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
+>     sweep_bits: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
 >         dtype=bool8
 >         shape=(num_shots, circuit.num_sweep_bits)
 >         Defaults to None (all sweep bits False).
@@ -1857,6 +1956,68 @@
 > Determines if the detector error model target is a separator (like "^" in a .dem file).
 > ```
 
+### `stim.DemTarget.logical_observable_id(index: int) -> stim.DemTarget`<a name="stim.DemTarget.logical_observable_id"></a>
+> ```
+> Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
+> 
+> Args:
+>     index: The index of the observable.
+> 
+> Returns:
+>     The logical observable target.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.25, [
+>     ...     stim.DemTarget.logical_observable_id(13)
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.25) L13
+>     ''')
+> ```
+
+### `stim.DemTarget.relative_detector_id(index: int) -> stim.DemTarget`<a name="stim.DemTarget.relative_detector_id"></a>
+> ```
+> Returns a relative detector id (e.g. "D5" in a .dem file).
+> 
+> Args:
+>     index: The index of the detector, relative to the current detector offset.
+> 
+> Returns:
+>     The relative detector target.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.25, [
+>     ...     stim.DemTarget.relative_detector_id(13)
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.25) D13
+>     ''')
+> ```
+
+### `stim.DemTarget.separator() -> stim.DemTarget`<a name="stim.DemTarget.separator"></a>
+> ```
+> Returns a target separator (e.g. "^" in a .dem file).
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.25, [
+>     ...     stim.DemTarget.relative_detector_id(1),
+>     ...     stim.DemTarget.separator(),
+>     ...     stim.DemTarget.relative_detector_id(2),
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.25) D1 ^ D2
+>     ''')
+> ```
+
 ### `stim.DemTarget.val`<a name="stim.DemTarget.val"></a>
 > ```
 > Returns the target's integer value.
@@ -1868,6 +2029,25 @@
 >     5
 >     >>> stim.target_logical_observable_id(6).val
 >     6
+> ```
+
+### `stim.DetectorErrorModel.__add__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__add__"></a>
+> ```
+> Creates a detector error model by appending two models.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m1 = stim.DetectorErrorModel('''
+>     ...    error(0.125) D0
+>     ... ''')
+>     >>> m2 = stim.Circuit('''
+>     ...    error(0.25) D1
+>     ... ''')
+>     >>> m1 + m2
+>     stim.DetectorErrorModel('''
+>         error(0.125) D0
+>         error(0.25) D1
+>     ''')
 > ```
 
 ### `stim.DetectorErrorModel.__eq__(self, arg0: stim.DetectorErrorModel) -> bool`<a name="stim.DetectorErrorModel.__eq__"></a>
@@ -1912,6 +2092,50 @@
 >     ''')
 > ```
 
+### `stim.DetectorErrorModel.__iadd__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__iadd__"></a>
+> ```
+> Appends a detector error model into the receiving model (mutating it).
+> 
+> Examples:
+>     >>> import stim
+>     >>> m1 = stim.DetectorErrorModel('''
+>     ...    error(0.125) D0
+>     ... ''')
+>     >>> m2 = stim.Circuit('''
+>     ...    error(0.25) D1
+>     ... ''')
+>     >>> m1 += m2
+>     >>> print(repr(m1))
+>     stim.DetectorErrorModel('''
+>         error(0.125) D0
+>         error(0.25) D1
+>     ''')
+> ```
+
+### `stim.DetectorErrorModel.__imul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__imul__"></a>
+> ```
+> Mutates the detector error model by putting its contents into a repeat block.
+> 
+> Special case: if the repetition count is 0, the model is cleared.
+> Special case: if the repetition count is 1, nothing happens.
+> 
+> Args:
+>     repetitions: The number of times the repeat block should repeat.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel('''
+>     ...    error(0.25) D0
+>     ...    shift_detectors 1
+>     ... ''')
+>     >>> m *= 3
+>     >>> print(m)
+>     REPEAT 3 {
+>         error(0.25) D0
+>         shift_detectors 1
+>     }
+> ```
+
 ### `stim.DetectorErrorModel.__init__(self, detector_error_model_text: str = '') -> None`<a name="stim.DetectorErrorModel.__init__"></a>
 > ```
 > Creates a stim.DetectorErrorModel.
@@ -1953,6 +2177,31 @@
 >     1
 > ```
 
+### `stim.DetectorErrorModel.__mul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__mul__"></a>
+> ```
+> Returns a detector error model with a REPEAT block containing the current model's instructions.
+> 
+> Special case: if the repetition count is 0, an empty model is returned.
+> Special case: if the repetition count is 1, an equal model with no REPEAT block is returned.
+> 
+> Args:
+>     repetitions: The number of times the REPEAT block should repeat.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel('''
+>     ...    error(0.25) D0
+>     ...    shift_detectors 1
+>     ... ''')
+>     >>> m * 3
+>     stim.DetectorErrorModel('''
+>         REPEAT 3 {
+>             error(0.25) D0
+>             shift_detectors 1
+>         }
+>     ''')
+> ```
+
 ### `stim.DetectorErrorModel.__ne__(self, arg0: stim.DetectorErrorModel) -> bool`<a name="stim.DetectorErrorModel.__ne__"></a>
 > ```
 > Determines if two detector error models have non-identical contents.
@@ -1963,9 +2212,141 @@
 > "Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`."
 > ```
 
+### `stim.DetectorErrorModel.__rmul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__rmul__"></a>
+> ```
+> Returns a detector error model with a REPEAT block containing the current model's instructions.
+> 
+> Special case: if the repetition count is 0, an empty model is returned.
+> Special case: if the repetition count is 1, an equal model with no REPEAT block is returned.
+> 
+> Args:
+>     repetitions: The number of times the REPEAT block should repeat.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel('''
+>     ...    error(0.25) D0
+>     ...    shift_detectors 1
+>     ... ''')
+>     >>> 3 * m
+>     stim.DetectorErrorModel('''
+>         REPEAT 3 {
+>             error(0.25) D0
+>             shift_detectors 1
+>         }
+>     ''')
+> ```
+
 ### `stim.DetectorErrorModel.__str__(self) -> str`<a name="stim.DetectorErrorModel.__str__"></a>
 > ```
 > "Returns detector error model (.dem) instructions (that can be parsed by stim) for the model.");
+> ```
+
+### `stim.DetectorErrorModel.append(self, instruction: object, parens_arguments: object = None, targets: List[object] = ()) -> None`<a name="stim.DetectorErrorModel.append"></a>
+> ```
+> Appends an instruction to the detector error model.
+> 
+> Args:
+>     instruction: Either the name of an instruction, a stim.DemInstruction, or a stim.DemRepeatBlock.
+>         The `parens_arguments` and `targets` arguments are given if and only if the instruction is a name.
+>     parens_arguments: Numeric values parameterizing the instruction. The numbers inside parentheses in a
+>         detector error model file (eg. the `0.25` in `error(0.25) D0`). This argument can be given either
+>         a list of doubles, or a single double (which will be implicitly wrapped into a list).
+>     targets: The instruction targets, such as the `D0` in `error(0.25) D0`.
+> 
+> Examples:
+>     >>> import stim
+>     >>> m = stim.DetectorErrorModel()
+>     >>> m.append("error", 0.125, [
+>     ...     stim.DemTarget.relative_detector_id(1),
+>     ... ])
+>     >>> m.append("error", 0.25, [
+>     ...     stim.DemTarget.relative_detector_id(1),
+>     ...     stim.DemTarget.separator(),
+>     ...     stim.DemTarget.relative_detector_id(2),
+>     ...     stim.DemTarget.logical_observable_id(3),
+>     ... ])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.125) D1
+>         error(0.25) D1 ^ D2 L3
+>     ''')
+> 
+>     >>> m.append("shift_detectors", (1, 2, 3), [5])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.125) D1
+>         error(0.25) D1 ^ D2 L3
+>         shift_detectors(1, 2, 3) 5
+>     ''')
+> 
+>     >>> m += m * 3
+>     >>> m.append(m[0])
+>     >>> m.append(m[-2])
+>     >>> print(repr(m))
+>     stim.DetectorErrorMode('''
+>         error(0.125) D1
+>         error(0.25) D1 ^ D2 L3
+>         shift_detectors(1, 2, 3) 5
+>         repeat 3 {
+>             error(0.125) D1
+>             error(0.25) D1 ^ D2 L3
+>             shift_detectors(1, 2, 3) 5
+>         }
+>         error(0.125) D1
+>         repeat 3 {
+>             error(0.125) D1
+>             error(0.25) D1 ^ D2 L3
+>             shift_detectors(1, 2, 3) 5
+>         }
+>     ''')
+> ```
+
+### `stim.DetectorErrorModel.approx_equals(self, other: object, *, atol: float) -> bool`<a name="stim.DetectorErrorModel.approx_equals"></a>
+> ```
+> Checks if a detector error model is approximately equal to another detector error model.
+> 
+> Two detector error model are approximately equal if they are equal up to slight perturbations of instruction
+> arguments such as probabilities. For example `error(0.100) D0` is approximately equal to `error(0.099) D0`
+> within an absolute tolerance of 0.002. All other details of the models (such as the ordering of errors and
+> their targets) must be exactly the same.
+> 
+> Args:
+>     other: The detector error model, or other object, to compare to this one.
+>     atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+> 
+> Returns:
+>     True if the given object is a detector error model approximately equal up to the receiving circuit up to
+>     the given tolerance, otherwise False.
+> 
+> Examples:
+>     >>> import stim
+>     >>> base = stim.DetectorErrorModel('''
+>     ...    error(0.099) D0 D1
+>     ... ''')
+> 
+>     >>> base.approx_equals(base, atol=0)
+>     True
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    error(0.101) D0 D1
+>     ... '''), atol=0)
+>     False
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    error(0.101) D0 D1
+>     ... '''), atol=0.0001)
+>     False
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    error(0.101) D0 D1
+>     ... '''), atol=0.01)
+>     True
+> 
+>     >>> base.approx_equals(stim.Circuit('''
+>     ...    error(0.099) D0 D1 L0 L1 L2 L3 L4
+>     ... '''), atol=9999)
+>     False
 > ```
 
 ### `stim.DetectorErrorModel.clear(self) -> None`<a name="stim.DetectorErrorModel.clear"></a>
@@ -2027,6 +2408,27 @@
 >     ...    error(0.1) D0 D199
 >     ... ''').num_detectors
 >     1200
+> ```
+
+### `stim.DetectorErrorModel.num_errors`<a name="stim.DetectorErrorModel.num_errors"></a>
+> ```
+> Counts the number of errors (e.g. `error(0.1) D0`) in the error model.
+> 
+> Error instructions inside repeat blocks count once per repetition.
+> Redundant errors with the same targets count as separate errors.
+> 
+> Examples:
+>     >>> import stim
+> 
+>     >>> stim.DetectorErrorModel('''
+>     ...     error(0.125) D0
+>     ...     REPEAT 100 {
+>     ...         REPEAT 5 {
+>     ...             error(0.25) D1
+>     ...         }
+>     ...     }
+>     ... ''').num_errors
+>     501
 > ```
 
 ### `stim.DetectorErrorModel.num_observables`<a name="stim.DetectorErrorModel.num_observables"></a>

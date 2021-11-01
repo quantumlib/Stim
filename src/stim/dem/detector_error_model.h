@@ -122,6 +122,7 @@ struct DetectorErrorModel {
     uint64_t total_detector_shift() const;
     uint64_t count_detectors() const;
     uint64_t count_observables() const;
+    uint64_t count_errors() const;
 
     void clear();
 

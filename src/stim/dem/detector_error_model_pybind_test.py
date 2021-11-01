@@ -184,3 +184,23 @@ def test_pickle():
     """)
     a = pickle.dumps(t)
     assert pickle.loads(a) == t
+
+
+def test_count_errors():
+    assert stim.DetectorErrorModel().num_errors == 0
+
+    assert stim.DetectorErrorModel("""
+        logical_observable L100
+        detector D100
+        shift_detectors(100, 100, 100) 100
+        error(0.125) D100
+    """).num_errors == 1
+
+    assert stim.DetectorErrorModel("""
+        error(0.125) D0
+        REPEAT 100 {
+            REPEAT 5 {
+                error(0.25) D1
+            }
+        }
+    """).num_errors == 501

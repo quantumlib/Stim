@@ -163,6 +163,30 @@ void pybind_detector_error_model(pybind11::module &m) {
             .data());
 
     c.def_property_readonly(
+        "num_errors",
+        &DetectorErrorModel::count_errors,
+        clean_doc_string(u8R"DOC(
+            Counts the number of errors (e.g. `error(0.1) D0`) in the error model.
+
+            Error instructions inside repeat blocks count once per repetition.
+            Redundant errors with the same targets count as separate errors.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.DetectorErrorModel('''
+                ...     error(0.125) D0
+                ...     REPEAT 100 {
+                ...         REPEAT 5 {
+                ...             error(0.25) D1
+                ...         }
+                ...     }
+                ... ''').num_errors
+                501
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
         "num_observables",
         &DetectorErrorModel::count_observables,
         clean_doc_string(u8R"DOC(

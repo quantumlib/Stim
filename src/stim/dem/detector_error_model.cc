@@ -616,6 +616,33 @@ uint64_t DetectorErrorModel::count_detectors() const {
     return max_num;
 }
 
+uint64_t DetectorErrorModel::count_errors() const {
+    uint64_t total = 0;
+    for (const auto &e : instructions) {
+        switch (e.type) {
+            case DEM_LOGICAL_OBSERVABLE:
+                break;
+            case DEM_SHIFT_DETECTORS:
+                break;
+            case DEM_REPEAT_BLOCK: {
+                auto &block = blocks[e.target_data[1].data];
+                auto n = block.count_errors();
+                auto reps = e.target_data[0].data;
+                total += n * reps;
+                break;
+            }
+            case DEM_DETECTOR:
+                break;
+            case DEM_ERROR:
+                total++;
+                break;
+            default:
+                throw std::invalid_argument("Instruction type not implemented in count_errors: " + e.str());
+        }
+    }
+    return total;
+}
+
 uint64_t DetectorErrorModel::count_observables() const {
     uint64_t max_num = 0;
     for (const auto &e : instructions) {
