@@ -46,7 +46,7 @@ void pybind_detector_error_model_target(pybind11::module &m) {
                 ...     stim.target_relative_detector_id(13)
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.25) D13
                 ''')
         )DOC")
@@ -72,7 +72,7 @@ void pybind_detector_error_model_target(pybind11::module &m) {
                 ...     stim.target_logical_observable_id(13)
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.25) L13
                 ''')
         )DOC")
@@ -93,7 +93,7 @@ void pybind_detector_error_model_target(pybind11::module &m) {
                 ...     stim.target_relative_detector_id(2),
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.25) D1 ^ D2
                 ''')
         )DOC")
@@ -122,7 +122,7 @@ void pybind_detector_error_model_target(pybind11::module &m) {
                 ...     stim.DemTarget.relative_detector_id(13)
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.25) D13
                 ''')
         )DOC")
@@ -148,7 +148,7 @@ void pybind_detector_error_model_target(pybind11::module &m) {
                 ...     stim.DemTarget.logical_observable_id(13)
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.25) L13
                 ''')
         )DOC")
@@ -169,7 +169,7 @@ void pybind_detector_error_model_target(pybind11::module &m) {
                 ...     stim.DemTarget.relative_detector_id(2),
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.25) D1 ^ D2
                 ''')
         )DOC")

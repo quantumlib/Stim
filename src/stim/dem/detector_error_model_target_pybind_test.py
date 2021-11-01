@@ -64,6 +64,6 @@ def test_repr():
 
 
 def test_static_constructors():
-    assert stim.DemTarget.relative_detectorr_id(5) == stim.target_relative_detector_id(5)
+    assert stim.DemTarget.relative_detector_id(5) == stim.target_relative_detector_id(5)
     assert stim.DemTarget.logical_observable_id(5) == stim.target_logical_observable_id(5)
-    assert stim.DemTarget.separator(5) == stim.target_separator(5)
+    assert stim.DemTarget.separator() == stim.target_separator()

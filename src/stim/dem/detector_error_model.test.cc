@@ -600,4 +600,10 @@ TEST(detector_error_model, iadd) {
     ASSERT_EQ(b, original);
     b += a;
     ASSERT_NE(b, original);
+
+    // Aliased.
+    a = original;
+    a += a;
+    a = DetectorErrorModel(a.str().data()); // Remove memory deduplication, because it affects equality.
+    ASSERT_EQ(a, original + original);
 }

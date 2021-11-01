@@ -712,6 +712,11 @@ DetectorErrorModel DetectorErrorModel::operator+(const DetectorErrorModel &other
 }
 
 DetectorErrorModel &DetectorErrorModel::operator+=(const DetectorErrorModel &other) {
+    if (&other == this) {
+        instructions.insert(instructions.end(), instructions.begin(), instructions.end());
+        return *this;
+    }
+
     for (auto &e : other.instructions) {
         if (e.type == DEM_REPEAT_BLOCK) {
             uint64_t repeat_count = e.target_data[0].data;

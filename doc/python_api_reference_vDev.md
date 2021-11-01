@@ -507,7 +507,7 @@
 >     ...     stim.target_logical_observable_id(13)
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.25) L13
 >     ''')
 > ```
@@ -535,7 +535,7 @@
 >     ...     stim.target_relative_detector_id(13)
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.25) D13
 >     ''')
 > ```
@@ -553,7 +553,7 @@
 >     ...     stim.target_relative_detector_id(2),
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.25) D1 ^ D2
 >     ''')
 > ```
@@ -595,10 +595,12 @@
 >     >>> c2 = stim.Circuit('''
 >     ...    M 0 1 2
 >     ... ''')
->     >>> print(c1 + c2)
->     X 0
->     Y 1 2
->     M 0 1 2
+>     >>> c1 + c2
+>     stim.Circuit('''
+>         X 0
+>         Y 1 2
+>         M 0 1 2
+>     ''')
 > ```
 
 ### `stim.Circuit.__eq__(self, arg0: stim.Circuit) -> bool`<a name="stim.Circuit.__eq__"></a>
@@ -656,10 +658,12 @@
 >     ...    M 0 1 2
 >     ... ''')
 >     >>> c1 += c2
->     >>> print(c1)
->     X 0
->     Y 1 2
->     M 0 1 2
+>     >>> print(repr(c1))
+>     stim.Circuit('''
+>         X 0
+>         Y 1 2
+>         M 0 1 2
+>     ''')
 > ```
 
 ### `stim.Circuit.__imul__(self, repetitions: int) -> stim.Circuit`<a name="stim.Circuit.__imul__"></a>
@@ -679,11 +683,13 @@
 >     ...    Y 1 2
 >     ... ''')
 >     >>> c *= 3
->     >>> print(c)
->     REPEAT 3 {
->         X 0
->         Y 1 2
->     }
+>     >>> print(repr(c))
+>     stim.Circuit('''
+>         REPEAT 3 {
+>             X 0
+>             Y 1 2
+>         }
+>     ''')
 > ```
 
 ### `stim.Circuit.__init__(self, stim_program_text: str = '') -> None`<a name="stim.Circuit.__init__"></a>
@@ -746,11 +752,13 @@
 >     ...    X 0
 >     ...    Y 1 2
 >     ... ''')
->     >>> print(c * 3)
->     REPEAT 3 {
->         X 0
->         Y 1 2
->     }
+>     >>> c * 3
+>     stim.Circuit('''
+>         REPEAT 3 {
+>             X 0
+>             Y 1 2
+>         }
+>     ''')
 > ```
 
 ### `stim.Circuit.__ne__(self, arg0: stim.Circuit) -> bool`<a name="stim.Circuit.__ne__"></a>
@@ -779,11 +787,13 @@
 >     ...    X 0
 >     ...    Y 1 2
 >     ... ''')
->     >>> print(3 * c)
->     REPEAT 3 {
->         X 0
->         Y 1 2
->     }
+>     >>> 3 * c
+>     stim.Circuit('''
+>         REPEAT 3 {
+>             X 0
+>             Y 1 2
+>         }
+>     ''')
 > ```
 
 ### `stim.Circuit.__str__(self) -> str`<a name="stim.Circuit.__str__"></a>
@@ -828,13 +838,15 @@
 >     >>> c.append_operation("CNOT", [stim.target_rec(-1), 0])
 >     >>> c.append_operation("X_ERROR", [0], 0.125)
 >     >>> c.append_operation("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
->     >>> print(c)
->     X 0
->     H 0 1
->     M 0 !1
->     CX rec[-1] 0
->     X_ERROR(0.125) 0
->     E(0.25) X0 Y2
+>     >>> print(repr(c))
+>     stim.Circuit('''
+>         X 0
+>         H 0 1
+>         M 0 !1
+>         CX rec[-1] 0
+>         X_ERROR(0.125) 0
+>         E(0.25) X0 Y2
+>     ''')
 > 
 > Args:
 >     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
@@ -1973,7 +1985,7 @@
 >     ...     stim.DemTarget.logical_observable_id(13)
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.25) L13
 >     ''')
 > ```
@@ -1995,7 +2007,7 @@
 >     ...     stim.DemTarget.relative_detector_id(13)
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.25) D13
 >     ''')
 > ```
@@ -2013,7 +2025,7 @@
 >     ...     stim.DemTarget.relative_detector_id(2),
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.25) D1 ^ D2
 >     ''')
 > ```
@@ -2040,7 +2052,7 @@
 >     >>> m1 = stim.DetectorErrorModel('''
 >     ...    error(0.125) D0
 >     ... ''')
->     >>> m2 = stim.Circuit('''
+>     >>> m2 = stim.DetectorErrorModel('''
 >     ...    error(0.25) D1
 >     ... ''')
 >     >>> m1 + m2
@@ -2069,7 +2081,7 @@
 >     >>> model = stim.DetectorErrorModel('''
 >     ...    error(0.125) D0
 >     ...    error(0.125) D1 L1
->     ...    REPEAT 100 {
+>     ...    repeat 100 {
 >     ...        error(0.125) D1 D2
 >     ...        shift_detectors 1
 >     ...    }
@@ -2101,7 +2113,7 @@
 >     >>> m1 = stim.DetectorErrorModel('''
 >     ...    error(0.125) D0
 >     ... ''')
->     >>> m2 = stim.Circuit('''
+>     >>> m2 = stim.DetectorErrorModel('''
 >     ...    error(0.25) D1
 >     ... ''')
 >     >>> m1 += m2
@@ -2130,7 +2142,7 @@
 >     ... ''')
 >     >>> m *= 3
 >     >>> print(m)
->     REPEAT 3 {
+>     repeat 3 {
 >         error(0.25) D0
 >         shift_detectors 1
 >     }
@@ -2169,7 +2181,7 @@
 >     ... '''))
 >     3
 >     >>> len(stim.DetectorErrorModel('''
->     ...    REPEAT 100 {
+>     ...    repeat 100 {
 >     ...        error(0.1) D0 D1
 >     ...        error(0.1) D1 D2
 >     ...    }
@@ -2179,13 +2191,13 @@
 
 ### `stim.DetectorErrorModel.__mul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__mul__"></a>
 > ```
-> Returns a detector error model with a REPEAT block containing the current model's instructions.
+> Returns a detector error model with a repeat block containing the current model's instructions.
 > 
 > Special case: if the repetition count is 0, an empty model is returned.
-> Special case: if the repetition count is 1, an equal model with no REPEAT block is returned.
+> Special case: if the repetition count is 1, an equal model with no repeat block is returned.
 > 
 > Args:
->     repetitions: The number of times the REPEAT block should repeat.
+>     repetitions: The number of times the repeat block should repeat.
 > 
 > Examples:
 >     >>> import stim
@@ -2195,7 +2207,7 @@
 >     ... ''')
 >     >>> m * 3
 >     stim.DetectorErrorModel('''
->         REPEAT 3 {
+>         repeat 3 {
 >             error(0.25) D0
 >             shift_detectors 1
 >         }
@@ -2214,13 +2226,13 @@
 
 ### `stim.DetectorErrorModel.__rmul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__rmul__"></a>
 > ```
-> Returns a detector error model with a REPEAT block containing the current model's instructions.
+> Returns a detector error model with a repeat block containing the current model's instructions.
 > 
 > Special case: if the repetition count is 0, an empty model is returned.
-> Special case: if the repetition count is 1, an equal model with no REPEAT block is returned.
+> Special case: if the repetition count is 1, an equal model with no repeat block is returned.
 > 
 > Args:
->     repetitions: The number of times the REPEAT block should repeat.
+>     repetitions: The number of times the repeat block should repeat.
 > 
 > Examples:
 >     >>> import stim
@@ -2230,7 +2242,7 @@
 >     ... ''')
 >     >>> 3 * m
 >     stim.DetectorErrorModel('''
->         REPEAT 3 {
+>         repeat 3 {
 >             error(0.25) D0
 >             shift_detectors 1
 >         }
@@ -2267,14 +2279,14 @@
 >     ...     stim.DemTarget.logical_observable_id(3),
 >     ... ])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.125) D1
 >         error(0.25) D1 ^ D2 L3
 >     ''')
 > 
 >     >>> m.append("shift_detectors", (1, 2, 3), [5])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.125) D1
 >         error(0.25) D1 ^ D2 L3
 >         shift_detectors(1, 2, 3) 5
@@ -2284,7 +2296,7 @@
 >     >>> m.append(m[0])
 >     >>> m.append(m[-2])
 >     >>> print(repr(m))
->     stim.DetectorErrorMode('''
+>     stim.DetectorErrorModel('''
 >         error(0.125) D1
 >         error(0.25) D1 ^ D2 L3
 >         shift_detectors(1, 2, 3) 5
@@ -2328,22 +2340,22 @@
 >     >>> base.approx_equals(base, atol=0)
 >     True
 > 
->     >>> base.approx_equals(stim.Circuit('''
+>     >>> base.approx_equals(stim.DetectorErrorModel('''
 >     ...    error(0.101) D0 D1
 >     ... '''), atol=0)
 >     False
 > 
->     >>> base.approx_equals(stim.Circuit('''
+>     >>> base.approx_equals(stim.DetectorErrorModel('''
 >     ...    error(0.101) D0 D1
 >     ... '''), atol=0.0001)
 >     False
 > 
->     >>> base.approx_equals(stim.Circuit('''
+>     >>> base.approx_equals(stim.DetectorErrorModel('''
 >     ...    error(0.101) D0 D1
 >     ... '''), atol=0.01)
 >     True
 > 
->     >>> base.approx_equals(stim.Circuit('''
+>     >>> base.approx_equals(stim.DetectorErrorModel('''
 >     ...    error(0.099) D0 D1 L0 L1 L2 L3 L4
 >     ... '''), atol=9999)
 >     False
@@ -2422,8 +2434,8 @@
 > 
 >     >>> stim.DetectorErrorModel('''
 >     ...     error(0.125) D0
->     ...     REPEAT 100 {
->     ...         REPEAT 5 {
+>     ...     repeat 100 {
+>     ...         repeat 5 {
 >     ...             error(0.25) D1
 >     ...         }
 >     ...     }

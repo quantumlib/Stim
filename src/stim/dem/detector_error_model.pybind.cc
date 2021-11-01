@@ -176,8 +176,8 @@ void pybind_detector_error_model(pybind11::module &m) {
 
                 >>> stim.DetectorErrorModel('''
                 ...     error(0.125) D0
-                ...     REPEAT 100 {
-                ...         REPEAT 5 {
+                ...     repeat 100 {
+                ...         repeat 5 {
                 ...             error(0.25) D1
                 ...         }
                 ...     }
@@ -288,7 +288,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ... '''))
                 3
                 >>> len(stim.DetectorErrorModel('''
-                ...    REPEAT 100 {
+                ...    repeat 100 {
                 ...        error(0.1) D0 D1
                 ...        error(0.1) D1 D2
                 ...    }
@@ -330,7 +330,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 >>> model = stim.DetectorErrorModel('''
                 ...    error(0.125) D0
                 ...    error(0.125) D1 L1
-                ...    REPEAT 100 {
+                ...    repeat 100 {
                 ...        error(0.125) D1 D2
                 ...        shift_detectors 1
                 ...    }
@@ -391,22 +391,22 @@ void pybind_detector_error_model(pybind11::module &m) {
                 >>> base.approx_equals(base, atol=0)
                 True
 
-                >>> base.approx_equals(stim.Circuit('''
+                >>> base.approx_equals(stim.DetectorErrorModel('''
                 ...    error(0.101) D0 D1
                 ... '''), atol=0)
                 False
 
-                >>> base.approx_equals(stim.Circuit('''
+                >>> base.approx_equals(stim.DetectorErrorModel('''
                 ...    error(0.101) D0 D1
                 ... '''), atol=0.0001)
                 False
 
-                >>> base.approx_equals(stim.Circuit('''
+                >>> base.approx_equals(stim.DetectorErrorModel('''
                 ...    error(0.101) D0 D1
                 ... '''), atol=0.01)
                 True
 
-                >>> base.approx_equals(stim.Circuit('''
+                >>> base.approx_equals(stim.DetectorErrorModel('''
                 ...    error(0.099) D0 D1 L0 L1 L2 L3 L4
                 ... '''), atol=9999)
                 False
@@ -494,14 +494,14 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...     stim.DemTarget.logical_observable_id(3),
                 ... ])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.125) D1
                     error(0.25) D1 ^ D2 L3
                 ''')
 
                 >>> m.append("shift_detectors", (1, 2, 3), [5])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.125) D1
                     error(0.25) D1 ^ D2 L3
                     shift_detectors(1, 2, 3) 5
@@ -511,7 +511,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 >>> m.append(m[0])
                 >>> m.append(m[-2])
                 >>> print(repr(m))
-                stim.DetectorErrorMode('''
+                stim.DetectorErrorModel('''
                     error(0.125) D1
                     error(0.25) D1 ^ D2 L3
                     shift_detectors(1, 2, 3) 5
@@ -551,7 +551,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ... ''')
                 >>> m *= 3
                 >>> print(m)
-                REPEAT 3 {
+                repeat 3 {
                     error(0.25) D0
                     shift_detectors 1
                 }
@@ -570,7 +570,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 >>> m1 = stim.DetectorErrorModel('''
                 ...    error(0.125) D0
                 ... ''')
-                >>> m2 = stim.Circuit('''
+                >>> m2 = stim.DetectorErrorModel('''
                 ...    error(0.25) D1
                 ... ''')
                 >>> m1 + m2
@@ -593,7 +593,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 >>> m1 = stim.DetectorErrorModel('''
                 ...    error(0.125) D0
                 ... ''')
-                >>> m2 = stim.Circuit('''
+                >>> m2 = stim.DetectorErrorModel('''
                 ...    error(0.25) D1
                 ... ''')
                 >>> m1 += m2
@@ -610,13 +610,13 @@ void pybind_detector_error_model(pybind11::module &m) {
         &DetectorErrorModel::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Returns a detector error model with a REPEAT block containing the current model's instructions.
+            Returns a detector error model with a repeat block containing the current model's instructions.
 
             Special case: if the repetition count is 0, an empty model is returned.
-            Special case: if the repetition count is 1, an equal model with no REPEAT block is returned.
+            Special case: if the repetition count is 1, an equal model with no repeat block is returned.
 
             Args:
-                repetitions: The number of times the REPEAT block should repeat.
+                repetitions: The number of times the repeat block should repeat.
 
             Examples:
                 >>> import stim
@@ -626,7 +626,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ... ''')
                 >>> m * 3
                 stim.DetectorErrorModel('''
-                    REPEAT 3 {
+                    repeat 3 {
                         error(0.25) D0
                         shift_detectors 1
                     }
@@ -639,13 +639,13 @@ void pybind_detector_error_model(pybind11::module &m) {
         &DetectorErrorModel::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Returns a detector error model with a REPEAT block containing the current model's instructions.
+            Returns a detector error model with a repeat block containing the current model's instructions.
 
             Special case: if the repetition count is 0, an empty model is returned.
-            Special case: if the repetition count is 1, an equal model with no REPEAT block is returned.
+            Special case: if the repetition count is 1, an equal model with no repeat block is returned.
 
             Args:
-                repetitions: The number of times the REPEAT block should repeat.
+                repetitions: The number of times the repeat block should repeat.
 
             Examples:
                 >>> import stim
@@ -655,7 +655,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ... ''')
                 >>> 3 * m
                 stim.DetectorErrorModel('''
-                    REPEAT 3 {
+                    repeat 3 {
                         error(0.25) D0
                         shift_detectors 1
                     }
