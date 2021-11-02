@@ -565,3 +565,29 @@ def test_circuit_detector_sampling_seeded():
     s3 = c.compile_detector_sampler(seed=6).sample(256)
     assert np.array_equal(s1, s2)
     assert not np.array_equal(s1, s3)
+
+
+def test_approx_equals():
+    base = stim.Circuit("X_ERROR(0.099) 0")
+    assert not base.approx_equals(stim.Circuit("X_ERROR(0.101) 0"), atol=0)
+    assert not base.approx_equals(stim.Circuit("X_ERROR(0.101) 0"), atol=0.00001)
+    assert base.approx_equals(stim.Circuit("X_ERROR(0.101) 0"), atol=0.01)
+    assert base.approx_equals(stim.Circuit("X_ERROR(0.101) 0"), atol=999)
+    assert not base.approx_equals(stim.Circuit("DEPOLARIZE1(0.101) 0"), atol=999)
+
+    assert not base.approx_equals(object(), atol=999)
+    assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.Circuit("""
+        H 0
+        REPEAT 100 {
+            M 0
+            CNOT rec[-1] 2
+        }
+    """)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t

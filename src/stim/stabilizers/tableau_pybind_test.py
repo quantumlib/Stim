@@ -674,3 +674,10 @@ def test_inverse():
             stim.PauliString("+ZZ_"),
         ],
     )
+
+
+def test_pickle():
+    import pickle
+    t = stim.Tableau.random(4)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t

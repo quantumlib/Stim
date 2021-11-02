@@ -27,6 +27,7 @@ struct PyPauliString {
     PyPauliString(const stim::PauliStringRef val, bool imag = false);
     PyPauliString(stim::PauliString &&val, bool imag = false);
 
+    static PyPauliString from_text(const char *c);
     std::complex<float> get_phase() const;
 
     PyPauliString operator+(const PyPauliString &rhs) const;

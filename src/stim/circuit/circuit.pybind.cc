@@ -360,30 +360,6 @@ void pybind_circuit(pybind11::module &m) {
             .data());
 
     c.def(
-        "__iadd__",
-        &Circuit::operator+=,
-        pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
-            Appends a circuit into the receiving circuit (mutating it).
-
-            Examples:
-                >>> import stim
-                >>> c1 = stim.Circuit('''
-                ...    X 0
-                ...    Y 1 2
-                ... ''')
-                >>> c2 = stim.Circuit('''
-                ...    M 0 1 2
-                ... ''')
-                >>> c1 += c2
-                >>> print(c1)
-                X 0
-                Y 1 2
-                M 0 1 2
-        )DOC")
-            .data());
-
-    c.def(
         "flattened_operations",
         [](Circuit &self) {
             pybind11::list result;
@@ -480,10 +456,38 @@ void pybind_circuit(pybind11::module &m) {
                 >>> c2 = stim.Circuit('''
                 ...    M 0 1 2
                 ... ''')
-                >>> print(c1 + c2)
-                X 0
-                Y 1 2
-                M 0 1 2
+                >>> c1 + c2
+                stim.Circuit('''
+                    X 0
+                    Y 1 2
+                    M 0 1 2
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "__iadd__",
+        &Circuit::operator+=,
+        pybind11::arg("second"),
+        clean_doc_string(u8R"DOC(
+            Appends a circuit into the receiving circuit (mutating it).
+
+            Examples:
+                >>> import stim
+                >>> c1 = stim.Circuit('''
+                ...    X 0
+                ...    Y 1 2
+                ... ''')
+                >>> c2 = stim.Circuit('''
+                ...    M 0 1 2
+                ... ''')
+                >>> c1 += c2
+                >>> print(repr(c1))
+                stim.Circuit('''
+                    X 0
+                    Y 1 2
+                    M 0 1 2
+                ''')
         )DOC")
             .data());
 
@@ -507,11 +511,13 @@ void pybind_circuit(pybind11::module &m) {
                 ...    Y 1 2
                 ... ''')
                 >>> c *= 3
-                >>> print(c)
-                REPEAT 3 {
-                    X 0
-                    Y 1 2
-                }
+                >>> print(repr(c))
+                stim.Circuit('''
+                    REPEAT 3 {
+                        X 0
+                        Y 1 2
+                    }
+                ''')
         )DOC")
             .data());
 
@@ -534,11 +540,13 @@ void pybind_circuit(pybind11::module &m) {
                 ...    X 0
                 ...    Y 1 2
                 ... ''')
-                >>> print(c * 3)
-                REPEAT 3 {
-                    X 0
-                    Y 1 2
-                }
+                >>> c * 3
+                stim.Circuit('''
+                    REPEAT 3 {
+                        X 0
+                        Y 1 2
+                    }
+                ''')
         )DOC")
             .data());
 
@@ -561,11 +569,13 @@ void pybind_circuit(pybind11::module &m) {
                 ...    X 0
                 ...    Y 1 2
                 ... ''')
-                >>> print(3 * c)
-                REPEAT 3 {
-                    X 0
-                    Y 1 2
-                }
+                >>> 3 * c
+                stim.Circuit('''
+                    REPEAT 3 {
+                        X 0
+                        Y 1 2
+                    }
+                ''')
         )DOC")
             .data());
 
@@ -621,7 +631,7 @@ void pybind_circuit(pybind11::module &m) {
                 throw std::invalid_argument(
                     "First argument of append_operation must be a str (a gate name), "
                     "a stim.CircuitInstruction, "
-                    "or a stim.Circuit");
+                    "or a stim.CircuitRepeatBlock");
             }
         },
         pybind11::arg("name"),
@@ -639,13 +649,15 @@ void pybind_circuit(pybind11::module &m) {
                 >>> c.append_operation("CNOT", [stim.target_rec(-1), 0])
                 >>> c.append_operation("X_ERROR", [0], 0.125)
                 >>> c.append_operation("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
-                >>> print(c)
-                X 0
-                H 0 1
-                M 0 !1
-                CX rec[-1] 0
-                X_ERROR(0.125) 0
-                E(0.25) X0 Y2
+                >>> print(repr(c))
+                stim.Circuit('''
+                    X 0
+                    H 0 1
+                    M 0 !1
+                    CX rec[-1] 0
+                    X_ERROR(0.125) 0
+                    E(0.25) X0 Y2
+                ''')
 
             Args:
                 name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
@@ -1015,4 +1027,77 @@ void pybind_circuit(pybind11::module &m) {
                 ''')
         )DOC")
             .data());
+
+    c.def(
+        "approx_equals",
+        [](const Circuit &self, const pybind11::object &obj, double atol) -> bool {
+            try {
+                return self.approx_equals(pybind11::cast<Circuit>(obj), atol);
+            } catch (const pybind11::cast_error &ex) {
+                return false;
+            }
+        },
+        pybind11::arg("other"),
+        pybind11::kw_only(),
+        pybind11::arg("atol"),
+        clean_doc_string(u8R"DOC(
+            Checks if a circuit is approximately equal to another circuit.
+
+            Two circuits are approximately equal if they are equal up to slight perturbations of instruction arguments
+            such as probabilities. For example `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an
+            absolute tolerance of 0.002. All other details of the circuits (such as the ordering of instructions and
+            targets) must be exactly the same.
+
+            Args:
+                other: The circuit, or other object, to compare to this one.
+                atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+
+            Returns:
+                True if the given object is a circuit approximately equal up to the receiving circuit up to the given
+                tolerance, otherwise False.
+
+            Examples:
+                >>> import stim
+                >>> base = stim.Circuit('''
+                ...    X_ERROR(0.099) 0 1 2
+                ...    M 0 1 2
+                ... ''')
+
+                >>> base.approx_equals(base, atol=0)
+                True
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    X_ERROR(0.101) 0 1 2
+                ...    M 0 1 2
+                ... '''), atol=0)
+                False
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    X_ERROR(0.101) 0 1 2
+                ...    M 0 1 2
+                ... '''), atol=0.0001)
+                False
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    X_ERROR(0.101) 0 1 2
+                ...    M 0 1 2
+                ... '''), atol=0.01)
+                True
+
+                >>> base.approx_equals(stim.Circuit('''
+                ...    DEPOLARIZE1(0.099) 0 1 2
+                ...    MRX 0 1 2
+                ... '''), atol=9999)
+                False
+        )DOC")
+            .data());
+
+    c.def(pybind11::pickle(
+        [](const Circuit &self) -> pybind11::str {
+            return self.str();
+        },
+        [](const pybind11::str &text) {
+            return Circuit(pybind11::cast<std::string>(text).data());
+        }
+    ));
 }
