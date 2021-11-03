@@ -4,7 +4,6 @@
 , numpy
 , pybind11
 , pytestCheckHook
-, networkx
 }:
 let
   simdFlags =
@@ -30,12 +29,9 @@ buildPythonPackage {
 
   pythonImportsCheck = [ "stim" ];
 
-  checkInputs = [ pytestCheckHook networkx ];
+  checkInputs = [ pytestCheckHook ];
 
   disabledTestPaths = [
-    # requires cirq, which isn't in nixpkgs
-    "glue/cirq/stimcirq/_cirq_to_stim_test.py"
-    "glue/cirq/stimcirq/_stim_sampler_test.py"
-    "glue/cirq/stimcirq/_stim_to_cirq_test.py"
+    "glue/*"
   ];
 }
