@@ -1,6 +1,7 @@
 { stdenv
 , cmake
 , gitignoreSource
+, gtest
 , avx2Support ? stdenv.targetPlatform.avx2Support
 , sseSupport ? stdenv.targetPlatform.isx86_64
 }:
@@ -18,6 +19,16 @@ stdenv.mkDerivation {
     else if sseSupport
     then [ "-DSIMD_WIDTH=128" ]
     else [ "-DSIMD_WIDTH=64" ];
+
+  doCheck = true;
+
+  checkInputs = [ gtest ];
+
+  checkPhase = ''
+    runHook preCheck
+    out/stim_test
+    runHook postCheck
+  '';
 
   installPhase = ''
     runHook preInstall
