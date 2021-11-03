@@ -23,7 +23,6 @@ stdenv.mkDerivation {
     runHook preInstall
     mkdir -p $out/{bin,lib}
     install -m 755 out/stim $out/bin/
-    install -m 755 out/stim_benchmark $out/bin
     install -m 644 out/libstim.a $out/lib
     runHook postInstall
   '';
