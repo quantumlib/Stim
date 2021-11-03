@@ -460,3 +460,15 @@ def test_commutes_different_lengths():
     assert not x1000.commutes(z1)
     assert not x1.commutes(z1000)
     assert not z1000.commutes(x1)
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.PauliString.random(4)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t
+
+    t = stim.PauliString("i_XYZ")
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t

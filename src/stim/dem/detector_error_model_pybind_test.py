@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 import stim
 
 
@@ -97,3 +99,108 @@ def test_repr():
     assert eval(repr(v), {"stim": stim}) == v
     v = stim.DetectorErrorModel("error(0.125) D0 D1")
     assert eval(repr(v), {"stim": stim}) == v
+
+
+def test_approx_equals():
+    base = stim.DetectorErrorModel("error(0.099) D0")
+    assert not base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=0)
+    assert not base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=0.00001)
+    assert base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=0.01)
+    assert base.approx_equals(stim.DetectorErrorModel("error(0.101) D0"), atol=999)
+    assert not base.approx_equals(stim.DetectorErrorModel("error(0.101) D0 D1"), atol=999)
+
+    assert not base.approx_equals(object(), atol=999)
+    assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
+
+
+def test_append():
+    m = stim.DetectorErrorModel()
+    m.append("error", 0.125, [
+        stim.DemTarget.relative_detector_id(1),
+    ])
+    m.append("error", 0.25, [
+        stim.DemTarget.relative_detector_id(1),
+        stim.DemTarget.separator(),
+        stim.DemTarget.relative_detector_id(2),
+        stim.DemTarget.logical_observable_id(3),
+    ])
+    m.append("shift_detectors", (1, 2, 3), [5])
+    m += m * 3
+    m.append(m[0])
+    m.append(m[-2])
+    assert m == stim.DetectorErrorModel("""
+        error(0.125) D1
+        error(0.25) D1 ^ D2 L3
+        shift_detectors(1, 2, 3) 5
+        repeat 3 {
+            error(0.125) D1
+            error(0.25) D1 ^ D2 L3
+            shift_detectors(1, 2, 3) 5
+        }
+        error(0.125) D1
+        repeat 3 {
+            error(0.125) D1
+            error(0.25) D1 ^ D2 L3
+            shift_detectors(1, 2, 3) 5
+        }
+    """)
+
+
+def test_append_bad():
+    m = stim.DetectorErrorModel()
+    m.append("error", 0.125, [stim.target_relative_detector_id(0)])
+    m.append("error", [0.125], [stim.target_relative_detector_id(0)])
+    m.append("shift_detectors", [], [5])
+    m += m * 3
+
+    with pytest.raises(ValueError, match="Bad target 'D0' for instruction 'shift_detectors'"):
+        m.append("shift_detectors", [0.125, 0.25], [stim.target_relative_detector_id(0)])
+    with pytest.raises(ValueError, match="takes 1 argument"):
+        m.append("error", [0.125, 0.25], [stim.target_relative_detector_id(0)])
+
+    with pytest.raises(ValueError, match="Bad target '0' for instruction 'error'"):
+        m.append("error", [0.125], [0])
+
+    with pytest.raises(ValueError, match="First argument"):
+        m.append(None)
+    with pytest.raises(ValueError, match="First argument"):
+        m.append(object())
+    with pytest.raises(ValueError, match="Must specify.*instruction name"):
+        m.append("error")
+    with pytest.raises(ValueError, match="Can't specify.*instruction is a"):
+        m.append(m[0], 0.125, [])
+    with pytest.raises(ValueError, match="Can't specify.*instruction is a"):
+        m.append(m[-1], 0.125, [])
+
+
+def test_pickle():
+    import pickle
+
+    t = stim.DetectorErrorModel("""
+        repeat 100 {
+            error(0.25) D0 L1
+            shift_detectors(1, 2) 3
+        }
+    """)
+    a = pickle.dumps(t)
+    assert pickle.loads(a) == t
+
+
+def test_count_errors():
+    assert stim.DetectorErrorModel().num_errors == 0
+
+    assert stim.DetectorErrorModel("""
+        logical_observable L100
+        detector D100
+        shift_detectors(100, 100, 100) 100
+        error(0.125) D100
+    """).num_errors == 1
+
+    assert stim.DetectorErrorModel("""
+        error(0.125) D0
+        REPEAT 100 {
+            REPEAT 5 {
+                error(0.25) D1
+            }
+        }
+    """).num_errors == 501

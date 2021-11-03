@@ -89,6 +89,12 @@ struct DetectorErrorModel {
     /// Move assignment.
     DetectorErrorModel &operator=(DetectorErrorModel &&other) noexcept;
 
+    DetectorErrorModel &operator*=(size_t repetitions);
+    DetectorErrorModel operator*(size_t repetitions) const;
+    DetectorErrorModel operator+(const DetectorErrorModel &other) const;
+    DetectorErrorModel &operator+=(const DetectorErrorModel &other);
+
+    void append_dem_instruction(const DemInstruction &instruction);
     void append_error_instruction(double probability, ConstPointerRange<DemTarget> targets);
     void append_shift_detectors_instruction(ConstPointerRange<double> coord_shift, uint64_t detector_shift);
     void append_detector_instruction(ConstPointerRange<double> coords, DemTarget target);
@@ -116,6 +122,7 @@ struct DetectorErrorModel {
     uint64_t total_detector_shift() const;
     uint64_t count_detectors() const;
     uint64_t count_observables() const;
+    uint64_t count_errors() const;
 
     void clear();
 

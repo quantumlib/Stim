@@ -38,6 +38,17 @@ void pybind_detector_error_model_target(pybind11::module &m) {
 
             Returns:
                 The relative detector target.
+
+            Examples:
+                >>> import stim
+                >>> m = stim.DetectorErrorModel()
+                >>> m.append("error", 0.25, [
+                ...     stim.target_relative_detector_id(13)
+                ... ])
+                >>> print(repr(m))
+                stim.DetectorErrorModel('''
+                    error(0.25) D13
+                ''')
         )DOC")
             .data());
 
@@ -53,6 +64,17 @@ void pybind_detector_error_model_target(pybind11::module &m) {
 
             Returns:
                 The logical observable target.
+
+            Examples:
+                >>> import stim
+                >>> m = stim.DetectorErrorModel()
+                >>> m.append("error", 0.25, [
+                ...     stim.target_logical_observable_id(13)
+                ... ])
+                >>> print(repr(m))
+                stim.DetectorErrorModel('''
+                    error(0.25) L13
+                ''')
         )DOC")
             .data());
 
@@ -61,11 +83,97 @@ void pybind_detector_error_model_target(pybind11::module &m) {
         &ExposedDemTarget::separator,
         clean_doc_string(u8R"DOC(
             Returns a target separator (e.g. "^" in a .dem file).
+
+            Examples:
+                >>> import stim
+                >>> m = stim.DetectorErrorModel()
+                >>> m.append("error", 0.25, [
+                ...     stim.target_relative_detector_id(1),
+                ...     stim.target_separator(),
+                ...     stim.target_relative_detector_id(2),
+                ... ])
+                >>> print(repr(m))
+                stim.DetectorErrorModel('''
+                    error(0.25) D1 ^ D2
+                ''')
         )DOC")
             .data());
 
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.DemTarget`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.DemTarget`s are different.");
+
+    c.def_static(
+        "relative_detector_id",
+        &ExposedDemTarget::relative_detector_id,
+        pybind11::arg("index"),
+        clean_doc_string(u8R"DOC(
+            Returns a relative detector id (e.g. "D5" in a .dem file).
+
+            Args:
+                index: The index of the detector, relative to the current detector offset.
+
+            Returns:
+                The relative detector target.
+
+            Examples:
+                >>> import stim
+                >>> m = stim.DetectorErrorModel()
+                >>> m.append("error", 0.25, [
+                ...     stim.DemTarget.relative_detector_id(13)
+                ... ])
+                >>> print(repr(m))
+                stim.DetectorErrorModel('''
+                    error(0.25) D13
+                ''')
+        )DOC")
+            .data());
+
+    c.def_static(
+        "logical_observable_id",
+        &ExposedDemTarget::observable_id,
+        pybind11::arg("index"),
+        clean_doc_string(u8R"DOC(
+            Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
+
+            Args:
+                index: The index of the observable.
+
+            Returns:
+                The logical observable target.
+
+            Examples:
+                >>> import stim
+                >>> m = stim.DetectorErrorModel()
+                >>> m.append("error", 0.25, [
+                ...     stim.DemTarget.logical_observable_id(13)
+                ... ])
+                >>> print(repr(m))
+                stim.DetectorErrorModel('''
+                    error(0.25) L13
+                ''')
+        )DOC")
+            .data());
+
+    c.def_static(
+        "separator",
+        &ExposedDemTarget::separator,
+        clean_doc_string(u8R"DOC(
+            Returns a target separator (e.g. "^" in a .dem file).
+
+            Examples:
+                >>> import stim
+                >>> m = stim.DetectorErrorModel()
+                >>> m.append("error", 0.25, [
+                ...     stim.DemTarget.relative_detector_id(1),
+                ...     stim.DemTarget.separator(),
+                ...     stim.DemTarget.relative_detector_id(2),
+                ... ])
+                >>> print(repr(m))
+                stim.DetectorErrorModel('''
+                    error(0.25) D1 ^ D2
+                ''')
+        )DOC")
+            .data());
 
     c.def(
         "__repr__",
