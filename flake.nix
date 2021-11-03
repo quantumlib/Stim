@@ -34,7 +34,9 @@
               allPyStims = mapAttrs (_: mkPyStim) (listToAttrs pyOuts);
             in
             flake-utils.lib.flattenTree (allPyStims // {
-              stim = pkgs.callPackage ./stim.nix { };
+              stim-avx2 = pkgs.callPackage ./stim.nix { avx2Support = true; sseSupport = false; };
+              stim-sse = pkgs.callPackage ./stim.nix { avx2Support = false; sseSupport = true; };
+              stim = pkgs.callPackage ./stim.nix { }
             });
 
 
