@@ -1266,8 +1266,13 @@ void ErrorAnalyzer::add_error_combinations(
 }
 
 void ErrorAnalyzer::MPP(const OperationData &target_data) {
+    size_t n = target_data.targets.size();
+    std::vector<GateTarget> reversed_targets(n);
+    for (size_t k = 0; k < n; k++) {
+        reversed_targets[k] = target_data.targets[n-k-1];
+    }
     decompose_mpp_operation(
-        target_data,
+        OperationData{target_data.args, reversed_targets},
         xs.size(),
         [&](const OperationData &h_xz,
             const OperationData &h_yz,

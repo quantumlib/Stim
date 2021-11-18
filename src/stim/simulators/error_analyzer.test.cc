@@ -2498,3 +2498,35 @@ TEST(ErrorAnalyzer, ignores_sweep_controls) {
             error(0.25) D0
         )MODEL"));
 }
+
+TEST(ErrorAnalyzer, mpp_ordering) {
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                MPP X0*X1 X0
+                TICK
+                MPP X0
+                DETECTOR rec[-1] rec[-2]
+            )CIRCUIT"),
+            false,
+            false,
+            false,
+            false),
+        DetectorErrorModel(R"MODEL(
+            detector D0
+        )MODEL"));
+
+    ASSERT_THROW({
+        ErrorAnalyzer::circuit_to_detector_error_model(
+            Circuit(R"CIRCUIT(
+                MPP X0 X0*X1
+                TICK
+                MPP X0
+                DETECTOR rec[-1] rec[-2]
+            )CIRCUIT"),
+            false,
+            false,
+            false,
+            false);
+    }, std::invalid_argument);
+}
