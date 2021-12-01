@@ -98,7 +98,7 @@ struct DemAdjGraph {
         } else if (detectors.size() == 2) {
             add_outward_edge(detectors[0], detectors[1], obs_mask);
             add_outward_edge(detectors[1], detectors[0], obs_mask);
-        } else if (detectors.size() == 0 && obs_mask && distance_1_error_mask == 0) {
+        } else if (detectors.empty() && obs_mask && distance_1_error_mask == 0) {
             distance_1_error_mask = obs_mask;
         }
     }
@@ -145,28 +145,32 @@ struct DemAdjGraph {
 };
 
 struct DemAdjGraphSearchState {
-    uint64_t node1;
-    uint64_t node2;
+    uint64_t nodeX;
+    uint64_t nodeY;
     uint64_t obs_mask;
 
-    DemAdjGraphSearchState() : node1(NO_NODE_INDEX), node2(NO_NODE_INDEX), obs_mask(0) {
+    DemAdjGraphSearchState() : nodeX(NO_NODE_INDEX), nodeY(NO_NODE_INDEX), obs_mask(0) {
     }
-    DemAdjGraphSearchState(uint64_t init_node1, uint64_t init_node2, uint64_t obs_mask) : obs_mask(obs_mask) {
-        if (init_node1 < init_node2) {
-            node1 = init_node1;
-            node2 = init_node2;
-        } else if (init_node1 > init_node2) {
-            node1 = init_node2;
-            node2 = init_node1;
+    DemAdjGraphSearchState(uint64_t init_nodeX, uint64_t init_nodeY, uint64_t obs_mask) : nodeX(init_nodeX), nodeY(init_nodeY), obs_mask(obs_mask) {
+    }
+
+    bool is_undetected() const {
+        return nodeX == nodeY;
+    }
+
+    DemAdjGraphSearchState canonical() const {
+        if (nodeX < nodeY) {
+            return {nodeX, nodeY, obs_mask};
+        } else if (nodeX > nodeY) {
+            return {nodeY, nodeX, obs_mask};
         } else {
-            node1 = NO_NODE_INDEX;
-            node2 = NO_NODE_INDEX;
+            return {NO_NODE_INDEX, NO_NODE_INDEX, obs_mask};
         }
     }
 
     void append_transition_as_error_instruction_to(const DemAdjGraphSearchState &other, DetectorErrorModel &out) {
         // Extract detector indices while cancelling duplicates.
-        std::array<uint64_t, 5> nodes{node1, node2, other.node1, other.node2, NO_NODE_INDEX};
+        std::array<uint64_t, 5> nodes{nodeX, nodeY, other.nodeX, other.nodeY, NO_NODE_INDEX};
         std::sort(nodes.begin(), nodes.end());
         for (size_t k = 0; k < 4; k++) {
             if (nodes[k] == nodes[k + 1]) {
@@ -193,41 +197,49 @@ struct DemAdjGraphSearchState {
     }
 
     bool operator==(const DemAdjGraphSearchState &other) const {
-        return node1 == other.node1 && node2 == other.node2 && obs_mask == other.obs_mask;
+        DemAdjGraphSearchState a = canonical();
+        DemAdjGraphSearchState b = other.canonical();
+        return a.nodeX == b.nodeX && a.nodeY == b.nodeY && obs_mask == other.obs_mask;
     }
 
     bool operator<(const DemAdjGraphSearchState &other) const {
-        if (node1 != other.node1) {
-            return node1 < other.node1;
+        DemAdjGraphSearchState a = canonical();
+        DemAdjGraphSearchState b = other.canonical();
+        if (a.nodeX != b.nodeX) {
+            return a.nodeX < b.nodeX;
         }
-        if (node2 != other.node2) {
-            return node2 < other.node2;
+        if (a.nodeY != b.nodeY) {
+            return a.nodeY < b.nodeY;
         }
         return obs_mask < other.obs_mask;
     }
 
     std::string str() const {
         std::stringstream result;
-        if (node1 != NO_NODE_INDEX) {
-            result << "D" << node1;
-            if (node2 != NO_NODE_INDEX) {
-                result << " D" << node2;
-            }
+        if (is_undetected()) {
+            result << "[no symptoms] ";
         } else {
-            result << "[no symptoms]";
+            if (nodeX != NO_NODE_INDEX) {
+                result << "D" << nodeX << " ";
+            }
+            if (nodeY != NO_NODE_INDEX) {
+                result << "D" << nodeY << " ";
+            }
         }
 
         uint64_t dif_mask = obs_mask;
         size_t obs_id = 0;
         while (dif_mask) {
             if (dif_mask & 1) {
-                result << " L" << obs_id;
+                result << "L" << obs_id << " ";
             }
             dif_mask >>= 1;
             obs_id++;
         }
 
-        return result.str();
+        std::string r = result.str();
+        r.pop_back();
+        return r;
     }
 };
 
@@ -240,7 +252,7 @@ DetectorErrorModel backtrack_path(
     while (true) {
         auto prev_state = back_map.at(cur_state);
         cur_state.append_transition_as_error_instruction_to(prev_state, out);
-        if (prev_state.node1 == NO_NODE_INDEX) {
+        if (prev_state.is_undetected()) {
             break;
         }
         cur_state = prev_state;
@@ -277,12 +289,15 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(const Det
 
     for (; !queue.empty(); queue.pop()) {
         DemAdjGraphSearchState cur = queue.front();
-        for (const auto &e : graph.nodes[cur.node1].edges) {
-            DemAdjGraphSearchState next(e.opposite_node_index, cur.node2, e.crossing_observable_mask ^ cur.obs_mask);
+        for (const auto &e : graph.nodes[cur.nodeX].edges) {
+            DemAdjGraphSearchState next(e.opposite_node_index, cur.nodeY, e.crossing_observable_mask ^ cur.obs_mask);
+            if (next.nodeX == NO_NODE_INDEX) {
+                std::swap(next.nodeX, next.nodeY);
+            }
             if (!back_map.emplace(next, cur).second) {
                 continue;
             }
-            if (next.node1 == NO_NODE_INDEX) {
+            if (next.is_undetected()) {
                 if (next.obs_mask) {
                     return backtrack_path(back_map, next);
                 }
