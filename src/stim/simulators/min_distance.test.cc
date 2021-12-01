@@ -16,6 +16,7 @@
 
 #include <gtest/gtest.h>
 
+#include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/error_analyzer.h"
 
@@ -162,4 +163,16 @@ TEST(shortest_graphlike_undetectable_logical_error, surface_code) {
     // Throw due to ungraphlike errors.
     ASSERT_THROW({ stim::shortest_graphlike_undetectable_logical_error(ungraphlike_model, false);
     }, std::invalid_argument);
+}
+
+TEST(shortest_graphlike_undetectable_logical_error, repetition_code) {
+    CircuitGenParameters params(10, 7, "memory");
+    params.before_round_data_depolarization = 0.01;
+    auto circuit = generate_rep_code_circuit(params).circuit;
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(
+        circuit, true, true, false, false);
+
+    ASSERT_EQ(
+        stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(),
+        7);
 }

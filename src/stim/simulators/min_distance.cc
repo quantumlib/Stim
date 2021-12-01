@@ -145,24 +145,24 @@ struct DemAdjGraph {
 };
 
 struct DemAdjGraphSearchState {
-    uint64_t nodeX;
-    uint64_t nodeY;
-    uint64_t obs_mask;
+    uint64_t det_active;  // The detection event being moved around in an attempt to remove it (or NO_NODE_INDEX).
+    uint64_t det_held;  // The detection event being left in the same place (or NO_NODE_INDEX).
+    uint64_t obs_mask;  // The accumulated frame changes from moving the detection events around.
 
-    DemAdjGraphSearchState() : nodeX(NO_NODE_INDEX), nodeY(NO_NODE_INDEX), obs_mask(0) {
+    DemAdjGraphSearchState() : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(0) {
     }
-    DemAdjGraphSearchState(uint64_t init_nodeX, uint64_t init_nodeY, uint64_t obs_mask) : nodeX(init_nodeX), nodeY(init_nodeY), obs_mask(obs_mask) {
+    DemAdjGraphSearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask) : det_active(det_active), det_held(det_held), obs_mask(obs_mask) {
     }
 
     bool is_undetected() const {
-        return nodeX == nodeY;
+        return det_active == det_held;
     }
 
     DemAdjGraphSearchState canonical() const {
-        if (nodeX < nodeY) {
-            return {nodeX, nodeY, obs_mask};
-        } else if (nodeX > nodeY) {
-            return {nodeY, nodeX, obs_mask};
+        if (det_active < det_held) {
+            return {det_active, det_held, obs_mask};
+        } else if (det_active > det_held) {
+            return {det_held, det_active, obs_mask};
         } else {
             return {NO_NODE_INDEX, NO_NODE_INDEX, obs_mask};
         }
@@ -170,7 +170,7 @@ struct DemAdjGraphSearchState {
 
     void append_transition_as_error_instruction_to(const DemAdjGraphSearchState &other, DetectorErrorModel &out) {
         // Extract detector indices while cancelling duplicates.
-        std::array<uint64_t, 5> nodes{nodeX, nodeY, other.nodeX, other.nodeY, NO_NODE_INDEX};
+        std::array<uint64_t, 5> nodes{det_active, det_held, other.det_active, other.det_held, NO_NODE_INDEX};
         std::sort(nodes.begin(), nodes.end());
         for (size_t k = 0; k < 4; k++) {
             if (nodes[k] == nodes[k + 1]) {
@@ -199,19 +199,19 @@ struct DemAdjGraphSearchState {
     bool operator==(const DemAdjGraphSearchState &other) const {
         DemAdjGraphSearchState a = canonical();
         DemAdjGraphSearchState b = other.canonical();
-        return a.nodeX == b.nodeX && a.nodeY == b.nodeY && obs_mask == other.obs_mask;
+        return a.det_active == b.det_active && a.det_held == b.det_held && a.obs_mask == b.obs_mask;
     }
 
     bool operator<(const DemAdjGraphSearchState &other) const {
         DemAdjGraphSearchState a = canonical();
         DemAdjGraphSearchState b = other.canonical();
-        if (a.nodeX != b.nodeX) {
-            return a.nodeX < b.nodeX;
+        if (a.det_active != b.det_active) {
+            return a.det_active < b.det_active;
         }
-        if (a.nodeY != b.nodeY) {
-            return a.nodeY < b.nodeY;
+        if (a.det_held != b.det_held) {
+            return a.det_held < b.det_held;
         }
-        return obs_mask < other.obs_mask;
+        return a.obs_mask < b.obs_mask;
     }
 
     std::string str() const {
@@ -219,11 +219,11 @@ struct DemAdjGraphSearchState {
         if (is_undetected()) {
             result << "[no symptoms] ";
         } else {
-            if (nodeX != NO_NODE_INDEX) {
-                result << "D" << nodeX << " ";
+            if (det_active != NO_NODE_INDEX) {
+                result << "D" << det_active << " ";
             }
-            if (nodeY != NO_NODE_INDEX) {
-                result << "D" << nodeY << " ";
+            if (det_held != NO_NODE_INDEX) {
+                result << "D" << det_held << " ";
             }
         }
 
@@ -274,6 +274,8 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(const Det
 
     std::queue<DemAdjGraphSearchState> queue;
     std::map<DemAdjGraphSearchState, DemAdjGraphSearchState> back_map;
+    // Mark the vacuous dead-end state as already seen.
+    back_map.emplace(DemAdjGraphSearchState(), DemAdjGraphSearchState());
 
     // Search starts from any and all edges crossing an observable.
     for (size_t node1 = 0; node1 < graph.nodes.size(); node1++) {
@@ -287,21 +289,25 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(const Det
         }
     }
 
+    // Breadth first search for a symptomless state that has a frame change.
+    std::cerr << "starting breadth first search\n";
     for (; !queue.empty(); queue.pop()) {
         DemAdjGraphSearchState cur = queue.front();
-        for (const auto &e : graph.nodes[cur.nodeX].edges) {
-            DemAdjGraphSearchState next(e.opposite_node_index, cur.nodeY, e.crossing_observable_mask ^ cur.obs_mask);
-            if (next.nodeX == NO_NODE_INDEX) {
-                std::swap(next.nodeX, next.nodeY);
-            }
+        std::cerr << "    popped " << cur.str() << "\n";
+        assert(cur.det_active != NO_NODE_INDEX);
+        for (const auto &e : graph.nodes[cur.det_active].edges) {
+            DemAdjGraphSearchState next(e.opposite_node_index, cur.det_held, e.crossing_observable_mask ^ cur.obs_mask);
             if (!back_map.emplace(next, cur).second) {
                 continue;
             }
             if (next.is_undetected()) {
-                if (next.obs_mask) {
-                    return backtrack_path(back_map, next);
-                }
+                assert(next.obs_mask);  // Otherwise, it would have already been in back_map.
+                return backtrack_path(back_map, next);
             } else {
+                if (next.det_active == NO_NODE_INDEX) {
+                    // Just resolved one out of two excitations. Move on to the second excitation.
+                    std::swap(next.det_active, next.det_held);
+                }
                 queue.push(next);
             }
         }
