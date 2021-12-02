@@ -206,8 +206,32 @@ def test_count_errors():
     """).num_errors == 501
 
 
+def test_shortest_graphlike_error_trivial():
+    with pytest.raises(ValueError, match="any graphlike logical errors"):
+        _ = stim.DetectorErrorModel().shortest_graphlike_error()
+    with pytest.raises(ValueError, match="any graphlike logical errors"):
+        _ = stim.DetectorErrorModel("""
+            error(0.1) D0
+        """).shortest_graphlike_error()
+    with pytest.raises(ValueError, match="any graphlike logical errors"):
+        _ = stim.DetectorErrorModel("""
+            error(0.1) D0 L0
+        """).shortest_graphlike_error()
+    assert stim.DetectorErrorModel("""
+        error(0.1) L0
+    """).shortest_graphlike_error() == stim.DetectorErrorModel("""
+        error(1) L0
+    """)
+    assert stim.DetectorErrorModel("""
+        error(0.1) D0 D1 L0
+        error(0.1) D0 D1
+    """).shortest_graphlike_error() == stim.DetectorErrorModel("""
+        error(1) D0 D1
+        error(1) D0 D1 L0
+    """)
+
+
 def test_shortest_graphlike_error_line():
-    print("LINE START")
     assert stim.DetectorErrorModel("""
         error(0.125) D0
         error(0.125) D0 D1
@@ -217,7 +241,17 @@ def test_shortest_graphlike_error_line():
         error(1) D1
         error(1) D1 L55
     """)
-    print("LINE END")
+
+    assert len(stim.DetectorErrorModel("""
+        error(0.1) D0 D1 L5
+        REPEAT 1000 {
+            error(0.1) D0 D2
+            error(0.1) D1 D3
+            shift_detectors 2
+        }
+        error(0.1) D0
+        error(0.1) D1
+    """).shortest_graphlike_error()) == 2003
 
 
 def test_shortest_graphlike_error_ignore():
