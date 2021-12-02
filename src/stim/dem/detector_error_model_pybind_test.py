@@ -255,22 +255,18 @@ def test_shortest_graphlike_error_line():
 
 
 def test_shortest_graphlike_error_ignore():
-    print("IGNORE START")
     assert stim.DetectorErrorModel("""
         error(0.125) D0 D1 D2
         error(0.125) L0
     """).shortest_graphlike_error(ignore_ungraphlike_errors=True) == stim.DetectorErrorModel("""
         error(1) L0
     """)
-    print("IGNORE END")
 
 
 def test_shortest_graphlike_error_rep_code():
-    print("REP CODE START")
     circuit = stim.Circuit.generated("repetition_code:memory",
                                      rounds=10,
                                      distance=7,
                                      before_round_data_depolarization=0.01)
     model = circuit.detector_error_model(decompose_errors=True)
     assert len(model.shortest_graphlike_error()) == 7
-    print("REP CODE FINISH")

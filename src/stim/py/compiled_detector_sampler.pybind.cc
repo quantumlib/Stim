@@ -45,9 +45,9 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
     size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
 
     void *ptr = bytes.data();
-    ssize_t itemsize = sizeof(uint8_t);
-    std::vector<ssize_t> shape{(ssize_t)num_shots, (ssize_t)n};
-    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_bits_padded(), 1};
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)n};
+    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_bits_padded(), 1};
     const std::string &format = pybind11::format_descriptor<uint8_t>::value;
     bool readonly = true;
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
@@ -60,9 +60,9 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
     size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
 
     void *ptr = sample.data.u8;
-    ssize_t itemsize = sizeof(uint8_t);
-    std::vector<ssize_t> shape{(ssize_t)num_shots, (ssize_t)(n + 7) / 8};
-    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_u8_padded(), 1};
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)(n + 7) / 8};
+    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_u8_padded(), 1};
     const std::string &format = pybind11::format_descriptor<uint8_t>::value;
     bool readonly = true;
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));

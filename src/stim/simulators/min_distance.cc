@@ -319,10 +319,8 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(const Det
     }
 
     // Breadth first search for a symptomless state that has a frame change.
-    std::cerr << "starting breadth first search\n";
     for (; !queue.empty(); queue.pop()) {
         DemAdjGraphSearchState cur = queue.front();
-        std::cerr << "    popped " << cur.str() << "\n";
         assert(cur.det_active != NO_NODE_INDEX);
         for (const auto &e : graph.nodes[cur.det_active].edges) {
             DemAdjGraphSearchState next(e.opposite_node_index, cur.det_held, e.crossing_observable_mask ^ cur.obs_mask);

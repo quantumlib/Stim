@@ -38,7 +38,7 @@ jobs:
         env:
           CIBW_SKIP: "cp27-* cp35-* pp*"
           CIBW_TEST_REQUIRES: cirq-core pytest
-          CIBW_TEST_COMMAND: pytest -s -v {project}/src {project}/glue/cirq
+          CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
       - uses: actions/upload-artifact@v2
         with:
           path: ./wheelhouse/*.whl
@@ -134,7 +134,7 @@ jobs:
       - run: pip install -e .
       - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install pytest
-      - run: pytest -s -v src
+      - run: pytest src
       - run: python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
   test_stimcirq:
     runs-on: ubuntu-latest
@@ -148,7 +148,7 @@ jobs:
       - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/cirq
       - run: pip install pytest
-      - run: pytest -s -v glue/cirq
+      - run: pytest glue/cirq
       - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
   test_stimzx:
     runs-on: ubuntu-latest
@@ -162,7 +162,7 @@ jobs:
       - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/zx
       - run: pip install pytest
-      - run: pytest -s -v glue/zx
+      - run: pytest glue/zx
       - run: python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
   test_stimjs:
     runs-on: ubuntu-latest
