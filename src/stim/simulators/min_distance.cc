@@ -309,7 +309,7 @@ DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(const Det
     // Search starts from any and all edges crossing an observable.
     for (size_t node1 = 0; node1 < graph.nodes.size(); node1++) {
         for (const auto &e : graph.nodes[node1].edges) {
-            size_t node2 = e.opposite_node_index;
+            uint64_t node2 = e.opposite_node_index;
             if (node1 < node2 && e.crossing_observable_mask) {
                 DemAdjGraphSearchState start{node1, node2, e.crossing_observable_mask};
                 queue.push(start);
