@@ -36,7 +36,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_SKIP: "cp27-* cp35-* pp* cp310-win32 cp310-manylinux_i686"
+          CIBW_SKIP: "cp27-* cp35-* pp* cp310-win32 cp310-manylinux_i686 cp36-musllinux_x86_64"
           CIBW_TEST_REQUIRES: cirq-core pytest
           CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
       - uses: actions/upload-artifact@v2
