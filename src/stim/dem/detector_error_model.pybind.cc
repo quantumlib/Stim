@@ -14,6 +14,7 @@
 
 #include "stim/dem/detector_error_model.pybind.h"
 
+#include "stim/simulators/min_distance.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
@@ -671,4 +672,85 @@ void pybind_detector_error_model(pybind11::module &m) {
             return DetectorErrorModel(pybind11::cast<std::string>(text).data());
         }
     ));
+
+    c.def(
+        "shortest_graphlike_error",
+        &shortest_graphlike_undetectable_logical_error,
+        pybind11::arg("ignore_ungraphlike_errors") = false,
+        clean_doc_string(u8R"DOC(
+            Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+
+            Note that this method does not pay attention to error probabilities (other than ignoring errors with
+            probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
+            maximum probability of those physical errors all occurring.
+
+            This method works by looking for errors that have frame changes (eg. "error(0.1) D0 D1 L5" flips the frame
+            of observable 5). These errors are converted into one or two symptoms and a net frame change. The symptoms
+            can then be moved around by following errors touching that symptom. Each symptom is moved until it
+            disappears into a boundary or cancels against another remaining symptom, while leaving the other symptoms
+            alone (ensuring only one symptom is allowed to move significantly reduces waste in the search space).
+            Eventually a path or cycle of errors is found that cancels out the symptoms, and if there is still a frame
+            change at that point then that path or cycle is a logical error (otherwise all that was found was a
+            stabilizer of the system; a dead end). The search process advances like a breadth first search, seeded from
+            all the frame-change errors and branching them outward in tandem, until one of them wins the race to find a
+            solution.
+
+            Args:
+                ignore_ungraphlike_errors: Defaults to False. When False, an exception is raised if there are any
+                    errors in the model that are not graphlike. When True, those errors are skipped as if they weren't
+                    present.
+
+                    A graphlike error is an error with at most two symptoms per decomposed component.
+                        graphlike:
+                            error(0.1) D0
+                            error(0.1) D0 D1
+                            error(0.1) D0 D1 L0
+                            error(0.1) D0 D1 ^ D2
+                        not graphlike:
+                            error(0.1) D0 D1 D2
+                            error(0.1) D0 D1 D2 ^ D3
+
+            Returns:
+                A detector error model containing just the error instructions corresponding to an undetectable logical
+                error. There will be no other kinds of instructions (no `repeat`s, no `shift_detectors`, etc).
+                The error probabilities will all be set to 1.
+
+                The `len` of the returned model is the graphlike code distance of the circuit. But beware that in
+                general the true code distance may be smaller. For example, in the XZ surface code with twists, the true
+                minimum sized logical error is likely to use Y errors. But each Y error decomposes into two graphlike
+                components (the X part and the Z part). As a result, the graphlike code distance in that context is
+                likely to be nearly twice as large as the true code distance.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.DetectorErrorModel("""
+                ...     error(0.125) D0
+                ...     error(0.125) D0 D1
+                ...     error(0.125) D1 L55
+                ...     error(0.125) D1
+                ... """).shortest_graphlike_error()
+                stim.DetectorErrorModel('''
+                    error(1) D1
+                    error(1) D1 L55
+                ''')
+
+                >>> stim.DetectorErrorModel("""
+                ...     error(0.125) D0 D1 D2
+                ...     error(0.125) L0
+                ... """).shortest_graphlike_error(ignore_ungraphlike_errors=True)
+                stim.DetectorErrorModel('''
+                    error(1) L0
+                ''')
+
+                >>> circuit = stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     rounds=10,
+                ...     distance=7,
+                ...     before_round_data_depolarization=0.01)
+                >>> model = circuit.detector_error_model(decompose_errors=True)
+                >>> len(model.shortest_graphlike_error())
+                7
+        )DOC")
+            .data());
 }

@@ -260,7 +260,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
                 }
                 throw std::invalid_argument("HITS data wasn't comma-separated integers terminated by a newline.");
             }
-            handle_hit(value);
+            handle_hit((size_t)value);
             first = false;
             if (next_char == '\n') {
                 return true;
@@ -396,7 +396,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
                     << ".";
                 throw std::invalid_argument(msg.str());
             }
-            handle_hit(offset + value);
+            handle_hit((size_t)(offset + value));
         }
     }
 };

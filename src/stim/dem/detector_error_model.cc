@@ -92,6 +92,16 @@ void DemTarget::shift_if_detector_id(int64_t offset) {
     }
 }
 
+bool DemInstruction::operator<(const DemInstruction &other) const {
+    if (type != other.type) {
+        return type < other.type;
+    }
+    if (target_data != other.target_data) {
+        return target_data < other.target_data;
+    }
+    return arg_data < other.arg_data;
+}
+
 bool DemInstruction::operator==(const DemInstruction &other) const {
     return approx_equals(other, 0);
 }

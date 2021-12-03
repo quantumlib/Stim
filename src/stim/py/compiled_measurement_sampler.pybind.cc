@@ -42,9 +42,9 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples
     }
 
     void *ptr = bytes.data();
-    ssize_t itemsize = sizeof(uint8_t);
-    std::vector<ssize_t> shape{(ssize_t)num_samples, (ssize_t)circuit.count_measurements()};
-    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_bits_padded(), 1};
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_samples, (pybind11::ssize_t)circuit.count_measurements()};
+    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_bits_padded(), 1};
     const std::string &format = pybind11::format_descriptor<uint8_t>::value;
     bool readonly = true;
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
@@ -54,9 +54,9 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t 
     auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
 
     void *ptr = sample.data.u8;
-    ssize_t itemsize = sizeof(uint8_t);
-    std::vector<ssize_t> shape{(ssize_t)num_samples, (ssize_t)(circuit.count_measurements() + 7) / 8};
-    std::vector<ssize_t> stride{(ssize_t)sample.num_minor_u8_padded(), 1};
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_samples, (pybind11::ssize_t)(circuit.count_measurements() + 7) / 8};
+    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_u8_padded(), 1};
     const std::string &format = pybind11::format_descriptor<uint8_t>::value;
     bool readonly = true;
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));

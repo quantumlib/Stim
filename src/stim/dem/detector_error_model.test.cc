@@ -607,3 +607,32 @@ TEST(detector_error_model, iadd) {
     a = DetectorErrorModel(a.str().data()); // Remove memory deduplication, because it affects equality.
     ASSERT_EQ(a, original + original);
 }
+
+TEST(detector_error_model, iter_flatten_error_instructions) {
+    DetectorErrorModel d(R"MODEL(
+        error(0.25) D0
+        shift_detectors 1
+        error(0.375) D0 D1
+        repeat 5 {
+            error(0.125) D0 D1 D2 L0
+            shift_detectors 2
+        }
+        detector D5000
+        logical_observable L5000
+    )MODEL");
+
+    DetectorErrorModel dem;
+    d.iter_flatten_error_instructions([&](const DemInstruction &e) {
+        EXPECT_EQ(e.type, DEM_ERROR);
+        dem.append_error_instruction(e.arg_data[0], e.target_data);
+    });
+    ASSERT_EQ(dem, DetectorErrorModel(R"MODEL(
+        error(0.25) D0
+        error(0.375) D1 D2
+        error(0.125) D1 D2 D3 L0
+        error(0.125) D3 D4 D5 L0
+        error(0.125) D5 D6 D7 L0
+        error(0.125) D7 D8 D9 L0
+        error(0.125) D9 D10 D11 L0
+    )MODEL"));
+}

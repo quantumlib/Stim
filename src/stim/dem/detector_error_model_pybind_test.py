@@ -204,3 +204,69 @@ def test_count_errors():
             }
         }
     """).num_errors == 501
+
+
+def test_shortest_graphlike_error_trivial():
+    with pytest.raises(ValueError, match="any graphlike logical errors"):
+        _ = stim.DetectorErrorModel().shortest_graphlike_error()
+    with pytest.raises(ValueError, match="any graphlike logical errors"):
+        _ = stim.DetectorErrorModel("""
+            error(0.1) D0
+        """).shortest_graphlike_error()
+    with pytest.raises(ValueError, match="any graphlike logical errors"):
+        _ = stim.DetectorErrorModel("""
+            error(0.1) D0 L0
+        """).shortest_graphlike_error()
+    assert stim.DetectorErrorModel("""
+        error(0.1) L0
+    """).shortest_graphlike_error() == stim.DetectorErrorModel("""
+        error(1) L0
+    """)
+    assert stim.DetectorErrorModel("""
+        error(0.1) D0 D1 L0
+        error(0.1) D0 D1
+    """).shortest_graphlike_error() == stim.DetectorErrorModel("""
+        error(1) D0 D1
+        error(1) D0 D1 L0
+    """)
+
+
+def test_shortest_graphlike_error_line():
+    assert stim.DetectorErrorModel("""
+        error(0.125) D0
+        error(0.125) D0 D1
+        error(0.125) D1 L55
+        error(0.125) D1
+    """).shortest_graphlike_error() == stim.DetectorErrorModel("""
+        error(1) D1
+        error(1) D1 L55
+    """)
+
+    assert len(stim.DetectorErrorModel("""
+        error(0.1) D0 D1 L5
+        REPEAT 1000 {
+            error(0.1) D0 D2
+            error(0.1) D1 D3
+            shift_detectors 2
+        }
+        error(0.1) D0
+        error(0.1) D1
+    """).shortest_graphlike_error()) == 2003
+
+
+def test_shortest_graphlike_error_ignore():
+    assert stim.DetectorErrorModel("""
+        error(0.125) D0 D1 D2
+        error(0.125) L0
+    """).shortest_graphlike_error(ignore_ungraphlike_errors=True) == stim.DetectorErrorModel("""
+        error(1) L0
+    """)
+
+
+def test_shortest_graphlike_error_rep_code():
+    circuit = stim.Circuit.generated("repetition_code:memory",
+                                     rounds=10,
+                                     distance=7,
+                                     before_round_data_depolarization=0.01)
+    model = circuit.detector_error_model(decompose_errors=True)
+    assert len(model.shortest_graphlike_error()) == 7
