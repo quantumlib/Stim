@@ -399,7 +399,7 @@ bool MeasureRecordReaderFormatHits::start_record() {
                 "Bits per record is " + std::to_string(bits_per_record()) + " but got a hit value " +
                 std::to_string(value) + ".");
         }
-        buffer[value] ^= true;
+        buffer[(size_t)value] ^= true;
         is_first = false;
     }
     return true;
@@ -613,7 +613,7 @@ bool MeasureRecordReaderFormatDets::start_record() {
                 "Got '" + std::to_string(c) + std::to_string(number) + "' but expected num values of that type is " +
                 std::to_string(size) + ".");
         }
-        buffer[offset + number] ^= true;
+        buffer[(size_t)(offset + number)] ^= true;
     }
     return true;
 }

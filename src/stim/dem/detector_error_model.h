@@ -61,6 +61,7 @@ struct DemInstruction {
     ConstPointerRange<DemTarget> target_data;
     DemInstructionType type;
 
+    bool operator<(const DemInstruction &other) const;
     bool operator==(const DemInstruction &other) const;
     bool operator!=(const DemInstruction &other) const;
     bool approx_equals(const DemInstruction &other, double atol) const;
@@ -125,6 +126,56 @@ struct DetectorErrorModel {
     uint64_t count_errors() const;
 
     void clear();
+
+   private:
+    template <typename CALLBACK>
+    void iter_flatten_error_instructions_helper(const CALLBACK &callback, uint64_t &detector_shift) const {
+        std::vector<DemTarget> translate_buf;
+        for (const auto &op : instructions) {
+            switch (op.type) {
+                case DEM_ERROR:
+                    translate_buf.clear();
+                    translate_buf.insert(translate_buf.end(), op.target_data.begin(), op.target_data.end());
+                    for (auto &t : translate_buf) {
+                        t.shift_if_detector_id((int64_t)detector_shift);
+                    }
+                    callback(DemInstruction{op.arg_data, translate_buf, op.type});
+                    break;
+                case DEM_REPEAT_BLOCK: {
+                    const auto &block = blocks[op.target_data[1].data];
+                    auto reps = op.target_data[0].data;
+                    for (uint64_t k = 0; k < reps; k++) {
+                        block.iter_flatten_error_instructions_helper(callback, detector_shift);
+                    }
+                    break;
+                }
+                case DEM_SHIFT_DETECTORS:
+                    detector_shift += op.target_data[0].data;
+                    break;
+                case DEM_DETECTOR:
+                case DEM_LOGICAL_OBSERVABLE:
+                    break;
+                default:
+                    throw std::invalid_argument("Unrecognized DEM instruction type: " + op.str());
+            }
+        }
+    }
+
+   public:
+    /// Iterates through the error model, invoking the given callback on each found error mechanism.
+    ///
+    /// Automatically flattens `repeat` blocks into repeated instructions.
+    /// Automatically folds `shift_detectors` instructions into adjusted indices of later error instructions.
+    ///
+    /// Args:
+    ///     callback: A function that takes a DemInstruction and returns no value. This function will be invoked once
+    ///         for each error instruction. The DemInstruction's arg_data will contain a single value (the error's
+    ///         probability) and the absolute targets of the error.
+    template <typename CALLBACK>
+    void iter_flatten_error_instructions(const CALLBACK &callback) const {
+        uint64_t offset = 0;
+        iter_flatten_error_instructions_helper(callback, offset);
+    }
 
     /// Gets a python-style slice of the error model's instructions.
     DetectorErrorModel py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;

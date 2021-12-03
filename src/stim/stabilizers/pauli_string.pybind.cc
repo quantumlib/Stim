@@ -109,9 +109,9 @@ PyPauliString &PyPauliString::operator*=(pybind11::object rhs) {
     } else if (rhs.equal(pybind11::cast(std::complex<float>{0, -1}))) {
         return *this *= std::complex<float>{0, -1};
     } else if (pybind11::isinstance<pybind11::int_>(rhs)) {
-        ssize_t k = pybind11::int_(rhs);
+        pybind11::ssize_t k = pybind11::int_(rhs);
         if (k >= 0) {
-            return *this *= (size_t)k;
+            return *this *= (pybind11::size_t)k;
         }
     }
     throw std::out_of_range("need isinstance(rhs, (stim.PauliString, int)) or rhs in (1, -1, 1j, -1j)");
@@ -303,13 +303,13 @@ void pybind_pauli_string(pybind11::module &m) {
             .data());
 
     c.def(
-        pybind11::init([](const std::vector<ssize_t> &pauli_indices) {
+        pybind11::init([](const std::vector<pybind11::ssize_t> &pauli_indices) {
             return PyPauliString(
                 PauliString::from_func(
                     false,
                     pauli_indices.size(),
                     [&](size_t i) {
-                        ssize_t p = pauli_indices[i];
+                        pybind11::ssize_t p = pauli_indices[i];
                         if (p < 0 || p > 3) {
                             throw std::invalid_argument(
                                 "Expected a pauli index (0->I, 1->X, 2->Y, 3->Z) but got " + std::to_string(p));
