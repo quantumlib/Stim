@@ -49,6 +49,8 @@
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
+#include "stim/simulators/measurements_to_detection_events.h"
+#include "stim/simulators/min_distance.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"

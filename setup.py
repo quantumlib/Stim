@@ -20,6 +20,7 @@ ALL_SOURCE_FILES = glob.glob("src/**/*.cc", recursive=True)
 TEST_FILES = glob.glob("src/**/*.test.cc", recursive=True)
 PERF_FILES = glob.glob("src/**/*.perf.cc", recursive=True)
 MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
+HEADER_FILES = glob.glob("src/**/*.h", recursive=True)
 RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES))
 
 version = '1.7.dev1'
@@ -36,8 +37,10 @@ stim_polyfill = Extension(
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
+    data_files=['pyproject.toml'] + HEADER_FILES,
     extra_compile_args=[
         *common_compile_args,
+        # I would specify -mno-sse2 but that causes build failures in non-stim code...?
         '-mno-avx2',
         '-DSTIM_PYBIND11_MODULE_NAME=_stim_march_polyfill',
     ],
@@ -47,6 +50,7 @@ stim_sse2 = Extension(
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
+    data_files=['pyproject.toml'] + HEADER_FILES,
     extra_compile_args=[
         *common_compile_args,
         '-msse2',
@@ -59,6 +63,7 @@ stim_avx2 = Extension(
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
+    data_files=['pyproject.toml'] + HEADER_FILES,
     extra_compile_args=[
         *common_compile_args,
         '-msse2',

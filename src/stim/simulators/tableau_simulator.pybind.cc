@@ -157,9 +157,9 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 float_vec.push_back(e.imag());
             }
             void *ptr = float_vec.data();
-            ssize_t itemsize = sizeof(float) * 2;
-            std::vector<ssize_t> shape{(ssize_t)complex_vec.size()};
-            std::vector<ssize_t> stride{itemsize};
+            pybind11::ssize_t itemsize = sizeof(float) * 2;
+            std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)complex_vec.size()};
+            std::vector<pybind11::ssize_t> stride{itemsize};
             const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
             bool readonly = true;
             return pybind11::array_t<float>(
