@@ -47,6 +47,7 @@ cc_library(
 cc_binary(
     name = "stim",
     srcs = SOURCE_FILES_NO_MAIN + glob(["src/**/main.cc"]),
+    includes = ["src/"],
     copts = [
         "-march=native",
         "-O3",
@@ -57,6 +58,7 @@ cc_binary(
 cc_binary(
     name = "stim_benchmark",
     srcs = SOURCE_FILES_NO_MAIN + PERF_FILES,
+    includes = ["src/"],
     copts = [
         "-march=native",
         "-O3",
@@ -70,6 +72,7 @@ cc_test(
     copts = [
         "-march=native",
     ],
+    includes = ["src/"],
     linkopts = ["-lpthread"],
     deps = [
         "@gtest",
