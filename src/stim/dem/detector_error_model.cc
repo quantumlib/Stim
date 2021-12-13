@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <iomanip>
+#include <limits>
 
 #include "stim/simulators/error_analyzer.h"
 #include "stim/str_util.h"
