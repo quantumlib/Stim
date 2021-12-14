@@ -9,7 +9,7 @@
 #########################################################
 
 if [ -z "$1" ]; then
-  echo "Provide a version argument like 'v1.2.0' or 'v1.2.dev0'."
+  echo "Provide a version argument like '1.2.0' or '1.2.dev0'."
   exit 1
 fi
 
