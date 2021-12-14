@@ -37,7 +37,6 @@ stim_polyfill = Extension(
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
-    data_files=['pyproject.toml'] + HEADER_FILES,
     extra_compile_args=[
         *common_compile_args,
         # I would specify -mno-sse2 but that causes build failures in non-stim code...?
@@ -50,7 +49,6 @@ stim_sse2 = Extension(
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
-    data_files=['pyproject.toml'] + HEADER_FILES,
     extra_compile_args=[
         *common_compile_args,
         '-msse2',
@@ -63,7 +61,6 @@ stim_avx2 = Extension(
     sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
-    data_files=['pyproject.toml'] + HEADER_FILES,
     extra_compile_args=[
         *common_compile_args,
         '-msse2',
@@ -87,7 +84,8 @@ setup(
     long_description_content_type='text/markdown',
     ext_modules=[stim_polyfill, stim_sse2, stim_avx2],
     python_requires='>=3.6.0',
-    data_files=[('', ['glue/python/README.md'])],
+    headers=HEADER_FILES,
+    data_files=[('', ['glue/python/README.md', 'pyproject.toml'])],
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},
     install_requires=['numpy'],
