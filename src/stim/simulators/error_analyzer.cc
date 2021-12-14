@@ -1268,6 +1268,7 @@ void ErrorAnalyzer::add_error_combinations(
 void ErrorAnalyzer::MPP(const OperationData &target_data) {
     size_t n = target_data.targets.size();
     std::vector<GateTarget> reversed_targets(n);
+    std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
         reversed_targets[k] = target_data.targets[n-k-1];
     }
@@ -1281,7 +1282,11 @@ void ErrorAnalyzer::MPP(const OperationData &target_data) {
             H_XZ(h_xz);
             H_YZ(h_yz);
             ZCX(cnot);
-            MZ(meas);
+            reversed_measure_targets.clear();
+            for (size_t k = meas.targets.size(); k--;) {
+                reversed_measure_targets.push_back(meas.targets[k]);
+            }
+            MZ({meas.args, reversed_measure_targets});
             ZCX(cnot);
             H_YZ(h_yz);
             H_XZ(h_xz);
