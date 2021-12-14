@@ -35,6 +35,7 @@ common_compile_args = [
 stim_polyfill = Extension(
     'stim._stim_march_polyfill',
     sources=RELEVANT_SOURCE_FILES,
+    headers=HEADER_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
@@ -47,6 +48,7 @@ stim_polyfill = Extension(
 stim_sse2 = Extension(
     'stim._stim_march_sse2',
     sources=RELEVANT_SOURCE_FILES,
+    headers=HEADER_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
@@ -59,6 +61,7 @@ stim_sse2 = Extension(
 stim_avx2 = Extension(
     'stim._stim_march_avx2',
     sources=RELEVANT_SOURCE_FILES,
+    headers=HEADER_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
@@ -84,7 +87,6 @@ setup(
     long_description_content_type='text/markdown',
     ext_modules=[stim_polyfill, stim_sse2, stim_avx2],
     python_requires='>=3.6.0',
-    headers=HEADER_FILES,
     data_files=[('', ['glue/python/README.md', 'pyproject.toml'])],
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},
