@@ -21,8 +21,8 @@
 using namespace stim;
 
 TEST(simd_bits_range_ref, construct) {
-    alignas(64) uint64_t data[16]{};
-    simd_bits_range_ref ref((simd_word *)data, sizeof(data) / sizeof(simd_word));
+    alignas(64) std::array<uint64_t, 16> data{};
+    simd_bits_range_ref ref((simd_word *)data.data(), sizeof(data) / sizeof(simd_word));
 
     ASSERT_EQ(ref.ptr_simd, (simd_word *)&data[0]);
     ASSERT_EQ(ref.num_simd_words, 16 * sizeof(uint64_t) / sizeof(simd_word));
@@ -34,10 +34,10 @@ TEST(simd_bits_range_ref, construct) {
 }
 
 TEST(simd_bits_range_ref, aliased_editing_and_bit_refs) {
-    alignas(64) uint64_t data[16]{};
+    alignas(64) std::array<uint64_t, 16> data{};
     auto c = (char *)&data;
-    simd_bits_range_ref ref((simd_word *)data, sizeof(data) / sizeof(simd_word));
-    const simd_bits_range_ref cref((simd_word *)data, sizeof(data) / sizeof(simd_word));
+    simd_bits_range_ref ref((simd_word *)data.data(), sizeof(data) / sizeof(simd_word));
+    const simd_bits_range_ref cref((simd_word *)data.data(), sizeof(data) / sizeof(simd_word));
 
     ASSERT_EQ(c[0], 0);
     ASSERT_EQ(c[13], 0);
@@ -54,8 +54,8 @@ TEST(simd_bits_range_ref, aliased_editing_and_bit_refs) {
 }
 
 TEST(simd_bits_range_ref, str) {
-    alignas(64) uint64_t data[8]{};
-    simd_bits_range_ref ref((simd_word *)data, sizeof(data) / sizeof(simd_word));
+    alignas(64) std::array<uint64_t, 8> data{};
+    simd_bits_range_ref ref((simd_word *)data.data(), sizeof(data) / sizeof(simd_word));
     ASSERT_EQ(
         ref.str(),
         "________________________________________________________________"
@@ -80,8 +80,8 @@ TEST(simd_bits_range_ref, str) {
 }
 
 TEST(simd_bits_range_ref, randomize) {
-    alignas(64) uint64_t data[16]{};
-    simd_bits_range_ref ref((simd_word *)data, sizeof(data) / sizeof(simd_word));
+    alignas(64) std::array<uint64_t, 16> data{};
+    simd_bits_range_ref ref((simd_word *)data.data(), sizeof(data) / sizeof(simd_word));
 
     ref.randomize(64 + 57, SHARED_TEST_RNG());
     uint64_t mask = (1ULL << 57) - 1;
@@ -111,7 +111,7 @@ TEST(simd_bits_range_ref, randomize) {
 }
 
 TEST(simd_bits_range_ref, xor_assignment) {
-    alignas(64) uint64_t data[24]{};
+    alignas(64) std::array<uint64_t, 24> data{};
     simd_bits_range_ref m0((simd_word *)&data[0], sizeof(data) / sizeof(simd_word) / 3);
     simd_bits_range_ref m1((simd_word *)&data[8], sizeof(data) / sizeof(simd_word) / 3);
     simd_bits_range_ref m2((simd_word *)&data[16], sizeof(data) / sizeof(simd_word) / 3);
@@ -128,7 +128,7 @@ TEST(simd_bits_range_ref, xor_assignment) {
 }
 
 TEST(simd_bits_range_ref, assignment) {
-    alignas(64) uint64_t data[16]{};
+    alignas(64) std::array<uint64_t, 16> data{};
     simd_bits_range_ref m0((simd_word *)&data[0], sizeof(data) / sizeof(simd_word) / 2);
     simd_bits_range_ref m1((simd_word *)&data[8], sizeof(data) / sizeof(simd_word) / 2);
     m0.randomize(512, SHARED_TEST_RNG());
@@ -142,7 +142,7 @@ TEST(simd_bits_range_ref, assignment) {
 }
 
 TEST(simd_bits_range_ref, equality) {
-    alignas(64) uint64_t data[32]{};
+    alignas(64) std::array<uint64_t, 32> data{};
     simd_bits_range_ref m0((simd_word *)&data[0], sizeof(data) / sizeof(simd_word) / 4);
     simd_bits_range_ref m1((simd_word *)&data[8], sizeof(data) / sizeof(simd_word) / 4);
     simd_bits_range_ref m4((simd_word *)&data[16], sizeof(data) / sizeof(simd_word) / 2);
@@ -161,7 +161,7 @@ TEST(simd_bits_range_ref, equality) {
 }
 
 TEST(simd_bits_range_ref, swap_with) {
-    alignas(64) uint64_t data[32]{};
+    alignas(64) std::array<uint64_t, 32> data{};
     simd_bits_range_ref m0((simd_word *)&data[0], sizeof(data) / sizeof(simd_word) / 4);
     simd_bits_range_ref m1((simd_word *)&data[8], sizeof(data) / sizeof(simd_word) / 4);
     simd_bits_range_ref m2((simd_word *)&data[16], sizeof(data) / sizeof(simd_word) / 4);
@@ -178,7 +178,7 @@ TEST(simd_bits_range_ref, swap_with) {
 }
 
 TEST(simd_bits_range_ref, clear) {
-    alignas(64) uint64_t data[8]{};
+    alignas(64) std::array<uint64_t, 8> data{};
     simd_bits_range_ref m0((simd_word *)&data[0], sizeof(data) / sizeof(simd_word));
     m0.randomize(512, SHARED_TEST_RNG());
     ASSERT_TRUE(m0.not_zero());
@@ -187,7 +187,7 @@ TEST(simd_bits_range_ref, clear) {
 }
 
 TEST(simd_bits_range_ref, not_zero256) {
-    alignas(64) uint64_t data[8]{};
+    alignas(64) std::array<uint64_t, 8> data{};
     simd_bits_range_ref m0((simd_word *)&data[0], sizeof(data) / sizeof(simd_word));
     ASSERT_FALSE(m0.not_zero());
     m0[5] = true;
