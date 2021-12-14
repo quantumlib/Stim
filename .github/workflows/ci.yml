@@ -17,6 +17,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - v*
   pull_request:
     branches:
       - main
@@ -123,7 +125,7 @@ jobs:
           architecture: 'x64'
       - run: pip install -e .
       - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-      - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py)
+      - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py -dev)
       - run: cmake .
       - run: make stim
       - run: diff doc/gates.md <(out/stim help gates_markdown)

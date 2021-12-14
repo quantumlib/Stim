@@ -6,6 +6,7 @@ import stim
 
 import collections
 import inspect
+import sys
 from typing import DefaultDict, List, Union
 
 keep = {
@@ -139,7 +140,7 @@ def main():
     index = []
     generate_documentation(obj=stim, full_name="stim", outs=level_entries, level=2, out_index=index)
     version = stim.__version__
-    if "dev" in version or version == "VERSION_INFO":
+    if "dev" in version or version == "VERSION_INFO" or "-dev" in sys.argv:
         version = "(Development Version)"
     else:
         version = "v" + version
