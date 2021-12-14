@@ -126,7 +126,7 @@ which indicate that the block's instructions should be iterated over `K` times i
 
 ### Target Types
 
-There are three types of targets that can be given to instructions:
+There are four types of targets that can be given to instructions:
 qubit targets, measurement record targets, sweep bit targets, and Pauli targets.
 
 A qubit target refers to a qubit by index.
