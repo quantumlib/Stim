@@ -5,7 +5,7 @@ It does runtime detection of CPU features, and based on that imports the fastest
 compatible instructions. Importing a different one can result in runtime segfaults that crash the python interpreter.
 """
 
-import stim._stim_march_avx2 as _tmp
+import stim._stim_march_polyfill as _tmp
 
 _tmp = _tmp._UNSTABLE_detect_march()
 if _tmp == 'avx2':
