@@ -355,6 +355,10 @@ def _c2s_helper(
         try:
             _c2s_helper(cirq.decompose_once(op), q2i, out, key_out)
         except TypeError as ex:
-            raise TypeError(f"Don't know how to translate {op!r} into stim gates.") from ex
+            raise TypeError(
+                f"Don't know how to translate {op!r} into stim gates.\n"
+                f"- It doesn't have a _decompose_ method that returns stim-compatible operations.\n"
+                f"- It doesn't have a _stim_conversion_ method.\n"
+            ) from ex
 
     return out
