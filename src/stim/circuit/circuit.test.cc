@@ -1080,7 +1080,171 @@ TEST(circuit, aliased_noiseless_circuit) {
 
 TEST(circuit, validate_nan_probability) {
     Circuit c;
-    ASSERT_THROW({
-        c.append_op("X_ERROR", {0}, NAN);
-    }, std::invalid_argument);
+    ASSERT_THROW({ c.append_op("X_ERROR", {0}, NAN); }, std::invalid_argument);
+}
+
+TEST(circuit, get_final_qubit_coords) {
+    ASSERT_EQ(Circuit().get_final_qubit_coords(), (std::map<uint64_t, std::vector<double>>{}));
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+                  QUBIT_COORDS(1, 2) 3
+              )CIRCUIT")
+            .get_final_qubit_coords(),
+        (std::map<uint64_t, std::vector<double>>{
+            {3, {1, 2}},
+        }));
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+                  SHIFT_COORDS(10, 20, 30)
+                  QUBIT_COORDS(4, 5) 3
+              )CIRCUIT")
+            .get_final_qubit_coords(),
+        (std::map<uint64_t, std::vector<double>>{
+            {3, {14, 25}},
+        }));
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+                  QUBIT_COORDS(1, 2, 3, 4) 1
+                  REPEAT 100 {
+                      SHIFT_COORDS(10, 20, 30)
+                  }
+                  QUBIT_COORDS(4, 5) 3
+                  QUBIT_COORDS(6) 4
+              )CIRCUIT")
+            .get_final_qubit_coords(),
+        (std::map<uint64_t, std::vector<double>>{
+            {1, {1, 2, 3, 4}},
+            {3, {1004, 2005}},
+            {4, {1006}},
+        }));
+}
+
+TEST(circuit, get_final_qubit_coords_huge_repetition_count_efficiency) {
+    auto actual = Circuit(R"CIRCUIT(
+        QUBIT_COORDS(0) 0
+        REPEAT 1000 {
+            QUBIT_COORDS(1, 1) 1
+            REPEAT 2000 {
+                QUBIT_COORDS(2, 0.5) 2
+                REPEAT 4000 {
+                    QUBIT_COORDS(3) 3
+                    REPEAT 8000 {
+                        QUBIT_COORDS(4) 4
+                        SHIFT_COORDS(100)
+                        QUBIT_COORDS(5) 5
+                    }
+                    SHIFT_COORDS(10)
+                    QUBIT_COORDS(6) 6
+                }
+                QUBIT_COORDS(7) 7
+            }
+            QUBIT_COORDS(8) 8
+        }
+        QUBIT_COORDS(9) 9
+    )CIRCUIT")
+                      .get_final_qubit_coords();
+
+    ASSERT_EQ(
+        actual,
+        (std::map<uint64_t, std::vector<double>>{
+            {0, {0}},
+            {1, {6400080000000001 - 6400080000000, 1}},
+            {2, {6400080000000002 - 3200040000, 0.5}},
+            {3, {6400080000000003 - 800010}},
+            {4, {6400080000000004 - 110}},
+            {5, {6400080000000005 - 10}},
+            {6, {6400080000000006}},
+            {7, {6400080000000007}},
+            {8, {6400080000000008}},
+            {9, {6400080000000009}},
+        }));
+    // Precision sanity check.
+    ASSERT_EQ(6400080000000009, (uint64_t)(double)6400080000000009);
+}
+
+TEST(circuit, count_ticks) {
+    ASSERT_EQ(Circuit().count_ticks(), 0);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            TICK
+        )CIRCUIT")
+            .count_ticks(),
+        1);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            TICK
+            TICK
+        )CIRCUIT")
+            .count_ticks(),
+        2);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            TICK
+            H 0
+            TICK
+        )CIRCUIT")
+            .count_ticks(),
+        2);
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            TICK
+            REPEAT 1000 {
+                REPEAT 2000 {
+                    REPEAT 1000 {
+                        TICK
+                    }
+                    TICK
+                    TICK
+                    TICK
+                }
+            }
+            TICK
+        )CIRCUIT")
+            .count_ticks(),
+        2006000002);
+}
+
+TEST(circuit, coords_of_detector) {
+    Circuit c(R"CIRCUIT(
+        TICK
+        REPEAT 1000 {
+            REPEAT 2000 {
+                REPEAT 1000 {
+                    DETECTOR(0, 0, 0, 4)
+                    SHIFT_COORDS(1, 0, 0)
+                }
+                DETECTOR(0, 0, 0, 3)
+                SHIFT_COORDS(0, 1, 0)
+            }
+            DETECTOR(0, 0, 0, 2)
+            SHIFT_COORDS(0, 0, 1)
+        }
+        DETECTOR(0, 0, 0, 1)
+    )CIRCUIT");
+    ASSERT_EQ(c.coords_of_detector(4000000000), (std::vector<double>{}));
+    ASSERT_EQ(c.coords_of_detector(0), (std::vector<double>{0, 0, 0, 4}));
+    ASSERT_EQ(c.coords_of_detector(1), (std::vector<double>{1, 0, 0, 4}));
+    ASSERT_EQ(c.coords_of_detector(999), (std::vector<double>{999, 0, 0, 4}));
+    ASSERT_EQ(c.coords_of_detector(1000), (std::vector<double>{1000, 0, 0, 3}));
+    ASSERT_EQ(c.coords_of_detector(1001), (std::vector<double>{1000, 1, 0, 4}));
+    ASSERT_EQ(c.coords_of_detector(1002), (std::vector<double>{1001, 1, 0, 4}));
+}
+
+TEST(circuit, final_coord_shift) {
+    Circuit c(R"CIRCUIT(
+        REPEAT 1000 {
+            REPEAT 2000 {
+                REPEAT 3000 {
+                    SHIFT_COORDS(0, 0, 1)
+                }
+                SHIFT_COORDS(1)
+            }
+            SHIFT_COORDS(0, 1)
+        }
+    )CIRCUIT");
+    ASSERT_EQ(c.final_coord_shift(), (std::vector<double>{2000000, 1000, 6000000000}));
 }

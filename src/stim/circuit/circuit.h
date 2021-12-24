@@ -21,6 +21,7 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -101,6 +102,8 @@ struct Circuit {
     uint64_t count_detectors() const;
     // Returns one more than the largest `k` from any `OBSERVABLE_INCLUDE(k)` instruction.
     uint64_t count_observables() const;
+    // Returns the number of ticks performed when running the circuit.
+    uint64_t count_ticks() const;
     // Returns the largest `k` from any `rec[-k]` target.
     size_t max_lookback() const;
     // Returns one more than the largest `k` from any `sweep[k]` target.
@@ -253,6 +256,16 @@ struct Circuit {
         }
         return n;
     }
+
+    /// Looks for QUBIT_COORDS instructions in the circuit, and returns a map from qubit index to qubit coordinate.
+    ///
+    /// This method efficiently handles REPEAT blocks. It finishes in time proportional to the size of the circuit
+    /// file, not time proportional to the amount of data produced by the circuit.
+    std::map<uint64_t, std::vector<double>> get_final_qubit_coords() const;
+
+    std::vector<double> coords_of_detector(uint64_t detector_index) const;
+    std::vector<double> final_coord_shift() const;
+    std::string describe_instruction_location(size_t instruction_offset) const;
 };
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.

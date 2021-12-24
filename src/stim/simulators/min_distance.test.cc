@@ -27,24 +27,32 @@ using namespace stim::impl_min_distance;
 
 TEST(shortest_graphlike_undetectable_logical_error, no_error) {
     // No error.
-    ASSERT_THROW({ stim::shortest_graphlike_undetectable_logical_error(DetectorErrorModel(), false);
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        { stim::shortest_graphlike_undetectable_logical_error(DetectorErrorModel(), false); }, std::invalid_argument);
 
     // No undetectable error.
-    ASSERT_THROW({
-        stim::shortest_graphlike_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+    ASSERT_THROW(
+        {
+            stim::shortest_graphlike_undetectable_logical_error(
+                DetectorErrorModel(R"MODEL(
             error(0.1) D0 L0
-        )MODEL"), false);
-    }, std::invalid_argument);
+        )MODEL"),
+                false);
+        },
+        std::invalid_argument);
 
     // No logical flips.
-    ASSERT_THROW({
-        stim::shortest_graphlike_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+    ASSERT_THROW(
+        {
+            stim::shortest_graphlike_undetectable_logical_error(
+                DetectorErrorModel(R"MODEL(
             error(0.1) D0
             error(0.1) D0 D1
             error(0.1) D1
-        )MODEL"), false);
-    }, std::invalid_argument);
+        )MODEL"),
+                false);
+        },
+        std::invalid_argument);
 }
 
 TEST(shortest_graphlike_undetectable_logical_error, distance_1) {
@@ -146,38 +154,27 @@ TEST(shortest_graphlike_undetectable_logical_error, surface_code) {
     params.after_reset_flip_probability = 0.001;
     params.before_round_data_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit, true, true, false, false);
-    auto ungraphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit, false, true, false, false);
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
+    auto ungraphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, false);
 
-    ASSERT_EQ(
-        stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(),
-        5);
+    ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(), 5);
 
-    ASSERT_EQ(
-        stim::shortest_graphlike_undetectable_logical_error(graphlike_model, true).instructions.size(),
-        5);
+    ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, true).instructions.size(), 5);
 
-    ASSERT_EQ(
-        stim::shortest_graphlike_undetectable_logical_error(ungraphlike_model, true).instructions.size(),
-        5);
+    ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(ungraphlike_model, true).instructions.size(), 5);
 
     // Throw due to ungraphlike errors.
-    ASSERT_THROW({ stim::shortest_graphlike_undetectable_logical_error(ungraphlike_model, false);
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        { stim::shortest_graphlike_undetectable_logical_error(ungraphlike_model, false); }, std::invalid_argument);
 }
 
 TEST(shortest_graphlike_undetectable_logical_error, repetition_code) {
     CircuitGenParameters params(10, 7, "memory");
     params.before_round_data_depolarization = 0.01;
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit, true, true, false, false);
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
 
-    ASSERT_EQ(
-        stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(),
-        7);
+    ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(), 7);
 }
 
 TEST(impl_min_distance, DemAdjEdge) {
@@ -271,14 +268,12 @@ TEST(impl_min_distance, DemAdjGraphSearchState_canonical) {
 TEST(impl_min_distance, DemAdjGraphSearchState_append_transition_as_error_instruction_to) {
     DetectorErrorModel out;
 
-    DemAdjGraphSearchState(1, 2, 9).append_transition_as_error_instruction_to(
-        DemAdjGraphSearchState(1, 2, 16), out);
+    DemAdjGraphSearchState(1, 2, 9).append_transition_as_error_instruction_to(DemAdjGraphSearchState(1, 2, 16), out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
     )MODEL"));
 
-    DemAdjGraphSearchState(1, 2, 9).append_transition_as_error_instruction_to(
-        DemAdjGraphSearchState(3, 2, 9), out);
+    DemAdjGraphSearchState(1, 2, 9).append_transition_as_error_instruction_to(DemAdjGraphSearchState(3, 2, 9), out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
         error(1) D1 D3
@@ -292,8 +287,8 @@ TEST(impl_min_distance, DemAdjGraphSearchState_append_transition_as_error_instru
         error(1) D2
     )MODEL"));
 
-    DemAdjGraphSearchState(NO_NODE_INDEX, NO_NODE_INDEX, 0).append_transition_as_error_instruction_to(
-        DemAdjGraphSearchState(1, NO_NODE_INDEX, 9), out);
+    DemAdjGraphSearchState(NO_NODE_INDEX, NO_NODE_INDEX, 0)
+        .append_transition_as_error_instruction_to(DemAdjGraphSearchState(1, NO_NODE_INDEX, 9), out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
         error(1) D1 D3
@@ -301,8 +296,7 @@ TEST(impl_min_distance, DemAdjGraphSearchState_append_transition_as_error_instru
         error(1) D1 L0 L3
     )MODEL"));
 
-    DemAdjGraphSearchState(1, 1, 0).append_transition_as_error_instruction_to(
-        DemAdjGraphSearchState(2, 2, 4), out);
+    DemAdjGraphSearchState(1, 1, 0).append_transition_as_error_instruction_to(DemAdjGraphSearchState(2, 2, 4), out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
         error(1) D1 D3
@@ -362,81 +356,113 @@ TEST(impl_min_distance, DemAdjGraph_add_outward_edge) {
     DemAdjGraph g(3);
 
     g.add_outward_edge(1, 2, 3);
-    ASSERT_EQ(g, (DemAdjGraph{std::vector<DemAdjNode>{
-        DemAdjNode{},
-        DemAdjNode{{DemAdjEdge{2, 3}}},
-        DemAdjNode{},
-    }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            std::vector<DemAdjNode>{
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{2, 3}}},
+                DemAdjNode{},
+            },
+            0}));
 
     g.add_outward_edge(1, 2, 3);
-    ASSERT_EQ(g, (DemAdjGraph{std::vector<DemAdjNode>{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{2, 3}}},
-                                  DemAdjNode{},
-                              }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            std::vector<DemAdjNode>{
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{2, 3}}},
+                DemAdjNode{},
+            },
+            0}));
 
     g.add_outward_edge(1, 2, 4);
-    ASSERT_EQ(g, (DemAdjGraph{std::vector<DemAdjNode>{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{2, 3}, DemAdjEdge{2, 4}}},
-                                  DemAdjNode{},
-                              }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            std::vector<DemAdjNode>{
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{2, 3}, DemAdjEdge{2, 4}}},
+                DemAdjNode{},
+            },
+            0}));
 
     g.add_outward_edge(2, 1, 3);
-    ASSERT_EQ(g, (DemAdjGraph{std::vector<DemAdjNode>{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{2, 3}, DemAdjEdge{2, 4}}},
-                                  DemAdjNode{{DemAdjEdge{1, 3}}},
-                              }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            std::vector<DemAdjNode>{
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{2, 3}, DemAdjEdge{2, 4}}},
+                DemAdjNode{{DemAdjEdge{1, 3}}},
+            },
+            0}));
 
     g.add_outward_edge(2, NO_NODE_INDEX, 3);
-    ASSERT_EQ(g, (DemAdjGraph{std::vector<DemAdjNode>{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{2, 3}, DemAdjEdge{2, 4}}},
-                                  DemAdjNode{{DemAdjEdge{1, 3}, DemAdjEdge{NO_NODE_INDEX, 3}}},
-                              }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            std::vector<DemAdjNode>{
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{2, 3}, DemAdjEdge{2, 4}}},
+                DemAdjNode{{DemAdjEdge{1, 3}, DemAdjEdge{NO_NODE_INDEX, 3}}},
+            },
+            0}));
 }
 
 TEST(impl_min_distance, DemAdjGraph_add_edges_from_targets_with_no_separators) {
     DemAdjGraph g(4);
 
+    g.add_edges_from_targets_with_no_separators(std::vector<DemTarget>{DemTarget::relative_detector_id(1)}, false);
+
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            {
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}}},
+                DemAdjNode{},
+                DemAdjNode{},
+            },
+            0}));
+
     g.add_edges_from_targets_with_no_separators(
-        std::vector<DemTarget>{DemTarget::relative_detector_id(1)},
+        std::vector<DemTarget>{
+            DemTarget::relative_detector_id(1),
+            DemTarget::relative_detector_id(3),
+            DemTarget::observable_id(5),
+        },
         false);
 
-    ASSERT_EQ(g, (DemAdjGraph{{
-                     DemAdjNode{},
-                     DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}}},
-                     DemAdjNode{},
-                     DemAdjNode{},
-                 }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            {
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{3, 32}}},
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{1, 32}}},
+            },
+            0}));
 
-    g.add_edges_from_targets_with_no_separators(std::vector<DemTarget>{
-                                                    DemTarget::relative_detector_id(1),
-                                                    DemTarget::relative_detector_id(3),
-                                                    DemTarget::observable_id(5),
-                                                },
+    g.add_edges_from_targets_with_no_separators(
+        std::vector<DemTarget>{
+            DemTarget::observable_id(3),
+            DemTarget::observable_id(7),
+        },
         false);
 
-    ASSERT_EQ(g, (DemAdjGraph{{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{3, 32}}},
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{1, 32}}},
-                              }, 0}));
-
-    g.add_edges_from_targets_with_no_separators(std::vector<DemTarget>{
-                                                    DemTarget::observable_id(3),
-                                                    DemTarget::observable_id(7),
-                                                },
-                                                false);
-
-    ASSERT_EQ(g, (DemAdjGraph{{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{3, 32}}},
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{1, 32}}},
-                              }, (1 << 3) + (1 << 7)}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            {
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{3, 32}}},
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{1, 32}}},
+            },
+            (1 << 3) + (1 << 7)}));
 
     DemAdjGraph same_g = g;
     std::vector<DemTarget> too_big{
@@ -444,29 +470,30 @@ TEST(impl_min_distance, DemAdjGraph_add_edges_from_targets_with_no_separators) {
         DemTarget::relative_detector_id(2),
         DemTarget::relative_detector_id(3),
     };
-    ASSERT_THROW({
-        same_g.add_edges_from_targets_with_no_separators(too_big, false);
-    }, std::invalid_argument);
+    ASSERT_THROW({ same_g.add_edges_from_targets_with_no_separators(too_big, false); }, std::invalid_argument);
     ASSERT_EQ(g, same_g);
     same_g.add_edges_from_targets_with_no_separators(too_big, true);
     ASSERT_EQ(g, same_g);
 }
 
 TEST(impl_min_distance, DemAdjGraph_str) {
-    DemAdjGraph g{{
-        DemAdjNode{},
-        DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{3, 32}}},
-        DemAdjNode{},
-        DemAdjNode{{DemAdjEdge{1, 32}}},
-    }, 0};
-    ASSERT_EQ(g.str(),
-              "0:\n"
-              "1:\n"
-              "    [boundary]\n"
-              "    D3 L5\n"
-              "2:\n"
-              "3:\n"
-              "    D1 L5\n");
+    DemAdjGraph g{
+        {
+            DemAdjNode{},
+            DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{3, 32}}},
+            DemAdjNode{},
+            DemAdjNode{{DemAdjEdge{1, 32}}},
+        },
+        0};
+    ASSERT_EQ(
+        g.str(),
+        "0:\n"
+        "1:\n"
+        "    [boundary]\n"
+        "    D3 L5\n"
+        "2:\n"
+        "3:\n"
+        "    D1 L5\n");
 }
 
 TEST(impl_min_distance, DemAdjGraph_add_edges_from_separable_targets) {
@@ -482,16 +509,22 @@ TEST(impl_min_distance, DemAdjGraph_add_edges_from_separable_targets) {
         },
         false);
 
-    ASSERT_EQ(g, (DemAdjGraph{{
-                                  DemAdjNode{},
-                                  DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{2, 16}}},
-                                  DemAdjNode{{DemAdjEdge{1, 16}}},
-                                  DemAdjNode{},
-                              }, 0}));
+    ASSERT_EQ(
+        g,
+        (DemAdjGraph{
+            {
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{2, 16}}},
+                DemAdjNode{{DemAdjEdge{1, 16}}},
+                DemAdjNode{},
+            },
+            0}));
 }
 
 TEST(impl_min_distance, DemAdjGraph_from_dem) {
-    ASSERT_EQ(DemAdjGraph::from_dem(DetectorErrorModel(R"MODEL(
+    ASSERT_EQ(
+        DemAdjGraph::from_dem(
+            DetectorErrorModel(R"MODEL(
         error(0.1) D0
         repeat 3 {
             error(0.1) D0 D1
@@ -500,15 +533,19 @@ TEST(impl_min_distance, DemAdjGraph_from_dem) {
         error(0.1) D0 L7
         error(0.1) D2 ^ D3 D4 L2
         detector D5
-    )MODEL"), false), DemAdjGraph({
-                  DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{1, 0}}},
-                  DemAdjNode{{DemAdjEdge{0, 0}, DemAdjEdge{2, 0}}},
-                  DemAdjNode{{DemAdjEdge{1, 0}, DemAdjEdge{3, 0}}},
-                  DemAdjNode{{DemAdjEdge{2, 0}, DemAdjEdge{NO_NODE_INDEX, 128}}},
-                  DemAdjNode{},
-                  DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}}},
-                  DemAdjNode{{DemAdjEdge{7, 4}}},
-                  DemAdjNode{{DemAdjEdge{6, 4}}},
-                  DemAdjNode{},
-              }, 0));
+    )MODEL"),
+            false),
+        DemAdjGraph(
+            {
+                DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}, DemAdjEdge{1, 0}}},
+                DemAdjNode{{DemAdjEdge{0, 0}, DemAdjEdge{2, 0}}},
+                DemAdjNode{{DemAdjEdge{1, 0}, DemAdjEdge{3, 0}}},
+                DemAdjNode{{DemAdjEdge{2, 0}, DemAdjEdge{NO_NODE_INDEX, 128}}},
+                DemAdjNode{},
+                DemAdjNode{{DemAdjEdge{NO_NODE_INDEX, 0}}},
+                DemAdjNode{{DemAdjEdge{7, 4}}},
+                DemAdjNode{{DemAdjEdge{6, 4}}},
+                DemAdjNode{},
+            },
+            0));
 }

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "stim/simulators/min_distance.h"
-#include "stim/gen/gen_surface_code.h"
-#include "stim/simulators/error_analyzer.h"
 
 #include "stim/benchmark_util.perf.h"
+#include "stim/gen/gen_surface_code.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 
@@ -27,14 +27,12 @@ BENCHMARK(find_graphlike_logical_error_surface_code_d25) {
     params.after_reset_flip_probability = 0.001;
     params.before_round_data_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto model = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit, true, true, false, false);
+    auto model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
 
     size_t total = 0;
     benchmark_go([&]() {
         total += stim::shortest_graphlike_undetectable_logical_error(model, false).instructions.size();
-    })
-        .goal_millis(35);
+    }).goal_millis(35);
     if (total % 25 != 0 || total == 0) {
         std::cout << "bad";
     }

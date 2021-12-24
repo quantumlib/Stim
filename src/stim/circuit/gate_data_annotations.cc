@@ -195,7 +195,7 @@ circuit-to-detector-error-model conversion will refuse to operate on circuits co
             0,
             &TableauSimulator::I,
             &FrameSimulator::I,
-            &ErrorAnalyzer::I,
+            &ErrorAnalyzer::TICK,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
             []() -> ExtraGateData {
                 return {

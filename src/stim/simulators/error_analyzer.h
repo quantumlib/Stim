@@ -22,6 +22,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <stim/stabilizers/pauli_string.h>
 #include <vector>
 
 #include "stim/circuit/circuit.h"
@@ -32,6 +33,20 @@
 #include "stim/mem/sparse_xor_vec.h"
 
 namespace stim {
+
+enum ErrorAnalyzerMode : uint8_t {
+    /// Normal operating mode.
+    NormalWork_RecordDetectorErrors,
+
+    /// Reduce execution cost by skipping recording of errors, and instead just tracking sensitivities.
+    /// Used by the hare in the tortoise-and-hare algorithm looking for periodicity in the error sensitivity state
+    /// of REPEAT blocks, in order to make the hare cheaper to run.
+    MinimumWork_OnlyTrackErrorSensitivity,
+
+    /// Collect information useful when debugging why a circuit isn't working as expected (eg. why a logical observable
+    /// is anti-commuting with a reset operation).
+    ExtraWork_RecordDebugInformation,
+};
 
 /// This class is responsible for iterating backwards over a circuit, tracking which detectors are currently
 /// sensitive to an X or Z error on each qubit. This is done by having a SparseXorVec for the X and Z
@@ -100,6 +115,9 @@ struct ErrorAnalyzer {
     std::map<ConstPointerRange<DemTarget>, double> error_class_probabilities;
     /// Backing datastore for values in error_class_probabilities.
     MonotonicBuffer<DemTarget> mono_buf;
+
+    /// Used for producing debug information when errors occur.
+    const Circuit *current_circuit_being_analyzed = nullptr;
 
     /// Creates an instance ready to start processing instructions from a circuit of known size.
     ErrorAnalyzer(
@@ -170,6 +188,7 @@ struct ErrorAnalyzer {
     void ZCY(const OperationData &dat);
     void ZCZ(const OperationData &dat);
     void I(const OperationData &dat);
+    void TICK(const OperationData &dat);
     void SQRT_XX(const OperationData &dat);
     void SQRT_YY(const OperationData &dat);
     void SQRT_ZZ(const OperationData &dat);
@@ -187,11 +206,27 @@ struct ErrorAnalyzer {
     void PAULI_CHANNEL_2(const OperationData &dat);
     void ISWAP(const OperationData &dat);
 
+    void RX_with_context(const OperationData &dat, const char *context_op);
+    void RY_with_context(const OperationData &dat, const char *context_op);
+    void RZ_with_context(const OperationData &dat, const char *context_op);
+    void MX_with_context(const OperationData &dat, const char *context_op);
+    void MY_with_context(const OperationData &dat, const char *context_op);
+    void MZ_with_context(const OperationData &dat, const char *context_op);
+
     /// Processes each of the instructions in the circuit, in reverse order.
     void run_circuit(const Circuit &circuit);
     /// This is used at the end of the analysis to check that any remaining sensitivities commute
     /// with the implicit Z basis initialization at the start of a circuit.
     void post_check_initialization();
+
+    /// Returns a PauliString indicating the current error sensitivity of a detector or observable.
+    ///
+    /// The observable or detector is sensitive to the Pauli error P at q if the Pauli sensitivity
+    /// at q anti-commutes with P.
+    PauliString current_error_sensitivity_for(DemTarget t) const;
+
+    /// Counts the number of tick operations, for better debug messages.
+    uint64_t ticks_seen = 0;
 
    private:
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
@@ -202,14 +237,16 @@ struct ErrorAnalyzer {
     /// Checks if the given sparse vector is empty. If it isn't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
-    void check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge, const char *context);
+    void check_for_gauge(
+        const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit);
     /// Checks if the given sparse vectors are equal. If they aren't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
     void check_for_gauge(
         SparseXorVec<DemTarget> &potential_gauge_summand_1,
         SparseXorVec<DemTarget> &potential_gauge_summand_2,
-        const char *context);
+        const char *context_op,
+        uint64_t context_qubit);
 
     /// Rewrites all stored detectors id. Used when jumping across the rest of a loop when period analysis
     /// succeeds at folding the loop.

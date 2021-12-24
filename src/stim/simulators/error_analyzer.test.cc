@@ -2150,21 +2150,36 @@ std::string check_catch(std::string expected_substring, std::function<void(void)
 }
 
 TEST(ErrorAnalyzer, context_clues_for_errors) {
-    ASSERT_EQ("", check_catch<std::invalid_argument>("operation at offset 1", [&] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(
-                      Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        "",
+        check_catch<std::invalid_argument>(
+            "Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).\n"
+            "\n"
+            "Circuit stack trace:\n"
+            "    at instruction #2 [which is DEPOLARIZE1(1) 0]",
+            [&] {
+                ErrorAnalyzer::circuit_to_detector_error_model(
+                    Circuit(R"CIRCUIT(
                 X 0
                 DEPOLARIZE1(1) 0
             )CIRCUIT"),
-                      false,
-                      false,
-                      false,
-                      false);
-              }));
+                    false,
+                    false,
+                    false,
+                    false);
+            }));
 
-    ASSERT_EQ("", check_catch<std::invalid_argument>("REPEAT block at offset 2", [&] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(
-                      Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        "",
+        check_catch<std::invalid_argument>(
+            "Can't analyze over-mixing DEPOLARIZE1 errors (probability >= 3/4).\n"
+            "\n"
+            "Circuit stack trace:\n"
+            "    at instruction #3 [which is a REPEAT 500 block]\n"
+            "    at block's instruction #1 [which is DEPOLARIZE1(1) 0]",
+            [&] {
+                ErrorAnalyzer::circuit_to_detector_error_model(
+                    Circuit(R"CIRCUIT(
                 X 0
                 Y 1
                 REPEAT 500 {
@@ -2172,11 +2187,11 @@ TEST(ErrorAnalyzer, context_clues_for_errors) {
                 }
                 Z 3
             )CIRCUIT"),
-                      false,
-                      false,
-                      false,
-                      false);
-              }));
+                    false,
+                    false,
+                    false,
+                    false);
+            }));
 }
 
 TEST(ErrorAnalyzer, too_many_symptoms) {
@@ -2546,31 +2561,139 @@ TEST(ErrorAnalyzer, mpp_ordering) {
             detector D0
         )MODEL"));
 
-    ASSERT_THROW({
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            Circuit(R"CIRCUIT(
+    ASSERT_THROW(
+        {
+            ErrorAnalyzer::circuit_to_detector_error_model(
+                Circuit(R"CIRCUIT(
                 MPP X0 X0*X1
                 TICK
                 MPP X0
                 DETECTOR rec[-1] rec[-2]
             )CIRCUIT"),
-            false,
-            false,
-            false,
-            false);
-    }, std::invalid_argument);
+                false,
+                false,
+                false,
+                false);
+        },
+        std::invalid_argument);
 
-    ASSERT_THROW({
-        ErrorAnalyzer::circuit_to_detector_error_model(
-            Circuit(R"CIRCUIT(
+    ASSERT_THROW(
+        {
+            ErrorAnalyzer::circuit_to_detector_error_model(
+                Circuit(R"CIRCUIT(
                 MPP X0 X2*X1
                 TICK
                 MPP X0
                 DETECTOR rec[-1] rec[-2]
             )CIRCUIT"),
-            false,
-            false,
-            false,
-            false);
-    }, std::invalid_argument);
+                false,
+                false,
+                false,
+                false);
+        },
+        std::invalid_argument);
+}
+
+TEST(ErrorAnalyzer, anticommuting_observable_error_message_help) {
+    for (size_t folding = 0; folding < 2; folding++) {
+        ASSERT_EQ(
+            "",
+            check_catch<std::invalid_argument>(
+                R"ERROR(The circuit contains non-deterministic observables.
+(Error analysis requires deterministic observables.)
+
+This was discovered while analyzing an X-basis reset (RX) on:
+    qubit 2
+
+The collapse anti-commuted with these detectors/observables:
+    L0
+
+The backward-propagating error sensitivity for L0 was:
+    X0 [coords (1, 2, 3)]
+    Z2
+
+Circuit stack trace:
+    during TICK layer #1 of 200
+    at instruction #2 [which is RX 2])ERROR",
+                [&] {
+                    ErrorAnalyzer::circuit_to_detector_error_model(
+                        Circuit(R"CIRCUIT(
+                            QUBIT_COORDS(1, 2, 3) 0
+                            RX 2
+                            REPEAT 10 {
+                                REPEAT 20 {
+                                    C_XYZ 0
+                                    R 1
+                                    M 1
+                                    DETECTOR rec[-1]
+                                    TICK
+                                }
+                            }
+                            M 0 2
+                            OBSERVABLE_INCLUDE(0) rec[-1] rec[-2]
+                        )CIRCUIT"),
+                        false,
+                        folding == 1,
+                        false,
+                        false);
+                }));
+
+        ASSERT_EQ(
+            "",
+            check_catch<std::invalid_argument>(
+                R"ERROR(The circuit contains non-deterministic observables.
+(Error analysis requires deterministic observables.)
+The circuit contains non-deterministic detectors.
+(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)
+
+This was discovered while analyzing an X-basis reset (RX) on:
+    qubit 0
+
+The collapse anti-commuted with these detectors/observables:
+    D101 [coords (1004, 2105, 6)]
+    L0
+
+The backward-propagating error sensitivity for D101 was:
+    Z0
+
+The backward-propagating error sensitivity for L0 was:
+    Z0
+    Z1
+
+Circuit stack trace:
+    during TICK layer #101 of 1401
+    at instruction #4 [which is a REPEAT 100 block]
+    at block's instruction #1 [which is RX 0])ERROR",
+                [&] {
+                    ErrorAnalyzer::circuit_to_detector_error_model(
+                        Circuit(R"CIRCUIT(
+                            TICK
+                            SHIFT_COORDS(1000, 2000)
+                            M 0 1
+                            REPEAT 100 {
+                                RX 0
+                                DETECTOR rec[-1]
+                                TICK
+                            }
+                            REPEAT 200 {
+                                TICK
+                            }
+                            REPEAT 100 {
+                                M 0 1
+                                SHIFT_COORDS(0, 100)
+                                DETECTOR(1, 2, 3) rec[-1] rec[-3]
+                                DETECTOR(4, 5, 6) rec[-2] rec[-4]
+                                OBSERVABLE_INCLUDE(0) rec[-1] rec[-2] rec[-3] rec[-4]
+                                TICK
+                            }
+                            REPEAT 1000 {
+                                TICK
+                            }
+                        )CIRCUIT"),
+                        false,
+                        folding == 1,
+                        false,
+                        false);
+                }));
+    }
 }
