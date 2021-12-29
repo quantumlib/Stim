@@ -2613,7 +2613,7 @@ The backward-propagating error sensitivity for L0 was:
     Z2
 
 Circuit stack trace:
-    during TICK layer #1 of 200
+    during TICK layer #1 of 201
     at instruction #2 [which is RX 2])ERROR",
                 [&] {
                     ErrorAnalyzer::circuit_to_detector_error_model(
@@ -2661,7 +2661,7 @@ The backward-propagating error sensitivity for L0 was:
     Z1
 
 Circuit stack trace:
-    during TICK layer #101 of 1401
+    during TICK layer #101 of 1402
     at instruction #4 [which is a REPEAT 100 block]
     at block's instruction #1 [which is RX 0])ERROR",
                 [&] {
