@@ -624,7 +624,7 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
                 auto total_ticks = circuit.count_ticks();
                 if (total_ticks) {
                     uint64_t current_tick = total_ticks - ticks_seen;
-                    error_msg << "\n    during TICK layer #" << (current_tick + 1) << " of " << total_ticks;
+                    error_msg << "\n    during TICK layer #" << (current_tick + 1) << " of " << (total_ticks + 1);
                 }
             }
             error_msg << '\n' << circuit.describe_instruction_location(k);

@@ -34,20 +34,6 @@
 
 namespace stim {
 
-enum ErrorAnalyzerMode : uint8_t {
-    /// Normal operating mode.
-    NormalWork_RecordDetectorErrors,
-
-    /// Reduce execution cost by skipping recording of errors, and instead just tracking sensitivities.
-    /// Used by the hare in the tortoise-and-hare algorithm looking for periodicity in the error sensitivity state
-    /// of REPEAT blocks, in order to make the hare cheaper to run.
-    MinimumWork_OnlyTrackErrorSensitivity,
-
-    /// Collect information useful when debugging why a circuit isn't working as expected (eg. why a logical observable
-    /// is anti-commuting with a reset operation).
-    ExtraWork_RecordDebugInformation,
-};
-
 /// This class is responsible for iterating backwards over a circuit, tracking which detectors are currently
 /// sensitive to an X or Z error on each qubit. This is done by having a SparseXorVec for the X and Z
 /// sensitivities of each qubit, and transforming these collections in response to operations.
