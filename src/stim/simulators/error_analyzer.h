@@ -37,11 +37,10 @@ namespace stim {
 /// This class is responsible for iterating backwards over a circuit, tracking which detectors are currently
 /// sensitive to an X or Z error on each qubit. This is done by having a SparseXorVec for the X and Z
 /// sensitivities of each qubit, and transforming these collections in response to operations.
-///
-/// Y error sensitivity is always implicit in the xor of the X and Z components.
-///
 /// For example, applying a CNOT gate from qubit A to qubit B will xor the X sensitivity of A into B and the
 /// Z sensitivity of B into A.
+///
+/// Y error sensitivity is always implicit in the xor of the X and Z components.
 ///
 /// Note that the class iterates over the circuit *backward*, so that DETECTOR instructions are seen before
 /// the measurement operations that the detector depends on. When a DETECTOR is seen, it is noted which
@@ -52,7 +51,16 @@ namespace stim {
 /// - There is a monobuf that is often used as a temporary buffer to avoid allocations, meaning
 ///     the state and meaning of the monobuf's tail is highly coupled to what method is currently
 ///     executing.
-/// - The class recursively uses itself when  recursion
+/// - The class recursively uses itself when performing period finding on loops. It is seriously
+///     hard to directly inspect and understand the current state when period finding is happening
+///     inside of period finding.
+/// - When period finding succeeds it flushes the recorded errors to avoid crosstalk between the
+///     in-loop errors and out-of-loop errors. The state of the buffers is coupled across features.
+/// - Error decomposition is done using heuristics that are not guaranteed to work, and prone to
+///     being tweaked, creating churn. Also the decomposition code itself is quite complex in order
+///     to make it fast (e.g. reducing the explicit detectors into bitmasks and then working with
+///     the bitmasks).
+/// - I guess what I'm saying is... have fun!
 struct ErrorAnalyzer {
     /// Queued detectors to add into the xs/zs frame lists once the relevant measurement
     /// is iterated over. When a detector is iterated over, it adds itself to the vector
