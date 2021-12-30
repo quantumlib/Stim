@@ -1077,10 +1077,8 @@ void pybind_tableau(pybind11::module &m) {
                 result.zs[q] = zs[q].value;
             }
             if (!result.satisfies_invariants()) {
-                throw std::invalid_argument(
-                    "Pickled tableau was invalid. It doesn't preserve commutativity.");
+                throw std::invalid_argument("Pickled tableau was invalid. It doesn't preserve commutativity.");
             }
             return result;
-        }
-    ));
+        }));
 }

@@ -23,14 +23,14 @@ using namespace stim::impl_min_distance;
 
 constexpr uint64_t NO_NODE_INDEX = UINT64_MAX;
 
-
 std::string DemAdjEdge::str() const {
     std::stringstream result;
     result << *this;
     return result.str();
 }
 bool DemAdjEdge::operator==(const DemAdjEdge &other) const {
-    return opposite_node_index == other.opposite_node_index && crossing_observable_mask == other.crossing_observable_mask;
+    return opposite_node_index == other.opposite_node_index &&
+           crossing_observable_mask == other.crossing_observable_mask;
 }
 bool DemAdjEdge::operator!=(const DemAdjEdge &other) const {
     return !(*this == other);
@@ -97,7 +97,8 @@ void DemAdjGraph::add_outward_edge(size_t src, uint64_t dst, uint64_t obs_mask) 
     node.edges.push_back({dst, obs_mask});
 }
 
-void DemAdjGraph::add_edges_from_targets_with_no_separators(ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors) {
+void DemAdjGraph::add_edges_from_targets_with_no_separators(
+    ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors) {
     FixedCapVector<uint64_t, 2> detectors;
     uint64_t obs_mask = 0;
 
@@ -131,7 +132,8 @@ void DemAdjGraph::add_edges_from_targets_with_no_separators(ConstPointerRange<De
     }
 }
 
-void DemAdjGraph::add_edges_from_separable_targets(ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors) {
+void DemAdjGraph::add_edges_from_separable_targets(
+    ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors) {
     const DemTarget *prev = targets.begin();
     const DemTarget *cur = targets.begin();
     while (true) {
@@ -148,11 +150,12 @@ void DemAdjGraph::add_edges_from_separable_targets(ConstPointerRange<DemTarget> 
 
 DemAdjGraph DemAdjGraph::from_dem(const DetectorErrorModel &model, bool ignore_ungraphlike_errors) {
     if (model.count_observables() > 64) {
-        throw std::invalid_argument("NotImplemented: shortest_graphlike_undetectable_logical_error with more than 64 observables.");
+        throw std::invalid_argument(
+            "NotImplemented: shortest_graphlike_undetectable_logical_error with more than 64 observables.");
     }
 
     DemAdjGraph result(model.count_detectors());
-    model.iter_flatten_error_instructions([&](const DemInstruction &e){
+    model.iter_flatten_error_instructions([&](const DemInstruction &e) {
         if (e.arg_data[0] != 0) {
             result.add_edges_from_separable_targets(e.target_data, ignore_ungraphlike_errors);
         }
@@ -169,7 +172,8 @@ bool DemAdjGraph::operator!=(const DemAdjGraph &other) const {
 DemAdjGraph::DemAdjGraph(size_t node_count) : nodes(node_count), distance_1_error_mask(0) {
 }
 
-DemAdjGraph::DemAdjGraph(std::vector<DemAdjNode> nodes, uint64_t distance_1_error_mask) : nodes(std::move(nodes)), distance_1_error_mask(distance_1_error_mask) {
+DemAdjGraph::DemAdjGraph(std::vector<DemAdjNode> nodes, uint64_t distance_1_error_mask)
+    : nodes(std::move(nodes)), distance_1_error_mask(distance_1_error_mask) {
 }
 
 std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAdjGraph &v) {
@@ -181,7 +185,8 @@ std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAd
 
 DemAdjGraphSearchState::DemAdjGraphSearchState() : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(0) {
 }
-DemAdjGraphSearchState::DemAdjGraphSearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask) : det_active(det_active), det_held(det_held), obs_mask(obs_mask) {
+DemAdjGraphSearchState::DemAdjGraphSearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask)
+    : det_active(det_active), det_held(det_held), obs_mask(obs_mask) {
 }
 
 bool DemAdjGraphSearchState::is_undetected() const {
@@ -198,7 +203,8 @@ DemAdjGraphSearchState DemAdjGraphSearchState::canonical() const {
     }
 }
 
-void DemAdjGraphSearchState::append_transition_as_error_instruction_to(const DemAdjGraphSearchState &other, DetectorErrorModel &out) {
+void DemAdjGraphSearchState::append_transition_as_error_instruction_to(
+    const DemAdjGraphSearchState &other, DetectorErrorModel &out) {
     // Extract detector indices while cancelling duplicates.
     std::array<uint64_t, 5> nodes{det_active, det_held, other.det_active, other.det_held, NO_NODE_INDEX};
     std::sort(nodes.begin(), nodes.end());
@@ -273,9 +279,7 @@ std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAd
 }
 
 DetectorErrorModel backtrack_path(
-        const std::map<DemAdjGraphSearchState, DemAdjGraphSearchState> &back_map,
-        DemAdjGraphSearchState final_state) {
-
+    const std::map<DemAdjGraphSearchState, DemAdjGraphSearchState> &back_map, DemAdjGraphSearchState final_state) {
     DetectorErrorModel out;
     auto cur_state = final_state;
     while (true) {
@@ -290,8 +294,8 @@ DetectorErrorModel backtrack_path(
     return out;
 }
 
-DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(const DetectorErrorModel &model,
-                                                                       bool ignore_ungraphlike_errors) {
+DetectorErrorModel stim::shortest_graphlike_undetectable_logical_error(
+    const DetectorErrorModel &model, bool ignore_ungraphlike_errors) {
     DemAdjGraph graph = DemAdjGraph::from_dem(model, ignore_ungraphlike_errors);
 
     if (graph.distance_1_error_mask) {

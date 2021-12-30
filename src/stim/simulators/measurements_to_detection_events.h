@@ -105,7 +105,7 @@ simd_bit_table measurements_to_detection_events(
     bool append_observables,
     bool skip_reference_sample);
 /// A variant of `stim::measurements_to_detection_events` with derived values passed in, not recomputed.
-    void measurements_to_detection_events_helper(
+void measurements_to_detection_events_helper(
     const simd_bit_table &measurements__minor_shot_index,
     const simd_bit_table &sweep_bits__minor_shot_index,
     simd_bit_table &out_detection_results__minor_shot_index,

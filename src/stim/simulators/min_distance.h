@@ -1,18 +1,18 @@
 /*
-* Copyright 2021 Google LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2021 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef _STIM_SIMULATORS_MIN_DISTANCE_H
 #define _STIM_SIMULATORS_MIN_DISTANCE_H
@@ -37,8 +37,8 @@ namespace stim {
 /// Returns:
 ///     A detector error model containing only the error mechanisms that cause the undetectable logical error.
 ///     Note that the error mechanisms will have their probabilities set to 1 (indicating they are necessary).
-DetectorErrorModel shortest_graphlike_undetectable_logical_error(const DetectorErrorModel &model,
-                                                                 bool ignore_ungraphlike_errors);
+DetectorErrorModel shortest_graphlike_undetectable_logical_error(
+    const DetectorErrorModel &model, bool ignore_ungraphlike_errors);
 
 namespace impl_min_distance {
 
@@ -67,7 +67,8 @@ struct DemAdjGraph {
     DemAdjGraph(std::vector<DemAdjNode> nodes, uint64_t distance_1_error_mask);
 
     void add_outward_edge(size_t src, uint64_t dst, uint64_t obs_mask);
-    void add_edges_from_targets_with_no_separators(ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors);
+    void add_edges_from_targets_with_no_separators(
+        ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors);
     void add_edges_from_separable_targets(ConstPointerRange<DemTarget> targets, bool ignore_ungraphlike_errors);
     static DemAdjGraph from_dem(const DetectorErrorModel &model, bool ignore_ungraphlike_errors);
     bool operator==(const DemAdjGraph &other) const;
@@ -78,8 +79,8 @@ std::ostream &operator<<(std::ostream &out, const DemAdjGraph &v);
 
 struct DemAdjGraphSearchState {
     uint64_t det_active;  // The detection event being moved around in an attempt to remove it (or NO_NODE_INDEX).
-    uint64_t det_held;  // The detection event being left in the same place (or NO_NODE_INDEX).
-    uint64_t obs_mask;  // The accumulated frame changes from moving the detection events around.
+    uint64_t det_held;    // The detection event being left in the same place (or NO_NODE_INDEX).
+    uint64_t obs_mask;    // The accumulated frame changes from moving the detection events around.
 
     DemAdjGraphSearchState();
     DemAdjGraphSearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask);

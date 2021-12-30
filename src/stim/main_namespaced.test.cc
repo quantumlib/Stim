@@ -711,10 +711,32 @@ M 0 1
 DETECTOR rec[-1]
 DETECTOR rec[-2]
             )input")),
-        trim("[stderr=\x1B[31mThe detectors D0, D1 anti-commuted with a Z-basis reset, and allow_gauge_detectors isn't "
-             "set.\n"
-             "Context: analyzing the circuit operation at offset 0 which is 'R 0'.\n"
-             "\x1B[0m]"));
+        trim(R"OUTPUT(
+[stderr=)OUTPUT"
+             "\x1B"
+             R"OUTPUT([31mThe circuit contains non-deterministic detectors.
+(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)
+
+This was discovered while analyzing a Z-basis reset (R) on:
+    qubit 0
+
+The collapse anti-commuted with these detectors/observables:
+    D0
+    D1
+
+The backward-propagating error sensitivity for D0 was:
+    X0
+    Z1
+
+The backward-propagating error sensitivity for D1 was:
+    X0
+
+Circuit stack trace:
+    at instruction #1 [which is R 0]
+)OUTPUT"
+             "\x1B"
+             R"OUTPUT([0m]
+)OUTPUT"));
 }
 
 TEST(main, analyze_errors_all_approximate_disjoint_errors) {
@@ -736,10 +758,17 @@ PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
 M 0
 DETECTOR rec[-1]
             )input")),
-        trim("[stderr=\x1B[31mHandling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be "
-             "specified.\n"
-             "Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.\n"
-             "\x1B[0m]"));
+        trim(R"OUTPUT(
+[stderr=)OUTPUT"
+             "\x1B"
+             R"OUTPUT([31mHandling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.
+
+Circuit stack trace:
+    at instruction #2 [which is PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0]
+)OUTPUT"
+             "\x1B"
+             R"OUTPUT([0m]
+)OUTPUT"));
 
     ASSERT_EQ(
         trim(execute({"--analyze_errors", "--approximate_disjoint_errors", "0.3"}, R"input(
@@ -748,10 +777,18 @@ PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
 M 0
 DETECTOR rec[-1]
             )input")),
-        trim("[stderr=\x1B[31mPAULI_CHANNEL_1 has a component probability '0.375000' larger than the "
-             "`approximate_disjoint_errors` threshold of '0.300000'.\n"
-             "Context: analyzing the circuit operation at offset 1 which is 'PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0'.\n"
-             "\x1B[0m]"));
+        trim(
+            R"OUTPUT(
+[stderr=)OUTPUT"
+            "\x1B"
+            R"OUTPUT([31mPAULI_CHANNEL_1 has a component probability '0.375000' larger than the `approximate_disjoint_errors` threshold of '0.300000'.
+
+Circuit stack trace:
+    at instruction #2 [which is PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0]
+)OUTPUT"
+            "\x1B"
+            R"OUTPUT([0m]
+)OUTPUT"));
 }
 
 TEST(main, generate_circuits) {

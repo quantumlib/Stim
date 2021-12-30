@@ -16,11 +16,10 @@ http_archive(
     urls = ["https://github.com/pybind/pybind11/archive/v2.6.0.tar.gz"],
 )
 
-git_repository(
+http_archive(
     name = "rules_python",
-    commit = "38f86fb55b698c51e8510c807489c9f4e047480e",
-    remote = "https://github.com/bazelbuild/rules_python.git",
-    shallow_since = "1575517988 -0500",
+    sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
 )
 
 http_archive(

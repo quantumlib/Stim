@@ -1098,6 +1098,5 @@ void pybind_circuit(pybind11::module &m) {
         },
         [](const pybind11::str &text) {
             return Circuit(pybind11::cast<std::string>(text).data());
-        }
-    ));
+        }));
 }

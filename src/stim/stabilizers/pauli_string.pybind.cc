@@ -909,6 +909,5 @@ void pybind_pauli_string(pybind11::module &m) {
         },
         [](const pybind11::str &d) {
             return PyPauliString::from_text(pybind11::cast<std::string>(d).data());
-        }
-    ));
+        }));
 }

@@ -42,41 +42,90 @@ void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
 }
 
 void ErrorAnalyzer::RX(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
-        check_for_gauge(zs[q], "an X-basis reset");
-        xs[q].clear();
-        zs[q].clear();
-    }
+    RX_with_context(dat, "an X-basis reset (RX)");
 }
-
 void ErrorAnalyzer::RY(const OperationData &dat) {
+    RY_with_context(dat, "an X-basis reset (RY)");
+}
+void ErrorAnalyzer::RZ(const OperationData &dat) {
+    RZ_with_context(dat, "a Z-basis reset (R)");
+}
+
+void ErrorAnalyzer::RX_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        check_for_gauge(xs[q], zs[q], "a Y-basis reset");
+        check_for_gauge(zs[q], context_op, q);
         xs[q].clear();
         zs[q].clear();
     }
 }
 
-void ErrorAnalyzer::RZ(const OperationData &dat) {
+void ErrorAnalyzer::RY_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        check_for_gauge(xs[q], "a Z-basis reset");
+        check_for_gauge(xs[q], zs[q], context_op, q);
         xs[q].clear();
         zs[q].clear();
+    }
+}
+
+void ErrorAnalyzer::RZ_with_context(const OperationData &dat, const char *context_op) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        check_for_gauge(xs[q], context_op, q);
+        xs[q].clear();
+        zs[q].clear();
+    }
+}
+
+void ErrorAnalyzer::MX_with_context(const OperationData &dat, const char *op) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        xor_sort_measurement_error(d, dat);
+        xs[q].xor_sorted_items(d);
+        check_for_gauge(zs[q], op, q);
+    }
+}
+
+void ErrorAnalyzer::MY_with_context(const OperationData &dat, const char *op) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        xor_sort_measurement_error(d, dat);
+        xs[q].xor_sorted_items(d);
+        zs[q].xor_sorted_items(d);
+        check_for_gauge(xs[q], zs[q], op, q);
+    }
+}
+
+void ErrorAnalyzer::MZ_with_context(const OperationData &dat, const char *context_op) {
+    for (size_t k = dat.targets.size(); k-- > 0;) {
+        auto q = dat.targets[k].qubit_value();
+        scheduled_measurement_time++;
+
+        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
+        xor_sort_measurement_error(d, dat);
+
+        zs[q].xor_sorted_items(d);
+        check_for_gauge(xs[q], context_op, q);
     }
 }
 
 void ErrorAnalyzer::check_for_gauge(
     SparseXorVec<DemTarget> &potential_gauge_summand_1,
     SparseXorVec<DemTarget> &potential_gauge_summand_2,
-    const char *context) {
+    const char *context_op,
+    uint64_t context_qubit) {
     if (potential_gauge_summand_1 == potential_gauge_summand_2) {
         return;
     }
     potential_gauge_summand_1 ^= potential_gauge_summand_2;
-    check_for_gauge(potential_gauge_summand_1, context);
+    check_for_gauge(potential_gauge_summand_1, context_op, context_qubit);
     potential_gauge_summand_1 ^= potential_gauge_summand_2;
 }
 
@@ -98,23 +147,101 @@ std::string comma_sep_workaround(const TIter &iterable) {
     return out.str();
 }
 
-void ErrorAnalyzer::check_for_gauge(const SparseXorVec<DemTarget> &potential_gauge, const char *context) {
+void ErrorAnalyzer::check_for_gauge(
+    const SparseXorVec<DemTarget> &potential_gauge, const char *context_op, uint64_t context_qubit) {
     if (potential_gauge.empty()) {
         return;
     }
+
+    bool has_observables = false;
+    bool has_detectors = false;
     for (const auto &t : potential_gauge) {
-        if (t.is_observable_id()) {
-            throw std::invalid_argument(
-                "The observable " + t.str() + " anti-commuted with " + std::string(context) +
-                ".\nAll objects anti-commuting with that operation: " + comma_sep_workaround(potential_gauge));
+        has_observables |= t.is_observable_id();
+        has_detectors |= t.is_relative_detector_id();
+    }
+    if (allow_gauge_detectors && !has_observables) {
+        remove_gauge(add_error(0.5, potential_gauge.range()));
+        return;
+    }
+
+    // We are now in an error condition, and it's a bit hard to debug for the user.
+    // The goal is to collect a *lot* of information that might be useful to them.
+
+    std::stringstream error_msg;
+    has_detectors &= !allow_gauge_detectors;
+    if (has_observables) {
+        error_msg << "The circuit contains non-deterministic observables.\n";
+        error_msg << "(Error analysis requires deterministic observables.)\n";
+    }
+    if (has_detectors) {
+        error_msg << "The circuit contains non-deterministic detectors.\n";
+        error_msg << "(To allow non-deterministic detectors, use the `allow_gauge_detectors` option.)\n";
+    }
+
+    std::map<uint64_t, std::vector<double>> qubit_coords_map;
+    if (current_circuit_being_analyzed != nullptr) {
+        qubit_coords_map = current_circuit_being_analyzed->get_final_qubit_coords();
+    }
+    auto error_msg_qubit_with_coords = [&](uint64_t q, uint8_t p) {
+        error_msg << "\n";
+        auto qubit_coords = qubit_coords_map[q];
+        if (p == 0) {
+            error_msg << "    qubit " << q;
+        } else if (p == 1) {
+            error_msg << "    X" << q;
+        } else if (p == 2) {
+            error_msg << "    Z" << q;
+        } else if (p == 3) {
+            error_msg << "    Y" << q;
+        }
+        if (!qubit_coords.empty()) {
+            error_msg << " [coords (" << comma_sep_workaround(qubit_coords) << ")]";
+        }
+    };
+
+    error_msg << "\n";
+    error_msg << "This was discovered while analyzing " << context_op << " on:";
+    error_msg_qubit_with_coords(context_qubit, 0);
+
+    error_msg << "\n\n";
+    error_msg << "The collapse anti-commuted with these detectors/observables:";
+    for (const auto &t : potential_gauge) {
+        error_msg << "\n    " << t;
+
+        // Try to find recorded coordinate information for the detector.
+        if (t.is_relative_detector_id() && current_circuit_being_analyzed != nullptr) {
+            auto coords = current_circuit_being_analyzed->coords_of_detector(t.raw_id());
+            if (!coords.empty()) {
+                error_msg << " [coords (" << comma_sep_workaround(coords) << ")]";
+            }
         }
     }
-    if (!allow_gauge_detectors) {
-        throw std::invalid_argument(
-            "The detectors " + comma_sep_workaround(potential_gauge) + " anti-commuted with " + std::string(context) +
-            ", and allow_gauge_detectors isn't set.");
+
+    for (const auto &t : potential_gauge) {
+        if (t.is_relative_detector_id() && allow_gauge_detectors) {
+            continue;
+        }
+        error_msg << "\n\n";
+        error_msg << "The backward-propagating error sensitivity for " << t << " was:";
+        auto sensitivity = current_error_sensitivity_for(t);
+        for (size_t q = 0; q < sensitivity.num_qubits; q++) {
+            uint8_t p = sensitivity.xs[q] + sensitivity.zs[q] * 2;
+            if (p) {
+                error_msg_qubit_with_coords(q, p);
+            }
+        }
     }
-    remove_gauge(add_error(0.5, potential_gauge.range()));
+
+    throw std::invalid_argument(error_msg.str());
+}
+
+PauliString ErrorAnalyzer::current_error_sensitivity_for(DemTarget t) const {
+    PauliString result(xs.size());
+    for (size_t q = 0; q < xs.size(); q++) {
+        result.xs[q] = std::find(xs[q].begin(), xs[q].end(), t) != xs[q].end();
+        result.zs[q] = std::find(zs[q].begin(), zs[q].end(), t) != zs[q].end();
+    }
+    return result;
 }
 
 void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const OperationData &dat) {
@@ -139,49 +266,21 @@ void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const 
 }
 
 void ErrorAnalyzer::MX(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
-        scheduled_measurement_time++;
-
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort_measurement_error(d, dat);
-        xs[q].xor_sorted_items(d);
-        check_for_gauge(zs[q], "an X-basis measurement");
-    }
+    MX_with_context(dat, "an X-basis measurement (MX)");
 }
-
 void ErrorAnalyzer::MY(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
-        scheduled_measurement_time++;
-
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort_measurement_error(d, dat);
-        xs[q].xor_sorted_items(d);
-        zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q], zs[q], "a Y-basis measurement");
-    }
+    MY_with_context(dat, "a Y-basis measurement (MY)");
 }
-
 void ErrorAnalyzer::MZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].qubit_value();
-        scheduled_measurement_time++;
-
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort_measurement_error(d, dat);
-
-        zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q], "a Z-basis measurement");
-    }
+    MZ_with_context(dat, "a Z-basis measurement (M)");
 }
 
 void ErrorAnalyzer::MRX(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         OperationData d{dat.args, {&q}};
-        RX(d);
-        MX(d);
+        RX_with_context(d, "an X-basis demolition measurement (MRX)");
+        MX_with_context(d, "an X-basis demolition measurement (MRX)");
     }
 }
 
@@ -189,8 +288,8 @@ void ErrorAnalyzer::MRY(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         OperationData d{dat.args, {&q}};
-        RY(d);
-        MY(d);
+        RY_with_context(d, "a Y-basis demolition measurement (MRY)");
+        MY_with_context(d, "a Y-basis demolition measurement (MRY)");
     }
 }
 
@@ -198,8 +297,8 @@ void ErrorAnalyzer::MRZ(const OperationData &dat) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k];
         OperationData d{dat.args, {&q}};
-        RZ(d);
-        MZ(d);
+        RZ_with_context(d, "a Z-basis demolition measurement (MR)");
+        MZ_with_context(d, "a Z-basis demolition measurement (MR)");
     }
 }
 
@@ -269,6 +368,10 @@ void ErrorAnalyzer::YCX(const OperationData &dat) {
         xs[ty] ^= zs[tx];
         zs[ty] ^= zs[tx];
     }
+}
+
+void ErrorAnalyzer::TICK(const OperationData &dat) {
+    ticks_seen += 1;
 }
 
 void ErrorAnalyzer::ZCY(const OperationData &dat) {
@@ -495,34 +598,47 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
     for (size_t k = circuit.operations.size(); k--;) {
         const auto &op = circuit.operations[k];
         assert(op.gate != nullptr);
-        if (op.gate->id == gate_name_to_id("REPEAT")) {
-            assert(op.target_data.targets.size() == 3);
-            auto b = op.target_data.targets[0].data;
-            assert(op.target_data.targets[0].data < circuit.blocks.size());
-            uint64_t repeats = op_data_rep_count(op.target_data);
-            const auto &block = circuit.blocks[b];
-            try {
+        try {
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                assert(op.target_data.targets.size() == 3);
+                auto b = op.target_data.targets[0].data;
+                assert(op.target_data.targets[0].data < circuit.blocks.size());
+                uint64_t repeats = op_data_rep_count(op.target_data);
+                const auto &block = circuit.blocks[b];
                 run_loop(block, repeats);
-            } catch (std::invalid_argument &ex) {
-                throw std::invalid_argument(
-                    std::string(ex.what()) + "\nContext: inside of the REPEAT block at offset " + std::to_string(k) +
-                    ".");
-            }
-        } else {
-            try {
+            } else {
                 (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
-            } catch (std::invalid_argument &ex) {
-                throw std::invalid_argument(
-                    std::string(ex.what()) + "\nContext: analyzing the circuit operation at offset " +
-                    std::to_string(k) + " which is '" + op.str() + "'.");
             }
+        } catch (std::invalid_argument &ex) {
+            std::stringstream error_msg;
+            std::string body = ex.what();
+            const char *marker = "\n\nCircuit stack trace:\n    at instruction";
+            size_t p = body.find(marker);
+            if (p == std::string::npos) {
+                error_msg << body;
+            } else {
+                error_msg << body.substr(0, p);
+            }
+            error_msg << "\n\nCircuit stack trace:";
+            if (&circuit == current_circuit_being_analyzed) {
+                auto total_ticks = circuit.count_ticks();
+                if (total_ticks) {
+                    uint64_t current_tick = total_ticks - ticks_seen;
+                    error_msg << "\n    during TICK layer #" << (current_tick + 1) << " of " << (total_ticks + 1);
+                }
+            }
+            error_msg << '\n' << circuit.describe_instruction_location(k);
+            if (p != std::string::npos) {
+                error_msg << "\n    at block's instruction" << body.substr(p + strlen(marker));
+            }
+            throw std::invalid_argument(error_msg.str());
         }
     }
 }
 
 void ErrorAnalyzer::post_check_initialization() {
-    for (const auto &x : xs) {
-        check_for_gauge(x, "qubit initialization into |0> at the start of the circuit");
+    for (uint32_t q = 0; q < xs.size(); q++) {
+        check_for_gauge(xs[q], "qubit initialization into |0> at the start of the circuit", q);
     }
 }
 
@@ -752,6 +868,7 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
         fold_loops,
         allow_gauge_detectors,
         approximate_disjoint_errors_threshold);
+    analyzer.current_circuit_being_analyzed = &circuit;
     analyzer.run_circuit(circuit);
     analyzer.post_check_initialization();
     analyzer.flush();
@@ -850,6 +967,7 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
         approximate_disjoint_errors_threshold);
     hare.xs = xs;
     hare.zs = zs;
+    hare.ticks_seen = ticks_seen;
     hare.measurement_to_detectors = measurement_to_detectors;
     hare.scheduled_measurement_time = scheduled_measurement_time;
     hare.accumulate_errors = false;
@@ -871,7 +989,13 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
 
     // Perform tortoise-and-hare cycle finding.
     while (hare_iter < iterations) {
-        hare.run_circuit(loop);
+        try {
+            hare.run_circuit(loop);
+        } catch (const std::invalid_argument &ex) {
+            // Encountered an error. Abort loop folding so it can be re-triggered in a normal way.
+            hare_iter = iterations;
+            break;
+        }
         hare_iter++;
         if (hare_is_colliding_with_tortoise()) {
             break;
@@ -890,6 +1014,7 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
         // Don't bother folding a single iteration into a repeated block.
         uint64_t period = hare_iter - tortoise_iter;
         uint64_t period_iterations = (iterations - tortoise_iter) / period;
+        uint64_t ticks_per_circuit_loop_iteration = (hare.ticks_seen - ticks_seen) / period;
         if (period_iterations > 1) {
             // Stash error model build up so far.
             flush();
@@ -900,11 +1025,13 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             int64_t detector_shift = (int64_t)((period_iterations - 1) * shift_per_iteration);
             shift_active_detector_ids(-detector_shift);
             used_detectors += detector_shift;
-            tortoise_iter += period_iterations * period;
+            ticks_seen += (period_iterations - 1) * period * ticks_per_circuit_loop_iteration;
+            tortoise_iter += (period_iterations - 1) * period;
 
             // Compute the loop's error model.
             for (size_t k = 0; k < period; k++) {
                 run_circuit(loop);
+                tortoise_iter++;
             }
             flush();
             DetectorErrorModel body = std::move(flushed_reversed_model);
@@ -1270,7 +1397,7 @@ void ErrorAnalyzer::MPP(const OperationData &target_data) {
     std::vector<GateTarget> reversed_targets(n);
     std::vector<GateTarget> reversed_measure_targets;
     for (size_t k = 0; k < n; k++) {
-        reversed_targets[k] = target_data.targets[n-k-1];
+        reversed_targets[k] = target_data.targets[n - k - 1];
     }
     decompose_mpp_operation(
         OperationData{target_data.args, reversed_targets},

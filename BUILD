@@ -1,5 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
+load("@rules_python//python:packaging.bzl", "py_wheel")
+
 SOURCE_FILES_NO_MAIN = glob(
     [
         "src/**/*.cc",
@@ -47,22 +49,22 @@ cc_library(
 cc_binary(
     name = "stim",
     srcs = SOURCE_FILES_NO_MAIN + glob(["src/**/main.cc"]),
-    includes = ["src/"],
     copts = [
         "-march=native",
         "-O3",
     ],
+    includes = ["src/"],
     linkopts = ["-lpthread"],
 )
 
 cc_binary(
     name = "stim_benchmark",
     srcs = SOURCE_FILES_NO_MAIN + PERF_FILES,
-    includes = ["src/"],
     copts = [
         "-march=native",
         "-O3",
     ],
+    includes = ["src/"],
     linkopts = ["-lpthread"],
 )
 
@@ -81,7 +83,7 @@ cc_test(
 )
 
 cc_binary(
-    name = "stim_pybind.so",
+    name = "stim.so",
     srcs = SOURCE_FILES_NO_MAIN + PYBIND_FILES,
     copts = [
         "-O3",
@@ -92,7 +94,13 @@ cc_binary(
     includes = ["src/"],
     linkopts = ["-lpthread"],
     linkshared = 1,
-    deps = [
-        "@pybind11",
-    ],
+    deps = ["@pybind11"],
+)
+
+py_wheel(
+    name = "stim_dev_wheel",
+    distribution = "stim",
+    requires = ["numpy"],
+    version = "dev",
+    deps = [":stim.so"],
 )

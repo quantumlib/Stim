@@ -964,6 +964,13 @@ uint64_t Circuit::count_detectors() const {
     });
 }
 
+uint64_t Circuit::count_ticks() const {
+    const Gate *tick = &GATE_DATA.at("TICK");
+    return flat_count_operations([=](const Operation &op) -> uint64_t {
+        return op.gate == tick;
+    });
+}
+
 uint64_t Circuit::count_observables() const {
     const Gate *obs = &GATE_DATA.at("OBSERVABLE_INCLUDE");
     return max_operation_property([=](const Operation &op) -> uint64_t {
@@ -1045,4 +1052,133 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
         result.blocks.push_back(block.aliased_noiseless_circuit());
     }
     return result;
+}
+
+void vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul = 1) {
+    while (target.size() < offset.size()) {
+        target.push_back(0);
+    }
+    for (size_t k = 0; k < offset.size(); k++) {
+        target[k] += offset[k] * mul;
+    }
+}
+
+void get_final_qubit_coords_helper(
+    const Circuit &circuit,
+    uint64_t repetitions,
+    std::vector<double> &out_coord_shift,
+    std::map<uint64_t, std::vector<double>> &out_qubit_coords) {
+    auto initial_shift = out_coord_shift;
+    std::map<uint64_t, std::vector<double>> new_qubit_coords;
+
+    for (const auto &op : circuit.operations) {
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            const auto &block = circuit.blocks[op.target_data.targets[0].data];
+            uint64_t block_repeats = op_data_rep_count(op.target_data);
+            get_final_qubit_coords_helper(block, block_repeats, out_coord_shift, new_qubit_coords);
+        } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+            vec_pad_add_mul(out_coord_shift, op.target_data.args);
+        } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+            while (out_coord_shift.size() < op.target_data.args.size()) {
+                out_coord_shift.push_back(0);
+            }
+            for (const auto &t : op.target_data.targets) {
+                if (t.is_qubit_target()) {
+                    auto &vec = new_qubit_coords[t.qubit_value()];
+                    for (size_t k = 0; k < op.target_data.args.size(); k++) {
+                        vec.push_back(op.target_data.args[k] + out_coord_shift[k]);
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle additional iterations by computing the total coordinate shift instead of iterating instructions.
+    if (repetitions > 1 && out_coord_shift != initial_shift) {
+        // Determine how much each coordinate shifts in each iteration.
+        auto gain_per_iteration = out_coord_shift;
+        for (size_t k = 0; k < initial_shift.size(); k++) {
+            gain_per_iteration[k] -= initial_shift[k];
+        }
+
+        // Shift in-loop qubit coordinates forward to the last iteration's values.
+        for (auto &kv : new_qubit_coords) {
+            auto &qc = kv.second;
+            for (size_t k = 0; k < qc.size(); k++) {
+                qc[k] += gain_per_iteration[k] * (repetitions - 1);
+            }
+        }
+
+        // Advance the coordinate shifts to account for all iterations.
+        vec_pad_add_mul(out_coord_shift, gain_per_iteration, repetitions - 1);
+    }
+
+    // Output updated values.
+    for (const auto &kv : new_qubit_coords) {
+        out_qubit_coords[kv.first] = kv.second;
+    }
+}
+
+std::map<uint64_t, std::vector<double>> Circuit::get_final_qubit_coords() const {
+    std::vector<double> coord_shift;
+    std::map<uint64_t, std::vector<double>> qubit_coords;
+    get_final_qubit_coords_helper(*this, 1, coord_shift, qubit_coords);
+    return qubit_coords;
+}
+
+std::vector<double> Circuit::final_coord_shift() const {
+    std::vector<double> coord_shift;
+    for (const auto &op : operations) {
+        if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+            vec_pad_add_mul(coord_shift, op.target_data.args);
+        } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+            const auto &block = op_data_block_body(*this, op.target_data);
+            uint64_t reps = op_data_rep_count(op.target_data);
+            vec_pad_add_mul(coord_shift, block.final_coord_shift(), reps);
+        }
+    }
+    return coord_shift;
+}
+
+std::vector<double> coords_of_detector_helper(
+    const Circuit &circuit, uint64_t detector_index, const std::vector<double> &initial_coord_shift) {
+    std::vector<double> coord_shift = initial_coord_shift;
+    for (const auto &op : circuit.operations) {
+        if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+            vec_pad_add_mul(coord_shift, op.target_data.args);
+        } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+            const auto &block = op_data_block_body(circuit, op.target_data);
+            uint64_t per = block.count_detectors();
+            uint64_t reps = op_data_rep_count(op.target_data);
+            uint64_t full_reps = per == 0 ? reps : std::min(reps, detector_index / per);
+            vec_pad_add_mul(coord_shift, block.final_coord_shift(), full_reps);
+            detector_index -= per * full_reps;
+            if (full_reps != reps) {
+                return coords_of_detector_helper(block, detector_index, coord_shift);
+            }
+        } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+            if (detector_index == 0) {
+                coord_shift.resize(op.target_data.args.size());
+                vec_pad_add_mul(coord_shift, op.target_data.args);
+                return coord_shift;
+            }
+            detector_index -= 1;
+        }
+    }
+    return {};
+}
+std::vector<double> Circuit::coords_of_detector(uint64_t detector_index) const {
+    return coords_of_detector_helper(*this, detector_index, {});
+}
+
+std::string Circuit::describe_instruction_location(size_t instruction_offset) const {
+    std::stringstream out;
+    out << "    at instruction #" << (instruction_offset + 1);
+    const auto &op = operations[instruction_offset];
+    if (op.gate->id == gate_name_to_id("REPEAT")) {
+        out << " [which is a REPEAT " << op_data_rep_count(op.target_data) << " block]";
+    } else {
+        out << " [which is " << op << "]";
+    }
+    return out.str();
 }

@@ -14,11 +14,11 @@
 
 #include "stim/dem/detector_error_model.pybind.h"
 
-#include "stim/simulators/min_distance.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/simulators/min_distance.h"
 
 using namespace stim;
 
@@ -420,7 +420,6 @@ void pybind_detector_error_model(pybind11::module &m) {
            const pybind11::object &instruction,
            const pybind11::object &parens_arguments,
            const std::vector<pybind11::object> &targets) {
-
             bool is_name = pybind11::isinstance<pybind11::str>(instruction);
             if (!is_name && (!targets.empty() || !parens_arguments.is_none())) {
                 throw std::invalid_argument(
@@ -670,8 +669,7 @@ void pybind_detector_error_model(pybind11::module &m) {
         },
         [](const pybind11::str &text) -> DetectorErrorModel {
             return DetectorErrorModel(pybind11::cast<std::string>(text).data());
-        }
-    ));
+        }));
 
     c.def(
         "shortest_graphlike_error",

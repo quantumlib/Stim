@@ -8,9 +8,9 @@ cd "$( dirname "${BASH_SOURCE[0]}" )"
 cd "$(git rev-parse --show-toplevel)"
 
 # Put latest stim python wheel into python environment.
-bazel build :stim_pybind.so
+bazel build :stim.so
 rm -f stim.so
-cp bazel-bin/stim_pybind.so stim.so
+cp bazel-bin/stim.so stim.so
 
 # Build latest stim command line tool.
 cmake .
