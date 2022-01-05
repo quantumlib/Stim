@@ -66,6 +66,16 @@ struct MeasureRecordReader {
     /// records encoded in HITS and DETS file formats never end.
     virtual size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer);
 
+    /// Determines whether or not there is no actual data written for each shot.
+    ///
+    /// For example, sampling a circuit with no measurements produces no bytes of data
+    /// when using the 'b8' format.
+    ///
+    /// This is important to check for sometimes. For example, instead of getting stuck
+    /// in an infinite loop repeatedly reading zero bytes of data and not reaching the
+    /// end of the file, code can check for this degenerate code.
+    virtual bool expects_empty_serialized_data_for_each_shot() const = 0;
+
     /// Reads entire records into the given bit table.
     ///
     /// This method must only be called when the reader is at the start of a record.
@@ -154,6 +164,7 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
     bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
+    bool expects_empty_serialized_data_for_each_shot() const override;
 
    private:
     template <typename SAW0, typename SAW1>
@@ -181,7 +192,11 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
                     throw std::invalid_argument("Unexpected character in 01 format data: '" + std::to_string(b) + "'.");
             }
         }
-        if (getc(in) != '\n') {
+        int last = getc(in);
+        if (n == 0 && last == EOF) {
+            return false;
+        }
+        if (last != '\n') {
             throw std::invalid_argument(
                 "01 data didn't end with a newline after the expected data length of '" + std::to_string(n) + "'.");
         }
@@ -204,6 +219,7 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
     bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
+    bool expects_empty_serialized_data_for_each_shot() const override;
 
    private:
     void maybe_update_payload();
@@ -243,6 +259,7 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
+    bool expects_empty_serialized_data_for_each_shot() const override;
 
    private:
     template <typename HANDLE_HIT>
@@ -286,9 +303,9 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     bool next_record() override;
     bool start_record() override;
     bool is_end_of_record() override;
-
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
+    bool expects_empty_serialized_data_for_each_shot() const override;
 
    private:
     bool maybe_buffer_data();
@@ -339,6 +356,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
+    bool expects_empty_serialized_data_for_each_shot() const override;
 
    private:
     template <typename HANDLE_HIT>

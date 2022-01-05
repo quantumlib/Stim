@@ -199,6 +199,11 @@ void stim::stream_measurements_to_detection_events_helper(
     simd_bit_table out__minor_shot_index(num_out_bits, num_buffered_shots);
     simd_bit_table out__major_shot_index(num_buffered_shots, num_out_bits);
     simd_bit_table sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
+    if (reader->expects_empty_serialized_data_for_each_shot()) {
+        throw std::invalid_argument(
+            "Can't tell how many shots are in the measurement data.\n"
+            "The circuit has no measurements and the measurement format encodes empty shots into no bytes.");
+    }
 
     // Data streaming loop.
     size_t total_read = 0;
@@ -207,7 +212,7 @@ void stim::stream_measurements_to_detection_events_helper(
         size_t record_count = reader->read_records_into(measurements__minor_shot_index, false);
         if (sweep_data_reader != nullptr) {
             size_t sweep_data_count = sweep_data_reader->read_records_into(sweep_bits__minor_shot_index, false);
-            if (sweep_data_count != record_count) {
+            if (sweep_data_count != record_count && sweep_data_reader->bits_per_record()) {
                 std::stringstream ss;
                 ss << "The sweep data contained a different number of shots than the measurement data.\n";
                 ss << "There was " << (record_count + total_read) << " shot records total.\n";

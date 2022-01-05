@@ -585,3 +585,67 @@ TEST(measurements_to_detection_events, file_01_to_01_yes_obs) {
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), "1010000000001\n1010000000001\n0000000000000\n");
 }
+
+TEST(measurements_to_detection_events, empty_input_01_empty_sweep_b8) {
+    FILE *in = tmpfile();
+    FILE *sweep = tmpfile();
+    FILE *out = tmpfile();
+
+    stream_measurements_to_detection_events(
+        in,
+        SampleFormat::SAMPLE_FORMAT_01,
+        sweep,
+        SampleFormat::SAMPLE_FORMAT_B8,
+        out,
+        SampleFormat::SAMPLE_FORMAT_01,
+        Circuit(),
+        true,
+        false);
+    fclose(in);
+    fclose(sweep);
+    ASSERT_EQ(rewind_read_close(out), "");
+}
+
+TEST(measurements_to_detection_events, some_input_01_empty_sweep_b8) {
+    FILE *in = tmpfile();
+    fprintf(in, "%s", "\n\n");
+    rewind(in);
+    FILE *sweep = tmpfile();
+    FILE *out = tmpfile();
+
+    stream_measurements_to_detection_events(
+        in,
+        SampleFormat::SAMPLE_FORMAT_01,
+        sweep,
+        SampleFormat::SAMPLE_FORMAT_B8,
+        out,
+        SampleFormat::SAMPLE_FORMAT_01,
+        Circuit(),
+        true,
+        false);
+    fclose(in);
+    fclose(sweep);
+    ASSERT_EQ(rewind_read_close(out), "\n\n");
+}
+
+TEST(measurements_to_detection_events, empty_input_b8_empty_sweep_b8) {
+    FILE *in = tmpfile();
+    FILE *sweep = tmpfile();
+    FILE *out = tmpfile();
+
+    ASSERT_THROW({
+        stream_measurements_to_detection_events(
+            in,
+            SampleFormat::SAMPLE_FORMAT_B8,
+            sweep,
+            SampleFormat::SAMPLE_FORMAT_B8,
+            out,
+            SampleFormat::SAMPLE_FORMAT_01,
+            Circuit(),
+            true,
+            false);
+    }, std::invalid_argument);
+    fclose(in);
+    fclose(sweep);
+    ASSERT_EQ(rewind_read_close(out), "");
+}

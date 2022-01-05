@@ -223,6 +223,10 @@ bool MeasureRecordReaderFormat01::is_end_of_record() {
     return payload_ended;
 }
 
+bool MeasureRecordReaderFormat01::expects_empty_serialized_data_for_each_shot() const {
+    return false;
+}
+
 /// B8 format
 
 MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(
@@ -332,6 +336,10 @@ void MeasureRecordReaderFormatB8::maybe_update_payload() {
     }
 }
 
+bool MeasureRecordReaderFormatB8::expects_empty_serialized_data_for_each_shot() const {
+    return bits_per_record() == 0;
+}
+
 /// Hits format
 
 MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(
@@ -407,6 +415,10 @@ bool MeasureRecordReaderFormatHits::start_record() {
 
 bool MeasureRecordReaderFormatHits::is_end_of_record() {
     return position_in_buffer >= bits_per_record();
+}
+
+bool MeasureRecordReaderFormatHits::expects_empty_serialized_data_for_each_shot() const {
+    return false;
 }
 
 /// R8 format
@@ -532,6 +544,10 @@ bool MeasureRecordReaderFormatR8::maybe_buffer_data() {
     return true;
 }
 
+bool MeasureRecordReaderFormatR8::expects_empty_serialized_data_for_each_shot() const {
+    return false;
+}
+
 /// DETS format
 
 bool MeasureRecordReaderFormatDets::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
@@ -620,4 +636,8 @@ bool MeasureRecordReaderFormatDets::start_record() {
 
 bool MeasureRecordReaderFormatDets::is_end_of_record() {
     return position_in_buffer == bits_per_record();
+}
+
+bool MeasureRecordReaderFormatDets::expects_empty_serialized_data_for_each_shot() const {
+    return false;
 }
