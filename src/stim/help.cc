@@ -964,23 +964,19 @@ std::string generate_per_format_markdown(const FileFormatData &format_data, int 
     if (anchor) {
         out << "<a name=\"" << format_data.name << "\"></a>";
     }
-    out << "**`" << format_data.name << "`**\n";
+    out << "The `" << format_data.name << "` Format\n";
     out << format_data.help;
     out << "\n";
 
-    out << "- Sample parsing code (python):\n";
-    out.change_indent(+4);
+    out << "*Example " << format_data.name << " parsing code (python)*:\n";
     out << "```python";
     out << format_data.help_python_parse;
     out << "```\n";
-    out.change_indent(-4);
 
-    out << "- Sample saving code (python):\n";
-    out.change_indent(+4);
+    out << "*Example " << format_data.name << " saving code (python):*\n";
     out << "```python";
     out << format_data.help_python_save;
     out << "```\n";
-    out.change_indent(-4);
 
     out.flush();
     return out.settled;
@@ -991,7 +987,8 @@ std::map<std::string, std::string> generate_format_help_markdown() {
 
     std::stringstream all;
     all << "Result data formats supported by Stim\n";
-    all << "=====================================\n";
+
+    all << "\n# Index\n";
     for (const auto &kv : format_name_to_enum_map) {
         all << kv.first << "\n";
     }
@@ -1002,15 +999,38 @@ std::map<std::string, std::string> generate_format_help_markdown() {
     }
 
     all.str("");
-    all << R"MARKDOWN(# Result formats supported by Stim
+    all << R"MARKDOWN(# Introduction
 
+A *result format* is a way of representing bits from shots sampled from a circuit.
+It is some way of converting between a list-of-list-of-bits (a list-of-shots) and
+a flat string of bytes or characters.
+
+Generally, the result data formats supported by Stim are extremely minimalist.
+They do not contain metadata about which circuit was run,
+how many shots were taken,
+how many bits are in each shot,
+or even self-identifying information like a header with magic bytes.
+They produce *raw* data.
+Even details about which bits are measurements, which are detection events,
+and which are observable frame changes must be determined from context.
+
+The major driver for having multiple formats is context-dependent preferences for
+binary-vs-human-readable and dense-vs-sparse.
+For example, '`01`' is a dense text format and '`r8`' is a sparse binary format.
+Sometimes you want to be able to eyeball your data, so you want a text format.
+Other times you want maximum efficiency, so you want a binary format.
+Sometimes your data is high entropy, with as many 1s as 0s, so you use a dense format.
+Other times the data is highly biased, with 1s being much rarer and more interesting
+than 0s, so you use a sparse format.
+
+# Index
 )MARKDOWN";
     for (const auto &kv : format_name_to_enum_map) {
-        all << "- [" << kv.first << "](#" << kv.first << ")\n";
+        all << "- [The **" << kv.first << "** Format](#" << kv.first << ")\n";
     }
-    all << "\n";
+    all << "\n\n";
     for (const auto &kv : format_name_to_enum_map) {
-        all << "- " << generate_per_format_markdown(kv.second, 4, true) << "\n";
+        all << "# " << generate_per_format_markdown(kv.second, 0, true) << "\n";
     }
     result[std::string("FORMATS_MARKDOWN")] = all.str();
 
