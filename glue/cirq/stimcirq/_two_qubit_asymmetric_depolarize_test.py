@@ -28,7 +28,9 @@ def test_repr():
 
 
 def test_json_serialization():
-    r = stimcirq.TwoQubitAsymmetricDepolarizingChannel([0.125, 0.1, 0, 0.23, 0, 0, 0.375, 0, 0, 0, 0, 0, 0, 0.25, 0])
+    r = stimcirq.TwoQubitAsymmetricDepolarizingChannel([
+        0.0125, 0.1, 0, 0.23, 0, 0, 0.0375, 0, 0, 0, 0, 0, 0, 0.25, 0
+    ])
     c = cirq.Circuit(
         r(cirq.LineQubit(0), cirq.LineQubit(1)),
     )
