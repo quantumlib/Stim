@@ -5,303 +5,303 @@ from typing import Callable, Dict, List, Tuple, Union, Iterator, cast, Sequence,
 import cirq
 import stim
 
-
-@cirq.value_equality
-class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
-    def __init__(self, probabilities: Sequence[float]):
-        if len(probabilities) != 15:
-            raise ValueError(len(probabilities) != 15)
-        self.probabilities = tuple(probabilities)
-
-    def _num_qubits_(self):
-        return 2
-
-    def _value_equality_values_(self):
-        return self.probabilities
-
-    def _has_mixture_(self):
-        return True
-
-    def _dense_mixture_(self):
-        result = [(1 - sum(self.probabilities), cirq.DensePauliString([0, 0]))]
-        result.extend([
-            (p, cirq.DensePauliString([((k + 1) >> 2) & 3, (k + 1) & 3]))
-            for k, p in enumerate(self.probabilities)
-        ])
-        return [(p, g) for p, g in result if p]
-
-    def _mixture_(self):
-        return [(p, cirq.unitary(g)) for p, g in self._dense_mixture_()]
-
-    def _circuit_diagram_info_(self, args: cirq.CircuitDiagramInfoArgs):
-        result = []
-        for p, d in self._dense_mixture_():
-            result.append(str(d)[1:] + ":" + args.format_real(p))
-        return "PauliMix(" + ",".join(result) + ")", "#2"
-
-    def _stim_conversion_(
-            self,
-            edit_circuit: stim.Circuit,
-            targets: List[int],
-            **kwargs):
-        edit_circuit.append_operation("PAULI_CHANNEL_2", targets, self.probabilities)
-
-    def __repr__(self):
-        return f"stimcirq.TwoQubitAsymmetricDepolarizingChannel({self.probabilities!r})"
+from ._det_annotation import DetAnnotation
+from ._measure_and_or_reset_gate import MeasureAndOrResetGate
+from ._obs_annotation import CumulativeObservableAnnotation
+from ._two_qubit_asymmetric_depolarize import TwoQubitAsymmetricDepolarizingChannel
 
 
-@cirq.value_equality
-class MeasureAndOrReset(cirq.SingleQubitGate):
-    def __init__(self, measure: bool, reset: bool, basis: str, invert_measure: bool, key: str, measure_flip_probability: float = 0):
-        self.measure = measure
-        self.reset = reset
-        self.basis = basis
-        self.invert_measure = invert_measure
-        self.key = key
-        self.measure_flip_probability = measure_flip_probability
-
-    def _value_equality_values_(self):
-        return self.measure, self.reset, self.basis, self.invert_measure, self.key, self.measure_flip_probability
-
-    def _decompose_(self, qubits):
-        q, = qubits
-        if self.measure:
-            if self.basis == 'X':
-                yield cirq.H(q)
-            elif self.basis == 'Y':
-                yield cirq.X(q)**0.5
-            if self.measure_flip_probability:
-                raise NotImplementedError("Noisy measurement as a cirq operation.")
-            else:
-                yield cirq.measure(q, key=self.key, invert_mask=(True,) if self.invert_measure else ())
-        if self.reset:
-            yield cirq.ResetChannel().on(q)
-        if self.measure or self.reset:
-            if self.basis == 'X':
-                yield cirq.H(q)
-            elif self.basis == 'Y':
-                yield cirq.X(q)**-0.5
-
-    def with_key(self, key: str) -> 'MeasureAndOrReset':
-        return MeasureAndOrReset(
-            measure=self.measure,
-            reset=self.reset,
-            basis=self.basis,
-            invert_measure=self.invert_measure,
-            key=key,
-            measure_flip_probability=self.measure_flip_probability
-        )
-
-    def with_bits_flipped(self, *bit_positions):
-        assert bit_positions == (0,)
-        return MeasureAndOrReset(
-            measure=self.measure,
-            reset=self.reset,
-            basis=self.basis,
-            invert_measure=not self.invert_measure,
-            key=self.key,
-            measure_flip_probability=self.measure_flip_probability
-        )
-
-    def _stim_op_name(self) -> str:
-        result = ''
-        if self.measure:
-            result += "M"
-        if self.reset:
-            result += "R"
-        if self.basis != 'Z':
-            result += self.basis
-        return result
-
-    def _stim_conversion_(
-            self,
-            edit_circuit: stim.Circuit,
-            targets: List[int],
-            **kwargs):
-        if self.invert_measure:
-            targets[0] = stim.target_inv(targets[0])
-        if self.measure_flip_probability:
-            edit_circuit.append_operation(self._stim_op_name(), targets, self.measure_flip_probability)
+def _stim_targets_to_dense_pauli_string(targets: List[stim.GateTarget]) -> cirq.BaseDensePauliString:
+    obs = cirq.MutableDensePauliString("I" * len(targets))
+    for k, target in enumerate(targets):
+        if target.is_inverted_result_target:
+            obs.coefficient *= -1
+        if target.is_x_target:
+            obs.pauli_mask[k] = 1
+        elif target.is_y_target:
+            obs.pauli_mask[k] = 2
+        elif target.is_z_target:
+            obs.pauli_mask[k] = 3
         else:
-            edit_circuit.append_operation(self._stim_op_name(), targets)
-
-    def __str__(self) -> str:
-        result = self._stim_op_name()
-        if self.invert_measure:
-            result = "!" + result
-        if self.measure:
-            result += f"('{self.key}')"
-        if self.measure_flip_probability:
-            result += f"^{self.measure_flip_probability:%}"
-        return result
-
-    def __repr__(self):
-        return (f'stimcirq.MeasureAndOrReset('
-                f'measure={self.measure!r}, '
-                f'reset={self.reset!r}, '
-                f'basis={self.basis!r}, '
-                f'invert_measure={self.invert_measure!r}, '
-                f'key={self.key!r}, '
-                f'measure_flip_probability={self.measure_flip_probability!r})')
+            raise NotImplementedError(f"{target=!r}")
+    return obs.frozen()
 
 
-def args_to_cirq_depolarize_1(args: List[float]) -> cirq.AsymmetricDepolarizingChannel:
-    if len(args) != 3:
-        raise ValueError(f"len(args) != 3: {args!r}")
-    return cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2])
-
-
-def thrower(message) -> Callable[[Any], None]:
-    def f(*args, **kwargs):
-        raise NotImplementedError(message)
-    return f
-
-
-def _opt(args: Union[float, List[float]]) -> float:
-    if not args:
-        return 0
-    return args if isinstance(args, float) else args[0]
-
-
-@functools.lru_cache(maxsize=1)
-def stim_to_cirq_gate_table() -> Dict[str, Union[Tuple, cirq.Gate, Callable[[Union[float, List[float]]], cirq.Gate]]]:
-    return {
-        "R": cirq.ResetChannel(),
-        "RX": MeasureAndOrReset(measure=False, reset=True, basis='X', invert_measure=False, key='', measure_flip_probability=0),
-        "RY": MeasureAndOrReset(measure=False, reset=True, basis='Y', invert_measure=False, key='', measure_flip_probability=0),
-        "RZ": cirq.ResetChannel(),
-        "M": lambda args: cirq.MeasurementGate(num_qubits=1, key='0') if not _opt(args) else MeasureAndOrReset(measure=True, reset=False, basis='Z', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MX": lambda args: MeasureAndOrReset(measure=True, reset=False, basis='X', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MY": lambda args: MeasureAndOrReset(measure=True, reset=False, basis='Y', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MZ": lambda args: cirq.MeasurementGate(num_qubits=1, key='0') if not _opt(args) else MeasureAndOrReset(measure=True, reset=False, basis='Z', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MR": lambda args: MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MRX": lambda args: MeasureAndOrReset(measure=True, reset=True, basis='X', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MRY": lambda args: MeasureAndOrReset(measure=True, reset=True, basis='Y', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "MRZ": lambda args: MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='0', measure_flip_probability=_opt(args)),
-        "I": cirq.I,
-        "X": cirq.X,
-        "Y": cirq.Y,
-        "Z": cirq.Z,
-        "H_XY": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.Z, True)),
-        "H": cirq.H,
-        "H_XZ": cirq.H,
-        "H_YZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False)),
-        "SQRT_X": cirq.X**0.5,
-        "SQRT_X_DAG": cirq.X**-0.5,
-        "SQRT_Y": cirq.Y**0.5,
-        "SQRT_Y_DAG": cirq.Y**-0.5,
-        "C_XYZ": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, False)),
-        "C_ZYX": cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, False)),
-        "SQRT_XX": cirq.XX**0.5,
-        "SQRT_YY": cirq.YY**0.5,
-        "SQRT_ZZ": cirq.ZZ**0.5,
-        "SQRT_XX_DAG": cirq.XX**-0.5,
-        "SQRT_YY_DAG": cirq.YY**-0.5,
-        "SQRT_ZZ_DAG": cirq.ZZ**-0.5,
-        "S": cirq.S,
-        "S_DAG": cirq.S**-1,
-        "SQRT_Z": cirq.S,
-        "SQRT_Z_DAG": cirq.S**-1,
-        "SWAP": cirq.SWAP,
-        "ISWAP": cirq.ISWAP,
-        "ISWAP_DAG": cirq.ISWAP**-1,
-        "XCX": cirq.PauliInteractionGate(cirq.X, False, cirq.X, False),
-        "XCY": cirq.PauliInteractionGate(cirq.X, False, cirq.Y, False),
-        "XCZ": cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False),
-        "YCX": cirq.PauliInteractionGate(cirq.Y, False, cirq.X, False),
-        "YCY": cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False),
-        "YCZ": cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False),
-        "CX": cirq.CNOT,
-        "CNOT": cirq.CNOT,
-        "ZCX": cirq.CNOT,
-        "CY": cirq.Y.controlled(1),
-        "ZCY": cirq.Y.controlled(1),
-        "CZ": cirq.CZ,
-        "ZCZ": cirq.CZ,
-        "DEPOLARIZE1": lambda arg: cirq.DepolarizingChannel(arg, 1),
-        "DEPOLARIZE2": lambda arg: cirq.DepolarizingChannel(arg, 2),
-        "X_ERROR": cirq.X.with_probability,
-        "Y_ERROR": cirq.Y.with_probability,
-        "Z_ERROR": cirq.Z.with_probability,
-        "PAULI_CHANNEL_1": args_to_cirq_depolarize_1,
-        "PAULI_CHANNEL_2": lambda args: TwoQubitAsymmetricDepolarizingChannel(args),
-        "DETECTOR": (),
-        "OBSERVABLE_INCLUDE": (),
-        "ELSE_CORRELATED_ERROR": thrower("Converting ELSE_CORRELATED_ERROR to cirq is not supported."),
-        "TICK": (),
-    }
-
-
-def not_handled_or_handled_specially_set() -> Set[str]:
-    return {"E", "CORRELATED_ERROR", "REPEAT", "ELSE_CORRELATED_ERROR", "QUBIT_COORDS", "SHIFT_COORDS"}
-
-
-class CoordTracker:
+class CircuitTranslationTracker:
     def __init__(self):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
         self.origin: DefaultDict[float] = collections.defaultdict(float)
+        self.num_measurements_seen = 0
+        self.full_circuit = cirq.Circuit()
+        self.tick_circuit = cirq.Circuit()
 
+    def get_next_measure_id(self) -> int:
+        self.num_measurements_seen += 1
+        return self.num_measurements_seen - 1
 
-def _translate_flattened_operation(
-        op: Tuple[str, List, Union[float, Iterable[float]]],
-        coord_tracker: CoordTracker,
-        get_next_measure_id: Callable[[], int]) -> Iterator[cirq.Operation]:
-    name, targets, arg = op
+    def append_operation(self, op: cirq.Operation) -> None:
+        self.tick_circuit.append(op, strategy=cirq.InsertStrategy.INLINE)
 
-    handler = stim_to_cirq_gate_table().get(name)
+    def process_gate_instruction(self, gate: cirq.Gate, instruction: stim.CircuitInstruction) -> None:
+        targets: List[stim.GateTarget] = instruction.targets_copy()
+        m = cirq.num_qubits(gate)
+        if not all(t.is_qubit_target for t in targets) or len(targets) % m != 0:
+            raise NotImplementedError(f"{instruction=!r}")
+        for k in range(0, len(targets), m):
+            self.append_operation(gate(*[cirq.LineQubit(t.value) for t in targets[k:k+m]]))
 
-    if handler is not None:
-        if isinstance(handler, cirq.Gate):
-            gate = handler
-        elif handler == ():
-            return
-        else:
-            gate = handler(arg)
-        for q in targets:
-            if isinstance(q, tuple) and q[0] == "rec":
-                raise NotImplementedError("Measurement record.")
-        if name[0] == 'M':  # Measurement.
-            for t in targets:
-                if isinstance(t, int):
-                    q = t
-                    g = gate
-                elif t[0] == "inv":
-                    q = t[1]
-                    g = cast(Union[MeasureAndOrReset, cirq.MeasurementGate], gate).with_bits_flipped(0)
-                else:
-                    raise NotImplementedError("Unrecognized measurement target.")
-                key = str(get_next_measure_id())
-                yield g.with_key(key).on(cirq.LineQubit(q))
-        else:
-            m = cirq.num_qubits(gate)
-            for k in range(0, len(targets), m):
-                yield gate(*[cirq.LineQubit(q) for q in targets[k:k+m]])
-        return
+    def process_tick(self, instruction: stim.CircuitInstruction) -> None:
+        self.full_circuit += self.tick_circuit or cirq.Moment()
+        self.tick_circuit = cirq.Circuit()
 
-    if name == "E":
-        yield cirq.PauliString({cirq.LineQubit(q): k for k, q in targets}).with_probability(arg)
-        return
+    def process_pauli_channel_1(self, instruction: stim.CircuitInstruction) -> None:
+        args = instruction.gate_args_copy()
+        if len(args) != 3:
+            raise ValueError(f"len({args=!r}) != 3")
+        self.process_gate_instruction(
+            cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2]),
+            instruction)
 
-    if name == "QUBIT_COORDS":
-        args: List[float] = [arg] if isinstance(arg, float) else arg
-        for k in range(len(args)):
-            args[k] += coord_tracker.origin[k]
-            if args[k] == int(args[k]):
-                args[k] = int(args[k])
+    def process_pauli_channel_2(self, instruction: stim.CircuitInstruction) -> None:
+        args = instruction.gate_args_copy()
+        if len(args) != 15:
+            raise ValueError(f"len({args=!r}) != 15")
+        self.process_gate_instruction(
+            TwoQubitAsymmetricDepolarizingChannel(args),
+            instruction)
+
+    def process_measurement_instruction(self,
+                                        instruction: stim.CircuitInstruction,
+                                        measure: bool,
+                                        reset: bool,
+                                        basis: str) -> None:
+        args = instruction.gate_args_copy()
+        flip_probability = 0
+        if args:
+            flip_probability = args[0]
+
+        targets: List[stim.GateTarget] = instruction.targets_copy()
         for t in targets:
-            if len(args) == 1:
-                coord_tracker.qubit_coords[t] = cirq.LineQubit(*args)
-            elif len(args) == 2:
-                coord_tracker.qubit_coords[t] = cirq.GridQubit(*args)
-        return
+            if not t.is_qubit_target:
+                raise NotImplementedError(f"{instruction=!r}")
+            key = str(self.get_next_measure_id())
+            self.append_operation(
+                MeasureAndOrResetGate(
+                    measure=measure,
+                    reset=reset,
+                    basis=basis,
+                    invert_measure=t.is_inverted_result_target,
+                    key=key,
+                    measure_flip_probability=flip_probability,
+                ).resolve(cirq.LineQubit(t.value)))
 
-    if name == "SHIFT_COORDS":
-        args: List[float] = [arg] if isinstance(arg, float) else arg
-        for k, a in enumerate(args):
-            coord_tracker.origin[k] += a
-        return
+    def process_circuit(
+            self,
+            repetitions: int,
+            circuit: stim.Circuit) -> None:
+        handler_table = CircuitTranslationTracker.get_handler_table()
+        for _ in range(repetitions):
+            for instruction in circuit:
+                if isinstance(instruction, stim.CircuitInstruction):
+                    handler = handler_table.get(instruction.name)
+                    if handler is None:
+                        raise NotImplementedError(f"{instruction!r}")
+                    handler(self, instruction)
+                elif isinstance(instruction, stim.CircuitRepeatBlock):
+                    self.process_circuit(instruction.repeat_count, instruction.body_copy())
+                else:
+                    raise NotImplementedError(f"{instruction=!r}")
 
-    raise NotImplementedError(f"Unsupported gate: {name}")
+    def output(self) -> cirq.Circuit:
+        out = self.full_circuit + self.tick_circuit
+
+        if self.qubit_coords:
+            remap: Dict[cirq.Qid, cirq.Qid] = {
+                q: self.qubit_coords.get(cast(cirq.LineQubit, q).x, q)
+                for q in out.all_qubits()
+            }
+
+            # Only remap if there are no collisions.
+            if len(set(remap.values())) == len(remap):
+                out = out.transform_qubits(remap.__getitem__)
+
+        return out
+
+    def process_mpp(self, instruction: stim.CircuitInstruction) -> None:
+        args = instruction.gate_args_copy()
+        if args and args[0]:
+            raise NotImplementedError("Noisy MPP")
+
+        targets: List[stim.GateTarget] = instruction.targets_copy()
+        start = 0
+        while start < len(targets):
+            next_start = start + 1
+            while next_start < len(targets) and targets[next_start].is_combiner:
+                next_start += 2
+            group = targets[start:next_start:2]
+            start = next_start
+
+            obs = _stim_targets_to_dense_pauli_string(group)
+            qubits = [cirq.LineQubit(t.value) for t in group]
+            key = str(self.get_next_measure_id())
+            if obs.coefficient == -1:
+                raise NotImplementedError(
+                    "Converting inverted MPP blocked by https://github.com/quantumlib/Cirq/issues/4814")
+            self.append_operation(cirq.PauliMeasurementGate(obs, key=key).on(*qubits))
+
+    def process_correlated_error(self, instruction: stim.CircuitInstruction) -> None:
+        args = instruction.gate_args_copy()
+        probability = args[0] if args else 0
+        targets = instruction.targets_copy()
+        qubits = [cirq.LineQubit(t.value) for t in targets]
+        self.append_operation(_stim_targets_to_dense_pauli_string(targets).on(*qubits).with_probability(probability))
+
+    def coords_after_offset(self, relative_coords: List[float]) -> List[Union[float, int]]:
+        result = []
+        for k in range(len(relative_coords)):
+            t = relative_coords[k] + self.origin[k]
+            if t == int(t):
+                t = int(t)
+            result.append(t)
+        return result
+
+    def process_detector(self, instruction: stim.CircuitInstruction) -> None:
+        coords = self.coords_after_offset(instruction.gate_args_copy())
+        targets = instruction.targets_copy()
+        measurement_keys = [str(self.num_measurements_seen + t.value) for t in targets]
+        self.append_operation(DetAnnotation(*measurement_keys, coordinate_metadata=coords))
+
+    def process_observable_include(self, instruction: stim.CircuitInstruction) -> None:
+        args = instruction.gate_args_copy()
+        index = 0 if not args else int(args[0])
+        targets = instruction.targets_copy()
+        measurement_keys = [str(self.num_measurements_seen + t.value) for t in targets]
+        self.append_operation(CumulativeObservableAnnotation(
+            *measurement_keys,
+            observable_index=index))
+
+    def process_qubit_coords(self, instruction: stim.CircuitInstruction) -> None:
+        coords = self.coords_after_offset(instruction.gate_args_copy())
+        for t in instruction.targets_copy():
+            if len(coords) == 1:
+                self.qubit_coords[t.value] = cirq.LineQubit(*coords)
+            elif len(coords) == 2:
+                self.qubit_coords[t.value] = cirq.GridQubit(*coords)
+
+    def process_shift_coords(self, instruction: stim.CircuitInstruction) -> None:
+        for k, a in enumerate(instruction.gate_args_copy()):
+            self.origin[k] += a
+
+    class OneToOneGateHandler:
+        def __init__(self, gate: cirq.Gate):
+            self.gate = gate
+
+        def __call__(self, tracker: 'CircuitTranslationTracker', instruction: stim.CircuitInstruction) -> None:
+            tracker.process_gate_instruction(gate=self.gate, instruction=instruction)
+
+    class OneToOneMeasurementHandler:
+        def __init__(self, *, reset: bool, measure: bool, basis: str):
+            self.reset = reset
+            self.measure = measure
+            self.basis = basis
+
+        def __call__(self, tracker: 'CircuitTranslationTracker', instruction: stim.CircuitInstruction) -> None:
+            tracker.process_measurement_instruction(
+                measure=self.measure,
+                reset=self.reset,
+                basis=self.basis,
+                instruction=instruction)
+
+    class OneToOneNoisyGateHandler:
+        def __init__(self, prob_to_gate: Callable[[float], cirq.Gate]):
+            self.prob_to_gate = prob_to_gate
+
+        def __call__(self, tracker: 'CircuitTranslationTracker', instruction: stim.CircuitInstruction) -> None:
+            tracker.process_gate_instruction(self.prob_to_gate(instruction.gate_args_copy()[0]), instruction)
+
+    @staticmethod
+    @functools.lru_cache(maxsize=1)
+    def get_handler_table() -> Dict[str, Callable[['CircuitTranslationTracker', stim.Circuit], None]]:
+        gate = CircuitTranslationTracker.OneToOneGateHandler
+        measure_gate = CircuitTranslationTracker.OneToOneMeasurementHandler
+        noise = CircuitTranslationTracker.OneToOneNoisyGateHandler
+
+        def not_impl(message) -> Callable[[Any], None]:
+            def handler(tracker: CircuitTranslationTracker, instruction: stim.CircuitInstruction) -> None:
+                raise NotImplementedError(message)
+            return handler
+
+        return {
+            "M": measure_gate(measure=True, reset=False, basis='Z'),
+            "MX": measure_gate(measure=True, reset=False, basis='X'),
+            "MY": measure_gate(measure=True, reset=False, basis='Y'),
+            "MZ": measure_gate(measure=True, reset=False, basis='Z'),
+            "MR": measure_gate(measure=True, reset=True, basis='Z'),
+            "MRX": measure_gate(measure=True, reset=True, basis='X'),
+            "MRY": measure_gate(measure=True, reset=True, basis='Y'),
+            "MRZ": measure_gate(measure=True, reset=True, basis='Z'),
+            "R": gate(cirq.ResetChannel()),
+            "RX": gate(MeasureAndOrResetGate(measure=False, reset=True, basis='X', invert_measure=False, key='')),
+            "RY": gate(MeasureAndOrResetGate(measure=False, reset=True, basis='Y', invert_measure=False, key='')),
+            "RZ": gate(cirq.ResetChannel()),
+            "I": gate(cirq.I),
+            "X": gate(cirq.X),
+            "Y": gate(cirq.Y),
+            "Z": gate(cirq.Z),
+            "H_XY": gate(cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.Z, True))),
+            "H": gate(cirq.H),
+            "H_XZ": gate(cirq.H),
+            "H_YZ": gate(cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.X, True), z_to=(cirq.Y, False))),
+            "SQRT_X": gate(cirq.X**0.5),
+            "SQRT_X_DAG": gate(cirq.X**-0.5),
+            "SQRT_Y": gate(cirq.Y**0.5),
+            "SQRT_Y_DAG": gate(cirq.Y**-0.5),
+            "C_XYZ": gate(cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Y, False), z_to=(cirq.X, False))),
+            "C_ZYX": gate(cirq.SingleQubitCliffordGate.from_xz_map(x_to=(cirq.Z, False), z_to=(cirq.Y, False))),
+            "SQRT_XX": gate(cirq.XX**0.5),
+            "SQRT_YY": gate(cirq.YY**0.5),
+            "SQRT_ZZ": gate(cirq.ZZ**0.5),
+            "SQRT_XX_DAG": gate(cirq.XX**-0.5),
+            "SQRT_YY_DAG": gate(cirq.YY**-0.5),
+            "SQRT_ZZ_DAG": gate(cirq.ZZ**-0.5),
+            "S": gate(cirq.S),
+            "S_DAG": gate(cirq.S**-1),
+            "SQRT_Z": gate(cirq.S),
+            "SQRT_Z_DAG": gate(cirq.S**-1),
+            "SWAP": gate(cirq.SWAP),
+            "ISWAP": gate(cirq.ISWAP),
+            "ISWAP_DAG": gate(cirq.ISWAP**-1),
+            "XCX": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.X, False)),
+            "XCY": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.Y, False)),
+            "XCZ": gate(cirq.PauliInteractionGate(cirq.X, False, cirq.Z, False)),
+            "YCX": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.X, False)),
+            "YCY": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.Y, False)),
+            "YCZ": gate(cirq.PauliInteractionGate(cirq.Y, False, cirq.Z, False)),
+            "CX": gate(cirq.CNOT),
+            "CNOT": gate(cirq.CNOT),
+            "ZCX": gate(cirq.CNOT),
+            "CY": gate(cirq.Y.controlled(1)),
+            "ZCY": gate(cirq.Y.controlled(1)),
+            "CZ": gate(cirq.CZ),
+            "ZCZ": gate(cirq.CZ),
+            "DEPOLARIZE1": noise(lambda p: cirq.DepolarizingChannel(p, 1)),
+            "DEPOLARIZE2": noise(lambda p: cirq.DepolarizingChannel(p, 2)),
+            "X_ERROR": noise(cirq.X.with_probability),
+            "Y_ERROR": noise(cirq.Y.with_probability),
+            "Z_ERROR": noise(cirq.Z.with_probability),
+            "PAULI_CHANNEL_1": CircuitTranslationTracker.process_pauli_channel_1,
+            "PAULI_CHANNEL_2": CircuitTranslationTracker.process_pauli_channel_2,
+            "ELSE_CORRELATED_ERROR": not_impl("Converting ELSE_CORRELATED_ERROR to cirq is not supported."),
+            "REPEAT": not_impl("[handled special]"),
+            "TICK": CircuitTranslationTracker.process_tick,
+            "SHIFT_COORDS": CircuitTranslationTracker.process_shift_coords,
+            "QUBIT_COORDS": CircuitTranslationTracker.process_qubit_coords,
+            "E": CircuitTranslationTracker.process_correlated_error,
+            "CORRELATED_ERROR": CircuitTranslationTracker.process_correlated_error,
+            "MPP": CircuitTranslationTracker.process_mpp,
+            "DETECTOR": CircuitTranslationTracker.process_detector,
+            "OBSERVABLE_INCLUDE": CircuitTranslationTracker.process_observable_include,
+        }
 
 
 def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
@@ -339,35 +339,6 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
                   │
         1: ───────X──────────────────!M('0')───
     """
-    _next_measure_id = 0
-
-    def get_next_measure_id() -> int:
-        nonlocal _next_measure_id
-        _next_measure_id += 1
-        return _next_measure_id - 1
-
-    coord_tracker = CoordTracker()
-
-    full_circuit = cirq.Circuit()
-    current_tick = cirq.Circuit()
-    for op in circuit.flattened_operations():
-        if op[0] == 'TICK':
-            if len(current_tick):
-                full_circuit += current_tick
-                current_tick = cirq.Circuit()
-            else:
-                full_circuit += cirq.Moment()
-        else:
-            current_tick += _translate_flattened_operation(op, coord_tracker, get_next_measure_id)
-    full_circuit += current_tick
-
-    if coord_tracker.qubit_coords:
-        remap: Dict[cirq.Qid, cirq.Qid] = {
-            q: coord_tracker.qubit_coords.get(cast(cirq.LineQubit, q).x, q)
-            for q in full_circuit.all_qubits()
-        }
-        # Only remap if there are no collisions.
-        if len(set(remap.values())) == len(remap):
-            full_circuit = full_circuit.transform_qubits(remap.__getitem__)
-
-    return full_circuit
+    tracker = CircuitTranslationTracker()
+    tracker.process_circuit(repetitions=1, circuit=circuit)
+    return tracker.output()
