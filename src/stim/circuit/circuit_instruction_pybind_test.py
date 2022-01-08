@@ -42,3 +42,11 @@ def test_repr(value):
 
 def test_str():
     assert str(stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], [0.5])) == "X_ERROR(0.5) 5"
+
+
+def test_hashable():
+    a = stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], [0.5])
+    b = stim.CircuitInstruction("DEPOLARIZE1", [stim.GateTarget(5)], [0.5])
+    c = stim.CircuitInstruction("X_ERROR", [stim.GateTarget(5)], [0.5])
+    assert hash(a) == hash(c)
+    assert len({a, b, c}) == 2
