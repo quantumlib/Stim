@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, Dict, List, Tuple
 
 import cirq
@@ -27,7 +25,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
     def qubits(self) -> Tuple[cirq.Qid, ...]:
         return ()
 
-    def with_qubits(self, *new_qubits) -> CumulativeObservableAnnotation:
+    def with_qubits(self, *new_qubits) -> 'CumulativeObservableAnnotation':
         return self
 
     def _value_equality_values_(self) -> Any:
@@ -44,7 +42,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
     @classmethod
     def _from_json_helper(
         cls, parity_keys: List[str], observable_index: int
-    ) -> CumulativeObservableAnnotation:
+    ) -> 'CumulativeObservableAnnotation':
         return CumulativeObservableAnnotation(*parity_keys, observable_index=observable_index)
 
     def _json_dict_(self) -> Dict[str, Any]:

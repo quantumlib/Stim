@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, Dict, Iterable, List, Tuple
 
 import cirq
@@ -29,7 +27,7 @@ class DetAnnotation(cirq.Operation):
     def qubits(self) -> Tuple[cirq.Qid, ...]:
         return ()
 
-    def with_qubits(self, *new_qubits) -> DetAnnotation:
+    def with_qubits(self, *new_qubits) -> 'DetAnnotation':
         return self
 
     def _value_equality_values_(self) -> Any:
@@ -42,7 +40,7 @@ class DetAnnotation(cirq.Operation):
     @classmethod
     def _from_json_helper(
         cls, parity_keys: List[str], coordinate_metadata: List[float]
-    ) -> DetAnnotation:
+    ) -> 'DetAnnotation':
         return DetAnnotation(*parity_keys, coordinate_metadata=coordinate_metadata)
 
     def _json_dict_(self) -> Dict[str, Any]:
