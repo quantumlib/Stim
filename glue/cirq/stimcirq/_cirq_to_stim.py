@@ -274,7 +274,7 @@ def _stim_append_pauli_measurement_gate(circuit: stim.Circuit, gate: cirq.PauliM
         elif p == 3:
             t = stim.target_z(t)
         else:
-            raise NotImplementedError(f"{obs=!r}")
+            raise NotImplementedError(f"obs={obs!r}")
         new_targets.append(t)
         new_targets.append(stim.target_combiner())
     new_targets.pop()
@@ -284,7 +284,7 @@ def _stim_append_pauli_measurement_gate(circuit: stim.Circuit, gate: cirq.PauliM
         new_targets[0] |= stim.target_inv(new_targets[0])
         pass
     elif obs.coefficient != 1:
-        raise NotImplementedError(f"{obs.coefficient=!r} not in [1, -1]")
+        raise NotImplementedError(f"obs.coefficient={obs.coefficient!r} not in [1, -1]")
 
     circuit.append_operation("MPP",  new_targets)
 

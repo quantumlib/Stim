@@ -23,7 +23,7 @@ def _stim_targets_to_dense_pauli_string(targets: List[stim.GateTarget]) -> cirq.
         elif target.is_z_target:
             obs.pauli_mask[k] = 3
         else:
-            raise NotImplementedError(f"{target=!r}")
+            raise NotImplementedError(f"target={target!r}")
     return obs.frozen()
 
 
@@ -46,7 +46,7 @@ class CircuitTranslationTracker:
         targets: List[stim.GateTarget] = instruction.targets_copy()
         m = cirq.num_qubits(gate)
         if not all(t.is_qubit_target for t in targets) or len(targets) % m != 0:
-            raise NotImplementedError(f"{instruction=!r}")
+            raise NotImplementedError(f"instruction={instruction!r}")
         for k in range(0, len(targets), m):
             self.append_operation(gate(*[cirq.LineQubit(t.value) for t in targets[k:k+m]]))
 
@@ -57,7 +57,7 @@ class CircuitTranslationTracker:
     def process_pauli_channel_1(self, instruction: stim.CircuitInstruction) -> None:
         args = instruction.gate_args_copy()
         if len(args) != 3:
-            raise ValueError(f"len({args=!r}) != 3")
+            raise ValueError(f"len(args={args!r}) != 3")
         self.process_gate_instruction(
             cirq.AsymmetricDepolarizingChannel(p_x=args[0], p_y=args[1], p_z=args[2]),
             instruction)
@@ -65,7 +65,7 @@ class CircuitTranslationTracker:
     def process_pauli_channel_2(self, instruction: stim.CircuitInstruction) -> None:
         args = instruction.gate_args_copy()
         if len(args) != 15:
-            raise ValueError(f"len({args=!r}) != 15")
+            raise ValueError(f"len(args={args!r}) != 15")
         self.process_gate_instruction(
             TwoQubitAsymmetricDepolarizingChannel(args),
             instruction)
@@ -83,7 +83,7 @@ class CircuitTranslationTracker:
         targets: List[stim.GateTarget] = instruction.targets_copy()
         for t in targets:
             if not t.is_qubit_target:
-                raise NotImplementedError(f"{instruction=!r}")
+                raise NotImplementedError(f"instruction={instruction!r}")
             key = str(self.get_next_measure_id())
             self.append_operation(
                 MeasureAndOrResetGate(
@@ -110,7 +110,7 @@ class CircuitTranslationTracker:
                 elif isinstance(instruction, stim.CircuitRepeatBlock):
                     self.process_circuit(instruction.repeat_count, instruction.body_copy())
                 else:
-                    raise NotImplementedError(f"{instruction=!r}")
+                    raise NotImplementedError(f"instruction={instruction!r}")
 
     def output(self) -> cirq.Circuit:
         out = self.full_circuit + self.tick_circuit
