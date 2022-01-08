@@ -55,7 +55,7 @@ std::string CircuitInstruction::repr() const {
     return result.str();
 }
 
-std::string CircuitInstruction::str() {
+std::string CircuitInstruction::str() const {
     std::stringstream result;
     result << Operation{&gate, {gate_args, targets}};
     return result.str();
@@ -157,4 +157,9 @@ void pybind_circuit_instruction(pybind11::module &m) {
         "__str__",
         &CircuitInstruction::str,
         "Returns a text description of the instruction as a stim circuit file line.");
+
+    c.def("__hash__",
+          [](const CircuitInstruction &self){
+              return pybind11::hash(pybind11::str(self.str()));
+          });
 }

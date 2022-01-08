@@ -67,3 +67,11 @@ def test_static_constructors():
     assert stim.DemTarget.relative_detector_id(5) == stim.target_relative_detector_id(5)
     assert stim.DemTarget.logical_observable_id(5) == stim.target_logical_observable_id(5)
     assert stim.DemTarget.separator() == stim.target_separator()
+
+
+def test_hashable():
+    a = stim.DemTarget.relative_detector_id(3)
+    b = stim.DemTarget.logical_observable_id(5)
+    c = stim.DemTarget.relative_detector_id(3)
+    assert hash(a) == hash(c)
+    assert len({a, b, c}) == 2

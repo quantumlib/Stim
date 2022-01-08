@@ -1,4 +1,5 @@
 import inspect
+import itertools
 from typing import Tuple, Union, Callable, Any, cast
 
 import cirq
@@ -6,23 +7,7 @@ import pytest
 import stim
 
 import stimcirq
-from ._stim_to_cirq import stim_to_cirq_gate_table, not_handled_or_handled_specially_set
-
-
-def test_two_qubit_asymmetric_depolarizing_channel():
-    r = stimcirq.TwoQubitAsymmetricDepolarizingChannel([0.125, 0, 0, 0, 0, 0, 0.375, 0, 0, 0, 0, 0, 0, 0.25, 0])
-    assert r._dense_mixture_() == [
-        (0.25, cirq.DensePauliString("II")),
-        (0.125, cirq.DensePauliString("IX")),
-        (0.375, cirq.DensePauliString("XZ")),
-        (0.25, cirq.DensePauliString("ZY")),
-    ]
-    cirq.testing.assert_has_diagram(cirq.Circuit(r.on(*cirq.LineQubit.range(2))), """
-0: ───PauliMix(II:0.25,IX:0.125,XZ:0.375,ZY:0.25)───
-      │
-1: ───#2────────────────────────────────────────────
-    """)
-    assert eval(repr(r), {'stimcirq': stimcirq}) == r
+from ._stim_to_cirq import CircuitTranslationTracker
 
 
 def test_stim_circuit_to_cirq_circuit():
@@ -54,50 +39,71 @@ def test_stim_circuit_to_cirq_circuit():
             cirq.measure(b, key="1", invert_mask=(True,)),
         ),
         cirq.Moment(
-            stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='2').on(a),
-            stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=True, key='3').on(b),
+            stimcirq.MeasureAndOrResetGate(measure=True, reset=True, basis='Z', invert_measure=False, key='2').on(a),
+            stimcirq.MeasureAndOrResetGate(measure=True, reset=True, basis='Z', invert_measure=True, key='3').on(b),
         ),
     )
 
 
-@pytest.mark.parametrize("key,handler", list(stim_to_cirq_gate_table().items()) + [
-    ("m-case", stimcirq.MeasureAndOrReset(
-        measure=True,
-        reset=reset,
-        basis=basis,
-        invert_measure=invert,
-        key='0'
-    ))
-    for reset in [False, True]
-    for basis in ['X', 'Y', 'Z']
-    for invert in [False, True]
-    if reset or basis != 'Z'
-] + [
-    ("+M", cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=())),
-    ("-M", cirq.MeasurementGate(num_qubits=1, key='0', invert_mask=(True,))),
+def assert_circuits_are_equivalent_and_convert(cirq_circuit: cirq.Circuit, stim_circuit: stim.Circuit):
+    assert cirq_circuit == stimcirq.stim_circuit_to_cirq_circuit(stim_circuit)
+    assert stim_circuit == stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
+
+
+@pytest.mark.parametrize("name", [
+    k
+    for k, v in CircuitTranslationTracker.get_handler_table().items()
+    if isinstance(v, CircuitTranslationTracker.OneToOneGateHandler)
 ])
-def test_exact_gate_round_trips(key: str, handler: Union[cirq.Gate, Callable[[Any], cirq.Gate], Tuple]):
-    if handler == ():
-        return
-    if isinstance(handler, cirq.Gate):
-        gate = handler
-    else:
-        try:
-            gate = handler(0.125)
-        except NotImplementedError:
-            assert key in not_handled_or_handled_specially_set()
-            return
-        except:
-            try:
-                gate = handler([k/128 for k in range(1, 4)])
-            except:
-                gate = handler([k/128 for k in range(1, 16)])
+def test_gates_converted_using_OneToOneGateHandler(name: str):
+    handler = cast(CircuitTranslationTracker.OneToOneGateHandler, CircuitTranslationTracker.get_handler_table()[name])
+    gate = handler.gate
     n = cirq.num_qubits(gate)
     qs = cirq.LineQubit.range(n)
-    original = cirq.Circuit(gate.on(*qs))
-    converted = stimcirq.cirq_circuit_to_stim_circuit(original)
-    restored = stimcirq.stim_circuit_to_cirq_circuit(converted)
-    assert original == restored
+
+    cirq_original = cirq.Circuit(gate.on(*qs))
+    stim_targets = " ".join(str(e) for e in range(n))
+    stim_original = stim.Circuit(f"{name} {stim_targets}\nTICK")
+    assert_circuits_are_equivalent_and_convert(cirq_original, stim_original)
+
+
+@pytest.mark.parametrize("name,probability", itertools.product([
+    k
+    for k, v in CircuitTranslationTracker.get_handler_table().items()
+    if isinstance(v, CircuitTranslationTracker.OneToOneNoisyGateHandler)
+], [0, 0.125]))
+def test_gates_converted_using_OneToOneNoisyGateHandler(name: str, probability: float):
+    handler = cast(CircuitTranslationTracker.OneToOneNoisyGateHandler, CircuitTranslationTracker.get_handler_table()[name])
+    gate = handler.prob_to_gate(probability)
+    n = cirq.num_qubits(gate)
+    qs = cirq.LineQubit.range(n)
+
+    cirq_original = cirq.Circuit(gate.on(*qs))
+    stim_targets = " ".join(str(e) for e in range(n))
+    stim_original = stim.Circuit(f"{name}({probability}) {stim_targets}\nTICK")
+    assert_circuits_are_equivalent_and_convert(cirq_original, stim_original)
+
+
+@pytest.mark.parametrize("name,invert,probability", itertools.product([
+    k
+    for k, v in CircuitTranslationTracker.get_handler_table().items()
+    if isinstance(v, CircuitTranslationTracker.OneToOneMeasurementHandler)
+], [False, True], [0, 0.125]))
+def test_gates_converted_using_OneToOneMeasurementHandler(name: str, invert: bool, probability: float):
+    handler = cast(CircuitTranslationTracker.OneToOneMeasurementHandler, CircuitTranslationTracker.get_handler_table()[name])
+    if handler.basis == 'Z' and not handler.reset and not probability:
+        cirq_original = cirq.Circuit(cirq.measure(cirq.LineQubit(5), key="0", invert_mask=(1,) * invert))
+    else:
+        cirq_original = cirq.Circuit(stimcirq.MeasureAndOrResetGate(basis=handler.basis,
+                                                                    key="0",
+                                                                    invert_measure=invert,
+                                                                    reset=handler.reset,
+                                                                    measure_flip_probability=probability,
+                                                                    measure=handler.measure).on(cirq.LineQubit(5)))
+    inverted = "!" if invert else ""
+    p_str = f"({probability})" if probability else ""
+    stim_original = stim.Circuit(f"QUBIT_COORDS(5) 0\n{name}{p_str} {inverted}0\nTICK")
+    assert_circuits_are_equivalent_and_convert(cirq_original, stim_original)
 
 
 def test_round_trip_preserves_moment_structure():
@@ -137,78 +143,10 @@ def test_circuit_diagram():
 
 
 def test_all_known_gates_explicitly_handled():
-    output_from_stim_help_gates = """
-CNOT
-CORRELATED_ERROR
-CX
-CY
-CZ
-C_XYZ
-C_ZYX
-DEPOLARIZE1
-DEPOLARIZE2
-DETECTOR
-E
-ELSE_CORRELATED_ERROR
-H
-H_XY
-H_XZ
-H_YZ
-I
-ISWAP
-ISWAP_DAG
-M
-MR
-MRX
-MRY
-MRZ
-MX
-MY
-MZ
-OBSERVABLE_INCLUDE
-PAULI_CHANNEL_1
-PAULI_CHANNEL_2
-QUBIT_COORDS
-R
-REPEAT
-RX
-RY
-RZ
-S
-SHIFT_COORDS
-SQRT_X
-SQRT_XX
-SQRT_XX_DAG
-SQRT_X_DAG
-SQRT_Y
-SQRT_YY
-SQRT_YY_DAG
-SQRT_Y_DAG
-SQRT_Z
-SQRT_ZZ
-SQRT_ZZ_DAG
-SQRT_Z_DAG
-SWAP
-S_DAG
-TICK
-X
-XCX
-XCY
-XCZ
-X_ERROR
-Y
-YCX
-YCY
-YCZ
-Y_ERROR
-Z
-ZCX
-ZCY
-ZCZ
-Z_ERROR
-    """
-    gates = output_from_stim_help_gates.strip().split()
-    handled = stim_to_cirq_gate_table().keys() | not_handled_or_handled_specially_set()
+    gates = []
+    for gate in stim._UNSTABLE_raw_gate_data():
+        gates.append(gate)
+    handled = CircuitTranslationTracker.get_handler_table().keys()
     for gate_name in gates:
         assert gate_name in handled, gate_name
 
@@ -260,12 +198,106 @@ def test_noisy_measurements():
     """)
     c = stimcirq.stim_circuit_to_cirq_circuit(s)
     assert c == cirq.Circuit(
-        stimcirq.MeasureAndOrReset(measure=True, reset=False, basis='X', invert_measure=False, key='0', measure_flip_probability=0.125).on(cirq.LineQubit(0)),
-        stimcirq.MeasureAndOrReset(measure=True, reset=False, basis='Y', invert_measure=False, key='1', measure_flip_probability=0.125).on(cirq.LineQubit(1)),
-        stimcirq.MeasureAndOrReset(measure=True, reset=False, basis='Z', invert_measure=False, key='2', measure_flip_probability=0.125).on(cirq.LineQubit(2)),
-        stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='X', invert_measure=False, key='3', measure_flip_probability=0.125).on(cirq.LineQubit(3)),
-        stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='Y', invert_measure=False, key='4', measure_flip_probability=0.125).on(cirq.LineQubit(4)),
-        stimcirq.MeasureAndOrReset(measure=True, reset=True, basis='Z', invert_measure=False, key='5', measure_flip_probability=0.25).on(cirq.LineQubit(5)),
+        stimcirq.MeasureAndOrResetGate(measure=True, reset=False, basis='X', invert_measure=False, key='0', measure_flip_probability=0.125).on(cirq.LineQubit(0)),
+        stimcirq.MeasureAndOrResetGate(measure=True, reset=False, basis='Y', invert_measure=False, key='1', measure_flip_probability=0.125).on(cirq.LineQubit(1)),
+        stimcirq.MeasureAndOrResetGate(measure=True, reset=False, basis='Z', invert_measure=False, key='2', measure_flip_probability=0.125).on(cirq.LineQubit(2)),
+        stimcirq.MeasureAndOrResetGate(measure=True, reset=True, basis='X', invert_measure=False, key='3', measure_flip_probability=0.125).on(cirq.LineQubit(3)),
+        stimcirq.MeasureAndOrResetGate(measure=True, reset=True, basis='Y', invert_measure=False, key='4', measure_flip_probability=0.125).on(cirq.LineQubit(4)),
+        stimcirq.MeasureAndOrResetGate(measure=True, reset=True, basis='Z', invert_measure=False, key='5', measure_flip_probability=0.25).on(cirq.LineQubit(5)),
     )
     assert stimcirq.cirq_circuit_to_stim_circuit(c) == s
     cirq.testing.assert_equivalent_repr(c, global_vals={'stimcirq': stimcirq})
+
+
+def test_convert_mpp():
+    s = stim.Circuit("""
+        MPP X2*Y5*Z3
+        TICK
+        MPP X1 Y2 Z3*Z4
+        X 0
+        TICK
+    """)
+    c = cirq.Circuit(
+        cirq.Moment(
+            cirq.PauliMeasurementGate(cirq.DensePauliString("XYZ", coefficient=+1), key='0').on(
+                cirq.LineQubit(2), cirq.LineQubit(5), cirq.LineQubit(3)),
+        ),
+        cirq.Moment(
+            cirq.PauliMeasurementGate(cirq.DensePauliString("X"), key='1').on(cirq.LineQubit(1)),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("Y"), key='2').on(cirq.LineQubit(2)),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("ZZ"), key='3').on(cirq.LineQubit(3), cirq.LineQubit(4)),
+            cirq.X(cirq.LineQubit(0)),
+        ),
+    )
+    assert_circuits_are_equivalent_and_convert(c, s)
+    cirq.testing.assert_has_diagram(c, """
+0: ───────────────X───────────
+
+1: ───────────────M(X)────────
+
+2: ───M(X)('0')───M(Y)────────
+      │
+3: ───M(Z)────────M(Z)('3')───
+      │           │
+4: ───┼───────────M(Z)────────
+      │
+5: ───M(Y)────────────────────
+        """)
+
+
+def test_convert_detector():
+    s = stim.Circuit("""
+        H 0
+        TICK
+        CNOT 0 1
+        TICK
+        M 0 1
+        DETECTOR(2, 3, 5) rec[-1] rec[-2]
+        TICK
+    """)
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.Circuit(
+        cirq.H(a),
+        cirq.CNOT(a, b),
+        cirq.Moment(
+            cirq.measure(a, key='0'),
+            cirq.measure(b, key='1'),
+            stimcirq.DetAnnotation('0', '1', coordinate_metadata=(2, 3, 5)),
+        ),
+    )
+    cirq.testing.assert_has_diagram(c, """
+0: ───H───@───M──────────────
+          │
+1: ───────X───M──────────────
+              Det('0','1')
+        """)
+    assert_circuits_are_equivalent_and_convert(c, s)
+
+
+def test_convert_observable():
+    s = stim.Circuit("""
+        H 0
+        TICK
+        CNOT 0 1
+        TICK
+        M 0 1
+        OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
+        TICK
+    """)
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.Circuit(
+        cirq.H(a),
+        cirq.CNOT(a, b),
+        cirq.Moment(
+            cirq.measure(a, key='0'),
+            cirq.measure(b, key='1'),
+            stimcirq.CumulativeObservableAnnotation('0', '1', observable_index=5),
+        ),
+    )
+    cirq.testing.assert_has_diagram(c, """
+0: ───H───@───M───────────────
+          │
+1: ───────X───M───────────────
+              Obs5('0','1')
+        """)
+    assert_circuits_are_equivalent_and_convert(c, s)

@@ -79,3 +79,11 @@ def test_repr():
     assert eval(repr(v), {"stim": stim}) == v
     v = stim.DemInstruction("shift_detectors", [1.5, 2.5, 5.5], [6])
     assert eval(repr(v), {"stim": stim}) == v
+
+
+def test_hashable():
+    a = stim.DemInstruction("error", [0.25], [stim.target_relative_detector_id(3)])
+    b = stim.DemInstruction("error", [0.125], [stim.target_relative_detector_id(3)])
+    c = stim.DemInstruction("error", [0.25], [stim.target_relative_detector_id(3)])
+    assert hash(a) == hash(c)
+    assert len({a, b, c}) == 2

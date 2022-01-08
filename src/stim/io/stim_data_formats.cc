@@ -9,14 +9,14 @@ extern const std::map<std::string, stim::FileFormatData> stim::format_name_to_en
             "01",
             SAMPLE_FORMAT_01,
             R"HELP(
-A human readable format that stores shots as lines of '0' and '1' characters.
+The 01 format is a dense human readable format that stores shots as lines of '0' and '1' characters.
 
 The data from each shot is terminated by a newline character '\n'. Each character in the line is a '0' (indicating
 False) or a '1' (indicating True) corresponding to a measurement result (or a detector result) from a circuit.
 
-This is the default format used when saving to files.
+This is the default format used by Stim, because it's the easiest to understand.
 
-Example:
+*Example of producing 01 format data using stim's python API:*
 
     >>> import pathlib
     >>> import stim
@@ -75,7 +75,7 @@ def parse_01(data: str) -> List[List[bool]]:
             "b8",
             SAMPLE_FORMAT_B8,
             R"HELP(
-A binary format that stores shots as bit-packed bytes.
+The b8 format is a dense binary format that stores shots as bit-packed bytes.
 
 Each shot is stored into ceil(n / 8) bytes, where n is the number of bits in the shot. Effectively, each shot is padded
 up to a multiple of 8 by appending False bits, so that shots always start on a byte boundary. Bits are packed into bytes
@@ -84,7 +84,7 @@ until the 128s bit which is the eighth bit).
 
 This format requires the reader to know the number of bits in each shot.
 
-Example:
+*Example of producing b8 format data using stim's python API:*
 
     >>> import pathlib
     >>> import stim
@@ -137,7 +137,7 @@ def parse_b8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             "ptb64",
             SAMPLE_FORMAT_PTB64,
             R"HELP(
-A binary format that stores shots as partially transposed bit-packed data.
+The ptb64 format is a dense SIMD-focused binary format that stores shots as partially transposed bit-packed data.
 
 Each 64 bit word (8 bytes) of the data contains bits from the same measurement result across 64 separate shots. The next
 8 bytes contain bits for the next measurement result from the 64 separate shots. This continues until the 8 bytes
@@ -154,7 +154,7 @@ This format requires the reader to know the number of shots that were taken.
 This format is generally more tedious to work with, but useful for achieving good performance on data processing tasks
 where it is possible to parallelize across shots using SIMD instructions.
 
-Example:
+*Example of producing ptb64 format data using stim's python API:*
 
     >>> import pathlib
     >>> import stim
@@ -208,7 +208,9 @@ def parse_ptb64(data: bytes, bits_per_shot: int, num_shots: int) -> List[List[bo
             "hits",
             SAMPLE_FORMAT_HITS,
             R"HELP(
-A human readable format that stores shots as a comma-separated list of integers indicating which bits were true.
+The hits format is a dense human readable format that stores shots as a comma-separated list of integers.
+Each integer indicates the position of a bit that was True.
+Positions that aren't mentioned had bits that were False.
 
 The data from each shot is terminated by a newline character '\n'. The line is a series of non-negative integers
 separated by commas, with each integer indicating a bit from the shot that was true.
@@ -220,7 +222,7 @@ the text data.
 This format is useful in contexts where the number of set bits is expected to be low, e.g. when sampling detection
 events.
 
-Example:
+*Example of producing hits format data using stim's python API:*
 
     >>> import pathlib
     >>> import stim
@@ -277,7 +279,7 @@ def parse_hits(data: str, bits_per_shot: int) -> List[List[bool]]:
             "r8",
             SAMPLE_FORMAT_R8,
             R"HELP(
-A binary format that stores shots as the length of runs between 1s.
+The r8 format is a sparse binary format that stores shots as a series of lengths of runs between 1s.
 
 Each byte in the data indicates how many False bits there are before the next True bit. The maximum byte value (255) is
 special; it indicates to include 255 False bits but not follow them by a True bit. A shot always has a terminating True
@@ -289,7 +291,7 @@ This format requires the reader to know the number of bits in each shot.
 This format is useful in contexts where the number of set bits is expected to be low, e.g. when sampling detection
 events.
 
-Example:
+*Example of producing r8 format data using stim's python API:*
 
     >>> import pathlib
     >>> import stim
@@ -359,7 +361,10 @@ def parse_r8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             "dets",
             SAMPLE_FORMAT_DETS,
             R"HELP(
-A human readable format that stores shots as lines starting with 'shot' and space-separated prefixed values like 'D5'.
+The dets format is a sparse human readable format that stores shots as lines starting with the word 'shot'
+and then containing space-separated prefixed values like 'D5' and 'L2'. Each value's prefix indicates whether
+it is a measurement (M), a detector (D), or observable frame change (L) and its integer indicates that
+the corresponding measurement/detection-event/frame-change was True instead of False.
 
 The data from each shot is started with the text 'shot' and terminated by a newline character '\n'. The rest of the
 line is a series of integers, separated by spaces and prefixed by a single letter. The prefix letter indicates the type
@@ -369,7 +374,7 @@ value. For example, "D1 D3 L0" indicates detectors 1 and 3 fired, and logical ob
 This format requires the reader to know the number of measurements/detectors/observables in each shot, if the reader
 wants to produce vectors of bits instead of sets.
 
-Example:
+*Example of producing dets format data using stim's python API:*
 
     >>> import pathlib
     >>> import stim

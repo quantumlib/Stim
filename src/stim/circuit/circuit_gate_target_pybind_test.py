@@ -118,3 +118,11 @@ def test_properties():
 def test_repr(value):
     assert eval(repr(value), {'stim': stim}) == value
     assert repr(eval(repr(value), {'stim': stim})) == repr(value)
+
+
+def test_hashable():
+    a = stim.GateTarget(5)
+    b = stim.GateTarget(6)
+    c = stim.GateTarget(5)
+    assert hash(a) == hash(c)
+    assert len({a, b, c}) == 2

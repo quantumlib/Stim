@@ -259,6 +259,36 @@ def _stim_append_measurement_gate(circuit: stim.Circuit, gate: cirq.MeasurementG
     circuit.append_operation("M",  targets)
 
 
+def _stim_append_pauli_measurement_gate(circuit: stim.Circuit, gate: cirq.PauliMeasurementGate, targets: List[int]):
+    obs: cirq.DensePauliString = gate.observable()
+
+    # Convert to stim Pauli product targets.
+    if len(targets) == 0:
+        raise NotImplementedError(f"{len(targets)=} == 0")
+    new_targets = []
+    for t, p in zip(targets, obs.pauli_mask):
+        if p == 1:
+            t = stim.target_x(t)
+        elif p == 2:
+            t = stim.target_y(t)
+        elif p == 3:
+            t = stim.target_z(t)
+        else:
+            raise NotImplementedError(f"{obs=!r}")
+        new_targets.append(t)
+        new_targets.append(stim.target_combiner())
+    new_targets.pop()
+
+    # Inverted result?
+    if obs.coefficient == -1:
+        new_targets[0] |= stim.target_inv(new_targets[0])
+        pass
+    elif obs.coefficient != 1:
+        raise NotImplementedError(f"{obs.coefficient=!r} not in [1, -1]")
+
+    circuit.append_operation("MPP",  new_targets)
+
+
 def _stim_append_dense_pauli_string_gate(c: stim.Circuit, g: cirq.BaseDensePauliString, t: List[int]):
     gates = [None, "X", "Y", "Z"]
     for p, k in zip(g.pauli_mask, t):
@@ -334,6 +364,10 @@ def _c2s_helper(
             continue
 
         # Special case measurement, because of its metadata.
+        if isinstance(gate, cirq.PauliMeasurementGate):
+            key_out.append((gate.key, len(targets)))
+            _stim_append_pauli_measurement_gate(out, gate, targets)
+            continue
         if isinstance(gate, cirq.MeasurementGate):
             key_out.append((gate.key, len(targets)))
             _stim_append_measurement_gate(out, gate, targets)

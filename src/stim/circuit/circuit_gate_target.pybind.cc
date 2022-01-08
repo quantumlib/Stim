@@ -139,6 +139,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
 
     c.def(pybind11::self == pybind11::self, "Determines if two `stim.GateTarget`s are identical.");
     c.def(pybind11::self != pybind11::self, "Determines if two `stim.GateTarget`s are different.");
+    c.def("__hash__",
+          [](const GateTarget &self){
+              return pybind11::hash(pybind11::make_tuple("GateTarget", self.data));
+          });
     c.def(
         "__repr__",
         &GateTarget::repr,
