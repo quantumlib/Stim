@@ -40,7 +40,7 @@ struct CircuitInstruction {
     bool operator!=(const CircuitInstruction &other) const;
 
     std::string repr() const;
-    std::string str();
+    std::string str() const;
 };
 
 #endif
