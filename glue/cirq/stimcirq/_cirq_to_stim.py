@@ -264,7 +264,7 @@ def _stim_append_pauli_measurement_gate(circuit: stim.Circuit, gate: cirq.PauliM
 
     # Convert to stim Pauli product targets.
     if len(targets) == 0:
-        raise NotImplementedError(f"{len(targets)=} == 0")
+        raise NotImplementedError(f"len(targets)={len(targets)} == 0")
     new_targets = []
     for t, p in zip(targets, obs.pauli_mask):
         if p == 1:

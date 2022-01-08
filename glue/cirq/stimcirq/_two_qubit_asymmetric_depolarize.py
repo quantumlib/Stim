@@ -12,9 +12,9 @@ class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
     """
     def __init__(self, probabilities: Sequence[float]):
         if len(probabilities) != 15:
-            raise ValueError(f"len({probabilities=}) != 15")
+            raise ValueError(f"len(probabilities={probabilities}) != 15")
         if sum(probabilities) > 1.000001:
-            raise ValueError(f"sum({probabilities=}) > 1")
+            raise ValueError(f"sum(probabilities={probabilities}) > 1")
         self.probabilities = tuple(probabilities)
 
     def _num_qubits_(self):
