@@ -27,7 +27,7 @@ class SweepPauli(cirq.Gate):
             pauli: The cirq Pauli operation to apply when the bit is True.
         """
         if cirq_sweep_symbol is None:
-            cirq_sweep_symbol = f"sweep_{stim_sweep_bit_index}"
+            cirq_sweep_symbol = f"sweep[{stim_sweep_bit_index}]"
         self.stim_sweep_bit_index = stim_sweep_bit_index
         self.cirq_sweep_symbol = cirq_sweep_symbol
         self.pauli = pauli
