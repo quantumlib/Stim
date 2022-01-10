@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import cirq
 import numpy as np
 import pytest

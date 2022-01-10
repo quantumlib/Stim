@@ -6,6 +6,8 @@ import stim
 
 @cirq.value_equality
 class MeasureAndOrResetGate(cirq.SingleQubitGate):
+    """Handles explaining stim's MX/MY/MZ/MRX/MRY/MRZ/RX/RY/RZ gates to cirq."""
+
     def __init__(self, measure: bool, reset: bool, basis: str, invert_measure: bool, key: str, measure_flip_probability: float = 0):
         self.measure = measure
         self.reset = reset

@@ -67,6 +67,38 @@ def test_gates_converted_using_OneToOneGateHandler(name: str):
     assert_circuits_are_equivalent_and_convert(cirq_original, stim_original)
 
 
+@pytest.mark.parametrize("name", [
+    k
+    for k, v in CircuitTranslationTracker.get_handler_table().items()
+    if isinstance(v, CircuitTranslationTracker.SweepableGateHandler)
+])
+def test_gates_converted_using_SweepableGateHandler(name: str):
+    handler = cast(CircuitTranslationTracker.SweepableGateHandler, CircuitTranslationTracker.get_handler_table()[name])
+    gate = handler.gate
+    n = cirq.num_qubits(gate)
+    qs = cirq.LineQubit.range(n)
+
+    # Without sweeping.
+    cirq_original = cirq.Circuit(gate.on(*qs))
+    stim_targets = " ".join(str(e) for e in range(n))
+    stim_original = stim.Circuit(f"{name} {stim_targets}\nTICK")
+    assert_circuits_are_equivalent_and_convert(cirq_original, stim_original)
+
+    # With sweeping.
+    q = qs[0]
+    cirq_original = cirq.Circuit(stimcirq.SweepPauli(
+        stim_sweep_bit_index=3,
+        cirq_sweep_symbol="sweep[3]",
+        pauli=handler.pauli_gate).on(q))
+    if name.startswith("C") or name.startswith("Z"):
+        stim_original = stim.Circuit(f"{name} sweep[3] 0\nTICK")
+        assert_circuits_are_equivalent_and_convert(cirq_original, stim_original)
+    else:
+        stim_original = stim.Circuit(f"{name} 0 sweep[3]\nTICK")
+        # Round trip loses distinction between ZCX and XCZ.
+        assert stimcirq.stim_circuit_to_cirq_circuit(stim_original) == cirq_original
+
+
 @pytest.mark.parametrize("name,probability", itertools.product([
     k
     for k, v in CircuitTranslationTracker.get_handler_table().items()
@@ -301,3 +333,29 @@ def test_convert_observable():
               Obs5('0','1')
         """)
     assert_circuits_are_equivalent_and_convert(c, s)
+
+
+def test_sweep_target():
+    stim_circuit = stim.Circuit("""
+        CX sweep[2] 0
+        CY sweep[3] 1
+        CZ sweep[5] 2 sweep[7] 3
+        TICK
+    """)
+    a, b, c, d = cirq.LineQubit.range(4)
+    cirq_circuit = cirq.Circuit(
+        stimcirq.SweepPauli(stim_sweep_bit_index=2, cirq_sweep_symbol="sweep[2]", pauli=cirq.X).on(a),
+        stimcirq.SweepPauli(stim_sweep_bit_index=3, cirq_sweep_symbol="sweep[3]", pauli=cirq.Y).on(b),
+        stimcirq.SweepPauli(stim_sweep_bit_index=5, cirq_sweep_symbol="sweep[5]", pauli=cirq.Z).on(c),
+        stimcirq.SweepPauli(stim_sweep_bit_index=7, cirq_sweep_symbol="sweep[7]", pauli=cirq.Z).on(d),
+    )
+    cirq.testing.assert_has_diagram(cirq_circuit, """
+0: ───X^sweep[2]='sweep[2]'───
+
+1: ───Y^sweep[3]='sweep[3]'───
+
+2: ───Z^sweep[5]='sweep[5]'───
+
+3: ───Z^sweep[7]='sweep[7]'───
+        """)
+    assert_circuits_are_equivalent_and_convert(cirq_circuit, stim_circuit)
