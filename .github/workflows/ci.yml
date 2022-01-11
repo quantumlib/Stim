@@ -34,7 +34,7 @@ jobs:
       - run: glue/python/overwrite_dev_version_with_date.sh
       - run: python -m pip install pybind11==2.6.0
       - run: python setup.py sdist
-      - run: python glue/cirq/setup.py sdist
+      - run: cd glue/cirq && python setup.py sdist
       - run: mkdir wheelhouse
       - run: cp dist/* wheelhouse/
       - run: cp glue/cirq/dist/* wheelhouse/
