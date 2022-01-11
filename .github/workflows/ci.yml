@@ -63,6 +63,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: dist
+          path: dist
       - run: echo TEST2
       - uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
