@@ -8,6 +8,8 @@
 # ./glue/python/create_sdists.sh VERSION_STRING
 #########################################################
 
+set -e
+
 if [ -z "$1" ]; then
   echo "Provide a version argument like '1.2.0' or '1.2.dev0'."
   exit 1
