@@ -22,9 +22,18 @@ readonly DEV_VERSION="${MAJOR_MINOR_VERSION}.dev$(date "+%Y%m%d%H%M%S")"
 
 # Overwrite existing versions.
 ls .
+echo STARTING SED
+cat setup.py | wc
+echo STARTING SED
 sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i setup.py
 ls glue
 ls glue/cirq
+echo STARTING SED GLUE CIRQ
+cat glue/cirq/setup.py | wc
+echo STARTING SED GLUE CIRQ
 sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i glue/cirq/setup.py
 ls glue/zx
+echo STARTING SED GLUE ZX
+cat glue/zx/setup.py | wc
+echo STARTING SED GLUE ZX
 sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i glue/zx/setup.py
