@@ -23,19 +23,8 @@ readonly TIMESTAMP="$(date -d @"$(git show -s --format=%ct HEAD)" "+%Y%m%d%H%M%S
 readonly DEV_VERSION="${MAJOR_MINOR_VERSION}.dev${TIMESTAMP}"
 
 # Overwrite existing versions.
-ls .
-echo STARTING SED
-cat setup.py | wc
-echo STARTING SED
-sed -i setup.py -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g"
-ls glue
-ls glue/cirq
-echo STARTING SED GLUE CIRQ
-cat glue/cirq/setup.py | wc
-echo STARTING SED GLUE CIRQ
-sed -i glue/cirq/setup.py -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g"
-ls glue/zx
-echo STARTING SED GLUE ZX
-cat glue/zx/setup.py | wc
-echo STARTING SED GLUE ZX
-sed -i glue/zx/setup.py -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g"
+declare -a setup_file_paths=("setup.py" "glue/cirq/setup.py" "glue/zx/setup.py")
+for setup_file_path in "${setup_file_paths[@]}"; do
+  sed -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" > "${setup_file_path}_tmp" < "${setup_file_path}"
+  mv "${setup_file_path}_tmp" "${setup_file_path}"
+done
