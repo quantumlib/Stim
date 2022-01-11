@@ -7,6 +7,8 @@
 #
 # ./glue/python/overwrite_dev_version_with_date.sh
 #########################################################
+echo STEP 0
+false
 
 set -e
 
