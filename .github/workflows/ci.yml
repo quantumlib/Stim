@@ -32,6 +32,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
       - run: glue/python/overwrite_dev_version_with_date.sh
+      - run: python -m pip install pybind11==2.6.0
       - run: python setup.py sdist
       - run: python glue/cirq/setup.py sdist
       - run: mkdir wheelhouse
@@ -140,7 +141,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py -dev)
       - run: cmake .
       - run: make stim
@@ -156,7 +157,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install pytest
       - run: pytest src
       - run: python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
@@ -169,7 +170,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
@@ -183,7 +184,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/zx
       - run: pip install pytest
       - run: pytest glue/zx
