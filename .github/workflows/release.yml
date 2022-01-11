@@ -1,4 +1,4 @@
-name: ci
+name: release
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
       - main
 jobs:
   upload_dev_release_to_pypi:
-#    needs: run_main
+    needs: build_bazel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
