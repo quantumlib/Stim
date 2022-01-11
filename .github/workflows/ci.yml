@@ -59,7 +59,7 @@ jobs:
     - run: echo DONE
   upload_dev_release_to_pypi:
     needs: run_main
-    if: github.ref == 'refs/pull/187/merge'
+    if: github.ref == 'refs/pull/186/merge'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
