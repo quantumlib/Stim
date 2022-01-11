@@ -8,6 +8,8 @@
 # ./glue/python/create_sdists.sh VERSION_STRING
 #########################################################
 
+set -e
+
 if [ -z "$1" ]; then
   echo "Provide a version argument like '1.2.0' or '1.2.dev0'."
   exit 1
@@ -27,7 +29,7 @@ sed "s/version.*=.*'.*'/version = '$1'/g" -i setup.py
 sed "s/version.*=.*'.*'/version = '$1'/g" -i glue/cirq/setup.py
 sed "s/version.*=.*'.*'/version = '$1'/g" -i glue/zx/setup.py
 
-python -m pip install pybind11
+python -m pip install pybind11==2.6.0
 python setup.py sdist
 cd glue/cirq
 python setup.py sdist
