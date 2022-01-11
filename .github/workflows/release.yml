@@ -24,7 +24,7 @@ on:
       - main
 jobs:
   upload_dev_release_to_pypi:
-    needs: build_wheels
+#    needs: build_wheels
     if: github.ref == 'refs/pull/186/merge'
     runs-on: ubuntu-latest
     steps:
