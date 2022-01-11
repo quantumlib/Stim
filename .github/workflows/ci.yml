@@ -47,7 +47,7 @@ jobs:
           CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
       - uses: actions/upload-artifact@v2
         with:
-          name: distributions
+          name: dist
           path: |
             ./wheelhouse/*.whl
   upload_dev_release_to_pypi:
@@ -60,13 +60,16 @@ jobs:
       - run: echo TEST1
       - uses: actions/download-artifact@v2
         with:
-          name: distributions
+          name: dist
           path: dist
       - run: echo TEST2
-#    - uses: pypa/gh-action-pypi-publish@v1.4.2
-#      with:
-#        user: __token__
-#        password: ${{ secrets.pypi_password }}
+      - uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          verbose: true
+          user: __token__
+          password: |
+            ${{ secrets.pypi_token_stim }}
+            ${{ secrets.pypi_token_stimcirq }}
 #  run_main:
 #    runs-on: ubuntu-latest
 #    steps:
