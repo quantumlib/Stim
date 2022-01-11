@@ -27,15 +27,15 @@ ls .
 echo STARTING SED
 cat setup.py | wc
 echo STARTING SED
-sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i setup.py
+sed -i setup.py -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g"
 ls glue
 ls glue/cirq
 echo STARTING SED GLUE CIRQ
 cat glue/cirq/setup.py | wc
 echo STARTING SED GLUE CIRQ
-sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i glue/cirq/setup.py
+sed -i glue/cirq/setup.py -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g"
 ls glue/zx
 echo STARTING SED GLUE ZX
 cat glue/zx/setup.py | wc
 echo STARTING SED GLUE ZX
-sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i glue/zx/setup.py
+sed -i glue/zx/setup.py -e "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g"
