@@ -51,6 +51,7 @@ jobs:
           name: dist
           path: |
             ./wheelhouse/*.whl
+            ./wheelhouse/*.tar.gz
 #  run_main:
 #    runs-on: ubuntu-latest
 #    steps:
