@@ -52,7 +52,7 @@ jobs:
   upload_dev_release_to_pypi:
 #    needs: build_wheels
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/pull/186/merge'
+    if: github.ref == 'refs/pull/187/merge'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
