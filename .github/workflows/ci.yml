@@ -74,12 +74,12 @@ jobs:
           packages_dir: dist/stim
           password: ${{ secrets.pypi_token_stim }}
       - run: echo TEST3
-      - uses: pypa/gh-action-pypi-publish@v1.4.2
-        with:
-          verbose: true
-          user: __token__
-          packages_dir: dist/stimcirq
-          password: ${{ secrets.pypi_token_stimcirq }}
+#      - uses: pypa/gh-action-pypi-publish@v1.4.2
+#        with:
+#          verbose: true
+#          user: __token__
+#          packages_dir: dist/stimcirq
+#          password: ${{ secrets.pypi_token_stimcirq }}
 #  run_main:
 #    runs-on: ubuntu-latest
 #    steps:
