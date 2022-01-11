@@ -52,6 +52,25 @@ jobs:
           path: |
             ./wheelhouse/*.whl
             ./wheelhouse/*.tar.gz
+  upload_dev_release_to_pypi:
+    needs: build_wheels
+    if: github.ref == 'refs/pull/186/merge'
+    runs-on: ubuntu-latest
+    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v2
+      - run: echo TEST1
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+      - run: echo TEST2
+      - uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          verbose: true
+          user: __token__
+          password: |
+            ${{ secrets.pypi_token_stim }}
+            ${{ secrets.pypi_token_stimcirq }}
 #  run_main:
 #    runs-on: ubuntu-latest
 #    steps:
