@@ -8,16 +8,16 @@ on:
       - main
 jobs:
   upload_dev_release_to_pypi:
-    needs: build_bazel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - run: echo TEST
-#    - uses: actions/download-artifact@v2
-#      with:
-#        name: artifact
-#        path: dist
+      - run: echo TEST1
+      - uses: actions/download-artifact@v2
+        with:
+          name: distributions
+          path: dist
+      - run: echo TEST2
 #    - uses: pypa/gh-action-pypi-publish@v1.4.2
 #      with:
 #        user: __token__

@@ -49,19 +49,19 @@ jobs:
 #            ./wheelhouse/*.whl
 #            ./dist/*.tar.gz
 #            ./glue/cirq/dist/*.tar.gz
-#  run_main:
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v1
-#    - run: cmake .
-#    - run: make stim
-#    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
-  build_bazel:
+  run_main:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: bazelbuild/setup-bazelisk@v1
-    - run: bazel build :all
+    - run: cmake .
+    - run: make stim
+    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
+#  build_bazel:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - uses: bazelbuild/setup-bazelisk@v1
+#    - run: bazel build :all
 #  build_lib:
 #    runs-on: ubuntu-latest
 #    steps:
