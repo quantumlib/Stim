@@ -9,6 +9,7 @@
 #########################################################
 
 set -e
+set -x
 
 # Get to the repo root.
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -20,6 +21,10 @@ readonly MAJOR_MINOR_VERSION="$(cat setup.py | sed -n "s/version.*=.*'\(.*\)\.de
 readonly DEV_VERSION="${MAJOR_MINOR_VERSION}.dev$(date "+%Y%m%d%H%M%S")"
 
 # Overwrite existing versions.
+ls .
 sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i setup.py
+ls glue
+ls glue/cirq
 sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i glue/cirq/setup.py
+ls glue/zx
 sed "s/version.*=.*'.*'/version = '${DEV_VERSION}'/g" -i glue/zx/setup.py
