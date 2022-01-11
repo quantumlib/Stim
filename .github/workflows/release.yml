@@ -1,13 +1,12 @@
 name: release
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["ci"]
+#    branches:
+#      - main
 jobs:
   upload_dev_release_to_pypi:
+    needs: build_bazel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
