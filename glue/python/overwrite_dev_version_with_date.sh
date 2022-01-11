@@ -9,7 +9,6 @@
 #########################################################
 
 set -e
-set -x
 
 # Get to the repo root.
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -19,7 +18,7 @@ cd "$(git rev-parse --show-toplevel)"
 # (Requires the existing version to have a 'dev' suffix.)
 # (Uses the timestamp of the HEAD commit, to ensure consistency when run multiple times.)
 readonly MAJOR_MINOR_VERSION="$(cat setup.py | sed -n "s/version.*=.*'\(.*\)\.dev.*'/\1/p")"
-readonly TIMESTAMP="$(date -d @"$(git show -s --format=%ct HEAD)" "+%Y%m%d%H%M%S")"
+readonly TIMESTAMP="$(git show -s --format=%ct HEAD)"
 readonly DEV_VERSION="${MAJOR_MINOR_VERSION}.dev${TIMESTAMP}"
 
 # Overwrite existing versions.
