@@ -8,9 +8,8 @@ on:
       - main
 jobs:
   upload_dev_release_to_pypi:
-    needs: run_main
+#    needs: run_main
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/pull/187/merge'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
