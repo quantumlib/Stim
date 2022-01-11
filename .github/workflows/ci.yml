@@ -23,171 +23,171 @@ on:
     branches:
       - main
 jobs:
-  build_wheels:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-2019, macOS-10.15]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - run: python glue/python/overwrite_dev_version_with_date.py
-      - run: python -m pip install pybind11==2.6.0
-      - run: python setup.py sdist
-      - run: cd glue/cirq && python setup.py sdist
-      - run: python -m pip install cibuildwheel==2.3.0
-      - run: python -m cibuildwheel --output-dir wheelhouse
-        env:
-#          CIBW_SKIP: "cp27-* cp35-* pp* cp310-win32 cp310-manylinux_i686 *-musllinux_*"
-          CIBW_SKIP: "cp27-* cp35-* cp36-* cp37-* cp38-* cp39-* pp* cp310-win32 cp310-manylinux_i686 *-musllinux_*"
-          CIBW_TEST_REQUIRES: cirq-core pytest
-          CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
-      - uses: actions/upload-artifact@v2
-        with:
-          name: distributions
-          path: |
-            ./wheelhouse/*.whl
-            ./dist/*.tar.gz
-            ./glue/cirq/dist/*.tar.gz
-  run_main:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - run: cmake .
-    - run: make stim
-    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
+#  build_wheels:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ubuntu-latest, windows-2019, macOS-10.15]
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v2
+#      - run: python glue/python/overwrite_dev_version_with_date.py
+#      - run: python -m pip install pybind11==2.6.0
+#      - run: python setup.py sdist
+#      - run: cd glue/cirq && python setup.py sdist
+#      - run: python -m pip install cibuildwheel==2.3.0
+#      - run: python -m cibuildwheel --output-dir wheelhouse
+#        env:
+##          CIBW_SKIP: "cp27-* cp35-* pp* cp310-win32 cp310-manylinux_i686 *-musllinux_*"
+#          CIBW_SKIP: "cp27-* cp35-* cp36-* cp37-* cp38-* cp39-* pp* cp310-win32 cp310-manylinux_i686 *-musllinux_*"
+#          CIBW_TEST_REQUIRES: cirq-core pytest
+#          CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: distributions
+#          path: |
+#            ./wheelhouse/*.whl
+#            ./dist/*.tar.gz
+#            ./glue/cirq/dist/*.tar.gz
+#  run_main:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - run: cmake .
+#    - run: make stim
+#    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
   build_bazel:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - uses: bazelbuild/setup-bazelisk@v1
     - run: bazel build :all
-  build_lib:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - run: cmake .
-    - run: make libstim
-    - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
-    - run: g++ test.cc out/libstim.a -I src
-    - run: ./a.out test
-  benchmark_windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: microsoft/setup-msbuild@v1.0.2
-      - run: cmake .
-      - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
-      - run: msbuild_out/stim_benchmark.exe
-  benchmark:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        simd_width: [64, 128, 256]
-    steps:
-    - uses: actions/checkout@v1
-    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_benchmark
-    - run: out/stim_benchmark
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        simd_width: [64, 128, 256]
-    steps:
-    - uses: actions/checkout@v1
-    - run: |
-        cd ..
-        git clone https://github.com/google/googletest.git -b release-1.10.0
-        mkdir googletest/build && cd googletest/build
-        cmake .. -DBUILD_GMOCK=OFF
-        make
-        sudo make install
-    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_test
-    - run: out/stim_test
-  test_o3:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - run: |
-        cd ..
-        git clone https://github.com/google/googletest.git -b release-1.10.0
-        mkdir googletest/build && cd googletest/build
-        cmake .. -DBUILD_GMOCK=OFF
-        make
-        sudo make install
-    - run: cmake . -DSIMD_WIDTH=256
-    - run: make stim_test_o3
-    - run: out/stim_test_o3
-  test_generated_docs_are_fresh:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-      - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py -dev)
-      - run: cmake .
-      - run: make stim
-      - run: diff doc/gates.md <(out/stim help gates_markdown)
-      - run: diff doc/result_formats.md <(out/stim help formats_markdown)
-      - run: diff doc/usage_command_line.md <(out/stim help flags_markdown)
-  test_pybind:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-      - run: pip install pytest
-      - run: pytest src
-      - run: python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
-  test_stimcirq:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-      - run: pip install -e glue/cirq
-      - run: pip install pytest
-      - run: pytest glue/cirq
-      - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
-  test_stimzx:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-      - run: pip install -e glue/zx
-      - run: pip install pytest
-      - run: pytest glue/zx
-      - run: python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
-  test_stimjs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: mymindstorm/setup-emsdk@v9
-        with:
-          version: 2.0.18
-          actions-cache-folder: 'emsdk-cache'
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12.x
-      - run: npm install
-      - run: bash glue/javascript/build_wasm.sh
-      - run: node puppeteer_run_tests.js
+#  build_lib:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - run: cmake .
+#    - run: make libstim
+#    - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
+#    - run: g++ test.cc out/libstim.a -I src
+#    - run: ./a.out test
+#  benchmark_windows:
+#    runs-on: windows-latest
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: microsoft/setup-msbuild@v1.0.2
+#      - run: cmake .
+#      - run: MSBuild.exe stim_benchmark.vcxproj /p:Configuration=Release /p:OutDir=msbuild_out /p:O=2
+#      - run: msbuild_out/stim_benchmark.exe
+#  benchmark:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        simd_width: [64, 128, 256]
+#    steps:
+#    - uses: actions/checkout@v1
+#    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
+#    - run: make stim_benchmark
+#    - run: out/stim_benchmark
+#  test:
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        simd_width: [64, 128, 256]
+#    steps:
+#    - uses: actions/checkout@v1
+#    - run: |
+#        cd ..
+#        git clone https://github.com/google/googletest.git -b release-1.10.0
+#        mkdir googletest/build && cd googletest/build
+#        cmake .. -DBUILD_GMOCK=OFF
+#        make
+#        sudo make install
+#    - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
+#    - run: make stim_test
+#    - run: out/stim_test
+#  test_o3:
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v1
+#    - run: |
+#        cd ..
+#        git clone https://github.com/google/googletest.git -b release-1.10.0
+#        mkdir googletest/build && cd googletest/build
+#        cmake .. -DBUILD_GMOCK=OFF
+#        make
+#        sudo make install
+#    - run: cmake . -DSIMD_WIDTH=256
+#    - run: make stim_test_o3
+#    - run: out/stim_test_o3
+#  test_generated_docs_are_fresh:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: '3.6'
+#          architecture: 'x64'
+#      - run: pip install -e .
+#      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+#      - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py -dev)
+#      - run: cmake .
+#      - run: make stim
+#      - run: diff doc/gates.md <(out/stim help gates_markdown)
+#      - run: diff doc/result_formats.md <(out/stim help formats_markdown)
+#      - run: diff doc/usage_command_line.md <(out/stim help flags_markdown)
+#  test_pybind:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: '3.6'
+#          architecture: 'x64'
+#      - run: pip install -e .
+#      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+#      - run: pip install pytest
+#      - run: pytest src
+#      - run: python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
+#  test_stimcirq:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: '3.6'
+#          architecture: 'x64'
+#      - run: pip install -e .
+#      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+#      - run: pip install -e glue/cirq
+#      - run: pip install pytest
+#      - run: pytest glue/cirq
+#      - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
+#  test_stimzx:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: '3.6'
+#          architecture: 'x64'
+#      - run: pip install -e .
+#      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+#      - run: pip install -e glue/zx
+#      - run: pip install pytest
+#      - run: pytest glue/zx
+#      - run: python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
+#  test_stimjs:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: mymindstorm/setup-emsdk@v9
+#        with:
+#          version: 2.0.18
+#          actions-cache-folder: 'emsdk-cache'
+#      - uses: actions/setup-node@v1
+#        with:
+#          node-version: 12.x
+#      - run: npm install
+#      - run: bash glue/javascript/build_wasm.sh
+#      - run: node puppeteer_run_tests.js
