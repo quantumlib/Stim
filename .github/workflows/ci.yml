@@ -53,9 +53,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - run: cmake .
-    - run: make stim
-    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
+#    - run: cmake .
+#    - run: make stim
+#    - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
+    - run: echo DONE
+  upload_dev_release_to_pypi:
+    needs: run_main
+    if: github.ref == 'refs/pull/187/merge'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: echo TEST1
+      - uses: actions/download-artifact@v2
+        with:
+          name: distributions
+          path: dist
+      - run: echo TEST2
+#    - uses: pypa/gh-action-pypi-publish@v1.4.2
+#      with:
+#        user: __token__
+#        password: ${{ secrets.pypi_password }}
 #  build_bazel:
 #    runs-on: ubuntu-latest
 #    steps:
