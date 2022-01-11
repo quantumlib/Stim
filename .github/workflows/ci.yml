@@ -49,11 +49,14 @@ jobs:
             ./wheelhouse/*.whl
             ./dist/*.tar.gz
             ./glue/cirq/dist/*.tar.gz
-#  upload_dev_release_to_pypi:
+  upload_dev_release_to_pypi:
 #    needs: build_wheels
-#    runs-on: ubuntu-latest
-#    if: github.event_name == 'release' && github.event.action == 'published'
-#    steps:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/pull/186/merge'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: echo TEST
 #    - uses: actions/download-artifact@v2
 #      with:
 #        name: artifact
