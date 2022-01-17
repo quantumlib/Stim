@@ -579,6 +579,20 @@ def test_approx_equals():
     assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
 
 
+def test_append_extended_cases():
+    c = stim.Circuit()
+    c.append("H", 5)
+    c.append("CNOT", [0, 1])
+    c.append("H", c[0].targets_copy()[0])
+    c.append("X", (e + 1 for e in range(5)))
+    assert c == stim.Circuit("""
+        H 5
+        CNOT 0 1
+        H 5
+        X 1 2 3 4 5
+    """)
+
+
 def test_pickle():
     import pickle
 

@@ -16,6 +16,17 @@ class MeasureAndOrResetGate(cirq.SingleQubitGate):
         self.key = key
         self.measure_flip_probability = measure_flip_probability
 
+    def _circuit_diagram_info_(self, args: cirq.CircuitDiagramInfoArgs) -> str:
+        out = ''
+        if self.invert_measure:
+            out += '!'
+        if self.measure:
+            out += 'M'
+        if self.reset:
+            out += 'R'
+        out += self.basis
+        return out
+
     def resolve(self,
                 target: cirq.Qid,
                 ) -> cirq.Operation:

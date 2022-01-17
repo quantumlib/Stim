@@ -260,7 +260,7 @@ void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const 
     d.resize(d.size() - skip);
 
     // Measurement error.
-    if (!dat.args.empty()) {
+    if (!dat.args.empty() && dat.args[0] > 0) {
         add_error(dat.args[0], d);
     }
 }
@@ -1413,7 +1413,7 @@ void ErrorAnalyzer::MPP(const OperationData &target_data) {
             for (size_t k = meas.targets.size(); k--;) {
                 reversed_measure_targets.push_back(meas.targets[k]);
             }
-            MZ({meas.args, reversed_measure_targets});
+            MZ_with_context({meas.args, reversed_measure_targets}, "a Pauli product measurement (MPP)");
             ZCX(cnot);
             H_YZ(h_yz);
             H_XZ(h_xz);

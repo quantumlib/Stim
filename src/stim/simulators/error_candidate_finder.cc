@@ -53,7 +53,7 @@ void ErrorCandidateFinder::err_atom(
     assert(error_analyzer.error_class_probabilities.empty());
     (error_analyzer.*effect.gate->reverse_error_analyzer_function)(effect.target_data);
     if (error_analyzer.error_class_probabilities.empty()) {
-        /// Maybe there were no detectors or observables nearby?
+        /// Maybe there were no detectors or observables nearby? Or the noise probability was zero?
         return;
     }
 
@@ -162,7 +162,7 @@ void ErrorCandidateFinder::err_m(const Operation &op, uint32_t obs_mask) {
     size_t end = t.size();
     while (end > 0) {
         size_t start = end - 1;
-        while (t[start].is_combiner()) {
+        while (start > 0 && t[start - 1].is_combiner()) {
             start -= std::min(start, size_t{2});
         }
 
@@ -174,6 +174,7 @@ void ErrorCandidateFinder::err_m(const Operation &op, uint32_t obs_mask) {
         loc.instruction_target_start = start;
         loc.instruction_target_end = end;
         loc.id_of_flipped_measurement = total_measurements_in_circuit - error_analyzer.scheduled_measurement_time - 1;
+
         err_atom({op.gate, {a, slice}}, error_terms);
         loc.id_of_flipped_measurement = UINT64_MAX;
 
@@ -225,6 +226,7 @@ void ErrorCandidateFinder::rev_process_instruction(const Operation &op) {
 void ErrorCandidateFinder::rev_process_circuit(uint64_t reps, const Circuit &block) {
     loc.instruction_indices.push_back(0);
     loc.iteration_indices.push_back(0);
+    loc.id_of_flipped_measurement = UINT64_MAX;
     for (size_t rep = reps; rep--;) {
         loc.iteration_indices.back() = rep;
         for (size_t k = block.operations.size(); k--;) {
