@@ -89,7 +89,7 @@ Note that the script actually overwrites the version strings in various `setup.p
 Ensure python environment dependencies are present:
 
 ```bash
-pip install pybind11
+pip install pybind11==2.6.0
 ```
 
 Create a source distribution:
