@@ -14,6 +14,7 @@
     - [`stim.Circuit.__repr__`](#stim.Circuit.__repr__)
     - [`stim.Circuit.__rmul__`](#stim.Circuit.__rmul__)
     - [`stim.Circuit.__str__`](#stim.Circuit.__str__)
+    - [`stim.Circuit.append`](#stim.Circuit.append)
     - [`stim.Circuit.append_from_stim_program_text`](#stim.Circuit.append_from_stim_program_text)
     - [`stim.Circuit.append_operation`](#stim.Circuit.append_operation)
     - [`stim.Circuit.approx_equals`](#stim.Circuit.approx_equals)
@@ -238,8 +239,8 @@
 > Examples:
 >     >>> import stim
 >     >>> c = stim.Circuit()
->     >>> c.append_operation("X", [0])
->     >>> c.append_operation("M", [0])
+>     >>> c.append("X", 0)
+>     >>> c.append("M", 0)
 >     >>> c.compile_sampler().sample(shots=1)
 >     array([[1]], dtype=uint8)
 > 
@@ -802,6 +803,53 @@
 > Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit.
 > ```
 
+### `stim.Circuit.append(self, name: object, targets: object = (), arg: object = None) -> None`<a name="stim.Circuit.append"></a>
+> ```
+> Appends an operation into the circuit.
+> 
+> Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
+> 
+> Examples:
+>     >>> import stim
+>     >>> c = stim.Circuit()
+>     >>> c.append("X", 0)
+>     >>> c.append("H", [0, 1])
+>     >>> c.append("M", [0, stim.target_inv(1)])
+>     >>> c.append("CNOT", [stim.target_rec(-1), 0])
+>     >>> c.append("X_ERROR", [0], 0.125)
+>     >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+>     >>> print(repr(c))
+>     stim.Circuit('''
+>         X 0
+>         H 0 1
+>         M 0 !1
+>         CX rec[-1] 0
+>         X_ERROR(0.125) 0
+>         E(0.25) X0 Y2
+>     ''')
+> 
+> Args:
+>     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
+> 
+>         This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
+>         results in the instruction or block being appended to the circuit. The other arguments (targets and
+>         arg) can't be specified when doing so.
+> 
+>         (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
+>     targets: The objects operated on by the gate. This can be either a single target or an iterable of
+>         multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
+>         stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
+>         measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
+>     arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
+>         list of doubles parameterizing the gate. Different gates take different parens arguments. For
+>         example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
+>         PAULI_CHANNEL_1 takes three disjoint probabilities.
+> 
+>         Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
+>         `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
+>         that take exactly one argument.
+> ```
+
 ### `stim.Circuit.append_from_stim_program_text(self, stim_program_text: str) -> None`<a name="stim.Circuit.append_from_stim_program_text"></a>
 > ```
 > Appends operations described by a STIM format program into the circuit.
@@ -826,19 +874,21 @@
 >     text: The STIM program text containing the circuit operations to append.
 > ```
 
-### `stim.Circuit.append_operation(self, name: object, targets: List[object] = (), arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
+### `stim.Circuit.append_operation(self, name: object, targets: object = (), arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
 > ```
 > Appends an operation into the circuit.
+> 
+> Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
 > 
 > Examples:
 >     >>> import stim
 >     >>> c = stim.Circuit()
->     >>> c.append_operation("X", [0])
->     >>> c.append_operation("H", [0, 1])
->     >>> c.append_operation("M", [0, stim.target_inv(1)])
->     >>> c.append_operation("CNOT", [stim.target_rec(-1), 0])
->     >>> c.append_operation("X_ERROR", [0], 0.125)
->     >>> c.append_operation("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+>     >>> c.append("X", 0)
+>     >>> c.append("H", [0, 1])
+>     >>> c.append("M", [0, stim.target_inv(1)])
+>     >>> c.append("CNOT", [stim.target_rec(-1), 0])
+>     >>> c.append("X_ERROR", [0], 0.125)
+>     >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
 >     >>> print(repr(c))
 >     stim.Circuit('''
 >         X 0
@@ -857,11 +907,18 @@
 >         arg) can't be specified when doing so.
 > 
 >         (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
->     targets: The gate targets. Gates implicitly broadcast over their targets.
->     arg: A double or list of doubles parameterizing the gate. Different gates take different arguments. For
->         example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and PAULI_CHANNEL_1
->         takes three disjoint probabilities. For backwards compatibility reasons, defaults to (0,) for gates
->         that take exactly one argument. Otherwise defaults to no arguments.
+>     targets: The objects operated on by the gate. This can be either a single target or an iterable of
+>         multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
+>         stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
+>         measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
+>     arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
+>         list of doubles parameterizing the gate. Different gates take different parens arguments. For
+>         example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
+>         PAULI_CHANNEL_1 takes three disjoint probabilities.
+> 
+>         Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
+>         `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
+>         that take exactly one argument.
 > ```
 
 ### `stim.Circuit.approx_equals(self, other: object, *, atol: float) -> bool`<a name="stim.Circuit.approx_equals"></a>

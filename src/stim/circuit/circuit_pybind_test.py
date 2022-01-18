@@ -579,6 +579,20 @@ def test_approx_equals():
     assert not base.approx_equals(stim.PauliString("XYZ"), atol=999)
 
 
+def test_append_extended_cases():
+    c = stim.Circuit()
+    c.append("H", 5)
+    c.append("CNOT", [0, 1])
+    c.append("H", c[0].targets_copy()[0])
+    c.append("X", (e + 1 for e in range(5)))
+    assert c == stim.Circuit("""
+        H 5
+        CNOT 0 1
+        H 5
+        X 1 2 3 4 5
+    """)
+
+
 def test_pickle():
     import pickle
 
@@ -591,3 +605,16 @@ def test_pickle():
     """)
     a = pickle.dumps(t)
     assert pickle.loads(a) == t
+
+
+def test_backwards_compatibility_vs_safety_append_vs_append_operation():
+    c = stim.Circuit()
+    with pytest.raises(ValueError, match="takes 1 parens argument"):
+        c.append("X_ERROR", [5])
+    with pytest.raises(ValueError, match="takes 1 parens argument"):
+        c.append("OBSERVABLE_INCLUDE", [])
+    assert c == stim.Circuit()
+    c.append_operation("X_ERROR", [5])
+    assert c == stim.Circuit("X_ERROR(0) 5")
+    c.append_operation("Z_ERROR", [5], 0.25)
+    assert c == stim.Circuit("X_ERROR(0) 5\nZ_ERROR(0.25) 5")
