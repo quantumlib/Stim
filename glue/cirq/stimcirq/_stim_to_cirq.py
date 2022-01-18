@@ -107,7 +107,7 @@ class CircuitTranslationTracker:
         self.process_gate_instruction(TwoQubitAsymmetricDepolarizingChannel(args), instruction)
 
     def process_repeat_block(self, block: stim.CircuitRepeatBlock):
-        if self.flatten:
+        if self.flatten or block.repeat_count == 1:
             self.process_circuit(block.repeat_count, block.body_copy())
             return
 

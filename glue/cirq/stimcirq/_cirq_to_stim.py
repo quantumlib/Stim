@@ -359,7 +359,7 @@ class CirqToStimHelper:
         self.flatten = False
 
     def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation) -> None:
-        if self.flatten:
+        if self.flatten or op.repetitions == 1:
             self.process_operations(cirq.decompose_once(op))
             return
 
