@@ -122,13 +122,13 @@ void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, Cons
     if (gate.arg_count == ARG_COUNT_SYGIL_ZERO_OR_ONE) {
         if (args.size() > 1) {
             throw std::invalid_argument(
-                "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " arguments (" +
-                comma_sep(args).str() + ") but takes 0 or 1 arguments.");
+                "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " parens arguments (" +
+                comma_sep(args).str() + ") but takes 0 or 1 parens arguments.");
         }
     } else if (args.size() != gate.arg_count && gate.arg_count != ARG_COUNT_SYGIL_ANY) {
         throw std::invalid_argument(
-            "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " arguments (" +
-            comma_sep(args).str() + ") but takes " + std::to_string(gate.arg_count) + " arguments.");
+            "Gate " + std::string(gate.name) + " was given " + std::to_string(args.size()) + " parens arguments (" +
+            comma_sep(args).str() + ") but takes " + std::to_string(gate.arg_count) + " parens arguments.");
     }
 
     if ((gate.flags & GATE_TAKES_NO_TARGETS) && !targets.empty()) {

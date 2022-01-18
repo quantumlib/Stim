@@ -19,7 +19,7 @@
 
 using namespace stim;
 
-GateTarget obj_to_gate_target(const pybind11::object &obj) {
+GateTarget handle_to_gate_target(const pybind11::handle &obj) {
     try {
         return pybind11::cast<GateTarget>(obj);
     } catch (const pybind11::cast_error &ex) {
@@ -30,6 +30,10 @@ GateTarget obj_to_gate_target(const pybind11::object &obj) {
     }
     throw std::invalid_argument(
         "target argument wasn't a qubit index, a result from a `stim.target_*` method, or a `stim.GateTarget`.");
+}
+
+GateTarget obj_to_gate_target(const pybind11::object &obj) {
+    return handle_to_gate_target(obj);
 }
 
 void pybind_circuit_gate_target(pybind11::module &m) {

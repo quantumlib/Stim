@@ -40,6 +40,86 @@ std::string circuit_repr(const Circuit &self) {
     return ss.str();
 }
 
+void circuit_append(
+        Circuit &self,
+        const pybind11::object &obj,
+        const pybind11::object &targets,
+        pybind11::object arg,
+        bool backwards_compat) {
+    // Extract single target or list of targets.
+    std::vector<uint32_t> raw_targets;
+    try {
+        raw_targets.push_back(obj_to_gate_target(targets).data);
+    } catch (const std::invalid_argument &ex) {
+        for (const auto &t : targets) {
+            raw_targets.push_back(handle_to_gate_target(t).data);
+        }
+    }
+
+    if (pybind11::isinstance<pybind11::str>(obj)) {
+        const std::string &gate_name = pybind11::cast<std::string>(obj);
+
+        // Maintain backwards compatibility to when there was always exactly one argument.
+        if (arg.is(pybind11::none())) {
+            if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
+                arg = pybind11::make_tuple(0.0);
+            } else {
+                arg = pybind11::make_tuple();
+            }
+        }
+
+        // Extract single argument or list of arguments.
+        try {
+            auto d = pybind11::cast<double>(arg);
+            self.append_op(gate_name, raw_targets, d);
+            return;
+        } catch (const pybind11::cast_error &ex) {
+        }
+        try {
+            auto args = pybind11::cast<std::vector<double>>(arg);
+            self.append_op(gate_name, raw_targets, args);
+            return;
+        } catch (const pybind11::cast_error &ex) {
+        }
+        throw std::invalid_argument("Arg must be a double or sequence of doubles.");
+    } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
+        if (!raw_targets.empty() || !arg.is_none()) {
+            throw std::invalid_argument(
+                "Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+        }
+
+        const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
+        self.append_op(instruction.gate.name, instruction.raw_targets(), instruction.gate_args);
+    } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
+        if (!raw_targets.empty() || !arg.is_none()) {
+            throw std::invalid_argument(
+                "Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+        }
+
+        const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
+        self.append_repeat_block(block.repeat_count, block.body);
+    } else {
+        throw std::invalid_argument(
+            "First argument of append_operation must be a str (a gate name), "
+            "a stim.CircuitInstruction, "
+            "or a stim.CircuitRepeatBlock");
+    }
+}
+void circuit_append_backwards_compat(
+        Circuit &self,
+        const pybind11::object &obj,
+        const pybind11::object &targets,
+        pybind11::object arg) {
+    circuit_append(self, obj, targets, arg, true);
+}
+void circuit_append_strict(
+        Circuit &self,
+        const pybind11::object &obj,
+        const pybind11::object &targets,
+        pybind11::object arg) {
+    circuit_append(self, obj, targets, arg, false);
+}
+
 void pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
         m,
@@ -51,8 +131,8 @@ void pybind_circuit(pybind11::module &m) {
             Examples:
                 >>> import stim
                 >>> c = stim.Circuit()
-                >>> c.append_operation("X", [0])
-                >>> c.append_operation("M", [0])
+                >>> c.append("X", 0)
+                >>> c.append("M", 0)
                 >>> c.compile_sampler().sample(shots=1)
                 array([[1]], dtype=uint8)
 
@@ -579,101 +659,60 @@ void pybind_circuit(pybind11::module &m) {
         )DOC")
             .data());
 
-    c.def(
-        "append_operation",
-        [](Circuit &self,
-           const pybind11::object &obj,
-           const std::vector<pybind11::object> &targets,
-           pybind11::object arg) {
-            if (pybind11::isinstance<pybind11::str>(obj)) {
-                const std::string &gate_name = pybind11::cast<std::string>(obj);
-                if (arg.is(pybind11::none())) {
-                    if (GATE_DATA.at(gate_name).arg_count == 1) {
-                        arg = pybind11::make_tuple(0.0);
-                    } else {
-                        arg = pybind11::make_tuple();
-                    }
-                }
-                std::vector<uint32_t> raw_targets;
-                for (const auto &t : targets) {
-                    raw_targets.push_back(obj_to_gate_target(t).data);
-                }
-                try {
-                    auto d = pybind11::cast<double>(arg);
-                    self.append_op(gate_name, raw_targets, d);
-                    return;
-                } catch (const pybind11::cast_error &ex) {
-                }
-                try {
-                    auto args = pybind11::cast<std::vector<double>>(arg);
-                    self.append_op(gate_name, raw_targets, args);
-                    return;
-                } catch (const pybind11::cast_error &ex) {
-                }
-                throw std::invalid_argument("Arg must be a double or sequence of doubles.");
-            } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
-                if (!targets.empty() || !arg.is_none()) {
-                    throw std::invalid_argument(
-                        "Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
-                }
+    for (size_t k = 0; k < 2; k++) {
+        c.def(
+            k == 0 ? "append_operation" : "append",
+            k == 0 ? &circuit_append_backwards_compat : &circuit_append_strict,
+            pybind11::arg("name"),
+            pybind11::arg("targets") = pybind11::make_tuple(),
+            pybind11::arg("arg") = pybind11::none(),
+            clean_doc_string(u8R"DOC(
+                Appends an operation into the circuit.
 
-                const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
-                self.append_op(instruction.gate.name, instruction.raw_targets(), instruction.gate_args);
-            } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
-                if (!targets.empty() || !arg.is_none()) {
-                    throw std::invalid_argument(
-                        "Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
-                }
+                Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
 
-                const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
-                self.append_repeat_block(block.repeat_count, block.body);
-            } else {
-                throw std::invalid_argument(
-                    "First argument of append_operation must be a str (a gate name), "
-                    "a stim.CircuitInstruction, "
-                    "or a stim.CircuitRepeatBlock");
-            }
-        },
-        pybind11::arg("name"),
-        pybind11::arg("targets") = pybind11::make_tuple(),
-        pybind11::arg("arg") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
-            Appends an operation into the circuit.
+                Examples:
+                    >>> import stim
+                    >>> c = stim.Circuit()
+                    >>> c.append("X", 0)
+                    >>> c.append("H", [0, 1])
+                    >>> c.append("M", [0, stim.target_inv(1)])
+                    >>> c.append("CNOT", [stim.target_rec(-1), 0])
+                    >>> c.append("X_ERROR", [0], 0.125)
+                    >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
+                    >>> print(repr(c))
+                    stim.Circuit('''
+                        X 0
+                        H 0 1
+                        M 0 !1
+                        CX rec[-1] 0
+                        X_ERROR(0.125) 0
+                        E(0.25) X0 Y2
+                    ''')
 
-            Examples:
-                >>> import stim
-                >>> c = stim.Circuit()
-                >>> c.append_operation("X", [0])
-                >>> c.append_operation("H", [0, 1])
-                >>> c.append_operation("M", [0, stim.target_inv(1)])
-                >>> c.append_operation("CNOT", [stim.target_rec(-1), 0])
-                >>> c.append_operation("X_ERROR", [0], 0.125)
-                >>> c.append_operation("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
-                >>> print(repr(c))
-                stim.Circuit('''
-                    X 0
-                    H 0 1
-                    M 0 !1
-                    CX rec[-1] 0
-                    X_ERROR(0.125) 0
-                    E(0.25) X0 Y2
-                ''')
+                Args:
+                    name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
 
-            Args:
-                name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
+                        This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
+                        results in the instruction or block being appended to the circuit. The other arguments (targets and
+                        arg) can't be specified when doing so.
 
-                    This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
-                    results in the instruction or block being appended to the circuit. The other arguments (targets and
-                    arg) can't be specified when doing so.
+                        (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
+                    targets: The objects operated on by the gate. This can be either a single target or an iterable of
+                        multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
+                        stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
+                        measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
+                    arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
+                        list of doubles parameterizing the gate. Different gates take different parens arguments. For
+                        example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
+                        PAULI_CHANNEL_1 takes three disjoint probabilities.
 
-                    (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
-                targets: The gate targets. Gates implicitly broadcast over their targets.
-                arg: A double or list of doubles parameterizing the gate. Different gates take different arguments. For
-                    example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and PAULI_CHANNEL_1
-                    takes three disjoint probabilities. For backwards compatibility reasons, defaults to (0,) for gates
-                    that take exactly one argument. Otherwise defaults to no arguments.
-        )DOC")
-            .data());
+                        Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
+                        `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
+                        that take exactly one argument.
+            )DOC")
+                .data());
+    }
 
     c.def(
         "append_from_stim_program_text",
@@ -960,11 +999,11 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "detector_error_model",
-        [](Circuit &self,
+        [](const Circuit &self,
            bool decompose_errors,
            bool flatten_loops,
            bool allow_gauge_detectors,
-           double approximate_disjoint_errors) {
+           double approximate_disjoint_errors) -> DetectorErrorModel {
             return ErrorAnalyzer::circuit_to_detector_error_model(
                 self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors);
         },
