@@ -94,7 +94,7 @@ def cirq_circuit_to_stim_circuit(
 
 
 def cirq_circuit_to_stim_data(
-    circuit: cirq.Circuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool
+    circuit: cirq.Circuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool = False,
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:
