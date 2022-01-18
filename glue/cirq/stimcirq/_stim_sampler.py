@@ -23,7 +23,7 @@ class StimSampler(cirq.Sampler):
         for param_resolver in cirq.to_resolvers(params):
             # Request samples from stim.
             instance = cirq.resolve_parameters(program, param_resolver)
-            converted_circuit, key_ranges = cirq_circuit_to_stim_data(instance)
+            converted_circuit, key_ranges = cirq_circuit_to_stim_data(instance, flatten=True)
             samples = converted_circuit.compile_sampler().sample(repetitions)
 
             # Convert unlabelled samples into keyed results.

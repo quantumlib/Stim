@@ -90,17 +90,18 @@ def cirq_circuit_to_stim_circuit(
 
             edit_circuit.append_operation("H", targets)
     """
-    return cirq_circuit_to_stim_data(circuit, q2i=qubit_to_index_dict)[0]
+    return cirq_circuit_to_stim_data(circuit, q2i=qubit_to_index_dict, flatten=False)[0]
 
 
 def cirq_circuit_to_stim_data(
-    circuit: cirq.Circuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None
+    circuit: cirq.Circuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:
         q2i = {q: i for i, q in enumerate(sorted(circuit.all_qubits()))}
     helper = CirqToStimHelper()
     helper.q2i = q2i
+    helper.flatten = flatten
 
     for q in sorted(circuit.all_qubits()):
         if isinstance(q, cirq.LineQubit):
