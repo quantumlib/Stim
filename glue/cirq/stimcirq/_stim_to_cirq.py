@@ -8,6 +8,7 @@ import stim
 from ._det_annotation import DetAnnotation
 from ._measure_and_or_reset_gate import MeasureAndOrResetGate
 from ._obs_annotation import CumulativeObservableAnnotation
+from ._shift_coords_annotation import ShiftCoordsAnnotation
 from ._sweep_pauli import SweepPauli
 from ._two_qubit_asymmetric_depolarize import TwoQubitAsymmetricDepolarizingChannel
 
@@ -29,12 +30,14 @@ def _stim_targets_to_dense_pauli_string(targets: List[stim.GateTarget]) -> cirq.
 
 
 class CircuitTranslationTracker:
-    def __init__(self):
+    def __init__(self, flatten: bool):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
         self.origin: DefaultDict[float] = collections.defaultdict(float)
         self.num_measurements_seen = 0
         self.full_circuit = cirq.Circuit()
         self.tick_circuit = cirq.Circuit()
+        self.flatten = flatten
+        self.have_seen_loop = False
 
     def get_next_measure_id(self) -> int:
         self.num_measurements_seen += 1
@@ -70,6 +73,27 @@ class CircuitTranslationTracker:
         self.process_gate_instruction(
             TwoQubitAsymmetricDepolarizingChannel(args),
             instruction)
+
+    def process_repeat_block(self, block: stim.CircuitRepeatBlock):
+        if self.flatten:
+            self.process_circuit(block.repeat_count, block.body_copy())
+            return
+
+        self.have_seen_loop = True
+        child = CircuitTranslationTracker(flatten=self.flatten)
+        child.origin = self.origin.copy()
+        child.num_measurements_seen = self.num_measurements_seen
+        child.qubit_coords = self.qubit_coords.copy()
+        child.have_seen_loop = True
+        child.process_circuit(1, block.body_copy())
+        self.append_operation(cirq.CircuitOperation(
+            cirq.FrozenCircuit(child.full_circuit + child.tick_circuit),
+            repetitions=block.repeat_count,
+        ))
+        self.qubit_coords = child.qubit_coords
+        self.num_measurements_seen += (child.num_measurements_seen - self.num_measurements_seen) * block.repeat_count
+        for k, v in child.origin.items():
+            self.origin[k] += (v - self.origin[k]) * block.repeat_count
 
     def process_measurement_instruction(self,
                                         instruction: stim.CircuitInstruction,
@@ -109,7 +133,7 @@ class CircuitTranslationTracker:
                         raise NotImplementedError(f"{instruction!r}")
                     handler(self, instruction)
                 elif isinstance(instruction, stim.CircuitRepeatBlock):
-                    self.process_circuit(instruction.repeat_count, instruction.body_copy())
+                    self.process_repeat_block(instruction)
                 else:
                     raise NotImplementedError(f"instruction={instruction!r}")
 
@@ -157,7 +181,12 @@ class CircuitTranslationTracker:
         qubits = [cirq.LineQubit(t.value) for t in targets]
         self.append_operation(_stim_targets_to_dense_pauli_string(targets).on(*qubits).with_probability(probability))
 
-    def coords_after_offset(self, relative_coords: List[float]) -> List[Union[float, int]]:
+    def coords_after_offset(self,
+                            relative_coords: List[float],
+                            *,
+                            even_if_flattening: bool = False) -> List[Union[float, int]]:
+        if not self.flatten and not even_if_flattening:
+            return list(relative_coords)
         result = []
         for k in range(len(relative_coords)):
             t = relative_coords[k] + self.origin[k]
@@ -166,23 +195,28 @@ class CircuitTranslationTracker:
             result.append(t)
         return result
 
+    def resolve_measurement_record_keys(self, targets: Iterable[stim.GateTarget]) -> Tuple[List[str], List[int]]:
+        if self.have_seen_loop:
+            return [], [t.value for t in targets]
+        else:
+            return [str(self.num_measurements_seen + t.value) for t in targets], []
+
     def process_detector(self, instruction: stim.CircuitInstruction) -> None:
         coords = self.coords_after_offset(instruction.gate_args_copy())
-        targets = instruction.targets_copy()
-        measurement_keys = [str(self.num_measurements_seen + t.value) for t in targets]
-        self.append_operation(DetAnnotation(*measurement_keys, coordinate_metadata=coords))
+        keys, rels = self.resolve_measurement_record_keys(instruction.targets_copy())
+        self.append_operation(DetAnnotation(parity_keys=keys, relative_keys=rels, coordinate_metadata=coords))
 
     def process_observable_include(self, instruction: stim.CircuitInstruction) -> None:
         args = instruction.gate_args_copy()
         index = 0 if not args else int(args[0])
-        targets = instruction.targets_copy()
-        measurement_keys = [str(self.num_measurements_seen + t.value) for t in targets]
+        keys, rels = self.resolve_measurement_record_keys(instruction.targets_copy())
         self.append_operation(CumulativeObservableAnnotation(
-            *measurement_keys,
+            parity_keys=keys,
+            relative_keys=rels,
             observable_index=index))
 
     def process_qubit_coords(self, instruction: stim.CircuitInstruction) -> None:
-        coords = self.coords_after_offset(instruction.gate_args_copy())
+        coords = self.coords_after_offset(instruction.gate_args_copy(), even_if_flattening=True)
         for t in instruction.targets_copy():
             if len(coords) == 1:
                 self.qubit_coords[t.value] = cirq.LineQubit(*coords)
@@ -190,7 +224,10 @@ class CircuitTranslationTracker:
                 self.qubit_coords[t.value] = cirq.GridQubit(*coords)
 
     def process_shift_coords(self, instruction: stim.CircuitInstruction) -> None:
-        for k, a in enumerate(instruction.gate_args_copy()):
+        args = instruction.gate_args_copy()
+        if not self.flatten:
+            self.append_operation(ShiftCoordsAnnotation(args))
+        for k, a in enumerate(args):
             self.origin[k] += a
 
     class OneToOneGateHandler:
@@ -332,7 +369,9 @@ class CircuitTranslationTracker:
         }
 
 
-def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
+def stim_circuit_to_cirq_circuit(circuit: stim.Circuit,
+                                 *,
+                                 flatten: bool = False) -> cirq.Circuit:
     """Converts a stim circuit into an equivalent cirq circuit.
 
     Qubit indices are turned into cirq.LineQubit instances. Measurements are
@@ -348,6 +387,10 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
 
     Args:
         circuit: The stim circuit to convert into a cirq circuit.
+        flatten: Defaults to False. When set to True, REPEAT blocks are removed by
+            explicitly repeating their instructions multiple times. Also,
+            SHIFT_COORDS instructions are removed by appropriately adjusting the
+            coordinate metadata of later instructions.
 
     Returns:
         The converted circuit.
@@ -367,6 +410,6 @@ def stim_circuit_to_cirq_circuit(circuit: stim.Circuit) -> cirq.Circuit:
                   │
         1: ───────X──────────────────!M('0')───
     """
-    tracker = CircuitTranslationTracker()
+    tracker = CircuitTranslationTracker(flatten=flatten)
     tracker.process_circuit(repetitions=1, circuit=circuit)
     return tracker.output()

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Iterable
 
 import cirq
 import stim
@@ -11,14 +11,20 @@ class CumulativeObservableAnnotation(cirq.Operation):
     Creates an OBSERVABLE_INCLUDE operation when converting to a stim circuit.
     """
 
-    def __init__(self, *parity_keys: str, observable_index: int):
+    def __init__(self, *,
+                 parity_keys: Iterable[str] = (),
+                 relative_keys: Iterable[int] = (),
+                 observable_index: int):
         """
 
         Args:
             parity_keys: The keys of some measurements to include in the logical observable.
+            relative_keys: Refers to measurements relative to this operation. For example,
+                relative key -1 is the previous measurement. All entries must be negative.
             observable_index: A unique index for the logical observable.
         """
         self.parity_keys = frozenset(parity_keys)
+        self.relative_keys = frozenset(relative_keys)
         self.observable_index = observable_index
 
     @property
@@ -32,25 +38,26 @@ class CumulativeObservableAnnotation(cirq.Operation):
         return self.parity_keys, self.observable_index
 
     def _circuit_diagram_info_(self, args: Any) -> str:
-        k = ",".join(repr(e) for e in sorted(self.parity_keys))
+        items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
+        items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
+        k = ",".join(str(e) for e in items)
         return f"Obs{self.observable_index}({k})"
 
     def __repr__(self) -> str:
-        k = ", ".join(repr(e) for e in sorted(self.parity_keys))
-        return f'stimcirq.CumulativeObservableAnnotation({k}, observable_index={self.observable_index!r})'
-
-    @classmethod
-    def _from_json_helper(
-        cls, parity_keys: List[str], observable_index: int
-    ) -> 'CumulativeObservableAnnotation':
-        return CumulativeObservableAnnotation(*parity_keys, observable_index=observable_index)
+        return (f'stimcirq.CumulativeObservableAnnotation('
+                f'parity_keys={sorted(self.parity_keys)}, '
+                f'relative_keys={sorted(self.relative_keys)}, '
+                f'observable_index={self.observable_index!r})')
 
     def _json_dict_(self) -> Dict[str, Any]:
-        return {
+        result = {
             'cirq_type': self.__class__.__name__,
             'parity_keys': sorted(self.parity_keys),
             'observable_index': self.observable_index,
         }
+        if self.relative_keys:
+            result['relative_keys']  = sorted(self.relative_keys)
+        return result
 
     def _decompose_(self):
         return []
@@ -62,6 +69,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         self,
         edit_circuit: stim.Circuit,
         edit_measurement_key_lengths: List[Tuple[str, int]],
+        have_seen_loop: bool = False,
         **kwargs,
     ):
         # Ideally these references would all be resolved ahead of time, to avoid the redundant
@@ -69,9 +77,12 @@ class CumulativeObservableAnnotation(cirq.Operation):
         # instead of grouped (grouping measurements is helpful for stabilizer simulation). But that
         # didn't happen and this is the context we're called in and we're going to make it work.
 
+        if have_seen_loop and self.parity_keys:
+            raise NotImplementedError("Measurement key conversion is not reliable when loops are present.")
+
         # Find indices of measurement record targets.
         remaining = set(self.parity_keys)
-        rec_targets = []
+        rec_targets = [stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)]
         for offset in range(len(edit_measurement_key_lengths)):
             m_key, m_len = edit_measurement_key_lengths[-1 - offset]
             if m_len != 1:

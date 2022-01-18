@@ -170,8 +170,10 @@ def test_circuit_diagram():
             MRY 0
             MRZ 0
         """)), """
-0: ───M───MX('1')───MY('2')───M('3')───R───RX───RY───R───MR('4')───MRX('5')───MRY('6')───MR('7')───
-        """)
+0: ---M---MX('1')---MY('2')---M('3')---R---RX---RY---R---MR('4')---MRX('5')---MRY('6')---MR('7')---
+        """,
+        use_unicode_characters=False,
+    )
 
 
 def test_all_known_gates_explicitly_handled():
@@ -215,7 +217,7 @@ def test_line_grid_qubit_round_trip():
         SHIFT_COORDS(1, 2, 3)
         QUBIT_COORDS(20, 30) 1
         H 0 1
-    """)) == cirq.Circuit(cirq.H(cirq.LineQubit(10)), cirq.H(cirq.GridQubit(21, 32)))
+    """)) == cirq.Circuit(stimcirq.ShiftCoordsAnnotation([1, 2, 3]), cirq.H(cirq.LineQubit(10)), cirq.H(cirq.GridQubit(21, 32)))
 
 
 def test_noisy_measurements():
@@ -263,18 +265,19 @@ def test_convert_mpp():
     )
     assert_circuits_are_equivalent_and_convert(c, s)
     cirq.testing.assert_has_diagram(c, """
-0: ───────────────X───────────
+0: ---------------X-----------
 
-1: ───────────────M(X)────────
+1: ---------------M(X)--------
 
-2: ───M(X)('0')───M(Y)────────
-      │
-3: ───M(Z)────────M(Z)('3')───
-      │           │
-4: ───┼───────────M(Z)────────
-      │
-5: ───M(Y)────────────────────
-        """)
+2: ---M(X)('0')---M(Y)--------
+      |
+3: ---M(Z)--------M(Z)('3')---
+      |           |
+4: ---|-----------M(Z)--------
+      |
+5: ---M(Y)--------------------
+        """,
+        use_unicode_characters=False)
 
 
 def test_convert_detector():
@@ -294,15 +297,16 @@ def test_convert_detector():
         cirq.Moment(
             cirq.measure(a, key='0'),
             cirq.measure(b, key='1'),
-            stimcirq.DetAnnotation('0', '1', coordinate_metadata=(2, 3, 5)),
+            stimcirq.DetAnnotation(parity_keys=['0', '1'], coordinate_metadata=(2, 3, 5)),
         ),
     )
     cirq.testing.assert_has_diagram(c, """
-0: ───H───@───M──────────────
-          │
-1: ───────X───M──────────────
+0: ---H---@---M--------------
+          |
+1: -------X---M--------------
               Det('0','1')
-        """)
+        """,
+        use_unicode_characters=False)
     assert_circuits_are_equivalent_and_convert(c, s)
 
 
@@ -323,15 +327,16 @@ def test_convert_observable():
         cirq.Moment(
             cirq.measure(a, key='0'),
             cirq.measure(b, key='1'),
-            stimcirq.CumulativeObservableAnnotation('0', '1', observable_index=5),
+            stimcirq.CumulativeObservableAnnotation(parity_keys=['0', '1'], observable_index=5),
         ),
     )
     cirq.testing.assert_has_diagram(c, """
-0: ───H───@───M───────────────
-          │
-1: ───────X───M───────────────
+0: ---H---@---M---------------
+          |
+1: -------X---M---------------
               Obs5('0','1')
-        """)
+        """,
+        use_unicode_characters=False)
     assert_circuits_are_equivalent_and_convert(c, s)
 
 
@@ -350,12 +355,85 @@ def test_sweep_target():
         stimcirq.SweepPauli(stim_sweep_bit_index=7, cirq_sweep_symbol="sweep[7]", pauli=cirq.Z).on(d),
     )
     cirq.testing.assert_has_diagram(cirq_circuit, """
-0: ───X^sweep[2]='sweep[2]'───
+0: ---X^sweep[2]='sweep[2]'---
 
-1: ───Y^sweep[3]='sweep[3]'───
+1: ---Y^sweep[3]='sweep[3]'---
 
-2: ───Z^sweep[5]='sweep[5]'───
+2: ---Z^sweep[5]='sweep[5]'---
 
-3: ───Z^sweep[7]='sweep[7]'───
-        """)
+3: ---Z^sweep[7]='sweep[7]'---
+        """,
+        use_unicode_characters=False)
     assert_circuits_are_equivalent_and_convert(cirq_circuit, stim_circuit)
+
+
+def test_convert_repeat_simple():
+    stim_circuit = stim.Circuit("""
+        REPEAT 1000000 {
+            H 0
+            TICK
+            CNOT 0 1
+            TICK
+        }
+        M 0
+        TICK
+    """)
+    a, b = cirq.LineQubit.range(2)
+    cirq_circuit = cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.H(a),
+                cirq.CNOT(a, b),
+            ),
+            repetitions=1000000,
+        ),
+        cirq.measure(a, key="0")
+    )
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit) == cirq_circuit
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim_circuit
+
+
+def test_convert_repeat_measurements():
+    stim_circuit = stim.Circuit("""
+        REPEAT 1000000 {
+            H 0
+            TICK
+            CNOT 0 1
+            TICK
+            M 0 1
+            DETECTOR(5) rec[-1] rec[-2]
+            SHIFT_COORDS(2)
+            TICK
+        }
+        M 0
+        DETECTOR(7) rec[-1] rec[-3]
+        TICK
+    """)
+    a, b = cirq.LineQubit.range(2)
+    cirq_circuit = cirq.Circuit(
+        cirq.Moment(
+            cirq.CircuitOperation(
+                cirq.FrozenCircuit(
+                    cirq.Moment(
+                        cirq.H(a),
+                    ),
+                    cirq.Moment(
+                        cirq.CNOT(a, b),
+                    ),
+                    cirq.Moment(
+                        cirq.measure(a, key=cirq.MeasurementKey("0")),
+                        cirq.measure(b, key=cirq.MeasurementKey("1")),
+                        stimcirq.DetAnnotation(relative_keys=[-1, -2], coordinate_metadata=[5]),
+                        stimcirq.ShiftCoordsAnnotation([2]),
+                    ),
+                ),
+                repetitions=1000000,
+            ),
+        ),
+        cirq.Moment(
+            cirq.measure(a, key="2000000"),
+            stimcirq.DetAnnotation(relative_keys=[-1, -3], coordinate_metadata=[7]),
+        ),
+    )
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit) == cirq_circuit
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim_circuit

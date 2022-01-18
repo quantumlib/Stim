@@ -11,16 +11,23 @@ class DetAnnotation(cirq.Operation):
     Creates a DETECTOR operation when converting to a stim circuit.
     """
 
-    def __init__(self, *parity_keys: str, coordinate_metadata: Iterable[float] = ()):
+    def __init__(self,
+                 *,
+                 parity_keys: Iterable[str] = (),
+                 relative_keys: Iterable[int] = (),
+                 coordinate_metadata: Iterable[float] = ()):
         """
 
         Args:
             parity_keys: The keys of some measurements with the property that their parity is always
                 the same under noiseless execution of the circuit.
+            relative_keys: Refers to measurements relative to this operation. For example,
+                relative key -1 is the previous measurement. All entries must be negative.
             coordinate_metadata: An optional location for the detector. This has no effect on the
                 function of the circuit, but can be used by plotting tools.
         """
         self.parity_keys = frozenset(parity_keys)
+        self.relative_keys = frozenset(relative_keys)
         self.coordinate_metadata = tuple(coordinate_metadata)
 
     @property
@@ -34,25 +41,26 @@ class DetAnnotation(cirq.Operation):
         return self.parity_keys, self.coordinate_metadata
 
     def _circuit_diagram_info_(self, args: Any) -> str:
-        k = ",".join(repr(e) for e in sorted(self.parity_keys))
+        items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
+        items += [f'rec[{e}]' for e in sorted(self.relative_keys)]
+        k = ",".join(str(e) for e in items)
         return f"Det({k})"
 
-    @classmethod
-    def _from_json_helper(
-        cls, parity_keys: List[str], coordinate_metadata: List[float]
-    ) -> 'DetAnnotation':
-        return DetAnnotation(*parity_keys, coordinate_metadata=coordinate_metadata)
-
     def _json_dict_(self) -> Dict[str, Any]:
-        return {
+        result = {
             'cirq_type': self.__class__.__name__,
             'parity_keys': sorted(self.parity_keys),
             'coordinate_metadata': self.coordinate_metadata,
         }
+        if self.relative_keys:
+            result['relative_keys'] = sorted(self.relative_keys)
+        return result
 
     def __repr__(self) -> str:
-        k = ", ".join(repr(e) for e in sorted(self.parity_keys))
-        return f'stimcirq.DetAnnotation({k}, coordinate_metadata={self.coordinate_metadata!r})'
+        return (f'stimcirq.DetAnnotation('
+                f'parity_keys={sorted(self.parity_keys)}, '
+                f'relative_keys={sorted(self.relative_keys)}, '
+                f'coordinate_metadata={self.coordinate_metadata!r})')
 
     def _decompose_(self):
         return []
@@ -64,6 +72,7 @@ class DetAnnotation(cirq.Operation):
         self,
         edit_circuit: stim.Circuit,
         edit_measurement_key_lengths: List[Tuple[str, int]],
+        have_seen_loop: bool = False,
         **kwargs,
     ):
         # Ideally these references would all be resolved ahead of time, to avoid the redundant
@@ -71,9 +80,12 @@ class DetAnnotation(cirq.Operation):
         # instead of grouped (grouping measurements is helpful for stabilizer simulation). But that
         # didn't happen and this is the context we're called in and we're going to make it work.
 
+        if have_seen_loop and self.parity_keys:
+            raise NotImplementedError("Measurement key conversion is not reliable when loops are present.")
+
         # Find indices of measurement record targets.
         remaining = set(self.parity_keys)
-        rec_targets = []
+        rec_targets = [stim.target_rec(k) for k in sorted(self.relative_keys, reverse=True)]
         for offset in range(len(edit_measurement_key_lengths)):
             m_key, m_len = edit_measurement_key_lengths[-1 - offset]
             if m_len != 1:

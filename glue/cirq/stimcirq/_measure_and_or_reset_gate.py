@@ -17,15 +17,7 @@ class MeasureAndOrResetGate(cirq.SingleQubitGate):
         self.measure_flip_probability = measure_flip_probability
 
     def _circuit_diagram_info_(self, args: cirq.CircuitDiagramInfoArgs) -> str:
-        out = ''
-        if self.invert_measure:
-            out += '!'
-        if self.measure:
-            out += 'M'
-        if self.reset:
-            out += 'R'
-        out += self.basis
-        return out
+        return str(self)
 
     def resolve(self,
                 target: cirq.Qid,
@@ -108,19 +100,6 @@ class MeasureAndOrResetGate(cirq.SingleQubitGate):
                 f'invert_measure={self.invert_measure!r}, '
                 f'key={self.key!r}, '
                 f'measure_flip_probability={self.measure_flip_probability!r})')
-
-    @classmethod
-    def _from_json_helper(
-        cls, measure: bool, reset: bool, basis: str, invert_measure: bool, key: str, measure_flip_probability: float,
-    ) -> 'MeasureAndOrResetGate':
-        return MeasureAndOrResetGate(
-            measure=measure,
-            reset=reset,
-            basis=basis,
-            invert_measure=invert_measure,
-            key=key,
-            measure_flip_probability=measure_flip_probability,
-        )
 
     def _json_dict_(self) -> Dict[str, Any]:
         return {

@@ -16,10 +16,11 @@ def test_mixture():
 def test_diagram():
     r = stimcirq.TwoQubitAsymmetricDepolarizingChannel([0.125, 0, 0, 0, 0, 0, 0.375, 0, 0, 0, 0, 0, 0, 0.25, 0])
     cirq.testing.assert_has_diagram(cirq.Circuit(r.on(*cirq.LineQubit.range(2))), """
-0: ───PauliMix(II:0.25,IX:0.125,XZ:0.375,ZY:0.25)───
-      │
-1: ───#2────────────────────────────────────────────
-    """)
+0: ---PauliMix(II:0.25,IX:0.125,XZ:0.375,ZY:0.25)---
+      |
+1: ---#2--------------------------------------------
+        """,
+        use_unicode_characters=False)
 
 
 def test_repr():
