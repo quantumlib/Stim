@@ -18,18 +18,19 @@ def test_repr():
 def test_stim_conversion():
     actual = stimcirq.cirq_circuit_to_stim_circuit(
         cirq.Circuit(
-            stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.X, cirq_sweep_symbol="init_66").on(
-                cirq.GridQubit(1, 3)
-            ),
-            stimcirq.SweepPauli(stim_sweep_bit_index=7, pauli=cirq.Y, cirq_sweep_symbol="init_63").on(
-                cirq.GridQubit(2, 4)
-            ),
-            stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.Z, cirq_sweep_symbol="init_66").on(
-                cirq.GridQubit(2, 4)
-            ),
+            stimcirq.SweepPauli(
+                stim_sweep_bit_index=5, pauli=cirq.X, cirq_sweep_symbol="init_66"
+            ).on(cirq.GridQubit(1, 3)),
+            stimcirq.SweepPauli(
+                stim_sweep_bit_index=7, pauli=cirq.Y, cirq_sweep_symbol="init_63"
+            ).on(cirq.GridQubit(2, 4)),
+            stimcirq.SweepPauli(
+                stim_sweep_bit_index=5, pauli=cirq.Z, cirq_sweep_symbol="init_66"
+            ).on(cirq.GridQubit(2, 4)),
         )
     )
-    assert actual == stim.Circuit("""
+    assert actual == stim.Circuit(
+        """
         QUBIT_COORDS(1, 3) 0
         QUBIT_COORDS(2, 4) 1
         CX sweep[5] 0
@@ -37,12 +38,15 @@ def test_stim_conversion():
         TICK
         CZ sweep[5] 1
         TICK
-    """)
+    """
+    )
 
 
 def test_cirq_compatibility():
     circuit = cirq.Circuit(
-        stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.X, cirq_sweep_symbol="xx").on(cirq.LineQubit(0)),
+        stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.X, cirq_sweep_symbol="xx").on(
+            cirq.LineQubit(0)
+        ),
         cirq.measure(cirq.LineQubit(0), key="k"),
     )
     np.testing.assert_array_equal(
@@ -53,7 +57,9 @@ def test_cirq_compatibility():
     )
 
     circuit = cirq.Circuit(
-        stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.Z, cirq_sweep_symbol="xx").on(cirq.LineQubit(0)),
+        stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.Z, cirq_sweep_symbol="xx").on(
+            cirq.LineQubit(0)
+        ),
         cirq.measure(cirq.LineQubit(0), key="k"),
     )
     np.testing.assert_array_equal(
@@ -65,7 +71,9 @@ def test_cirq_compatibility():
 
     circuit = cirq.Circuit(
         cirq.H(cirq.LineQubit(0)),
-        stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.Z, cirq_sweep_symbol="xx").on(cirq.LineQubit(0)),
+        stimcirq.SweepPauli(stim_sweep_bit_index=5, pauli=cirq.Z, cirq_sweep_symbol="xx").on(
+            cirq.LineQubit(0)
+        ),
         cirq.H(cirq.LineQubit(0)),
         cirq.measure(cirq.LineQubit(0), key="k"),
     )
@@ -87,7 +95,5 @@ def test_json_serialization():
         ),
     )
     json = cirq.to_json(c)
-    c2 = cirq.read_json(
-        json_text=json,
-        resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
+    c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
     assert c == c2

@@ -1,16 +1,15 @@
-from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tuple, Type
-
 import functools
 import itertools
 import math
+from typing import Callable, cast, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 import cirq
 import stim
 
 
-def cirq_circuit_to_stim_circuit(circuit: cirq.Circuit,
-                                 *,
-                                 qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None) -> stim.Circuit:
+def cirq_circuit_to_stim_circuit(
+    circuit: cirq.Circuit, *, qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None
+) -> stim.Circuit:
     """Converts a cirq circuit into an equivalent stim circuit.
 
     Not all circuits can be converted. In order for a circuit to be convertible, all of its operations must be
@@ -100,21 +99,19 @@ def cirq_circuit_to_stim_data(
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:
         q2i = {q: i for i, q in enumerate(sorted(circuit.all_qubits()))}
-    out = stim.Circuit()
-    key_out: List[Tuple[str, int]] = []
+    helper = CirqToStimHelper()
+    helper.q2i = q2i
 
     for q in sorted(circuit.all_qubits()):
         if isinstance(q, cirq.LineQubit):
             i = q2i[q]
             if i != q.x:
-                out.append_operation("QUBIT_COORDS", [i], [q.x])
+                helper.out.append_operation("QUBIT_COORDS", [i], [q.x])
         elif isinstance(q, cirq.GridQubit):
-            out.append_operation("QUBIT_COORDS", [q2i[q]], [q.row, q.col])
+            helper.out.append_operation("QUBIT_COORDS", [q2i[q]], [q.row, q.col])
 
-    for moment in circuit:
-        _c2s_helper(moment, q2i, out, key_out)
-        out.append_operation("TICK", [])
-    return out, key_out
+    helper.process_moments(circuit)
+    return helper.out, helper.key_out
 
 
 StimTypeHandler = Callable[[stim.Circuit, cirq.Gate, List[int]], None]
@@ -189,12 +186,12 @@ def gate_to_stim_append_func() -> Dict[cirq.Gate, Callable[[stim.Circuit, List[i
         cirq.X.controlled(1): use("CX"),
         cirq.Y.controlled(1): use("CY"),
         cirq.Z.controlled(1): use("CZ"),
-        cirq.XX**0.5: use("SQRT_XX"),
-        cirq.YY**0.5: use("SQRT_YY"),
-        cirq.ZZ**0.5: use("SQRT_ZZ"),
-        cirq.XX**-0.5: use("SQRT_XX_DAG"),
-        cirq.YY**-0.5: use("SQRT_YY_DAG"),
-        cirq.ZZ**-0.5: use("SQRT_ZZ_DAG"),
+        cirq.XX ** 0.5: use("SQRT_XX"),
+        cirq.YY ** 0.5: use("SQRT_YY"),
+        cirq.ZZ ** 0.5: use("SQRT_ZZ"),
+        cirq.XX ** -0.5: use("SQRT_XX_DAG"),
+        cirq.YY ** -0.5: use("SQRT_YY_DAG"),
+        cirq.ZZ ** -0.5: use("SQRT_ZZ_DAG"),
         # All 24 cirq.SingleQubitCliffordGate instances.
         sqcg(x, y): use("SQRT_X_DAG"),
         sqcg(x, ny): use("SQRT_X"),
@@ -237,7 +234,9 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
         cirq.ControlledGate: cast(StimTypeHandler, _stim_append_controlled_gate),
         cirq.DensePauliString: cast(StimTypeHandler, _stim_append_dense_pauli_string_gate),
         cirq.MutableDensePauliString: cast(StimTypeHandler, _stim_append_dense_pauli_string_gate),
-        cirq.AsymmetricDepolarizingChannel: cast(StimTypeHandler, _stim_append_asymmetric_depolarizing_channel),
+        cirq.AsymmetricDepolarizingChannel: cast(
+            StimTypeHandler, _stim_append_asymmetric_depolarizing_channel
+        ),
         cirq.BitFlipChannel: lambda c, g, t: c.append_operation(
             "X_ERROR", t, cast(cirq.BitFlipChannel, g).p
         ),
@@ -252,14 +251,18 @@ def gate_type_to_stim_append_func() -> Dict[Type[cirq.Gate], StimTypeHandler]:
     }
 
 
-def _stim_append_measurement_gate(circuit: stim.Circuit, gate: cirq.MeasurementGate, targets: List[int]):
+def _stim_append_measurement_gate(
+    circuit: stim.Circuit, gate: cirq.MeasurementGate, targets: List[int]
+):
     for i, b in enumerate(gate.invert_mask):
         if b:
             targets[i] = stim.target_inv(targets[i])
-    circuit.append_operation("M",  targets)
+    circuit.append_operation("M", targets)
 
 
-def _stim_append_pauli_measurement_gate(circuit: stim.Circuit, gate: cirq.PauliMeasurementGate, targets: List[int]):
+def _stim_append_pauli_measurement_gate(
+    circuit: stim.Circuit, gate: cirq.PauliMeasurementGate, targets: List[int]
+):
     obs: cirq.DensePauliString = gate.observable()
 
     # Convert to stim Pauli product targets.
@@ -286,17 +289,21 @@ def _stim_append_pauli_measurement_gate(circuit: stim.Circuit, gate: cirq.PauliM
     elif obs.coefficient != 1:
         raise NotImplementedError(f"obs.coefficient={obs.coefficient!r} not in [1, -1]")
 
-    circuit.append_operation("MPP",  new_targets)
+    circuit.append_operation("MPP", new_targets)
 
 
-def _stim_append_dense_pauli_string_gate(c: stim.Circuit, g: cirq.BaseDensePauliString, t: List[int]):
+def _stim_append_dense_pauli_string_gate(
+    c: stim.Circuit, g: cirq.BaseDensePauliString, t: List[int]
+):
     gates = [None, "X", "Y", "Z"]
     for p, k in zip(g.pauli_mask, t):
         if p:
             c.append_operation(gates[p], [k])
 
 
-def _stim_append_asymmetric_depolarizing_channel(c: stim.Circuit, g: cirq.AsymmetricDepolarizingChannel, t: List[int]):
+def _stim_append_asymmetric_depolarizing_channel(
+    c: stim.Circuit, g: cirq.AsymmetricDepolarizingChannel, t: List[int]
+):
     c.append_operation("PAULI_CHANNEL_1", t, [g.p_x, g.p_y, g.p_z])
 
 
@@ -335,64 +342,100 @@ def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel,
         c.append_operation(f"{g.sub_gate}_ERROR", t, g.probability)
     elif isinstance(g.sub_gate, cirq.DensePauliString):
         target_p = [None, stim.target_x, stim.target_y, stim.target_z]
-        pauli_targets = [
-            target_p[p](t)
-            for t, p in zip(t, g.sub_gate.pauli_mask)
-        ]
+        pauli_targets = [target_p[p](t) for t, p in zip(t, g.sub_gate.pauli_mask)]
         c.append_operation(f"CORRELATED_ERROR", pauli_targets, g.probability)
     else:
-        raise NotImplementedError(f"Don't know how to turn probabilistic {g!r} into Stim operations.")
+        raise NotImplementedError(
+            f"Don't know how to turn probabilistic {g!r} into Stim operations."
+        )
 
 
-def _c2s_helper(
-    operations: Iterable[cirq.Operation], q2i: Dict[cirq.Qid, int], out: stim.Circuit,
-    key_out: List[Tuple[str, int]]
-):
-    g2f = gate_to_stim_append_func()
-    t2f = gate_type_to_stim_append_func()
-    for op in operations:
-        gate = op.gate
-        targets = [q2i[q] for q in op.qubits]
+class CirqToStimHelper:
+    def __init__(self):
+        self.key_out: List[Tuple[str, int]] = []
+        self.out = stim.Circuit()
+        self.q2i = {}
+        self.have_seen_loop = False
+        self.flatten = False
 
-        custom_method = getattr(op, '_stim_conversion_', getattr(gate, '_stim_conversion_', None))
-        if custom_method is not None:
-            custom_method(
-                dont_forget_your_star_star_kwargs=True,
-                edit_circuit=out,
-                edit_measurement_key_lengths=key_out,
-                targets=targets)
-            continue
+    def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation) -> None:
+        if self.flatten or op.repetitions == 1:
+            self.process_operations(cirq.decompose_once(op))
+            return
 
-        # Special case measurement, because of its metadata.
-        if isinstance(gate, cirq.PauliMeasurementGate):
-            key_out.append((gate.key, len(targets)))
-            _stim_append_pauli_measurement_gate(out, gate, targets)
-            continue
-        if isinstance(gate, cirq.MeasurementGate):
-            key_out.append((gate.key, len(targets)))
-            _stim_append_measurement_gate(out, gate, targets)
-            continue
+        child = CirqToStimHelper()
+        child.key_out = self.key_out
+        child.q2i = self.q2i
+        child.have_seen_loop = True
+        self.have_seen_loop = True
+        child.process_moments(op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit)
+        self.out += child.out * op.repetitions
 
-        # Look for recognized gate values like cirq.H.
-        val_append_func = g2f.get(gate)
-        if val_append_func is not None:
-            val_append_func(out, targets)
-            continue
+    def process_operations(self, operations: Iterable[cirq.Operation]) -> None:
+        g2f = gate_to_stim_append_func()
+        t2f = gate_type_to_stim_append_func()
+        for op in operations:
+            assert isinstance(op, cirq.Operation)
+            gate = op.gate
+            targets = [self.q2i[q] for q in op.qubits]
 
-        # Look for recognized gate types like cirq.DepolarizingChannel.
-        type_append_func = t2f.get(type(gate))
-        if type_append_func is not None:
-            type_append_func(out, gate, targets)
-            continue
+            custom_method = getattr(
+                op, '_stim_conversion_', getattr(gate, '_stim_conversion_', None)
+            )
+            if custom_method is not None:
+                custom_method(
+                    dont_forget_your_star_star_kwargs=True,
+                    edit_circuit=self.out,
+                    edit_measurement_key_lengths=self.key_out,
+                    targets=targets,
+                    have_seen_loop=self.have_seen_loop,
+                )
+                continue
 
-        # Ask unrecognized operations to decompose themselves into simpler operations.
-        try:
-            _c2s_helper(cirq.decompose_once(op), q2i, out, key_out)
-        except TypeError as ex:
-            raise TypeError(
-                f"Don't know how to translate {op!r} into stim gates.\n"
-                f"- It doesn't have a _decompose_ method that returns stim-compatible operations.\n"
-                f"- It doesn't have a _stim_conversion_ method.\n"
-            ) from ex
+            if isinstance(op, cirq.CircuitOperation):
+                self.process_circuit_operation_into_repeat_block(op)
+                continue
 
-    return out
+            # Special case measurement, because of its metadata.
+            if isinstance(gate, cirq.PauliMeasurementGate):
+                self.key_out.append((gate.key, len(targets)))
+                _stim_append_pauli_measurement_gate(self.out, gate, targets)
+                continue
+            if isinstance(gate, cirq.MeasurementGate):
+                self.key_out.append((gate.key, len(targets)))
+                _stim_append_measurement_gate(self.out, gate, targets)
+                continue
+
+            # Look for recognized gate values like cirq.H.
+            val_append_func = g2f.get(gate)
+            if val_append_func is not None:
+                val_append_func(self.out, targets)
+                continue
+
+            # Look for recognized gate types like cirq.DepolarizingChannel.
+            type_append_func = t2f.get(type(gate))
+            if type_append_func is not None:
+                type_append_func(self.out, gate, targets)
+                continue
+
+            # Ask unrecognized operations to decompose themselves into simpler operations.
+            try:
+                self.process_operations(cirq.decompose_once(op))
+            except TypeError as ex:
+                raise TypeError(
+                    f"Don't know how to translate {op!r} into stim gates.\n"
+                    f"- It doesn't have a _decompose_ method that returns stim-compatible operations.\n"
+                    f"- It doesn't have a _stim_conversion_ method.\n"
+                ) from ex
+
+    def process_moment(self, moment: cirq.Moment):
+        length_before = len(self.out)
+        self.process_operations(moment)
+
+        # Append a TICK, unless it was already handled by an internal REPEAT block.
+        if length_before == len(self.out) or not isinstance(self.out[-1], stim.CircuitRepeatBlock):
+            self.out.append_operation("TICK", [])
+
+    def process_moments(self, moments: Iterable[cirq.Moment]):
+        for moment in moments:
+            self.process_moment(moment)
