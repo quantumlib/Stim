@@ -526,6 +526,8 @@ def test_convert_repeat_simple():
 def test_convert_repeat_measurements():
     stim_circuit = stim.Circuit(
         """
+        QUBIT_COORDS(2, 3) 0
+        QUBIT_COORDS(4, 5) 1
         REPEAT 1000000 {
             H 0
             TICK
@@ -541,7 +543,7 @@ def test_convert_repeat_measurements():
         TICK
     """
     )
-    a, b = cirq.LineQubit.range(2)
+    a, b = cirq.GridQubit(2, 3), cirq.GridQubit(4, 5)
     cirq_circuit = cirq.Circuit(
         cirq.Moment(
             cirq.CircuitOperation(
@@ -565,3 +567,20 @@ def test_convert_repeat_measurements():
     )
     assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit) == cirq_circuit
     assert stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit) == stim_circuit
+
+
+def test_single_repeat_loops_always_flattened():
+    assert stimcirq.stim_circuit_to_cirq_circuit(stim.Circuit(
+        """
+        REPEAT 1 {
+            H 0
+        }
+        """)) == cirq.Circuit(cirq.H(cirq.LineQubit(0)))
+    assert stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.H(cirq.LineQubit(0)),
+            ),
+            repetitions=1,
+        ),
+    )) == stim.Circuit("H 0\nTICK")

@@ -359,7 +359,7 @@ class CirqToStimHelper:
         self.flatten = False
 
     def process_circuit_operation_into_repeat_block(self, op: cirq.CircuitOperation) -> None:
-        if self.flatten:
+        if self.flatten or op.repetitions == 1:
             self.process_operations(cirq.decompose_once(op))
             return
 
@@ -368,7 +368,7 @@ class CirqToStimHelper:
         child.q2i = self.q2i
         child.have_seen_loop = True
         self.have_seen_loop = True
-        child.process_moments(op.circuit)
+        child.process_moments(op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit)
         self.out += child.out * op.repetitions
 
     def process_operations(self, operations: Iterable[cirq.Operation]) -> None:

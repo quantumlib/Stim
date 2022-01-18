@@ -44,6 +44,23 @@ def _stim_targets_to_dense_pauli_string(
     return obs.frozen()
 
 
+def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[cirq.Qid, cirq.Qid]) -> cirq.Circuit:
+    # Note: doing this the hard way because cirq.CircuitOperation otherwise remembers the old indices in
+    # its `remap` entry, instead of completely expunging those indices.
+    return cirq.Circuit(
+        cirq.Moment(
+            cirq.CircuitOperation(
+                circuit=_proper_transform_circuit_qubits(op.circuit, remap).freeze(),
+                repetitions=op.repetitions,
+            )
+            if isinstance(op, cirq.CircuitOperation)
+            else op.with_qubits(*[remap[q] for q in op.qubits])
+            for op in moment
+        )
+        for moment in circuit
+    )
+
+
 class CircuitTranslationTracker:
     def __init__(self, flatten: bool):
         self.qubit_coords: Dict[int, cirq.Qid] = {}
@@ -90,7 +107,7 @@ class CircuitTranslationTracker:
         self.process_gate_instruction(TwoQubitAsymmetricDepolarizingChannel(args), instruction)
 
     def process_repeat_block(self, block: stim.CircuitRepeatBlock):
-        if self.flatten:
+        if self.flatten or block.repeat_count == 1:
             self.process_circuit(block.repeat_count, block.body_copy())
             return
 
@@ -162,7 +179,9 @@ class CircuitTranslationTracker:
 
             # Only remap if there are no collisions.
             if len(set(remap.values())) == len(remap):
-                out = out.transform_qubits(remap.__getitem__)
+                # Note: doing this the hard way because cirq.CircuitOperation otherwise remembers the old indices in
+                # its `remap` entry, instead of completely expunging those indices.
+                out = _proper_transform_circuit_qubits(out, remap)
 
         return out
 
