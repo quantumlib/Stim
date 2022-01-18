@@ -1,15 +1,11 @@
-from typing import Dict, Tuple, Sequence, List, Union
+from typing import Dict, List, Sequence, Tuple, Union
 
 import cirq
 import numpy as np
 import pytest
 import stim
-
 import stimcirq
-from stimcirq._cirq_to_stim import (
-    cirq_circuit_to_stim_data,
-    gate_to_stim_append_func,
-)
+from stimcirq._cirq_to_stim import cirq_circuit_to_stim_data, gate_to_stim_append_func
 
 
 def solve_tableau(gate: cirq.Gate) -> Dict[cirq.PauliString, cirq.PauliString]:
@@ -109,7 +105,9 @@ def test_more_unitary_gate_conversions():
         assert_unitary_gate_converts_correctly((p * cirq.DensePauliString("IXYZ")).controlled(1))
 
     a, b = cirq.LineQubit.range(2)
-    c, _ = cirq_circuit_to_stim_data(cirq.Circuit(cirq.H(a), cirq.CNOT(a, b), cirq.measure(a, b), cirq.reset(a)))
+    c, _ = cirq_circuit_to_stim_data(
+        cirq.Circuit(cirq.H(a), cirq.CNOT(a, b), cirq.measure(a, b), cirq.reset(a))
+    )
     assert (
         str(c).strip()
         == """
@@ -148,11 +146,13 @@ ROUND_TRIP_NOISY_GATES = [
     cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0.1, p_z=0),
     cirq.AsymmetricDepolarizingChannel(p_x=0, p_y=0, p_z=0.1),
     *[
-        stimcirq.TwoQubitAsymmetricDepolarizingChannel(cirq.one_hot(index=k, shape=15, value=0.1, dtype=np.float64))
+        stimcirq.TwoQubitAsymmetricDepolarizingChannel(
+            cirq.one_hot(index=k, shape=15, value=0.1, dtype=np.float64)
+        )
         for k in range(15)
     ],
-    stimcirq.TwoQubitAsymmetricDepolarizingChannel([k/300 for k in range(1, 16)]),
-    stimcirq.TwoQubitAsymmetricDepolarizingChannel([0]*15),
+    stimcirq.TwoQubitAsymmetricDepolarizingChannel([k / 300 for k in range(1, 16)]),
+    stimcirq.TwoQubitAsymmetricDepolarizingChannel([0] * 15),
 ]
 
 
@@ -171,7 +171,9 @@ def test_frame_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq.G
     expected_rates = cirq.final_density_matrix(circuit).diagonal().real
 
     # Convert test circuit to Stim and sample from it.
-    stim_circuit, _ = cirq_circuit_to_stim_data(circuit + cirq.measure(*sorted(circuit.all_qubits())[::-1]))
+    stim_circuit, _ = cirq_circuit_to_stim_data(
+        circuit + cirq.measure(*sorted(circuit.all_qubits())[::-1])
+    )
     sample_count = 10000
     samples = stim_circuit.compile_sampler().sample_bit_packed(sample_count).flat
     unique, counts = np.unique(samples, return_counts=True)
@@ -208,7 +210,9 @@ def test_tableau_simulator_sampling_noisy_gates_agrees_with_cirq_data(gate: cirq
     expected_rates = cirq.final_density_matrix(circuit).diagonal().real
 
     # Convert test circuit to Stim and sample from it.
-    stim_circuit, _ = cirq_circuit_to_stim_data(circuit + cirq.measure(*sorted(circuit.all_qubits())[::-1]))
+    stim_circuit, _ = cirq_circuit_to_stim_data(
+        circuit + cirq.measure(*sorted(circuit.all_qubits())[::-1])
+    )
     sample_count = 10000
     samples = []
     for _ in range(sample_count):
@@ -242,13 +246,15 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
             return 1
 
         def _measure_keys_(self):
-            return "custom",
+            return ("custom",)
 
-        def _stim_conversion_(self,
-                              edit_circuit: stim.Circuit,
-                              edit_measurement_key_lengths: List[Tuple[str, int]],
-                              targets: Sequence[int],
-                              **kwargs):
+        def _stim_conversion_(
+            self,
+            edit_circuit: stim.Circuit,
+            edit_measurement_key_lengths: List[Tuple[str, int]],
+            targets: Sequence[int],
+            **kwargs,
+        ):
             edit_measurement_key_lengths.append(("custom", 2))
             edit_circuit.append_operation("M", [stim.target_inv(targets[0])])
             edit_circuit.append_operation("M", [targets[0]])
@@ -275,7 +281,9 @@ def test_cirq_circuit_to_stim_circuit_custom_stim_method():
     )
 
     stim_circuit = stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
-    assert str(stim_circuit).strip() == """
+    assert (
+        str(stim_circuit).strip()
+        == """
 M 0 1 2
 TICK
 DETECTOR rec[-2]
@@ -284,6 +292,7 @@ M !1 1
 DETECTOR rec[-1]
 TICK
     """.strip()
+    )
 
     class BadGate(cirq.Gate):
         def num_qubits(self) -> int:
@@ -306,5 +315,7 @@ TICK
 def test_custom_qubit_indexing():
     a = cirq.NamedQubit("a")
     b = cirq.NamedQubit("b")
-    actual = stimcirq.cirq_circuit_to_stim_circuit(cirq.Circuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15})
+    actual = stimcirq.cirq_circuit_to_stim_circuit(
+        cirq.Circuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15}
+    )
     assert actual == stim.Circuit('CX 10 15\nTICK')

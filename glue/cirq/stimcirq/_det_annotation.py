@@ -11,11 +11,13 @@ class DetAnnotation(cirq.Operation):
     Creates a DETECTOR operation when converting to a stim circuit.
     """
 
-    def __init__(self,
-                 *,
-                 parity_keys: Iterable[str] = (),
-                 relative_keys: Iterable[int] = (),
-                 coordinate_metadata: Iterable[float] = ()):
+    def __init__(
+        self,
+        *,
+        parity_keys: Iterable[str] = (),
+        relative_keys: Iterable[int] = (),
+        coordinate_metadata: Iterable[float] = (),
+    ):
         """
 
         Args:
@@ -57,10 +59,12 @@ class DetAnnotation(cirq.Operation):
         return result
 
     def __repr__(self) -> str:
-        return (f'stimcirq.DetAnnotation('
-                f'parity_keys={sorted(self.parity_keys)}, '
-                f'relative_keys={sorted(self.relative_keys)}, '
-                f'coordinate_metadata={self.coordinate_metadata!r})')
+        return (
+            f'stimcirq.DetAnnotation('
+            f'parity_keys={sorted(self.parity_keys)}, '
+            f'relative_keys={sorted(self.relative_keys)}, '
+            f'coordinate_metadata={self.coordinate_metadata!r})'
+        )
 
     def _decompose_(self):
         return []
@@ -81,7 +85,9 @@ class DetAnnotation(cirq.Operation):
         # didn't happen and this is the context we're called in and we're going to make it work.
 
         if have_seen_loop and self.parity_keys:
-            raise NotImplementedError("Measurement key conversion is not reliable when loops are present.")
+            raise NotImplementedError(
+                "Measurement key conversion is not reliable when loops are present."
+            )
 
         # Find indices of measurement record targets.
         remaining = set(self.parity_keys)

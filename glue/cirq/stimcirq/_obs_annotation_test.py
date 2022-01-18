@@ -10,13 +10,21 @@ def test_stim_conversion():
 
     with pytest.raises(ValueError, match="earlier"):
         stimcirq.cirq_circuit_to_stim_circuit(
-            cirq.Circuit(cirq.Moment(stimcirq.CumulativeObservableAnnotation(parity_keys=["unknown"], observable_index=0)))
+            cirq.Circuit(
+                cirq.Moment(
+                    stimcirq.CumulativeObservableAnnotation(
+                        parity_keys=["unknown"], observable_index=0
+                    )
+                )
+            )
         )
     with pytest.raises(ValueError, match="earlier"):
         stimcirq.cirq_circuit_to_stim_circuit(
             cirq.Circuit(
                 cirq.Moment(
-                    stimcirq.CumulativeObservableAnnotation(parity_keys=["later"], observable_index=0),
+                    stimcirq.CumulativeObservableAnnotation(
+                        parity_keys=["later"], observable_index=0
+                    ),
                     cirq.measure(b, key="later"),
                 )
             )
@@ -24,14 +32,20 @@ def test_stim_conversion():
     with pytest.raises(ValueError, match="earlier"):
         stimcirq.cirq_circuit_to_stim_circuit(
             cirq.Circuit(
-                cirq.Moment(stimcirq.CumulativeObservableAnnotation(parity_keys=["later"], observable_index=0)),
+                cirq.Moment(
+                    stimcirq.CumulativeObservableAnnotation(
+                        parity_keys=["later"], observable_index=0
+                    )
+                ),
                 cirq.Moment(cirq.measure(b, key="later")),
             )
         )
     assert stimcirq.cirq_circuit_to_stim_circuit(
         cirq.Circuit(
             cirq.Moment(cirq.measure(b, key="earlier")),
-            cirq.Moment(stimcirq.CumulativeObservableAnnotation(parity_keys=["earlier"], observable_index=0)),
+            cirq.Moment(
+                stimcirq.CumulativeObservableAnnotation(parity_keys=["earlier"], observable_index=0)
+            ),
         )
     ) == stim.Circuit(
         """
@@ -46,7 +60,9 @@ def test_stim_conversion():
         cirq.Circuit(
             cirq.Moment(
                 cirq.measure(b, key="earlier"),
-                stimcirq.CumulativeObservableAnnotation(parity_keys=["earlier"], observable_index=0),
+                stimcirq.CumulativeObservableAnnotation(
+                    parity_keys=["earlier"], observable_index=0
+                ),
             )
         )
     ) == stim.Circuit(
@@ -61,7 +77,9 @@ def test_stim_conversion():
     assert stimcirq.cirq_circuit_to_stim_circuit(
         cirq.Circuit(
             cirq.Moment(cirq.measure(a, key="a"), cirq.measure(b, key="b")),
-            cirq.Moment(stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=2)),
+            cirq.Moment(
+                stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=2)
+            ),
         )
     ) == stim.Circuit(
         """
@@ -145,9 +163,15 @@ def test_equality():
         stimcirq.CumulativeObservableAnnotation(observable_index=0),
     )
     eq.add_equality_group(stimcirq.CumulativeObservableAnnotation(observable_index=1))
-    eq.add_equality_group(stimcirq.CumulativeObservableAnnotation(parity_keys=["a"], observable_index=0))
-    eq.add_equality_group(stimcirq.CumulativeObservableAnnotation(parity_keys=["a"], observable_index=1))
-    eq.add_equality_group(stimcirq.CumulativeObservableAnnotation(parity_keys=["b"], observable_index=0))
+    eq.add_equality_group(
+        stimcirq.CumulativeObservableAnnotation(parity_keys=["a"], observable_index=0)
+    )
+    eq.add_equality_group(
+        stimcirq.CumulativeObservableAnnotation(parity_keys=["a"], observable_index=1)
+    )
+    eq.add_equality_group(
+        stimcirq.CumulativeObservableAnnotation(parity_keys=["b"], observable_index=0)
+    )
     eq.add_equality_group(
         stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=0),
         stimcirq.CumulativeObservableAnnotation(parity_keys=["b", "a"], observable_index=0),
@@ -157,12 +181,12 @@ def test_equality():
 def test_json_serialization():
     c = cirq.Circuit(
         stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], observable_index=5),
-        stimcirq.CumulativeObservableAnnotation(parity_keys=["a", "b"], relative_keys=[-1, -3], observable_index=5),
+        stimcirq.CumulativeObservableAnnotation(
+            parity_keys=["a", "b"], relative_keys=[-1, -3], observable_index=5
+        ),
         stimcirq.CumulativeObservableAnnotation(observable_index=2),
         stimcirq.CumulativeObservableAnnotation(parity_keys=["d", "c"], observable_index=5),
     )
     json = cirq.to_json(c)
-    c2 = cirq.read_json(
-        json_text=json,
-        resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
+    c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
     assert c == c2

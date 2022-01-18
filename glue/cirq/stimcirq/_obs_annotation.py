@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Iterable
+from typing import Any, Dict, Iterable, List, Tuple
 
 import cirq
 import stim
@@ -11,10 +11,13 @@ class CumulativeObservableAnnotation(cirq.Operation):
     Creates an OBSERVABLE_INCLUDE operation when converting to a stim circuit.
     """
 
-    def __init__(self, *,
-                 parity_keys: Iterable[str] = (),
-                 relative_keys: Iterable[int] = (),
-                 observable_index: int):
+    def __init__(
+        self,
+        *,
+        parity_keys: Iterable[str] = (),
+        relative_keys: Iterable[int] = (),
+        observable_index: int,
+    ):
         """
 
         Args:
@@ -44,10 +47,12 @@ class CumulativeObservableAnnotation(cirq.Operation):
         return f"Obs{self.observable_index}({k})"
 
     def __repr__(self) -> str:
-        return (f'stimcirq.CumulativeObservableAnnotation('
-                f'parity_keys={sorted(self.parity_keys)}, '
-                f'relative_keys={sorted(self.relative_keys)}, '
-                f'observable_index={self.observable_index!r})')
+        return (
+            f'stimcirq.CumulativeObservableAnnotation('
+            f'parity_keys={sorted(self.parity_keys)}, '
+            f'relative_keys={sorted(self.relative_keys)}, '
+            f'observable_index={self.observable_index!r})'
+        )
 
     def _json_dict_(self) -> Dict[str, Any]:
         result = {
@@ -56,7 +61,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
             'observable_index': self.observable_index,
         }
         if self.relative_keys:
-            result['relative_keys']  = sorted(self.relative_keys)
+            result['relative_keys'] = sorted(self.relative_keys)
         return result
 
     def _decompose_(self):
@@ -78,7 +83,9 @@ class CumulativeObservableAnnotation(cirq.Operation):
         # didn't happen and this is the context we're called in and we're going to make it work.
 
         if have_seen_loop and self.parity_keys:
-            raise NotImplementedError("Measurement key conversion is not reliable when loops are present.")
+            raise NotImplementedError(
+                "Measurement key conversion is not reliable when loops are present."
+            )
 
         # Find indices of measurement record targets.
         remaining = set(self.parity_keys)

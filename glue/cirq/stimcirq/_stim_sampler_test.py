@@ -1,7 +1,6 @@
 import cirq
 import numpy as np
 import pytest
-
 import stimcirq
 
 
@@ -80,18 +79,20 @@ def test_custom_measurement():
             return 1
 
         def _decompose_(self, qubits):
-            q, = qubits
+            (q,) = qubits
             return [cirq.H(q), cirq.measure(q, key=self.key), cirq.H(q)]
 
     s = stimcirq.StimSampler()
     a, b = cirq.LineQubit.range(2)
-    out = s.sample(cirq.Circuit(
-        cirq.H(a),
-        cirq.X(b),
-        cirq.H(b),
-        XBasisMeasurement("a").on(a),
-        XBasisMeasurement("b").on(b),
-    ))
+    out = s.sample(
+        cirq.Circuit(
+            cirq.H(a),
+            cirq.X(b),
+            cirq.H(b),
+            XBasisMeasurement("a").on(a),
+            XBasisMeasurement("b").on(b),
+        )
+    )
     np.testing.assert_array_equal(out["a"], [0])
     np.testing.assert_array_equal(out["b"], [1])
 

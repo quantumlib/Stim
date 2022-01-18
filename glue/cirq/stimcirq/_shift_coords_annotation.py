@@ -34,10 +34,7 @@ class ShiftCoordsAnnotation(cirq.Operation):
         return f"ShiftCoords({k})"
 
     def _json_dict_(self) -> Dict[str, Any]:
-        return {
-            'cirq_type': self.__class__.__name__,
-            'shift': self.shift,
-        }
+        return {'cirq_type': self.__class__.__name__, 'shift': self.shift}
 
     def __repr__(self) -> str:
         return f'stimcirq.ShiftCoordsAnnotation({self.shift!r})'
@@ -48,9 +45,5 @@ class ShiftCoordsAnnotation(cirq.Operation):
     def _is_comment_(self) -> bool:
         return True
 
-    def _stim_conversion_(
-        self,
-        edit_circuit: stim.Circuit,
-        **kwargs,
-    ):
+    def _stim_conversion_(self, edit_circuit: stim.Circuit, **kwargs):
         edit_circuit.append_operation("SHIFT_COORDS", [], self.shift)
