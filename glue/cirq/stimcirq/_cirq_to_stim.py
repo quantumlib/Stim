@@ -368,7 +368,7 @@ class CirqToStimHelper:
         child.q2i = self.q2i
         child.have_seen_loop = True
         self.have_seen_loop = True
-        child.process_moments(op.circuit)
+        child.process_moments(op.transform_qubits(lambda q: op.qubit_map.get(q, q)).circuit)
         self.out += child.out * op.repetitions
 
     def process_operations(self, operations: Iterable[cirq.Operation]) -> None:

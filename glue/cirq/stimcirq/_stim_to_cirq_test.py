@@ -526,6 +526,8 @@ def test_convert_repeat_simple():
 def test_convert_repeat_measurements():
     stim_circuit = stim.Circuit(
         """
+        QUBIT_COORDS(2, 3) 0
+        QUBIT_COORDS(4, 5) 1
         REPEAT 1000000 {
             H 0
             TICK
@@ -541,7 +543,7 @@ def test_convert_repeat_measurements():
         TICK
     """
     )
-    a, b = cirq.LineQubit.range(2)
+    a, b = cirq.GridQubit(2, 3), cirq.GridQubit(4, 5)
     cirq_circuit = cirq.Circuit(
         cirq.Moment(
             cirq.CircuitOperation(
