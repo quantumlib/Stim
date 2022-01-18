@@ -17,10 +17,7 @@ class StimSampler(cirq.Sampler):
     """
 
     def run_sweep(
-        self,
-        program: cirq.Circuit,
-        params: cirq.Sweepable,
-        repetitions: int = 1,
+        self, program: cirq.Circuit, params: cirq.Sweepable, repetitions: int = 1
     ) -> List[cirq.Result]:
         trial_results: List[cirq.Result] = []
         for param_resolver in cirq.to_resolvers(params):
