@@ -314,7 +314,7 @@ struct ErrorAnalyzer {
     /// If any aren't, attempts to decompose them using other errors in the system.
     void do_global_error_decomposition_pass();
 
-    // Checks whether there any errors that need decomposing.
+    /// Checks whether there any errors that need decomposing.
     bool has_unflushed_ungraphlike_errors() const;
 };
 
