@@ -618,3 +618,11 @@ def test_backwards_compatibility_vs_safety_append_vs_append_operation():
     assert c == stim.Circuit("X_ERROR(0) 5")
     c.append_operation("Z_ERROR", [5], 0.25)
     assert c == stim.Circuit("X_ERROR(0) 5\nZ_ERROR(0.25) 5")
+
+
+def test_anti_commuting_mpp_error_message():
+    with pytest.raises(ValueError, match="while analyzing a Pauli product measurement"):
+        stim.Circuit("""
+            MPP X0 Z0
+            DETECTOR rec[-1]
+        """).detector_error_model()
