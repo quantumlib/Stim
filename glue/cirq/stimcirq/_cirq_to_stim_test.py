@@ -319,3 +319,20 @@ def test_custom_qubit_indexing():
         cirq.Circuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15}
     )
     assert actual == stim.Circuit('CX 10 15\nTICK')
+
+
+def test_on_loop():
+    a, b = cirq.LineQubit.range(2)
+    c = cirq.Circuit(
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(
+                cirq.X(a),
+                cirq.X(b),
+                cirq.measure(a, key="a"),
+                cirq.measure(b, key="b"),
+            ),
+            repetitions=3,
+        )
+    )
+    result = stimcirq.StimSampler().run(c)
+    assert result.measurements.keys() == {'0:a', '0:b', '1:a', '1:b', '2:a', '2:b'}

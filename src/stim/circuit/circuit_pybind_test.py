@@ -605,3 +605,16 @@ def test_pickle():
     """)
     a = pickle.dumps(t)
     assert pickle.loads(a) == t
+
+
+def test_backwards_compatibility_vs_safety_append_vs_append_operation():
+    c = stim.Circuit()
+    with pytest.raises(ValueError, match="takes 1 parens argument"):
+        c.append("X_ERROR", [5])
+    with pytest.raises(ValueError, match="takes 1 parens argument"):
+        c.append("OBSERVABLE_INCLUDE", [])
+    assert c == stim.Circuit()
+    c.append_operation("X_ERROR", [5])
+    assert c == stim.Circuit("X_ERROR(0) 5")
+    c.append_operation("Z_ERROR", [5], 0.25)
+    assert c == stim.Circuit("X_ERROR(0) 5\nZ_ERROR(0.25) 5")

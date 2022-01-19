@@ -69,7 +69,8 @@ void circuit_append(
         Circuit &self,
         const pybind11::object &obj,
         const pybind11::object &targets,
-        pybind11::object arg) {
+        const pybind11::object &arg,
+        bool backwards_compat) {
     // Extract single target or list of targets.
     std::vector<uint32_t> raw_targets;
     try {
@@ -85,7 +86,7 @@ void circuit_append(
 
         // Maintain backwards compatibility to when there was always exactly one argument.
         if (arg.is(pybind11::none())) {
-            if (GATE_DATA.at(gate_name).arg_count == 1) {
+            if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
                 arg = pybind11::make_tuple(0.0);
             } else {
                 arg = pybind11::make_tuple();
@@ -128,6 +129,20 @@ void circuit_append(
             "a stim.CircuitInstruction, "
             "or a stim.CircuitRepeatBlock");
     }
+}
+void circuit_append_backwards_compat(
+        Circuit &self,
+        const pybind11::object &obj,
+        const pybind11::object &targets,
+        pybind11::object arg) {
+    circuit_append(self, obj, targets, arg, true);
+}
+void circuit_append_strict(
+        Circuit &self,
+        const pybind11::object &obj,
+        const pybind11::object &targets,
+        pybind11::object arg) {
+    circuit_append(self, obj, targets, arg, false);
 }
 
 void pybind_circuit(pybind11::module &m) {
@@ -669,11 +684,10 @@ void pybind_circuit(pybind11::module &m) {
         )DOC")
             .data());
 
-    std::array<const char *, 2> append_names{"append_operation", "append"};
-    for (const char *op_name : append_names) {
+    for (size_t k = 0; k < 2; k++) {
         c.def(
-            op_name,
-            &circuit_append,
+            k == 0 ? "append_operation" : "append",
+            k == 0 ? &circuit_append_backwards_compat : &circuit_append_strict,
             pybind11::arg("name"),
             pybind11::arg("targets") = pybind11::make_tuple(),
             pybind11::arg("arg") = pybind11::none(),
@@ -713,10 +727,14 @@ void pybind_circuit(pybind11::module &m) {
                         multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
                         stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
                         measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
-                    arg: A double or list of doubles parameterizing the gate. Different gates take different arguments. For
-                        example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and PAULI_CHANNEL_1
-                        takes three disjoint probabilities. For backwards compatibility reasons, defaults to (0,) for gates
-                        that take exactly one argument. Otherwise defaults to no arguments.
+                    arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
+                        list of doubles parameterizing the gate. Different gates take different parens arguments. For
+                        example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
+                        PAULI_CHANNEL_1 takes three disjoint probabilities.
+
+                        Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
+                        `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
+                        that take exactly one argument.
             )DOC")
                 .data());
     }
