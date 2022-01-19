@@ -300,7 +300,7 @@ void pybind_detector_error_model(pybind11::module &m) {
 
     c.def(
         "__getitem__",
-        [](const DetectorErrorModel &self, pybind11::object index_or_slice) -> pybind11::object {
+        [](const DetectorErrorModel &self, const pybind11::object &index_or_slice) -> pybind11::object {
             pybind11::ssize_t index, step, slice_length;
             if (normalize_index_or_slice(index_or_slice, self.instructions.size(), &index, &step, &slice_length)) {
                 return pybind11::cast(self.py_get_slice(index, step, slice_length));

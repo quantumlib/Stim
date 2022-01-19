@@ -62,7 +62,7 @@ PyPauliString PyPauliString::operator/(const std::complex<float> &scale) const {
     return copy;
 }
 
-PyPauliString PyPauliString::operator*(pybind11::object rhs) const {
+PyPauliString PyPauliString::operator*(const pybind11::object &rhs) const {
     PyPauliString copy = *this;
     copy *= rhs;
     return copy;
@@ -97,7 +97,7 @@ PyPauliString &PyPauliString::operator*=(size_t power) {
     return *this;
 }
 
-PyPauliString &PyPauliString::operator*=(pybind11::object rhs) {
+PyPauliString &PyPauliString::operator*=(const pybind11::object &rhs) {
     if (pybind11::isinstance<PyPauliString>(rhs)) {
         return *this *= pybind11::cast<PyPauliString>(rhs);
     } else if (rhs.equal(pybind11::cast(std::complex<float>{+1, 0}))) {
@@ -795,7 +795,7 @@ void pybind_pauli_string(pybind11::module &m) {
 
     c.def(
         "__setitem__",
-        [](PyPauliString &self, pybind11::ssize_t index, pybind11::object arg_new_pauli) {
+        [](PyPauliString &self, pybind11::ssize_t index, const  pybind11::object &arg_new_pauli) {
             if (index < 0) {
                 index += self.value.num_qubits;
             }
@@ -865,7 +865,7 @@ void pybind_pauli_string(pybind11::module &m) {
 
     c.def(
         "__getitem__",
-        [](const PyPauliString &self, pybind11::object index_or_slice) -> pybind11::object {
+        [](const PyPauliString &self, const pybind11::object &index_or_slice) -> pybind11::object {
             pybind11::ssize_t start, step, slice_length;
             if (normalize_index_or_slice(index_or_slice, self.value.num_qubits, &start, &step, &slice_length)) {
                 return pybind11::cast(PyPauliString(self.value.py_get_slice(start, step, slice_length)));

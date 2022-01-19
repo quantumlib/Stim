@@ -134,14 +134,14 @@ void circuit_append_backwards_compat(
         Circuit &self,
         const pybind11::object &obj,
         const pybind11::object &targets,
-        pybind11::object arg) {
+        const pybind11::object &arg) {
     circuit_append(self, obj, targets, arg, true);
 }
 void circuit_append_strict(
         Circuit &self,
         const pybind11::object &obj,
         const pybind11::object &targets,
-        pybind11::object arg) {
+        const pybind11::object &arg) {
     circuit_append(self, obj, targets, arg, false);
 }
 
@@ -964,7 +964,7 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "__getitem__",
-        [](const Circuit &self, pybind11::object index_or_slice) -> pybind11::object {
+        [](const Circuit &self, const pybind11::object &index_or_slice) -> pybind11::object {
             pybind11::ssize_t index, step, slice_length;
             if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
                 return pybind11::cast(self.py_get_slice(index, step, slice_length));
