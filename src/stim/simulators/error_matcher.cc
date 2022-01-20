@@ -46,7 +46,7 @@ ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel &ini
     });
 }
 
-void ErrorMatcher::err_atom(const Operation &effect, const ConstPointerRange<GateTarget> &pauli_terms) {
+void ErrorMatcher::err_atom(const Operation &effect) {
     assert(error_analyzer.error_class_probabilities.empty());
     (error_analyzer.*effect.gate->reverse_error_analyzer_function)(effect.target_data);
     if (error_analyzer.error_class_probabilities.empty()) {
@@ -61,7 +61,7 @@ void ErrorMatcher::err_atom(const Operation &effect, const ConstPointerRange<Gat
         auto entry = output_map.find(dem_error_terms);
         CircuitErrorLocation new_loc = cur_loc;
         if (cur_op != nullptr) {
-            new_loc.instruction_targets.fill_targets_in_range(cur_op->target_data, qubit_coords_map);
+            new_loc.instruction_targets.fill_args_and_targets_in_range(cur_op->target_data, qubit_coords_map);
         }
         if (entry == output_map.end()) {
             dem_targets_buf.append_tail(dem_error_terms);
@@ -80,6 +80,20 @@ void ErrorMatcher::err_atom(const Operation &effect, const ConstPointerRange<Gat
     error_analyzer.flushed_reversed_model.clear();
 }
 
+void ErrorMatcher::resolve_paulis_into(ConstPointerRange<GateTarget> targets,
+                                       uint32_t target_flags,
+                                       std::vector<GateTargetWithCoords> &out) {
+    for (const auto &t : targets) {
+        auto entry = qubit_coords_map.find(t.qubit_value());
+        if (entry != qubit_coords_map.end()) {
+            out.push_back({t, entry->second});
+        } else {
+            out.push_back({t, {}});
+        }
+        out.back().gate_target.data |= target_flags;
+    }
+}
+
 void ErrorMatcher::err_xyz(const Operation &op, uint32_t target_flags) {
     const auto &a = op.target_data.args;
     const auto &t = op.target_data.targets;
@@ -91,9 +105,12 @@ void ErrorMatcher::err_xyz(const Operation &op, uint32_t target_flags) {
     for (size_t k = op.target_data.targets.size(); k--;) {
         cur_loc.instruction_targets.target_range_start = k;
         cur_loc.instruction_targets.target_range_end = k + 1;
-        GateTarget target = op.target_data.targets[k];
-        target.data |= target_flags;
-        err_atom({op.gate, {a, &t[k]}}, &target);
+        resolve_paulis_into(
+            &op.target_data.targets[k],
+            target_flags,
+            cur_loc.flipped_pauli_product);
+        err_atom({op.gate, {a, &t[k]}});
+        cur_loc.flipped_pauli_product.clear();
     }
 }
 
@@ -119,28 +136,34 @@ void ErrorMatcher::err_pauli_channel_2(const Operation &op) {
     for (size_t k = 0; k < t.size(); k += 2) {
         cur_loc.instruction_targets.target_range_start = k;
         cur_loc.instruction_targets.target_range_end = k + 2;
-        for (uint8_t p1 = 0; p1 < 4; p1++) {
-            for (uint8_t p2 = !p1; p2 < 4; p2++) {
+        for (uint8_t p0 = 0; p0 < 4; p0++) {
+            for (uint8_t p1 = !p0; p1 < 4; p1++) {
                 // Extract data for this term of the error.
-                p = a[p1 * 4 + p2 - 1];
+                p = a[p0 * 4 + p1 - 1];
                 if (p == 0) {
                     continue;
                 }
+                bool x0 = p0 & 1;
+                bool z0 = p0 & 2;
                 bool x1 = p1 & 1;
                 bool z1 = p1 & 2;
-                bool x2 = p2 & 1;
-                bool z2 = p2 & 2;
-                pair[0].data = t[k].data + x1 * TARGET_PAULI_X_BIT + z1 * TARGET_PAULI_Z_BIT;
-                pair[1].data = t[k + 1].data + x2 * TARGET_PAULI_X_BIT + z2 * TARGET_PAULI_Z_BIT;
+                uint32_t m0 = x0 * TARGET_PAULI_X_BIT + z0 * TARGET_PAULI_Z_BIT;
+                uint32_t m1 = x1 * TARGET_PAULI_X_BIT + z1 * TARGET_PAULI_Z_BIT;
+                pair[0].data = t[k].data | m0;
+                pair[1].data = t[k + 1].data | m1;
 
                 // Handle the error term as if it were an isolated CORRELATED_ERROR.
-                if (p1 == 0) {
-                    err_atom(second_effect, &pair[1]);
-                } else if (p2 == 0) {
-                    err_atom(first_effect, &pair[0]);
+                if (p0 == 0) {
+                    resolve_paulis_into(&pair[1], 0, cur_loc.flipped_pauli_product);
+                    err_atom(second_effect);
+                } else if (p1 == 0) {
+                    resolve_paulis_into(&pair[0], 0, cur_loc.flipped_pauli_product);
+                    err_atom(first_effect);
                 } else {
-                    err_atom(pair_effect, pair);
+                    resolve_paulis_into(pair, 0, cur_loc.flipped_pauli_product);
+                    err_atom(pair_effect);
                 }
+                cur_loc.flipped_pauli_product.clear();
             }
         }
     }
@@ -158,16 +181,18 @@ void ErrorMatcher::err_m(const Operation &op, uint32_t obs_mask) {
         }
 
         ConstPointerRange<GateTarget> slice{t.begin() + start, t.begin() + end};
-        std::vector<GateTarget> error_terms;
-        for (const auto &term : slice) {
-            error_terms.push_back({term.data | obs_mask});
-        }
+
         cur_loc.instruction_targets.target_range_start = start;
         cur_loc.instruction_targets.target_range_end = end;
         cur_loc.flipped_measurement.measurement_record_index =
             total_measurements_in_circuit - error_analyzer.scheduled_measurement_time - 1;
-        err_atom({op.gate, {a, slice}}, error_terms);
+        resolve_paulis_into(
+            slice,
+            obs_mask,
+            cur_loc.flipped_measurement.measured_observable);
+        err_atom({op.gate, {a, slice}});
         cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
+        cur_loc.flipped_measurement.measured_observable.clear();
 
         end = start;
     }
@@ -190,7 +215,12 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
     } else if (op.gate->id == gate_name_to_id("E")) {
         cur_loc.instruction_targets.target_range_start = 0;
         cur_loc.instruction_targets.target_range_end = op.target_data.targets.size();
-        err_atom(op, op.target_data.targets);
+        resolve_paulis_into(
+            op.target_data.targets,
+            0,
+            cur_loc.flipped_pauli_product);
+        err_atom(op);
+        cur_loc.flipped_pauli_product.clear();
     } else if (op.gate->id == gate_name_to_id("X_ERROR")) {
         err_xyz(op, TARGET_PAULI_X_BIT);
     } else if (op.gate->id == gate_name_to_id("Y_ERROR")) {
@@ -249,8 +279,8 @@ std::vector<MatchedError> ErrorMatcher::match_errors_from_circuit(
 
     // And list them out.
     std::vector<MatchedError> result;
-    for (const auto &e : finder.output_map) {
-        result.push_back(e.second);
+    for (auto &e : finder.output_map) {
+        result.push_back(std::move(e.second));
     }
 
     return result;

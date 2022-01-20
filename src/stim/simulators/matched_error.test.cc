@@ -61,7 +61,7 @@ TEST(matched_error, CircuitErrorLocationStackFrame_basics) {
         "CircuitErrorLocationStackFrame{"
         "instruction_offset=1, "
         "iteration_index=2, "
-        "parent_loop_num_repetitions=3}");
+        "instruction_repetitions_arg=3}");
 
     ASSERT_TRUE(c == (CircuitErrorLocationStackFrame{1, 2, 3}));
     ASSERT_FALSE(c != (CircuitErrorLocationStackFrame{1, 2, 3}));
@@ -105,7 +105,7 @@ TEST(matched_error, CircuitTargetsInsideInstruction_fill) {
         5,
         {},
     };
-    not_filled.fill_targets_in_range(
+    not_filled.fill_args_and_targets_in_range(
         Circuit("X_ERROR(0.125) 0 1 2 3 4 5 6 7 8 9").operations[0].target_data, {{4, {11, 13}}});
     ASSERT_EQ(not_filled.str(), "X_ERROR(0.125) 2 3 4[coords 11,13]");
 }

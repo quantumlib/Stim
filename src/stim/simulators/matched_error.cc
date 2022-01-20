@@ -57,7 +57,7 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         out << indent << "        ";
         out << "at instruction #" << (frame.instruction_offset + 1);
         if (k < e.stack_frames.size() - 1) {
-            out << " (a REPEAT " << frame.parent_loop_num_repetitions << " block)";
+            out << " (a REPEAT " << frame.instruction_repetitions_arg << " block)";
         } else if (e.instruction_targets.gate != nullptr) {
             out << " (" << e.instruction_targets.gate->name << ")";
         }
@@ -75,12 +75,12 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         out << " to #" << e.instruction_targets.target_range_end;
     }
     out << " of the instruction\n";
-    out << "        resolving to " << e.instruction_targets << "\n";
+    out << indent << "        resolving to " << e.instruction_targets << "\n";
 
     out << indent << "}";
 }
 
-void CircuitTargetsInsideInstruction::fill_targets_in_range(
+void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
     const OperationData &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords) {
     targets_in_range.clear();
     for (size_t k = target_range_start; k < target_range_end; k++) {
@@ -93,6 +93,9 @@ void CircuitTargetsInsideInstruction::fill_targets_in_range(
             targets_in_range.push_back({t, entry->second});
         }
     }
+
+    args.clear();
+    args.insert(args.begin(), actual_op.args.begin(), actual_op.args.end());
 }
 
 void MatchedError::fill_in_dem_targets(
@@ -127,7 +130,7 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitErrorLocationStac
     out << "CircuitErrorLocationStackFrame";
     out << "{instruction_offset=" << e.instruction_offset;
     out << ", iteration_index=" << e.iteration_index;
-    out << ", parent_loop_num_repetitions=" << e.parent_loop_num_repetitions << "}";
+    out << ", instruction_repetitions_arg=" << e.instruction_repetitions_arg << "}";
     return out;
 }
 std::ostream &stim::operator<<(std::ostream &out, const MatchedError &e) {
@@ -181,7 +184,7 @@ bool MatchedError::operator==(const MatchedError &other) const {
 }
 bool CircuitErrorLocationStackFrame::operator==(const CircuitErrorLocationStackFrame &other) const {
     return iteration_index == other.iteration_index && instruction_offset == other.instruction_offset &&
-           parent_loop_num_repetitions == other.parent_loop_num_repetitions;
+           instruction_repetitions_arg == other.instruction_repetitions_arg;
 }
 bool CircuitErrorLocation::operator==(const CircuitErrorLocation &other) const {
     return flipped_measurement == other.flipped_measurement && tick_offset == other.tick_offset &&
@@ -260,4 +263,105 @@ std::string MatchedError::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
+}
+
+void MatchedError::canonicalize() {
+    for (auto &c : circuit_error_locations) {
+        c.canonicalize();
+    }
+    std::sort(
+        dem_error_terms.begin(),
+        dem_error_terms.end());
+    std::sort(
+        circuit_error_locations.begin(),
+        circuit_error_locations.end());
+}
+
+void CircuitErrorLocation::canonicalize() {
+    std::sort(flipped_pauli_product.begin(), flipped_pauli_product.end());
+    std::sort(flipped_measurement.measured_observable.begin(), flipped_measurement.measured_observable.end());
+}
+
+template <typename T>
+bool vec_less_than(const std::vector<T> &vec1, const std::vector<T> &vec2) {
+    ConstPointerRange<T> c1 = vec1;
+    ConstPointerRange<T> c2 = vec2;
+    return c1 < c2;
+}
+bool GateTargetWithCoords::operator<(const GateTargetWithCoords &other) const {
+    if (gate_target != other.gate_target) {
+        return gate_target < other.gate_target;
+    }
+    if (coords != other.coords) {
+        return vec_less_than(coords, other.coords);
+    }
+
+    return false;
+}
+bool DemTargetWithCoords::operator<(const DemTargetWithCoords &other) const {
+    if (dem_target != other.dem_target) {
+        return dem_target < other.dem_target;
+    }
+    if (coords != other.coords) {
+        return vec_less_than(coords, other.coords);
+    }
+
+    return false;
+}
+bool CircuitErrorLocation::operator<(const CircuitErrorLocation &other) const {
+    if (tick_offset != other.tick_offset) {
+        return tick_offset < other.tick_offset;
+    }
+    if (flipped_pauli_product != other.flipped_pauli_product) {
+        return vec_less_than(flipped_pauli_product, other.flipped_pauli_product);
+    }
+    if (flipped_measurement != other.flipped_measurement) {
+        return flipped_measurement < other.flipped_measurement;
+    }
+    if (instruction_targets != other.instruction_targets) {
+        return instruction_targets < other.instruction_targets;
+    }
+    if (stack_frames != other.stack_frames) {
+        return vec_less_than(stack_frames, other.stack_frames);
+    }
+    return false;
+}
+bool FlippedMeasurement::operator<(const FlippedMeasurement &other) const {
+    if (measurement_record_index != other.measurement_record_index) {
+        return measurement_record_index < other.measurement_record_index;
+    }
+    if (measured_observable != other.measured_observable) {
+        return vec_less_than(measured_observable, other.measured_observable);
+    }
+    return false;
+}
+bool CircuitErrorLocationStackFrame::operator<(const CircuitErrorLocationStackFrame &other) const {
+    if (instruction_offset != other.instruction_offset) {
+        return instruction_offset < other.instruction_offset;
+    }
+    if (iteration_index != other.iteration_index) {
+        return iteration_index < other.iteration_index;
+    }
+    if (instruction_repetitions_arg != other.instruction_repetitions_arg) {
+        return instruction_repetitions_arg < other.instruction_repetitions_arg;
+    }
+    return false;
+}
+bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstruction &other) const {
+    if (target_range_start != other.target_range_start) {
+        return target_range_start < other.target_range_start;
+    }
+    if (target_range_end != other.target_range_end) {
+        return target_range_end < other.target_range_end;
+    }
+    if (targets_in_range != other.targets_in_range) {
+        return vec_less_than(targets_in_range, other.targets_in_range);
+    }
+    if (args != other.args) {
+        return vec_less_than(args, other.args);
+    }
+    if ((gate == nullptr) != (other.gate == nullptr)) {
+        return (gate == nullptr) < (other.gate == nullptr);
+    }
+    return strcmp(gate->name, other.gate->name) < 0;
 }

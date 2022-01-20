@@ -35,10 +35,13 @@ struct CircuitErrorLocationStackFrame {
     /// before the moment that we are trying to refer to.
     /// If not in a loop, set to 0.
     uint64_t iteration_index;
-    /// If inside a loop, this is how many times that loop repeats.
-    /// If not in a loop, set to 1.
-    uint64_t parent_loop_num_repetitions;
+    /// If the instruction is a REPEAT block, this is how many times it repeats.
+    /// If not, set to 0.
+    uint64_t instruction_repetitions_arg;
 
+    bool operator<(const CircuitErrorLocationStackFrame &other) const;
+
+    /// Standard methods for easy testing.
     bool operator==(const CircuitErrorLocationStackFrame &other) const;
     bool operator!=(const CircuitErrorLocationStackFrame &other) const;
     std::string str() const;
@@ -49,6 +52,9 @@ struct GateTargetWithCoords {
     GateTarget gate_target;
     std::vector<double> coords;
 
+    bool operator<(const GateTargetWithCoords &other) const;
+
+    /// Standard methods for easy testing.
     bool operator==(const GateTargetWithCoords &other) const;
     bool operator!=(const GateTargetWithCoords &other) const;
     std::string str() const;
@@ -58,6 +64,8 @@ struct GateTargetWithCoords {
 struct DemTargetWithCoords {
     DemTarget dem_target;
     std::vector<double> coords;
+
+    bool operator<(const DemTargetWithCoords &other) const;
 
     /// Standard methods for easy testing.
     bool operator==(const DemTargetWithCoords &other) const;
@@ -72,6 +80,8 @@ struct FlippedMeasurement {
     uint64_t measurement_record_index;
     /// Which observable this measurement was responsible for measuring.
     std::vector<GateTargetWithCoords> measured_observable;
+
+    bool operator<(const FlippedMeasurement &other) const;
 
     /// Standard methods for easy testing.
     bool operator==(const FlippedMeasurement &other) const;
@@ -92,8 +102,10 @@ struct CircuitTargetsInsideInstruction {
     size_t target_range_end;
     std::vector<GateTargetWithCoords> targets_in_range;
 
-    void fill_targets_in_range(
+    void fill_args_and_targets_in_range(
         const OperationData &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords);
+
+    bool operator<(const CircuitTargetsInsideInstruction &other) const;
 
     /// Standard methods for easy testing.
     bool operator==(const CircuitTargetsInsideInstruction &other) const;
@@ -123,6 +135,9 @@ struct CircuitErrorLocation {
     // Stack trace within the circuit and nested loop blocks.
     std::vector<CircuitErrorLocationStackFrame> stack_frames;
 
+    void canonicalize();
+    bool operator<(const CircuitErrorLocation &other) const;
+
     /// Standard methods for easy testing.
     bool operator==(const CircuitErrorLocation &other) const;
     bool operator!=(const CircuitErrorLocation &other) const;
@@ -140,6 +155,8 @@ struct MatchedError {
 
     void fill_in_dem_targets(
         ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
+
+    void canonicalize();
 
     /// Standard methods for easy testing.
     std::string str() const;
