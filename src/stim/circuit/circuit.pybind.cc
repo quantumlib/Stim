@@ -25,7 +25,7 @@
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/simulators/error_analyzer.h"
-#include "stim/simulators/error_candidate_finder.h"
+#include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/min_distance.h"
 
@@ -52,9 +52,7 @@ std::vector<std::string> circuit_shortest_graphlike_error(const Circuit &self, b
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(
         dem,
         ignore_ungraphlike_errors);
-    auto candidates = ErrorCandidateFinder::candidate_localized_dem_errors_from_circuit(
-        self,
-        filter);
+    auto candidates = ErrorMatcher::match_errors_from_circuit(self, filter);
     std::vector<std::string> result;
     for (const auto &candidate : candidates) {
         result.push_back(candidate.str());

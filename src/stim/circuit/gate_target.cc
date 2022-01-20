@@ -151,3 +151,25 @@ std::string GateTarget::repr() const {
     ss << ")";
     return ss.str();
 }
+
+void GateTarget::write_succinct(std::ostream &out) const {
+    if (data == TARGET_COMBINER) {
+        out << "*";
+        return;
+    }
+    if (data & TARGET_INVERTED_BIT) {
+        out << '!';
+    }
+    if (data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
+        bool x = data & TARGET_PAULI_X_BIT;
+        bool z = data & TARGET_PAULI_Z_BIT;
+        out << "IXZY"[x + z * 2];
+    }
+    if (data & TARGET_RECORD_BIT) {
+        out << "rec[-" << (data & TARGET_VALUE_MASK) << "]";
+    } else if (data & TARGET_SWEEP_BIT) {
+        out << "sweep[" << (data & TARGET_VALUE_MASK) << "]";
+    } else {
+        out << (data & TARGET_VALUE_MASK);
+    }
+}

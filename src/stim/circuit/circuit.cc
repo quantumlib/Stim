@@ -46,31 +46,9 @@ void fuse_data(
     dst.ptr_end = src.ptr_end;
 }
 
-void write_target(std::ostream &out, GateTarget t) {
-    if (t.data == TARGET_COMBINER) {
-        out << "*";
-        return;
-    }
-    if (t.data & TARGET_INVERTED_BIT) {
-        out << '!';
-    }
-    if (t.data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT)) {
-        bool x = t.data & TARGET_PAULI_X_BIT;
-        bool z = t.data & TARGET_PAULI_Z_BIT;
-        out << "IXZY"[x + z * 2];
-    }
-    if (t.data & TARGET_RECORD_BIT) {
-        out << "rec[-" << (t.data & TARGET_VALUE_MASK) << "]";
-    } else if (t.data & TARGET_SWEEP_BIT) {
-        out << "sweep[" << (t.data & TARGET_VALUE_MASK) << "]";
-    } else {
-        out << (t.data & TARGET_VALUE_MASK);
-    }
-}
-
 std::string target_str(GateTarget t) {
     std::stringstream out;
-    write_target(out, t);
+    t.write_succinct(out);
     return out.str();
 }
 
@@ -84,7 +62,7 @@ void write_targets(std::ostream &out, ConstPointerRange<GateTarget> targets) {
         } else {
             skip_space = false;
         }
-        write_target(out, t);
+        t.write_succinct(out);
     }
 }
 
@@ -213,7 +191,7 @@ void validate_gate(const Gate &gate, ConstPointerRange<GateTarget> targets, Cons
             if (q.data != (q.data & valid_target_mask)) {
                 std::stringstream ss;
                 ss << "Target ";
-                write_target(ss, q);
+                q.write_succinct(ss);
                 ss << " has invalid modifiers for gate type '" << gate.name << "'.";
                 throw std::invalid_argument(ss.str());
             }

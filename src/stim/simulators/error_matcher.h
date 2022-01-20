@@ -14,59 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_SIMULATORS_ERROR_CANDIDATE_FINDER_H
-#define _STIM_SIMULATORS_ERROR_CANDIDATE_FINDER_H
+#ifndef _STIM_SIMULATORS_ERROR_MATCHER_H
+#define _STIM_SIMULATORS_ERROR_MATCHER_H
 
 #include "stim/simulators/error_analyzer.h"
+#include "stim/simulators/matched_error.h"
 
 namespace stim {
 
-/// Identifies a location in a circuit.
-struct MatchedDetectorCircuitError {
-    /// A sorted list of detector and observable targets flipped by the error.
-    /// This list should never contain target separators.
-    std::vector<DemTarget> dem_error_terms;
-
-    /// Determines if the circuit error was a measurement error.
-    /// UINT64_MAX means NOT a measurement error.
-    /// Other values refer to a specific measurement index in the measurement record.
-    uint64_t id_of_flipped_measurement;
-
-    /// The pauli terms corresponding to the circuit error.
-    /// For non-measurement errors, this is the actual pauli error that triggers the problem.
-    /// For measurement errors, this is the observable that was being measured.
-    std::vector<GateTarget> pauli_error_terms;
-
-    /// The number of ticks that have been executed by this point.
-    uint64_t ticks_beforehand;
-
-    /// These two values identify a specific range of targets within the executing instruction.
-    uint64_t instruction_target_start;
-    uint64_t instruction_target_end;
-
-    /// The name of the instruction that was executing.
-    /// (This should always point into static data from GATE_DATA.)
-    const char *instruction_name;
-
-    // Stack trace within the circuit and nested loop blocks.
-    std::vector<uint64_t> instruction_indices;
-    std::vector<uint64_t> iteration_indices;
-
-    std::string str() const;
-    bool operator==(const MatchedDetectorCircuitError &other) const;
-    bool operator!=(const MatchedDetectorCircuitError &other) const;
-};
-
-std::ostream &operator<<(std::ostream &out, const MatchedDetectorCircuitError &e);
 
 /// This class handles matching circuit errors to detector-error-model errors.
-struct ErrorCandidateFinder {
+struct ErrorMatcher {
     /// The error analyzer handles most of converting circuit errors into detector errors.
     ErrorAnalyzer error_analyzer;
 
     // This value is tweaked and adjusted while iterating through the circuit, tracking
     // where we currently are.
-    MatchedDetectorCircuitError loc;
+    CircuitErrorLocation loc;
 
     // Determines which errors to keep.
     //
@@ -79,13 +43,13 @@ struct ErrorCandidateFinder {
     // Key data points to vector data inside the associated value data.
     // This is only correct assuming the vector data stays in place, which should
     // hold as long as the vector is left alone (except it should be safe to std::move it).
-    std::map<ConstPointerRange<DemTarget>, MatchedDetectorCircuitError> output_map;
+    std::map<ConstPointerRange<DemTarget>, MatchedError> output_map;
 
     uint64_t total_measurements_in_circuit;
     uint64_t total_ticks_in_circuit;
 
     // This class has pointers into its own data. Can't just copy it around!
-    ErrorCandidateFinder(const ErrorCandidateFinder &) = delete;
+    ErrorMatcher(const ErrorMatcher &) = delete;
 
     /// Finds detector-error-model errors while matching them with their source circuit errors.
     ///
@@ -100,13 +64,13 @@ struct ErrorCandidateFinder {
     ///
     /// Returns:
     ///     A list of detector-error-model-paired-with-explanatory-circuit-error items.
-    static std::vector<MatchedDetectorCircuitError> candidate_localized_dem_errors_from_circuit(
+    static std::vector<MatchedError> match_errors_from_circuit(
             const Circuit &circuit,
             const DetectorErrorModel &filter);
 
     /// Constructs an error candidate finder based on parameters that are given to
-    /// `ErrorCandidateFinder::candidate_localized_dem_errors_from_circuit`.
-    ErrorCandidateFinder(const Circuit &circuit, const DetectorErrorModel &filter);
+    /// `ErrorCandidateFinder::match_errors_from_circuit`.
+    ErrorMatcher(const Circuit &circuit, const DetectorErrorModel &filter);
 
     /// Base case for processing a single-term error mechanism.
     void err_atom(const Operation &effect, const ConstPointerRange<GateTarget> &pauli_terms);
