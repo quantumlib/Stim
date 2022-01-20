@@ -22,7 +22,6 @@
 
 namespace stim {
 
-
 /// This class handles matching circuit errors to detector-error-model errors.
 struct ErrorMatcher {
     /// The error analyzer handles most of converting circuit errors into detector errors.
@@ -30,21 +29,23 @@ struct ErrorMatcher {
 
     // This value is tweaked and adjusted while iterating through the circuit, tracking
     // where we currently are.
-    CircuitErrorLocation loc;
+    CircuitErrorLocation cur_loc;
+    const Operation *cur_op;
 
     // Determines which errors to keep.
     //
-    // Pointed-to key data is owned by `filter_targets_buf``.
+    // Pointed-to key data is owned by `dem_targets_buf``.
     std::set<ConstPointerRange<DemTarget>> filter;
-    MonotonicBuffer<DemTarget> filter_targets_buf;
 
     // Tracks discovered pairings keyed by their detector-error-model error terms.
     //
-    // Key data points to vector data inside the associated value data.
-    // This is only correct assuming the vector data stays in place, which should
-    // hold as long as the vector is left alone (except it should be safe to std::move it).
+    // Pointed-to key data is owned by `dem_targets_buf``.
     std::map<ConstPointerRange<DemTarget>, MatchedError> output_map;
 
+    std::map<uint64_t, std::vector<double>> dem_coords_map;
+    std::map<uint64_t, std::vector<double>> qubit_coords_map;
+
+    MonotonicBuffer<DemTarget> dem_targets_buf;
     uint64_t total_measurements_in_circuit;
     uint64_t total_ticks_in_circuit;
 
@@ -65,8 +66,7 @@ struct ErrorMatcher {
     /// Returns:
     ///     A list of detector-error-model-paired-with-explanatory-circuit-error items.
     static std::vector<MatchedError> match_errors_from_circuit(
-            const Circuit &circuit,
-            const DetectorErrorModel &filter);
+        const Circuit &circuit, const DetectorErrorModel &filter);
 
     /// Constructs an error candidate finder based on parameters that are given to
     /// `ErrorCandidateFinder::match_errors_from_circuit`.

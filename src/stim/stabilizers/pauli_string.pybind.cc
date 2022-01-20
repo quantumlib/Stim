@@ -795,7 +795,7 @@ void pybind_pauli_string(pybind11::module &m) {
 
     c.def(
         "__setitem__",
-        [](PyPauliString &self, pybind11::ssize_t index, const  pybind11::object &arg_new_pauli) {
+        [](PyPauliString &self, pybind11::ssize_t index, const pybind11::object &arg_new_pauli) {
             if (index < 0) {
                 index += self.value.num_qubits;
             }

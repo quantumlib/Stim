@@ -219,10 +219,9 @@ void pybind_detector_error_model_target(pybind11::module &m) {
         )DOC")
             .data());
 
-    c.def("__hash__",
-          [](const ExposedDemTarget &self){
-              return pybind11::hash(pybind11::make_tuple("DemInstruction", self.data));
-          });
+    c.def("__hash__", [](const ExposedDemTarget &self) {
+        return pybind11::hash(pybind11::make_tuple("DemInstruction", self.data));
+    });
 }
 
 std::string ExposedDemTarget::repr() const {

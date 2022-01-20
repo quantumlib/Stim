@@ -12,35 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-
 #include "stim/simulators/error_matcher.h"
+
+#include <gtest/gtest.h>
 
 using namespace stim;
 
-//TEST(ErrorCandidateFinder, X_ERROR) {
-//    auto actual = ErrorMatcher::match_errors_from_circuit(
-//        Circuit(R"CIRCUIT(
-//            X_ERROR(0.1) 0
-//            M 0
-//            DETECTOR rec[-1]
-//        )CIRCUIT"),
-//        DetectorErrorModel());
-//    std::vector<MatchedError> expected{
-//        MatchedError{
-//            {DemTarget::relative_detector_id(0)},
-//            {
-//                CircuitErrorLocation{
-//                    UINT64_MAX,
-//                    {GateTarget::x(0)},
-//                    0,
-//                    0,
-//                    1,
-//                    "X_ERROR",
-//                    {{0, 0}},
-//                }
-//            },
-//        },
-//    };
-//    ASSERT_EQ(actual, expected);
-//}
+// TEST(ErrorCandidateFinder, X_ERROR) {
+//     auto actual = ErrorMatcher::match_errors_from_circuit(
+//         Circuit(R"CIRCUIT(
+//             X_ERROR(0.1) 0
+//             M 0
+//             DETECTOR rec[-1]
+//         )CIRCUIT"),
+//         DetectorErrorModel());
+//     std::vector<MatchedError> expected{
+//         MatchedError{
+//             {DemTarget::relative_detector_id(0)},
+//             {
+//                 CircuitErrorLocation{
+//                     UINT64_MAX,
+//                     {GateTarget::x(0)},
+//                     0,
+//                     0,
+//                     1,
+//                     "X_ERROR",
+//                     {{0, 0}},
+//                 }
+//             },
+//         },
+//     };
+//     ASSERT_EQ(actual, expected);
+// }

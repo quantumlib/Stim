@@ -12,72 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "stim/simulators/matched_error.h"
+
 #include <algorithm>
 #include <queue>
 #include <sstream>
 
-#include "stim/simulators/matched_error.h"
-
 using namespace stim;
 
-std::string MatchedError::str() const {
-    std::stringstream ss;
-    ss << *this;
-    return ss.str();
-}
-
-std::string CircuitErrorLocation::str() const {
-    std::stringstream ss;
-    ss << *this;
-    return ss.str();
-}
-
-bool MatchedError::operator==(const MatchedError &other) const {
-    return dem_error_terms == other.dem_error_terms
-        && circuit_error_locations == other.circuit_error_locations;
-}
-
-bool MatchedError::operator!=(const MatchedError &other) const {
-    return !(*this == other);
-}
-
-bool CircuitErrorLocationStackFrame::operator==(const CircuitErrorLocationStackFrame &other) const {
-    return iteration_index == other.iteration_index
-        && instruction_offset == other.instruction_offset
-        && repeat_count == other.repeat_count;
-}
-
-bool CircuitErrorLocationStackFrame::operator!=(const CircuitErrorLocationStackFrame &other) const {
-    return !(*this == other);
-}
-
-bool CircuitErrorLocation::operator==(const CircuitErrorLocation &other) const {
-    return flipped_measurement.measurement_record_index == other.flipped_measurement.measurement_record_index
-        && flipped_measurement.measured_observable == other.flipped_measurement.measured_observable
-        && tick_offset == other.tick_offset
-        && flipped_pauli_product == other.flipped_pauli_product
-        && instruction_targets == other.instruction_targets
-        && stack_frames == other.stack_frames;
-}
-
-bool CircuitErrorLocation::operator!=(const CircuitErrorLocation &other) const {
-    return !(*this == other);
-}
-
-void print_pauli_product(std::ostream &out, const std::vector<GateTarget> &pauli_terms) {
+void print_pauli_product(std::ostream &out, const std::vector<GateTargetWithCoords> &pauli_terms) {
     for (size_t k = 0; k < pauli_terms.size(); k++) {
+        const auto &p = pauli_terms[k];
         if (k) {
             out << "*";
         }
-        const auto &p = pauli_terms[k];
-        if (p.is_x_target()) {
-            out << "X";
-        } else if (p.is_y_target()) {
-            out << "Y";
-        } else if (p.is_z_target()) {
-            out << "Z";
-        }
-        out << p.qubit_value();
+        out << p;
     }
 }
 
@@ -90,7 +39,9 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         out << "\n";
     }
     if (e.flipped_measurement.measurement_record_index != UINT64_MAX) {
-        out << indent << "    flipped_measurement.measurement_record_index: " << e.flipped_measurement.measurement_record_index << "\n";
+        out << indent
+            << "    flipped_measurement.measurement_record_index: " << e.flipped_measurement.measurement_record_index
+            << "\n";
         out << indent << "    flipped_measurement.measured_observable: ";
         print_pauli_product(out, e.flipped_measurement.measured_observable);
         out << "\n";
@@ -106,7 +57,7 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
         out << indent << "        ";
         out << "at instruction #" << (frame.instruction_offset + 1);
         if (k < e.stack_frames.size() - 1) {
-            out << " (a REPEAT " << frame.repeat_count << " block)";
+            out << " (a REPEAT " << frame.parent_loop_num_repetitions << " block)";
         } else if (e.instruction_targets.gate != nullptr) {
             out << " (" << e.instruction_targets.gate->name << ")";
         }
@@ -129,40 +80,65 @@ void print_circuit_error_loc_indent(std::ostream &out, const CircuitErrorLocatio
     out << indent << "}";
 }
 
-std::ostream &stim::operator<<(std::ostream &out, const MatchedError &e) {
-    out << "MatchedError {\n";
-    out << "    dem_error_terms: " << comma_sep(e.dem_error_terms, " ") << "\n";
-    for (const auto &loc : e.circuit_error_locations) {
-        print_circuit_error_loc_indent(out, loc, "    ");
+void CircuitTargetsInsideInstruction::fill_targets_in_range(
+    const OperationData &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords) {
+    targets_in_range.clear();
+    for (size_t k = target_range_start; k < target_range_end; k++) {
+        const auto &t = actual_op.targets[k];
+        bool is_non_coord_target = t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER);
+        auto entry = qubit_coords.find(t.qubit_value());
+        if (entry == qubit_coords.end() || is_non_coord_target) {
+            targets_in_range.push_back({t, {}});
+        } else {
+            targets_in_range.push_back({t, entry->second});
+        }
     }
-    out << "}\n";
-    return out;
 }
 
+void MatchedError::fill_in_dem_targets(
+    ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
+    dem_error_terms.clear();
+    for (const auto &t : targets) {
+        auto entry = dem_coords.find(t.raw_id());
+        if (t.is_relative_detector_id() && entry != dem_coords.end()) {
+            dem_error_terms.push_back({t, entry->second});
+        } else {
+            dem_error_terms.push_back({t, {}});
+        }
+    }
+}
+
+std::ostream &stim::operator<<(std::ostream &out, const FlippedMeasurement &e) {
+    out << "FlippedMeasurement{";
+    if (e.measurement_record_index == UINT64_MAX) {
+        return out << "none}";
+    }
+    out << e.measurement_record_index;
+    out << ", ";
+    print_pauli_product(out, e.measured_observable);
+    out << "}";
+    return out;
+}
 std::ostream &stim::operator<<(std::ostream &out, const CircuitErrorLocation &e) {
     print_circuit_error_loc_indent(out, e, "");
     return out;
 }
-
-Operation CircuitTargetsInsideInstruction::viewed_as_operation() const {
-    return {
-        gate,
-        {
-            args,
-            targets_in_range,
-        }
-    };
+std::ostream &stim::operator<<(std::ostream &out, const CircuitErrorLocationStackFrame &e) {
+    out << "CircuitErrorLocationStackFrame";
+    out << "{instruction_offset=" << e.instruction_offset;
+    out << ", iteration_index=" << e.iteration_index;
+    out << ", parent_loop_num_repetitions=" << e.parent_loop_num_repetitions << "}";
+    return out;
 }
-bool CircuitTargetsInsideInstruction::operator==(const CircuitTargetsInsideInstruction &other) const {
-    return gate == other.gate
-        && target_range_start == other.target_range_start
-        && target_range_end == other.target_range_end
-        && targets_in_range == other.targets_in_range
-        && target_coords == other.target_coords
-        && args == other.args;
-}
-bool CircuitTargetsInsideInstruction::operator!=(const CircuitTargetsInsideInstruction &other) const {
-    return !(*this == other);
+std::ostream &stim::operator<<(std::ostream &out, const MatchedError &e) {
+    out << "MatchedError {\n";
+    out << "    dem_error_terms: " << comma_sep(e.dem_error_terms, " ");
+    for (const auto &loc : e.circuit_error_locations) {
+        out << "\n";
+        print_circuit_error_loc_indent(out, loc, "    ");
+    }
+    out << "\n}";
+    return out;
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const CircuitTargetsInsideInstruction &e) {
@@ -175,17 +151,113 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitTargetsInsideInst
         out << '(' << comma_sep(e.args) << ')';
     }
     bool was_combiner = false;
-    for (size_t k = 0; k < e.targets_in_range.size(); k++) {
-        const auto &t = e.targets_in_range[k];
-        bool is_combiner = t.is_combiner();
+    for (const auto &t : e.targets_in_range) {
+        bool is_combiner = t.gate_target.is_combiner();
         if (!is_combiner && !was_combiner) {
             out << ' ';
         }
         was_combiner = is_combiner;
-        t.write_succinct(out);
-        if (k < e.target_coords.size() && !e.target_coords[k].empty()) {
-            out << "[coords " << comma_sep(e.target_coords[k], ",") << "]";
-        }
+        out << t;
     }
     return out;
+}
+std::ostream &stim::operator<<(std::ostream &out, const GateTargetWithCoords &e) {
+    e.gate_target.write_succinct(out);
+    if (!e.coords.empty()) {
+        out << "[coords " << comma_sep(e.coords, ",") << "]";
+    }
+    return out;
+}
+std::ostream &stim::operator<<(std::ostream &out, const DemTargetWithCoords &e) {
+    out << e.dem_target;
+    if (!e.coords.empty()) {
+        out << "[coords " << comma_sep(e.coords, ",") << "]";
+    }
+    return out;
+}
+
+bool MatchedError::operator==(const MatchedError &other) const {
+    return dem_error_terms == other.dem_error_terms && circuit_error_locations == other.circuit_error_locations;
+}
+bool CircuitErrorLocationStackFrame::operator==(const CircuitErrorLocationStackFrame &other) const {
+    return iteration_index == other.iteration_index && instruction_offset == other.instruction_offset &&
+           parent_loop_num_repetitions == other.parent_loop_num_repetitions;
+}
+bool CircuitErrorLocation::operator==(const CircuitErrorLocation &other) const {
+    return flipped_measurement == other.flipped_measurement && tick_offset == other.tick_offset &&
+           flipped_pauli_product == other.flipped_pauli_product && instruction_targets == other.instruction_targets &&
+           stack_frames == other.stack_frames;
+}
+bool CircuitTargetsInsideInstruction::operator==(const CircuitTargetsInsideInstruction &other) const {
+    return gate == other.gate && target_range_start == other.target_range_start &&
+           target_range_end == other.target_range_end && targets_in_range == other.targets_in_range &&
+           args == other.args;
+}
+bool DemTargetWithCoords::operator==(const DemTargetWithCoords &other) const {
+    return coords == other.coords && dem_target == other.dem_target;
+}
+bool FlippedMeasurement::operator==(const FlippedMeasurement &other) const {
+    return measured_observable == other.measured_observable &&
+           measurement_record_index == other.measurement_record_index;
+}
+bool GateTargetWithCoords::operator==(const GateTargetWithCoords &other) const {
+    return coords == other.coords && gate_target == other.gate_target;
+}
+
+bool CircuitErrorLocation::operator!=(const CircuitErrorLocation &other) const {
+    return !(*this == other);
+}
+bool CircuitErrorLocationStackFrame::operator!=(const CircuitErrorLocationStackFrame &other) const {
+    return !(*this == other);
+}
+bool CircuitTargetsInsideInstruction::operator!=(const CircuitTargetsInsideInstruction &other) const {
+    return !(*this == other);
+}
+bool DemTargetWithCoords::operator!=(const DemTargetWithCoords &other) const {
+    return !(*this == other);
+}
+bool FlippedMeasurement::operator!=(const FlippedMeasurement &other) const {
+    return !(*this == other);
+}
+bool GateTargetWithCoords::operator!=(const GateTargetWithCoords &other) const {
+    return !(*this == other);
+}
+bool MatchedError::operator!=(const MatchedError &other) const {
+    return !(*this == other);
+}
+
+std::string CircuitErrorLocation::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+std::string CircuitErrorLocationStackFrame::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+std::string CircuitTargetsInsideInstruction::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+std::string DemTargetWithCoords::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+std::string FlippedMeasurement::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+std::string GateTargetWithCoords::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
+}
+std::string MatchedError::str() const {
+    std::stringstream ss;
+    ss << *this;
+    return ss.str();
 }

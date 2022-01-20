@@ -22,56 +22,87 @@
 
 namespace stim {
 
+/// Describes the location of an instruction being executed within a
+/// circuit or loop, distinguishing between separate loop iterations.
+///
+/// The full location is a stack of these frames, drilling down from
+/// the top level circuit to the inner-most loop that the instruction
+/// is within.
 struct CircuitErrorLocationStackFrame {
+    /// The index of the instruction in the circuit (or block).
     uint64_t instruction_offset;
+    /// If inside a loop, the number of iterations of the loop that completed
+    /// before the moment that we are trying to refer to.
+    /// If not in a loop, set to 0.
     uint64_t iteration_index;
-    uint64_t repeat_count;
+    /// If inside a loop, this is how many times that loop repeats.
+    /// If not in a loop, set to 1.
+    uint64_t parent_loop_num_repetitions;
+
     bool operator==(const CircuitErrorLocationStackFrame &other) const;
     bool operator!=(const CircuitErrorLocationStackFrame &other) const;
+    std::string str() const;
 };
 
+/// A gate target with qubit coordinate metadata attached to it.
+struct GateTargetWithCoords {
+    GateTarget gate_target;
+    std::vector<double> coords;
+
+    bool operator==(const GateTargetWithCoords &other) const;
+    bool operator!=(const GateTargetWithCoords &other) const;
+    std::string str() const;
+};
+
+/// A dem target with detector coordinate metadata attached to it.
+struct DemTargetWithCoords {
+    DemTarget dem_target;
+    std::vector<double> coords;
+
+    /// Standard methods for easy testing.
+    bool operator==(const DemTargetWithCoords &other) const;
+    bool operator!=(const DemTargetWithCoords &other) const;
+    std::string str() const;
+};
+
+/// Stores additional details about measurement errors.
+struct FlippedMeasurement {
+    /// Which output bit this measurement corresponds to.
+    /// UINT64_MAX means "no measurement error occurred".
+    uint64_t measurement_record_index;
+    /// Which observable this measurement was responsible for measuring.
+    std::vector<GateTargetWithCoords> measured_observable;
+
+    /// Standard methods for easy testing.
+    bool operator==(const FlippedMeasurement &other) const;
+    bool operator!=(const FlippedMeasurement &other) const;
+    std::string str() const;
+};
+
+/// Describes a specific range of targets within a parameterized instruction.
 struct CircuitTargetsInsideInstruction {
-    /// The name of the instruction that was executing.
-    /// (This should always point into static data from GATE_DATA.)
+    /// The instruction type.
     const Gate *gate;
-    size_t target_range_start;
-    size_t target_range_end;
-    std::vector<GateTarget> targets_in_range;
-    std::vector<std::vector<float>> target_coords;
+
+    /// The parens arguments for the instruction.
     std::vector<double> args;
 
-    Operation viewed_as_operation() const;
+    /// The range of targets within the instruction that were executing.
+    size_t target_range_start;
+    size_t target_range_end;
+    std::vector<GateTargetWithCoords> targets_in_range;
 
-    void fill_in_data(const OperationData &actual_op,
-                      const std::map<uint64_t, std::vector<float>> qubit_coords) {
-        targets_in_range.clear();
-        targets_in_range.insert(
-            targets_in_range.begin(),
-            &actual_op.targets[target_range_start],
-            &actual_op.targets[target_range_end]);
-        for (const auto &t : targets_in_range) {
-            if (t.data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER)) {
-                target_coords.push_back({});
-            } else {
-                auto entry = qubit_coords.find(t.qubit_value());
-                if (entry == qubit_coords.end()) {
-                    target_coords.push_back({});
-                }
-                target_coords.push_back(entry->second);
-            }
-        }
-    }
+    void fill_targets_in_range(
+        const OperationData &actual_op, const std::map<uint64_t, std::vector<double>> &qubit_coords);
 
+    /// Standard methods for easy testing.
     bool operator==(const CircuitTargetsInsideInstruction &other) const;
     bool operator!=(const CircuitTargetsInsideInstruction &other) const;
     std::string str() const;
 };
 
-struct FlippedMeasurement {
-    uint64_t measurement_record_index;
-    std::vector<GateTarget> measured_observable;
-};
-
+/// Describes the location of an error within a circuit, with as much extra information
+/// as possible in order to make it easier for users to grok the location.
 struct CircuitErrorLocation {
     /// The number of ticks that have been executed by this point.
     uint64_t tick_offset;
@@ -79,7 +110,7 @@ struct CircuitErrorLocation {
     /// The pauli terms corresponding to the circuit error.
     /// For non-measurement errors, this is the actual pauli error that triggers the problem.
     /// For measurement errors, this is the observable that was being measured.
-    std::vector<GateTarget> flipped_pauli_product;
+    std::vector<GateTargetWithCoords> flipped_pauli_product;
 
     /// Determines if the circuit error was a measurement error.
     /// UINT64_MAX means NOT a measurement error.
@@ -92,27 +123,36 @@ struct CircuitErrorLocation {
     // Stack trace within the circuit and nested loop blocks.
     std::vector<CircuitErrorLocationStackFrame> stack_frames;
 
-    std::string str() const;
+    /// Standard methods for easy testing.
     bool operator==(const CircuitErrorLocation &other) const;
     bool operator!=(const CircuitErrorLocation &other) const;
+    std::string str() const;
 };
 
 /// Explains how an error from a detector error model matches error(s) from a circuit.
 struct MatchedError {
     /// A sorted list of detector and observable targets flipped by the error.
     /// This list should never contain target separators.
-    std::vector<DemTarget> dem_error_terms;
+    std::vector<DemTargetWithCoords> dem_error_terms;
 
     /// Locations of matching errors in the circuit.
     std::vector<CircuitErrorLocation> circuit_error_locations;
 
+    void fill_in_dem_targets(
+        ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords);
+
+    /// Standard methods for easy testing.
     std::string str() const;
     bool operator==(const MatchedError &other) const;
     bool operator!=(const MatchedError &other) const;
 };
 
-std::ostream &operator<<(std::ostream &out, const CircuitTargetsInsideInstruction &e);
 std::ostream &operator<<(std::ostream &out, const CircuitErrorLocation &e);
+std::ostream &operator<<(std::ostream &out, const CircuitErrorLocationStackFrame &e);
+std::ostream &operator<<(std::ostream &out, const CircuitTargetsInsideInstruction &e);
+std::ostream &operator<<(std::ostream &out, const DemTargetWithCoords &e);
+std::ostream &operator<<(std::ostream &out, const FlippedMeasurement &e);
+std::ostream &operator<<(std::ostream &out, const GateTargetWithCoords &e);
 std::ostream &operator<<(std::ostream &out, const MatchedError &e);
 
 }  // namespace stim

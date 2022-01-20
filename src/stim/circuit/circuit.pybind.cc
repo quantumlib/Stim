@@ -43,15 +43,9 @@ std::string circuit_repr(const Circuit &self) {
 }
 
 std::vector<std::string> circuit_shortest_graphlike_error(const Circuit &self, bool ignore_ungraphlike_errors) {
-    DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(
-        self,
-        !ignore_ungraphlike_errors,
-        true,
-        false,
-        1);
-    DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(
-        dem,
-        ignore_ungraphlike_errors);
+    DetectorErrorModel dem =
+        ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
+    DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
     auto candidates = ErrorMatcher::match_errors_from_circuit(self, filter);
     std::vector<std::string> result;
     for (const auto &candidate : candidates) {
@@ -64,11 +58,11 @@ std::vector<std::string> circuit_shortest_graphlike_error(const Circuit &self, b
 }
 
 void circuit_append(
-        Circuit &self,
-        const pybind11::object &obj,
-        const pybind11::object &targets,
-        const pybind11::object &arg,
-        bool backwards_compat) {
+    Circuit &self,
+    const pybind11::object &obj,
+    const pybind11::object &targets,
+    const pybind11::object &arg,
+    bool backwards_compat) {
     // Extract single target or list of targets.
     std::vector<uint32_t> raw_targets;
     try {
@@ -107,16 +101,14 @@ void circuit_append(
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument(
-                "Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
         }
 
         const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
         self.append_op(instruction.gate.name, instruction.raw_targets(), instruction.gate_args);
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument(
-                "Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
@@ -129,17 +121,11 @@ void circuit_append(
     }
 }
 void circuit_append_backwards_compat(
-        Circuit &self,
-        const pybind11::object &obj,
-        const pybind11::object &targets,
-        const pybind11::object &arg) {
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
     circuit_append(self, obj, targets, arg, true);
 }
 void circuit_append_strict(
-        Circuit &self,
-        const pybind11::object &obj,
-        const pybind11::object &targets,
-        const pybind11::object &arg) {
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
     circuit_append(self, obj, targets, arg, false);
 }
 

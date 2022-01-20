@@ -21,19 +21,18 @@
 
 using namespace stim;
 
-ErrorMatcher::ErrorMatcher(
-    const Circuit &circuit,
-    const DetectorErrorModel &init_filter) :
-      error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1),
-      loc(),
+ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel &init_filter)
+    : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1),
+      cur_loc(),
       filter(),
       output_map(),
+      dem_coords_map(),
+      qubit_coords_map(circuit.get_final_qubit_coords()),
       total_measurements_in_circuit(circuit.count_measurements()),
       total_ticks_in_circuit(circuit.count_ticks()) {
-
     // Canonicalize the desired error mechanisms and get them into a set for fast searching.
     SparseXorVec<DemTarget> buf;
-    init_filter.iter_flatten_error_instructions([&](const DemInstruction &instruction){
+    init_filter.iter_flatten_error_instructions([&](const DemInstruction &instruction) {
         assert(instruction.type == DEM_ERROR);
         buf.clear();
         // Note: quadratic overhead, but typical size is 4 and 100 would be crazy big.
@@ -42,14 +41,12 @@ ErrorMatcher::ErrorMatcher(
                 buf.xor_item(target);
             }
         }
-        filter_targets_buf.append_tail(buf.sorted_items);
-        filter.insert(filter_targets_buf.commit_tail());
+        dem_targets_buf.append_tail(buf.sorted_items);
+        filter.insert(dem_targets_buf.commit_tail());
     });
 }
 
-void ErrorMatcher::err_atom(
-    const Operation &effect,
-    const ConstPointerRange<GateTarget> &pauli_terms) {
+void ErrorMatcher::err_atom(const Operation &effect, const ConstPointerRange<GateTarget> &pauli_terms) {
     assert(error_analyzer.error_class_probabilities.empty());
     (error_analyzer.*effect.gate->reverse_error_analyzer_function)(effect.target_data);
     if (error_analyzer.error_class_probabilities.empty()) {
@@ -62,17 +59,16 @@ void ErrorMatcher::err_atom(
     if (!dem_error_terms.empty() && (filter.empty() || filter.find(dem_error_terms) != filter.end())) {
         // We have a desired match! Record it.
         auto entry = output_map.find(dem_error_terms);
-        CircuitErrorLocation new_loc = loc;
-        // new_loc.instruction_targets.fill_in_data(current_op, qubit_coords);
+        CircuitErrorLocation new_loc = cur_loc;
+        if (cur_op != nullptr) {
+            new_loc.instruction_targets.fill_targets_in_range(cur_op->target_data, qubit_coords_map);
+        }
         if (entry == output_map.end()) {
-            MatchedError new_match{{}, {loc}};
-            new_match.dem_error_terms.insert(
-                new_match.dem_error_terms.begin(),
-                dem_error_terms.begin(),
-                dem_error_terms.end());
-            // CAUTION: Black magic where key points into data owned by a vector in the value data.
-            // If the vector's buffer ever gets moved, or left behind during a copy, bad things happen.
-            output_map.insert({new_match.dem_error_terms, std::move(new_match)});
+            dem_targets_buf.append_tail(dem_error_terms);
+            auto stored_key = dem_targets_buf.commit_tail();
+            MatchedError new_match{{}, {new_loc}};
+            new_match.fill_in_dem_targets(stored_key, dem_coords_map);
+            output_map.insert({stored_key, std::move(new_match)});
         } else {
             entry->second.circuit_error_locations.push_back(std::move(new_loc));
         }
@@ -93,8 +89,8 @@ void ErrorMatcher::err_xyz(const Operation &op, uint32_t target_flags) {
         return;
     }
     for (size_t k = op.target_data.targets.size(); k--;) {
-        loc.instruction_targets.target_range_start = k;
-        loc.instruction_targets.target_range_end = k + 1;
+        cur_loc.instruction_targets.target_range_start = k;
+        cur_loc.instruction_targets.target_range_end = k + 1;
         GateTarget target = op.target_data.targets[k];
         target.data |= target_flags;
         err_atom({op.gate, {a, &t[k]}}, &target);
@@ -121,12 +117,12 @@ void ErrorMatcher::err_pauli_channel_2(const Operation &op) {
     Operation second_effect = {&GATE_DATA.at("E"), {&p, &pair[1]}};
 
     for (size_t k = 0; k < t.size(); k += 2) {
-        loc.instruction_targets.target_range_start = k;
-        loc.instruction_targets.target_range_end = k + 2;
+        cur_loc.instruction_targets.target_range_start = k;
+        cur_loc.instruction_targets.target_range_end = k + 2;
         for (uint8_t p1 = 0; p1 < 4; p1++) {
             for (uint8_t p2 = !p1; p2 < 4; p2++) {
                 // Extract data for this term of the error.
-                p = a[p1*4 + p2 - 1];
+                p = a[p1 * 4 + p2 - 1];
                 if (p == 0) {
                     continue;
                 }
@@ -166,25 +162,34 @@ void ErrorMatcher::err_m(const Operation &op, uint32_t obs_mask) {
         for (const auto &term : slice) {
             error_terms.push_back({term.data | obs_mask});
         }
-        loc.instruction_targets.target_range_start = start;
-        loc.instruction_targets.target_range_end = end;
-        loc.flipped_measurement.measurement_record_index = total_measurements_in_circuit - error_analyzer.scheduled_measurement_time - 1;
+        cur_loc.instruction_targets.target_range_start = start;
+        cur_loc.instruction_targets.target_range_end = end;
+        cur_loc.flipped_measurement.measurement_record_index =
+            total_measurements_in_circuit - error_analyzer.scheduled_measurement_time - 1;
         err_atom({op.gate, {a, slice}}, error_terms);
-        loc.flipped_measurement.measurement_record_index = UINT64_MAX;
+        cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
 
         end = start;
     }
 }
 
 void ErrorMatcher::rev_process_instruction(const Operation &op) {
-    loc.instruction_targets.gate = op.gate;
-    loc.tick_offset = total_ticks_in_circuit - error_analyzer.ticks_seen;
+    cur_loc.instruction_targets.gate = op.gate;
+    cur_loc.tick_offset = total_ticks_in_circuit - error_analyzer.ticks_seen;
+    cur_op = &op;
 
-    if (!(op.gate->flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
+    if (op.gate->id == gate_name_to_id("DETECTOR")) {
+        error_analyzer.DETECTOR(op.target_data);
+        if (!op.target_data.args.empty()) {
+            auto id = error_analyzer.total_detectors - error_analyzer.used_detectors;
+            auto entry = dem_coords_map.insert({id, {}}).first;
+            entry->second.insert(entry->second.begin(), op.target_data.args.begin(), op.target_data.args.end());
+        }
+    } else if (!(op.gate->flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
         (error_analyzer.*op.gate->reverse_error_analyzer_function)(op.target_data);
     } else if (op.gate->id == gate_name_to_id("E")) {
-        loc.instruction_targets.target_range_start = 0;
-        loc.instruction_targets.target_range_end = op.target_data.targets.size();
+        cur_loc.instruction_targets.target_range_start = 0;
+        cur_loc.instruction_targets.target_range_end = op.target_data.targets.size();
         err_atom(op, op.target_data.targets);
     } else if (op.gate->id == gate_name_to_id("X_ERROR")) {
         err_xyz(op, TARGET_PAULI_X_BIT);
@@ -218,30 +223,26 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
 }
 
 void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
-    loc.stack_frames.push_back({0, 0});
-    loc.flipped_measurement.measurement_record_index = UINT64_MAX;
+    cur_loc.stack_frames.push_back({0, 0});
+    cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
     for (size_t rep = reps; rep--;) {
-        loc.stack_frames.back().iteration_index = rep;
+        cur_loc.stack_frames.back().iteration_index = rep;
         for (size_t k = block.operations.size(); k--;) {
-            loc.stack_frames.back().instruction_offset = k;
+            cur_loc.stack_frames.back().instruction_offset = k;
 
             const auto &op = block.operations[k];
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                rev_process_circuit(
-                    op_data_rep_count(op.target_data),
-                    op_data_block_body(block, op.target_data));
+                rev_process_circuit(op_data_rep_count(op.target_data), op_data_block_body(block, op.target_data));
             } else {
                 rev_process_instruction(op);
             }
         }
     }
-    loc.stack_frames.pop_back();
+    cur_loc.stack_frames.pop_back();
 }
 
 std::vector<MatchedError> ErrorMatcher::match_errors_from_circuit(
-        const Circuit &circuit,
-        const DetectorErrorModel &filter) {
-
+    const Circuit &circuit, const DetectorErrorModel &filter) {
     // Find the matches.
     ErrorMatcher finder(circuit, filter);
     finder.rev_process_circuit(1, circuit);
