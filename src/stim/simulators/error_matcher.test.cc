@@ -16,7 +16,6 @@
 
 #include "stim/simulators/error_matcher.h"
 #include "stim/gen/gen_rep_code.h"
-#include "stim/gen/gen_surface_code.h"
 
 using namespace stim;
 
@@ -72,18 +71,40 @@ TEST(ErrorMatcher, X_ERROR) {
 })RESULT");
 }
 
+TEST(ErrorMatcher, CORRELATED_ERROR) {
+    auto actual = ErrorMatcher::match_errors_from_circuit(
+        Circuit(R"CIRCUIT(
+            QUBIT_COORDS(5, 6) 0
+            CORRELATED_ERROR(0.25) X0 Y1
+            M 0
+            DETECTOR(2, 3) rec[-1]
+        )CIRCUIT"),
+        DetectorErrorModel());
+    ASSERT_EQ(actual.size(), 1);
+    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    dem_error_terms: D0[coords 2,3]
+    CircuitErrorLocation {
+        flipped_pauli_product: X0[coords 5,6]
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #2 (X_ERROR) in the circuit
+            at target #1 of the instruction
+            resolving to X_ERROR(0.25) 0[coords 5,6]
+    }
+})RESULT");
+}
+
 TEST(ErrorMatcher, repetition_code) {
-    CircuitGenParameters params(2, 3, "rotated_memory_z");
+    CircuitGenParameters params(2, 3, "memory");
     params.before_round_data_depolarization = 0.001;
-    params.after_clifford_depolarization = 0.001;
-    auto circuit = generate_surface_code_circuit(params).circuit;
+    params.before_measure_flip_probability = 0.125;
+    auto circuit = generate_rep_code_circuit(params).circuit;
 
     auto actual = ErrorMatcher::match_errors_from_circuit(circuit, DetectorErrorModel());
     std::stringstream ss;
     for (const auto &match : actual) {
         ss << "\n" << match << "\n";
     }
-    std::cerr << ss.str() << "\n";
     ASSERT_EQ(ss.str(), R"RESULT(
 MatchedError {
     dem_error_terms: D0[coords 1,0]
