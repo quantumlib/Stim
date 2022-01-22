@@ -31,6 +31,7 @@
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
+    - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
 - [`stim.CircuitInstruction`](#stim.CircuitInstruction)
     - [`stim.CircuitInstruction.__eq__`](#stim.CircuitInstruction.__eq__)
     - [`stim.CircuitInstruction.__init__`](#stim.CircuitInstruction.__init__)
@@ -1391,6 +1392,41 @@
 >     ...    CX sweep[2] 0
 >     ... ''').num_sweep_bits
 >     6
+> ```
+
+### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool) -> List[str]`<a name="stim.Circuit.shortest_graphlike_error"></a>
+> ```
+> Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+> 
+> A "graphlike error" is an error that creates at most two detection events (causes a change in the parity of
+> the measurement sets of at most two DETECTOR annotations).
+> 
+> Note that this method does not pay attention to error probabilities (other than ignoring errors with
+> probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
+> maximum probability of those physical errors all occurring.
+> 
+> This method works by converting the circuit into a `stim.DetectorErrorModel` using
+> `circuit.detector_error_model(...)`, computing the shortest graphlike error of the error model, and then
+> converting the physical errors making up that logical error back into representative circuit errors.
+> 
+> Args:
+>     ignore_ungraphlike_errors: Defaults to False. When False, an exception is raised if there are any
+>         errors in the circuit that cannot be decomposed into graphlike errors. When True, non-graphlike
+>         errors are simply skipped as if they weren't present (they are not even decomposed).
+> 
+> Returns:
+>     ...
+> 
+> Examples:
+>     >>> import stim
+> 
+>     >>> circuit = stim.Circuit.generated(
+>     ...     "repetition_code:memory",
+>     ...     rounds=10,
+>     ...     distance=7,
+>     ...     before_round_data_depolarization=0.01)
+>     >>> len(circuit.shortest_graphlike_error(decompose_errors=True))
+>     7
 > ```
 
 ### `stim.CircuitInstruction.__eq__(self, arg0: stim.CircuitInstruction) -> bool`<a name="stim.CircuitInstruction.__eq__"></a>
