@@ -46,13 +46,10 @@ std::vector<std::string> circuit_shortest_graphlike_error(const Circuit &self, b
     DetectorErrorModel dem =
         ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
-    auto candidates = ErrorMatcher::match_errors_from_circuit(self, filter);
+    auto candidates = ErrorMatcher::match_errors_from_circuit(self, &filter);
     std::vector<std::string> result;
     for (const auto &candidate : candidates) {
         result.push_back(candidate.str());
-    }
-    while (result.size() < filter.instructions.size()) {
-        result.push_back("UNMATCHED ERROR");
     }
     return result;
 }
@@ -77,23 +74,24 @@ void circuit_append(
         const std::string &gate_name = pybind11::cast<std::string>(obj);
 
         // Maintain backwards compatibility to when there was always exactly one argument.
-        if (arg.is(pybind11::none())) {
-            if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
-                arg = pybind11::make_tuple(0.0);
-            } else {
-                arg = pybind11::make_tuple();
-            }
+        pybind11::object used_arg;
+        if (!arg.is(pybind11::none())) {
+            used_arg = arg;
+        } else if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
+            used_arg = pybind11::make_tuple(0.0);
+        } else {
+            used_arg = pybind11::make_tuple();
         }
 
         // Extract single argument or list of arguments.
         try {
-            auto d = pybind11::cast<double>(arg);
+            auto d = pybind11::cast<double>(used_arg);
             self.append_op(gate_name, raw_targets, d);
             return;
         } catch (const pybind11::cast_error &ex) {
         }
         try {
-            auto args = pybind11::cast<std::vector<double>>(arg);
+            auto args = pybind11::cast<std::vector<double>>(used_arg);
             self.append_op(gate_name, raw_targets, args);
             return;
         } catch (const pybind11::cast_error &ex) {
