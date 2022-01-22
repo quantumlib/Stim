@@ -37,12 +37,7 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
 }
 
 int main_mode_match_errors(int argc, const char **argv) {
-    check_for_unknown_arguments(
-        {"--dem_filter", "--out", "--in"},
-        {},
-        "match_errors",
-        argc,
-        argv);
+    check_for_unknown_arguments({"--dem_filter", "--out", "--in"}, {}, "match_errors", argc, argv);
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
@@ -50,8 +45,8 @@ int main_mode_match_errors(int argc, const char **argv) {
     bool has_filter = find_argument("--dem_filter", argc, argv) != nullptr;
     if (has_filter) {
         FILE *filter_file = find_open_file_argument("--dem_filter", stdin, "r", argc, argv);
-        dem_filter = std::unique_ptr<DetectorErrorModel>(
-            new DetectorErrorModel(DetectorErrorModel::from_file(filter_file)));
+        dem_filter =
+            std::unique_ptr<DetectorErrorModel>(new DetectorErrorModel(DetectorErrorModel::from_file(filter_file)));
         fclose(filter_file);
     }
     auto circuit = Circuit::from_file(in);
@@ -280,8 +275,8 @@ int stim::main(int argc, const char **argv) {
             std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
             mode_analyze_errors = true;
         }
-        int modes_picked = (
-            mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert + mode_match_errors);
+        int modes_picked =
+            (mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert + mode_match_errors);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
             if (modes_picked > 1) {

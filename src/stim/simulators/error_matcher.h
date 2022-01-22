@@ -69,9 +69,8 @@ struct ErrorMatcher {
     ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *filter);
 
     /// Looks up the coordinates of qubit/pauli terms, and appends into an output vector.
-    void resolve_paulis_into(ConstPointerRange<GateTarget> targets,
-                             uint32_t target_flags,
-                             std::vector<GateTargetWithCoords> &out);
+    void resolve_paulis_into(
+        ConstPointerRange<GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out);
 
     /// Base case for processing a single-term error mechanism.
     void err_atom(const Operation &effect);

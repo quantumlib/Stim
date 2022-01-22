@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "stim/simulators/error_matcher.h"
+
 #include <gtest/gtest.h>
 
-#include "stim/simulators/error_matcher.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 
@@ -54,8 +55,7 @@ TEST(ErrorMatcher, X_ERROR) {
                         CircuitErrorLocationStackFrame{1, 0, 0},
                     },
                 },
-            }
-        },
+            }},
     };
     ASSERT_EQ(actual, expected);
     ASSERT_EQ(actual.size(), 1);

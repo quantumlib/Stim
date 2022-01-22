@@ -30,7 +30,6 @@ ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *ini
       qubit_coords_map(circuit.get_final_qubit_coords()),
       total_measurements_in_circuit(circuit.count_measurements()),
       total_ticks_in_circuit(circuit.count_ticks()) {
-
     // If filtering, get the filter errors into the output map immediately.
     if (!allow_adding_new_dem_errors_to_output_map) {
         SparseXorVec<DemTarget> buf;
@@ -80,9 +79,8 @@ void ErrorMatcher::err_atom(const Operation &effect) {
     error_analyzer.flushed_reversed_model.clear();
 }
 
-void ErrorMatcher::resolve_paulis_into(ConstPointerRange<GateTarget> targets,
-                                       uint32_t target_flags,
-                                       std::vector<GateTargetWithCoords> &out) {
+void ErrorMatcher::resolve_paulis_into(
+    ConstPointerRange<GateTarget> targets, uint32_t target_flags, std::vector<GateTargetWithCoords> &out) {
     for (const auto &t : targets) {
         if (t.is_combiner()) {
             continue;
@@ -108,10 +106,7 @@ void ErrorMatcher::err_xyz(const Operation &op, uint32_t target_flags) {
     for (size_t k = op.target_data.targets.size(); k--;) {
         cur_loc.instruction_targets.target_range_start = k;
         cur_loc.instruction_targets.target_range_end = k + 1;
-        resolve_paulis_into(
-            &op.target_data.targets[k],
-            target_flags,
-            cur_loc.flipped_pauli_product);
+        resolve_paulis_into(&op.target_data.targets[k], target_flags, cur_loc.flipped_pauli_product);
         err_atom({op.gate, {a, &t[k]}});
         cur_loc.flipped_pauli_product.clear();
     }
@@ -189,10 +184,7 @@ void ErrorMatcher::err_m(const Operation &op, uint32_t obs_mask) {
         cur_loc.instruction_targets.target_range_end = end;
         cur_loc.flipped_measurement.measurement_record_index =
             total_measurements_in_circuit - error_analyzer.scheduled_measurement_time - 1;
-        resolve_paulis_into(
-            slice,
-            obs_mask,
-            cur_loc.flipped_measurement.measured_observable);
+        resolve_paulis_into(slice, obs_mask, cur_loc.flipped_measurement.measured_observable);
         err_atom({op.gate, {a, slice}});
         cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
         cur_loc.flipped_measurement.measured_observable.clear();
@@ -218,10 +210,7 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
     } else if (op.gate->id == gate_name_to_id("E")) {
         cur_loc.instruction_targets.target_range_start = 0;
         cur_loc.instruction_targets.target_range_end = op.target_data.targets.size();
-        resolve_paulis_into(
-            op.target_data.targets,
-            0,
-            cur_loc.flipped_pauli_product);
+        resolve_paulis_into(op.target_data.targets, 0, cur_loc.flipped_pauli_product);
         err_atom(op);
         cur_loc.flipped_pauli_product.clear();
     } else if (op.gate->id == gate_name_to_id("X_ERROR")) {

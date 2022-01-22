@@ -272,12 +272,8 @@ void MatchedError::canonicalize() {
     for (auto &c : circuit_error_locations) {
         c.canonicalize();
     }
-    std::sort(
-        dem_error_terms.begin(),
-        dem_error_terms.end());
-    std::sort(
-        circuit_error_locations.begin(),
-        circuit_error_locations.end());
+    std::sort(dem_error_terms.begin(), dem_error_terms.end());
+    std::sort(circuit_error_locations.begin(), circuit_error_locations.end());
 }
 
 void CircuitErrorLocation::canonicalize() {
