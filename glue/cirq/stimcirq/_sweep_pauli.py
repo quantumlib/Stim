@@ -25,7 +25,7 @@ class SweepPauli(cirq.Gate):
         Args:
             stim_sweep_bit_index: The bit position, in some unspecified array, controlling the Pauli.
             cirq_sweep_symbol: The symbol used by cirq. Defaults to f"sweep_{sweep_bit_index}".
-            Pauli: The cirq Pauli operation to apply when the bit is True.
+            pauli: The cirq Pauli operation to apply when the bit is True.
         """
         if cirq_sweep_symbol is None:
             cirq_sweep_symbol = f"sweep[{stim_sweep_bit_index}]"
