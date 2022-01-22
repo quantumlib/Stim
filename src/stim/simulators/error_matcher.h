@@ -32,15 +32,11 @@ struct ErrorMatcher {
     CircuitErrorLocation cur_loc;
     const Operation *cur_op;
 
-    // Determines which errors to keep.
-    //
-    // Pointed-to key data is owned by `dem_targets_buf``.
-    std::set<ConstPointerRange<DemTarget>> filter;
-
     // Tracks discovered pairings keyed by their detector-error-model error terms.
     //
     // Pointed-to key data is owned by `dem_targets_buf``.
     std::map<ConstPointerRange<DemTarget>, MatchedError> output_map;
+    bool allow_adding_new_dem_errors_to_output_map;
 
     std::map<uint64_t, std::vector<double>> dem_coords_map;
     std::map<uint64_t, std::vector<double>> qubit_coords_map;
@@ -66,11 +62,11 @@ struct ErrorMatcher {
     /// Returns:
     ///     A list of detector-error-model-paired-with-explanatory-circuit-error items.
     static std::vector<MatchedError> match_errors_from_circuit(
-        const Circuit &circuit, const DetectorErrorModel &filter);
+        const Circuit &circuit, const DetectorErrorModel *filter);
 
     /// Constructs an error candidate finder based on parameters that are given to
     /// `ErrorCandidateFinder::match_errors_from_circuit`.
-    ErrorMatcher(const Circuit &circuit, const DetectorErrorModel &filter);
+    ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *filter);
 
     /// Looks up the coordinates of qubit/pauli terms, and appends into an output vector.
     void resolve_paulis_into(ConstPointerRange<GateTarget> targets,
@@ -86,7 +82,10 @@ struct ErrorMatcher {
     /// Processes measurement operations.
     void err_m(const Operation &op, uint32_t obs_mask);
     void err_xyz(const Operation &op, uint32_t target_flags);
+
+    /// Processes arbitrary instructions.
     void rev_process_instruction(const Operation &op);
+    /// Processes entire circuits.
     void rev_process_circuit(uint64_t reps, const Circuit &block);
 };
 

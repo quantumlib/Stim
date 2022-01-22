@@ -136,6 +136,9 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitErrorLocationStac
 std::ostream &stim::operator<<(std::ostream &out, const MatchedError &e) {
     out << "MatchedError {\n";
     out << "    dem_error_terms: " << comma_sep(e.dem_error_terms, " ");
+    if (e.circuit_error_locations.empty()) {
+        out << "\n    [no single circuit error had these exact symptoms]";
+    }
     for (const auto &loc : e.circuit_error_locations) {
         out << "\n";
         print_circuit_error_loc_indent(out, loc, "    ");

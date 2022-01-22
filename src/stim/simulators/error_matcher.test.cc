@@ -16,6 +16,7 @@
 
 #include "stim/simulators/error_matcher.h"
 #include "stim/gen/gen_rep_code.h"
+#include "stim/gen/gen_surface_code.h"
 
 using namespace stim;
 
@@ -27,7 +28,7 @@ TEST(ErrorMatcher, X_ERROR) {
             M 0
             DETECTOR(2, 3) rec[-1]
         )CIRCUIT"),
-        DetectorErrorModel());
+        nullptr);
     std::vector<MatchedError> expected{
         MatchedError{
             {
@@ -79,28 +80,79 @@ TEST(ErrorMatcher, CORRELATED_ERROR) {
             M 0
             DETECTOR(2, 3) rec[-1]
         )CIRCUIT"),
-        DetectorErrorModel());
+        nullptr);
     ASSERT_EQ(actual.size(), 1);
     ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
     dem_error_terms: D0[coords 2,3]
     CircuitErrorLocation {
-        flipped_pauli_product: X0[coords 5,6]
+        flipped_pauli_product: X0[coords 5,6]*Y1
         Circuit location stack trace:
             (after 0 TICKs)
-            at instruction #2 (X_ERROR) in the circuit
-            at target #1 of the instruction
-            resolving to X_ERROR(0.25) 0[coords 5,6]
+            at instruction #2 (E) in the circuit
+            at targets #1 to #2 of the instruction
+            resolving to E(0.25) X0[coords 5,6] Y1
     }
 })RESULT");
 }
 
-TEST(ErrorMatcher, repetition_code) {
+TEST(ErrorMatcher, MX_ERROR) {
+    auto actual = ErrorMatcher::match_errors_from_circuit(
+        Circuit(R"CIRCUIT(
+            QUBIT_COORDS(5, 6) 0
+            RX 0
+            REPEAT 10 {
+                TICK
+            }
+            MX(0.125) 1 2 3 0 4
+            DETECTOR(2, 3) rec[-2]
+        )CIRCUIT"),
+        nullptr);
+    ASSERT_EQ(actual.size(), 1);
+    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    dem_error_terms: D0[coords 2,3]
+    CircuitErrorLocation {
+        flipped_measurement.measurement_record_index: 3
+        flipped_measurement.measured_observable: X0[coords 5,6]
+        Circuit location stack trace:
+            (after 10 TICKs)
+            at instruction #4 (MX) in the circuit
+            at target #4 of the instruction
+            resolving to MX(0.125) 0[coords 5,6]
+    }
+})RESULT");
+}
+
+TEST(ErrorMatcher, MPP_ERROR) {
+    auto actual = ErrorMatcher::match_errors_from_circuit(
+        Circuit(R"CIRCUIT(
+            QUBIT_COORDS(5, 6) 0
+            RY 0
+            MPP(0.125) Z1 Y0*Z3*Z4 Y5
+            DETECTOR(2, 3) rec[-2]
+            DETECTOR(5, 6) rec[-2]
+        )CIRCUIT"),
+        nullptr);
+    ASSERT_EQ(actual.size(), 1);
+    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    dem_error_terms: D0[coords 2,3] D1[coords 5,6]
+    CircuitErrorLocation {
+        flipped_measurement.measurement_record_index: 1
+        flipped_measurement.measured_observable: Y0[coords 5,6]*Z3*Z4
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #3 (MPP) in the circuit
+            at targets #2 to #6 of the instruction
+            resolving to MPP(0.125) Y0[coords 5,6]*Z3*Z4
+    }
+})RESULT");
+}
+
+TEST(ErrorMatcher, repetition_code_data_depolarization) {
     CircuitGenParameters params(2, 3, "memory");
     params.before_round_data_depolarization = 0.001;
-    params.before_measure_flip_probability = 0.125;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
-    auto actual = ErrorMatcher::match_errors_from_circuit(circuit, DetectorErrorModel());
+    auto actual = ErrorMatcher::match_errors_from_circuit(circuit, nullptr);
     std::stringstream ss;
     for (const auto &match : actual) {
         ss << "\n" << match << "\n";
@@ -223,6 +275,39 @@ MatchedError {
             at instruction #12 (DEPOLARIZE1) in the circuit
             at target #3 of the instruction
             resolving to DEPOLARIZE1(0.001) 4
+    }
+}
+)RESULT");
+}
+
+TEST(ErrorMatcher, surface_code_filter) {
+    CircuitGenParameters params(5, 5, "rotated_memory_z");
+    params.before_round_data_depolarization = 0.001;
+    params.after_clifford_depolarization = 0.001;
+    params.before_measure_flip_probability = 0.001;
+    params.after_reset_flip_probability = 0.001;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    DetectorErrorModel filter(R"MODEL(
+        error(1) D97 D98 D102 D103
+)MODEL");
+
+    auto actual = ErrorMatcher::match_errors_from_circuit(circuit, &filter);
+    std::stringstream ss;
+    for (const auto &match : actual) {
+        ss << "\n" << match << "\n";
+    }
+    ASSERT_EQ(ss.str(), R"RESULT(
+MatchedError {
+    dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
+    CircuitErrorLocation {
+        flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
+        Circuit location stack trace:
+            (after 31 TICKs)
+            at instruction #89 (a REPEAT 0 block) in the circuit
+            after 3 completed iterations
+            at instruction #10 (DEPOLARIZE2) in the REPEAT block
+            at targets #9 to #10 of the instruction
+            resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
     }
 }
 )RESULT");

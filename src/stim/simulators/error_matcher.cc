@@ -21,29 +21,32 @@
 
 using namespace stim;
 
-ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel &init_filter)
+ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *init_filter)
     : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1),
       cur_loc(),
-      filter(),
       output_map(),
+      allow_adding_new_dem_errors_to_output_map(init_filter == nullptr),
       dem_coords_map(),
       qubit_coords_map(circuit.get_final_qubit_coords()),
       total_measurements_in_circuit(circuit.count_measurements()),
       total_ticks_in_circuit(circuit.count_ticks()) {
-    // Canonicalize the desired error mechanisms and get them into a set for fast searching.
-    SparseXorVec<DemTarget> buf;
-    init_filter.iter_flatten_error_instructions([&](const DemInstruction &instruction) {
-        assert(instruction.type == DEM_ERROR);
-        buf.clear();
-        // Note: quadratic overhead, but typical size is 4 and 100 would be crazy big.
-        for (const auto &target : instruction.target_data) {
-            if (!target.is_separator()) {
-                buf.xor_item(target);
+
+    // If filtering, get the filter errors into the output map immediately.
+    if (!allow_adding_new_dem_errors_to_output_map) {
+        SparseXorVec<DemTarget> buf;
+        init_filter->iter_flatten_error_instructions([&](const DemInstruction &instruction) {
+            assert(instruction.type == DEM_ERROR);
+            buf.clear();
+            // Note: quadratic overhead, but typical size is 4 and 100 would be crazy big.
+            for (const auto &target : instruction.target_data) {
+                if (!target.is_separator()) {
+                    buf.xor_item(target);
+                }
             }
-        }
-        dem_targets_buf.append_tail(buf.sorted_items);
-        filter.insert(dem_targets_buf.commit_tail());
-    });
+            dem_targets_buf.append_tail(buf.sorted_items);
+            output_map.insert({dem_targets_buf.commit_tail(), {{}, {}}});
+        });
+    }
 }
 
 void ErrorMatcher::err_atom(const Operation &effect) {
@@ -56,9 +59,9 @@ void ErrorMatcher::err_atom(const Operation &effect) {
 
     assert(error_analyzer.error_class_probabilities.size() == 1);
     ConstPointerRange<DemTarget> dem_error_terms = error_analyzer.error_class_probabilities.begin()->first;
-    if (!dem_error_terms.empty() && (filter.empty() || filter.find(dem_error_terms) != filter.end())) {
+    auto entry = output_map.find(dem_error_terms);
+    if (!dem_error_terms.empty() && (allow_adding_new_dem_errors_to_output_map || entry != output_map.end())) {
         // We have a desired match! Record it.
-        auto entry = output_map.find(dem_error_terms);
         CircuitErrorLocation new_loc = cur_loc;
         if (cur_op != nullptr) {
             new_loc.instruction_targets.fill_args_and_targets_in_range(cur_op->target_data, qubit_coords_map);
@@ -66,12 +69,9 @@ void ErrorMatcher::err_atom(const Operation &effect) {
         if (entry == output_map.end()) {
             dem_targets_buf.append_tail(dem_error_terms);
             auto stored_key = dem_targets_buf.commit_tail();
-            MatchedError new_match{{}, {new_loc}};
-            new_match.fill_in_dem_targets(stored_key, dem_coords_map);
-            output_map.insert({stored_key, std::move(new_match)});
-        } else {
-            entry->second.circuit_error_locations.push_back(std::move(new_loc));
+            entry = output_map.insert({stored_key, {{}, {}}}).first;
         }
+        entry->second.circuit_error_locations.push_back(std::move(new_loc));
     }
 
     // Restore the pristine state.
@@ -84,6 +84,9 @@ void ErrorMatcher::resolve_paulis_into(ConstPointerRange<GateTarget> targets,
                                        uint32_t target_flags,
                                        std::vector<GateTargetWithCoords> &out) {
     for (const auto &t : targets) {
+        if (t.is_combiner()) {
+            continue;
+        }
         auto entry = qubit_coords_map.find(t.qubit_value());
         if (entry != qubit_coords_map.end()) {
             out.push_back({t, entry->second});
@@ -272,7 +275,7 @@ void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
 }
 
 std::vector<MatchedError> ErrorMatcher::match_errors_from_circuit(
-    const Circuit &circuit, const DetectorErrorModel &filter) {
+    const Circuit &circuit, const DetectorErrorModel *filter) {
     // Find the matches.
     ErrorMatcher finder(circuit, filter);
     finder.rev_process_circuit(1, circuit);
@@ -280,6 +283,7 @@ std::vector<MatchedError> ErrorMatcher::match_errors_from_circuit(
     // And list them out.
     std::vector<MatchedError> result;
     for (auto &e : finder.output_map) {
+        e.second.fill_in_dem_targets(e.first, finder.dem_coords_map);
         result.push_back(std::move(e.second));
     }
 

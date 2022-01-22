@@ -226,7 +226,7 @@ TEST(matched_error, MatchedError_basics) {
             after 15 completed iterations
             at instruction #14 (X_ERROR) in the REPEAT block
             at targets #12 to #17 of the instruction
-        resolving to X_ERROR(0.125) 5[coords 1,2,3] X6*Y9[coords 3,4] rec[-5]
+            resolving to X_ERROR(0.125) 5[coords 1,2,3] X6*Y9[coords 3,4] rec[-5]
     }
     CircuitErrorLocation {
         flipped_pauli_product: X3[coords 11,12]*Z5
@@ -238,7 +238,7 @@ TEST(matched_error, MatchedError_basics) {
             after 15 completed iterations
             at instruction #14 (X_ERROR) in the REPEAT block
             at targets #12 to #17 of the instruction
-        resolving to X_ERROR(0.125) 5[coords 1,2,3] X6*Y9[coords 3,4] rec[-5]
+            resolving to X_ERROR(0.125) 5[coords 1,2,3] X6*Y9[coords 3,4] rec[-5]
     }
 })RESULT");
 }
@@ -250,5 +250,6 @@ TEST(matched_error, MatchedError_fill) {
         {{5, {11, 13}}});
     ASSERT_EQ(err.str(), R"RESULT(MatchedError {
     dem_error_terms: D5[coords 11,13] D6
+    [no single circuit error had these exact symptoms]
 })RESULT");
 }
