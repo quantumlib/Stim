@@ -211,6 +211,9 @@ Only details relevant to error mechanisms that appear in this model will be incl
 The argument must be a filepath leading to a [stim detector error model format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
 )PARAGRAPH";
 
+    flags["--single"] = R"PARAGRAPH(Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
+)PARAGRAPH";
+
     flags["--out_format"] = R"PARAGRAPH(Specifies a data format to use when writing shot data, e.g. `01` or `r8`.
 
 Defaults to `01` when not specified.

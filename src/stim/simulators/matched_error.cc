@@ -364,3 +364,13 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
     }
     return strcmp(gate->name, other.gate->name) < 0;
 }
+
+bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {
+    if (flipped_pauli_product.size() != other.flipped_pauli_product.size()) {
+        return flipped_pauli_product.size() < other.flipped_pauli_product.size();
+    }
+    if (flipped_measurement.measured_observable.size() != other.flipped_measurement.measured_observable.size()) {
+        return other.flipped_measurement.measured_observable.size() < other.flipped_measurement.measured_observable.size();
+    }
+    return *this < other;
+}

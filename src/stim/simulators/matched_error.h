@@ -137,6 +137,7 @@ struct CircuitErrorLocation {
 
     void canonicalize();
     bool operator<(const CircuitErrorLocation &other) const;
+    bool is_simpler_than(const CircuitErrorLocation &other) const;
 
     /// Standard methods for easy testing.
     bool operator==(const CircuitErrorLocation &other) const;

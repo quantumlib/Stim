@@ -21,13 +21,15 @@
 
 using namespace stim;
 
-ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *init_filter)
+ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *init_filter, bool reduce_to_one_representative_error)
     : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1),
       cur_loc(),
       output_map(),
       allow_adding_new_dem_errors_to_output_map(init_filter == nullptr),
+      reduce_to_one_representative_error(reduce_to_one_representative_error),
       dem_coords_map(),
       qubit_coords_map(circuit.get_final_qubit_coords()),
+      cur_coord_offset(circuit.final_coord_shift()),
       total_measurements_in_circuit(circuit.count_measurements()),
       total_ticks_in_circuit(circuit.count_ticks()) {
     // If filtering, get the filter errors into the output map immediately.
@@ -70,7 +72,12 @@ void ErrorMatcher::err_atom(const Operation &effect) {
             auto stored_key = dem_targets_buf.commit_tail();
             entry = output_map.insert({stored_key, {{}, {}}}).first;
         }
-        entry->second.circuit_error_locations.push_back(std::move(new_loc));
+        auto &out = entry->second.circuit_error_locations;
+        if (out.empty() || !reduce_to_one_representative_error) {
+            out.push_back(std::move(new_loc));
+        } else if (new_loc.is_simpler_than(out.front())) {
+            out[0] = std::move(new_loc);
+        }
     }
 
     // Restore the pristine state.
@@ -203,7 +210,18 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
         if (!op.target_data.args.empty()) {
             auto id = error_analyzer.total_detectors - error_analyzer.used_detectors;
             auto entry = dem_coords_map.insert({id, {}}).first;
-            entry->second.insert(entry->second.begin(), op.target_data.args.begin(), op.target_data.args.end());
+            for (size_t k = 0; k < op.target_data.args.size(); k++) {
+                double d = op.target_data.args[k];
+                if (k < cur_coord_offset.size()) {
+                    d += cur_coord_offset[k];
+                }
+                entry->second.push_back(d);
+            }
+        }
+    } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+        error_analyzer.SHIFT_COORDS(op.target_data);
+        for (size_t k = 0; k < op.target_data.args.size(); k++) {
+            cur_coord_offset[k] -= op.target_data.args[k];
         }
     } else if (!(op.gate->flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
         (error_analyzer.*op.gate->reverse_error_analyzer_function)(op.target_data);
@@ -264,9 +282,11 @@ void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
 }
 
 std::vector<MatchedError> ErrorMatcher::match_errors_from_circuit(
-    const Circuit &circuit, const DetectorErrorModel *filter) {
+    const Circuit &circuit,
+    const DetectorErrorModel *filter,
+    bool reduce_to_one_representative_error) {
     // Find the matches.
-    ErrorMatcher finder(circuit, filter);
+    ErrorMatcher finder(circuit, filter, reduce_to_one_representative_error);
     finder.rev_process_circuit(1, circuit);
 
     // And list them out.

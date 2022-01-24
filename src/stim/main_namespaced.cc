@@ -37,11 +37,12 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
 }
 
 int main_mode_match_errors(int argc, const char **argv) {
-    check_for_unknown_arguments({"--dem_filter", "--out", "--in"}, {}, "match_errors", argc, argv);
+    check_for_unknown_arguments({"--dem_filter", "--single", "--out", "--in"}, {}, "match_errors", argc, argv);
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
     std::unique_ptr<DetectorErrorModel> dem_filter;
+    bool single = find_bool_argument("--single", argc, argv);
     bool has_filter = find_argument("--dem_filter", argc, argv) != nullptr;
     if (has_filter) {
         FILE *filter_file = find_open_file_argument("--dem_filter", stdin, "r", argc, argv);
@@ -53,7 +54,7 @@ int main_mode_match_errors(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    for (const auto &e : ErrorMatcher::match_errors_from_circuit(circuit, dem_filter.get())) {
+    for (const auto &e : ErrorMatcher::match_errors_from_circuit(circuit, dem_filter.get(), single)) {
         std::cout << e << "\n";
     }
     if (out != stdout) {
