@@ -22,7 +22,7 @@ The intent of the file format is to act as a reasonably flexible configuration l
         - [`^`: separator target](#separator-target)
     - [State Space](#State-Space)
 - [Examples](#Examples)
-    - [Circular Error Mode](#circular-error-model)
+    - [Circular Error Model](#circular-error-model)
     - [Repetition Code Error Model](#repetition-code-error-model)
     - [Surface Code Error Model](#surface-code-error-model)
 
