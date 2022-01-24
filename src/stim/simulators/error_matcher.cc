@@ -263,7 +263,7 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
 }
 
 void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
-    cur_loc.stack_frames.push_back({0, 0});
+    cur_loc.stack_frames.push_back({0, 0, 0});
     cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
     for (size_t rep = reps; rep--;) {
         cur_loc.stack_frames.back().iteration_index = rep;
@@ -272,7 +272,10 @@ void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
 
             const auto &op = block.operations[k];
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                rev_process_circuit(op_data_rep_count(op.target_data), op_data_block_body(block, op.target_data));
+                auto rep_count = op_data_rep_count(op.target_data);
+                cur_loc.stack_frames.back().instruction_repetitions_arg = op_data_rep_count(op.target_data);
+                rev_process_circuit(rep_count, op_data_block_body(block, op.target_data));
+                cur_loc.stack_frames.back().instruction_repetitions_arg = 0;
             } else {
                 rev_process_instruction(op);
             }

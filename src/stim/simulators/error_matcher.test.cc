@@ -394,7 +394,7 @@ MatchedError {
         flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
         Circuit location stack trace:
             (after 31 TICKs)
-            at instruction #89 (a REPEAT 0 block) in the circuit
+            at instruction #89 (a REPEAT 4 block) in the circuit
             after 3 completed iterations
             at instruction #10 (DEPOLARIZE2) in the REPEAT block
             at targets #9 to #10 of the instruction
