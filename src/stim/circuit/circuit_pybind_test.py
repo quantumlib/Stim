@@ -626,3 +626,66 @@ def test_anti_commuting_mpp_error_message():
             MPP X0 Z0
             DETECTOR rec[-1]
         """).detector_error_model()
+
+
+def test_shortest_graphlike_error():
+    c = stim.Circuit("""
+        TICK
+        X_ERROR(0.125) 0
+        Y_ERROR(0.125) 0
+        M 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+
+    actual = c.shortest_graphlike_error()
+    assert len(actual) == 1
+    assert isinstance(actual[0], stim.MatchedError)
+    assert str(actual[0]) == """MatchedError {
+    dem_error_terms: L0
+    CircuitErrorLocation {
+        flipped_pauli_product: Y0
+        Circuit location stack trace:
+            (after 1 TICKs)
+            at instruction #3 (Y_ERROR) in the circuit
+            at target #1 of the instruction
+            resolving to Y_ERROR(0.125) 0
+    }
+    CircuitErrorLocation {
+        flipped_pauli_product: X0
+        Circuit location stack trace:
+            (after 1 TICKs)
+            at instruction #2 (X_ERROR) in the circuit
+            at target #1 of the instruction
+            resolving to X_ERROR(0.125) 0
+    }
+}"""
+
+    actual = c.shortest_graphlike_error(canonicalize_circuit_errors=True)
+    assert len(actual) == 1
+    assert isinstance(actual[0], stim.MatchedError)
+    assert str(actual[0]) == """MatchedError {
+    dem_error_terms: L0
+    CircuitErrorLocation {
+        flipped_pauli_product: X0
+        Circuit location stack trace:
+            (after 1 TICKs)
+            at instruction #2 (X_ERROR) in the circuit
+            at target #1 of the instruction
+            resolving to X_ERROR(0.125) 0
+    }
+}"""
+
+
+def test_shortest_graphlike_error_ignore():
+    c = stim.Circuit("""
+        TICK
+        X_ERROR(0.125) 0
+        M 0
+        DETECTOR rec[-1]
+        DETECTOR rec[-1]
+        DETECTOR rec[-1]
+    """)
+    with pytest.raises(ValueError, match="Failed to decompose errors"):
+        c.shortest_graphlike_error()
+    with pytest.raises(ValueError, match="Failed to find any graphlike logical errors"):
+        c.shortest_graphlike_error(ignore_ungraphlike_errors=True)

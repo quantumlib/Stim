@@ -32,6 +32,18 @@
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
+- [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
+    - [`stim.CircuitErrorLocation.__init__`](#stim.CircuitErrorLocation.__init__)
+    - [`stim.CircuitErrorLocation.flipped_measurement`](#stim.CircuitErrorLocation.flipped_measurement)
+    - [`stim.CircuitErrorLocation.flipped_pauli_product`](#stim.CircuitErrorLocation.flipped_pauli_product)
+    - [`stim.CircuitErrorLocation.instruction_targets`](#stim.CircuitErrorLocation.instruction_targets)
+    - [`stim.CircuitErrorLocation.stack_frames`](#stim.CircuitErrorLocation.stack_frames)
+    - [`stim.CircuitErrorLocation.tick_offset`](#stim.CircuitErrorLocation.tick_offset)
+- [`stim.CircuitErrorLocationStackFrame`](#stim.CircuitErrorLocationStackFrame)
+    - [`stim.CircuitErrorLocationStackFrame.__init__`](#stim.CircuitErrorLocationStackFrame.__init__)
+    - [`stim.CircuitErrorLocationStackFrame.instruction_offset`](#stim.CircuitErrorLocationStackFrame.instruction_offset)
+    - [`stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg`](#stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg)
+    - [`stim.CircuitErrorLocationStackFrame.iteration_index`](#stim.CircuitErrorLocationStackFrame.iteration_index)
 - [`stim.CircuitInstruction`](#stim.CircuitInstruction)
     - [`stim.CircuitInstruction.__eq__`](#stim.CircuitInstruction.__eq__)
     - [`stim.CircuitInstruction.__init__`](#stim.CircuitInstruction.__init__)
@@ -48,6 +60,13 @@
     - [`stim.CircuitRepeatBlock.__repr__`](#stim.CircuitRepeatBlock.__repr__)
     - [`stim.CircuitRepeatBlock.body_copy`](#stim.CircuitRepeatBlock.body_copy)
     - [`stim.CircuitRepeatBlock.repeat_count`](#stim.CircuitRepeatBlock.repeat_count)
+- [`stim.CircuitTargetsInsideInstruction`](#stim.CircuitTargetsInsideInstruction)
+    - [`stim.CircuitTargetsInsideInstruction.__init__`](#stim.CircuitTargetsInsideInstruction.__init__)
+    - [`stim.CircuitTargetsInsideInstruction.args`](#stim.CircuitTargetsInsideInstruction.args)
+    - [`stim.CircuitTargetsInsideInstruction.gate`](#stim.CircuitTargetsInsideInstruction.gate)
+    - [`stim.CircuitTargetsInsideInstruction.target_range_end`](#stim.CircuitTargetsInsideInstruction.target_range_end)
+    - [`stim.CircuitTargetsInsideInstruction.target_range_start`](#stim.CircuitTargetsInsideInstruction.target_range_start)
+    - [`stim.CircuitTargetsInsideInstruction.targets_in_range`](#stim.CircuitTargetsInsideInstruction.targets_in_range)
 - [`stim.CompiledDetectorSampler`](#stim.CompiledDetectorSampler)
     - [`stim.CompiledDetectorSampler.__init__`](#stim.CompiledDetectorSampler.__init__)
     - [`stim.CompiledDetectorSampler.__repr__`](#stim.CompiledDetectorSampler.__repr__)
@@ -93,6 +112,10 @@
     - [`stim.DemTarget.relative_detector_id`](#stim.DemTarget.relative_detector_id)
     - [`stim.DemTarget.separator`](#stim.DemTarget.separator)
     - [`stim.DemTarget.val`](#stim.DemTarget.val)
+- [`stim.DemTargetWithCoords`](#stim.DemTargetWithCoords)
+    - [`stim.DemTargetWithCoords.__init__`](#stim.DemTargetWithCoords.__init__)
+    - [`stim.DemTargetWithCoords.coords`](#stim.DemTargetWithCoords.coords)
+    - [`stim.DemTargetWithCoords.dem_target`](#stim.DemTargetWithCoords.dem_target)
 - [`stim.DetectorErrorModel`](#stim.DetectorErrorModel)
     - [`stim.DetectorErrorModel.__add__`](#stim.DetectorErrorModel.__add__)
     - [`stim.DetectorErrorModel.__eq__`](#stim.DetectorErrorModel.__eq__)
@@ -114,6 +137,10 @@
     - [`stim.DetectorErrorModel.num_errors`](#stim.DetectorErrorModel.num_errors)
     - [`stim.DetectorErrorModel.num_observables`](#stim.DetectorErrorModel.num_observables)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
+- [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
+    - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
+    - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
+    - [`stim.FlippedMeasurement.record_index`](#stim.FlippedMeasurement.record_index)
 - [`stim.GateTarget`](#stim.GateTarget)
     - [`stim.GateTarget.__eq__`](#stim.GateTarget.__eq__)
     - [`stim.GateTarget.__init__`](#stim.GateTarget.__init__)
@@ -128,6 +155,14 @@
     - [`stim.GateTarget.is_y_target`](#stim.GateTarget.is_y_target)
     - [`stim.GateTarget.is_z_target`](#stim.GateTarget.is_z_target)
     - [`stim.GateTarget.value`](#stim.GateTarget.value)
+- [`stim.GateTargetWithCoords`](#stim.GateTargetWithCoords)
+    - [`stim.GateTargetWithCoords.__init__`](#stim.GateTargetWithCoords.__init__)
+    - [`stim.GateTargetWithCoords.coords`](#stim.GateTargetWithCoords.coords)
+    - [`stim.GateTargetWithCoords.gate_target`](#stim.GateTargetWithCoords.gate_target)
+- [`stim.MatchedError`](#stim.MatchedError)
+    - [`stim.MatchedError.__init__`](#stim.MatchedError.__init__)
+    - [`stim.MatchedError.circuit_error_locations`](#stim.MatchedError.circuit_error_locations)
+    - [`stim.MatchedError.dem_error_terms`](#stim.MatchedError.dem_error_terms)
 - [`stim.PauliString`](#stim.PauliString)
     - [`stim.PauliString.__add__`](#stim.PauliString.__add__)
     - [`stim.PauliString.__eq__`](#stim.PauliString.__eq__)
@@ -255,6 +290,21 @@
 > 
 > ```
 
+## `stim.CircuitErrorLocation`<a name="stim.CircuitErrorLocation"></a>
+> ```
+> Describes the location of an error mechanism from a stim circuit.
+> ```
+
+## `stim.CircuitErrorLocationStackFrame`<a name="stim.CircuitErrorLocationStackFrame"></a>
+> ```
+> Describes the location of an instruction being executed within a
+> circuit or loop, distinguishing between separate loop iterations.
+> 
+> The full location of an instruction is a list of these frames,
+> drilling down from the top level circuit to the inner-most loop
+> that the instruction is within.
+> ```
+
 ## `stim.CircuitInstruction`<a name="stim.CircuitInstruction"></a>
 > ```
 > An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
@@ -295,6 +345,11 @@
 >         CX 0 1
 >         CZ 1 2
 >     ''')
+> ```
+
+## `stim.CircuitTargetsInsideInstruction`<a name="stim.CircuitTargetsInsideInstruction"></a>
+> ```
+> Describes a range of targets within a circuit instruction.
 > ```
 
 ## `stim.CompiledDetectorSampler`<a name="stim.CompiledDetectorSampler"></a>
@@ -354,6 +409,24 @@
 > An instruction target from a detector error model (.dem) file.
 > ```
 
+## `stim.DemTargetWithCoords`<a name="stim.DemTargetWithCoords"></a>
+> ```
+> A detector error model instruction target with associated coords.
+> 
+> It is also guaranteed that, if the type of the DEM target is a
+> relative detector id, it is actually absolute (i.e. relative to
+> 0).
+> 
+> For example, if the DEM target is a detector from a circuit with
+> coordinate arguments given to detectors, the coords field will
+> contain the coordinate data for the detector.
+> 
+> This is helpful information to have available when debugging a
+> problem in a circuit, instead of having to constantly manually
+> look up the coordinates of a detector index in order to understand
+> what is happening.
+> ```
+
 ## `stim.DetectorErrorModel`<a name="stim.DetectorErrorModel"></a>
 > ```
 > A list of instructions describing error mechanisms in terms of the detection events they produce.
@@ -385,6 +458,14 @@
 >     ''')
 > ```
 
+## `stim.FlippedMeasurement`<a name="stim.FlippedMeasurement"></a>
+> ```
+> Describes a measurement that was flipped.
+> 
+> Gives the measurement's index in the measurement record, and also
+> the observable of the measurement.
+> ```
+
 ## `stim.GateTarget`<a name="stim.GateTarget"></a>
 > ```
 > Represents a gate target, like `0` or `rec[-1]`, from a circuit.
@@ -398,6 +479,25 @@
 >     stim.GateTarget(0)
 >     >>> circuit[0].targets_copy()[1]
 >     stim.GateTarget(stim.target_inv(1))
+> ```
+
+## `stim.GateTargetWithCoords`<a name="stim.GateTargetWithCoords"></a>
+> ```
+> A gate target with associated coordinate information.
+> 
+> For example, if the gate target is a qubit from a circuit with
+> QUBIT_COORDS instructions, the coords field will contain the
+> coordinate data from the QUBIT_COORDS instruction for the qubit.
+> 
+> This is helpful information to have available when debugging a
+> problem in a circuit, instead of having to constantly manually
+> look up the coordinates of a qubit index in order to understand
+> what is happening.
+> ```
+
+## `stim.MatchedError`<a name="stim.MatchedError"></a>
+> ```
+> Describes the location of an error mechanism from a stim circuit.
 > ```
 
 ## `stim.PauliString`<a name="stim.PauliString"></a>
@@ -1394,7 +1494,7 @@
 >     6
 > ```
 
-### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool) -> List[str]`<a name="stim.Circuit.shortest_graphlike_error"></a>
+### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool = False, canonicalize_circuit_errors: bool = False) -> List[stim.MatchedError]`<a name="stim.Circuit.shortest_graphlike_error"></a>
 > ```
 > Finds a minimum sized set of graphlike errors that produce an undetected logical error.
 > 
@@ -1410,9 +1510,25 @@
 > converting the physical errors making up that logical error back into representative circuit errors.
 > 
 > Args:
->     ignore_ungraphlike_errors: Defaults to False. When False, an exception is raised if there are any
->         errors in the circuit that cannot be decomposed into graphlike errors. When True, non-graphlike
->         errors are simply skipped as if they weren't present (they are not even decomposed).
+>     ignore_ungraphlike_errors:
+>         False (default): Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
+>             If this fails, raise an exception instead of continuing.
+>             Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
+>             This can produce a result that lists DEM errors with zero matching circuit errors, because the
+>             only way to achieve those errors is by combining a decomposed error with a graphlike error.
+>             As a result, when using this option it is NOT guaranteed that the length of the result is an
+>             upper bound on the true code distance. That is only the case if every item in the result lists
+>             at least one matching circuit error.
+>         True: Ungraphlike errors are simply skipped as if they weren't present, even if they could become
+>             graphlike if decomposed. This guarantees the length of the result is an upper bound on the true
+>             code distance.
+>     canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
+>         False (default): Each DEM error lists every possible circuit error that single handedly produces
+>             those symptoms as a potential match. This is verbose but gives complete information.
+>         True: Each DEM error is matched with one possible circuit error that single handedly produces those
+>             symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
+>             This discards mostly-redundant information about different ways to produce the same symptoms in
+>             order to give a succinct result.
 > 
 > Returns:
 >     ...
@@ -1427,6 +1543,70 @@
 >     ...     before_round_data_depolarization=0.01)
 >     >>> len(circuit.shortest_graphlike_error(decompose_errors=True))
 >     7
+> ```
+
+### `stim.CircuitErrorLocation.__init__(self, *, tick_offset: int, flipped_pauli_product: List[stim.GateTargetWithCoords], flipped_measurement: object, instruction_targets: stim.CircuitTargetsInsideInstruction, stack_frames: List[stim.CircuitErrorLocationStackFrame]) -> None`<a name="stim.CircuitErrorLocation.__init__"></a>
+> ```
+> Creates a stim.CircuitErrorLocation.
+> ```
+
+### `stim.CircuitErrorLocation.flipped_measurement`<a name="stim.CircuitErrorLocation.flipped_measurement"></a>
+> ```
+> The measurement that was flipped by the error mechanism.
+> If the error isn't a measurement error, this will be None.
+> ```
+
+### `stim.CircuitErrorLocation.flipped_pauli_product`<a name="stim.CircuitErrorLocation.flipped_pauli_product"></a>
+> ```
+> The Pauli errors that the error mechanism applied to qubits.
+> When the error is a measurement error, this will be an empty list.
+> ```
+
+### `stim.CircuitErrorLocation.instruction_targets`<a name="stim.CircuitErrorLocation.instruction_targets"></a>
+> ```
+> Within the error instruction, which may have hundreds of
+> targets, which specific targets were being executed to
+> produce the error.
+> ```
+
+### `stim.CircuitErrorLocation.stack_frames`<a name="stim.CircuitErrorLocation.stack_frames"></a>
+> ```
+> Where in the circuit's execution does the error mechanism occur,
+> accounting for things like nested loops that iterate multiple times.
+> ```
+
+### `stim.CircuitErrorLocation.tick_offset`<a name="stim.CircuitErrorLocation.tick_offset"></a>
+> ```
+> The number of TICKs that executed before the error mechanism being discussed,
+> including TICKs that occurred multiple times during loops.
+> ```
+
+### `stim.CircuitErrorLocationStackFrame.__init__(self, *, instruction_offset: int, iteration_index: int, instruction_repetitions_arg: int) -> None`<a name="stim.CircuitErrorLocationStackFrame.__init__"></a>
+> ```
+> Creates a stim.CircuitErrorLocationStackFrame.
+> ```
+
+### `stim.CircuitErrorLocationStackFrame.instruction_offset`<a name="stim.CircuitErrorLocationStackFrame.instruction_offset"></a>
+> ```
+> The index of the instruction within the circuit, or within the
+> instruction's parent REPEAT block. This is slightly different
+> from the line number, because blank lines and commented lines
+> don't count and also because the offset of the first instruction
+> is 0 instead of 1.
+> ```
+
+### `stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg`<a name="stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg"></a>
+> ```
+> If the instruction being referred to is a REPEAT block,
+> this is the repetition count of that REPEAT block. Otherwise
+> this field defaults to 0.
+> ```
+
+### `stim.CircuitErrorLocationStackFrame.iteration_index`<a name="stim.CircuitErrorLocationStackFrame.iteration_index"></a>
+> ```
+> Disambiguates which iteration of the loop containing this instruction
+> is being referred to. If the instruction isn't in a REPEAT block, this
+> field defaults to 0.
 > ```
 
 ### `stim.CircuitInstruction.__eq__(self, arg0: stim.CircuitInstruction) -> bool`<a name="stim.CircuitInstruction.__eq__"></a>
@@ -1543,6 +1723,40 @@
 >     >>> repeat_block = circuit[1]
 >     >>> repeat_block.repeat_count
 >     5
+> ```
+
+### `stim.CircuitTargetsInsideInstruction.__init__(self, *, gate: str, args: List[float], target_range_start: int, target_range_end: int, targets_in_range: List[stim.GateTargetWithCoords]) -> None`<a name="stim.CircuitTargetsInsideInstruction.__init__"></a>
+> ```
+> Creates a stim.CircuitTargetsInsideInstruction.
+> ```
+
+### `stim.CircuitTargetsInsideInstruction.args`<a name="stim.CircuitTargetsInsideInstruction.args"></a>
+> ```
+> Returns parens arguments of the gate / instruction that was being executed.
+> ```
+
+### `stim.CircuitTargetsInsideInstruction.gate`<a name="stim.CircuitTargetsInsideInstruction.gate"></a>
+> ```
+> Returns the name of the gate / instruction that was being executed.
+> ```
+
+### `stim.CircuitTargetsInsideInstruction.target_range_end`<a name="stim.CircuitTargetsInsideInstruction.target_range_end"></a>
+> ```
+> Returns the exclusive end of the range of targets that were executing
+> within the gate / instruction.
+> ```
+
+### `stim.CircuitTargetsInsideInstruction.target_range_start`<a name="stim.CircuitTargetsInsideInstruction.target_range_start"></a>
+> ```
+> Returns the inclusive start of the range of targets that were executing
+> within the gate / instruction.
+> ```
+
+### `stim.CircuitTargetsInsideInstruction.targets_in_range`<a name="stim.CircuitTargetsInsideInstruction.targets_in_range"></a>
+> ```
+> Returns the subset of targets of the gate / instruction that were being executed.
+> 
+> Includes coordinate data with the targets.
 > ```
 
 ### `stim.CompiledDetectorSampler.__init__(self, circuit: stim.Circuit, *, seed: object = None) -> None`<a name="stim.CompiledDetectorSampler.__init__"></a>
@@ -2137,6 +2351,23 @@
 >     6
 > ```
 
+### `stim.DemTargetWithCoords.__init__(self, *, dem_target: stim.DemTarget, coords: List[float]) -> None`<a name="stim.DemTargetWithCoords.__init__"></a>
+> ```
+> Creates a stim.DemTargetWithCoords.
+> ```
+
+### `stim.DemTargetWithCoords.coords`<a name="stim.DemTargetWithCoords.coords"></a>
+> ```
+> Returns the associated coordinate information as a list of flaots.
+> 
+> If there is no coordinate information, returns an empty list.
+> ```
+
+### `stim.DemTargetWithCoords.dem_target`<a name="stim.DemTargetWithCoords.dem_target"></a>
+> ```
+> Returns the actual DEM target as a `stim.DemTarget`.
+> ```
+
 ### `stim.DetectorErrorModel.__add__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__add__"></a>
 > ```
 > Creates a detector error model by appending two models.
@@ -2637,6 +2868,25 @@
 >     7
 > ```
 
+### `stim.FlippedMeasurement.__init__(self, *, record_index: int, observable: object) -> None`<a name="stim.FlippedMeasurement.__init__"></a>
+> ```
+> Creates a stim.FlippedMeasurement.
+> ```
+
+### `stim.FlippedMeasurement.observable`<a name="stim.FlippedMeasurement.observable"></a>
+> ```
+> Returns the observable of the flipped measurement.
+> 
+> For example, an `MX 5` measurement will have the observable X5.
+> ```
+
+### `stim.FlippedMeasurement.record_index`<a name="stim.FlippedMeasurement.record_index"></a>
+> ```
+> The measurement record index of the flipped measurement.
+> For example, the fifth measurement in a circuit has a measurement
+> record index of 4.
+> ```
+
 ### `stim.GateTarget.__eq__(self, arg0: stim.GateTarget) -> bool`<a name="stim.GateTarget.__eq__"></a>
 > ```
 > Determines if two `stim.GateTarget`s are identical.
@@ -2706,6 +2956,46 @@
 ### `stim.GateTarget.value`<a name="stim.GateTarget.value"></a>
 > ```
 > The numeric part of the target. Positive for qubit targets, negative for measurement record targets.
+> ```
+
+### `stim.GateTargetWithCoords.__init__(self, *, gate_target: object, coords: List[float]) -> None`<a name="stim.GateTargetWithCoords.__init__"></a>
+> ```
+> Creates a stim.GateTargetWithCoords.
+> ```
+
+### `stim.GateTargetWithCoords.coords`<a name="stim.GateTargetWithCoords.coords"></a>
+> ```
+> Returns the associated coordinate information as a list of flaots.
+> 
+> If there is no coordinate information, returns an empty list.
+> ```
+
+### `stim.GateTargetWithCoords.gate_target`<a name="stim.GateTargetWithCoords.gate_target"></a>
+> ```
+> Returns the actual gate target as a `stim.GateTarget`.
+> ```
+
+### `stim.MatchedError.__init__(self, *, dem_error_terms: List[stim.DemTargetWithCoords], circuit_error_locations: List[stim.CircuitErrorLocation]) -> None`<a name="stim.MatchedError.__init__"></a>
+> ```
+> Creates a stim.MatchedError.
+> ```
+
+### `stim.MatchedError.circuit_error_locations`<a name="stim.MatchedError.circuit_error_locations"></a>
+> ```
+> The locations of circuit errors that produce the symptoms in dem_error_terms.
+> 
+> Note: if this list contains a single entry, it may be because a result
+> with a single representative error was requested (as opposed to all possible
+> errors).
+> 
+> Note: if this list is empty, it may be because there was a DEM error decomposed
+> into parts where one of the parts is impossible to make on its own from a single
+> circuit error.
+> ```
+
+### `stim.MatchedError.dem_error_terms`<a name="stim.MatchedError.dem_error_terms"></a>
+> ```
+> The detectors and observables flipped by this error mechanism.
 > ```
 
 ### `stim.PauliString.__add__(self, rhs: stim.PauliString) -> stim.PauliString`<a name="stim.PauliString.__add__"></a>

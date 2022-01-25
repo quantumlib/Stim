@@ -42,16 +42,14 @@ std::string circuit_repr(const Circuit &self) {
     return ss.str();
 }
 
-std::vector<std::string> circuit_shortest_graphlike_error(const Circuit &self, bool ignore_ungraphlike_errors) {
+std::vector<MatchedError> circuit_shortest_graphlike_error(
+        const Circuit &self,
+        bool ignore_ungraphlike_errors,
+        bool reduce_to_representative) {
     DetectorErrorModel dem =
         ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
-    auto candidates = ErrorMatcher::match_errors_from_circuit(self, &filter);
-    std::vector<std::string> result;
-    for (const auto &candidate : candidates) {
-        result.push_back(candidate.str());
-    }
-    return result;
+    return ErrorMatcher::match_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
 void circuit_append(
@@ -127,7 +125,7 @@ void circuit_append_strict(
     circuit_append(self, obj, targets, arg, false);
 }
 
-void pybind_circuit(pybind11::module &m) {
+pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
         m,
         "Circuit",
@@ -1146,11 +1144,16 @@ void pybind_circuit(pybind11::module &m) {
             return Circuit(pybind11::cast<std::string>(text).data());
         }));
 
+    return c;
+}
+
+void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
     c.def(
         "shortest_graphlike_error",
         &circuit_shortest_graphlike_error,
         pybind11::kw_only(),
-        pybind11::arg("ignore_ungraphlike_errors"),
+        pybind11::arg("ignore_ungraphlike_errors") = false,
+        pybind11::arg("canonicalize_circuit_errors") = false,
         clean_doc_string(u8R"DOC(
             Finds a minimum sized set of graphlike errors that produce an undetected logical error.
 
@@ -1166,9 +1169,25 @@ void pybind_circuit(pybind11::module &m) {
             converting the physical errors making up that logical error back into representative circuit errors.
 
             Args:
-                ignore_ungraphlike_errors: Defaults to False. When False, an exception is raised if there are any
-                    errors in the circuit that cannot be decomposed into graphlike errors. When True, non-graphlike
-                    errors are simply skipped as if they weren't present (they are not even decomposed).
+                ignore_ungraphlike_errors:
+                    False (default): Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
+                        If this fails, raise an exception instead of continuing.
+                        Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
+                        This can produce a result that lists DEM errors with zero matching circuit errors, because the
+                        only way to achieve those errors is by combining a decomposed error with a graphlike error.
+                        As a result, when using this option it is NOT guaranteed that the length of the result is an
+                        upper bound on the true code distance. That is only the case if every item in the result lists
+                        at least one matching circuit error.
+                    True: Ungraphlike errors are simply skipped as if they weren't present, even if they could become
+                        graphlike if decomposed. This guarantees the length of the result is an upper bound on the true
+                        code distance.
+                canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
+                    False (default): Each DEM error lists every possible circuit error that single handedly produces
+                        those symptoms as a potential match. This is verbose but gives complete information.
+                    True: Each DEM error is matched with one possible circuit error that single handedly produces those
+                        symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
+                        This discards mostly-redundant information about different ways to produce the same symptoms in
+                        order to give a succinct result.
 
             Returns:
                 ...

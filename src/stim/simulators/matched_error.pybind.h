@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _STIM_CIRCUIT_CIRCUIT_PYBIND_H
-#define _STIM_CIRCUIT_CIRCUIT_PYBIND_H
+#ifndef _STIM_SIMULATORS_MATCHED_ERROR_PYBIND_H
+#define _STIM_SIMULATORS_MATCHED_ERROR_PYBIND_H
 
 #include <pybind11/pybind11.h>
 
-#include "stim/circuit/circuit.h"
-
-pybind11::class_<stim::Circuit> pybind_circuit(pybind11::module &m);
-void pybind_circuit_after_types_all_defined(pybind11::class_<stim::Circuit> &c);
-std::string circuit_repr(const stim::Circuit &self);
+void pybind_matched_error(pybind11::module &m);
 
 #endif
