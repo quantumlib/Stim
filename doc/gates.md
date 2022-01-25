@@ -2004,32 +2004,36 @@
     
     - Parens Arguments:
     
-        Fifteen floats specifying disjoint non-identity Pauli pair case probabilities.
-        pix: Probability of applying an IX operation.
-        piy: Probability of applying an IY operation.
-        piz: Probability of applying an IZ operation.
-        pxi: Probability of applying an XI operation.
-        pxx: Probability of applying an XX operation.
-        pxy: Probability of applying an XY operation.
-        pxz: Probability of applying an XZ operation.
-        pyi: Probability of applying a YI operation.
-        pyx: Probability of applying a YX operation.
-        pyy: Probability of applying a YY operation.
-        pyz: Probability of applying a YZ operation.
-        pzi: Probability of applying a ZI operation.
-        pzx: Probability of applying a ZX operation.
-        pzy: Probability of applying a ZY operation.
-        pzz: Probability of applying a ZZ operation.
+        Fifteen floats specifying the disjoint probabilities of each possible Pauli pair
+        that can occur (except for the non-error double identity case).
+        The disjoint probability arguments are (in order):
+    
+        1. pix: Probability of applying an IX operation.
+        2. piy: Probability of applying an IY operation.
+        3. piz: Probability of applying an IZ operation.
+        4. pxi: Probability of applying an XI operation.
+        5. pxx: Probability of applying an XX operation.
+        6. pxy: Probability of applying an XY operation.
+        7. pxz: Probability of applying an XZ operation.
+        8. pyi: Probability of applying a YI operation.
+        9. pyx: Probability of applying a YX operation.
+        10. pyy: Probability of applying a YY operation.
+        11. pyz: Probability of applying a YZ operation.
+        12. pzi: Probability of applying a ZI operation.
+        13. pzx: Probability of applying a ZX operation.
+        14. pzy: Probability of applying a ZY operation.
+        15. pzz: Probability of applying a ZZ operation.
     
     - Targets:
     
-        Qubit pairs to apply the custom noise channel to.
+        Pairs of qubits to apply the custom noise channel to.
+        There must be an even number of targets.
     
     - Example:
     
         ```
         # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
-        # Apply independently to qubit pairs (1,2) (5,6) (8,3)
+        # Apply independently to qubit pairs (1,2), (5,6), and (8,3)
         PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
         ```
     

@@ -23,6 +23,7 @@
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/py/march.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/simulators/matched_error.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
@@ -121,13 +122,14 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c0 = pybind_compiled_detector_sampler_class(m);
     auto c1 = pybind_compiled_measurement_sampler_class(m);
     auto c2 = pybind_compiled_measurements_to_detection_events_converter_class(m);
-    pybind_circuit(m);
+    auto c_circuit = pybind_circuit(m);
     pybind_compiled_detector_sampler_methods(c0);
     pybind_compiled_measurement_sampler_methods(c1);
     pybind_compiled_measurements_to_detection_events_converter_methods(c2);
     pybind_pauli_string(m);
     pybind_tableau(m);
     pybind_tableau_simulator(m);
+    pybind_matched_error(m);
 
     m.def(
         "target_rec",
@@ -204,4 +206,5 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
     m.def("_UNSTABLE_detect_march", &detect_march);
+    pybind_circuit_after_types_all_defined(c_circuit);
 }

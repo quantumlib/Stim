@@ -21,6 +21,7 @@
 #include "stim/probability_util.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/simulators/error_matcher.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
@@ -33,6 +34,33 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
     }
     uint64_t seed = (uint64_t)find_int64_argument("--seed", 0, 0, INT64_MAX, argc, argv);
     return std::mt19937_64(seed ^ INTENTIONAL_VERSION_SEED_INCOMPATIBILITY);
+}
+
+int main_mode_match_errors(int argc, const char **argv) {
+    check_for_unknown_arguments({"--dem_filter", "--single", "--out", "--in"}, {}, "match_errors", argc, argv);
+
+    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    std::unique_ptr<DetectorErrorModel> dem_filter;
+    bool single = find_bool_argument("--single", argc, argv);
+    bool has_filter = find_argument("--dem_filter", argc, argv) != nullptr;
+    if (has_filter) {
+        FILE *filter_file = find_open_file_argument("--dem_filter", stdin, "r", argc, argv);
+        dem_filter =
+            std::unique_ptr<DetectorErrorModel>(new DetectorErrorModel(DetectorErrorModel::from_file(filter_file)));
+        fclose(filter_file);
+    }
+    auto circuit = Circuit::from_file(in);
+    if (in != stdin) {
+        fclose(in);
+    }
+    for (const auto &e : ErrorMatcher::match_errors_from_circuit(circuit, dem_filter.get(), single)) {
+        std::cout << e << "\n";
+    }
+    if (out != stdout) {
+        fclose(out);
+    }
+    return EXIT_SUCCESS;
 }
 
 int main_mode_detect(int argc, const char **argv) {
@@ -242,12 +270,14 @@ int stim::main(int argc, const char **argv) {
         bool mode_analyze_errors = is_mode("--analyze_errors");
         bool mode_gen = is_mode("--gen");
         bool mode_convert = is_mode("--m2d");
+        bool mode_match_errors = is_mode("--match_errors");
         bool old_mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
         if (old_mode_detector_hypergraph) {
             std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
             mode_analyze_errors = true;
         }
-        int modes_picked = mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert;
+        int modes_picked =
+            (mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert + mode_match_errors);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
             if (modes_picked > 1) {
@@ -277,6 +307,9 @@ int stim::main(int argc, const char **argv) {
         }
         if (mode_convert) {
             return main_mode_measurements_to_detections(argc, argv);
+        }
+        if (mode_match_errors) {
+            return main_mode_match_errors(argc, argv);
         }
 
         throw std::out_of_range("Mode not handled.");

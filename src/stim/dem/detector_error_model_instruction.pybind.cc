@@ -198,8 +198,7 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
         &ExposedDemInstruction::repr,
         "Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`.");
 
-    c.def("__hash__",
-          [](const ExposedDemInstruction &self){
-              return pybind11::hash(pybind11::str(self.str()));
-          });
+    c.def("__hash__", [](const ExposedDemInstruction &self) {
+        return pybind11::hash(pybind11::str(self.str()));
+    });
 }

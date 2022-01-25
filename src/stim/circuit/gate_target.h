@@ -57,6 +57,8 @@ struct GateTarget {
     bool operator<(const GateTarget &other) const;
     std::string str() const;
     std::string repr() const;
+
+    void write_succinct(std::ostream &out) const;
 };
 
 std::ostream &operator<<(std::ostream &out, const GateTarget &t);

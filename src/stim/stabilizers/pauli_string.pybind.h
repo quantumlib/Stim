@@ -33,13 +33,13 @@ struct PyPauliString {
     PyPauliString operator+(const PyPauliString &rhs) const;
     PyPauliString &operator+=(const PyPauliString &rhs);
 
-    PyPauliString operator*(pybind11::object rhs) const;
+    PyPauliString operator*(const pybind11::object &rhs) const;
     PyPauliString operator*(size_t power) const;
     PyPauliString operator*(std::complex<float> scale) const;
     PyPauliString operator*(const PyPauliString &rhs) const;
     PyPauliString operator/(const std::complex<float> &divisor) const;
 
-    PyPauliString &operator*=(pybind11::object rhs);
+    PyPauliString &operator*=(const pybind11::object &rhs);
     PyPauliString &operator*=(size_t power);
     PyPauliString &operator*=(std::complex<float> scale);
     PyPauliString &operator*=(const PyPauliString &rhs);

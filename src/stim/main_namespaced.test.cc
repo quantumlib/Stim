@@ -934,3 +934,33 @@ TEST(main, seeded_detecting) {
                 DETECTOR rec[-1]
             )input"));
 }
+
+TEST(main, match_errors) {
+    ASSERT_EQ(execute({"match_errors"}, ""), "");
+
+    RaiiTempNamedFile tmp;
+    FILE *f = fopen(tmp.path.data(), "w");
+    fprintf(f, "error(1) D0\n");
+    fclose(f);
+
+    ASSERT_EQ(
+        trim(execute({"match_errors", "--dem_filter", tmp.path.data()}, R"input(
+X_ERROR(0.25) 0 1
+M 0 1
+DETECTOR rec[-1]
+DETECTOR rec[-2]
+            )input")),
+        trim(R"output(
+MatchedError {
+    dem_error_terms: D0
+    CircuitErrorLocation {
+        flipped_pauli_product: X1
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #1 (X_ERROR) in the circuit
+            at target #2 of the instruction
+            resolving to X_ERROR(0.25) 1
+    }
+}
+            )output"));
+}

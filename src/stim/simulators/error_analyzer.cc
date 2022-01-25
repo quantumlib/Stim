@@ -260,7 +260,7 @@ void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const 
     d.resize(d.size() - skip);
 
     // Measurement error.
-    if (!dat.args.empty()) {
+    if (!dat.args.empty() && dat.args[0] > 0) {
         add_error(dat.args[0], d);
     }
 }

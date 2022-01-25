@@ -25,7 +25,9 @@
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/simulators/min_distance.h"
 
 using namespace stim;
 
@@ -40,12 +42,22 @@ std::string circuit_repr(const Circuit &self) {
     return ss.str();
 }
 
+std::vector<MatchedError> circuit_shortest_graphlike_error(
+        const Circuit &self,
+        bool ignore_ungraphlike_errors,
+        bool reduce_to_representative) {
+    DetectorErrorModel dem =
+        ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
+    DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
+    return ErrorMatcher::match_errors_from_circuit(self, &filter, reduce_to_representative);
+}
+
 void circuit_append(
-        Circuit &self,
-        const pybind11::object &obj,
-        const pybind11::object &targets,
-        pybind11::object arg,
-        bool backwards_compat) {
+    Circuit &self,
+    const pybind11::object &obj,
+    const pybind11::object &targets,
+    const pybind11::object &arg,
+    bool backwards_compat) {
     // Extract single target or list of targets.
     std::vector<uint32_t> raw_targets;
     try {
@@ -60,23 +72,24 @@ void circuit_append(
         const std::string &gate_name = pybind11::cast<std::string>(obj);
 
         // Maintain backwards compatibility to when there was always exactly one argument.
-        if (arg.is(pybind11::none())) {
-            if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
-                arg = pybind11::make_tuple(0.0);
-            } else {
-                arg = pybind11::make_tuple();
-            }
+        pybind11::object used_arg;
+        if (!arg.is(pybind11::none())) {
+            used_arg = arg;
+        } else if (backwards_compat && GATE_DATA.at(gate_name).arg_count == 1) {
+            used_arg = pybind11::make_tuple(0.0);
+        } else {
+            used_arg = pybind11::make_tuple();
         }
 
         // Extract single argument or list of arguments.
         try {
-            auto d = pybind11::cast<double>(arg);
+            auto d = pybind11::cast<double>(used_arg);
             self.append_op(gate_name, raw_targets, d);
             return;
         } catch (const pybind11::cast_error &ex) {
         }
         try {
-            auto args = pybind11::cast<std::vector<double>>(arg);
+            auto args = pybind11::cast<std::vector<double>>(used_arg);
             self.append_op(gate_name, raw_targets, args);
             return;
         } catch (const pybind11::cast_error &ex) {
@@ -84,16 +97,14 @@ void circuit_append(
         throw std::invalid_argument("Arg must be a double or sequence of doubles.");
     } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument(
-                "Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
+            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitInstruction.");
         }
 
         const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
         self.append_op(instruction.gate.name, instruction.raw_targets(), instruction.gate_args);
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
-            throw std::invalid_argument(
-                "Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
+            throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
         }
 
         const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
@@ -106,21 +117,15 @@ void circuit_append(
     }
 }
 void circuit_append_backwards_compat(
-        Circuit &self,
-        const pybind11::object &obj,
-        const pybind11::object &targets,
-        pybind11::object arg) {
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
     circuit_append(self, obj, targets, arg, true);
 }
 void circuit_append_strict(
-        Circuit &self,
-        const pybind11::object &obj,
-        const pybind11::object &targets,
-        pybind11::object arg) {
+    Circuit &self, const pybind11::object &obj, const pybind11::object &targets, const pybind11::object &arg) {
     circuit_append(self, obj, targets, arg, false);
 }
 
-void pybind_circuit(pybind11::module &m) {
+pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
         m,
         "Circuit",
@@ -939,7 +944,7 @@ void pybind_circuit(pybind11::module &m) {
 
     c.def(
         "__getitem__",
-        [](const Circuit &self, pybind11::object index_or_slice) -> pybind11::object {
+        [](const Circuit &self, const pybind11::object &index_or_slice) -> pybind11::object {
             pybind11::ssize_t index, step, slice_length;
             if (normalize_index_or_slice(index_or_slice, self.operations.size(), &index, &step, &slice_length)) {
                 return pybind11::cast(self.py_get_slice(index, step, slice_length));
@@ -1138,4 +1143,65 @@ void pybind_circuit(pybind11::module &m) {
         [](const pybind11::str &text) {
             return Circuit(pybind11::cast<std::string>(text).data());
         }));
+
+    return c;
+}
+
+void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
+    c.def(
+        "shortest_graphlike_error",
+        &circuit_shortest_graphlike_error,
+        pybind11::kw_only(),
+        pybind11::arg("ignore_ungraphlike_errors") = false,
+        pybind11::arg("canonicalize_circuit_errors") = false,
+        clean_doc_string(u8R"DOC(
+            Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+
+            A "graphlike error" is an error that creates at most two detection events (causes a change in the parity of
+            the measurement sets of at most two DETECTOR annotations).
+
+            Note that this method does not pay attention to error probabilities (other than ignoring errors with
+            probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
+            maximum probability of those physical errors all occurring.
+
+            This method works by converting the circuit into a `stim.DetectorErrorModel` using
+            `circuit.detector_error_model(...)`, computing the shortest graphlike error of the error model, and then
+            converting the physical errors making up that logical error back into representative circuit errors.
+
+            Args:
+                ignore_ungraphlike_errors:
+                    False (default): Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
+                        If this fails, raise an exception instead of continuing.
+                        Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
+                        This can produce a result that lists DEM errors with zero matching circuit errors, because the
+                        only way to achieve those errors is by combining a decomposed error with a graphlike error.
+                        As a result, when using this option it is NOT guaranteed that the length of the result is an
+                        upper bound on the true code distance. That is only the case if every item in the result lists
+                        at least one matching circuit error.
+                    True: Ungraphlike errors are simply skipped as if they weren't present, even if they could become
+                        graphlike if decomposed. This guarantees the length of the result is an upper bound on the true
+                        code distance.
+                canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
+                    False (default): Each DEM error lists every possible circuit error that single handedly produces
+                        those symptoms as a potential match. This is verbose but gives complete information.
+                    True: Each DEM error is matched with one possible circuit error that single handedly produces those
+                        symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
+                        This discards mostly-redundant information about different ways to produce the same symptoms in
+                        order to give a succinct result.
+
+            Returns:
+                ...
+
+            Examples:
+                >>> import stim
+
+                >>> circuit = stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     rounds=10,
+                ...     distance=7,
+                ...     before_round_data_depolarization=0.01)
+                >>> len(circuit.shortest_graphlike_error(decompose_errors=True))
+                7
+        )DOC")
+            .data());
 }

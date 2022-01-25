@@ -30,6 +30,7 @@ struct CommaSep;
 template <typename TIter>
 struct CommaSep {
     const TIter &iter;
+    const char *sep;
     std::string str() const {
         std::stringstream out;
         out << *this;
@@ -38,8 +39,8 @@ struct CommaSep {
 };
 
 template <typename TIter>
-CommaSep<TIter> comma_sep(const TIter &v) {
-    return CommaSep<TIter>{v};
+CommaSep<TIter> comma_sep(const TIter &v, const char *sep = ", ") {
+    return CommaSep<TIter>{v, sep};
 }
 
 template <typename TIter>
@@ -49,7 +50,7 @@ std::ostream &operator<<(std::ostream &out, const CommaSep<TIter> &v) {
         if (first) {
             first = false;
         } else {
-            out << ", ";
+            out << v.sep;
         }
         out << t;
     }

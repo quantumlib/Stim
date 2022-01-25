@@ -34,6 +34,10 @@
     - [--out](#--out)
     - [--out_format](#--out_format)
     - [--skip_reference_sample](#--skip_reference_sample)
+- **(mode)** [stim match_errors](#match_errors)
+    - [--dem_filter](#--dem_filter)
+    - [--in](#--in)
+    - [--out](#--out)
 - **(mode)** [stim repl](#repl)
 - **(mode)** [stim sample](#sample)
     - [--in](#--in)
@@ -277,10 +281,14 @@ Use `stim help [topic]` for information about specific topics. Available topics 
 <a name="m2d"></a>
 ### stim m2d
 
-*Convert measurement data to detection event data.*
+*Convert measurement data into detection event data.*
+
+Takes measurement data from stdin, and a circuit from the file given to `--circuit`. Converts the measurement data
+into detection event data based on annotations in the circuit. Outputs detection event data to stdout.
 
 Note that this conversion requires taking a reference sample from the circuit, in order to determine whether the
 measurement sets defining the detectors and observables have an expected parity of 0 or an expected parity of 1.
+To get the reference sample, a noiseless stabilizer simulation of the circuit is performed.
 
 stdin: The measurement data, in the format specified by --in_format.
 
@@ -308,6 +316,48 @@ Flags used with this mode:
 - [--out](#--out)
 - [--out_format](#--out_format)
 - [--skip_reference_sample](#--skip_reference_sample)
+
+<a name="match_errors"></a>
+### stim match_errors
+
+*Describes how detector error model errors correspond to circuit errors.*
+
+Takes a circuit on stdin, and optionally a detector error model file containing the errors to match on `--dem_filter`.
+Iterates over the circuit, recording which circuit noise processes violate which combinations of detectors and
+observables.
+In other words, matches circuit errors to detector error model (dem) errors.
+If a filter is specified, matches to dem errors not in the filter are discarded.
+Then outputs, for each dem error, that dem error and which circuit errors cause it.
+
+stdin: The circuit to look for noise processes in, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+
+stdout: A human readable description of dem errors that were found, with associated circuit error data.
+
+- Examples:
+
+    ```
+    >>> stim gen --code surface_code --task rotated_memory_z --distance 5 --rounds 10 --after_clifford_depolarization 0.001 > tmp.stim
+    >>> echo "error(1) D97 D98 D102 D103" > tmp.dem
+    >>> stim match_errors --in tmp.stim --dem_filter tmp.dem
+    MatchedError {
+        dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
+        CircuitErrorLocation {
+            flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
+            Circuit location stack trace:
+                (after 31 TICKs)
+                at instruction #89 (a REPEAT 0 block) in the circuit
+                after 3 completed iterations
+                at instruction #10 (DEPOLARIZE2) in the REPEAT block
+                at targets #9 to #10 of the instruction
+                resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
+        }
+    }
+    ```
+
+Flags used with this mode:
+- [--dem_filter](#--dem_filter)
+- [--in](#--in)
+- [--out](#--out)
 
 <a name="repl"></a>
 ### stim repl
@@ -516,6 +566,14 @@ Flags used with this mode:
     satisfying decomposition.
     
     
+- <a name="--dem_filter"></a>**`--dem_filter`**
+    Specifies a detector error model to use as a filter.
+    
+    Only details relevant to error mechanisms that appear in this model will be included in the output.
+    
+    The argument must be a filepath leading to a [stim detector error model format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
+    
+    
 - <a name="--distance"></a>**`--distance`**
     The minimum number of physical errors needed to cause a logical error.
     
@@ -610,6 +668,10 @@ Flags used with this mode:
     
     Defaults to 1.
     Must be an integer between 0 and a quintillion (10^18).
+    
+    
+- <a name="--single"></a>**`--single`**
+    Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
     
     
 - <a name="--skip_reference_sample"></a>**`--skip_reference_sample`**

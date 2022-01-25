@@ -34,4 +34,16 @@ bool normalize_index_or_slice(
     pybind11::ssize_t *step,
     pybind11::ssize_t *slice_length);
 
+template <typename T>
+pybind11::tuple tuple_tree(const std::vector<T> &val, size_t offset = 0) {
+    // A workaround for https://github.com/pybind/pybind11/issues/1928
+    if (offset >= val.size()) {
+        return pybind11::make_tuple();
+    }
+    if (offset + 1 == val.size()) {
+        return pybind11::make_tuple(val[offset]);
+    }
+    return pybind11::make_tuple(val[offset], tuple_tree(val, offset + 1));
+}
+
 #endif
