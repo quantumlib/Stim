@@ -670,6 +670,10 @@ Flags used with this mode:
     Must be an integer between 0 and a quintillion (10^18).
     
     
+- <a name="--single"></a>**`--single`**
+    Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
+    
+    
 - <a name="--skip_reference_sample"></a>**`--skip_reference_sample`**
     Instead of computing a reference sample for the given circuit, use
     a vacuous reference sample where where all measurement results are 0.
