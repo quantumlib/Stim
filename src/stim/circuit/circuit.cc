@@ -1032,7 +1032,7 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     return result;
 }
 
-void vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul = 1) {
+void stim::vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul) {
     while (target.size() < offset.size()) {
         target.push_back(0);
     }
@@ -1118,35 +1118,90 @@ std::vector<double> Circuit::final_coord_shift() const {
     return coord_shift;
 }
 
-std::vector<double> coords_of_detector_helper(
-    const Circuit &circuit, uint64_t detector_index, const std::vector<double> &initial_coord_shift) {
+void get_detector_coordinates_helper(
+    const Circuit &circuit,
+    const std::set<uint64_t> &included_detector_indices,
+    std::set<uint64_t>::const_iterator &iter_desired_detector_index,
+    const std::vector<double> &initial_coord_shift,
+    uint64_t &next_detector_index,
+    std::map<uint64_t, std::vector<double>> &out) {
+    if (iter_desired_detector_index == included_detector_indices.end()) {
+        return;
+    }
+    uint64_t desired_detector_index = *iter_desired_detector_index;
+
     std::vector<double> coord_shift = initial_coord_shift;
     for (const auto &op : circuit.operations) {
         if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
             vec_pad_add_mul(coord_shift, op.target_data.args);
         } else if (op.gate->id == gate_name_to_id("REPEAT")) {
             const auto &block = op_data_block_body(circuit, op.target_data);
+            auto block_shift = block.final_coord_shift();
             uint64_t per = block.count_detectors();
             uint64_t reps = op_data_rep_count(op.target_data);
-            uint64_t full_reps = per == 0 ? reps : std::min(reps, detector_index / per);
-            vec_pad_add_mul(coord_shift, block.final_coord_shift(), full_reps);
-            detector_index -= per * full_reps;
-            if (full_reps != reps) {
-                return coords_of_detector_helper(block, detector_index, coord_shift);
+            uint64_t used_reps = 0;
+            while (used_reps < reps) {
+                uint64_t skip = per == 0 ? reps : std::min(reps, (desired_detector_index - next_detector_index) / per);
+                used_reps += skip;
+                next_detector_index += per * skip;
+                vec_pad_add_mul(coord_shift, block_shift, skip);
+                if (used_reps < reps) {
+                    get_detector_coordinates_helper(
+                        block,
+                        included_detector_indices,
+                        iter_desired_detector_index,
+                        coord_shift,
+                        next_detector_index,
+                        out);
+                    used_reps += 1;
+                    vec_pad_add_mul(coord_shift, block_shift);
+                    if (iter_desired_detector_index == included_detector_indices.end()) {
+                        return;
+                    }
+                    desired_detector_index = *iter_desired_detector_index;
+                }
             }
         } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
-            if (detector_index == 0) {
-                coord_shift.resize(op.target_data.args.size());
-                vec_pad_add_mul(coord_shift, op.target_data.args);
-                return coord_shift;
+            if (next_detector_index == desired_detector_index) {
+                std::vector<double> det_coords;
+                for (size_t k = 0; k < op.target_data.args.size(); k++) {
+                    det_coords.push_back(op.target_data.args[k]);
+                    if (k < coord_shift.size()) {
+                        det_coords[k] += coord_shift[k];
+                    }
+                }
+                out[next_detector_index] = det_coords;
+
+                iter_desired_detector_index++;
+                if (iter_desired_detector_index == included_detector_indices.end()) {
+                    return;
+                }
+                desired_detector_index = *iter_desired_detector_index;
             }
-            detector_index -= 1;
+            next_detector_index++;
         }
     }
-    return {};
 }
+
 std::vector<double> Circuit::coords_of_detector(uint64_t detector_index) const {
-    return coords_of_detector_helper(*this, detector_index, {});
+    return get_detector_coordinates({detector_index})[detector_index];
+}
+
+std::map<uint64_t, std::vector<double>> Circuit::get_detector_coordinates(
+    const std::set<uint64_t> &included_detector_indices) const {
+    std::map<uint64_t, std::vector<double>> out;
+    uint64_t next_coordinate_index = 0;
+    std::set<uint64_t>::const_iterator iter = included_detector_indices.begin();
+    get_detector_coordinates_helper(*this, included_detector_indices, iter, {}, next_coordinate_index, out);
+
+    if (iter != included_detector_indices.end()) {
+        std::stringstream msg;
+        msg << "Detector index " << *iter << " is too big. The circuit has ";
+        msg << count_detectors() << " detectors)";
+        throw std::invalid_argument(msg.str());
+    }
+
+    return out;
 }
 
 std::string Circuit::describe_instruction_location(size_t instruction_offset) const {

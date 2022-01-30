@@ -23,6 +23,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -264,9 +265,13 @@ struct Circuit {
     std::map<uint64_t, std::vector<double>> get_final_qubit_coords() const;
 
     std::vector<double> coords_of_detector(uint64_t detector_index) const;
+    std::map<uint64_t, std::vector<double>> get_detector_coordinates(
+        const std::set<uint64_t> &included_detector_indices) const;
     std::vector<double> final_coord_shift() const;
     std::string describe_instruction_location(size_t instruction_offset) const;
 };
+
+void vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul = 1);
 
 /// Lists sets of measurements that have deterministic parity under noiseless execution from a circuit.
 struct DetectorsAndObservables {

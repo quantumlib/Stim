@@ -36,8 +36,8 @@ std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
     return std::mt19937_64(seed ^ INTENTIONAL_VERSION_SEED_INCOMPATIBILITY);
 }
 
-int main_mode_match_errors(int argc, const char **argv) {
-    check_for_unknown_arguments({"--dem_filter", "--single", "--out", "--in"}, {}, "match_errors", argc, argv);
+int main_mode_explain_errors(int argc, const char **argv) {
+    check_for_unknown_arguments({"--dem_filter", "--single", "--out", "--in"}, {}, "explain_errors", argc, argv);
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
@@ -54,7 +54,7 @@ int main_mode_match_errors(int argc, const char **argv) {
     if (in != stdin) {
         fclose(in);
     }
-    for (const auto &e : ErrorMatcher::match_errors_from_circuit(circuit, dem_filter.get(), single)) {
+    for (const auto &e : ErrorMatcher::explain_errors_from_circuit(circuit, dem_filter.get(), single)) {
         std::cout << e << "\n";
     }
     if (out != stdout) {
@@ -270,14 +270,15 @@ int stim::main(int argc, const char **argv) {
         bool mode_analyze_errors = is_mode("--analyze_errors");
         bool mode_gen = is_mode("--gen");
         bool mode_convert = is_mode("--m2d");
-        bool mode_match_errors = is_mode("--match_errors");
+        bool mode_explain_errors = is_mode("--explain_errors");
         bool old_mode_detector_hypergraph = find_bool_argument("--detector_hypergraph", argc, argv);
         if (old_mode_detector_hypergraph) {
             std::cerr << "[DEPRECATION] Use `stim analyze_errors` instead of `--detector_hypergraph`\n";
             mode_analyze_errors = true;
         }
         int modes_picked =
-            (mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert + mode_match_errors);
+            (mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert +
+             mode_explain_errors);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
             if (modes_picked > 1) {
@@ -308,8 +309,8 @@ int stim::main(int argc, const char **argv) {
         if (mode_convert) {
             return main_mode_measurements_to_detections(argc, argv);
         }
-        if (mode_match_errors) {
-            return main_mode_match_errors(argc, argv);
+        if (mode_explain_errors) {
+            return main_mode_explain_errors(argc, argv);
         }
 
         throw std::out_of_range("Mode not handled.");

@@ -21,6 +21,8 @@
 
 pybind11::class_<stim::Circuit> pybind_circuit(pybind11::module &m);
 void pybind_circuit_after_types_all_defined(pybind11::class_<stim::Circuit> &c);
+std::set<uint64_t> obj_to_abs_detector_id_set(
+    const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors);
 std::string circuit_repr(const stim::Circuit &self);
 
 #endif

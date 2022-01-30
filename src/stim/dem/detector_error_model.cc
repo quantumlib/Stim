@@ -201,7 +201,7 @@ void DemInstruction::validate() const {
         case DEM_SHIFT_DETECTORS:
             if (target_data.size() != 1) {
                 throw std::invalid_argument(
-                    "'shift_detectors' instruction takes 1 target, but got " + std::to_string(arg_data.size()) +
+                    "'shift_detectors' instruction takes 1 target, but got " + std::to_string(target_data.size()) +
                     " targets.");
             }
             break;
@@ -738,4 +738,123 @@ DetectorErrorModel &DetectorErrorModel::operator+=(const DetectorErrorModel &oth
         }
     }
     return *this;
+}
+
+std::pair<uint64_t, std::vector<double>> DetectorErrorModel::final_detector_and_coord_shift() const {
+    uint64_t detector_offset = 0;
+    std::vector<double> coord_shift;
+    for (const auto &op : instructions) {
+        if (op.type == DEM_SHIFT_DETECTORS) {
+            vec_pad_add_mul(coord_shift, op.arg_data);
+            detector_offset += op.target_data[0].data;
+        } else if (op.type == DEM_REPEAT_BLOCK) {
+            const auto &block = blocks[op.target_data[1].data];
+            uint64_t reps = op.target_data[0].data;
+            auto rec = block.final_detector_and_coord_shift();
+            vec_pad_add_mul(coord_shift, rec.second, reps);
+            detector_offset += reps * rec.first;
+        }
+    }
+    return {detector_offset, coord_shift};
+}
+
+bool get_detector_coordinates_helper(
+    const DetectorErrorModel &dem,
+    const std::set<uint64_t> &included_detector_indices,
+    std::set<uint64_t>::const_iterator &iter_desired_detector_index,
+    std::vector<double> &coord_shift,
+    uint64_t &detector_offset,
+    std::map<uint64_t, std::vector<double>> &out,
+    bool top) {
+    if (iter_desired_detector_index == included_detector_indices.end()) {
+        return true;
+    }
+    uint64_t smallest_desired_detector_index = *iter_desired_detector_index;
+
+    auto found_result = [&](uint64_t index, ConstPointerRange<double> data) {
+        if (included_detector_indices.find(index) == included_detector_indices.end()) {
+            return false;
+        }
+        if (out.find(index) != out.end()) {
+            return false;
+        }
+
+        std::vector<double> det_coords;
+        for (size_t k = 0; k < data.size(); k++) {
+            det_coords.push_back(data[k]);
+            if (k < coord_shift.size()) {
+                det_coords[k] += coord_shift[k];
+            }
+        }
+        out[index] = std::move(det_coords);
+
+        while (out.find(smallest_desired_detector_index) != out.end()) {
+            iter_desired_detector_index++;
+            if (iter_desired_detector_index == included_detector_indices.end()) {
+                return true;
+            }
+            smallest_desired_detector_index = *iter_desired_detector_index;
+        }
+        return false;
+    };
+
+    for (const auto &op : dem.instructions) {
+        if (op.type == DEM_SHIFT_DETECTORS) {
+            vec_pad_add_mul(coord_shift, op.arg_data);
+            detector_offset += op.target_data[0].data;
+            while (smallest_desired_detector_index < detector_offset) {
+                if (found_result(smallest_desired_detector_index, {})) {
+                    return true;
+                }
+            }
+
+        } else if (op.type == DEM_DETECTOR) {
+            for (const auto &t : op.target_data) {
+                if (found_result(t.data + detector_offset, op.arg_data)) {
+                    return true;
+                }
+            }
+
+        } else if (op.type == DEM_REPEAT_BLOCK) {
+            const auto &block = dem.blocks[op.target_data[1].data];
+            uint64_t reps = op.target_data[0].data;
+
+            // TODO: Finish in time proportional to len(instructions) + len(desired) instead of len(execution).
+            for (uint64_t k = 0; k < reps; k++) {
+                if (get_detector_coordinates_helper(
+                    block, included_detector_indices, iter_desired_detector_index, coord_shift, detector_offset, out, false)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    if (top && out.size() < included_detector_indices.size()) {
+        uint64_t n = dem.count_detectors();
+        while (smallest_desired_detector_index < n) {
+            if (found_result(smallest_desired_detector_index, {})) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+std::map<uint64_t, std::vector<double>> DetectorErrorModel::get_detector_coordinates(
+    const std::set<uint64_t> &included_detector_indices) const {
+    std::map<uint64_t, std::vector<double>> out;
+    uint64_t detector_offset = 0;
+    std::set<uint64_t>::const_iterator iter = included_detector_indices.begin();
+    std::vector<double> coord_shift;
+    get_detector_coordinates_helper(*this, included_detector_indices, iter, coord_shift, detector_offset, out, true);
+
+    if (iter != included_detector_indices.end()) {
+        std::stringstream msg;
+        msg << "Detector index " << *iter << " is too big. The detector error model has ";
+        msg << count_detectors() << " detectors)";
+        throw std::invalid_argument(msg.str());
+    }
+
+    return out;
 }

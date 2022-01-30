@@ -235,7 +235,7 @@ def test_MatchedError():
         instruction_targets=t,
         stack_frames=s,
     )
-    v1 = stim.MatchedError(
+    v1 = stim.ExplainedError(
         dem_error_terms=[stim.DemTargetWithCoords(
             dem_target=stim.DemTarget.relative_detector_id(5),
             coords=[1, 2, 3],
@@ -247,7 +247,7 @@ def test_MatchedError():
         coords=[1, 2, 3],
     )]
     assert v1.circuit_error_locations == [e]
-    v2 = stim.MatchedError(
+    v2 = stim.ExplainedError(
         dem_error_terms=[],
         circuit_error_locations=[],
     )
@@ -256,7 +256,7 @@ def test_MatchedError():
     assert len({v1, v1, v2}) == 2  # Check hashable.
     assert eval(repr(v1), {"stim": stim}) == v1
     assert eval(repr(v2), {"stim": stim}) == v2
-    assert str(v1) == """MatchedError {
+    assert str(v1) == """ExplainedError {
     dem_error_terms: D5[coords 1,2,3]
     CircuitErrorLocation {
         flipped_pauli_product: Y6[coords 1,2,3]

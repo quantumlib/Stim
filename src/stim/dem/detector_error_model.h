@@ -125,6 +125,10 @@ struct DetectorErrorModel {
     uint64_t count_observables() const;
     uint64_t count_errors() const;
 
+    std::pair<uint64_t, std::vector<double>> final_detector_and_coord_shift() const;
+    std::map<uint64_t, std::vector<double>> get_detector_coordinates(
+        const std::set<uint64_t> &included_detector_indices) const;
+
     void clear();
 
    private:

@@ -22,7 +22,7 @@
 using namespace stim;
 
 TEST(ErrorMatcher, X_ERROR) {
-    auto actual = ErrorMatcher::match_errors_from_circuit(
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
             QUBIT_COORDS(5, 6) 0
             X_ERROR(0.25) 0
@@ -31,8 +31,8 @@ TEST(ErrorMatcher, X_ERROR) {
         )CIRCUIT"),
         nullptr,
         false);
-    std::vector<MatchedError> expected{
-        MatchedError{
+    std::vector<ExplainedError> expected{
+        ExplainedError{
             {
                 {DemTarget::relative_detector_id(0), {2, 3}},
             },
@@ -60,7 +60,7 @@ TEST(ErrorMatcher, X_ERROR) {
     };
     ASSERT_EQ(actual, expected);
     ASSERT_EQ(actual.size(), 1);
-    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
     dem_error_terms: D0[coords 2,3]
     CircuitErrorLocation {
         flipped_pauli_product: X0[coords 5,6]
@@ -74,7 +74,7 @@ TEST(ErrorMatcher, X_ERROR) {
 }
 
 TEST(ErrorMatcher, CORRELATED_ERROR) {
-    auto actual = ErrorMatcher::match_errors_from_circuit(
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
             SHIFT_COORDS(10, 20)
             QUBIT_COORDS(5, 6) 0
@@ -86,7 +86,7 @@ TEST(ErrorMatcher, CORRELATED_ERROR) {
         nullptr,
         false);
     ASSERT_EQ(actual.size(), 1);
-    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
     dem_error_terms: D0[coords 112,223]
     CircuitErrorLocation {
         flipped_pauli_product: X0[coords 15,26]*Y1
@@ -100,7 +100,7 @@ TEST(ErrorMatcher, CORRELATED_ERROR) {
 }
 
 TEST(ErrorMatcher, MX_ERROR) {
-    auto actual = ErrorMatcher::match_errors_from_circuit(
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
             QUBIT_COORDS(5, 6) 0
             RX 0
@@ -113,7 +113,7 @@ TEST(ErrorMatcher, MX_ERROR) {
         nullptr,
         false);
     ASSERT_EQ(actual.size(), 1);
-    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
     dem_error_terms: D0[coords 2,3]
     CircuitErrorLocation {
         flipped_measurement.measurement_record_index: 3
@@ -128,7 +128,7 @@ TEST(ErrorMatcher, MX_ERROR) {
 }
 
 TEST(ErrorMatcher, MPP_ERROR) {
-    auto actual = ErrorMatcher::match_errors_from_circuit(
+    auto actual = ErrorMatcher::explain_errors_from_circuit(
         Circuit(R"CIRCUIT(
             QUBIT_COORDS(5, 6) 0
             RY 0
@@ -139,7 +139,7 @@ TEST(ErrorMatcher, MPP_ERROR) {
         nullptr,
         false);
     ASSERT_EQ(actual.size(), 1);
-    ASSERT_EQ(actual[0].str(), R"RESULT(MatchedError {
+    ASSERT_EQ(actual[0].str(), R"RESULT(ExplainedError {
     dem_error_terms: D0[coords 2,3] D1[coords 5,6]
     CircuitErrorLocation {
         flipped_measurement.measurement_record_index: 1
@@ -158,13 +158,13 @@ TEST(ErrorMatcher, repetition_code_data_depolarization) {
     params.before_round_data_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
-    auto actual = ErrorMatcher::match_errors_from_circuit(circuit, nullptr, false);
+    auto actual = ErrorMatcher::explain_errors_from_circuit(circuit, nullptr, false);
     std::stringstream ss;
     for (const auto &match : actual) {
         ss << "\n" << match << "\n";
     }
     ASSERT_EQ(ss.str(), R"RESULT(
-MatchedError {
+ExplainedError {
     dem_error_terms: D0[coords 1,0]
     CircuitErrorLocation {
         flipped_pauli_product: X0
@@ -184,7 +184,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D0[coords 1,0] D1[coords 3,0]
     CircuitErrorLocation {
         flipped_pauli_product: X2
@@ -204,7 +204,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D1[coords 3,0] L0
     CircuitErrorLocation {
         flipped_pauli_product: X4
@@ -224,7 +224,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D2[coords 1,1]
     CircuitErrorLocation {
         flipped_pauli_product: X0
@@ -244,7 +244,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D2[coords 1,1] D3[coords 3,1]
     CircuitErrorLocation {
         flipped_pauli_product: X2
@@ -264,7 +264,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D3[coords 3,1] L0
     CircuitErrorLocation {
         flipped_pauli_product: X4
@@ -291,13 +291,13 @@ TEST(ErrorMatcher, repetition_code_data_depolarization_single_results) {
     params.before_round_data_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
 
-    auto actual = ErrorMatcher::match_errors_from_circuit(circuit, nullptr, true);
+    auto actual = ErrorMatcher::explain_errors_from_circuit(circuit, nullptr, true);
     std::stringstream ss;
     for (const auto &match : actual) {
         ss << "\n" << match << "\n";
     }
     ASSERT_EQ(ss.str(), R"RESULT(
-MatchedError {
+ExplainedError {
     dem_error_terms: D0[coords 1,0]
     CircuitErrorLocation {
         flipped_pauli_product: X0
@@ -309,7 +309,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D0[coords 1,0] D1[coords 3,0]
     CircuitErrorLocation {
         flipped_pauli_product: X2
@@ -321,7 +321,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D1[coords 3,0] L0
     CircuitErrorLocation {
         flipped_pauli_product: X4
@@ -333,7 +333,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D2[coords 1,1]
     CircuitErrorLocation {
         flipped_pauli_product: X0
@@ -345,7 +345,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D2[coords 1,1] D3[coords 3,1]
     CircuitErrorLocation {
         flipped_pauli_product: X2
@@ -357,7 +357,7 @@ MatchedError {
     }
 }
 
-MatchedError {
+ExplainedError {
     dem_error_terms: D3[coords 3,1] L0
     CircuitErrorLocation {
         flipped_pauli_product: X4
@@ -382,13 +382,13 @@ TEST(ErrorMatcher, surface_code_filter) {
         error(1) D97 D98 D102 D103
 )MODEL");
 
-    auto actual = ErrorMatcher::match_errors_from_circuit(circuit, &filter, false);
+    auto actual = ErrorMatcher::explain_errors_from_circuit(circuit, &filter, false);
     std::stringstream ss;
     for (const auto &match : actual) {
         ss << "\n" << match << "\n";
     }
     ASSERT_EQ(ss.str(), R"RESULT(
-MatchedError {
+ExplainedError {
     dem_error_terms: D97[coords 4,6,4] D98[coords 6,6,4] D102[coords 2,8,4] D103[coords 4,8,4]
     CircuitErrorLocation {
         flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]

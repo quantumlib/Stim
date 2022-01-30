@@ -129,7 +129,7 @@ stdout: The sample data.
         {"--out_format", "--seed", "--in", "--out", "--skip_reference_sample", "--shots"},
     };
 
-    modes["match_errors"] = CommandLineSingleModeData{
+    modes["explain_errors"] = CommandLineSingleModeData{
         "Describes how detector error model errors correspond to circuit errors.",
         R"PARAGRAPH(
 Takes a circuit on stdin, and optionally a detector error model file containing the errors to match on `--dem_filter`.
@@ -148,8 +148,8 @@ stdout: A human readable description of dem errors that were found, with associa
     ```
     >>> stim gen --code surface_code --task rotated_memory_z --distance 5 --rounds 10 --after_clifford_depolarization 0.001 > tmp.stim
     >>> echo "error(1) D97 D98 D102 D103" > tmp.dem
-    >>> stim match_errors --in tmp.stim --dem_filter tmp.dem
-    MatchedError {
+    >>> stim explain_errors --in tmp.stim --dem_filter tmp.dem
+    ExplainedError {
         dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
         CircuitErrorLocation {
             flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
@@ -211,7 +211,8 @@ Only details relevant to error mechanisms that appear in this model will be incl
 The argument must be a filepath leading to a [stim detector error model format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
 )PARAGRAPH";
 
-    flags["--single"] = R"PARAGRAPH(Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
+    flags["--single"] =
+        R"PARAGRAPH(Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
 )PARAGRAPH";
 
     flags["--out_format"] = R"PARAGRAPH(Specifies a data format to use when writing shot data, e.g. `01` or `r8`.

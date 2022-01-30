@@ -146,7 +146,7 @@ struct CircuitErrorLocation {
 };
 
 /// Explains how an error from a detector error model matches error(s) from a circuit.
-struct MatchedError {
+struct ExplainedError {
     /// A sorted list of detector and observable targets flipped by the error.
     /// This list should never contain target separators.
     std::vector<DemTargetWithCoords> dem_error_terms;
@@ -161,8 +161,8 @@ struct MatchedError {
 
     /// Standard methods for easy testing.
     std::string str() const;
-    bool operator==(const MatchedError &other) const;
-    bool operator!=(const MatchedError &other) const;
+    bool operator==(const ExplainedError &other) const;
+    bool operator!=(const ExplainedError &other) const;
 };
 
 std::ostream &operator<<(std::ostream &out, const CircuitErrorLocation &e);
@@ -171,7 +171,7 @@ std::ostream &operator<<(std::ostream &out, const CircuitTargetsInsideInstructio
 std::ostream &operator<<(std::ostream &out, const DemTargetWithCoords &e);
 std::ostream &operator<<(std::ostream &out, const FlippedMeasurement &e);
 std::ostream &operator<<(std::ostream &out, const GateTargetWithCoords &e);
-std::ostream &operator<<(std::ostream &out, const MatchedError &e);
+std::ostream &operator<<(std::ostream &out, const ExplainedError &e);
 
 }  // namespace stim
 
