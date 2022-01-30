@@ -22,7 +22,6 @@ def main():
     with open('setup.py') as f:
         maj_min_version_line, = [line for line in f.read().splitlines() if re.match("^version = '[^']+'", line)]
         maj_version, min_version, patch = maj_min_version_line.split()[-1].strip("'").split('.')
-        assert 'dev' in patch
     timestamp = subprocess.check_output(['git', 'show', '-s', '--format=%ct', 'HEAD']).decode().strip()
     new_version = f"{maj_version}.{min_version}.dev{timestamp}"
 
