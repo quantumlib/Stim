@@ -197,14 +197,14 @@ TEST(matched_error, MatchedError_basics) {
     CircuitErrorLocation loc2 = loc;
     loc2.tick_offset++;
 
-    MatchedError err{
+    ExplainedError err{
         {
             {DemTarget::relative_detector_id(5), {1, 2}},
             {DemTarget::observable_id(5), {}},
         },
         {loc, loc2},
     };
-    MatchedError err2{
+    ExplainedError err2{
         {
             {DemTarget::relative_detector_id(5), {1, 2}},
         },
@@ -214,7 +214,7 @@ TEST(matched_error, MatchedError_basics) {
     ASSERT_FALSE(err != err);
     ASSERT_TRUE(err != err2);
     ASSERT_FALSE(err == err2);
-    ASSERT_EQ(err.str(), R"RESULT(MatchedError {
+    ASSERT_EQ(err.str(), R"RESULT(ExplainedError {
     dem_error_terms: D5[coords 1,2] L5
     CircuitErrorLocation {
         flipped_pauli_product: X3[coords 11,12]*Z5
@@ -244,11 +244,11 @@ TEST(matched_error, MatchedError_basics) {
 }
 
 TEST(matched_error, MatchedError_fill) {
-    MatchedError err{{}, {}};
+    ExplainedError err{{}, {}};
     err.fill_in_dem_targets(
         std::vector<DemTarget>{DemTarget::relative_detector_id(5), DemTarget::relative_detector_id(6)},
         {{5, {11, 13}}});
-    ASSERT_EQ(err.str(), R"RESULT(MatchedError {
+    ASSERT_EQ(err.str(), R"RESULT(ExplainedError {
     dem_error_terms: D5[coords 11,13] D6
     [no single circuit error had these exact symptoms]
 })RESULT");

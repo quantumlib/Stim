@@ -14,6 +14,7 @@
 
 #include "stim/dem/detector_error_model.pybind.h"
 
+#include "stim/circuit/circuit.pybind.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
@@ -555,6 +556,41 @@ void pybind_detector_error_model(pybind11::module &m) {
                     error(0.25) D0
                     shift_detectors 1
                 }
+        )DOC")
+            .data());
+
+    c.def(
+        "get_detector_coordinates",
+        [](const DetectorErrorModel &self, const pybind11::object &obj) {
+            return self.get_detector_coordinates(obj_to_abs_detector_id_set(obj, [&]() {
+                return self.count_detectors();
+            }));
+        },
+        pybind11::arg("only") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            Returns the coordinate metadata of detectors in the detector error model.
+
+            Args:
+                only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
+                    result. Detector indices beyond the end of the detector error model cause an error.
+
+            Returns:
+                A dictionary mapping integers (detector indices) to lists of floats (coordinates).
+                Detectors with no specified coordinate data are mapped to an empty tuple.
+                If `only` is specified, then `set(result.keys()) == set(only)`.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...    error(0.25) D0 D1
+                ...    detector(1, 2, 3) D1
+                ...    shift_detectors(5) 1
+                ...    detector(1, 2) D2
+                ... ''')
+                >>> dem.get_detector_coordinates()
+                {0: [], 1: [1.0, 2.0, 3.0], 2: [], 3: [6.0, 2.0]}
+                >>> dem.get_detector_coordinates(only=[1])
+                {1: [1.0, 2.0, 3.0]}
         )DOC")
             .data());
 

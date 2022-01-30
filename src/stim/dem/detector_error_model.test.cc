@@ -636,3 +636,100 @@ TEST(detector_error_model, iter_flatten_error_instructions) {
         error(0.125) D9 D10 D11 L0
     )MODEL"));
 }
+
+TEST(detector_error_model, get_detector_coordinates_nested_loops) {
+    DetectorErrorModel dem(R"MODEL(
+        repeat 200 {
+            repeat 100 {
+                detector(0, 0, 0, 4) D1
+                shift_detectors(1, 0, 0) 10
+            }
+            detector(0, 0, 0, 3) D2
+            shift_detectors(0, 1, 0) 0
+        }
+        detector(0, 0, 0, 2) D3
+    )MODEL");
+    ASSERT_THROW({ dem.get_detector_coordinates({4000000000}); }, std::invalid_argument);
+    ASSERT_THROW({ dem.get_detector_coordinates({dem.count_detectors()}); }, std::invalid_argument);
+    auto result = dem.get_detector_coordinates({
+        0,
+        1,
+        11,
+        991,
+        1001,
+        1002,
+        1011,
+        1021,
+    });
+    ASSERT_EQ(
+        result,
+        (std::map<uint64_t, std::vector<double>>{
+            {0, {}},
+            {1, {0, 0, 0, 4}},
+            {11, {1, 0, 0, 4}},
+            {991, {99, 0, 0, 4}},
+            {1001, {100, 1, 0, 4}},
+            {1002, {100, 0, 0, 3}},
+            {1011, {101, 1, 0, 4}},
+            {1021, {102, 1, 0, 4}},
+        }));
+}
+
+TEST(detector_error_model, get_detector_coordinates_trivial) {
+    DetectorErrorModel dem;
+
+    dem = DetectorErrorModel(R"MODEL(
+        detector(1, 2) D1
+    )MODEL");
+    ASSERT_EQ(dem.get_detector_coordinates({0, 1}), (std::map<uint64_t, std::vector<double>>{
+        {0, {}},
+        {1, {1, 2}},
+    }));
+    ASSERT_THROW({
+        dem.get_detector_coordinates({2});
+    }, std::invalid_argument);
+
+    dem = DetectorErrorModel(R"MODEL(
+        error(0.25) D0 D1
+    )MODEL");
+    ASSERT_EQ(dem.get_detector_coordinates({0, 1}), (std::map<uint64_t, std::vector<double>>{
+        {0, {}},
+        {1, {}},
+    }));
+    ASSERT_THROW({
+        dem.get_detector_coordinates({2});
+    }, std::invalid_argument);
+
+    dem = DetectorErrorModel(R"MODEL(
+        error(0.25) D0 D1
+        detector(1, 2, 3) D1
+        shift_detectors(5) 1
+        detector(1, 2) D2
+    )MODEL");
+    ASSERT_EQ(dem.get_detector_coordinates({0, 1, 2, 3}), (std::map<uint64_t, std::vector<double>>{
+        {0, {}},
+        {1, {1, 2, 3}},
+        {2, {}},
+        {3, {6, 2}},
+    }));
+    ASSERT_THROW({
+        dem.get_detector_coordinates({4});
+    }, std::invalid_argument);
+}
+
+TEST(detector_error_model, final_detector_and_coord_shift) {
+    DetectorErrorModel dem(R"MODEL(
+        repeat 1000 {
+            repeat 2000 {
+                repeat 3000 {
+                    shift_detectors(0, 0, 1) 0
+                }
+                shift_detectors(1) 2
+            }
+            shift_detectors(0, 1) 0
+        }
+    )MODEL");
+    ASSERT_EQ(
+        dem.final_detector_and_coord_shift(),
+        (std::pair<uint64_t, std::vector<double>>{4000000, {2000000, 1000, 6000000000}}));
+}

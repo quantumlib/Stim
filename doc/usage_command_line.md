@@ -16,6 +16,10 @@
     - [--out_format](#--out_format)
     - [--seed](#--seed)
     - [--shots](#--shots)
+- **(mode)** [stim explain_errors](#explain_errors)
+    - [--dem_filter](#--dem_filter)
+    - [--in](#--in)
+    - [--out](#--out)
 - **(mode)** [stim gen](#gen)
     - [--after_clifford_depolarization](#--after_clifford_depolarization)
     - [--after_reset_flip_probability](#--after_reset_flip_probability)
@@ -34,10 +38,6 @@
     - [--out](#--out)
     - [--out_format](#--out_format)
     - [--skip_reference_sample](#--skip_reference_sample)
-- **(mode)** [stim match_errors](#match_errors)
-    - [--dem_filter](#--dem_filter)
-    - [--in](#--in)
-    - [--out](#--out)
 - **(mode)** [stim repl](#repl)
 - **(mode)** [stim sample](#sample)
     - [--in](#--in)
@@ -190,6 +190,48 @@ Flags used with this mode:
 - [--seed](#--seed)
 - [--shots](#--shots)
 
+<a name="explain_errors"></a>
+### stim explain_errors
+
+*Describes how detector error model errors correspond to circuit errors.*
+
+Takes a circuit on stdin, and optionally a detector error model file containing the errors to match on `--dem_filter`.
+Iterates over the circuit, recording which circuit noise processes violate which combinations of detectors and
+observables.
+In other words, matches circuit errors to detector error model (dem) errors.
+If a filter is specified, matches to dem errors not in the filter are discarded.
+Then outputs, for each dem error, that dem error and which circuit errors cause it.
+
+stdin: The circuit to look for noise processes in, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+
+stdout: A human readable description of dem errors that were found, with associated circuit error data.
+
+- Examples:
+
+    ```
+    >>> stim gen --code surface_code --task rotated_memory_z --distance 5 --rounds 10 --after_clifford_depolarization 0.001 > tmp.stim
+    >>> echo "error(1) D97 D98 D102 D103" > tmp.dem
+    >>> stim explain_errors --in tmp.stim --dem_filter tmp.dem
+    ExplainedError {
+        dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
+        CircuitErrorLocation {
+            flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
+            Circuit location stack trace:
+                (after 31 TICKs)
+                at instruction #89 (a REPEAT 0 block) in the circuit
+                after 3 completed iterations
+                at instruction #10 (DEPOLARIZE2) in the REPEAT block
+                at targets #9 to #10 of the instruction
+                resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
+        }
+    }
+    ```
+
+Flags used with this mode:
+- [--dem_filter](#--dem_filter)
+- [--in](#--in)
+- [--out](#--out)
+
 <a name="gen"></a>
 ### stim gen
 
@@ -316,48 +358,6 @@ Flags used with this mode:
 - [--out](#--out)
 - [--out_format](#--out_format)
 - [--skip_reference_sample](#--skip_reference_sample)
-
-<a name="match_errors"></a>
-### stim match_errors
-
-*Describes how detector error model errors correspond to circuit errors.*
-
-Takes a circuit on stdin, and optionally a detector error model file containing the errors to match on `--dem_filter`.
-Iterates over the circuit, recording which circuit noise processes violate which combinations of detectors and
-observables.
-In other words, matches circuit errors to detector error model (dem) errors.
-If a filter is specified, matches to dem errors not in the filter are discarded.
-Then outputs, for each dem error, that dem error and which circuit errors cause it.
-
-stdin: The circuit to look for noise processes in, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-
-stdout: A human readable description of dem errors that were found, with associated circuit error data.
-
-- Examples:
-
-    ```
-    >>> stim gen --code surface_code --task rotated_memory_z --distance 5 --rounds 10 --after_clifford_depolarization 0.001 > tmp.stim
-    >>> echo "error(1) D97 D98 D102 D103" > tmp.dem
-    >>> stim match_errors --in tmp.stim --dem_filter tmp.dem
-    MatchedError {
-        dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
-        CircuitErrorLocation {
-            flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
-            Circuit location stack trace:
-                (after 31 TICKs)
-                at instruction #89 (a REPEAT 0 block) in the circuit
-                after 3 completed iterations
-                at instruction #10 (DEPOLARIZE2) in the REPEAT block
-                at targets #9 to #10 of the instruction
-                resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
-        }
-    }
-    ```
-
-Flags used with this mode:
-- [--dem_filter](#--dem_filter)
-- [--in](#--in)
-- [--out](#--out)
 
 <a name="repl"></a>
 ### stim repl

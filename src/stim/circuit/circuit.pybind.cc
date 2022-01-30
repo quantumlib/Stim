@@ -17,6 +17,7 @@
 #include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
@@ -42,14 +43,12 @@ std::string circuit_repr(const Circuit &self) {
     return ss.str();
 }
 
-std::vector<MatchedError> circuit_shortest_graphlike_error(
-        const Circuit &self,
-        bool ignore_ungraphlike_errors,
-        bool reduce_to_representative) {
+std::vector<ExplainedError> circuit_shortest_graphlike_error(
+    const Circuit &self, bool ignore_ungraphlike_errors, bool reduce_to_representative) {
     DetectorErrorModel dem =
         ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
-    return ErrorMatcher::match_errors_from_circuit(self, &filter, reduce_to_representative);
+    return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
 void circuit_append(
@@ -1136,6 +1135,67 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         )DOC")
             .data());
 
+    c.def(
+        "get_detector_coordinates",
+        [](const Circuit &self, const pybind11::object &obj) {
+            return self.get_detector_coordinates(obj_to_abs_detector_id_set(obj, [&]() {
+                return self.count_detectors();
+            }));
+        },
+        pybind11::arg("only") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            Returns the coordinate metadata of detectors in the circuit.
+
+            Args:
+                only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
+                    result. Detector indices beyond the end of the detector error model of the circuit cause an error.
+
+            Returns:
+                A dictionary mapping integers (detector indices) to lists of floats (coordinates).
+                A dictionary mapping detector indices to lists of floats.
+                Detectors with no specified coordinate data are mapped to an empty tuple.
+                If `only` is specified, then `set(result.keys()) == set(only)`.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...    M 0
+                ...    DETECTOR rec[-1]
+                ...    DETECTOR(1, 2, 3) rec[-1]
+                ...    REPEAT 3 {
+                ...        DETECTOR(42) rec[-1]
+                ...        SHIFT_COORDS(100)
+                ...    }
+                ... ''')
+                >>> circuit.get_detector_coordinates()
+                {0: [], 1: [1.0, 2.0, 3.0], 2: [42.0], 3: [142.0], 4: [242.0]}
+                >>> circuit.get_detector_coordinates(only=[1])
+                {1: [1.0, 2.0, 3.0]}
+        )DOC")
+            .data());
+
+    c.def(
+        "get_final_qubit_coordinates",
+        &Circuit::get_final_qubit_coords,
+        clean_doc_string(u8R"DOC(
+            Returns the coordinate metadata of qubits in the circuit.
+
+            If a qubit's coordinates are specified multiple times, only the last specified coordinates are returned.
+
+            Returns:
+                A dictionary mapping qubit indices (integers) to coordinates (lists of floats).
+                Qubits that never had their coordinates specified are not included in the result.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...    QUBIT_COORDS(1, 2, 3) 1
+                ... ''')
+                >>> circuit.get_final_qubit_coordinates()
+                {1: [1.0, 2.0, 3.0]}
+        )DOC")
+            .data());
+
     c.def(pybind11::pickle(
         [](const Circuit &self) -> pybind11::str {
             return self.str();
@@ -1145,6 +1205,49 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         }));
 
     return c;
+}
+
+uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
+    try {
+        return obj.cast<uint64_t>();
+    } catch (const pybind11::cast_error &) {
+    }
+    try {
+        ExposedDemTarget t = obj.cast<ExposedDemTarget>();
+        if (t.is_relative_detector_id()) {
+            return t.data;
+        }
+    } catch (const pybind11::cast_error &) {
+    }
+    if (!fail) {
+        return UINT64_MAX;
+    }
+
+    std::stringstream ss;
+    ss << "Expected a detector id but didn't get a stim.DemTarget or a uint64_t.";
+    ss << " Got " << pybind11::repr(obj);
+    throw std::invalid_argument(ss.str());
+}
+
+std::set<uint64_t> obj_to_abs_detector_id_set(
+    const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors) {
+    std::set<uint64_t> filter;
+    if (obj.is_none()) {
+        size_t n = get_num_detectors();
+        for (size_t k = 0; k < n; k++) {
+            filter.insert(k);
+        }
+    } else {
+        uint64_t single = obj_to_abs_detector_id(obj, false);
+        if (single != UINT64_MAX) {
+            filter.insert(single);
+        } else {
+            for (const auto &e : obj) {
+                filter.insert(obj_to_abs_detector_id(e, true));
+            }
+        }
+    }
+    return filter;
 }
 
 void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
@@ -1200,8 +1303,71 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                 ...     rounds=10,
                 ...     distance=7,
                 ...     before_round_data_depolarization=0.01)
-                >>> len(circuit.shortest_graphlike_error(decompose_errors=True))
+                >>> len(circuit.shortest_graphlike_error())
                 7
+        )DOC")
+            .data());
+
+    c.def(
+        "explain_detector_error_model_errors",
+        [](const Circuit &self, const pybind11::object &dem_filter, bool reduce_to_one_representative_error) -> std::vector<ExplainedError> {
+            if (dem_filter.is_none()) {
+                return ErrorMatcher::explain_errors_from_circuit(self, nullptr, reduce_to_one_representative_error);
+            } else {
+                const DetectorErrorModel &model = dem_filter.cast<const DetectorErrorModel &>();
+                return ErrorMatcher::explain_errors_from_circuit(self, &model, reduce_to_one_representative_error);
+            }
+        },
+        pybind11::kw_only(),
+        pybind11::arg("dem_filter") = pybind11::none(),
+        pybind11::arg("reduce_to_one_representative_error") = false,
+        clean_doc_string(u8R"DOC(
+            Explains how detector error model errors are produced by circuit errors.
+
+            Args:
+                dem_filter: Defaults to None (unused). When used, the output will only contain detector error
+                    model errors that appear in the given `stim.DetectorErrorModel`. Any error mechanisms from the
+                    detector error model that can't be reproduced using one error from the circuit will also be included
+                    in the result, but with an empty list of associated circuit error mechanisms.
+                reduce_to_one_representative_error: Defaults to False. When True, the items in the result will contain
+                    at most one circuit error mechanism.
+
+            Returns:
+                A `List[stim.ExplainedError]` (see `stim.ExplainedError` for more information). Each item in the list
+                describes how a detector error model error can be produced by individual circuit errors.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...     # Create Bell pair.
+                ...     H 0
+                ...     CNOT 0 1
+                ...
+                ...     # Noise.
+                ...     DEPOLARIZE1(0.01) 0
+                ...
+                ...     # Bell basis measurement.
+                ...     CNOT 0 1
+                ...     H 0
+                ...     M 0 1
+                ...
+                ...     # Both measurements should be False under noiseless execution.
+                ...     DETECTOR rec[-1]
+                ...     DETECTOR rec[-2]
+                ... ''')
+                >>> explained_errors = circuit.explain_detector_error_model_errors(
+                ...     dem_filter=stim.DetectorErrorModel('error(1) D0 D1'),
+                ...     reduce_to_one_representative_error=True,
+                ... )
+                >>> print(explained_errors[0].circuit_error_locations[0])
+                CircuitErrorLocation {
+                    flipped_pauli_product: Y0
+                    Circuit location stack trace:
+                        (after 0 TICKs)
+                        at instruction #3 (DEPOLARIZE1) in the circuit
+                        at target #1 of the instruction
+                        resolving to DEPOLARIZE1(0.01) 0
+                }
         )DOC")
             .data());
 }

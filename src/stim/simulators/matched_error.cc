@@ -98,7 +98,7 @@ void CircuitTargetsInsideInstruction::fill_args_and_targets_in_range(
     args.insert(args.begin(), actual_op.args.begin(), actual_op.args.end());
 }
 
-void MatchedError::fill_in_dem_targets(
+void ExplainedError::fill_in_dem_targets(
     ConstPointerRange<DemTarget> targets, const std::map<uint64_t, std::vector<double>> &dem_coords) {
     dem_error_terms.clear();
     for (const auto &t : targets) {
@@ -133,8 +133,8 @@ std::ostream &stim::operator<<(std::ostream &out, const CircuitErrorLocationStac
     out << ", instruction_repetitions_arg=" << e.instruction_repetitions_arg << "}";
     return out;
 }
-std::ostream &stim::operator<<(std::ostream &out, const MatchedError &e) {
-    out << "MatchedError {\n";
+std::ostream &stim::operator<<(std::ostream &out, const ExplainedError &e) {
+    out << "ExplainedError {\n";
     out << "    dem_error_terms: " << comma_sep(e.dem_error_terms, " ");
     if (e.circuit_error_locations.empty()) {
         out << "\n    [no single circuit error had these exact symptoms]";
@@ -182,7 +182,7 @@ std::ostream &stim::operator<<(std::ostream &out, const DemTargetWithCoords &e) 
     return out;
 }
 
-bool MatchedError::operator==(const MatchedError &other) const {
+bool ExplainedError::operator==(const ExplainedError &other) const {
     return dem_error_terms == other.dem_error_terms && circuit_error_locations == other.circuit_error_locations;
 }
 bool CircuitErrorLocationStackFrame::operator==(const CircuitErrorLocationStackFrame &other) const {
@@ -228,7 +228,7 @@ bool FlippedMeasurement::operator!=(const FlippedMeasurement &other) const {
 bool GateTargetWithCoords::operator!=(const GateTargetWithCoords &other) const {
     return !(*this == other);
 }
-bool MatchedError::operator!=(const MatchedError &other) const {
+bool ExplainedError::operator!=(const ExplainedError &other) const {
     return !(*this == other);
 }
 
@@ -262,13 +262,13 @@ std::string GateTargetWithCoords::str() const {
     ss << *this;
     return ss.str();
 }
-std::string MatchedError::str() const {
+std::string ExplainedError::str() const {
     std::stringstream ss;
     ss << *this;
     return ss.str();
 }
 
-void MatchedError::canonicalize() {
+void ExplainedError::canonicalize() {
     for (auto &c : circuit_error_locations) {
         c.canonicalize();
     }
@@ -366,11 +366,12 @@ bool CircuitTargetsInsideInstruction::operator<(const CircuitTargetsInsideInstru
 }
 
 bool CircuitErrorLocation::is_simpler_than(const CircuitErrorLocation &other) const {
+    if (flipped_measurement.measured_observable.size() != other.flipped_measurement.measured_observable.size()) {
+        return other.flipped_measurement.measured_observable.size() <
+               other.flipped_measurement.measured_observable.size();
+    }
     if (flipped_pauli_product.size() != other.flipped_pauli_product.size()) {
         return flipped_pauli_product.size() < other.flipped_pauli_product.size();
-    }
-    if (flipped_measurement.measured_observable.size() != other.flipped_measurement.measured_observable.size()) {
-        return other.flipped_measurement.measured_observable.size() < other.flipped_measurement.measured_observable.size();
     }
     return *this < other;
 }

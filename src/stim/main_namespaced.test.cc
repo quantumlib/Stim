@@ -935,8 +935,8 @@ TEST(main, seeded_detecting) {
             )input"));
 }
 
-TEST(main, match_errors) {
-    ASSERT_EQ(execute({"match_errors"}, ""), "");
+TEST(main, explain_errors) {
+    ASSERT_EQ(execute({"explain_errors"}, ""), "");
 
     RaiiTempNamedFile tmp;
     FILE *f = fopen(tmp.path.data(), "w");
@@ -944,14 +944,14 @@ TEST(main, match_errors) {
     fclose(f);
 
     ASSERT_EQ(
-        trim(execute({"match_errors", "--dem_filter", tmp.path.data()}, R"input(
+        trim(execute({"explain_errors", "--dem_filter", tmp.path.data()}, R"input(
 X_ERROR(0.25) 0 1
 M 0 1
 DETECTOR rec[-1]
 DETECTOR rec[-2]
             )input")),
         trim(R"output(
-MatchedError {
+ExplainedError {
     dem_error_terms: D0
     CircuitErrorLocation {
         flipped_pauli_product: X1

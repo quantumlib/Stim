@@ -639,8 +639,8 @@ def test_shortest_graphlike_error():
 
     actual = c.shortest_graphlike_error()
     assert len(actual) == 1
-    assert isinstance(actual[0], stim.MatchedError)
-    assert str(actual[0]) == """MatchedError {
+    assert isinstance(actual[0], stim.ExplainedError)
+    assert str(actual[0]) == """ExplainedError {
     dem_error_terms: L0
     CircuitErrorLocation {
         flipped_pauli_product: Y0
@@ -662,8 +662,8 @@ def test_shortest_graphlike_error():
 
     actual = c.shortest_graphlike_error(canonicalize_circuit_errors=True)
     assert len(actual) == 1
-    assert isinstance(actual[0], stim.MatchedError)
-    assert str(actual[0]) == """MatchedError {
+    assert isinstance(actual[0], stim.ExplainedError)
+    assert str(actual[0]) == """ExplainedError {
     dem_error_terms: L0
     CircuitErrorLocation {
         flipped_pauli_product: X0
@@ -689,3 +689,82 @@ def test_shortest_graphlike_error_ignore():
         c.shortest_graphlike_error()
     with pytest.raises(ValueError, match="Failed to find any graphlike logical errors"):
         c.shortest_graphlike_error(ignore_ungraphlike_errors=True)
+
+
+def test_coords():
+    circuit = stim.Circuit("""
+        QUBIT_COORDS(1, 2, 3) 0
+        QUBIT_COORDS(2) 1
+        SHIFT_COORDS(5)
+        QUBIT_COORDS(3) 4
+    """)
+    assert circuit.get_final_qubit_coordinates() == {
+        0: [1, 2, 3],
+        1: [2],
+        4: [8],
+    }
+
+
+def test_explain_errors():
+    circuit = stim.Circuit("""
+        H 0
+        CNOT 0 1
+        DEPOLARIZE1(0.01) 0
+        CNOT 0 1
+        H 0
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+    """)
+    r = circuit.explain_detector_error_model_errors()
+    assert len(r) == 3
+    assert str(r[0]) == """ExplainedError {
+    dem_error_terms: D0
+    CircuitErrorLocation {
+        flipped_pauli_product: X0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #3 (DEPOLARIZE1) in the circuit
+            at target #1 of the instruction
+            resolving to DEPOLARIZE1(0.01) 0
+    }
+}"""
+    assert str(r[1]) == """ExplainedError {
+    dem_error_terms: D0 D1
+    CircuitErrorLocation {
+        flipped_pauli_product: Y0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #3 (DEPOLARIZE1) in the circuit
+            at target #1 of the instruction
+            resolving to DEPOLARIZE1(0.01) 0
+    }
+}"""
+    assert str(r[2]) == """ExplainedError {
+    dem_error_terms: D1
+    CircuitErrorLocation {
+        flipped_pauli_product: Z0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #3 (DEPOLARIZE1) in the circuit
+            at target #1 of the instruction
+            resolving to DEPOLARIZE1(0.01) 0
+    }
+}"""
+
+    r = circuit.explain_detector_error_model_errors(
+        dem_filter=stim.DetectorErrorModel('error(1) D0 D1'),
+        reduce_to_one_representative_error=True,
+    )
+    assert len(r) == 1
+    assert str(r[0]) == """ExplainedError {
+    dem_error_terms: D0 D1
+    CircuitErrorLocation {
+        flipped_pauli_product: Y0
+        Circuit location stack trace:
+            (after 0 TICKs)
+            at instruction #3 (DEPOLARIZE1) in the circuit
+            at target #1 of the instruction
+            resolving to DEPOLARIZE1(0.01) 0
+    }
+}"""

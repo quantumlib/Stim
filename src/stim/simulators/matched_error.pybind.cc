@@ -14,12 +14,12 @@
 
 #include "stim/simulators/matched_error.pybind.h"
 
-#include "stim/simulators/matched_error.h"
-#include "stim/py/base.pybind.h"
 #include "stim/circuit/circuit_gate_target.pybind.h"
-#include "stim/dem/detector_error_model_target.pybind.h"
-#include "stim/circuit/gate_target.h"
 #include "stim/circuit/gate_data.h"
+#include "stim/circuit/gate_target.h"
+#include "stim/dem/detector_error_model_target.pybind.h"
+#include "stim/py/base.pybind.h"
+#include "stim/simulators/matched_error.h"
 
 using namespace stim;
 
@@ -112,9 +112,9 @@ std::string CircuitErrorLocation_repr(const CircuitErrorLocation &self) {
     return out.str();
 }
 
-std::string MatchedError_repr(const MatchedError &self) {
+std::string MatchedError_repr(const ExplainedError &self) {
     std::stringstream out;
-    out << "stim.MatchedError";
+    out << "stim.ExplainedError";
     out << "(dem_error_terms=(";
     for (const auto &e : self.dem_error_terms) {
         out << DemTargetWithCoords_repr(e) << ",";
@@ -188,11 +188,12 @@ void pybind_CircuitErrorLocationStackFrame(pybind11::module &m) {
             self.instruction_repetitions_arg));
     });
     c.def(
-        pybind11::init([](uint64_t instruction_offset,
-                          uint64_t iteration_index,
-                          uint64_t instruction_repetitions_arg) -> CircuitErrorLocationStackFrame {
-            return CircuitErrorLocationStackFrame{instruction_offset, iteration_index, instruction_repetitions_arg};
-        }),
+        pybind11::init(
+            [](uint64_t instruction_offset,
+               uint64_t iteration_index,
+               uint64_t instruction_repetitions_arg) -> CircuitErrorLocationStackFrame {
+                return CircuitErrorLocationStackFrame{instruction_offset, iteration_index, instruction_repetitions_arg};
+            }),
         pybind11::kw_only(),
         pybind11::arg("instruction_offset"),
         pybind11::arg("iteration_index"),
@@ -245,17 +246,14 @@ void pybind_GateTargetWithCoords(pybind11::module &m) {
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const GateTargetWithCoords &self) {
-        return pybind11::hash(pybind11::make_tuple(
-            "GateTargetWithCoords",
-            self.gate_target,
-            tuple_tree(self.coords)));
+        return pybind11::hash(pybind11::make_tuple("GateTargetWithCoords", self.gate_target, tuple_tree(self.coords)));
     });
     c.def("__str__", &GateTargetWithCoords::str);
     c.def(
-        pybind11::init([](const pybind11::object &gate_target,
-                          const std::vector<double> &coords) -> GateTargetWithCoords {
-            return GateTargetWithCoords{obj_to_gate_target(gate_target), coords};
-        }),
+        pybind11::init(
+            [](const pybind11::object &gate_target, const std::vector<double> &coords) -> GateTargetWithCoords {
+                return GateTargetWithCoords{obj_to_gate_target(gate_target), coords};
+            }),
         pybind11::kw_only(),
         pybind11::arg("gate_target"),
         pybind11::arg("coords"),
@@ -312,17 +310,15 @@ void pybind_DemTargetWithCoords(pybind11::module &m) {
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const DemTargetWithCoords &self) {
-        return pybind11::hash(pybind11::make_tuple(
-            "DemTargetWithCoords",
-            self.dem_target.data,
-            tuple_tree(self.coords)));
+        return pybind11::hash(
+            pybind11::make_tuple("DemTargetWithCoords", self.dem_target.data, tuple_tree(self.coords)));
     });
     c.def("__str__", &DemTargetWithCoords::str);
     c.def(
-        pybind11::init([](const ExposedDemTarget &dem_target,
-                          const std::vector<double> &coords) -> DemTargetWithCoords {
-            return DemTargetWithCoords{dem_target, coords};
-        }),
+        pybind11::init(
+            [](const ExposedDemTarget &dem_target, const std::vector<double> &coords) -> DemTargetWithCoords {
+                return DemTargetWithCoords{dem_target, coords};
+            }),
         pybind11::kw_only(),
         pybind11::arg("dem_target"),
         pybind11::arg("coords"),
@@ -370,19 +366,17 @@ void pybind_FlippedMeasurement(pybind11::module &m) {
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", [](const FlippedMeasurement &self) {
         return pybind11::hash(pybind11::make_tuple(
-            "FlippedMeasurement",
-            self.measurement_record_index,
-            tuple_tree(self.measured_observable)));
+            "FlippedMeasurement", self.measurement_record_index, tuple_tree(self.measured_observable)));
     });
     c.def(
-        pybind11::init([](uint64_t measurement_record_index,
-                          const pybind11::object &measured_observable) -> FlippedMeasurement {
-            FlippedMeasurement result{measurement_record_index, {}};
-            for (const auto &e : measured_observable) {
-                result.measured_observable.push_back(pybind11::cast<GateTargetWithCoords>(e));
-            }
-            return result;
-        }),
+        pybind11::init(
+            [](uint64_t measurement_record_index, const pybind11::object &measured_observable) -> FlippedMeasurement {
+                FlippedMeasurement result{measurement_record_index, {}};
+                for (const auto &e : measured_observable) {
+                    result.measured_observable.push_back(pybind11::cast<GateTargetWithCoords>(e));
+                }
+                return result;
+            }),
         pybind11::kw_only(),
         pybind11::arg("record_index"),
         pybind11::arg("observable"),
@@ -457,20 +451,16 @@ void pybind_CircuitTargetsInsideInstruction(pybind11::module &m) {
     c.def(pybind11::self != pybind11::self);
     c.def("__hash__", &CircuitTargetsInsideInstruction_hash);
     c.def(
-        pybind11::init([](const std::string &gate,
-                          const std::vector<double> &args,
-                          size_t target_range_start,
-                          size_t target_range_end,
-                          const std::vector<GateTargetWithCoords> &targets_in_range) -> CircuitTargetsInsideInstruction {
-            CircuitTargetsInsideInstruction result{
-                &GATE_DATA.at(gate),
-                args,
-                target_range_start,
-                target_range_end,
-                targets_in_range
-            };
-            return result;
-        }),
+        pybind11::init(
+            [](const std::string &gate,
+               const std::vector<double> &args,
+               size_t target_range_start,
+               size_t target_range_end,
+               const std::vector<GateTargetWithCoords> &targets_in_range) -> CircuitTargetsInsideInstruction {
+                CircuitTargetsInsideInstruction result{
+                    &GATE_DATA.at(gate), args, target_range_start, target_range_end, targets_in_range};
+                return result;
+            }),
         pybind11::kw_only(),
         pybind11::arg("gate"),
         pybind11::arg("args"),
@@ -495,7 +485,9 @@ void pybind_CircuitErrorLocation(pybind11::module &m) {
         )DOC")
             .data());
 
-    c.def_readonly("tick_offset", &CircuitErrorLocation::tick_offset,
+    c.def_readonly(
+        "tick_offset",
+        &CircuitErrorLocation::tick_offset,
         clean_doc_string(u8R"DOC(
             The number of TICKs that executed before the error mechanism being discussed,
             including TICKs that occurred multiple times during loops.
@@ -513,7 +505,7 @@ void pybind_CircuitErrorLocation(pybind11::module &m) {
 
     c.def_property_readonly(
         "flipped_measurement",
-        [](const CircuitErrorLocation& self) -> pybind11::object {
+        [](const CircuitErrorLocation &self) -> pybind11::object {
             if (self.flipped_measurement.measured_observable.empty()) {
                 return pybind11::none();
             }
@@ -556,24 +548,19 @@ void pybind_CircuitErrorLocation(pybind11::module &m) {
             tuple_tree(self.stack_frames)));
     });
     c.def(
-        pybind11::init([](uint64_t tick_offset,
-                          const std::vector<GateTargetWithCoords> &flipped_pauli_product,
-                          const pybind11::object &flipped_measurement,
-                          const CircuitTargetsInsideInstruction &instruction_targets,
-                          const std::vector<CircuitErrorLocationStackFrame> &stack_frames) -> CircuitErrorLocation {
-            FlippedMeasurement m{0, {}};
-            if (!flipped_measurement.is_none()) {
-                m = pybind11::cast<FlippedMeasurement>(flipped_measurement);
-            }
-            CircuitErrorLocation result{
-                tick_offset,
-                flipped_pauli_product,
-                m,
-                instruction_targets,
-                stack_frames
-            };
-            return result;
-        }),
+        pybind11::init(
+            [](uint64_t tick_offset,
+               const std::vector<GateTargetWithCoords> &flipped_pauli_product,
+               const pybind11::object &flipped_measurement,
+               const CircuitTargetsInsideInstruction &instruction_targets,
+               const std::vector<CircuitErrorLocationStackFrame> &stack_frames) -> CircuitErrorLocation {
+                FlippedMeasurement m{0, {}};
+                if (!flipped_measurement.is_none()) {
+                    m = pybind11::cast<FlippedMeasurement>(flipped_measurement);
+                }
+                CircuitErrorLocation result{tick_offset, flipped_pauli_product, m, instruction_targets, stack_frames};
+                return result;
+            }),
         pybind11::kw_only(),
         pybind11::arg("tick_offset"),
         pybind11::arg("flipped_pauli_product"),
@@ -589,16 +576,18 @@ void pybind_CircuitErrorLocation(pybind11::module &m) {
 }
 
 void pybind_MatchedError(pybind11::module &m) {
-    auto c = pybind11::class_<MatchedError>(
+    auto c = pybind11::class_<ExplainedError>(
         m,
-        "MatchedError",
+        "ExplainedError",
         pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             Describes the location of an error mechanism from a stim circuit.
         )DOC")
             .data());
 
-    c.def_readonly("dem_error_terms", &MatchedError::dem_error_terms,
+    c.def_readonly(
+        "dem_error_terms",
+        &ExplainedError::dem_error_terms,
         clean_doc_string(u8R"DOC(
             The detectors and observables flipped by this error mechanism.
         )DOC")
@@ -606,7 +595,7 @@ void pybind_MatchedError(pybind11::module &m) {
 
     c.def_readonly(
         "circuit_error_locations",
-        &MatchedError::circuit_error_locations,
+        &ExplainedError::circuit_error_locations,
         clean_doc_string(u8R"DOC(
             The locations of circuit errors that produce the symptoms in dem_error_terms.
 
@@ -622,30 +611,29 @@ void pybind_MatchedError(pybind11::module &m) {
 
     c.def(pybind11::self == pybind11::self);
     c.def(pybind11::self != pybind11::self);
-    c.def("__hash__", [](const MatchedError &self) {
+    c.def("__hash__", [](const ExplainedError &self) {
         return pybind11::hash(pybind11::make_tuple(
-            "MatchedError",
-            tuple_tree(self.dem_error_terms),
-            tuple_tree(self.circuit_error_locations)));
+            "ExplainedError", tuple_tree(self.dem_error_terms), tuple_tree(self.circuit_error_locations)));
     });
     c.def(
-        pybind11::init([](const std::vector<DemTargetWithCoords> dem_error_terms,
-                          const std::vector<CircuitErrorLocation> &circuit_error_locations) -> MatchedError {
-            MatchedError result{
-                dem_error_terms,
-                circuit_error_locations,
-            };
-            return result;
-        }),
+        pybind11::init(
+            [](const std::vector<DemTargetWithCoords> dem_error_terms,
+               const std::vector<CircuitErrorLocation> &circuit_error_locations) -> ExplainedError {
+                ExplainedError result{
+                    dem_error_terms,
+                    circuit_error_locations,
+                };
+                return result;
+            }),
         pybind11::kw_only(),
         pybind11::arg("dem_error_terms"),
         pybind11::arg("circuit_error_locations"),
         clean_doc_string(u8R"DOC(
-            Creates a stim.MatchedError.
+            Creates a stim.ExplainedError.
         )DOC")
             .data());
     c.def("__repr__", &MatchedError_repr);
-    c.def("__str__", &MatchedError::str);
+    c.def("__str__", &ExplainedError::str);
 }
 
 void pybind_matched_error(pybind11::module &m) {

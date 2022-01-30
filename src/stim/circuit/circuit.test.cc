@@ -1225,13 +1225,33 @@ TEST(circuit, coords_of_detector) {
         }
         DETECTOR(0, 0, 0, 1)
     )CIRCUIT");
-    ASSERT_EQ(c.coords_of_detector(4000000000), (std::vector<double>{}));
     ASSERT_EQ(c.coords_of_detector(0), (std::vector<double>{0, 0, 0, 4}));
     ASSERT_EQ(c.coords_of_detector(1), (std::vector<double>{1, 0, 0, 4}));
     ASSERT_EQ(c.coords_of_detector(999), (std::vector<double>{999, 0, 0, 4}));
     ASSERT_EQ(c.coords_of_detector(1000), (std::vector<double>{1000, 0, 0, 3}));
     ASSERT_EQ(c.coords_of_detector(1001), (std::vector<double>{1000, 1, 0, 4}));
     ASSERT_EQ(c.coords_of_detector(1002), (std::vector<double>{1001, 1, 0, 4}));
+
+    ASSERT_THROW({ c.get_detector_coordinates({4000000000}); }, std::invalid_argument);
+
+    auto result = c.get_detector_coordinates({
+        0,
+        1,
+        999,
+        1000,
+        1001,
+        1002,
+    });
+    ASSERT_EQ(
+        result,
+        (std::map<uint64_t, std::vector<double>>{
+            {0, {0, 0, 0, 4}},
+            {1, {1, 0, 0, 4}},
+            {999, {999, 0, 0, 4}},
+            {1000, {1000, 0, 0, 3}},
+            {1001, {1000, 1, 0, 4}},
+            {1002, {1001, 1, 0, 4}},
+        }));
 }
 
 TEST(circuit, final_coord_shift) {

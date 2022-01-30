@@ -270,3 +270,77 @@ def test_shortest_graphlike_error_rep_code():
                                      before_round_data_depolarization=0.01)
     model = circuit.detector_error_model(decompose_errors=True)
     assert len(model.shortest_graphlike_error()) == 7
+
+
+def test_coords():
+    circuit = stim.Circuit("""
+        M 0
+        DETECTOR(1, 2, 3) rec[-1]
+        REPEAT 3 {
+            DETECTOR(2) rec[-1]
+            SHIFT_COORDS(5)
+        }
+    """)
+    dem = circuit.detector_error_model()
+
+    assert dem.get_detector_coordinates() == {
+        0: [1, 2, 3],
+        1: [2],
+        2: [7],
+        3: [12],
+    }
+    assert circuit.get_detector_coordinates() == {
+        0: [1, 2, 3],
+        1: [2],
+        2: [7],
+        3: [12],
+    }
+
+    assert dem.get_detector_coordinates([1]) == {
+        1: [2],
+    }
+    assert circuit.get_detector_coordinates([1]) == {
+        1: [2],
+    }
+    assert dem.get_detector_coordinates(1) == {
+        1: [2],
+    }
+    assert circuit.get_detector_coordinates(1) == {
+        1: [2],
+    }
+    assert dem.get_detector_coordinates({1}) == {
+        1: [2],
+    }
+    assert circuit.get_detector_coordinates({1}) == {
+        1: [2],
+    }
+    assert dem.get_detector_coordinates(stim.DemTarget.relative_detector_id(1)) == {
+        1: [2],
+    }
+    assert circuit.get_detector_coordinates(stim.DemTarget.relative_detector_id(1)) == {
+        1: [2],
+    }
+    assert dem.get_detector_coordinates((stim.DemTarget.relative_detector_id(1),)) == {
+        1: [2],
+    }
+    assert circuit.get_detector_coordinates((stim.DemTarget.relative_detector_id(1),)) == {
+        1: [2],
+    }
+
+    assert dem.get_detector_coordinates(only=[2, 3]) == {
+        2: [7],
+        3: [12],
+    }
+    assert circuit.get_detector_coordinates(only=[2, 3]) == {
+        2: [7],
+        3: [12],
+    }
+
+    with pytest.raises(ValueError, match="Expected a detector id"):
+        dem.get_detector_coordinates([-1])
+    with pytest.raises(ValueError, match="too big"):
+        dem.get_detector_coordinates([500])
+    with pytest.raises(ValueError, match="Expected a detector id"):
+        circuit.get_detector_coordinates([-1])
+    with pytest.raises(ValueError, match="too big"):
+        circuit.get_detector_coordinates([500])

@@ -24,8 +24,11 @@
     - [`stim.Circuit.compile_sampler`](#stim.Circuit.compile_sampler)
     - [`stim.Circuit.copy`](#stim.Circuit.copy)
     - [`stim.Circuit.detector_error_model`](#stim.Circuit.detector_error_model)
+    - [`stim.Circuit.explain_detector_error_model_errors`](#stim.Circuit.explain_detector_error_model_errors)
     - [`stim.Circuit.flattened_operations`](#stim.Circuit.flattened_operations)
     - [`stim.Circuit.generated`](#stim.Circuit.generated)
+    - [`stim.Circuit.get_detector_coordinates`](#stim.Circuit.get_detector_coordinates)
+    - [`stim.Circuit.get_final_qubit_coordinates`](#stim.Circuit.get_final_qubit_coordinates)
     - [`stim.Circuit.num_detectors`](#stim.Circuit.num_detectors)
     - [`stim.Circuit.num_measurements`](#stim.Circuit.num_measurements)
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
@@ -133,10 +136,15 @@
     - [`stim.DetectorErrorModel.approx_equals`](#stim.DetectorErrorModel.approx_equals)
     - [`stim.DetectorErrorModel.clear`](#stim.DetectorErrorModel.clear)
     - [`stim.DetectorErrorModel.copy`](#stim.DetectorErrorModel.copy)
+    - [`stim.DetectorErrorModel.get_detector_coordinates`](#stim.DetectorErrorModel.get_detector_coordinates)
     - [`stim.DetectorErrorModel.num_detectors`](#stim.DetectorErrorModel.num_detectors)
     - [`stim.DetectorErrorModel.num_errors`](#stim.DetectorErrorModel.num_errors)
     - [`stim.DetectorErrorModel.num_observables`](#stim.DetectorErrorModel.num_observables)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
+- [`stim.ExplainedError`](#stim.ExplainedError)
+    - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
+    - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
+    - [`stim.ExplainedError.dem_error_terms`](#stim.ExplainedError.dem_error_terms)
 - [`stim.FlippedMeasurement`](#stim.FlippedMeasurement)
     - [`stim.FlippedMeasurement.__init__`](#stim.FlippedMeasurement.__init__)
     - [`stim.FlippedMeasurement.observable`](#stim.FlippedMeasurement.observable)
@@ -159,10 +167,6 @@
     - [`stim.GateTargetWithCoords.__init__`](#stim.GateTargetWithCoords.__init__)
     - [`stim.GateTargetWithCoords.coords`](#stim.GateTargetWithCoords.coords)
     - [`stim.GateTargetWithCoords.gate_target`](#stim.GateTargetWithCoords.gate_target)
-- [`stim.MatchedError`](#stim.MatchedError)
-    - [`stim.MatchedError.__init__`](#stim.MatchedError.__init__)
-    - [`stim.MatchedError.circuit_error_locations`](#stim.MatchedError.circuit_error_locations)
-    - [`stim.MatchedError.dem_error_terms`](#stim.MatchedError.dem_error_terms)
 - [`stim.PauliString`](#stim.PauliString)
     - [`stim.PauliString.__add__`](#stim.PauliString.__add__)
     - [`stim.PauliString.__eq__`](#stim.PauliString.__eq__)
@@ -458,6 +462,11 @@
 >     ''')
 > ```
 
+## `stim.ExplainedError`<a name="stim.ExplainedError"></a>
+> ```
+> Describes the location of an error mechanism from a stim circuit.
+> ```
+
 ## `stim.FlippedMeasurement`<a name="stim.FlippedMeasurement"></a>
 > ```
 > Describes a measurement that was flipped.
@@ -493,11 +502,6 @@
 > problem in a circuit, instead of having to constantly manually
 > look up the coordinates of a qubit index in order to understand
 > what is happening.
-> ```
-
-## `stim.MatchedError`<a name="stim.MatchedError"></a>
-> ```
-> Describes the location of an error mechanism from a stim circuit.
 > ```
 
 ## `stim.PauliString`<a name="stim.PauliString"></a>
@@ -1282,6 +1286,56 @@
 >     ''')
 > ```
 
+### `stim.Circuit.explain_detector_error_model_errors(self, *, dem_filter: object = None, reduce_to_one_representative_error: bool = False) -> List[stim.ExplainedError]`<a name="stim.Circuit.explain_detector_error_model_errors"></a>
+> ```
+> Explains how detector error model errors are produced by circuit errors.
+> 
+> Args:
+>     dem_filter: Defaults to None (unused). When used, the output will only contain detector error
+>         model errors that appear in the given `stim.DetectorErrorModel`. Any error mechanisms from the
+>         detector error model that can't be reproduced using one error from the circuit will also be included
+>         in the result, but with an empty list of associated circuit error mechanisms.
+>     reduce_to_one_representative_error: Defaults to False. When True, the items in the result will contain
+>         at most one circuit error mechanism.
+> 
+> Returns:
+>     A `List[stim.ExplainedError]` (see `stim.ExplainedError` for more information). Each item in the list
+>     describes how a detector error model error can be produced by individual circuit errors.
+> 
+> Examples:
+>     >>> import stim
+>     >>> circuit = stim.Circuit('''
+>     ...     # Create Bell pair.
+>     ...     H 0
+>     ...     CNOT 0 1
+>     ...
+>     ...     # Noise.
+>     ...     DEPOLARIZE1(0.01) 0
+>     ...
+>     ...     # Bell basis measurement.
+>     ...     CNOT 0 1
+>     ...     H 0
+>     ...     M 0 1
+>     ...
+>     ...     # Both measurements should be False under noiseless execution.
+>     ...     DETECTOR rec[-1]
+>     ...     DETECTOR rec[-2]
+>     ... ''')
+>     >>> explained_errors = circuit.explain_detector_error_model_errors(
+>     ...     dem_filter=stim.DetectorErrorModel('error(1) D0 D1'),
+>     ...     reduce_to_one_representative_error=True,
+>     ... )
+>     >>> print(explained_errors[0].circuit_error_locations[0])
+>     CircuitErrorLocation {
+>         flipped_pauli_product: Y0
+>         Circuit location stack trace:
+>             (after 0 TICKs)
+>             at instruction #3 (DEPOLARIZE1) in the circuit
+>             at target #1 of the instruction
+>             resolving to DEPOLARIZE1(0.01) 0
+>     }
+> ```
+
 ### `stim.Circuit.flattened_operations(self) -> list`<a name="stim.Circuit.flattened_operations"></a>
 > ```
 > Flattens the circuit's operations into a list.
@@ -1402,6 +1456,56 @@
 >     OBSERVABLE_INCLUDE(0) rec[-1]
 > ```
 
+### `stim.Circuit.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`<a name="stim.Circuit.get_detector_coordinates"></a>
+> ```
+> Returns the coordinate metadata of detectors in the circuit.
+> 
+> Args:
+>     only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
+>         result. Detector indices beyond the end of the detector error model of the circuit cause an error.
+> 
+> Returns:
+>     A dictionary mapping integers (detector indices) to lists of floats (coordinates).
+>     A dictionary mapping detector indices to lists of floats.
+>     Detectors with no specified coordinate data are mapped to an empty tuple.
+>     If `only` is specified, then `set(result.keys()) == set(only)`.
+> 
+> Examples:
+>     >>> import stim
+>     >>> circuit = stim.Circuit('''
+>     ...    M 0
+>     ...    DETECTOR rec[-1]
+>     ...    DETECTOR(1, 2, 3) rec[-1]
+>     ...    REPEAT 3 {
+>     ...        DETECTOR(42) rec[-1]
+>     ...        SHIFT_COORDS(100)
+>     ...    }
+>     ... ''')
+>     >>> circuit.get_detector_coordinates()
+>     {0: [], 1: [1.0, 2.0, 3.0], 2: [42.0], 3: [142.0], 4: [242.0]}
+>     >>> circuit.get_detector_coordinates(only=[1])
+>     {1: [1.0, 2.0, 3.0]}
+> ```
+
+### `stim.Circuit.get_final_qubit_coordinates(self, List[float]]`<a name="stim.Circuit.get_final_qubit_coordinates"></a>
+> ```
+> Returns the coordinate metadata of qubits in the circuit.
+> 
+> If a qubit's coordinates are specified multiple times, only the last specified coordinates are returned.
+> 
+> Returns:
+>     A dictionary mapping qubit indices (integers) to coordinates (lists of floats).
+>     Qubits that never had their coordinates specified are not included in the result.
+> 
+> Examples:
+>     >>> import stim
+>     >>> circuit = stim.Circuit('''
+>     ...    QUBIT_COORDS(1, 2, 3) 1
+>     ... ''')
+>     >>> circuit.get_final_qubit_coordinates()
+>     {1: [1.0, 2.0, 3.0]}
+> ```
+
 ### `stim.Circuit.num_detectors`<a name="stim.Circuit.num_detectors"></a>
 > ```
 > Counts the number of bits produced when sampling the circuit's detectors.
@@ -1494,7 +1598,7 @@
 >     6
 > ```
 
-### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool = False, canonicalize_circuit_errors: bool = False) -> List[stim.MatchedError]`<a name="stim.Circuit.shortest_graphlike_error"></a>
+### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool = False, canonicalize_circuit_errors: bool = False) -> List[stim.ExplainedError]`<a name="stim.Circuit.shortest_graphlike_error"></a>
 > ```
 > Finds a minimum sized set of graphlike errors that produce an undetected logical error.
 > 
@@ -1541,7 +1645,7 @@
 >     ...     rounds=10,
 >     ...     distance=7,
 >     ...     before_round_data_depolarization=0.01)
->     >>> len(circuit.shortest_graphlike_error(decompose_errors=True))
+>     >>> len(circuit.shortest_graphlike_error())
 >     7
 > ```
 
@@ -2715,6 +2819,33 @@
 >     True
 > ```
 
+### `stim.DetectorErrorModel.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`<a name="stim.DetectorErrorModel.get_detector_coordinates"></a>
+> ```
+> Returns the coordinate metadata of detectors in the detector error model.
+> 
+> Args:
+>     only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
+>         result. Detector indices beyond the end of the detector error model cause an error.
+> 
+> Returns:
+>     A dictionary mapping integers (detector indices) to lists of floats (coordinates).
+>     Detectors with no specified coordinate data are mapped to an empty tuple.
+>     If `only` is specified, then `set(result.keys()) == set(only)`.
+> 
+> Examples:
+>     >>> import stim
+>     >>> dem = stim.DetectorErrorModel('''
+>     ...    error(0.25) D0 D1
+>     ...    detector(1, 2, 3) D1
+>     ...    shift_detectors(5) 1
+>     ...    detector(1, 2) D2
+>     ... ''')
+>     >>> dem.get_detector_coordinates()
+>     {0: [], 1: [1.0, 2.0, 3.0], 2: [], 3: [6.0, 2.0]}
+>     >>> dem.get_detector_coordinates(only=[1])
+>     {1: [1.0, 2.0, 3.0]}
+> ```
+
 ### `stim.DetectorErrorModel.num_detectors`<a name="stim.DetectorErrorModel.num_detectors"></a>
 > ```
 > Counts the number of detectors (e.g. `D2`) in the error model.
@@ -2868,6 +2999,29 @@
 >     7
 > ```
 
+### `stim.ExplainedError.__init__(self, *, dem_error_terms: List[stim.DemTargetWithCoords], circuit_error_locations: List[stim.CircuitErrorLocation]) -> None`<a name="stim.ExplainedError.__init__"></a>
+> ```
+> Creates a stim.ExplainedError.
+> ```
+
+### `stim.ExplainedError.circuit_error_locations`<a name="stim.ExplainedError.circuit_error_locations"></a>
+> ```
+> The locations of circuit errors that produce the symptoms in dem_error_terms.
+> 
+> Note: if this list contains a single entry, it may be because a result
+> with a single representative error was requested (as opposed to all possible
+> errors).
+> 
+> Note: if this list is empty, it may be because there was a DEM error decomposed
+> into parts where one of the parts is impossible to make on its own from a single
+> circuit error.
+> ```
+
+### `stim.ExplainedError.dem_error_terms`<a name="stim.ExplainedError.dem_error_terms"></a>
+> ```
+> The detectors and observables flipped by this error mechanism.
+> ```
+
 ### `stim.FlippedMeasurement.__init__(self, *, record_index: int, observable: object) -> None`<a name="stim.FlippedMeasurement.__init__"></a>
 > ```
 > Creates a stim.FlippedMeasurement.
@@ -2973,29 +3127,6 @@
 ### `stim.GateTargetWithCoords.gate_target`<a name="stim.GateTargetWithCoords.gate_target"></a>
 > ```
 > Returns the actual gate target as a `stim.GateTarget`.
-> ```
-
-### `stim.MatchedError.__init__(self, *, dem_error_terms: List[stim.DemTargetWithCoords], circuit_error_locations: List[stim.CircuitErrorLocation]) -> None`<a name="stim.MatchedError.__init__"></a>
-> ```
-> Creates a stim.MatchedError.
-> ```
-
-### `stim.MatchedError.circuit_error_locations`<a name="stim.MatchedError.circuit_error_locations"></a>
-> ```
-> The locations of circuit errors that produce the symptoms in dem_error_terms.
-> 
-> Note: if this list contains a single entry, it may be because a result
-> with a single representative error was requested (as opposed to all possible
-> errors).
-> 
-> Note: if this list is empty, it may be because there was a DEM error decomposed
-> into parts where one of the parts is impossible to make on its own from a single
-> circuit error.
-> ```
-
-### `stim.MatchedError.dem_error_terms`<a name="stim.MatchedError.dem_error_terms"></a>
-> ```
-> The detectors and observables flipped by this error mechanism.
 > ```
 
 ### `stim.PauliString.__add__(self, rhs: stim.PauliString) -> stim.PauliString`<a name="stim.PauliString.__add__"></a>

@@ -21,7 +21,8 @@
 
 using namespace stim;
 
-ErrorMatcher::ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *init_filter, bool reduce_to_one_representative_error)
+ErrorMatcher::ErrorMatcher(
+    const Circuit &circuit, const DetectorErrorModel *init_filter, bool reduce_to_one_representative_error)
     : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1),
       cur_loc(),
       output_map(),
@@ -284,16 +285,14 @@ void ErrorMatcher::rev_process_circuit(uint64_t reps, const Circuit &block) {
     cur_loc.stack_frames.pop_back();
 }
 
-std::vector<MatchedError> ErrorMatcher::match_errors_from_circuit(
-    const Circuit &circuit,
-    const DetectorErrorModel *filter,
-    bool reduce_to_one_representative_error) {
+std::vector<ExplainedError> ErrorMatcher::explain_errors_from_circuit(
+    const Circuit &circuit, const DetectorErrorModel *filter, bool reduce_to_one_representative_error) {
     // Find the matches.
     ErrorMatcher finder(circuit, filter, reduce_to_one_representative_error);
     finder.rev_process_circuit(1, circuit);
 
     // And list them out.
-    std::vector<MatchedError> result;
+    std::vector<ExplainedError> result;
     for (auto &e : finder.output_map) {
         e.second.fill_in_dem_targets(e.first, finder.dem_coords_map);
         result.push_back(std::move(e.second));

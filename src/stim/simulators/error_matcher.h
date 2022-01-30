@@ -35,7 +35,7 @@ struct ErrorMatcher {
     // Tracks discovered pairings keyed by their detector-error-model error terms.
     //
     // Pointed-to key data is owned by `dem_targets_buf``.
-    std::map<ConstPointerRange<DemTarget>, MatchedError> output_map;
+    std::map<ConstPointerRange<DemTarget>, ExplainedError> output_map;
     bool allow_adding_new_dem_errors_to_output_map;
     bool reduce_to_one_representative_error;
 
@@ -63,13 +63,11 @@ struct ErrorMatcher {
     ///
     /// Returns:
     ///     A list of detector-error-model-paired-with-explanatory-circuit-error items.
-    static std::vector<MatchedError> match_errors_from_circuit(
-        const Circuit &circuit,
-        const DetectorErrorModel *filter,
-        bool reduce_to_one_representative_error);
+    static std::vector<ExplainedError> explain_errors_from_circuit(
+        const Circuit &circuit, const DetectorErrorModel *filter, bool reduce_to_one_representative_error);
 
     /// Constructs an error candidate finder based on parameters that are given to
-    /// `ErrorCandidateFinder::match_errors_from_circuit`.
+    /// `ErrorCandidateFinder::explain_errors_from_circuit`.
     ErrorMatcher(const Circuit &circuit, const DetectorErrorModel *filter, bool reduce_to_one_representative_error);
 
     /// Looks up the coordinates of qubit/pauli terms, and appends into an output vector.
