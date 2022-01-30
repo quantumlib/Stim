@@ -701,7 +701,7 @@ def test_coords():
     assert circuit.get_final_qubit_coordinates() == {
         0: [1, 2, 3],
         1: [2],
-        3: [9],
+        4: [8],
     }
 
 
