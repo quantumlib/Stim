@@ -5,6 +5,12 @@ import cirq
 from ._cirq_to_stim import cirq_circuit_to_stim_data
 
 
+try:
+    ResultImpl = cirq.ResultDict  # For cirq >= 0.14
+except AttributeError:
+    ResultImpl = cirq.Result  # For cirq < 0.14
+
+
 class StimSampler(cirq.Sampler):
     """Samples stabilizer circuits using Stim.
 
@@ -33,6 +39,6 @@ class StimSampler(cirq.Sampler):
                 p = k
                 k += length
                 measurements[key] = samples[:, p:k]
-            trial_results.append(cirq.Result(params=param_resolver, measurements=measurements))
+            trial_results.append(ResultImpl(params=param_resolver, measurements=measurements))
 
         return trial_results
