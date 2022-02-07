@@ -20,6 +20,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <array>
 
 #include "stim/mem/bit_ref.h"
 #include "stim/mem/simd_compat.h"

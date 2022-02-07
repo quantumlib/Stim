@@ -198,9 +198,11 @@ TEST(pauli_string, move_copy_assignment) {
     ASSERT_EQ(x, PauliString::from_str("XYZ"));
 
     // Move.
-    x = std::move(PauliString::from_str("XXY"));
+    PauliString z = PauliString::from_str("XXY");
+    x = std::move(z);
     ASSERT_EQ(x, PauliString::from_str("XXY"));
-    x = std::move(PauliString::from_str("-IIX"));
+    z = PauliString::from_str("-IIX");
+    x = std::move(z);
     ASSERT_EQ(x, PauliString::from_str("-IIX"));
 
     // Copy.
