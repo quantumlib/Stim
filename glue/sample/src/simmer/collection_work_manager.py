@@ -95,7 +95,7 @@ class CollectionWorkManager:
             del self.deployed_jobs[key]
             return finished_problem, stats
         else:
-            raise NotImplementedError(f'{result=!r}')
+            raise NotImplementedError(f'result={result!r}')
 
     def _iter_draw_collectors(self) -> Iterator[Tuple[int, CollectionCaseTracker]]:
         yield from self.active_collectors.items()

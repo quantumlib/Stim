@@ -40,9 +40,9 @@ def iter_file_path_into_collectors(circuit_paths: Iterator[str],
                 circuit=circuit, last_coord_minimum=postselect_last_coord_min)
 
             for decoder in decoders:
-                hash_text = (f'{postselect_last_coord_min=!r}\n'
-                             f'{decoder=!r}\n'
-                             f'{circuit_text=!r}\n')
+                hash_text = (f'postselect_last_coord_min={postselect_last_coord_min!r}\n'
+                             f'decoder={decoder!r}\n'
+                             f'circuit_text={circuit_text!r}\n')
                 strong_id = hashlib.sha256(hash_text.encode('utf8')).hexdigest()
                 name = f'{circuit_path}:{decoder}'
                 if postselect_last_coord_min is not None:
@@ -130,7 +130,7 @@ def parse_args(args: List[str]) -> Any:
     a = parser.parse_args(args=args)
     for e in a.postselect_last_coord_min:
         if e is not None and e < -1:
-            raise ValueError(f'{a.postselect_last_coord_min=!r} < -1')
+            raise ValueError(f'a.postselect_last_coord_min={a.postselect_last_coord_min!r} < -1')
     a.postselect_last_coord_min = [None if e == -1 else e for e in
                                                        a.postselect_last_coord_min]
     if a.merge_data_location in a.existing_data_location:
