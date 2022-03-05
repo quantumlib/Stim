@@ -30,7 +30,7 @@ setup(
     description='Samples Stim circuits.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    python_requires='>=3.6.0',
+    python_requires='>=3.7.0',
     data_files=['README.md', 'requirements.txt', 'readme_example_plot.png'],
     install_requires=requirements,
     tests_require=['pytest'],
