@@ -185,6 +185,20 @@ jobs:
       - run: pip install pytest
       - run: pytest glue/cirq
       - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
+  test_simmer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+          architecture: 'x64'
+      - run: pip install -e .
+      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install -e glue/sample
+      - run: pip install pytest
+      - run: pytest glue/sample
+      - run: python -c "import simmer; import doctest; assert doctest.testmod(simmer).failed == 0"
   test_stimzx:
     runs-on: ubuntu-latest
     steps:
