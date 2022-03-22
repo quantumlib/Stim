@@ -27,10 +27,8 @@ class CollectionWorkManager:
     def __init__(self,
                  to_do: Iterator[CollectionCaseTracker],
                  max_shutdown_wait_seconds: float):
-        self.results_queue = multiprocessing.Queue()
-        self.problem_queue = multiprocessing.Queue()
-        self.results_queue.cancel_join_thread()
-        self.problem_queue.cancel_join_thread()
+        self.results_queue: Optional[multiprocessing.Queue] = None
+        self.problem_queue: Optional[multiprocessing.Queue] = None
         self.max_shutdown_wait_seconds = max_shutdown_wait_seconds
 
         self.workers: List[multiprocessing.Process] = []
@@ -43,25 +41,26 @@ class CollectionWorkManager:
         self.next_job_id = 0
 
     def start_workers(self, num_workers: int) -> None:
-        if multiprocessing.get_start_method() != 'spawn':
-            raise ValueError("""
-multiprocessing.get_start_method() != 'spawn'
+        current_method = multiprocessing.get_start_method()
+        try:
+            # To ensure the child processes do not accidentally share ANY state
+            # related to, we use 'spawn' instead of 'fork'.
+            multiprocessing.set_start_method('spawn', force=True)
+            # Create queues after setting start method to work around a deadlock
+            # bug that occurs otherwise.
+            self.results_queue = multiprocessing.Queue()
+            self.problem_queue = multiprocessing.Queue()
+            self.results_queue.cancel_join_thread()
+            self.problem_queue.cancel_join_thread()
 
-To ensure the child processes do not accidentally share ANY state related to
-generating random numbers, simmer REQUIRES you to have called
-
-multiprocessing.set_start_method('spawn', force=True)
-
-before attempting to collect data. It's also recommended that the entrypoint
-file do as little work as possible when __name__ == '__mp_main__'.
-            """)
-
-        for _ in range(num_workers):
-            w = multiprocessing.Process(
-                target=worker_loop,
-                args=(self.problem_queue, self.results_queue))
-            self.workers.append(w)
-            w.start()
+            for _ in range(num_workers):
+                w = multiprocessing.Process(
+                    target=worker_loop,
+                    args=(self.problem_queue, self.results_queue))
+                self.workers.append(w)
+                w.start()
+        finally:
+            multiprocessing.set_start_method(current_method, force=True)
 
     def __enter__(self):
         return self
