@@ -22,6 +22,7 @@
 #include "stim/simulators/min_distance.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 std::string detector_error_model_repr(const DetectorErrorModel &self) {
     if (self.instructions.empty()) {

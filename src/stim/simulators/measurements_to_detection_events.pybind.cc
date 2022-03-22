@@ -22,6 +22,7 @@
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 CompiledMeasurementsToDetectionEventsConverter::CompiledMeasurementsToDetectionEventsConverter(
     simd_bits ref_sample, Circuit circuit, bool skip_reference_sample)

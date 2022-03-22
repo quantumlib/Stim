@@ -107,14 +107,14 @@ void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
     }
 }
 
-VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> stabilizers, std::mt19937_64 &rng) {
+VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> &stabilizers, std::mt19937_64 &rng) {
     size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
     VectorSimulator result(num_qubits);
 
     // Create an initial state $|A\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
     std::uniform_real_distribution<float> dist(-1.0, +1.0);
-    for (size_t k = 0; k < result.state.size(); k++) {
-        result.state[k] = {dist(rng), dist(rng)};
+    for (auto &s : result.state) {
+        s = {dist(rng), dist(rng)};
     }
 
     // Project out the non-overlapping parts.

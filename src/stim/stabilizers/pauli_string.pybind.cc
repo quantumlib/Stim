@@ -21,6 +21,7 @@
 #include "stim/stabilizers/tableau.pybind.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 PyPauliString::PyPauliString(const PauliStringRef val, bool imag) : value(val), imag(imag) {
 }
@@ -341,7 +342,7 @@ void pybind_pauli_string(pybind11::module &m) {
     c.def_static(
         "random",
         [](size_t num_qubits, bool allow_imaginary) {
-            std::shared_ptr<std::mt19937_64> rng = PYBIND_SHARED_RNG(pybind11::none());
+            auto rng = make_py_seeded_rng(pybind11::none());
             return PyPauliString(PauliString::random(num_qubits, *rng), allow_imaginary ? ((*rng)() & 1) : false);
         },
         pybind11::arg("num_qubits"),

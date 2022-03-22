@@ -18,6 +18,7 @@
 #include "stim/py/base.pybind.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 DemInstruction ExposedDemInstruction::as_dem_instruction() const {
     return DemInstruction{arguments, targets, type};

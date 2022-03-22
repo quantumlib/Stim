@@ -21,6 +21,7 @@
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_ptr<std::mt19937_64> prng)
     : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
@@ -91,11 +92,11 @@ std::string CompiledDetectorSampler::repr() const {
     return result.str();
 }
 
-CompiledDetectorSampler py_init_compiled_detector_sampler(const Circuit &circuit, const pybind11::object &seed) {
-    return CompiledDetectorSampler(circuit, PYBIND_SHARED_RNG(seed));
+CompiledDetectorSampler stim_pybind::py_init_compiled_detector_sampler(const Circuit &circuit, const pybind11::object &seed) {
+    return CompiledDetectorSampler(circuit, make_py_seeded_rng(seed));
 }
 
-pybind11::class_<CompiledDetectorSampler> pybind_compiled_detector_sampler_class(pybind11::module &m) {
+pybind11::class_<CompiledDetectorSampler> stim_pybind::pybind_compiled_detector_sampler_class(pybind11::module &m) {
     return pybind11::class_<CompiledDetectorSampler>(
         m,
         "CompiledDetectorSampler",
@@ -103,7 +104,7 @@ pybind11::class_<CompiledDetectorSampler> pybind_compiled_detector_sampler_class
         "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
 }
 
-void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c) {
+void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c) {
     c.def(
         pybind11::init(&py_init_compiled_detector_sampler),
         pybind11::arg("circuit"),

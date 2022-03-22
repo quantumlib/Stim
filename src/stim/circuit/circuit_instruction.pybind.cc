@@ -20,6 +20,7 @@
 #include "stim/str_util.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 CircuitInstruction::CircuitInstruction(
     const char *name, const std::vector<pybind11::object> &init_targets, const std::vector<double> &gate_args)

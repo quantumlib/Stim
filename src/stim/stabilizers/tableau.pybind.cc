@@ -21,6 +21,7 @@
 #include "stim/stabilizers/tableau.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 void pybind_tableau(pybind11::module &m) {
     auto c = pybind11::class_<Tableau>(
@@ -86,7 +87,7 @@ void pybind_tableau(pybind11::module &m) {
     c.def_static(
         "random",
         [](size_t num_qubits) {
-            return Tableau::random(num_qubits, *PYBIND_SHARED_RNG(pybind11::none()));
+            return Tableau::random(num_qubits, *make_py_seeded_rng(pybind11::none()));
         },
         pybind11::arg("num_qubits"),
         clean_doc_string(u8R"DOC(
