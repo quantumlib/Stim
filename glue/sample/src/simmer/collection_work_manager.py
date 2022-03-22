@@ -43,6 +43,19 @@ class CollectionWorkManager:
         self.next_job_id = 0
 
     def start_workers(self, num_workers: int) -> None:
+        if multiprocessing.get_start_method() != 'spawn':
+            raise ValueError("""
+multiprocessing.get_start_method() != 'spawn'
+
+To ensure the child processes do not accidentally share ANY state related to
+generating random numbers, simmer REQUIRES you to have called
+
+multiprocessing.set_start_method('spawn', force=True)
+
+before attempting to collect data. It's also recommended that the entrypoint
+file do as little work as possible when __name__ == '__mp_main__'.
+            """)
+
         for _ in range(num_workers):
             w = multiprocessing.Process(
                 target=worker_loop,

@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import hashlib
+import multiprocessing
 import sys
 from typing import Iterator, Any, Tuple, Optional, List
 
@@ -150,6 +151,8 @@ def open_merge_file(path: str) -> Tuple[Any, ExistingData]:
 
 
 def main_collect(*, command_line_args: List[str]):
+    multiprocessing.set_start_method('spawn', force=True)
+
     with contextlib.ExitStack() as ctx:
         args = parse_args(args=command_line_args)
 

@@ -26,7 +26,7 @@ setup(
     author_email='craig.gidney@gmail.com',
     license='Apache 2',
     packages=['simmer'],
-    package_dir = {'': 'src'},
+    package_dir={'': 'src'},
     description='Samples Stim circuits.',
     long_description=long_description,
     long_description_content_type='text/markdown',
