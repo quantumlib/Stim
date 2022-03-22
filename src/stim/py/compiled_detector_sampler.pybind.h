@@ -22,6 +22,8 @@
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
 
+namespace stim_pybind {
+
 struct CompiledDetectorSampler {
     const stim::DetectorsAndObservables dets_obs;
     const stim::Circuit circuit;
@@ -44,5 +46,7 @@ struct CompiledDetectorSampler {
 pybind11::class_<CompiledDetectorSampler> pybind_compiled_detector_sampler_class(pybind11::module &m);
 void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c);
 CompiledDetectorSampler py_init_compiled_detector_sampler(const stim::Circuit &circuit, const pybind11::object &seed);
+
+}
 
 #endif

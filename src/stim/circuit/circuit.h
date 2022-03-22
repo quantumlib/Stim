@@ -35,7 +35,7 @@
 namespace stim {
 
 // Change this number from time to time to ensure people don't rely on seeds across versions.
-constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF1235ULL;
+constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF1236ULL;
 
 uint64_t op_data_rep_count(const OperationData &data);
 

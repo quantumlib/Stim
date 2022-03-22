@@ -25,7 +25,7 @@ TableauSimulator::TableauSimulator(std::mt19937_64 &rng, size_t num_qubits, int8
     : inv_state(Tableau::identity(num_qubits)),
       rng(rng),
       sign_bias(sign_bias),
-      measurement_record(record),
+      measurement_record(std::move(record)),
       last_correlated_error_occurred(false) {
 }
 

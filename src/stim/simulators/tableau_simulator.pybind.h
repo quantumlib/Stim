@@ -17,6 +17,13 @@
 
 #include <pybind11/pybind11.h>
 
+#include "stim/simulators/tableau_simulator.h"
+
+struct PyTableauSimulator : stim::TableauSimulator {
+    std::shared_ptr<std::mt19937_64> rng_reference;
+    explicit PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng);
+};
+
 void pybind_tableau_simulator(pybind11::module &m);
 
 #endif

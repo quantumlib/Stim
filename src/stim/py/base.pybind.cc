@@ -20,14 +20,9 @@
 
 using namespace stim;
 
-static std::shared_ptr<std::mt19937_64> shared_rng;
-
-std::shared_ptr<std::mt19937_64> PYBIND_SHARED_RNG(const pybind11::object &seed) {
-    if (seed.is(pybind11::none())) {
-        if (!shared_rng) {
-            shared_rng = std::make_shared<std::mt19937_64>(std::move(externally_seeded_rng()));
-        }
-        return shared_rng;
+std::shared_ptr<std::mt19937_64> stim_pybind::make_py_seeded_rng(const pybind11::object &seed) {
+    if (seed.is_none()) {
+        return std::make_shared<std::mt19937_64>(externally_seeded_rng());
     }
 
     try {
@@ -38,7 +33,7 @@ std::shared_ptr<std::mt19937_64> PYBIND_SHARED_RNG(const pybind11::object &seed)
     }
 }
 
-std::string clean_doc_string(const char *c) {
+std::string stim_pybind::clean_doc_string(const char *c) {
     // Skip leading empty lines.
     while (*c == '\n') {
         c++;
@@ -71,7 +66,7 @@ std::string clean_doc_string(const char *c) {
     return result;
 }
 
-bool normalize_index_or_slice(
+bool stim_pybind::normalize_index_or_slice(
     const pybind11::object &index_or_slice,
     size_t length,
     pybind11::ssize_t *start,
@@ -105,7 +100,7 @@ bool normalize_index_or_slice(
     return true;
 }
 
-SampleFormat format_to_enum(const std::string &format) {
+SampleFormat stim_pybind::format_to_enum(const std::string &format) {
     auto found_format = format_name_to_enum_map.find(format);
     if (found_format == format_name_to_enum_map.end()) {
         std::stringstream msg;

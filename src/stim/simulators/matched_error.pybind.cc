@@ -22,6 +22,7 @@
 #include "stim/simulators/matched_error.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 std::string CircuitErrorLocationStackFrame_repr(const CircuitErrorLocationStackFrame &self) {
     std::stringstream out;

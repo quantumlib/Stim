@@ -18,6 +18,7 @@
 #include "stim/py/base.pybind.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 GateTarget handle_to_gate_target(const pybind11::handle &obj) {
     try {

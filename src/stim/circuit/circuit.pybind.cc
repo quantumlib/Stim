@@ -31,6 +31,7 @@
 #include "stim/simulators/min_distance.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 std::string circuit_repr(const Circuit &self) {
     if (self.operations.empty()) {

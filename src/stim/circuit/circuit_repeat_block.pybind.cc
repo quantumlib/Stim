@@ -20,6 +20,7 @@
 #include "stim/py/base.pybind.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 CircuitRepeatBlock::CircuitRepeatBlock(uint64_t repeat_count, stim::Circuit body)
     : repeat_count(repeat_count), body(body) {

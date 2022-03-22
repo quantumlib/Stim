@@ -33,6 +33,7 @@
 #define str(s) #s
 
 using namespace stim;
+using namespace stim_pybind;
 
 uint32_t target_rec(int32_t lookback) {
     if (lookback >= 0 || lookback <= -(1 << 24)) {

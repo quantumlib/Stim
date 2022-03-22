@@ -21,6 +21,7 @@
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 CompiledMeasurementSampler::CompiledMeasurementSampler(
     simd_bits ref_sample, Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng)
@@ -98,7 +99,7 @@ CompiledMeasurementSampler py_init_compiled_sampler(
     const Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed) {
     simd_bits ref_sample = skip_reference_sample ? simd_bits(circuit.count_measurements())
                                                  : TableauSimulator::reference_sample_circuit(circuit);
-    return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, PYBIND_SHARED_RNG(seed));
+    return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
 }
 
 void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c) {
