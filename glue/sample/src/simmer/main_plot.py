@@ -1,6 +1,7 @@
 import argparse
 import collections
 from typing import List, Any, Tuple, Iterable, DefaultDict
+from typing import Optional
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -21,6 +22,15 @@ def parse_args(args: List[str]) -> Any:
                         default="1",
                         help='A python expression that transforms a `name` into an x coordinate.\n'
                              'Used to spread data points over the x axis.')
+    parser.add_argument('-fig_size',
+                        type=int,
+                        nargs=2,
+                        default=None,
+                        help='Desired figure width in pixels.')
+    parser.add_argument('-fig_height',
+                        type=int,
+                        default=None,
+                        help='Desired figure height in pixels.')
     parser.add_argument('-group_func',
                         type=str,
                         default="'use -group_func and -x_func to customize'",
@@ -32,6 +42,11 @@ def parse_args(args: List[str]) -> Any:
                         nargs='+',
                         required=True,
                         help='Input files to get data from.')
+    parser.add_argument('-type',
+                        choices=['error_rate', 'discard_rate'],
+                        nargs='+',
+                        default=(),
+                        help='Picks the figures to include.')
     parser.add_argument('-out',
                         type=str,
                         default=None,
@@ -64,31 +79,55 @@ def plot_case_stats(
         *,
         curves: Iterable[Tuple[Any, Iterable[Tuple[float, CaseStats]]]],
         highlight_likelihood_ratio: float = 1e-3,
-        xaxis: str) -> Tuple[plt.Figure, plt.Axes, plt.Axes]:
+        xaxis: str,
+        include_error_rate_plot: bool,
+        include_discard_rate_plot: bool,
+    ) -> Tuple[plt.Figure, Optional[plt.Axes], Optional[plt.Axes]]:
     fig: plt.Figure
-    ax1: plt.Axes
-    ax2: plt.Axes
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    ax1.set_title('Error Rates')
-    ax1.set_ylabel('Logical Error Probability (per shot)')
-    ax1.grid()
+    ax_err: Optional[plt.Axes]
+    ax_dis: Optional[plt.Axes]
+    if include_error_rate_plot and include_discard_rate_plot:
+        fig, (ax_err, ax_dis) = plt.subplots(1, 2)
+    elif include_error_rate_plot:
+        fig, ax_err = plt.subplots(1, 1)
+        ax_dis = None
+    elif include_discard_rate_plot:
+        fig, ax_dis = plt.subplots(1, 1)
+        ax_err = None
+    else:
+        raise NotImplementedError()
 
-    ax2.set_title('Discard Rates')
-    ax2.set_ylabel('Discard Probability (per shot)')
-    ax2.set_ylim(0, 1)
-    ax2.set_yticks([p*0.1 for p in range(11)])
-    ax2.set_yticklabels([str(p * 10) + '%' for p in range(11)])
-    ax2.grid()
+    if ax_err is not None:
+        ax_err.set_ylabel('Logical Error Probability (per shot)')
+        ax_err.grid()
+
+    if ax_dis is not None:
+        ax_dis.set_ylim(0, 1)
+        ax_dis.set_ylabel('Discard Probability (per shot)')
+        ax_dis.set_yticks([p*0.1 for p in range(11)])
+        ax_dis.set_yticklabels([str(p * 10) + '%' for p in range(11)])
+        ax_dis.grid()
 
     if xaxis.startswith('[log]'):
-        ax1.loglog()
-        ax2.semilogx()
+        if ax_err is not None:
+            ax_err.loglog()
+        if ax_dis is not None:
+            ax_dis.semilogx()
         xaxis = xaxis[5:]
     else:
-        ax1.semilogy()
+        ax_err.semilogy()
     if xaxis:
-        ax1.set_xlabel(xaxis)
-        ax2.set_xlabel(xaxis)
+        if ax_err is not None:
+            ax_err.set_xlabel(xaxis)
+            ax_err.set_title('Logical Error Rate vs ' + xaxis)
+        if ax_dis is not None:
+            ax_dis.set_xlabel(xaxis)
+            ax_dis.set_title('Discard Rate vs ' + xaxis)
+    else:
+        if ax_err is not None:
+            ax_err.set_title('Logical Error Rates')
+        if ax_dis is not None:
+            ax_dis.set_title('Discard Rates')
     all_ys1 = []
 
     for group_index, (group, x_stats) in enumerate(curves):
@@ -123,21 +162,28 @@ def plot_case_stats(
         all_ys1 += ys1
         all_ys1 += ys1_low
         all_ys1 += ys1_high
-        ax1.plot(xs1, ys1, label=group, marker=MARKERS[group_index], color=COLORS[group_index], zorder=100)
-        ax2.plot(xs2, ys2, label=group, marker=MARKERS[group_index], color=COLORS[group_index], zorder=100)
+        if ax_err is not None:
+            ax_err.plot(xs1, ys1, label=group, marker=MARKERS[group_index], color=COLORS[group_index], zorder=100)
+        if ax_dis is not None:
+            ax_dis.plot(xs2, ys2, label=group, marker=MARKERS[group_index], color=COLORS[group_index], zorder=100)
         if 0 < highlight_likelihood_ratio < 1:
-            ax1.fill_between(xs1, ys1_low, ys1_high, color=COLORS[group_index], alpha=0.25)
-            ax2.fill_between(xs2, ys2_low, ys2_high, color=COLORS[group_index], alpha=0.25)
+            if ax_err is not None:
+                ax_err.fill_between(xs1, ys1_low, ys1_high, color=COLORS[group_index], alpha=0.25)
+            if ax_dis is not None:
+                ax_dis.fill_between(xs2, ys2_low, ys2_high, color=COLORS[group_index], alpha=0.25)
 
-    min_y = min((y for y in all_ys1 if y > 0), default=0.002)
-    low_d = 4
-    while 10**-low_d > min_y and low_d < 10:
-        low_d += 1
-    ax1.set_ylim(10**-low_d, 1e-0)
+    if ax_err is not None:
+        min_y = min((y for y in all_ys1 if y > 0), default=0.002)
+        low_d = 4
+        while 10**-low_d > min_y and low_d < 10:
+            low_d += 1
+        ax_err.set_ylim(10**-low_d, 1e-0)
 
-    ax1.legend()
-    ax2.legend()
-    return fig, ax1, ax2
+    if ax_err is not None:
+        ax_err.legend()
+    if ax_dis is not None:
+        ax_dis.legend()
+    return fig, ax_err, ax_dis
 
 
 def main_plot(*, command_line_args: List[str]):
@@ -147,7 +193,10 @@ def main_plot(*, command_line_args: List[str]):
         total += ExistingData.from_file(file)
 
     groups: DefaultDict[Any, List[Tuple[float, CaseStats]]] = collections.defaultdict(list)
+    has_discards = False
     for summary, stats in total.data.values():
+        if stats.discards:
+            has_discards = True
         g = args.group_func(decoder=summary.decoder, custom=summary.custom, strong_id=summary.strong_id)
         x = float(args.x_func(decoder=summary.decoder, custom=summary.custom, strong_id=summary.strong_id))
         groups[g].append((x, stats))
@@ -156,11 +205,26 @@ def main_plot(*, command_line_args: List[str]):
         (key, groups[key])
         for key in sorted(groups)
     ]
+    include_discard_plot = 'discard_rate' in args.type
+    include_error_rate_plot = 'error_rate' in args.type
+    if not include_error_rate_plot and not include_discard_plot:
+        include_error_rate_plot = True
+        include_discard_plot = has_discards
     fig, _, _ = plot_case_stats(
         curves=sorted_groups,
         highlight_likelihood_ratio=args.likelihood_ratio,
         xaxis=args.xaxis,
+        include_error_rate_plot=include_error_rate_plot,
+        include_discard_rate_plot=include_discard_plot,
     )
+    if args.fig_size is None:
+        fig.set_size_inches(10*(include_discard_plot + include_error_rate_plot), 10)
+        fig.set_dpi(100)
+    else:
+        w, h = args.fig_size
+        fig.set_size_inches(w / 100, h / 100)
+        fig.set_dpi(100)
+    fig.tight_layout()
     if args.out is not None:
         fig.savefig(args.out)
     if args.show:

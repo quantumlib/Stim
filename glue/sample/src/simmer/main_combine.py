@@ -86,7 +86,7 @@ class ExistingData:
 
     def stats_for(self, case: Union[CaseExecutable, CaseSummary]) -> CaseStats:
         if isinstance(case, CaseExecutable):
-            key = case.strong_id
+            key = case.to_strong_id()
         elif isinstance(case, CaseSummary):
             key = case.strong_id
         else:

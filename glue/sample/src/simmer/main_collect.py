@@ -175,7 +175,7 @@ def main_collect(*, command_line_args: List[str]):
                 if sys.stdout in out_files:
                     print(CSV_HEADER, flush=True)
                 did_work = True
-            stats_line = csv_line_ex(case, stats)
+            stats_line = csv_line_ex(case.to_summary(), stats)
             for f in out_files:
                 print(stats_line, flush=True, file=f)
 

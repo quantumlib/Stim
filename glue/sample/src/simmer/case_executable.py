@@ -1,5 +1,4 @@
 import pathlib
-import functools
 import hashlib
 import json
 import numpy as np
@@ -35,16 +34,14 @@ class CaseExecutable:
         self.postselection_mask = postselection_mask
         self.custom = custom
 
-    @functools.cached_property
-    def summary(self) -> CaseSummary:
+    def to_summary(self) -> CaseSummary:
         return CaseSummary(
             decoder=self.decoder,
             custom=self.custom,
-            strong_id=self.strong_id,
+            strong_id=self.to_strong_id(),
         )
 
-    @functools.cached_property
-    def strong_id(self) -> str:
+    def to_strong_id(self) -> str:
         input_text = json.dumps({
             'circuit': str(self.circuit),
             'decoder': self.decoder,
