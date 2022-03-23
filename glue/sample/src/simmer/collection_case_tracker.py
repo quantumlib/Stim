@@ -1,29 +1,22 @@
 import dataclasses
 import math
-from typing import Optional
+from typing import Optional, Tuple
 
-import numpy as np
-import stim
-
-from simmer.decoding import CaseStats, Case
+from simmer.case import CaseStats, Case
+from simmer.worker import WorkIn
 
 
 @dataclasses.dataclass
 class CollectionCaseTracker:
-    circuit: stim.Circuit
-    name: str
-    post_mask: Optional[np.ndarray]
-    strong_id: str
+    case: Case
     start_batch_size: int
     max_batch_size: Optional[int]
     max_errors: int
     max_shots: int
-    decoder: str
 
     finished_stats: CaseStats = CaseStats()
     deployed_shots: int = 0
     deployed_processes: int = 0
-    dem: Optional[stim.DetectorErrorModel] = None
 
     def expected_shots_remaining(self, *, safety_factor_on_shots_per_error: float = 1) -> int:
         """Doesn't include deployed shots."""
@@ -60,7 +53,7 @@ class CollectionCaseTracker:
             result = min(result, self.max_batch_size)
         return result
 
-    def provide_more_work(self) -> Optional[Case]:
+    def provide_more_work(self) -> Optional[WorkIn]:
         # Don't massively oversample when finishing.
         if self.deployed_shots > self.expected_shots_remaining():
             return None
@@ -69,23 +62,13 @@ class CollectionCaseTracker:
         if self.finished_stats.num_shots == 0 and self.deployed_shots > 0:
             return None
 
-        if self.dem is None:
-            self.dem = self.circuit.detector_error_model(decompose_errors=True)
         num_shots = self.next_shot_count()
         if num_shots <= 0:
             return None
 
         self.deployed_shots += num_shots
         self.deployed_processes += 1
-        return Case(
-            name=self.name,
-            num_shots=num_shots,
-            circuit=self.circuit,
-            dem=self.dem,
-            post_mask=self.post_mask,
-            decoder=self.decoder,
-            strong_id=self.strong_id,
-        )
+        return num_shots, self.case
 
     def status(self) -> str:
         t = self.expected_time_remaining()
@@ -102,7 +85,7 @@ class CollectionCaseTracker:
             + f'eta={t}'.ljust(12)
             + f'shots_left={max(0, self.max_shots - self.finished_stats.num_shots)}'.ljust(20)
             + f'errors_left={max(0, self.max_errors - self.finished_stats.num_errors)}'.ljust(20)
-            + f'{self.name}')
+            + f'{self.case.custom}')
 
 
 def next_shot_count(prev_data: CaseStats,

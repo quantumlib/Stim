@@ -1,18 +1,18 @@
 import sys
-from typing import Iterator, Tuple, Optional
+from typing import Iterator, Tuple, Optional, Union, Iterable
 
 import numpy as np
 import stim
 
 from simmer.collection_case_tracker import CollectionCaseTracker
 from simmer.collection_work_manager import CollectionWorkManager
-from simmer.decoding import CaseStats, Case
+from simmer.case import CaseStats, Case, CaseGoal
 
 
 def iter_collect(*,
                  num_workers: int,
-                 num_todo: Optional[int] = None,
-                 iter_todo: Iterator[CollectionCaseTracker],
+                 num_goals: Optional[int] = None,
+                 goals: Union[Iterator[CaseGoal], Iterable[CaseGoal]],
                  max_shutdown_wait_seconds: float,
                  print_progress: bool) -> Iterator[Tuple[Case, CaseStats]]:
     """Collects error correction statistics using multiple worker processes.
@@ -20,7 +20,7 @@ def iter_collect(*,
     Args:
         num_workers: The number of worker processes to use.
         num_todo: The length of `iter_todo`.
-        iter_todo: Generates cases to sample, decode, and collect statistics from.
+        todo: Generates cases to sample, decode, and collect statistics from.
         max_shutdown_wait_seconds: If an exception is thrown (e.g. because the user sent a SIGINT
             to end the python program), this is the maximum amount of time the workers have to
             shut down gracefully before they are forcefully terminated.
@@ -29,16 +29,15 @@ def iter_collect(*,
     Yields:
         (case, stats) tuples recording incremental statistical data collected by workers.
     """
-    if num_todo is None:
+    if num_goals is None:
         try:
             # noinspection PyTypeChecker
-            num_todo = len(iter_todo)
+            num_todo = len(goals)
         except TypeError:
             pass
-    iter_todo = iter(iter_todo)
 
     with CollectionWorkManager(
-        to_do=iter_todo,
+        to_do=iter(goals),
         max_shutdown_wait_seconds=max_shutdown_wait_seconds,
     ) as manager:
         manager.start_workers(num_workers)
