@@ -6,9 +6,11 @@ from typing import Iterator, Any, Tuple, Optional, List
 
 import stim
 
+from simmer.case import Case
+from simmer.case_stats import CaseStats
 from simmer.collection import iter_collect, post_selection_mask_from_last_detector_coords
 from simmer.collection_case_tracker import CollectionCaseTracker
-from simmer.decoding import CaseStats, DECODER_METHODS, Case
+from simmer.decoding import DECODER_METHODS
 from simmer.main_combine import csv_line, ExistingData, CSV_HEADER
 
 

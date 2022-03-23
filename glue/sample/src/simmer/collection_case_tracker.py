@@ -5,7 +5,8 @@ from typing import Optional
 import numpy as np
 import stim
 
-from simmer.decoding import CaseStats, Case
+from simmer.case import Case
+from simmer.case_stats import CaseStats
 
 
 @dataclasses.dataclass

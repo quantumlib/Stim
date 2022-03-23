@@ -6,7 +6,8 @@ import stim
 
 from simmer.collection_case_tracker import CollectionCaseTracker
 from simmer.collection_work_manager import CollectionWorkManager
-from simmer.decoding import CaseStats, Case
+from simmer.case import Case
+from simmer.case_stats import CaseStats
 
 
 def iter_collect(*,
