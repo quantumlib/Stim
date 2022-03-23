@@ -1,3 +1,5 @@
+import contextlib
+import io
 import pathlib
 import tempfile
 
@@ -7,7 +9,7 @@ from simmer.main import main
 from simmer.main_combine import ExistingData
 
 
-def test_main():
+def test_main_collect():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
         for distance in [3, 5, 7]:
@@ -40,10 +42,10 @@ def test_main():
         ])
         data = ExistingData.from_file(d / "out.csv").data
         assert len(data) == 3
-        for k, v in data.items():
-            assert v.num_discards == 0
-            assert v.num_errors <= 50
-            assert v.num_shots >= 1000
+        for k, (_, v) in data.items():
+            assert v.discards == 0
+            assert v.errors <= 50
+            assert v.shots >= 1000
 
         # No more work when existing stats at merge location are sufficient.
         with open(d / "out.csv") as f:
@@ -93,3 +95,65 @@ def test_main():
         ])
         data2 = ExistingData.from_file(d / "out2.csv").data
         assert len(data2) == 0
+
+
+def test_main_combine():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+shots,errors,discards,seconds,decoder,strong_id,custom_json
+300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
+300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
+9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
+            """.strip(), file=f)
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "combine",
+                str(d / "input.csv"),
+            ])
+        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,custom_json
+       600,       101,       220,    3.00,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
+         9,         5,         4,    6.00,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
+"""
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "combine",
+                str(d / "input.csv"),
+                str(d / "input.csv"),
+            ])
+        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,custom_json
+      1200,       202,       440,    6.00,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
+        18,        10,         8,    12.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
+"""
+
+
+def test_main_plot():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.csv', 'w') as f:
+            print("""
+shots,errors,discards,seconds,decoder,strong_id,custom_json
+300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
+300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
+9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
+            """.strip(), file=f)
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            main(command_line_args=[
+                "plot",
+                "-in",
+                str(d / "input.csv"),
+                "-out",
+                str(d / "output.png"),
+                "-x_func",
+                "int('a' in custom['path'])",
+                "-group_func",
+                "decoder",
+            ])
+        assert (d / "output.png").exists()

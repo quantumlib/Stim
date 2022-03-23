@@ -12,26 +12,29 @@ def test_decode_using_pymatching():
                                      after_clifford_depolarization=0.05)
     result = simmer.sample_decode(
         circuit=circuit,
+        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert 1 <= result.num_errors <= 100
-    assert result.num_shots == 1000
+    assert result.discards == 0
+    assert 1 <= result.errors <= 100
+    assert result.shots == 1000
 
 
 def test_pymatching_works_on_surface_code():
+    circuit = stim.Circuit.generated(
+        "surface_code:rotated_memory_x",
+        distance=3,
+        rounds=15,
+        after_clifford_depolarization=0.001,
+    )
     stats = simmer.sample_decode(
         num_shots=1000,
-        circuit=stim.Circuit.generated(
-            "surface_code:rotated_memory_x",
-            distance=3,
-            rounds=15,
-            after_clifford_depolarization=0.001,
-        ),
+        circuit=circuit,
+        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         decoder="pymatching",
     )
-    assert 0 <= stats.num_errors <= 50
+    assert 0 <= stats.errors <= 50
 
 
 def test_decode_using_internal_decoder():
@@ -43,12 +46,13 @@ def test_decode_using_internal_decoder():
                                      after_clifford_depolarization=0.05)
     result = simmer.sample_decode(
         circuit=circuit,
+        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='internal',
     )
-    assert result.num_discards == 0
-    assert 1 <= result.num_errors <= 100
-    assert result.num_shots == 1000
+    assert result.discards == 0
+    assert 1 <= result.errors <= 100
+    assert result.shots == 1000
 
 
 def test_decode_using_internal_decoder_correlated():
@@ -60,23 +64,26 @@ def test_decode_using_internal_decoder_correlated():
                                      after_clifford_depolarization=0.05)
     result = simmer.sample_decode(
         circuit=circuit,
+        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='internal_correlated',
     )
-    assert result.num_discards == 0
-    assert 1 <= result.num_errors <= 100
-    assert result.num_shots == 1000
+    assert result.discards == 0
+    assert 1 <= result.errors <= 100
+    assert result.shots == 1000
 
 
 def test_empty():
+    circuit = stim.Circuit()
     result = simmer.sample_decode(
-        circuit=stim.Circuit(),
+        circuit=circuit,
+        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert result.num_shots == 1000
-    assert result.num_errors == 0
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert result.errors == 0
 
 
 def test_no_observables():
@@ -87,12 +94,13 @@ def test_no_observables():
     """)
     result = simmer.sample_decode(
         circuit=c,
+        decoder_error_model=c.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert result.num_shots == 1000
-    assert result.num_errors == 0
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert result.errors == 0
 
 
 @pytest.mark.parametrize("offset", range(8))
@@ -108,12 +116,13 @@ def test_observable_offsets_mod8(offset: int):
     """)
     result = simmer.sample_decode(
         circuit=c,
+        decoder_error_model=c.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert result.num_shots == 1000
-    assert 50 <= result.num_errors <= 150
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert 50 <= result.errors <= 150
 
 
 def test_no_detectors():
@@ -124,11 +133,12 @@ def test_no_detectors():
     """)
     result = simmer.sample_decode(
         circuit=c,
+        decoder_error_model=c.detector_error_model(decompose_errors=True),
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert 50 <= result.num_errors <= 150
+    assert result.discards == 0
+    assert 50 <= result.errors <= 150
 
 
 def test_no_detectors_with_post_mask():
@@ -139,12 +149,13 @@ def test_no_detectors_with_post_mask():
     """)
     result = simmer.sample_decode(
         circuit=c,
+        decoder_error_model=c.detector_error_model(decompose_errors=True),
         post_mask=np.array([0], dtype=np.uint8),
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert 50 <= result.num_errors <= 150
+    assert result.discards == 0
+    assert 50 <= result.errors <= 150
 
 
 def test_post_selection():
@@ -165,9 +176,10 @@ def test_post_selection():
     """)
     result = simmer.sample_decode(
         circuit=c,
+        decoder_error_model=c.detector_error_model(decompose_errors=True),
         post_mask=simmer.post_selection_mask_from_last_detector_coords(circuit=c, last_coord_minimum=2),
         num_shots=2000,
         decoder='pymatching',
     )
-    assert 1050 <= result.num_discards <= 1350
-    assert 40 <= result.num_errors <= 160
+    assert 1050 <= result.discards <= 1350
+    assert 40 <= result.errors <= 160

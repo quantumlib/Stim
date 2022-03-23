@@ -1,4 +1,5 @@
 import math
+import pathlib
 from typing import Callable, List
 
 import networkx as nx
@@ -10,6 +11,7 @@ import stim
 def decode_using_pymatching(*,
                             error_model: stim.DetectorErrorModel,
                             bit_packed_det_samples: np.ndarray,
+                            tmp_dir: pathlib.Path,
                             ) -> np.ndarray:
     """Collect statistics on how often logical errors occur when correcting using detections."""
 
