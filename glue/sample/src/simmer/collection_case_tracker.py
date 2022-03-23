@@ -1,5 +1,5 @@
-import dataclasses
 import math
+from typing import Iterator
 from typing import Optional
 
 import stim
@@ -14,10 +14,12 @@ class CollectionCaseTracker:
                  *,
                  case_goal: CaseGoal,
                  start_batch_size: int,
-                 max_batch_size: Optional[int]):
+                 max_batch_size: Optional[int],
+                 max_batch_seconds: Optional[float]):
         self.case_goal = case_goal
         self.start_batch_size = start_batch_size
         self.max_batch_size = max_batch_size
+        self.max_batch_seconds = max_batch_seconds
         self.finished_stats = case_goal.previous_stats
         self.deployed_shots = 0
         self.deployed_processes = 0
@@ -33,10 +35,16 @@ class CollectionCaseTracker:
 
         return math.ceil(result)
 
-    def expected_time_remaining(self) -> Optional[float]:
+    def expected_time_per_shot(self) -> Optional[float]:
         if self.finished_stats.shots == 0:
             return None
-        return self.finished_stats.seconds / self.finished_stats.shots * self.expected_shots_remaining()
+        return self.finished_stats.seconds / self.finished_stats.shots
+
+    def expected_time_remaining(self) -> Optional[float]:
+        dt = self.expected_time_per_shot()
+        if dt is None:
+            return None
+        return dt * self.expected_shots_remaining()
 
     def work_completed(self, stats: CaseStats) -> None:
         self.deployed_shots -= stats.shots
@@ -49,13 +57,20 @@ class CollectionCaseTracker:
                 return True
         return False
 
-    def next_shot_count(self) -> int:
-        unfinished_shots = self.expected_shots_remaining(safety_factor_on_shots_per_error=1.1)
-        result = unfinished_shots - self.deployed_shots
-        result = min(result, max(self.start_batch_size, self.finished_stats.shots * 2))
+    def iter_batch_size_limits(self) -> Iterator[int]:
+        yield max(self.start_batch_size, self.finished_stats.shots * 2)
+        unfinished_shots = self.expected_shots_remaining(
+                safety_factor_on_shots_per_error=1.1)
+        yield unfinished_shots - self.deployed_shots
         if self.max_batch_size is not None:
-            result = min(result, self.max_batch_size)
-        return result
+            yield self.max_batch_size
+        if self.max_batch_seconds is not None:
+            dt = self.expected_time_per_shot()
+            if dt is not None:
+                yield max(1, math.floor(self.max_batch_seconds / dt))
+
+    def next_shot_count(self) -> int:
+        return min(self.iter_batch_size_limits())
 
     def provide_more_work(self) -> Optional[WorkIn]:
         # Don't massively oversample when finishing.

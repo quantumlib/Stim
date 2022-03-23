@@ -68,8 +68,8 @@ def parse_args(args: List[str]) -> Any:
                         required=True,
                         help='Sampling of a circuit will stop if this many errors have been seen.')
     parser.add_argument('-processes',
+                        required=True,
                         type=int,
-                        default=4,
                         help='Number of processes to use for simultaneous sampling and decoding.')
     parser.add_argument('-merge_data_location',
                         type=str,
@@ -83,16 +83,20 @@ def parse_args(args: List[str]) -> Any:
 
     parser.add_argument('-start_batch_size',
                         type=int,
-                        default=10**2,
+                        default=100,
                         help='Initial number of samples to batch together into one job.\n'
                              'Starting small prevents over-sampling of circuits above threshold.\n'
                              'The allowed batch size increases exponentially from this starting point.')
     parser.add_argument('-max_batch_size',
                         type=int,
-                        default=10**5,
+                        default=None,
                         help='Maximum number of samples to batch together into one job.\n'
                              'Bigger values increase the delay between jobs finishing.\n'
                              'Smaller values decrease the amount of aggregation of results, increasing the amount of output information.')
+    parser.add_argument('-max_batch_seconds',
+                        type=int,
+                        default=None,
+                        help='Limits number of shots in a batch so that the estimated runtime of the batch is below this amount.')
     parser.add_argument('-postselect_last_coord_min',
                         type=int,
                         nargs='+',
@@ -109,7 +113,6 @@ def parse_args(args: List[str]) -> Any:
                         default=(),
                         help='CSV data from these files counts towards max_shots and max_errors.\n'
                              'This parameter can be given multiple arguments.')
-
 
     a = parser.parse_args(args=args)
     for e in a.postselect_last_coord_min:
@@ -165,11 +168,16 @@ def main_collect(*, command_line_args: List[str]):
         num_todo = len(args.circuits) * len(args.decoders)
 
         did_work = False
-        for case, stats in iter_collect(num_workers=args.processes,
-                                        num_goals=num_todo,
-                                        goals=iter_todo,
-                                        max_shutdown_wait_seconds=0.5,
-                                        print_progress=not args.quiet):
+        for case, stats in iter_collect(
+                num_workers=args.processes,
+                num_goals=num_todo,
+                goals=iter_todo,
+                max_shutdown_wait_seconds=0.5,
+                print_progress=not args.quiet,
+                max_batch_size=args.max_batch_size,
+                max_batch_seconds=args.max_batch_seconds,
+                start_batch_size=args.start_batch_size,
+        ):
             # Print collected stats.
             if not did_work:
                 if sys.stdout in out_files:

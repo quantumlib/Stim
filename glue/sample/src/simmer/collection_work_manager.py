@@ -16,10 +16,20 @@ class CollectionWorkManager:
     def __init__(self,
                  to_do: Iterator[CaseGoal],
                  max_shutdown_wait_seconds: float,
-                 max_batch_size: int,
+                 max_batch_size: Optional[int],
+                 max_batch_seconds: Optional[float],
                  start_batch_size: int):
+        if start_batch_size <= 0:
+            raise ValueError('start_batch_size <= 0')
+        if max_batch_size is not None and max_batch_size <= 0:
+            raise ValueError(
+                'max_batch_size is not None and max_batch_size <= 0')
+        if max_batch_seconds is not None and max_batch_seconds <= 0:
+            raise ValueError(
+                'max_batch_seconds is not None and max_batch_seconds <= 0')
         self.start_batch_size = start_batch_size
         self.max_batch_size = max_batch_size
+        self.max_batch_seconds = max_batch_seconds
         self.results_queue: Optional[multiprocessing.Queue] = None
         self.problem_queue: Optional[multiprocessing.Queue] = None
         self.max_shutdown_wait_seconds = max_shutdown_wait_seconds
@@ -131,7 +141,8 @@ class CollectionWorkManager:
             collector = CollectionCaseTracker(
                 case_goal=goal,
                 start_batch_size=self.start_batch_size,
-                max_batch_size=self.max_batch_size)
+                max_batch_size=self.max_batch_size,
+                max_batch_seconds=self.max_batch_seconds)
             if collector.is_done():
                 continue
             self.next_collector_key += 1
