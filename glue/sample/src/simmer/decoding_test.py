@@ -16,9 +16,9 @@ def test_decode_using_pymatching():
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert 1 <= result.num_errors <= 100
-    assert result.num_shots == 1000
+    assert result.discards == 0
+    assert 1 <= result.errors <= 100
+    assert result.shots == 1000
 
 
 def test_pymatching_works_on_surface_code():
@@ -34,7 +34,7 @@ def test_pymatching_works_on_surface_code():
         decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         decoder="pymatching",
     )
-    assert 0 <= stats.num_errors <= 50
+    assert 0 <= stats.errors <= 50
 
 
 def test_decode_using_internal_decoder():
@@ -50,9 +50,9 @@ def test_decode_using_internal_decoder():
         num_shots=1000,
         decoder='internal',
     )
-    assert result.num_discards == 0
-    assert 1 <= result.num_errors <= 100
-    assert result.num_shots == 1000
+    assert result.discards == 0
+    assert 1 <= result.errors <= 100
+    assert result.shots == 1000
 
 
 def test_decode_using_internal_decoder_correlated():
@@ -68,9 +68,9 @@ def test_decode_using_internal_decoder_correlated():
         num_shots=1000,
         decoder='internal_correlated',
     )
-    assert result.num_discards == 0
-    assert 1 <= result.num_errors <= 100
-    assert result.num_shots == 1000
+    assert result.discards == 0
+    assert 1 <= result.errors <= 100
+    assert result.shots == 1000
 
 
 def test_empty():
@@ -81,9 +81,9 @@ def test_empty():
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert result.num_shots == 1000
-    assert result.num_errors == 0
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert result.errors == 0
 
 
 def test_no_observables():
@@ -98,9 +98,9 @@ def test_no_observables():
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert result.num_shots == 1000
-    assert result.num_errors == 0
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert result.errors == 0
 
 
 @pytest.mark.parametrize("offset", range(8))
@@ -120,9 +120,9 @@ def test_observable_offsets_mod8(offset: int):
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert result.num_shots == 1000
-    assert 50 <= result.num_errors <= 150
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert 50 <= result.errors <= 150
 
 
 def test_no_detectors():
@@ -137,8 +137,8 @@ def test_no_detectors():
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert 50 <= result.num_errors <= 150
+    assert result.discards == 0
+    assert 50 <= result.errors <= 150
 
 
 def test_no_detectors_with_post_mask():
@@ -154,8 +154,8 @@ def test_no_detectors_with_post_mask():
         num_shots=1000,
         decoder='pymatching',
     )
-    assert result.num_discards == 0
-    assert 50 <= result.num_errors <= 150
+    assert result.discards == 0
+    assert 50 <= result.errors <= 150
 
 
 def test_post_selection():
@@ -181,5 +181,5 @@ def test_post_selection():
         num_shots=2000,
         decoder='pymatching',
     )
-    assert 1050 <= result.num_discards <= 1350
-    assert 40 <= result.num_errors <= 160
+    assert 1050 <= result.discards <= 1350
+    assert 40 <= result.errors <= 160

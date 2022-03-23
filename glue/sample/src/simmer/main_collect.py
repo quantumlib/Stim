@@ -1,37 +1,24 @@
 import argparse
 import contextlib
-import hashlib
 import sys
 from typing import Iterator, Any, Tuple, Optional, List
 
 import stim
 
-from simmer.case import Case
-from simmer.case_stats import CaseStats
+from simmer import CaseGoal
+from simmer.case_executable import CaseExecutable
 from simmer.collection import iter_collect, post_selection_mask_from_last_detector_coords
-from simmer.collection_case_tracker import CollectionCaseTracker
 from simmer.decoding import DECODER_METHODS
-from simmer.main_combine import csv_line, ExistingData, CSV_HEADER
+from simmer.main_combine import csv_line_ex, ExistingData, CSV_HEADER
 
 
-def csv_line_ex(problem: Case, stats: CaseStats) -> str:
-    return csv_line(
-        shots=stats.num_shots,
-        errors=stats.num_errors,
-        elapsed=stats.seconds_elapsed,
-        discards=stats.num_discards,
-        strong_id=problem.strong_id,
-        name=problem.name)
-
-
-def iter_file_path_into_collectors(circuit_paths: Iterator[str],
-                                   start_batch_size: int,
-                                   max_batch_size: int,
-                                   max_errors: int,
-                                   max_shots: int,
-                                   postselect_last_coord_mins: List[Optional[int]],
-                                   decoders: List[str],
-                                   existing_data: 'ExistingData') -> Iterator[CollectionCaseTracker]:
+def iter_file_paths_into_goals(circuit_paths: Iterator[str],
+                               max_errors: int,
+                               max_shots: int,
+                               postselect_last_coord_mins: List[Optional[int]],
+                               decoders: List[str],
+                               existing_data: 'ExistingData',
+                               ) -> Iterator[CaseGoal]:
     for circuit_path in circuit_paths:
         with open(circuit_path) as f:
             circuit_text = f.read()
@@ -42,25 +29,20 @@ def iter_file_path_into_collectors(circuit_paths: Iterator[str],
                 circuit=circuit, last_coord_minimum=postselect_last_coord_min)
 
             for decoder in decoders:
-                hash_text = (f'postselect_last_coord_min={postselect_last_coord_min!r}\n'
-                             f'decoder={decoder!r}\n'
-                             f'circuit_text={circuit_text!r}\n')
-                strong_id = hashlib.sha256(hash_text.encode('utf8')).hexdigest()
-                name = f'{circuit_path}:{decoder}'
-                if postselect_last_coord_min is not None:
-                    name += f':post≥{postselect_last_coord_min}'
-                finished_stats = existing_data.stats_for(circuit_name=name, circuit_sha256=strong_id)
-                yield CollectionCaseTracker(
+                case_executable = CaseExecutable(
                     circuit=circuit,
-                    name=name,
-                    post_mask=post_mask,
-                    strong_id=strong_id,
-                    start_batch_size=start_batch_size,
-                    max_batch_size=max_batch_size,
+                    decoder=decoder,
+                    postselection_mask=post_mask,
+                    custom={
+                        'path': circuit_path,
+                    },
+                )
+                finished_stats = existing_data.stats_for(case_executable)
+                yield CaseGoal(
+                    case=case_executable,
                     max_errors=max_errors,
                     max_shots=max_shots,
-                    decoder=decoder,
-                    finished_stats=finished_stats,
+                    previous_stats=finished_stats,
                 )
 
 
@@ -172,22 +154,20 @@ def main_collect(*, command_line_args: List[str]):
         else:
             out_files.append(sys.stdout)
 
-        iter_todo = iter_file_path_into_collectors(
+        iter_todo = iter_file_paths_into_goals(
             circuit_paths=args.circuits,
-            start_batch_size=args.start_batch_size,
-            max_batch_size=args.max_batch_size,
             max_errors=args.max_errors,
             max_shots=args.max_shots,
             decoders=args.decoders,
-            existing_data=existing_data,
             postselect_last_coord_mins=args.postselect_last_coord_min,
+            existing_data=existing_data,
         )
         num_todo = len(args.circuits) * len(args.decoders)
 
         did_work = False
         for case, stats in iter_collect(num_workers=args.processes,
-                                        num_todo=num_todo,
-                                        iter_todo=iter_todo,
+                                        num_goals=num_todo,
+                                        goals=iter_todo,
                                         max_shutdown_wait_seconds=0.5,
                                         print_progress=not args.quiet):
             # Print collected stats.

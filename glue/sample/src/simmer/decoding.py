@@ -1,5 +1,4 @@
 import contextlib
-import dataclasses
 import functools
 import pathlib
 import tempfile
@@ -116,8 +115,8 @@ def sample_decode(*,
         # Count how many predictions matched the actual observable data.
         num_errors = np.count_nonzero(np.any(predictions != obs_data, axis=1))
         return CaseStats(
-            num_shots=num_shots,
-            num_errors=num_errors,
-            num_discards=num_discards,
-            seconds_elapsed=time.monotonic() - start_time,
+            shots=num_shots,
+            errors=num_errors,
+            discards=num_discards,
+            seconds=time.monotonic() - start_time,
         )
