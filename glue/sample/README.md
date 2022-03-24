@@ -46,9 +46,9 @@ You can use simmer to collect statistics on each circuit by using the `simmer co
 This command takes options specifying how much data to collect, how to do decoding, etc.
 
 By default, simmer writes the collected statistics to stdout as CSV data.
-One particularly important option that changes this behavior is `-merge_data_location`,
+One particularly important option that changes this behavior is `-save_resume_filepath`,
 which allows the command to be interrupted and restarted without losing data.
-Any data already at the file specified by `-merge_data_location` will count towards the
+Any data already at the file specified by `-save_resume_filepath` will count towards the
 amount of statistics asked to be collected, and simmer will append new statistics to this file
 instead of overwriting it.
 
@@ -59,7 +59,7 @@ simmer collect \
     -decoders pymatching \
     -max_shots 1_000_000 \
     -max_errors 1000 \
-    -merge_data_location surface_code_stats.csv
+    -save_resume_filepath surface_code_stats.csv
 ```
 
 Beware that if you SIGKILL or SIGTEM simmer, instead of just using SIGINT, it's possible
