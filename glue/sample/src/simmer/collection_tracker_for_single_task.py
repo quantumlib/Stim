@@ -84,11 +84,16 @@ class CollectionTrackerForSingleTask:
         if self.task.max_batch_size is not None:
             yield self.task.max_batch_size
 
+        # If no maximum on batch size is specified, default to 30s maximum.
+        max_batch_seconds = self.task.max_batch_seconds
+        if max_batch_seconds is None and self.task.max_batch_size is None:
+            max_batch_seconds = 30
+
         # Try not to exceed max batch duration.
-        if self.task.max_batch_seconds is not None:
+        if max_batch_seconds is not None:
             dt = self.expected_time_per_shot()
             if dt is not None:
-                yield max(1, math.floor(self.task.max_batch_seconds / dt))
+                yield max(1, math.floor(max_batch_seconds / dt))
 
     def next_shot_count(self) -> int:
         return math.ceil(min(self.iter_batch_size_limits()))
