@@ -55,12 +55,27 @@ class CollectionTrackerForSingleTask:
         return False
 
     def iter_batch_size_limits(self) -> Iterator[int]:
-        yield max(self.task.start_batch_size, self.finished_stats.shots * 2)
+        if self.finished_stats.shots == 0:
+            yield self.task.start_batch_size
+            return
+
+        # Do exponential ramp-up of batch sizes.
+        yield self.finished_stats.shots * 2
+
+        # Don't go super parallel before reaching other maximums.
+        yield self.finished_stats.shots * 5 - self.deployed_shots
+
+        # Don't take more shots than requested.
+        # Also, maintain 4x parallelism as error threshold gets close.
         unfinished_shots = self.expected_shots_remaining(
-                safety_factor_on_shots_per_error=1.1)
+                safety_factor_on_shots_per_error=0.25)
         yield unfinished_shots - self.deployed_shots
+
+        # Don't exceed max batch size.
         if self.task.max_batch_size is not None:
             yield self.task.max_batch_size
+
+        # Try not to exceed max batch duration.
         if self.task.max_batch_seconds is not None:
             dt = self.expected_time_per_shot()
             if dt is not None:
