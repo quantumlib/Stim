@@ -42,7 +42,7 @@ def test_main_collect():
         ])
         data = ExistingData.from_file(d / "out.csv").data
         assert len(data) == 3
-        for k, (_, v) in data.items():
+        for k, v in data.items():
             assert v.discards == 0
             assert v.errors <= 50
             assert v.shots >= 1000
@@ -102,7 +102,7 @@ def test_main_combine():
         d = pathlib.Path(d)
         with open(d / f'input.csv', 'w') as f:
             print("""
-shots,errors,discards,seconds,decoder,strong_id,custom_json
+shots,errors,discards,seconds,decoder,strong_id,json_metadata
 300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
 300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
 9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
@@ -114,7 +114,7 @@ shots,errors,discards,seconds,decoder,strong_id,custom_json
                 "combine",
                 str(d / "input.csv"),
             ])
-        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,custom_json
+        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
        600,       101,       220,    3.00,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
          9,         5,         4,    6.00,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
 """
@@ -126,7 +126,7 @@ shots,errors,discards,seconds,decoder,strong_id,custom_json
                 str(d / "input.csv"),
                 str(d / "input.csv"),
             ])
-        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,custom_json
+        assert out.getvalue() == """     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
       1200,       202,       440,    6.00,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
         18,        10,         8,    12.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
 """
@@ -137,7 +137,7 @@ def test_main_plot():
         d = pathlib.Path(d)
         with open(d / f'input.csv', 'w') as f:
             print("""
-shots,errors,discards,seconds,decoder,strong_id,custom_json
+shots,errors,discards,seconds,decoder,strong_id,json_metadata
 300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
 300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
 9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
@@ -152,7 +152,7 @@ shots,errors,discards,seconds,decoder,strong_id,custom_json
                 "-out",
                 str(d / "output.png"),
                 "-x_func",
-                "int('a' in custom['path'])",
+                "int('a' in metadata['path'])",
                 "-group_func",
                 "decoder",
             ])

@@ -2,35 +2,30 @@ import math
 from typing import Iterator
 from typing import Optional
 
-import stim
-
-from simmer.case_goal import CaseGoal
+from simmer.task import Task
 from simmer.case_stats import CaseStats
 from simmer.worker import WorkIn
+from simmer.worker import WorkOut
 
 
-class CollectionCaseTracker:
+class CollectionTrackerForSingleTask:
     def __init__(self,
                  *,
-                 case_goal: CaseGoal,
-                 start_batch_size: int,
-                 max_batch_size: Optional[int],
-                 max_batch_seconds: Optional[float]):
-        self.case_goal = case_goal
-        self.start_batch_size = start_batch_size
-        self.max_batch_size = max_batch_size
-        self.max_batch_seconds = max_batch_seconds
-        self.finished_stats = case_goal.previous_stats
+                 task: Task):
+        self.task = task
+        self.finished_stats = task.previous_stats
         self.deployed_shots = 0
         self.deployed_processes = 0
+        self.problem_summary = task.to_case_executable().to_summary()
 
-    def expected_shots_remaining(self, *, safety_factor_on_shots_per_error: float = 1) -> int:
+    def expected_shots_remaining(
+            self, *, safety_factor_on_shots_per_error: float = 1) -> int:
         """Doesn't include deployed shots."""
-        result: float = self.case_goal.max_shots - self.finished_stats.shots
+        result: float = self.task.max_shots - self.finished_stats.shots
 
         if self.finished_stats.errors:
             shots_per_error = self.finished_stats.shots / self.finished_stats.errors
-            errors_left = self.case_goal.max_errors - self.finished_stats.errors
+            errors_left = self.task.max_errors - self.finished_stats.errors
             result = min(result, errors_left * shots_per_error * safety_factor_on_shots_per_error)
 
         return math.ceil(result)
@@ -46,28 +41,28 @@ class CollectionCaseTracker:
             return None
         return dt * self.expected_shots_remaining()
 
-    def work_completed(self, stats: CaseStats) -> None:
-        self.deployed_shots -= stats.shots
+    def work_completed(self, result: WorkOut) -> None:
+        self.deployed_shots -= result.sample.shots
         self.deployed_processes -= 1
-        self.finished_stats += stats
+        self.finished_stats += result.sample.to_case_stats()
 
     def is_done(self) -> bool:
-        if self.finished_stats.shots >= self.case_goal.max_shots or self.finished_stats.errors >= self.case_goal.max_errors:
+        if self.finished_stats.shots >= self.task.max_shots or self.finished_stats.errors >= self.task.max_errors:
             if self.deployed_shots == 0:
                 return True
         return False
 
     def iter_batch_size_limits(self) -> Iterator[int]:
-        yield max(self.start_batch_size, self.finished_stats.shots * 2)
+        yield max(self.task.start_batch_size, self.finished_stats.shots * 2)
         unfinished_shots = self.expected_shots_remaining(
                 safety_factor_on_shots_per_error=1.1)
         yield unfinished_shots - self.deployed_shots
-        if self.max_batch_size is not None:
-            yield self.max_batch_size
-        if self.max_batch_seconds is not None:
+        if self.task.max_batch_size is not None:
+            yield self.task.max_batch_size
+        if self.task.max_batch_seconds is not None:
             dt = self.expected_time_per_shot()
             if dt is not None:
-                yield max(1, math.floor(self.max_batch_seconds / dt))
+                yield max(1, math.floor(self.task.max_batch_seconds / dt))
 
     def next_shot_count(self) -> int:
         return min(self.iter_batch_size_limits())
@@ -89,26 +84,24 @@ class CollectionCaseTracker:
         self.deployed_processes += 1
         return WorkIn(
             key=None,
-            case=self.case_goal.case,
+            case=self.task.to_case_executable(),
+            summary=self.problem_summary,
             num_shots=num_shots,
         )
 
     def status(self) -> str:
         t = self.expected_time_remaining()
-        if self.deployed_processes == 0:
-            t = None
         if t is not None:
             t /= 60
-            t /= self.deployed_processes
             t = math.ceil(t)
-            t = f'{t}min'
+            t = f'{t}'
         return (
             'case: '
             + f'processes={self.deployed_processes}'.ljust(13)
-            + f'eta={t}'.ljust(12)
-            + f'shots_left={max(0, self.case_goal.max_shots - self.finished_stats.shots)}'.ljust(20)
-            + f'errors_left={max(0, self.case_goal.max_errors - self.finished_stats.errors)}'.ljust(20)
-            + f'{self.case_goal.case.custom}')
+            + f'~core_mins_left={t}'.ljust(24)
+            + f'shots_left={max(0, self.task.max_shots - self.finished_stats.shots)}'.ljust(20)
+            + f'errors_left={max(0, self.task.max_errors - self.finished_stats.errors)}'.ljust(20)
+            + f'{self.task.json_metadata}')
 
 
 def next_shot_count(prev_data: CaseStats,

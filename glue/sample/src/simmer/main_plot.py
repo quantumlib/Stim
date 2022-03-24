@@ -1,12 +1,17 @@
 import argparse
 import collections
+import functools
+from typing import Callable
 from typing import List, Any, Tuple, Iterable, DefaultDict
 from typing import Optional
+from typing import Union
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
-from simmer import CaseStats
+import simmer
+from simmer.case_stats import CaseStats
+from simmer.case_summary import CaseSummary
 from simmer.main_combine import ExistingData
 from simmer.probability_util import binominal_relative_likelihood_range
 
@@ -70,15 +75,15 @@ def parse_args(args: List[str]) -> Any:
     a = parser.parse_args(args=args)
     if not a.show and a.out is None:
         raise ValueError("Must specify '-out file' or '-show'.")
-    a.x_func = eval('lambda decoder, custom, strong_id: ' + a.x_func)
-    a.group_func = eval('lambda decoder, custom, strong_id: ' + a.group_func)
+    a.x_func = eval('lambda decoder, metadata, strong_id: ' + a.x_func)
+    a.group_func = eval('lambda decoder, metadata, strong_id: ' + a.group_func)
     return a
 
 
 def plot_case_stats(
         *,
         curves: Iterable[Tuple[Any, Iterable[Tuple[float, CaseStats]]]],
-        highlight_likelihood_ratio: float = 1e-3,
+        highlight_likelihood_ratio: Optional[float],
         xaxis: str,
         include_error_rate_plot: bool,
         include_discard_rate_plot: bool,
@@ -150,7 +155,7 @@ def plot_case_stats(
                                                                     likelihood_ratio=highlight_likelihood_ratio)
                     ys1_low.append(low)
                     ys1_high.append(high)
-            if stats.shots:
+            if stats.shots and highlight_likelihood_ratio is not None:
                 xs2.append(x)
                 ys2.append(stats.discards / stats.shots)
                 if 0 < highlight_likelihood_ratio < 1:
@@ -186,6 +191,59 @@ def plot_case_stats(
     return fig, ax_err, ax_dis
 
 
+def plot(
+    *,
+    samples: Union[Iterable[simmer.SampleStats], ExistingData],
+    group_func: Callable[[CaseSummary], Any],
+    x_func: Callable[[CaseSummary], Any],
+    include_discard_rate_plot: bool = False,
+    include_error_rate_plot: bool = False,
+    highlight_likelihood_ratio: Optional[float] = 1e-3,
+    xaxis: str,
+    fig_size: Optional[Tuple[int, int]] = None,
+) -> Tuple[plt.Figure, List[plt.Axes]]:
+    if isinstance(samples, ExistingData):
+        total = samples
+    else:
+        total = ExistingData()
+        for sample in samples:
+            total.add_sample(sample)
+
+    groups: DefaultDict[Any, List[Tuple[float, CaseStats]]] = collections.defaultdict(list)
+    has_discards = False
+    for sample in total.data.values():
+        if sample.discards:
+            has_discards = True
+        g = group_func(sample.to_case_summary())
+        x = float(x_func(sample.to_case_summary()))
+        groups[g].append((x, sample.to_case_stats()))
+
+    sorted_groups = [
+        (key, groups[key])
+        for key in sorted(groups)
+    ]
+    if not include_error_rate_plot and not include_discard_rate_plot:
+        include_error_rate_plot = True
+        include_discard_rate_plot = has_discards
+    fig, ax1, ax2 = plot_case_stats(
+        curves=sorted_groups,
+        highlight_likelihood_ratio=highlight_likelihood_ratio,
+        xaxis=xaxis,
+        include_error_rate_plot=include_error_rate_plot,
+        include_discard_rate_plot=include_discard_rate_plot,
+    )
+    if fig_size is None:
+        fig.set_size_inches(10 * (include_discard_rate_plot + include_error_rate_plot), 10)
+        fig.set_dpi(100)
+    else:
+        w, h = fig_size
+        fig.set_size_inches(w / 100, h / 100)
+        fig.set_dpi(100)
+    fig.tight_layout()
+    axs = [e for e in [ax1, ax2] if e is not None]
+    return fig, axs
+
+
 def main_plot(*, command_line_args: List[str]):
     args = parse_args(command_line_args)
     total = ExistingData()
@@ -194,12 +252,12 @@ def main_plot(*, command_line_args: List[str]):
 
     groups: DefaultDict[Any, List[Tuple[float, CaseStats]]] = collections.defaultdict(list)
     has_discards = False
-    for summary, stats in total.data.values():
-        if stats.discards:
+    for sample in total.data.values():
+        if sample.discards:
             has_discards = True
-        g = args.group_func(decoder=summary.decoder, custom=summary.custom, strong_id=summary.strong_id)
-        x = float(args.x_func(decoder=summary.decoder, custom=summary.custom, strong_id=summary.strong_id))
-        groups[g].append((x, stats))
+        g = args.group_func(decoder=sample.decoder, metadata=sample.json_metadata, strong_id=sample.strong_id)
+        x = float(args.x_func(decoder=sample.decoder, metadata=sample.json_metadata, strong_id=sample.strong_id))
+        groups[g].append((x, sample.to_case_stats()))
 
     sorted_groups = [
         (key, groups[key])

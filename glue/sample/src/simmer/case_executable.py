@@ -16,28 +16,28 @@ class CaseExecutable:
     def __init__(self, *,
                  circuit: stim.Circuit,
                  decoder: str,
-                 decoder_error_model: Optional[stim.DetectorErrorModel] = None,
+                 error_model_for_decoder: Optional[stim.DetectorErrorModel] = None,
                  postselection_mask: Optional[np.ndarray] = None,
-                 custom: JSON_TYPE = None) -> None:
-        if decoder_error_model is None:
-            decoder_error_model = circuit.detector_error_model(decompose_errors=True)
+                 json_metadata: JSON_TYPE = None) -> None:
+        if error_model_for_decoder is None:
+            error_model_for_decoder = circuit.detector_error_model(decompose_errors=True)
         else:
             n1 = circuit.num_detectors + circuit.num_observables
-            n2 = decoder_error_model.num_detectors + decoder_error_model.num_observables
+            n2 = error_model_for_decoder.num_detectors + error_model_for_decoder.num_observables
             assert n1 == n2
             if postselection_mask is not None:
                 assert postselection_mask.dtype == np.uint8
                 assert postselection_mask.shape == ((n1 + 7) // 8,)
         self.circuit = circuit
-        self.decoder_error_model = decoder_error_model
+        self.decoder_error_model = error_model_for_decoder
         self.decoder = decoder
         self.postselection_mask = postselection_mask
-        self.custom = custom
+        self.json_metadata = json_metadata
 
     def to_summary(self) -> CaseSummary:
         return CaseSummary(
             decoder=self.decoder,
-            custom=self.custom,
+            json_metadata=self.json_metadata,
             strong_id=self.to_strong_id(),
         )
 
@@ -50,7 +50,7 @@ class CaseExecutable:
                 None
                 if self.postselection_mask is None
                 else list(self.postselection_mask),
-            'custom': self.custom,
+            'json_metadata': self.json_metadata,
         })
         return hashlib.sha256(input_text.encode('utf8')).hexdigest()
 

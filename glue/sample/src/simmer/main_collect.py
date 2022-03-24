@@ -5,20 +5,22 @@ from typing import Iterator, Any, Tuple, Optional, List
 
 import stim
 
-from simmer import CaseGoal
-from simmer.case_executable import CaseExecutable
+from simmer import Task
 from simmer.collection import iter_collect, post_selection_mask_from_last_detector_coords
 from simmer.decoding import DECODER_METHODS
-from simmer.main_combine import csv_line_ex, ExistingData, CSV_HEADER
+from simmer.main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
                                max_errors: int,
                                max_shots: int,
+                               max_batch_size: Optional[int],
+                               start_batch_size: int,
+                               max_batch_seconds: Optional[float],
                                postselect_last_coord_mins: List[Optional[int]],
                                decoders: List[str],
                                existing_data: 'ExistingData',
-                               ) -> Iterator[CaseGoal]:
+                               ) -> Iterator[Task]:
     for circuit_path in circuit_paths:
         with open(circuit_path) as f:
             circuit_text = f.read()
@@ -29,20 +31,19 @@ def iter_file_paths_into_goals(circuit_paths: Iterator[str],
                 circuit=circuit, last_coord_minimum=postselect_last_coord_min)
 
             for decoder in decoders:
-                case_executable = CaseExecutable(
+                yield Task(
                     circuit=circuit,
                     decoder=decoder,
                     postselection_mask=post_mask,
-                    custom={
+                    json_metadata={
                         'path': circuit_path,
                     },
-                )
-                finished_stats = existing_data.stats_for(case_executable)
-                yield CaseGoal(
-                    case=case_executable,
                     max_errors=max_errors,
                     max_shots=max_shots,
-                    previous_stats=finished_stats,
+                    previous_stats=existing_data,
+                    max_batch_size=max_batch_size,
+                    max_batch_seconds=max_batch_seconds,
+                    start_batch_size=start_batch_size,
                 )
 
 
@@ -164,26 +165,25 @@ def main_collect(*, command_line_args: List[str]):
             decoders=args.decoders,
             postselect_last_coord_mins=args.postselect_last_coord_min,
             existing_data=existing_data,
+            max_batch_seconds=args.max_batch_seconds,
+            max_batch_size=args.max_batch_size,
+            start_batch_size=args.start_batch_size,
         )
         num_todo = len(args.circuits) * len(args.decoders)
 
         did_work = False
-        for case, stats in iter_collect(
+        for sample in iter_collect(
                 num_workers=args.processes,
-                num_goals=num_todo,
-                goals=iter_todo,
-                max_shutdown_wait_seconds=0.5,
+                hint_num_tasks=num_todo,
+                tasks=iter_todo,
                 print_progress=not args.quiet,
-                max_batch_size=args.max_batch_size,
-                max_batch_seconds=args.max_batch_seconds,
-                start_batch_size=args.start_batch_size,
         ):
             # Print collected stats.
             if not did_work:
                 if sys.stdout in out_files:
                     print(CSV_HEADER, flush=True)
                 did_work = True
-            stats_line = csv_line_ex(case.to_summary(), stats)
+            stats_line = sample.to_csv_line()
             for f in out_files:
                 print(stats_line, flush=True, file=f)
 
