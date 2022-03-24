@@ -37,6 +37,9 @@ class CollectionTrackerForSingleTask:
             return None
         return self.finished_stats.seconds / self.finished_stats.shots
 
+    def expected_errors_per_shot(self) -> Optional[float]:
+        return (self.finished_stats.errors + 1) / (self.finished_stats.shots + 1)
+
     def expected_time_remaining(self) -> Optional[float]:
         dt = self.expected_time_per_shot()
         if dt is None:
@@ -54,9 +57,12 @@ class CollectionTrackerForSingleTask:
                 return True
         return False
 
-    def iter_batch_size_limits(self) -> Iterator[int]:
+    def iter_batch_size_limits(self) -> Iterator[float]:
         if self.finished_stats.shots == 0:
-            yield self.task.start_batch_size
+            if self.deployed_shots == 0:
+                yield self.task.start_batch_size
+            else:
+                yield 0
             return
 
         # Do exponential ramp-up of batch sizes.
@@ -66,10 +72,13 @@ class CollectionTrackerForSingleTask:
         yield self.finished_stats.shots * 5 - self.deployed_shots
 
         # Don't take more shots than requested.
-        # Also, maintain 4x parallelism as error threshold gets close.
-        unfinished_shots = self.expected_shots_remaining(
-                safety_factor_on_shots_per_error=0.25)
-        yield unfinished_shots - self.deployed_shots
+        yield self.task.max_shots - self.finished_stats.shots - self.deployed_shots
+
+        # Don't take more errors than requested.
+        errors_left = self.task.max_errors - self.finished_stats.errors
+        errors_left += 2  # oversample once count gets low
+        de = self.expected_errors_per_shot()
+        yield errors_left / de - self.deployed_shots
 
         # Don't exceed max batch size.
         if self.task.max_batch_size is not None:
@@ -82,17 +91,10 @@ class CollectionTrackerForSingleTask:
                 yield max(1, math.floor(self.task.max_batch_seconds / dt))
 
     def next_shot_count(self) -> int:
-        return min(self.iter_batch_size_limits())
+        return math.ceil(min(self.iter_batch_size_limits()))
 
     def provide_more_work(self) -> Optional[WorkIn]:
-        # Don't massively oversample when finishing.
-        if self.deployed_shots > self.expected_shots_remaining():
-            return None
-
         # Wait to have *some* data before starting to sample in parallel.
-        if self.finished_stats.shots == 0 and self.deployed_shots > 0:
-            return None
-
         num_shots = self.next_shot_count()
         if num_shots <= 0:
             return None
