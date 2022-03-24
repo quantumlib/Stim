@@ -10,7 +10,7 @@ class CaseSummary:
     """A serializable representation of a decoding problem."""
     strong_id: str
     decoder: str
-    custom: JSON_TYPE
+    json_metadata: JSON_TYPE
 
     def __hash__(self) -> int:
         return self.strong_id.__hash__()

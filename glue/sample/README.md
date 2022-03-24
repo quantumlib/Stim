@@ -7,7 +7,7 @@ multiprocessing to fully utilize a computer's resources to get good performance.
 
 **simmer is still in development. Its API and output formats are not stable.** 
 
-# Example
+# Usage: Command Line Example
 
 This example assumes you are using a linux command line in a python virtualenv with `simmer` installed.
 
@@ -46,19 +46,20 @@ You can use simmer to collect statistics on each circuit by using the `simmer co
 This command takes options specifying how much data to collect, how to do decoding, etc.
 
 By default, simmer writes the collected statistics to stdout as CSV data.
-One particularly important option that changes this behavior is `-merge_data_location`,
+One particularly important option that changes this behavior is `-save_resume_filepath`,
 which allows the command to be interrupted and restarted without losing data.
-Any data already at the file specified by `-merge_data_location` will count towards the
+Any data already at the file specified by `-save_resume_filepath` will count towards the
 amount of statistics asked to be collected, and simmer will append new statistics to this file
 instead of overwriting it.
 
 ```bash
 simmer collect \
+    -processes 4 \
     -circuits surface_code_circuits/*.stim \
-    -max_shots 1_000_000 \
-    -max_errors 100 \
     -decoders pymatching \
-    -merge_data_location surface_code_stats.csv
+    -max_shots 1_000_000 \
+    -max_errors 1000 \
+    -save_resume_filepath surface_code_stats.csv
 ```
 
 Beware that if you SIGKILL or SIGTEM simmer, instead of just using SIGINT, it's possible
@@ -79,19 +80,19 @@ simmer combine surface_code_stats.csv
 ```
 
 ```
-     shots,    errors,  discards, seconds,decoder,strong_id,custom_json
-    403500,       101,         0,    9.83,pymatching,ef3da13b767334393de4d126f8224aad405265130e8fc78f3845679be52ec42f,"{""path"":""surface_code_circuits/rotated_d3_p0.001.stim""}"
-     20130,       101,         0,   0.652,pymatching,43a7b4d873ffa6eedaa906d64abc4be7d7565e626ee2e24d779a1765ec5fd69b,"{""path"":""surface_code_circuits/rotated_d3_p0.005.stim""}"
-      4215,       102,         0,   0.165,pymatching,c0bc6090f3165ef2b8df7bae2102b5cad8afd8027cc499b98bc7b7dc6822c93d,"{""path"":""surface_code_circuits/rotated_d3_p0.01.stim""}"
-   1000000,        43,         0,    71.5,pymatching,903acf3fb1adcfb680786fc140f45ffeb5cc09f0707bd58a2c1a6040586b43bf,"{""path"":""surface_code_circuits/rotated_d5_p0.001.stim""}"
-    378500,       101,         0,    12.0,pymatching,dd8ff3eb31268796201788b2e7e84788f5164cedd1003069feca364d6f0cf17b,"{""path"":""surface_code_circuits/unrotated_d3_p0.001.stim""}"
-     21739,       101,         0,    3.70,pymatching,ecd7f4a93985876bde1eb5d03d8553323422da51e30f41d31c44401e6dbd6e05,"{""path"":""surface_code_circuits/rotated_d5_p0.005.stim""}"
-     22521,       113,         0,   0.936,pymatching,dc03dea140b3df28e485c8dc5b3e310d0b7a3764f0bb4e12dd359245c62961b6,"{""path"":""surface_code_circuits/unrotated_d3_p0.005.stim""}"
-      3672,       111,         0,    1.11,pymatching,7bab069683a2f6a669d54b4dbe3c0f6d72e6efc720091e76f18dbf6e0d3a4b5f,"{""path"":""surface_code_circuits/rotated_d5_p0.01.stim""}"
-      5794,       120,         0,   0.359,pymatching,9d21b0d66df659a75dc1ea467d3b6c5eff81dc4924b722ae5f64ad8f7faee9bb,"{""path"":""surface_code_circuits/unrotated_d3_p0.01.stim""}"
-   1000000,        24,         0,   130.1,pymatching,6a23f2748c9623e365b3d220c327d6cb35738fc4bd54274732d735541cc5b59d,"{""path"":""surface_code_circuits/unrotated_d5_p0.001.stim""}"
-     43854,       104,         0,    16.2,pymatching,99e125b30772a79c8165d709934b7c77bd14a3bd4d9a437b42ea6458e68b1282,"{""path"":""surface_code_circuits/unrotated_d5_p0.005.stim""}"
-      4208,       103,         0,    3.03,pymatching,9c235b930d8373583f26d60238985af91b09db14396e4e342332c6e4b6a1e664,"{""path"":""surface_code_circuits/unrotated_d5_p0.01.stim""}"
+     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
+   1000000,       262,         0,    16.3,pymatching,f01233f0d6edafc76d03e8236995bb78ed09b48e2e5ebbf43ffbf02793d8e9d7,"{""d"":3,""p"":0.001,""rot"":""rotated""}"
+   1000000,       239,         0,    17.9,pymatching,22952528d7ff664b2fe27c5cc3d338511e27eb95f224228bc860b67aef27dd58,"{""d"":3,""p"":0.001,""rot"":""unrotated""}"
+   1000000,        51,         0,    34.0,pymatching,3355b9bf8560b45b8f7eac03398cb6e008e16de19fba2bd5b8b1a6f9c4332067,"{""d"":5,""p"":0.001,""rot"":""rotated""}"
+   1000000,        13,         0,    65.8,pymatching,5fc9fa28cc477c212ab0cc654d1625a0573884e9691bb52179cb3d8f1446ce21,"{""d"":5,""p"":0.001,""rot"":""unrotated""}"
+    166658,      1037,         0,    3.31,pymatching,a2fadab97195f83df0a505477885f53cfb64620b06501a849fb47617d1c42ee1,"{""d"":3,""p"":0.005,""rot"":""rotated""}"
+    194010,      1100,         0,    5.62,pymatching,31f9a15a9cfa7cde5dc014ba3a352a2487412cfa1a9cc0a1d1ad5eaf784fcba1,"{""d"":3,""p"":0.005,""rot"":""unrotated""}"
+    207350,      1001,         0,    23.2,pymatching,d7392e6975e4a79ba13e4dd0eeaf058351c3a57704c813bf6f8f40774bcb3d93,"{""d"":5,""p"":0.005,""rot"":""rotated""}"
+    388484,      1032,         0,   113.7,pymatching,220ef6450c218c2c86e699253af5a7ec65a048ec4f2e2a3e63ecbd2fe84bfdeb,"{""d"":5,""p"":0.005,""rot"":""unrotated""}"
+     43816,      1014,         0,    1.34,pymatching,142926adda22610adf785e42c7a2fe7b29df607687c0b3d231f3a856bc406369,"{""d"":3,""p"":0.01,""rot"":""rotated""}"
+     47255,      1041,         0,    1.86,pymatching,2007687e756a06f41e62c82aed46276c98be16371948a07e8852f59102244273,"{""d"":3,""p"":0.01,""rot"":""unrotated""}"
+     32150,      1012,         0,    7.14,pymatching,22ee39f253d37897894334649453037e1107cf2301e600b0f91be07555b2d81b,"{""d"":5,""p"":0.01,""rot"":""rotated""}"
+     52068,      1182,         0,    31.5,pymatching,bfebe2cdf47cf94aee1422283efac3d47071729ccf254a092389933b594d24b7,"{""d"":5,""p"":0.01,""rot"":""unrotated""}"
 ```
 
 # display
@@ -116,3 +117,89 @@ Which will save a png image of, and also open a window showing, a plot like this
 
 ![Example plot](readme_example_plot.png)
 
+
+# Usage: Python API Example
+
+This example assumes you are in a python environment with stim and simmer
+installed.
+
+```bash
+import stim
+import simmer
+
+
+# Generates surface code circuit tasks using Stim's circuit generation.
+def generate_tasks():
+    for p in [0.001, 0.005, 0.01]:
+        for d in [3, 5]:
+            for rot in ['rotated', 'unrotated']:
+                yield simmer.Task(
+                    # What to sample from.
+                    circuit=stim.Circuit.generated(
+                        rounds=d,
+                        distance=d,
+                        after_clifford_depolarization=p,
+                        code_task=f'surface_code:{rot}_memory_x',
+                    ),
+                    decoder='pymatching',
+
+                    # Helpful attached data to include in output.
+                    json_metadata={
+                        'p': p,
+                        'd': d,
+                        'rot': rot,
+                    },
+
+                    # How much work to do.
+                    max_shots=1_000_000,
+                    max_errors=1000,
+                )
+
+
+def main():
+    # Collect the samples (takes a few minutes).
+    samples = simmer.collect(num_workers=4, tasks=generate_tasks())
+
+    # Print as CSV data.
+    print(simmer.CSV_HEADER)
+    for sample in samples:
+        print(sample.to_csv_line())
+
+    # Render a matplotlib plot of the data into a png image.
+    fig, axs = simmer.plot(
+        samples=samples,
+        x_func=lambda e: e.json_metadata['p'],
+        xaxis='[log]Physical Error Rate',
+        group_func=lambda e: f"{e.json_metadata['rot']} d{e.json_metadata['d']}",
+    )
+    fig.savefig('plot.png')
+
+
+# NOTE: This is actually necessary! If the code inside 'main()' was at the
+# module level, the multiprocessing children spawned by simmer.collect would
+# also attempt to run that code.
+if __name__ == '__main__':
+    main()
+```
+
+Example output to stdout:
+
+```
+     shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
+   1000000,       262,         0,    16.3,pymatching,f01233f0d6edafc76d03e8236995bb78ed09b48e2e5ebbf43ffbf02793d8e9d7,"{""d"":3,""p"":0.001,""rot"":""rotated""}"
+   1000000,       239,         0,    17.9,pymatching,22952528d7ff664b2fe27c5cc3d338511e27eb95f224228bc860b67aef27dd58,"{""d"":3,""p"":0.001,""rot"":""unrotated""}"
+   1000000,        51,         0,    34.0,pymatching,3355b9bf8560b45b8f7eac03398cb6e008e16de19fba2bd5b8b1a6f9c4332067,"{""d"":5,""p"":0.001,""rot"":""rotated""}"
+   1000000,        13,         0,    65.8,pymatching,5fc9fa28cc477c212ab0cc654d1625a0573884e9691bb52179cb3d8f1446ce21,"{""d"":5,""p"":0.001,""rot"":""unrotated""}"
+    166658,      1037,         0,    3.31,pymatching,a2fadab97195f83df0a505477885f53cfb64620b06501a849fb47617d1c42ee1,"{""d"":3,""p"":0.005,""rot"":""rotated""}"
+    194010,      1100,         0,    5.62,pymatching,31f9a15a9cfa7cde5dc014ba3a352a2487412cfa1a9cc0a1d1ad5eaf784fcba1,"{""d"":3,""p"":0.005,""rot"":""unrotated""}"
+    207350,      1001,         0,    23.2,pymatching,d7392e6975e4a79ba13e4dd0eeaf058351c3a57704c813bf6f8f40774bcb3d93,"{""d"":5,""p"":0.005,""rot"":""rotated""}"
+    388484,      1032,         0,   113.7,pymatching,220ef6450c218c2c86e699253af5a7ec65a048ec4f2e2a3e63ecbd2fe84bfdeb,"{""d"":5,""p"":0.005,""rot"":""unrotated""}"
+     43816,      1014,         0,    1.34,pymatching,142926adda22610adf785e42c7a2fe7b29df607687c0b3d231f3a856bc406369,"{""d"":3,""p"":0.01,""rot"":""rotated""}"
+     47255,      1041,         0,    1.86,pymatching,2007687e756a06f41e62c82aed46276c98be16371948a07e8852f59102244273,"{""d"":3,""p"":0.01,""rot"":""unrotated""}"
+     32150,      1012,         0,    7.14,pymatching,22ee39f253d37897894334649453037e1107cf2301e600b0f91be07555b2d81b,"{""d"":5,""p"":0.01,""rot"":""rotated""}"
+     52068,      1182,         0,    31.5,pymatching,bfebe2cdf47cf94aee1422283efac3d47071729ccf254a092389933b594d24b7,"{""d"":5,""p"":0.01,""rot"":""unrotated""}"
+```
+
+and the corresponding image saved to `plot.png`:
+
+![Example plot](readme_example_plot.png)

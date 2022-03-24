@@ -3,6 +3,8 @@ import pytest
 import stim
 
 import simmer
+from simmer.collection import post_selection_mask_from_last_detector_coords
+from simmer.decoding import sample_decode
 
 
 def test_decode_using_pymatching():
@@ -10,7 +12,7 @@ def test_decode_using_pymatching():
                                      rounds=3,
                                      distance=3,
                                      after_clifford_depolarization=0.05)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=circuit,
         decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -28,7 +30,7 @@ def test_pymatching_works_on_surface_code():
         rounds=15,
         after_clifford_depolarization=0.001,
     )
-    stats = simmer.sample_decode(
+    stats = sample_decode(
         num_shots=1000,
         circuit=circuit,
         decoder_error_model=circuit.detector_error_model(decompose_errors=True),
@@ -44,7 +46,7 @@ def test_decode_using_internal_decoder():
                                      rounds=3,
                                      distance=3,
                                      after_clifford_depolarization=0.05)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=circuit,
         decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -62,7 +64,7 @@ def test_decode_using_internal_decoder_correlated():
                                      rounds=3,
                                      distance=3,
                                      after_clifford_depolarization=0.05)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=circuit,
         decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -75,7 +77,7 @@ def test_decode_using_internal_decoder_correlated():
 
 def test_empty():
     circuit = stim.Circuit()
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=circuit,
         decoder_error_model=circuit.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -92,7 +94,7 @@ def test_no_observables():
         M 0
         DETECTOR rec[-1]
     """)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -114,7 +116,7 @@ def test_observable_offsets_mod8(offset: int):
         MR 0
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -131,7 +133,7 @@ def test_no_detectors():
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
         num_shots=1000,
@@ -147,7 +149,7 @@ def test_no_detectors_with_post_mask():
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
         post_mask=np.array([0], dtype=np.uint8),
@@ -174,10 +176,10 @@ def test_post_selection():
         M 2
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
-    result = simmer.sample_decode(
+    result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
-        post_mask=simmer.post_selection_mask_from_last_detector_coords(circuit=c, last_coord_minimum=2),
+        post_mask=post_selection_mask_from_last_detector_coords(circuit=c, last_coord_minimum=2),
         num_shots=2000,
         decoder='pymatching',
     )

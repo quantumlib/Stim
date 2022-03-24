@@ -5,30 +5,24 @@ import tempfile
 import time
 from typing import Optional, Iterator, Tuple, Dict, List
 
-from simmer.case_executable import CaseExecutable
-from simmer.case_goal import CaseGoal
-from simmer.case_stats import CaseStats
-from simmer.collection_case_tracker import CollectionCaseTracker
+from simmer.existing_data import ExistingData
+from simmer.sample_stats import SampleStats
+from simmer.task import Task
+from simmer.collection_tracker_for_single_task import CollectionTrackerForSingleTask
 from simmer.worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:
-    def __init__(self,
-                 to_do: Iterator[CaseGoal],
-                 max_shutdown_wait_seconds: float,
-                 max_batch_size: int,
-                 start_batch_size: int):
-        self.start_batch_size = start_batch_size
-        self.max_batch_size = max_batch_size
-        self.results_queue: Optional[multiprocessing.Queue] = None
-        self.problem_queue: Optional[multiprocessing.Queue] = None
-        self.max_shutdown_wait_seconds = max_shutdown_wait_seconds
+    def __init__(self, *, tasks: Iterator[Task], additional_existing_data: Optional[ExistingData]):
+        self.queue_from_workers: Optional[multiprocessing.Queue] = None
+        self.queue_to_workers: Optional[multiprocessing.Queue] = None
+        self.additional_existing_data = ExistingData() if additional_existing_data is None else additional_existing_data
         self.tmp_dir: Optional[pathlib.Path] = None
         self.exit_stack: Optional[contextlib.ExitStack] = None
 
         self.workers: List[multiprocessing.Process] = []
-        self.active_collectors: Dict[int, CollectionCaseTracker] = {}
-        self.to_do: Iterator[CaseGoal] = to_do
+        self.active_collectors: Dict[int, CollectionTrackerForSingleTask] = {}
+        self.tasks: Iterator[Task] = tasks
         self.next_collector_key: int = 0
         self.started_count = 0
         self.finished_count = 0
@@ -44,17 +38,17 @@ class CollectionWorkManager:
             multiprocessing.set_start_method('spawn', force=True)
             # Create queues after setting start method to work around a deadlock
             # bug that occurs otherwise.
-            self.results_queue = multiprocessing.Queue()
-            self.problem_queue = multiprocessing.Queue()
-            self.results_queue.cancel_join_thread()
-            self.problem_queue.cancel_join_thread()
+            self.queue_from_workers = multiprocessing.Queue()
+            self.queue_to_workers = multiprocessing.Queue()
+            self.queue_from_workers.cancel_join_thread()
+            self.queue_to_workers.cancel_join_thread()
 
             for _ in range(num_workers):
                 w = multiprocessing.Process(
                     target=worker_loop,
-                    args=(self.tmp_dir, self.problem_queue, self.results_queue))
-                self.workers.append(w)
+                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers))
                 w.start()
+                self.workers.append(w)
         finally:
             multiprocessing.set_start_method(current_method, force=True)
 
@@ -73,17 +67,21 @@ class CollectionWorkManager:
         removed_workers = self.workers
         self.workers = []
 
-        # Notify workers that they should stop.
-        # (Though, in SIGINT situations the workers have separately received SIGINTs.)
-        for _ in removed_workers:
-            self.problem_queue.put(None)
+        # Look, we don't have all day here.
+        max_shutdown_wait_seconds = 0.1
+        deadline = time.monotonic() + max_shutdown_wait_seconds
 
-        # Wait the maximum time, then bring the hammer down.
-        deadline = time.monotonic() + self.max_shutdown_wait_seconds
+        # Notify workers that they should stop.
+        for _ in removed_workers:
+            self.queue_to_workers.put(None)
+
+        # Ensure the workers are stopped.
         for w in removed_workers:
+            # Wait until the deadline or until the worker stops.
             max_wait_seconds = deadline - time.monotonic()
             if max_wait_seconds > 0:
                 w.join(timeout=max_wait_seconds)
+            # Bring the hammer down.
             if w.is_alive():
                 w.terminate()
 
@@ -92,71 +90,75 @@ class CollectionWorkManager:
             work = self.provide_more_work()
             if work is None:
                 break
-            self.problem_queue.put(WorkIn(key=(self.next_job_id, work.key),
-                                          case=work.case,
-                                          num_shots=work.num_shots))
+            self.queue_to_workers.put(WorkIn(key=(self.next_job_id, work.key),
+                                             case=work.case,
+                                             summary=work.summary,
+                                             num_shots=work.num_shots))
             self.deployed_jobs[self.next_job_id] = work
             self.next_job_id += 1
         return bool(self.deployed_jobs)
 
-    def wait_for_more_stats(self,
-                            *,
-                            timeout: Optional[float] = None,
-                            ) -> Tuple[CaseExecutable, CaseStats]:
-        result = self.results_queue.get(timeout=timeout)
+    def wait_for_next_sample(self,
+                             *,
+                             timeout: Optional[float] = None,
+                             ) -> SampleStats:
+        result = self.queue_from_workers.get(timeout=timeout)
         assert isinstance(result, WorkOut)
         if result.error is not None:
             raise RuntimeError("Worker failed") from result.error
-        elif result.stats is not None:
-            job_id, sub_key = result.input.key
-            self.work_completed(WorkOut(input=WorkIn(
-                                            key=sub_key,
-                                            case=result.input.case,
-                                            num_shots=result.input.num_shots),
-                                        stats=result.stats,
+        elif result.sample is not None:
+            job_id, sub_key = result.key
+            self.work_completed(WorkOut(key=sub_key,
+                                        sample=result.sample,
                                         error=result.error))
             del self.deployed_jobs[job_id]
-            return result.input.case, result.stats
+            return result.sample
         else:
             raise NotImplementedError(f'result={result!r}')
 
-    def _iter_draw_collectors(self) -> Iterator[Tuple[int, CollectionCaseTracker]]:
-        yield from self.active_collectors.items()
+    def _iter_draw_collectors(self, *, prefer_started: bool) -> Iterator[Tuple[int, CollectionTrackerForSingleTask]]:
+        if prefer_started:
+            yield from self.active_collectors.items()
         while True:
             key = self.next_collector_key
             try:
-                goal = next(self.to_do)
+                task = next(self.tasks)
             except StopIteration:
-                return
-            collector = CollectionCaseTracker(
-                case_goal=goal,
-                start_batch_size=self.start_batch_size,
-                max_batch_size=self.max_batch_size)
+                break
+            collector = CollectionTrackerForSingleTask(
+                    task=task, additional_existing_data=self.additional_existing_data)
             if collector.is_done():
                 continue
             self.next_collector_key += 1
             self.active_collectors[key] = collector
             self.started_count += 1
             yield key, collector
+        if not prefer_started:
+            yield from self.active_collectors.items()
 
     def is_done(self) -> bool:
         return len(self.active_collectors) == 0
 
     def work_completed(self, result: WorkOut):
-        collector_index = result.input.key
+        collector_index = result.key
         assert isinstance(collector_index, int)
         collector = self.active_collectors[collector_index]
-        collector.work_completed(result.stats)
+        collector.work_completed(result)
         if collector.is_done():
             self.finished_count += 1
             del self.active_collectors[collector_index]
 
     def provide_more_work(self) -> Optional[WorkIn]:
-        for collector_index, collector in self._iter_draw_collectors():
+        iter_collectors = self._iter_draw_collectors(
+                prefer_started=len(self.active_collectors) >= 2)
+        for collector_index, collector in iter_collectors:
             w = collector.provide_more_work()
             if w is not None:
                 assert w.key is None
-                return WorkIn(key=collector_index, case=w.case, num_shots=w.num_shots)
+                return WorkIn(key=collector_index,
+                              case=w.case,
+                              summary=w.summary,
+                              num_shots=w.num_shots)
         return None
 
     def status(self, *, num_circuits: Optional[int]) -> str:
@@ -169,4 +171,6 @@ class CollectionWorkManager:
             '\n    ' + collector.status()
             for collector in self.active_collectors.values()
         ]
+        if len(collector_statuses) > 10:
+            collector_statuses = collector_statuses[:10] + ['\n...']
         return main_status + ''.join(collector_statuses) + '\033[0m'
