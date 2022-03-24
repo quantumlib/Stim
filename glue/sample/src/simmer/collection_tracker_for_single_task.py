@@ -87,7 +87,7 @@ class CollectionTrackerForSingleTask:
         # If no maximum on batch size is specified, default to 30s maximum.
         max_batch_seconds = self.task.max_batch_seconds
         if max_batch_seconds is None and self.task.max_batch_size is None:
-            max_batch_seconds = 30
+            max_batch_seconds = 10
 
         # Try not to exceed max batch duration.
         if max_batch_seconds is not None:
