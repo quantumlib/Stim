@@ -37,7 +37,7 @@ def test_main_collect():
             "-processes",
             "4",
             "-quiet",
-            "-merge_data_location",
+            "-save_resume_filepath",
             str(d / "out.csv"),
         ])
         data = ExistingData.from_file(d / "out.csv").data
@@ -65,7 +65,7 @@ def test_main_collect():
             "-processes",
             "4",
             "-quiet",
-            "-merge_data_location",
+            "-save_resume_filepath",
             str(d / "out.csv"),
         ])
         with open(d / "out.csv") as f:
@@ -88,9 +88,9 @@ def test_main_collect():
             "-processes",
             "4",
             "-quiet",
-            "-existing_data_location",
+            "-existing_data_filepaths",
             str(d / "out.csv"),
-            "-merge_data_location",
+            "-save_resume_filepath",
             str(d / "out2.csv"),
         ])
         data2 = ExistingData.from_file(d / "out2.csv").data

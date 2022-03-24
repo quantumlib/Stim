@@ -163,7 +163,7 @@ def main():
     # Print as CSV data.
     print(simmer.CSV_HEADER)
     for sample in samples:
-        print(sample)
+        print(sample.to_csv_line())
 
     # Render a matplotlib plot of the data into a png image.
     fig, axs = simmer.plot(

@@ -2,6 +2,7 @@ import math
 from typing import Iterator
 from typing import Optional
 
+from simmer.existing_data import ExistingData
 from simmer.task import Task
 from simmer.case_stats import CaseStats
 from simmer.worker import WorkIn
@@ -11,12 +12,13 @@ from simmer.worker import WorkOut
 class CollectionTrackerForSingleTask:
     def __init__(self,
                  *,
-                 task: Task):
+                 task: Task,
+                 additional_existing_data: ExistingData):
         self.task = task
-        self.finished_stats = task.previous_stats
+        self.problem_summary = task.to_case_executable().to_summary()
+        self.finished_stats = task.previous_stats + additional_existing_data.stats_for(self.problem_summary)
         self.deployed_shots = 0
         self.deployed_processes = 0
-        self.problem_summary = task.to_case_executable().to_summary()
 
     def expected_shots_remaining(
             self, *, safety_factor_on_shots_per_error: float = 1) -> int:

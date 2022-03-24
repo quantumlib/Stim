@@ -5,6 +5,7 @@ import tempfile
 import time
 from typing import Optional, Iterator, Tuple, Dict, List
 
+from simmer.existing_data import ExistingData
 from simmer.sample_stats import SampleStats
 from simmer.task import Task
 from simmer.collection_tracker_for_single_task import CollectionTrackerForSingleTask
@@ -12,9 +13,10 @@ from simmer.worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:
-    def __init__(self, *, tasks: Iterator[Task]):
+    def __init__(self, *, tasks: Iterator[Task], additional_existing_data: Optional[ExistingData]):
         self.queue_from_workers: Optional[multiprocessing.Queue] = None
         self.queue_to_workers: Optional[multiprocessing.Queue] = None
+        self.additional_existing_data = ExistingData() if additional_existing_data is None else additional_existing_data
         self.tmp_dir: Optional[pathlib.Path] = None
         self.exit_stack: Optional[contextlib.ExitStack] = None
 
@@ -123,7 +125,8 @@ class CollectionWorkManager:
                 task = next(self.tasks)
             except StopIteration:
                 break
-            collector = CollectionTrackerForSingleTask(task=task)
+            collector = CollectionTrackerForSingleTask(
+                    task=task, additional_existing_data=self.additional_existing_data)
             if collector.is_done():
                 continue
             self.next_collector_key += 1
