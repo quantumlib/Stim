@@ -25,14 +25,16 @@ import stim
 
 for p in [0.001, 0.005, 0.01]:
     for d in [3, 5]:
-        for rot in ['rotated', 'unrotated']:
-            with open(f'surface_code_circuits/{rot}_d{d}_p{p}.stim', 'w') as f:
-                c = stim.Circuit.generated(
-                    rounds=d,
-                    distance=d,
-                    after_clifford_depolarization=p,
-                    code_task=f'surface_code:{rot}_memory_x')
-                print(c, file=f)
+        with open(f'surface_code_circuits/{d}_{p}_.stim', 'w') as f:
+            c = stim.Circuit.generated(
+                rounds=d,
+                distance=d,
+                after_clifford_depolarization=p,
+                after_reset_flip_probability=p,
+                before_measure_flip_probability=p,
+                before_round_data_depolarization=p,
+                code_task=f'surface_code:rotated_memory_x')
+            print(c, file=f)
 
 "
 ```
@@ -56,6 +58,7 @@ instead of overwriting it.
 simmer collect \
     -processes 4 \
     -circuits surface_code_circuits/*.stim \
+    -metadata_func "(v := path.split('/')[-1].split('_')) and {'d': int(v[0]), 'p': float(v[1])}" \
     -decoders pymatching \
     -max_shots 1_000_000 \
     -max_errors 1000 \
@@ -105,8 +108,8 @@ This is done in a flexible but very hacky way, by specifying a python expression
 ```bash
 simmer plot \
     -in surface_code_stats.csv \
-    -group_func "' '.join(custom['path'].split('/')[-1].split('_')[:2])" \
-    -x_func "'0.' + custom['path'].split('/')[-1].split('_')[-1].split('.')[1]" \
+    -group_func "'Rotated Surface Code d=' + str(metadata['d'])" \
+    -x_func "metadata['p']" \
     -fig_size 1024 1024 \
     -xaxis "[log]Physical Error Rate" \
     -out surface_code_figure.png \

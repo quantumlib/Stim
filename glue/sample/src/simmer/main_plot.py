@@ -1,7 +1,6 @@
 import argparse
 import collections
-import functools
-from typing import Callable
+from typing import Callable, TypeVar
 from typing import List, Any, Tuple, Iterable, DefaultDict
 from typing import Optional
 from typing import Union
@@ -22,11 +21,33 @@ COLORS = list(mcolors.TABLEAU_COLORS) * 3
 def parse_args(args: List[str]) -> Any:
     parser = argparse.ArgumentParser(description='Plot collected CSV data.',
                                      prog='simmer plot')
+    parser.add_argument('-filter_func',
+                        type=str,
+                        default="True",
+                        help='A python expression that determines whether a case is kept or not.\n'
+                             'Available values:\n'
+                             '    metadata: The parsed value from the json_metadata column.\n'
+                             '    decoder: The decoder that decoded the case.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Expected type:\n'
+                             '    Something that can be given to `bool` to get True or False.\n'
+                             'Examples:\n'
+                             '''    -filter_func "decoder=='pymatching'"\n'''
+                             '''    -filter_func "0.001 < metadata['p'] < 0.005"\n''')
     parser.add_argument('-x_func',
                         type=str,
                         default="1",
-                        help='A python expression that transforms a `name` into an x coordinate.\n'
-                             'Used to spread data points over the x axis.')
+                        help='A python expression that determines where points go on the x axis.\n'
+                             'Available values:\n'
+                             '    metadata: The parsed value from the json_metadata column.\n'
+                             '    decoder: The decoder that decoded the case.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Expected type:\n'
+                             '    Something that can be given to `float` to get a float.\n'
+                             'Examples:\n'
+                             '''    -x_func "metadata['p']"\n'''
+                             '''    -x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
+                        )
     parser.add_argument('-fig_size',
                         type=int,
                         nargs=2,
@@ -38,10 +59,18 @@ def parse_args(args: List[str]) -> Any:
                         help='Desired figure height in pixels.')
     parser.add_argument('-group_func',
                         type=str,
-                        default="'use -group_func and -x_func to customize'",
-                        help='A python expression that transforms a `name` into a group key.\n'
-                             'Data points with the same group end up in the same curve.\n'
-                             'The group key is used as the name of the curve in the legend.')
+                        default="'all data (use -group_func and -x_func to group into curves)'",
+                        help='A python expression that determines how points are grouped into curves.\n'
+                             'Available values:\n'
+                             '    metadata: The parsed value from the json_metadata column.\n'
+                             '    decoder: The decoder that decoded the case.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Expected type:\n'
+                             '    Something that can be given to `str` to get a useful string.\n'
+                             'Examples:\n'
+                             '''    -group_func "(decoder, metadata['d'])"\n'''
+                             '''    -group_func "metadata['path'].split('/')[-2]"\n'''
+                        )
     parser.add_argument('-in',
                         type=str,
                         nargs='+',
@@ -66,7 +95,7 @@ def parse_args(args: List[str]) -> Any:
                         action='store_true',
                         help='Displays the plot in a window.\n'
                              'Either this or -out must be specified.')
-    parser.add_argument('-likelihood_ratio',
+    parser.add_argument('-highlight_likelihood_ratio',
                         type=float,
                         default=1e-3,
                         help='The relative likelihood ratio that determines the color highlights around curves.\n'
@@ -75,9 +104,58 @@ def parse_args(args: List[str]) -> Any:
     a = parser.parse_args(args=args)
     if not a.show and a.out is None:
         raise ValueError("Must specify '-out file' or '-show'.")
-    a.x_func = eval('lambda decoder, metadata, strong_id: ' + a.x_func)
-    a.group_func = eval('lambda decoder, metadata, strong_id: ' + a.group_func)
+    a.x_func = eval(compile(
+        'lambda *, decoder, metadata, strong_id: ' + a.x_func,
+        filename='x_func:command_line_arg',
+        mode='eval'))
+    a.group_func = eval(compile(
+        'lambda *, decoder, metadata, strong_id: ' + a.group_func,
+        filename='group_func:command_line_arg',
+        mode='eval'))
+    a.filter_func = eval(compile(
+        'lambda *, decoder, metadata, strong_id: ' + a.filter_func,
+        filename='filter_func:command_line_arg',
+        mode='eval'))
     return a
+
+
+T = TypeVar('T')
+
+
+def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
+    cur_key: Any = None
+    out: List[List[T]] = []
+    buf: List[T] = []
+    for item in vs:
+        key = key_func(item)
+        if key != cur_key:
+            cur_key = key
+            if buf:
+                out.append(buf)
+                buf = []
+        buf.append(item)
+    if buf:
+        out.append(buf)
+    return out
+
+
+def better_sorted_str_terms(val: str) -> Tuple[Any, ...]:
+    terms = split_by(val, lambda c: c in '.0123456789')
+    result = []
+    for term in terms:
+        term = ''.join(term)
+        if '.' in term:
+            try:
+                term = float(term)
+            except ValueError:
+                term = tuple(int(e) for e in term.split('.'))
+        else:
+            try:
+                term = int(term)
+            except ValueError:
+                pass
+        result.append(term)
+    return tuple(result)
 
 
 def plot_case_stats(
@@ -195,6 +273,7 @@ def plot(
     *,
     samples: Union[Iterable[simmer.SampleStats], ExistingData],
     group_func: Callable[[CaseSummary], Any],
+    filter_func: Callable[[CaseSummary], Any],
     x_func: Callable[[CaseSummary], Any],
     include_discard_rate_plot: bool = False,
     include_error_rate_plot: bool = False,
@@ -208,19 +287,22 @@ def plot(
         total = ExistingData()
         for sample in samples:
             total.add_sample(sample)
+    total.data = {k: v
+                  for k, v in total.data.items()
+                  if bool(filter_func(v.to_case_summary()))}
 
     groups: DefaultDict[Any, List[Tuple[float, CaseStats]]] = collections.defaultdict(list)
     has_discards = False
     for sample in total.data.values():
         if sample.discards:
             has_discards = True
-        g = group_func(sample.to_case_summary())
+        g = str(group_func(sample.to_case_summary()))
         x = float(x_func(sample.to_case_summary()))
         groups[g].append((x, sample.to_case_stats()))
 
     sorted_groups = [
         (key, groups[key])
-        for key in sorted(groups)
+        for key in sorted(groups, key=lambda g: better_sorted_str_terms(g))
     ]
     if not include_error_rate_plot and not include_discard_rate_plot:
         include_error_rate_plot = True
@@ -250,39 +332,26 @@ def main_plot(*, command_line_args: List[str]):
     for file in getattr(args, 'in'):
         total += ExistingData.from_file(file)
 
-    groups: DefaultDict[Any, List[Tuple[float, CaseStats]]] = collections.defaultdict(list)
-    has_discards = False
-    for sample in total.data.values():
-        if sample.discards:
-            has_discards = True
-        g = args.group_func(decoder=sample.decoder, metadata=sample.json_metadata, strong_id=sample.strong_id)
-        x = float(args.x_func(decoder=sample.decoder, metadata=sample.json_metadata, strong_id=sample.strong_id))
-        groups[g].append((x, sample.to_case_stats()))
-
-    sorted_groups = [
-        (key, groups[key])
-        for key in sorted(groups)
-    ]
-    include_discard_plot = 'discard_rate' in args.type
-    include_error_rate_plot = 'error_rate' in args.type
-    if not include_error_rate_plot and not include_discard_plot:
-        include_error_rate_plot = True
-        include_discard_plot = has_discards
-    fig, _, _ = plot_case_stats(
-        curves=sorted_groups,
-        highlight_likelihood_ratio=args.likelihood_ratio,
+    fig, _ = plot(
+        samples=total,
+        group_func=lambda summary: args.group_func(
+            decoder=summary.decoder,
+            metadata=summary.json_metadata,
+            strong_id=summary.strong_id),
+        x_func=lambda summary: args.x_func(
+            decoder=summary.decoder,
+            metadata=summary.json_metadata,
+            strong_id=summary.strong_id),
+        filter_func=lambda summary: args.filter_func(
+            decoder=summary.decoder,
+            metadata=summary.json_metadata,
+            strong_id=summary.strong_id),
+        include_discard_rate_plot='discard_rate' in args.type,
+        include_error_rate_plot='error_rate' in args.type,
         xaxis=args.xaxis,
-        include_error_rate_plot=include_error_rate_plot,
-        include_discard_rate_plot=include_discard_plot,
+        fig_size=args.fig_size,
+        highlight_likelihood_ratio=args.highlight_likelihood_ratio,
     )
-    if args.fig_size is None:
-        fig.set_size_inches(10*(include_discard_plot + include_error_rate_plot), 10)
-        fig.set_dpi(100)
-    else:
-        w, h = args.fig_size
-        fig.set_size_inches(w / 100, h / 100)
-        fig.set_dpi(100)
-    fig.tight_layout()
     if args.out is not None:
         fig.savefig(args.out)
     if args.show:
