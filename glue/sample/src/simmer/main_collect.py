@@ -1,7 +1,6 @@
 import argparse
-import contextlib
 import sys
-from typing import Iterator, Any, Tuple, Optional, List
+from typing import Iterator, Any, Tuple, Optional, List, Callable
 
 import stim
 
@@ -13,16 +12,17 @@ from simmer.main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
-                               max_errors: int,
-                               max_shots: int,
+                               max_errors: Optional[int],
+                               max_shots: Optional[int],
                                max_batch_size: Optional[int],
                                start_batch_size: int,
+                               metadata_func: Callable,
                                max_batch_seconds: Optional[float],
                                postselect_last_coord_mins: List[Optional[int]],
                                decoders: List[str],
                                ) -> Iterator[Task]:
-    for circuit_path in circuit_paths:
-        with open(circuit_path) as f:
+    for path in circuit_paths:
+        with open(path) as f:
             circuit_text = f.read()
         circuit = stim.Circuit(circuit_text)
 
@@ -35,9 +35,7 @@ def iter_file_paths_into_goals(circuit_paths: Iterator[str],
                     circuit=circuit,
                     decoder=decoder,
                     postselection_mask=post_mask,
-                    json_metadata={
-                        'path': circuit_path,
-                    },
+                    json_metadata=metadata_func(path=path, circuit=circuit, decoder=decoder),
                     max_errors=max_errors,
                     max_shots=max_shots,
                     max_batch_size=max_batch_size,
@@ -61,11 +59,11 @@ def parse_args(args: List[str]) -> Any:
                         help='How to combine new results with old results.')
     parser.add_argument('-max_shots',
                         type=int,
-                        required=True,
+                        default=None,
                         help='Sampling of a circuit will stop if this many shots have been taken.')
     parser.add_argument('-max_errors',
                         type=int,
-                        required=True,
+                        default=None,
                         help='Sampling of a circuit will stop if this many errors have been seen.')
     parser.add_argument('-processes',
                         required=True,
@@ -113,7 +111,24 @@ def parse_args(args: List[str]) -> Any:
                         default=(),
                         help='CSV data from these files counts towards max_shots and max_errors.\n'
                              'This parameter can be given multiple arguments.')
-
+    parser.add_argument('-metadata_func',
+                        type=str,
+                        default="{'path': path}",
+                        help='A python expression that determines whether a case is kept or not.\n'
+                             'Available values:\n'
+                             '    path: Relative path to the circuit file, from the command line arguments.\n'
+                             '    circuit: The circuit itself, parsed from the file, as a stim.Circuit.\n'
+                             '    decoder: The decoder that will be used on the circuit.\n'
+                             'Expected type:\n'
+                             '    A value that can be serialized into JSON, like a Dict[str, int].\n'
+                             '\n'
+                             '    Note that the decoder field is already recorded separately, so storing\n'
+                             '    it in the metadata as well would be redundant. But something like\n'
+                             '    decoder version could be usefully added.\n'
+                             'Examples:\n'
+                             '''    -metadata_func "{'path': path}"\n'''
+                             '''    -metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
+                        )
     a = parser.parse_args(args=args)
     for e in a.postselect_last_coord_min:
         if e is not None and e < -1:
@@ -121,6 +136,10 @@ def parse_args(args: List[str]) -> Any:
     a.postselect_last_coord_min = [None if e == -1 else e for e in
                                                        a.postselect_last_coord_min]
 
+    a.metadata_func = eval(compile(
+        'lambda *, path, circuit, decoder: ' + a.metadata_func,
+        filename='metadata_func:command_line_arg',
+        mode='eval'))
     return a
 
 
@@ -135,42 +154,42 @@ def open_merge_file(path: str) -> Tuple[Any, ExistingData]:
 
 
 def main_collect(*, command_line_args: List[str]):
-    with contextlib.ExitStack() as ctx:
-        args = parse_args(args=command_line_args)
+    args = parse_args(args=command_line_args)
 
-        iter_tasks = iter_file_paths_into_goals(
-            circuit_paths=args.circuits,
-            max_errors=args.max_errors,
-            max_shots=args.max_shots,
-            decoders=args.decoders,
-            postselect_last_coord_mins=args.postselect_last_coord_min,
-            max_batch_seconds=args.max_batch_seconds,
-            max_batch_size=args.max_batch_size,
-            start_batch_size=args.start_batch_size,
-        )
-        num_tasks = len(args.circuits) * len(args.decoders)
+    iter_tasks = iter_file_paths_into_goals(
+        circuit_paths=args.circuits,
+        max_errors=args.max_errors,
+        max_shots=args.max_shots,
+        decoders=args.decoders,
+        metadata_func=args.metadata_func,
+        postselect_last_coord_mins=args.postselect_last_coord_min,
+        max_batch_seconds=args.max_batch_seconds,
+        max_batch_size=args.max_batch_size,
+        start_batch_size=args.start_batch_size,
+    )
+    num_tasks = len(args.circuits) * len(args.decoders)
 
-        print_to_stdout = args.save_resume_filepath is not None or not args.quiet
+    print_to_stdout = args.save_resume_filepath is not None or not args.quiet
 
-        did_work = False
+    did_work = False
 
-        def on_progress(sample: SampleStats) -> None:
-            nonlocal did_work
-            if print_to_stdout:
-                if not did_work:
-                    print(CSV_HEADER, flush=True)
-                print(sample.to_csv_line(), flush=True)
-            did_work = True
+    def on_progress(sample: SampleStats) -> None:
+        nonlocal did_work
+        if print_to_stdout:
+            if not did_work:
+                print(CSV_HEADER, flush=True)
+            print(sample.to_csv_line(), flush=True)
+        did_work = True
 
-        collect(
-            num_workers=args.processes,
-            hint_num_tasks=num_tasks,
-            tasks=iter_tasks,
-            print_progress=not args.quiet,
-            save_resume_filepath=args.save_resume_filepath,
-            existing_data_filepaths=args.existing_data_filepaths,
-            progress_callback=on_progress,
-        )
+    collect(
+        num_workers=args.processes,
+        hint_num_tasks=num_tasks,
+        tasks=iter_tasks,
+        print_progress=not args.quiet,
+        save_resume_filepath=args.save_resume_filepath,
+        existing_data_filepaths=args.existing_data_filepaths,
+        progress_callback=on_progress,
+    )
 
-        if not did_work and not args.quiet:
-            print("No work to do.", file=sys.stderr)
+    if not did_work and not args.quiet:
+        print("No work to do.", file=sys.stderr)

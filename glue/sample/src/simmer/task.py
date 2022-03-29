@@ -23,8 +23,8 @@ class Task:
                  json_metadata: JSON_TYPE = None,
 
                  # Information related to how to take samples from the problem.
-                 max_shots: int,
-                 max_errors: int,
+                 max_shots: Optional[int] = None,
+                 max_errors: Optional[int] = None,
                  start_batch_size: int = 100,
                  max_batch_size: Optional[int] = None,
                  max_batch_seconds: Optional[float] = None,
@@ -46,11 +46,12 @@ class Task:
                 the problem. Must be JSON serializable. For example, this could
                 be a dictionary with "physical_error_rate" and "code_distance"
                 keys.
-            max_shots: Stops the sampling process after this many samples have
-                been taken from the circuit.
-            max_errors: Stops the sampling process after this many errors have
-                been seen in samples taken from the circuit. The actual number
-                sampled errors may be larger due to batching.
+            max_shots: Defaults to None (unused). Stops the sampling process
+                after this many samples have been taken from the circuit.
+            max_errors: Defaults to None (unused). Stops the sampling process
+                after this many errors have been seen in samples taken from the
+                circuit. The actual number sampled errors may be larger due to
+                batching.
             start_batch_size: Defaults to 100. The very first shots taken from
                 the circuit will use a batch of this size, and no other batches
                 will be taken in parallel. Once this initial fact finding batch
@@ -70,10 +71,12 @@ class Task:
                 a batch might take, instead of having to wait for new shots to
                 reveal this information again.
         """
-        if max_shots < 0:
-            raise ValueError(f'max_shots={max_shots} < 0')
-        if max_errors < 0:
-            raise ValueError(f'max_errors={max_errors} < 0')
+        if max_shots is None and max_errors is None:
+            raise ValueError(f'max_shots is None and max_errors is None. Must specify one or the other.')
+        if max_shots is not None and max_shots < 0:
+            raise ValueError(f'max_shots is not None and max_shots={max_shots} < 0')
+        if max_errors is not None and max_errors < 0:
+            raise ValueError(f'max_errors is not None and max_errors={max_errors} < 0')
         if start_batch_size <= 0:
             raise ValueError(f'start_batch_size={start_batch_size} <= 0')
         if max_batch_size is not None and max_batch_size <= 0:

@@ -7,6 +7,19 @@ import stim
 
 from simmer.main import main
 from simmer.main_combine import ExistingData
+from simmer.main_plot import better_sorted_str_terms, split_by
+
+
+def test_split_by():
+    assert split_by('abcdefcccghi', lambda e: e == 'c') == [list('ab'), list('c'), list('def'), list('ccc'), list('ghi')]
+
+
+def test_better_sorted_str_terms():
+    assert better_sorted_str_terms('a') == ('a',)
+    assert better_sorted_str_terms('abc') == ('abc',)
+    assert better_sorted_str_terms('a1b2') == ('a', 1, 'b', 2)
+    assert better_sorted_str_terms('a1.5b2') == ('a', 1.5, 'b', 2)
+    assert better_sorted_str_terms('a1.5.3b2') == ('a', (1, 5, 3), 'b', 2)
 
 
 def test_main_collect():

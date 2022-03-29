@@ -72,7 +72,7 @@ stim_avx2 = Extension(
     ],
 )
 
-with open('glue/python/README.md') as f:
+with open('glue/python/README.md', encoding='UTF-8') as f:
     long_description = f.read()
 
 setup(

@@ -14,9 +14,9 @@
 
 from setuptools import setup
 
-with open('README.md') as f:
+with open('README.md', encoding='UTF-8') as f:
     long_description = f.read()
-with open('requirements.txt') as f:
+with open('requirements.txt', encoding='UTF-8') as f:
     requirements = [line.split()[0] for line in f.read().splitlines()]
 
 setup(

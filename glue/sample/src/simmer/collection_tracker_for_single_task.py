@@ -21,16 +21,19 @@ class CollectionTrackerForSingleTask:
         self.deployed_processes = 0
 
     def expected_shots_remaining(
-            self, *, safety_factor_on_shots_per_error: float = 1) -> int:
+            self, *, safety_factor_on_shots_per_error: float = 1) -> float:
         """Doesn't include deployed shots."""
-        result: float = self.task.max_shots - self.finished_stats.shots
+        result: float = float('inf')
 
-        if self.finished_stats.errors:
+        if self.task.max_shots is not None:
+            result = self.task.max_shots - self.finished_stats.shots
+
+        if self.finished_stats.errors and self.task.max_errors is not None:
             shots_per_error = self.finished_stats.shots / self.finished_stats.errors
             errors_left = self.task.max_errors - self.finished_stats.errors
             result = min(result, errors_left * shots_per_error * safety_factor_on_shots_per_error)
 
-        return math.ceil(result)
+        return result
 
     def expected_time_per_shot(self) -> Optional[float]:
         if self.finished_stats.shots == 0:
@@ -42,9 +45,10 @@ class CollectionTrackerForSingleTask:
 
     def expected_time_remaining(self) -> Optional[float]:
         dt = self.expected_time_per_shot()
-        if dt is None:
+        n = self.expected_shots_remaining()
+        if dt is None or n == float('inf'):
             return None
-        return dt * self.expected_shots_remaining()
+        return dt * n
 
     def work_completed(self, result: WorkOut) -> None:
         self.deployed_shots -= result.sample.shots
@@ -52,10 +56,12 @@ class CollectionTrackerForSingleTask:
         self.finished_stats += result.sample.to_case_stats()
 
     def is_done(self) -> bool:
-        if self.finished_stats.shots >= self.task.max_shots or self.finished_stats.errors >= self.task.max_errors:
-            if self.deployed_shots == 0:
-                return True
-        return False
+        enough_shots = False
+        if self.task.max_shots is not None and self.finished_stats.shots >= self.task.max_shots:
+            enough_shots = True
+        if self.task.max_errors is not None and self.finished_stats.errors >= self.task.max_errors:
+            enough_shots = True
+        return enough_shots and self.deployed_shots == 0
 
     def iter_batch_size_limits(self) -> Iterator[float]:
         if self.finished_stats.shots == 0:
@@ -72,13 +78,15 @@ class CollectionTrackerForSingleTask:
         yield self.finished_stats.shots * 5 - self.deployed_shots
 
         # Don't take more shots than requested.
-        yield self.task.max_shots - self.finished_stats.shots - self.deployed_shots
+        if self.task.max_shots is not None:
+            yield self.task.max_shots - self.finished_stats.shots - self.deployed_shots
 
         # Don't take more errors than requested.
-        errors_left = self.task.max_errors - self.finished_stats.errors
-        errors_left += 2  # oversample once count gets low
-        de = self.expected_errors_per_shot()
-        yield errors_left / de - self.deployed_shots
+        if self.task.max_errors is not None:
+            errors_left = self.task.max_errors - self.finished_stats.errors
+            errors_left += 2  # oversample once count gets low
+            de = self.expected_errors_per_shot()
+            yield errors_left / de - self.deployed_shots
 
         # Don't exceed max batch size.
         if self.task.max_batch_size is not None:
@@ -119,23 +127,28 @@ class CollectionTrackerForSingleTask:
             t /= 60
             t = math.ceil(t)
             t = f'{t}'
-        return (
-            'case: '
-            + f'processes={self.deployed_processes}'.ljust(13)
-            + f'~core_mins_left={t}'.ljust(24)
-            + f'shots_left={max(0, self.task.max_shots - self.finished_stats.shots)}'.ljust(20)
-            + f'errors_left={max(0, self.task.max_errors - self.finished_stats.errors)}'.ljust(20)
-            + f'{self.task.json_metadata}')
+        terms = [
+            'case: ',
+            f'processes={self.deployed_processes}'.ljust(13),
+            f'~core_mins_left={t}'.ljust(24),
+        ]
+        if self.task.max_shots is not None:
+            terms.append(f'shots_left={max(0, self.task.max_shots - self.finished_stats.shots)}'.ljust(20))
+        if self.task.max_errors is not None:
+            terms.append(f'errors_left={max(0, self.task.max_errors - self.finished_stats.errors)}'.ljust(20))
+        terms.append(f'{self.task.json_metadata}')
+        return ''.join(terms)
 
 
 def next_shot_count(prev_data: CaseStats,
                     cur_batch_size: int,
                     max_batch_size: Optional[int],
-                    max_errors: int,
-                    max_shots: int) -> int:
+                    max_errors: Optional[int],
+                    max_shots: Optional[int]) -> int:
     result = cur_batch_size
-    result = min(result, max_shots - prev_data.shots)
-    if prev_data.errors:
+    if max_shots is not None:
+        result = min(result, max_shots - prev_data.shots)
+    if prev_data.errors and max_errors is not None:
         result = min(result, math.ceil(1.1 * (max_errors - prev_data.errors) * prev_data.shots / prev_data.errors))
     if max_batch_size is not None:
         result = min(result, max_batch_size)

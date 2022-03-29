@@ -24,7 +24,6 @@ class CollectionWorkManager:
         self.active_collectors: Dict[int, CollectionTrackerForSingleTask] = {}
         self.tasks: Iterator[Task] = tasks
         self.next_collector_key: int = 0
-        self.started_count = 0
         self.finished_count = 0
         self.deployed_jobs: Dict[int, WorkIn] = {}
         self.next_job_id = 0
@@ -128,10 +127,10 @@ class CollectionWorkManager:
             collector = CollectionTrackerForSingleTask(
                     task=task, additional_existing_data=self.additional_existing_data)
             if collector.is_done():
+                self.finished_count += 1
                 continue
             self.next_collector_key += 1
             self.active_collectors[key] = collector
-            self.started_count += 1
             yield key, collector
         if not prefer_started:
             yield from self.active_collectors.items()
