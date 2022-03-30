@@ -3,45 +3,294 @@
 This is documentation for programmers working with stim, e.g. how to build it.
 These notes generally assume you are on a Linux system.
 
-## Build stim command line tool
+# Index
 
-### CMake Build
+- [releasing a new version](#release-checklist)
+- [building `stim` command line tool](#build)
+    - [with cmake](#build.cmake)
+    - [with bazel](#build.bazel)
+    - [with gcc](#build.gcc)
+- [linking to `libstim` shared library](#link)
+    - [with cmake](#link.cmake)
+    - [with bazel](#link.bazel)
+- [running C++ tests](#test)
+    - [with cmake](#test.cmake)
+    - [with bazel](#test.bazel)
+- [running performance benchmarks](#perf)
+    - [with cmake](#perf.cmake)
+    - [with bazel](#perf.bazel)
+    - [interpreting output from `stim_benchmark`](#perf.output)
+    - [profiling with gcc and perf](#perf.profile)
+- [creating a python dev environment](#venv)
+- [running python unit tests](#test.pytest)
+- [python packaging `stim`](#pypackage.stim)
+    - [with cibuildwheels](#pypackage.stim.cibuildwheels)
+    - [with bazel](#pypackage.stim.bazel)
+    - [with python setup.py](#pypackage.stim.python)
+    - [with pip install -e](#pypackage.stim.pip)
+- [python packaging `stimcirq`](#pypackage.stimcirq)
+    - [with python setup.py](#pypackage.stimcirq.python)
+    - [with pip install -e](#pypackage.stimcirq.pip)
+- [python packaging `simmer`](#pypackage.simmer)
+    - [with python setup.py](#pypackage.simmer.python)
+    - [with pip install -e](#pypackage.simmer.pip)
+- [javascript packaging `stimjs`](#jspackage.stimjs)
+    - [with emscripten](#jspackage.stimjs.emscripten)
+- [autoformating code](#autoformat)
+    - [with clang-format](#autoformat.clang-format)
+
+# <a name="release-checklist"></a>Releasing a new version
+
+- Create an off-main-branch release commit
+    - Update version to `vX.Y.Z` in all setup.py files
+    - Commit changes
+    - `git tag vX.Y.Z`
+    - Push tag to github
+    - Get `stim` wheels [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
+    - Build `stimcirq` sdist on this tag [using python setup.py sdist](#pypackage.stimcirq.python)
+    - Combine `stim` and `stimcirq` package files into one directory
+- Bump to next dev version on main branch
+    - Update version to `vX.Y.dev0` in all setup.py files
+    - Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
+    - Push to github as a branch and merge into main using a pull request
+- Write release notes on github
+    - In title, use two-word themeing of most important changes
+    - Flagship changes section
+    - Notable changes section
+    - Include wheels/sdists as attachments
+- Do irreversible steps last
+    - Upload wheels/sdists to pypi using `twine`
+    - Publish the github release notes
+    - Add gates reference page to wiki for the new version
+    - Add python api reference page to wiki for the new version
+    - Update main wiki page to point to latest reference pages
+    - Tweet about the release
+
+
+# <a name="build"></a>Building `stim` command line tool
+
+The stim command line tool is a binary program `stim` that accepts commands like
+`stim sample -shots 100 -in circuit.stim`
+(see [the command line reference](usage_command_line.md)).
+It can be built [with cmake](#build.cmake), [with bazel](#build.bazel), or
+manually [with gcc](#build.gcc).
+
+## <a name="build.cmake"></a>Building `stim` command line tool with cmake
 
 ```bash
+# from the repository root:
 cmake .
 make stim
+
+# output binary ends up at:
 # ./out/stim
 ```
 
-To control the vectorization (e.g. this is done for testing),
-use `cmake . -DSIMD_WIDTH=256` (implying `-mavx2`)
-or `cmake . -DSIMD_WIDTH=128` (implying `-msse2`)
-or `cmake . -DSIMD_WIDTH=64` (implying no machine architecture flag).
-If `SIMD_WIDTH` is not specified, `-march=native` is used.
+Vectorization can be controlled by passing the flag `-DSIMD_WIDTH` to `cmake`:
 
-### Bazel Build
+- `cmake . -DSIMD_WIDTH=256` means "use 256 bit avx operations" (forces `-mavx2`)
+- `cmake . -DSIMD_WIDTH=128` means "use 128 bit sse operations" (forces `-msse2`)
+- `cmake . -DSIMD_WIDTH=64` means "don't use simd operations" (no machine arch flags)
+- `cmake .` means "use the best thing possible on this machine" (forces `-march=native`)
+
+## <a name="build.bazel"></a>Building `stim` command line tool with bazel
 
 ```bash
 bazel build stim
-# bazel run stim
 ```
 
-### Manual Build
+or, to build and run:
 
 ```bash
-find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -I src -pthread -std=c++11 -O3 -march=native
+bazel run stim
+```
+
+## <a name="build.gcc"></a>Building `stim` command line tool with gcc
+
+```bash
+# from the repository root:
+find src \
+    | grep "\\.cc" \
+    | grep -v "\\.\(test\|perf\|pybind\)\\.cc" \
+    | xargs g++ -I src -pthread -std=c++11 -O3 -march=native
+
+# output binary ends up at:
 # ./a.out
 ```
 
-# Profile stim command line tool
 
-```bash
-find src | grep "\\.cc" | grep -v "\\.\(test\|perf\|pybind\)\\.cc" | xargs g++ -I src -pthread -std=c++11 -O3 -march=native -g -fno-omit-frame-pointer
-sudo perf record -g ./a.out  # [ADD STIM FLAGS FOR THE CASE YOU WANT TO PROFILE]
-sudo perf report
+# <a name="link"></a>Linking to `libstim` shared library
+
+**!!!CAUTION!!!
+Stim's C++ API is not kept stable!
+Always pin to a specific version!
+I *WILL* break your downstream code when I update stim if you don't!
+The API is also not extensively documented;
+what you can find in the headers is what you get.**
+
+To use Stim functionality within your C++ program, you can build `libstim` and
+link to it to gain direct access to underlying Stim types and methods.
+
+If you want a stim API that promises backwards compatibility, use the python API.
+
+## <a name="link.cmake"></a>Linking to `libstim` shared library with cmake
+
+**!!!CAUTION!!!
+Stim's C++ API is not kept stable!
+Always pin to a specific version!
+I *WILL* break your downstream code when I update stim if you don't!
+The API is also not extensively documented;
+what you can find in the headers is what you get.**
+
+In your `CMakeLists.txt` file, use `FetchContent` to automatically fetch stim
+from github when running `cmake .`:
+
+```
+# in CMakeLists.txt file
+
+include(FetchContent)
+FetchContent_Declare(stim
+        GIT_REPOSITORY https://github.com/quantumlib/stim.git
+        GIT_TAG v1.4.0)  # [[[<<<<<<< customize the version you want!!]]]
+FetchContent_GetProperties(stim)
+if(NOT stim_POPULATED)
+  FetchContent_Populate(stim)
+  add_subdirectory(${stim_SOURCE_DIR})
+endif()
 ```
 
-# Run benchmarks
+(Replace `v1.4.0` with another version tag as appropriate.)
+
+For build targets that need to use stim functionality, add `libstim` to them
+using `target_link_libraries`:
+
+```
+# in CMakeLists.txt file
+
+target_link_libraries(some_cmake_target PRIVATE libstim)
+```
+
+In your source code, use `#include "stim.h"` to access stim types and functions:
+
+```
+// in a source code file
+
+#include "stim.h"
+
+stim::Circuit make_bell_pair_circuit() {
+    return stim::Circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+    )CIRCUIT");
+}
+```
+
+## <a name="link.bazel"></a>Linking to `libstim` shared library with bazel
+
+**!!!CAUTION!!!
+Stim's C++ API is not kept stable!
+Always pin to a specific version!
+I *WILL* break your downstream code when I update stim if you don't!
+The API is also not extensively documented;
+what you can find in the headers is what you get.**
+
+In your `WORKSPACE` file, include stim's git repo using `git_repository`:
+
+```
+# in WORKSPACE file
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "stim",
+    commit = "v1.4.0",
+    remote = "https://github.com/quantumlib/stim.git",
+)
+```
+
+(Replace `v1.4.0` with another version tag or commit SHA as appropriate.)
+
+In your `BUILD` file, add `@stim//:stim_lib` to the relevant target's `deps`:
+
+```
+# in BUILD file
+
+cc_binary(
+    ...
+    deps = [
+        ...
+        "@stim//:stim_lib",
+        ...
+    ],
+)
+```
+
+In your source code, use `#include "stim.h"` to access stim types and functions:
+
+```
+// in a source code file
+
+#include "stim.h"
+
+stim::Circuit make_bell_pair_circuit() {
+    return stim::Circuit(R"CIRCUIT(
+        H 0
+        CNOT 0 1
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+    )CIRCUIT");
+}
+```
+
+
+# <a name="test"></a>Running unit tests
+
+Stim's code base includes a variety of types of tests, spanning over a few
+packages and languages.
+
+## <a name="test.cmake"></a>Running C++ unit tests with cmake
+
+Unit testing with cmake requires the GTest library to be installed on your
+system in a place that cmake can find it.
+Follow the ["Standalone CMake Project" instructions from the GTest README](https://github.com/google/googletest/tree/master/googletest)
+to get GTest installed correctly.
+
+Run tests with address and memory sanitization, without compile time optimization:
+
+```bash
+# from the repository root:
+cmake .
+make stim_test
+./out/stim_test
+```
+
+Run tests without sanitization, with compile time optimization:
+
+```bash
+# from the repository root:
+cmake .
+make stim_test_o3
+./out/stim_test_o3
+```
+
+Stim supports 256 bit (AVX), 128 bit (SSE), and 64 bit (native) vectorization.
+The type to use is chosen at compile time.
+To force this choice (so that each case can be tested on one machine),
+add `-DSIMD_WIDTH=256` or `-DSIMD_WIDTH=128` or `-DSIMD_WIDTH=64`
+to the `cmake .` command.
+
+## <a name="test.bazel"></a>Running C++ unit tests with bazel
+
+```bash
+# from the repository root:
+bazel test stim_test
+```
+
+# <a name="perf"></a>Running performance benchmarks
+
+## <a name="perf.cmake"></a>Running performance benchmarks with cmake
 
 ```bash
 cmake .
@@ -49,7 +298,15 @@ make stim_benchmark
 ./out/stim_benchmark
 ```
 
-This will output results like:
+## <a name="perf.cmake"></a>Running performance benchmarks with bazel
+
+```bash
+bazel run stim_benchmark
+```
+
+## <a name="perf.output"></a>Interpreting output from `stim_benchmark`
+
+When you run `stim_benchmark` you will see output like:
 
 ```
 [....................*....................] 460 ns (vs 450 ns) ( 21 GBits/s) simd_bits_randomize_10K
@@ -70,57 +327,238 @@ The benchmark binary supports a `--only=BENCHMARK_NAME` filter flag.
 Multiple filters can be specified by separating them with commas `--only=A,B`.
 Ending a filter with a `*` turns it into a prefix filter `--only=sim_*`.
 
-# Build all python packages
-
-From the repo root, in a python 3.9+ environment:
+## <a name="perf.profile"></a>Profiling with gcc and perf
 
 ```bash
-./glue/python/create_sdists.sh VERSION_SPECIFIER_GOES_HERE
+find src \
+    | grep "\\.cc" \
+    | grep -v "\\.\(test\|perf\|pybind\)\\.cc" \
+    | xargs g++ -I src -pthread -std=c++11 -O3 -march=native -g -fno-omit-frame-pointer
+sudo perf record -g ./a.out  # [ADD STIM FLAGS FOR THE CASE YOU WANT TO PROFILE]
+sudo perf report
 ```
 
-Output is in the `dist` directory from the repo root, and can be uploaded using `twine`.
 
-The version specifier should be like `v1.5.0`, or `v1.5.dev0` for development versions.
+## <a name="venv"></a>Creating a python dev environment
 
-Note that the script actually overwrites the version strings in various `setup.py` files.
+First, create a fresh python 3.6+ virtual environment using your favorite
+method:
+[`python -m venv`](https://docs.python.org/3/library/venv.html),
+[`virtualenvwrapper`](https://virtualenvwrapper.readthedocs.io/en/latest/),
+[`conda`](https://docs.conda.io/en/latest/),
+or etc.
 
-# Manual build stim python package
+Second, build and install a stim wheel.
+Follow the [python packaging stim](#pypackage.stim) instructions to
+create a wheel.
+I recommend [packaging with bazel](#pypackage.stim) because it is **BY FAR** the
+fastest.
+Once you have the wheel, run `pip install [that_wheel]`.
+For example:
 
-Ensure python environment dependencies are present:
-
-```bash
-pip install pybind11==2.6.0
+```base
+# from the repository root in a python virtual environment
+bazel build :stim_dev_wheel
+pip uninstall stim --yes
+pip install bazel-bin/stim-dev-py3-none-any.whl
 ```
 
-Create a source distribution:
+Note that you need to repeat the above steps each time you make a change to
+`stim`.
+
+Third, use `pip install -e` to install development references to the pure-python
+glue packages:
+
+```
+# install stimcirq dev reference:
+pip install -e glue/cirq
+
+# install simmer dev reference:
+pip install -e glue/sample
+
+# install stimzx dev reference:
+pip install -e glue/zx
+```
+
+## <a name="test.pytest"></a>Running python unit tests
+
+See [creating a python dev environment](#venv) for instructions on creating a
+python virtual environment with your changes to stim installed.
+
+Unit tests are run using `pytest`.
+Examples in docstrings are tested using `doctest`.
+
+To test everything:
 
 ```bash
+# from the repository root in a virtualenv with development wheels installed:
+pytest src glue
+python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
+python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
+python -c "import simmer; import doctest; assert doctest.testmod(simmer).failed == 0"
+python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
+```
+
+Test only `stim`:
+
+```bash
+# from the repository root in a virtualenv with development wheels installed:
+pytest src
+python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
+```
+
+Test only `stimcirq`:
+
+```bash
+# from the repository root in a virtualenv with development wheels installed:
+pytest glue/cirq
+python -c "import stimcirq; import doctest; assert doctest.testmod(sitmcirq).failed == 0"
+```
+
+Test only `simmer`:
+
+```bash
+# from the repository root in a virtualenv with development wheels installed:
+pytest glue/sample
+python -c "import simmer; import doctest; assert doctest.testmod(simmer).failed == 0"
+```
+
+Test only `stimzx`:
+
+```bash
+# from the repository root in a virtualenv with development wheels installed:
+pytest glue/zx
+python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
+```
+
+
+# <a name="pypackage.stim"></a>python packaging `stim`
+
+Because stim is a C++ extension, it is non-trivial to create working
+python packages for it.
+To make cross-platform release wheels, we rely heavily on cibuildwheels.
+To make development wheels, we various other options are possible.
+
+## <a name="pypackage.stim.cibuildwheels"></a>python packaging `stim` with cibuildwheels
+
+When a commit is merged into the `main` branch of stim's github repository,
+there are github actions that use [cibuildwheels](https://github.com/pypa/cibuildwheel)
+to build wheels for all supported platforms.
+
+When these wheels are finished building, they are automatically uploaded to
+pypi as a dev version of stim.
+For release versions, the artifacts created by the github action must be
+manually downloaded and uploaded using `twine`:
+
+```bash
+twine upload --username="${PROD_TWINE_USERNAME}" --password="${PROD_TWINE_PASSWORD}" artifacts_directory/*
+```
+
+## <a name="pypackage.stim.bazel"></a>python packaging `stim` with bazel
+
+Bazel can be used to create dev versions of the stim python wheel:
+
+```bash
+# from the repository root:
+bazel build stim_dev_wheel
+# output is at bazel-bin/stim-dev-py3-none-any.whl
+```
+
+## <a name="pypackage.stim.python"></a>python packaging `stim` with python setup.py
+
+Python can be used to create dev versions of the stim python wheel (very slow):
+
+Binary distribution:
+
+```bash
+# from the repository root in a python venv with pybind11 installed:
+python setup.py bdist
+# output is at dist/*
+```
+
+Source distribution:
+
+```bash
+# from the repository root in a python venv with pybind11 installed:
 python setup.py sdist
+# output is at dist/*
 ```
 
-Output is in the `dist` directory, and can be uploaded using `twine`.
+## <a name="pypackage.stim.pip"></a>python packaging `stim` with pip install -e
+
+You can directly install stim as a development python wheel by using pip (very slow):
 
 ```bash
-twine upload --username="${PROD_TWINE_USERNAME}" --password="${PROD_TWINE_PASSWORD}" dist/[CREATED_FILE_GOES_HERE]
+# from the repository root
+pip install -e .
+# output is at dist/*
 ```
 
-# Manual build stimcirq python package
 
-Create a source distribution:
+# <a name="pypackage.stimcirq"></a>Python packaging `stimcirq`
+
+## <a name="pypackage.stimcirq.python"></a>Python packaging `stimcirq` with python setup.py
 
 ```bash
+# from repo root
 cd glue/cirq
 python setup.py sdist
-cd ../..
+cd -
+# output in glue/cirq/dist/*
 ```
 
-Output is in the `glue/cirq/dist` directory, and can be uploaded using `twine`.
+## <a name="pypackage.stimcirq.pip"></a>Python packaging `stimcirq` with pip install -e
 
 ```bash
-twine upload --username="${PROD_TWINE_USERNAME}" --password="${PROD_TWINE_PASSWORD}" glue/cirq/dist/[CREATED_FILE_GOES_HERE]
+# from repo root
+pip install -e glue/cirq
+# stimcirq is now installed in current virtualenv as dev reference
 ```
 
-# Build javascript bindings
+# <a name="pypackage.simmer"></a>Python packaging `simmer`
+
+## <a name="pypackage.simmer.python"></a>Python packaging `simmer` with python setup.py
+
+```bash
+# from repo root
+cd glue/sample
+python setup.py sdist
+cd -
+# output in glue/sample/dist/*
+```
+
+## <a name="pypackage.simmer.pip"></a>Python packaging `simmer` with pip install -e
+
+```bash
+# from repo root
+pip install -e glue/sample
+# simmer is now installed in current virtualenv as dev reference
+```
+
+# <a name="pypackage.stimzx"></a>Python packaging `stimzx`
+
+## <a name="pypackage.stimzx.python"></a>Python packaging `stimzx` with python setup.py
+
+```bash
+# from repo root
+cd glue/zx
+python setup.py sdist
+cd -
+# output in glue/zx/dist/*
+```
+
+## <a name="pypackage.stimzx.pip"></a>Python packaging `stimzx` with pip install -e
+
+```bash
+# from repo root
+pip install -e glue/zx
+# stimzx is now installed in current virtualenv as dev reference
+```
+
+
+# <a name="jspackage"></a>Javascript packaging `stimjs`
+
+## <a name="jspackage.stimjs"></a>Javascript packaging `stimjs` with emscripten
 
 Install and activate enscriptem (`emcc` must be in your PATH).
 Example:
@@ -148,163 +586,10 @@ Run tests by opening in a browser and checking for an `All tests passed.` messag
 firefox out/all_stim_tests.html
 ```
 
-# Testing
 
-### Run C++ tests using CMAKE
+# <a name="autoformat"></a>Autoformating code
 
-Unit testing with CMAKE requires GTest to be installed on your system and discoverable by CMake.
-Follow the ["Standalone CMake Project" from the GTest README](https://github.com/google/googletest/tree/master/googletest).
-
-Run tests with address and memory sanitization, but without optimizations:
-
-```bash
-cmake .
-make stim_test
-./out/stim_test
-```
-
-To force AVX vectorization, SSE vectorization, or no vectorization
-pass `-DSIMD_WIDTH=256` or `-DSIMD_WIDTH=128` or `-DSIMD_WIDTH=64` to the `cmake` command.
-
-Run tests with optimizations without sanitization:
-
-```bash
-cmake .
-make stim_test_o3
-./out/stim_test_o3
-```
-
-### Run C++ tests using Bazel
-
-Run tests with whatever settings Bazel feels like using:
-
-```bash
-bazel test :stim_test
-```
-
-### Run stim python package tests
-
-In a clean virtual environment:
-
-```bash
-pip install pytest
-pip install -e .
-python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-python -m pytest src
-python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
-```
-
-### Run stimcirq python package tests
-
-In a clean virtual environment:
-
-```bash
-pip install pytest
-pip install -e glue/cirq
-python -m pytest glue/cirq
-python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
-```
-
-## Static Linking (cmake)
-
-**WARNING**.
-Stim's C++ API is not stable.
-It may change in incompatible ways from version to version.
-There's also no API reference, although the basics are somewhat similar to the python API.
-You will have to rely on reading method signatures and comments to discover functionality.
-
-Assuming that's acceptable to you...
-
-In your `CMakeLists.txt` file, use `FetchContent` to automatically fetch stim from github:
-
-```
-include(FetchContent)
-FetchContent_Declare(stim
-        GIT_REPOSITORY https://github.com/quantumlib/stim.git
-        GIT_TAG v1.4.0)
-FetchContent_GetProperties(stim)
-if(NOT stim_POPULATED)
-  FetchContent_Populate(stim)
-  add_subdirectory(${stim_SOURCE_DIR})
-endif()
-```
-
-(Replace `v1.4.0` with another version tag as appropriate.)
-
-Then link to `libstim` in targets using stim:
-
-```
-target_link_libraries(some_target_defined_in_your_cmake_file PRIVATE libstim)
-```
-
-And finally `#include "stim.h"` source files to use stim types and functions:
-
-```
-#include "stim.h"
-
-stim::Circuit make_bell_pair_circuit() {
-    return stim::Circuit(R"CIRCUIT(
-        H 0
-        CNOT 0 1
-        M 0 1
-        DETECTOR rec[-1] rec[-2]
-    )CIRCUIT");
-}
-```
-
-## Static Linking (bazel)
-
-**WARNING**.
-Stim's C++ API is not stable.
-It may change in incompatible ways from version to version.
-There's also no API reference, although the basics are somewhat similar to the python API.
-You will have to rely on reading method signatures and comments to discover functionality.
-
-Assuming that's acceptable to you...
-
-In your `WORKSPACE` file, include stim's git repo using `git_repository`:
-
-```
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-
-git_repository(
-    name = "stim",
-    commit = "v1.4.0",
-    remote = "https://github.com/quantumlib/stim.git",
-)
-```
-
-(Replace `v1.4.0` with another version tag or commit SHA as appropriate.)
-
-Then in your `BUILD` file add `@stim//:stim_lib` to the relevant target's `deps`:
-
-```
-cc_binary(
-    ...
-    deps = [
-        ...
-        "@stim//:stim_lib",
-        ...
-    ],
-)
-```
-
-And finally `#include "stim.h"` in source files to use stim types and functions:
-
-```
-#include "stim.h"
-
-stim::Circuit make_bell_pair_circuit() {
-    return stim::Circuit(R"CIRCUIT(
-        H 0
-        CNOT 0 1
-        M 0 1
-        DETECTOR rec[-1] rec[-2]
-    )CIRCUIT");
-}
-```
-
-### Auto-format Code
+## <a name="autoformat.clang-format"></a>Autoformating code with clang-format
 
 Run the following command from the repo root to auto-format all C++ code:
 
