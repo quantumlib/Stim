@@ -10,8 +10,9 @@ You have to install it from source using `pip install -e`.
 For example:
 
 ```
-git clone git@github.com:quantumlib/Stim.git
-pip install -e stim/glue/zx
+git clone git@github.com:quantumlib/stim.git
+cd stim
+pip install -e glue/zx
 ```
 
 # How to Use
