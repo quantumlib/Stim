@@ -192,7 +192,7 @@ def plot_error_rate(
         samples: 'Iterable[sinter.TaskStats]',
         curve_func: Callable[[TaskSummary], Optional[DataPointId]],
         highlight_likelihood_ratio: Optional[float] = 1e-3,
-        xaxis: str,
+        xaxis: str = '',
 ) -> None:
     ax.set_ylabel('Logical Error Probability (per shot)')
     ax.grid()

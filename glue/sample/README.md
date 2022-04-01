@@ -23,6 +23,7 @@ installed.
 ```bash
 import stim
 import sinter
+import matplotlib.pyplot as plt
 
 
 # Generates surface code circuit tasks using Stim's circuit generation.
@@ -53,19 +54,26 @@ def main():
         decoders=['pymatching'],
     )
 
-    # Print as CSV data.
+    # Print samples as CSV data.
     print(sinter.CSV_HEADER)
     for sample in samples:
-        print(sample.to_csv_line())
+        print(sample)
 
-    # Render a matplotlib plot of the data into a png image.
-    fig, axs = sinter.plot(
+    # Render a matplotlib plot of the data.
+    fig, ax = plt.subplots(1, 1)
+    sinter.plot_error_rate(
+        ax=ax,
         samples=samples,
-        x_func=lambda e: e.json_metadata['p'],
-        xaxis='[log]Physical Error Rate',
-        group_func=lambda e: f"Rotated Surface Code d={e.json_metadata['d']}",
+        curve_func=lambda e: sinter.DataPointId(
+            curve_label=f"Rotated Surface Code d={e.json_metadata['d']}",
+            x=e.json_metadata['p'],
+        ),
+        xaxis='[log]Physical Error Rate'
     )
+
+    # Save to file and also open in a window.
     fig.savefig('plot.png')
+    plt.show()
 
 
 # NOTE: This is actually necessary! If the code inside 'main()' was at the
