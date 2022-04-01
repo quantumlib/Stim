@@ -31,9 +31,9 @@ These notes generally assume you are on a Linux system.
 - [python packaging `stimcirq`](#pypackage.stimcirq)
     - [with python setup.py](#pypackage.stimcirq.python)
     - [with pip install -e](#pypackage.stimcirq.pip)
-- [python packaging `simmer`](#pypackage.simmer)
-    - [with python setup.py](#pypackage.simmer.python)
-    - [with pip install -e](#pypackage.simmer.pip)
+- [python packaging `sinter`](#pypackage.sinter)
+    - [with python setup.py](#pypackage.sinter.python)
+    - [with pip install -e](#pypackage.sinter.pip)
 - [javascript packaging `stimjs`](#jspackage.stimjs)
     - [with emscripten](#jspackage.stimjs.emscripten)
 - [autoformating code](#autoformat)
@@ -373,7 +373,7 @@ glue packages:
 # install stimcirq dev reference:
 pip install -e glue/cirq
 
-# install simmer dev reference:
+# install sinter dev reference:
 pip install -e glue/sample
 
 # install stimzx dev reference:
@@ -395,7 +395,7 @@ To test everything:
 pytest src glue
 python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
 python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
-python -c "import simmer; import doctest; assert doctest.testmod(simmer).failed == 0"
+python -c "import sinter; import doctest; assert doctest.testmod(sinter).failed == 0"
 python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
 ```
 
@@ -415,12 +415,12 @@ pytest glue/cirq
 python -c "import stimcirq; import doctest; assert doctest.testmod(sitmcirq).failed == 0"
 ```
 
-Test only `simmer`:
+Test only `sinter`:
 
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/sample
-python -c "import simmer; import doctest; assert doctest.testmod(simmer).failed == 0"
+python -c "import sinter; import doctest; assert doctest.testmod(sinter).failed == 0"
 ```
 
 Test only `stimzx`:
@@ -515,9 +515,9 @@ pip install -e glue/cirq
 # stimcirq is now installed in current virtualenv as dev reference
 ```
 
-# <a name="pypackage.simmer"></a>Python packaging `simmer`
+# <a name="pypackage.sinter"></a>Python packaging `sinter`
 
-## <a name="pypackage.simmer.python"></a>Python packaging `simmer` with python setup.py
+## <a name="pypackage.sinter.python"></a>Python packaging `sinter` with python setup.py
 
 ```bash
 # from repo root
@@ -527,12 +527,12 @@ cd -
 # output in glue/sample/dist/*
 ```
 
-## <a name="pypackage.simmer.pip"></a>Python packaging `simmer` with pip install -e
+## <a name="pypackage.sinter.pip"></a>Python packaging `sinter` with pip install -e
 
 ```bash
 # from repo root
 pip install -e glue/sample
-# simmer is now installed in current virtualenv as dev reference
+# sinter is now installed in current virtualenv as dev reference
 ```
 
 # <a name="pypackage.stimzx"></a>Python packaging `stimzx`

@@ -6,7 +6,7 @@ JSON_TYPE = Union[Dict[str, 'JSON_TYPE'], List['JSON_TYPE'], str, int, float]
 
 
 @dataclasses.dataclass(frozen=True)
-class CaseSummary:
+class TaskSummary:
     """A serializable representation of a decoding problem."""
     strong_id: str
     decoder: str

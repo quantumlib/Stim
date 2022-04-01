@@ -1,12 +1,12 @@
 import dataclasses
 
-from simmer.case_stats import CaseStats
-from simmer.case_summary import JSON_TYPE, CaseSummary
-from simmer.csv_out import csv_line
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.task_summary import JSON_TYPE, TaskSummary
+from sinter.csv_out import csv_line
 
 
 @dataclasses.dataclass(frozen=True)
-class SampleStats:
+class TaskStats:
     """Results of sampling from a decoding problem."""
 
     # Information describing the problem that was sampled.
@@ -20,9 +20,9 @@ class SampleStats:
     discards: int
     seconds: float
 
-    def __add__(self, other: 'SampleStats') -> 'SampleStats':
+    def __add__(self, other: 'TaskStats') -> 'TaskStats':
         assert self.to_case_summary() == other.to_case_summary()
-        return SampleStats(
+        return TaskStats(
             decoder=self.decoder,
             strong_id=self.strong_id,
             json_metadata=self.json_metadata,
@@ -32,15 +32,15 @@ class SampleStats:
             seconds=self.seconds + other.seconds,
         )
 
-    def to_case_summary(self) -> CaseSummary:
-        return CaseSummary(
+    def to_case_summary(self) -> TaskSummary:
+        return TaskSummary(
             strong_id=self.strong_id,
             decoder=self.decoder,
             json_metadata=self.json_metadata,
         )
 
-    def to_case_stats(self) -> CaseStats:
-        return CaseStats(
+    def to_case_stats(self) -> AnonTaskStats:
+        return AnonTaskStats(
             shots=self.shots,
             errors=self.errors,
             discards=self.discards,

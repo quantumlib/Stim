@@ -8,9 +8,9 @@ from typing import Optional, Dict, Callable, Tuple
 import numpy as np
 import stim
 
-from simmer.case_stats import CaseStats
-from simmer.decoding_internal import decode_using_internal_decoder
-from simmer.decoding_pymatching import decode_using_pymatching
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.decoding_internal import decode_using_internal_decoder
+from sinter.decoding_pymatching import decode_using_pymatching
 
 
 DECODER_METHODS: Dict[str, Callable] = {
@@ -59,7 +59,7 @@ def sample_decode(*,
                   post_mask: Optional[np.ndarray] = None,
                   num_shots: int,
                   decoder: str,
-                  tmp_dir: Optional[pathlib.Path] = None) -> CaseStats:
+                  tmp_dir: Optional[pathlib.Path] = None) -> AnonTaskStats:
     """Samples how many times a decoder correctly predicts the logical frame.
 
     Args:
@@ -114,7 +114,7 @@ def sample_decode(*,
 
         # Count how many predictions matched the actual observable data.
         num_errors = np.count_nonzero(np.any(predictions != obs_data, axis=1))
-        return CaseStats(
+        return AnonTaskStats(
             shots=num_shots,
             errors=num_errors,
             discards=num_discards,

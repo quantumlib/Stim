@@ -34,11 +34,14 @@ jobs:
       - run: python glue/python/overwrite_dev_version_with_date.py
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
+      - run: mkdir -p output/sinter
       - run: python -m pip install pybind11==2.6.0
       - run: python setup.py sdist
       - run: mv dist/* output/stim
       - run: cd glue/cirq && python setup.py sdist
       - run: mv glue/cirq/dist/* output/stimcirq
+      - run: cd glue/sample && python setup.py sdist
+      - run: mv glue/sample/dist/* output/sinter
       - run: python -m pip install cibuildwheel==2.3.0
       - run: python -m cibuildwheel --output-dir output/stim
         env:
@@ -52,6 +55,7 @@ jobs:
             ./output/stim/*.whl
             ./output/stim/*.tar.gz
             ./output/stimcirq/*.tar.gz
+            ./output/sinter/*.tar.gz
   upload_dev_release_to_pypi:
     needs: build_dist
     if: github.ref == 'refs/heads/main'
@@ -71,6 +75,11 @@ jobs:
           user: __token__
           packages_dir: dist/stimcirq/
           password: ${{ secrets.pypi_token_stimcirq }}
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          packages_dir: dist/sinter/
+          password: ${{ secrets.pypi_token_sinter }}
   run_main:
     runs-on: ubuntu-latest
     steps:
@@ -185,7 +194,7 @@ jobs:
       - run: pip install pytest
       - run: pytest glue/cirq
       - run: python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
-  test_simmer:
+  test_sinter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -198,7 +207,7 @@ jobs:
       - run: pip install -e glue/sample
       - run: pip install pytest
       - run: pytest glue/sample
-      - run: python -c "import simmer; import doctest; assert doctest.testmod(simmer).failed == 0"
+      - run: python -c "import sinter; import doctest; assert doctest.testmod(sinter).failed == 0"
   test_stimzx:
     runs-on: ubuntu-latest
     steps:

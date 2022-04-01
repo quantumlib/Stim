@@ -1,8 +1,8 @@
 import sys
 from typing import List
 
-from simmer.csv_out import CSV_HEADER
-from simmer.existing_data import ExistingData
+from sinter.csv_out import CSV_HEADER
+from sinter.existing_data import ExistingData
 
 
 def main_combine(*, command_line_args: List[str]):

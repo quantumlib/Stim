@@ -8,23 +8,29 @@ from typing import TYPE_CHECKING
 import numpy as np
 import stim
 
-from simmer.csv_out import CSV_HEADER
-from simmer.collection_work_manager import CollectionWorkManager
-from simmer.existing_data import ExistingData
+from sinter.csv_out import CSV_HEADER
+from sinter.collection_work_manager import CollectionWorkManager
+from sinter.existing_data import ExistingData
 
 
 if TYPE_CHECKING:
-    import simmer
+    import sinter
 
 
 def iter_collect(*,
                  num_workers: int,
-                 tasks: Union[Iterator['simmer.Task'],
-                              Iterable['simmer.Task']],
+                 tasks: Union[Iterator['sinter.Task'],
+                              Iterable['sinter.Task']],
                  print_progress: bool = False,
                  hint_num_tasks: Optional[int] = None,
                  additional_existing_data: Optional[ExistingData] = None,
-                 ) -> Iterator['simmer.SampleStats']:
+                 max_shots: Optional[int] = None,
+                 max_errors: Optional[int] = None,
+                 decoders: Optional[Iterable[str]] = None,
+                 max_batch_seconds: Optional[int] = None,
+                 max_batch_size: Optional[int] = None,
+                 start_batch_size: Optional[int] = None,
+                 ) -> Iterator['sinter.TaskStats']:
     """Collects error correction statistics using multiple worker processes.
 
     Note: if max_batch_size and max_batch_seconds are both not used (or
@@ -43,9 +49,32 @@ def iter_collect(*,
         additional_existing_data: Defaults to None (no additional data).
             Statistical data that has already been collected, in addition to
             anything included in each task's `previous_stats` field.
+        decoders: Defaults to None (specified by each Task). The names of the
+            decoders to use on each Task. It must either be the case that each
+            Task specifies a decoder and this is set to None, or this is an
+            iterable and each Task has its decoder set to None.
+        max_shots: Defaults to None (unused). Stops the sampling process
+            after this many samples have been taken from the circuit.
+        max_errors: Defaults to None (unused). Stops the sampling process
+            after this many errors have been seen in samples taken from the
+            circuit. The actual number sampled errors may be larger due to
+            batching.
+        start_batch_size: Defaults to None (collector's choice). The very
+            first shots taken from the circuit will use a batch of this
+            size, and no other batches will be taken in parallel. Once this
+            initial fact finding batch is done, batches can be taken in
+            parallel and the normal batch size limiting processes take over.
+        max_batch_size: Defaults to None (unused). Limits batches from
+            taking more than this many shots at once. For example, this can
+            be used to ensure memory usage stays below some limit.
+        max_batch_seconds: Defaults to None (unused). When set, the recorded
+            data from previous shots is used to estimate how much time is
+            taken per shot. This information is then used to predict the
+            biggest batch size that can finish in under the given number of
+            seconds. Limits each batch to be no larger than that.
 
     Yields:
-        simmer.SamplerStats values recording incremental statistical data
+        sinter.SamplerStats values recording incremental statistical data
         as it is collected by workers.
     """
     if hint_num_tasks is None:
@@ -55,8 +84,15 @@ def iter_collect(*,
         except TypeError:
             pass
 
-    with CollectionWorkManager(tasks=iter(tasks),
-                               additional_existing_data=additional_existing_data) as manager:
+    with CollectionWorkManager(
+            tasks=iter(tasks),
+            max_shots=max_shots,
+            max_errors=max_errors,
+            max_batch_seconds=max_batch_seconds,
+            decoders=decoders,
+            start_batch_size=start_batch_size,
+            max_batch_size=max_batch_size,
+            additional_existing_data=additional_existing_data) as manager:
         manager.start_workers(num_workers)
 
         while manager.fill_work_queue():
@@ -80,13 +116,20 @@ def iter_collect(*,
 
 def collect(*,
             num_workers: int,
-            tasks: Union[Iterator['simmer.Task'], Iterable['simmer.Task']],
+            tasks: Union[Iterator['sinter.Task'], Iterable['sinter.Task']],
             existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
             save_resume_filepath: Union[None, str, pathlib.Path] = None,
-            progress_callback: Optional[Callable[['simmer.SampleStats'], None]] = None,
+            progress_callback: Optional[Callable[[
+                                                         'sinter.TaskStats'], None]] = None,
+            max_shots: Optional[int] = None,
+            max_errors: Optional[int] = None,
+            decoders: Optional[Iterable[str]] = None,
+            max_batch_seconds: Optional[int] = None,
+            max_batch_size: Optional[int] = None,
+            start_batch_size: Optional[int] = None,
             print_progress: bool = False,
             hint_num_tasks: Optional[int] = None,
-            ) -> List['simmer.SampleStats']:
+            ) -> List['sinter.TaskStats']:
     """
     Args:
         num_workers: The number of worker processes to use.
@@ -104,13 +147,36 @@ def collect(*,
             max_shots and max_errors.
         progress_callback: Defaults to None (unused). If specified, then each
             time new sample statistics are acquired from a worker this method
-            will be invoked with the new simmer.SamplerStats.
+            will be invoked with the new sinter.SamplerStats.
         print_progress: When True, progress status is printed to stderr. Uses
             bash escape sequences to erase and rewrite the status as things
             progress.
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
+        decoders: Defaults to None (specified by each Task). The names of the
+            decoders to use on each Task. It must either be the case that each
+            Task specifies a decoder and this is set to None, or this is an
+            iterable and each Task has its decoder set to None.
+        max_shots: Defaults to None (unused). Stops the sampling process
+            after this many samples have been taken from the circuit.
+        max_errors: Defaults to None (unused). Stops the sampling process
+            after this many errors have been seen in samples taken from the
+            circuit. The actual number sampled errors may be larger due to
+            batching.
+        start_batch_size: Defaults to None (collector's choice). The very
+            first shots taken from the circuit will use a batch of this
+            size, and no other batches will be taken in parallel. Once this
+            initial fact finding batch is done, batches can be taken in
+            parallel and the normal batch size limiting processes take over.
+        max_batch_size: Defaults to None (unused). Limits batches from
+            taking more than this many shots at once. For example, this can
+            be used to ensure memory usage stays below some limit.
+        max_batch_seconds: Defaults to None (unused). When set, the recorded
+            data from previous shots is used to estimate how much time is
+            taken per shot. This information is then used to predict the
+            biggest batch size that can finish in under the given number of
+            seconds. Limits each batch to be no larger than that.
 
     Returns:
         A list of sample statistics, one from each problem. The list is not in
@@ -133,10 +199,10 @@ def collect(*,
             if save_resume_filepath.exists():
                 additional_existing_data += ExistingData.from_file(save_resume_filepath)
                 save_resume_file = exit_stack.enter_context(
-                        open(save_resume_filepath, 'a'))
+                        open(save_resume_filepath, 'a'))  # type: ignore
             else:
                 save_resume_file = exit_stack.enter_context(
-                        open(save_resume_filepath, 'w'))
+                        open(save_resume_filepath, 'w'))  # type: ignore
                 print(CSV_HEADER, file=save_resume_file, flush=True)
         else:
             save_resume_file = None
@@ -146,6 +212,12 @@ def collect(*,
         result.data = dict(additional_existing_data.data)
         for sample in iter_collect(
             num_workers=num_workers,
+            max_shots=max_shots,
+            max_errors=max_errors,
+            max_batch_seconds=max_batch_seconds,
+            start_batch_size=start_batch_size,
+            max_batch_size=max_batch_size,
+            decoders=decoders,
             tasks=tasks,
             print_progress=print_progress,
             hint_num_tasks=hint_num_tasks,

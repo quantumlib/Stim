@@ -8,22 +8,22 @@ def main(*, command_line_args: Optional[List[str]] = None):
 
     mode = command_line_args[0] if command_line_args else None
     if mode == 'combine':
-        from simmer.main_combine import main_combine
+        from sinter.main_combine import main_combine
         return main_combine(command_line_args=command_line_args[1:])
     if mode == 'collect':
-        from simmer.main_collect import main_collect
+        from sinter.main_collect import main_collect
         return main_collect(command_line_args=command_line_args[1:])
     if mode == 'plot':
-        from simmer.main_plot import main_plot
+        from sinter.main_plot import main_plot
         return main_plot(command_line_args=command_line_args[1:])
     if command_line_args and not command_line_args[0].startswith('-'):
-        print(f"\033[31mUnrecognized command: simmer {command_line_args[0]}\033[0m\n", file=sys.stderr)
+        print(f"\033[31mUnrecognized command: sinter {command_line_args[0]}\033[0m\n", file=sys.stderr)
     else:
         print(f"\033[31mDidn't specify a command.\033[0m\n", file=sys.stderr)
     print(f"Known commands are:\n"
-          f"    simmer collect\n"
-          f"    simmer combine\n"
-          f"    simmer plot\n"
+          f"    sinter collect\n"
+          f"    sinter combine\n"
+          f"    sinter plot\n"
           f"", file=sys.stderr)
     sys.exit(1)
 

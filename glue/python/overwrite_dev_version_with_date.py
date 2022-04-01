@@ -30,7 +30,13 @@ def main():
     new_version = f"{maj_version}.{min_version}.dev{timestamp}"
 
     # Overwrite existing versions.
-    for path in ["setup.py", "glue/cirq/setup.py", "glue/zx/setup.py"]:
+    package_setup_files = [
+        "setup.py",
+        "glue/cirq/setup.py",
+        "glue/zx/setup.py",
+        "glue/sample/setup.py",
+    ]
+    for path in package_setup_files:
         with open(path) as f:
             content = f.read()
         assert maj_min_version_line in content

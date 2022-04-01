@@ -3,28 +3,28 @@ from typing import Any, Dict, Union
 
 import pandas as pd
 
-from simmer.sample_stats import SampleStats
-from simmer.case_executable import CaseExecutable
-from simmer.case_summary import CaseSummary
-from simmer.decoding import CaseStats
+from sinter.task_stats import TaskStats
+from sinter.executable_task import ExecutableTask
+from sinter.task_summary import TaskSummary
+from sinter.decoding import AnonTaskStats
 
 
 class ExistingData:
     def __init__(self):
-        self.data: Dict[str, SampleStats] = {}
+        self.data: Dict[str, TaskStats] = {}
 
-    def stats_for(self, case: Union[CaseExecutable, CaseSummary]) -> CaseStats:
-        if isinstance(case, CaseExecutable):
+    def stats_for(self, case: Union[ExecutableTask, TaskSummary]) -> AnonTaskStats:
+        if isinstance(case, ExecutableTask):
             key = case.to_strong_id()
-        elif isinstance(case, CaseSummary):
+        elif isinstance(case, TaskSummary):
             key = case.strong_id
         else:
             raise NotImplementedError(f'{type(case)}')
         if key not in self.data:
-            return CaseStats()
+            return AnonTaskStats()
         return self.data[key].to_case_stats()
 
-    def add_sample(self, sample: SampleStats) -> None:
+    def add_sample(self, sample: TaskStats) -> None:
         k = sample.strong_id
         if k in self.data:
             self.data[k] += sample
@@ -58,7 +58,7 @@ class ExistingData:
         result = ExistingData()
         for (strong_id, decoder, custom_json), row in id_to_stats.items():
             assert strong_id not in result.data
-            result.data[strong_id] = SampleStats(
+            result.data[strong_id] = TaskStats(
                 strong_id=strong_id,
                 decoder=decoder,
                 json_metadata=json.loads(custom_json),

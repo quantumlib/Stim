@@ -3,16 +3,16 @@ import collections
 import pytest
 import stim
 
-import simmer
-from simmer.case_stats import CaseStats
+import sinter
+from sinter.anon_task_stats import AnonTaskStats
 
 
 def test_iter_collect():
-    result = collections.defaultdict(CaseStats)
-    for sample in simmer.iter_collect(
+    result = collections.defaultdict(AnonTaskStats)
+    for sample in sinter.iter_collect(
         num_workers=2,
         tasks=[
-            simmer.Task(
+            sinter.Task(
                 circuit=stim.Circuit.generated(
                     'repetition_code:memory',
                     rounds=3,
@@ -41,10 +41,10 @@ def test_iter_collect():
 
 
 def test_collect():
-    results = simmer.collect(
+    results = sinter.collect(
         num_workers=2,
         tasks=[
-            simmer.Task(
+            sinter.Task(
                 circuit=stim.Circuit.generated(
                     'repetition_code:memory',
                     rounds=3,
@@ -74,11 +74,11 @@ def test_collect():
 
 
 def test_iter_collect_list():
-    result = collections.defaultdict(CaseStats)
-    for sample in simmer.iter_collect(
+    result = collections.defaultdict(AnonTaskStats)
+    for sample in sinter.iter_collect(
         num_workers=2,
         tasks=[
-            simmer.Task(
+            sinter.Task(
                 circuit=stim.Circuit.generated(
                     'repetition_code:memory',
                     rounds=3,
@@ -108,10 +108,10 @@ def test_iter_collect_list():
 
 def test_iter_collect_worker_fails():
     with pytest.raises(RuntimeError, match="Worker failed"):
-        _ = list(simmer.iter_collect(
+        _ = list(sinter.iter_collect(
             num_workers=1,
             tasks=iter([
-                simmer.Task(
+                sinter.Task(
                     circuit=stim.Circuit.generated('repetition_code:memory', rounds=3, distance=3),
                     decoder='NOT A VALID DECODER',
                     max_errors=1,

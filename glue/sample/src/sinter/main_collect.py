@@ -4,22 +4,16 @@ from typing import Iterator, Any, Tuple, Optional, List, Callable
 
 import stim
 
-from simmer.sample_stats import SampleStats
-from simmer.task import Task
-from simmer.collection import collect, post_selection_mask_from_last_detector_coords
-from simmer.decoding import DECODER_METHODS
-from simmer.main_combine import ExistingData, CSV_HEADER
+from sinter.task_stats import TaskStats
+from sinter.task import Task
+from sinter.collection import collect, post_selection_mask_from_last_detector_coords
+from sinter.decoding import DECODER_METHODS
+from sinter.main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
-                               max_errors: Optional[int],
-                               max_shots: Optional[int],
-                               max_batch_size: Optional[int],
-                               start_batch_size: int,
                                metadata_func: Callable,
-                               max_batch_seconds: Optional[float],
                                postselect_last_coord_mins: List[Optional[int]],
-                               decoders: List[str],
                                ) -> Iterator[Task]:
     for path in circuit_paths:
         with open(path) as f:
@@ -30,23 +24,16 @@ def iter_file_paths_into_goals(circuit_paths: Iterator[str],
             post_mask = post_selection_mask_from_last_detector_coords(
                 circuit=circuit, last_coord_minimum=postselect_last_coord_min)
 
-            for decoder in decoders:
-                yield Task(
-                    circuit=circuit,
-                    decoder=decoder,
-                    postselection_mask=post_mask,
-                    json_metadata=metadata_func(path=path, circuit=circuit, decoder=decoder),
-                    max_errors=max_errors,
-                    max_shots=max_shots,
-                    max_batch_size=max_batch_size,
-                    max_batch_seconds=max_batch_seconds,
-                    start_batch_size=start_batch_size,
-                )
+            yield Task(
+                circuit=circuit,
+                postselection_mask=post_mask,
+                json_metadata=metadata_func(path=path, circuit=circuit),
+            )
 
 
 def parse_args(args: List[str]) -> Any:
     parser = argparse.ArgumentParser(description='Collect Monte Carlo samples.',
-                                     prog='simmer collect')
+                                     prog='sinter collect')
     parser.add_argument('-circuits',
                         nargs='+',
                         required=True,
@@ -118,7 +105,6 @@ def parse_args(args: List[str]) -> Any:
                              'Available values:\n'
                              '    path: Relative path to the circuit file, from the command line arguments.\n'
                              '    circuit: The circuit itself, parsed from the file, as a stim.Circuit.\n'
-                             '    decoder: The decoder that will be used on the circuit.\n'
                              'Expected type:\n'
                              '    A value that can be serialized into JSON, like a Dict[str, int].\n'
                              '\n'
@@ -137,7 +123,7 @@ def parse_args(args: List[str]) -> Any:
                                                        a.postselect_last_coord_min]
 
     a.metadata_func = eval(compile(
-        'lambda *, path, circuit, decoder: ' + a.metadata_func,
+        'lambda *, path, circuit: ' + a.metadata_func,
         filename='metadata_func:command_line_arg',
         mode='eval'))
     return a
@@ -158,14 +144,8 @@ def main_collect(*, command_line_args: List[str]):
 
     iter_tasks = iter_file_paths_into_goals(
         circuit_paths=args.circuits,
-        max_errors=args.max_errors,
-        max_shots=args.max_shots,
-        decoders=args.decoders,
         metadata_func=args.metadata_func,
         postselect_last_coord_mins=args.postselect_last_coord_min,
-        max_batch_seconds=args.max_batch_seconds,
-        max_batch_size=args.max_batch_size,
-        start_batch_size=args.start_batch_size,
     )
     num_tasks = len(args.circuits) * len(args.decoders)
 
@@ -173,7 +153,7 @@ def main_collect(*, command_line_args: List[str]):
 
     did_work = False
 
-    def on_progress(sample: SampleStats) -> None:
+    def on_progress(sample: TaskStats) -> None:
         nonlocal did_work
         if print_to_stdout:
             if not did_work:
@@ -189,6 +169,12 @@ def main_collect(*, command_line_args: List[str]):
         save_resume_filepath=args.save_resume_filepath,
         existing_data_filepaths=args.existing_data_filepaths,
         progress_callback=on_progress,
+        max_errors=args.max_errors,
+        max_shots=args.max_shots,
+        decoders=args.decoders,
+        max_batch_seconds=args.max_batch_seconds,
+        max_batch_size=args.max_batch_size,
+        start_batch_size=args.start_batch_size,
     )
 
     if not did_work and not args.quiet:
