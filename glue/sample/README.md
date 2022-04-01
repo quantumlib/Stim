@@ -1,13 +1,41 @@
-# sinter: stim sampling helper
+# sinter: fast QEC sampling
 
-sinter is a bit of glue code that allows using Stim and a decoder in tandem
-in order to benchmark quantum error correction circuits using Monte Carlo sampling.
-sinter supports using pymatching to decode the samples, and can use python
-multiprocessing to fully utilize a computer's resources to get good performance.
+> **sinter is still in development. Its API and output formats are not stable.** 
+
+Sinter is a software tool/library for doing fast monte carlo sampling of
+quantum error correction circuits.
+
+- [How it works](#how_it_works)
+- [How to install](#how_to_install)
+- [How to use: Python API](#how_to_use_python)
+- [How to use: Linux Command Line](#how_to_use_linux)
+
+<a name="how_to_works"></a>
+# How it works
+
+> **sinter is still in development. Its API and output formats are not stable.** 
+
+Sinter takes Stim circuits annotated with noise, detectors, and logical
+observables.
+It uses stim to sample the circuits and pymatching to predict whether the
+logical observables were flipped or not, given the detector data.
+It records how often this succeeds, and how often it fails (the error rate).
+
+Sinter uses python multiprocessing to do parallel sampling across multiple CPU
+cores, dynamically decides which circuits need more samples based on parameters
+specified by the user (such as a target number of errors), saves the results to
+as simple CSV format, and has some basic  plotting functionality for viewing the
+results.
+
+Sinter doesn't support cloud compute, but it does scale extremely well within
+a single machine.
+I've tested it on 2 core machines and 96 core machines, and it consistently gets
+good resource utilization (>95%).
+
+<a name="how_to_install"></a>
+# How to install
 
 **sinter is still in development. Its API and output formats are not stable.** 
-
-# How to Install
 
 Sinter is available as a pypi package. It can be installed using pip:
 
@@ -15,7 +43,15 @@ Sinter is available as a pypi package. It can be installed using pip:
 pip install sinter
 ```
 
-# How to Use: Python API
+When you are in a python virtual environment with sinter installed, you have
+access to a command line command `sinter` which can be used to perform tasks
+from the command line. You can also `import sinter` in a python program in order
+to use sinter's python API.
+
+<a name="how_to_use_python"></a>
+# How to use: Python API
+
+> **sinter is still in development. Its API and output formats are not stable.** 
 
 This example assumes you are in a python environment with stim and sinter
 installed.
@@ -99,7 +135,10 @@ and the corresponding image saved to `plot.png`:
 
 ![Example plot](readme_example_plot.png)
 
-# How to Use: Linux Command Line
+<a name="how_to_use_linux"></a>
+# How to use: Linux Command Line
+
+> **sinter is still in development. Its API and output formats are not stable.** 
 
 This example assumes you are using a linux command line in a python virtualenv with `sinter` installed.
 
