@@ -3,10 +3,10 @@ from typing import Any, Dict, Union
 
 import pandas as pd
 
-from simmer.task_stats import TaskStats
-from simmer.executable_task import ExecutableTask
-from simmer.task_summary import TaskSummary
-from simmer.decoding import AnonTaskStats
+from sinter.task_stats import TaskStats
+from sinter.executable_task import ExecutableTask
+from sinter.task_summary import TaskSummary
+from sinter.decoding import AnonTaskStats
 
 
 class ExistingData:

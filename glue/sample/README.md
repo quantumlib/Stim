@@ -1,37 +1,35 @@
-# simmer: stim sampling helper
+# sinter: stim sampling helper
 
-Simmer is a bit of glue code that allows using Stim and a decoder in tandem
+sinter is a bit of glue code that allows using Stim and a decoder in tandem
 in order to benchmark quantum error correction circuits using Monte Carlo sampling.
-Simmer supports using pymatching to decode the samples, and can use python
+sinter supports using pymatching to decode the samples, and can use python
 multiprocessing to fully utilize a computer's resources to get good performance.
 
-**simmer is still in development. Its API and output formats are not stable.** 
+**sinter is still in development. Its API and output formats are not stable.** 
 
 # How to Install
 
-Simmer is currently in development, so it can only be installed from source.
-For example:
+Sinter is available as a pypi package. It can be installed using pip:
 
 ```
-git clone git@github.com:quantumlib/stim.git
-pip install -e stim/glue/sample
+pip install sinter
 ```
 
 # How to Use: Python API
 
-This example assumes you are in a python environment with stim and simmer
+This example assumes you are in a python environment with stim and sinter
 installed.
 
 ```bash
 import stim
-import simmer
+import sinter
 
 
 # Generates surface code circuit tasks using Stim's circuit generation.
 def generate_example_tasks():
     for p in [0.001, 0.005, 0.01]:
         for d in [3, 5]:
-            yield simmer.Task(
+            yield sinter.Task(
                 circuit=stim.Circuit.generated(
                     rounds=d,
                     distance=d,
@@ -47,7 +45,7 @@ def generate_example_tasks():
 
 def main():
     # Collect the samples (takes a few minutes).
-    samples = simmer.collect(
+    samples = sinter.collect(
         num_workers=4,
         max_shots=1_000_000,
         max_errors=1000,
@@ -56,12 +54,12 @@ def main():
     )
 
     # Print as CSV data.
-    print(simmer.CSV_HEADER)
+    print(sinter.CSV_HEADER)
     for sample in samples:
         print(sample.to_csv_line())
 
     # Render a matplotlib plot of the data into a png image.
-    fig, axs = simmer.plot(
+    fig, axs = sinter.plot(
         samples=samples,
         x_func=lambda e: e.json_metadata['p'],
         xaxis='[log]Physical Error Rate',
@@ -71,7 +69,7 @@ def main():
 
 
 # NOTE: This is actually necessary! If the code inside 'main()' was at the
-# module level, the multiprocessing children spawned by simmer.collect would
+# module level, the multiprocessing children spawned by sinter.collect would
 # also attempt to run that code.
 if __name__ == '__main__':
     main()
@@ -95,7 +93,7 @@ and the corresponding image saved to `plot.png`:
 
 # How to Use: Linux Command Line
 
-This example assumes you are using a linux command line in a python virtualenv with `simmer` installed.
+This example assumes you are using a linux command line in a python virtualenv with `sinter` installed.
 
 ## pick circuits
 
@@ -134,18 +132,18 @@ But this is just an example, so we'll use normal surface code circuits.
 
 # collect
 
-You can use simmer to collect statistics on each circuit by using the `simmer collect` command.
+You can use sinter to collect statistics on each circuit by using the `sinter collect` command.
 This command takes options specifying how much data to collect, how to do decoding, etc.
 
-By default, simmer writes the collected statistics to stdout as CSV data.
+By default, sinter writes the collected statistics to stdout as CSV data.
 One particularly important option that changes this behavior is `-save_resume_filepath`,
 which allows the command to be interrupted and restarted without losing data.
 Any data already at the file specified by `-save_resume_filepath` will count towards the
-amount of statistics asked to be collected, and simmer will append new statistics to this file
+amount of statistics asked to be collected, and sinter will append new statistics to this file
 instead of overwriting it.
 
 ```bash
-simmer collect \
+sinter collect \
     -processes 4 \
     -circuits circuits/*.stim \
     -metadata_func "(v := path.split('/')[-1].split('_')) and {
@@ -158,21 +156,21 @@ simmer collect \
     -save_resume_filepath stats.csv
 ```
 
-Beware that if you SIGKILL or SIGTEM simmer, instead of just using SIGINT, it's possible
+Beware that if you SIGKILL or SIGTEM sinter, instead of just using SIGINT, it's possible
 (though unlikely) that you are killing it just as it writes a row of CSV data. This truncates
 the data, which requires manual intervention on your part to fix (e.g. by deleting the partial row
 using a text editor).
 
 # combine
 
-Note that the CSV data written by simmer will contain multiple rows for each case, because
-simmer starts by running small batches to see roughly what the error rate is before moving
+Note that the CSV data written by sinter will contain multiple rows for each case, because
+sinter starts by running small batches to see roughly what the error rate is before moving
 to larger batch sizes. 
 
-You can get a single-row-per-case CSV file by using `simmer combine`:
+You can get a single-row-per-case CSV file by using `sinter combine`:
 
 ```bash
-simmer combine stats.csv
+sinter combine stats.csv
 ```
 
 ```
@@ -187,13 +185,13 @@ simmer combine stats.csv
 
 # plot
 
-You can use `simmer plot` to view the results you've collected.
+You can use `sinter plot` to view the results you've collected.
 This command takes a CSV file, and also some command indicating how to group each case
 into single curves and also what the desired X coordinate of a case is.
 This is done in a flexible but very hacky way, by specifying a python expression using the case's filename: 
 
 ```bash
-simmer plot \
+sinter plot \
     -in stats.csv \
     -group_func "'Rotated Surface Code d=' + str(metadata['d'])" \
     -x_func "metadata['p']" \

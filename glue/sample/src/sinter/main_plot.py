@@ -3,18 +3,18 @@ from typing import Callable, List, Any, Tuple, Iterable, Optional, TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 
-from simmer.plotting import DataPointId
-from simmer.plotting import plot_discard_rate, plot_error_rate
-from simmer.task_summary import TaskSummary
-from simmer.main_combine import ExistingData
+from sinter.plotting import DataPointId
+from sinter.plotting import plot_discard_rate, plot_error_rate
+from sinter.task_summary import TaskSummary
+from sinter.main_combine import ExistingData
 
 if TYPE_CHECKING:
-    import simmer
+    import sinter
 
 
 def parse_args(args: List[str]) -> Any:
     parser = argparse.ArgumentParser(description='Plot collected CSV data.',
-                                     prog='simmer plot')
+                                     prog='sinter plot')
     parser.add_argument('-filter_func',
                         type=str,
                         default="True",
@@ -115,7 +115,7 @@ def parse_args(args: List[str]) -> Any:
 
 def plot(
     *,
-    samples: Union[Iterable['simmer.TaskStats'], ExistingData],
+    samples: Union[Iterable['sinter.TaskStats'], ExistingData],
     group_func: Callable[[TaskSummary], Any],
     filter_func: Callable[[TaskSummary], Any] = lambda e: True,
     x_func: Callable[[TaskSummary], Any],

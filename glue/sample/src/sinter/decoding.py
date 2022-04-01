@@ -8,9 +8,9 @@ from typing import Optional, Dict, Callable, Tuple
 import numpy as np
 import stim
 
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.decoding_internal import decode_using_internal_decoder
-from simmer.decoding_pymatching import decode_using_pymatching
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.decoding_internal import decode_using_internal_decoder
+from sinter.decoding_pymatching import decode_using_pymatching
 
 
 DECODER_METHODS: Dict[str, Callable] = {

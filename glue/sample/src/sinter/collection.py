@@ -8,19 +8,19 @@ from typing import TYPE_CHECKING
 import numpy as np
 import stim
 
-from simmer.csv_out import CSV_HEADER
-from simmer.collection_work_manager import CollectionWorkManager
-from simmer.existing_data import ExistingData
+from sinter.csv_out import CSV_HEADER
+from sinter.collection_work_manager import CollectionWorkManager
+from sinter.existing_data import ExistingData
 
 
 if TYPE_CHECKING:
-    import simmer
+    import sinter
 
 
 def iter_collect(*,
                  num_workers: int,
-                 tasks: Union[Iterator['simmer.Task'],
-                              Iterable['simmer.Task']],
+                 tasks: Union[Iterator['sinter.Task'],
+                              Iterable['sinter.Task']],
                  print_progress: bool = False,
                  hint_num_tasks: Optional[int] = None,
                  additional_existing_data: Optional[ExistingData] = None,
@@ -30,7 +30,7 @@ def iter_collect(*,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
-                 ) -> Iterator['simmer.TaskStats']:
+                 ) -> Iterator['sinter.TaskStats']:
     """Collects error correction statistics using multiple worker processes.
 
     Note: if max_batch_size and max_batch_seconds are both not used (or
@@ -74,7 +74,7 @@ def iter_collect(*,
             seconds. Limits each batch to be no larger than that.
 
     Yields:
-        simmer.SamplerStats values recording incremental statistical data
+        sinter.SamplerStats values recording incremental statistical data
         as it is collected by workers.
     """
     if hint_num_tasks is None:
@@ -116,11 +116,11 @@ def iter_collect(*,
 
 def collect(*,
             num_workers: int,
-            tasks: Union[Iterator['simmer.Task'], Iterable['simmer.Task']],
+            tasks: Union[Iterator['sinter.Task'], Iterable['sinter.Task']],
             existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
             save_resume_filepath: Union[None, str, pathlib.Path] = None,
             progress_callback: Optional[Callable[[
-                                                         'simmer.TaskStats'], None]] = None,
+                                                         'sinter.TaskStats'], None]] = None,
             max_shots: Optional[int] = None,
             max_errors: Optional[int] = None,
             decoders: Optional[Iterable[str]] = None,
@@ -129,7 +129,7 @@ def collect(*,
             start_batch_size: Optional[int] = None,
             print_progress: bool = False,
             hint_num_tasks: Optional[int] = None,
-            ) -> List['simmer.TaskStats']:
+            ) -> List['sinter.TaskStats']:
     """
     Args:
         num_workers: The number of worker processes to use.
@@ -147,7 +147,7 @@ def collect(*,
             max_shots and max_errors.
         progress_callback: Defaults to None (unused). If specified, then each
             time new sample statistics are acquired from a worker this method
-            will be invoked with the new simmer.SamplerStats.
+            will be invoked with the new sinter.SamplerStats.
         print_progress: When True, progress status is printed to stderr. Uses
             bash escape sequences to erase and rewrite the status as things
             progress.

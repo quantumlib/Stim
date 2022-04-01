@@ -3,10 +3,10 @@ from typing import Optional
 import numpy as np
 import stim
 
-from simmer.executable_task import ExecutableTask
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.task_summary import JSON_TYPE
-from simmer.existing_data import ExistingData
+from sinter.executable_task import ExecutableTask
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.task_summary import JSON_TYPE
+from sinter.existing_data import ExistingData
 
 
 class Task:
@@ -23,7 +23,7 @@ class Task:
 
                  # Information related to how to take samples from the problem.
                  # This is not necessary to specify. If not specified, these
-                 # details must be given to `simmer.collect`.
+                 # details must be given to `sinter.collect`.
                  max_shots: Optional[int] = None,
                  max_errors: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
@@ -155,5 +155,5 @@ def nullable_single_decoder(a: Optional[str], b: Optional[str]) -> str:
     if a is None and b is None:
         raise ValueError('decoder not specified')
     if a is not None and b is not None:
-        raise ValueError('decoder specified to both Task and simmer.collect')
+        raise ValueError('decoder specified to both Task and sinter.collect')
     return a if a is not None else b

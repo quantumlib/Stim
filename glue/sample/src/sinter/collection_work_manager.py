@@ -6,11 +6,11 @@ import time
 from typing import Iterable
 from typing import Optional, Iterator, Tuple, Dict, List
 
-from simmer.existing_data import ExistingData
-from simmer.task_stats import TaskStats
-from simmer.task import Task
-from simmer.collection_tracker_for_single_task import CollectionTrackerForSingleTask
-from simmer.worker import worker_loop, WorkIn, WorkOut
+from sinter.existing_data import ExistingData
+from sinter.task_stats import TaskStats
+from sinter.task import Task
+from sinter.collection_tracker_for_single_task import CollectionTrackerForSingleTask
+from sinter.worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:

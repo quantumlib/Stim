@@ -5,12 +5,12 @@ from typing import Callable, TypeVar, List, Any, Tuple, Iterable, DefaultDict, O
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.probability_util import binominal_relative_likelihood_range
-from simmer.task_summary import TaskSummary
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.probability_util import binominal_relative_likelihood_range
+from sinter.task_summary import TaskSummary
 
 if TYPE_CHECKING:
-    import simmer
+    import sinter
 
 
 MARKERS: str = "ov*sp^<>8PhH+xXDd|" * 100
@@ -81,7 +81,7 @@ class CurveStats:
     hidden: bool
 
     @staticmethod
-    def from_samples(samples: Iterable['simmer.TaskStats'],
+    def from_samples(samples: Iterable['sinter.TaskStats'],
                      *,
                      curve_func: Callable[[TaskSummary], Optional[DataPointId]],
                      ) -> List['CurveStats']:
@@ -130,7 +130,7 @@ class CurveStats:
 def plot_discard_rate(
         *,
         ax: plt.Axes,
-        samples: 'Iterable[simmer.TaskStats]',
+        samples: 'Iterable[sinter.TaskStats]',
         curve_func: Callable[[TaskSummary], Optional[DataPointId]],
         highlight_likelihood_ratio: Optional[float] = 1e-3,
         xaxis: str,
@@ -189,7 +189,7 @@ def plot_discard_rate(
 def plot_error_rate(
         *,
         ax: plt.Axes,
-        samples: 'Iterable[simmer.TaskStats]',
+        samples: 'Iterable[sinter.TaskStats]',
         curve_func: Callable[[TaskSummary], Optional[DataPointId]],
         highlight_likelihood_ratio: Optional[float] = 1e-3,
         xaxis: str,

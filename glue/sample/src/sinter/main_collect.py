@@ -4,11 +4,11 @@ from typing import Iterator, Any, Tuple, Optional, List, Callable
 
 import stim
 
-from simmer.task_stats import TaskStats
-from simmer.task import Task
-from simmer.collection import collect, post_selection_mask_from_last_detector_coords
-from simmer.decoding import DECODER_METHODS
-from simmer.main_combine import ExistingData, CSV_HEADER
+from sinter.task_stats import TaskStats
+from sinter.task import Task
+from sinter.collection import collect, post_selection_mask_from_last_detector_coords
+from sinter.decoding import DECODER_METHODS
+from sinter.main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
@@ -33,7 +33,7 @@ def iter_file_paths_into_goals(circuit_paths: Iterator[str],
 
 def parse_args(args: List[str]) -> Any:
     parser = argparse.ArgumentParser(description='Collect Monte Carlo samples.',
-                                     prog='simmer collect')
+                                     prog='sinter collect')
     parser.add_argument('-circuits',
                         nargs='+',
                         required=True,

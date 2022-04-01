@@ -5,9 +5,9 @@ import tempfile
 
 import stim
 
-from simmer.main import main
-from simmer.main_combine import ExistingData
-from simmer.plotting import better_sorted_str_terms, split_by
+from sinter.main import main
+from sinter.main_combine import ExistingData
+from sinter.plotting import better_sorted_str_terms, split_by
 
 
 def test_split_by():

@@ -1,8 +1,8 @@
 import dataclasses
 
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.task_summary import JSON_TYPE, TaskSummary
-from simmer.csv_out import csv_line
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.task_summary import JSON_TYPE, TaskSummary
+from sinter.csv_out import csv_line
 
 
 @dataclasses.dataclass(frozen=True)

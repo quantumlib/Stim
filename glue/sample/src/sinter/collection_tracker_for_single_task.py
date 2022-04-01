@@ -2,10 +2,10 @@ import math
 from typing import Iterator
 from typing import Optional
 
-from simmer.task import Task
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.worker import WorkIn
-from simmer.worker import WorkOut
+from sinter.task import Task
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.worker import WorkIn
+from sinter.worker import WorkOut
 
 
 class CollectionTrackerForSingleTask:

@@ -5,10 +5,10 @@ import tempfile
 from typing import Any
 from typing import Optional
 
-from simmer.task_stats import TaskStats
-from simmer.executable_task import ExecutableTask
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.task_summary import TaskSummary
+from sinter.task_stats import TaskStats
+from sinter.executable_task import ExecutableTask
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.task_summary import TaskSummary
 
 
 @dataclasses.dataclass

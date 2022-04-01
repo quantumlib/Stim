@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 import stim
 
-import simmer
-from simmer.collection import post_selection_mask_from_last_detector_coords
-from simmer.decoding import sample_decode
+import sinter
+from sinter.collection import post_selection_mask_from_last_detector_coords
+from sinter.decoding import sample_decode
 
 
 def test_decode_using_pymatching():

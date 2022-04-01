@@ -6,8 +6,8 @@ from typing import Optional
 
 import stim
 
-from simmer.anon_task_stats import AnonTaskStats
-from simmer.task_summary import JSON_TYPE, TaskSummary
+from sinter.anon_task_stats import AnonTaskStats
+from sinter.task_summary import JSON_TYPE, TaskSummary
 
 
 class ExecutableTask:
@@ -58,7 +58,7 @@ class ExecutableTask:
                      *,
                      num_shots: int,
                      tmp_dir: Optional[pathlib.Path]) -> AnonTaskStats:
-        from simmer.decoding import sample_decode
+        from sinter.decoding import sample_decode
         return sample_decode(
             num_shots=num_shots,
             circuit=self.circuit,
