@@ -4,11 +4,11 @@ import pytest
 import stim
 
 import simmer
-from simmer.case_stats import CaseStats
+from simmer.anon_task_stats import AnonTaskStats
 
 
 def test_iter_collect():
-    result = collections.defaultdict(CaseStats)
+    result = collections.defaultdict(AnonTaskStats)
     for sample in simmer.iter_collect(
         num_workers=2,
         tasks=[
@@ -74,7 +74,7 @@ def test_collect():
 
 
 def test_iter_collect_list():
-    result = collections.defaultdict(CaseStats)
+    result = collections.defaultdict(AnonTaskStats)
     for sample in simmer.iter_collect(
         num_workers=2,
         tasks=[

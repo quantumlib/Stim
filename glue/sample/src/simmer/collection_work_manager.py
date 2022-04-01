@@ -3,22 +3,38 @@ import multiprocessing
 import pathlib
 import tempfile
 import time
+from typing import Iterable
 from typing import Optional, Iterator, Tuple, Dict, List
 
 from simmer.existing_data import ExistingData
-from simmer.sample_stats import SampleStats
+from simmer.task_stats import TaskStats
 from simmer.task import Task
 from simmer.collection_tracker_for_single_task import CollectionTrackerForSingleTask
 from simmer.worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:
-    def __init__(self, *, tasks: Iterator[Task], additional_existing_data: Optional[ExistingData]):
+    def __init__(self, *,
+                 tasks: Iterator[Task],
+                 max_shots: Optional[int],
+                 max_errors: Optional[int],
+                 max_batch_seconds: Optional[int],
+                 start_batch_size: Optional[int],
+                 max_batch_size: Optional[int],
+                 additional_existing_data: Optional[ExistingData],
+                 decoders: Optional[Iterable[str]]):
         self.queue_from_workers: Optional[multiprocessing.Queue] = None
         self.queue_to_workers: Optional[multiprocessing.Queue] = None
         self.additional_existing_data = ExistingData() if additional_existing_data is None else additional_existing_data
         self.tmp_dir: Optional[pathlib.Path] = None
         self.exit_stack: Optional[contextlib.ExitStack] = None
+
+        self.max_errors = max_errors
+        self.max_shots = max_shots
+        self.max_batch_seconds = max_batch_seconds
+        self.start_batch_size = start_batch_size
+        self.max_batch_size = max_batch_size
+        self.decoders = (None,) if decoders is None else tuple(decoders)
 
         self.workers: List[multiprocessing.Process] = []
         self.active_collectors: Dict[int, CollectionTrackerForSingleTask] = {}
@@ -90,7 +106,7 @@ class CollectionWorkManager:
             if work is None:
                 break
             self.queue_to_workers.put(WorkIn(key=(self.next_job_id, work.key),
-                                             case=work.case,
+                                             task=work.task,
                                              summary=work.summary,
                                              num_shots=work.num_shots))
             self.deployed_jobs[self.next_job_id] = work
@@ -100,7 +116,7 @@ class CollectionWorkManager:
     def wait_for_next_sample(self,
                              *,
                              timeout: Optional[float] = None,
-                             ) -> SampleStats:
+                             ) -> TaskStats:
         result = self.queue_from_workers.get(timeout=timeout)
         assert isinstance(result, WorkOut)
         if result.error is not None:
@@ -124,14 +140,24 @@ class CollectionWorkManager:
                 task = next(self.tasks)
             except StopIteration:
                 break
-            collector = CollectionTrackerForSingleTask(
-                    task=task, additional_existing_data=self.additional_existing_data)
-            if collector.is_done():
-                self.finished_count += 1
-                continue
-            self.next_collector_key += 1
-            self.active_collectors[key] = collector
-            yield key, collector
+            for decoder in self.decoders:
+                collector = CollectionTrackerForSingleTask(
+                    task=task.with_merged_options(
+                        decoder=decoder,
+                        max_shots=self.max_shots,
+                        max_errors=self.max_errors,
+                        max_batch_size=self.max_batch_size,
+                        max_batch_seconds=self.max_batch_seconds,
+                        start_batch_size=self.start_batch_size,
+                        existing_data=self.additional_existing_data,
+                    ),
+                )
+                if collector.is_done():
+                    self.finished_count += 1
+                    continue
+                self.next_collector_key += 1
+                self.active_collectors[key] = collector
+                yield key, collector
         if not prefer_started:
             yield from self.active_collectors.items()
 
@@ -155,7 +181,7 @@ class CollectionWorkManager:
             if w is not None:
                 assert w.key is None
                 return WorkIn(key=collector_index,
-                              case=w.case,
+                              task=w.task,
                               summary=w.summary,
                               num_shots=w.num_shots)
         return None

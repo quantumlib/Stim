@@ -28,34 +28,32 @@ import simmer
 
 
 # Generates surface code circuit tasks using Stim's circuit generation.
-def generate_tasks():
+def generate_example_tasks():
     for p in [0.001, 0.005, 0.01]:
         for d in [3, 5]:
             yield simmer.Task(
-                # What to sample from.
                 circuit=stim.Circuit.generated(
                     rounds=d,
                     distance=d,
                     after_clifford_depolarization=p,
                     code_task=f'surface_code:rotated_memory_x',
                 ),
-                decoder='pymatching',
-
-                # Helpful attached data to include in output.
                 json_metadata={
                     'p': p,
                     'd': d,
                 },
-
-                # How much work to do.
-                max_shots=1_000_000,
-                max_errors=1000,
             )
 
 
 def main():
     # Collect the samples (takes a few minutes).
-    samples = simmer.collect(num_workers=4, tasks=generate_tasks())
+    samples = simmer.collect(
+        num_workers=4,
+        max_shots=1_000_000,
+        max_errors=1000,
+        tasks=generate_example_tasks(),
+        decoders=['pymatching'],
+    )
 
     # Print as CSV data.
     print(simmer.CSV_HEADER)
@@ -101,9 +99,10 @@ This example assumes you are using a linux command line in a python virtualenv w
 
 ## pick circuits
 
-For this example, we will use Stim's circuit generation functionality to produce circuits to benchmark.
-We will make rotated and unrotated surface code circuits with various physical error rates, with filenames like
-`rotated_d5_p0.001.stim`.
+For this example, we will use Stim's circuit generation functionality to produce
+circuits to benchmark.
+We will make rotated surface code circuits with various physical error rates,
+with filenames like `rotated_d5_p0.001_surface_code.stim`.
 
 ```bash
 mkdir -p circuits
@@ -127,8 +126,11 @@ for p in [0.001, 0.005, 0.01]:
 "
 ```
 
-In practice, you'd have some other source of the circuits you wanted to benchmark,
-such as custom python code you write to produce circuits.
+Normally, making the circuit files is the hardest step, because they are what
+specifies the problem you are sampling from.
+Almost all of the work you do will generally involve creating the exact perfect
+circuit file for your needs.
+But this is just an example, so we'll use normal surface code circuits.
 
 # collect
 

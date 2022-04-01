@@ -2,23 +2,21 @@ import math
 from typing import Iterator
 from typing import Optional
 
-from simmer.existing_data import ExistingData
 from simmer.task import Task
-from simmer.case_stats import CaseStats
+from simmer.anon_task_stats import AnonTaskStats
 from simmer.worker import WorkIn
 from simmer.worker import WorkOut
 
 
 class CollectionTrackerForSingleTask:
-    def __init__(self,
-                 *,
-                 task: Task,
-                 additional_existing_data: ExistingData):
+    def __init__(self, *, task: Task):
         self.task = task
-        self.problem_summary = task.to_case_executable().to_summary()
-        self.finished_stats = task.previous_stats + additional_existing_data.stats_for(self.problem_summary)
+        self.task_summary = task.to_case_executable().to_summary()
+        self.finished_stats = task.previous_stats
         self.deployed_shots = 0
         self.deployed_processes = 0
+        if self.task.max_shots is None and self.task.max_errors is None:
+            raise ValueError('Neither the task nor the collector specified max_shots or max_errors. Mus specify one.')
 
     def expected_shots_remaining(
             self, *, safety_factor_on_shots_per_error: float = 1) -> float:
@@ -65,10 +63,12 @@ class CollectionTrackerForSingleTask:
 
     def iter_batch_size_limits(self) -> Iterator[float]:
         if self.finished_stats.shots == 0:
-            if self.deployed_shots == 0:
-                yield self.task.start_batch_size
-            else:
+            if self.deployed_shots > 0:
                 yield 0
+            elif self.task.start_batch_size is None:
+                yield 100
+            else:
+                yield self.task.start_batch_size
             return
 
         # Do exponential ramp-up of batch sizes.
@@ -116,8 +116,8 @@ class CollectionTrackerForSingleTask:
         self.deployed_processes += 1
         return WorkIn(
             key=None,
-            case=self.task.to_case_executable(),
-            summary=self.problem_summary,
+            task=self.task.to_case_executable(),
+            summary=self.task_summary,
             num_shots=num_shots,
         )
 
@@ -140,7 +140,7 @@ class CollectionTrackerForSingleTask:
         return ''.join(terms)
 
 
-def next_shot_count(prev_data: CaseStats,
+def next_shot_count(prev_data: AnonTaskStats,
                     cur_batch_size: int,
                     max_batch_size: Optional[int],
                     max_errors: Optional[int],

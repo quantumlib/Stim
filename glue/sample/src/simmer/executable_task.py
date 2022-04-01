@@ -6,11 +6,11 @@ from typing import Optional
 
 import stim
 
-from simmer.case_stats import CaseStats
-from simmer.case_summary import JSON_TYPE, CaseSummary
+from simmer.anon_task_stats import AnonTaskStats
+from simmer.task_summary import JSON_TYPE, TaskSummary
 
 
-class CaseExecutable:
+class ExecutableTask:
     """Complete specification of an executable decoding problem."""
 
     def __init__(self, *,
@@ -34,8 +34,8 @@ class CaseExecutable:
         self.postselection_mask = postselection_mask
         self.json_metadata = json_metadata
 
-    def to_summary(self) -> CaseSummary:
-        return CaseSummary(
+    def to_summary(self) -> TaskSummary:
+        return TaskSummary(
             decoder=self.decoder,
             json_metadata=self.json_metadata,
             strong_id=self.to_strong_id(),
@@ -57,7 +57,7 @@ class CaseExecutable:
     def sample_stats(self,
                      *,
                      num_shots: int,
-                     tmp_dir: Optional[pathlib.Path]) -> CaseStats:
+                     tmp_dir: Optional[pathlib.Path]) -> AnonTaskStats:
         from simmer.decoding import sample_decode
         return sample_decode(
             num_shots=num_shots,

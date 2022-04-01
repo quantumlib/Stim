@@ -5,12 +5,14 @@ from simmer.collection import (
 from simmer.csv_out import (
     CSV_HEADER,
 )
+from simmer.plotting import (
+    plot_discard_rate,
+    plot_error_rate,
+    DataPointId,
+)
 from simmer.task import (
     Task,
 )
-from simmer.sample_stats import (
-    SampleStats,
-)
-from simmer.main_plot import (
-    plot,
+from simmer.task_stats import (
+    TaskStats,
 )

@@ -7,7 +7,7 @@ import stim
 
 from simmer.main import main
 from simmer.main_combine import ExistingData
-from simmer.main_plot import better_sorted_str_terms, split_by
+from simmer.plotting import better_sorted_str_terms, split_by
 
 
 def test_split_by():
