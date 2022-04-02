@@ -299,8 +299,8 @@ For example, this data:
 
 ```
   shots,errors,discards,seconds,decoder,strong_id,json_metadata
- 500000,   437,       0,   20.7,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
- 500000,   400,       0,   19.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+ 500000,   437,       0,   20.5,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+ 500000,   400,       0,   16.1,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
 ```
 
 has the same total statistics as this data:
