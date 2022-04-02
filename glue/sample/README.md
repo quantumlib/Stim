@@ -9,6 +9,7 @@ quantum error correction circuits.
 - [How to install](#how_to_install)
 - [How to use: Python API](#how_to_use_python)
 - [How to use: Linux Command Line](#how_to_use_linux)
+- [The csv format for sample statistics](#csv_format)
 
 <a name="how_to_works"></a>
 # How it works
@@ -93,7 +94,7 @@ def main():
     # Print samples as CSV data.
     print(sinter.CSV_HEADER)
     for sample in samples:
-        print(sample)
+        print(sample.to_csv_line())
 
     # Render a matplotlib plot of the data.
     fig, ax = plt.subplots(1, 1)
@@ -251,3 +252,58 @@ sinter plot \
 Which will save a png image of, and also open a window showing, a plot like this one:
 
 ![Example plot](readme_example_plot.png)
+
+<a name="csv_format"></a>
+# The csv format for sample statistics
+
+Sinter saves samples as a table using a Comma Separated Value format.
+For example:
+
+```
+  shots,errors,discards,seconds,decoder,strong_id,json_metadata
+1000000,   837,       0,   36.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+  53498,  1099,       0,   6.52,pymatching,3f40432443a99b933fb548b831fb54e7e245d9d73a35c03ea5a2fb2ce270f8c8,"{""d"":3,""p"":0.005}"
+  16269,  1023,       0,   3.23,pymatching,17b2e0c99560d20307204494ac50e31b33e50721b4ebae99d9e3577ae7248874,"{""d"":3,""p"":0.01}"
+1000000,   151,       0,   77.3,pymatching,e179a18739201250371ffaae0197d8fa19d26b58dfc2942f9f1c85568645387a,"{""d"":5,""p"":0.001}"
+  11363,  1068,       0,   12.5,pymatching,a4dec28934a033215ff1389651a26114ecc22016a6e122008830cf7dd04ba5ad,"{""d"":5,""p"":0.01}"
+  61569,  1001,       0,   24.5,pymatching,2fefcc356752482fb4c6d912c228f6d18762f5752796c668b6abeb7775f5de92,"{""d"":5,""p"":0.005}"
+```
+
+The columns are:
+
+- `shots`: How many times the circuit was sampled.
+- `errors`: How many times the decoder failed to predict the logical observable.
+- `discards`: How many times decoding was skipped because a postselected detector fired.
+- `seconds`: How many CPU core seconds it took to simulate and decode these shots.
+- `decoder`: Which decoder was used.
+- `strong_id`: A cryptographic hash of the problem being sampled from.
+The hashed data includes the exact circuit that was simulated,
+the decoder that was used,
+the exact detector error model that was given to the decoder,
+the postselection rules that were applied,
+and the metadata associated with the circuit.
+The purpose of the strong id is to make it impossible to accidentally combine
+shots that were from separate circuits or separate versions of a circuit.
+- `json_metadata`: A free form field that can store any value representable in
+[Java Script Object Notation](https://json.org). For example, this could be a
+dictionary with helpful keys like "noise_level" or "circuit_name". The json
+value is serialized into JSON and then escaped so that it can be put into the
+CSV data (e.g. quotes get doubled up).
+
+Note shots may be spread across multiple rows.
+For example, this data:
+
+```
+  shots,errors,discards,seconds,decoder,strong_id,json_metadata
+ 500000,   437,       0,   20.7,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+ 500000,   400,       0,   19.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+```
+
+has the same total statistics as this data:
+
+```
+  shots,errors,discards,seconds,decoder,strong_id,json_metadata
+1000000,   837,       0,   36.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+```
+
+just split over two rows instead of combined into one.
