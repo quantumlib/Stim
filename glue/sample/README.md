@@ -256,6 +256,8 @@ Which will save a png image of, and also open a window showing, a plot like this
 <a name="csv_format"></a>
 # The csv format for sample statistics
 
+> **sinter is still in development. Its API and output formats are not stable.** 
+
 Sinter saves samples as a table using a Comma Separated Value format.
 For example:
 
@@ -271,12 +273,14 @@ For example:
 
 The columns are:
 
-- `shots`: How many times the circuit was sampled.
-- `errors`: How many times the decoder failed to predict the logical observable.
-- `discards`: How many times decoding was skipped because a postselected detector fired.
-- `seconds`: How many CPU core seconds it took to simulate and decode these shots.
-- `decoder`: Which decoder was used.
-- `strong_id`: A cryptographic hash of the problem being sampled from.
+- `shots` (unsigned int): How many times the circuit was sampled.
+- `errors` (unsigned int): How many times the decoder failed to predict the logical observable.
+- `discards` (unsigned int): How many times decoding was skipped because a postselected detector fired.
+- `seconds` (non-negative float): How many CPU core seconds it took to simulate and decode these shots.
+- `decoder` (str): Which decoder was used.
+- `strong_id` (str):
+Hex representation of a cryptographic hash of the problem
+being sampled from.
 The hashed data includes the exact circuit that was simulated,
 the decoder that was used,
 the exact detector error model that was given to the decoder,
@@ -284,7 +288,7 @@ the postselection rules that were applied,
 and the metadata associated with the circuit.
 The purpose of the strong id is to make it impossible to accidentally combine
 shots that were from separate circuits or separate versions of a circuit.
-- `json_metadata`: A free form field that can store any value representable in
+- `json_metadata` (json): A free form field that can store any value representable in
 [Java Script Object Notation](https://json.org). For example, this could be a
 dictionary with helpful keys like "noise_level" or "circuit_name". The json
 value is serialized into JSON and then escaped so that it can be put into the
