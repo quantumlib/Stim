@@ -100,7 +100,7 @@ class CollectionTrackerForSingleTask:
         # Try not to exceed max batch duration.
         if max_batch_seconds is not None:
             dt = self.expected_time_per_shot()
-            if dt is not None:
+            if dt is not None and dt > 0:
                 yield max(1, math.floor(max_batch_seconds / dt))
 
     def next_shot_count(self) -> int:

@@ -1,13 +1,42 @@
-# sinter: stim sampling helper
+# sinter: fast QEC sampling
 
-sinter is a bit of glue code that allows using Stim and a decoder in tandem
-in order to benchmark quantum error correction circuits using Monte Carlo sampling.
-sinter supports using pymatching to decode the samples, and can use python
-multiprocessing to fully utilize a computer's resources to get good performance.
+> **sinter is still in development. Its API and output formats are not stable.** 
+
+Sinter is a software tool/library for doing fast monte carlo sampling of
+quantum error correction circuits.
+
+- [How it works](#how_it_works)
+- [How to install](#how_to_install)
+- [How to use: Python API](#how_to_use_python)
+- [How to use: Linux Command Line](#how_to_use_linux)
+- [The csv format for sample statistics](#csv_format)
+
+<a name="how_to_works"></a>
+# How it works
+
+> **sinter is still in development. Its API and output formats are not stable.** 
+
+Sinter takes Stim circuits annotated with noise, detectors, and logical
+observables.
+It uses stim to sample the circuits and pymatching to predict whether the
+logical observables were flipped or not, given the detector data.
+It records how often this succeeds, and how often it fails (the error rate).
+
+Sinter uses python multiprocessing to do parallel sampling across multiple CPU
+cores, dynamically decides which circuits need more samples based on parameters
+specified by the user (such as a target number of errors), saves the results to
+as simple CSV format, and has some basic  plotting functionality for viewing the
+results.
+
+Sinter doesn't support cloud compute, but it does scale extremely well within
+a single machine.
+I've tested it on 2 core machines and 96 core machines, and it consistently gets
+good resource utilization (>95%).
+
+<a name="how_to_install"></a>
+# How to install
 
 **sinter is still in development. Its API and output formats are not stable.** 
-
-# How to Install
 
 Sinter is available as a pypi package. It can be installed using pip:
 
@@ -15,7 +44,15 @@ Sinter is available as a pypi package. It can be installed using pip:
 pip install sinter
 ```
 
-# How to Use: Python API
+When you are in a python virtual environment with sinter installed, you have
+access to a command line command `sinter` which can be used to perform tasks
+from the command line. You can also `import sinter` in a python program in order
+to use sinter's python API.
+
+<a name="how_to_use_python"></a>
+# How to use: Python API
+
+> **sinter is still in development. Its API and output formats are not stable.** 
 
 This example assumes you are in a python environment with stim and sinter
 installed.
@@ -23,6 +60,7 @@ installed.
 ```bash
 import stim
 import sinter
+import matplotlib.pyplot as plt
 
 
 # Generates surface code circuit tasks using Stim's circuit generation.
@@ -53,19 +91,26 @@ def main():
         decoders=['pymatching'],
     )
 
-    # Print as CSV data.
+    # Print samples as CSV data.
     print(sinter.CSV_HEADER)
     for sample in samples:
         print(sample.to_csv_line())
 
-    # Render a matplotlib plot of the data into a png image.
-    fig, axs = sinter.plot(
+    # Render a matplotlib plot of the data.
+    fig, ax = plt.subplots(1, 1)
+    sinter.plot_error_rate(
+        ax=ax,
         samples=samples,
-        x_func=lambda e: e.json_metadata['p'],
-        xaxis='[log]Physical Error Rate',
-        group_func=lambda e: f"Rotated Surface Code d={e.json_metadata['d']}",
+        curve_func=lambda e: sinter.DataPointId(
+            curve_label=f"Rotated Surface Code d={e.json_metadata['d']}",
+            x=e.json_metadata['p'],
+        ),
+        xaxis='[log]Physical Error Rate'
     )
+
+    # Save to file and also open in a window.
     fig.savefig('plot.png')
+    plt.show()
 
 
 # NOTE: This is actually necessary! If the code inside 'main()' was at the
@@ -91,7 +136,10 @@ and the corresponding image saved to `plot.png`:
 
 ![Example plot](readme_example_plot.png)
 
-# How to Use: Linux Command Line
+<a name="how_to_use_linux"></a>
+# How to use: Linux Command Line
+
+> **sinter is still in development. Its API and output formats are not stable.** 
 
 This example assumes you are using a linux command line in a python virtualenv with `sinter` installed.
 
@@ -204,3 +252,62 @@ sinter plot \
 Which will save a png image of, and also open a window showing, a plot like this one:
 
 ![Example plot](readme_example_plot.png)
+
+<a name="csv_format"></a>
+# The csv format for sample statistics
+
+> **sinter is still in development. Its API and output formats are not stable.** 
+
+Sinter saves samples as a table using a Comma Separated Value format.
+For example:
+
+```
+  shots,errors,discards,seconds,decoder,strong_id,json_metadata
+1000000,   837,       0,   36.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+  53498,  1099,       0,   6.52,pymatching,3f40432443a99b933fb548b831fb54e7e245d9d73a35c03ea5a2fb2ce270f8c8,"{""d"":3,""p"":0.005}"
+  16269,  1023,       0,   3.23,pymatching,17b2e0c99560d20307204494ac50e31b33e50721b4ebae99d9e3577ae7248874,"{""d"":3,""p"":0.01}"
+1000000,   151,       0,   77.3,pymatching,e179a18739201250371ffaae0197d8fa19d26b58dfc2942f9f1c85568645387a,"{""d"":5,""p"":0.001}"
+  11363,  1068,       0,   12.5,pymatching,a4dec28934a033215ff1389651a26114ecc22016a6e122008830cf7dd04ba5ad,"{""d"":5,""p"":0.01}"
+  61569,  1001,       0,   24.5,pymatching,2fefcc356752482fb4c6d912c228f6d18762f5752796c668b6abeb7775f5de92,"{""d"":5,""p"":0.005}"
+```
+
+The columns are:
+
+- `shots` (unsigned int): How many times the circuit was sampled.
+- `errors` (unsigned int): How many times the decoder failed to predict the logical observable.
+- `discards` (unsigned int): How many times decoding was skipped because a postselected detector fired.
+- `seconds` (non-negative float): How many CPU core seconds it took to simulate and decode these shots.
+- `decoder` (str): Which decoder was used.
+- `strong_id` (str):
+Hex representation of a cryptographic hash of the problem
+being sampled from.
+The hashed data includes the exact circuit that was simulated,
+the decoder that was used,
+the exact detector error model that was given to the decoder,
+the postselection rules that were applied,
+and the metadata associated with the circuit.
+The purpose of the strong id is to make it impossible to accidentally combine
+shots that were from separate circuits or separate versions of a circuit.
+- `json_metadata` (json): A free form field that can store any value representable in
+[Java Script Object Notation](https://json.org). For example, this could be a
+dictionary with helpful keys like "noise_level" or "circuit_name". The json
+value is serialized into JSON and then escaped so that it can be put into the
+CSV data (e.g. quotes get doubled up).
+
+Note shots may be spread across multiple rows.
+For example, this data:
+
+```
+  shots,errors,discards,seconds,decoder,strong_id,json_metadata
+ 500000,   437,       0,   20.5,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+ 500000,   400,       0,   16.1,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+```
+
+has the same total statistics as this data:
+
+```
+  shots,errors,discards,seconds,decoder,strong_id,json_metadata
+1000000,   837,       0,   36.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
+```
+
+just split over two rows instead of combined into one.
