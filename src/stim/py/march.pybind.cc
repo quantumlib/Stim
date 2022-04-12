@@ -1,4 +1,6 @@
-#include "march.pybind.h"
+#include <pybind11/pybind11.h>
+
+#include "stim/py/march.pybind.h"
 
 #ifdef _WIN32
 //  Windows
@@ -50,4 +52,11 @@ std::string detect_march() {
     }
 
     return "polyfill";
+}
+
+PYBIND11_MODULE(_detect_machine_architecture, m) {
+    m.doc() = R"pbdoc(
+        Helper code for detecting AVX/SSE instruction support for Stim.
+    )pbdoc";
+    m.def("_UNSTABLE_detect_march", &detect_march);
 }

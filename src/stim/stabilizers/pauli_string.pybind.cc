@@ -219,7 +219,6 @@ void pybind_pauli_string(pybind11::module &m) {
     auto c = pybind11::class_<PyPauliString>(
         m,
         "PauliString",
-        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
