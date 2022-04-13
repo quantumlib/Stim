@@ -23,12 +23,17 @@ on:
     branches:
       - main
 jobs:
-  build_dist:
+  build_wheel:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-2019, macOS-10.15]
         py: [cp36, cp37, cp38, cp39, cp310]
+    env:
+      CIBW_BUILD: "${{ matrix.py }}-*"
+      CIBW_SKIP: "cp310-win32 *-musllinux_*"
+      CIBW_TEST_REQUIRES: cirq-core pytest
+      CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -38,11 +43,6 @@ jobs:
       - run: python -m pip install cibuildwheel==2.4.0
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir output/stim
-        env:
-          CIBW_BUILD: "${{ matrix.py }}-*"
-          CIBW_SKIP: "cp310-win32 *-musllinux_*"
-          CIBW_TEST_REQUIRES: cirq-core pytest
-          CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
       - uses: actions/upload-artifact@v2
         with:
           name: dist
@@ -77,7 +77,7 @@ jobs:
       - uses: actions/setup-python@v2
       - run: python -m pip install pybind11==2.6.0
       - run: python setup.py sdist
-      - run: pip install dist/*
+      - run: pip install dist/*.tar.gz
   upload_dev_release_to_pypi:
     needs: build_dist
     if: github.ref == 'refs/heads/main'
