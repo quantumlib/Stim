@@ -89,7 +89,7 @@ def print_doc(*, full_name: str, obj: object, level: int, outs: DefaultDict[int,
                 k1 = sig_name.index("(self: ") + 5
                 k2 = sig_name.index(", " if ", " in sig_name[k1:] else ")", k1)
                 sig_name = sig_name[:k1] + sig_name[k2:]
-        text = f"{level * '#'} `{sig_name}`<a name=\"{full_name}\"></a>"
+        text = f"<a name=\"{full_name}\"></a>\n{level * '#'} `{sig_name}`"
         if "Exposed" in sig_name or "::" in sig_name:
             raise ValueError("Bad type annotation came out of pybind11:\n" + sig_name)
         if doc:
@@ -152,7 +152,7 @@ def main():
     for k in sorted(level_entries.keys()):
         for entry in level_entries[k]:
             print()
-            print(entry.replace("stim._stim_march_avx2", "stim"))
+            print(entry.replace("stim._stim_avx2", "stim"))
 
 
 if __name__ == '__main__':

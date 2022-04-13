@@ -272,7 +272,8 @@
 - [`stim.target_y`](#stim.target_y)
 - [`stim.target_z`](#stim.target_z)
 
-## `stim.Circuit`<a name="stim.Circuit"></a>
+<a name="stim.Circuit"></a>
+## `stim.Circuit`
 > ```
 > A mutable stabilizer circuit.
 > 
@@ -294,12 +295,14 @@
 > 
 > ```
 
-## `stim.CircuitErrorLocation`<a name="stim.CircuitErrorLocation"></a>
+<a name="stim.CircuitErrorLocation"></a>
+## `stim.CircuitErrorLocation`
 > ```
 > Describes the location of an error mechanism from a stim circuit.
 > ```
 
-## `stim.CircuitErrorLocationStackFrame`<a name="stim.CircuitErrorLocationStackFrame"></a>
+<a name="stim.CircuitErrorLocationStackFrame"></a>
+## `stim.CircuitErrorLocationStackFrame`
 > ```
 > Describes the location of an instruction being executed within a
 > circuit or loop, distinguishing between separate loop iterations.
@@ -309,7 +312,8 @@
 > that the instruction is within.
 > ```
 
-## `stim.CircuitInstruction`<a name="stim.CircuitInstruction"></a>
+<a name="stim.CircuitInstruction"></a>
+## `stim.CircuitInstruction`
 > ```
 > An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
 > 
@@ -328,7 +332,8 @@
 >     stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], [0.125])
 > ```
 
-## `stim.CircuitRepeatBlock`<a name="stim.CircuitRepeatBlock"></a>
+<a name="stim.CircuitRepeatBlock"></a>
+## `stim.CircuitRepeatBlock`
 > ```
 > A REPEAT block from a circuit.
 > 
@@ -351,27 +356,32 @@
 >     ''')
 > ```
 
-## `stim.CircuitTargetsInsideInstruction`<a name="stim.CircuitTargetsInsideInstruction"></a>
+<a name="stim.CircuitTargetsInsideInstruction"></a>
+## `stim.CircuitTargetsInsideInstruction`
 > ```
 > Describes a range of targets within a circuit instruction.
 > ```
 
-## `stim.CompiledDetectorSampler`<a name="stim.CompiledDetectorSampler"></a>
+<a name="stim.CompiledDetectorSampler"></a>
+## `stim.CompiledDetectorSampler`
 > ```
 > An analyzed stabilizer circuit whose detection events can be sampled quickly.
 > ```
 
-## `stim.CompiledMeasurementSampler`<a name="stim.CompiledMeasurementSampler"></a>
+<a name="stim.CompiledMeasurementSampler"></a>
+## `stim.CompiledMeasurementSampler`
 > ```
 > An analyzed stabilizer circuit whose measurements can be sampled quickly.
 > ```
 
-## `stim.CompiledMeasurementsToDetectionEventsConverter`<a name="stim.CompiledMeasurementsToDetectionEventsConverter"></a>
+<a name="stim.CompiledMeasurementsToDetectionEventsConverter"></a>
+## `stim.CompiledMeasurementsToDetectionEventsConverter`
 > ```
 > A tool for quickly converting measurements from an analyzed stabilizer circuit into detection events.
 > ```
 
-## `stim.DemInstruction`<a name="stim.DemInstruction"></a>
+<a name="stim.DemInstruction"></a>
+## `stim.DemInstruction`
 > ```
 > An instruction from a detector error model.
 > 
@@ -389,7 +399,8 @@
 >     stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(0)])
 > ```
 
-## `stim.DemRepeatBlock`<a name="stim.DemRepeatBlock"></a>
+<a name="stim.DemRepeatBlock"></a>
+## `stim.DemRepeatBlock`
 > ```
 > A repeat block from a detector error model.
 > 
@@ -408,12 +419,14 @@
 >     '''))
 > ```
 
-## `stim.DemTarget`<a name="stim.DemTarget"></a>
+<a name="stim.DemTarget"></a>
+## `stim.DemTarget`
 > ```
 > An instruction target from a detector error model (.dem) file.
 > ```
 
-## `stim.DemTargetWithCoords`<a name="stim.DemTargetWithCoords"></a>
+<a name="stim.DemTargetWithCoords"></a>
+## `stim.DemTargetWithCoords`
 > ```
 > A detector error model instruction target with associated coords.
 > 
@@ -431,7 +444,8 @@
 > what is happening.
 > ```
 
-## `stim.DetectorErrorModel`<a name="stim.DetectorErrorModel"></a>
+<a name="stim.DetectorErrorModel"></a>
+## `stim.DetectorErrorModel`
 > ```
 > A list of instructions describing error mechanisms in terms of the detection events they produce.
 > 
@@ -462,12 +476,14 @@
 >     ''')
 > ```
 
-## `stim.ExplainedError`<a name="stim.ExplainedError"></a>
+<a name="stim.ExplainedError"></a>
+## `stim.ExplainedError`
 > ```
 > Describes the location of an error mechanism from a stim circuit.
 > ```
 
-## `stim.FlippedMeasurement`<a name="stim.FlippedMeasurement"></a>
+<a name="stim.FlippedMeasurement"></a>
+## `stim.FlippedMeasurement`
 > ```
 > Describes a measurement that was flipped.
 > 
@@ -475,7 +491,8 @@
 > the observable of the measurement.
 > ```
 
-## `stim.GateTarget`<a name="stim.GateTarget"></a>
+<a name="stim.GateTarget"></a>
+## `stim.GateTarget`
 > ```
 > Represents a gate target, like `0` or `rec[-1]`, from a circuit.
 > 
@@ -490,7 +507,8 @@
 >     stim.GateTarget(stim.target_inv(1))
 > ```
 
-## `stim.GateTargetWithCoords`<a name="stim.GateTargetWithCoords"></a>
+<a name="stim.GateTargetWithCoords"></a>
+## `stim.GateTargetWithCoords`
 > ```
 > A gate target with associated coordinate information.
 > 
@@ -504,7 +522,8 @@
 > what is happening.
 > ```
 
-## `stim.PauliString`<a name="stim.PauliString"></a>
+<a name="stim.PauliString"></a>
+## `stim.PauliString`
 > ```
 > A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 > 
@@ -518,7 +537,8 @@
 >     +_____
 > ```
 
-## `stim.Tableau`<a name="stim.Tableau"></a>
+<a name="stim.Tableau"></a>
+## `stim.Tableau`
 > ```
 > A stabilizer tableau.
 > 
@@ -553,7 +573,8 @@
 >     stim.PauliString("+__XZ_")
 > ```
 
-## `stim.TableauSimulator`<a name="stim.TableauSimulator"></a>
+<a name="stim.TableauSimulator"></a>
+## `stim.TableauSimulator`
 > ```
 > A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
 > 
@@ -585,19 +606,22 @@
 >     )
 > ```
 
-## `stim.target_combiner() -> stim.GateTarget`<a name="stim.target_combiner"></a>
+<a name="stim.target_combiner"></a>
+## `stim.target_combiner() -> stim.GateTarget`
 > ```
 > Returns a target combiner (`*` in circuit files) that can be used as an operation target.
 > ```
 
-## `stim.target_inv(qubit_index: int) -> int`<a name="stim.target_inv"></a>
+<a name="stim.target_inv"></a>
+## `stim.target_inv(qubit_index: int) -> int`
 > ```
 > Returns a target flagged as inverted that can be passed into Circuit.append_operation
 > For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
 > meaning the measurement result from qubit 1 should be inverted when reported.
 > ```
 
-## `stim.target_logical_observable_id(index: int) -> stim.DemTarget`<a name="stim.target_logical_observable_id"></a>
+<a name="stim.target_logical_observable_id"></a>
+## `stim.target_logical_observable_id(index: int) -> stim.DemTarget`
 > ```
 > Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
 > 
@@ -619,13 +643,15 @@
 >     ''')
 > ```
 
-## `stim.target_rec(lookback_index: int) -> int`<a name="stim.target_rec"></a>
+<a name="stim.target_rec"></a>
+## `stim.target_rec(lookback_index: int) -> int`
 > ```
 > Returns a record target that can be passed into Circuit.append_operation.
 > For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
 > ```
 
-## `stim.target_relative_detector_id(index: int) -> stim.DemTarget`<a name="stim.target_relative_detector_id"></a>
+<a name="stim.target_relative_detector_id"></a>
+## `stim.target_relative_detector_id(index: int) -> stim.DemTarget`
 > ```
 > Returns a relative detector id (e.g. "D5" in a .dem file).
 > 
@@ -647,7 +673,8 @@
 >     ''')
 > ```
 
-## `stim.target_separator() -> stim.DemTarget`<a name="stim.target_separator"></a>
+<a name="stim.target_separator"></a>
+## `stim.target_separator() -> stim.DemTarget`
 > ```
 > Returns a target separator (e.g. "^" in a .dem file).
 > 
@@ -665,31 +692,36 @@
 >     ''')
 > ```
 
-## `stim.target_sweep_bit(sweep_bit_index: int) -> int`<a name="stim.target_sweep_bit"></a>
+<a name="stim.target_sweep_bit"></a>
+## `stim.target_sweep_bit(sweep_bit_index: int) -> int`
 > ```
 > Returns a sweep bit target that can be passed into Circuit.append_operation
 > For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
 > ```
 
-## `stim.target_x(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_x"></a>
+<a name="stim.target_x"></a>
+## `stim.target_x(qubit_index: int, invert: bool = False) -> int`
 > ```
 > Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
 > For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
 > ```
 
-## `stim.target_y(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_y"></a>
+<a name="stim.target_y"></a>
+## `stim.target_y(qubit_index: int, invert: bool = False) -> int`
 > ```
 > Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
 > For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
 > ```
 
-## `stim.target_z(qubit_index: int, invert: bool = False) -> int`<a name="stim.target_z"></a>
+<a name="stim.target_z"></a>
+## `stim.target_z(qubit_index: int, invert: bool = False) -> int`
 > ```
 > Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
 > For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
 > ```
 
-### `stim.Circuit.__add__(self, second: stim.Circuit) -> stim.Circuit`<a name="stim.Circuit.__add__"></a>
+<a name="stim.Circuit.__add__"></a>
+### `stim.Circuit.__add__(self, second: stim.Circuit) -> stim.Circuit`
 > ```
 > Creates a circuit by appending two circuits.
 > 
@@ -710,12 +742,14 @@
 >     ''')
 > ```
 
-### `stim.Circuit.__eq__(self, arg0: stim.Circuit) -> bool`<a name="stim.Circuit.__eq__"></a>
+<a name="stim.Circuit.__eq__"></a>
+### `stim.Circuit.__eq__(self, arg0: stim.Circuit) -> bool`
 > ```
 > Determines if two circuits have identical contents.
 > ```
 
-### `stim.Circuit.__getitem__(self, index_or_slice: object) -> object`<a name="stim.Circuit.__getitem__"></a>
+<a name="stim.Circuit.__getitem__"></a>
+### `stim.Circuit.__getitem__(self, index_or_slice: object) -> object`
 > ```
 > Returns copies of instructions from the circuit.
 > 
@@ -751,7 +785,8 @@
 >     ''')
 > ```
 
-### `stim.Circuit.__iadd__(self, second: stim.Circuit) -> stim.Circuit`<a name="stim.Circuit.__iadd__"></a>
+<a name="stim.Circuit.__iadd__"></a>
+### `stim.Circuit.__iadd__(self, second: stim.Circuit) -> stim.Circuit`
 > ```
 > Appends a circuit into the receiving circuit (mutating it).
 > 
@@ -773,7 +808,8 @@
 >     ''')
 > ```
 
-### `stim.Circuit.__imul__(self, repetitions: int) -> stim.Circuit`<a name="stim.Circuit.__imul__"></a>
+<a name="stim.Circuit.__imul__"></a>
+### `stim.Circuit.__imul__(self, repetitions: int) -> stim.Circuit`
 > ```
 > Mutates the circuit by putting its contents into a REPEAT block.
 > 
@@ -799,7 +835,8 @@
 >     ''')
 > ```
 
-### `stim.Circuit.__init__(self, stim_program_text: str = '') -> None`<a name="stim.Circuit.__init__"></a>
+<a name="stim.Circuit.__init__"></a>
+### `stim.Circuit.__init__(self, stim_program_text: str = '') -> None`
 > ```
 > Creates a stim.Circuit.
 > 
@@ -816,7 +853,8 @@
 >     ... ''')
 > ```
 
-### `stim.Circuit.__len__(self) -> int`<a name="stim.Circuit.__len__"></a>
+<a name="stim.Circuit.__len__"></a>
+### `stim.Circuit.__len__(self) -> int`
 > ```
 > Returns the number of top-level instructions and blocks in the circuit.
 > 
@@ -843,7 +881,8 @@
 >     1
 > ```
 
-### `stim.Circuit.__mul__(self, repetitions: int) -> stim.Circuit`<a name="stim.Circuit.__mul__"></a>
+<a name="stim.Circuit.__mul__"></a>
+### `stim.Circuit.__mul__(self, repetitions: int) -> stim.Circuit`
 > ```
 > Returns a circuit with a REPEAT block containing the current circuit's instructions.
 > 
@@ -868,17 +907,20 @@
 >     ''')
 > ```
 
-### `stim.Circuit.__ne__(self, arg0: stim.Circuit) -> bool`<a name="stim.Circuit.__ne__"></a>
+<a name="stim.Circuit.__ne__"></a>
+### `stim.Circuit.__ne__(self, arg0: stim.Circuit) -> bool`
 > ```
 > Determines if two circuits have non-identical contents.
 > ```
 
-### `stim.Circuit.__repr__(self) -> str`<a name="stim.Circuit.__repr__"></a>
+<a name="stim.Circuit.__repr__"></a>
+### `stim.Circuit.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.Circuit`.
 > ```
 
-### `stim.Circuit.__rmul__(self, repetitions: int) -> stim.Circuit`<a name="stim.Circuit.__rmul__"></a>
+<a name="stim.Circuit.__rmul__"></a>
+### `stim.Circuit.__rmul__(self, repetitions: int) -> stim.Circuit`
 > ```
 > Returns a circuit with a REPEAT block containing the current circuit's instructions.
 > 
@@ -903,12 +945,14 @@
 >     ''')
 > ```
 
-### `stim.Circuit.__str__(self) -> str`<a name="stim.Circuit.__str__"></a>
+<a name="stim.Circuit.__str__"></a>
+### `stim.Circuit.__str__(self) -> str`
 > ```
 > Returns stim instructions (that can be saved to a file and parsed by stim) for the current circuit.
 > ```
 
-### `stim.Circuit.append(self, name: object, targets: object = (), arg: object = None) -> None`<a name="stim.Circuit.append"></a>
+<a name="stim.Circuit.append"></a>
+### `stim.Circuit.append(self, name: object, targets: object = (), arg: object = None) -> None`
 > ```
 > Appends an operation into the circuit.
 > 
@@ -955,7 +999,8 @@
 >         that take exactly one argument.
 > ```
 
-### `stim.Circuit.append_from_stim_program_text(self, stim_program_text: str) -> None`<a name="stim.Circuit.append_from_stim_program_text"></a>
+<a name="stim.Circuit.append_from_stim_program_text"></a>
+### `stim.Circuit.append_from_stim_program_text(self, stim_program_text: str) -> None`
 > ```
 > Appends operations described by a STIM format program into the circuit.
 > 
@@ -979,7 +1024,8 @@
 >     text: The STIM program text containing the circuit operations to append.
 > ```
 
-### `stim.Circuit.append_operation(self, name: object, targets: object = (), arg: object = None) -> None`<a name="stim.Circuit.append_operation"></a>
+<a name="stim.Circuit.append_operation"></a>
+### `stim.Circuit.append_operation(self, name: object, targets: object = (), arg: object = None) -> None`
 > ```
 > Appends an operation into the circuit.
 > 
@@ -1026,7 +1072,8 @@
 >         that take exactly one argument.
 > ```
 
-### `stim.Circuit.approx_equals(self, other: object, *, atol: float) -> bool`<a name="stim.Circuit.approx_equals"></a>
+<a name="stim.Circuit.approx_equals"></a>
+### `stim.Circuit.approx_equals(self, other: object, *, atol: float) -> bool`
 > ```
 > Checks if a circuit is approximately equal to another circuit.
 > 
@@ -1078,7 +1125,8 @@
 >     False
 > ```
 
-### `stim.Circuit.clear(self) -> None`<a name="stim.Circuit.clear"></a>
+<a name="stim.Circuit.clear"></a>
+### `stim.Circuit.clear(self) -> None`
 > ```
 > Clears the contents of the circuit.
 > 
@@ -1093,7 +1141,8 @@
 >     stim.Circuit()
 > ```
 
-### `stim.Circuit.compile_detector_sampler(self, *, seed: object = None) -> stim.CompiledDetectorSampler`<a name="stim.Circuit.compile_detector_sampler"></a>
+<a name="stim.Circuit.compile_detector_sampler"></a>
+### `stim.Circuit.compile_detector_sampler(self, *, seed: object = None) -> stim.CompiledDetectorSampler`
 > ```
 > Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
 > 
@@ -1131,7 +1180,8 @@
 >     array([[0]], dtype=uint8)
 > ```
 
-### `stim.Circuit.compile_m2d_converter(self, *, skip_reference_sample: bool = False) -> stim.CompiledMeasurementsToDetectionEventsConverter`<a name="stim.Circuit.compile_m2d_converter"></a>
+<a name="stim.Circuit.compile_m2d_converter"></a>
+### `stim.Circuit.compile_m2d_converter(self, *, skip_reference_sample: bool = False) -> stim.CompiledMeasurementsToDetectionEventsConverter`
 > ```
 > Returns an object that can efficiently convert measurements into detection events for the given circuit.
 > 
@@ -1168,7 +1218,8 @@
 >            [False]])
 > ```
 
-### `stim.Circuit.compile_sampler(self, *, skip_reference_sample: bool = False, seed: object = None) -> stim.CompiledMeasurementSampler`<a name="stim.Circuit.compile_sampler"></a>
+<a name="stim.Circuit.compile_sampler"></a>
+### `stim.Circuit.compile_sampler(self, *, skip_reference_sample: bool = False, seed: object = None) -> stim.CompiledMeasurementSampler`
 > ```
 > Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
 > 
@@ -1216,7 +1267,8 @@
 >     array([[0, 0, 1]], dtype=uint8)
 > ```
 
-### `stim.Circuit.copy(self) -> stim.Circuit`<a name="stim.Circuit.copy"></a>
+<a name="stim.Circuit.copy"></a>
+### `stim.Circuit.copy(self) -> stim.Circuit`
 > ```
 > Returns a copy of the circuit. An independent circuit with the same contents.
 > 
@@ -1231,7 +1283,8 @@
 >     True
 > ```
 
-### `stim.Circuit.detector_error_model(self, *, decompose_errors: bool = False, flatten_loops: bool = False, allow_gauge_detectors: bool = False, approximate_disjoint_errors: float = False) -> stim.DetectorErrorModel`<a name="stim.Circuit.detector_error_model"></a>
+<a name="stim.Circuit.detector_error_model"></a>
+### `stim.Circuit.detector_error_model(self, *, decompose_errors: bool = False, flatten_loops: bool = False, allow_gauge_detectors: bool = False, approximate_disjoint_errors: float = False) -> stim.DetectorErrorModel`
 > ```
 > Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 > 
@@ -1286,7 +1339,8 @@
 >     ''')
 > ```
 
-### `stim.Circuit.explain_detector_error_model_errors(self, *, dem_filter: object = None, reduce_to_one_representative_error: bool = False) -> List[stim.ExplainedError]`<a name="stim.Circuit.explain_detector_error_model_errors"></a>
+<a name="stim.Circuit.explain_detector_error_model_errors"></a>
+### `stim.Circuit.explain_detector_error_model_errors(self, *, dem_filter: object = None, reduce_to_one_representative_error: bool = False) -> List[stim.ExplainedError]`
 > ```
 > Explains how detector error model errors are produced by circuit errors.
 > 
@@ -1336,7 +1390,8 @@
 >     }
 > ```
 
-### `stim.Circuit.flattened_operations(self) -> list`<a name="stim.Circuit.flattened_operations"></a>
+<a name="stim.Circuit.flattened_operations"></a>
+### `stim.Circuit.flattened_operations(self) -> list`
 > ```
 > Flattens the circuit's operations into a list.
 > 
@@ -1372,7 +1427,8 @@
 >     [('H', [6], 0), ('H', [6], 0)]
 > ```
 
-### `stim.Circuit.generated(code_task: str, *, distance: int, rounds: int, after_clifford_depolarization: float = 0.0, before_round_data_depolarization: float = 0.0, before_measure_flip_probability: float = 0.0, after_reset_flip_probability: float = 0.0) -> stim.Circuit`<a name="stim.Circuit.generated"></a>
+<a name="stim.Circuit.generated"></a>
+### `stim.Circuit.generated(code_task: str, *, distance: int, rounds: int, after_clifford_depolarization: float = 0.0, before_round_data_depolarization: float = 0.0, before_measure_flip_probability: float = 0.0, after_reset_flip_probability: float = 0.0) -> stim.Circuit`
 > ```
 > Generates common circuits.
 > 
@@ -1456,7 +1512,8 @@
 >     OBSERVABLE_INCLUDE(0) rec[-1]
 > ```
 
-### `stim.Circuit.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`<a name="stim.Circuit.get_detector_coordinates"></a>
+<a name="stim.Circuit.get_detector_coordinates"></a>
+### `stim.Circuit.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`
 > ```
 > Returns the coordinate metadata of detectors in the circuit.
 > 
@@ -1487,7 +1544,8 @@
 >     {1: [1.0, 2.0, 3.0]}
 > ```
 
-### `stim.Circuit.get_final_qubit_coordinates(self, List[float]]`<a name="stim.Circuit.get_final_qubit_coordinates"></a>
+<a name="stim.Circuit.get_final_qubit_coordinates"></a>
+### `stim.Circuit.get_final_qubit_coordinates(self, List[float]]`
 > ```
 > Returns the coordinate metadata of qubits in the circuit.
 > 
@@ -1506,7 +1564,8 @@
 >     {1: [1.0, 2.0, 3.0]}
 > ```
 
-### `stim.Circuit.num_detectors`<a name="stim.Circuit.num_detectors"></a>
+<a name="stim.Circuit.num_detectors"></a>
+### `stim.Circuit.num_detectors`
 > ```
 > Counts the number of bits produced when sampling the circuit's detectors.
 > 
@@ -1525,7 +1584,8 @@
 >     201
 > ```
 
-### `stim.Circuit.num_measurements`<a name="stim.Circuit.num_measurements"></a>
+<a name="stim.Circuit.num_measurements"></a>
+### `stim.Circuit.num_measurements`
 > ```
 > Counts the number of bits produced when sampling the circuit's measurements.
 > 
@@ -1541,7 +1601,8 @@
 >     201
 > ```
 
-### `stim.Circuit.num_observables`<a name="stim.Circuit.num_observables"></a>
+<a name="stim.Circuit.num_observables"></a>
+### `stim.Circuit.num_observables`
 > ```
 > Counts the number of bits produced when sampling the circuit's logical observables.
 > 
@@ -1558,7 +1619,8 @@
 >     6
 > ```
 
-### `stim.Circuit.num_qubits`<a name="stim.Circuit.num_qubits"></a>
+<a name="stim.Circuit.num_qubits"></a>
+### `stim.Circuit.num_qubits`
 > ```
 > Counts the number of qubits used when simulating the circuit.
 > 
@@ -1579,7 +1641,8 @@
 >     101
 > ```
 
-### `stim.Circuit.num_sweep_bits`<a name="stim.Circuit.num_sweep_bits"></a>
+<a name="stim.Circuit.num_sweep_bits"></a>
+### `stim.Circuit.num_sweep_bits`
 > ```
 > Returns the number of sweep bits needed to completely configure the circuit.
 > 
@@ -1598,7 +1661,8 @@
 >     6
 > ```
 
-### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool = False, canonicalize_circuit_errors: bool = False) -> List[stim.ExplainedError]`<a name="stim.Circuit.shortest_graphlike_error"></a>
+<a name="stim.Circuit.shortest_graphlike_error"></a>
+### `stim.Circuit.shortest_graphlike_error(self, *, ignore_ungraphlike_errors: bool = False, canonicalize_circuit_errors: bool = False) -> List[stim.ExplainedError]`
 > ```
 > Finds a minimum sized set of graphlike errors that produce an undetected logical error.
 > 
@@ -1649,48 +1713,56 @@
 >     7
 > ```
 
-### `stim.CircuitErrorLocation.__init__(self, *, tick_offset: int, flipped_pauli_product: List[stim.GateTargetWithCoords], flipped_measurement: object, instruction_targets: stim.CircuitTargetsInsideInstruction, stack_frames: List[stim.CircuitErrorLocationStackFrame]) -> None`<a name="stim.CircuitErrorLocation.__init__"></a>
+<a name="stim.CircuitErrorLocation.__init__"></a>
+### `stim.CircuitErrorLocation.__init__(self, *, tick_offset: int, flipped_pauli_product: List[stim.GateTargetWithCoords], flipped_measurement: object, instruction_targets: stim.CircuitTargetsInsideInstruction, stack_frames: List[stim.CircuitErrorLocationStackFrame]) -> None`
 > ```
 > Creates a stim.CircuitErrorLocation.
 > ```
 
-### `stim.CircuitErrorLocation.flipped_measurement`<a name="stim.CircuitErrorLocation.flipped_measurement"></a>
+<a name="stim.CircuitErrorLocation.flipped_measurement"></a>
+### `stim.CircuitErrorLocation.flipped_measurement`
 > ```
 > The measurement that was flipped by the error mechanism.
 > If the error isn't a measurement error, this will be None.
 > ```
 
-### `stim.CircuitErrorLocation.flipped_pauli_product`<a name="stim.CircuitErrorLocation.flipped_pauli_product"></a>
+<a name="stim.CircuitErrorLocation.flipped_pauli_product"></a>
+### `stim.CircuitErrorLocation.flipped_pauli_product`
 > ```
 > The Pauli errors that the error mechanism applied to qubits.
 > When the error is a measurement error, this will be an empty list.
 > ```
 
-### `stim.CircuitErrorLocation.instruction_targets`<a name="stim.CircuitErrorLocation.instruction_targets"></a>
+<a name="stim.CircuitErrorLocation.instruction_targets"></a>
+### `stim.CircuitErrorLocation.instruction_targets`
 > ```
 > Within the error instruction, which may have hundreds of
 > targets, which specific targets were being executed to
 > produce the error.
 > ```
 
-### `stim.CircuitErrorLocation.stack_frames`<a name="stim.CircuitErrorLocation.stack_frames"></a>
+<a name="stim.CircuitErrorLocation.stack_frames"></a>
+### `stim.CircuitErrorLocation.stack_frames`
 > ```
 > Where in the circuit's execution does the error mechanism occur,
 > accounting for things like nested loops that iterate multiple times.
 > ```
 
-### `stim.CircuitErrorLocation.tick_offset`<a name="stim.CircuitErrorLocation.tick_offset"></a>
+<a name="stim.CircuitErrorLocation.tick_offset"></a>
+### `stim.CircuitErrorLocation.tick_offset`
 > ```
 > The number of TICKs that executed before the error mechanism being discussed,
 > including TICKs that occurred multiple times during loops.
 > ```
 
-### `stim.CircuitErrorLocationStackFrame.__init__(self, *, instruction_offset: int, iteration_index: int, instruction_repetitions_arg: int) -> None`<a name="stim.CircuitErrorLocationStackFrame.__init__"></a>
+<a name="stim.CircuitErrorLocationStackFrame.__init__"></a>
+### `stim.CircuitErrorLocationStackFrame.__init__(self, *, instruction_offset: int, iteration_index: int, instruction_repetitions_arg: int) -> None`
 > ```
 > Creates a stim.CircuitErrorLocationStackFrame.
 > ```
 
-### `stim.CircuitErrorLocationStackFrame.instruction_offset`<a name="stim.CircuitErrorLocationStackFrame.instruction_offset"></a>
+<a name="stim.CircuitErrorLocationStackFrame.instruction_offset"></a>
+### `stim.CircuitErrorLocationStackFrame.instruction_offset`
 > ```
 > The index of the instruction within the circuit, or within the
 > instruction's parent REPEAT block. This is slightly different
@@ -1699,26 +1771,30 @@
 > is 0 instead of 1.
 > ```
 
-### `stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg`<a name="stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg"></a>
+<a name="stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg"></a>
+### `stim.CircuitErrorLocationStackFrame.instruction_repetitions_arg`
 > ```
 > If the instruction being referred to is a REPEAT block,
 > this is the repetition count of that REPEAT block. Otherwise
 > this field defaults to 0.
 > ```
 
-### `stim.CircuitErrorLocationStackFrame.iteration_index`<a name="stim.CircuitErrorLocationStackFrame.iteration_index"></a>
+<a name="stim.CircuitErrorLocationStackFrame.iteration_index"></a>
+### `stim.CircuitErrorLocationStackFrame.iteration_index`
 > ```
 > Disambiguates which iteration of the loop containing this instruction
 > is being referred to. If the instruction isn't in a REPEAT block, this
 > field defaults to 0.
 > ```
 
-### `stim.CircuitInstruction.__eq__(self, arg0: stim.CircuitInstruction) -> bool`<a name="stim.CircuitInstruction.__eq__"></a>
+<a name="stim.CircuitInstruction.__eq__"></a>
+### `stim.CircuitInstruction.__eq__(self, arg0: stim.CircuitInstruction) -> bool`
 > ```
 > Determines if two `stim.CircuitInstruction`s are identical.
 > ```
 
-### `stim.CircuitInstruction.__init__(self, name: str, targets: List[object], gate_args: List[float] = ()) -> None`<a name="stim.CircuitInstruction.__init__"></a>
+<a name="stim.CircuitInstruction.__init__"></a>
+### `stim.CircuitInstruction.__init__(self, name: str, targets: List[object], gate_args: List[float] = ()) -> None`
 > ```
 > Initializes a `stim.CircuitInstruction`.
 > 
@@ -1730,22 +1806,26 @@
 >         probabilities. For OBSERVABLE_INCLUDE it's the logical observable's index.
 > ```
 
-### `stim.CircuitInstruction.__ne__(self, arg0: stim.CircuitInstruction) -> bool`<a name="stim.CircuitInstruction.__ne__"></a>
+<a name="stim.CircuitInstruction.__ne__"></a>
+### `stim.CircuitInstruction.__ne__(self, arg0: stim.CircuitInstruction) -> bool`
 > ```
 > Determines if two `stim.CircuitInstruction`s are different.
 > ```
 
-### `stim.CircuitInstruction.__repr__(self) -> str`<a name="stim.CircuitInstruction.__repr__"></a>
+<a name="stim.CircuitInstruction.__repr__"></a>
+### `stim.CircuitInstruction.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitInstruction`.
 > ```
 
-### `stim.CircuitInstruction.__str__(self) -> str`<a name="stim.CircuitInstruction.__str__"></a>
+<a name="stim.CircuitInstruction.__str__"></a>
+### `stim.CircuitInstruction.__str__(self) -> str`
 > ```
 > Returns a text description of the instruction as a stim circuit file line.
 > ```
 
-### `stim.CircuitInstruction.gate_args_copy(self) -> List[float]`<a name="stim.CircuitInstruction.gate_args_copy"></a>
+<a name="stim.CircuitInstruction.gate_args_copy"></a>
+### `stim.CircuitInstruction.gate_args_copy(self) -> List[float]`
 > ```
 > Returns the gate's arguments (numbers parameterizing the instruction).
 > 
@@ -1753,22 +1833,26 @@
 > For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable index.
 > ```
 
-### `stim.CircuitInstruction.name`<a name="stim.CircuitInstruction.name"></a>
+<a name="stim.CircuitInstruction.name"></a>
+### `stim.CircuitInstruction.name`
 > ```
 > The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`).
 > ```
 
-### `stim.CircuitInstruction.targets_copy(self) -> List[stim.GateTarget]`<a name="stim.CircuitInstruction.targets_copy"></a>
+<a name="stim.CircuitInstruction.targets_copy"></a>
+### `stim.CircuitInstruction.targets_copy(self) -> List[stim.GateTarget]`
 > ```
 > Returns a copy of the targets of the instruction.
 > ```
 
-### `stim.CircuitRepeatBlock.__eq__(self, arg0: stim.CircuitRepeatBlock) -> bool`<a name="stim.CircuitRepeatBlock.__eq__"></a>
+<a name="stim.CircuitRepeatBlock.__eq__"></a>
+### `stim.CircuitRepeatBlock.__eq__(self, arg0: stim.CircuitRepeatBlock) -> bool`
 > ```
 > Determines if two `stim.CircuitRepeatBlock`s are identical.
 > ```
 
-### `stim.CircuitRepeatBlock.__init__(self, repeat_count: int, body: stim.Circuit) -> None`<a name="stim.CircuitRepeatBlock.__init__"></a>
+<a name="stim.CircuitRepeatBlock.__init__"></a>
+### `stim.CircuitRepeatBlock.__init__(self, repeat_count: int, body: stim.Circuit) -> None`
 > ```
 > Initializes a `stim.CircuitRepeatBlock`.
 > 
@@ -1777,17 +1861,20 @@
 >     body: The body of the block, as a circuit.
 > ```
 
-### `stim.CircuitRepeatBlock.__ne__(self, arg0: stim.CircuitRepeatBlock) -> bool`<a name="stim.CircuitRepeatBlock.__ne__"></a>
+<a name="stim.CircuitRepeatBlock.__ne__"></a>
+### `stim.CircuitRepeatBlock.__ne__(self, arg0: stim.CircuitRepeatBlock) -> bool`
 > ```
 > Determines if two `stim.CircuitRepeatBlock`s are different.
 > ```
 
-### `stim.CircuitRepeatBlock.__repr__(self) -> str`<a name="stim.CircuitRepeatBlock.__repr__"></a>
+<a name="stim.CircuitRepeatBlock.__repr__"></a>
+### `stim.CircuitRepeatBlock.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitRepeatBlock`.
 > ```
 
-### `stim.CircuitRepeatBlock.body_copy(self) -> stim.Circuit`<a name="stim.CircuitRepeatBlock.body_copy"></a>
+<a name="stim.CircuitRepeatBlock.body_copy"></a>
+### `stim.CircuitRepeatBlock.body_copy(self) -> stim.Circuit`
 > ```
 > Returns a copy of the body of the repeat block.
 > 
@@ -1811,7 +1898,8 @@
 >     ''')
 > ```
 
-### `stim.CircuitRepeatBlock.repeat_count`<a name="stim.CircuitRepeatBlock.repeat_count"></a>
+<a name="stim.CircuitRepeatBlock.repeat_count"></a>
+### `stim.CircuitRepeatBlock.repeat_count`
 > ```
 > The repetition count of the repeat block.
 > 
@@ -1829,41 +1917,48 @@
 >     5
 > ```
 
-### `stim.CircuitTargetsInsideInstruction.__init__(self, *, gate: str, args: List[float], target_range_start: int, target_range_end: int, targets_in_range: List[stim.GateTargetWithCoords]) -> None`<a name="stim.CircuitTargetsInsideInstruction.__init__"></a>
+<a name="stim.CircuitTargetsInsideInstruction.__init__"></a>
+### `stim.CircuitTargetsInsideInstruction.__init__(self, *, gate: str, args: List[float], target_range_start: int, target_range_end: int, targets_in_range: List[stim.GateTargetWithCoords]) -> None`
 > ```
 > Creates a stim.CircuitTargetsInsideInstruction.
 > ```
 
-### `stim.CircuitTargetsInsideInstruction.args`<a name="stim.CircuitTargetsInsideInstruction.args"></a>
+<a name="stim.CircuitTargetsInsideInstruction.args"></a>
+### `stim.CircuitTargetsInsideInstruction.args`
 > ```
 > Returns parens arguments of the gate / instruction that was being executed.
 > ```
 
-### `stim.CircuitTargetsInsideInstruction.gate`<a name="stim.CircuitTargetsInsideInstruction.gate"></a>
+<a name="stim.CircuitTargetsInsideInstruction.gate"></a>
+### `stim.CircuitTargetsInsideInstruction.gate`
 > ```
 > Returns the name of the gate / instruction that was being executed.
 > ```
 
-### `stim.CircuitTargetsInsideInstruction.target_range_end`<a name="stim.CircuitTargetsInsideInstruction.target_range_end"></a>
+<a name="stim.CircuitTargetsInsideInstruction.target_range_end"></a>
+### `stim.CircuitTargetsInsideInstruction.target_range_end`
 > ```
 > Returns the exclusive end of the range of targets that were executing
 > within the gate / instruction.
 > ```
 
-### `stim.CircuitTargetsInsideInstruction.target_range_start`<a name="stim.CircuitTargetsInsideInstruction.target_range_start"></a>
+<a name="stim.CircuitTargetsInsideInstruction.target_range_start"></a>
+### `stim.CircuitTargetsInsideInstruction.target_range_start`
 > ```
 > Returns the inclusive start of the range of targets that were executing
 > within the gate / instruction.
 > ```
 
-### `stim.CircuitTargetsInsideInstruction.targets_in_range`<a name="stim.CircuitTargetsInsideInstruction.targets_in_range"></a>
+<a name="stim.CircuitTargetsInsideInstruction.targets_in_range"></a>
+### `stim.CircuitTargetsInsideInstruction.targets_in_range`
 > ```
 > Returns the subset of targets of the gate / instruction that were being executed.
 > 
 > Includes coordinate data with the targets.
 > ```
 
-### `stim.CompiledDetectorSampler.__init__(self, circuit: stim.Circuit, *, seed: object = None) -> None`<a name="stim.CompiledDetectorSampler.__init__"></a>
+<a name="stim.CompiledDetectorSampler.__init__"></a>
+### `stim.CompiledDetectorSampler.__init__(self, circuit: stim.Circuit, *, seed: object = None) -> None`
 > ```
 > Creates a detector sampler, which can sample the detectors (and optionally observables) in a circuit.
 > 
@@ -1906,12 +2001,14 @@
 >     array([[1]], dtype=uint8)
 > ```
 
-### `stim.CompiledDetectorSampler.__repr__(self) -> str`<a name="stim.CompiledDetectorSampler.__repr__"></a>
+<a name="stim.CompiledDetectorSampler.__repr__"></a>
+### `stim.CompiledDetectorSampler.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledDetectorSampler`.
 > ```
 
-### `stim.CompiledDetectorSampler.sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False) -> numpy.ndarray[numpy.uint8]`<a name="stim.CompiledDetectorSampler.sample"></a>
+<a name="stim.CompiledDetectorSampler.sample"></a>
+### `stim.CompiledDetectorSampler.sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False) -> numpy.ndarray[numpy.uint8]`
 > ```
 > Returns a numpy array containing a batch of detector samples from the circuit.
 > 
@@ -1931,7 +2028,8 @@
 >     The bit for detection event `m` in shot `s` is at `result[s, m]`.
 > ```
 
-### `stim.CompiledDetectorSampler.sample_bit_packed(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False) -> numpy.ndarray[numpy.uint8]`<a name="stim.CompiledDetectorSampler.sample_bit_packed"></a>
+<a name="stim.CompiledDetectorSampler.sample_bit_packed"></a>
+### `stim.CompiledDetectorSampler.sample_bit_packed(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False) -> numpy.ndarray[numpy.uint8]`
 > ```
 > Returns a numpy array containing bit packed batch of detector samples from the circuit.
 > 
@@ -1951,7 +2049,8 @@
 >     The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
 > ```
 
-### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01', prepend_observables: bool = False, append_observables: bool = False) -> None`<a name="stim.CompiledDetectorSampler.sample_write"></a>
+<a name="stim.CompiledDetectorSampler.sample_write"></a>
+### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01', prepend_observables: bool = False, append_observables: bool = False) -> None`
 > ```
 > Samples detection events from the circuit and writes them to a file.
 > 
@@ -1988,7 +2087,8 @@
 >     None.
 > ```
 
-### `stim.CompiledMeasurementSampler.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False, seed: object = None) -> None`<a name="stim.CompiledMeasurementSampler.__init__"></a>
+<a name="stim.CompiledMeasurementSampler.__init__"></a>
+### `stim.CompiledMeasurementSampler.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False, seed: object = None) -> None`
 > ```
 > Creates a measurement sampler for the given circuit.
 > 
@@ -2044,12 +2144,14 @@
 >     array([[1, 0, 1, 1]], dtype=uint8)
 > ```
 
-### `stim.CompiledMeasurementSampler.__repr__(self) -> str`<a name="stim.CompiledMeasurementSampler.__repr__"></a>
+<a name="stim.CompiledMeasurementSampler.__repr__"></a>
+### `stim.CompiledMeasurementSampler.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`.
 > ```
 
-### `stim.CompiledMeasurementSampler.sample(self, shots: int) -> numpy.ndarray[numpy.uint8]`<a name="stim.CompiledMeasurementSampler.sample"></a>
+<a name="stim.CompiledMeasurementSampler.sample"></a>
+### `stim.CompiledMeasurementSampler.sample(self, shots: int) -> numpy.ndarray[numpy.uint8]`
 > ```
 > Returns a numpy array containing a batch of measurement samples from the circuit.
 > 
@@ -2071,7 +2173,8 @@
 >     The bit for measurement `m` in shot `s` is at `result[s, m]`.
 > ```
 
-### `stim.CompiledMeasurementSampler.sample_bit_packed(self, shots: int) -> numpy.ndarray[numpy.uint8]`<a name="stim.CompiledMeasurementSampler.sample_bit_packed"></a>
+<a name="stim.CompiledMeasurementSampler.sample_bit_packed"></a>
+### `stim.CompiledMeasurementSampler.sample_bit_packed(self, shots: int) -> numpy.ndarray[numpy.uint8]`
 > ```
 > Returns a numpy array containing a bit packed batch of measurement samples from the circuit.
 > 
@@ -2093,7 +2196,8 @@
 >     The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
 > ```
 
-### `stim.CompiledMeasurementSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01') -> None`<a name="stim.CompiledMeasurementSampler.sample_write"></a>
+<a name="stim.CompiledMeasurementSampler.sample_write"></a>
+### `stim.CompiledMeasurementSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01') -> None`
 > ```
 > Samples measurements from the circuit and writes them to a file.
 > 
@@ -2126,7 +2230,8 @@
 >     None.
 > ```
 
-### `stim.CompiledMeasurementsToDetectionEventsConverter.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False) -> None`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.__init__"></a>
+<a name="stim.CompiledMeasurementsToDetectionEventsConverter.__init__"></a>
+### `stim.CompiledMeasurementsToDetectionEventsConverter.__init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False) -> None`
 > ```
 > Creates a measurement-to-detection-events converter for the given circuit.
 > 
@@ -2164,12 +2269,14 @@
 >            [False]])
 > ```
 
-### `stim.CompiledMeasurementsToDetectionEventsConverter.__repr__(self) -> str`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.__repr__"></a>
+<a name="stim.CompiledMeasurementsToDetectionEventsConverter.__repr__"></a>
+### `stim.CompiledMeasurementsToDetectionEventsConverter.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementsToDetectionEventsConverter`.
 > ```
 
-### `stim.CompiledMeasurementsToDetectionEventsConverter.convert(self, *, measurements: numpy.ndarray[bool], sweep_bits: numpy.ndarray[bool] = None, append_observables: bool) -> numpy.ndarray[bool]`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert"></a>
+<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert"></a>
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert(self, *, measurements: numpy.ndarray[bool], sweep_bits: numpy.ndarray[bool] = None, append_observables: bool) -> numpy.ndarray[bool]`
 > ```
 > Reads measurement data from a file, converts it, and writes the detection events to another file.
 > 
@@ -2206,7 +2313,8 @@
 >            [False]])
 > ```
 
-### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool) -> None`<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert_file"></a>
+<a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert_file"></a>
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool) -> None`
 > ```
 > Reads measurement data from a file, converts it, and writes the detection events to another file.
 > 
@@ -2253,12 +2361,14 @@
 >     0
 > ```
 
-### `stim.DemInstruction.__eq__(self, arg0: stim.DemInstruction) -> bool`<a name="stim.DemInstruction.__eq__"></a>
+<a name="stim.DemInstruction.__eq__"></a>
+### `stim.DemInstruction.__eq__(self, arg0: stim.DemInstruction) -> bool`
 > ```
 > Determines if two instructions have identical contents.
 > ```
 
-### `stim.DemInstruction.__init__(self, type: str, args: List[float], targets: List[object]) -> None`<a name="stim.DemInstruction.__init__"></a>
+<a name="stim.DemInstruction.__init__"></a>
+### `stim.DemInstruction.__init__(self, type: str, args: List[float], targets: List[object]) -> None`
 > ```
 > Creates a stim.DemInstruction.
 > 
@@ -2274,42 +2384,50 @@
 >     error(0.125) D5
 > ```
 
-### `stim.DemInstruction.__ne__(self, arg0: stim.DemInstruction) -> bool`<a name="stim.DemInstruction.__ne__"></a>
+<a name="stim.DemInstruction.__ne__"></a>
+### `stim.DemInstruction.__ne__(self, arg0: stim.DemInstruction) -> bool`
 > ```
 > Determines if two instructions have non-identical contents.
 > ```
 
-### `stim.DemInstruction.__repr__(self) -> str`<a name="stim.DemInstruction.__repr__"></a>
+<a name="stim.DemInstruction.__repr__"></a>
+### `stim.DemInstruction.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`.
 > ```
 
-### `stim.DemInstruction.__str__(self) -> str`<a name="stim.DemInstruction.__str__"></a>
+<a name="stim.DemInstruction.__str__"></a>
+### `stim.DemInstruction.__str__(self) -> str`
 > ```
 > Returns detector error model (.dem) instructions (that can be parsed by stim) for the model.
 > ```
 
-### `stim.DemInstruction.args_copy(self) -> List[float]`<a name="stim.DemInstruction.args_copy"></a>
+<a name="stim.DemInstruction.args_copy"></a>
+### `stim.DemInstruction.args_copy(self) -> List[float]`
 > ```
 > Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).
 > ```
 
-### `stim.DemInstruction.targets_copy(self) -> List[object]`<a name="stim.DemInstruction.targets_copy"></a>
+<a name="stim.DemInstruction.targets_copy"></a>
+### `stim.DemInstruction.targets_copy(self) -> List[object]`
 > ```
 > Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.
 > ```
 
-### `stim.DemInstruction.type`<a name="stim.DemInstruction.type"></a>
+<a name="stim.DemInstruction.type"></a>
+### `stim.DemInstruction.type`
 > ```
 > The name of the instruction type (e.g. "error" or "shift_detectors").
 > ```
 
-### `stim.DemRepeatBlock.__eq__(self, arg0: stim.DemRepeatBlock) -> bool`<a name="stim.DemRepeatBlock.__eq__"></a>
+<a name="stim.DemRepeatBlock.__eq__"></a>
+### `stim.DemRepeatBlock.__eq__(self, arg0: stim.DemRepeatBlock) -> bool`
 > ```
 > Determines if two repeat blocks are identical.
 > ```
 
-### `stim.DemRepeatBlock.__init__(self, repeat_count: int, block: stim.DetectorErrorModel) -> None`<a name="stim.DemRepeatBlock.__init__"></a>
+<a name="stim.DemRepeatBlock.__init__"></a>
+### `stim.DemRepeatBlock.__init__(self, repeat_count: int, block: stim.DetectorErrorModel) -> None`
 > ```
 > Creates a stim.DemRepeatBlock.
 > 
@@ -2325,62 +2443,74 @@
 >     ... '''))
 > ```
 
-### `stim.DemRepeatBlock.__ne__(self, arg0: stim.DemRepeatBlock) -> bool`<a name="stim.DemRepeatBlock.__ne__"></a>
+<a name="stim.DemRepeatBlock.__ne__"></a>
+### `stim.DemRepeatBlock.__ne__(self, arg0: stim.DemRepeatBlock) -> bool`
 > ```
 > Determines if two repeat blocks are different.
 > ```
 
-### `stim.DemRepeatBlock.__repr__(self) -> str`<a name="stim.DemRepeatBlock.__repr__"></a>
+<a name="stim.DemRepeatBlock.__repr__"></a>
+### `stim.DemRepeatBlock.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.DemRepeatBlock`.
 > ```
 
-### `stim.DemRepeatBlock.body_copy(self) -> stim.DetectorErrorModel`<a name="stim.DemRepeatBlock.body_copy"></a>
+<a name="stim.DemRepeatBlock.body_copy"></a>
+### `stim.DemRepeatBlock.body_copy(self) -> stim.DetectorErrorModel`
 > ```
 > Returns a copy of the block's body, as a stim.DetectorErrorModel.
 > ```
 
-### `stim.DemRepeatBlock.repeat_count`<a name="stim.DemRepeatBlock.repeat_count"></a>
+<a name="stim.DemRepeatBlock.repeat_count"></a>
+### `stim.DemRepeatBlock.repeat_count`
 > ```
 > The number of times the repeat block's body is supposed to execute.
 > ```
 
-### `stim.DemTarget.__eq__(self, arg0: stim.DemTarget) -> bool`<a name="stim.DemTarget.__eq__"></a>
+<a name="stim.DemTarget.__eq__"></a>
+### `stim.DemTarget.__eq__(self, arg0: stim.DemTarget) -> bool`
 > ```
 > Determines if two `stim.DemTarget`s are identical.
 > ```
 
-### `stim.DemTarget.__ne__(self, arg0: stim.DemTarget) -> bool`<a name="stim.DemTarget.__ne__"></a>
+<a name="stim.DemTarget.__ne__"></a>
+### `stim.DemTarget.__ne__(self, arg0: stim.DemTarget) -> bool`
 > ```
 > Determines if two `stim.DemTarget`s are different.
 > ```
 
-### `stim.DemTarget.__repr__(self) -> str`<a name="stim.DemTarget.__repr__"></a>
+<a name="stim.DemTarget.__repr__"></a>
+### `stim.DemTarget.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.DemTarget`.
 > ```
 
-### `stim.DemTarget.__str__(self) -> str`<a name="stim.DemTarget.__str__"></a>
+<a name="stim.DemTarget.__str__"></a>
+### `stim.DemTarget.__str__(self) -> str`
 > ```
 > Returns a text description of the detector error model target.
 > ```
 
-### `stim.DemTarget.is_logical_observable_id(self) -> bool`<a name="stim.DemTarget.is_logical_observable_id"></a>
+<a name="stim.DemTarget.is_logical_observable_id"></a>
+### `stim.DemTarget.is_logical_observable_id(self) -> bool`
 > ```
 > Determines if the detector error model target is a logical observable id target (like "L5" in a .dem file).
 > ```
 
-### `stim.DemTarget.is_relative_detector_id(self) -> bool`<a name="stim.DemTarget.is_relative_detector_id"></a>
+<a name="stim.DemTarget.is_relative_detector_id"></a>
+### `stim.DemTarget.is_relative_detector_id(self) -> bool`
 > ```
 > Determines if the detector error model target is a relative detector id target (like "D4" in a .dem file).
 > ```
 
-### `stim.DemTarget.is_separator(self) -> bool`<a name="stim.DemTarget.is_separator"></a>
+<a name="stim.DemTarget.is_separator"></a>
+### `stim.DemTarget.is_separator(self) -> bool`
 > ```
 > Determines if the detector error model target is a separator (like "^" in a .dem file).
 > ```
 
-### `stim.DemTarget.logical_observable_id(index: int) -> stim.DemTarget`<a name="stim.DemTarget.logical_observable_id"></a>
+<a name="stim.DemTarget.logical_observable_id"></a>
+### `stim.DemTarget.logical_observable_id(index: int) -> stim.DemTarget`
 > ```
 > Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
 > 
@@ -2402,7 +2532,8 @@
 >     ''')
 > ```
 
-### `stim.DemTarget.relative_detector_id(index: int) -> stim.DemTarget`<a name="stim.DemTarget.relative_detector_id"></a>
+<a name="stim.DemTarget.relative_detector_id"></a>
+### `stim.DemTarget.relative_detector_id(index: int) -> stim.DemTarget`
 > ```
 > Returns a relative detector id (e.g. "D5" in a .dem file).
 > 
@@ -2424,7 +2555,8 @@
 >     ''')
 > ```
 
-### `stim.DemTarget.separator() -> stim.DemTarget`<a name="stim.DemTarget.separator"></a>
+<a name="stim.DemTarget.separator"></a>
+### `stim.DemTarget.separator() -> stim.DemTarget`
 > ```
 > Returns a target separator (e.g. "^" in a .dem file).
 > 
@@ -2442,7 +2574,8 @@
 >     ''')
 > ```
 
-### `stim.DemTarget.val`<a name="stim.DemTarget.val"></a>
+<a name="stim.DemTarget.val"></a>
+### `stim.DemTarget.val`
 > ```
 > Returns the target's integer value.
 > 
@@ -2455,24 +2588,28 @@
 >     6
 > ```
 
-### `stim.DemTargetWithCoords.__init__(self, *, dem_target: stim.DemTarget, coords: List[float]) -> None`<a name="stim.DemTargetWithCoords.__init__"></a>
+<a name="stim.DemTargetWithCoords.__init__"></a>
+### `stim.DemTargetWithCoords.__init__(self, *, dem_target: stim.DemTarget, coords: List[float]) -> None`
 > ```
 > Creates a stim.DemTargetWithCoords.
 > ```
 
-### `stim.DemTargetWithCoords.coords`<a name="stim.DemTargetWithCoords.coords"></a>
+<a name="stim.DemTargetWithCoords.coords"></a>
+### `stim.DemTargetWithCoords.coords`
 > ```
 > Returns the associated coordinate information as a list of flaots.
 > 
 > If there is no coordinate information, returns an empty list.
 > ```
 
-### `stim.DemTargetWithCoords.dem_target`<a name="stim.DemTargetWithCoords.dem_target"></a>
+<a name="stim.DemTargetWithCoords.dem_target"></a>
+### `stim.DemTargetWithCoords.dem_target`
 > ```
 > Returns the actual DEM target as a `stim.DemTarget`.
 > ```
 
-### `stim.DetectorErrorModel.__add__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__add__"></a>
+<a name="stim.DetectorErrorModel.__add__"></a>
+### `stim.DetectorErrorModel.__add__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`
 > ```
 > Creates a detector error model by appending two models.
 > 
@@ -2491,12 +2628,14 @@
 >     ''')
 > ```
 
-### `stim.DetectorErrorModel.__eq__(self, arg0: stim.DetectorErrorModel) -> bool`<a name="stim.DetectorErrorModel.__eq__"></a>
+<a name="stim.DetectorErrorModel.__eq__"></a>
+### `stim.DetectorErrorModel.__eq__(self, arg0: stim.DetectorErrorModel) -> bool`
 > ```
 > Determines if two detector error models have identical contents.
 > ```
 
-### `stim.DetectorErrorModel.__getitem__(self, index_or_slice: object) -> object`<a name="stim.DetectorErrorModel.__getitem__"></a>
+<a name="stim.DetectorErrorModel.__getitem__"></a>
+### `stim.DetectorErrorModel.__getitem__(self, index_or_slice: object) -> object`
 > ```
 > Returns copies of instructions from the detector error model.
 > 
@@ -2533,7 +2672,8 @@
 >     ''')
 > ```
 
-### `stim.DetectorErrorModel.__iadd__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__iadd__"></a>
+<a name="stim.DetectorErrorModel.__iadd__"></a>
+### `stim.DetectorErrorModel.__iadd__(self, second: stim.DetectorErrorModel) -> stim.DetectorErrorModel`
 > ```
 > Appends a detector error model into the receiving model (mutating it).
 > 
@@ -2553,7 +2693,8 @@
 >     ''')
 > ```
 
-### `stim.DetectorErrorModel.__imul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__imul__"></a>
+<a name="stim.DetectorErrorModel.__imul__"></a>
+### `stim.DetectorErrorModel.__imul__(self, repetitions: int) -> stim.DetectorErrorModel`
 > ```
 > Mutates the detector error model by putting its contents into a repeat block.
 > 
@@ -2577,7 +2718,8 @@
 >     }
 > ```
 
-### `stim.DetectorErrorModel.__init__(self, detector_error_model_text: str = '') -> None`<a name="stim.DetectorErrorModel.__init__"></a>
+<a name="stim.DetectorErrorModel.__init__"></a>
+### `stim.DetectorErrorModel.__init__(self, detector_error_model_text: str = '') -> None`
 > ```
 > Creates a stim.DetectorErrorModel.
 > 
@@ -2593,7 +2735,8 @@
 >     ... ''')
 > ```
 
-### `stim.DetectorErrorModel.__len__(self) -> int`<a name="stim.DetectorErrorModel.__len__"></a>
+<a name="stim.DetectorErrorModel.__len__"></a>
+### `stim.DetectorErrorModel.__len__(self) -> int`
 > ```
 > Returns the number of top-level instructions and blocks in the detector error model.
 > 
@@ -2618,7 +2761,8 @@
 >     1
 > ```
 
-### `stim.DetectorErrorModel.__mul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__mul__"></a>
+<a name="stim.DetectorErrorModel.__mul__"></a>
+### `stim.DetectorErrorModel.__mul__(self, repetitions: int) -> stim.DetectorErrorModel`
 > ```
 > Returns a detector error model with a repeat block containing the current model's instructions.
 > 
@@ -2643,17 +2787,20 @@
 >     ''')
 > ```
 
-### `stim.DetectorErrorModel.__ne__(self, arg0: stim.DetectorErrorModel) -> bool`<a name="stim.DetectorErrorModel.__ne__"></a>
+<a name="stim.DetectorErrorModel.__ne__"></a>
+### `stim.DetectorErrorModel.__ne__(self, arg0: stim.DetectorErrorModel) -> bool`
 > ```
 > Determines if two detector error models have non-identical contents.
 > ```
 
-### `stim.DetectorErrorModel.__repr__(self) -> str`<a name="stim.DetectorErrorModel.__repr__"></a>
+<a name="stim.DetectorErrorModel.__repr__"></a>
+### `stim.DetectorErrorModel.__repr__(self) -> str`
 > ```
 > "Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`."
 > ```
 
-### `stim.DetectorErrorModel.__rmul__(self, repetitions: int) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.__rmul__"></a>
+<a name="stim.DetectorErrorModel.__rmul__"></a>
+### `stim.DetectorErrorModel.__rmul__(self, repetitions: int) -> stim.DetectorErrorModel`
 > ```
 > Returns a detector error model with a repeat block containing the current model's instructions.
 > 
@@ -2678,12 +2825,14 @@
 >     ''')
 > ```
 
-### `stim.DetectorErrorModel.__str__(self) -> str`<a name="stim.DetectorErrorModel.__str__"></a>
+<a name="stim.DetectorErrorModel.__str__"></a>
+### `stim.DetectorErrorModel.__str__(self) -> str`
 > ```
 > "Returns detector error model (.dem) instructions (that can be parsed by stim) for the model.");
 > ```
 
-### `stim.DetectorErrorModel.append(self, instruction: object, parens_arguments: object = None, targets: List[object] = ()) -> None`<a name="stim.DetectorErrorModel.append"></a>
+<a name="stim.DetectorErrorModel.append"></a>
+### `stim.DetectorErrorModel.append(self, instruction: object, parens_arguments: object = None, targets: List[object] = ()) -> None`
 > ```
 > Appends an instruction to the detector error model.
 > 
@@ -2743,7 +2892,8 @@
 >     ''')
 > ```
 
-### `stim.DetectorErrorModel.approx_equals(self, other: object, *, atol: float) -> bool`<a name="stim.DetectorErrorModel.approx_equals"></a>
+<a name="stim.DetectorErrorModel.approx_equals"></a>
+### `stim.DetectorErrorModel.approx_equals(self, other: object, *, atol: float) -> bool`
 > ```
 > Checks if a detector error model is approximately equal to another detector error model.
 > 
@@ -2790,7 +2940,8 @@
 >     False
 > ```
 
-### `stim.DetectorErrorModel.clear(self) -> None`<a name="stim.DetectorErrorModel.clear"></a>
+<a name="stim.DetectorErrorModel.clear"></a>
+### `stim.DetectorErrorModel.clear(self) -> None`
 > ```
 > Clears the contents of the detector error model.
 > 
@@ -2804,7 +2955,8 @@
 >     stim.DetectorErrorModel()
 > ```
 
-### `stim.DetectorErrorModel.copy(self) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.copy"></a>
+<a name="stim.DetectorErrorModel.copy"></a>
+### `stim.DetectorErrorModel.copy(self) -> stim.DetectorErrorModel`
 > ```
 > Returns a copy of the detector error model. An independent model with the same contents.
 > 
@@ -2819,7 +2971,8 @@
 >     True
 > ```
 
-### `stim.DetectorErrorModel.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`<a name="stim.DetectorErrorModel.get_detector_coordinates"></a>
+<a name="stim.DetectorErrorModel.get_detector_coordinates"></a>
+### `stim.DetectorErrorModel.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`
 > ```
 > Returns the coordinate metadata of detectors in the detector error model.
 > 
@@ -2846,7 +2999,8 @@
 >     {1: [1.0, 2.0, 3.0]}
 > ```
 
-### `stim.DetectorErrorModel.num_detectors`<a name="stim.DetectorErrorModel.num_detectors"></a>
+<a name="stim.DetectorErrorModel.num_detectors"></a>
+### `stim.DetectorErrorModel.num_detectors`
 > ```
 > Counts the number of detectors (e.g. `D2`) in the error model.
 > 
@@ -2878,7 +3032,8 @@
 >     1200
 > ```
 
-### `stim.DetectorErrorModel.num_errors`<a name="stim.DetectorErrorModel.num_errors"></a>
+<a name="stim.DetectorErrorModel.num_errors"></a>
+### `stim.DetectorErrorModel.num_errors`
 > ```
 > Counts the number of errors (e.g. `error(0.1) D0`) in the error model.
 > 
@@ -2899,7 +3054,8 @@
 >     501
 > ```
 
-### `stim.DetectorErrorModel.num_observables`<a name="stim.DetectorErrorModel.num_observables"></a>
+<a name="stim.DetectorErrorModel.num_observables"></a>
+### `stim.DetectorErrorModel.num_observables`
 > ```
 > Counts the number of frame changes (e.g. `L2`) in the error model.
 > 
@@ -2922,7 +3078,8 @@
 >     400
 > ```
 
-### `stim.DetectorErrorModel.shortest_graphlike_error(self, ignore_ungraphlike_errors: bool = False) -> stim.DetectorErrorModel`<a name="stim.DetectorErrorModel.shortest_graphlike_error"></a>
+<a name="stim.DetectorErrorModel.shortest_graphlike_error"></a>
+### `stim.DetectorErrorModel.shortest_graphlike_error(self, ignore_ungraphlike_errors: bool = False) -> stim.DetectorErrorModel`
 > ```
 > Finds a minimum sized set of graphlike errors that produce an undetected logical error.
 > 
@@ -2999,12 +3156,14 @@
 >     7
 > ```
 
-### `stim.ExplainedError.__init__(self, *, dem_error_terms: List[stim.DemTargetWithCoords], circuit_error_locations: List[stim.CircuitErrorLocation]) -> None`<a name="stim.ExplainedError.__init__"></a>
+<a name="stim.ExplainedError.__init__"></a>
+### `stim.ExplainedError.__init__(self, *, dem_error_terms: List[stim.DemTargetWithCoords], circuit_error_locations: List[stim.CircuitErrorLocation]) -> None`
 > ```
 > Creates a stim.ExplainedError.
 > ```
 
-### `stim.ExplainedError.circuit_error_locations`<a name="stim.ExplainedError.circuit_error_locations"></a>
+<a name="stim.ExplainedError.circuit_error_locations"></a>
+### `stim.ExplainedError.circuit_error_locations`
 > ```
 > The locations of circuit errors that produce the symptoms in dem_error_terms.
 > 
@@ -3017,36 +3176,42 @@
 > circuit error.
 > ```
 
-### `stim.ExplainedError.dem_error_terms`<a name="stim.ExplainedError.dem_error_terms"></a>
+<a name="stim.ExplainedError.dem_error_terms"></a>
+### `stim.ExplainedError.dem_error_terms`
 > ```
 > The detectors and observables flipped by this error mechanism.
 > ```
 
-### `stim.FlippedMeasurement.__init__(self, *, record_index: int, observable: object) -> None`<a name="stim.FlippedMeasurement.__init__"></a>
+<a name="stim.FlippedMeasurement.__init__"></a>
+### `stim.FlippedMeasurement.__init__(self, *, record_index: int, observable: object) -> None`
 > ```
 > Creates a stim.FlippedMeasurement.
 > ```
 
-### `stim.FlippedMeasurement.observable`<a name="stim.FlippedMeasurement.observable"></a>
+<a name="stim.FlippedMeasurement.observable"></a>
+### `stim.FlippedMeasurement.observable`
 > ```
 > Returns the observable of the flipped measurement.
 > 
 > For example, an `MX 5` measurement will have the observable X5.
 > ```
 
-### `stim.FlippedMeasurement.record_index`<a name="stim.FlippedMeasurement.record_index"></a>
+<a name="stim.FlippedMeasurement.record_index"></a>
+### `stim.FlippedMeasurement.record_index`
 > ```
 > The measurement record index of the flipped measurement.
 > For example, the fifth measurement in a circuit has a measurement
 > record index of 4.
 > ```
 
-### `stim.GateTarget.__eq__(self, arg0: stim.GateTarget) -> bool`<a name="stim.GateTarget.__eq__"></a>
+<a name="stim.GateTarget.__eq__"></a>
+### `stim.GateTarget.__eq__(self, arg0: stim.GateTarget) -> bool`
 > ```
 > Determines if two `stim.GateTarget`s are identical.
 > ```
 
-### `stim.GateTarget.__init__(self, value: object) -> None`<a name="stim.GateTarget.__init__"></a>
+<a name="stim.GateTarget.__init__"></a>
+### `stim.GateTarget.__init__(self, value: object) -> None`
 > ```
 > Initializes a `stim.GateTarget`.
 > 
@@ -3054,22 +3219,26 @@
 >     value: A target like `5` or `stim.target_rec(-1)`.
 > ```
 
-### `stim.GateTarget.__ne__(self, arg0: stim.GateTarget) -> bool`<a name="stim.GateTarget.__ne__"></a>
+<a name="stim.GateTarget.__ne__"></a>
+### `stim.GateTarget.__ne__(self, arg0: stim.GateTarget) -> bool`
 > ```
 > Determines if two `stim.GateTarget`s are different.
 > ```
 
-### `stim.GateTarget.__repr__(self) -> str`<a name="stim.GateTarget.__repr__"></a>
+<a name="stim.GateTarget.__repr__"></a>
+### `stim.GateTarget.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.GateTarget`.
 > ```
 
-### `stim.GateTarget.is_combiner`<a name="stim.GateTarget.is_combiner"></a>
+<a name="stim.GateTarget.is_combiner"></a>
+### `stim.GateTarget.is_combiner`
 > ```
 > Returns whether or not this is a `stim.target_combiner()` (a `*` in a circuit file).
 > ```
 
-### `stim.GateTarget.is_inverted_result_target`<a name="stim.GateTarget.is_inverted_result_target"></a>
+<a name="stim.GateTarget.is_inverted_result_target"></a>
+### `stim.GateTarget.is_inverted_result_target`
 > ```
 > Returns whether or not this is an inverted target.
 > 
@@ -3077,59 +3246,70 @@
 > inverted Pauli targets like `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
 > ```
 
-### `stim.GateTarget.is_measurement_record_target`<a name="stim.GateTarget.is_measurement_record_target"></a>
+<a name="stim.GateTarget.is_measurement_record_target"></a>
+### `stim.GateTarget.is_measurement_record_target`
 > ```
 > Returns whether or not this is a `stim.target_rec` target (e.g. `rec[-5]` in a circuit file).
 > ```
 
-### `stim.GateTarget.is_qubit_target`<a name="stim.GateTarget.is_qubit_target"></a>
+<a name="stim.GateTarget.is_qubit_target"></a>
+### `stim.GateTarget.is_qubit_target`
 > ```
 > Returns true if this is a qubit target (e.g. `5`) or an inverted qubit target (e.g. `stim.target_inv(4)`).
 > ```
 
-### `stim.GateTarget.is_sweep_bit_target`<a name="stim.GateTarget.is_sweep_bit_target"></a>
+<a name="stim.GateTarget.is_sweep_bit_target"></a>
+### `stim.GateTarget.is_sweep_bit_target`
 > ```
 > Returns whether or not this is a `stim.target_sweep_bit` target (e.g. `sweep[5]` in a circuit file).
 > ```
 
-### `stim.GateTarget.is_x_target`<a name="stim.GateTarget.is_x_target"></a>
+<a name="stim.GateTarget.is_x_target"></a>
+### `stim.GateTarget.is_x_target`
 > ```
 > Returns whether or not this is a `stim.target_x` target (e.g. `X5` in a circuit file).
 > ```
 
-### `stim.GateTarget.is_y_target`<a name="stim.GateTarget.is_y_target"></a>
+<a name="stim.GateTarget.is_y_target"></a>
+### `stim.GateTarget.is_y_target`
 > ```
 > Returns whether or not this is a `stim.target_y` target (e.g. `Y5` in a circuit file).
 > ```
 
-### `stim.GateTarget.is_z_target`<a name="stim.GateTarget.is_z_target"></a>
+<a name="stim.GateTarget.is_z_target"></a>
+### `stim.GateTarget.is_z_target`
 > ```
 > Returns whether or not this is a `stim.target_z` target (e.g. `Z5` in a circuit file).
 > ```
 
-### `stim.GateTarget.value`<a name="stim.GateTarget.value"></a>
+<a name="stim.GateTarget.value"></a>
+### `stim.GateTarget.value`
 > ```
 > The numeric part of the target. Positive for qubit targets, negative for measurement record targets.
 > ```
 
-### `stim.GateTargetWithCoords.__init__(self, *, gate_target: object, coords: List[float]) -> None`<a name="stim.GateTargetWithCoords.__init__"></a>
+<a name="stim.GateTargetWithCoords.__init__"></a>
+### `stim.GateTargetWithCoords.__init__(self, *, gate_target: object, coords: List[float]) -> None`
 > ```
 > Creates a stim.GateTargetWithCoords.
 > ```
 
-### `stim.GateTargetWithCoords.coords`<a name="stim.GateTargetWithCoords.coords"></a>
+<a name="stim.GateTargetWithCoords.coords"></a>
+### `stim.GateTargetWithCoords.coords`
 > ```
 > Returns the associated coordinate information as a list of flaots.
 > 
 > If there is no coordinate information, returns an empty list.
 > ```
 
-### `stim.GateTargetWithCoords.gate_target`<a name="stim.GateTargetWithCoords.gate_target"></a>
+<a name="stim.GateTargetWithCoords.gate_target"></a>
+### `stim.GateTargetWithCoords.gate_target`
 > ```
 > Returns the actual gate target as a `stim.GateTarget`.
 > ```
 
-### `stim.PauliString.__add__(self, rhs: stim.PauliString) -> stim.PauliString`<a name="stim.PauliString.__add__"></a>
+<a name="stim.PauliString.__add__"></a>
+### `stim.PauliString.__add__(self, rhs: stim.PauliString) -> stim.PauliString`
 > ```
 > Returns the tensor product of two Pauli strings.
 > 
@@ -3151,12 +3331,14 @@
 >     The tensor product.
 > ```
 
-### `stim.PauliString.__eq__(self, arg0: stim.PauliString) -> bool`<a name="stim.PauliString.__eq__"></a>
+<a name="stim.PauliString.__eq__"></a>
+### `stim.PauliString.__eq__(self, arg0: stim.PauliString) -> bool`
 > ```
 > Determines if two Pauli strings have identical contents.
 > ```
 
-### `stim.PauliString.__getitem__(self, index_or_slice: object) -> object`<a name="stim.PauliString.__getitem__"></a>
+<a name="stim.PauliString.__getitem__"></a>
+### `stim.PauliString.__getitem__(self, index_or_slice: object) -> object`
 > ```
 > Returns an individual Pauli or Pauli string slice from the pauli string.
 > 
@@ -3185,7 +3367,8 @@
 >     3: Pauli Z.
 > ```
 
-### `stim.PauliString.__iadd__(self, rhs: stim.PauliString) -> stim.PauliString`<a name="stim.PauliString.__iadd__"></a>
+<a name="stim.PauliString.__iadd__"></a>
+### `stim.PauliString.__iadd__(self, rhs: stim.PauliString) -> stim.PauliString`
 > ```
 > Performs an inplace tensor product.
 > 
@@ -3209,7 +3392,8 @@
 >     The mutated pauli string.
 > ```
 
-### `stim.PauliString.__imul__(self, rhs: object) -> stim.PauliString`<a name="stim.PauliString.__imul__"></a>
+<a name="stim.PauliString.__imul__"></a>
+### `stim.PauliString.__imul__(self, rhs: object) -> stim.PauliString`
 > ```
 > Inplace right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 > 
@@ -3250,7 +3434,8 @@
 >     ValueError: The Pauli strings have different lengths.
 > ```
 
-### `stim.PauliString.__init__(*args, **kwargs)`<a name="stim.PauliString.__init__"></a>
+<a name="stim.PauliString.__init__"></a>
+### `stim.PauliString.__init__(*args, **kwargs)`
 > ```
 > Overloaded function.
 > 
@@ -3327,7 +3512,8 @@
 >     pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating paulis.
 > ```
 
-### `stim.PauliString.__itruediv__(self, rhs: complex) -> stim.PauliString`<a name="stim.PauliString.__itruediv__"></a>
+<a name="stim.PauliString.__itruediv__"></a>
+### `stim.PauliString.__itruediv__(self, rhs: complex) -> stim.PauliString`
 > ```
 > Inplace divides the Pauli string by a complex unit.
 > 
@@ -3349,12 +3535,14 @@
 >     ValueError: The divisor isn't 1, -1, 1j, or -1j.
 > ```
 
-### `stim.PauliString.__len__(self) -> int`<a name="stim.PauliString.__len__"></a>
+<a name="stim.PauliString.__len__"></a>
+### `stim.PauliString.__len__(self) -> int`
 > ```
 > Returns the length the pauli string; the number of qubits it operates on.
 > ```
 
-### `stim.PauliString.__mul__(self, rhs: object) -> stim.PauliString`<a name="stim.PauliString.__mul__"></a>
+<a name="stim.PauliString.__mul__"></a>
+### `stim.PauliString.__mul__(self, rhs: object) -> stim.PauliString`
 > ```
 > Right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 > 
@@ -3399,12 +3587,14 @@
 >     TypeError: The right hand side isn't a stim.PauliString, a non-negative integer, or a complex unit (1, -1, 1j, or -1j).
 > ```
 
-### `stim.PauliString.__ne__(self, arg0: stim.PauliString) -> bool`<a name="stim.PauliString.__ne__"></a>
+<a name="stim.PauliString.__ne__"></a>
+### `stim.PauliString.__ne__(self, arg0: stim.PauliString) -> bool`
 > ```
 > Determines if two Pauli strings have non-identical contents.
 > ```
 
-### `stim.PauliString.__neg__(self) -> stim.PauliString`<a name="stim.PauliString.__neg__"></a>
+<a name="stim.PauliString.__neg__"></a>
+### `stim.PauliString.__neg__(self) -> stim.PauliString`
 > ```
 > Returns the negation of the pauli string.
 > 
@@ -3418,7 +3608,8 @@
 >     stim.PauliString("-iZZZ")
 > ```
 
-### `stim.PauliString.__pos__(self) -> stim.PauliString`<a name="stim.PauliString.__pos__"></a>
+<a name="stim.PauliString.__pos__"></a>
+### `stim.PauliString.__pos__(self) -> stim.PauliString`
 > ```
 > Returns a pauli string with the same contents.
 > 
@@ -3432,12 +3623,14 @@
 >     stim.PauliString("+iZZZ")
 > ```
 
-### `stim.PauliString.__repr__(self) -> str`<a name="stim.PauliString.__repr__"></a>
+<a name="stim.PauliString.__repr__"></a>
+### `stim.PauliString.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.PauliString`.
 > ```
 
-### `stim.PauliString.__rmul__(self, lhs: object) -> stim.PauliString`<a name="stim.PauliString.__rmul__"></a>
+<a name="stim.PauliString.__rmul__"></a>
+### `stim.PauliString.__rmul__(self, lhs: object) -> stim.PauliString`
 > ```
 > Left-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 > 
@@ -3482,7 +3675,8 @@
 >     ValueError: The scalar phase factor isn't 1, -1, 1j, or -1j.
 > ```
 
-### `stim.PauliString.__setitem__(self, index: int, new_pauli: object) -> None`<a name="stim.PauliString.__setitem__"></a>
+<a name="stim.PauliString.__setitem__"></a>
+### `stim.PauliString.__setitem__(self, index: int, new_pauli: object) -> None`
 > ```
 > Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
 > 
@@ -3512,12 +3706,14 @@
 >     +_XYY
 > ```
 
-### `stim.PauliString.__str__(self) -> str`<a name="stim.PauliString.__str__"></a>
+<a name="stim.PauliString.__str__"></a>
+### `stim.PauliString.__str__(self) -> str`
 > ```
 > Returns a text description.
 > ```
 
-### `stim.PauliString.__truediv__(self, rhs: complex) -> stim.PauliString`<a name="stim.PauliString.__truediv__"></a>
+<a name="stim.PauliString.__truediv__"></a>
+### `stim.PauliString.__truediv__(self, rhs: complex) -> stim.PauliString`
 > ```
 > Divides the Pauli string by a complex unit.
 > 
@@ -3537,7 +3733,8 @@
 >     ValueError: The divisor isn't 1, -1, 1j, or -1j.
 > ```
 
-### `stim.PauliString.commutes(self, other: stim.PauliString) -> bool`<a name="stim.PauliString.commutes"></a>
+<a name="stim.PauliString.commutes"></a>
+### `stim.PauliString.commutes(self, other: stim.PauliString) -> bool`
 > ```
 > Determines if two Pauli strings commute or not.
 > 
@@ -3569,7 +3766,8 @@
 >     True if the Pauli strings commute, False if they anti-commute.
 > ```
 
-### `stim.PauliString.copy(self) -> stim.PauliString`<a name="stim.PauliString.copy"></a>
+<a name="stim.PauliString.copy"></a>
+### `stim.PauliString.copy(self) -> stim.PauliString`
 > ```
 > Returns a copy of the pauli string. An independent pauli string with the same contents.
 > 
@@ -3583,12 +3781,14 @@
 >     True
 > ```
 
-### `stim.PauliString.extended_product(self, other: stim.PauliString) -> Tuple[complex, stim.PauliString]`<a name="stim.PauliString.extended_product"></a>
+<a name="stim.PauliString.extended_product"></a>
+### `stim.PauliString.extended_product(self, other: stim.PauliString) -> Tuple[complex, stim.PauliString]`
 > ```
 > [DEPRECATED] Use multiplication (__mul__ or *) instead.
 > ```
 
-### `stim.PauliString.random(num_qubits: int, *, allow_imaginary: bool = False) -> stim.PauliString`<a name="stim.PauliString.random"></a>
+<a name="stim.PauliString.random"></a>
+### `stim.PauliString.random(num_qubits: int, *, allow_imaginary: bool = False) -> stim.PauliString`
 > ```
 > Samples a uniformly random Hermitian Pauli string over the given number of qubits.
 > 
@@ -3616,7 +3816,8 @@
 >     The sampled Pauli string.
 > ```
 
-### `stim.PauliString.sign`<a name="stim.PauliString.sign"></a>
+<a name="stim.PauliString.sign"></a>
+### `stim.PauliString.sign`
 > ```
 > The sign of the Pauli string. Can be +1, -1, 1j, or -1j.
 > 
@@ -3632,7 +3833,8 @@
 >     (-0-1j)
 > ```
 
-### `stim.Tableau.__add__(self, rhs: stim.Tableau) -> stim.Tableau`<a name="stim.Tableau.__add__"></a>
+<a name="stim.Tableau.__add__"></a>
+### `stim.Tableau.__add__(self, rhs: stim.Tableau) -> stim.Tableau`
 > ```
 > Returns the direct sum (diagonal concatenation) of two Tableaus.
 > 
@@ -3655,7 +3857,8 @@
 >     The direct sum.
 > ```
 
-### `stim.Tableau.__call__(self, pauli_string: stim.PauliString) -> stim.PauliString`<a name="stim.Tableau.__call__"></a>
+<a name="stim.Tableau.__call__"></a>
+### `stim.Tableau.__call__(self, pauli_string: stim.PauliString) -> stim.PauliString`
 > ```
 > Returns the result of conjugating the given PauliString by the Tableau's Clifford operation.
 > 
@@ -3674,12 +3877,14 @@
 >     +X_
 > ```
 
-### `stim.Tableau.__eq__(self, arg0: stim.Tableau) -> bool`<a name="stim.Tableau.__eq__"></a>
+<a name="stim.Tableau.__eq__"></a>
+### `stim.Tableau.__eq__(self, arg0: stim.Tableau) -> bool`
 > ```
 > Determines if two tableaus have identical contents.
 > ```
 
-### `stim.Tableau.__iadd__(self, rhs: stim.Tableau) -> stim.Tableau`<a name="stim.Tableau.__iadd__"></a>
+<a name="stim.Tableau.__iadd__"></a>
+### `stim.Tableau.__iadd__(self, rhs: stim.Tableau) -> stim.Tableau`
 > ```
 > Performs an inplace direct sum (diagonal concatenation).
 > 
@@ -3706,7 +3911,8 @@
 >     The mutated tableau.
 > ```
 
-### `stim.Tableau.__init__(self, num_qubits: int) -> None`<a name="stim.Tableau.__init__"></a>
+<a name="stim.Tableau.__init__"></a>
+### `stim.Tableau.__init__(self, num_qubits: int) -> None`
 > ```
 > Creates an identity tableau over the given number of qubits.
 > 
@@ -3724,12 +3930,14 @@
 >     num_qubits: The number of qubits the tableau's operation acts on.
 > ```
 
-### `stim.Tableau.__len__(self) -> int`<a name="stim.Tableau.__len__"></a>
+<a name="stim.Tableau.__len__"></a>
+### `stim.Tableau.__len__(self) -> int`
 > ```
 > Returns the number of qubits operated on by the tableau.
 > ```
 
-### `stim.Tableau.__mul__(self, rhs: stim.Tableau) -> stim.Tableau`<a name="stim.Tableau.__mul__"></a>
+<a name="stim.Tableau.__mul__"></a>
+### `stim.Tableau.__mul__(self, rhs: stim.Tableau) -> stim.Tableau`
 > ```
 > Returns the product of two tableaus.
 > 
@@ -3750,12 +3958,14 @@
 >     True
 > ```
 
-### `stim.Tableau.__ne__(self, arg0: stim.Tableau) -> bool`<a name="stim.Tableau.__ne__"></a>
+<a name="stim.Tableau.__ne__"></a>
+### `stim.Tableau.__ne__(self, arg0: stim.Tableau) -> bool`
 > ```
 > Determines if two tableaus have non-identical contents.
 > ```
 
-### `stim.Tableau.__pow__(self, exponent: int) -> stim.Tableau`<a name="stim.Tableau.__pow__"></a>
+<a name="stim.Tableau.__pow__"></a>
+### `stim.Tableau.__pow__(self, exponent: int) -> stim.Tableau`
 > ```
 > Raises the tableau to an integer power.
 > 
@@ -3784,17 +3994,20 @@
 >     True
 > ```
 
-### `stim.Tableau.__repr__(self) -> str`<a name="stim.Tableau.__repr__"></a>
+<a name="stim.Tableau.__repr__"></a>
+### `stim.Tableau.__repr__(self) -> str`
 > ```
 > Returns text that is a valid python expression evaluating to an equivalent `stim.Tableau`.
 > ```
 
-### `stim.Tableau.__str__(self) -> str`<a name="stim.Tableau.__str__"></a>
+<a name="stim.Tableau.__str__"></a>
+### `stim.Tableau.__str__(self) -> str`
 > ```
 > Returns a text description.
 > ```
 
-### `stim.Tableau.append(self, gate: stim.Tableau, targets: List[int]) -> None`<a name="stim.Tableau.append"></a>
+<a name="stim.Tableau.append"></a>
+### `stim.Tableau.append(self, gate: stim.Tableau, targets: List[int]) -> None`
 > ```
 > Appends an operation's effect into this tableau, mutating this tableau.
 > 
@@ -3815,7 +4028,8 @@
 >     True
 > ```
 
-### `stim.Tableau.copy(self) -> stim.Tableau`<a name="stim.Tableau.copy"></a>
+<a name="stim.Tableau.copy"></a>
+### `stim.Tableau.copy(self) -> stim.Tableau`
 > ```
 > Returns a copy of the tableau. An independent tableau with the same contents.
 > 
@@ -3829,7 +4043,8 @@
 >     True
 > ```
 
-### `stim.Tableau.from_conjugated_generators(*, xs: List[stim.PauliString], zs: List[stim.PauliString]) -> stim.Tableau`<a name="stim.Tableau.from_conjugated_generators"></a>
+<a name="stim.Tableau.from_conjugated_generators"></a>
+### `stim.Tableau.from_conjugated_generators(*, xs: List[stim.PauliString], zs: List[stim.PauliString]) -> stim.Tableau`
 > ```
 > Creates a tableau from the given outputs for each generator.
 > 
@@ -3864,7 +4079,8 @@
 >     True
 > ```
 
-### `stim.Tableau.from_named_gate(name: str) -> stim.Tableau`<a name="stim.Tableau.from_named_gate"></a>
+<a name="stim.Tableau.from_named_gate"></a>
+### `stim.Tableau.from_named_gate(name: str) -> stim.Tableau`
 > ```
 > Returns the tableau of a named Clifford gate.
 > 
@@ -3891,7 +4107,8 @@
 >     | YZ
 > ```
 
-### `stim.Tableau.inverse(self, *, unsigned: bool = False) -> stim.Tableau`<a name="stim.Tableau.inverse"></a>
+<a name="stim.Tableau.inverse"></a>
+### `stim.Tableau.inverse(self, *, unsigned: bool = False) -> stim.Tableau`
 > ```
 > Computes the inverse of the tableau.
 > 
@@ -3945,7 +4162,8 @@
 >     | X_ YX Y_
 > ```
 
-### `stim.Tableau.inverse_x_output(self, input_index: int, *, unsigned: bool = False) -> stim.PauliString`<a name="stim.Tableau.inverse_x_output"></a>
+<a name="stim.Tableau.inverse_x_output"></a>
+### `stim.Tableau.inverse_x_output(self, input_index: int, *, unsigned: bool = False) -> stim.PauliString`
 > ```
 > Returns the result of conjugating an X Pauli generator by the inverse of the tableau.
 > 
@@ -3973,7 +4191,8 @@
 >     True
 > ```
 
-### `stim.Tableau.inverse_x_output_pauli(self, input_index: int, output_index: int) -> int`<a name="stim.Tableau.inverse_x_output_pauli"></a>
+<a name="stim.Tableau.inverse_x_output_pauli"></a>
+### `stim.Tableau.inverse_x_output_pauli(self, input_index: int, output_index: int) -> int`
 > ```
 > Returns a Pauli term from the tableau's inverse's output pauli string for an input X generator.
 > 
@@ -4008,7 +4227,8 @@
 >     3
 > ```
 
-### `stim.Tableau.inverse_y_output(self, input_index: int, *, unsigned: bool = False) -> stim.PauliString`<a name="stim.Tableau.inverse_y_output"></a>
+<a name="stim.Tableau.inverse_y_output"></a>
+### `stim.Tableau.inverse_y_output(self, input_index: int, *, unsigned: bool = False) -> stim.PauliString`
 > ```
 > Returns the result of conjugating a Y Pauli generator by the inverse of the tableau.
 > 
@@ -4036,7 +4256,8 @@
 >     True
 > ```
 
-### `stim.Tableau.inverse_y_output_pauli(self, input_index: int, output_index: int) -> int`<a name="stim.Tableau.inverse_y_output_pauli"></a>
+<a name="stim.Tableau.inverse_y_output_pauli"></a>
+### `stim.Tableau.inverse_y_output_pauli(self, input_index: int, output_index: int) -> int`
 > ```
 > Returns a Pauli term from the tableau's inverse's output pauli string for an input Y generator.
 > 
@@ -4071,7 +4292,8 @@
 >     2
 > ```
 
-### `stim.Tableau.inverse_z_output(self, input_index: int, *, unsigned: bool = False) -> stim.PauliString`<a name="stim.Tableau.inverse_z_output"></a>
+<a name="stim.Tableau.inverse_z_output"></a>
+### `stim.Tableau.inverse_z_output(self, input_index: int, *, unsigned: bool = False) -> stim.PauliString`
 > ```
 > Returns the result of conjugating a Z Pauli generator by the inverse of the tableau.
 > 
@@ -4101,7 +4323,8 @@
 >     True
 > ```
 
-### `stim.Tableau.inverse_z_output_pauli(self, input_index: int, output_index: int) -> int`<a name="stim.Tableau.inverse_z_output_pauli"></a>
+<a name="stim.Tableau.inverse_z_output_pauli"></a>
+### `stim.Tableau.inverse_z_output_pauli(self, input_index: int, output_index: int) -> int`
 > ```
 > Returns a Pauli term from the tableau's inverse's output pauli string for an input Z generator.
 > 
@@ -4136,7 +4359,8 @@
 >     1
 > ```
 
-### `stim.Tableau.prepend(self, gate: stim.Tableau, targets: List[int]) -> None`<a name="stim.Tableau.prepend"></a>
+<a name="stim.Tableau.prepend"></a>
+### `stim.Tableau.prepend(self, gate: stim.Tableau, targets: List[int]) -> None`
 > ```
 > Prepends an operation's effect into this tableau, mutating this tableau.
 > 
@@ -4156,7 +4380,8 @@
 >     True
 > ```
 
-### `stim.Tableau.random(num_qubits: int) -> stim.Tableau`<a name="stim.Tableau.random"></a>
+<a name="stim.Tableau.random"></a>
+### `stim.Tableau.random(num_qubits: int) -> stim.Tableau`
 > ```
 > Samples a uniformly random Clifford operation over the given number of qubits and returns its tableau.
 > 
@@ -4176,7 +4401,8 @@
 >     https://arxiv.org/abs/2003.09412
 > ```
 
-### `stim.Tableau.then(self, second: stim.Tableau) -> stim.Tableau`<a name="stim.Tableau.then"></a>
+<a name="stim.Tableau.then"></a>
+### `stim.Tableau.then(self, second: stim.Tableau) -> stim.Tableau`
 > ```
 > Returns the result of composing two tableaus.
 > 
@@ -4198,7 +4424,8 @@
 >     True
 > ```
 
-### `stim.Tableau.x_output(self, target: int) -> stim.PauliString`<a name="stim.Tableau.x_output"></a>
+<a name="stim.Tableau.x_output"></a>
+### `stim.Tableau.x_output(self, target: int) -> stim.PauliString`
 > ```
 > Returns the result of conjugating a Pauli X by the tableau's Clifford operation.
 > 
@@ -4218,7 +4445,8 @@
 >     stim.PauliString("+_X")
 > ```
 
-### `stim.Tableau.x_output_pauli(self, input_index: int, output_index: int) -> int`<a name="stim.Tableau.x_output_pauli"></a>
+<a name="stim.Tableau.x_output_pauli"></a>
+### `stim.Tableau.x_output_pauli(self, input_index: int, output_index: int) -> int`
 > ```
 > Returns a Pauli term from the tableau's output pauli string for an input X generator.
 > 
@@ -4253,7 +4481,8 @@
 >     3
 > ```
 
-### `stim.Tableau.y_output(self, target: int) -> stim.PauliString`<a name="stim.Tableau.y_output"></a>
+<a name="stim.Tableau.y_output"></a>
+### `stim.Tableau.y_output(self, target: int) -> stim.PauliString`
 > ```
 > Returns the result of conjugating a Pauli Y by the tableau's Clifford operation.
 > 
@@ -4273,7 +4502,8 @@
 >     stim.PauliString("+ZY")
 > ```
 
-### `stim.Tableau.y_output_pauli(self, input_index: int, output_index: int) -> int`<a name="stim.Tableau.y_output_pauli"></a>
+<a name="stim.Tableau.y_output_pauli"></a>
+### `stim.Tableau.y_output_pauli(self, input_index: int, output_index: int) -> int`
 > ```
 > Returns a Pauli term from the tableau's output pauli string for an input Y generator.
 > 
@@ -4308,7 +4538,8 @@
 >     2
 > ```
 
-### `stim.Tableau.z_output(self, target: int) -> stim.PauliString`<a name="stim.Tableau.z_output"></a>
+<a name="stim.Tableau.z_output"></a>
+### `stim.Tableau.z_output(self, target: int) -> stim.PauliString`
 > ```
 > Returns the result of conjugating a Pauli Z by the tableau's Clifford operation.
 > 
@@ -4328,7 +4559,8 @@
 >     stim.PauliString("+ZZ")
 > ```
 
-### `stim.Tableau.z_output_pauli(self, input_index: int, output_index: int) -> int`<a name="stim.Tableau.z_output_pauli"></a>
+<a name="stim.Tableau.z_output_pauli"></a>
+### `stim.Tableau.z_output_pauli(self, input_index: int, output_index: int) -> int`
 > ```
 > Returns a Pauli term from the tableau's output pauli string for an input Z generator.
 > 
@@ -4363,7 +4595,8 @@
 >     1
 > ```
 
-### `stim.TableauSimulator.canonical_stabilizers(self) -> List[stim.PauliString]`<a name="stim.TableauSimulator.canonical_stabilizers"></a>
+<a name="stim.TableauSimulator.canonical_stabilizers"></a>
+### `stim.TableauSimulator.canonical_stabilizers(self) -> List[stim.PauliString]`
 > ```
 > Returns a list of the stabilizers of the simulator's current state in a standard form.
 > 
@@ -4401,7 +4634,8 @@
 >     [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
 > ```
 
-### `stim.TableauSimulator.cnot(self, *args) -> None`<a name="stim.TableauSimulator.cnot"></a>
+<a name="stim.TableauSimulator.cnot"></a>
+### `stim.TableauSimulator.cnot(self, *args) -> None`
 > ```
 > Applies a controlled X gate to the simulator's state.
 > 
@@ -4411,7 +4645,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.copy(self) -> stim.TableauSimulator`<a name="stim.TableauSimulator.copy"></a>
+<a name="stim.TableauSimulator.copy"></a>
+### `stim.TableauSimulator.copy(self) -> stim.TableauSimulator`
 > ```
 > Returns a copy of the simulator. A simulator with the same internal state.
 > 
@@ -4440,7 +4675,8 @@
 >     True
 > ```
 
-### `stim.TableauSimulator.current_inverse_tableau(self) -> stim.Tableau`<a name="stim.TableauSimulator.current_inverse_tableau"></a>
+<a name="stim.TableauSimulator.current_inverse_tableau"></a>
+### `stim.TableauSimulator.current_inverse_tableau(self) -> stim.Tableau`
 > ```
 > Returns a copy of the internal state of the simulator as a stim.Tableau.
 > 
@@ -4474,7 +4710,8 @@
 >     )
 > ```
 
-### `stim.TableauSimulator.current_measurement_record(self) -> List[bool]`<a name="stim.TableauSimulator.current_measurement_record"></a>
+<a name="stim.TableauSimulator.current_measurement_record"></a>
+### `stim.TableauSimulator.current_measurement_record(self) -> List[bool]`
 > ```
 > Returns a copy of the record of all measurements performed by the simulator.
 > 
@@ -4498,7 +4735,8 @@
 >     A list of booleans containing the result of every measurement performed by the simulator so far.
 > ```
 
-### `stim.TableauSimulator.cy(self, *args) -> None`<a name="stim.TableauSimulator.cy"></a>
+<a name="stim.TableauSimulator.cy"></a>
+### `stim.TableauSimulator.cy(self, *args) -> None`
 > ```
 > Applies a controlled Y gate to the simulator's state.
 > 
@@ -4508,7 +4746,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.cz(self, *args) -> None`<a name="stim.TableauSimulator.cz"></a>
+<a name="stim.TableauSimulator.cz"></a>
+### `stim.TableauSimulator.cz(self, *args) -> None`
 > ```
 > Applies a controlled Z gate to the simulator's state.
 > 
@@ -4518,7 +4757,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.do(*args, **kwargs)`<a name="stim.TableauSimulator.do"></a>
+<a name="stim.TableauSimulator.do"></a>
+### `stim.TableauSimulator.do(*args, **kwargs)`
 > ```
 > Overloaded function.
 > 
@@ -4557,7 +4797,8 @@
 >     pauli_string: A stim.PauliString containing Pauli operations to apply.
 > ```
 
-### `stim.TableauSimulator.h(self, *args) -> None`<a name="stim.TableauSimulator.h"></a>
+<a name="stim.TableauSimulator.h"></a>
+### `stim.TableauSimulator.h(self, *args) -> None`
 > ```
 > Applies a Hadamard gate to the simulator's state.
 > 
@@ -4565,7 +4806,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.h_xy(self, *args) -> None`<a name="stim.TableauSimulator.h_xy"></a>
+<a name="stim.TableauSimulator.h_xy"></a>
+### `stim.TableauSimulator.h_xy(self, *args) -> None`
 > ```
 > Applies a variant of the Hadamard gate that swaps the X and Y axes to the simulator's state.
 > 
@@ -4573,7 +4815,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.h_yz(self, *args) -> None`<a name="stim.TableauSimulator.h_yz"></a>
+<a name="stim.TableauSimulator.h_yz"></a>
+### `stim.TableauSimulator.h_yz(self, *args) -> None`
 > ```
 > Applies a variant of the Hadamard gate that swaps the Y and Z axes to the simulator's state.
 > 
@@ -4581,7 +4824,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.iswap(self, *args) -> None`<a name="stim.TableauSimulator.iswap"></a>
+<a name="stim.TableauSimulator.iswap"></a>
+### `stim.TableauSimulator.iswap(self, *args) -> None`
 > ```
 > Applies an ISWAP gate to the simulator's state.
 > 
@@ -4591,7 +4835,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.iswap_dag(self, *args) -> None`<a name="stim.TableauSimulator.iswap_dag"></a>
+<a name="stim.TableauSimulator.iswap_dag"></a>
+### `stim.TableauSimulator.iswap_dag(self, *args) -> None`
 > ```
 > Applies an ISWAP_DAG gate to the simulator's state.
 > 
@@ -4601,7 +4846,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.measure(self, target: int) -> bool`<a name="stim.TableauSimulator.measure"></a>
+<a name="stim.TableauSimulator.measure"></a>
+### `stim.TableauSimulator.measure(self, target: int) -> bool`
 > ```
 > Measures a single qubit.
 > 
@@ -4618,7 +4864,8 @@
 >     The measurement result as a bool.
 > ```
 
-### `stim.TableauSimulator.measure_kickback(self, target: int) -> tuple`<a name="stim.TableauSimulator.measure_kickback"></a>
+<a name="stim.TableauSimulator.measure_kickback"></a>
+### `stim.TableauSimulator.measure_kickback(self, target: int) -> tuple`
 > ```
 > Measures a qubit and returns the result as well as its Pauli kickback (if any).
 > 
@@ -4671,7 +4918,8 @@
 >     [True, True, True]
 > ```
 
-### `stim.TableauSimulator.measure_many(self, *args) -> List[bool]`<a name="stim.TableauSimulator.measure_many"></a>
+<a name="stim.TableauSimulator.measure_many"></a>
+### `stim.TableauSimulator.measure_many(self, *args) -> List[bool]`
 > ```
 > Measures multiple qubits.
 > 
@@ -4682,7 +4930,8 @@
 >     The measurement results as a list of bools.
 > ```
 
-### `stim.TableauSimulator.peek_bloch(self, target: int) -> stim.PauliString`<a name="stim.TableauSimulator.peek_bloch"></a>
+<a name="stim.TableauSimulator.peek_bloch"></a>
+### `stim.TableauSimulator.peek_bloch(self, target: int) -> stim.PauliString`
 > ```
 > Returns the current bloch vector of the qubit, represented as a stim.PauliString.
 > 
@@ -4719,7 +4968,8 @@
 >     stim.PauliString("+_")
 > ```
 
-### `stim.TableauSimulator.peek_observable_expectation(self, observable: stim.PauliString) -> int`<a name="stim.TableauSimulator.peek_observable_expectation"></a>
+<a name="stim.TableauSimulator.peek_observable_expectation"></a>
+### `stim.TableauSimulator.peek_observable_expectation(self, observable: stim.PauliString) -> int`
 > ```
 > Determines the expected value of an observable (which will always be -1, 0, or +1).
 > 
@@ -4761,7 +5011,8 @@
 >     IIZ 1
 > ```
 
-### `stim.TableauSimulator.reset(self, *args) -> None`<a name="stim.TableauSimulator.reset"></a>
+<a name="stim.TableauSimulator.reset"></a>
+### `stim.TableauSimulator.reset(self, *args) -> None`
 > ```
 > Resets qubits to zero (e.g. by swapping them for zero'd qubit from the environment).
 > 
@@ -4769,7 +5020,8 @@
 >     *targets: The indices of the qubits to reset.
 > ```
 
-### `stim.TableauSimulator.s(self, *args) -> None`<a name="stim.TableauSimulator.s"></a>
+<a name="stim.TableauSimulator.s"></a>
+### `stim.TableauSimulator.s(self, *args) -> None`
 > ```
 > Applies a SQRT_Z gate to the simulator's state.
 > 
@@ -4777,7 +5029,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.s_dag(self, *args) -> None`<a name="stim.TableauSimulator.s_dag"></a>
+<a name="stim.TableauSimulator.s_dag"></a>
+### `stim.TableauSimulator.s_dag(self, *args) -> None`
 > ```
 > Applies a SQRT_Z_DAG gate to the simulator's state.
 > 
@@ -4785,7 +5038,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.set_inverse_tableau(self, arg0: stim.Tableau) -> None`<a name="stim.TableauSimulator.set_inverse_tableau"></a>
+<a name="stim.TableauSimulator.set_inverse_tableau"></a>
+### `stim.TableauSimulator.set_inverse_tableau(self, arg0: stim.Tableau) -> None`
 > ```
 > Overwrites the simulator's internal state with a copy of the given inverse tableau.
 > 
@@ -4810,7 +5064,8 @@
 >     True
 > ```
 
-### `stim.TableauSimulator.set_num_qubits(self, arg0: int) -> None`<a name="stim.TableauSimulator.set_num_qubits"></a>
+<a name="stim.TableauSimulator.set_num_qubits"></a>
+### `stim.TableauSimulator.set_num_qubits(self, arg0: int) -> None`
 > ```
 > Forces the simulator's internal state to track exactly the qubits whose indices are in range(new_num_qubits).
 > 
@@ -4840,7 +5095,8 @@
 >     [True, True, False, False]
 > ```
 
-### `stim.TableauSimulator.sqrt_x(self, *args) -> None`<a name="stim.TableauSimulator.sqrt_x"></a>
+<a name="stim.TableauSimulator.sqrt_x"></a>
+### `stim.TableauSimulator.sqrt_x(self, *args) -> None`
 > ```
 > Applies a SQRT_X gate to the simulator's state.
 > 
@@ -4848,7 +5104,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.sqrt_x_dag(self, *args) -> None`<a name="stim.TableauSimulator.sqrt_x_dag"></a>
+<a name="stim.TableauSimulator.sqrt_x_dag"></a>
+### `stim.TableauSimulator.sqrt_x_dag(self, *args) -> None`
 > ```
 > Applies a SQRT_X_DAG gate to the simulator's state.
 > 
@@ -4856,7 +5113,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.sqrt_y(self, *args) -> None`<a name="stim.TableauSimulator.sqrt_y"></a>
+<a name="stim.TableauSimulator.sqrt_y"></a>
+### `stim.TableauSimulator.sqrt_y(self, *args) -> None`
 > ```
 > Applies a SQRT_Y gate to the simulator's state.
 > 
@@ -4864,7 +5122,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.sqrt_y_dag(self, *args) -> None`<a name="stim.TableauSimulator.sqrt_y_dag"></a>
+<a name="stim.TableauSimulator.sqrt_y_dag"></a>
+### `stim.TableauSimulator.sqrt_y_dag(self, *args) -> None`
 > ```
 > Applies a SQRT_Y_DAG gate to the simulator's state.
 > 
@@ -4872,7 +5131,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.state_vector(self) -> numpy.ndarray[numpy.float32]`<a name="stim.TableauSimulator.state_vector"></a>
+<a name="stim.TableauSimulator.state_vector"></a>
+### `stim.TableauSimulator.state_vector(self) -> numpy.ndarray[numpy.float32]`
 > ```
 > Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 > 
@@ -4903,7 +5163,8 @@
 >     1.0
 > ```
 
-### `stim.TableauSimulator.swap(self, *args) -> None`<a name="stim.TableauSimulator.swap"></a>
+<a name="stim.TableauSimulator.swap"></a>
+### `stim.TableauSimulator.swap(self, *args) -> None`
 > ```
 > Applies a swap gate to the simulator's state.
 > 
@@ -4913,7 +5174,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.x(self, *args) -> None`<a name="stim.TableauSimulator.x"></a>
+<a name="stim.TableauSimulator.x"></a>
+### `stim.TableauSimulator.x(self, *args) -> None`
 > ```
 > Applies a Pauli X gate to the simulator's state.
 > 
@@ -4921,7 +5183,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.xcx(self, *args) -> None`<a name="stim.TableauSimulator.xcx"></a>
+<a name="stim.TableauSimulator.xcx"></a>
+### `stim.TableauSimulator.xcx(self, *args) -> None`
 > ```
 > Applies an X-controlled X gate to the simulator's state.
 > 
@@ -4931,7 +5194,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.xcy(self, *args) -> None`<a name="stim.TableauSimulator.xcy"></a>
+<a name="stim.TableauSimulator.xcy"></a>
+### `stim.TableauSimulator.xcy(self, *args) -> None`
 > ```
 > Applies an X-controlled Y gate to the simulator's state.
 > 
@@ -4941,7 +5205,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.xcz(self, *args) -> None`<a name="stim.TableauSimulator.xcz"></a>
+<a name="stim.TableauSimulator.xcz"></a>
+### `stim.TableauSimulator.xcz(self, *args) -> None`
 > ```
 > Applies an X-controlled Z gate to the simulator's state.
 > 
@@ -4951,7 +5216,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.y(self, *args) -> None`<a name="stim.TableauSimulator.y"></a>
+<a name="stim.TableauSimulator.y"></a>
+### `stim.TableauSimulator.y(self, *args) -> None`
 > ```
 > Applies a Pauli Y gate to the simulator's state.
 > 
@@ -4959,7 +5225,8 @@
 >     *targets: The indices of the qubits to target with the gate.
 > ```
 
-### `stim.TableauSimulator.ycx(self, *args) -> None`<a name="stim.TableauSimulator.ycx"></a>
+<a name="stim.TableauSimulator.ycx"></a>
+### `stim.TableauSimulator.ycx(self, *args) -> None`
 > ```
 > Applies a Y-controlled X gate to the simulator's state.
 > 
@@ -4969,7 +5236,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.ycy(self, *args) -> None`<a name="stim.TableauSimulator.ycy"></a>
+<a name="stim.TableauSimulator.ycy"></a>
+### `stim.TableauSimulator.ycy(self, *args) -> None`
 > ```
 > Applies a Y-controlled Y gate to the simulator's state.
 > 
@@ -4979,7 +5247,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.ycz(self, *args) -> None`<a name="stim.TableauSimulator.ycz"></a>
+<a name="stim.TableauSimulator.ycz"></a>
+### `stim.TableauSimulator.ycz(self, *args) -> None`
 > ```
 > Applies a Y-controlled Z gate to the simulator's state.
 > 
@@ -4989,7 +5258,8 @@
 >         There must be an even number of targets.
 > ```
 
-### `stim.TableauSimulator.z(self, *args) -> None`<a name="stim.TableauSimulator.z"></a>
+<a name="stim.TableauSimulator.z"></a>
+### `stim.TableauSimulator.z(self, *args) -> None`
 > ```
 > Applies a Pauli Z gate to the simulator's state.
 > 
