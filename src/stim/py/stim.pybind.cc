@@ -206,6 +206,5 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
-    m.def("_UNSTABLE_detect_march", &detect_march);
     pybind_circuit_after_types_all_defined(c_circuit);
 }

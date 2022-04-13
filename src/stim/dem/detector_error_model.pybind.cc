@@ -71,7 +71,6 @@ void pybind_detector_error_model(pybind11::module &m) {
     auto c = pybind11::class_<DetectorErrorModel>(
         m,
         "DetectorErrorModel",
-        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             A list of instructions describing error mechanisms in terms of the detection events they produce.
 

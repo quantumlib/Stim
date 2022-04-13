@@ -37,7 +37,9 @@ def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
     return out
 
 
-def better_sorted_str_terms(val: Any) -> Tuple[Any, ...]:
+def better_sorted_str_terms(val: Any) -> Any:
+    if isinstance(val, tuple):
+        return tuple(better_sorted_str_terms(e) for e in val)
     if not isinstance(val, str):
         return val
     terms = split_by(val, lambda c: c in '.0123456789')

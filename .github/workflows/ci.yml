@@ -28,6 +28,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-2019, macOS-10.15]
+        py: [cp36, cp37, cp38, cp39, cp310]
+    env:
+      CIBW_BUILD: "${{ matrix.py }}-*"
+      CIBW_SKIP: "cp310-win32 cp310-manylinux_i686 *-musllinux_*"
+      CIBW_TEST_REQUIRES: cirq-core pytest
+      CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -35,29 +41,32 @@ jobs:
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
       - run: mkdir -p output/sinter
-      - run: python -m pip install pybind11==2.6.0
-      - run: python setup.py sdist
-      - run: mv dist/* output/stim
-      - run: cd glue/cirq && python setup.py sdist
-      - run: mv glue/cirq/dist/* output/stimcirq
-      - run: cd glue/sample && python setup.py sdist
-      - run: mv glue/sample/dist/* output/sinter
-      - run: python -m pip install cibuildwheel==2.3.0
+      - run: python -m pip install pybind11==2.6.0 cibuildwheel==2.4.0
+      - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir output/stim
-        env:
-          CIBW_SKIP: "cp27-* cp35-* pp* cp310-win32 cp310-manylinux_i686 *-musllinux_*"
-          CIBW_TEST_REQUIRES: cirq-core pytest
-          CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
+      - run: python setup.py sdist
+      - run: cd glue/cirq && python setup.py sdist
+      - run: cd glue/sample && python setup.py sdist
+      - run: mv dist/* output/stim
+      - run: mv glue/cirq/dist/* output/stimcirq
+      - run: mv glue/sample/dist/* output/sinter
       - uses: actions/upload-artifact@v2
         with:
           name: dist
           path: |
-            ./output/stim/*.whl
-            ./output/stim/*.tar.gz
             ./output/stimcirq/*.tar.gz
             ./output/sinter/*.tar.gz
+            ./output/stim/*
+  check_sdist_installs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: python -m pip install pybind11==2.6.0
+      - run: python setup.py sdist
+      - run: pip install dist/*.tar.gz
   upload_dev_release_to_pypi:
-    needs: build_dist
+    needs: ["build_dist"]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:

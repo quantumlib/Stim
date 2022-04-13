@@ -84,7 +84,6 @@ void pybind_circuit_instruction(pybind11::module &m) {
     auto c = pybind11::class_<CircuitInstruction>(
         m,
         "CircuitInstruction",
-        pybind11::module_local(),
         clean_doc_string(u8R"DOC(
             An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
 

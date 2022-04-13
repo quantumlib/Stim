@@ -91,7 +91,6 @@ pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler
     return pybind11::class_<CompiledMeasurementSampler>(
         m,
         "CompiledMeasurementSampler",
-        pybind11::module_local(),
         "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
 }
 
