@@ -39,8 +39,7 @@ jobs:
       - uses: actions/setup-python@v2
       - run: python glue/python/overwrite_dev_version_with_date.py
       - run: mkdir -p output/stim
-      - run: python -m pip install pybind11==2.6.0
-      - run: python -m pip install cibuildwheel==2.4.0
+      - run: python -m pip install pybind11==2.6.0 cibuildwheel==2.4.0
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir output/stim
       - uses: actions/upload-artifact@v2
@@ -49,7 +48,7 @@ jobs:
           path: |
             ./output/stim/*.whl
   build_sdist:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
