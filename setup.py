@@ -44,30 +44,30 @@ stim_detect_machine_architecture = Extension(
         '-mno-avx2',
     ],
 )
-# stim_polyfill = Extension(
-#     'stim._stim_polyfill',
-#     sources=RELEVANT_SOURCE_FILES,
-#     include_dirs=[pybind11.get_include(), "src"],
-#     language='c++',
-#     extra_compile_args=[
-#         *common_compile_args,
-#         # I would specify -mno-sse2 but that causes build failures in non-stim code...?
-#         '-mno-avx2',
-#         '-DSTIM_PYBIND11_MODULE_NAME=_stim_polyfill',
-#     ],
-# )
-# stim_sse2 = Extension(
-#     'stim._stim_sse2',
-#     sources=RELEVANT_SOURCE_FILES,
-#     include_dirs=[pybind11.get_include(), "src"],
-#     language='c++',
-#     extra_compile_args=[
-#         *common_compile_args,
-#         '-msse2',
-#         '-mno-avx2',
-#         '-DSTIM_PYBIND11_MODULE_NAME=_stim_sse2',
-#     ],
-# )
+stim_polyfill = Extension(
+    'stim._stim_polyfill',
+    sources=RELEVANT_SOURCE_FILES,
+    include_dirs=[pybind11.get_include(), "src"],
+    language='c++',
+    extra_compile_args=[
+        *common_compile_args,
+        # I would specify -mno-sse2 but that causes build failures in non-stim code...?
+        '-mno-avx2',
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_polyfill',
+    ],
+)
+stim_sse2 = Extension(
+    'stim._stim_sse2',
+    sources=RELEVANT_SOURCE_FILES,
+    include_dirs=[pybind11.get_include(), "src"],
+    language='c++',
+    extra_compile_args=[
+        *common_compile_args,
+        '-msse2',
+        '-mno-avx2',
+        '-DSTIM_PYBIND11_MODULE_NAME=_stim_sse2',
+    ],
+)
 stim_avx2 = Extension(
     'stim._stim_avx2',
     sources=RELEVANT_SOURCE_FILES,
@@ -96,8 +96,8 @@ setup(
     long_description_content_type='text/markdown',
     ext_modules=[
         stim_detect_machine_architecture,
-        # stim_polyfill,
-        # stim_sse2,
+        stim_polyfill,
+        stim_sse2,
         stim_avx2,
     ],
     python_requires='>=3.6.0',
