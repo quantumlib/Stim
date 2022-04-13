@@ -79,7 +79,7 @@ jobs:
       - run: python setup.py sdist
       - run: pip install dist/*.tar.gz
   upload_dev_release_to_pypi:
-    needs: build_dist
+    needs: ["build_wheel", "build_sdist"]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
