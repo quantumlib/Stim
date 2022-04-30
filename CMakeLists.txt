@@ -70,7 +70,11 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/mem/simd_util.cc
         src/stim/mem/sparse_xor_vec.cc
         src/stim/probability_util.cc
-        src/stim/search/graphlike/min_distance.cc
+        src/stim/search/graphlike/algo.cc
+        src/stim/search/graphlike/edge.cc
+        src/stim/search/graphlike/graph.cc
+        src/stim/search/graphlike/node.cc
+        src/stim/search/graphlike/search_state.cc
         src/stim/simulators/detection_simulator.cc
         src/stim/simulators/error_analyzer.cc
         src/stim/simulators/error_matcher.cc
@@ -114,7 +118,11 @@ set(TEST_FILES
         src/stim/mem/simd_util.test.cc
         src/stim/mem/sparse_xor_vec.test.cc
         src/stim/probability_util.test.cc
-        src/stim/search/graphlike/min_distance.test.cc
+        src/stim/search/graphlike/algo.test.cc
+        src/stim/search/graphlike/edge.test.cc
+        src/stim/search/graphlike/graph.test.cc
+        src/stim/search/graphlike/node.test.cc
+        src/stim/search/graphlike/search_state.test.cc
         src/stim/simulators/detection_simulator.test.cc
         src/stim/simulators/error_analyzer.test.cc
         src/stim/simulators/error_matcher.test.cc
@@ -142,7 +150,7 @@ set(BENCHMARK_FILES
         src/stim/mem/simd_compat.perf.cc
         src/stim/mem/sparse_xor_vec.perf.cc
         src/stim/probability_util.perf.cc
-        src/stim/search/graphlike/min_distance.perf.cc
+        src/stim/search/graphlike/algo.perf.cc
         src/stim/simulators/error_analyzer.perf.cc
         src/stim/simulators/frame_simulator.perf.cc
         src/stim/simulators/tableau_simulator.perf.cc
