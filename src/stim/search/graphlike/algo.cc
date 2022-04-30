@@ -13,20 +13,20 @@
 // limitations under the License.
 
 #include "stim/search/graphlike/algo.h"
-#include "stim/search/graphlike/edge.h"
-#include "stim/search/graphlike/graph.h"
-#include "stim/search/graphlike/node.h"
-#include "stim/search/graphlike/search_state.h"
 
 #include <algorithm>
 #include <map>
 #include <queue>
 
+#include "stim/search/graphlike/edge.h"
+#include "stim/search/graphlike/graph.h"
+#include "stim/search/graphlike/node.h"
+#include "stim/search/graphlike/search_state.h"
+
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
-DetectorErrorModel backtrack_path(
-    const std::map<SearchState, SearchState> &back_map, SearchState final_state) {
+DetectorErrorModel backtrack_path(const std::map<SearchState, SearchState> &back_map, SearchState final_state) {
     DetectorErrorModel out;
     auto cur_state = final_state;
     while (true) {

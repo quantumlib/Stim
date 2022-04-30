@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/search/graphlike/node.h"
 #include "stim/search/graphlike/search_state.h"
 
 #include <gtest/gtest.h>
+
+#include "stim/search/graphlike/node.h"
 
 using namespace stim;
 using namespace stim::impl_search_graphlike;
@@ -82,8 +83,7 @@ TEST(search_graphlike, DemAdjGraphSearchState_append_transition_as_error_instruc
         error(1) D1 D3
     )MODEL"));
 
-    SearchState(1, 2, 9).append_transition_as_error_instruction_to(
-        SearchState(1, NO_NODE_INDEX, 9), out);
+    SearchState(1, 2, 9).append_transition_as_error_instruction_to(SearchState(1, NO_NODE_INDEX, 9), out);
     ASSERT_EQ(out, DetectorErrorModel(R"MODEL(
         error(1) L0 L3 L4
         error(1) D1 D3

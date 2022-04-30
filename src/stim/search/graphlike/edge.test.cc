@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/search/graphlike/node.h"
 #include "stim/search/graphlike/edge.h"
 
 #include <gtest/gtest.h>
+
+#include "stim/search/graphlike/node.h"
 
 using namespace stim;
 using namespace stim::impl_search_graphlike;

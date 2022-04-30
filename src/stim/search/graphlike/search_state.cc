@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/search/graphlike/node.h"
 #include "stim/search/graphlike/search_state.h"
 
 #include <algorithm>
 #include <map>
 #include <queue>
+
+#include "stim/search/graphlike/node.h"
 
 using namespace stim;
 using namespace stim::impl_search_graphlike;
@@ -48,8 +49,7 @@ SearchState SearchState::canonical() const {
     }
 }
 
-void SearchState::append_transition_as_error_instruction_to(
-    const SearchState &other, DetectorErrorModel &out) {
+void SearchState::append_transition_as_error_instruction_to(const SearchState &other, DetectorErrorModel &out) {
     // Extract detector indices while cancelling duplicates.
     std::array<uint64_t, 5> nodes{det_active, det_held, other.det_active, other.det_held, NO_NODE_INDEX};
     std::sort(nodes.begin(), nodes.end());

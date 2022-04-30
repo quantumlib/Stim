@@ -92,15 +92,14 @@ std::string CompiledDetectorSampler::repr() const {
     return result.str();
 }
 
-CompiledDetectorSampler stim_pybind::py_init_compiled_detector_sampler(const Circuit &circuit, const pybind11::object &seed) {
+CompiledDetectorSampler stim_pybind::py_init_compiled_detector_sampler(
+    const Circuit &circuit, const pybind11::object &seed) {
     return CompiledDetectorSampler(circuit, make_py_seeded_rng(seed));
 }
 
 pybind11::class_<CompiledDetectorSampler> stim_pybind::pybind_compiled_detector_sampler_class(pybind11::module &m) {
     return pybind11::class_<CompiledDetectorSampler>(
-        m,
-        "CompiledDetectorSampler",
-        "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
+        m, "CompiledDetectorSampler", "An analyzed stabilizer circuit whose detection events can be sampled quickly.");
 }
 
 void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c) {

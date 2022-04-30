@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "stim/search/graphlike/algo.h"
-#include "stim/search/graphlike/edge.h"
 
 #include <gtest/gtest.h>
 
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/search/graphlike/edge.h"
 #include "stim/simulators/error_analyzer.h"
 
 using namespace stim;

@@ -17,6 +17,7 @@
 #ifndef _STIM_SEARCH_SEARCH_H
 #define _STIM_SEARCH_SEARCH_H
 
+#include "stim/search/decay/algo.h"
 #include "stim/search/graphlike/algo.h"
 
 #endif

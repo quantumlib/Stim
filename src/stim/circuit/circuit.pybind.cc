@@ -25,10 +25,10 @@
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
+#include "stim/search/search.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
-#include "stim/search/search.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -1310,7 +1310,9 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
     c.def(
         "explain_detector_error_model_errors",
-        [](const Circuit &self, const pybind11::object &dem_filter, bool reduce_to_one_representative_error) -> std::vector<ExplainedError> {
+        [](const Circuit &self,
+           const pybind11::object &dem_filter,
+           bool reduce_to_one_representative_error) -> std::vector<ExplainedError> {
             if (dem_filter.is_none()) {
                 return ErrorMatcher::explain_errors_from_circuit(self, nullptr, reduce_to_one_representative_error);
             } else {
