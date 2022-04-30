@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/min_distance.h"
+#include "stim/search/graphlike/min_distance.h"
 
 #include <gtest/gtest.h>
 
@@ -23,7 +23,7 @@
 constexpr uint64_t NO_NODE_INDEX = UINT64_MAX;
 
 using namespace stim;
-using namespace stim::impl_min_distance;
+using namespace stim::impl_min_distance_graphlike;
 
 TEST(shortest_graphlike_undetectable_logical_error, no_error) {
     // No error.
@@ -177,7 +177,7 @@ TEST(shortest_graphlike_undetectable_logical_error, repetition_code) {
     ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(), 7);
 }
 
-TEST(impl_min_distance, DemAdjEdge) {
+TEST(impl_min_distance_graphlike, DemAdjEdge) {
     DemAdjEdge e1{NO_NODE_INDEX, 0};
     DemAdjEdge e2{1, 0};
     DemAdjEdge e3{NO_NODE_INDEX, 1};
@@ -198,7 +198,7 @@ TEST(impl_min_distance, DemAdjEdge) {
     ASSERT_NE(e1, e3);
 }
 
-TEST(impl_min_distance, DemAdjNode) {
+TEST(impl_min_distance_graphlike, DemAdjNode) {
     DemAdjNode n1{};
     DemAdjNode n2{{DemAdjEdge{NO_NODE_INDEX, 0}}};
     DemAdjNode n3{{DemAdjEdge{1, 5}, DemAdjEdge{NO_NODE_INDEX, 8}}};
@@ -217,7 +217,7 @@ TEST(impl_min_distance, DemAdjNode) {
     ASSERT_NE(n1, n3);
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_construct) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_construct) {
     DemAdjGraphSearchState r;
     ASSERT_EQ(r.det_active, NO_NODE_INDEX);
     ASSERT_EQ(r.det_held, NO_NODE_INDEX);
@@ -229,7 +229,7 @@ TEST(impl_min_distance, DemAdjGraphSearchState_construct) {
     ASSERT_EQ(r2.obs_mask, 3);
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_is_undetected) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_is_undetected) {
     ASSERT_FALSE(DemAdjGraphSearchState(1, 2, 3).is_undetected());
     ASSERT_FALSE(DemAdjGraphSearchState(1, 2, 2).is_undetected());
     ASSERT_FALSE(DemAdjGraphSearchState(1, 2, 0).is_undetected());
@@ -238,7 +238,7 @@ TEST(impl_min_distance, DemAdjGraphSearchState_is_undetected) {
     ASSERT_TRUE(DemAdjGraphSearchState(NO_NODE_INDEX, NO_NODE_INDEX, 0).is_undetected());
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_canonical) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_canonical) {
     DemAdjGraphSearchState a = DemAdjGraphSearchState(1, 2, 3).canonical();
     ASSERT_EQ(a.det_active, 1);
     ASSERT_EQ(a.det_held, 2);
@@ -265,7 +265,7 @@ TEST(impl_min_distance, DemAdjGraphSearchState_canonical) {
     ASSERT_EQ(a.obs_mask, 1);
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_append_transition_as_error_instruction_to) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_append_transition_as_error_instruction_to) {
     DetectorErrorModel out;
 
     DemAdjGraphSearchState(1, 2, 9).append_transition_as_error_instruction_to(DemAdjGraphSearchState(1, 2, 16), out);
@@ -306,7 +306,7 @@ TEST(impl_min_distance, DemAdjGraphSearchState_append_transition_as_error_instru
     )MODEL"));
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_canonical_equality) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_canonical_equality) {
     DemAdjGraphSearchState v1{1, 2, 3};
     DemAdjGraphSearchState v2{1, 4, 3};
     ASSERT_TRUE(v1 == v1);
@@ -323,7 +323,7 @@ TEST(impl_min_distance, DemAdjGraphSearchState_canonical_equality) {
     ASSERT_EQ(DemAdjGraphSearchState(2, NO_NODE_INDEX, 3), DemAdjGraphSearchState(NO_NODE_INDEX, 2, 3));
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_canonical_ordering) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_canonical_ordering) {
     ASSERT_TRUE(DemAdjGraphSearchState(1, 999, 999) < DemAdjGraphSearchState(101, 102, 103));
     ASSERT_TRUE(DemAdjGraphSearchState(999, 1, 999) < DemAdjGraphSearchState(101, 102, 103));
     ASSERT_TRUE(DemAdjGraphSearchState(101, 1, 999) < DemAdjGraphSearchState(101, 102, 103));
@@ -335,11 +335,11 @@ TEST(impl_min_distance, DemAdjGraphSearchState_canonical_ordering) {
     ASSERT_FALSE(DemAdjGraphSearchState(101, 102, 104) < DemAdjGraphSearchState(101, 102, 103));
 }
 
-TEST(impl_min_distance, DemAdjGraphSearchState_str) {
+TEST(impl_min_distance_graphlike, DemAdjGraphSearchState_str) {
     ASSERT_EQ(DemAdjGraphSearchState(1, 2, 3).str(), "D1 D2 L0 L1 ");
 }
 
-TEST(impl_min_distance, DemAdjGraph_equality) {
+TEST(impl_min_distance_graphlike, DemAdjGraph_equality) {
     ASSERT_TRUE(DemAdjGraph(1) == DemAdjGraph(1));
     ASSERT_TRUE(DemAdjGraph(1) != DemAdjGraph(2));
     ASSERT_FALSE(DemAdjGraph(1) == DemAdjGraph(2));
@@ -352,7 +352,7 @@ TEST(impl_min_distance, DemAdjGraph_equality) {
     ASSERT_NE(a, b);
 }
 
-TEST(impl_min_distance, DemAdjGraph_add_outward_edge) {
+TEST(impl_min_distance_graphlike, DemAdjGraph_add_outward_edge) {
     DemAdjGraph g(3);
 
     g.add_outward_edge(1, 2, 3);
@@ -411,7 +411,7 @@ TEST(impl_min_distance, DemAdjGraph_add_outward_edge) {
             0}));
 }
 
-TEST(impl_min_distance, DemAdjGraph_add_edges_from_targets_with_no_separators) {
+TEST(impl_min_distance_graphlike, DemAdjGraph_add_edges_from_targets_with_no_separators) {
     DemAdjGraph g(4);
 
     g.add_edges_from_targets_with_no_separators(std::vector<DemTarget>{DemTarget::relative_detector_id(1)}, false);
@@ -476,7 +476,7 @@ TEST(impl_min_distance, DemAdjGraph_add_edges_from_targets_with_no_separators) {
     ASSERT_EQ(g, same_g);
 }
 
-TEST(impl_min_distance, DemAdjGraph_str) {
+TEST(impl_min_distance_graphlike, DemAdjGraph_str) {
     DemAdjGraph g{
         {
             DemAdjNode{},
@@ -496,7 +496,7 @@ TEST(impl_min_distance, DemAdjGraph_str) {
         "    D1 L5\n");
 }
 
-TEST(impl_min_distance, DemAdjGraph_add_edges_from_separable_targets) {
+TEST(impl_min_distance_graphlike, DemAdjGraph_add_edges_from_separable_targets) {
     DemAdjGraph g(4);
 
     g.add_edges_from_separable_targets(
@@ -521,7 +521,7 @@ TEST(impl_min_distance, DemAdjGraph_add_edges_from_separable_targets) {
             0}));
 }
 
-TEST(impl_min_distance, DemAdjGraph_from_dem) {
+TEST(impl_min_distance_graphlike, DemAdjGraph_from_dem) {
     ASSERT_EQ(
         DemAdjGraph::from_dem(
             DetectorErrorModel(R"MODEL(

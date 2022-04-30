@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/simulators/min_distance.h"
+#include "stim/search/search.h"
+#include "stim/search/graphlike/min_distance.h"
 
 #include <algorithm>
 #include <map>
 #include <queue>
 
 using namespace stim;
-using namespace stim::impl_min_distance;
+using namespace stim::impl_min_distance_graphlike;
 
 constexpr uint64_t NO_NODE_INDEX = UINT64_MAX;
 
@@ -57,7 +58,7 @@ std::string DemAdjGraphSearchState::str() const {
     return result.str();
 }
 
-std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAdjEdge &v) {
+std::ostream &stim::impl_min_distance_graphlike::operator<<(std::ostream &out, const DemAdjEdge &v) {
     if (v.opposite_node_index == NO_NODE_INDEX) {
         out << "[boundary]";
     } else {
@@ -75,7 +76,7 @@ std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAd
     return out;
 }
 
-std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAdjNode &v) {
+std::ostream &stim::impl_min_distance_graphlike::operator<<(std::ostream &out, const DemAdjNode &v) {
     for (const auto &e : v.edges) {
         out << "    " << e << "\n";
     }
@@ -176,7 +177,7 @@ DemAdjGraph::DemAdjGraph(std::vector<DemAdjNode> nodes, uint64_t distance_1_erro
     : nodes(std::move(nodes)), distance_1_error_mask(distance_1_error_mask) {
 }
 
-std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAdjGraph &v) {
+std::ostream &stim::impl_min_distance_graphlike::operator<<(std::ostream &out, const DemAdjGraph &v) {
     for (size_t k = 0; k < v.nodes.size(); k++) {
         out << k << ":\n" << v.nodes[k];
     }
@@ -253,7 +254,7 @@ bool DemAdjGraphSearchState::operator<(const DemAdjGraphSearchState &other) cons
     return a.obs_mask < b.obs_mask;
 }
 
-std::ostream &stim::impl_min_distance::operator<<(std::ostream &out, const DemAdjGraphSearchState &v) {
+std::ostream &stim::impl_min_distance_graphlike::operator<<(std::ostream &out, const DemAdjGraphSearchState &v) {
     if (v.is_undetected()) {
         out << "[no symptoms] ";
     } else {

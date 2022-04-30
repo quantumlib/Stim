@@ -28,7 +28,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
-#include "stim/simulators/min_distance.h"
+#include "stim/search/search.h"
 
 using namespace stim;
 using namespace stim_pybind;
