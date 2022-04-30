@@ -215,14 +215,17 @@ def plot_error_rate(
     for curve in curves:
         xs = []
         ys = []
+        xs_range = []
         ys_low = []
         ys_high = []
         for x, stats in zip(curve.xs, curve.stats):
             num_kept = stats.shots - stats.discards
             if num_kept:
-                xs.append(x)
-                ys.append(stats.errors / num_kept)
+                if stats.errors:
+                    xs.append(x)
+                    ys.append(stats.errors / num_kept)
                 if 0 < highlight_likelihood_ratio < 1:
+                    xs_range.append(x)
                     low, high = binominal_relative_likelihood_range(num_shots=num_kept,
                                                                     num_hits=stats.errors,
                                                                     likelihood_ratio=highlight_likelihood_ratio)
@@ -239,7 +242,7 @@ def plot_error_rate(
                     color=curve.color,
                     zorder=100)
             if 0 < highlight_likelihood_ratio < 1:
-                ax.fill_between(xs,
+                ax.fill_between(xs_range,
                                 ys_low,
                                 ys_high,
                                 color=curve.color,
