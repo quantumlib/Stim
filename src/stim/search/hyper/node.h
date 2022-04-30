@@ -14,10 +14,26 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_SEARCH_SEARCH_H
-#define _STIM_SEARCH_SEARCH_H
+#ifndef _STIM_SEARCH_HYPER_NODE_H
+#define _STIM_SEARCH_HYPER_NODE_H
 
-#include "stim/search/hyper/algo.h"
-#include "stim/search/graphlike/algo.h"
+#include <vector>
+
+#include "stim/search/hyper/edge.h"
+
+namespace stim {
+
+namespace impl_search_hyper {
+
+struct Node {
+    std::vector<Edge> edges;
+    std::string str() const;
+    bool operator==(const Node &other) const;
+    bool operator!=(const Node &other) const;
+};
+std::ostream &operator<<(std::ostream &out, const Node &v);
+
+}  // namespace impl_search_hyper
+}  // namespace stim
 
 #endif

@@ -1,0 +1,185 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "stim/search/hyper/algo.h"
+
+#include <gtest/gtest.h>
+
+#include "stim/gen/gen_rep_code.h"
+#include "stim/gen/gen_surface_code.h"
+#include "stim/search/hyper/edge.h"
+#include "stim/simulators/error_analyzer.h"
+
+using namespace stim;
+using namespace stim::impl_search_hyper;
+
+TEST(find_undetectable_logical_error, no_error) {
+    // No error.
+    ASSERT_THROW({ stim::find_undetectable_logical_error(DetectorErrorModel(), SIZE_MAX, SIZE_MAX, false); }, std::invalid_argument);
+
+    // No undetectable error.
+    ASSERT_THROW(
+        {
+            stim::find_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+            error(0.1) D0 L0
+        )MODEL"), SIZE_MAX, SIZE_MAX, false);
+        },
+        std::invalid_argument);
+
+    // No logical flips.
+    ASSERT_THROW(
+        {
+            stim::find_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+            error(0.1) D0
+            error(0.1) D0 D1
+            error(0.1) D1
+        )MODEL"), SIZE_MAX, SIZE_MAX, false);
+        },
+        std::invalid_argument);
+}
+
+TEST(find_undetectable_logical_error, distance_1) {
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+                error(0.1) L0
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) L0
+        )MODEL"));
+}
+
+TEST(find_undetectable_logical_error, distance_2) {
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D0
+                error(0.1) D0 L0
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0
+            error(1) D0 L0
+        )MODEL"));
+
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D0 L0
+                error(0.1) D0 L1
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0 L0
+            error(1) D0 L1
+        )MODEL"));
+
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D0 D1 L0
+                error(0.1) D0 D1 L1
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0 D1 L0
+            error(1) D0 D1 L1
+        )MODEL"));
+
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D0 D1 L1
+                error(0.1) D0 D1 L0
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0 D1 L0
+            error(1) D0 D1 L1
+        )MODEL"));
+}
+
+TEST(find_undetectable_logical_error, distance_3) {
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D0
+                error(0.1) D0 D1 L0
+                error(0.1) D1
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0
+            error(1) D0 D1 L0
+            error(1) D1
+        )MODEL"));
+
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D1
+                error(0.1) D1 D0 L0
+                error(0.1) D0
+            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0
+            error(1) D0 D1 L0
+            error(1) D1
+        )MODEL"));
+}
+
+TEST(find_undetectable_logical_error, hyper_error) {
+    ASSERT_EQ(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
+                error(0.1) D0 D1
+                error(0.1) D0 D1 D2 D3
+                error(0.1) D2 D3 D4 D5 L0
+                error(0.1) D4 D5 D6 D100
+                error(0.1) D6 D110 D7 D8
+                error(0.1) D7 D8 D9
+                error(0.1) D9
+                REPEAT 50 {
+                    error(0.1) D100 D101
+                    error(0.1) D100 D101 D200
+                    shift_detectors 1
+                }
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            true),
+        DetectorErrorModel(R"MODEL(
+            error(1) D0
+            error(1) D0 D1 L0
+            error(1) D1
+        )MODEL"));
+}
+
+TEST(find_undetectable_logical_error, surface_code) {
+    CircuitGenParameters params(5, 5, "rotated_memory_x");
+    params.after_clifford_depolarization = 0.001;
+    params.before_measure_flip_probability = 0.001;
+    params.after_reset_flip_probability = 0.001;
+    params.before_round_data_depolarization = 0.001;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
+    auto ungraphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, false);
+
+    ASSERT_EQ(stim::find_undetectable_logical_error(graphlike_model, 4, 4, true).instructions.size(), 5);
+
+    ASSERT_EQ(stim::find_undetectable_logical_error(ungraphlike_model, 4, 4, true).instructions.size(), 5);
+}
+
+TEST(find_undetectable_logical_error, repetition_code) {
+    CircuitGenParameters params(10, 7, "memory");
+    params.before_round_data_depolarization = 0.01;
+    auto circuit = generate_rep_code_circuit(params).circuit;
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
+
+    ASSERT_EQ(stim::find_undetectable_logical_error(graphlike_model, 4, 4, false).instructions.size(), 7);
+}

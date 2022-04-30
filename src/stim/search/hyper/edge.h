@@ -14,10 +14,29 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_SEARCH_SEARCH_H
-#define _STIM_SEARCH_SEARCH_H
+#ifndef _STIM_SEARCH_HYPER_EDGE_H
+#define _STIM_SEARCH_HYPER_EDGE_H
 
-#include "stim/search/hyper/algo.h"
-#include "stim/search/graphlike/algo.h"
+#include <cstdint>
+#include <iostream>
+#include <string>
+
+#include "stim/mem/sparse_xor_vec.h"
+
+namespace stim {
+
+namespace impl_search_hyper {
+
+struct Edge {
+    SparseXorVec<uint64_t> nodes;
+    uint64_t crossing_observable_mask;
+    std::string str() const;
+    bool operator==(const Edge &other) const;
+    bool operator!=(const Edge &other) const;
+};
+std::ostream &operator<<(std::ostream &out, const Edge &v);
+
+}  // namespace impl_search_hyper
+}  // namespace stim
 
 #endif

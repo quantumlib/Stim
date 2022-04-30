@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/search/graphlike/search_state.h"
+#include "stim/search/hyper/search_state.h"
 
 #include <algorithm>
-#include <map>
-#include <queue>
 
-#include "stim/search/graphlike/node.h"
+#include "stim/search/hyper/node.h"
 
 using namespace stim;
-using namespace stim::impl_search_graphlike;
+using namespace stim::impl_search_hyper;
 
 std::string SearchState::str() const {
     std::stringstream result;
@@ -29,36 +27,11 @@ std::string SearchState::str() const {
     return result.str();
 }
 
-SearchState::SearchState() : det_active(NO_NODE_INDEX), det_held(NO_NODE_INDEX), obs_mask(0) {
-}
-SearchState::SearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask)
-    : det_active(det_active), det_held(det_held), obs_mask(obs_mask) {
-}
-
-bool SearchState::is_undetected() const {
-    return det_active == det_held;
-}
-
-SearchState SearchState::canonical() const {
-    if (det_active < det_held) {
-        return {det_active, det_held, obs_mask};
-    } else if (det_active > det_held) {
-        return {det_held, det_active, obs_mask};
-    } else {
-        return {NO_NODE_INDEX, NO_NODE_INDEX, obs_mask};
-    }
-}
-
 void SearchState::append_transition_as_error_instruction_to(const SearchState &other, DetectorErrorModel &out) const {
     // Extract detector indices while cancelling duplicates.
-    std::array<uint64_t, 5> nodes{det_active, det_held, other.det_active, other.det_held, NO_NODE_INDEX};
-    std::sort(nodes.begin(), nodes.end());
-    for (size_t k = 0; k < 4; k++) {
-        if (nodes[k] == nodes[k + 1]) {
-            k++;
-        } else {
-            out.target_buf.append_tail(DemTarget::relative_detector_id(nodes[k]));
-        }
+    SparseXorVec<uint64_t> dif = dets ^ other.dets;
+    for (const auto &n : dif) {
+        out.target_buf.append_tail(DemTarget::relative_detector_id(n));
     }
 
     // Extract logical observable indices.
@@ -72,41 +45,32 @@ void SearchState::append_transition_as_error_instruction_to(const SearchState &o
         obs_id++;
     }
 
+    // Default probability to 1.
     out.arg_buf.append_tail(1);
 
     out.instructions.push_back(DemInstruction{out.arg_buf.commit_tail(), out.target_buf.commit_tail(), DEM_ERROR});
 }
 
 bool SearchState::operator==(const SearchState &other) const {
-    SearchState a = canonical();
-    SearchState b = other.canonical();
-    return a.det_active == b.det_active && a.det_held == b.det_held && a.obs_mask == b.obs_mask;
+    return dets == other.dets && obs_mask == other.obs_mask;
 }
 bool SearchState::operator!=(const SearchState &other) const {
     return !(*this == other);
 }
 
 bool SearchState::operator<(const SearchState &other) const {
-    SearchState a = canonical();
-    SearchState b = other.canonical();
-    if (a.det_active != b.det_active) {
-        return a.det_active < b.det_active;
+    if (dets != other.dets) {
+        return dets < other.dets;
     }
-    if (a.det_held != b.det_held) {
-        return a.det_held < b.det_held;
-    }
-    return a.obs_mask < b.obs_mask;
+    return obs_mask < other.obs_mask;
 }
 
-std::ostream &stim::impl_search_graphlike::operator<<(std::ostream &out, const SearchState &v) {
-    if (v.is_undetected()) {
+std::ostream &stim::impl_search_hyper::operator<<(std::ostream &out, const SearchState &v) {
+    if (v.dets.empty()) {
         out << "[no symptoms] ";
     } else {
-        if (v.det_active != NO_NODE_INDEX) {
-            out << "D" << v.det_active << " ";
-        }
-        if (v.det_held != NO_NODE_INDEX) {
-            out << "D" << v.det_held << " ";
+        for (const auto &d : v.dets) {
+            out << "D" << d << " ";
         }
     }
 

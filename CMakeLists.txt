@@ -75,6 +75,11 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/search/graphlike/graph.cc
         src/stim/search/graphlike/node.cc
         src/stim/search/graphlike/search_state.cc
+        src/stim/search/hyper/algo.cc
+        src/stim/search/hyper/edge.cc
+        src/stim/search/hyper/graph.cc
+        src/stim/search/hyper/node.cc
+        src/stim/search/hyper/search_state.cc
         src/stim/simulators/detection_simulator.cc
         src/stim/simulators/error_analyzer.cc
         src/stim/simulators/error_matcher.cc
@@ -123,6 +128,11 @@ set(TEST_FILES
         src/stim/search/graphlike/graph.test.cc
         src/stim/search/graphlike/node.test.cc
         src/stim/search/graphlike/search_state.test.cc
+        src/stim/search/hyper/algo.test.cc
+        src/stim/search/hyper/edge.test.cc
+        src/stim/search/hyper/graph.test.cc
+        src/stim/search/hyper/node.test.cc
+        src/stim/search/hyper/search_state.test.cc
         src/stim/simulators/detection_simulator.test.cc
         src/stim/simulators/error_analyzer.test.cc
         src/stim/simulators/error_matcher.test.cc

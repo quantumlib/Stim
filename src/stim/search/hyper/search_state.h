@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_SEARCH_GRAPHLIKE_SEARCH_STATE_H
-#define _STIM_SEARCH_GRAPHLIKE_SEARCH_STATE_H
+#ifndef _STIM_SEARCH_HYPER_SEARCH_STATE_H
+#define _STIM_SEARCH_HYPER_SEARCH_STATE_H
 
 #include "stim/dem/detector_error_model.h"
+#include "stim/mem/sparse_xor_vec.h"
 
 namespace stim {
 
-namespace impl_search_graphlike {
+namespace impl_search_hyper {
 
 struct SearchState {
-    uint64_t det_active;  // The detection event being moved around in an attempt to remove it (or NO_NODE_INDEX).
-    uint64_t det_held;    // The detection event being left in the same place (or NO_NODE_INDEX).
-    uint64_t obs_mask;    // The accumulated frame changes from moving the detection events around.
+    SparseXorVec<uint64_t> dets;
+    uint64_t obs_mask;
 
-    SearchState();
-    SearchState(uint64_t det_active, uint64_t det_held, uint64_t obs_mask);
-    bool is_undetected() const;
-    SearchState canonical() const;
     void append_transition_as_error_instruction_to(const SearchState &other, DetectorErrorModel &out) const;
     bool operator==(const SearchState &other) const;
     bool operator!=(const SearchState &other) const;
@@ -40,7 +36,7 @@ struct SearchState {
 };
 std::ostream &operator<<(std::ostream &out, const SearchState &v);
 
-}  // namespace impl_search_graphlike
+}  // namespace impl_search_hyper
 }  // namespace stim
 
 #endif
