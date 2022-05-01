@@ -52,6 +52,22 @@ std::vector<ExplainedError> circuit_shortest_graphlike_error(
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
+std::vector<ExplainedError> py_find_undetectable_logical_error(
+        const Circuit &self,
+        size_t dont_explore_detection_event_sets_with_size_above,
+        size_t dont_explore_edges_with_degree_above,
+        bool dont_explore_edges_increasing_symptom_degree,
+        bool reduce_to_representative) {
+    DetectorErrorModel dem =
+        ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1);
+    DetectorErrorModel filter = stim::find_undetectable_logical_error(
+        dem,
+        dont_explore_detection_event_sets_with_size_above,
+        dont_explore_edges_with_degree_above,
+        dont_explore_edges_increasing_symptom_degree);
+    return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
+}
+
 void circuit_append(
     Circuit &self,
     const pybind11::object &obj,
@@ -1255,7 +1271,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
         "shortest_graphlike_error",
         &circuit_shortest_graphlike_error,
         pybind11::kw_only(),
-        pybind11::arg("ignore_ungraphlike_errors") = false,
+        pybind11::arg("ignore_ungraphlike_errors") = true,
         pybind11::arg("canonicalize_circuit_errors") = false,
         clean_doc_string(u8R"DOC(
             Finds a minimum sized set of graphlike errors that produce an undetected logical error.
@@ -1273,7 +1289,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
             Args:
                 ignore_ungraphlike_errors:
-                    False (default): Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
+                    False: Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
                         If this fails, raise an exception instead of continuing.
                         Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
                         This can produce a result that lists DEM errors with zero matching circuit errors, because the
@@ -1281,9 +1297,9 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                         As a result, when using this option it is NOT guaranteed that the length of the result is an
                         upper bound on the true code distance. That is only the case if every item in the result lists
                         at least one matching circuit error.
-                    True: Ungraphlike errors are simply skipped as if they weren't present, even if they could become
-                        graphlike if decomposed. This guarantees the length of the result is an upper bound on the true
-                        code distance.
+                    True (default): Ungraphlike errors are simply skipped as if they weren't present, even if they could
+                        become graphlike if decomposed. This guarantees the length of the result is an upper bound on
+                        the true code distance.
                 canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
                     False (default): Each DEM error lists every possible circuit error that single handedly produces
                         those symptoms as a potential match. This is verbose but gives complete information.
@@ -1293,7 +1309,9 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                         order to give a succinct result.
 
             Returns:
-                ...
+                A detector error model containing only the error mechanisms that cause the undetectable
+                logical error. The error mechanisms will have their probabilities set to 1 (indicating that
+                they are necessary) and will not suggest a decomposition.
 
             Examples:
                 >>> import stim
@@ -1308,6 +1326,89 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
         )DOC")
             .data());
 
+
+    c.def(
+        "search_for_undetectable_logical_errors",
+        &py_find_undetectable_logical_error,
+        pybind11::kw_only(),
+        pybind11::arg("dont_explore_detection_event_sets_with_size_above"),
+        pybind11::arg("dont_explore_edges_with_degree_above"),
+        pybind11::arg("dont_explore_edges_increasing_symptom_degree"),
+        pybind11::arg("canonicalize_circuit_errors") = false,
+        clean_doc_string(u8R"DOC(
+            Searches for lists of errors from the model that form an undetectable logical error.
+
+            THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of particular
+            sizes, or with particular properties. The errors it finds are a tangled combination of the
+            truncation parameters you specify, internal optimizations which are correct when not
+            truncating, and minutia of the circuit being considered.
+
+            If you want a well behaved method that does provide guarantees of finding errors of a
+            particular type, use `stim.Circuit.shortest_graphlike_error`. This method is more
+            thorough than that (assuming you don't truncate so hard you omit graphlike edges),
+            but exactly how thorough is difficult to describe. It's also not guaranteed that the
+            behavior of this method will not be changed in the future in a way that permutes which
+            logical errors are found and which are missed.
+
+            This search method considers hyper errors, so it has worst case exponential runtime. It is
+            important to carefully consider the arguments you are providing, which truncate the search
+            space and trade cost for quality.
+
+            The search progresses by starting from each error that crosses a logical observable, noting
+            which detection events each error produces, and then iteratively adding in errors touching
+            those detection events attempting to cancel out the detection event with the lowest index.
+
+            Beware that the choice of logical observable can interact with the truncation options. Using
+            different observables can change whether or not the search succeeds, even if those observables
+            are equal modulo the stabilizers of the code. This is because the edges crossing logical
+            observables are used as starting points for the search, and starting from different places along
+            a path will result in different numbers of symptoms in intermediate states as the search
+            progresses. For example, if the logical observable is next to a boundary, then the starting
+            edges are likely boundary edges (degree 1) with 'room to grow', whereas if the observable was
+            running through the bulk then the starting edges will have degree at least 2.
+
+            Args:
+                model: The detector error model to search for undetectable errors.
+                dont_explore_detection_event_sets_with_size_above: Truncates the search space by refusing to
+                    cross an edge (i.e. add an error) when doing so would produce an intermediate state that
+                    has more detection events than this limit.
+                dont_explore_edges_with_degree_above: Truncates the search space by refusing to consider
+                    errors that cause a lot of detection events. For example, you may only want to consider
+                    graphlike errors which have two or fewer detection events.
+                dont_explore_edges_increasing_symptom_degree: Truncates the search space by refusing to
+                    cross an edge (i.e. add an error) when doing so would produce an intermediate state that
+                    has more detection events that the previous intermediate state. This massively improves
+                    the efficiency of the search because instead of, for example, exploring all n^4 possible
+                    detection event sets with 4 symptoms, the search will attempt to cancel out symptoms one
+                    by one.
+                canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
+                    False (default): Each DEM error lists every possible circuit error that single handedly produces
+                        those symptoms as a potential match. This is verbose but gives complete information.
+                    True: Each DEM error is matched with one possible circuit error that single handedly produces those
+                        symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
+                        This discards mostly-redundant information about different ways to produce the same symptoms in
+                        order to give a succinct result.
+
+            Returns:
+                A detector error model containing only the error mechanisms that cause the undetectable
+                logical error. The error mechanisms will have their probabilities set to 1 (indicating that
+                they are necessary) and will not suggest a decomposition.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit.generated(
+                ...     "surface_code:rotated_memory_x",
+                ...     rounds=5,
+                ...     distance=5,
+                ...     after_clifford_depolarization=0.001)
+                >>> print(len(circuit.search_for_undetectable_logical_errors(
+                ...     dont_explore_detection_event_sets_with_size_above=4,
+                ...     dont_explore_edges_with_degree_above=4,
+                ...     dont_explore_edges_increasing_symptom_degree=True,
+                ... )))
+                5
+        )DOC")
+            .data());
     c.def(
         "explain_detector_error_model_errors",
         [](const Circuit &self,
