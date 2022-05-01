@@ -75,7 +75,7 @@ class CollectionTrackerForSingleTask:
         yield self.finished_stats.shots * 2
 
         # Don't go super parallel before reaching other maximums.
-        yield self.finished_stats.shots * 5 - self.deployed_shots
+        yield self.finished_stats.shots * 30 - self.deployed_shots
 
         # Don't take more shots than requested.
         if self.task.max_shots is not None:
