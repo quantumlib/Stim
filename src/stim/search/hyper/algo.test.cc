@@ -140,23 +140,22 @@ TEST(find_undetectable_logical_error, hyper_error) {
                 error(0.1) D0 D1
                 error(0.1) D0 D1 D2 D3
                 error(0.1) D2 D3 D4 D5 L0
-                error(0.1) D4 D5 D6 D100
-                error(0.1) D6 D110 D7 D8
-                error(0.1) D7 D8 D9
+                error(0.1) D4 D5 D6 D7
+                error(0.1) D6 D7 D8 D9
+                error(0.1) D8
                 error(0.1) D9
-                REPEAT 50 {
-                    error(0.1) D100 D101
-                    error(0.1) D100 D101 D200
-                    shift_detectors 1
-                }
             )MODEL"),
-            SIZE_MAX,
-            SIZE_MAX,
+            4,
+            4,
             true),
         DetectorErrorModel(R"MODEL(
-            error(1) D0
-            error(1) D0 D1 L0
-            error(1) D1
+            error(1) D0 D1
+            error(1) D0 D1 D2 D3
+            error(1) D2 D3 D4 D5 L0
+            error(1) D4 D5 D6 D7
+            error(1) D6 D7 D8 D9
+            error(1) D8
+            error(1) D9
         )MODEL"));
 }
 
