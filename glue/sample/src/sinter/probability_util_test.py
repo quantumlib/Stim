@@ -6,7 +6,7 @@ import pytest
 
 from .probability_util import (
     binary_search, log_binomial, log_factorial, least_squares_output_range, least_squares_slope_range,
-    binary_intercept, least_squares_through_point, binominal_relative_likelihood_range,
+    binary_intercept, least_squares_through_point, binomial_relative_likelihood_range,
 )
 
 
@@ -119,27 +119,27 @@ def test_least_squares_slope_range():
 
 def test_likely_error_rate_bounds_shrink_towards_half():
     np.testing.assert_allclose(
-        binominal_relative_likelihood_range(num_shots=10 ** 5, num_hits=10 ** 5 / 2, likelihood_ratio=1e-3),
+        binomial_relative_likelihood_range(num_shots=10 ** 5, num_hits=10 ** 5 / 2, likelihood_ratio=1e-3),
         (0.494122, 0.505878),
         rtol=1e-4,
     )
     np.testing.assert_allclose(
-        binominal_relative_likelihood_range(num_shots=10 ** 4, num_hits=10 ** 4 / 2, likelihood_ratio=1e-3),
+        binomial_relative_likelihood_range(num_shots=10 ** 4, num_hits=10 ** 4 / 2, likelihood_ratio=1e-3),
         (0.481422, 0.518578),
         rtol=1e-4,
     )
     np.testing.assert_allclose(
-        binominal_relative_likelihood_range(num_shots=10 ** 4, num_hits=10 ** 4 / 2, likelihood_ratio=1e-2),
+        binomial_relative_likelihood_range(num_shots=10 ** 4, num_hits=10 ** 4 / 2, likelihood_ratio=1e-2),
         (0.48483, 0.51517),
         rtol=1e-4,
     )
     np.testing.assert_allclose(
-        binominal_relative_likelihood_range(num_shots=1000, num_hits=500, likelihood_ratio=1e-3),
+        binomial_relative_likelihood_range(num_shots=1000, num_hits=500, likelihood_ratio=1e-3),
         (0.44143, 0.55857),
         rtol=1e-4,
     )
     np.testing.assert_allclose(
-        binominal_relative_likelihood_range(num_shots=100, num_hits=50, likelihood_ratio=1e-3),
+        binomial_relative_likelihood_range(num_shots=100, num_hits=50, likelihood_ratio=1e-3),
         (0.3204, 0.6796),
         rtol=1e-4,
     )
@@ -154,7 +154,7 @@ def test_likely_error_rate_bounds_shrink_towards_half():
     (10**6, 100, 1e-2),
 ])
 def test_likely_error_rate_bounds_vs_log_binomial(n: int, c: int, ratio: float):
-    a, b = binominal_relative_likelihood_range(num_shots=n, num_hits=n - c, likelihood_ratio=ratio)
+    a, b = binomial_relative_likelihood_range(num_shots=n, num_hits=n - c, likelihood_ratio=ratio)
 
     raw = log_binomial(p=(n - c) / n, n=n, hits=n - c)
     low = log_binomial(p=a, n=n, hits=n - c)

@@ -6,7 +6,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
 from sinter.anon_task_stats import AnonTaskStats
-from sinter.probability_util import binominal_relative_likelihood_range
+from sinter.probability_util import binomial_relative_likelihood_range
 from sinter.task_summary import TaskSummary
 
 if TYPE_CHECKING:
@@ -85,18 +85,18 @@ class CurveStats:
     @staticmethod
     def from_samples(samples: Iterable['sinter.TaskStats'],
                      *,
-                     curve_func: Callable[[TaskSummary], Optional[DataPointId]],
-                     ) -> List['CurveStats']:
+                     curve_func: Callable[['sinter.TaskSummary'], Optional['sinter.DataPointId']],
+                     ) -> List['sinter.CurveStats']:
         pairs: DefaultDict[Any, List[Tuple[float, AnonTaskStats]]] = collections.defaultdict(list)
 
         seen_appearance_ids = set()
         for sample in samples:
-            curve = curve_func(sample.to_case_summary())
+            curve = curve_func(sample.to_task_summary())
             if curve is not None:
                 aid = curve.effective_appearance_id()
                 seen_appearance_ids.add(aid)
                 key = curve.curve_label, aid, curve.hidden
-                stats = sample.to_case_stats()
+                stats = sample.to_anon_stats()
                 pairs[key].append((curve.x, stats))
 
         appearance_id_to_int = {
@@ -133,7 +133,7 @@ def plot_discard_rate(
         *,
         ax: plt.Axes,
         samples: 'Iterable[sinter.TaskStats]',
-        curve_func: Callable[[TaskSummary], Optional[DataPointId]],
+        curve_func: Callable[['sinter.TaskSummary'], Optional['sinter.DataPointId']],
         highlight_likelihood_ratio: Optional[float] = 1e-3,
         xaxis: str,
 ) -> None:
@@ -166,7 +166,7 @@ def plot_discard_rate(
                 xs.append(x)
                 ys.append(stats.discards / stats.shots)
                 if 0 < highlight_likelihood_ratio < 1:
-                    low, high = binominal_relative_likelihood_range(
+                    low, high = binomial_relative_likelihood_range(
                         num_shots=stats.shots,
                         num_hits=stats.discards,
                         likelihood_ratio=highlight_likelihood_ratio)
@@ -192,7 +192,7 @@ def plot_error_rate(
         *,
         ax: plt.Axes,
         samples: 'Iterable[sinter.TaskStats]',
-        curve_func: Callable[[TaskSummary], Optional[DataPointId]],
+        curve_func: Callable[['sinter.TaskSummary'], Optional['sinter.DataPointId']],
         highlight_likelihood_ratio: Optional[float] = 1e-3,
         xaxis: str = '',
 ) -> None:
@@ -226,7 +226,7 @@ def plot_error_rate(
                     ys.append(stats.errors / num_kept)
                 if 0 < highlight_likelihood_ratio < 1:
                     xs_range.append(x)
-                    low, high = binominal_relative_likelihood_range(num_shots=num_kept,
+                    low, high = binomial_relative_likelihood_range(num_shots=num_kept,
                                                                     num_hits=stats.errors,
                                                                     likelihood_ratio=highlight_likelihood_ratio)
                     ys_low.append(low)

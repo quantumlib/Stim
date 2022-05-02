@@ -22,7 +22,7 @@ class ExistingData:
             raise NotImplementedError(f'{type(case)}')
         if key not in self.data:
             return AnonTaskStats()
-        return self.data[key].to_case_stats()
+        return self.data[key].to_anon_stats()
 
     def add_sample(self, sample: TaskStats) -> None:
         k = sample.strong_id

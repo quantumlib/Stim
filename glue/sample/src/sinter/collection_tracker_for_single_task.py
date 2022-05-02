@@ -51,7 +51,7 @@ class CollectionTrackerForSingleTask:
     def work_completed(self, result: WorkOut) -> None:
         self.deployed_shots -= result.sample.shots
         self.deployed_processes -= 1
-        self.finished_stats += result.sample.to_case_stats()
+        self.finished_stats += result.sample.to_anon_stats()
 
     def is_done(self) -> bool:
         enough_shots = False
