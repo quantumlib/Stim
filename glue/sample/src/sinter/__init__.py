@@ -1,3 +1,6 @@
+from sinter.anon_task_stats import (
+    AnonTaskStats,
+)
 from sinter.collection import (
     collect,
     iter_collect,
