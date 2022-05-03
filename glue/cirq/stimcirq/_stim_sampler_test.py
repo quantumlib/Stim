@@ -33,21 +33,28 @@ def test_custom_gates():
     s = stimcirq.StimSampler()
     a, b, c, d = cirq.LineQubit.range(4)
 
-    class GoodGate(cirq.SingleQubitGate):
+    class GoodGate(cirq.Gate):
         def _num_qubits_(self) -> int:
             return 1
 
         def _decompose_(self, qubits):
             return [cirq.X.on_each(*qubits)]
 
-    class IndirectlyGoodGate(cirq.SingleQubitGate):
+    class IndirectlyGoodGate(cirq.Gate):
+        def _num_qubits_(self) -> int:
+            return 1
+
         def _decompose_(self, qubits):
             return [GoodGate().on_each(*qubits)]
 
-    class BadGate(cirq.SingleQubitGate):
-        pass
+    class BadGate(cirq.Gate):
+        def _num_qubits_(self) -> int:
+            return 1
 
-    class IndirectlyBadGate(cirq.SingleQubitGate):
+    class IndirectlyBadGate(cirq.Gate):
+        def _num_qubits_(self) -> int:
+            return 1
+
         def _decompose_(self):
             return [BadGate()]
 
