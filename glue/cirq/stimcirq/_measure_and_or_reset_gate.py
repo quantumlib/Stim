@@ -5,7 +5,7 @@ import stim
 
 
 @cirq.value_equality
-class MeasureAndOrResetGate(cirq.SingleQubitGate):
+class MeasureAndOrResetGate(cirq.Gate):
     """Handles explaining stim's MX/MY/MZ/MRX/MRY/MRZ/RX/RY/RZ gates to cirq."""
 
     def __init__(
@@ -23,6 +23,9 @@ class MeasureAndOrResetGate(cirq.SingleQubitGate):
         self.invert_measure = invert_measure
         self.key = key
         self.measure_flip_probability = measure_flip_probability
+
+    def _num_qubits_(self) -> int:
+        return 1
 
     def _circuit_diagram_info_(self, args: cirq.CircuitDiagramInfoArgs) -> str:
         return str(self)
