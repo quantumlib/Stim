@@ -47,19 +47,18 @@ std::string circuit_repr(const Circuit &self) {
 std::vector<ExplainedError> circuit_shortest_graphlike_error(
     const Circuit &self, bool ignore_ungraphlike_errors, bool reduce_to_representative) {
     DetectorErrorModel dem =
-        ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
+        ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1, false, false);
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
 
 std::vector<ExplainedError> py_find_undetectable_logical_error(
-        const Circuit &self,
-        size_t dont_explore_detection_event_sets_with_size_above,
-        size_t dont_explore_edges_with_degree_above,
-        bool dont_explore_edges_increasing_symptom_degree,
-        bool reduce_to_representative) {
-    DetectorErrorModel dem =
-        ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1);
+    const Circuit &self,
+    size_t dont_explore_detection_event_sets_with_size_above,
+    size_t dont_explore_edges_with_degree_above,
+    bool dont_explore_edges_increasing_symptom_degree,
+    bool reduce_to_representative) {
+    DetectorErrorModel dem = ErrorAnalyzer::circuit_to_detector_error_model(self, false, true, false, 1, false, false);
     DetectorErrorModel filter = stim::find_undetectable_logical_error(
         dem,
         dont_explore_detection_event_sets_with_size_above,
@@ -1023,15 +1022,19 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
            bool decompose_errors,
            bool flatten_loops,
            bool allow_gauge_detectors,
-           double approximate_disjoint_errors) -> DetectorErrorModel {
+           double approximate_disjoint_errors,
+           bool ignore_decomposition_failures,
+           bool block_decomposition_from_introducing_remnant_edges) -> DetectorErrorModel {
             return ErrorAnalyzer::circuit_to_detector_error_model(
-                self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors);
+                self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors, ignore_decomposition_failures, block_decomposition_from_introducing_remnant_edges);
         },
         pybind11::kw_only(),
         pybind11::arg("decompose_errors") = false,
         pybind11::arg("flatten_loops") = false,
         pybind11::arg("allow_gauge_detectors") = false,
         pybind11::arg("approximate_disjoint_errors") = false,
+        pybind11::arg("ignore_decomposition_failures") = false,
+        pybind11::arg("block_decomposition_from_introducing_remnant_edges") = false,
         clean_doc_string(u8R"DOC(
             Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 
@@ -1067,6 +1070,25 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                     This argument can also be set to a probability between 0 and 1, setting a threshold below which the
                     approximation is acceptable. Any error mechanisms that have a component probability above the
                     threshold will cause an exception to be thrown.
+                ignore_decomposition_failures: Defaults to False.
+                    When this is set to True, circuit errors that fail to decompose into graphlike
+                    detector error model errors no longer cause the conversion process to abort.
+                    Instead, the undecomposed error is inserted into the output. Whatever tool
+                    the detector error model is then given to is responsible for dealing with the
+                    undecomposed errors (e.g. a tool may choose to simply ignore them).
+
+                    Irrelevant unless decompose_errors=True.
+                block_decomposition_from_introducing_remnant_edges: Defaults to False.
+                    Requires that both A B and C D be present elsewhere in the detector error model
+                    in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
+                    needs to appear to allow this decomposition.
+
+                    Remnant edges can be a useful feature for ensuring decomposition succeeds, but
+                    they can also reduce the effective code distance by giving the decoder single
+                    edges that actually represent multiple errors in the circuit (resulting in the
+                    decoder making misinformed choices when decoding).
+
+                    Irrelevant unless decompose_errors=True.
 
             Examples:
                 >>> import stim
@@ -1325,7 +1347,6 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                 7
         )DOC")
             .data());
-
 
     c.def(
         "search_for_undetectable_logical_errors",

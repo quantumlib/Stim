@@ -64,8 +64,7 @@ DetectorErrorModel find_undetectable_logical_error(
     const DetectorErrorModel &model,
     size_t dont_explore_detection_event_sets_with_size_above,
     size_t dont_explore_edges_with_degree_above,
-    bool dont_explore_edges_increasing_symptom_degree
-);
+    bool dont_explore_edges_increasing_symptom_degree);
 
 }  // namespace stim
 

@@ -26,34 +26,48 @@ using namespace stim::impl_search_hyper;
 
 TEST(find_undetectable_logical_error, no_error) {
     // No error.
-    ASSERT_THROW({ stim::find_undetectable_logical_error(DetectorErrorModel(), SIZE_MAX, SIZE_MAX, false); }, std::invalid_argument);
+    ASSERT_THROW(
+        { stim::find_undetectable_logical_error(DetectorErrorModel(), SIZE_MAX, SIZE_MAX, false); },
+        std::invalid_argument);
 
     // No undetectable error.
     ASSERT_THROW(
         {
-            stim::find_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+            stim::find_undetectable_logical_error(
+                DetectorErrorModel(R"MODEL(
             error(0.1) D0 L0
-        )MODEL"), SIZE_MAX, SIZE_MAX, false);
+        )MODEL"),
+                SIZE_MAX,
+                SIZE_MAX,
+                false);
         },
         std::invalid_argument);
 
     // No logical flips.
     ASSERT_THROW(
         {
-            stim::find_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+            stim::find_undetectable_logical_error(
+                DetectorErrorModel(R"MODEL(
             error(0.1) D0
             error(0.1) D0 D1
             error(0.1) D1
-        )MODEL"), SIZE_MAX, SIZE_MAX, false);
+        )MODEL"),
+                SIZE_MAX,
+                SIZE_MAX,
+                false);
         },
         std::invalid_argument);
 }
 
 TEST(find_undetectable_logical_error, distance_1) {
     ASSERT_EQ(
-        stim::find_undetectable_logical_error(DetectorErrorModel(R"MODEL(
+        stim::find_undetectable_logical_error(
+            DetectorErrorModel(R"MODEL(
                 error(0.1) L0
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) L0
         )MODEL"));
@@ -65,7 +79,10 @@ TEST(find_undetectable_logical_error, distance_2) {
             DetectorErrorModel(R"MODEL(
                 error(0.1) D0
                 error(0.1) D0 L0
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) D0
             error(1) D0 L0
@@ -76,7 +93,10 @@ TEST(find_undetectable_logical_error, distance_2) {
             DetectorErrorModel(R"MODEL(
                 error(0.1) D0 L0
                 error(0.1) D0 L1
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) D0 L0
             error(1) D0 L1
@@ -87,7 +107,10 @@ TEST(find_undetectable_logical_error, distance_2) {
             DetectorErrorModel(R"MODEL(
                 error(0.1) D0 D1 L0
                 error(0.1) D0 D1 L1
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) D0 D1 L0
             error(1) D0 D1 L1
@@ -98,7 +121,10 @@ TEST(find_undetectable_logical_error, distance_2) {
             DetectorErrorModel(R"MODEL(
                 error(0.1) D0 D1 L1
                 error(0.1) D0 D1 L0
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) D0 D1 L0
             error(1) D0 D1 L1
@@ -112,7 +138,10 @@ TEST(find_undetectable_logical_error, distance_3) {
                 error(0.1) D0
                 error(0.1) D0 D1 L0
                 error(0.1) D1
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) D0
             error(1) D0 D1 L0
@@ -125,7 +154,10 @@ TEST(find_undetectable_logical_error, distance_3) {
                 error(0.1) D1
                 error(0.1) D1 D0 L0
                 error(0.1) D0
-            )MODEL"), SIZE_MAX, SIZE_MAX, false),
+            )MODEL"),
+            SIZE_MAX,
+            SIZE_MAX,
+            false),
         DetectorErrorModel(R"MODEL(
             error(1) D0
             error(1) D0 D1 L0
@@ -166,8 +198,10 @@ TEST(find_undetectable_logical_error, surface_code) {
     params.after_reset_flip_probability = 0.001;
     params.before_round_data_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
-    auto ungraphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, false);
+    auto graphlike_model =
+        ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, true);
+    auto ungraphlike_model =
+        ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, false, false, true);
 
     ASSERT_EQ(stim::find_undetectable_logical_error(graphlike_model, 4, 4, true).instructions.size(), 5);
 
@@ -178,7 +212,7 @@ TEST(find_undetectable_logical_error, repetition_code) {
     CircuitGenParameters params(10, 7, "memory");
     params.before_round_data_depolarization = 0.01;
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
 
     ASSERT_EQ(stim::find_undetectable_logical_error(graphlike_model, 4, 4, false).instructions.size(), 7);
 }
