@@ -628,6 +628,36 @@ def test_anti_commuting_mpp_error_message():
         """).detector_error_model()
 
 
+def test_blocked_remnant_edge_error():
+    circuit = stim.Circuit("""
+        X_ERROR(0.125) 0
+        CORRELATED_ERROR(0.25) X0 X1
+        M 0 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-2]
+    """)
+
+    assert circuit.detector_error_model(decompose_errors=True) == stim.DetectorErrorModel("""
+        error(0.125) D2 D3
+        error(0.25) D2 D3 ^ D0 D1
+    """)
+
+    with pytest.raises(ValueError, match="Failed to decompose"):
+        circuit.detector_error_model(
+            decompose_errors=True,
+            block_decomposition_from_introducing_remnant_edges=True)
+
+    assert circuit.detector_error_model(
+        decompose_errors=True,
+        block_decomposition_from_introducing_remnant_edges=True,
+        ignore_decomposition_failures=True) == stim.DetectorErrorModel("""
+            error(0.25) D0 D1 D2 D3
+            error(0.125) D2 D3
+        """)
+
+
 def test_shortest_graphlike_error():
     c = stim.Circuit("""
         TICK

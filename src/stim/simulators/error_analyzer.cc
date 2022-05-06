@@ -581,7 +581,9 @@ ErrorAnalyzer::ErrorAnalyzer(
     bool decompose_errors,
     bool fold_loops,
     bool allow_gauge_detectors,
-    double approximate_disjoint_errors_threshold)
+    double approximate_disjoint_errors_threshold,
+    bool ignore_decomposition_failures,
+    bool block_decomposition_from_introducing_remnant_edges)
     : total_detectors(num_detectors),
       used_detectors(0),
       xs(num_qubits),
@@ -591,7 +593,9 @@ ErrorAnalyzer::ErrorAnalyzer(
       accumulate_errors(true),
       fold_loops(fold_loops),
       allow_gauge_detectors(allow_gauge_detectors),
-      approximate_disjoint_errors_threshold(approximate_disjoint_errors_threshold) {
+      approximate_disjoint_errors_threshold(approximate_disjoint_errors_threshold),
+      ignore_decomposition_failures(ignore_decomposition_failures),
+      block_decomposition_from_introducing_remnant_edges(block_decomposition_from_introducing_remnant_edges) {
 }
 
 void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
@@ -860,14 +864,18 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
     bool decompose_errors,
     bool fold_loops,
     bool allow_gauge_detectors,
-    double approximate_disjoint_errors_threshold) {
+    double approximate_disjoint_errors_threshold,
+    bool ignore_decomposition_failures,
+    bool block_decomposition_from_introducing_remnant_edges) {
     ErrorAnalyzer analyzer(
         circuit.count_detectors(),
         circuit.count_qubits(),
         decompose_errors,
         fold_loops,
         allow_gauge_detectors,
-        approximate_disjoint_errors_threshold);
+        approximate_disjoint_errors_threshold,
+        ignore_decomposition_failures,
+        block_decomposition_from_introducing_remnant_edges);
     analyzer.current_circuit_being_analyzed = &circuit;
     analyzer.run_circuit(circuit);
     analyzer.post_check_initialization();
@@ -964,7 +972,9 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
         false,
         true,
         allow_gauge_detectors,
-        approximate_disjoint_errors_threshold);
+        approximate_disjoint_errors_threshold,
+        false,
+        false);
     hare.xs = xs;
     hare.zs = zs;
     hare.ticks_seen = ticks_seen;
@@ -1205,7 +1215,7 @@ bool ErrorAnalyzer::has_unflushed_ungraphlike_errors() const {
     return false;
 }
 
-void ErrorAnalyzer::decompose_and_append_component_to_tail(
+bool ErrorAnalyzer::decompose_and_append_component_to_tail(
     ConstPointerRange<DemTarget> component,
     const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms) {
     std::vector<bool> done(component.size(), false);
@@ -1221,7 +1231,7 @@ void ErrorAnalyzer::decompose_and_append_component_to_tail(
     if (num_component_detectors <= 2) {
         mono_buf.append_tail(component);
         mono_buf.append_tail(DemTarget::separator());
-        return;
+        return true;
     }
 
     SparseXorVec<DemTarget> sparse;
@@ -1259,17 +1269,101 @@ void ErrorAnalyzer::decompose_and_append_component_to_tail(
         missed += !done[k];
     }
 
-    if (missed > 2) {
-        throw std::invalid_argument(
-            "Failed to decompose errors into graphlike components with at most two symptoms.\n"
-            "The error component that failed to decompose is '" +
-            comma_sep_workaround(component) + "'.");
+    if (missed <= 2) {
+        if (!sparse.empty()) {
+            mono_buf.append_tail({sparse.begin(), sparse.end()});
+            mono_buf.append_tail(DemTarget::separator());
+        }
+        return true;
     }
 
-    if (!sparse.empty()) {
-        mono_buf.append_tail({sparse.begin(), sparse.end()});
-        mono_buf.append_tail(DemTarget::separator());
+    mono_buf.discard_tail();
+    return false;
+}
+
+std::pair<uint64_t, uint64_t> obs_mask_of_targets(ConstPointerRange<DemTarget> targets) {
+    uint64_t obs_mask = 0;
+    uint64_t used_mask = 0;
+    for (size_t k = 0; k < targets.size(); k++) {
+        const auto &t = targets[k];
+        if (t.is_observable_id()) {
+            if (t.val() >= 64) {
+                throw std::invalid_argument("Not implemented: decomposing errors observable ids larger than 63.");
+            }
+            obs_mask |= uint64_t{1} << t.val();
+            used_mask |= uint64_t{1} << k;
+        }
     }
+    return {obs_mask, used_mask};
+}
+
+bool brute_force_decomp_helper(
+    size_t start,
+    uint64_t used_term_mask,
+    uint64_t remaining_obs_mask,
+    ConstPointerRange<DemTarget> problem,
+    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms,
+    std::vector<ConstPointerRange<DemTarget>> &out_result) {
+    while (true) {
+        if (start >= problem.size()) {
+            return remaining_obs_mask == 0;
+        }
+        if (((used_term_mask >> start) & 1) == 0) {
+            break;
+        }
+        start++;
+    }
+    used_term_mask |= 1 << start;
+
+    FixedCapVector<DemTarget, 2> key;
+    key.push_back(problem[start]);
+    for (size_t k = start + 1; k <= problem.size(); k++) {
+        if (k < problem.size()) {
+            if ((used_term_mask >> k) & 1) {
+                continue;
+            }
+            key.push_back(problem[k]);
+            used_term_mask ^= 1 << k;
+        }
+        auto match = known_symptoms.find(key);
+        if (match != known_symptoms.end()) {
+            uint64_t obs_change = obs_mask_of_targets(match->second).first;
+            if (brute_force_decomp_helper(
+                    start + 1, used_term_mask, remaining_obs_mask ^ obs_change, problem, known_symptoms, out_result)) {
+                out_result.push_back(match->second);
+                return true;
+            }
+        }
+        if (k < problem.size()) {
+            key.pop_back();
+            used_term_mask ^= 1 << k;
+        }
+    }
+
+    return false;
+}
+
+bool stim::brute_force_decomposition_into_known_graphlike_errors(
+    ConstPointerRange<DemTarget> problem,
+    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_graphlike_errors,
+    MonotonicBuffer<DemTarget> &output) {
+    if (problem.size() >= 64) {
+        throw std::invalid_argument("Not implemented: decomposing errors with more than 64 terms.");
+    }
+
+    std::vector<ConstPointerRange<DemTarget>> out;
+    out.reserve(problem.size());
+    auto prob_masks = obs_mask_of_targets(problem);
+
+    bool result =
+        brute_force_decomp_helper(0, prob_masks.second, prob_masks.first, problem, known_graphlike_errors, out);
+    if (result) {
+        for (auto r = out.crbegin(); r != out.crend(); r++) {
+            output.append_tail(*r);
+            output.append_tail(DemTarget::separator());
+        }
+    }
+    return result;
 }
 
 void ErrorAnalyzer::do_global_error_decomposition_pass() {
@@ -1317,7 +1411,37 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
         size_t start = 0;
         for (size_t k = 0; k <= targets.size(); k++) {
             if (k == targets.size() || targets[k].is_separator()) {
-                decompose_and_append_component_to_tail({&targets[start], &targets[k]}, known_symptoms);
+                ConstPointerRange<DemTarget> problem{&targets[start], &targets[k]};
+                if (brute_force_decomposition_into_known_graphlike_errors(problem, known_symptoms, mono_buf)) {
+                    // Solved using only existing edges.
+                } else if (
+                    !block_decomposition_from_introducing_remnant_edges &&
+                    // We are now *really* desperate.
+                    // We need to start considering decomposing into errors that
+                    // don't exist, as long as they can be formed by xoring
+                    // together errors that do exist. This might impact the
+                    // graphlike code distance.
+                    decompose_and_append_component_to_tail({&targets[start], &targets[k]}, known_symptoms)) {
+                    // Solved using a remnant edge.
+                } else if (ignore_decomposition_failures) {
+                    mono_buf.append_tail(problem);
+                    mono_buf.append_tail(DemTarget::separator());
+                } else {
+                    std::stringstream ss;
+                    ss << "Failed to decompose errors into graphlike components with at most two symptoms.\n";
+                    ss << "The error component that failed to decompose is '" << comma_sep_workaround(problem)
+                       << "'.\n";
+                    ss << "\n";
+                    ss << "In Python, you can ignore this error by passing `ignore_decomposition_failures=True` to "
+                          "`stim.Circuit.detector_error_model(...)`.\n";
+                    ss << "From the command line, you can ignore this error by passing the flag "
+                          "`--ignore_decomposition_failures` to `stim analyze_errors`.";
+                    if (block_decomposition_from_introducing_remnant_edges) {
+                        ss << "\n\nNote: `block_decomposition_from_introducing_remnant_edges` is ON.\n";
+                        ss << "Turning it off may prevent this error.\n";
+                    }
+                    throw std::invalid_argument(ss.str());
+                }
                 start = k + 1;
             }
         }
@@ -1331,8 +1455,9 @@ void ErrorAnalyzer::do_global_error_decomposition_pass() {
     }
 
     for (const auto &rewrite : rewrites) {
-        add_error(error_class_probabilities[rewrite.first], rewrite.second);
+        double p = error_class_probabilities[rewrite.first];
         error_class_probabilities.erase(rewrite.first);
+        add_error(p, rewrite.second);
     }
 }
 

@@ -107,7 +107,8 @@ void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
     }
 }
 
-VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> &stabilizers, std::mt19937_64 &rng) {
+VectorSimulator VectorSimulator::from_stabilizers(
+    const std::vector<PauliStringRef> &stabilizers, std::mt19937_64 &rng) {
     size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
     VectorSimulator result(num_qubits);
 
