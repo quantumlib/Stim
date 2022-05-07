@@ -185,6 +185,12 @@ struct Circuit {
     /// The result's lifetime must be shorter than the given circuit's lifetime!
     const Circuit aliased_noiseless_circuit() const;
 
+    /// Returns a copy of the circuit with all noise processes removed.
+    Circuit without_noise() const;
+
+    /// Returns an equivalent circuit without REPEAT or SHIFT_COORDS instructions.
+    Circuit flattened() const;
+
     template <typename CALLBACK>
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {

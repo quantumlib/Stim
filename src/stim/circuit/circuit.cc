@@ -1032,6 +1032,71 @@ const Circuit Circuit::aliased_noiseless_circuit() const {
     return result;
 }
 
+Circuit Circuit::without_noise() const {
+    Circuit result;
+    for (const auto &op : operations) {
+        if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
+            // Drop result flip probabilities.
+            result.operations.push_back(Operation{
+                op.gate, {
+                    {},
+                    result.target_buf.take_copy(op.target_data.targets)
+                }});
+        } else if (!(op.gate->flags & GATE_IS_NOISE)) {
+            // Keep noiseless operations.
+            result.operations.push_back(Operation{
+                op.gate, {
+                    result.arg_buf.take_copy(op.target_data.args),
+                    result.target_buf.take_copy(op.target_data.targets)
+                }});
+        }
+    }
+    for (const auto &block : blocks) {
+        result.blocks.push_back(block.without_noise());
+    }
+    return result;
+}
+
+void flattened_helper(const Circuit &body, std::vector<double> &cur_coordinate_shift, Circuit &out) {
+    const uint8_t shift = gate_name_to_id("SHIFT_COORDS");
+    const uint8_t rep = gate_name_to_id("REPEAT");
+    const uint8_t qubit_coords = gate_name_to_id("QUBIT_COORDS");
+    const uint8_t detector = gate_name_to_id("DETECTOR");
+    for (const auto &op : body.operations) {
+        uint8_t id = op.gate->id;
+        if (id == shift) {
+            while (cur_coordinate_shift.size() < op.target_data.args.size()) {
+                cur_coordinate_shift.push_back(0);
+            }
+            for (size_t k = 0; k < op.target_data.args.size(); k++) {
+                cur_coordinate_shift[k] += op.target_data.args[k];
+            }
+        } else if (id == rep) {
+            uint64_t reps = op_data_rep_count(op.target_data);
+            const auto &loop_body = op_data_block_body(body, op.target_data);
+            for (uint64_t k = 0; k < reps; k++) {
+                flattened_helper(loop_body, cur_coordinate_shift, out);
+            }
+        } else {
+            auto t = out.target_buf.take_copy(op.target_data.targets);
+            auto a = out.arg_buf.take_copy(op.target_data.args);
+            if (id == qubit_coords || op.gate->id == detector) {
+                for (size_t k = 0; k < a.size() && k < cur_coordinate_shift.size(); k++) {
+                    a[k] += cur_coordinate_shift[k];
+                }
+            }
+            out.operations.push_back({op.gate, {a, t}});
+        }
+    }
+}
+
+Circuit Circuit::flattened() const {
+    Circuit result;
+    std::vector<double> shift;
+    flattened_helper(*this, shift, result);
+    return result;
+}
+
 void stim::vec_pad_add_mul(std::vector<double> &target, ConstPointerRange<double> offset, uint64_t mul) {
     while (target.size() < offset.size()) {
         target.push_back(0);
