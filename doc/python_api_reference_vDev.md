@@ -35,6 +35,7 @@
     - [`stim.Circuit.num_observables`](#stim.Circuit.num_observables)
     - [`stim.Circuit.num_qubits`](#stim.Circuit.num_qubits)
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
+    - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
 - [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
@@ -1708,6 +1709,82 @@
 >     ...    CX sweep[2] 0
 >     ... ''').num_sweep_bits
 >     6
+> ```
+
+<a name="stim.Circuit.search_for_undetectable_logical_errors"></a>
+### `stim.Circuit.search_for_undetectable_logical_errors(self, *, dont_explore_detection_event_sets_with_size_above: int, dont_explore_edges_with_degree_above: int, dont_explore_edges_increasing_symptom_degree: bool, canonicalize_circuit_errors: bool = False) -> List[stim.ExplainedError]`
+> ```
+> Searches for lists of errors from the model that form an undetectable logical error.
+> 
+> THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of particular
+> sizes, or with particular properties. The errors it finds are a tangled combination of the
+> truncation parameters you specify, internal optimizations which are correct when not
+> truncating, and minutia of the circuit being considered.
+> 
+> If you want a well behaved method that does provide guarantees of finding errors of a
+> particular type, use `stim.Circuit.shortest_graphlike_error`. This method is more
+> thorough than that (assuming you don't truncate so hard you omit graphlike edges),
+> but exactly how thorough is difficult to describe. It's also not guaranteed that the
+> behavior of this method will not be changed in the future in a way that permutes which
+> logical errors are found and which are missed.
+> 
+> This search method considers hyper errors, so it has worst case exponential runtime. It is
+> important to carefully consider the arguments you are providing, which truncate the search
+> space and trade cost for quality.
+> 
+> The search progresses by starting from each error that crosses a logical observable, noting
+> which detection events each error produces, and then iteratively adding in errors touching
+> those detection events attempting to cancel out the detection event with the lowest index.
+> 
+> Beware that the choice of logical observable can interact with the truncation options. Using
+> different observables can change whether or not the search succeeds, even if those observables
+> are equal modulo the stabilizers of the code. This is because the edges crossing logical
+> observables are used as starting points for the search, and starting from different places along
+> a path will result in different numbers of symptoms in intermediate states as the search
+> progresses. For example, if the logical observable is next to a boundary, then the starting
+> edges are likely boundary edges (degree 1) with 'room to grow', whereas if the observable was
+> running through the bulk then the starting edges will have degree at least 2.
+> 
+> Args:
+>     model: The detector error model to search for undetectable errors.
+>     dont_explore_detection_event_sets_with_size_above: Truncates the search space by refusing to
+>         cross an edge (i.e. add an error) when doing so would produce an intermediate state that
+>         has more detection events than this limit.
+>     dont_explore_edges_with_degree_above: Truncates the search space by refusing to consider
+>         errors that cause a lot of detection events. For example, you may only want to consider
+>         graphlike errors which have two or fewer detection events.
+>     dont_explore_edges_increasing_symptom_degree: Truncates the search space by refusing to
+>         cross an edge (i.e. add an error) when doing so would produce an intermediate state that
+>         has more detection events that the previous intermediate state. This massively improves
+>         the efficiency of the search because instead of, for example, exploring all n^4 possible
+>         detection event sets with 4 symptoms, the search will attempt to cancel out symptoms one
+>         by one.
+>     canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
+>         False (default): Each DEM error lists every possible circuit error that single handedly produces
+>             those symptoms as a potential match. This is verbose but gives complete information.
+>         True: Each DEM error is matched with one possible circuit error that single handedly produces those
+>             symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
+>             This discards mostly-redundant information about different ways to produce the same symptoms in
+>             order to give a succinct result.
+> 
+> Returns:
+>     A detector error model containing only the error mechanisms that cause the undetectable
+>     logical error. The error mechanisms will have their probabilities set to 1 (indicating that
+>     they are necessary) and will not suggest a decomposition.
+> 
+> Examples:
+>     >>> import stim
+>     >>> circuit = stim.Circuit.generated(
+>     ...     "surface_code:rotated_memory_x",
+>     ...     rounds=5,
+>     ...     distance=5,
+>     ...     after_clifford_depolarization=0.001)
+>     >>> print(len(circuit.search_for_undetectable_logical_errors(
+>     ...     dont_explore_detection_event_sets_with_size_above=4,
+>     ...     dont_explore_edges_with_degree_above=4,
+>     ...     dont_explore_edges_increasing_symptom_degree=True,
+>     ... )))
+>     5
 > ```
 
 <a name="stim.Circuit.shortest_graphlike_error"></a>
