@@ -1,6 +1,6 @@
-#include <pybind11/pybind11.h>
-
 #include "stim/py/march.pybind.h"
+
+#include <pybind11/pybind11.h>
 
 #ifdef _WIN32
 //  Windows

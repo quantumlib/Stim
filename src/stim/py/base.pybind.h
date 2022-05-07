@@ -48,6 +48,6 @@ pybind11::tuple tuple_tree(const std::vector<T> &val, size_t offset = 0) {
     return pybind11::make_tuple(val[offset], tuple_tree(val, offset + 1));
 }
 
-}
+}  // namespace stim_pybind
 
 #endif

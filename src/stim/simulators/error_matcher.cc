@@ -23,7 +23,7 @@ using namespace stim;
 
 ErrorMatcher::ErrorMatcher(
     const Circuit &circuit, const DetectorErrorModel *init_filter, bool reduce_to_one_representative_error)
-    : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1),
+    : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1, false, false),
       cur_loc(),
       output_map(),
       allow_adding_new_dem_errors_to_output_map(init_filter == nullptr),

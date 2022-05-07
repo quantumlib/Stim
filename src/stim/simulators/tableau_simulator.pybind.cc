@@ -22,7 +22,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-PyTableauSimulator::PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng) : TableauSimulator(*rng), rng_reference(rng) {
+PyTableauSimulator::PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng)
+    : TableauSimulator(*rng), rng_reference(rng) {
 }
 
 struct TempViewableData {

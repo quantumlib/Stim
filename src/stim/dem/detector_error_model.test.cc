@@ -681,24 +681,24 @@ TEST(detector_error_model, get_detector_coordinates_trivial) {
     dem = DetectorErrorModel(R"MODEL(
         detector(1, 2) D1
     )MODEL");
-    ASSERT_EQ(dem.get_detector_coordinates({0, 1}), (std::map<uint64_t, std::vector<double>>{
-        {0, {}},
-        {1, {1, 2}},
-    }));
-    ASSERT_THROW({
-        dem.get_detector_coordinates({2});
-    }, std::invalid_argument);
+    ASSERT_EQ(
+        dem.get_detector_coordinates({0, 1}),
+        (std::map<uint64_t, std::vector<double>>{
+            {0, {}},
+            {1, {1, 2}},
+        }));
+    ASSERT_THROW({ dem.get_detector_coordinates({2}); }, std::invalid_argument);
 
     dem = DetectorErrorModel(R"MODEL(
         error(0.25) D0 D1
     )MODEL");
-    ASSERT_EQ(dem.get_detector_coordinates({0, 1}), (std::map<uint64_t, std::vector<double>>{
-        {0, {}},
-        {1, {}},
-    }));
-    ASSERT_THROW({
-        dem.get_detector_coordinates({2});
-    }, std::invalid_argument);
+    ASSERT_EQ(
+        dem.get_detector_coordinates({0, 1}),
+        (std::map<uint64_t, std::vector<double>>{
+            {0, {}},
+            {1, {}},
+        }));
+    ASSERT_THROW({ dem.get_detector_coordinates({2}); }, std::invalid_argument);
 
     dem = DetectorErrorModel(R"MODEL(
         error(0.25) D0 D1
@@ -706,15 +706,15 @@ TEST(detector_error_model, get_detector_coordinates_trivial) {
         shift_detectors(5) 1
         detector(1, 2) D2
     )MODEL");
-    ASSERT_EQ(dem.get_detector_coordinates({0, 1, 2, 3}), (std::map<uint64_t, std::vector<double>>{
-        {0, {}},
-        {1, {1, 2, 3}},
-        {2, {}},
-        {3, {6, 2}},
-    }));
-    ASSERT_THROW({
-        dem.get_detector_coordinates({4});
-    }, std::invalid_argument);
+    ASSERT_EQ(
+        dem.get_detector_coordinates({0, 1, 2, 3}),
+        (std::map<uint64_t, std::vector<double>>{
+            {0, {}},
+            {1, {1, 2, 3}},
+            {2, {}},
+            {3, {6, 2}},
+        }));
+    ASSERT_THROW({ dem.get_detector_coordinates({4}); }, std::invalid_argument);
 }
 
 TEST(detector_error_model, final_detector_and_coord_shift) {
