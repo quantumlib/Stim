@@ -486,22 +486,11 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             return result;
         },
         clean_doc_string(u8R"DOC(
-            Flattens the circuit's operations into a list.
+            [DEPRECATED]
 
-            The operations within repeat blocks are actually repeated in the output.
-
-            Returns:
-                A List[Tuple[name, targets, arg]] of the operations in the circuit.
-                    name: A string with the gate's name.
-                    targets: A list of things acted on by the gate. Each thing can be:
-                        int: The index of a qubit.
-                        Tuple["inv", int]: The index of a qubit to measure with an inverted result.
-                        Tuple["rec", int]: A measurement record target like `rec[-1]`.
-                        Tuple["X", int]: A Pauli X operation to apply during a correlated error.
-                        Tuple["Y", int]: A Pauli Y operation to apply during a correlated error.
-                        Tuple["Z", int]: A Pauli Z operation to apply during a correlated error.
-                    arg: The gate's numeric argument. For most gates this is just 0. For noisy
-                        gates this is the probability of the noise being applied.
+            Returns a list of tuples encoding the contents of the circuit.
+            Instead of this method, use `for instruction in circuit` or, to
+            avoid REPEAT blocks, `for instruction in circuit.flattened()`.
 
             Examples:
                 >>> import stim
@@ -1395,6 +1384,77 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                         at target #1 of the instruction
                         resolving to DEPOLARIZE1(0.01) 0
                 }
+        )DOC")
+            .data());
+
+    c.def(
+        "without_noise",
+        &Circuit::without_noise,
+        clean_doc_string(u8R"DOC(
+            Returns a copy of the circuit with all noise processes removed.
+
+            Pure noise instructions, such as X_ERROR and DEPOLARIZE2, are not
+            included in the result.
+
+            Noisy measurement instructions, like `M(0.001)`, have their noise
+            parameter removed.
+
+            Returns:
+                A `stim.Circuit` with the same instructions except all noise
+                processes have been removed.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...     X_ERROR(0.25) 0
+                ...     CNOT 0 1
+                ...     M(0.125) 0
+                ... ''').without_noise()
+                stim.Circuit('''
+                    CNOT 0 1
+                    M 0
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "flattened",
+        &Circuit::flattened,
+        clean_doc_string(u8R"DOC(
+            Creates an equivalent circuit without REPEAT or SHIFT_COORDS.
+
+            Returns:
+                A `stim.Circuit` with the same instructions in the same order,
+                but with loops flattened into repeated instructions and with
+                all coordinate shifts inlined.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...     REPEAT 5 {
+                ...         MR 0 1
+                ...         DETECTOR(0, 0) rec[-2]
+                ...         DETECTOR(1, 0) rec[-1]
+                ...         SHIFT_COORDS(0, 1)
+                ...     }
+                ... ''').flattened()
+                stim.Circuit('''
+                    MR 0 1
+                    DETECTOR(0, 0) rec[-2]
+                    DETECTOR(1, 0) rec[-1]
+                    MR 0 1
+                    DETECTOR(0, 1) rec[-2]
+                    DETECTOR(1, 1) rec[-1]
+                    MR 0 1
+                    DETECTOR(0, 2) rec[-2]
+                    DETECTOR(1, 2) rec[-1]
+                    MR 0 1
+                    DETECTOR(0, 3) rec[-2]
+                    DETECTOR(1, 3) rec[-1]
+                    MR 0 1
+                    DETECTOR(0, 4) rec[-2]
+                    DETECTOR(1, 4) rec[-1]
+                ''')
         )DOC")
             .data());
 }

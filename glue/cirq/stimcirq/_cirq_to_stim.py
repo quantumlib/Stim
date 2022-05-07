@@ -343,7 +343,7 @@ def _stim_append_random_gate_channel(c: stim.Circuit, g: cirq.RandomGateChannel,
         c.append_operation(f"{g.sub_gate}_ERROR", t, g.probability)
     elif isinstance(g.sub_gate, cirq.DensePauliString):
         target_p = [None, stim.target_x, stim.target_y, stim.target_z]
-        pauli_targets = [target_p[p](t) for t, p in zip(t, g.sub_gate.pauli_mask)]
+        pauli_targets = [target_p[p](t) for t, p in zip(t, g.sub_gate.pauli_mask) if p]
         c.append_operation(f"CORRELATED_ERROR", pauli_targets, g.probability)
     else:
         raise NotImplementedError(
