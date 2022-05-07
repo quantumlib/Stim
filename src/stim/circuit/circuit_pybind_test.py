@@ -768,3 +768,51 @@ def test_explain_errors():
             resolving to DEPOLARIZE1(0.01) 0
     }
 }"""
+
+
+def test_without_noise():
+    assert stim.Circuit("""
+        X_ERROR(0.25) 0
+        CNOT 0 1
+        M(0.125) 0
+        REPEAT 50 {
+            DEPOLARIZE1(0.25) 0 1 2
+            X 0 1 2
+        }
+    """).without_noise() == stim.Circuit("""
+        CNOT 0 1
+        M 0
+        REPEAT 50 {
+            X 0 1 2
+        }
+    """)
+
+
+def test_flattened():
+    assert stim.Circuit("""
+        SHIFT_COORDS(5, 0)
+        QUBIT_COORDS(1, 2, 3) 0
+        REPEAT 5 {
+            MR 0 1
+            DETECTOR(0, 0) rec[-2]
+            DETECTOR(1, 0) rec[-1]
+            SHIFT_COORDS(0, 1)
+        }
+    """).flattened() == stim.Circuit("""
+        QUBIT_COORDS(6, 2, 3) 0
+        MR 0 1
+        DETECTOR(5, 0) rec[-2]
+        DETECTOR(6, 0) rec[-1]
+        MR 0 1
+        DETECTOR(5, 1) rec[-2]
+        DETECTOR(6, 1) rec[-1]
+        MR 0 1
+        DETECTOR(5, 2) rec[-2]
+        DETECTOR(6, 2) rec[-1]
+        MR 0 1
+        DETECTOR(5, 3) rec[-2]
+        DETECTOR(6, 3) rec[-1]
+        MR 0 1
+        DETECTOR(5, 4) rec[-2]
+        DETECTOR(6, 4) rec[-1]
+    """)

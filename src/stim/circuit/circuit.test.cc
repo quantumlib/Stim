@@ -1076,6 +1076,12 @@ TEST(circuit, aliased_noiseless_circuit) {
             MPP X0*X1 Z0 Z1
         }
     )CIRCUIT"));
+
+    Circuit c1 = initial.without_noise();
+    Circuit c2 = c1;
+    ASSERT_EQ(c1, noiseless);
+    initial.clear();
+    ASSERT_EQ(c1, c2);
 }
 
 TEST(circuit, validate_nan_probability) {
