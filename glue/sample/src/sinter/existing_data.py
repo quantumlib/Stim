@@ -15,7 +15,7 @@ class ExistingData:
 
     def stats_for(self, case: Union[ExecutableTask, TaskSummary]) -> AnonTaskStats:
         if isinstance(case, ExecutableTask):
-            key = case.to_strong_id()
+            key = case.strong_id()
         elif isinstance(case, TaskSummary):
             key = case.strong_id
         else:
