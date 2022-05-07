@@ -51,7 +51,7 @@ class CollectionTrackerForSingleTask:
     def work_completed(self, result: WorkOut) -> None:
         self.deployed_shots -= result.sample.shots
         self.deployed_processes -= 1
-        self.finished_stats += result.sample.to_case_stats()
+        self.finished_stats += result.sample.to_anon_stats()
 
     def is_done(self) -> bool:
         enough_shots = False
@@ -61,7 +61,7 @@ class CollectionTrackerForSingleTask:
             enough_shots = True
         return enough_shots and self.deployed_shots == 0
 
-    def iter_batch_size_limits(self) -> Iterator[float]:
+    def iter_batch_size_limits(self, *, desperate: bool) -> Iterator[float]:
         if self.finished_stats.shots == 0:
             if self.deployed_shots > 0:
                 yield 0
@@ -75,7 +75,8 @@ class CollectionTrackerForSingleTask:
         yield self.finished_stats.shots * 2
 
         # Don't go super parallel before reaching other maximums.
-        yield self.finished_stats.shots * 5 - self.deployed_shots
+        if not desperate:
+            yield self.finished_stats.shots * 5 - self.deployed_shots
 
         # Don't take more shots than requested.
         if self.task.max_shots is not None:
@@ -103,12 +104,12 @@ class CollectionTrackerForSingleTask:
             if dt is not None and dt > 0:
                 yield max(1, math.floor(max_batch_seconds / dt))
 
-    def next_shot_count(self) -> int:
-        return math.ceil(min(self.iter_batch_size_limits()))
+    def next_shot_count(self, *, desperate: bool) -> int:
+        return math.ceil(min(self.iter_batch_size_limits(desperate=desperate)))
 
-    def provide_more_work(self) -> Optional[WorkIn]:
+    def provide_more_work(self, *, desperate: bool) -> Optional[WorkIn]:
         # Wait to have *some* data before starting to sample in parallel.
-        num_shots = self.next_shot_count()
+        num_shots = self.next_shot_count(desperate=desperate)
         if num_shots <= 0:
             return None
 

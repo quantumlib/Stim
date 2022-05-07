@@ -2,6 +2,8 @@ import pathlib
 import hashlib
 import json
 import numpy as np
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 import stim
@@ -38,11 +40,18 @@ class ExecutableTask:
         return TaskSummary(
             decoder=self.decoder,
             json_metadata=self.json_metadata,
-            strong_id=self.to_strong_id(),
+            strong_id=self.strong_id(),
         )
 
-    def to_strong_id(self) -> str:
-        input_text = json.dumps({
+    def strong_id_value(self) -> Dict[str, Any]:
+        """Contains all data that affects the strong id for this case.
+
+        This value is converted into the actual strong id by:
+            - Serializing it into text using JSON.
+            - Serializing the JSON text into bytes using UTF8.
+            - Hashing the UTF8 bytes using SHA256.
+        """
+        return {
             'circuit': str(self.circuit),
             'decoder': self.decoder,
             'decoder_error_model': str(self.decoder_error_model),
@@ -51,8 +60,17 @@ class ExecutableTask:
                 if self.postselection_mask is None
                 else list(self.postselection_mask),
             'json_metadata': self.json_metadata,
-        })
-        return hashlib.sha256(input_text.encode('utf8')).hexdigest()
+        }
+
+    def strong_id_text(self) -> str:
+        return json.dumps(self.strong_id_value())
+
+    def strong_id_bytes(self) -> bytes:
+        return self.strong_id_text().encode('utf8')
+
+    def strong_id(self) -> str:
+        """A cryptographically unique identifier for this task."""
+        return hashlib.sha256(self.strong_id_bytes()).hexdigest()
 
     def sample_stats(self,
                      *,

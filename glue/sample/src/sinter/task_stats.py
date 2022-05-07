@@ -1,6 +1,8 @@
+from typing import Tuple
 import dataclasses
 
 from sinter.anon_task_stats import AnonTaskStats
+from sinter.probability_util import binomial_relative_likelihood_range
 from sinter.task_summary import JSON_TYPE, TaskSummary
 from sinter.csv_out import csv_line
 
@@ -21,7 +23,7 @@ class TaskStats:
     seconds: float
 
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
-        assert self.to_case_summary() == other.to_case_summary()
+        assert self.to_task_summary() == other.to_task_summary()
         return TaskStats(
             decoder=self.decoder,
             strong_id=self.strong_id,
@@ -32,14 +34,14 @@ class TaskStats:
             seconds=self.seconds + other.seconds,
         )
 
-    def to_case_summary(self) -> TaskSummary:
+    def to_task_summary(self) -> TaskSummary:
         return TaskSummary(
             strong_id=self.strong_id,
             decoder=self.decoder,
             json_metadata=self.json_metadata,
         )
 
-    def to_case_stats(self) -> AnonTaskStats:
+    def to_anon_stats(self) -> AnonTaskStats:
         return AnonTaskStats(
             shots=self.shots,
             errors=self.errors,
