@@ -154,8 +154,8 @@ TEST(shortest_graphlike_undetectable_logical_error, surface_code) {
     params.after_reset_flip_probability = 0.001;
     params.before_round_data_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
-    auto ungraphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, false);
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
+    auto ungraphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, false, true, false, 0.0, false, true);
 
     ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(), 5);
 
@@ -172,7 +172,7 @@ TEST(shortest_graphlike_undetectable_logical_error, repetition_code) {
     CircuitGenParameters params(10, 7, "memory");
     params.before_round_data_depolarization = 0.01;
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false);
+    auto graphlike_model = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
 
     ASSERT_EQ(stim::shortest_graphlike_undetectable_logical_error(graphlike_model, false).instructions.size(), 7);
 }

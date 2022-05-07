@@ -822,7 +822,13 @@ bool get_detector_coordinates_helper(
             // TODO: Finish in time proportional to len(instructions) + len(desired) instead of len(execution).
             for (uint64_t k = 0; k < reps; k++) {
                 if (get_detector_coordinates_helper(
-                    block, included_detector_indices, iter_desired_detector_index, coord_shift, detector_offset, out, false)) {
+                        block,
+                        included_detector_indices,
+                        iter_desired_detector_index,
+                        coord_shift,
+                        detector_offset,
+                        out,
+                        false)) {
                     return true;
                 }
             }

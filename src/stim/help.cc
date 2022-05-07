@@ -404,12 +404,36 @@ Note: currently, the `ELSE_CORRELATED_ERROR` instruction is not supported by thi
         {
             "--allow_gauge_detectors",
             "--approximate_disjoint_errors",
+            "--block_decompose_from_introducing_remnant_edges",
+            "--ignore_decomposition_failures",
             "--decompose_errors",
             "--fold_loops",
             "--out",
             "--in",
         },
     };
+
+    flags["--ignore_decomposition_failures"] = R"PARAGRAPH(
+When this flag is set, circuit errors that fail to decompose into graphlike
+detector error model errors no longer cause the conversion process to abort.
+Instead, the undecomposed error is inserted into the output. Whatever processes
+the detector error model is then responsible for dealing with the undecomposed
+errors (e.g. a tool may choose to simply ignore them).
+
+Irrelevant unless --decompose_errors is specified.
+)PARAGRAPH";
+    flags["--block_decomposition_from_introducing_remnant_edges"] = R"PARAGRAPH(
+Requires that both A B and C D be present elsewhere in the detector error model
+in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
+needs to appear to allow this decomposition.
+
+Remnant edges can be a useful feature for ensuring decomposition succeeds, but
+they can also reduce the effective code distance by giving the decoder single
+edges that actually represent multiple errors in the circuit (resulting in the
+decoder making misinformed choices when decoding).
+
+Irrelevant unless --decompose_errors is specified.
+)PARAGRAPH";
 
     flags["--fold_loops"] = R"PARAGRAPH(
 Allows the output error model to contain `repeat` blocks.

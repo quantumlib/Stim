@@ -208,10 +208,12 @@ int main_mode_analyze_errors(int argc, const char **argv) {
         {
             "--allow_gauge_detectors",
             "--approximate_disjoint_errors",
+            "--block_decompose_from_introducing_remnant_edges",
             "--decompose_errors",
             "--fold_loops",
-            "--out",
+            "--ignore_decomposition_failures",
             "--in",
+            "--out",
         },
         {"--analyze_errors", "--detector_hypergraph"},
         "analyze_errors",
@@ -220,6 +222,9 @@ int main_mode_analyze_errors(int argc, const char **argv) {
     bool decompose_errors = find_bool_argument("--decompose_errors", argc, argv);
     bool fold_loops = find_bool_argument("--fold_loops", argc, argv);
     bool allow_gauge_detectors = find_bool_argument("--allow_gauge_detectors", argc, argv);
+    bool ignore_decomposition_failures = find_bool_argument("--ignore_decomposition_failures", argc, argv);
+    bool block_decompose_from_introducing_remnant_edges =
+        find_bool_argument("--block_decompose_from_introducing_remnant_edges", argc, argv);
 
     const char *approximate_disjoint_errors_arg = find_argument("--approximate_disjoint_errors", argc, argv);
     float approximate_disjoint_errors_threshold = 0;
@@ -238,7 +243,13 @@ int main_mode_analyze_errors(int argc, const char **argv) {
         fclose(in);
     }
     out << ErrorAnalyzer::circuit_to_detector_error_model(
-               circuit, decompose_errors, fold_loops, allow_gauge_detectors, approximate_disjoint_errors_threshold)
+               circuit,
+               decompose_errors,
+               fold_loops,
+               allow_gauge_detectors,
+               approximate_disjoint_errors_threshold,
+               ignore_decomposition_failures,
+               block_decompose_from_introducing_remnant_edges)
         << "\n";
     return EXIT_SUCCESS;
 }

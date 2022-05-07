@@ -47,7 +47,7 @@ std::string circuit_repr(const Circuit &self) {
 std::vector<ExplainedError> circuit_shortest_graphlike_error(
     const Circuit &self, bool ignore_ungraphlike_errors, bool reduce_to_representative) {
     DetectorErrorModel dem =
-        ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1);
+        ErrorAnalyzer::circuit_to_detector_error_model(self, !ignore_ungraphlike_errors, true, false, 1, false, false);
     DetectorErrorModel filter = shortest_graphlike_undetectable_logical_error(dem, ignore_ungraphlike_errors);
     return ErrorMatcher::explain_errors_from_circuit(self, &filter, reduce_to_representative);
 }
@@ -1007,15 +1007,19 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
            bool decompose_errors,
            bool flatten_loops,
            bool allow_gauge_detectors,
-           double approximate_disjoint_errors) -> DetectorErrorModel {
+           double approximate_disjoint_errors,
+           bool ignore_decomposition_failures,
+           bool block_decomposition_from_introducing_remnant_edges) -> DetectorErrorModel {
             return ErrorAnalyzer::circuit_to_detector_error_model(
-                self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors);
+                self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors, ignore_decomposition_failures, block_decomposition_from_introducing_remnant_edges);
         },
         pybind11::kw_only(),
         pybind11::arg("decompose_errors") = false,
         pybind11::arg("flatten_loops") = false,
         pybind11::arg("allow_gauge_detectors") = false,
         pybind11::arg("approximate_disjoint_errors") = false,
+        pybind11::arg("ignore_decomposition_failures") = false,
+        pybind11::arg("block_decomposition_from_introducing_remnant_edges") = false,
         clean_doc_string(u8R"DOC(
             Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 
@@ -1051,6 +1055,25 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                     This argument can also be set to a probability between 0 and 1, setting a threshold below which the
                     approximation is acceptable. Any error mechanisms that have a component probability above the
                     threshold will cause an exception to be thrown.
+                ignore_decomposition_failures: Defaults to False.
+                    When this is set to True, circuit errors that fail to decompose into graphlike
+                    detector error model errors no longer cause the conversion process to abort.
+                    Instead, the undecomposed error is inserted into the output. Whatever tool
+                    the detector error model is then given to is responsible for dealing with the
+                    undecomposed errors (e.g. a tool may choose to simply ignore them).
+
+                    Irrelevant unless decompose_errors=True.
+                block_decomposition_from_introducing_remnant_edges: Defaults to False.
+                    Requires that both A B and C D be present elsewhere in the detector error model
+                    in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
+                    needs to appear to allow this decomposition.
+
+                    Remnant edges can be a useful feature for ensuring decomposition succeeds, but
+                    they can also reduce the effective code distance by giving the decoder single
+                    edges that actually represent multiple errors in the circuit (resulting in the
+                    decoder making misinformed choices when decoding).
+
+                    Irrelevant unless decompose_errors=True.
 
             Examples:
                 >>> import stim
@@ -1255,7 +1278,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
         "shortest_graphlike_error",
         &circuit_shortest_graphlike_error,
         pybind11::kw_only(),
-        pybind11::arg("ignore_ungraphlike_errors") = false,
+        pybind11::arg("ignore_ungraphlike_errors") = true,
         pybind11::arg("canonicalize_circuit_errors") = false,
         clean_doc_string(u8R"DOC(
             Finds a minimum sized set of graphlike errors that produce an undetected logical error.
@@ -1273,7 +1296,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
             Args:
                 ignore_ungraphlike_errors:
-                    False (default): Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
+                    False: Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
                         If this fails, raise an exception instead of continuing.
                         Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
                         This can produce a result that lists DEM errors with zero matching circuit errors, because the
@@ -1281,9 +1304,9 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                         As a result, when using this option it is NOT guaranteed that the length of the result is an
                         upper bound on the true code distance. That is only the case if every item in the result lists
                         at least one matching circuit error.
-                    True: Ungraphlike errors are simply skipped as if they weren't present, even if they could become
-                        graphlike if decomposed. This guarantees the length of the result is an upper bound on the true
-                        code distance.
+                    True (default): Ungraphlike errors are simply skipped as if they weren't present, even if they could
+                        become graphlike if decomposed. This guarantees the length of the result is an upper bound on
+                        the true code distance.
                 canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
                     False (default): Each DEM error lists every possible circuit error that single handedly produces
                         those symptoms as a potential match. This is verbose but gives complete information.
@@ -1293,7 +1316,9 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                         order to give a succinct result.
 
             Returns:
-                ...
+                A detector error model containing only the error mechanisms that cause the undetectable
+                logical error. The error mechanisms will have their probabilities set to 1 (indicating that
+                they are necessary) and will not suggest a decomposition.
 
             Examples:
                 >>> import stim
@@ -1310,7 +1335,9 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
     c.def(
         "explain_detector_error_model_errors",
-        [](const Circuit &self, const pybind11::object &dem_filter, bool reduce_to_one_representative_error) -> std::vector<ExplainedError> {
+        [](const Circuit &self,
+           const pybind11::object &dem_filter,
+           bool reduce_to_one_representative_error) -> std::vector<ExplainedError> {
             if (dem_filter.is_none()) {
                 return ErrorMatcher::explain_errors_from_circuit(self, nullptr, reduce_to_one_representative_error);
             } else {

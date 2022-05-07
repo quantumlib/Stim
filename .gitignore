@@ -31,3 +31,4 @@ venv/*
 .venv/*
 **/LastTest.log
 *.so
+.cmake/*

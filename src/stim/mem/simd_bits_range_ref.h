@@ -17,10 +17,10 @@
 #ifndef _STIM_MEM_SIMD_BITS_RANGE_REF_H
 #define _STIM_MEM_SIMD_BITS_RANGE_REF_H
 
+#include <array>
 #include <iostream>
 #include <random>
 #include <vector>
-#include <array>
 
 #include "stim/mem/bit_ref.h"
 #include "stim/mem/simd_compat.h"

@@ -99,6 +99,21 @@ struct ErrorAnalyzer {
     /// before they can be approximated as being independent. Any larger probabilities cause failure.
     double approximate_disjoint_errors_threshold;
 
+    /// When true, errors that fail to decompose are inserted into the output
+    /// undecomposed instead of raising an exception that terminates the
+    /// conversion from circuit to detector error model.
+    ///
+    /// Only relevant when decompose_errors=True.
+    bool ignore_decomposition_failures;
+
+    /// When true, decomposition is permitted to split A B C D into A B ^ C D
+    /// when only one of A B or C D exists elsewhere, instead of requiring both
+    /// to exist. This can reduce the code distance of the decoding graph, but
+    /// is sometimes necessary.
+    ///
+    /// Only relevant when decompose_errors=True.
+    bool block_decomposition_from_introducing_remnant_edges;
+
     /// A buffer containing the growing output error model as the circuit is traversed.
     /// The buffer is in reverse order because the circuit is traversed back to front.
     /// Certain events during period solving of loops can cause the error probabilities
@@ -120,7 +135,9 @@ struct ErrorAnalyzer {
         bool decompose_errors,
         bool fold_loops,
         bool allow_gauge_detectors,
-        double approximate_disjoint_errors_threshold);
+        double approximate_disjoint_errors_threshold,
+        bool ignore_decomposition_failures,
+        bool block_decomposition_from_introducing_remnant_edges);
 
     /// Returns the detector error model of the given circuit.
     ///
@@ -132,6 +149,11 @@ struct ErrorAnalyzer {
     ///         of failing.
     ///     approximate_disjoint_errors_threshold: When larger than 0, allows disjoint errors like PAULI_CHANNEL_2 to
     ///         be present in the circuit, as long as their probabilities are not larger than this.
+    ///     ignore_decomposition_failures: Determines whether errors that that fail to decompose are inserted into the
+    ///         output, or cause the conversion to fail and raise an exception.
+    ///     block_decomposition_from_introducing_remnant_edges: When true, it is not permitted to decompose A B C D
+    ///         into A B ^ C D unless both A B and C D appear elsewhere in the error model. When false, only one has
+    ///         to appear elsewhere.
     ///
     /// Returns:
     ///     The detector error model.
@@ -140,7 +162,9 @@ struct ErrorAnalyzer {
         bool decompose_errors,
         bool fold_loops,
         bool allow_gauge_detectors,
-        double approximate_disjoint_errors_threshold);
+        double approximate_disjoint_errors_threshold,
+        bool ignore_decomposition_failures,
+        bool block_decomposition_from_introducing_remnant_edges);
 
     /// Copying is unsafe because `error_class_probabilities` has overlapping pointers to `monobuf`'s internals.
     ErrorAnalyzer(const ErrorAnalyzer &analyzer) = delete;
@@ -306,7 +330,7 @@ struct ErrorAnalyzer {
     /// Handles global decomposition of errors.
     /// When an error has more than two symptoms, this method attempts to find other known errors that can be used as
     /// components of this error, so that it is decomposed into graphlike components.
-    void decompose_and_append_component_to_tail(
+    bool decompose_and_append_component_to_tail(
         ConstPointerRange<DemTarget> component,
         const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_symptoms);
 
@@ -323,6 +347,11 @@ struct ErrorAnalyzer {
 /// An error is graphlike if it has at most two symptoms (two detectors) per component.
 /// For example, error(0.1) D0 D1 ^ D2 D3 L55 is graphlike but error(0.1) D0 D1 ^ D2 D3 D55 is not.
 bool is_graphlike(const ConstPointerRange<DemTarget> &components);
+
+bool brute_force_decomposition_into_known_graphlike_errors(
+    ConstPointerRange<DemTarget> problem,
+    const std::map<FixedCapVector<DemTarget, 2>, ConstPointerRange<DemTarget>> &known_graphlike_errors,
+    MonotonicBuffer<DemTarget> &output);
 
 }  // namespace stim
 

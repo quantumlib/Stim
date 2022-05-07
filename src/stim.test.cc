@@ -25,5 +25,5 @@ TEST(stim, include1) {
 }
 
 TEST(stim, include3) {
-    stim::ErrorAnalyzer::circuit_to_detector_error_model({}, false, false, false, false);
+    stim::ErrorAnalyzer::circuit_to_detector_error_model({}, false, false, false, 0.0, false, true);
 }
