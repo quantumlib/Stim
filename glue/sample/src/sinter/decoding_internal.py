@@ -34,7 +34,7 @@ def decode_using_internal_decoder(*,
         dets_format='b8',
         dets_filepath=dets_file,
         ignore_distance_1_errors=True,
-        ignore_undecomposed_errors=False,
+        ignore_undecomposed_errors=True,
         use_correlated_decoding=use_correlated_decoding,
     )
 

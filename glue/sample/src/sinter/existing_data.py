@@ -15,14 +15,14 @@ class ExistingData:
 
     def stats_for(self, case: Union[ExecutableTask, TaskSummary]) -> AnonTaskStats:
         if isinstance(case, ExecutableTask):
-            key = case.to_strong_id()
+            key = case.strong_id()
         elif isinstance(case, TaskSummary):
             key = case.strong_id
         else:
             raise NotImplementedError(f'{type(case)}')
         if key not in self.data:
             return AnonTaskStats()
-        return self.data[key].to_case_stats()
+        return self.data[key].to_anon_stats()
 
     def add_sample(self, sample: TaskStats) -> None:
         k = sample.strong_id

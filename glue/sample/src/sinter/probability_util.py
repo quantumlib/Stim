@@ -169,15 +169,21 @@ def least_squares_slope_range(*,
     return low_slope, fit.slope, high_slope
 
 
-def binominal_relative_likelihood_range(
+def binomial_relative_likelihood_range(
         *,
         num_shots: int,
         num_hits: int,
         likelihood_ratio: float) -> Tuple[float, float]:
-    """Compute relative-likelihood bounds.
+    """Compute the (min, max) probabilities within the given ratio of the max likelihood hypothesis.
 
-    Returns the min/max error rates whose Bayes factors are within the given ratio of the maximum
-    likelihood estimate.
+    Args:
+        num_shots: The number of samples that were taken.
+        num_hits: The number of hits that were seen in the samples.
+        likelihood_ratio: Should be larger than 1. The maximum Bayes factor between hypotheses and
+            the max likelihood hypothesis.
+
+    Returns:
+        A (min_hypothesis_probability, max_hypothesis_probability) tuple.
     """
     if num_shots == 0:
         return 0, 1

@@ -31,4 +31,5 @@ venv/*
 .venv/*
 **/LastTest.log
 *.so
+.clwb/*
 .cmake/*
