@@ -19,7 +19,7 @@
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
-#include "stim/simulators/min_distance.h"
+#include "stim/search/search.h"
 
 using namespace stim;
 using namespace stim_pybind;
