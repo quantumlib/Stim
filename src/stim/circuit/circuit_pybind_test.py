@@ -716,7 +716,7 @@ def test_shortest_graphlike_error_ignore():
         DETECTOR rec[-1]
     """)
     with pytest.raises(ValueError, match="Failed to decompose errors"):
-        c.shortest_graphlike_error()
+        c.shortest_graphlike_error(ignore_ungraphlike_errors=False)
     with pytest.raises(ValueError, match="Failed to find any graphlike logical errors"):
         c.shortest_graphlike_error(ignore_ungraphlike_errors=True)
 

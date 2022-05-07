@@ -208,10 +208,12 @@ int main_mode_analyze_errors(int argc, const char **argv) {
         {
             "--allow_gauge_detectors",
             "--approximate_disjoint_errors",
+            "--block_decompose_from_introducing_remnant_edges",
             "--decompose_errors",
             "--fold_loops",
-            "--out",
+            "--ignore_decomposition_failures",
             "--in",
+            "--out",
         },
         {"--analyze_errors", "--detector_hypergraph"},
         "analyze_errors",
