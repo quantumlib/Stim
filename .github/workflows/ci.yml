@@ -39,7 +39,15 @@ jobs:
           {os: ubuntu-latest, dist: cp37-manylinux_i686},
           {os: ubuntu-latest, dist: cp38-manylinux_i686},
           {os: ubuntu-latest, dist: cp39-manylinux_i686},
-          {os: ubuntu-latest, dist: cp310-manylinux_i686},
+          # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
+          #
+          # The actual error seen in github actions:
+          #
+          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
+          #     libraries found. To build Scipy from sources, BLAS & LAPACK
+          #     libraries need to be installed.
+          #
+          #{os: ubuntu-latest, dist: cp310-manylinux_i686},
 
           # pypy manylinux builds disabled because scipy isn't prebuilt and fails to build.
           #
