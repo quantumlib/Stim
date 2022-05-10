@@ -336,3 +336,15 @@ def test_on_loop():
     )
     result = stimcirq.StimSampler().run(c)
     assert result.measurements.keys() == {'0:a', '0:b', '1:a', '1:b', '2:a', '2:b'}
+
+
+def test_random_gate_channel():
+    q0, q1 = cirq.LineQubit.range(2)
+
+    circuit = cirq.Circuit(cirq.RandomGateChannel(
+        sub_gate=cirq.DensePauliString((0, 1)),
+        probability=0.25).on(q0, q1))
+    assert stimcirq.cirq_circuit_to_stim_circuit(circuit) == stim.Circuit("""
+        E(0.25) X1
+        TICK
+    """)

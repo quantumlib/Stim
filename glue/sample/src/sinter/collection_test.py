@@ -29,7 +29,7 @@ def test_iter_collect():
         ],
         print_progress=False,
     ):
-        result[sample.json_metadata['p']] += sample.to_case_stats()
+        result[sample.json_metadata['p']] += sample.to_anon_stats()
     assert len(result) == 4
     for k, v in result.items():
         assert v.shots >= 1000 or v.errors >= 100
@@ -95,7 +95,7 @@ def test_iter_collect_list():
         ],
         print_progress=False,
     ):
-        result[sample.json_metadata['p']] += sample.to_case_stats()
+        result[sample.json_metadata['p']] += sample.to_anon_stats()
     assert len(result) == 4
     for k, v in result.items():
         assert v.shots >= 1000 or v.errors >= 100

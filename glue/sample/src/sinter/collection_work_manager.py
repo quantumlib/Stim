@@ -176,14 +176,15 @@ class CollectionWorkManager:
     def provide_more_work(self) -> Optional[WorkIn]:
         iter_collectors = self._iter_draw_collectors(
                 prefer_started=len(self.active_collectors) >= 2)
-        for collector_index, collector in iter_collectors:
-            w = collector.provide_more_work()
-            if w is not None:
-                assert w.key is None
-                return WorkIn(key=collector_index,
-                              task=w.task,
-                              summary=w.summary,
-                              num_shots=w.num_shots)
+        for desperate in False, True:
+            for collector_index, collector in iter_collectors:
+                w = collector.provide_more_work(desperate=desperate)
+                if w is not None:
+                    assert w.key is None
+                    return WorkIn(key=collector_index,
+                                  task=w.task,
+                                  summary=w.summary,
+                                  num_shots=w.num_shots)
         return None
 
     def status(self, *, num_circuits: Optional[int]) -> str:
