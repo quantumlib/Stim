@@ -769,32 +769,39 @@ bool get_detector_coordinates_helper(
     if (iter_desired_detector_index == included_detector_indices.end()) {
         return true;
     }
-    uint64_t smallest_desired_detector_index = *iter_desired_detector_index;
 
-    auto found_result = [&](uint64_t index, ConstPointerRange<double> data) {
-        if (included_detector_indices.find(index) == included_detector_indices.end()) {
+    // Fills in data for a detector that was found while iterating.
+    // Returns true if all data has been filled in.
+    auto fill_in_data = [&](uint64_t fill_index, ConstPointerRange<double> fill_data) {
+        if (included_detector_indices.find(fill_index) == included_detector_indices.end()) {
+            // Not interested in the index for this data.
             return false;
         }
-        if (out.find(index) != out.end()) {
+        if (out.find(fill_index) != out.end()) {
+            // Already have this data. Detector may have been declared twice?
             return false;
         }
 
+        // Write data to result dictionary.
         std::vector<double> det_coords;
-        for (size_t k = 0; k < data.size(); k++) {
-            det_coords.push_back(data[k]);
+        det_coords.reserve(fill_data.size());
+        for (size_t k = 0; k < fill_data.size(); k++) {
+            det_coords.push_back(fill_data[k]);
             if (k < coord_shift.size()) {
                 det_coords[k] += coord_shift[k];
             }
         }
-        out[index] = std::move(det_coords);
+        out[fill_index] = std::move(det_coords);
 
-        while (out.find(smallest_desired_detector_index) != out.end()) {
+        // Advance the iterator past values that have been written in.
+        // If the end has been reached, we're done.
+        while (out.find(*iter_desired_detector_index) != out.end()) {
             iter_desired_detector_index++;
             if (iter_desired_detector_index == included_detector_indices.end()) {
                 return true;
             }
-            smallest_desired_detector_index = *iter_desired_detector_index;
         }
+
         return false;
     };
 
@@ -802,15 +809,17 @@ bool get_detector_coordinates_helper(
         if (op.type == DEM_SHIFT_DETECTORS) {
             vec_pad_add_mul(coord_shift, op.arg_data);
             detector_offset += op.target_data[0].data;
-            while (smallest_desired_detector_index < detector_offset) {
-                if (found_result(smallest_desired_detector_index, {})) {
+            while (*iter_desired_detector_index < detector_offset) {
+                // Shifting past an index proves that it will never be given data.
+                // So set the coordinate data to the empty list.
+                if (fill_in_data(*iter_desired_detector_index, {})) {
                     return true;
                 }
             }
 
         } else if (op.type == DEM_DETECTOR) {
             for (const auto &t : op.target_data) {
-                if (found_result(t.data + detector_offset, op.arg_data)) {
+                if (fill_in_data(t.data + detector_offset, op.arg_data)) {
                     return true;
                 }
             }
@@ -835,10 +844,12 @@ bool get_detector_coordinates_helper(
         }
     }
 
+    // If we've reached the end of the detector error model, then all remaining
+    // values should be given empty data.
     if (top && out.size() < included_detector_indices.size()) {
         uint64_t n = dem.count_detectors();
-        while (smallest_desired_detector_index < n) {
-            if (found_result(smallest_desired_detector_index, {})) {
+        while (*iter_desired_detector_index < n) {
+            if (fill_in_data(*iter_desired_detector_index, {})) {
                 return true;
             }
         }
