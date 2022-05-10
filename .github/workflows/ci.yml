@@ -41,25 +41,39 @@ jobs:
           {os: ubuntu-latest, dist: cp39-manylinux_i686},
           {os: ubuntu-latest, dist: cp310-manylinux_i686},
 
-          {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
-          {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
-          {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
+          # pypy manylinux builds disabled because scipy isn't prebuilt and fails to build.
+          #
+          # The actual error seen in github actions:
+          #
+          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
+          #     libraries found. To build Scipy from sources, BLAS & LAPACK
+          #     libraries need to be installed.
+          #
+          # {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
+          # {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
+          # {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
+          # {os: ubuntu-latest, dist: pp37-manylinux_i686},
+          # {os: ubuntu-latest, dist: pp38-manylinux_i686},
+          # {os: ubuntu-latest, dist: pp39-manylinux_i686},
 
-          {os: ubuntu-latest, dist: pp37-manylinux_i686},
-          {os: ubuntu-latest, dist: pp38-manylinux_i686},
-          {os: ubuntu-latest, dist: pp39-manylinux_i686},
-
-          {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
-          {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
-          {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
-          {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
-          {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
-
-          {os: ubuntu-latest, dist: cp36-musllinux_i686},
-          {os: ubuntu-latest, dist: cp37-musllinux_i686},
-          {os: ubuntu-latest, dist: cp38-musllinux_i686},
-          {os: ubuntu-latest, dist: cp39-musllinux_i686},
-          {os: ubuntu-latest, dist: cp310-musllinux_i686},
+          # musllinux builds disabled because scipy isn't prebuilt and fails to build.
+          #
+          # The actual error seen in github actions:
+          #
+          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
+          #     libraries found. To build Scipy from sources, BLAS & LAPACK
+          #     libraries need to be installed.
+          #
+          # {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
+          # {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
+          # {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
+          # {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
+          # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
+          # {os: ubuntu-latest, dist: cp36-musllinux_i686},
+          # {os: ubuntu-latest, dist: cp37-musllinux_i686},
+          # {os: ubuntu-latest, dist: cp38-musllinux_i686},
+          # {os: ubuntu-latest, dist: cp39-musllinux_i686},
+          # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
           {os: macOS-10.15, dist: cp36-macosx_x86_64},
           {os: macOS-10.15, dist: cp37-macosx_x86_64},
@@ -67,20 +81,38 @@ jobs:
           {os: macOS-10.15, dist: cp39-macosx_x86_64},
           {os: macOS-10.15, dist: cp310-macosx_x86_64},
 
-          {os: macOS-10.15, dist: pp37-macosx_x86_64},
-          {os: macOS-10.15, dist: pp38-macosx_x86_64},
-          {os: macOS-10.15, dist: pp39-macosx_x86_64},
+          # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
+          #
+          # The actual error seen in github actions:
+          #
+          #     RuntimeError: Found /usr/lib/libcblas.dylib, but that file is a
+          #     symbolic link to the MacOS Accelerate framework, which is not
+          #     supported by NumPy. You must configure the build to use a
+          #     different optimized library, or disable the use of optimized
+          #     BLAS and LAPACK by setting the environment variables
+          #     NPY_BLAS_ORDER="" and NPY_LAPACK_ORDER="" before building NumPy.
+          #
+          # {os: macOS-10.15, dist: pp37-macosx_x86_64},
+          # {os: macOS-10.15, dist: pp38-macosx_x86_64},
+          # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2019, dist: cp36-win32},
-          {os: windows-2019, dist: cp37-win32},
-          {os: windows-2019, dist: cp38-win32},
-          {os: windows-2019, dist: cp39-win32},
-          {os: windows-2019, dist: cp310-win32},
           {os: windows-2019, dist: cp36-win_amd64},
           {os: windows-2019, dist: cp37-win_amd64},
           {os: windows-2019, dist: cp38-win_amd64},
           {os: windows-2019, dist: cp39-win_amd64},
           {os: windows-2019, dist: cp310-win_amd64},
+
+          {os: windows-2019, dist: cp36-win32},
+          {os: windows-2019, dist: cp37-win32},
+          {os: windows-2019, dist: cp38-win32},
+          {os: windows-2019, dist: cp39-win32},
+          # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
+          #
+          # The actual error seen in github actions:
+          #
+          #     CCompiler_spawn() got an unexpected keyword argument 'env'
+          #
+          # {os: windows-2019, dist: cp310-win32},
         ]
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
