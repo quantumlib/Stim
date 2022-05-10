@@ -24,14 +24,67 @@ on:
       - main
 jobs:
   build_dist:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os_dist.os }}
     strategy:
       matrix:
+        os_dist: [
+          {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
+          {os: ubuntu-latest, dist: cp37-manylinux_x86_64},
+          {os: ubuntu-latest, dist: cp38-manylinux_x86_64},
+          {os: ubuntu-latest, dist: cp39-manylinux_x86_64},
+          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
+
+          {os: ubuntu-latest, dist: cp36-manylinux_i686},
+          {os: ubuntu-latest, dist: cp37-manylinux_i686},
+          {os: ubuntu-latest, dist: cp38-manylinux_i686},
+          {os: ubuntu-latest, dist: cp39-manylinux_i686},
+          {os: ubuntu-latest, dist: cp310-manylinux_i686},
+
+          {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
+          {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
+          {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
+
+          {os: ubuntu-latest, dist: pp37-manylinux_i686},
+          {os: ubuntu-latest, dist: pp38-manylinux_i686},
+          {os: ubuntu-latest, dist: pp39-manylinux_i686},
+
+          {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
+          {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
+          {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
+          {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
+          {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
+
+          {os: ubuntu-latest, dist: cp36-musllinux_i686},
+          {os: ubuntu-latest, dist: cp37-musllinux_i686},
+          {os: ubuntu-latest, dist: cp38-musllinux_i686},
+          {os: ubuntu-latest, dist: cp39-musllinux_i686},
+          {os: ubuntu-latest, dist: cp310-musllinux_i686},
+
+          {os: macOS-10.15, dist: cp36-macosx_x86_64},
+          {os: macOS-10.15, dist: cp37-macosx_x86_64},
+          {os: macOS-10.15, dist: cp38-macosx_x86_64},
+          {os: macOS-10.15, dist: cp39-macosx_x86_64},
+          {os: macOS-10.15, dist: cp310-macosx_x86_64},
+
+          {os: macOS-10.15, dist: pp37-macosx_x86_64},
+          {os: macOS-10.15, dist: pp38-macosx_x86_64},
+          {os: macOS-10.15, dist: pp39-macosx_x86_64},
+
+          {os: windows-2019, dist: cp36-win32},
+          {os: windows-2019, dist: cp37-win32},
+          {os: windows-2019, dist: cp38-win32},
+          {os: windows-2019, dist: cp39-win32},
+          {os: windows-2019, dist: cp310-win32},
+          {os: windows-2019, dist: cp36-win_amd64},
+          {os: windows-2019, dist: cp37-win_amd64},
+          {os: windows-2019, dist: cp38-win_amd64},
+          {os: windows-2019, dist: cp39-win_amd64},
+          {os: windows-2019, dist: cp310-win_amd64},
+        ]
         os: [ubuntu-latest, windows-2019, macOS-10.15]
         py: [cp36, cp37, cp38, cp39, cp310]
     env:
-      CIBW_BUILD: "${{ matrix.py }}-*"
-      CIBW_SKIP: "cp310-win32 cp310-manylinux_i686 *-musllinux_*"
+      CIBW_BUILD: "${{ matrix.os_dist.dist }}-*"
       CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
     steps:
