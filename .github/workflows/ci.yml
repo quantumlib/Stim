@@ -26,6 +26,7 @@ jobs:
   build_dist:
     runs-on: ${{ matrix.os_dist.os }}
     strategy:
+      fail-fast: false
       matrix:
         os_dist: [
           {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
