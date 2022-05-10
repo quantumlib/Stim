@@ -1193,7 +1193,6 @@ void get_detector_coordinates_helper(
     if (iter_desired_detector_index == included_detector_indices.end()) {
         return;
     }
-    uint64_t desired_detector_index = *iter_desired_detector_index;
 
     std::vector<double> coord_shift = initial_coord_shift;
     for (const auto &op : circuit.operations) {
@@ -1206,7 +1205,7 @@ void get_detector_coordinates_helper(
             uint64_t reps = op_data_rep_count(op.target_data);
             uint64_t used_reps = 0;
             while (used_reps < reps) {
-                uint64_t skip = per == 0 ? reps : std::min(reps, (desired_detector_index - next_detector_index) / per);
+                uint64_t skip = per == 0 ? reps : std::min(reps, (*iter_desired_detector_index - next_detector_index) / per);
                 used_reps += skip;
                 next_detector_index += per * skip;
                 vec_pad_add_mul(coord_shift, block_shift, skip);
@@ -1223,11 +1222,10 @@ void get_detector_coordinates_helper(
                     if (iter_desired_detector_index == included_detector_indices.end()) {
                         return;
                     }
-                    desired_detector_index = *iter_desired_detector_index;
                 }
             }
         } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
-            if (next_detector_index == desired_detector_index) {
+            if (next_detector_index == *iter_desired_detector_index) {
                 std::vector<double> det_coords;
                 for (size_t k = 0; k < op.target_data.args.size(); k++) {
                     det_coords.push_back(op.target_data.args[k]);
@@ -1241,7 +1239,6 @@ void get_detector_coordinates_helper(
                 if (iter_desired_detector_index == included_detector_indices.end()) {
                     return;
                 }
-                desired_detector_index = *iter_desired_detector_index;
             }
             next_detector_index++;
         }

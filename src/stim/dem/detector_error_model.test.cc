@@ -17,6 +17,8 @@
 #include <gtest/gtest.h>
 
 #include "stim/test_util.test.h"
+#include "stim/gen/gen_surface_code.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 
@@ -732,4 +734,24 @@ TEST(detector_error_model, final_detector_and_coord_shift) {
     ASSERT_EQ(
         dem.final_detector_and_coord_shift(),
         (std::pair<uint64_t, std::vector<double>>{4000000, {2000000, 1000, 6000000000}}));
+}
+
+TEST(detector_error_model, surface_code_coords_dont_infinite_loop) {
+    CircuitGenParameters params(7, 5, "rotated_memory_x");
+    params.after_clifford_depolarization = 0.01;
+    params.before_measure_flip_probability = 0;
+    params.after_reset_flip_probability = 0;
+    params.before_round_data_depolarization = 0;
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 0.0, false, true);
+    std::set<uint64_t> filter;
+    size_t n = dem.count_detectors();
+    for (size_t k = 0; k < n; k++) {
+        filter.insert(k);
+    }
+    auto coords1 = dem.get_detector_coordinates(filter);
+    auto coords2 = circuit.get_detector_coordinates(filter);
+    ASSERT_EQ(coords1.size(), coords2.size());
+    ASSERT_EQ(coords1.size(), n);
+    ASSERT_EQ(n, 168);
 }
