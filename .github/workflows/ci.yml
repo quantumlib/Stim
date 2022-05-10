@@ -81,10 +81,8 @@ jobs:
           {os: windows-2019, dist: cp39-win_amd64},
           {os: windows-2019, dist: cp310-win_amd64},
         ]
-        os: [ubuntu-latest, windows-2019, macOS-10.15]
-        py: [cp36, cp37, cp38, cp39, cp310]
     env:
-      CIBW_BUILD: "${{ matrix.os_dist.dist }}-*"
+      CIBW_BUILD: "${{ matrix.os_dist.dist }}"
       CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq
     steps:
