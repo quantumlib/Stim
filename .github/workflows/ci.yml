@@ -133,7 +133,7 @@ jobs:
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
       - run: mkdir -p output/sinter
-      - run: python -m pip install pybind11==2.6.0 cibuildwheel==2.4.0
+      - run: python -m pip install pybind11==2.9.2 cibuildwheel==2.4.0
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir output/stim
       - run: python setup.py sdist
@@ -154,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - run: python -m pip install pybind11==2.6.0
+      - run: python -m pip install pybind11==2.9.2
       - run: python setup.py sdist
       - run: pip install dist/*.tar.gz
   upload_dev_release_to_pypi:
@@ -261,7 +261,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py -dev)
       - run: cmake .
       - run: make stim
@@ -277,7 +277,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install pytest
       - run: pytest src
       - run: python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
@@ -290,7 +290,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
@@ -304,7 +304,7 @@ jobs:
           python-version: '3.7'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/sample
       - run: pip install pytest
       - run: pytest glue/sample
@@ -318,7 +318,7 @@ jobs:
           python-version: '3.6'
           architecture: 'x64'
       - run: pip install -e .
-      - run: pip install pybind11==2.6.0 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/zx
       - run: pip install pytest
       - run: pytest glue/zx
