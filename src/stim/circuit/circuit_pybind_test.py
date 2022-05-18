@@ -846,3 +846,8 @@ def test_flattened():
         DETECTOR(5, 4) rec[-2]
         DETECTOR(6, 4) rec[-1]
     """)
+
+
+def test_complex_slice_does_not_seg_fault():
+    with pytest.raises(TypeError):
+        _ = stim.Circuit()[1j]
