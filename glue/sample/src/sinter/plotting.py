@@ -227,8 +227,8 @@ def plot_error_rate(
                 if 0 < highlight_likelihood_ratio < 1:
                     xs_range.append(x)
                     low, high = binomial_relative_likelihood_range(num_shots=num_kept,
-                                                                    num_hits=stats.errors,
-                                                                    likelihood_ratio=highlight_likelihood_ratio)
+                                                                   num_hits=stats.errors,
+                                                                   likelihood_ratio=highlight_likelihood_ratio)
                     ys_low.append(low)
                     ys_high.append(high)
         all_ys += ys

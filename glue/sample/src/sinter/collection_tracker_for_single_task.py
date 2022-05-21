@@ -8,10 +8,13 @@ from sinter.worker import WorkIn
 from sinter.worker import WorkOut
 
 
+DEFAULT_MAX_BATCH_SECONDS = 120
+
+
 class CollectionTrackerForSingleTask:
     def __init__(self, *, task: Task):
         self.task = task
-        self.task_summary = task.to_case_executable().to_summary()
+        self.task_summary = task.to_executable_task().to_summary()
         self.finished_stats = task.previous_stats
         self.deployed_shots = 0
         self.deployed_processes = 0
@@ -96,7 +99,7 @@ class CollectionTrackerForSingleTask:
         # If no maximum on batch size is specified, default to 30s maximum.
         max_batch_seconds = self.task.max_batch_seconds
         if max_batch_seconds is None and self.task.max_batch_size is None:
-            max_batch_seconds = 10
+            max_batch_seconds = DEFAULT_MAX_BATCH_SECONDS
 
         # Try not to exceed max batch duration.
         if max_batch_seconds is not None:
@@ -117,7 +120,7 @@ class CollectionTrackerForSingleTask:
         self.deployed_processes += 1
         return WorkIn(
             key=None,
-            task=self.task.to_case_executable(),
+            task=self.task.to_executable_task(),
             summary=self.task_summary,
             num_shots=num_shots,
         )
