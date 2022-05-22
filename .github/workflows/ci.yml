@@ -37,8 +37,10 @@ jobs:
 
           {os: ubuntu-latest, dist: cp36-manylinux_i686},
           {os: ubuntu-latest, dist: cp37-manylinux_i686},
-          {os: ubuntu-latest, dist: cp38-manylinux_i686},
-          {os: ubuntu-latest, dist: cp39-manylinux_i686},
+          # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
+          # {os: ubuntu-latest, dist: cp38-manylinux_i686},
+          # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
+          # {os: ubuntu-latest, dist: cp39-manylinux_i686},
           # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
           #
           # The actual error seen in github actions:
