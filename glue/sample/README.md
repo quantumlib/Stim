@@ -100,13 +100,17 @@ def main():
     fig, ax = plt.subplots(1, 1)
     sinter.plot_error_rate(
         ax=ax,
-        samples=samples,
-        curve_func=lambda e: sinter.DataPointId(
-            curve_label=f"Rotated Surface Code d={e.json_metadata['d']}",
-            x=e.json_metadata['p'],
-        ),
-        xaxis='[log]Physical Error Rate'
+        stats=samples,
+        curve_func=lambda stat: f"Rotated Surface Code d={stat.json_metadata['d']}",
+        x_func=lambda stat: stat.json_metadata['p'],
     )
+    ax.loglog()
+    ax.set_ylim(1e-5, 1)
+    ax.grid()
+    ax.set_title('Logical Error Rate vs Physical Error Rate')
+    ax.set_ylabel('Logical Error Probability (per shot)')
+    ax.set_xlabel('Physical Error Rate')
+    ax.legend()
 
     # Save to file and also open in a window.
     fig.savefig('plot.png')

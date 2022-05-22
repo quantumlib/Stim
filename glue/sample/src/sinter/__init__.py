@@ -8,6 +8,9 @@ from sinter.collection import (
 from sinter.csv_out import (
     CSV_HEADER,
 )
+from sinter.existing_data import (
+    stats_from_csv_files,
+)
 from sinter.probability_util import (
     binomial_relative_likelihood_range,
 )
@@ -15,7 +18,7 @@ from sinter.plotting import (
     better_sorted_str_terms,
     plot_discard_rate,
     plot_error_rate,
-    DataPointId,
+    group_by,
 )
 from sinter.task import (
     Task,

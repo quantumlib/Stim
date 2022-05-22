@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, List, TYPE_CHECKING
 
 import pandas as pd
 
@@ -7,6 +7,9 @@ from sinter.task_stats import TaskStats
 from sinter.executable_task import ExecutableTask
 from sinter.task_summary import TaskSummary
 from sinter.decoding import AnonTaskStats
+
+if TYPE_CHECKING:
+    import sinter
 
 
 class ExistingData:
@@ -68,3 +71,10 @@ class ExistingData:
                 seconds=row['seconds'],
             )
         return result
+
+
+def stats_from_csv_files(*paths_or_files: Any) -> List['sinter.TaskStats']:
+    result = ExistingData()
+    for p in paths_or_files:
+        result += ExistingData.from_file(p)
+    return list(result.data.values())

@@ -103,7 +103,15 @@ class Task:
 
         self.previous_stats = previous_stats
         if existing_data is not None:
-            self.previous_stats += existing_data.stats_for(self.to_case_executable())
+            self.previous_stats += existing_data.stats_for(self.to_executable_task())
+
+    def strong_id(self) -> str:
+        """A cryptographically unique identifier for this task.
+
+        Doesn't depend on properties related to how many shots to take (such as
+        max_batch_size).
+        """
+        return self.to_executable_task().strong_id()
 
     def with_merged_options(self,
              *,
@@ -131,7 +139,11 @@ class Task:
             existing_data=existing_data,
         )
 
-    def to_case_executable(self) -> ExecutableTask:
+    def to_executable_task(self) -> ExecutableTask:
+        """Strips off properties that are not needed in order to take a shot.
+
+        Omits things like max_errors but keeps things like the circuit.
+        """
         if self.decoder is None:
             raise ValueError('decoder is None')
         return ExecutableTask(
