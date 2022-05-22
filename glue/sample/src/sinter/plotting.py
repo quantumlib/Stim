@@ -1,6 +1,6 @@
 import collections
 import dataclasses
-from typing import Callable, TypeVar, List, Any, Tuple, Iterable, DefaultDict, Optional, TYPE_CHECKING
+from typing import Callable, TypeVar, List, Any, Tuple, Iterable, DefaultDict, Optional, TYPE_CHECKING, Dict
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -60,197 +60,192 @@ def better_sorted_str_terms(val: Any) -> Any:
     return tuple(result)
 
 
-@dataclasses.dataclass
-class DataPointId:
-    curve_label: str
-    x: float
-    curve_appearance_id: Optional[Any] = None
-    hidden: bool = False
-
-    def effective_appearance_id(self) -> Any:
-        if self.curve_appearance_id is not None:
-            return self.curve_appearance_id
-        return self.curve_label
+TVal = TypeVar('TVal')
+TKey = TypeVar('TKey')
 
 
-@dataclasses.dataclass(frozen=True)
-class CurveStats:
-    label: str
-    marker: str
-    color: str
-    xs: Tuple[float, ...]
-    stats: Tuple[AnonTaskStats, ...]
-    hidden: bool
+def group_by(items: Iterable[TVal],
+             *,
+             key: Callable[[TVal], TKey],
+             ) -> Dict[TKey, List[TVal]]:
+    """Groups items based on whether they produce the same key from a function.
 
-    @staticmethod
-    def from_samples(samples: Iterable['sinter.TaskStats'],
-                     *,
-                     curve_func: Callable[['sinter.TaskSummary'], Optional['sinter.DataPointId']],
-                     ) -> List['sinter.CurveStats']:
-        pairs: DefaultDict[Any, List[Tuple[float, AnonTaskStats]]] = collections.defaultdict(list)
+    Args:
+        items: The items to group.
+        key: Items that produce the same value from this function get grouped together.
 
-        seen_appearance_ids = set()
-        for sample in samples:
-            curve = curve_func(sample.to_task_summary())
-            if curve is not None:
-                aid = curve.effective_appearance_id()
-                seen_appearance_ids.add(aid)
-                key = curve.curve_label, aid, curve.hidden
-                stats = sample.to_anon_stats()
-                pairs[key].append((curve.x, stats))
+    Returns:
+        A dictionary mapping outputs that were produced by the grouping function to
+        the list of items that produced that output.
 
-        appearance_id_to_int = {
-            k: i
-            for i, k in enumerate(sorted(
-                seen_appearance_ids,
-                key=better_sorted_str_terms,
-            ))
-        }
+    Examples:
+        >>> sinter.group_by([1, 2, 3], key=lambda i: i == 2)
+        {False: [1, 3], True: [2]}
 
-        out = []
-        for key in sorted(pairs.keys(), key=better_sorted_str_terms):
-            val = pairs[key]
-            label, appearance_id, hidden = key
-            xs = []
-            stats = []
-            for x, s in sorted(val, key=lambda e: e[0]):
-                xs.append(x)
-                stats.append(s)
-            i = appearance_id_to_int[appearance_id]
-            out.append(CurveStats(
-                label=label,
-                marker=MARKERS[i % len(MARKERS)],
-                color=COLORS[i % len(COLORS)],
-                xs=tuple(xs),
-                stats=tuple(stats),
-                hidden=hidden,
-            ))
+        >>> sinter.group_by(range(10), key=lambda i: i % 3)
+        {0: [0, 3, 6, 9], 1: [1, 4, 7], 2: [2, 5, 8]}
+    """
 
-        return out
+    result: Dict[TKey, List[TVal]] = {}
+
+    for item in items:
+        curve_id = key(item)
+        result.setdefault(curve_id, []).append(item)
+
+    return result
+
+
+TCurveId = TypeVar('TCurveId')
 
 
 def plot_discard_rate(
         *,
         ax: plt.Axes,
-        samples: 'Iterable[sinter.TaskStats]',
-        curve_func: Callable[['sinter.TaskSummary'], Optional['sinter.DataPointId']],
+        stats: 'Iterable[sinter.TaskStats]',
+        x_func: Callable[['sinter.TaskStats'], float],
+        curve_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
         highlight_likelihood_ratio: Optional[float] = 1e-3,
-        xaxis: str,
 ) -> None:
+    """Plots discard rates in curves with uncertainty highlights.
 
-    ax.set_ylim(0, 1)
-    ax.set_ylabel('Discard Probability (per shot)')
-    ax.set_yticks([p*0.1 for p in range(11)])
-    ax.set_yticklabels([str(p * 10) + '%' for p in range(11)])
-    ax.grid()
+    Args:
+        ax: The plt.Axes to plot onto. For example, the `ax` value from `fig, ax = plt.subplots(1, 1)`.
+        stats: The collected statistics to plot.
+        x_func: The X coordinate to use for each stat's data point. For example, this could be
+            `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
+        curve_func: Optional. When specified, multiple curves will be plotted instead of one curve.
+            The statistics are grouped into curves based on whether or not they get the same result
+            out of this function. For example, this could be `curve_func=lambda stat: stat.decoder`.
+        plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
+            `plot` and `fill_between` used to do the actual plotting. For example, this can be used
+            to specify markers and colors. Takes the index of the curve in sorted order and also a
+            curve_id (these will be 0 and None respectively if curve_func is not specified). For example,
+            this could be:
 
-    if xaxis.startswith('[log]'):
-        ax.semilogx()
-        xaxis = xaxis[5:]
-    if xaxis:
-        ax.set_xlabel(xaxis)
-        ax.set_title('Discard Rate vs ' + xaxis)
-    else:
-        ax.set_title('Discard Rates')
+                plot_args_func=lambda index, curve_id: {'color': 'red'
+                                                        if curve_id == 'pymatching'
+                                                        else 'blue'}
 
-    curves = CurveStats.from_samples(samples, curve_func=curve_func)
-    for curve in curves:
-        if curve.hidden:
-            continue
+        highlight_likelihood_ratio: Controls how wide the uncertainty highlight region around curves is.
+            Set to this a value between 0 and 1, and the hypothesis probabilities at least that many times
+            as likely as the max likelihood hypothesis will be highlighted.
+    """
+
+    curve_groups = group_by(stats, key=curve_func)
+    for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
+        stats = sorted(curve_groups[curve_id], key=x_func)
+
         xs = []
         ys = []
         ys_low = []
         ys_high = []
-        for x, stats in zip(curve.xs, curve.stats):
-            if stats.shots and highlight_likelihood_ratio is not None:
+        for stat in stats:
+            x = x_func(stat)
+            if stat.shots:
                 xs.append(x)
-                ys.append(stats.discards / stats.shots)
+                ys.append(stat.discards / stat.shots)
                 if 0 < highlight_likelihood_ratio < 1:
                     low, high = binomial_relative_likelihood_range(
-                        num_shots=stats.shots,
-                        num_hits=stats.discards,
+                        num_shots=stat.shots,
+                        num_hits=stat.discards,
                         likelihood_ratio=highlight_likelihood_ratio)
                     ys_low.append(low)
                     ys_high.append(high)
-        ax.plot(xs,
-                ys,
-                label=curve.label,
-                marker=curve.marker,
-                color=curve.color,
-                zorder=100)
-        if 0 < highlight_likelihood_ratio < 1:
-            ax.fill_between(xs,
-                            ys_low,
-                            ys_high,
-                            color=curve.color,
-                            alpha=0.25)
 
-    ax.legend()
+        kwargs = dict(plot_args_func(k, curve_id))
+        if 'label' not in kwargs and curve_id is not None:
+            kwargs['label'] = str(curve_id)
+        ax.plot(xs, ys, **kwargs)
+        if 0 < highlight_likelihood_ratio < 1:
+            if 'zorder' not in kwargs:
+                kwargs['zorder'] = 0
+            if 'alpha' not in kwargs:
+                kwargs['alpha'] = 1
+            kwargs['zorder'] -= 100
+            kwargs['alpha'] *= 0.25
+            if 'marker' in kwargs:
+                del kwargs['marker']
+            if 'linestyle' in kwargs:
+                del kwargs['linestyle']
+            del kwargs['label']
+            ax.fill_between(xs, ys_low, ys_high, **kwargs)
 
 
 def plot_error_rate(
         *,
         ax: plt.Axes,
-        samples: 'Iterable[sinter.TaskStats]',
-        curve_func: Callable[['sinter.TaskSummary'], Optional['sinter.DataPointId']],
+        stats: 'Iterable[sinter.TaskStats]',
+        x_func: Callable[['sinter.TaskStats'], float],
+        curve_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
         highlight_likelihood_ratio: Optional[float] = 1e-3,
-        xaxis: str = '',
 ) -> None:
-    ax.set_ylabel('Logical Error Probability (per shot)')
-    ax.grid()
+    """Plots error rates in curves with uncertainty highlights.
 
-    if xaxis.startswith('[log]'):
-        ax.loglog()
-        xaxis = xaxis[5:]
-    else:
-        ax.semilogy()
-    if xaxis:
-        ax.set_xlabel(xaxis)
-        ax.set_title('Logical Error Rate vs ' + xaxis)
-    else:
-        ax.set_title('Logical Error Rates')
-    all_ys = []
+    Args:
+        ax: The plt.Axes to plot onto. For example, the `ax` value from `fig, ax = plt.subplots(1, 1)`.
+        stats: The collected statistics to plot.
+        x_func: The X coordinate to use for each stat's data point. For example, this could be
+            `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
+        curve_func: Optional. When specified, multiple curves will be plotted instead of one curve.
+            The statistics are grouped into curves based on whether or not they get the same result
+            out of this function. For example, this could be `curve_func=lambda stat: stat.decoder`.
+        plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
+            `plot` and `fill_between` used to do the actual plotting. For example, this can be used
+            to specify markers and colors. Takes the index of the curve in sorted order and also a
+            curve_id (these will be 0 and None respectively if curve_func is not specified). For example,
+            this could be:
 
-    curves = CurveStats.from_samples(samples, curve_func=curve_func)
-    for curve in curves:
+                plot_args_func=lambda index, curve_id: {'color': 'red'
+                                                        if curve_id == 'pymatching'
+                                                        else 'blue'}
+
+        highlight_likelihood_ratio: Controls how wide the uncertainty highlight region around curves is.
+            Set to this a value between 0 and 1, and the hypothesis probabilities at least that many times
+            as likely as the max likelihood hypothesis will be highlighted.
+    """
+    curve_groups = group_by(stats, key=curve_func)
+    for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
+        stats = sorted(curve_groups[curve_id], key=x_func)
+
         xs = []
         ys = []
         xs_range = []
         ys_low = []
         ys_high = []
-        for x, stats in zip(curve.xs, curve.stats):
-            num_kept = stats.shots - stats.discards
-            if num_kept:
-                if stats.errors:
-                    xs.append(x)
-                    ys.append(stats.errors / num_kept)
-                if 0 < highlight_likelihood_ratio < 1:
-                    xs_range.append(x)
-                    low, high = binomial_relative_likelihood_range(num_shots=num_kept,
-                                                                   num_hits=stats.errors,
-                                                                   likelihood_ratio=highlight_likelihood_ratio)
-                    ys_low.append(low)
-                    ys_high.append(high)
-        all_ys += ys
-        all_ys += ys_low
-        all_ys += ys_high
-        if not curve.hidden:
-            ax.plot(xs,
-                    ys,
-                    label=curve.label,
-                    marker=curve.marker,
-                    color=curve.color,
-                    zorder=100)
+        for stat in stats:
+            num_kept = stat.shots - stat.discards
+            if num_kept == 0:
+                continue
+            x = x_func(stat)
+            if stat.errors:
+                xs.append(x)
+                ys.append(stat.errors / num_kept)
             if 0 < highlight_likelihood_ratio < 1:
-                ax.fill_between(xs_range,
-                                ys_low,
-                                ys_high,
-                                color=curve.color,
-                                alpha=0.25)
+                xs_range.append(x)
+                low, high = binomial_relative_likelihood_range(
+                    num_shots=num_kept,
+                    num_hits=stat.errors,
+                    likelihood_ratio=highlight_likelihood_ratio,
+                )
+                ys_low.append(low)
+                ys_high.append(high)
 
-    min_y = min((y for y in all_ys if y > 0), default=0.002)
-    low_d = 4
-    while 10**-low_d > min_y and low_d < 10:
-        low_d += 1
-    ax.set_ylim(10**-low_d, 1e-0)
-    ax.legend()
+        kwargs = dict(plot_args_func(k, curve_id))
+        if 'label' not in kwargs and curve_id is not None:
+            kwargs['label'] = str(curve_id)
+        ax.plot(xs, ys, **kwargs)
+        if 0 < highlight_likelihood_ratio < 1:
+            if 'zorder' not in kwargs:
+                kwargs['zorder'] = 0
+            if 'alpha' not in kwargs:
+                kwargs['alpha'] = 1
+            kwargs['zorder'] -= 100
+            kwargs['alpha'] *= 0.25
+            if 'marker' in kwargs:
+                del kwargs['marker']
+            if 'linestyle' in kwargs:
+                del kwargs['linestyle']
+            del kwargs['label']
+            ax.fill_between(xs_range, ys_low, ys_high, **kwargs)

@@ -3,8 +3,8 @@ from typing import Callable, List, Any, Tuple, Iterable, Optional, TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 
-from sinter.plotting import DataPointId
-from sinter.plotting import plot_discard_rate, plot_error_rate
+from sinter import TaskStats
+from sinter.plotting import plot_discard_rate, plot_error_rate, MARKERS
 from sinter.task_summary import TaskSummary
 from sinter.main_combine import ExistingData
 
@@ -116,9 +116,9 @@ def parse_args(args: List[str]) -> Any:
 def plot(
     *,
     samples: Union[Iterable['sinter.TaskStats'], ExistingData],
-    group_func: Callable[[TaskSummary], Any],
-    filter_func: Callable[[TaskSummary], Any] = lambda e: True,
-    x_func: Callable[[TaskSummary], Any],
+    group_func: Callable[['sinter.TaskStats'], Any],
+    filter_func: Callable[['sinter.TaskStats'], Any] = lambda e: True,
+    x_func: Callable[['sinter.TaskStats'], Any],
     include_discard_rate_plot: bool = False,
     include_error_rate_plot: bool = False,
     highlight_likelihood_ratio: Optional[float] = 1e-3,
@@ -153,31 +153,64 @@ def plot(
     else:
         raise NotImplementedError()
 
-    def curve_func(summary: TaskSummary) -> Optional[DataPointId]:
-        if not filter_func(summary):
-            return None
-        return DataPointId(
-            curve_label=str(group_func(summary)),
-            x=float(x_func(summary)),
-        )
+    plotted_stats: List['sinter.TaskStats'] = [
+        stat
+        for stat in total.data.values()
+        if filter_func(stat)
+    ]
 
     if ax_err is not None:
         plot_error_rate(
             ax=ax_err,
-            samples=total.data.values(),
-            curve_func=curve_func,
+            stats=plotted_stats,
+            curve_func=group_func,
+            x_func=x_func,
             highlight_likelihood_ratio=highlight_likelihood_ratio,
-            xaxis=xaxis,
+            plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
+        min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
+        low_d = 4
+        while 10**-low_d > min_y*0.9 and low_d < 10:
+            low_d += 1
+        ax_err.set_ylim(10**-low_d, 1e-0)
+        ax_err.set_ylabel("Logical Error Probability (per shot)")
+        ax_err.grid()
+        ax_err.legend()
     if ax_dis is not None:
         plot_discard_rate(
             ax=ax_dis,
-            samples=total.data.values(),
-            curve_func=curve_func,
+            stats=plotted_stats,
+            curve_func=group_func,
+            x_func=x_func,
             highlight_likelihood_ratio=highlight_likelihood_ratio,
-            xaxis=xaxis,
+            plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
+        ax_dis.set_ylim(0, 1)
+        ax_dis.grid()
+        ax_dis.set_ylabel("Discard Probability")
+        ax_dis.legend()
 
+    if xaxis.startswith('[log]'):
+        if ax_err is not None:
+            ax_err.loglog()
+        if ax_dis is not None:
+            ax_dis.semilogx()
+        xaxis = xaxis[5:]
+    else:
+        if ax_err is not None:
+            ax_err.semilogy()
+    if xaxis:
+        if ax_err is not None:
+            ax_err.set_xlabel(xaxis)
+            ax_err.set_title('Logical Error Rate vs ' + xaxis)
+        if ax_dis is not None:
+            ax_dis.set_xlabel(xaxis)
+            ax_dis.set_title('Discard Rate vs ' + xaxis)
+    else:
+        if ax_err is not None:
+            ax_err.set_title('Logical Error Rates')
+        if ax_dis is not None:
+            ax_dis.set_title('Discard Rates')
     if fig_size is None:
         fig.set_size_inches(10 * (include_discard_rate_plot + include_error_rate_plot), 10)
         fig.set_dpi(100)

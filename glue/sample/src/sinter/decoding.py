@@ -25,8 +25,10 @@ DECODER_METHODS: Dict[str, Callable] = {
 def _post_select(data: np.ndarray, *, post_mask: Optional[np.ndarray] = None) -> Tuple[int, np.ndarray]:
     if post_mask is None:
         return 0, data
-    assert post_mask.shape == (data.shape[1],)
-    assert post_mask.dtype == np.uint8
+    if post_mask.shape != (data.shape[1],):
+        raise ValueError(f"post_mask.shape={post_mask.shape} != (data.shape[1]={data.shape[1]},)")
+    if post_mask.dtype != np.uint8:
+        raise ValueError(f"post_mask.dtype={post_mask.dtype} != np.uint8")
     discarded = np.any(data & post_mask, axis=1)
     num_discards = np.count_nonzero(discarded)
     return num_discards, data[~discarded]

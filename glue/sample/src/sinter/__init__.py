@@ -18,7 +18,7 @@ from sinter.plotting import (
     better_sorted_str_terms,
     plot_discard_rate,
     plot_error_rate,
-    DataPointId,
+    group_by,
 )
 from sinter.task import (
     Task,
