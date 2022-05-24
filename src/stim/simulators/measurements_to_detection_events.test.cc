@@ -390,7 +390,9 @@ TEST(measurements_to_detection_events, file_01_to_dets_no_obs) {
             DETECTOR rec[-1]
         )CIRCUIT"),
         false,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(out), "shot D0 D2\nshot D0 D2\nshot\n");
     fclose(in);
 }
@@ -417,7 +419,9 @@ TEST(measurements_to_detection_events, file_01_to_dets_yes_obs) {
             DETECTOR rec[-1]
         )CIRCUIT"),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), "shot D0 D2 L9\nshot D0 D2 L9\nshot\n");
 }
@@ -478,7 +482,9 @@ TEST(measurements_to_detection_events, with_error_propagation) {
             DETECTOR rec[-1] rec[-2]
         )CIRCUIT"),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     fclose(in_sweep_bits);
     ASSERT_EQ(
@@ -522,7 +528,9 @@ TEST(measurements_to_detection_events, many_shots) {
             DETECTOR rec[-1]
         )CIRCUIT"),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), expected);
 }
@@ -554,7 +562,9 @@ TEST(measurements_to_detection_events, many_measurements_and_detectors) {
             }
         )CIRCUIT"),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), expected);
 }
@@ -581,7 +591,9 @@ TEST(measurements_to_detection_events, file_01_to_01_yes_obs) {
             DETECTOR rec[-1]
         )CIRCUIT"),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     ASSERT_EQ(rewind_read_close(out), "1010000000001\n1010000000001\n0000000000000\n");
 }
@@ -600,7 +612,9 @@ TEST(measurements_to_detection_events, empty_input_01_empty_sweep_b8) {
         SampleFormat::SAMPLE_FORMAT_01,
         Circuit(),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     fclose(sweep);
     ASSERT_EQ(rewind_read_close(out), "");
@@ -622,7 +636,9 @@ TEST(measurements_to_detection_events, some_input_01_empty_sweep_b8) {
         SampleFormat::SAMPLE_FORMAT_01,
         Circuit(),
         true,
-        false);
+        false,
+        nullptr,
+        SampleFormat::SAMPLE_FORMAT_01);
     fclose(in);
     fclose(sweep);
     ASSERT_EQ(rewind_read_close(out), "\n\n");
@@ -644,7 +660,9 @@ TEST(measurements_to_detection_events, empty_input_b8_empty_sweep_b8) {
                 SampleFormat::SAMPLE_FORMAT_01,
                 Circuit(),
                 true,
-                false);
+                false,
+                nullptr,
+                SampleFormat::SAMPLE_FORMAT_01);
         },
         std::invalid_argument);
     fclose(in);

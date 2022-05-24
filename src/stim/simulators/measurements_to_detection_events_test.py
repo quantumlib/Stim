@@ -65,6 +65,22 @@ def test_convert_file_without_sweep_bits():
         with open(f"{d}/detections.dets", "r") as f:
             assert f.read() == "shot D0 L0\nshot\nshot\nshot D0 L0\n"
 
+        converter.convert_file(
+            measurements_filepath=f"{d}/measurements.b8",
+            measurements_format="b8",
+            sweep_bits_filepath=f"{d}/sweep.hits",
+            sweep_bits_format="hits",
+            detection_events_filepath=f"{d}/detections.dets",
+            detection_events_format="dets",
+            obs_out_filepath=f"{d}/obs.hits",
+            obs_out_format="hits",
+        )
+
+        with open(f"{d}/detections.dets", "r") as f:
+            assert f.read() == "shot D0\nshot\nshot\nshot D0\n"
+        with open(f"{d}/obs.hits", "r") as f:
+            assert f.read() == "0\n\n\n0\n"
+
 
 def test_convert():
     converter = stim.Circuit('''

@@ -39,7 +39,9 @@ struct CompiledDetectorSampler {
         const std::string &filepath,
         const std::string &format,
         bool prepend_observables,
-        bool append_observables);
+        bool append_observables,
+        const char *obs_out_filepath,
+        const std::string &obs_out_format);
     std::string repr() const;
 };
 

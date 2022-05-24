@@ -50,19 +50,23 @@ TEST(DetectionSimulator, detector_samples_out) {
     )circuit");
 
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 2, false, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
+    detector_samples_out(
+        circuit, 2, false, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1\nshot D1\n");
 
     tmp = tmpfile();
-    detector_samples_out(circuit, 2, true, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
+    detector_samples_out(
+        circuit, 2, true, false, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot L4 D1\nshot L4 D1\n");
 
     tmp = tmpfile();
-    detector_samples_out(circuit, 2, false, true, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
+    detector_samples_out(
+        circuit, 2, false, true, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "shot D1 L4\nshot D1 L4\n");
 
     tmp = tmpfile();
-    detector_samples_out(circuit, 2, false, true, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
+    detector_samples_out(
+        circuit, 2, false, true, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
     ASSERT_EQ(rewind_read_close(tmp), "1,6\n1,6\n");
 }
 
@@ -76,7 +80,8 @@ TEST(DetectionSimulator, stream_many_shots) {
         DETECTOR rec[-3]
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    detector_samples_out(
+        circuit, 2048, false, false, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {
@@ -101,7 +106,7 @@ TEST(DetectionSimulator, block_results_single_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -126,7 +131,7 @@ TEST(DetectionSimulator, block_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -155,7 +160,7 @@ TEST(DetectionSimulator, stream_results) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    detector_samples_out(circuit, 1, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -181,7 +186,7 @@ TEST(DetectionSimulator, stream_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    detector_samples_out(circuit, 3, false, true, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG(), nullptr, SAMPLE_FORMAT_01);
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -433,4 +438,44 @@ TEST(DetectorSimulator, noisy_measure_reset_z) {
     ASSERT_GT(m2, 10000 - 700);
     ASSERT_EQ(r[2].popcnt(), 0);
     ASSERT_EQ(r[3].popcnt(), 0);
+}
+
+TEST(DetectionSimulator, obs_data) {
+    auto circuit = Circuit(R"circuit(
+        REPEAT 399 {
+            X_ERROR(1) 0
+            MR 0
+            DETECTOR rec[-1]
+        }
+        REPEAT 600 {
+            MR 0
+            DETECTOR rec[-1]
+            OBSERVABLE_INCLUDE(0) rec[-1]
+        }
+        X_ERROR(1) 0
+        MR 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        OBSERVABLE_INCLUDE(1) rec[-1]
+        MR 0
+        OBSERVABLE_INCLUDE(2) rec[-1]
+    )circuit");
+    FILE *det_tmp = tmpfile();
+    FILE *obs_tmp = tmpfile();
+    detector_samples_out(
+        circuit, 1001, false, false, det_tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG(), obs_tmp, SAMPLE_FORMAT_B8);
+
+    auto det_saved = rewind_read_close(det_tmp);
+    auto obs_saved = rewind_read_close(obs_tmp);
+    ASSERT_EQ(det_saved.size(), 125 * 1001);
+    ASSERT_EQ(obs_saved.size(), 1 * 1001);
+    for (size_t k = 0; k < det_saved.size(); k++) {
+        for (size_t b = 0; b < 8; b++) {
+            size_t det_index = (k % 125) * 8 + b;
+            bool bit = (((uint8_t)det_saved[k]) >> b) & 1;
+            ASSERT_EQ(bit, det_index < 399) << k;
+        }
+    }
+    for (size_t k = 0; k < obs_saved.size(); k++) {
+        ASSERT_EQ(obs_saved[k], 0x3);
+    }
 }

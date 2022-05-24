@@ -81,13 +81,17 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
     const std::string &sweep_bits_format,
     const std::string &detection_events_filepath,
     const std::string &detection_events_format,
-    bool append_observables) {
+    bool append_observables,
+    const char *obs_out_filepath,
+    const std::string &obs_out_format) {
     auto format_in = format_to_enum(measurements_format);
     auto format_sweep_bits = format_to_enum(sweep_bits_format);
     auto format_out = format_to_enum(detection_events_format);
     RaiiFile file_in(measurements_filepath.data(), "r");
+    RaiiFile obs_out(obs_out_filepath, "w");
     RaiiFile sweep_bits_in(sweep_bits_filepath, "r");
     RaiiFile detections_out(detection_events_filepath.data(), "w");
+    auto parsed_obs_out_format = format_to_enum(obs_out_format);
 
     stim::stream_measurements_to_detection_events_helper(
         file_in.f,
@@ -99,6 +103,8 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
         circuit,
         append_observables,
         ref_sample,
+        obs_out.f,
+        parsed_obs_out_format,
         circuit_num_measurements,
         circuit_num_observables,
         circuit_num_detectors,
@@ -247,7 +253,9 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
         pybind11::arg("sweep_bits_format") = "01",
         pybind11::arg("detection_events_filepath"),
         pybind11::arg("detection_events_format") = "01",
-        pybind11::arg("append_observables"),
+        pybind11::arg("append_observables") = false,
+        pybind11::arg("obs_out_filepath") = nullptr,
+        pybind11::arg("obs_out_format") = "01",
         clean_doc_string(u8R"DOC(
             Reads measurement data from a file, converts it, and writes the detection events to another file.
 
@@ -265,6 +273,11 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
                     shot) will be read from the given file.
                     When not specified, all sweep bits default to False and no sweep-controlled operations occur.
                 sweep_bits_format: The format the sweep data is stored in.
+                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                    Defaults to "01".
+                obs_out_filepath: Sample observables as part of each shot, and write them to this file.
+                    This keeps the observable data separate from the detector data.
+                obs_out_format: If writing the observables to a file, this is the format to write them in.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                     Defaults to "01".
                 append_observables: When True, the observables in the circuit are included as part of the detection

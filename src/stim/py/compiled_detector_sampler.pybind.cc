@@ -19,6 +19,7 @@
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/measurements_to_detection_events.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -74,14 +75,14 @@ void CompiledDetectorSampler::sample_write(
     const std::string &filepath,
     const std::string &format,
     bool prepend_observables,
-    bool append_observables) {
+    bool append_observables,
+    const char *obs_out_filepath,
+    const std::string &obs_out_format) {
     auto f = format_to_enum(format);
-    FILE *out = fopen(filepath.data(), "w");
-    if (out == nullptr) {
-        throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
-    }
-    detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out, f, *prng);
-    fclose(out);
+    RaiiFile out(filepath.data(), "w");
+    RaiiFile obs_out(obs_out_filepath, "w");
+    auto parsed_obs_out_format = format_to_enum(obs_out_format);
+    detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out.f, f, *prng, obs_out.f, parsed_obs_out_format);
 }
 
 std::string CompiledDetectorSampler::repr() const {
@@ -214,6 +215,8 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
         pybind11::arg("format") = "01",
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
+        pybind11::arg("obs_out_filepath") = nullptr,
+        pybind11::arg("obs_out_format") = "01",
         clean_doc_string(u8R"DOC(
             Samples detection events from the circuit and writes them to a file.
 
@@ -239,6 +242,11 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
                 shots: The number of times to sample every measurement in the circuit.
                 filepath: The file to write the results to.
                 format: The output format to write the results with.
+                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                    Defaults to "01".
+                obs_out_filepath: Sample observables as part of each shot, and write them to this file.
+                    This keeps the observable data separate from the detector data.
+                obs_out_format: If writing the observables to a file, this is the format to write them in.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                     Defaults to "01".
                 prepend_observables: Sample observables as part of each shot, and put them at the start of the detector

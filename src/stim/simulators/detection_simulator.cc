@@ -128,33 +128,47 @@ void detector_samples_out_in_memory(
     bool append_observables,
     FILE *out,
     SampleFormat format,
-    std::mt19937_64 &rng) {
-    if (prepend_observables && append_observables) {
-        throw std::out_of_range("Can't have both --prepend_observables and --append_observables");
+    std::mt19937_64 &rng,
+    FILE *obs_out,
+    SampleFormat obs_out_format) {
+    bool obs_in_det_output = prepend_observables || append_observables;
+    if (prepend_observables + append_observables + (obs_out != nullptr) > 1) {
+        throw std::out_of_range("Can't combine --prepend_observables, --append_observables, or --obs_out");
     }
 
     DetectorsAndObservables det_obs(circuit);
-    size_t num_sample_locations =
-        det_obs.detectors.size() + det_obs.observables.size() * ((int)prepend_observables + (int)append_observables);
+    size_t no = det_obs.observables.size();
+    size_t nd = det_obs.detectors.size();
 
     char c1, c2;
     size_t ct;
     if (prepend_observables) {
         c1 = 'L';
         c2 = 'D';
-        ct = det_obs.observables.size();
+        ct = no;
     } else if (append_observables) {
         c1 = 'D';
         c2 = 'L';
-        ct = det_obs.detectors.size();
+        ct = nd;
     } else {
         c1 = 'D';
         c2 = 'D';
         ct = 0;
     }
 
-    auto table = detector_samples(circuit, det_obs, num_shots, prepend_observables, append_observables, rng);
-    write_table_data(out, num_shots, num_sample_locations, simd_bits(0), table, format, c1, c2, ct);
+    auto table = detector_samples(
+        circuit, det_obs, num_shots, prepend_observables, append_observables || obs_out != nullptr, rng);
+
+    if (obs_out != nullptr) {
+        simd_bit_table obs_data(no, num_shots);
+        for (size_t k = 0; k < no; k++) {
+            obs_data[k] = table[nd + k];
+            table[nd + k].clear();
+        }
+        write_table_data(obs_out, num_shots, no, simd_bits(0), obs_data, obs_out_format, 'L', 'L', no);
+    }
+
+    write_table_data(out, num_shots, nd + no * obs_in_det_output, simd_bits(0), table, format, c1, c2, ct);
 }
 
 void detector_sample_out_helper(
@@ -165,13 +179,16 @@ void detector_sample_out_helper(
     bool append_observables,
     FILE *out,
     SampleFormat format,
-    std::mt19937_64 &rng) {
+    std::mt19937_64 &rng,
+    FILE *obs_out,
+    SampleFormat obs_out_format) {
     uint64_t d = circuit.count_detectors() + circuit.count_observables();
     uint64_t approx_mem_usage = std::max(num_shots, size_t{256}) * std::max(circuit.count_measurements(), d);
-    if (!prepend_observables && should_use_streaming_instead_of_memory(approx_mem_usage)) {
+    if (!prepend_observables && obs_out == nullptr && should_use_streaming_instead_of_memory(approx_mem_usage)) {
         detector_sample_out_helper_stream(circuit, sim, num_shots, append_observables, out, format);
     } else {
-        detector_samples_out_in_memory(circuit, num_shots, prepend_observables, append_observables, out, format, rng);
+        detector_samples_out_in_memory(
+            circuit, num_shots, prepend_observables, append_observables, out, format, rng, obs_out, obs_out_format);
     }
 }
 
@@ -182,7 +199,9 @@ void stim::detector_samples_out(
     bool append_observables,
     FILE *out,
     SampleFormat format,
-    std::mt19937_64 &rng) {
+    std::mt19937_64 &rng,
+    FILE *obs_out,
+    SampleFormat obs_out_format) {
     constexpr size_t GOOD_BLOCK_SIZE = 768;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();
@@ -190,12 +209,31 @@ void stim::detector_samples_out(
         auto sim = FrameSimulator(num_qubits, GOOD_BLOCK_SIZE, max_lookback, rng);
         while (num_shots > GOOD_BLOCK_SIZE) {
             detector_sample_out_helper(
-                circuit, sim, GOOD_BLOCK_SIZE, prepend_observables, append_observables, out, format, rng);
+                circuit,
+                sim,
+                GOOD_BLOCK_SIZE,
+                prepend_observables,
+                append_observables,
+                out,
+                format,
+                rng,
+                obs_out,
+                obs_out_format);
             num_shots -= GOOD_BLOCK_SIZE;
         }
     }
     if (num_shots) {
         auto sim = FrameSimulator(num_qubits, num_shots, max_lookback, rng);
-        detector_sample_out_helper(circuit, sim, num_shots, prepend_observables, append_observables, out, format, rng);
+        detector_sample_out_helper(
+            circuit,
+            sim,
+            num_shots,
+            prepend_observables,
+            append_observables,
+            out,
+            format,
+            rng,
+            obs_out,
+            obs_out_format);
     }
 }

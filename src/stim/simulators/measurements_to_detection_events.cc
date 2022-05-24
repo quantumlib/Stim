@@ -137,7 +137,9 @@ void stim::stream_measurements_to_detection_events(
     SampleFormat results_out_format,
     const Circuit &circuit,
     bool append_observables,
-    bool skip_reference_sample) {
+    bool skip_reference_sample,
+    FILE *obs_out,
+    SampleFormat obs_out_format) {
     // Circuit metadata.
     size_t num_measurements = circuit.count_measurements();
     size_t num_observables = circuit.count_observables();
@@ -160,6 +162,8 @@ void stim::stream_measurements_to_detection_events(
         noiseless_circuit,
         append_observables,
         reference_sample,
+        obs_out,
+        obs_out_format,
         num_measurements,
         num_observables,
         num_detectors,
@@ -177,6 +181,8 @@ void stim::stream_measurements_to_detection_events_helper(
     const Circuit &noiseless_circuit,
     bool append_observables,
     simd_bits_range_ref reference_sample,
+    FILE *obs_out,
+    SampleFormat obs_out_format,
     size_t num_measurements,
     size_t num_observables,
     size_t num_detectors,
@@ -189,6 +195,10 @@ void stim::stream_measurements_to_detection_events_helper(
     // Readers / writers.
     auto reader = MeasureRecordReader::make(measurements_in, measurements_in_format, num_measurements);
     std::unique_ptr<MeasureRecordReader> sweep_data_reader;
+    std::unique_ptr<MeasureRecordWriter> obs_writer;
+    if (obs_out != nullptr) {
+        obs_writer = MeasureRecordWriter::make(obs_out, obs_out_format);
+    }
     auto writer = MeasureRecordWriter::make(results_out, results_out_format);
     if (optional_sweep_bits_in != nullptr) {
         sweep_data_reader = MeasureRecordReader::make(optional_sweep_bits_in, sweep_bits_in_format, num_sweep_bits);
@@ -236,7 +246,7 @@ void stim::stream_measurements_to_detection_events_helper(
             out__minor_shot_index,
             noiseless_circuit,
             reference_sample,
-            append_observables,
+            append_observables || obs_out != nullptr,
             num_measurements,
             num_detectors,
             num_observables,
@@ -255,6 +265,14 @@ void stim::stream_measurements_to_detection_events_helper(
                 }
             }
             writer->write_end();
+
+            if (obs_out != nullptr) {
+                obs_writer->begin_result_type('L');
+                for (size_t k2 = 0; k2 < num_observables; k2++) {
+                    obs_writer->write_bit(record[num_detectors + k2]);
+                }
+                obs_writer->write_end();
+            }
         }
     }
 }

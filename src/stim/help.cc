@@ -357,6 +357,25 @@ sampling begins. More generally, using the same seed for `stim sample` and `stim
 result in detection events corresponding to the measurement results.
 )PARAGRAPH";
 
+    flags["--sweep"] = R"PARAGRAPH(Specifies a per-shot sweep data file.
+
+Sweep bits are used to vary whether certain Pauli gates are included in a circuit, or not, from shot to shot.
+For example, if a circuit contains the instruction "CX sweep[5] 0" then there is an X pauli that is included
+only in shots where the corresponding sweep data has the bit at index 5 set to True.
+)PARAGRAPH";
+
+    flags["--sweep_format"] = R"PARAGRAPH(Specifies the format sweep data is stored in (e.g. b8 or 01).
+)PARAGRAPH";
+
+    flags["--obs_out"] = R"PARAGRAPH(Specifies a file to write observable flip data to.
+
+When sampling detection event data, this is an alternative to --append_observables which has the benefit
+of never mixing the two types of data together.
+)PARAGRAPH";
+
+    flags["--obs_out_format"] = R"PARAGRAPH(The format to use when writing observable flip data (e.g. b8 or 01).
+)PARAGRAPH";
+
     modes["analyze_errors"] = CommandLineSingleModeData{
         "Converts a circuit into a detector error model.",
         R"PARAGRAPH(
