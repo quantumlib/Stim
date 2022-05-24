@@ -27,6 +27,9 @@ MeasureRecordBatchWriter::MeasureRecordBatchWriter(FILE *out, size_t num_shots, 
     if (num_shots > 768) {
         throw std::out_of_range("num_shots > 768 (safety check to ensure staying away from linux file handle limit)");
     }
+    if (output_format == SAMPLE_FORMAT_PTB64 && num_shots % 64 != 0) {
+        throw std::out_of_range("Number of shots must be a multiple of 64 to use output format ptb64.");
+    }
     auto f = output_format;
     auto s = num_shots;
     if (output_format == SAMPLE_FORMAT_PTB64) {
