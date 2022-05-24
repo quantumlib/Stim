@@ -116,8 +116,7 @@ void MeasureRecordReader::move_obs_in_shots_to_mask_assuming_sorted(SparseShot &
 
 MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormat01::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
@@ -149,8 +148,7 @@ bool MeasureRecordReaderFormat01::expects_empty_serialized_data_for_each_shot() 
 
 MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormatB8::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
@@ -205,8 +203,7 @@ bool MeasureRecordReaderFormatB8::expects_empty_serialized_data_for_each_shot() 
 
 MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormatHits::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
@@ -287,15 +284,15 @@ bool MeasureRecordReaderFormatDets::start_and_read_entire_record(SparseShot &cle
 
 MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormatDets::expects_empty_serialized_data_for_each_shot() const {
     return false;
 }
 
-MeasureRecordReaderFormatPTB64::MeasureRecordReaderFormatPTB64(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
+MeasureRecordReaderFormatPTB64::MeasureRecordReaderFormatPTB64(
+    FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
     : MeasureRecordReader(num_measurements, num_detectors, num_observables),
       in(in),
       buf((bits_per_record() + 63) / 64 * 64 * 64),
@@ -338,7 +335,7 @@ bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(simd_bits_rang
     size_t offset = 64 - num_unread_shots_in_buf;
     size_t n64 = (bits_per_record() + 63) / 64;
     for (size_t k = 0; k < n64; k++) {
-        dirty_out_buffer.u64[k] = buf.u64[k*64 + offset];
+        dirty_out_buffer.u64[k] = buf.u64[k * 64 + offset];
     }
     num_unread_shots_in_buf -= 1;
     return true;
@@ -356,12 +353,12 @@ bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(SparseShot &cl
     size_t n = bits_per_record();
     size_t n64 = (n + 63) / 64;
     for (size_t k = 0; k < n64; k++) {
-        uint64_t v = buf.u64[k*64 + offset];
+        uint64_t v = buf.u64[k * 64 + offset];
         if (v) {
-            size_t nb = std::min(size_t{64}, n - k*64);
+            size_t nb = std::min(size_t{64}, n - k * 64);
             for (size_t b = 0; b < nb; b++) {
                 if (v & (uint64_t{1} << b)) {
-                    cleared_out.hits.push_back(k*64 + b);
+                    cleared_out.hits.push_back(k * 64 + b);
                 }
             }
         }

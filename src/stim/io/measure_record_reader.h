@@ -139,7 +139,8 @@ struct MeasureRecordReaderFormatPTB64 : MeasureRecordReader {
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
- private:
+
+   private:
     bool load_cache();
 };
 

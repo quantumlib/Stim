@@ -1037,18 +1037,12 @@ Circuit Circuit::without_noise() const {
     for (const auto &op : operations) {
         if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
             // Drop result flip probabilities.
-            result.operations.push_back(Operation{
-                op.gate, {
-                    {},
-                    result.target_buf.take_copy(op.target_data.targets)
-                }});
+            result.operations.push_back(Operation{op.gate, {{}, result.target_buf.take_copy(op.target_data.targets)}});
         } else if (!(op.gate->flags & GATE_IS_NOISE)) {
             // Keep noiseless operations.
             result.operations.push_back(Operation{
-                op.gate, {
-                    result.arg_buf.take_copy(op.target_data.args),
-                    result.target_buf.take_copy(op.target_data.targets)
-                }});
+                op.gate,
+                {result.arg_buf.take_copy(op.target_data.args), result.target_buf.take_copy(op.target_data.targets)}});
         }
     }
     for (const auto &block : blocks) {
@@ -1205,7 +1199,8 @@ void get_detector_coordinates_helper(
             uint64_t reps = op_data_rep_count(op.target_data);
             uint64_t used_reps = 0;
             while (used_reps < reps) {
-                uint64_t skip = per == 0 ? reps : std::min(reps, (*iter_desired_detector_index - next_detector_index) / per);
+                uint64_t skip =
+                    per == 0 ? reps : std::min(reps, (*iter_desired_detector_index - next_detector_index) / per);
                 used_reps += skip;
                 next_detector_index += per * skip;
                 vec_pad_add_mul(coord_shift, block_shift, skip);

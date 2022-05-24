@@ -1015,7 +1015,13 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
            bool ignore_decomposition_failures,
            bool block_decomposition_from_introducing_remnant_edges) -> DetectorErrorModel {
             return ErrorAnalyzer::circuit_to_detector_error_model(
-                self, decompose_errors, !flatten_loops, allow_gauge_detectors, approximate_disjoint_errors, ignore_decomposition_failures, block_decomposition_from_introducing_remnant_edges);
+                self,
+                decompose_errors,
+                !flatten_loops,
+                allow_gauge_detectors,
+                approximate_disjoint_errors,
+                ignore_decomposition_failures,
+                block_decomposition_from_introducing_remnant_edges);
         },
         pybind11::kw_only(),
         pybind11::arg("decompose_errors") = false,

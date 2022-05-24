@@ -13,22 +13,22 @@
 // limitations under the License.
 
 #include "stim/circuit/circuit.h"
-#include "stim/py/base.pybind.h"
-#include "stim/mem/simd_bits.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/measure_record_writer.h"
+#include "stim/mem/simd_bits.h"
+#include "stim/py/base.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
 
 pybind11::object read_shot_data_file(
-        const char *path,
-        const char *format,
-        const pybind11::handle &num_measurements,
-        const pybind11::handle &num_detectors,
-        const pybind11::handle &num_observables,
-        bool bit_pack) {
+    const char *path,
+    const char *format,
+    const pybind11::handle &num_measurements,
+    const pybind11::handle &num_detectors,
+    const pybind11::handle &num_observables,
+    bool bit_pack) {
     auto parsed_format = format_to_enum(format);
 
     if (num_measurements.is_none() && num_detectors.is_none() && num_observables.is_none()) {
@@ -84,12 +84,12 @@ pybind11::object read_shot_data_file(
 }
 
 void write_shot_data_file(
-        const pybind11::object &data,
-        const char *path,
-        const char *format,
-        const pybind11::handle &num_measurements,
-        const pybind11::handle &num_detectors,
-        const pybind11::handle &num_observables) {
+    const pybind11::object &data,
+    const char *path,
+    const char *format,
+    const pybind11::handle &num_measurements,
+    const pybind11::handle &num_detectors,
+    const pybind11::handle &num_observables) {
     auto parsed_format = format_to_enum(format);
 
     if (num_measurements.is_none() && num_detectors.is_none() && num_observables.is_none()) {
@@ -113,7 +113,9 @@ void write_shot_data_file(
 
     if (pybind11::isinstance<pybind11::array_t<uint8_t>>(data)) {
         if ((size_t)data8.shape(1) != num_bytes_per_shot) {
-            throw std::invalid_argument("data.dtype == np.uint8 but data.shape[1] != math.ceil((num_measurements + num_detectors + num_observables) / 8)");
+            throw std::invalid_argument(
+                "data.dtype == np.uint8 but data.shape[1] != math.ceil((num_measurements + num_detectors + "
+                "num_observables) / 8)");
         }
         auto u = data8.unchecked();
         for (size_t a = 0; a < num_shots; a++) {
@@ -126,7 +128,8 @@ void write_shot_data_file(
         }
     } else if (pybind11::isinstance<pybind11::array_t<bool>>(data)) {
         if ((size_t)data8.shape(1) != num_bits_per_shot) {
-            throw std::invalid_argument("data.dtype == np.bool8 but data.shape[1] != num_measurements + num_detectors + num_observables");
+            throw std::invalid_argument(
+                "data.dtype == np.bool8 but data.shape[1] != num_measurements + num_detectors + num_observables");
         }
         auto u = data8.unchecked();
         for (size_t a = 0; a < num_shots; a++) {

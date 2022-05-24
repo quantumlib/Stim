@@ -404,7 +404,7 @@ TEST(MeasureRecordReader, FormatHits_Repeated_Sparse) {
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
     SparseShot sparse;
     ASSERT_TRUE(reader->start_and_read_entire_record(sparse));
-    ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{1,1}));
+    ASSERT_EQ(sparse.hits, (std::vector<uint64_t>{1, 1}));
 }
 
 TEST(MeasureRecordReader, FormatDets_InvalidInput_Sparse) {
@@ -634,10 +634,10 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
     FILE *f = tmpfile();
     simd_bits saved1 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
     simd_bits saved2 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
-    for (size_t k = 0; k < 64*71 / 8; k++) {
+    for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved1.u8[k], f);
     }
-    for (size_t k = 0; k < 64*71 / 8; k++) {
+    for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved2.u8[k], f);
     }
     rewind(f);
@@ -647,13 +647,13 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
     for (size_t shot = 0; shot < 64; shot++) {
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
         for (size_t m = 0; m < 71; m++) {
-            ASSERT_EQ(saved1[m*64 + shot], loaded[m]);
+            ASSERT_EQ(saved1[m * 64 + shot], loaded[m]);
         }
     }
     for (size_t shot = 0; shot < 64; shot++) {
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
         for (size_t m = 0; m < 71; m++) {
-            ASSERT_EQ(saved2[m*64 + shot], loaded[m]);
+            ASSERT_EQ(saved2[m * 64 + shot], loaded[m]);
         }
     }
     ASSERT_FALSE(reader->start_and_read_entire_record(loaded));
@@ -663,10 +663,10 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
     FILE *f = tmpfile();
     simd_bits saved1 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
     simd_bits saved2 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
-    for (size_t k = 0; k < 64*71 / 8; k++) {
+    for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved1.u8[k], f);
     }
-    for (size_t k = 0; k < 64*71 / 8; k++) {
+    for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved2.u8[k], f);
     }
     rewind(f);
@@ -677,7 +677,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
         std::vector<uint64_t> expected;
         for (size_t m = 0; m < 71; m++) {
-            if (saved1[m*64 + shot]) {
+            if (saved1[m * 64 + shot]) {
                 expected.push_back(m);
             }
         }
@@ -688,7 +688,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
         std::vector<uint64_t> expected;
         for (size_t m = 0; m < 71; m++) {
-            if (saved2[m*64 + shot]) {
+            if (saved2[m * 64 + shot]) {
                 expected.push_back(m);
             }
         }

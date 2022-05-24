@@ -14,8 +14,8 @@
 
 #include "stim/mem/simd_util.h"
 
-template<uint64_t mask, uint64_t shift>
-void inplace_transpose_64x64_pass(uint64_t *data) {
+template <uint64_t mask, uint64_t shift>
+void inplace_transpose_64x64_pass(uint64_t* data) {
     for (size_t k = 0; k < 64; k++) {
         if (k & shift) {
             continue;
@@ -31,7 +31,7 @@ void inplace_transpose_64x64_pass(uint64_t *data) {
     }
 }
 
-void stim::inplace_transpose_64x64(uint64_t *data) {
+void stim::inplace_transpose_64x64(uint64_t* data) {
     inplace_transpose_64x64_pass<0x5555555555555555UL, 1>(data);
     inplace_transpose_64x64_pass<0x3333333333333333UL, 2>(data);
     inplace_transpose_64x64_pass<0x0F0F0F0F0F0F0F0FUL, 4>(data);
