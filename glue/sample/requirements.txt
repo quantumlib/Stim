@@ -1,7 +1,7 @@
-matplotlib == 3.5.1
-networkx == 2.6.3
-numpy == 1.22.2
-pymatching == 0.6.0
-pytest == 7.0.1
-pandas == 1.4.1
-stim == 1.8.0
+matplotlib ~= 3.5
+networkx ~= 2.6
+numpy ~= 1.22
+pymatching ~= 0.7.0
+pytest ~= 7.0
+pandas ~= 1.4
+stim ~= 1.9
