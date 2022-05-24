@@ -103,7 +103,7 @@ def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> nx.Graph
         if g.has_edge(*dets):
             edge_data = g.get_edge_data(*dets)
             old_p = edge_data["error_probability"]
-            old_frame_changes = edge_data["qubit_id"]
+            old_frame_changes = edge_data["fault_ids"]
             # If frame changes differ, the code has distance 2; just keep whichever was first.
             if set(old_frame_changes) == set(frame_changes):
                 p = p * (1 - old_p) + old_p * (1 - p)
@@ -111,7 +111,7 @@ def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> nx.Graph
         if p > 0.5:
             p = 1 - p
         if p > 0:
-            g.add_edge(*dets, weight=math.log((1 - p) / p), qubit_id=frame_changes, error_probability=p)
+            g.add_edge(*dets, weight=math.log((1 - p) / p), fault_ids=frame_changes, error_probability=p)
 
     def handle_detector_coords(detector: int, coords: np.ndarray):
         g.add_node(detector, coords=coords)
@@ -132,6 +132,6 @@ def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> 
         g.add_node(k)
     # Ensure invincible observables are seen by adding a boundary edge with all observables.
     g.add_node(num_detectors + 1)
-    g.add_edge(num_detectors, num_detectors + 1, weight=1, qubit_id=list(range(num_observables)))
+    g.add_edge(num_detectors, num_detectors + 1, weight=1, fault_ids=list(range(num_observables)))
 
     return pymatching.Matching(g)
