@@ -105,6 +105,24 @@ def test_no_observables():
     assert result.errors == 0
 
 
+def test_invincible_observables():
+    c = stim.Circuit("""
+        X_ERROR(0.1) 0
+        M 0 1
+        DETECTOR rec[-2]
+        OBSERVABLE_INCLUDE(1) rec[-1]
+    """)
+    result = sample_decode(
+        circuit=c,
+        decoder_error_model=c.detector_error_model(decompose_errors=True),
+        num_shots=1000,
+        decoder='pymatching',
+    )
+    assert result.discards == 0
+    assert result.shots == 1000
+    assert result.errors == 0
+
+    
 @pytest.mark.parametrize("offset", range(8))
 def test_observable_offsets_mod8(offset: int):
     c = stim.Circuit("""
