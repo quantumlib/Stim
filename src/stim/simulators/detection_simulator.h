@@ -82,7 +82,9 @@ void detector_samples_out(
     bool append_observables,
     FILE *out,
     SampleFormat format,
-    std::mt19937_64 &rng);
+    std::mt19937_64 &rng,
+    FILE *obs_out,
+    SampleFormat obs_out_format);
 
 }  // namespace stim
 

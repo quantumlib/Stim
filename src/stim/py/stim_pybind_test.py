@@ -76,12 +76,13 @@ def test_format_data():
     assert ctx["save_dets"](data, num_detectors=2, num_observables=2) == saved
     assert ctx["parse_dets"](saved, num_detectors=2, num_observables=2) == data
 
-    saved = (b"\x00\x00\x00\x00\x00\x00\x00\x00"
+    big_data = [data[0]] + [data[1]] * 36 + [[1, 0, 1, 0]] * 4 + [data[1]] * (64 - 41)
+    saved = (b"\x00\x00\x00\x00\xe0\x01\x00\x00"
              b"\x01\x00\x00\x00\x00\x00\x00\x00"
-             b"\x01\x00\x00\x00\x00\x00\x00\x00"
+             b"\x01\x00\x00\x00\xe0\x01\x00\x00"
              b"\x00\x00\x00\x00\x00\x00\x00\x00")
-    assert ctx["save_ptb64"](data) == saved
-    assert ctx["parse_ptb64"](saved, bits_per_shot=4, num_shots=2) == data
+    assert ctx["save_ptb64"](big_data) == saved
+    assert ctx["parse_ptb64"](saved, bits_per_shot=4) == big_data
 
     # Check that python examples in help strings are correct.
     for k, v in format_data.items():

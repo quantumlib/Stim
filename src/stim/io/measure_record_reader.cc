@@ -20,24 +20,6 @@
 
 using namespace stim;
 
-// Returns true if keyword is found at current position. Returns false if EOF is found at current
-// position. Throws otherwise. Uses next output variable for the next character or EOF.
-bool maybe_consume_keyword(FILE *in, const std::string &keyword, int &next) {
-    next = getc(in);
-    if (next == EOF) {
-        return false;
-    }
-
-    for (char c : keyword) {
-        if (c != next) {
-            throw std::runtime_error("Failed to find expected string \"" + keyword + "\"");
-        }
-        next = getc(in);
-    }
-
-    return true;
-}
-
 bool stim::read_uint64(FILE *in, uint64_t &value, int &next, bool include_next) {
     if (!include_next) {
         next = getc(in);
@@ -95,28 +77,14 @@ std::unique_ptr<MeasureRecordReader> MeasureRecordReader::make(
             return std::unique_ptr<MeasureRecordReader>(
                 new MeasureRecordReaderFormatHits(in, num_measurements, num_detectors, num_observables));
         case SAMPLE_FORMAT_PTB64:
-            throw std::invalid_argument("SAMPLE_FORMAT_PTB64 incompatible with SingleMeasurementRecord");
+            return std::unique_ptr<MeasureRecordReader>(
+                new MeasureRecordReaderFormatPTB64(in, num_measurements, num_detectors, num_observables));
         case SAMPLE_FORMAT_R8:
             return std::unique_ptr<MeasureRecordReader>(
                 new MeasureRecordReaderFormatR8(in, num_measurements, num_detectors, num_observables));
         default:
             throw std::invalid_argument("Sample format not recognized by SingleMeasurementRecord");
     }
-}
-
-size_t MeasureRecordReader::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
-    size_t n = 0;
-    for (uint8_t &b : out_buffer) {
-        b = 0;
-        for (size_t k = 0; k < 8; k++) {
-            if (is_end_of_record()) {
-                return n;
-            }
-            b |= uint8_t(read_bit()) << k;
-            ++n;
-        }
-    }
-    return n;
 }
 
 size_t MeasureRecordReader::bits_per_record() const {
@@ -148,10 +116,7 @@ void MeasureRecordReader::move_obs_in_shots_to_mask_assuming_sorted(SparseShot &
 
 MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in),
-      payload('\n'),
-      position(bits_per_record()) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormat01::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
@@ -175,54 +140,6 @@ bool MeasureRecordReaderFormat01::start_and_read_entire_record(SparseShot &clear
     return result;
 }
 
-bool MeasureRecordReaderFormat01::read_bit() {
-    if (payload == EOF) {
-        throw std::out_of_range("Attempt to read past end-of-file");
-    }
-    if (payload == '\n' || position >= bits_per_record()) {
-        throw std::out_of_range("Attempt to read past end-of-record");
-    }
-    if (payload != '0' && payload != '1') {
-        throw std::runtime_error("Expected '0' or '1' because input format was specified as '01'");
-    }
-
-    bool bit = payload == '1';
-    payload = getc(in);
-    ++position;
-    return bit;
-}
-
-bool MeasureRecordReaderFormat01::next_record() {
-    while (payload != EOF && payload != '\n') {
-        payload = getc(in);
-        if (position++ > bits_per_record()) {
-            throw std::runtime_error(
-                "Line was too long for input file in 01 format. Expected " + std::to_string(bits_per_record()) +
-                " characters but got " + std::to_string(position));
-        }
-    }
-
-    return start_record();
-}
-
-bool MeasureRecordReaderFormat01::start_record() {
-    payload = getc(in);
-    position = 0;
-    return payload != EOF;
-}
-
-bool MeasureRecordReaderFormat01::is_end_of_record() {
-    bool payload_ended = (payload == EOF || payload == '\n');
-    bool expected_end = position >= bits_per_record();
-    if (payload_ended && !expected_end) {
-        throw std::invalid_argument("Record data (in 01 format) ended early, before expected length.");
-    }
-    if (!payload_ended && expected_end) {
-        throw std::invalid_argument("Record data (in 01 format) did not end by the expected length.");
-    }
-    return payload_ended;
-}
-
 bool MeasureRecordReaderFormat01::expects_empty_serialized_data_for_each_shot() const {
     return false;
 }
@@ -231,109 +148,51 @@ bool MeasureRecordReaderFormat01::expects_empty_serialized_data_for_each_shot() 
 
 MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in),
-      payload(0),
-      bits_available(0),
-      position(bits_per_record()) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormatB8::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
-    return start_and_read_entire_record_helper([&](size_t byte_index, uint8_t byte) {
-        dirty_out_buffer.u8[byte_index] = (uint8_t)byte;
-    });
+    size_t n = bits_per_record();
+    size_t nb = (n + 7) >> 3;
+    size_t nr = fread(dirty_out_buffer.u8, 1, nb, in);
+    if (nr == 0) {
+        return false;
+    }
+    if (nr != nb) {
+        throw std::invalid_argument(
+            "b8 data ended in middle of record at byte position " + std::to_string(nr) +
+            ".\n"
+            "Expected bytes per record was " +
+            std::to_string(nb) + " (" + std::to_string(n) + " bits padded).");
+    }
+    return true;
 }
 
 bool MeasureRecordReaderFormatB8::start_and_read_entire_record(SparseShot &cleared_out) {
-    bool result = start_and_read_entire_record_helper([&](size_t byte_index, uint8_t byte) {
-        size_t bit_offset = byte_index << 3;
+    size_t n = bits_per_record();
+    size_t nb = (n + 7) >> 3;
+    for (size_t k = 0; k < nb; k++) {
+        int b = getc(in);
+        if (b == EOF) {
+            if (k == 0) {
+                return false;
+            }
+            throw std::invalid_argument(
+                "b8 data ended in middle of record at byte position " + std::to_string(k) +
+                ".\n"
+                "Expected bytes per record was " +
+                std::to_string(nb) + " (" + std::to_string(n) + " bits padded).");
+        }
+
+        size_t bit_offset = k << 3;
         for (size_t r = 0; r < 8; r++) {
-            if (byte & (1 << r)) {
+            if (b & (1 << r)) {
                 cleared_out.hits.push_back(bit_offset + r);
             }
         }
-    });
+    }
     move_obs_in_shots_to_mask_assuming_sorted(cleared_out);
-    return result;
-}
-
-size_t MeasureRecordReaderFormatB8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
-    if (out_buffer.empty()) {
-        return 0;
-    }
-    if (position >= bits_per_record()) {
-        return 0;
-    }
-
-    if (bits_available & 7) {
-        // Partial read from before still had trailing bits.
-        return MeasureRecordReader::read_bits_into_bytes(out_buffer);
-    }
-
-    size_t total_read = 0;
-    if (bits_available) {
-        *out_buffer.ptr_start = payload & 0xFF;
-        out_buffer.ptr_start++;
-        bits_available = 0;
-        position += 8;
-        total_read += 8;
-    }
-
-    size_t n_bits = std::min<size_t>(8 * out_buffer.size(), bits_per_record() - position);
-    size_t n_bytes = (n_bits + 7) / 8;
-    n_bytes = fread(out_buffer.ptr_start, sizeof(uint8_t), n_bytes, in);
-    n_bits = std::min<size_t>(8 * n_bytes, n_bits);
-    position += n_bits;
-    total_read += n_bits;
-
-    return total_read;
-}
-
-bool MeasureRecordReaderFormatB8::read_bit() {
-    if (position >= bits_per_record()) {
-        throw std::out_of_range("Attempt to read past end-of-record");
-    }
-
-    maybe_update_payload();
-
-    if (payload == EOF) {
-        throw std::out_of_range("Attempt to read past end-of-file");
-    }
-
-    bool b = payload & 1;
-    payload >>= 1;
-    --bits_available;
-    ++position;
-    return b;
-}
-
-bool MeasureRecordReaderFormatB8::next_record() {
-    while (!is_end_of_record()) {
-        read_bit();
-    }
-    return start_record();
-}
-
-bool MeasureRecordReaderFormatB8::start_record() {
-    position = 0;
-    bits_available = 0;
-    payload = 0;
-    maybe_update_payload();
-    return payload != EOF;
-}
-
-bool MeasureRecordReaderFormatB8::is_end_of_record() {
-    return position >= bits_per_record();
-}
-
-void MeasureRecordReaderFormatB8::maybe_update_payload() {
-    if (bits_available > 0) {
-        return;
-    }
-    payload = getc(in);
-    if (payload != EOF) {
-        bits_available = 8;
-    }
+    return true;
 }
 
 bool MeasureRecordReaderFormatB8::expects_empty_serialized_data_for_each_shot() const {
@@ -344,16 +203,17 @@ bool MeasureRecordReaderFormatB8::expects_empty_serialized_data_for_each_shot() 
 
 MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in),
-      buffer(bits_per_record()),
-      position_in_buffer(bits_per_record()) {
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormatHits::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
+    size_t m = bits_per_record();
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
-        dirty_out_buffer[bit_index] = true;
+        if (bit_index >= m) {
+            throw std::invalid_argument("hit index is too large.");
+        }
+        dirty_out_buffer[bit_index] ^= true;
     });
 }
 
@@ -372,51 +232,6 @@ bool MeasureRecordReaderFormatHits::start_and_read_entire_record(SparseShot &cle
     });
 }
 
-bool MeasureRecordReaderFormatHits::read_bit() {
-    if (position_in_buffer >= bits_per_record()) {
-        throw std::invalid_argument("Read past end of buffer.");
-    }
-    return buffer[position_in_buffer++];
-}
-
-bool MeasureRecordReaderFormatHits::next_record() {
-    return start_record();
-}
-
-bool MeasureRecordReaderFormatHits::start_record() {
-    int c = getc(in);
-    if (c == EOF) {
-        return false;
-    }
-    buffer.clear();
-    position_in_buffer = 0;
-    bool is_first = true;
-    while (c != '\n') {
-        uint64_t value;
-        if (!read_uint64(in, value, c, is_first)) {
-            throw std::runtime_error(
-                "Integer didn't start immediately at start of line or after comma in 'hits' format.");
-        }
-        if (c != ',' && c != '\n') {
-            throw std::runtime_error(
-                "'hits' format requires  integers to be followed by a comma or newline, but got a '" +
-                std::to_string(c) + "'.");
-        }
-        if (value >= bits_per_record()) {
-            throw std::runtime_error(
-                "Bits per record is " + std::to_string(bits_per_record()) + " but got a hit value " +
-                std::to_string(value) + ".");
-        }
-        buffer[(size_t)value] ^= true;
-        is_first = false;
-    }
-    return true;
-}
-
-bool MeasureRecordReaderFormatHits::is_end_of_record() {
-    return position_in_buffer >= bits_per_record();
-}
-
 bool MeasureRecordReaderFormatHits::expects_empty_serialized_data_for_each_shot() const {
     return false;
 }
@@ -426,45 +241,6 @@ bool MeasureRecordReaderFormatHits::expects_empty_serialized_data_for_each_shot(
 MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
     : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
-}
-
-size_t MeasureRecordReaderFormatR8::read_bits_into_bytes(PointerRange<uint8_t> out_buffer) {
-    size_t n = 0;
-    for (uint8_t &b : out_buffer) {
-        b = 0;
-        if (buffered_0s >= 8) {
-            position += 8;
-            buffered_0s -= 8;
-            n += 8;
-            continue;
-        }
-        for (size_t k = 0; k < 8; k++) {
-            if (is_end_of_record()) {
-                return n;
-            }
-            b |= uint8_t(read_bit()) << k;
-            ++n;
-        }
-    }
-    return n;
-}
-
-bool MeasureRecordReaderFormatR8::read_bit() {
-    if (!buffered_0s && !buffered_1s) {
-        bool read_any = maybe_buffer_data();
-        assert(read_any);
-    }
-    if (buffered_0s) {
-        buffered_0s--;
-        position++;
-        return false;
-    } else if (buffered_1s) {
-        buffered_1s--;
-        position++;
-        return true;
-    } else {
-        throw std::invalid_argument("Read past end-of-record.");
-    }
 }
 
 bool MeasureRecordReaderFormatR8::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
@@ -480,68 +256,6 @@ bool MeasureRecordReaderFormatR8::start_and_read_entire_record(SparseShot &clear
     });
     move_obs_in_shots_to_mask_assuming_sorted(cleared_out);
     return result;
-}
-bool MeasureRecordReaderFormatR8::next_record() {
-    while (!is_end_of_record()) {
-        read_bit();
-    }
-    return start_record();
-}
-
-bool MeasureRecordReaderFormatR8::start_record() {
-    position = 0;
-    have_seen_terminal_1 = false;
-    return maybe_buffer_data();
-}
-
-bool MeasureRecordReaderFormatR8::is_end_of_record() {
-    return position == bits_per_record() && have_seen_terminal_1;
-}
-
-bool MeasureRecordReaderFormatR8::maybe_buffer_data() {
-    assert(buffered_0s == 0);
-    assert(buffered_1s == 0);
-    if (is_end_of_record()) {
-        throw std::invalid_argument("Attempted to read past end-of-record.");
-    }
-
-    // Count zeroes until a one is found.
-    int r;
-    do {
-        r = getc(in);
-        if (r == EOF) {
-            if (buffered_0s == 0 && position == 0) {
-                return false;  // No next record.
-            }
-            throw std::invalid_argument("r8 data ended on a continuation (a 0xFF byte) which is not allowed.");
-        }
-        buffered_0s += r;
-    } while (r == 0xFF);
-    buffered_1s = 1;
-
-    // Check if the 1 is the one at end of data.
-    size_t total_data = position + buffered_0s + buffered_1s;
-    if (total_data == bits_per_record()) {
-        int t = getc(in);
-        if (t == EOF) {
-            throw std::invalid_argument(
-                "r8 data ended too early. "
-                "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
-                "'fake encoded 1 just after the end of the data' before the input ended.");
-        } else if (t != 0) {
-            throw std::invalid_argument(
-                "r8 data ended too early. "
-                "The extracted data ended in a 1, but there was no corresponding 0x00 terminator byte for the expected "
-                "'fake encoded 1 just after the end of the data' before any additional data.");
-        }
-        have_seen_terminal_1 = true;
-    } else if (total_data == bits_per_record() + 1) {
-        have_seen_terminal_1 = true;
-        buffered_1s = 0;
-    } else if (total_data > bits_per_record() + 1) {
-        throw std::invalid_argument("r8 data encoded a jump past the expected end of encoded data.");
-    }
-    return true;
 }
 
 bool MeasureRecordReaderFormatR8::expects_empty_serialized_data_for_each_shot() const {
@@ -570,74 +284,90 @@ bool MeasureRecordReaderFormatDets::start_and_read_entire_record(SparseShot &cle
 
 MeasureRecordReaderFormatDets::MeasureRecordReaderFormatDets(
     FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
-    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
-      in(in),
-      buffer(num_measurements + num_detectors + num_observables),
-      position_in_buffer(num_measurements + num_detectors + num_observables) {
-}
-
-bool MeasureRecordReaderFormatDets::read_bit() {
-    if (position_in_buffer >= bits_per_record()) {
-        throw std::invalid_argument("Read past end of buffer.");
-    }
-    return buffer[position_in_buffer++];
-}
-
-bool MeasureRecordReaderFormatDets::next_record() {
-    return start_record();
-}
-
-bool MeasureRecordReaderFormatDets::start_record() {
-    int c;
-    if (!maybe_consume_keyword(in, "shot", c)) {
-        return false;
-    }
-    buffer.clear();
-    position_in_buffer = 0;
-    while (true) {
-        bool had_spacing = c == ' ';
-        while (c == ' ') {
-            c = getc(in);
-        }
-        if (c == '\n' || c == EOF) {
-            break;
-        }
-        if (!had_spacing) {
-            throw std::invalid_argument("DETS values must be separated by spaces.");
-        }
-        size_t offset;
-        size_t size;
-        char prefix = c;
-        if (prefix == 'M') {
-            offset = 0;
-            size = num_measurements;
-        } else if (prefix == 'D') {
-            offset = num_measurements;
-            size = num_detectors;
-        } else if (prefix == 'L') {
-            offset = num_measurements + num_detectors;
-            size = num_observables;
-        } else {
-            throw std::invalid_argument("Unrecognized DETS prefix: '" + std::to_string(c) + "'");
-        }
-        uint64_t number;
-        if (!read_uint64(in, number, c)) {
-            throw std::invalid_argument("DETS prefix '" + std::to_string(c) + "' wasn't not followed by an integer.");
-        }
-        if (number >= size) {
-            throw std::invalid_argument(
-                "Got '" + std::to_string(c) + std::to_string(number) + "' but expected num values of that type is " +
-                std::to_string(size) + ".");
-        }
-        buffer[(size_t)(offset + number)] ^= true;
-    }
-    return true;
-}
-
-bool MeasureRecordReaderFormatDets::is_end_of_record() {
-    return position_in_buffer == bits_per_record();
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
 bool MeasureRecordReaderFormatDets::expects_empty_serialized_data_for_each_shot() const {
     return false;
+}
+
+MeasureRecordReaderFormatPTB64::MeasureRecordReaderFormatPTB64(
+    FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables)
+    : MeasureRecordReader(num_measurements, num_detectors, num_observables),
+      in(in),
+      buf((bits_per_record() + 63) / 64 * 64 * 64),
+      num_unread_shots_in_buf(0) {
+}
+
+bool MeasureRecordReaderFormatPTB64::load_cache() {
+    size_t n = bits_per_record();
+    size_t nb = bits_per_record() * (64 / 8);
+    size_t nr = fread(buf.u8, 1, nb, in);
+    if (nr == 0) {
+        num_unread_shots_in_buf = 0;
+        return false;
+    }
+    if (nr != nb) {
+        throw std::invalid_argument(
+            "ptb64 data ended in middle of 64 record group at byte position " + std::to_string(nr) +
+            ".\n"
+            "Expected bytes per 64 records was " +
+            std::to_string(nb) + " (" + std::to_string(n) + " bits padded).");
+    }
+
+    // Convert from bit interleaving to uint64_t interleaving.
+    for (size_t k = 0; k < n; k += 64) {
+        inplace_transpose_64x64(buf.u64 + k);
+    }
+
+    num_unread_shots_in_buf = 64;
+    return true;
+}
+
+bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) {
+    if (num_unread_shots_in_buf == 0) {
+        load_cache();
+    }
+    if (num_unread_shots_in_buf == 0) {
+        return false;
+    }
+
+    size_t offset = 64 - num_unread_shots_in_buf;
+    size_t n64 = (bits_per_record() + 63) / 64;
+    for (size_t k = 0; k < n64; k++) {
+        dirty_out_buffer.u64[k] = buf.u64[k * 64 + offset];
+    }
+    num_unread_shots_in_buf -= 1;
+    return true;
+}
+
+bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(SparseShot &cleared_out) {
+    if (num_unread_shots_in_buf == 0) {
+        load_cache();
+    }
+    if (num_unread_shots_in_buf == 0) {
+        return false;
+    }
+
+    size_t offset = 64 - num_unread_shots_in_buf;
+    size_t n = bits_per_record();
+    size_t n64 = (n + 63) / 64;
+    for (size_t k = 0; k < n64; k++) {
+        uint64_t v = buf.u64[k * 64 + offset];
+        if (v) {
+            size_t nb = std::min(size_t{64}, n - k * 64);
+            for (size_t b = 0; b < nb; b++) {
+                if (v & (uint64_t{1} << b)) {
+                    cleared_out.hits.push_back(k * 64 + b);
+                }
+            }
+        }
+    }
+    num_unread_shots_in_buf -= 1;
+    move_obs_in_shots_to_mask_assuming_sorted(cleared_out);
+    return true;
+}
+
+bool MeasureRecordReaderFormatPTB64::expects_empty_serialized_data_for_each_shot() const {
+    return bits_per_record() == 0;
 }

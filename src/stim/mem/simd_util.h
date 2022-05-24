@@ -35,6 +35,8 @@ inline uint64_t spread_bytes_32_to_64(uint32_t v) {
     return ((r << 8) | r) & 0xFF00FF00FF00FFULL;
 }
 
+void inplace_transpose_64x64(uint64_t *data);
+
 inline uint8_t popcnt64(uint64_t val) {
     val -= (val >> 1) & 0x5555555555555555ULL;
     val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);

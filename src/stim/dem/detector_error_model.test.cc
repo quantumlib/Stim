@@ -16,9 +16,9 @@
 
 #include <gtest/gtest.h>
 
-#include "stim/test_util.test.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/error_analyzer.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 

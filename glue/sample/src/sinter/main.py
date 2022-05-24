@@ -16,6 +16,9 @@ def main(*, command_line_args: Optional[List[str]] = None):
     if mode == 'plot':
         from sinter.main_plot import main_plot
         return main_plot(command_line_args=command_line_args[1:])
+    if mode == 'predict':
+        from sinter.main_predict import main_predict
+        return main_predict(command_line_args=command_line_args[1:])
     if command_line_args and not command_line_args[0].startswith('-'):
         print(f"\033[31mUnrecognized command: sinter {command_line_args[0]}\033[0m\n", file=sys.stderr)
     else:

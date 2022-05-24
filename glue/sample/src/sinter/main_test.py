@@ -183,3 +183,35 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
                 "decoder",
             ])
         assert (d / "output.png").exists()
+
+
+def test_main_predict():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'input.dets', 'w') as f:
+            print("""
+shot D0
+shot
+            """, file=f)
+        with open(d / f'input.dem', 'w') as f:
+            print("""
+error(0.1) D0 L0
+            """, file=f)
+
+        main(command_line_args=[
+            "predict",
+            "-dets",
+            str(d / "input.dets"),
+            "-dem",
+            str(d / "input.dem"),
+            "-decoder",
+            "pymatching",
+            "-dets_format",
+            "dets",
+            "-out",
+            str(d / "output.01"),
+            "-out_format",
+            "01",
+        ])
+        with open(d / 'output.01') as f:
+            assert f.read() == '1\n0\n'

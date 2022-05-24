@@ -102,7 +102,7 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     simd_bits ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng);
+        detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
         .goal_millis(20)
         .show_rate("Samples", circuit.count_measurements());
@@ -147,7 +147,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     simd_bits ref(0);
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng);
+        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
         .goal_millis(25)
         .show_rate("Samples", circuit.count_measurements());
@@ -162,7 +162,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r1000_stream) {
     simd_bits ref(0);
     benchmark_go([&]() {
         rewind(out);
-        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng);
+        detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
     })
         .goal_millis(360)
         .show_rate("Samples", circuit.count_measurements());

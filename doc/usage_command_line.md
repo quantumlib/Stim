@@ -646,6 +646,17 @@ Flags used with this mode:
     See `stim help formats` for a list of supported formats.
     
     
+- <a name="--obs_out"></a>**`--obs_out`**
+    Specifies a file to write observable flip data to.
+    
+    When sampling detection event data, this is an alternative to --append_observables which has the benefit
+    of never mixing the two types of data together.
+    
+    
+- <a name="--obs_out_format"></a>**`--obs_out_format`**
+    The format to use when writing observable flip data (e.g. b8 or 01).
+    
+    
 - <a name="--out"></a>**`--out`**
     Specifies an output file to read from, instead of stdout.
     
@@ -716,6 +727,18 @@ Flags used with this mode:
     measurements are not true measurement results but rather reports of which measurement results would have been flipped
     due to errors or Heisenberg uncertainty. They need to be XOR'd against a noiseless reference sample to become true
     measurement results.
+    
+    
+- <a name="--sweep"></a>**`--sweep`**
+    Specifies a per-shot sweep data file.
+    
+    Sweep bits are used to vary whether certain Pauli gates are included in a circuit, or not, from shot to shot.
+    For example, if a circuit contains the instruction "CX sweep[5] 0" then there is an X pauli that is included
+    only in shots where the corresponding sweep data has the bit at index 5 set to True.
+    
+    
+- <a name="--sweep_format"></a>**`--sweep_format`**
+    Specifies the format sweep data is stored in (e.g. b8 or 01).
     
     
 - <a name="--task"></a>**`--task`**

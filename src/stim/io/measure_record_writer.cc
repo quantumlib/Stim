@@ -230,6 +230,9 @@ void stim::write_table_data(
     char dets_prefix_2,
     size_t dets_prefix_transition) {
     if (format == SAMPLE_FORMAT_PTB64) {
+        if (num_shots % 64 != 0) {
+            throw std::invalid_argument("shots must be a multiple of 64 to use ptb64 format.");
+        }
         auto f64 = num_shots >> 6;
         for (size_t s = 0; s < f64; s++) {
             for (size_t m = 0; m < num_measurements; m++) {
@@ -240,18 +243,6 @@ void stim::write_table_data(
                 fwrite(&v, 1, 64 >> 3, out);
             }
         }
-        if (num_shots & 63) {
-            uint64_t mask = (uint64_t{1} << (num_shots & 63)) - 1ULL;
-            for (size_t m = 0; m < num_measurements; m++) {
-                uint64_t v = table[m].u64[f64];
-                if (m < reference_sample.num_bits_padded() && reference_sample[m]) {
-                    v = ~v;
-                }
-                v &= mask;
-                fwrite(&v, 1, 64 >> 3, out);
-            }
-        }
-        return;
     } else {
         auto result = transposed_vs_ref(num_shots, table, reference_sample);
         if (dets_prefix_transition == 0) {

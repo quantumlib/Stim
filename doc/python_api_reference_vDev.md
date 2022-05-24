@@ -264,6 +264,7 @@
     - [`stim.TableauSimulator.ycy`](#stim.TableauSimulator.ycy)
     - [`stim.TableauSimulator.ycz`](#stim.TableauSimulator.ycz)
     - [`stim.TableauSimulator.z`](#stim.TableauSimulator.z)
+- [`stim.read_shot_data_file`](#stim.read_shot_data_file)
 - [`stim.target_combiner`](#stim.target_combiner)
 - [`stim.target_inv`](#stim.target_inv)
 - [`stim.target_logical_observable_id`](#stim.target_logical_observable_id)
@@ -274,6 +275,7 @@
 - [`stim.target_x`](#stim.target_x)
 - [`stim.target_y`](#stim.target_y)
 - [`stim.target_z`](#stim.target_z)
+- [`stim.write_shot_data_file`](#stim.write_shot_data_file)
 
 <a name="stim.Circuit"></a>
 ## `stim.Circuit`
@@ -609,6 +611,53 @@
 >     )
 > ```
 
+<a name="stim.read_shot_data_file"></a>
+## `stim.read_shot_data_file(*, path: str, format: str, num_measurements: handle = None, num_detectors: handle = None, num_observables: handle = None, bit_pack: bool = False) -> object`
+> ```
+> Reads shot data, such as measurement samples, from a file.
+> 
+> Args:
+>     path: The path to the file to read the data from.
+>     format: The format that the data is stored in, such as 'b8'.
+>         See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+>     bit_pack: Defaults to false. Determines whether the result is a bool8 numpy array
+>         with one bit per byte, or a uint8 numpy array with 8 bits per byte.
+>     num_measurements: How many measurements there are per shot.
+>     num_detectors: How many detectors there are per shot.
+>     num_observables: How many observables there are per shot.
+>         Note that this only refers to observables *stored in the file*, not to
+>         observables from the original circuit that was sampled.
+> Returns:
+>     A numpy array containing the loaded data.
+> 
+>     If bit_pack=False:
+>         dtype = np.bool8
+>         shape = (num_shots, num_measurements + num_detectors + num_observables)
+>         bit b from shot s is at result[s, b]
+>     If bit_pack=True:
+>         dtype = np.uint8
+>         shape = (num_shots, math.ceil((num_measurements + num_detectors + num_observables) / 8))
+>         bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
+> 
+> Examples:
+>     >>> import stim
+>     >>> import pathlib
+>     >>> import tempfile
+>     >>> with tempfile.TemporaryDirectory() as d:
+>     ...     path = pathlib.Path(d) / 'shots'
+>     ...     with open(path) as f:
+>     ...         print("0000", file=f)
+>     ...         print("0101", file=f)
+>     ...
+>     ...     read = stim.read_shot_data_file(
+>     ...         path=str(path),
+>     ...         format='01',
+>     ...         num_measurements=4)
+>     >>> read
+>     [[False False False False]
+>      [False  True False  True]]
+> ```
+
 <a name="stim.target_combiner"></a>
 ## `stim.target_combiner() -> stim.GateTarget`
 > ```
@@ -721,6 +770,49 @@
 > ```
 > Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
 > For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
+> ```
+
+<a name="stim.write_shot_data_file"></a>
+## `stim.write_shot_data_file(*, data: object, path: str, format: str, num_measurements: handle = None, num_detectors: handle = None, num_observables: handle = None) -> None`
+> ```
+> Reads shot data, such as measurement samples, from a file.
+> 
+> Args:
+>     data: The data to write to the file. This must be a numpy array. The dtype
+>         of the array determines whether or not the data is bit packed, and the
+>         shape must match the bits per shot.
+> 
+>         dtype=np.bool8: Not bit packed. Shape must be (num_shots, num_measurements + num_detectors + num_observables).
+>         dtype=np.uint8: Yes bit packed. Shape must be (num_shots, math.ceil((num_measurements + num_detectors + num_observables) / 8)).
+>     path: The path to the file to write the data to.
+>     format: The format that the data is stored in, such as 'b8'.
+>         See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+>     num_measurements: How many measurements there are per shot.
+>     num_detectors: How many detectors there are per shot.
+>     num_observables: How many observables there are per shot.
+>         Note that this only refers to observables *in the given shot data*, not to
+>         observables from the original circuit that was sampled.
+> Examples:
+>     >>> import stim
+>     >>> import pathlib
+>     >>> import tempfile
+>     >>> with tempfile.TemporaryDirectory() as d:
+>     ...     path = pathlib.Path(d) / 'shots'
+>     ...     shot_data = np.array([
+>     ...         [0, 1, 0],
+>     ...         [0, 1, 1],
+>     ...     ], dtype=np.bool8)
+>     ...
+>     ...     stim.write_shot_data_file(
+>     ...         path=str(path),
+>     ...         data=shot_data,
+>     ...         format='01',
+>     ...         num_measurements=3)
+>     ...
+>     ...     with open(path) as f:
+>     ...         read = f.read()
+>     >>> read
+>     '010\n011\n'
 > ```
 
 <a name="stim.Circuit.__add__"></a>
@@ -2164,7 +2256,7 @@
 > ```
 
 <a name="stim.CompiledDetectorSampler.sample"></a>
-### `stim.CompiledDetectorSampler.sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False) -> numpy.ndarray[numpy.uint8]`
+### `stim.CompiledDetectorSampler.sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False) -> numpy.ndarray[bool]`
 > ```
 > Returns a numpy array containing a batch of detector samples from the circuit.
 > 
@@ -2206,7 +2298,7 @@
 > ```
 
 <a name="stim.CompiledDetectorSampler.sample_write"></a>
-### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01', prepend_observables: bool = False, append_observables: bool = False) -> None`
+### `stim.CompiledDetectorSampler.sample_write(self, shots: int, *, filepath: str, format: str = '01', prepend_observables: bool = False, append_observables: bool = False, obs_out_filepath: str = None, obs_out_format: str = '01') -> None`
 > ```
 > Samples detection events from the circuit and writes them to a file.
 > 
@@ -2232,6 +2324,11 @@
 >     shots: The number of times to sample every measurement in the circuit.
 >     filepath: The file to write the results to.
 >     format: The output format to write the results with.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
+>     obs_out_filepath: Sample observables as part of each shot, and write them to this file.
+>         This keeps the observable data separate from the detector data.
+>     obs_out_format: If writing the observables to a file, this is the format to write them in.
 >         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
 >         Defaults to "01".
 >     prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
@@ -2307,7 +2404,7 @@
 > ```
 
 <a name="stim.CompiledMeasurementSampler.sample"></a>
-### `stim.CompiledMeasurementSampler.sample(self, shots: int) -> numpy.ndarray[numpy.uint8]`
+### `stim.CompiledMeasurementSampler.sample(self, shots: int) -> numpy.ndarray[bool]`
 > ```
 > Returns a numpy array containing a batch of measurement samples from the circuit.
 > 
@@ -2470,7 +2567,7 @@
 > ```
 
 <a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert_file"></a>
-### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool) -> None`
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool = False, obs_out_filepath: str = None, obs_out_format: str = '01') -> None`
 > ```
 > Reads measurement data from a file, converts it, and writes the detection events to another file.
 > 
@@ -2488,6 +2585,11 @@
 >         shot) will be read from the given file.
 >         When not specified, all sweep bits default to False and no sweep-controlled operations occur.
 >     sweep_bits_format: The format the sweep data is stored in.
+>         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+>         Defaults to "01".
+>     obs_out_filepath: Sample observables as part of each shot, and write them to this file.
+>         This keeps the observable data separate from the detector data.
+>     obs_out_format: If writing the observables to a file, this is the format to write them in.
 >         Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
 >         Defaults to "01".
 >     append_observables: When True, the observables in the circuit are included as part of the detection

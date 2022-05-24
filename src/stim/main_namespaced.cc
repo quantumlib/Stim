@@ -65,12 +65,13 @@ int main_mode_explain_errors(int argc, const char **argv) {
 
 int main_mode_detect(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--seed", "--shots", "--append_observables", "--out_format", "--out", "--in"},
+        {"--seed", "--shots", "--append_observables", "--out_format", "--out", "--in", "--obs_out", "--obs_out_format"},
         {"--detect", "--prepend_observables"},
         "detect",
         argc,
         argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
     bool prepend_observables = find_bool_argument("--prepend_observables", argc, argv);
     if (prepend_observables) {
         std::cerr << "[DEPRECATION] Avoid using `--prepend_observables`. Data readers assume observables are appended, "
@@ -90,12 +91,28 @@ int main_mode_detect(int argc, const char **argv) {
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "w", argc, argv);
+    if (obs_out == stdout) {
+        obs_out = nullptr;
+    }
     auto circuit = Circuit::from_file(in);
     if (in != stdin) {
         fclose(in);
     }
     auto rng = optionally_seeded_rng(argc, argv);
-    detector_samples_out(circuit, num_shots, prepend_observables, append_observables, out, out_format.id, rng);
+    detector_samples_out(
+        circuit,
+        num_shots,
+        prepend_observables,
+        append_observables,
+        out,
+        out_format.id,
+        rng,
+        obs_out,
+        obs_out_format.id);
+    if (obs_out != nullptr) {
+        fclose(obs_out);
+    }
     if (out != stdout) {
         fclose(out);
     }
@@ -157,20 +174,21 @@ int main_mode_measurements_to_detections(int argc, const char **argv) {
             "--out",
             "--in",
             "--skip_reference_sample",
+            "--sweep",
+            "--sweep_format",
+            "--obs_out",
+            "--obs_out_format",
         },
         {
             "--m2d",
-            // Not deprecated but still experimental:
-            "--sweep_data_in_format",
-            "--sweep_data_in",
         },
         "m2d",
         argc,
         argv);
     const auto &in_format = find_enum_argument("--in_format", nullptr, format_name_to_enum_map, argc, argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
-    const auto &frame_in_format =
-        find_enum_argument("--sweep_data_in_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &sweep_format = find_enum_argument("--sweep_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
     FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "r", argc, argv);
@@ -179,23 +197,35 @@ int main_mode_measurements_to_detections(int argc, const char **argv) {
 
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    FILE *frame_in = find_open_file_argument("--sweep_data_in", stdin, "r", argc, argv);
-    if (frame_in == stdin) {
-        frame_in = nullptr;
+    FILE *sweep_in = find_open_file_argument("--sweep", stdin, "r", argc, argv);
+    FILE *obs_out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    if (sweep_in == stdin) {
+        sweep_in = nullptr;
+    }
+    if (obs_out == stdout) {
+        obs_out = nullptr;
     }
 
     stream_measurements_to_detection_events(
         in,
         in_format.id,
-        frame_in,
-        frame_in_format.id,
+        sweep_in,
+        sweep_format.id,
         out,
         out_format.id,
         circuit,
         append_observables,
-        skip_reference_sample);
+        skip_reference_sample,
+        obs_out,
+        obs_out_format.id);
     if (in != stdin) {
         fclose(in);
+    }
+    if (sweep_in != nullptr) {
+        fclose(sweep_in);
+    }
+    if (obs_out != nullptr) {
+        fclose(obs_out);
     }
     if (out != stdout) {
         fclose(out);

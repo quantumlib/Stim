@@ -18,6 +18,7 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
+#include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
@@ -131,6 +132,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_tableau(m);
     pybind_tableau_simulator(m);
     pybind_matched_error(m);
+    pybind_read_write(m);
 
     m.def(
         "target_rec",

@@ -172,3 +172,14 @@ TEST(simd_util, popcnt64) {
         }
     }
 }
+
+TEST(simd_util, inplace_transpose_64x64) {
+    simd_bits data = simd_bits::random(64 * 64, SHARED_TEST_RNG());
+    simd_bits copy = data;
+    inplace_transpose_64x64(copy.u64);
+    for (size_t i = 0; i < 64; i++) {
+        for (size_t j = 0; j < 64; j++) {
+            ASSERT_EQ(data[i * 64 + j], copy[j * 64 + i]);
+        }
+    }
+}

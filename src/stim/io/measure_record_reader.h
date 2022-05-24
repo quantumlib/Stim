@@ -58,14 +58,6 @@ struct MeasureRecordReader {
         size_t num_observables = 0);
     virtual ~MeasureRecordReader() = default;
 
-    /// Reads and returns one measurement result. If no result is available, exception is thrown.
-    /// If is_end_of_record() just returned false, then a result is available and no exception is thrown.
-    virtual bool read_bit() = 0;
-    /// Reads multiple measurement results. Returns the number of results read. If no results are available,
-    /// zero is returned. Read terminates when data is filled up or when the current record ends. Note that
-    /// records encoded in HITS and DETS file formats never end.
-    virtual size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer);
-
     /// Determines whether or not there is no actual data written for each shot.
     ///
     /// For example, sampling a circuit with no measurements produces no bytes of data
@@ -99,22 +91,6 @@ struct MeasureRecordReader {
     ///         The reader is not at the start of a record.
     virtual size_t read_records_into(
         simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
-
-    /// Advances the reader to the next record (i.e. the next sequence of 0s and 1s). Skips the remainder
-    /// of the current record and an end-of-record marker (such as a newline). Returns true if a new record
-    /// has been found. Returns false if end of file has been reached.
-    virtual bool next_record() = 0;
-
-    /// Checks if there is another record present. The reader must be between records.
-    ///
-    /// Returns:
-    //      True: there is another record to read and we have begun reading it.
-    //      False: there are no more records to read.
-    virtual bool start_record() = 0;
-
-    /// Returns true when the current record has ended. Beyond this point read_bit() throws an exception
-    /// and read_bits_into_bytes() returns no data. Note that records in file formats HITS and DETS never end.
-    virtual bool is_end_of_record() = 0;
 
     /// Reads an entire record from start to finish, returning False if there are no more records.
     /// The data from the record is bit packed into a simd_bits.
@@ -151,17 +127,28 @@ struct MeasureRecordReader {
     void move_obs_in_shots_to_mask_assuming_sorted(SparseShot &shot);
 };
 
+struct MeasureRecordReaderFormatPTB64 : MeasureRecordReader {
+    FILE *in;
+    // This buffer stores partially transposed shots.
+    // The uint64_t for index k of shot s is stored in the buffer at offset k*64 + s.
+    simd_bits buf;
+    size_t num_unread_shots_in_buf;
+
+    MeasureRecordReaderFormatPTB64(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
+
+    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(SparseShot &cleared_out) override;
+    bool expects_empty_serialized_data_for_each_shot() const override;
+
+   private:
+    bool load_cache();
+};
+
 struct MeasureRecordReaderFormat01 : MeasureRecordReader {
     FILE *in;
-    int payload;
-    size_t position;
 
     MeasureRecordReaderFormat01(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool read_bit() override;
-    bool next_record() override;
-    bool start_record() override;
-    bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
@@ -206,57 +193,19 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
     FILE *in;
-    int payload;
-    uint8_t bits_available;
-    size_t position;
 
     MeasureRecordReaderFormatB8(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer) override;
-    bool read_bit() override;
-    bool next_record() override;
-    bool start_record() override;
-    bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-
-   private:
-    void maybe_update_payload();
-
-    template <typename HANDLE_BYTE>
-    bool start_and_read_entire_record_helper(HANDLE_BYTE handle_byte) {
-        size_t n = bits_per_record();
-        size_t nb = (n + 7) >> 3;
-        for (size_t k = 0; k < nb; k++) {
-            int b = getc(in);
-            if (b == EOF) {
-                if (k == 0) {
-                    return false;
-                }
-                throw std::invalid_argument(
-                    "b8 data ended in middle of record at byte position " + std::to_string(k) +
-                    ".\n"
-                    "Expected bytes per record was " +
-                    std::to_string(nb) + " (" + std::to_string(n) + " bits padded).");
-            }
-            handle_byte(k, (uint8_t)b);
-        }
-        return true;
-    }
 };
 
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
     FILE *in;
-    simd_bits buffer;
-    size_t position_in_buffer;
 
     MeasureRecordReaderFormatHits(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool read_bit() override;
-    bool next_record() override;
-    bool start_record() override;
-    bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
@@ -291,24 +240,14 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
     FILE *in;
-    size_t position = 0;
-    bool have_seen_terminal_1 = false;
-    size_t buffered_0s = 0;
-    size_t buffered_1s = 0;
 
     MeasureRecordReaderFormatR8(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    size_t read_bits_into_bytes(PointerRange<uint8_t> out_buffer) override;
-    bool read_bit() override;
-    bool next_record() override;
-    bool start_record() override;
-    bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
 
    private:
-    bool maybe_buffer_data();
     template <typename HANDLE_HIT>
     bool start_and_read_entire_record_helper(HANDLE_HIT handle_hit) {
         int next_char = getc(in);
@@ -344,16 +283,10 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
 
 struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     FILE *in;
-    simd_bits buffer;
-    size_t position_in_buffer;
 
     MeasureRecordReaderFormatDets(
         FILE *in, size_t num_measurements, size_t num_detectors = 0, size_t num_observables = 0);
 
-    bool read_bit() override;
-    bool next_record() override;
-    bool start_record() override;
-    bool is_end_of_record() override;
     bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;

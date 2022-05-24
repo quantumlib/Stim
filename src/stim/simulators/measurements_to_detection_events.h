@@ -57,7 +57,9 @@ void stream_measurements_to_detection_events(
     SampleFormat results_out_format,
     const Circuit &circuit,
     bool append_observables,
-    bool skip_reference_sample);
+    bool skip_reference_sample,
+    FILE *obs_out,
+    SampleFormat obs_out_format);
 /// A variant of `stim::stream_measurements_to_detection_events` with derived values passed in, not recomputed.
 void stream_measurements_to_detection_events_helper(
     FILE *measurements_in,
@@ -69,6 +71,8 @@ void stream_measurements_to_detection_events_helper(
     const Circuit &circuit,
     bool append_observables,
     simd_bits_range_ref reference_sample,
+    FILE *obs_out,
+    SampleFormat obs_out_format,
     size_t num_measurements,
     size_t num_observables,
     size_t num_detectors,
