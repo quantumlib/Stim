@@ -12,28 +12,28 @@ def parse_args(args: List[str]) -> Any:
         description='Predict observable flips from detector data.',
         prog='sinter predict',
     )
-    parser.add_argument('--dets',
+    parser.add_argument('-dets',
                         type=str,
                         required=True,
                         help='File to read detection event data from.')
-    parser.add_argument('--dets_format',
+    parser.add_argument('-dets_format',
                         type=str,
                         required=True,
                         help='Format detection event data is stored in.\n'
                              'For example: b8 or 01')
-    parser.add_argument('--dem',
+    parser.add_argument('-dem',
                         type=str,
                         required=True,
                         help='File to read detector error model from.')
-    parser.add_argument('--decoder',
+    parser.add_argument('-decoder',
                         type=str,
                         required=True,
                         help='Decoder to use.')
-    parser.add_argument('--out',
+    parser.add_argument('-out',
                         type=str,
                         required=True,
                         help='Location to write predictions from decoder.')
-    parser.add_argument('--out_format',
+    parser.add_argument('-out_format',
                         type=str,
                         required=True,
                         help='Format to write predictions in.')

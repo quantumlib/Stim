@@ -199,7 +199,7 @@ TEST(MeasureRecordWriter, write_table_data_small) {
     ASSERT_EQ(rewind_read_close(tmp), "\x02\x02\x02\x02\x02");
 
     tmp = tmpfile();
-    write_table_data(tmp, 5, 4, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
+    write_table_data(tmp, 64, 4, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
     ASSERT_EQ(
         rewind_read_close(tmp),
         std::string(
@@ -278,23 +278,23 @@ TEST(MeasureRecordWriter, write_table_data_large) {
             26));
 
     tmp = tmpfile();
-    write_table_data(tmp, 2, 100, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
+    write_table_data(tmp, 64, 100, ref_sample, results, SAMPLE_FORMAT_PTB64, 'M', 'M', 0);
     auto actual = rewind_read_close(tmp);
     ASSERT_EQ(
         actual,
         std::string(
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0"
-            "\x03\0\0\0\0\0\0\0"
-            "\x03\0\0\0\0\0\0\0"
+            "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
+            "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
             "\0\0\0\0\0\0\0\0"
-            "\x03\0\0\0\0\0\0\0"
+            "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
             "\0\0\0\0\0\0\0\0"
-            "\x01\0\0\0\0\0\0\0"
+            "\xFD\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0"
-            "\x03\0\0\0\0\0\0\0"
+            "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0"
             "\0\0\0\0\0\0\0\0"
