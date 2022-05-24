@@ -18,8 +18,6 @@
 
 #include <algorithm>
 
-#include "stim/io/measure_record_batch.h"
-
 using namespace stim;
 
 MeasureRecordBatchWriter::MeasureRecordBatchWriter(FILE *out, size_t num_shots, SampleFormat output_format)

@@ -27,7 +27,7 @@ CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_pt
     : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
 }
 
-pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
+pybind11::array_t<bool> CompiledDetectorSampler::sample(
     size_t num_shots, bool prepend_observables, bool append_observables) {
     auto sample =
         detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
@@ -49,7 +49,7 @@ pybind11::array_t<uint8_t> CompiledDetectorSampler::sample(
     pybind11::ssize_t itemsize = sizeof(uint8_t);
     std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)n};
     std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_bits_padded(), 1};
-    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+    const std::string &format = pybind11::format_descriptor<bool>::value;
     bool readonly = true;
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }

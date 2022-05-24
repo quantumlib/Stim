@@ -164,10 +164,9 @@ where it is possible to parallelize across shots using SIMD instructions.
     ...         X 1
     ...         M 0 1
     ...     """).compile_sampler().sample_write(shots=64, filepath=path, format="ptb64")
-    ...     assert False
     ...     with open(path, 'rb') as f:
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
-    0 0 0 0 0 0 0 0 F F F F F F F F
+    0 0 0 0 0 0 0 0 ff ff ff ff ff ff ff ff
 )HELP",
             R"PYTHON(
 from typing import List
@@ -191,12 +190,11 @@ def save_ptb64(shots: List[List[bool]]):
 from typing import List
 
 def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
-    num_shots = int(num_shots)
-    num_shot_groups = num_shots // 64
+    num_shot_groups = int(len(data) * 8 / bits_per_shot / 64)
     if len(data) * 8 != num_shot_groups * 64 * bits_per_shot:
         raise ValueError("Number of shots must be a multiple of 64.")
 
-    result = [[False] * bits_per_shot for _ in range(num_shots)]
+    result = [[False] * bits_per_shot for _ in range(num_shot_groups * 64)]
     for group_index in range(num_shot_groups):
         group_bit_offset = 64 * bits_per_shot * group_index
         for m in range(bits_per_shot):
@@ -205,7 +203,8 @@ def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
                 bit_offset = group_bit_offset + m_bit_offset + shot
                 byte_offset = bit_offset // 8
                 bit = data[bit_offset // 8] & (1 << (bit_offset % 8)) != 0
-                result[shot_offset][measure_index] = bit
+                s = group_index * 64 + shot
+                result[s][m] = bit
     return result
 )PYTHON",
         },

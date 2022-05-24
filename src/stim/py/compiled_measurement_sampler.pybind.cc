@@ -28,7 +28,7 @@ CompiledMeasurementSampler::CompiledMeasurementSampler(
     : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), prng(prng) {
 }
 
-pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples) {
+pybind11::array_t<bool> CompiledMeasurementSampler::sample(size_t num_samples) {
     auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
 
     const simd_bits &flat = sample.data;
@@ -47,7 +47,7 @@ pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample(size_t num_samples
     std::vector<pybind11::ssize_t> shape{
         (pybind11::ssize_t)num_samples, (pybind11::ssize_t)circuit.count_measurements()};
     std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_bits_padded(), 1};
-    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+    const std::string &format = pybind11::format_descriptor<bool>::value;
     bool readonly = true;
     return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
 }

@@ -22,6 +22,14 @@
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
 
+struct RaiiFile {
+    FILE *f;
+    RaiiFile(const char *path, const char *mode);
+    RaiiFile(const RaiiFile &other) = delete;
+    RaiiFile(RaiiFile &&other) = delete;
+    ~RaiiFile();
+};
+
 struct CompiledMeasurementsToDetectionEventsConverter {
     const bool skip_reference_sample;
     const stim::simd_bits ref_sample;

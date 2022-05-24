@@ -46,37 +46,33 @@ std::string CompiledMeasurementsToDetectionEventsConverter::repr() const {
     return result.str();
 }
 
-struct RaiiFile {
-    FILE *f;
-    RaiiFile(const char *path, const char *mode) {
-        if (path == nullptr) {
-            f = nullptr;
-            return;
-        }
+RaiiFile::RaiiFile(const char *path, const char *mode) {
+    if (path == nullptr) {
+        f = nullptr;
+        return;
+    }
 
-        f = fopen(path, mode);
-        if (f == nullptr) {
-            std::stringstream ss;
-            ss << "Failed to open '";
-            ss << path;
-            ss << "' for ";
-            if (*mode == 'r') {
-                ss << "reading.";
-            } else {
-                ss << "writing.";
-            }
-            throw std::invalid_argument(ss.str());
+    f = fopen(path, mode);
+    if (f == nullptr) {
+        std::stringstream ss;
+        ss << "Failed to open '";
+        ss << path;
+        ss << "' for ";
+        if (*mode == 'r') {
+            ss << "reading.";
+        } else {
+            ss << "writing.";
         }
+        throw std::invalid_argument(ss.str());
     }
-    RaiiFile(const RaiiFile &other) = delete;
-    RaiiFile(RaiiFile &&other) = delete;
-    ~RaiiFile() {
-        if (f != nullptr) {
-            fclose(f);
-            f = nullptr;
-        }
+}
+
+RaiiFile::~RaiiFile() {
+    if (f != nullptr) {
+        fclose(f);
+        f = nullptr;
     }
-};
+}
 
 void CompiledMeasurementsToDetectionEventsConverter::convert_file(
     const std::string &measurements_filepath,
