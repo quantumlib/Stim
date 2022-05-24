@@ -23,11 +23,11 @@ def decode_using_pymatching(*,
     assert bit_packed_det_samples.shape[1] == (num_dets + 7) // 8
 
     predictions = np.zeros(shape=(num_shots, num_obs), dtype=np.bool8)
+    # note: extra 2 are the boundary node and the invincible-observable-boundary-edge node
+    buffer = np.zeros(num_dets + 2, dtype=np.bool8)
     for k in range(num_shots):
-        expanded_det = np.unpackbits(bit_packed_det_samples[k], count=num_dets, bitorder='little')
-        expanded_det = np.resize(expanded_det, num_dets + 1)
-        expanded_det[-1] = 0
-        predictions[k] = matching_graph.decode(expanded_det)
+        buffer[:num_dets] = np.unpackbits(bit_packed_det_samples[k], count=num_dets, bitorder='little')
+        predictions[k] = matching_graph.decode(buffer)
     return predictions
 
 
@@ -127,15 +127,11 @@ def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> 
     num_detectors = model.num_detectors
     num_observables = model.num_observables
 
-    # Add spandrels to the graph to ensure pymatching will accept it.
-    # - Make sure there's only one connected component.
-    # - Make sure no detector nodes are skipped.
-    # - Make sure no observable nodes are skipped.
+    # Ensure invincible detectors are seen by explicitly adding a node for each detector.
     for k in range(num_detectors):
         g.add_node(k)
+    # Ensure invincible observables are seen by adding a boundary edge with all observables.
     g.add_node(num_detectors + 1)
-    for k in range(num_detectors + 1):
-        g.add_edge(k, num_detectors + 1, weight=9999999999)
-    g.add_edge(num_detectors, num_detectors + 1, weight=9999999999, qubit_id=list(range(num_observables)))
+    g.add_edge(num_detectors, num_detectors + 1, weight=1, qubit_id=list(range(num_observables)))
 
     return pymatching.Matching(g)
