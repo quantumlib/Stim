@@ -121,9 +121,9 @@ TEST(gate_target, qubit) {
 }
 
 TEST(gate_target, record) {
-    ASSERT_THROW({ GateTarget::rec(1); }, std::invalid_argument);
-    ASSERT_THROW({ GateTarget::rec(0); }, std::invalid_argument);
-    ASSERT_THROW({ GateTarget::rec(-(int32_t{1} << 30)); }, std::invalid_argument);
+    ASSERT_THROW({ GateTarget::rec(1); }, std::out_of_range);
+    ASSERT_THROW({ GateTarget::rec(0); }, std::out_of_range);
+    ASSERT_THROW({ GateTarget::rec(-(int32_t{1} << 30)); }, std::out_of_range);
 
     auto t = GateTarget::rec(-5);
     ASSERT_EQ(t.is_combiner(), false);
