@@ -264,6 +264,7 @@
     - [`stim.TableauSimulator.ycy`](#stim.TableauSimulator.ycy)
     - [`stim.TableauSimulator.ycz`](#stim.TableauSimulator.ycz)
     - [`stim.TableauSimulator.z`](#stim.TableauSimulator.z)
+- [`stim.main`](#stim.main)
 - [`stim.read_shot_data_file`](#stim.read_shot_data_file)
 - [`stim.target_combiner`](#stim.target_combiner)
 - [`stim.target_inv`](#stim.target_inv)
@@ -611,6 +612,70 @@
 >     )
 > ```
 
+<a name="stim.main"></a>
+## `stim.main(*, command_line_args: List[str]) -> int`
+> ```
+> Runs the command line tool version of stim on the given arguments.
+> 
+> Note that by default any input will be read from stdin, any output
+> will print to stdout (as opposed to being intercepted). For most
+> commands, you can use arguments like `--out` to write to a file
+> instead of stdout and `--in` to read from a file instead of stdin.
+> 
+> Returns:
+>     An exit code (0 means success, not zero means failure).
+> 
+> Raises:
+>     A large variety of errors, depending on what you are doing and
+>     how it failed! Beware that many errors are caught by the main
+>     method itself and printed to stderr, with the only indication
+>     that something went wrong being the return code.
+> 
+> Example:
+>     >>> stim.main(command_line_args=[
+>     ...     "gen",
+>     ...     "--code=repetition_code",
+>     ...     "--task=memory",
+>     ...     "--rounds=1000",
+>     ...     "--distance=2",
+>     ... ])
+>     # Generated repetition_code circuit.
+>     # task: memory
+>     # rounds: 1000
+>     # distance: 2
+>     # before_round_data_depolarization: 0
+>     # before_measure_flip_probability: 0
+>     # after_reset_flip_probability: 0
+>     # after_clifford_depolarization: 0
+>     # layout:
+>     # L0 Z1 d2
+>     # Legend:
+>     #     d# = data qubit
+>     #     L# = data qubit with logical observable crossing
+>     #     Z# = measurement qubit
+>     R 0 1 2
+>     TICK
+>     CX 0 1
+>     TICK
+>     CX 2 1
+>     TICK
+>     MR 1
+>     DETECTOR(1, 0) rec[-1]
+>     REPEAT 999 {
+>         TICK
+>         CX 0 1
+>         TICK
+>         CX 2 1
+>         TICK
+>         MR 1
+>         SHIFT_COORDS(0, 1)
+>         DETECTOR(1, 0) rec[-1] rec[-2]
+>     }
+>     M 0 2
+>     DETECTOR(1, 1) rec[-1] rec[-2] rec[-3]
+>     OBSERVABLE_INCLUDE(0) rec[-1]
+> ```
+
 <a name="stim.read_shot_data_file"></a>
 ## `stim.read_shot_data_file(*, path: str, format: str, num_measurements: handle = None, num_detectors: handle = None, num_observables: handle = None, bit_pack: bool = False) -> object`
 > ```
@@ -665,7 +730,7 @@
 > ```
 
 <a name="stim.target_inv"></a>
-## `stim.target_inv(qubit_index: int) -> int`
+## `stim.target_inv(qubit_index: int) -> stim.GateTarget`
 > ```
 > Returns a target flagged as inverted that can be passed into Circuit.append_operation
 > For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
@@ -696,7 +761,7 @@
 > ```
 
 <a name="stim.target_rec"></a>
-## `stim.target_rec(lookback_index: int) -> int`
+## `stim.target_rec(lookback_index: int) -> stim.GateTarget`
 > ```
 > Returns a record target that can be passed into Circuit.append_operation.
 > For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
@@ -745,28 +810,28 @@
 > ```
 
 <a name="stim.target_sweep_bit"></a>
-## `stim.target_sweep_bit(sweep_bit_index: int) -> int`
+## `stim.target_sweep_bit(sweep_bit_index: int) -> stim.GateTarget`
 > ```
 > Returns a sweep bit target that can be passed into Circuit.append_operation
 > For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
 > ```
 
 <a name="stim.target_x"></a>
-## `stim.target_x(qubit_index: int, invert: bool = False) -> int`
+## `stim.target_x(qubit_index: int, invert: bool = False) -> stim.GateTarget`
 > ```
 > Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
 > For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
 > ```
 
 <a name="stim.target_y"></a>
-## `stim.target_y(qubit_index: int, invert: bool = False) -> int`
+## `stim.target_y(qubit_index: int, invert: bool = False) -> stim.GateTarget`
 > ```
 > Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
 > For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
 > ```
 
 <a name="stim.target_z"></a>
-## `stim.target_z(qubit_index: int, invert: bool = False) -> int`
+## `stim.target_z(qubit_index: int, invert: bool = False) -> stim.GateTarget`
 > ```
 > Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
 > For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
@@ -3687,9 +3752,6 @@
 > 
 > Returns:
 >     The mutated Pauli string.
-> 
-> Raises:
->     ValueError: The Pauli strings have different lengths.
 > ```
 
 <a name="stim.PauliString.__init__"></a>

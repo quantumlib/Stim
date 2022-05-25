@@ -29,6 +29,7 @@
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
+#include "stim/main_namespaced.h"
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -36,31 +37,37 @@
 using namespace stim;
 using namespace stim_pybind;
 
-uint32_t target_rec(int32_t lookback) {
-    if (lookback >= 0 || lookback <= -(1 << 24)) {
-        throw std::out_of_range("Need -16777215 <= lookback <= -1");
+GateTarget target_rec(int32_t lookback) {
+    return GateTarget::rec(lookback);
+}
+
+GateTarget target_inv(uint32_t qubit) {
+    return GateTarget::qubit(qubit, true);
+}
+
+GateTarget target_x(uint32_t qubit, bool invert) {
+    return GateTarget::x(qubit, invert);
+}
+
+GateTarget target_y(uint32_t qubit, bool invert) {
+    return GateTarget::y(qubit, invert);
+}
+
+GateTarget target_z(uint32_t qubit, bool invert) {
+    return GateTarget::z(qubit, invert);
+}
+
+GateTarget target_sweep_bit(uint32_t qubit) {
+    return GateTarget::sweep_bit(qubit);
+}
+
+int stim_main(const std::vector<std::string> &args) {
+    std::vector<const char *> argv;
+    argv.push_back("stim.main");
+    for (const auto &arg : args) {
+        argv.push_back(arg.data());
     }
-    return uint32_t(-lookback) | TARGET_RECORD_BIT;
-}
-
-uint32_t target_inv(uint32_t qubit) {
-    return GateTarget::qubit(qubit, true).data;
-}
-
-uint32_t target_x(uint32_t qubit, bool invert) {
-    return GateTarget::x(qubit, invert).data;
-}
-
-uint32_t target_y(uint32_t qubit, bool invert) {
-    return GateTarget::y(qubit, invert).data;
-}
-
-uint32_t target_z(uint32_t qubit, bool invert) {
-    return GateTarget::z(qubit, invert).data;
-}
-
-uint32_t target_sweep_bit(uint32_t qubit) {
-    return GateTarget::sweep_bit(qubit).data;
+    return stim::main(argv.size(), argv.data());
 }
 
 pybind11::object raw_gate_data_solo(const Gate &gate) {
@@ -111,7 +118,7 @@ pybind11::dict raw_format_data() {
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.attr("__version__") = xstr(VERSION_INFO);
     m.doc() = R"pbdoc(
-        Stim: A fast stabilizer circuit simulator library.
+        Stim: A fast stabilizer circuit library.
     )pbdoc";
 
     // CAUTION: The ordering of these is important!
@@ -203,6 +210,74 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         clean_doc_string(u8R"DOC(
             Returns a sweep bit target that can be passed into Circuit.append_operation
             For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
+        )DOC")
+            .data());
+
+    m.def(
+        "main",
+        &stim_main,
+        pybind11::kw_only(),
+        pybind11::arg("command_line_args"),
+        clean_doc_string(u8R"DOC(
+            Runs the command line tool version of stim on the given arguments.
+
+            Note that by default any input will be read from stdin, any output
+            will print to stdout (as opposed to being intercepted). For most
+            commands, you can use arguments like `--out` to write to a file
+            instead of stdout and `--in` to read from a file instead of stdin.
+
+            Returns:
+                An exit code (0 means success, not zero means failure).
+
+            Raises:
+                A large variety of errors, depending on what you are doing and
+                how it failed! Beware that many errors are caught by the main
+                method itself and printed to stderr, with the only indication
+                that something went wrong being the return code.
+
+            Example:
+                >>> stim.main(command_line_args=[
+                ...     "gen",
+                ...     "--code=repetition_code",
+                ...     "--task=memory",
+                ...     "--rounds=1000",
+                ...     "--distance=2",
+                ... ])
+                # Generated repetition_code circuit.
+                # task: memory
+                # rounds: 1000
+                # distance: 2
+                # before_round_data_depolarization: 0
+                # before_measure_flip_probability: 0
+                # after_reset_flip_probability: 0
+                # after_clifford_depolarization: 0
+                # layout:
+                # L0 Z1 d2
+                # Legend:
+                #     d# = data qubit
+                #     L# = data qubit with logical observable crossing
+                #     Z# = measurement qubit
+                R 0 1 2
+                TICK
+                CX 0 1
+                TICK
+                CX 2 1
+                TICK
+                MR 1
+                DETECTOR(1, 0) rec[-1]
+                REPEAT 999 {
+                    TICK
+                    CX 0 1
+                    TICK
+                    CX 2 1
+                    TICK
+                    MR 1
+                    SHIFT_COORDS(0, 1)
+                    DETECTOR(1, 0) rec[-1] rec[-2]
+                }
+                M 0 2
+                DETECTOR(1, 1) rec[-1] rec[-2] rec[-3]
+                OBSERVABLE_INCLUDE(0) rec[-1]
         )DOC")
             .data());
 
