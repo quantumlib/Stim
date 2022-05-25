@@ -41,8 +41,8 @@ GateTarget GateTarget::qubit(uint32_t qubit, bool inverted) {
     return {qubit | (TARGET_INVERTED_BIT * inverted)};
 }
 GateTarget GateTarget::rec(int32_t lookback) {
-    if (lookback >= 0 || lookback < -(int32_t)TARGET_VALUE_MASK) {
-        throw std::invalid_argument("lookback further than " + std::to_string(-(int32_t)TARGET_VALUE_MASK));
+    if (lookback >= 0 || lookback <= -(1 << 24)) {
+        throw std::out_of_range("Need -16777215 <= lookback <= -1");
     }
     return {((uint32_t)-lookback) | TARGET_RECORD_BIT};
 }

@@ -11,8 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pathlib
+
+import tempfile
+
 import doctest
 import importlib
+import pytest
 import types
 
 import stim
@@ -24,12 +29,33 @@ def test_version():
 
 
 def test_targets():
-    assert stim.target_x(5) & 0xFFFF == 5
-    assert stim.target_y(5) == (stim.target_x(5) | stim.target_z(5))
-    assert stim.target_z(5) & 0xFFFF == 5
-    assert stim.target_inv(5) & 0xFFFF == 5
-    assert stim.target_rec(-5) & 0xFFFF == 5
-    assert isinstance(stim.target_combiner(), stim.GateTarget)
+    t = stim.target_x(5)
+    assert isinstance(t, stim.GateTarget)
+    assert t.is_x_target and t.value == 5
+    assert not t.is_y_target
+
+    t = stim.target_y(6)
+    assert isinstance(t, stim.GateTarget)
+    assert t.is_y_target and t.value == 6
+
+    t = stim.target_z(5)
+    assert isinstance(t, stim.GateTarget)
+    assert t.is_z_target and t.value == 5
+
+    t = stim.target_inv(5)
+    assert isinstance(t, stim.GateTarget)
+    assert t.is_inverted_result_target and t.value == 5
+
+    t = stim.target_rec(-5)
+    assert isinstance(t, stim.GateTarget)
+    assert t.is_measurement_record_target and not t.is_inverted_result_target and t.value == -5
+
+    t = stim.target_sweep_bit(4)
+    assert isinstance(t, stim.GateTarget)
+    assert t.is_sweep_bit_target and not t.is_inverted_result_target and t.value == 4
+
+    t = stim.target_combiner()
+    assert isinstance(t, stim.GateTarget)
 
 
 def test_gate_data():
@@ -91,3 +117,18 @@ def test_format_data():
         mod.__test__ = {"f": mod.f}
         mod.f.__doc__ = v["help"]
         assert doctest.testmod(mod).failed == 0, k
+
+
+def test_main():
+    with tempfile.TemporaryDirectory() as d:
+        p = pathlib.Path(d) / 'tmp'
+        assert stim.main(command_line_args=[
+            "gen",
+            "--code=repetition_code",
+            "--task=memory",
+            "--rounds=1000",
+            "--distance=2",
+            f"--out={p}"
+        ]) == 0
+        with open(p) as f:
+            assert "Generated repetition_code" in f.read()

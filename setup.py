@@ -105,6 +105,9 @@ setup(
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},
     install_requires=['numpy'],
+    entry_points={
+        'console_scripts': ['stim=stim._main_argv:main_argv'],
+    },
     # Needed on Windows to avoid the default `build` colliding with Bazel's `BUILD`.
     options={'build': {'build_base': 'python_build_stim'}},
 )

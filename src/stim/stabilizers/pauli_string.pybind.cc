@@ -674,9 +674,6 @@ void pybind_pauli_string(pybind11::module &m) {
 
             Returns:
                 The mutated Pauli string.
-
-            Raises:
-                ValueError: The Pauli strings have different lengths.
         )DOC")
             .data());
 

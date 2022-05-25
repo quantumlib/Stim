@@ -44,9 +44,13 @@ TempViewableData args_to_targets(PyTableauSimulator &self, const pybind11::args 
     uint32_t max_q = 0;
     try {
         for (const auto &e : args) {
-            uint32_t q = e.cast<uint32_t>();
-            max_q = std::max(max_q, q & TARGET_VALUE_MASK);
-            arguments.push_back(GateTarget{q});
+            if (pybind11::isinstance<GateTarget>(e)) {
+                arguments.push_back(pybind11::cast<GateTarget>(e));
+            } else {
+                uint32_t q = e.cast<uint32_t>();
+                max_q = std::max(max_q, q & TARGET_VALUE_MASK);
+                arguments.push_back(GateTarget{q});
+            }
         }
     } catch (const pybind11::cast_error &) {
         throw std::out_of_range("Target qubits must be non-negative integers.");

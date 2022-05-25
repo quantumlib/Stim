@@ -437,12 +437,12 @@ python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed 
 Because stim is a C++ extension, it is non-trivial to create working
 python packages for it.
 To make cross-platform release wheels, we rely heavily on cibuildwheels.
-To make development wheels, we various other options are possible.
+To make development wheels, various other options are possible.
 
 ## <a name="pypackage.stim.cibuildwheels"></a>python packaging `stim` with cibuildwheels
 
-When a commit is merged into the `main` branch of stim's github repository,
-there are github actions that use [cibuildwheels](https://github.com/pypa/cibuildwheel)
+When a commit is merged into the `main` branch of stim's GitHub repository,
+there are GitHub actions that use [cibuildwheels](https://github.com/pypa/cibuildwheel)
 to build wheels for all supported platforms.
 
 When these wheels are finished building, they are automatically uploaded to
@@ -491,7 +491,7 @@ You can directly install stim as a development python wheel by using pip (very s
 ```bash
 # from the repository root
 pip install -e .
-# output is at dist/*
+# stim is now installed in current virtualenv as dev reference
 ```
 
 
