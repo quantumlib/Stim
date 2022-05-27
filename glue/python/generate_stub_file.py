@@ -143,10 +143,10 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int):
     if doc:
         text += "\n" + indented(paragraph=f"\"\"\"{doc}\n\"\"\"",
                                 indentation="    " * level + "    ")
-    print(text)
+    print(text.replace('._stim_avx2', ''))
     if has_setter:
         if '->' in sig_name:
-            setter_type = sig_name[sig_name.index('->') + 2:].strip()
+            setter_type = sig_name[sig_name.index('->') + 2:].strip().replace('._stim_avx2', '')
         else:
             setter_type = 'Any'
         print("    " * level + f"@{term_name}.setter")
