@@ -1,6 +1,6 @@
 # sinter: fast QEC sampling
 
-> **sinter is still in development. Its API and output formats are not stable.** 
+> **sinter is still in development. Its API is not stable.** 
 
 Sinter is a software tool/library for doing fast monte carlo sampling of
 quantum error correction circuits.
@@ -14,7 +14,7 @@ quantum error correction circuits.
 <a name="how_to_works"></a>
 # How it works
 
-> **sinter is still in development. Its API and output formats are not stable.** 
+> **sinter is still in development. Its API is not stable.** 
 
 Sinter takes Stim circuits annotated with noise, detectors, and logical
 observables.
@@ -36,7 +36,7 @@ good resource utilization (>95%).
 <a name="how_to_install"></a>
 # How to install
 
-**sinter is still in development. Its API and output formats are not stable.** 
+**sinter is still in development. Its API is not stable.** 
 
 Sinter is available as a pypi package. It can be installed using pip:
 
@@ -52,7 +52,7 @@ to use sinter's python API.
 <a name="how_to_use_python"></a>
 # How to use: Python API
 
-> **sinter is still in development. Its API and output formats are not stable.** 
+> **sinter is still in development. Its API is not stable.** 
 
 This example assumes you are in a python environment with stim and sinter
 installed.
@@ -140,10 +140,25 @@ and the corresponding image saved to `plot.png`:
 
 ![Example plot](readme_example_plot.png)
 
+## python API utility methods
+
+> **sinter is still in development. Its API is not stable.** 
+
+Sinter's python module exposes a variety of methods that are handy for plotting
+or analyzing QEC data. These include:
+
+- `sinter.predict_observables_bit_packed`: Runs a decoder on given detection event data, producing predicted observable flip data.
+- `sinter.predict_discards_bit_packed`: Converts detection event data into "what shots should be postselected" data according to given rules.
+- `sinter.predict_on_disk`: Converts detection event data into discard data and observable prediction data, using data from disk and writing results to disk.
+- `sinter.stats_from_csv_files`: Read saved CSV data.
+- `sinter.binomial_relative_likelihood_range`: The Bayesian equivalent of computing the standard deviation.
+- `sinter.better_sorted_str_terms`: A text sorting key that puts `"A100"` before `"A99"`, by noticing numbers instead of sorting purely lexicographically.
+- `sinter.group_by`: Combines items from a list into keyed groups.
+
 <a name="how_to_use_linux"></a>
 # How to use: Linux Command Line
 
-> **sinter is still in development. Its API and output formats are not stable.** 
+> **sinter is still in development. Its API is not stable.** 
 
 This example assumes you are using a linux command line in a python virtualenv with `sinter` installed.
 
@@ -196,16 +211,16 @@ instead of overwriting it.
 
 ```bash
 sinter collect \
-    -processes 4 \
-    -circuits circuits/*.stim \
-    -metadata_func "(v := path.split('/')[-1].split('_')) and {
+    --processes 4 \
+    --circuits circuits/*.stim \
+    --metadata_func "(v := path.split('/')[-1].split('_')) and {
         'd': int(v[1][1:]),
         'p': float(v[2][1:])
     }" \
-    -decoders pymatching \
-    -max_shots 1_000_000 \
-    -max_errors 1000 \
-    -save_resume_filepath stats.csv
+    --decoders pymatching \
+    --max_shots 1_000_000 \
+    --max_errors 1000 \
+    --save_resume_filepath stats.csv
 ```
 
 Beware that if you SIGKILL or SIGTEM sinter, instead of just using SIGINT, it's possible
@@ -244,13 +259,13 @@ This is done in a flexible but very hacky way, by specifying a python expression
 
 ```bash
 sinter plot \
-    -in stats.csv \
-    -group_func "'Rotated Surface Code d=' + str(metadata['d'])" \
-    -x_func "metadata['p']" \
-    -fig_size 1024 1024 \
-    -xaxis "[log]Physical Error Rate" \
-    -out surface_code_figure.png \
-    -show
+    --in stats.csv \
+    --group_func "'Rotated Surface Code d=' + str(metadata['d'])" \
+    --x_func "metadata['p']" \
+    --fig_size 1024 1024 \
+    --xaxis "[log]Physical Error Rate" \
+    --out surface_code_figure.png \
+    --show
 ```
 
 Which will save a png image of, and also open a window showing, a plot like this one:
@@ -260,7 +275,8 @@ Which will save a png image of, and also open a window showing, a plot like this
 <a name="csv_format"></a>
 # The csv format for sample statistics
 
-> **sinter is still in development. Its API and output formats are not stable.** 
+
+> **sinter is still in development. Its API is not stable.** 
 
 Sinter saves samples as a table using a Comma Separated Value format.
 For example:

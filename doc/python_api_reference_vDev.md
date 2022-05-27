@@ -298,7 +298,6 @@
 >     ...    DETECTOR rec[-1] rec[-2]
 >     ... ''').compile_detector_sampler().sample(shots=1)
 >     array([[0]], dtype=uint8)
-> 
 > ```
 
 <a name="stim.CircuitErrorLocation"></a>
@@ -692,6 +691,7 @@
 >     num_observables: How many observables there are per shot.
 >         Note that this only refers to observables *stored in the file*, not to
 >         observables from the original circuit that was sampled.
+> 
 > Returns:
 >     A numpy array containing the loaded data.
 > 
@@ -840,7 +840,7 @@
 <a name="stim.write_shot_data_file"></a>
 ## `stim.write_shot_data_file(*, data: object, path: str, format: str, num_measurements: handle = None, num_detectors: handle = None, num_observables: handle = None) -> None`
 > ```
-> Reads shot data, such as measurement samples, from a file.
+> Writes shot data, such as measurement samples, to a file.
 > 
 > Args:
 >     data: The data to write to the file. This must be a numpy array. The dtype
@@ -857,6 +857,7 @@
 >     num_observables: How many observables there are per shot.
 >         Note that this only refers to observables *in the given shot data*, not to
 >         observables from the original circuit that was sampled.
+> 
 > Examples:
 >     >>> import stim
 >     >>> import pathlib
@@ -875,8 +876,8 @@
 >     ...         num_measurements=3)
 >     ...
 >     ...     with open(path) as f:
->     ...         read = f.read()
->     >>> read
+>     ...         written = f.read()
+>     >>> written
 >     '010\n011\n'
 > ```
 
@@ -916,6 +917,10 @@
 > Args:
 >     index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
 >         of instructions to return as a circuit.
+> 
+> Returns:
+>     If the index was an integer, then an instruction from the circuit.
+>     If the index was a slice, then a circuit made up of the instructions in that slice.
 > 
 > Examples:
 >     >>> import stim
@@ -1181,55 +1186,13 @@
 >     CX rec[-1] 1
 > 
 > Args:
->     text: The STIM program text containing the circuit operations to append.
+>     stim_program_text: The STIM program text containing the circuit operations to append.
 > ```
 
 <a name="stim.Circuit.append_operation"></a>
 ### `stim.Circuit.append_operation(self, name: object, targets: object = (), arg: object = None) -> None`
 > ```
-> Appends an operation into the circuit.
-> 
-> Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
-> 
-> Examples:
->     >>> import stim
->     >>> c = stim.Circuit()
->     >>> c.append("X", 0)
->     >>> c.append("H", [0, 1])
->     >>> c.append("M", [0, stim.target_inv(1)])
->     >>> c.append("CNOT", [stim.target_rec(-1), 0])
->     >>> c.append("X_ERROR", [0], 0.125)
->     >>> c.append("CORRELATED_ERROR", [stim.target_x(0), stim.target_y(2)], 0.25)
->     >>> print(repr(c))
->     stim.Circuit('''
->         X 0
->         H 0 1
->         M 0 !1
->         CX rec[-1] 0
->         X_ERROR(0.125) 0
->         E(0.25) X0 Y2
->     ''')
-> 
-> Args:
->     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
-> 
->         This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
->         results in the instruction or block being appended to the circuit. The other arguments (targets and
->         arg) can't be specified when doing so.
-> 
->         (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
->     targets: The objects operated on by the gate. This can be either a single target or an iterable of
->         multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
->         stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
->         measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
->     arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
->         list of doubles parameterizing the gate. Different gates take different parens arguments. For
->         example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
->         PAULI_CHANNEL_1 takes three disjoint probabilities.
-> 
->         Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
->         `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
->         that take exactly one argument.
+> [DEPRECATED] use stim.Circuit.append instead
 > ```
 
 <a name="stim.Circuit.approx_equals"></a>
@@ -1903,7 +1866,6 @@
 > running through the bulk then the starting edges will have degree at least 2.
 > 
 > Args:
->     model: The detector error model to search for undetectable errors.
 >     dont_explore_detection_event_sets_with_size_above: Truncates the search space by refusing to
 >         cross an edge (i.e. add an error) when doing so would produce an intermediate state that
 >         has more detection events than this limit.
@@ -2596,7 +2558,7 @@
 <a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert"></a>
 ### `stim.CompiledMeasurementsToDetectionEventsConverter.convert(self, *, measurements: numpy.ndarray[bool], sweep_bits: numpy.ndarray[bool] = None, append_observables: bool) -> numpy.ndarray[bool]`
 > ```
-> Reads measurement data from a file, converts it, and writes the detection events to another file.
+> Converts measurement data into detection event data.
 > 
 > Args:
 >     measurements: A numpy array containing measurement data:
@@ -2756,7 +2718,7 @@
 > 
 > Args:
 >     repeat_count: The number of times the repeat block's body is supposed to execute.
->     body: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
+>     block: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
 > 
 > Examples:
 >     >>> import stim
@@ -3450,21 +3412,21 @@
 > Examples:
 >     >>> import stim
 > 
->     >>> stim.DetectorErrorModel("""
+>     >>> stim.DetectorErrorModel('''
 >     ...     error(0.125) D0
 >     ...     error(0.125) D0 D1
 >     ...     error(0.125) D1 L55
 >     ...     error(0.125) D1
->     ... """).shortest_graphlike_error()
+>     ... ''').shortest_graphlike_error()
 >     stim.DetectorErrorModel('''
 >         error(1) D1
 >         error(1) D1 L55
 >     ''')
 > 
->     >>> stim.DetectorErrorModel("""
+>     >>> stim.DetectorErrorModel('''
 >     ...     error(0.125) D0 D1 D2
 >     ...     error(0.125) L0
->     ... """).shortest_graphlike_error(ignore_ungraphlike_errors=True)
+>     ... ''').shortest_graphlike_error(ignore_ungraphlike_errors=True)
 >     stim.DetectorErrorModel('''
 >         error(1) L0
 >     ''')
@@ -3955,7 +3917,7 @@
 > Left-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 > 
 > Args:
->     rhs: The left hand side of the multiplication. This can be:
+>     lhs: The left hand side of the multiplication. This can be:
 >         - A stim.PauliString to left-multiply term-by-term into the paulis of the pauli string.
 >         - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
 >         - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
@@ -4506,7 +4468,7 @@
 >     >>> expected = t.inverse().x_output(0)
 >     >>> t.inverse_x_output(0) == expected
 >     True
->     >>> expected.sign = +1;
+>     >>> expected.sign = +1
 >     >>> t.inverse_x_output(0, unsigned=True) == expected
 >     True
 > ```
@@ -4571,7 +4533,7 @@
 >     >>> expected = t.inverse().y_output(0)
 >     >>> t.inverse_y_output(0) == expected
 >     True
->     >>> expected.sign = +1;
+>     >>> expected.sign = +1
 >     >>> t.inverse_y_output(0, unsigned=True) == expected
 >     True
 > ```
@@ -4638,7 +4600,7 @@
 >     >>> expected = t.inverse().z_output(0)
 >     >>> t.inverse_z_output(0) == expected
 >     True
->     >>> expected.sign = +1;
+>     >>> expected.sign = +1
 >     >>> t.inverse_z_output(0, unsigned=True) == expected
 >     True
 > ```
@@ -5078,13 +5040,12 @@
 > ```
 
 <a name="stim.TableauSimulator.do"></a>
-### `stim.TableauSimulator.do(*args, **kwargs)`
+### `stim.TableauSimulator.do(self, circuit_or_pauli_string: object) -> None`
 > ```
-> Overloaded function.
+> Applies a circuit or pauli string to the simulator's state.
 > 
-> 1. do(self: stim.TableauSimulator, circuit: stim.Circuit) -> None
-> 
-> Applies all the operations in the given stim.Circuit to the simulator's state.
+> Args:
+>     circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing operations to apply.
 > 
 > Examples:
 >     >>> import stim
@@ -5096,25 +5057,10 @@
 >     >>> s.current_measurement_record()
 >     [True]
 > 
-> Args:
->     circuit: A stim.Circuit containing operations to apply.
-> 
-> 
-> 2. do(self: stim.TableauSimulator, pauli_string: stim.PauliString) -> None
-> 
-> Applies all the Pauli operations in the given stim.PauliString to the simulator's state.
-> 
-> The Pauli at offset k is applied to the qubit with index k.
-> 
-> Examples:
->     >>> import stim
 >     >>> s = stim.TableauSimulator()
 >     >>> s.do(stim.PauliString("IXYZ"))
 >     >>> s.measure_many(0, 1, 2, 3)
 >     [False, True, True, False]
-> 
-> Args:
->     pauli_string: A stim.PauliString containing Pauli operations to apply.
 > ```
 
 <a name="stim.TableauSimulator.h"></a>
@@ -5359,7 +5305,7 @@
 > ```
 
 <a name="stim.TableauSimulator.set_inverse_tableau"></a>
-### `stim.TableauSimulator.set_inverse_tableau(self, arg0: stim.Tableau) -> None`
+### `stim.TableauSimulator.set_inverse_tableau(self, new_inverse_tableau: stim.Tableau) -> None`
 > ```
 > Overwrites the simulator's internal state with a copy of the given inverse tableau.
 > 
@@ -5385,7 +5331,7 @@
 > ```
 
 <a name="stim.TableauSimulator.set_num_qubits"></a>
-### `stim.TableauSimulator.set_num_qubits(self, arg0: int) -> None`
+### `stim.TableauSimulator.set_num_qubits(self, new_num_qubits: int) -> None`
 > ```
 > Forces the simulator's internal state to track exactly the qubits whose indices are in range(new_num_qubits).
 > 

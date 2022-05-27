@@ -316,7 +316,7 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
         pybind11::arg("sweep_bits") = pybind11::none(),
         pybind11::arg("append_observables"),
         clean_doc_string(u8R"DOC(
-            Reads measurement data from a file, converts it, and writes the detection events to another file.
+            Converts measurement data into detection event data.
 
             Args:
                 measurements: A numpy array containing measurement data:

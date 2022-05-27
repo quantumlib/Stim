@@ -39,11 +39,11 @@ void GateDataMap::add_gate_data_period_3(bool &failed) {
                     R"MARKDOWN(
 Right handed period 3 axis cycling gate, sending X -> Y -> Z -> X.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -74,11 +74,11 @@ H 0
                     R"MARKDOWN(
 Left handed period 3 axis cycling gate, sending Z -> Y -> X -> Z.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",

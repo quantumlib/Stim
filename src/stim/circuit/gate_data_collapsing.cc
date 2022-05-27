@@ -37,12 +37,12 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
 X-basis measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     The qubits to measure in the X basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
@@ -73,12 +73,12 @@ H 0
 Y-basis measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     The qubits to measure in the Y basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
@@ -113,12 +113,12 @@ S 0
 Z-basis measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     The qubits to measure in the Z basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
@@ -150,12 +150,12 @@ M 0
 X-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, true=`|->`), then resets to `|+>`.
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     The qubits to measure and reset in the X basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
@@ -187,12 +187,12 @@ H 0
 Y-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`, true=`|-i>`), then resets to `|i>`.
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     The qubits to measure and reset in the Y basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
@@ -228,12 +228,12 @@ S 0
 Z-basis demolition measurement (optionally noisy).
 Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, true=`|1>`), then resets to `|0>`.
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     The qubits to measure and reset in the Z basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
@@ -266,11 +266,11 @@ R 0
 X-basis reset.
 Forces each target qubit into the `|+>` state by silently measuring it in the X basis and applying a `Z` gate if it ended up in the `|->` state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     The qubits to reset in the X basis.
 )MARKDOWN",
@@ -300,11 +300,11 @@ H 0
 Y-basis reset.
 Forces each target qubit into the `|i>` state by silently measuring it in the Y basis and applying an `X` gate if it ended up in the `|-i>` state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     The qubits to reset in the Y basis.
 )MARKDOWN",
@@ -338,11 +338,11 @@ S 0
 Z-basis reset.
 Forces each target qubit into the `|0>` state by silently measuring it in the Z basis and applying an `X` gate if it ended up in the `|1>` state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     The qubits to reset in the Z basis.
 )MARKDOWN",
@@ -371,12 +371,12 @@ R 0
                     R"MARKDOWN(
 Measure Pauli products.
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     A single float specifying the probability of flipping each reported measurement result.
 
-- Targets:
+Targets:
 
     A series of Pauli products to measure.
 

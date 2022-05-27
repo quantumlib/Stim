@@ -37,15 +37,15 @@ The single qubit depolarizing channel.
 
 Applies a randomly chosen Pauli with a given probability.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the depolarization strength.
 
-- Targets:
+Targets:
 
     Qubits to apply single-qubit depolarizing noise to.
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
     1-p: I
@@ -78,15 +78,15 @@ The two qubit depolarizing channel.
 
 Applies a randomly chosen two-qubit Pauli product with a given probability.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the depolarization strength.
 
-- Targets:
+Targets:
 
     Qubit pairs to apply two-qubit depolarizing noise to.
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
      1-p: II
@@ -129,15 +129,15 @@ Applies a randomly chosen two-qubit Pauli product with a given probability.
                     R"MARKDOWN(
 Applies a Pauli X with a given probability.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the probability of applying an X operation.
 
-- Targets:
+Targets:
 
     Qubits to apply bit flip noise to.
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
     1-p: I
@@ -166,15 +166,15 @@ Applies a Pauli X with a given probability.
                     R"MARKDOWN(
 Applies a Pauli Y with a given probability.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the probability of applying a Y operation.
 
-- Targets:
+Targets:
 
     Qubits to apply Y flip noise to.
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
     1-p: I
@@ -203,15 +203,15 @@ Applies a Pauli Y with a given probability.
                     R"MARKDOWN(
 Applies a Pauli Z with a given probability.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the probability of applying a Z operation.
 
-- Targets:
+Targets:
 
     Qubits to apply phase flip noise to.
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
     1-p: I
@@ -240,14 +240,14 @@ Applies a Pauli Z with a given probability.
                     R"MARKDOWN(
 A single qubit Pauli error channel with explicitly specified probabilities for each case.
 
-- Parens Arguments:
+Parens Arguments:
 
     Three floats specifying disjoint Pauli case probabilities.
     px: Probability of applying an X operation.
     py: Probability of applying a Y operation.
     pz: Probability of applying a Z operation.
 
-- Targets:
+Targets:
 
     Qubits to apply the custom noise channel to.
 
@@ -259,7 +259,7 @@ A single qubit Pauli error channel with explicitly specified probabilities for e
     PAULI_CHANNEL_1(0.1, 0.15, 0.2) 1 2 4
     ```
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
     1-px-py-pz: I
@@ -290,7 +290,7 @@ A single qubit Pauli error channel with explicitly specified probabilities for e
                     R"MARKDOWN(
 A two qubit Pauli error channel with explicitly specified probabilities for each case.
 
-- Parens Arguments:
+Parens Arguments:
 
     Fifteen floats specifying the disjoint probabilities of each possible Pauli pair
     that can occur (except for the non-error double identity case).
@@ -312,7 +312,7 @@ A two qubit Pauli error channel with explicitly specified probabilities for each
     14. pzy: Probability of applying a ZY operation.
     15. pzz: Probability of applying a ZZ operation.
 
-- Targets:
+Targets:
 
     Pairs of qubits to apply the custom noise channel to.
     There must be an even number of targets.
@@ -325,7 +325,7 @@ A two qubit Pauli error channel with explicitly specified probabilities for each
     PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
     ```
 
-- Pauli Mixture:
+Pauli Mixture:
 
     ```
     1-pix-piy-piz-pxi-pxx-pxy-pxz-pyi-pyx-pyy-pyz-pzi-pzx-pzy-pzz: II
@@ -372,11 +372,11 @@ Otherwise sets the flag to false.
 
 See also: `ELSE_CORRELATED_ERROR`.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the probability of applying the Paulis making up the error.
 
-- Targets:
+Targets:
 
     Pauli targets specifying the Paulis to apply when the error occurs.
     Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
@@ -417,12 +417,12 @@ Otherwise leaves the flag alone.
 
 See also: `CORRELATED_ERROR`.
 
-- Parens Arguments:
+Parens Arguments:
 
     A single float specifying the probability of applying the Paulis making up the error, conditioned on the "correlated
     error occurred flag" being False.
 
-- Targets:
+Targets:
 
     Pauli targets specifying the Paulis to apply when the error occurs.
     Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).

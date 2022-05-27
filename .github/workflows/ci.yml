@@ -264,12 +264,11 @@ jobs:
           architecture: 'x64'
       - run: pip install -e .
       - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
-      - run: diff doc/python_api_reference_vDev.md <(python glue/python/generate_api_reference.py -dev)
-      - run: cmake .
-      - run: make stim
-      - run: diff doc/gates.md <(out/stim help gates_markdown)
-      - run: diff doc/result_formats.md <(out/stim help formats_markdown)
-      - run: diff doc/usage_command_line.md <(out/stim help flags_markdown)
+      - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
+      - run: diff <(python glue/python/generate_stub_file.py -dev) doc/stim.pyi
+      - run: diff <(stim help gates_markdown) doc/gates.md
+      - run: diff <(stim help formats_markdown) doc/result_formats.md
+      - run: diff <(stim help flags_markdown) doc/usage_command_line.md
   test_pybind:
     runs-on: ubuntu-latest
     steps:

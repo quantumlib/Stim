@@ -40,11 +40,11 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
 Principal square root of X gate.
 Phases the amplitude of |-> by i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -75,11 +75,11 @@ H 0
 Adjoint of the principal square root of X gate.
 Phases the amplitude of |-> by -i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -110,11 +110,11 @@ S 0
 Principal square root of Y gate.
 Phases the amplitude of |-i> by i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -145,11 +145,11 @@ H 0
 Adjoint of the principal square root of Y gate.
 Phases the amplitude of |-i> by -i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -180,11 +180,11 @@ S 0
 Principal square root of Z gate.
 Phases the amplitude of |1> by i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -214,11 +214,11 @@ S 0
 Adjoint of the principal square root of Z gate.
 Phases the amplitude of |1> by -i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",

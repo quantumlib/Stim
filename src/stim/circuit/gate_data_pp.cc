@@ -39,11 +39,11 @@ void GateDataMap::add_gate_data_pp(bool &failed) {
                     R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -77,11 +77,11 @@ CNOT 0 1
                     R"MARKDOWN(
 Phases the -1 eigenspace of the XX observable by -i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -116,11 +116,11 @@ CNOT 0 1
                     R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -156,11 +156,11 @@ S 0
                     R"MARKDOWN(
 Phases the -1 eigenspace of the YY observable by -i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -197,11 +197,11 @@ CNOT 0 1
                     R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -230,11 +230,11 @@ CNOT 0 1
                     R"MARKDOWN(
 Phases the -1 eigenspace of the ZZ observable by -i.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",

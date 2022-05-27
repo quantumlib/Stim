@@ -404,6 +404,7 @@ void pybind_CircuitTargetsInsideInstruction(pybind11::module &m) {
         },
         clean_doc_string(u8R"DOC(
             Returns the name of the gate / instruction that was being executed.
+            @signature def gate(self) -> Optional[str]:
         )DOC")
             .data());
 
@@ -509,6 +510,7 @@ void pybind_CircuitErrorLocation(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             The measurement that was flipped by the error mechanism.
             If the error isn't a measurement error, this will be None.
+            @signature def flipped_measurement(self) -> Optional[stim.FlippedMeasurement]:
         )DOC")
             .data());
 

@@ -81,18 +81,29 @@ def print_doc(*, full_name: str, obj: object, level: int, outs: DefaultDict[int,
     if not full_name.endswith("__") or len(doc.splitlines()) > 2:
         sig_name = full_name
         term_name = full_name.split(".")[-1]
+        doc_lines = doc.splitlines()
+        doc_lines_left = []
+        for line in doc_lines:
+            if '@overload ' in line:
+                pass
+            elif '@signature ' in line:
+                pass
+            else:
+                doc_lines_left.append(line)
         if doc.startswith(term_name):
-            doc_lines = doc.splitlines()
-            sig_name = sig_name + doc_lines[0][len(term_name):]
-            doc = "\n".join(doc_lines[1:]).lstrip()
+            sig_name = sig_name + doc_lines_left[0][len(term_name):]
             if "(self: " in sig_name:
                 k1 = sig_name.index("(self: ") + 5
                 k2 = sig_name.index(", " if ", " in sig_name[k1:] else ")", k1)
                 sig_name = sig_name[:k1] + sig_name[k2:]
+            doc = "\n".join(doc_lines_left[1:]).lstrip()
+        else:
+            doc = "\n".join(doc_lines_left).lstrip()
         text = f"<a name=\"{full_name}\"></a>\n{level * '#'} `{sig_name}`"
         if "Exposed" in sig_name or "::" in sig_name:
             raise ValueError("Bad type annotation came out of pybind11:\n" + sig_name)
         if doc:
+            assert '@signature' not in doc, doc
             text += "\n" + indented(paragraph=f"""```
 {doc}
 ```""", indentation="> ")

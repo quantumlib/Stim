@@ -41,11 +41,11 @@ void GateDataMap::add_gate_data_hada(bool &failed) {
 The Hadamard gate.
 Swaps the X and Z axes.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -74,11 +74,11 @@ H 0
                     R"MARKDOWN(
 A variant of the Hadamard gate that swaps the X and Y axes (instead of X and Z).
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -110,11 +110,11 @@ S 0
                     R"MARKDOWN(
 A variant of the Hadamard gate that swaps the Y and Z axes (instead of X and Z).
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",

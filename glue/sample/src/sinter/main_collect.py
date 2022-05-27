@@ -34,29 +34,29 @@ def iter_file_paths_into_goals(circuit_paths: Iterator[str],
 def parse_args(args: List[str]) -> Any:
     parser = argparse.ArgumentParser(description='Collect Monte Carlo samples.',
                                      prog='sinter collect')
-    parser.add_argument('-circuits',
+    parser.add_argument('--circuits',
                         nargs='+',
                         required=True,
                         help='Circuit files to sample from and decode.\n'
                              'This parameter can be given multiple arguments.')
-    parser.add_argument('-decoders',
+    parser.add_argument('--decoders',
                         choices=sorted(DECODER_METHODS.keys()),
                         nargs='+',
                         required=True,
                         help='How to combine new results with old results.')
-    parser.add_argument('-max_shots',
+    parser.add_argument('--max_shots',
                         type=int,
                         default=None,
                         help='Sampling of a circuit will stop if this many shots have been taken.')
-    parser.add_argument('-max_errors',
+    parser.add_argument('--max_errors',
                         type=int,
                         default=None,
                         help='Sampling of a circuit will stop if this many errors have been seen.')
-    parser.add_argument('-processes',
+    parser.add_argument('--processes',
                         required=True,
                         type=int,
                         help='Number of processes to use for simultaneous sampling and decoding.')
-    parser.add_argument('-save_resume_filepath',
+    parser.add_argument('--save_resume_filepath',
                         type=str,
                         default=None,
                         help='Activates MERGE mode.\n'
@@ -66,39 +66,39 @@ def parse_args(args: List[str]) -> Any:
                              'Note that MERGE mode is tolerant to failures: if the process is killed, it can simply be restarted and it will pick up where it left off.\n'
                              'Note that MERGE mode is idempotent: if sufficient data has been collected, no additional work is done when run again.')
 
-    parser.add_argument('-start_batch_size',
+    parser.add_argument('--start_batch_size',
                         type=int,
                         default=100,
                         help='Initial number of samples to batch together into one job.\n'
                              'Starting small prevents over-sampling of circuits above threshold.\n'
                              'The allowed batch size increases exponentially from this starting point.')
-    parser.add_argument('-max_batch_size',
+    parser.add_argument('--max_batch_size',
                         type=int,
                         default=None,
                         help='Maximum number of samples to batch together into one job.\n'
                              'Bigger values increase the delay between jobs finishing.\n'
                              'Smaller values decrease the amount of aggregation of results, increasing the amount of output information.')
-    parser.add_argument('-max_batch_seconds',
+    parser.add_argument('--max_batch_seconds',
                         type=int,
                         default=None,
                         help='Limits number of shots in a batch so that the estimated runtime of the batch is below this amount.')
-    parser.add_argument('-postselect_last_coord_min',
+    parser.add_argument('--postselect_last_coord_min',
                         type=int,
                         nargs='+',
                         help='Activates postselection of results. '
                              'Whenever a detecor with a last coordinate at least as large as the given '
                              'value creates a detection event, the shot is discarded.',
                         default=(None,))
-    parser.add_argument('-quiet',
+    parser.add_argument('--quiet',
                         help='Disables writing progress to stderr.',
                         action='store_true')
-    parser.add_argument('-existing_data_filepaths',
+    parser.add_argument('--existing_data_filepaths',
                         nargs='*',
                         type=str,
                         default=(),
                         help='CSV data from these files counts towards max_shots and max_errors.\n'
                              'This parameter can be given multiple arguments.')
-    parser.add_argument('-metadata_func',
+    parser.add_argument('--metadata_func',
                         type=str,
                         default="{'path': path}",
                         help='A python expression that determines whether a case is kept or not.\n'

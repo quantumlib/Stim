@@ -445,6 +445,13 @@ When a commit is merged into the `main` branch of stim's GitHub repository,
 there are GitHub actions that use [cibuildwheels](https://github.com/pypa/cibuildwheel)
 to build wheels for all supported platforms.
 
+cibuildwheels can also be invoked locally, assuming you have Docker installed, using a command like:
+
+```bash
+CIBW_BUILD=cp39-manylinux_x86_64 cibuildwheel --platform linux
+# output goes into wheelhouse/
+````
+
 When these wheels are finished building, they are automatically uploaded to
 pypi as a dev version of stim.
 For release versions, the artifacts created by the github action must be
