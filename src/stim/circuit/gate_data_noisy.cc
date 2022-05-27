@@ -444,3 +444,7 @@ Targets:
             },
         });
 }
+
+int16_t[16] method() {
+
+}

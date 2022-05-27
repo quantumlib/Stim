@@ -50,20 +50,20 @@ def test_main_collect():
         # Collects requested stats.
         main(command_line_args=[
             "collect",
-            "-circuits",
+            "--circuits",
             str(d / "3.stim"),
             str(d / "5.stim"),
             str(d / "7.stim"),
-            "-max_shots",
+            "--max_shots",
             "1000",
-            "-max_errors",
+            "--max_errors",
             "10",
-            "-decoders",
+            "--decoders",
             "pymatching",
-            "-processes",
+            "--processes",
             "4",
-            "-quiet",
-            "-save_resume_filepath",
+            "--quiet",
+            "--save_resume_filepath",
             str(d / "out.csv"),
         ])
         data = ExistingData.from_file(d / "out.csv").data
@@ -78,20 +78,20 @@ def test_main_collect():
             contents1 = f.read()
         main(command_line_args=[
             "collect",
-            "-circuits",
+            "--circuits",
             str(d / "3.stim"),
             str(d / "5.stim"),
             str(d / "7.stim"),
-            "-max_shots",
+            "--max_shots",
             "1000",
-            "-max_errors",
+            "--max_errors",
             "10",
-            "-decoders",
+            "--decoders",
             "pymatching",
-            "-processes",
+            "--processes",
             "4",
-            "-quiet",
-            "-save_resume_filepath",
+            "--quiet",
+            "--save_resume_filepath",
             str(d / "out.csv"),
         ])
         with open(d / "out.csv") as f:
@@ -101,22 +101,22 @@ def test_main_collect():
         # No more work when existing work is sufficient.
         main(command_line_args=[
             "collect",
-            "-circuits",
+            "--circuits",
             str(d / "3.stim"),
             str(d / "5.stim"),
             str(d / "7.stim"),
-            "-max_shots",
+            "--max_shots",
             "1000",
-            "-max_errors",
+            "--max_errors",
             "10",
-            "-decoders",
+            "--decoders",
             "pymatching",
-            "-processes",
+            "--processes",
             "4",
-            "-quiet",
-            "-existing_data_filepaths",
+            "--quiet",
+            "--existing_data_filepaths",
             str(d / "out.csv"),
-            "-save_resume_filepath",
+            "--save_resume_filepath",
             str(d / "out2.csv"),
         ])
         data2 = ExistingData.from_file(d / "out2.csv").data
@@ -173,13 +173,13 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
         with contextlib.redirect_stdout(out):
             main(command_line_args=[
                 "plot",
-                "-in",
+                "--in",
                 str(d / "input.csv"),
-                "-out",
+                "--out",
                 str(d / "output.png"),
-                "-x_func",
+                "--x_func",
                 "int('a' in metadata['path'])",
-                "-group_func",
+                "--group_func",
                 "decoder",
             ])
         assert (d / "output.png").exists()
@@ -200,17 +200,17 @@ error(0.1) D0 L0
 
         main(command_line_args=[
             "predict",
-            "-dets",
+            "--dets",
             str(d / "input.dets"),
-            "-dem",
+            "--dem",
             str(d / "input.dem"),
-            "-decoder",
+            "--decoder",
             "pymatching",
-            "-dets_format",
+            "--dets_format",
             "dets",
-            "-out",
+            "--obs_out",
             str(d / "output.01"),
-            "-out_format",
+            "--obs_out_format",
             "01",
         ])
         with open(d / 'output.01') as f:
