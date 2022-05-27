@@ -265,6 +265,7 @@ jobs:
       - run: pip install -e .
       - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
+      - run: diff <(python glue/python/generate_stub_file.py -dev) glue/python/src/stim/__init__.pyi
       - run: diff <(python glue/python/generate_stub_file.py -dev) doc/stim.pyi
       - run: diff <(stim help gates_markdown) doc/gates.md
       - run: diff <(stim help formats_markdown) doc/result_formats.md
