@@ -814,7 +814,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
             undecomposed << " 1";
         }
 
-        out << "- Decomposition (into H, S, CX, M, R):\n";
+        out << "Decomposition (into H, S, CX, M, R):\n";
         out.change_indent(+4);
         out << "```\n";
         out << "# The following circuit is equivalent (up to global phase) to `";
@@ -830,7 +830,7 @@ void print_decomposition(Acc &out, const Gate &gate) {
 
 void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (gate.flags & GATE_IS_UNITARY) {
-        out << "- Stabilizer Generators:\n";
+        out << "Stabilizer Generators:\n";
         out.change_indent(+4);
         out << "```\n";
         auto tableau = gate.tableau();
@@ -848,7 +848,7 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     } else {
         auto data = gate.extra_data_func();
         if (data.tableau_data.size()) {
-            out << "- Stabilizer Generators:\n";
+            out << "Stabilizer Generators:\n";
             out.change_indent(+4);
             out << "```\n";
             for (const auto &e : data.tableau_data) {
@@ -865,7 +865,7 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
         return;
     }
 
-    out << "- Bloch Rotation:\n";
+    out << "Bloch Rotation:\n";
     out.change_indent(+4);
     out << "```\n";
     auto matrix = gate.unitary();
@@ -931,7 +931,7 @@ void print_unitary_matrix(Acc &out, const Gate &gate) {
         return;
     }
     auto matrix = gate.unitary();
-    out << "- Unitary Matrix:\n";
+    out << "Unitary Matrix:\n";
     out.change_indent(+4);
     bool all_halves = true;
     bool all_sqrt_halves = true;
@@ -981,9 +981,13 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     out.indent = indent;
     const Gate &gate = GATE_DATA.at(alt_gate.name);
     if (anchor) {
-        out << "<a name=\"" << alt_gate.name << "\"></a>";
+        out << "<a name=\"" << alt_gate.name << "\"></a>\n";
     }
-    out << "**`" << alt_gate.name << "`**\n";
+    if (gate.flags & GATE_IS_UNITARY) {
+        out << "### The '" << alt_gate.name << "' Gate\n";
+    } else {
+        out << "### The '" << alt_gate.name << "' Instruction\n";
+    }
     for (const auto &other : GATE_DATA.gates()) {
         if (other.id == alt_gate.id && other.name != alt_gate.name) {
             out << "\nAlternate name: ";
@@ -1232,7 +1236,7 @@ std::map<std::string, std::string> generate_gate_help_markdown() {
         all << "## " << category.first.substr(2) << "\n\n";
         for (const auto &name : category.second) {
             if (name == GATE_DATA.at(name).name) {
-                all << "- " << generate_per_gate_help_markdown(GATE_DATA.at(name), 4, true) << "\n";
+                all << generate_per_gate_help_markdown(GATE_DATA.at(name), 0, true) << "\n";
             }
         }
     }

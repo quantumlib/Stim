@@ -26,6 +26,21 @@ PyTableauSimulator::PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng)
     : TableauSimulator(*rng), rng_reference(rng) {
 }
 
+void do_obj(PyTableauSimulator &self, const pybind11::object &obj) {
+    if (pybind11::isinstance<Circuit>(obj)) {
+        self.expand_do_circuit(pybind11::cast<Circuit>(obj));
+    } else if (pybind11::isinstance<PyPauliString>(obj)) {
+        const PyPauliString &pauli_string = pybind11::cast<PyPauliString>(obj);
+        self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
+        self.paulis(pauli_string.value);
+    } else {
+        std::stringstream ss;
+        ss << "Don't know how to handle ";
+        ss << obj;
+        throw std::invalid_argument(ss.str());
+    }
+}
+
 struct TempViewableData {
     std::vector<GateTarget> targets;
     TempViewableData(std::vector<GateTarget> targets) : targets(std::move(targets)) {
@@ -282,10 +297,15 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "do",
-        &PyTableauSimulator::expand_do_circuit,
-        pybind11::arg("circuit"),
+        &do_obj,
+        pybind11::arg("circuit_or_pauli_string"),
         clean_doc_string(u8R"DOC(
-            Applies all the operations in the given stim.Circuit to the simulator's state.
+            Applies a circuit or pauli string to the simulator's state.
+            @overload def do(self, circuit_or_pauli_string: stim.Circuit) -> None:
+            @overload def do(self, circuit_or_pauli_string: stim.PauliString) -> None:
+
+            Args:
+                circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing operations to apply.
 
             Examples:
                 >>> import stim
@@ -297,32 +317,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.current_measurement_record()
                 [True]
 
-            Args:
-                circuit: A stim.Circuit containing operations to apply.
-        )DOC")
-            .data());
-
-    c.def(
-        "do",
-        [](PyTableauSimulator &self, const PyPauliString &pauli_string) {
-            self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
-            self.paulis(pauli_string.value);
-        },
-        pybind11::arg("pauli_string"),
-        clean_doc_string(u8R"DOC(
-            Applies all the Pauli operations in the given stim.PauliString to the simulator's state.
-
-            The Pauli at offset k is applied to the qubit with index k.
-
-            Examples:
-                >>> import stim
                 >>> s = stim.TableauSimulator()
                 >>> s.do(stim.PauliString("IXYZ"))
                 >>> s.measure_many(0, 1, 2, 3)
                 [False, True, True, False]
-
-            Args:
-                pauli_string: A stim.PauliString containing Pauli operations to apply.
         )DOC")
             .data());
 
@@ -393,8 +391,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "z",
-        [](PyTableauSimulator &self, pybind11::args args) {
-            self.Z(args_to_targets(self, args));
+        [](PyTableauSimulator &self, pybind11::args targets) {
+            self.Z(args_to_targets(self, targets));
         },
         clean_doc_string(u8R"DOC(
             Applies a Pauli Z gate to the simulator's state.
@@ -820,6 +818,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         [](PyTableauSimulator &self, uint32_t new_num_qubits) {
             self.set_num_qubits(new_num_qubits);
         },
+        pybind11::arg("new_num_qubits"),
         clean_doc_string(u8R"DOC(
             Forces the simulator's internal state to track exactly the qubits whose indices are in range(new_num_qubits).
 
@@ -855,6 +854,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         [](PyTableauSimulator &self, const Tableau &new_inverse_tableau) {
             self.inv_state = new_inverse_tableau;
         },
+        pybind11::arg("new_inverse_tableau"),
         clean_doc_string(u8R"DOC(
             Overwrites the simulator's internal state with a copy of the given inverse tableau.
 

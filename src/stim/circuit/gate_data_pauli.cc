@@ -37,14 +37,14 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
                 return {
                     "A_Pauli Gates",
                     R"MARKDOWN(
-Identity gate.
+The identity gate.
 Does nothing to the target qubits.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to do nothing to.
 )MARKDOWN",
@@ -70,14 +70,14 @@ Does nothing to the target qubits.
                 return {
                     "A_Pauli Gates",
                     R"MARKDOWN(
-Pauli X gate.
+The Pauli X gate.
 The bit flip gate.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -106,13 +106,13 @@ H 0
                 return {
                     "A_Pauli Gates",
                     R"MARKDOWN(
-Pauli Y gate.
+The Pauli Y gate.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",
@@ -143,14 +143,14 @@ H 0
                 return {
                     "A_Pauli Gates",
                     R"MARKDOWN(
-Pauli Z gate.
+The Pauli Z gate.
 The phase flip gate.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubits to operate on.
 )MARKDOWN",

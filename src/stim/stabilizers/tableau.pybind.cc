@@ -756,7 +756,7 @@ void pybind_tableau(pybind11::module &m) {
                 >>> expected = t.inverse().x_output(0)
                 >>> t.inverse_x_output(0) == expected
                 True
-                >>> expected.sign = +1;
+                >>> expected.sign = +1
                 >>> t.inverse_x_output(0, unsigned=True) == expected
                 True
         )DOC")
@@ -792,7 +792,7 @@ void pybind_tableau(pybind11::module &m) {
                 >>> expected = t.inverse().y_output(0)
                 >>> t.inverse_y_output(0) == expected
                 True
-                >>> expected.sign = +1;
+                >>> expected.sign = +1
                 >>> t.inverse_y_output(0, unsigned=True) == expected
                 True
         )DOC")
@@ -830,7 +830,7 @@ void pybind_tableau(pybind11::module &m) {
                 >>> expected = t.inverse().z_output(0)
                 >>> t.inverse_z_output(0) == expected
                 True
-                >>> expected.sign = +1;
+                >>> expected.sign = +1
                 >>> t.inverse_z_output(0, unsigned=True) == expected
                 True
         )DOC")

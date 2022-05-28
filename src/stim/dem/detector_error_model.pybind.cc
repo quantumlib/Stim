@@ -321,6 +321,8 @@ void pybind_detector_error_model(pybind11::module &m) {
         pybind11::arg("index_or_slice"),
         clean_doc_string(u8R"DOC(
             Returns copies of instructions from the detector error model.
+            @overload def __getitem__(self, index_or_slice: int) -> Union[stim.DemInstruction, stim.DemRepeatBlock]:
+            @overload def __getitem__(self, index_or_slice: slice) -> stim.DetectorErrorModel:
 
             Args:
                 index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
@@ -758,21 +760,21 @@ void pybind_detector_error_model(pybind11::module &m) {
             Examples:
                 >>> import stim
 
-                >>> stim.DetectorErrorModel("""
+                >>> stim.DetectorErrorModel('''
                 ...     error(0.125) D0
                 ...     error(0.125) D0 D1
                 ...     error(0.125) D1 L55
                 ...     error(0.125) D1
-                ... """).shortest_graphlike_error()
+                ... ''').shortest_graphlike_error()
                 stim.DetectorErrorModel('''
                     error(1) D1
                     error(1) D1 L55
                 ''')
 
-                >>> stim.DetectorErrorModel("""
+                >>> stim.DetectorErrorModel('''
                 ...     error(0.125) D0 D1 D2
                 ...     error(0.125) L0
-                ... """).shortest_graphlike_error(ignore_ungraphlike_errors=True)
+                ... ''').shortest_graphlike_error(ignore_ungraphlike_errors=True)
                 stim.DetectorErrorModel('''
                     error(1) L0
                 ''')

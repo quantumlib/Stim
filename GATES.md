@@ -1261,7 +1261,7 @@
     
     Applies a randomly chosen Pauli with a given probability.
     
-    - Pauli Mixture:
+    Pauli Mixture:
     
         ```
         1-p: I
@@ -1285,7 +1285,7 @@
     
     Applies a randomly chosen two-qubit Pauli product with a given probability.
     
-    - Pauli Mixture:
+    Pauli Mixture:
     
         ```
          1-p: II
@@ -1355,7 +1355,7 @@
     
     Applies a Pauli X with a given probability.
     
-    - Pauli Mixture:
+    Pauli Mixture:
     
         ```
         1-p: I
@@ -1375,7 +1375,7 @@
     
     Applies a Pauli Y with a given probability.
     
-    - Pauli Mixture:
+    Pauli Mixture:
     
         ```
         1-p: I
@@ -1395,7 +1395,7 @@
     
     Applies a Pauli Z with a given probability.
     
-    - Pauli Mixture:
+    Pauli Mixture:
     
         ```
         1-p: I

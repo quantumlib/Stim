@@ -60,14 +60,14 @@ Detectors can specify coordinates using their parens arguments. Coordinates have
 useful to tools consuming the circuit. For example, a tool drawing how the detectors in a circuit relate to each other
 can use the coordinates as hints for where to place the detectors in the drawing.
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     Coordinate metadata, relative to the current coordinate offset accumulated from `SHIFT_COORDS` instructions.
     Can be any number of coordinates from 1 to 16.
     There is no required convention for which coordinate is which.
 
-- Targets:
+Targets:
 
     The measurement records to XOR together to get the deterministic-under-noiseless-execution parity.
 
@@ -153,11 +153,11 @@ determining the expected value, and `X_ERROR` is noise, causing deviations from 
 It is not recommended for the measurement set of an observable to have inconsistent parity. For example, the
 circuit-to-detector-error-model conversion will refuse to operate on circuits containing such observables.
 
-- Parens Arguments:
+Parens Arguments:
 
     A non-negative integer specifying the index of the logical observable to add the measurement records to.
 
-- Targets:
+Targets:
 
     The measurement records to add to the specified observable.
 
@@ -210,11 +210,11 @@ knowing whether or not operations are happening in the same time step or not.
 TICK instructions are added, and checked for, by `stimcirq` in order to preserve the moment structure of cirq circuits
 converted between stim circuits and cirq circuits.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     This instruction takes no targets.
 
@@ -265,14 +265,14 @@ A qubit's coordinates can be specified multiple times, with the intended interpr
 location of the most recent assignment. For example, this could be used to indicate a simulated qubit is iteratively
 playing the role of many physical qubits.
 
-- Parens Arguments:
+Parens Arguments:
 
     Optional.
     The latest coordinates of the qubit, relative to accumulated offsets from `SHIFT_COORDS` instructions.
     Can be any number of coordinates from 1 to 16.
     There is no required convention for which coordinate is which.
 
-- Targets:
+Targets:
 
     The qubit or qubits the coordinates apply to.
 
@@ -313,13 +313,13 @@ are ignored (i.e. not specifying a dimension is different from specifying it to 
 
 See also: `QUBIT_COORDS`, `DETECTOR`.
 
-- Parens Arguments:
+Parens Arguments:
 
     Offsets to add into the current coordinate offset.
     Can be any number of coordinate offsets from 1 to 16.
     There is no required convention for which coordinate is which.
 
-- Targets:
+Targets:
 
     This instruction takes no targets.
 

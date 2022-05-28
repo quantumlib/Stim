@@ -29,3 +29,8 @@ from sinter.task_stats import (
 from sinter.task_summary import (
     TaskSummary,
 )
+from sinter.predict import (
+    predict_discards_bit_packed,
+    predict_observables_bit_packed,
+    predict_on_disk,
+)

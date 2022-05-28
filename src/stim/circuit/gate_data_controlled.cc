@@ -44,11 +44,11 @@ Applies an X gate to the target if the control is in the |-> state.
 
 Negates the amplitude of the |->|-> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -86,11 +86,11 @@ Applies a Y gate to the target if the control is in the |-> state.
 
 Negates the amplitude of the |->|-i> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -131,11 +131,11 @@ Applies a Z gate to the target if the control is in the |-> state.
 
 Negates the amplitude of the |->|1> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -168,11 +168,11 @@ Applies an X gate to the target if the control is in the |-i> state.
 
 Negates the amplitude of the |-i>|-> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -212,11 +212,11 @@ Applies a Y gate to the target if the control is in the |-i> state.
 
 Negates the amplitude of the |-i>|-i> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -259,11 +259,11 @@ Applies a Z gate to the target if the control is in the |-i> state.
 
 Negates the amplitude of the |-i>|1> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -301,11 +301,11 @@ Applies an X gate to the target if the control is in the |1> state.
 
 Negates the amplitude of the |1>|-> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -341,11 +341,11 @@ Applies a Y gate to the target if the control is in the |1> state.
 
 Negates the amplitude of the |1>|-i> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -384,11 +384,11 @@ Applies a Z gate to the target if the control is in the |1> state.
 
 Negates the amplitude of the |1>|1> state.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",

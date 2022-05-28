@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def parse_args(args: List[str]) -> Any:
     parser = argparse.ArgumentParser(description='Plot collected CSV data.',
                                      prog='sinter plot')
-    parser.add_argument('-filter_func',
+    parser.add_argument('--filter_func',
                         type=str,
                         default="True",
                         help='A python expression that determines whether a case is kept or not.\n'
@@ -28,7 +28,7 @@ def parse_args(args: List[str]) -> Any:
                              'Examples:\n'
                              '''    -filter_func "decoder=='pymatching'"\n'''
                              '''    -filter_func "0.001 < metadata['p'] < 0.005"\n''')
-    parser.add_argument('-x_func',
+    parser.add_argument('--x_func',
                         type=str,
                         default="1",
                         help='A python expression that determines where points go on the x axis.\n'
@@ -42,16 +42,16 @@ def parse_args(args: List[str]) -> Any:
                              '''    -x_func "metadata['p']"\n'''
                              '''    -x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
                         )
-    parser.add_argument('-fig_size',
+    parser.add_argument('--fig_size',
                         type=int,
                         nargs=2,
                         default=None,
                         help='Desired figure width in pixels.')
-    parser.add_argument('-fig_height',
+    parser.add_argument('--fig_height',
                         type=int,
                         default=None,
                         help='Desired figure height in pixels.')
-    parser.add_argument('-group_func',
+    parser.add_argument('--group_func',
                         type=str,
                         default="'all data (use -group_func and -x_func to group into curves)'",
                         help='A python expression that determines how points are grouped into curves.\n'
@@ -65,31 +65,31 @@ def parse_args(args: List[str]) -> Any:
                              '''    -group_func "(decoder, metadata['d'])"\n'''
                              '''    -group_func "metadata['path'].split('/')[-2]"\n'''
                         )
-    parser.add_argument('-in',
+    parser.add_argument('--in',
                         type=str,
                         nargs='+',
                         required=True,
                         help='Input files to get data from.')
-    parser.add_argument('-type',
+    parser.add_argument('--type',
                         choices=['error_rate', 'discard_rate'],
                         nargs='+',
                         default=(),
                         help='Picks the figures to include.')
-    parser.add_argument('-out',
+    parser.add_argument('--out',
                         type=str,
                         default=None,
                         help='Output file to write the plot to.\n'
                              'The file extension determines the type of image.\n'
                              'Either this or -show must be specified.')
-    parser.add_argument('-xaxis',
+    parser.add_argument('--xaxis',
                         type=str,
                         default='[log]',
                         help='Customize the X axis title. Prefix [log] for log scale.')
-    parser.add_argument('-show',
+    parser.add_argument('--show',
                         action='store_true',
                         help='Displays the plot in a window.\n'
                              'Either this or -out must be specified.')
-    parser.add_argument('-highlight_likelihood_ratio',
+    parser.add_argument('--highlight_likelihood_ratio',
                         type=float,
                         default=1e-3,
                         help='The relative likelihood ratio that determines the color highlights around curves.\n'

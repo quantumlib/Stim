@@ -39,11 +39,11 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
                     R"MARKDOWN(
 Swaps two qubits.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -74,11 +74,11 @@ CNOT 0 1
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by i.
 Equivalent to `SWAP` then `CZ` then `S` on both targets.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",
@@ -110,11 +110,11 @@ CNOT 0 1
 Swaps two qubits and phases the -1 eigenspace of the ZZ observable by -i.
 Equivalent to `SWAP` then `CZ` then `S_DAG` on both targets.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     Qubit pairs to operate on.
 )MARKDOWN",

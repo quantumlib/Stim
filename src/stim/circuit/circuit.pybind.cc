@@ -674,8 +674,10 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             pybind11::arg("name"),
             pybind11::arg("targets") = pybind11::make_tuple(),
             pybind11::arg("arg") = pybind11::none(),
-            clean_doc_string(u8R"DOC(
+            k == 0 ? "[DEPRECATED] use stim.Circuit.append instead" : clean_doc_string(u8R"DOC(
                 Appends an operation into the circuit.
+                @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]]) -> None:
+                @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
 
                 Note: `stim.Circuit.append_operation` is an alias of `stim.Circuit.append`.
 
@@ -748,7 +750,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 CX rec[-1] 1
 
             Args:
-                text: The STIM program text containing the circuit operations to append.
+                stim_program_text: The STIM program text containing the circuit operations to append.
         )DOC")
             .data());
 
@@ -971,10 +973,16 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         pybind11::arg("index_or_slice"),
         clean_doc_string(u8R"DOC(
             Returns copies of instructions from the circuit.
+            @overload def __getitem__(self, index_or_slice: int) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
+            @overload def __getitem__(self, index_or_slice: slice) -> stim.Circuit:
 
             Args:
                 index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
                     of instructions to return as a circuit.
+
+            Returns:
+                If the index was an integer, then an instruction from the circuit.
+                If the index was a slice, then a circuit made up of the instructions in that slice.
 
             Examples:
                 >>> import stim
@@ -1384,7 +1392,6 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
             running through the bulk then the starting edges will have degree at least 2.
 
             Args:
-                model: The detector error model to search for undetectable errors.
                 dont_explore_detection_event_sets_with_size_above: Truncates the search space by refusing to
                     cross an edge (i.e. add an error) when doing so would produce an intermediate state that
                     has more detection events than this limit.

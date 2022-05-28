@@ -595,7 +595,7 @@ void pybind_pauli_string(pybind11::module &m) {
             Left-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
 
             Args:
-                rhs: The left hand side of the multiplication. This can be:
+                lhs: The left hand side of the multiplication. This can be:
                     - A stim.PauliString to left-multiply term-by-term into the paulis of the pauli string.
                     - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
                     - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
@@ -873,6 +873,8 @@ void pybind_pauli_string(pybind11::module &m) {
         pybind11::arg("index_or_slice"),
         clean_doc_string(u8R"DOC(
             Returns an individual Pauli or Pauli string slice from the pauli string.
+            @overload def __getitem__(self, index_or_slice: int) -> int:
+            @overload def __getitem__(self, index_or_slice: slice) -> stim.PauliString:
 
             Individual Paulis are returned as an int using the encoding 0=I, 1=X, 2=Y, 3=Z.
             Slices are returned as a stim.PauliString (always with positive sign).

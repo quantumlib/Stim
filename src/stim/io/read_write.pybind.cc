@@ -170,6 +170,7 @@ void pybind_read_write(pybind11::module &m) {
         pybind11::arg("bit_pack") = false,
         clean_doc_string(u8R"DOC(
             Reads shot data, such as measurement samples, from a file.
+            @signature def read_shot_data_file(path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
 
             Args:
                 path: The path to the file to read the data from.
@@ -182,6 +183,7 @@ void pybind_read_write(pybind11::module &m) {
                 num_observables: How many observables there are per shot.
                     Note that this only refers to observables *stored in the file*, not to
                     observables from the original circuit that was sampled.
+
             Returns:
                 A numpy array containing the loaded data.
 
@@ -225,7 +227,7 @@ void pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_detectors") = pybind11::none(),
         pybind11::arg("num_observables") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            Reads shot data, such as measurement samples, from a file.
+            Writes shot data, such as measurement samples, to a file.
 
             Args:
                 data: The data to write to the file. This must be a numpy array. The dtype
@@ -242,6 +244,7 @@ void pybind_read_write(pybind11::module &m) {
                 num_observables: How many observables there are per shot.
                     Note that this only refers to observables *in the given shot data*, not to
                     observables from the original circuit that was sampled.
+
             Examples:
                 >>> import stim
                 >>> import pathlib
@@ -260,8 +263,8 @@ void pybind_read_write(pybind11::module &m) {
                 ...         num_measurements=3)
                 ...
                 ...     with open(path) as f:
-                ...         read = f.read()
-                >>> read
+                ...         written = f.read()
+                >>> written
                 '010\n011\n'
         )DOC")
             .data());

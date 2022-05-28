@@ -53,7 +53,7 @@ void pybind_detector_error_model_repeat_block(pybind11::module &m) {
 
             Args:
                 repeat_count: The number of times the repeat block's body is supposed to execute.
-                body: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
+                block: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
 
             Examples:
                 >>> import stim

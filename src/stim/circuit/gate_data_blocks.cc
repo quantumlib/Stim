@@ -39,11 +39,11 @@ Currently, repetition counts of 0 are not allowed because they create corner cas
 For example, if a logical observable is only given measurements inside a repeat block with a repetition count of 0, it's
 ambiguous whether the output of sampling the logical observables includes a bit for that logical observable.
 
-- Parens Arguments:
+Parens Arguments:
 
     This instruction takes no parens arguments.
 
-- Targets:
+Targets:
 
     A positive integer in [1, 10^18] specifying the number of repetitions.
 

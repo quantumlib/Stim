@@ -1,9 +1,10 @@
-"""
-This is the entrypoint when running `import stim`.
+"""Stim: a fast quantum stabilizer circuit library."""
 
-It does runtime detection of CPU features, and based on that imports the fastest pre-built C++ extension that only uses
-compatible instructions. Importing a different one can result in runtime segfaults that crash the python interpreter.
-"""
+# This is the entrypoint when running `import stim`.
+#
+# It does runtime detection of CPU features, and based on that imports the fastest pre-built C++ extension that only uses
+# compatible instructions. Importing a different one can result in runtime segfaults that crash the python interpreter.
+
 import stim._detect_machine_architecture as _tmp
 
 _tmp = _tmp._UNSTABLE_detect_march()
