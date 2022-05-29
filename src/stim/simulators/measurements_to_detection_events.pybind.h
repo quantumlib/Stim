@@ -50,7 +50,8 @@ struct CompiledMeasurementsToDetectionEventsConverter {
     pybind11::object convert(
         const pybind11::object &measurements,
         const pybind11::object &sweep_bits,
-        bool append_observables,
+        const pybind11::object &separate_observables,
+        const pybind11::object &append_observables,
         bool bit_pack_result);
     void convert_file(
         const std::string &measurements_filepath,

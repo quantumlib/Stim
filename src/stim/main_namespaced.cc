@@ -198,7 +198,7 @@ int main_mode_measurements_to_detections(int argc, const char **argv) {
     FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
     FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
     FILE *sweep_in = find_open_file_argument("--sweep", stdin, "r", argc, argv);
-    FILE *obs_out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "w", argc, argv);
     if (sweep_in == stdin) {
         sweep_in = nullptr;
     }
