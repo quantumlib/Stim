@@ -24,6 +24,7 @@ def _pytest_pycharm_pybind_repr_bug_workaround(cls):
     f = cls.__repr__
     cls.__repr__ = lambda e: f(e)
     cls.__repr__.__doc__ = f.__doc__
+_pytest_pycharm_pybind_repr_bug_workaround(Circuit)
 _pytest_pycharm_pybind_repr_bug_workaround(CircuitErrorLocationStackFrame)
 _pytest_pycharm_pybind_repr_bug_workaround(CircuitInstruction)
 _pytest_pycharm_pybind_repr_bug_workaround(CircuitRepeatBlock)
