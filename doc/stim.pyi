@@ -1690,7 +1690,8 @@ class DemInstruction:
     def args_copy(self) -> List[float]:
         """Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).
         """
-    def targets_copy(self) -> List[object]:
+    def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
+
         """Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.
         """
     @property

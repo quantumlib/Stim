@@ -1,23 +1,16 @@
-import collections
-import dataclasses
-from typing import Callable, TypeVar, List, Any, Tuple, Iterable, DefaultDict, Optional, TYPE_CHECKING, Dict
+from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict
 
-import matplotlib.colors as mcolors
-import matplotlib.pyplot as plt
-
-from sinter.anon_task_stats import AnonTaskStats
 from sinter.probability_util import binomial_relative_likelihood_range
-from sinter.task_summary import TaskSummary
 
 if TYPE_CHECKING:
     import sinter
+    import matplotlib.pyplot as plt
 
 
 MARKERS: str = "ov*sp^<>8PhH+xXDd|" * 100
-COLORS: Tuple[str, ...] = tuple(mcolors.TABLEAU_COLORS.keys()) * 3
-
-
 T = TypeVar('T')
+TVal = TypeVar('TVal')
+TKey = TypeVar('TKey')
 
 
 def split_by(vs: Iterable[T], key_func: Callable[[T], Any]) -> List[List[T]]:
@@ -60,10 +53,6 @@ def better_sorted_str_terms(val: Any) -> Any:
     return tuple(result)
 
 
-TVal = TypeVar('TVal')
-TKey = TypeVar('TKey')
-
-
 def group_by(items: Iterable[TVal],
              *,
              key: Callable[[TVal], TKey],
@@ -100,7 +89,7 @@ TCurveId = TypeVar('TCurveId')
 
 def plot_discard_rate(
         *,
-        ax: plt.Axes,
+        ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], float],
         curve_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
@@ -174,7 +163,7 @@ def plot_discard_rate(
 
 def plot_error_rate(
         *,
-        ax: plt.Axes,
+        ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], float],
         curve_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,

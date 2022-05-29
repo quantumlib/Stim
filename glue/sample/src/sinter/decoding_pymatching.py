@@ -1,11 +1,13 @@
 import math
 import pathlib
-from typing import Callable, List
+from typing import Callable, List, TYPE_CHECKING
 
-import networkx as nx
 import numpy as np
-import pymatching
 import stim
+
+if TYPE_CHECKING:
+    import networkx as nx
+    import pymatching
 
 
 def decode_using_pymatching(*,
@@ -80,8 +82,11 @@ def iter_flatten_model(model: stim.DetectorErrorModel,
     _helper(model, 1)
 
 
-def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> nx.Graph:
+def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> 'nx.Graph':
     """Convert a stim error model into a NetworkX graph."""
+
+    # Local import to reduce sinter's startup time.
+    import networkx as nx
 
     g = nx.Graph()
     boundary_node = model.num_detectors
@@ -121,8 +126,12 @@ def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> nx.Graph
     return g
 
 
-def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> pymatching.Matching:
+def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> 'pymatching.Matching':
     """Convert a stim error model into a pymatching graph."""
+
+    # Local import to reduce sinter's startup time.
+    import pymatching
+
     g = detector_error_model_to_nx_graph(model)
     num_detectors = model.num_detectors
     num_observables = model.num_observables

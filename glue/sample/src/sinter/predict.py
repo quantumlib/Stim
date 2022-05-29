@@ -4,6 +4,7 @@ import stim
 import tempfile
 from typing import Optional
 
+from sinter import post_selection_mask_from_4th_coord
 from sinter.decoding import DECODER_METHODS
 
 
@@ -43,9 +44,7 @@ def predict_on_disk(
 
         post_selection_mask = np.zeros(dtype=np.uint8, shape=math.ceil(num_dets / 8))
         if postselect_detectors_with_non_zero_4th_coord:
-            for k, coord in dem.get_detector_coordinates().items():
-                if len(coord) >= 4 and coord[3]:
-                    post_selection_mask[k // 8] |= 1 << (k % 8)
+            post_selection_mask = post_selection_mask_from_4th_coord(dem)
         discards = np.any(dets_data & post_selection_mask, axis=1)
         discards.shape = (discards.shape[0], 1)
         stim.write_shot_data_file(

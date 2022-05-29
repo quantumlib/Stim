@@ -1,35 +1,35 @@
 import argparse
 import sys
-from typing import Iterator, Any, Tuple, Optional, List, Callable
+from typing import Iterator, Any, Tuple, List, Callable
 
 import stim
 
 from sinter.printer import ThrottledProgressPrinter
-from sinter.task_stats import TaskStats
 from sinter.task import Task
-from sinter.collection import collect, post_selection_mask_from_last_detector_coords, Progress
+from sinter.collection import collect, Progress, post_selection_mask_from_4th_coord
 from sinter.decoding import DECODER_METHODS
 from sinter.main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],
                                metadata_func: Callable,
-                               postselect_last_coord_mins: List[Optional[int]],
+                               postselect_4th_coord: bool,
                                ) -> Iterator[Task]:
     for path in circuit_paths:
         with open(path) as f:
             circuit_text = f.read()
         circuit = stim.Circuit(circuit_text)
 
-        for postselect_last_coord_min in postselect_last_coord_mins:
-            post_mask = post_selection_mask_from_last_detector_coords(
-                circuit=circuit, last_coord_minimum=postselect_last_coord_min)
+        if postselect_4th_coord:
+            post_mask = post_selection_mask_from_4th_coord(circuit)
+        else:
+            post_mask = None
 
-            yield Task(
-                circuit=circuit,
-                postselection_mask=post_mask,
-                json_metadata=metadata_func(path=path, circuit=circuit),
-            )
+        yield Task(
+            circuit=circuit,
+            postselection_mask=post_mask,
+            json_metadata=metadata_func(path=path, circuit=circuit),
+        )
 
 
 def parse_args(args: List[str]) -> Any:
@@ -83,13 +83,10 @@ def parse_args(args: List[str]) -> Any:
                         type=int,
                         default=None,
                         help='Limits number of shots in a batch so that the estimated runtime of the batch is below this amount.')
-    parser.add_argument('--postselect_last_coord_min',
-                        type=int,
-                        nargs='+',
-                        help='Activates postselection of results. '
-                             'Whenever a detecor with a last coordinate at least as large as the given '
-                             'value creates a detection event, the shot is discarded.',
-                        default=(None,))
+    parser.add_argument('--postselect_detectors_with_non_zero_4th_coord',
+                        help='Turns on postselection. '
+                             'If any detector with a non-zero 4th coordinate fires, the shot is discarded.',
+                        action='store_true')
     parser.add_argument('--quiet',
                         help='Disables writing progress to stderr.',
                         action='store_true')
@@ -117,12 +114,6 @@ def parse_args(args: List[str]) -> Any:
                              '''    -metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
                         )
     a = parser.parse_args(args=args)
-    for e in a.postselect_last_coord_min:
-        if e is not None and e < -1:
-            raise ValueError(f'a.postselect_last_coord_min={a.postselect_last_coord_min!r} < -1')
-    a.postselect_last_coord_min = [None if e == -1 else e for e in
-                                                       a.postselect_last_coord_min]
-
     a.metadata_func = eval(compile(
         'lambda *, path, circuit: ' + a.metadata_func,
         filename='metadata_func:command_line_arg',
@@ -146,7 +137,7 @@ def main_collect(*, command_line_args: List[str]):
     iter_tasks = iter_file_paths_into_goals(
         circuit_paths=args.circuits,
         metadata_func=args.metadata_func,
-        postselect_last_coord_mins=args.postselect_last_coord_min,
+        postselect_4th_coord=args.postselect_detectors_with_non_zero_4th_coord,
     )
     num_tasks = len(args.circuits) * len(args.decoders)
 
@@ -159,26 +150,32 @@ def main_collect(*, command_line_args: List[str]):
 
     def on_progress(sample: Progress) -> None:
         nonlocal did_work
-        printer.print_out(CSV_HEADER)
-        printer.print_out(sample.new_stats.to_csv_line())
+        for stats in sample.new_stats:
+            if not did_work:
+                printer.print_out(CSV_HEADER)
+                did_work = True
+            printer.print_out(stats.to_csv_line())
         printer.show_latest_progress(sample.status_message)
-        did_work = True
 
-    collect(
-        num_workers=args.processes,
-        hint_num_tasks=num_tasks,
-        tasks=iter_tasks,
-        print_progress=False,
-        save_resume_filepath=args.save_resume_filepath,
-        existing_data_filepaths=args.existing_data_filepaths,
-        progress_callback=on_progress,
-        max_errors=args.max_errors,
-        max_shots=args.max_shots,
-        decoders=args.decoders,
-        max_batch_seconds=args.max_batch_seconds,
-        max_batch_size=args.max_batch_size,
-        start_batch_size=args.start_batch_size,
-    )
+    try:
+        collect(
+            num_workers=args.processes,
+            hint_num_tasks=num_tasks,
+            tasks=iter_tasks,
+            print_progress=False,
+            save_resume_filepath=args.save_resume_filepath,
+            existing_data_filepaths=args.existing_data_filepaths,
+            progress_callback=on_progress,
+            max_errors=args.max_errors,
+            max_shots=args.max_shots,
+            decoders=args.decoders,
+            max_batch_seconds=args.max_batch_seconds,
+            max_batch_size=args.max_batch_size,
+            start_batch_size=args.start_batch_size,
+        )
+    except KeyboardInterrupt:
+        print("\033[33m\nInterrupted\033[0m")
+        return
 
     if not did_work and not args.quiet:
         print("No work to do.", file=sys.stderr)

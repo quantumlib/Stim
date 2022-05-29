@@ -1,8 +1,6 @@
-from typing import Tuple
 import dataclasses
 
 from sinter.anon_task_stats import AnonTaskStats
-from sinter.probability_util import binomial_relative_likelihood_range
 from sinter.task_summary import JSON_TYPE, TaskSummary
 from sinter.csv_out import csv_line
 

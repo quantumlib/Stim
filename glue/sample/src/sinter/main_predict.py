@@ -37,7 +37,8 @@ def parse_args(args: List[str]) -> Any:
                         help='Format to write predictions in.')
 
     parser.add_argument('--postselect_detectors_with_non_zero_4th_coord',
-                        help='Turns on postselection.',
+                        help='Turns on postselection. '
+                             'If any detector with a non-zero 4th coordinate fires, the shot is discarded.',
                         action='store_true')
     parser.add_argument('--discards_out',
                         type=str,

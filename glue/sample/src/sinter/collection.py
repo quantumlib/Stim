@@ -1,8 +1,9 @@
 import contextlib
 import dataclasses
 import pathlib
-from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING
+from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple
 
+import math
 import numpy as np
 import stim
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class Progress:
-    new_stats: TaskStats
+    new_stats: Tuple[TaskStats, ...]
     status_message: str
 
 
@@ -96,13 +97,19 @@ def iter_collect(*,
             additional_existing_data=additional_existing_data) as manager:
         manager.start_workers(num_workers)
 
+        manager.fill_work_queue()
+        yield Progress(
+            new_stats=(),
+            status_message=manager.status(num_circuits=hint_num_tasks)
+        )
+
         while manager.fill_work_queue():
             # Wait for a worker to finish a job.
             sample = manager.wait_for_next_sample()
 
             # Report the incremental results.
             yield Progress(
-                new_stats=sample,
+                new_stats=(sample,),
                 status_message=manager.status(num_circuits=hint_num_tasks),
             )
 
@@ -215,9 +222,10 @@ def collect(*,
             hint_num_tasks=hint_num_tasks,
             additional_existing_data=additional_existing_data,
         ):
-            result.add_sample(progress.new_stats)
-            if save_resume_file is not None:
-                print(progress.new_stats.to_csv_line(), file=save_resume_file, flush=True)
+            for stats in progress.new_stats:
+                result.add_sample(stats)
+                if save_resume_file is not None:
+                    print(stats.to_csv_line(), file=save_resume_file, flush=True)
             if print_progress:
                 progress_printer.show_latest_progress(progress.status_message)
             if progress_callback is not None:
@@ -228,17 +236,10 @@ def collect(*,
         return list(result.data.values())
 
 
-def post_selection_mask_from_last_detector_coords(
-        *,
-        circuit: stim.Circuit,
-        last_coord_minimum: Optional[int]) -> Optional[np.ndarray]:
-    lvl = last_coord_minimum
-    if lvl is None:
-        return None
-    coords = circuit.get_detector_coordinates()
-    n = circuit.num_detectors + circuit.num_observables
-    result = np.zeros(shape=(n + 7) // 8, dtype=np.uint8)
-    for k, v in coords.items():
-        if len(v) and v[-1] >= lvl:
-            result[k >> 3] |= 1 << (k & 7)
-    return result
+def post_selection_mask_from_4th_coord(dem: Union[stim.Circuit, stim.DetectorErrorModel]) -> np.ndarray:
+    num_dets = dem.num_detectors
+    post_selection_mask = np.zeros(dtype=np.uint8, shape=math.ceil(num_dets / 8))
+    for k, coord in dem.get_detector_coordinates().items():
+        if len(coord) >= 4 and coord[3]:
+            post_selection_mask[k // 8] |= 1 << (k % 8)
+    return post_selection_mask

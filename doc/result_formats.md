@@ -323,10 +323,11 @@ Each 64 bit word (8 bytes) of the data contains bits from the same measurement r
 containing the bits from the last measurement result, and then starts over again with data from the next 64 shots (if
 there are more).
 
-The shots are stored by byte order then significance order. The first shot's data goes into the least significant bit of
-the first byte of each 8 byte group.
+The shots are stored by byte order then significant order. The first shot's data goes into the least significant bit of
+the first byte of each 8 byte group. When the number of shots is not a multiple of 64, the bits corresponding to the
+missing shots are always zero.
 
-This format requires the number of shots to be a multiple of 64.
+This format requires the reader to know the number of bits in each shot.
 This format requires the reader to know the number of shots that were taken.
 
 This format is generally more tedious to work with, but useful for achieving good performance on data processing tasks
@@ -341,32 +342,26 @@ where it is possible to parallelize across shots using SIMD instructions.
     ...     path = str(pathlib.Path(d) / "tmp.dat")
     ...     stim.Circuit("""
     ...         X 1
-    ...         M 0 1
-    ...     """).compile_sampler().sample_write(shots=64, filepath=path, format="ptb64")
+    ...         M 0 0 0 0 1 1 1 1 0 0 1 1 0 1
+    ...     """).compile_sampler().sample_write(shots=10, filepath=path, format="ptb64")
     ...     with open(path, 'rb') as f:
     ...         print(' '.join(hex(e)[2:] for e in f.read()))
-    0 0 0 0 0 0 0 0 ff ff ff ff ff ff ff ff
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 ff 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff 3 0 0 0 0 0 0
 
 *Example ptb64 parsing code (python)*:
 ```python
 from typing import List
 
-def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
-    num_shot_groups = int(len(data) * 8 / bits_per_shot / 64)
-    if len(data) * 8 != num_shot_groups * 64 * bits_per_shot:
-        raise ValueError("Number of shots must be a multiple of 64.")
-
-    result = [[False] * bits_per_shot for _ in range(num_shot_groups * 64)]
-    for group_index in range(num_shot_groups):
-        group_bit_offset = 64 * bits_per_shot * group_index
-        for m in range(bits_per_shot):
-            m_bit_offset = m * 64
-            for shot in range(64):
-                bit_offset = group_bit_offset + m_bit_offset + shot
-                byte_offset = bit_offset // 8
-                bit = data[bit_offset // 8] & (1 << (bit_offset % 8)) != 0
-                s = group_index * 64 + shot
-                result[s][m] = bit
+def parse_ptb64(data: bytes, bits_per_shot: int, num_shots: int) -> List[List[bool]]:
+    result = [[False] * bits_per_shot for _ in range(num_shots)]
+    group_byte_stride = bits_per_shot * 8
+    for shot_offset in range(num_shots):
+        shot_group = shot_offset // 64
+        shot_stripe = shot_offset % 64
+        for measure_index in range(bits_per_shot):
+            byte_offset = group_byte_stride*shot_group + measure_index * 8 + shot_stripe // 8
+            bit = (data[byte_offset] >> (shot_stripe % 8)) % 2 == 1
+            result[shot_offset][measure_index] = bit
     return result
 ```
 *Example ptb64 saving code (python):*
@@ -374,15 +369,12 @@ def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
 from typing import List
 
 def save_ptb64(shots: List[List[bool]]):
-    if len(shots) % 64 != 0:
-        raise ValueError("Number of shots must be a multiple of 64.")
-
     output = b""
     for shot_offset in range(0, len(shots), 64):
         bits_per_shot = len(shots[0])
         for measure_index in range(bits_per_shot):
             v = 0
-            for k in range(64)[::-1]:
+            for k in reversed(range(min(64, len(shots) - shot_offset))):
                 v <<= 1
                 v += shots[shot_offset + k][measure_index]
             output += v.to_bytes(8, 'little')
