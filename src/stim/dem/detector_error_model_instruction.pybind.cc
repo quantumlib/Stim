@@ -178,7 +178,11 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
     c.def(
         "targets_copy",
         &ExposedDemInstruction::targets_copy,
-        "Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.");
+        clean_doc_string(u8R"DOC(
+            Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.
+            @signature def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
+        )DOC")
+            .data());
     c.def_property_readonly(
         "type",
         &ExposedDemInstruction::type_name,

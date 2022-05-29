@@ -1,8 +1,6 @@
 import json
 from typing import Any, Dict, Union, List, TYPE_CHECKING
 
-import pandas as pd
-
 from sinter.task_stats import TaskStats
 from sinter.executable_task import ExecutableTask
 from sinter.task_summary import TaskSummary
@@ -41,6 +39,8 @@ class ExistingData:
 
     @staticmethod
     def from_file(path_or_file: Any) -> 'ExistingData':
+        # Import is done locally to reduce cost of importing sinter.
+        import pandas as pd
         frame = pd.read_csv(path_or_file, skipinitialspace=True)
         expected_columns = sorted(["shots",
                                    "discards",

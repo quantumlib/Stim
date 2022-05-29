@@ -27,9 +27,9 @@ def test_iter_collect():
             )
             for p in [0.01, 0.02, 0.03, 0.04]
         ],
-        print_progress=False,
     ):
-        result[sample.json_metadata['p']] += sample.to_anon_stats()
+        for stats in sample.new_stats:
+            result[stats.json_metadata['p']] += stats.to_anon_stats()
     assert len(result) == 4
     for k, v in result.items():
         assert v.shots >= 1000 or v.errors >= 100
@@ -93,9 +93,9 @@ def test_iter_collect_list():
             )
             for p in [0.01, 0.02, 0.03, 0.04]
         ],
-        print_progress=False,
     ):
-        result[sample.json_metadata['p']] += sample.to_anon_stats()
+        for stats in sample.new_stats:
+            result[stats.json_metadata['p']] += stats.to_anon_stats()
     assert len(result) == 4
     for k, v in result.items():
         assert v.shots >= 1000 or v.errors >= 100
@@ -118,5 +118,4 @@ def test_iter_collect_worker_fails():
                     max_shots=1,
                 ),
             ]),
-            print_progress=False,
         ))

@@ -1,10 +1,11 @@
 import math
-from typing import Union, Callable, Sequence, Tuple
+from typing import Union, Callable, Sequence, Tuple, TYPE_CHECKING
 
 import numpy as np
-from scipy.stats import linregress
-from scipy.optimize import leastsq
-from scipy.stats._stats_mstats_common import LinregressResult
+
+if TYPE_CHECKING:
+    from scipy.stats._stats_mstats_common import LinregressResult
+
 
 
 def log_binomial(*, p: Union[float, np.ndarray], n: int, hits: int) -> Union[float, np.ndarray]:
@@ -111,7 +112,11 @@ def least_squares_cost(*, xs: np.ndarray, ys: np.ndarray, intercept: float, slop
     return np.sum((intercept + slope*xs - ys)**2)
 
 
-def least_squares_through_point(*, xs: np.ndarray, ys: np.ndarray, required_x: float, required_y: float) -> LinregressResult:
+def least_squares_through_point(*, xs: np.ndarray, ys: np.ndarray, required_x: float, required_y: float) -> 'LinregressResult':
+    # Local import to reduce initial cost of importing sinter.
+    from scipy.optimize import leastsq
+    from scipy.stats._stats_mstats_common import LinregressResult
+
     xs2 = xs - required_x
     ys2 = ys - required_y
 
@@ -123,10 +128,13 @@ def least_squares_through_point(*, xs: np.ndarray, ys: np.ndarray, required_x: f
     return LinregressResult(best_slope, intercept, None, None, None, intercept_stderr=False)
 
 
-def least_squares_with_slope(*, xs: np.ndarray, ys: np.ndarray, required_slope: float) -> LinregressResult:
+def least_squares_with_slope(*, xs: np.ndarray, ys: np.ndarray, required_slope: float) -> 'LinregressResult':
     def err(intercept: float) -> float:
         return least_squares_cost(xs=xs, ys=ys, intercept=intercept, slope=required_slope)
 
+    # Local import to reduce initial cost of importing sinter.
+    from scipy.optimize import leastsq
+    from scipy.stats._stats_mstats_common import LinregressResult
     (best_intercept,), _ = leastsq(func=err, x0=0.0)
     return LinregressResult(required_slope, best_intercept, None, None, None, intercept_stderr=False)
 
@@ -136,6 +144,9 @@ def least_squares_output_range(*,
                                ys: Sequence[float],
                                target_x: float,
                                cost_increase: float) -> Tuple[float, float, float]:
+    # Local import to reduce initial cost of importing sinter.
+    from scipy.stats import linregress
+
     xs = np.array(xs, dtype=np.float64)
     ys = np.array(ys, dtype=np.float64)
     fit = linregress(xs, ys)
@@ -155,6 +166,9 @@ def least_squares_slope_range(*,
                               xs: Sequence[float],
                               ys: Sequence[float],
                               cost_increase: float) -> Tuple[float, float, float]:
+    # Local import to reduce initial cost of importing sinter.
+    from scipy.stats import linregress
+
     xs = np.array(xs, dtype=np.float64)
     ys = np.array(ys, dtype=np.float64)
     fit = linregress(xs, ys)

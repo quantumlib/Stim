@@ -3,7 +3,7 @@ import pytest
 import stim
 
 import sinter
-from sinter.collection import post_selection_mask_from_last_detector_coords
+from sinter.collection import post_selection_mask_from_4th_coord
 from sinter.decoding import sample_decode
 
 
@@ -122,7 +122,7 @@ def test_invincible_observables():
     assert result.shots == 1000
     assert result.errors == 0
 
-    
+
 @pytest.mark.parametrize("offset", range(8))
 def test_observable_offsets_mod8(offset: int):
     c = stim.Circuit("""
@@ -182,12 +182,12 @@ def test_post_selection():
     c = stim.Circuit("""
         X_ERROR(0.6) 0
         M 0
-        DETECTOR(2) rec[-1]
+        DETECTOR(2, 0, 0, 1) rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
 
         X_ERROR(0.5) 1
         M 1
-        DETECTOR(1) rec[-1]
+        DETECTOR(1, 0, 0) rec[-1]
         OBSERVABLE_INCLUDE(0) rec[-1]
         
         X_ERROR(0.1) 2
@@ -197,7 +197,7 @@ def test_post_selection():
     result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
-        post_mask=post_selection_mask_from_last_detector_coords(circuit=c, last_coord_minimum=2),
+        post_mask=post_selection_mask_from_4th_coord(c),
         num_shots=2000,
         decoder='pymatching',
     )

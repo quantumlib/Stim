@@ -120,6 +120,8 @@ class CollectionWorkManager:
         result = self.queue_from_workers.get(timeout=timeout)
         assert isinstance(result, WorkOut)
         if result.error is not None:
+            if isinstance(result.error, KeyboardInterrupt):
+                raise KeyboardInterrupt() from result.error
             raise RuntimeError("Worker failed") from result.error
         elif result.sample is not None:
             job_id, sub_key = result.key

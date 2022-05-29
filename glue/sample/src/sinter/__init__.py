@@ -4,6 +4,8 @@ from sinter.anon_task_stats import (
 from sinter.collection import (
     collect,
     iter_collect,
+    post_selection_mask_from_4th_coord,
+    Progress,
 )
 from sinter.csv_out import (
     CSV_HEADER,
@@ -19,6 +21,9 @@ from sinter.plotting import (
     plot_discard_rate,
     plot_error_rate,
     group_by,
+)
+from sinter.executable_task import (
+    ExecutableTask,
 )
 from sinter.task import (
     Task,
