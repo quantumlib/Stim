@@ -19,6 +19,7 @@
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/io/read_write.pybind.h"
+#include "stim/main_namespaced.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
@@ -29,7 +30,6 @@
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
-#include "stim/main_namespaced.h"
 
 #define xstr(s) str(s)
 #define str(s) #s

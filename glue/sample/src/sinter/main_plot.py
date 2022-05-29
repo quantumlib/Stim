@@ -163,7 +163,7 @@ def plot(
         plot_error_rate(
             ax=ax_err,
             stats=plotted_stats,
-            curve_func=group_func,
+            group_func=group_func,
             x_func=x_func,
             highlight_likelihood_ratio=highlight_likelihood_ratio,
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},
@@ -180,7 +180,7 @@ def plot(
         plot_discard_rate(
             ax=ax_dis,
             stats=plotted_stats,
-            curve_func=group_func,
+            group_func=group_func,
             x_func=x_func,
             highlight_likelihood_ratio=highlight_likelihood_ratio,
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},

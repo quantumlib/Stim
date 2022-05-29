@@ -92,7 +92,7 @@ def plot_discard_rate(
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], float],
-        curve_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
         highlight_likelihood_ratio: Optional[float] = 1e-3,
 ) -> None:
@@ -103,13 +103,13 @@ def plot_discard_rate(
         stats: The collected statistics to plot.
         x_func: The X coordinate to use for each stat's data point. For example, this could be
             `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
-        curve_func: Optional. When specified, multiple curves will be plotted instead of one curve.
+        group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
-            out of this function. For example, this could be `curve_func=lambda stat: stat.decoder`.
+            out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
         plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
-            curve_id (these will be 0 and None respectively if curve_func is not specified). For example,
+            curve_id (these will be 0 and None respectively if group_func is not specified). For example,
             this could be:
 
                 plot_args_func=lambda index, curve_id: {'color': 'red'
@@ -121,7 +121,7 @@ def plot_discard_rate(
             as likely as the max likelihood hypothesis will be highlighted.
     """
 
-    curve_groups = group_by(stats, key=curve_func)
+    curve_groups = group_by(stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
         stats = sorted(curve_groups[curve_id], key=x_func)
 
@@ -166,7 +166,7 @@ def plot_error_rate(
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], float],
-        curve_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
         highlight_likelihood_ratio: Optional[float] = 1e-3,
 ) -> None:
@@ -177,13 +177,13 @@ def plot_error_rate(
         stats: The collected statistics to plot.
         x_func: The X coordinate to use for each stat's data point. For example, this could be
             `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
-        curve_func: Optional. When specified, multiple curves will be plotted instead of one curve.
+        group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
-            out of this function. For example, this could be `curve_func=lambda stat: stat.decoder`.
+            out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
         plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
-            curve_id (these will be 0 and None respectively if curve_func is not specified). For example,
+            curve_id (these will be 0 and None respectively if group_func is not specified). For example,
             this could be:
 
                 plot_args_func=lambda index, curve_id: {'color': 'red'
@@ -194,7 +194,7 @@ def plot_error_rate(
             Set to this a value between 0 and 1, and the hypothesis probabilities at least that many times
             as likely as the max likelihood hypothesis will be highlighted.
     """
-    curve_groups = group_by(stats, key=curve_func)
+    curve_groups = group_by(stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
         stats = sorted(curve_groups[curve_id], key=x_func)
 

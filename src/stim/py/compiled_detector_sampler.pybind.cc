@@ -18,8 +18,8 @@
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -82,7 +82,16 @@ void CompiledDetectorSampler::sample_write(
     RaiiFile out(filepath.data(), "w");
     RaiiFile obs_out(obs_out_filepath, "w");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
-    detector_samples_out(circuit, num_samples, prepend_observables, append_observables, out.f, f, *prng, obs_out.f, parsed_obs_out_format);
+    detector_samples_out(
+        circuit,
+        num_samples,
+        prepend_observables,
+        append_observables,
+        out.f,
+        f,
+        *prng,
+        obs_out.f,
+        parsed_obs_out_format);
 }
 
 std::string CompiledDetectorSampler::repr() const {

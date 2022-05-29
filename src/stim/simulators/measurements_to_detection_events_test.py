@@ -115,3 +115,76 @@ def test_convert():
     assert result.dtype == np.bool8
     assert result.shape == (4, 2)
     np.testing.assert_array_equal(result, [[1, 1], [0, 0], [0, 0], [1, 1]])
+
+
+def test_convert_bit_packed():
+    converter = stim.Circuit('''
+       REPEAT 100 {
+           X 0
+           MR 0
+           DETECTOR rec[-1]
+       }
+    ''').compile_m2d_converter()
+
+    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool8)
+    expected_detections = np.array([[1] * 100, [0] * 100], dtype=np.bool8)
+    measurements_bit_packed = np.packbits(measurements, axis=1, bitorder='little')
+    expected_detections_packed = np.packbits(expected_detections, axis=1, bitorder='little')
+
+    for m in measurements, measurements_bit_packed:
+        result = converter.convert(
+            measurements=m,
+            append_observables=False,
+        )
+        assert result.dtype == np.bool8
+        assert result.shape == (2, 100)
+        np.testing.assert_array_equal(result, expected_detections)
+
+        result = converter.convert(
+            measurements=m,
+            append_observables=False,
+            bit_pack_result=True,
+        )
+        assert result.dtype == np.uint8
+        assert result.shape == (2, 13)
+        np.testing.assert_array_equal(result, expected_detections_packed)
+
+
+def test_convert_bit_packed_swept():
+    converter = stim.Circuit('''
+       REPEAT 100 {
+           CNOT sweep[0] 0
+           X 0
+           MR 0
+           DETECTOR rec[-1]
+       }
+    ''').compile_m2d_converter()
+
+    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool8)
+    sweeps = np.array([[1], [0]], dtype=np.bool8)
+    expected_detections = np.array([[0] * 100, [0] * 100], dtype=np.bool8)
+
+    measurements_packed = np.packbits(measurements, axis=1, bitorder='little')
+    expected_detections_packed = np.packbits(expected_detections, axis=1, bitorder='little')
+    sweeps_packed = np.packbits(sweeps, axis=1, bitorder='little')
+
+    for m in measurements, measurements_packed:
+        for s in sweeps, sweeps_packed:
+            result = converter.convert(
+                measurements=m,
+                sweep_bits=s,
+                append_observables=False,
+            )
+            assert result.dtype == np.bool8
+            assert result.shape == (2, 100)
+            np.testing.assert_array_equal(result, expected_detections)
+
+            result = converter.convert(
+                measurements=m,
+                sweep_bits=s,
+                append_observables=False,
+                bit_pack_result=True,
+            )
+            assert result.dtype == np.uint8
+            assert result.shape == (2, 13)
+            np.testing.assert_array_equal(result, expected_detections_packed)
