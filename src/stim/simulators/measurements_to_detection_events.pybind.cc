@@ -285,6 +285,7 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
         pybind11::arg("bit_pack_result") = false,
         clean_doc_string(u8R"DOC(
             Converts measurement data into detection event data.
+            @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool, bit_pack_result: bool = False) -> np.ndarray:
 
             Args:
                 measurements: A numpy array containing measurement data. The dtype of the array is used

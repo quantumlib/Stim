@@ -2556,21 +2556,30 @@
 > ```
 
 <a name="stim.CompiledMeasurementsToDetectionEventsConverter.convert"></a>
-### `stim.CompiledMeasurementsToDetectionEventsConverter.convert(self, *, measurements: numpy.ndarray[bool], sweep_bits: numpy.ndarray[bool] = None, append_observables: bool) -> numpy.ndarray[bool]`
+### `stim.CompiledMeasurementsToDetectionEventsConverter.convert(self, *, measurements: object, sweep_bits: object = None, append_observables: bool, bit_pack_result: bool = False) -> object`
 > ```
 > Converts measurement data into detection event data.
 > 
 > Args:
->     measurements: A numpy array containing measurement data:
->         dtype=bool8
->         shape=(num_shots, circuit.num_measurements)
->     sweep_bits: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
->         dtype=bool8
->         shape=(num_shots, circuit.num_sweep_bits)
->         Defaults to None (all sweep bits False).
+>     measurements: A numpy array containing measurement data. The dtype of the array is used
+>         to determine if it is bit packed or not.
+> 
+>         dtype=np.bool8 (unpacked data):
+>             shape=(num_shots, circuit.num_measurements)
+>         dtype=np.uint8 (bit packed data):
+>             shape=(num_shots, math.ceil(circuit.num_measurements / 8))
+>     sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]` controls in the circuit.
+>         The dtype of the array is used to determine if it is bit packed or not.
+> 
+>         dtype=np.bool8 (unpacked data):
+>             shape=(num_shots, circuit.num_sweep_bits)
+>         dtype=np.uint8 (bit packed data):
+>             shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
 >     append_observables: When True, the observables in the circuit are included as part of the detection
 >         event data. Specifically, they are treated as if they were additional detectors at the end of the
 >         circuit. When False, observable data is not output.
+>     bit_pack_result: Defaults to False. When set to True, the returned numpy array contains bit packed
+>         data (dtype=np.uint8 with 8 bits per item) instead of unpacked data (dtype=np.bool8).
 > 
 > Returns:
 >     The detection event data in a numpy array:
