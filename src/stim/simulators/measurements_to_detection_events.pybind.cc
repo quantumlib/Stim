@@ -101,7 +101,7 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
         format_sweep_bits,
         detections_out.f,
         format_out,
-        circuit,
+        circuit.aliased_noiseless_circuit(),
         append_observables,
         ref_sample,
         obs_out.f,

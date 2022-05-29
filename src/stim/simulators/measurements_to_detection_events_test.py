@@ -20,11 +20,12 @@ import stim
 
 def test_convert_file_without_sweep_bits():
     converter = stim.Circuit('''
-       X 0
-       CNOT sweep[0] 0
-       M 0
-       DETECTOR rec[-1]
-       OBSERVABLE_INCLUDE(0) rec[-1]
+        X_ERROR(0.1) 0
+        X 0
+        CNOT sweep[0] 0
+        M 0
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
     ''').compile_m2d_converter()
 
     with tempfile.TemporaryDirectory() as d:
@@ -85,6 +86,7 @@ def test_convert_file_without_sweep_bits():
 
 def test_convert():
     converter = stim.Circuit('''
+       X_ERROR(0.1) 0
        X 0
        CNOT sweep[0] 0
        M 0
@@ -121,6 +123,7 @@ def test_convert():
 def test_convert_bit_packed():
     converter = stim.Circuit('''
        REPEAT 100 {
+           X_ERROR(0.1) 0
            X 0
            MR 0
            DETECTOR rec[-1]
@@ -155,6 +158,7 @@ def test_convert_bit_packed_swept():
     converter = stim.Circuit('''
        REPEAT 100 {
            CNOT sweep[0] 0
+           X_ERROR(0.1) 0
            X 0
            MR 0
            DETECTOR rec[-1]
@@ -194,6 +198,7 @@ def test_convert_bit_packed_swept():
 def test_convert_bit_packed_separate_observables():
     converter = stim.Circuit('''
        REPEAT 100 {
+           X_ERROR(0.1) 0
            X 0
            MR 0
            DETECTOR rec[-1]
@@ -233,6 +238,31 @@ def test_convert_bit_packed_separate_observables():
         np.testing.assert_array_equal(actual_obs, expected_obs_packed)
 
 
+def test_noiseless_conversion():
+    converter = stim.Circuit('''
+       MR 0
+       DETECTOR rec[-1]
+       X 0
+       MR 0
+       DETECTOR rec[-1]
+       OBSERVABLE_INCLUDE(0) rec[-1]
+    ''').compile_m2d_converter()
+
+    measurements = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=np.bool8)
+    expected_dets = np.array([[0, 1], [0, 0], [1, 1], [1, 0]], dtype=np.bool8)
+    expected_obs = np.array([[1], [0], [1], [0]], dtype=np.bool8)
+
+    actual_dets, actual_obs = converter.convert(
+        measurements=measurements,
+        separate_observables=True,
+    )
+    assert actual_dets.dtype == actual_obs.dtype == np.bool8
+    assert actual_dets.shape == (4, 2)
+    assert actual_obs.shape == (4, 1)
+    np.testing.assert_array_equal(actual_dets, expected_dets)
+    np.testing.assert_array_equal(actual_obs, expected_obs)
+
+
 def test_needs_append_or_separate():
     converter = stim.Circuit().compile_m2d_converter()
     ms = np.zeros(shape=(50, 0), dtype=np.bool8)
@@ -245,3 +275,15 @@ def test_needs_append_or_separate():
     np.testing.assert_array_equal(d1, d3)
     np.testing.assert_array_equal(d1, d4)
     np.testing.assert_array_equal(d1, d5)
+
+
+def test_anticommuting_pieces_combining_into_deterministic_observable():
+    c = stim.Circuit('''
+        MX 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        MX 0
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    ''').without_noise()
+    m = c.compile_sampler().sample_bit_packed(shots=1000)
+    det, obs = c.compile_m2d_converter().convert(measurements=m, separate_observables=True)
+    np.testing.assert_array_equal(obs, obs * 0)

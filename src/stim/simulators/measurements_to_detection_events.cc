@@ -40,13 +40,19 @@ void stim::measurements_to_detection_events_helper(
     size_t num_qubits) {
     // Tables should agree on the batch size.
     size_t batch_size = out_detection_results__minor_shot_index.num_minor_bits_padded();
-    assert(measurements__minor_shot_index.num_minor_bits_padded() == batch_size);
-    assert(sweep_bits__minor_shot_index.num_minor_bits_padded() == batch_size);
+    if (measurements__minor_shot_index.num_minor_bits_padded() != batch_size) {
+        throw std::invalid_argument("measurements__minor_shot_index.num_minor_bits_padded() != batch_size");
+    }
+    if (sweep_bits__minor_shot_index.num_minor_bits_padded() != batch_size) {
+        throw std::invalid_argument("sweep_bits__minor_shot_index.num_minor_bits_padded() != batch_size");
+    }
     // Tables should have the right number of bits per shot.
-    assert(
-        out_detection_results__minor_shot_index.num_major_bits_padded() >=
-        num_detectors + num_observables * append_observables);
-    assert(measurements__minor_shot_index.num_major_bits_padded() >= num_measurements);
+    if (out_detection_results__minor_shot_index.num_major_bits_padded() < num_detectors + num_observables * append_observables) {
+        throw std::invalid_argument("out_detection_results__minor_shot_index.num_major_bits_padded() < num_detectors + num_observables * append_observables");
+    }
+    if (measurements__minor_shot_index.num_major_bits_padded() < num_measurements) {
+        throw std::invalid_argument("measurements__minor_shot_index.num_major_bits_padded() < num_measurements");
+    }
 
     // The frame simulator is used to account for flips in the measurement results that originate from the sweep data.
     // Eg. a `CNOT sweep[5] 0` can bit flip qubit 0, which can invert later measurement results, which will invert the
@@ -78,7 +84,6 @@ void stim::measurements_to_detection_events_helper(
         }
 
         // XOR together the appropriate measurement inversions, using the reference sample as a baseline.
-        out_detection_results__minor_shot_index[out_index].clear();
         for (const auto &t : op.target_data.targets) {
             assert(t.is_measurement_record_target());  // Circuit validation should guarantee this.
             uint32_t lookback = t.data & TARGET_VALUE_MASK;
@@ -95,7 +100,9 @@ void stim::measurements_to_detection_events_helper(
     });
 
     // Safety check verifying no randomness was used by the frame simulator.
-    assert(rng1() == rng2());
+    if (rng1() != rng2()) {
+        throw std::invalid_argument("Something is wrong. Converting measurements consumed entropy, but it shouldn't.");
+    }
 }
 
 simd_bit_table stim::measurements_to_detection_events(
@@ -240,6 +247,7 @@ void stim::stream_measurements_to_detection_events_helper(
         total_read += record_count;
 
         // Convert measurement data into detection event data.
+        out__minor_shot_index.clear();
         measurements_to_detection_events_helper(
             measurements__minor_shot_index,
             sweep_bits__minor_shot_index,
