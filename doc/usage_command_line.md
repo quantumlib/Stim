@@ -5,8 +5,10 @@
 - **(mode)** [stim analyze_errors](#analyze_errors)
     - [--allow_gauge_detectors](#--allow_gauge_detectors)
     - [--approximate_disjoint_errors](#--approximate_disjoint_errors)
+    - [--block_decompose_from_introducing_remnant_edges](#--block_decompose_from_introducing_remnant_edges)
     - [--decompose_errors](#--decompose_errors)
     - [--fold_loops](#--fold_loops)
+    - [--ignore_decomposition_failures](#--ignore_decomposition_failures)
     - [--in](#--in)
     - [--out](#--out)
 - **(mode)** [stim detect](#detect)
@@ -97,8 +99,10 @@ Note: currently, the `ELSE_CORRELATED_ERROR` instruction is not supported by thi
 Flags used with this mode:
 - [--allow_gauge_detectors](#--allow_gauge_detectors)
 - [--approximate_disjoint_errors](#--approximate_disjoint_errors)
+- [--block_decompose_from_introducing_remnant_edges](#--block_decompose_from_introducing_remnant_edges)
 - [--decompose_errors](#--decompose_errors)
 - [--fold_loops](#--fold_loops)
+- [--ignore_decomposition_failures](#--ignore_decomposition_failures)
 - [--in](#--in)
 - [--out](#--out)
 
@@ -526,6 +530,20 @@ Flags used with this mode:
     When set to 0, the noise operations are not inserted.
     
     
+- <a name="--block_decomposition_from_introducing_remnant_edges"></a>**`--block_decomposition_from_introducing_remnant_edges`**
+    
+    Requires that both A B and C D be present elsewhere in the detector error model
+    in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
+    needs to appear to allow this decomposition.
+    
+    Remnant edges can be a useful feature for ensuring decomposition succeeds, but
+    they can also reduce the effective code distance by giving the decoder single
+    edges that actually represent multiple errors in the circuit (resulting in the
+    decoder making misinformed choices when decoding).
+    
+    Irrelevant unless --decompose_errors is specified.
+    
+    
 - <a name="--circuit"></a>**`--circuit`**
     Specifies the circuit to use when converting measurement data to detector data.
     
@@ -603,6 +621,17 @@ Flags used with this mode:
     between the error analysis finishing in seconds instead of days.
     
     
+- <a name="--ignore_decomposition_failures"></a>**`--ignore_decomposition_failures`**
+    
+    When this flag is set, circuit errors that fail to decompose into graphlike
+    detector error model errors no longer cause the conversion process to abort.
+    Instead, the undecomposed error is inserted into the output. Whatever processes
+    the detector error model is then responsible for dealing with the undecomposed
+    errors (e.g. a tool may choose to simply ignore them).
+    
+    Irrelevant unless --decompose_errors is specified.
+    
+    
 - <a name="--in"></a>**`--in`**
     Specifies an input file to read from, instead of stdin.
     
@@ -615,6 +644,17 @@ Flags used with this mode:
     Specifies a data format to use when reading shot data, e.g. `01` or `r8`.
     
     See `stim help formats` for a list of supported formats.
+    
+    
+- <a name="--obs_out"></a>**`--obs_out`**
+    Specifies a file to write observable flip data to.
+    
+    When sampling detection event data, this is an alternative to --append_observables which has the benefit
+    of never mixing the two types of data together.
+    
+    
+- <a name="--obs_out_format"></a>**`--obs_out_format`**
+    The format to use when writing observable flip data (e.g. b8 or 01).
     
     
 - <a name="--out"></a>**`--out`**
@@ -687,6 +727,18 @@ Flags used with this mode:
     measurements are not true measurement results but rather reports of which measurement results would have been flipped
     due to errors or Heisenberg uncertainty. They need to be XOR'd against a noiseless reference sample to become true
     measurement results.
+    
+    
+- <a name="--sweep"></a>**`--sweep`**
+    Specifies a per-shot sweep data file.
+    
+    Sweep bits are used to vary whether certain Pauli gates are included in a circuit, or not, from shot to shot.
+    For example, if a circuit contains the instruction "CX sweep[5] 0" then there is an X pauli that is included
+    only in shots where the corresponding sweep data has the bit at index 5 set to True.
+    
+    
+- <a name="--sweep_format"></a>**`--sweep_format`**
+    Specifies the format sweep data is stored in (e.g. b8 or 01).
     
     
 - <a name="--task"></a>**`--task`**

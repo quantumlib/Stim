@@ -4,6 +4,8 @@ from typing import List, Any
 import sys
 import time
 
+MIN_PROGRESS_PRINT_DELAY = 0.03
+
 
 class ThrottledProgressPrinter:
     def __init__(self, *, outs: List[Any], print_progress: bool):
@@ -36,7 +38,7 @@ class ThrottledProgressPrinter:
         t = time.monotonic()
         dt = self.next_can_print_time - t
         if dt <= 0:
-            self.next_can_print_time = t + 1
+            self.next_can_print_time = t + MIN_PROGRESS_PRINT_DELAY
             self.is_worker_running = False
             print(self.latest_msg, file=sys.stderr, flush=True)
         return max(dt, 0)
