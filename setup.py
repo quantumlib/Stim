@@ -46,7 +46,7 @@ stim_detect_machine_architecture = Extension(
 )
 stim_polyfill = Extension(
     'stim._stim_polyfill',
-    sources=[*HEADER_FILES, *RELEVANT_SOURCE_FILES],
+    sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
@@ -58,7 +58,7 @@ stim_polyfill = Extension(
 )
 stim_sse2 = Extension(
     'stim._stim_sse2',
-    sources=[*HEADER_FILES, *RELEVANT_SOURCE_FILES],
+    sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
@@ -70,7 +70,7 @@ stim_sse2 = Extension(
 )
 stim_avx2 = Extension(
     'stim._stim_avx2',
-    sources=[*HEADER_FILES, *RELEVANT_SOURCE_FILES],
+    sources=RELEVANT_SOURCE_FILES,
     include_dirs=[pybind11.get_include(), "src"],
     language='c++',
     extra_compile_args=[
