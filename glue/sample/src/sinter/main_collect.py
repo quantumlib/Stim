@@ -4,9 +4,10 @@ from typing import Iterator, Any, Tuple, Optional, List, Callable
 
 import stim
 
+from sinter.printer import ThrottledProgressPrinter
 from sinter.task_stats import TaskStats
 from sinter.task import Task
-from sinter.collection import collect, post_selection_mask_from_last_detector_coords
+from sinter.collection import collect, post_selection_mask_from_last_detector_coords, Progress
 from sinter.decoding import DECODER_METHODS
 from sinter.main_combine import ExistingData, CSV_HEADER
 
@@ -152,20 +153,22 @@ def main_collect(*, command_line_args: List[str]):
     print_to_stdout = args.save_resume_filepath is not None or not args.quiet
 
     did_work = False
+    printer = ThrottledProgressPrinter(outs=[], print_progress=not args.quiet)
+    if print_to_stdout:
+        printer.outs.append(sys.stdout)
 
-    def on_progress(sample: TaskStats) -> None:
+    def on_progress(sample: Progress) -> None:
         nonlocal did_work
-        if print_to_stdout:
-            if not did_work:
-                print(CSV_HEADER, flush=True)
-            print(sample.to_csv_line(), flush=True)
+        printer.print_out(CSV_HEADER)
+        printer.print_out(sample.new_stats.to_csv_line())
+        printer.show_latest_progress(sample.status_message)
         did_work = True
 
     collect(
         num_workers=args.processes,
         hint_num_tasks=num_tasks,
         tasks=iter_tasks,
-        print_progress=not args.quiet,
+        print_progress=False,
         save_resume_filepath=args.save_resume_filepath,
         existing_data_filepaths=args.existing_data_filepaths,
         progress_callback=on_progress,

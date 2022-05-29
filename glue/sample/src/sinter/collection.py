@@ -1,27 +1,31 @@
 import contextlib
+import dataclasses
 import pathlib
-import sys
-from typing import Callable
-from typing import Iterator, Optional, Union, Iterable, List
-from typing import TYPE_CHECKING
+from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING
 
 import numpy as np
 import stim
 
+from sinter.task_stats import TaskStats
 from sinter.csv_out import CSV_HEADER
 from sinter.collection_work_manager import CollectionWorkManager
 from sinter.existing_data import ExistingData
-
+from sinter.printer import ThrottledProgressPrinter
 
 if TYPE_CHECKING:
     import sinter
+
+
+@dataclasses.dataclass(frozen=True)
+class Progress:
+    new_stats: TaskStats
+    status_message: str
 
 
 def iter_collect(*,
                  num_workers: int,
                  tasks: Union[Iterator['sinter.Task'],
                               Iterable['sinter.Task']],
-                 print_progress: bool = False,
                  hint_num_tasks: Optional[int] = None,
                  additional_existing_data: Optional[ExistingData] = None,
                  max_shots: Optional[int] = None,
@@ -30,7 +34,7 @@ def iter_collect(*,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
-                 ) -> Iterator['sinter.TaskStats']:
+                 ) -> Iterator['sinter.Progress']:
     """Collects error correction statistics using multiple worker processes.
 
     Note: if max_batch_size and max_batch_seconds are both not used (or
@@ -40,9 +44,6 @@ def iter_collect(*,
     Args:
         num_workers: The number of worker processes to use.
         tasks: Decoding problems to sample.
-        print_progress: When True, progress status is printed to stderr. Uses
-            bash escape sequences to erase and rewrite the status as things
-            progress.
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
@@ -96,22 +97,14 @@ def iter_collect(*,
         manager.start_workers(num_workers)
 
         while manager.fill_work_queue():
-            # Show status on stderr.
-            if print_progress:
-                status = manager.status(num_circuits=hint_num_tasks)
-                print(status, flush=True, file=sys.stderr, end='')
-
             # Wait for a worker to finish a job.
             sample = manager.wait_for_next_sample()
 
-            # Erase stderr status message.
-            if print_progress:
-                erase_current_line = f"\r\033[K"
-                erase_previous_line = f"\033[1A" + erase_current_line
-                num_prev_lines = len(status.split('\n')) - 1
-                print(erase_current_line + erase_previous_line * num_prev_lines + '\033[0m', file=sys.stderr, end='', flush=False)
-
-            yield sample
+            # Report the incremental results.
+            yield Progress(
+                new_stats=sample,
+                status_message=manager.status(num_circuits=hint_num_tasks),
+            )
 
 
 def collect(*,
@@ -119,8 +112,7 @@ def collect(*,
             tasks: Union[Iterator['sinter.Task'], Iterable['sinter.Task']],
             existing_data_filepaths: Iterable[Union[str, pathlib.Path]] = (),
             save_resume_filepath: Union[None, str, pathlib.Path] = None,
-            progress_callback: Optional[Callable[[
-                                                         'sinter.TaskStats'], None]] = None,
+            progress_callback: Optional[Callable[['sinter.Progress'], None]] = None,
             max_shots: Optional[int] = None,
             max_errors: Optional[int] = None,
             decoders: Optional[Iterable[str]] = None,
@@ -148,9 +140,6 @@ def collect(*,
         progress_callback: Defaults to None (unused). If specified, then each
             time new sample statistics are acquired from a worker this method
             will be invoked with the new sinter.SamplerStats.
-        print_progress: When True, progress status is printed to stderr. Uses
-            bash escape sequences to erase and rewrite the status as things
-            progress.
         hint_num_tasks: If `tasks` is an iterator or a generator, its length
             can be given here so that progress printouts can say how many cases
             are left.
@@ -172,6 +161,8 @@ def collect(*,
         max_batch_size: Defaults to None (unused). Limits batches from
             taking more than this many shots at once. For example, this can
             be used to ensure memory usage stays below some limit.
+        print_progress: When True, progress is printed to stderr while
+            collection runs.
         max_batch_seconds: Defaults to None (unused). When set, the recorded
             data from previous shots is used to estimate how much time is
             taken per shot. This information is then used to predict the
@@ -192,6 +183,7 @@ def collect(*,
     if save_resume_filepath in existing_data_filepaths:
         raise ValueError("save_resume_filepath in existing_data_filepaths")
 
+    progress_printer = ThrottledProgressPrinter(outs=[], print_progress=print_progress)
     with contextlib.ExitStack() as exit_stack:
         # Open save/resume file.
         if save_resume_filepath is not None:
@@ -201,6 +193,7 @@ def collect(*,
                 save_resume_file = exit_stack.enter_context(
                         open(save_resume_filepath, 'a'))  # type: ignore
             else:
+                save_resume_filepath.parent.mkdir(exist_ok=True)
                 save_resume_file = exit_stack.enter_context(
                         open(save_resume_filepath, 'w'))  # type: ignore
                 print(CSV_HEADER, file=save_resume_file, flush=True)
@@ -210,7 +203,7 @@ def collect(*,
         # Collect data.
         result = ExistingData()
         result.data = dict(additional_existing_data.data)
-        for sample in iter_collect(
+        for progress in iter_collect(
             num_workers=num_workers,
             max_shots=max_shots,
             max_errors=max_errors,
@@ -219,16 +212,19 @@ def collect(*,
             max_batch_size=max_batch_size,
             decoders=decoders,
             tasks=tasks,
-            print_progress=print_progress,
             hint_num_tasks=hint_num_tasks,
             additional_existing_data=additional_existing_data,
         ):
-            result.add_sample(sample)
+            result.add_sample(progress.new_stats)
             if save_resume_file is not None:
-                print(sample.to_csv_line(), file=save_resume_file, flush=True)
+                print(progress.new_stats.to_csv_line(), file=save_resume_file, flush=True)
+            if print_progress:
+                progress_printer.show_latest_progress(progress.status_message)
             if progress_callback is not None:
-                progress_callback(sample)
+                progress_callback(progress)
 
+        if print_progress:
+            progress_printer.show_latest_progress("done collecting")
         return list(result.data.values())
 
 

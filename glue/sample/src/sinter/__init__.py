@@ -4,6 +4,7 @@ from sinter.anon_task_stats import (
 from sinter.collection import (
     collect,
     iter_collect,
+    Progress,
 )
 from sinter.csv_out import (
     CSV_HEADER,
