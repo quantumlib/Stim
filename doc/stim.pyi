@@ -1560,7 +1560,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
     def __repr__(self) -> str:
         """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementsToDetectionEventsConverter`.
         """
-    def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool, bit_pack_result: bool = False) -> np.ndarray:
+    def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
         """Converts measurement data into detection event data.
         
@@ -1579,30 +1579,53 @@ class CompiledMeasurementsToDetectionEventsConverter:
                     shape=(num_shots, circuit.num_sweep_bits)
                 dtype=np.uint8 (bit packed data):
                     shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
-            append_observables: When True, the observables in the circuit are included as part of the detection
-                event data. Specifically, they are treated as if they were additional detectors at the end of the
-                circuit. When False, observable data is not output.
+            separate_observables: Defaults to False. When set to True, two numpy arrays are returned instead of one,
+                with the second array containing the observable flip data.
+            append_observables: Defaults to False. When set to True, the observables in the circuit are treated as
+                if they were additional detectors. Their results are appended to the end of the detection event
+                data.
             bit_pack_result: Defaults to False. When set to True, the returned numpy array contains bit packed
                 data (dtype=np.uint8 with 8 bits per item) instead of unpacked data (dtype=np.bool8).
         
         Returns:
-            The detection event data in a numpy array:
-                dtype=bool8
-                shape=(num_shots, circuit.num_detectors + circuit.num_observables * append_observables)
+            The detection event data and (optionally) observable data.
+            The result is a single numpy array if separate_observables is false, otherwise it's a tuple of two numpy arrays.
+            When returning two numpy arrays, the first array is the detection event data and the second is the observable flip data.
+            The dtype of the returned arrays is np.bool8 if bit_pack_result is false, otherwise they're np.uint8 arrays.
+            shape[0] of the array(s) is the number of shots.
+            shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit packed) (e.g. for just detection event data it would be circuit.num_detectors).
         
         Examples:
             >>> import stim
             >>> import numpy as np
             >>> converter = stim.Circuit('''
             ...    X 0
-            ...    M 0
+            ...    M 0 1
             ...    DETECTOR rec[-1]
+            ...    DETECTOR rec[-2]
+            ...    OBSERVABLE_INCLUDE(0) rec[-2]
             ... ''').compile_m2d_converter()
-            >>> converter.convert(
-            ...     measurements=np.array([[0], [1]], dtype=np.bool8),
-            ...     append_observables=False,
+            >>> dets, obs = converter.convert(
+            ...     measurements=np.array([[1, 0],
+            ...                            [1, 0],
+            ...                            [1, 0],
+            ...                            [0, 0],
+            ...                            [1, 0]], dtype=np.bool8),
+            ...     separate_observables=True,
             ... )
-            array([[ True],
+            >>> dets
+            array([[False, False],
+                   [False, False],
+                   [False, False],
+                   [ True, False],
+                   [False, False],
+                   [False, False]])
+            >>> obs
+            array([[False],
+                   [False],
+                   [False],
+                   [ True],
+                   [False],
                    [False]])
         """
     def convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool = False, obs_out_filepath: str = None, obs_out_format: str = '01') -> None:

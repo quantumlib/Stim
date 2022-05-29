@@ -14,6 +14,7 @@
 import tempfile
 
 import numpy as np
+import pytest
 import stim
 
 
@@ -188,3 +189,59 @@ def test_convert_bit_packed_swept():
             assert result.dtype == np.uint8
             assert result.shape == (2, 13)
             np.testing.assert_array_equal(result, expected_detections_packed)
+
+
+def test_convert_bit_packed_separate_observables():
+    converter = stim.Circuit('''
+       REPEAT 100 {
+           X 0
+           MR 0
+           DETECTOR rec[-1]
+       }
+       OBSERVABLE_INCLUDE(0) rec[-1]
+       OBSERVABLE_INCLUDE(6) rec[-2]
+       OBSERVABLE_INCLUDE(14) rec[-3]
+    ''').compile_m2d_converter()
+
+    measurements = np.array([[0] * 100, [1] * 100], dtype=np.bool8)
+    expected_dets = np.array([[1] * 100, [0] * 100], dtype=np.bool8)
+    expected_obs = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1], [0] * 15], dtype=np.bool8)
+    measurements_bit_packed = np.packbits(measurements, axis=1, bitorder='little')
+    expected_dets_packed = np.packbits(expected_dets, axis=1, bitorder='little')
+    expected_obs_packed = np.packbits(expected_obs, axis=1, bitorder='little')
+
+    for m in measurements, measurements_bit_packed:
+        actual_dets, actual_obs = converter.convert(
+            measurements=m,
+            separate_observables=True,
+        )
+        assert actual_dets.dtype == actual_obs.dtype == np.bool8
+        assert actual_dets.shape == (2, 100)
+        assert actual_obs.shape == (2, 15)
+        np.testing.assert_array_equal(actual_dets, expected_dets)
+        np.testing.assert_array_equal(actual_obs, expected_obs)
+
+        actual_dets, actual_obs = converter.convert(
+            measurements=m,
+            separate_observables=True,
+            bit_pack_result=True,
+        )
+        assert actual_dets.dtype == actual_obs.dtype == np.uint8
+        assert actual_dets.shape == (2, 13)
+        assert actual_obs.shape == (2, 2)
+        np.testing.assert_array_equal(actual_dets, expected_dets_packed)
+        np.testing.assert_array_equal(actual_obs, expected_obs_packed)
+
+
+def test_needs_append_or_separate():
+    converter = stim.Circuit().compile_m2d_converter()
+    ms = np.zeros(shape=(50, 0), dtype=np.bool8)
+    with pytest.raises(ValueError, match="explicitly specify either separate"):
+        converter.convert(measurements=ms)
+    d1 = converter.convert(measurements=ms, append_observables=True)
+    d2, d3 = converter.convert(measurements=ms, separate_observables=True)
+    d4, d5 = converter.convert(measurements=ms, separate_observables=True, append_observables=True)
+    np.testing.assert_array_equal(d1, d2)
+    np.testing.assert_array_equal(d1, d3)
+    np.testing.assert_array_equal(d1, d4)
+    np.testing.assert_array_equal(d1, d5)
