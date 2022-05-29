@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "stim/io/read_write.pybind.h"
+
 #include "stim/circuit/circuit.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/measure_record_writer.h"
@@ -21,6 +23,57 @@
 
 using namespace stim;
 using namespace stim_pybind;
+
+pybind11::object transposed_simd_bit_table_to_numpy_uint8(
+    const simd_bit_table &table, size_t bits_per_shot, size_t num_shots) {
+    std::vector<uint8_t> bytes;
+    bytes.resize(bits_per_shot * num_shots);
+    size_t bytes_per_shot = (bits_per_shot + 7) / 8;
+    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
+        size_t shot_offset = bytes_per_shot * shot_index;
+        for (size_t o_index = 0; o_index < bits_per_shot; o_index += 8) {
+            for (size_t b = 0; b < 8; b++) {
+                bool bit = table[o_index + b][shot_index];
+                bytes[shot_offset + o_index / 8] |= bit << b;
+            }
+        }
+    }
+    void *ptr = bytes.data();
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)bytes_per_shot};
+    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)bytes_per_shot, 1};
+    const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
+    bool readonly = true;
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
+}
+
+pybind11::object transposed_simd_bit_table_to_numpy_bool8(
+    const simd_bit_table &table, size_t bits_per_shot, size_t num_shots) {
+    std::vector<uint8_t> bytes;
+    bytes.resize(bits_per_shot * num_shots);
+    size_t k = 0;
+    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
+        for (size_t o_index = 0; o_index < bits_per_shot; o_index++) {
+            bytes[k++] = table[o_index][shot_index];
+        }
+    }
+    void *ptr = bytes.data();
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)bits_per_shot};
+    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)bits_per_shot, 1};
+    const std::string &format = pybind11::format_descriptor<bool>::value;
+    bool readonly = true;
+    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+}
+
+pybind11::object stim_pybind::transposed_simd_bit_table_to_numpy(
+    const simd_bit_table &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result) {
+    if (bit_pack_result) {
+        return transposed_simd_bit_table_to_numpy_uint8(table, bits_per_shot, num_shots);
+    } else {
+        return transposed_simd_bit_table_to_numpy_bool8(table, bits_per_shot, num_shots);
+    }
+}
 
 pybind11::object read_shot_data_file(
     const char *path,
@@ -61,9 +114,9 @@ pybind11::object read_shot_data_file(
         pybind11::ssize_t itemsize = sizeof(uint8_t);
         std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bytes_per_shot};
         std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)num_bytes_per_shot, 1};
-        const std::string &format = pybind11::format_descriptor<uint8_t>::value;
+        const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
         bool readonly = true;
-        return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+        return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
     } else {
         std::vector<uint8_t> unpacked_buffer;
         for (size_t s = 0; s < num_shots; s++) {
@@ -77,9 +130,85 @@ pybind11::object read_shot_data_file(
         pybind11::ssize_t itemsize = sizeof(uint8_t);
         std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bits_per_shot};
         std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)num_bits_per_shot, 1};
-        const std::string &format = pybind11::format_descriptor<bool>::value;
+        const std::string &np_format = pybind11::format_descriptor<bool>::value;
         bool readonly = true;
-        return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+        return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
+    }
+}
+
+simd_bit_table bit_packed_numpy_uint8_array_to_transposed_simd_table(
+    const pybind11::array_t<uint8_t> &data_u8, size_t expected_bits_per_shot, size_t *num_shots_out) {
+    size_t num_shots = data_u8.shape(0);
+    *num_shots_out = num_shots;
+
+    if (data_u8.ndim() != 2) {
+        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+    }
+
+    size_t expected_bytes_per_shot = (expected_bits_per_shot + 7) / 8;
+    size_t actual_bytes_per_shot = data_u8.shape(1);
+    if (actual_bytes_per_shot != expected_bytes_per_shot) {
+        std::stringstream ss;
+        ss << "Expected " << expected_bits_per_shot << " bits per shot. ";
+        ss << "Got bit packed data (dtype=np.uint8) but data.shape[1]=";
+        ss << actual_bytes_per_shot << " != math.ceil(" << expected_bits_per_shot
+           << " / 8)=" << expected_bytes_per_shot;
+        throw std::invalid_argument(ss.str());
+    }
+
+    simd_bit_table result(actual_bytes_per_shot * 8, num_shots);
+
+    auto u = data_u8.unchecked();
+    for (size_t a = 0; a < num_shots; a++) {
+        for (size_t b = 0; b < actual_bytes_per_shot; b++) {
+            uint8_t v = u(a, b);
+            for (size_t k = 0; k < 8; k++) {
+                result[b * 8 + k][a] |= ((v >> k) & 1) != 0;
+            }
+        }
+    }
+
+    return result;
+}
+
+simd_bit_table bit_packed_numpy_bool8_array_to_transposed_simd_table(
+    const pybind11::array_t<bool> &data_bool8, size_t expected_bits_per_shot, size_t *num_shots_out) {
+    size_t num_shots = data_bool8.shape(0);
+    *num_shots_out = num_shots;
+
+    if (data_bool8.ndim() != 2) {
+        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+    }
+
+    size_t actual_bits_per_shot = data_bool8.shape(1);
+    if (actual_bits_per_shot != expected_bits_per_shot) {
+        std::stringstream ss;
+        ss << "Expected " << expected_bits_per_shot << " bits per shot. ";
+        ss << "Got unpacked boolean data (dtype=np.bool8) but data.shape[1]=" << actual_bits_per_shot;
+        throw std::invalid_argument(ss.str());
+    }
+    simd_bit_table result(actual_bits_per_shot, num_shots);
+
+    auto u = data_bool8.unchecked();
+    for (size_t a = 0; a < num_shots; a++) {
+        for (size_t b = 0; b < actual_bits_per_shot; b++) {
+            result[b][a] |= u(a, b);
+        }
+    }
+
+    return result;
+}
+
+simd_bit_table stim_pybind::numpy_array_to_transposed_simd_table(
+    const pybind11::object &data, size_t bits_per_shot, size_t *num_shots_out) {
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(data)) {
+        return bit_packed_numpy_uint8_array_to_transposed_simd_table(
+            pybind11::cast<pybind11::array_t<uint8_t>>(data), bits_per_shot, num_shots_out);
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(data)) {
+        return bit_packed_numpy_bool8_array_to_transposed_simd_table(
+            pybind11::cast<pybind11::array_t<bool>>(data), bits_per_shot, num_shots_out);
+    } else {
+        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
     }
 }
 
@@ -102,62 +231,24 @@ void write_shot_data_file(
         throw std::invalid_argument("num_measurements and (num_detectors or num_observables)");
     }
     size_t num_bits_per_shot = nm + nd + no;
-    size_t num_bytes_per_shot = (num_bits_per_shot + 7) / 8;
+    size_t num_shots;
+    simd_bit_table buffer = numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
 
-    auto data8 = pybind11::cast<pybind11::array_t<uint8_t>>(data);
-    if (data8.ndim() != 2) {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
-    }
-    size_t num_shots = data8.shape(0);
-    simd_bit_table buffer(num_bits_per_shot, num_shots);
-
-    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(data)) {
-        if ((size_t)data8.shape(1) != num_bytes_per_shot) {
-            throw std::invalid_argument(
-                "data.dtype == np.uint8 but data.shape[1] != math.ceil((num_measurements + num_detectors + "
-                "num_observables) / 8)");
-        }
-        auto u = data8.unchecked();
-        for (size_t a = 0; a < num_shots; a++) {
-            for (size_t b = 0; b < num_bytes_per_shot; b++) {
-                uint8_t v = u(a, b);
-                for (size_t k = 0; k < 8; k++) {
-                    buffer[b * 8 + k][a] |= ((v >> k) & 1) != 0;
-                }
-            }
-        }
-    } else if (pybind11::isinstance<pybind11::array_t<bool>>(data)) {
-        if ((size_t)data8.shape(1) != num_bits_per_shot) {
-            throw std::invalid_argument(
-                "data.dtype == np.bool8 but data.shape[1] != num_measurements + num_detectors + num_observables");
-        }
-        auto u = data8.unchecked();
-        for (size_t a = 0; a < num_shots; a++) {
-            for (size_t b = 0; b < num_bits_per_shot; b++) {
-                buffer[b][a] |= u(a, b);
-            }
-        }
-    } else {
-        throw std::invalid_argument("data.dtype not in [np.uint8, np.bool8]");
-    }
-
-    {
-        RaiiFile f(path, "w");
-        simd_bits unused(0);
-        write_table_data(
-            f.f,
-            num_shots,
-            num_bits_per_shot,
-            unused,
-            buffer,
-            parsed_format,
-            nm == 0 ? 'D' : 'M',
-            nm == 0 ? 'L' : 'M',
-            nm + nd);
-    }
+    RaiiFile f(path, "w");
+    simd_bits unused(0);
+    write_table_data(
+        f.f,
+        num_shots,
+        num_bits_per_shot,
+        unused,
+        buffer,
+        parsed_format,
+        nm == 0 ? 'D' : 'M',
+        nm == 0 ? 'L' : 'M',
+        nm + nd);
 }
 
-void pybind_read_write(pybind11::module &m) {
+void stim_pybind::pybind_read_write(pybind11::module &m) {
     m.def(
         "read_shot_data_file",
         &read_shot_data_file,

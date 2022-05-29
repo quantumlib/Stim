@@ -28,10 +28,11 @@ specified by the user (such as a target number of errors), saves the results to
 as simple CSV format, and has some basic  plotting functionality for viewing the
 results.
 
-Sinter doesn't support cloud compute, but it does scale extremely well within
+Sinter doesn't support cloud compute, but it does scale well on
 a single machine.
-I've tested it on 2 core machines and 96 core machines, and it consistently gets
-good resource utilization (>95%).
+I've tested it on 2 core machines, 4 core machines, and 96 core machines.
+Although there are potential pitfalls (e.g. setting batch sizes too large causes thrashing),
+sinter generally achieves good resource utilization of the processes you assign to it.
 
 <a name="how_to_install"></a>
 # How to install
@@ -54,7 +55,7 @@ to use sinter's python API.
 
 > **sinter is still in development. Its API is not stable.** 
 
-This example assumes you are in a python environment with stim and sinter
+This example assumes you are in a python environment with sinter
 installed.
 
 ```bash
@@ -101,7 +102,7 @@ def main():
     sinter.plot_error_rate(
         ax=ax,
         stats=samples,
-        curve_func=lambda stat: f"Rotated Surface Code d={stat.json_metadata['d']}",
+        group_func=lambda stat: f"Rotated Surface Code d={stat.json_metadata['d']}",
         x_func=lambda stat: stat.json_metadata['p'],
     )
     ax.loglog()
@@ -203,9 +204,9 @@ You can use sinter to collect statistics on each circuit by using the `sinter co
 This command takes options specifying how much data to collect, how to do decoding, etc.
 
 By default, sinter writes the collected statistics to stdout as CSV data.
-One particularly important option that changes this behavior is `-save_resume_filepath`,
+One particularly important option that changes this behavior is `--save_resume_filepath`,
 which allows the command to be interrupted and restarted without losing data.
-Any data already at the file specified by `-save_resume_filepath` will count towards the
+Any data already at the file specified by `--save_resume_filepath` will count towards the
 amount of statistics asked to be collected, and sinter will append new statistics to this file
 instead of overwriting it.
 
