@@ -91,7 +91,7 @@ def plot_discard_rate(
         *,
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], float],
+        x_func: Callable[['sinter.TaskStats'], Any],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
         highlight_likelihood_ratio: Optional[float] = 1e-3,
@@ -130,7 +130,7 @@ def plot_discard_rate(
         ys_low = []
         ys_high = []
         for stat in stats:
-            x = x_func(stat)
+            x = float(x_func(stat))
             if stat.shots:
                 xs.append(x)
                 ys.append(stat.discards / stat.shots)
@@ -165,7 +165,7 @@ def plot_error_rate(
         *,
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
-        x_func: Callable[['sinter.TaskStats'], float],
+        x_func: Callable[['sinter.TaskStats'], Any],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
         highlight_likelihood_ratio: Optional[float] = 1e-3,
@@ -207,7 +207,7 @@ def plot_error_rate(
             num_kept = stat.shots - stat.discards
             if num_kept == 0:
                 continue
-            x = x_func(stat)
+            x = float(x_func(stat))
             if stat.errors:
                 xs.append(x)
                 ys.append(stat.errors / num_kept)

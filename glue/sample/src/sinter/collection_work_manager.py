@@ -190,15 +190,16 @@ class CollectionWorkManager:
         return None
 
     def status(self, *, num_circuits: Optional[int]) -> str:
-        main_status = '\033[31m'
-        if num_circuits is not None:
-            main_status += f'{num_circuits - self.finished_count} cases not finished yet'
+        if self.is_done():
+            main_status = 'Done'
+        elif num_circuits is not None:
+            main_status = f'{num_circuits - self.finished_count} cases not finished yet'
         else:
-            main_status += "Running..."
+            main_status = "Running..."
         collector_statuses = [
             '\n    ' + collector.status()
             for collector in self.active_collectors.values()
         ]
         if len(collector_statuses) > 10:
             collector_statuses = collector_statuses[:10] + ['\n...']
-        return main_status + ''.join(collector_statuses) + '\033[0m'
+        return '\033[31m' + main_status + ''.join(collector_statuses) + '\033[0m'
