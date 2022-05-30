@@ -106,6 +106,7 @@ def iter_collect(*,
         while manager.fill_work_queue():
             # Wait for a worker to finish a job.
             sample = manager.wait_for_next_sample()
+            manager.fill_work_queue()
 
             # Report the incremental results.
             yield Progress(

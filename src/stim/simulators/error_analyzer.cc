@@ -87,6 +87,7 @@ void ErrorAnalyzer::MX_with_context(const OperationData &dat, const char *op) {
         xor_sort_measurement_error(d, dat);
         xs[q].xor_sorted_items(d);
         check_for_gauge(zs[q], op, q);
+        measurement_to_detectors.erase(scheduled_measurement_time);
     }
 }
 
@@ -100,6 +101,7 @@ void ErrorAnalyzer::MY_with_context(const OperationData &dat, const char *op) {
         xs[q].xor_sorted_items(d);
         zs[q].xor_sorted_items(d);
         check_for_gauge(xs[q], zs[q], op, q);
+        measurement_to_detectors.erase(scheduled_measurement_time);
     }
 }
 
@@ -113,6 +115,7 @@ void ErrorAnalyzer::MZ_with_context(const OperationData &dat, const char *contex
 
         zs[q].xor_sorted_items(d);
         check_for_gauge(xs[q], context_op, q);
+        measurement_to_detectors.erase(scheduled_measurement_time);
     }
 }
 
@@ -939,15 +942,31 @@ ConstPointerRange<DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(doub
     return key;
 }
 
-bool shifted_equals(int64_t shift, const SparseXorVec<DemTarget> &unshifted, const SparseXorVec<DemTarget> &expected) {
+bool shifted_equals(int64_t shift, ConstPointerRange<DemTarget> unshifted, ConstPointerRange<DemTarget> expected) {
     if (unshifted.size() != expected.size()) {
         return false;
     }
     for (size_t k = 0; k < unshifted.size(); k++) {
-        DemTarget a = unshifted.sorted_items[k];
-        DemTarget e = expected.sorted_items[k];
+        DemTarget a = unshifted[k];
+        DemTarget e = expected[k];
         a.shift_if_detector_id(shift);
         if (a != e) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool shifted_equals(int64_t m_shift, int64_t d_shift, const std::map<uint64_t, std::vector<DemTarget>> &unshifted, const std::map<uint64_t, std::vector<DemTarget>> &expected) {
+    if (unshifted.size() != expected.size()) {
+        return false;
+    }
+    for (const auto &unshifted_entry : unshifted) {
+        const auto &shifted_entry = expected.find(unshifted_entry.first + m_shift);
+        if (shifted_entry == expected.end()) {
+            return false;
+        }
+        if (!shifted_equals(d_shift, unshifted_entry.second, shifted_entry->second)) {
             return false;
         }
     }
@@ -986,13 +1005,17 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
         // When comparing different loop iterations, shift detector ids to account for
         // detectors being introduced during each iteration.
         int64_t dt = -(int64_t)((hare_iter - tortoise_iter) * num_loop_detectors);
+        int64_t mt = hare.scheduled_measurement_time - scheduled_measurement_time;
         for (size_t k = 0; k < hare.xs.size(); k++) {
-            if (!shifted_equals(dt, xs[k], hare.xs[k])) {
+            if (!shifted_equals(dt, xs[k].range(), hare.xs[k].range())) {
                 return false;
             }
-            if (!shifted_equals(dt, zs[k], hare.zs[k])) {
+            if (!shifted_equals(dt, zs[k].range(), hare.zs[k].range())) {
                 return false;
             }
+        }
+        if (!shifted_equals(mt, dt, measurement_to_detectors, hare.measurement_to_detectors)) {
+            return false;
         }
         return true;
     };

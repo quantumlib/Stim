@@ -3141,3 +3141,29 @@ TEST(ErrorAnalyzer, block_remnant_edge) {
             error(0.25) D2 D3 ^ D0 D1
         )MODEL"));
 }
+
+
+TEST(ErrorAnalyzer, dont_fold_when_observable_dependencies_cross_iterations) {
+    Circuit c(R"CIRCUIT(
+        RX 0 2
+        REPEAT 100 {
+            R 1
+            CX 0 1 2 1
+            MRZ 1
+            MRX 2
+        }
+        MX 0
+        # Doesn't include all elements from the loop.
+        OBSERVABLE_INCLUDE(0) rec[-1] rec[-2] rec[-4]
+    )CIRCUIT");
+    ASSERT_ANY_THROW({
+        ErrorAnalyzer::circuit_to_detector_error_model(
+        c,
+        true,
+        true,
+        false,
+        1,
+        false,
+        false);
+    });
+}
