@@ -170,7 +170,7 @@ def test_no_detectors_with_post_mask():
     result = sample_decode(
         circuit=c,
         decoder_error_model=c.detector_error_model(decompose_errors=True),
-        post_mask=np.array([0], dtype=np.uint8),
+        post_mask=np.array([], dtype=np.uint8),
         num_shots=1000,
         decoder='pymatching',
     )
