@@ -14,7 +14,7 @@
 
 #include "stim/gen/gen_rep_code.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace stim;
 

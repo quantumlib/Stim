@@ -14,7 +14,7 @@
 
 #include "stim/simulators/error_matcher.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"

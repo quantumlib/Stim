@@ -14,7 +14,7 @@
 
 #include "stim/search/graphlike/algo.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"

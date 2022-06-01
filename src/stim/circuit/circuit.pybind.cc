@@ -674,7 +674,8 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             pybind11::arg("name"),
             pybind11::arg("targets") = pybind11::make_tuple(),
             pybind11::arg("arg") = pybind11::none(),
-            k == 0 ? "[DEPRECATED] use stim.Circuit.append instead" : clean_doc_string(u8R"DOC(
+            k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
+                   : clean_doc_string(u8R"DOC(
                 Appends an operation into the circuit.
                 @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]]) -> None:
                 @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
@@ -721,7 +722,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                         `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
                         that take exactly one argument.
             )DOC")
-                .data());
+                         .data());
     }
 
     c.def(

@@ -14,7 +14,7 @@
 
 #include "stim/mem/bit_ref.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace stim;
 

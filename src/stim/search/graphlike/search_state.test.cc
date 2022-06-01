@@ -14,7 +14,7 @@
 
 #include "stim/search/graphlike/search_state.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/search/graphlike/node.h"
 

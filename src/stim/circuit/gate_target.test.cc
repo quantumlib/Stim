@@ -14,7 +14,7 @@
 
 #include "stim/circuit/gate_target.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

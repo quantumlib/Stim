@@ -14,7 +14,7 @@
 
 #include "stim/mem/simd_bits_range_ref.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

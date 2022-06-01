@@ -14,9 +14,10 @@
 
 #include "stim/main_namespaced.h"
 
-#include <gtest/gtest.h>
 #include <regex>
 #include <unordered_map>
+
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

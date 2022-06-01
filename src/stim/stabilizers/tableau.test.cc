@@ -14,8 +14,9 @@
 
 #include "stim/stabilizers/tableau.h"
 
-#include <gtest/gtest.h>
 #include <random>
+
+#include "gtest/gtest.h"
 
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/vector_simulator.h"

@@ -14,7 +14,7 @@
 
 #include "stim/search/hyper/search_state.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/search/hyper/node.h"
 

@@ -14,7 +14,7 @@
 
 #include "stim/simulators/frame_simulator.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.test.h"
 #include "stim/simulators/tableau_simulator.h"

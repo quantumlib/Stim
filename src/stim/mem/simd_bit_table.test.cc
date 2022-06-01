@@ -14,7 +14,7 @@
 
 #include "stim/mem/simd_bit_table.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

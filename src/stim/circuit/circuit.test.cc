@@ -14,7 +14,7 @@
 
 #include "stim/circuit/circuit.test.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace stim;
 

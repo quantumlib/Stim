@@ -14,7 +14,7 @@
 
 #include "stim/simulators/vector_simulator.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/circuit/gate_data.h"
 #include "stim/test_util.test.h"

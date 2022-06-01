@@ -14,7 +14,7 @@
 
 #include "stim/search/hyper/node.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace stim;
 using namespace stim::impl_search_hyper;

@@ -14,7 +14,7 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/stabilizers/tableau.h"
 #include "stim/test_util.test.h"

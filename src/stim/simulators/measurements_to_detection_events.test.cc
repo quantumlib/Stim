@@ -14,8 +14,9 @@
 
 #include "stim/simulators/measurements_to_detection_events.h"
 
-#include <gtest/gtest.h>
 #include <stim/gen/gen_surface_code.h>
+
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

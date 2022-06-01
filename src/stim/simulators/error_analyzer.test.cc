@@ -14,8 +14,9 @@
 
 #include "stim/simulators/error_analyzer.h"
 
-#include <gtest/gtest.h>
 #include <regex>
+
+#include "gtest/gtest.h"
 
 #include "stim/gen/gen_rep_code.h"
 #include "stim/simulators/frame_simulator.h"
