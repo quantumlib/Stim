@@ -33,12 +33,13 @@ struct RaiiFile {
 struct CompiledMeasurementsToDetectionEventsConverter {
     const bool skip_reference_sample;
     const stim::simd_bits ref_sample;
-    const stim::Circuit circuit;
     const uint64_t circuit_num_measurements;
     const uint64_t circuit_num_sweep_bits;
     const uint64_t circuit_num_detectors;
     const uint64_t circuit_num_observables;
     const size_t circuit_num_qubits;
+    const stim::Circuit circuit;
+
     CompiledMeasurementsToDetectionEventsConverter() = delete;
     CompiledMeasurementsToDetectionEventsConverter(const CompiledMeasurementsToDetectionEventsConverter &) = delete;
     CompiledMeasurementsToDetectionEventsConverter(CompiledMeasurementsToDetectionEventsConverter &&) = default;
@@ -46,10 +47,12 @@ struct CompiledMeasurementsToDetectionEventsConverter {
     CompiledMeasurementsToDetectionEventsConverter(
         stim::simd_bits ref_sample, stim::Circuit circuit, bool skip_reference_sample);
 
-    pybind11::array_t<bool> convert(
-        const pybind11::array_t<bool> &measurements,
-        const pybind11::array_t<bool> &sweep_bits,
-        bool append_observables);
+    pybind11::object convert(
+        const pybind11::object &measurements,
+        const pybind11::object &sweep_bits,
+        const pybind11::object &separate_observables,
+        const pybind11::object &append_observables,
+        bool bit_pack_result);
     void convert_file(
         const std::string &measurements_filepath,
         const std::string &measurements_format,

@@ -1560,39 +1560,72 @@ class CompiledMeasurementsToDetectionEventsConverter:
     def __repr__(self) -> str:
         """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementsToDetectionEventsConverter`.
         """
-    def convert(self, *, measurements: np.ndarray[bool], sweep_bits: np.ndarray[bool] = None, append_observables: bool) -> np.ndarray[bool]:
+    def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+
         """Converts measurement data into detection event data.
         
         Args:
-            measurements: A numpy array containing measurement data:
-                dtype=bool8
-                shape=(num_shots, circuit.num_measurements)
-            sweep_bits: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
-                dtype=bool8
-                shape=(num_shots, circuit.num_sweep_bits)
-                Defaults to None (all sweep bits False).
-            append_observables: When True, the observables in the circuit are included as part of the detection
-                event data. Specifically, they are treated as if they were additional detectors at the end of the
-                circuit. When False, observable data is not output.
+            measurements: A numpy array containing measurement data. The dtype of the array is used
+                to determine if it is bit packed or not.
+        
+                dtype=np.bool8 (unpacked data):
+                    shape=(num_shots, circuit.num_measurements)
+                dtype=np.uint8 (bit packed data):
+                    shape=(num_shots, math.ceil(circuit.num_measurements / 8))
+            sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]` controls in the circuit.
+                The dtype of the array is used to determine if it is bit packed or not.
+        
+                dtype=np.bool8 (unpacked data):
+                    shape=(num_shots, circuit.num_sweep_bits)
+                dtype=np.uint8 (bit packed data):
+                    shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
+            separate_observables: Defaults to False. When set to True, two numpy arrays are returned instead of one,
+                with the second array containing the observable flip data.
+            append_observables: Defaults to False. When set to True, the observables in the circuit are treated as
+                if they were additional detectors. Their results are appended to the end of the detection event
+                data.
+            bit_pack_result: Defaults to False. When set to True, the returned numpy array contains bit packed
+                data (dtype=np.uint8 with 8 bits per item) instead of unpacked data (dtype=np.bool8).
         
         Returns:
-            The detection event data in a numpy array:
-                dtype=bool8
-                shape=(num_shots, circuit.num_detectors + circuit.num_observables * append_observables)
+            The detection event data and (optionally) observable data.
+            The result is a single numpy array if separate_observables is false, otherwise it's a tuple of two numpy arrays.
+            When returning two numpy arrays, the first array is the detection event data and the second is the observable flip data.
+            The dtype of the returned arrays is np.bool8 if bit_pack_result is false, otherwise they're np.uint8 arrays.
+            shape[0] of the array(s) is the number of shots.
+            shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit packed) (e.g. for just detection event data it would be circuit.num_detectors).
         
         Examples:
             >>> import stim
             >>> import numpy as np
             >>> converter = stim.Circuit('''
             ...    X 0
-            ...    M 0
+            ...    M 0 1
             ...    DETECTOR rec[-1]
+            ...    DETECTOR rec[-2]
+            ...    OBSERVABLE_INCLUDE(0) rec[-2]
             ... ''').compile_m2d_converter()
-            >>> converter.convert(
-            ...     measurements=np.array([[0], [1]], dtype=np.bool8),
-            ...     append_observables=False,
+            >>> dets, obs = converter.convert(
+            ...     measurements=np.array([[1, 0],
+            ...                            [1, 0],
+            ...                            [1, 0],
+            ...                            [0, 0],
+            ...                            [1, 0]], dtype=np.bool8),
+            ...     separate_observables=True,
             ... )
-            array([[ True],
+            >>> dets
+            array([[False, False],
+                   [False, False],
+                   [False, False],
+                   [ True, False],
+                   [False, False],
+                   [False, False]])
+            >>> obs
+            array([[False],
+                   [False],
+                   [False],
+                   [ True],
+                   [False],
                    [False]])
         """
     def convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool = False, obs_out_filepath: str = None, obs_out_format: str = '01') -> None:
@@ -1690,7 +1723,8 @@ class DemInstruction:
     def args_copy(self) -> List[float]:
         """Returns a copy of the list of numbers parameterizing the instruction (e.g. the probability of an error).
         """
-    def targets_copy(self) -> List[object]:
+    def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
+
         """Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.
         """
     @property

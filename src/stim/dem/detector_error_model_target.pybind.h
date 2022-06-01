@@ -19,6 +19,8 @@
 
 #include "stim/dem/detector_error_model.h"
 
+namespace stim_pybind {
+
 struct ExposedDemTarget : stim::DemTarget {
     std::string repr() const;
     ExposedDemTarget(stim::DemTarget target);
@@ -29,5 +31,7 @@ struct ExposedDemTarget : stim::DemTarget {
 };
 
 void pybind_detector_error_model_target(pybind11::module &m);
+
+}  // namespace stim_pybind
 
 #endif

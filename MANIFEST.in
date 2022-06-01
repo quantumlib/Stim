@@ -1,0 +1,3 @@
+include glue/python/src/stim/__init__.pyi
+include glue/python/README.md
+recursive-include src *.cc *.h

@@ -488,7 +488,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 for (auto t : op.target_data.args) {
                     args.append(t);
                 }
-                if (op.target_data.args.size() == 0) {
+                if (op.target_data.args.empty()) {
                     // Backwards compatibility.
                     result.append(pybind11::make_tuple(op.gate->name, targets, 0));
                 } else if (op.target_data.args.size() == 1) {

@@ -15,6 +15,7 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 
 #include "stim/circuit/circuit.pybind.h"
+#include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
@@ -28,12 +29,12 @@ CompiledMeasurementsToDetectionEventsConverter::CompiledMeasurementsToDetectionE
     simd_bits ref_sample, Circuit circuit, bool skip_reference_sample)
     : skip_reference_sample(skip_reference_sample),
       ref_sample(ref_sample),
-      circuit(circuit),
       circuit_num_measurements(circuit.count_measurements()),
       circuit_num_sweep_bits(circuit.count_sweep_bits()),
       circuit_num_detectors(circuit.count_detectors()),
       circuit_num_observables(circuit.count_observables()),
-      circuit_num_qubits(circuit.count_qubits()) {
+      circuit_num_qubits(circuit.count_qubits()),
+      circuit(std::move(circuit)) {
 }
 std::string CompiledMeasurementsToDetectionEventsConverter::repr() const {
     std::stringstream result;
@@ -100,7 +101,7 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
         format_sweep_bits,
         detections_out.f,
         format_out,
-        circuit,
+        circuit.aliased_noiseless_circuit(),
         append_observables,
         ref_sample,
         obs_out.f,
@@ -112,75 +113,70 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
         circuit_num_sweep_bits);
 }
 
-pybind11::array_t<bool> CompiledMeasurementsToDetectionEventsConverter::convert(
-    const pybind11::array_t<bool> &measurements, const pybind11::array_t<bool> &sweep_bits, bool append_observables) {
-    size_t num_shots = measurements.shape(0);
-    if (measurements.ndim() != 2) {
-        throw std::invalid_argument("Need len(measurements.shape) == 2");
+pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
+    const pybind11::object &measurements,
+    const pybind11::object &sweep_bits,
+    const pybind11::object &separate_observables_obj,
+    const pybind11::object &append_observables_obj,
+    bool bit_pack_result) {
+    if (separate_observables_obj.is_none() && append_observables_obj.is_none()) {
+        throw std::invalid_argument(
+            "To ignore observable flip data, you must explicitly specify either separate_observables=False or "
+            "append_observables=False.");
     }
-    if ((size_t)measurements.shape(1) != circuit_num_measurements) {
-        throw std::invalid_argument("Need measurements.shape[1] == circuit.num_measurements");
-    }
-    if (sweep_bits.ndim() != 0) {
-        if (sweep_bits.ndim() != 2) {
-            throw std::invalid_argument("Need len(sweep_bits.shape) == 2");
-        }
-        if ((size_t)sweep_bits.shape(1) != circuit_num_sweep_bits) {
-            throw std::invalid_argument("Need sweep_bits.shape[1] == circuit.num_sweep_bits");
-        }
-        if ((size_t)sweep_bits.shape(0) != num_shots) {
+    bool separate_observables = pybind11::cast<bool>(separate_observables_obj);
+    bool append_observables = pybind11::cast<bool>(append_observables_obj);
+    size_t num_shots;
+    simd_bit_table measurements_minor_shot_index =
+        numpy_array_to_transposed_simd_table(measurements, circuit_num_measurements, &num_shots);
+
+    simd_bit_table sweep_bits_minor_shot_index{0, num_shots};
+    if (!sweep_bits.is_none()) {
+        size_t num_sweep_shots;
+        sweep_bits_minor_shot_index =
+            numpy_array_to_transposed_simd_table(sweep_bits, circuit_num_sweep_bits, &num_sweep_shots);
+        if (num_shots != num_sweep_shots) {
             throw std::invalid_argument("Need sweep_bits.shape[0] == measurements.shape[0]");
         }
     }
 
-    simd_bit_table measurements__minor_shot_index(circuit_num_measurements, num_shots);
-    auto m = measurements.unchecked();
-    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-        for (size_t m_index = 0; m_index < circuit_num_measurements; m_index++) {
-            measurements__minor_shot_index[m_index][shot_index] ^= (bool)m(shot_index, m_index);
-        }
-    }
-
-    simd_bit_table sweep_bits__minor_shot_index(circuit_num_sweep_bits, num_shots);
-    if (sweep_bits.ndim() != 0) {
-        auto s = sweep_bits.unchecked();
-        for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-            for (size_t b_index = 0; b_index < circuit_num_sweep_bits; b_index++) {
-                sweep_bits__minor_shot_index[b_index][shot_index] ^= (bool)s(shot_index, b_index);
-            }
-        }
-    }
-
-    size_t num_output_bits = circuit_num_detectors + circuit_num_observables * append_observables;
-    simd_bit_table out_detection_results__minor_shot_index(num_output_bits, num_shots);
+    size_t num_intermediate_bits =
+        circuit_num_detectors + circuit_num_observables * (append_observables || separate_observables);
+    simd_bit_table out_detection_results_minor_shot_index(num_intermediate_bits, num_shots);
     stim::measurements_to_detection_events_helper(
-        measurements__minor_shot_index,
-        sweep_bits__minor_shot_index,
-        out_detection_results__minor_shot_index,
+        measurements_minor_shot_index,
+        sweep_bits_minor_shot_index,
+        out_detection_results_minor_shot_index,
         circuit.aliased_noiseless_circuit(),
         ref_sample,
-        append_observables,
+        append_observables || separate_observables,
         circuit_num_measurements,
         circuit_num_detectors,
         circuit_num_observables,
         circuit_num_qubits);
 
-    std::vector<uint8_t> bytes;
-    bytes.resize(num_output_bits * num_shots);
-    size_t k = 0;
-    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-        for (size_t o_index = 0; o_index < num_output_bits; o_index++) {
-            bytes[k++] = out_detection_results__minor_shot_index[o_index][shot_index];
+    size_t num_output_bits = circuit_num_detectors + circuit_num_observables * append_observables;
+    pybind11::object obs_data = pybind11::none();
+    if (separate_observables) {
+        simd_bit_table obs_table(circuit_num_observables, num_shots);
+        for (size_t obs = 0; obs < circuit_num_observables; obs++) {
+            auto obs_slice = out_detection_results_minor_shot_index[circuit_num_detectors + obs];
+            obs_table[obs] = obs_slice;
+            if (!append_observables) {
+                obs_slice.clear();
+            }
         }
+        obs_data = transposed_simd_bit_table_to_numpy(obs_table, circuit_num_observables, num_shots, bit_pack_result);
     }
 
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_output_bits};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)num_output_bits, 1};
-    const std::string &format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+    // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.
+    pybind11::object det_data = transposed_simd_bit_table_to_numpy(
+        out_detection_results_minor_shot_index, num_output_bits, num_shots, bit_pack_result);
+
+    if (separate_observables) {
+        return pybind11::make_tuple(det_data, obs_data);
+    }
+    return det_data;
 }
 
 pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>
@@ -314,40 +310,75 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
         pybind11::kw_only(),
         pybind11::arg("measurements"),
         pybind11::arg("sweep_bits") = pybind11::none(),
-        pybind11::arg("append_observables"),
+        pybind11::arg("separate_observables") = pybind11::none(),
+        pybind11::arg("append_observables") = pybind11::none(),
+        pybind11::arg("bit_pack_result") = false,
         clean_doc_string(u8R"DOC(
             Converts measurement data into detection event data.
+            @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:
-                measurements: A numpy array containing measurement data:
-                    dtype=bool8
-                    shape=(num_shots, circuit.num_measurements)
-                sweep_bits: A numpy array containing sweep data for `sweep[k]` controls in the circuit:
-                    dtype=bool8
-                    shape=(num_shots, circuit.num_sweep_bits)
-                    Defaults to None (all sweep bits False).
-                append_observables: When True, the observables in the circuit are included as part of the detection
-                    event data. Specifically, they are treated as if they were additional detectors at the end of the
-                    circuit. When False, observable data is not output.
+                measurements: A numpy array containing measurement data. The dtype of the array is used
+                    to determine if it is bit packed or not.
+
+                    dtype=np.bool8 (unpacked data):
+                        shape=(num_shots, circuit.num_measurements)
+                    dtype=np.uint8 (bit packed data):
+                        shape=(num_shots, math.ceil(circuit.num_measurements / 8))
+                sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]` controls in the circuit.
+                    The dtype of the array is used to determine if it is bit packed or not.
+
+                    dtype=np.bool8 (unpacked data):
+                        shape=(num_shots, circuit.num_sweep_bits)
+                    dtype=np.uint8 (bit packed data):
+                        shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
+                separate_observables: Defaults to False. When set to True, two numpy arrays are returned instead of one,
+                    with the second array containing the observable flip data.
+                append_observables: Defaults to False. When set to True, the observables in the circuit are treated as
+                    if they were additional detectors. Their results are appended to the end of the detection event
+                    data.
+                bit_pack_result: Defaults to False. When set to True, the returned numpy array contains bit packed
+                    data (dtype=np.uint8 with 8 bits per item) instead of unpacked data (dtype=np.bool8).
 
             Returns:
-                The detection event data in a numpy array:
-                    dtype=bool8
-                    shape=(num_shots, circuit.num_detectors + circuit.num_observables * append_observables)
+                The detection event data and (optionally) observable data.
+                The result is a single numpy array if separate_observables is false, otherwise it's a tuple of two numpy arrays.
+                When returning two numpy arrays, the first array is the detection event data and the second is the observable flip data.
+                The dtype of the returned arrays is np.bool8 if bit_pack_result is false, otherwise they're np.uint8 arrays.
+                shape[0] of the array(s) is the number of shots.
+                shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit packed) (e.g. for just detection event data it would be circuit.num_detectors).
 
             Examples:
                 >>> import stim
                 >>> import numpy as np
                 >>> converter = stim.Circuit('''
                 ...    X 0
-                ...    M 0
+                ...    M 0 1
                 ...    DETECTOR rec[-1]
+                ...    DETECTOR rec[-2]
+                ...    OBSERVABLE_INCLUDE(0) rec[-2]
                 ... ''').compile_m2d_converter()
-                >>> converter.convert(
-                ...     measurements=np.array([[0], [1]], dtype=np.bool8),
-                ...     append_observables=False,
+                >>> dets, obs = converter.convert(
+                ...     measurements=np.array([[1, 0],
+                ...                            [1, 0],
+                ...                            [1, 0],
+                ...                            [0, 0],
+                ...                            [1, 0]], dtype=np.bool8),
+                ...     separate_observables=True,
                 ... )
-                array([[ True],
+                >>> dets
+                array([[False, False],
+                       [False, False],
+                       [False, False],
+                       [ True, False],
+                       [False, False],
+                       [False, False]])
+                >>> obs
+                array([[False],
+                       [False],
+                       [False],
+                       [ True],
+                       [False],
                        [False]])
         )DOC")
             .data());

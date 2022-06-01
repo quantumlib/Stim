@@ -1,34 +1,38 @@
 import math
 import pathlib
-from typing import Callable, List
+from typing import Callable, List, TYPE_CHECKING
 
-import networkx as nx
 import numpy as np
-import pymatching
 import stim
+
+if TYPE_CHECKING:
+    import networkx as nx
+    import pymatching
 
 
 def decode_using_pymatching(*,
+                            num_shots: int,
+                            num_dets: int,
+                            num_obs: int,
                             error_model: stim.DetectorErrorModel,
-                            bit_packed_det_samples: np.ndarray,
+                            dets_b8_in_path: pathlib.Path,
+                            obs_predictions_b8_out_path: pathlib.Path,
                             tmp_dir: pathlib.Path,
-                            ) -> np.ndarray:
+                            ) -> None:
     """Collect statistics on how often logical errors occur when correcting using detections."""
 
     matching_graph = detector_error_model_to_pymatching_graph(error_model)
+    num_det_bytes = math.ceil(num_dets / 8)
 
-    num_shots = bit_packed_det_samples.shape[0]
-    num_obs = error_model.num_observables
-    num_dets = error_model.num_detectors
-    assert bit_packed_det_samples.shape[1] == (num_dets + 7) // 8
-
-    predictions = np.zeros(shape=(num_shots, num_obs), dtype=np.bool8)
     # note: extra 2 are the boundary node and the invincible-observable-boundary-edge node
-    buffer = np.zeros(num_dets + 2, dtype=np.bool8)
-    for k in range(num_shots):
-        buffer[:num_dets] = np.unpackbits(bit_packed_det_samples[k], count=num_dets, bitorder='little')
-        predictions[k] = matching_graph.decode(buffer)
-    return predictions
+    det_bits_buffer = np.zeros(num_dets + 2, dtype=np.bool8)
+    with open(dets_b8_in_path, 'rb') as dets_in_f:
+        with open(obs_predictions_b8_out_path, 'wb') as obs_out_f:
+            for _ in range(num_shots):
+                det_bytes = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes)
+                det_bits_buffer[:num_dets] = np.unpackbits(det_bytes, count=num_dets, bitorder='little')
+                prediction_bits = matching_graph.decode(det_bits_buffer)
+                np.packbits(prediction_bits, bitorder='little').tofile(obs_out_f)
 
 
 def iter_flatten_model(model: stim.DetectorErrorModel,
@@ -80,8 +84,11 @@ def iter_flatten_model(model: stim.DetectorErrorModel,
     _helper(model, 1)
 
 
-def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> nx.Graph:
+def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> 'nx.Graph':
     """Convert a stim error model into a NetworkX graph."""
+
+    # Local import to reduce sinter's startup time.
+    import networkx as nx
 
     g = nx.Graph()
     boundary_node = model.num_detectors
@@ -121,8 +128,12 @@ def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> nx.Graph
     return g
 
 
-def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> pymatching.Matching:
+def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> 'pymatching.Matching':
     """Convert a stim error model into a pymatching graph."""
+
+    # Local import to reduce sinter's startup time.
+    import pymatching
+
     g = detector_error_model_to_nx_graph(model)
     num_detectors = model.num_detectors
     num_observables = model.num_observables

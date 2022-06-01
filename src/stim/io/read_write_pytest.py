@@ -115,7 +115,7 @@ def test_write_shot_data_file_01():
     with tempfile.TemporaryDirectory() as d:
         path = str(pathlib.Path(d) / 'file.01')
 
-        with pytest.raises(ValueError, match='bool8 but data.shape'):
+        with pytest.raises(ValueError, match='4 bits per shot.+bool8'):
             stim.write_shot_data_file(
                 data=np.array([
                     [0, 1, 0],
@@ -126,7 +126,7 @@ def test_write_shot_data_file_01():
                 num_measurements=4,
             )
 
-        with pytest.raises(ValueError, match='uint8 but data.shape'):
+        with pytest.raises(ValueError, match='4 bits per shot.+uint8'):
             stim.write_shot_data_file(
                 data=np.array([
                     [0, 1, 0],

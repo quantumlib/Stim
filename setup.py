@@ -101,9 +101,10 @@ setup(
         stim_avx2,
     ],
     python_requires='>=3.6.0',
-    data_files=[('', [*HEADER_FILES, 'glue/python/README.md', 'pyproject.toml'])],
     packages=['stim'],
     package_dir={'stim': 'glue/python/src/stim'},
+    package_data={'': [*HEADER_FILES, 'glue/python/src/stim/__init__.pyi', 'glue/python/README.md', 'pyproject.toml']},
+    include_package_data=True,
     install_requires=['numpy'],
     entry_points={
         'console_scripts': ['stim=stim._main_argv:main_argv'],
