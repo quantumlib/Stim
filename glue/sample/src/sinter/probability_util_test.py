@@ -4,10 +4,11 @@ from typing import Union
 import numpy as np
 import pytest
 
-from .probability_util import (
-    binary_search, log_binomial, log_factorial, least_squares_output_range, least_squares_slope_range,
-    binary_intercept, least_squares_through_point, binomial_relative_likelihood_range,
+from sinter.probability_util import (
+    binary_search, log_binomial, log_factorial, fit_line_y_at_x, fit_line_slope,
+    binary_intercept, least_squares_through_point, fit_binomial,
 )
+from sinter.probability_util import comma_separated_key_values
 
 
 @pytest.mark.parametrize(
@@ -97,75 +98,105 @@ def test_binary_intercept():
     assert t < 0 and abs(t**2 - 82.3) <= 0.2
 
 
-def test_least_squares_output_range():
-    low, mid, high = least_squares_output_range(
+def test_fit_y_at_x():
+    fit = fit_line_y_at_x(
         xs=[1, 2, 3],
         ys=[1, 5, 9],
         target_x=100,
-        cost_increase=1,
+        max_extra_squared_error=1,
     )
-    assert 300 < low < 390 < mid < 410 < high < 500
+    assert 300 < fit.low < 390 < fit.best < 410 < fit.high < 500
 
 
-def test_least_squares_slope_range():
-    low, mid, high = least_squares_slope_range(
+def test_fit_slope():
+    fit = fit_line_slope(
         xs=[1, 2, 3],
         ys=[1, 5, 9],
-        cost_increase=1,
+        max_extra_squared_error=1,
     )
-    np.testing.assert_allclose(mid, 4)
-    assert 3 < low < 3.5 < mid < 4.5 < high < 5
+    np.testing.assert_allclose(fit.best, 4)
+    assert 3 < fit.low < 3.5 < fit.best < 4.5 < fit.high < 5
 
 
-def test_likely_error_rate_bounds_shrink_towards_half():
+def test_fit_binomial_shrink_towards_half():
+    with pytest.raises(ValueError, match='max_likelihood_factor'):
+        fit_binomial(num_shots=10 ** 5, num_hits=10 ** 5 / 2, max_likelihood_factor=0.1)
+
+    fit = fit_binomial(num_shots=10 ** 5, num_hits=10 ** 5 / 2, max_likelihood_factor=1e3)
     np.testing.assert_allclose(
-        binomial_relative_likelihood_range(num_shots=10 ** 5, num_hits=10 ** 5 / 2, likelihood_ratio=1e-3),
-        (0.494122, 0.505878),
+        (fit.low, fit.best, fit.high),
+        (0.494122, 0.5, 0.505878),
         rtol=1e-4,
     )
+    fit = fit_binomial(num_shots=10 ** 4, num_hits=10 ** 4 / 2, max_likelihood_factor=1e3)
     np.testing.assert_allclose(
-        binomial_relative_likelihood_range(num_shots=10 ** 4, num_hits=10 ** 4 / 2, likelihood_ratio=1e-3),
-        (0.481422, 0.518578),
+        (fit.low, fit.best, fit.high),
+        (0.481422, 0.5, 0.518578),
         rtol=1e-4,
     )
+    fit = fit_binomial(num_shots=10 ** 4, num_hits=10 ** 4 / 2, max_likelihood_factor=1e2)
     np.testing.assert_allclose(
-        binomial_relative_likelihood_range(num_shots=10 ** 4, num_hits=10 ** 4 / 2, likelihood_ratio=1e-2),
-        (0.48483, 0.51517),
+        (fit.low, fit.best, fit.high),
+        (0.48483, 0.5, 0.51517),
         rtol=1e-4,
     )
+    fit = fit_binomial(num_shots=1000, num_hits=500, max_likelihood_factor=1e3)
     np.testing.assert_allclose(
-        binomial_relative_likelihood_range(num_shots=1000, num_hits=500, likelihood_ratio=1e-3),
-        (0.44143, 0.55857),
+        (fit.low, fit.best, fit.high),
+        (0.44143, 0.5, 0.55857),
         rtol=1e-4,
     )
+    fit = fit_binomial(num_shots=100, num_hits=50, max_likelihood_factor=1e3)
     np.testing.assert_allclose(
-        binomial_relative_likelihood_range(num_shots=100, num_hits=50, likelihood_ratio=1e-3),
-        (0.3204, 0.6796),
+        (fit.low, fit.best, fit.high),
+        (0.3204, 0.5, 0.6796),
         rtol=1e-4,
     )
 
 
-@pytest.mark.parametrize("n,c,ratio", [
-    (100, 50, 1e-1),
-    (100, 50, 1e-2),
-    (100, 50, 1e-3),
-    (1000, 500, 1e-3),
-    (10**6, 100, 1e-3),
-    (10**6, 100, 1e-2),
+@pytest.mark.parametrize("n,c,factor", [
+    (100, 50, 1e1),
+    (100, 50, 1e2),
+    (100, 50, 1e3),
+    (1000, 500, 1e3),
+    (10**6, 100, 1e3),
+    (10**6, 100, 1e2),
 ])
-def test_likely_error_rate_bounds_vs_log_binomial(n: int, c: int, ratio: float):
-    a, b = binomial_relative_likelihood_range(num_shots=n, num_hits=n - c, likelihood_ratio=ratio)
+def test_fit_binomial_vs_log_binomial(n: int, c: int, factor: float):
+    fit = fit_binomial(num_shots=n, num_hits=n - c, max_likelihood_factor=factor)
+    a = fit.low
+    b = fit.high
 
     raw = log_binomial(p=(n - c) / n, n=n, hits=n - c)
     low = log_binomial(p=a, n=n, hits=n - c)
     high = log_binomial(p=b, n=n, hits=n - c)
+
     np.testing.assert_allclose(
-        np.exp(low - raw),
-        ratio,
+        fit.best,
+        (n - c) / n,
+        rtol=1e-4,
+    )
+
+    np.testing.assert_allclose(
+        np.exp(raw - low),
+        factor,
         rtol=1e-2,
     )
     np.testing.assert_allclose(
-        np.exp(high - raw),
-        ratio,
+        np.exp(raw - high),
+        factor,
         rtol=1e-2,
     )
+
+
+def test_comma_separated_key_values():
+    d = comma_separated_key_values("folder/a=2,b=3.0,c=test.stim")
+    assert d == {
+        'a': 2,
+        'b': 3.0,
+        'c': 'test',
+    }
+    assert type(d['a']) == int
+    assert type(d['b']) == float
+    with pytest.raises(ValueError, match='separated'):
+        comma_separated_key_values("folder/a,b=3.0,c=test.stim")

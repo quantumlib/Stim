@@ -1,12 +1,12 @@
+from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union
 import argparse
-from typing import Callable, List, Any, Tuple, Iterable, Optional, TYPE_CHECKING, Union
 
 import matplotlib.pyplot as plt
 
-from sinter import TaskStats
-from sinter.plotting import plot_discard_rate, plot_error_rate, MARKERS
-from sinter.task_summary import TaskSummary
 from sinter.main_combine import ExistingData
+from sinter.plotting import MARKERS
+from sinter.plotting import plot_discard_rate
+from sinter.plotting import plot_error_rate
 
 if TYPE_CHECKING:
     import sinter
@@ -89,11 +89,11 @@ def parse_args(args: List[str]) -> Any:
                         action='store_true',
                         help='Displays the plot in a window.\n'
                              'Either this or -out must be specified.')
-    parser.add_argument('--highlight_likelihood_ratio',
+    parser.add_argument('--highlight_max_likelihood_factor',
                         type=float,
-                        default=1e-3,
+                        default=1000,
                         help='The relative likelihood ratio that determines the color highlights around curves.\n'
-                             'Setting this outside (0, 1) disables showing highlights.')
+                             'Set this to 1 or larger. Set to 1 to disable highlighting.')
 
     a = parser.parse_args(args=args)
     if not a.show and a.out is None:
@@ -121,7 +121,7 @@ def plot(
     x_func: Callable[['sinter.TaskStats'], Any],
     include_discard_rate_plot: bool = False,
     include_error_rate_plot: bool = False,
-    highlight_likelihood_ratio: Optional[float] = 1e-3,
+    highlight_max_likelihood_factor: Optional[float] = 1e-3,
     xaxis: str,
     fig_size: Optional[Tuple[int, int]] = None,
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
@@ -165,7 +165,7 @@ def plot(
             stats=plotted_stats,
             group_func=group_func,
             x_func=x_func,
-            highlight_likelihood_ratio=highlight_likelihood_ratio,
+            highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
         min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
@@ -182,7 +182,7 @@ def plot(
             stats=plotted_stats,
             group_func=group_func,
             x_func=x_func,
-            highlight_likelihood_ratio=highlight_likelihood_ratio,
+            highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
         ax_dis.set_ylim(0, 1)
@@ -247,7 +247,7 @@ def main_plot(*, command_line_args: List[str]):
         include_error_rate_plot='error_rate' in args.type,
         xaxis=args.xaxis,
         fig_size=args.fig_size,
-        highlight_likelihood_ratio=args.highlight_likelihood_ratio,
+        highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
     )
     if args.out is not None:
         fig.savefig(args.out)

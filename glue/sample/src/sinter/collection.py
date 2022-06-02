@@ -95,8 +95,16 @@ def iter_collect(*,
             start_batch_size=start_batch_size,
             max_batch_size=max_batch_size,
             additional_existing_data=additional_existing_data) as manager:
+        yield Progress(
+            new_stats=(),
+            status_message="Starting workers..."
+        )
         manager.start_workers(num_workers)
 
+        yield Progress(
+            new_stats=(),
+            status_message="Finding work..."
+        )
         manager.fill_work_queue()
         yield Progress(
             new_stats=(),
@@ -191,7 +199,11 @@ def collect(*,
     if save_resume_filepath in existing_data_filepaths:
         raise ValueError("save_resume_filepath in existing_data_filepaths")
 
-    progress_printer = ThrottledProgressPrinter(outs=[], print_progress=print_progress)
+    progress_printer = ThrottledProgressPrinter(
+        outs=[],
+        print_progress=print_progress,
+        min_progress_delay=1,
+    )
     with contextlib.ExitStack() as exit_stack:
         # Open save/resume file.
         if save_resume_filepath is not None:
@@ -209,6 +221,7 @@ def collect(*,
             save_resume_file = None
 
         # Collect data.
+        did_work = False
         result = ExistingData()
         result.data = dict(additional_existing_data.data)
         for progress in iter_collect(
@@ -224,6 +237,7 @@ def collect(*,
             additional_existing_data=additional_existing_data,
         ):
             for stats in progress.new_stats:
+                did_work = True
                 result.add_sample(stats)
                 if save_resume_file is not None:
                     print(stats.to_csv_line(), file=save_resume_file, flush=True)
@@ -232,8 +246,6 @@ def collect(*,
             if progress_callback is not None:
                 progress_callback(progress)
 
-        if print_progress:
-            progress_printer.show_latest_progress("done collecting")
         return list(result.data.values())
 
 

@@ -148,11 +148,15 @@ and the corresponding image saved to `plot.png`:
 Sinter's python module exposes a variety of methods that are handy for plotting
 or analyzing QEC data. These include:
 
+- `sinter.fit_binomial`: Fit a binomial hypothesis to data, including a likelihood range (the Bayesian equivalent of computing the standard deviation).
+- `sinter.fit_line_slope`: Predict slope by fitting sampled coordinates to a line.
+- `sinter.fit_line_y_at_x`: Predict Y values from X values by fitting sampled coordinates to a line
+- `sinter.comma_separated_key_values(path)`: A reasonable value to give for `--metadata_func` mapping `"folder/b=test,a=2.stim"` to `{'b': 'test', 'a': 2}`.
 - `sinter.predict_observables_bit_packed`: Runs a decoder on given detection event data, producing predicted observable flip data.
 - `sinter.predict_discards_bit_packed`: Converts detection event data into "what shots should be postselected" data according to given rules.
 - `sinter.predict_on_disk`: Converts detection event data into discard data and observable prediction data, using data from disk and writing results to disk.
 - `sinter.stats_from_csv_files`: Read saved CSV data.
-- `sinter.binomial_relative_likelihood_range`: The Bayesian equivalent of computing the standard deviation.
+- `sinter.shot_error_rate_to_piece_error_rate`: Compute per-round error rates.
 - `sinter.better_sorted_str_terms`: A text sorting key that puts `"A100"` before `"A99"`, by noticing numbers instead of sorting purely lexicographically.
 - `sinter.group_by`: Combines items from a list into keyed groups.
 

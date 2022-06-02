@@ -1,9 +1,15 @@
+import dataclasses
 import math
+import pathlib
+import stim
+from typing import Any
+from typing import Dict
 from typing import Union, Callable, Sequence, Tuple, TYPE_CHECKING
 
 import numpy as np
 
 if TYPE_CHECKING:
+    import sinter
     from scipy.stats._stats_mstats_common import LinregressResult
 
 
@@ -139,11 +145,52 @@ def least_squares_with_slope(*, xs: np.ndarray, ys: np.ndarray, required_slope: 
     return LinregressResult(required_slope, best_intercept, None, None, None, intercept_stderr=False)
 
 
-def least_squares_output_range(*,
-                               xs: Sequence[float],
-                               ys: Sequence[float],
-                               target_x: float,
-                               cost_increase: float) -> Tuple[float, float, float]:
+@dataclasses.dataclass(frozen=True)
+class Fit:
+    """The result of a fitting process.
+
+    Attributes:
+        best: The max likelihood hypothesis. The hypothesis that had the lowest squared error,
+            or the best fitting score.
+        low: The hypothesis with the smallest parameter whose cost or score was still "close to"
+            the cost of the best hypothesis. For example, this could be a hypothesis whose
+            squared error was within some tolerance of the best fit's square error, or whose
+            likelihood was within some maximum Bayes factor of the max likelihood hypothesis.
+        high: The hypothesis with the larger parameter whose cost or score was still "close to"
+            the cost of the best hypothesis. For example, this could be a hypothesis whose
+            squared error was within some tolerance of the best fit's square error, or whose
+            likelihood was within some maximum Bayes factor of the max likelihood hypothesis.
+    """
+    low: float
+    best: float
+    high: float
+
+
+def fit_line_y_at_x(*,
+                    xs: Sequence[float],
+                    ys: Sequence[float],
+                    target_x: float,
+                    max_extra_squared_error: float) -> 'sinter.Fit':
+    """Performs a line fit of the given points, focusing on the line's value for y at a given x coordinate.
+
+    Finds the y value at the given x of the best fit, but also the minimum and maximum
+    values for y at the given x amongst all possible line fits whose squared error cost
+    is within the given `max_extra_squared_error` cost of the best fit.
+
+    Args:
+        xs: The x coordinates of points to fit.
+        ys: The y coordinates of points to fit.
+        target_x: The reported fit values are the value of y at this x coordinate.
+        max_extra_squared_error: When computing the low and high fits, this is
+            the maximum additional squared error that can be introduced by
+            varying the slope away from the best fit.
+
+    Returns:
+        A sinter.Fit containing the best fit for y at the given x, as well as low
+        and high fits that are as far as possible from the best fit while respective
+        the given max_extra_squared_error.
+    """
+
     # Local import to reduce initial cost of importing sinter.
     from scipy.stats import linregress
 
@@ -157,15 +204,33 @@ def least_squares_output_range(*,
         fit2 = least_squares_through_point(xs=xs, ys=ys, required_x=target_x, required_y=y2)
         return least_squares_cost(xs=xs, ys=ys, intercept=fit2.intercept, slope=fit2.slope)
 
-    low_y = binary_intercept(start_x=base_y, step=-1, target_y=base_cost + cost_increase, func=cost_for_y, atol=1e-5)
-    high_y = binary_intercept(start_x=base_y, step=1, target_y=base_cost + cost_increase, func=cost_for_y, atol=1e-5)
-    return low_y, base_y, high_y
+    low_y = binary_intercept(start_x=base_y, step=-1, target_y=base_cost + max_extra_squared_error, func=cost_for_y, atol=1e-5)
+    high_y = binary_intercept(start_x=base_y, step=1, target_y=base_cost + max_extra_squared_error, func=cost_for_y, atol=1e-5)
+    return Fit(low=low_y, best=base_y, high=high_y)
 
 
-def least_squares_slope_range(*,
-                              xs: Sequence[float],
-                              ys: Sequence[float],
-                              cost_increase: float) -> Tuple[float, float, float]:
+def fit_line_slope(*,
+              xs: Sequence[float],
+              ys: Sequence[float],
+              max_extra_squared_error: float) -> 'sinter.Fit':
+    """Performs a line fit of the given points, focusing on the line's slope.
+
+    Finds the slope of the best fit, but also the minimum and maximum slopes
+    for line fits whose squared error cost is within the given `max_extra_squared_error`
+    cost of the best fit.
+
+    Args:
+        xs: The x coordinates of points to fit.
+        ys: The y coordinates of points to fit.
+        max_extra_squared_error: When computing the low and high fits, this is
+            the maximum additional squared error that can be introduced by
+            varying the slope away from the best fit.
+
+    Returns:
+        A sinter.Fit containing the best fit, as well as low and high fits that
+        are as far as possible from the best fit while respective the given
+        max_extra_squared_error.
+    """
     # Local import to reduce initial cost of importing sinter.
     from scipy.stats import linregress
 
@@ -178,31 +243,35 @@ def least_squares_slope_range(*,
         fit2 = least_squares_with_slope(xs=xs, ys=ys, required_slope=slope)
         return least_squares_cost(xs=xs, ys=ys, intercept=fit2.intercept, slope=fit2.slope)
 
-    low_slope = binary_intercept(start_x=fit.slope, step=-1, target_y=base_cost + cost_increase, func=cost_for_slope, atol=1e-5)
-    high_slope = binary_intercept(start_x=fit.slope, step=1, target_y=base_cost + cost_increase, func=cost_for_slope, atol=1e-5)
-    return low_slope, fit.slope, high_slope
+    low_slope = binary_intercept(start_x=fit.slope, step=-1, target_y=base_cost + max_extra_squared_error, func=cost_for_slope, atol=1e-5)
+    high_slope = binary_intercept(start_x=fit.slope, step=1, target_y=base_cost + max_extra_squared_error, func=cost_for_slope, atol=1e-5)
+    return Fit(low=low_slope, best=fit.slope, high=high_slope)
 
 
-def binomial_relative_likelihood_range(
+def fit_binomial(
         *,
         num_shots: int,
         num_hits: int,
-        likelihood_ratio: float) -> Tuple[float, float]:
+        max_likelihood_factor: float) -> 'sinter.Fit':
     """Compute the (min, max) probabilities within the given ratio of the max likelihood hypothesis.
 
     Args:
         num_shots: The number of samples that were taken.
         num_hits: The number of hits that were seen in the samples.
-        likelihood_ratio: Should be larger than 1. The maximum Bayes factor between hypotheses and
-            the max likelihood hypothesis.
+        max_likelihood_factor: The maximum Bayes factor between the low,high hypotheses and
+            the best hypothesis (the max likelihood hypothesis). This value should be
+            larger than 1 (as opposed to between 0 and 1).
 
     Returns:
+        A `sinter.Fit` containing the max likelihood h
         A (min_hypothesis_probability, max_hypothesis_probability) tuple.
     """
+    if max_likelihood_factor < 1:
+        raise ValueError(f'max_likelihood_factor={max_likelihood_factor} < 1')
     if num_shots == 0:
-        return 0, 1
+        return Fit(low=0, high=1, best=0.5)
     log_max_likelihood = log_binomial(p=num_hits / num_shots, n=num_shots, hits=num_hits)
-    target_log_likelihood = log_max_likelihood + math.log(likelihood_ratio)
+    target_log_likelihood = log_max_likelihood - math.log(max_likelihood_factor)
     acc = 100
     low = binary_search(
         func=lambda exp_err: log_binomial(p=exp_err / (acc * num_shots), n=num_shots, hits=num_hits),
@@ -214,4 +283,40 @@ def binomial_relative_likelihood_range(
         target=-target_log_likelihood,
         min_x=num_hits * acc,
         max_x=num_shots * acc) / acc
-    return low / num_shots, high / num_shots
+    return Fit(best=num_hits / num_shots, low=low / num_shots, high=high / num_shots)
+
+
+def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: int) -> float:
+    """Convert from total error rate to per-piece error rate.
+
+    Works by assuming pieces fail independently and a shot fails if an any single
+    piece fails.
+    """
+    if shot_error_rate > 0.5:
+        return 1 - shot_error_rate_to_piece_error_rate(1 - shot_error_rate, pieces=pieces)
+    assert 0 <= shot_error_rate <= 0.5
+    randomize_rate = 2*shot_error_rate
+    round_randomize_rate = 1 - (1 - randomize_rate)**(1 / pieces)
+    round_error_rate = round_randomize_rate / 2
+    return round_error_rate
+
+
+def comma_separated_key_values(path: str) -> Dict[str, Any]:
+    name = pathlib.Path(path).name
+    if '.' in name:
+        name = name[:name.rindex('.')]
+    result = {}
+    for term in name.split(','):
+        parts = term.split('=')
+        if len(parts) != 2:
+            raise ValueError(f"Expected a path with a filename containing comma-separated key=value terms like 'a=2,b=3.stim', but got {path!r}.")
+        k, v = parts
+        try:
+            v = int(v)
+        except ValueError:
+            try:
+                v = float(v)
+            except ValueError:
+                pass
+        result[k] = v
+    return result
