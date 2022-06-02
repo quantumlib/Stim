@@ -85,11 +85,11 @@ jobs:
           # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macOS-10.15, dist: cp36-macosx_x86_64},
-          {os: macOS-10.15, dist: cp37-macosx_x86_64},
-          {os: macOS-10.15, dist: cp38-macosx_x86_64},
-          {os: macOS-10.15, dist: cp39-macosx_x86_64},
-          {os: macOS-10.15, dist: cp310-macosx_x86_64},
+          {os: macos-latest, dist: cp36-macosx_x86_64},
+          {os: macos-latest, dist: cp37-macosx_x86_64},
+          {os: macos-latest, dist: cp38-macosx_x86_64},
+          {os: macos-latest, dist: cp39-macosx_x86_64},
+          {os: macos-latest, dist: cp310-macosx_x86_64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
