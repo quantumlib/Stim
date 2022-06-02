@@ -14,7 +14,7 @@
 
 #include "stim/str_util.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

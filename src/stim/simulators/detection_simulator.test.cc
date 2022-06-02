@@ -14,7 +14,7 @@
 
 #include "stim/simulators/detection_simulator.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/simulators/frame_simulator.h"
 #include "stim/test_util.test.h"

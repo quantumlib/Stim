@@ -14,7 +14,12 @@ from sinter.existing_data import (
     stats_from_csv_files,
 )
 from sinter.probability_util import (
-    binomial_relative_likelihood_range,
+    Fit,
+    fit_binomial,
+    fit_line_slope,
+    fit_line_y_at_x,
+    shot_error_rate_to_piece_error_rate,
+    comma_separated_key_values,
 )
 from sinter.plotting import (
     better_sorted_str_terms,

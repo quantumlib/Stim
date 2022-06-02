@@ -5,6 +5,7 @@ import tempfile
 
 import stim
 
+import sinter
 from sinter.main import main
 from sinter.main_combine import ExistingData
 from sinter.plotting import better_sorted_str_terms, split_by
@@ -121,6 +122,49 @@ def test_main_collect():
         ])
         data2 = ExistingData.from_file(d / "out2.csv").data
         assert len(data2) == 0
+
+
+def test_main_collect_comma_separated_key_values():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        paths = []
+        for distance in [3, 5, 7]:
+            c = stim.Circuit.generated(
+                'repetition_code:memory',
+                rounds=3,
+                distance=distance,
+                after_clifford_depolarization=0.02)
+            path = d / f'd={distance},p=0.02,r=3.0,c=rep_code.stim'
+            paths.append(str(path))
+            with open(path, 'w') as f:
+                print(c, file=f)
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            *paths,
+            "--max_shots",
+            "1000",
+            "--metadata_func",
+            "sinter.comma_separated_key_values(path)",
+            "--max_errors",
+            "10",
+            "--decoders",
+            "pymatching",
+            "--processes",
+            "4",
+            "--quiet",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+        ])
+        data = sinter.stats_from_csv_files(d / "out.csv")
+        seen_metadata = frozenset(repr(e.json_metadata) for e in data)
+        assert seen_metadata == frozenset([
+            "{'c': 'rep_code', 'd': 3, 'p': 0.02, 'r': 3.0}",
+            "{'c': 'rep_code', 'd': 5, 'p': 0.02, 'r': 3.0}",
+            "{'c': 'rep_code', 'd': 7, 'p': 0.02, 'r': 3.0}",
+        ])
 
 
 def test_main_combine():

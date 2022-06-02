@@ -14,7 +14,7 @@
 
 #include "stim/gen/circuit_gen_params.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/simulators/detection_simulator.h"
 #include "stim/test_util.test.h"

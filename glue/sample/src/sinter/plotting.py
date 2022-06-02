@@ -1,6 +1,6 @@
 from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict
 
-from sinter.probability_util import binomial_relative_likelihood_range
+from sinter.probability_util import fit_binomial
 
 if TYPE_CHECKING:
     import sinter
@@ -94,7 +94,7 @@ def plot_discard_rate(
         x_func: Callable[['sinter.TaskStats'], Any],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
-        highlight_likelihood_ratio: Optional[float] = 1e-3,
+        highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
 
@@ -116,10 +116,12 @@ def plot_discard_rate(
                                                         if curve_id == 'pymatching'
                                                         else 'blue'}
 
-        highlight_likelihood_ratio: Controls how wide the uncertainty highlight region around curves is.
-            Set to this a value between 0 and 1, and the hypothesis probabilities at least that many times
-            as likely as the max likelihood hypothesis will be highlighted.
+        highlight_max_likelihood_factor: Controls how wide the uncertainty highlight region around curves is.
+            Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
+            hypothesis will be highlighted.
     """
+    if not (highlight_max_likelihood_factor >= 1):
+        raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
     curve_groups = group_by(stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
@@ -127,26 +129,28 @@ def plot_discard_rate(
 
         xs = []
         ys = []
+        xs_range = []
         ys_low = []
         ys_high = []
         for stat in stats:
             x = float(x_func(stat))
             if stat.shots:
-                xs.append(x)
-                ys.append(stat.discards / stat.shots)
-                if 0 < highlight_likelihood_ratio < 1:
-                    low, high = binomial_relative_likelihood_range(
-                        num_shots=stat.shots,
-                        num_hits=stat.discards,
-                        likelihood_ratio=highlight_likelihood_ratio)
-                    ys_low.append(low)
-                    ys_high.append(high)
+                fit = fit_binomial(
+                    num_shots=stat.shots,
+                    num_hits=stat.discards,
+                    max_likelihood_factor=highlight_max_likelihood_factor)
+                if stat.discards:
+                    xs.append(x)
+                    ys.append(fit.best)
+                xs_range.append(x)
+                ys_low.append(fit.low)
+                ys_high.append(fit.high)
 
         kwargs = dict(plot_args_func(k, curve_id))
         if 'label' not in kwargs and curve_id is not None:
             kwargs['label'] = str(curve_id)
         ax.plot(xs, ys, **kwargs)
-        if 0 < highlight_likelihood_ratio < 1:
+        if highlight_max_likelihood_factor > 1:
             if 'zorder' not in kwargs:
                 kwargs['zorder'] = 0
             if 'alpha' not in kwargs:
@@ -158,7 +162,7 @@ def plot_discard_rate(
             if 'linestyle' in kwargs:
                 del kwargs['linestyle']
             del kwargs['label']
-            ax.fill_between(xs, ys_low, ys_high, **kwargs)
+            ax.fill_between(xs_range, ys_low, ys_high, **kwargs)
 
 
 def plot_error_rate(
@@ -168,7 +172,7 @@ def plot_error_rate(
         x_func: Callable[['sinter.TaskStats'], Any],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
-        highlight_likelihood_ratio: Optional[float] = 1e-3,
+        highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -190,10 +194,13 @@ def plot_error_rate(
                                                         if curve_id == 'pymatching'
                                                         else 'blue'}
 
-        highlight_likelihood_ratio: Controls how wide the uncertainty highlight region around curves is.
-            Set to this a value between 0 and 1, and the hypothesis probabilities at least that many times
-            as likely as the max likelihood hypothesis will be highlighted.
+        highlight_max_likelihood_factor: Controls how wide the uncertainty highlight region around curves is.
+            Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
+            hypothesis will be highlighted.
     """
+    if not (highlight_max_likelihood_factor >= 1):
+        raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
+
     curve_groups = group_by(stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
         stats = sorted(curve_groups[curve_id], key=x_func)
@@ -208,24 +215,24 @@ def plot_error_rate(
             if num_kept == 0:
                 continue
             x = float(x_func(stat))
+            fit = fit_binomial(
+                num_shots=num_kept,
+                num_hits=stat.errors,
+                max_likelihood_factor=highlight_max_likelihood_factor,
+            )
             if stat.errors:
                 xs.append(x)
-                ys.append(stat.errors / num_kept)
-            if 0 < highlight_likelihood_ratio < 1:
+                ys.append(fit.best)
+            if highlight_max_likelihood_factor > 1:
                 xs_range.append(x)
-                low, high = binomial_relative_likelihood_range(
-                    num_shots=num_kept,
-                    num_hits=stat.errors,
-                    likelihood_ratio=highlight_likelihood_ratio,
-                )
-                ys_low.append(low)
-                ys_high.append(high)
+                ys_low.append(fit.low)
+                ys_high.append(fit.high)
 
         kwargs = dict(plot_args_func(k, curve_id))
         if 'label' not in kwargs and curve_id is not None:
             kwargs['label'] = str(curve_id)
         ax.plot(xs, ys, **kwargs)
-        if 0 < highlight_likelihood_ratio < 1:
+        if highlight_max_likelihood_factor > 1:
             if 'zorder' not in kwargs:
                 kwargs['zorder'] = 0
             if 'alpha' not in kwargs:

@@ -17,8 +17,9 @@
 #ifndef _STIM_TEST_UTIL_TEST_H
 #define _STIM_TEST_UTIL_TEST_H
 
-#include <gtest/gtest.h>
 #include <random>
+
+#include "gtest/gtest.h"
 
 #include "stim/stabilizers/pauli_string.h"
 

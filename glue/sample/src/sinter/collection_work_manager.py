@@ -35,6 +35,7 @@ class CollectionWorkManager:
         self.start_batch_size = start_batch_size
         self.max_batch_size = max_batch_size
         self.decoders = (None,) if decoders is None else tuple(decoders)
+        self.did_work = False
 
         self.workers: List[multiprocessing.Process] = []
         self.active_collectors: Dict[int, CollectionTrackerForSingleTask] = {}
@@ -105,6 +106,7 @@ class CollectionWorkManager:
             work = self.provide_more_work()
             if work is None:
                 break
+            self.did_work = True
             self.queue_to_workers.put(WorkIn(key=(self.next_job_id, work.key),
                                              task=work.task,
                                              summary=work.summary,
@@ -191,7 +193,10 @@ class CollectionWorkManager:
 
     def status(self, *, num_circuits: Optional[int]) -> str:
         if self.is_done():
-            main_status = 'Done'
+            if self.did_work:
+                main_status = 'Done collecting'
+            else:
+                main_status = 'There was nothing additional to collect'
         elif num_circuits is not None:
             main_status = f'{num_circuits - self.finished_count} cases not finished yet'
         else:
@@ -202,4 +207,4 @@ class CollectionWorkManager:
         ]
         if len(collector_statuses) > 10:
             collector_statuses = collector_statuses[:10] + ['\n...']
-        return '\033[31m' + main_status + ''.join(collector_statuses) + '\033[0m'
+        return main_status + ''.join(collector_statuses)

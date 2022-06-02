@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"

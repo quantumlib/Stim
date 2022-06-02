@@ -4,15 +4,19 @@ from typing import List, Any
 import sys
 import time
 
-MIN_PROGRESS_PRINT_DELAY = 0.03
-
 
 class ThrottledProgressPrinter:
-    def __init__(self, *, outs: List[Any], print_progress: bool):
+    """Handles printing progress updates interspersed amongst output.
+
+    Throttles the progress updates to not flood the screen when 100 show up
+    at the same time, and instead only show the latest one.
+    """
+    def __init__(self, *, outs: List[Any], print_progress: bool, min_progress_delay: float):
         self.outs = outs
         self.print_progress = print_progress
         self.next_can_print_time = time.monotonic()
         self.latest_msg = ''
+        self.min_progress_delay = min_progress_delay
         self.is_worker_running = False
         self.lock = threading.Lock()
 
@@ -38,9 +42,9 @@ class ThrottledProgressPrinter:
         t = time.monotonic()
         dt = self.next_can_print_time - t
         if dt <= 0:
-            self.next_can_print_time = t + MIN_PROGRESS_PRINT_DELAY
+            self.next_can_print_time = t + self.min_progress_delay
             self.is_worker_running = False
-            print(self.latest_msg, file=sys.stderr, flush=True)
+            print('\033[31m' + self.latest_msg + '\033[0m', file=sys.stderr, flush=True)
         return max(dt, 0)
 
     def _print_worker(self):

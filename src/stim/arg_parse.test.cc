@@ -14,9 +14,10 @@
 
 #include "stim/arg_parse.h"
 
-#include <gtest/gtest.h>
 #include <stdio.h>
 #include <string>
+
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

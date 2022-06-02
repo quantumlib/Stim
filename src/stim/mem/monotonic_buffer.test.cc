@@ -14,7 +14,7 @@
 
 #include "stim/mem/monotonic_buffer.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 using namespace stim;
 

@@ -14,7 +14,7 @@
 
 #include "stim/circuit/gate_data.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/circuit/circuit.h"
 #include "stim/simulators/tableau_simulator.h"

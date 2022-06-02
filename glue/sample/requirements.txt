@@ -4,4 +4,4 @@ numpy ~= 1.22
 pymatching ~= 0.7.0
 pytest ~= 7.0
 pandas ~= 1.4
-stim ~= 1.9
+stim ~= 1.9.dev

@@ -15,7 +15,8 @@
 #include "stim/mem/simd_compat.h"
 
 #include <algorithm>
-#include <gtest/gtest.h>
+
+#include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
 

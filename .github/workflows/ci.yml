@@ -85,11 +85,11 @@ jobs:
           # {os: ubuntu-latest, dist: cp39-musllinux_i686},
           # {os: ubuntu-latest, dist: cp310-musllinux_i686},
 
-          {os: macOS-10.15, dist: cp36-macosx_x86_64},
-          {os: macOS-10.15, dist: cp37-macosx_x86_64},
-          {os: macOS-10.15, dist: cp38-macosx_x86_64},
-          {os: macOS-10.15, dist: cp39-macosx_x86_64},
-          {os: macOS-10.15, dist: cp310-macosx_x86_64},
+          {os: macos-latest, dist: cp36-macosx_x86_64},
+          {os: macos-latest, dist: cp37-macosx_x86_64},
+          {os: macos-latest, dist: cp38-macosx_x86_64},
+          {os: macos-latest, dist: cp39-macosx_x86_64},
+          {os: macos-latest, dist: cp310-macosx_x86_64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
@@ -129,8 +129,8 @@ jobs:
       CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
       - run: python glue/python/overwrite_dev_version_with_date.py
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
@@ -154,8 +154,8 @@ jobs:
   check_sdist_installs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
       - run: python -m pip install pybind11==2.9.2
       - run: python setup.py sdist
       - run: pip install dist/*.tar.gz
@@ -257,8 +257,8 @@ jobs:
   test_generated_docs_are_fresh:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.6'
           architecture: 'x64'
@@ -273,8 +273,8 @@ jobs:
   test_pybind:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.6'
           architecture: 'x64'
@@ -286,8 +286,8 @@ jobs:
   test_stimcirq:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.6'
           architecture: 'x64'
@@ -300,8 +300,8 @@ jobs:
   test_sinter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.7'
           architecture: 'x64'
@@ -314,8 +314,8 @@ jobs:
   test_stimzx:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.6'
           architecture: 'x64'
@@ -328,7 +328,7 @@ jobs:
   test_stimjs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: mymindstorm/setup-emsdk@v9
         with:
           version: 2.0.18

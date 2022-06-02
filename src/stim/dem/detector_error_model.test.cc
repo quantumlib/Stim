@@ -14,7 +14,7 @@
 
 #include "stim/dem/detector_error_model.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/error_analyzer.h"

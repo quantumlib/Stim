@@ -4,6 +4,7 @@ from typing import Iterator, Any, Tuple, List, Callable
 
 import stim
 
+import sinter
 from sinter.printer import ThrottledProgressPrinter
 from sinter.task import Task
 from sinter.collection import collect, Progress, post_selection_mask_from_4th_coord
@@ -90,6 +91,9 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--quiet',
                         help='Disables writing progress to stderr.',
                         action='store_true')
+    parser.add_argument('--also_print_results_to_stdout',
+                        help='Even if writing to a file, also write results to stdout.',
+                        action='store_true')
     parser.add_argument('--existing_data_filepaths',
                         nargs='*',
                         type=str,
@@ -117,7 +121,7 @@ def parse_args(args: List[str]) -> Any:
     a.metadata_func = eval(compile(
         'lambda *, path, circuit: ' + a.metadata_func,
         filename='metadata_func:command_line_arg',
-        mode='eval'))
+        mode='eval'), {'sinter': sinter})
     return a
 
 
@@ -141,10 +145,14 @@ def main_collect(*, command_line_args: List[str]):
     )
     num_tasks = len(args.circuits) * len(args.decoders)
 
-    print_to_stdout = args.save_resume_filepath is not None or not args.quiet
+    print_to_stdout = args.also_print_results_to_stdout or args.save_resume_filepath is None
 
     did_work = False
-    printer = ThrottledProgressPrinter(outs=[], print_progress=not args.quiet)
+    printer = ThrottledProgressPrinter(
+        outs=[],
+        print_progress=not args.quiet,
+        min_progress_delay=0.03 if args.also_print_results_to_stdout else 1,
+    )
     if print_to_stdout:
         printer.outs.append(sys.stdout)
 
@@ -155,6 +163,7 @@ def main_collect(*, command_line_args: List[str]):
                 printer.print_out(CSV_HEADER)
                 did_work = True
             printer.print_out(stats.to_csv_line())
+
         printer.show_latest_progress(sample.status_message)
 
     try:
@@ -176,6 +185,3 @@ def main_collect(*, command_line_args: List[str]):
     except KeyboardInterrupt:
         print("\033[33m\nInterrupted\033[0m")
         return
-
-    if not did_work and not args.quiet:
-        print("No work to do.", file=sys.stderr)
