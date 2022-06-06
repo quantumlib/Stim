@@ -6,7 +6,7 @@ import pytest
 
 from sinter.probability_util import (
     binary_search, log_binomial, log_factorial, fit_line_y_at_x, fit_line_slope,
-    binary_intercept, least_squares_through_point, fit_binomial,
+    binary_intercept, least_squares_through_point, fit_binomial, shot_error_rate_to_piece_error_rate,
 )
 from sinter.probability_util import comma_separated_key_values
 
@@ -200,3 +200,38 @@ def test_comma_separated_key_values():
     assert type(d['b']) == float
     with pytest.raises(ValueError, match='separated'):
         comma_separated_key_values("folder/a,b=3.0,c=test.stim")
+
+
+def test_shot_error_rate_to_piece_error_rate():
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.2 * (1 - 0.2) * 2,
+            pieces=2,
+        ),
+        0.2,
+        rtol=1e-5)
+
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.001 * (1 - 0.001) * 2,
+            pieces=2,
+        ),
+        0.001,
+        rtol=1e-5)
+
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=0.001 * (1 - 0.001)**2 * 3 + 0.001**3,
+            pieces=3,
+        ),
+        0.001,
+        rtol=1e-5)
+
+    # Extremely low error rates.
+    np.testing.assert_allclose(
+        shot_error_rate_to_piece_error_rate(
+            shot_error_rate=1e-100,
+            pieces=100,
+        ),
+        1e-102,
+        rtol=1e-5)

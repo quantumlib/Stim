@@ -292,12 +292,21 @@ def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: int) 
     Works by assuming pieces fail independently and a shot fails if an any single
     piece fails.
     """
+    if not (0 <= shot_error_rate <= 1):
+        raise ValueError(f'not (0 <= shot_error_rate={shot_error_rate} <= 1)')
+    if pieces == 1:
+        return shot_error_rate
     if shot_error_rate > 0.5:
         return 1 - shot_error_rate_to_piece_error_rate(1 - shot_error_rate, pieces=pieces)
     assert 0 <= shot_error_rate <= 0.5
     randomize_rate = 2*shot_error_rate
     round_randomize_rate = 1 - (1 - randomize_rate)**(1 / pieces)
     round_error_rate = round_randomize_rate / 2
+
+    if round_error_rate == 0:
+        # The intermediate numbers got too small. Fallback to division approximation.
+        return shot_error_rate / pieces
+
     return round_error_rate
 
 
