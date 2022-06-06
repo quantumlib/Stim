@@ -15,27 +15,6 @@ def test_split_by():
     assert split_by('abcdefcccghi', lambda e: e == 'c') == [list('ab'), list('c'), list('def'), list('ccc'), list('ghi')]
 
 
-def test_better_sorted_str_terms():
-    assert better_sorted_str_terms('a') == ('a',)
-    assert better_sorted_str_terms('abc') == ('abc',)
-    assert better_sorted_str_terms('a1b2') == ('a', 1, 'b', 2)
-    assert better_sorted_str_terms('a1.5b2') == ('a', 1.5, 'b', 2)
-    assert better_sorted_str_terms('a1.5.3b2') == ('a', (1, 5, 3), 'b', 2)
-    assert sorted([
-        "planar d=10 r=30",
-        "planar d=16 r=36",
-        "planar d=4 r=12",
-        "toric d=10 r=30",
-        "toric d=18 r=54",
-    ], key=better_sorted_str_terms) == [
-        "planar d=4 r=12",
-        "planar d=10 r=30",
-        "planar d=16 r=36",
-        "toric d=10 r=30",
-        "toric d=18 r=54",
-    ]
-
-
 def test_main_collect():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)

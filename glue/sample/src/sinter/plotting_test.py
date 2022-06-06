@@ -5,6 +5,29 @@ from matplotlib import pyplot as plt
 import sinter
 
 
+def test_better_sorted_str_terms():
+    f = sinter.better_sorted_str_terms
+    assert f('everyone et al. 2020') == ('everyone et al', '.', ' ', 2020)
+    assert f('a') == ('a',)
+    assert f('abc') == ('abc',)
+    assert f('a1b2') == ('a', 1, 'b', 2)
+    assert f('a1.5b2') == ('a', 1.5, 'b', 2)
+    assert f('a1.5.3b2') == ('a', (1, 5, 3), 'b', 2)
+    assert sorted([
+        "planar d=10 r=30",
+        "planar d=16 r=36",
+        "planar d=4 r=12",
+        "toric d=10 r=30",
+        "toric d=18 r=54",
+    ], key=f) == [
+        "planar d=4 r=12",
+        "planar d=10 r=30",
+        "planar d=16 r=36",
+        "toric d=10 r=30",
+        "toric d=18 r=54",
+    ]
+
+
 def test_plotting_does_not_crash():
     data = io.BytesIO()
     data.write("""

@@ -1,4 +1,4 @@
-from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict
+from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union
 
 from sinter.probability_util import fit_binomial
 
@@ -43,7 +43,10 @@ def better_sorted_str_terms(val: Any) -> Any:
             try:
                 term = float(term)
             except ValueError:
-                term = tuple(int(e) for e in term.split('.'))
+                try:
+                    term = tuple(int(e) for e in term.split('.'))
+                except ValueError:
+                    pass
         else:
             try:
                 term = int(term)
