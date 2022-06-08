@@ -3,7 +3,7 @@ import io
 import json
 from typing import Any, Optional
 
-from sinter.task_summary import JSON_TYPE
+from sinter.json_type import JSON_TYPE
 
 
 def escape_csv(text: Any, width: Optional[int]) -> str:

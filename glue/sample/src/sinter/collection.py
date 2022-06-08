@@ -7,11 +7,12 @@ import math
 import numpy as np
 import stim
 
-from sinter.task_stats import TaskStats
+from sinter.collection_options import CollectionOptions
 from sinter.csv_out import CSV_HEADER
 from sinter.collection_work_manager import CollectionWorkManager
 from sinter.existing_data import ExistingData
 from sinter.printer import ThrottledProgressPrinter
+from sinter.task_stats import TaskStats
 
 if TYPE_CHECKING:
     import sinter
@@ -88,12 +89,14 @@ def iter_collect(*,
 
     with CollectionWorkManager(
             tasks=iter(tasks),
-            max_shots=max_shots,
-            max_errors=max_errors,
-            max_batch_seconds=max_batch_seconds,
+            global_collection_options=CollectionOptions(
+                max_shots=max_shots,
+                max_errors=max_errors,
+                max_batch_seconds=max_batch_seconds,
+                start_batch_size=start_batch_size,
+                max_batch_size=max_batch_size,
+            ),
             decoders=decoders,
-            start_batch_size=start_batch_size,
-            max_batch_size=max_batch_size,
             additional_existing_data=additional_existing_data) as manager:
         yield Progress(
             new_stats=(),
@@ -118,7 +121,7 @@ def iter_collect(*,
 
             # Report the incremental results.
             yield Progress(
-                new_stats=(sample,),
+                new_stats=(sample,) if sample.shots > 0 else (),
                 status_message=manager.status(num_circuits=hint_num_tasks),
             )
 
@@ -221,7 +224,6 @@ def collect(*,
             save_resume_file = None
 
         # Collect data.
-        did_work = False
         result = ExistingData()
         result.data = dict(additional_existing_data.data)
         for progress in iter_collect(
@@ -237,7 +239,6 @@ def collect(*,
             additional_existing_data=additional_existing_data,
         ):
             for stats in progress.new_stats:
-                did_work = True
                 result.add_sample(stats)
                 if save_resume_file is not None:
                     print(stats.to_csv_line(), file=save_resume_file, flush=True)

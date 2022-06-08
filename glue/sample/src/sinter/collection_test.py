@@ -4,11 +4,10 @@ import pytest
 import stim
 
 import sinter
-from sinter.anon_task_stats import AnonTaskStats
 
 
 def test_iter_collect():
-    result = collections.defaultdict(AnonTaskStats)
+    result = collections.defaultdict(sinter.AnonTaskStats)
     for sample in sinter.iter_collect(
         num_workers=2,
         tasks=[
@@ -20,10 +19,12 @@ def test_iter_collect():
                     after_clifford_depolarization=p),
                 decoder='pymatching',
                 json_metadata={'p': p},
-                max_shots=1000,
-                max_errors=100,
-                start_batch_size=100,
-                max_batch_size=1000,
+                collection_options=sinter.CollectionOptions(
+                    max_shots=1000,
+                    max_errors=100,
+                    start_batch_size=100,
+                    max_batch_size=1000,
+                ),
             )
             for p in [0.01, 0.02, 0.03, 0.04]
         ],
@@ -52,10 +53,12 @@ def test_collect():
                     after_clifford_depolarization=p),
                 decoder='pymatching',
                 json_metadata={'p': p},
-                max_shots=1000,
-                max_errors=100,
-                start_batch_size=100,
-                max_batch_size=1000,
+                collection_options=sinter.CollectionOptions(
+                    max_shots=1000,
+                    max_errors=100,
+                    start_batch_size=100,
+                    max_batch_size=1000,
+                ),
             )
             for p in [0.01, 0.02, 0.03, 0.04]
         ]
@@ -74,7 +77,7 @@ def test_collect():
 
 
 def test_iter_collect_list():
-    result = collections.defaultdict(AnonTaskStats)
+    result = collections.defaultdict(sinter.AnonTaskStats)
     for sample in sinter.iter_collect(
         num_workers=2,
         tasks=[
@@ -86,10 +89,12 @@ def test_iter_collect_list():
                     after_clifford_depolarization=p),
                 decoder='pymatching',
                 json_metadata={'p': p},
-                max_errors=100,
-                max_shots=1000,
-                start_batch_size=100,
-                max_batch_size=1000,
+                collection_options=sinter.CollectionOptions(
+                    max_errors=100,
+                    max_shots=1000,
+                    start_batch_size=100,
+                    max_batch_size=1000,
+                ),
             )
             for p in [0.01, 0.02, 0.03, 0.04]
         ],
@@ -109,13 +114,15 @@ def test_iter_collect_list():
 def test_iter_collect_worker_fails():
     with pytest.raises(RuntimeError, match="Worker failed"):
         _ = list(sinter.iter_collect(
+            decoders=['NOT A VALID DECODER'],
             num_workers=1,
             tasks=iter([
                 sinter.Task(
                     circuit=stim.Circuit.generated('repetition_code:memory', rounds=3, distance=3),
-                    decoder='NOT A VALID DECODER',
-                    max_errors=1,
-                    max_shots=1,
+                    collection_options=sinter.CollectionOptions(
+                        max_errors=1,
+                        max_shots=1,
+                    ),
                 ),
             ]),
         ))

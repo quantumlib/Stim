@@ -7,6 +7,9 @@ from sinter.collection import (
     post_selection_mask_from_4th_coord,
     Progress,
 )
+from sinter.collection_options import (
+    CollectionOptions,
+)
 from sinter.csv_out import (
     CSV_HEADER,
 )
@@ -27,17 +30,11 @@ from sinter.plotting import (
     plot_error_rate,
     group_by,
 )
-from sinter.executable_task import (
-    ExecutableTask,
-)
 from sinter.task import (
     Task,
 )
 from sinter.task_stats import (
     TaskStats,
-)
-from sinter.task_summary import (
-    TaskSummary,
 )
 from sinter.predict import (
     predict_discards_bit_packed,

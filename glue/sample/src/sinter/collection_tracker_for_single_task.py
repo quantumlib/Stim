@@ -2,8 +2,9 @@ import math
 from typing import Iterator
 from typing import Optional
 
-from sinter.task import Task
 from sinter.anon_task_stats import AnonTaskStats
+from sinter.existing_data import ExistingData
+from sinter.task import Task
 from sinter.worker import WorkIn
 from sinter.worker import WorkOut
 
@@ -12,26 +13,37 @@ DEFAULT_MAX_BATCH_SECONDS = 120
 
 
 class CollectionTrackerForSingleTask:
-    def __init__(self, *, task: Task):
+    def __init__(
+            self,
+            *,
+            task: Task,
+            existing_data: ExistingData):
         self.task = task
-        self.task_summary = task.to_executable_task().to_summary()
-        self.finished_stats = task.previous_stats
+        self.finished_stats = AnonTaskStats()
+        self.existing_data = existing_data
         self.deployed_shots = 0
+        self.waiting_for_dem = False
         self.deployed_processes = 0
-        if self.task.max_shots is None and self.task.max_errors is None:
-            raise ValueError('Neither the task nor the collector specified max_shots or max_errors. Mus specify one.')
+        if self.task.detector_error_model is not None:
+            self.finished_stats += self.existing_data.stats_for(self.task)
+        if self.copts.max_shots is None and self.copts.max_errors is None:
+            raise ValueError('Neither the task nor the collector specified max_shots or max_errors. Must specify one.')
+
+    @property
+    def copts(self):
+        return self.task.collection_options
 
     def expected_shots_remaining(
             self, *, safety_factor_on_shots_per_error: float = 1) -> float:
         """Doesn't include deployed shots."""
         result: float = float('inf')
 
-        if self.task.max_shots is not None:
-            result = self.task.max_shots - self.finished_stats.shots
+        if self.copts.max_shots is not None:
+            result = self.copts.max_shots - self.finished_stats.shots
 
-        if self.finished_stats.errors and self.task.max_errors is not None:
+        if self.finished_stats.errors and self.copts.max_errors is not None:
             shots_per_error = self.finished_stats.shots / self.finished_stats.errors
-            errors_left = self.task.max_errors - self.finished_stats.errors
+            errors_left = self.copts.max_errors - self.finished_stats.errors
             result = min(result, errors_left * shots_per_error * safety_factor_on_shots_per_error)
 
         return result
@@ -52,15 +64,31 @@ class CollectionTrackerForSingleTask:
         return dt * n
 
     def work_completed(self, result: WorkOut) -> None:
-        self.deployed_shots -= result.sample.shots
-        self.deployed_processes -= 1
-        self.finished_stats += result.sample.to_anon_stats()
+        if self.waiting_for_dem:
+            assert result.filled_in_dem is not None
+            self.task = Task(
+                circuit=self.task.circuit,
+                detector_error_model=result.filled_in_dem,
+                postselection_mask=self.task.postselection_mask,
+                json_metadata=self.task.json_metadata,
+                collection_options=self.task.collection_options,
+                skip_validation=True,
+                _unvalidated_strong_id=result.filled_in_strong_id,
+            )
+            self.waiting_for_dem = False
+            self.finished_stats += self.existing_data.stats_for(self.task)
+        else:
+            self.deployed_shots -= result.stats.shots
+            self.deployed_processes -= 1
+            self.finished_stats += result.stats
 
     def is_done(self) -> bool:
+        if self.task.detector_error_model is None or self.waiting_for_dem:
+            return False
         enough_shots = False
-        if self.task.max_shots is not None and self.finished_stats.shots >= self.task.max_shots:
+        if self.copts.max_shots is not None and self.finished_stats.shots >= self.copts.max_shots:
             enough_shots = True
-        if self.task.max_errors is not None and self.finished_stats.errors >= self.task.max_errors:
+        if self.copts.max_errors is not None and self.finished_stats.errors >= self.copts.max_errors:
             enough_shots = True
         return enough_shots and self.deployed_shots == 0
 
@@ -68,10 +96,10 @@ class CollectionTrackerForSingleTask:
         if self.finished_stats.shots == 0:
             if self.deployed_shots > 0:
                 yield 0
-            elif self.task.start_batch_size is None:
+            elif self.copts.start_batch_size is None:
                 yield 100
             else:
-                yield self.task.start_batch_size
+                yield self.copts.start_batch_size
             return
 
         # Do exponential ramp-up of batch sizes.
@@ -82,23 +110,23 @@ class CollectionTrackerForSingleTask:
             yield self.finished_stats.shots * 5 - self.deployed_shots
 
         # Don't take more shots than requested.
-        if self.task.max_shots is not None:
-            yield self.task.max_shots - self.finished_stats.shots - self.deployed_shots
+        if self.copts.max_shots is not None:
+            yield self.copts.max_shots - self.finished_stats.shots - self.deployed_shots
 
         # Don't take more errors than requested.
-        if self.task.max_errors is not None:
-            errors_left = self.task.max_errors - self.finished_stats.errors
+        if self.copts.max_errors is not None:
+            errors_left = self.copts.max_errors - self.finished_stats.errors
             errors_left += 2  # oversample once count gets low
             de = self.expected_errors_per_shot()
             yield errors_left / de - self.deployed_shots
 
         # Don't exceed max batch size.
-        if self.task.max_batch_size is not None:
-            yield self.task.max_batch_size
+        if self.copts.max_batch_size is not None:
+            yield self.copts.max_batch_size
 
         # If no maximum on batch size is specified, default to 30s maximum.
-        max_batch_seconds = self.task.max_batch_seconds
-        if max_batch_seconds is None and self.task.max_batch_size is None:
+        max_batch_seconds = self.copts.max_batch_seconds
+        if max_batch_seconds is None and self.copts.max_batch_size is None:
             max_batch_seconds = DEFAULT_MAX_BATCH_SECONDS
 
         # Try not to exceed max batch duration.
@@ -111,6 +139,16 @@ class CollectionTrackerForSingleTask:
         return math.ceil(min(self.iter_batch_size_limits(desperate=desperate)))
 
     def provide_more_work(self, *, desperate: bool) -> Optional[WorkIn]:
+        if self.task.detector_error_model is None:
+            if self.waiting_for_dem:
+                return None
+            self.waiting_for_dem = True
+            return WorkIn(
+                work_key=None,
+                task=self.task,
+                num_shots=0,
+            )
+
         # Wait to have *some* data before starting to sample in parallel.
         num_shots = self.next_shot_count(desperate=desperate)
         if num_shots <= 0:
@@ -119,9 +157,8 @@ class CollectionTrackerForSingleTask:
         self.deployed_shots += num_shots
         self.deployed_processes += 1
         return WorkIn(
-            key=None,
-            task=self.task.to_executable_task(),
-            summary=self.task_summary,
+            work_key=None,
+            task=self.task,
             num_shots=num_shots,
         )
 
@@ -136,10 +173,10 @@ class CollectionTrackerForSingleTask:
             f'processes={self.deployed_processes}'.ljust(13),
             f'~core_mins_left={t}'.ljust(24),
         ]
-        if self.task.max_shots is not None:
-            terms.append(f'shots_left={max(0, self.task.max_shots - self.finished_stats.shots)}'.ljust(20))
-        if self.task.max_errors is not None:
-            terms.append(f'errors_left={max(0, self.task.max_errors - self.finished_stats.errors)}'.ljust(20))
+        if self.copts.max_shots is not None:
+            terms.append(f'shots_left={max(0, self.copts.max_shots - self.finished_stats.shots)}'.ljust(20))
+        if self.copts.max_errors is not None:
+            terms.append(f'errors_left={max(0, self.copts.max_errors - self.finished_stats.errors)}'.ljust(20))
         terms.append(f'{self.task.json_metadata}')
         return ''.join(terms)
 
