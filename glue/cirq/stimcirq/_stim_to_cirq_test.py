@@ -200,23 +200,23 @@ def test_circuit_diagram():
         stimcirq.stim_circuit_to_cirq_circuit(
             stim.Circuit(
                 """
-            M 0
-            MX 0
-            MY 0
-            MZ 0
-            R 0
-            RX 0
-            RY 0
-            RZ 0
-            MR 0
-            MRX 0
-            MRY 0
-            MRZ 0
+            M 9
+            MX 9
+            MY 9
+            MZ 9
+            R 9
+            RX 9
+            RY 9
+            RZ 9
+            MR 9
+            MRX 9
+            MRY 9
+            MRZ 9
         """
             )
         ),
         """
-0: ---M---MX('1')---MY('2')---M('3')---R---RX---RY---R---MR('4')---MRX('5')---MRY('6')---MR('7')---
+9: ---M('0')---MX('1')---MY('2')---M('3')---R---RX---RY---R---MR('4')---MRX('5')---MRY('6')---MR('7')---
         """,
         use_unicode_characters=False,
     )
@@ -351,7 +351,7 @@ def test_convert_mpp():
         """
         MPP X2*Y5*Z3
         TICK
-        MPP X1 Y2 Z3*Z4
+        MPP Y2 X1 Z3*Z4
         X 0
         TICK
     """
@@ -363,8 +363,8 @@ def test_convert_mpp():
             )
         ),
         cirq.Moment(
-            cirq.PauliMeasurementGate(cirq.DensePauliString("X"), key='1').on(cirq.LineQubit(1)),
-            cirq.PauliMeasurementGate(cirq.DensePauliString("Y"), key='2').on(cirq.LineQubit(2)),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("Y"), key='1').on(cirq.LineQubit(2)),
+            cirq.PauliMeasurementGate(cirq.DensePauliString("X"), key='2').on(cirq.LineQubit(1)),
             cirq.PauliMeasurementGate(cirq.DensePauliString("ZZ"), key='3').on(
                 cirq.LineQubit(3), cirq.LineQubit(4)
             ),
@@ -377,9 +377,9 @@ def test_convert_mpp():
         """
 0: ---------------X-----------
 
-1: ---------------M(X)--------
+1: ---------------M(X)('2')---
 
-2: ---M(X)('0')---M(Y)--------
+2: ---M(X)('0')---M(Y)('1')---
       |
 3: ---M(Z)--------M(Z)('3')---
       |           |
@@ -398,7 +398,7 @@ def test_convert_detector():
         TICK
         CNOT 0 1
         TICK
-        M 0 1
+        M 1 0
         DETECTOR(2, 3, 5) rec[-1] rec[-2]
         TICK
     """
@@ -408,17 +408,17 @@ def test_convert_detector():
         cirq.H(a),
         cirq.CNOT(a, b),
         cirq.Moment(
-            cirq.measure(a, key='0'),
-            cirq.measure(b, key='1'),
+            cirq.measure(b, key='0'),
+            cirq.measure(a, key='1'),
             stimcirq.DetAnnotation(parity_keys=['0', '1'], coordinate_metadata=(2, 3, 5)),
         ),
     )
     cirq.testing.assert_has_diagram(
         c,
         """
-0: ---H---@---M--------------
+0: ---H---@---M('1')---------
           |
-1: -------X---M--------------
+1: -------X---M('0')---------
               Det('0','1')
         """,
         use_unicode_characters=False,
@@ -433,7 +433,7 @@ def test_convert_observable():
         TICK
         CNOT 0 1
         TICK
-        M 0 1
+        M 1 0
         OBSERVABLE_INCLUDE(5) rec[-1] rec[-2]
         TICK
     """
@@ -443,17 +443,17 @@ def test_convert_observable():
         cirq.H(a),
         cirq.CNOT(a, b),
         cirq.Moment(
-            cirq.measure(a, key='0'),
-            cirq.measure(b, key='1'),
+            cirq.measure(b, key='0'),
+            cirq.measure(a, key='1'),
             stimcirq.CumulativeObservableAnnotation(parity_keys=['0', '1'], observable_index=5),
         ),
     )
     cirq.testing.assert_has_diagram(
         c,
         """
-0: ---H---@---M---------------
+0: ---H---@---M('1')----------
           |
-1: -------X---M---------------
+1: -------X---M('0')----------
               Obs5('0','1')
         """,
         use_unicode_characters=False,
@@ -516,7 +516,11 @@ def test_convert_repeat_simple():
     )
     a, b = cirq.LineQubit.range(2)
     cirq_circuit = cirq.Circuit(
-        cirq.CircuitOperation(cirq.FrozenCircuit(cirq.H(a), cirq.CNOT(a, b)), repetitions=1000000),
+        cirq.CircuitOperation(
+            cirq.FrozenCircuit(cirq.H(a), cirq.CNOT(a, b)),
+            repetitions=1000000,
+            use_repetition_ids=False,
+        ),
         cirq.measure(a, key="0"),
     )
     assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit) == cirq_circuit
@@ -558,6 +562,7 @@ def test_convert_repeat_measurements():
                     ),
                 ),
                 repetitions=1000000,
+                use_repetition_ids=False,
             )
         ),
         cirq.Moment(

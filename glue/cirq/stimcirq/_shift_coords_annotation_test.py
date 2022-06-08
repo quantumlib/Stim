@@ -1,22 +1,19 @@
 import cirq
 import numpy as np
-import pytest
 import stim
 import stimcirq
 
 
 def test_conversion():
-    stim_circuit = stim.Circuit(
-        """
+    stim_circuit = stim.Circuit("""
         M 0
         DETECTOR(4) rec[-1]
         SHIFT_COORDS(1, 2, 3)
         DETECTOR(5) rec[-1]
         TICK
-    """
-    )
+    """)
     cirq_circuit = cirq.Circuit(
-        cirq.measure(cirq.LineQubit(0)),
+        cirq.measure(cirq.LineQubit(0), key="0"),
         stimcirq.DetAnnotation(parity_keys=["0"], coordinate_metadata=[4]),
         stimcirq.ShiftCoordsAnnotation((1, 2, 3)),
         stimcirq.DetAnnotation(parity_keys=["0"], coordinate_metadata=[5]),
@@ -25,7 +22,7 @@ def test_conversion():
     assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit) == cirq_circuit
     assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit, flatten=False) == cirq_circuit
     assert stimcirq.stim_circuit_to_cirq_circuit(stim_circuit, flatten=True) == cirq.Circuit(
-        cirq.measure(cirq.LineQubit(0)),
+        cirq.measure(cirq.LineQubit(0), key="0"),
         stimcirq.DetAnnotation(parity_keys=["0"], coordinate_metadata=[4]),
         stimcirq.DetAnnotation(parity_keys=["0"], coordinate_metadata=[6]),
     )

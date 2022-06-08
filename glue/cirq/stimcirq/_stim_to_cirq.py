@@ -7,10 +7,7 @@ from typing import (
     DefaultDict,
     Dict,
     Iterable,
-    Iterator,
     List,
-    Sequence,
-    Set,
     Tuple,
     Union,
 )
@@ -52,6 +49,7 @@ def _proper_transform_circuit_qubits(circuit: cirq.AbstractCircuit, remap: Dict[
             cirq.CircuitOperation(
                 circuit=_proper_transform_circuit_qubits(op.circuit, remap).freeze(),
                 repetitions=op.repetitions,
+                use_repetition_ids=False,
             )
             if isinstance(op, cirq.CircuitOperation)
             else op.with_qubits(*[remap[q] for q in op.qubits])
@@ -122,6 +120,7 @@ class CircuitTranslationTracker:
             cirq.CircuitOperation(
                 cirq.FrozenCircuit(child.full_circuit + child.tick_circuit),
                 repetitions=block.repeat_count,
+                use_repetition_ids=False,
             )
         )
         self.qubit_coords = child.qubit_coords
