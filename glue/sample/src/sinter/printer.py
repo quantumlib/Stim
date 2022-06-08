@@ -44,7 +44,8 @@ class ThrottledProgressPrinter:
         if dt <= 0:
             self.next_can_print_time = t + self.min_progress_delay
             self.is_worker_running = False
-            print('\033[31m' + self.latest_msg + '\033[0m', file=sys.stderr, flush=True)
+            if self.latest_msg != "":
+                print('\033[31m' + self.latest_msg + '\033[0m', file=sys.stderr, flush=True)
         return max(dt, 0)
 
     def _print_worker(self):

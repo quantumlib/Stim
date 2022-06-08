@@ -80,8 +80,8 @@ class CollectionTrackerForSingleTask:
             self.finished_stats += self.existing_data.stats_for(self.task)
         else:
             self.deployed_shots -= result.stats.shots
-            self.deployed_processes -= 1
             self.finished_stats += result.stats
+        self.deployed_processes -= 1
 
     def is_done(self) -> bool:
         if self.task.detector_error_model is None or self.waiting_for_dem:
@@ -144,6 +144,7 @@ class CollectionTrackerForSingleTask:
             if self.waiting_for_dem:
                 return None
             self.waiting_for_dem = True
+            self.deployed_processes += 1
             return WorkIn(
                 work_key=None,
                 task=self.task,
@@ -174,10 +175,13 @@ class CollectionTrackerForSingleTask:
             f'processes={self.deployed_processes}'.ljust(13),
             f'~core_mins_left={t}'.ljust(24),
         ]
-        if self.copts.max_shots is not None:
-            terms.append(f'shots_left={max(0, self.copts.max_shots - self.finished_stats.shots)}'.ljust(20))
-        if self.copts.max_errors is not None:
-            terms.append(f'errors_left={max(0, self.copts.max_errors - self.finished_stats.errors)}'.ljust(20))
+        if self.task.detector_error_model is None:
+            terms.append(f'(initializing...) ')
+        else:
+            if self.copts.max_shots is not None:
+                terms.append(f'shots_left={max(0, self.copts.max_shots - self.finished_stats.shots)}'.ljust(20))
+            if self.copts.max_errors is not None:
+                terms.append(f'errors_left={max(0, self.copts.max_errors - self.finished_stats.errors)}'.ljust(20))
         terms.append(f'{self.task.json_metadata}')
         return ''.join(terms)
 

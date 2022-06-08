@@ -2,11 +2,7 @@ import contextlib
 import multiprocessing
 import pathlib
 import tempfile
-from typing import cast
-
-import time
-from typing import Iterable
-from typing import Optional, Iterator, Tuple, Dict, List
+from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
 from sinter.collection_options import CollectionOptions
 from sinter.existing_data import ExistingData
@@ -78,23 +74,11 @@ class CollectionWorkManager:
         removed_workers = self.workers
         self.workers = []
 
-        # Look, we don't have all day here.
-        max_shutdown_wait_seconds = 0.1
-        deadline = time.monotonic() + max_shutdown_wait_seconds
-
-        # Notify workers that they should stop.
-        for _ in removed_workers:
-            self.queue_to_workers.put(None)
-
-        # Ensure the workers are stopped.
+        # SIGKILL everything.
         for w in removed_workers:
-            # Wait until the deadline or until the worker stops.
-            max_wait_seconds = deadline - time.monotonic()
-            if max_wait_seconds > 0:
-                w.join(timeout=max_wait_seconds)
-            # Bring the hammer down.
-            if w.is_alive():
-                w.terminate()
+            # This is supposed to be safe because all state on disk was put
+            # in the specified tmp directory which we will handle deleting.
+            w.kill()
 
     def fill_work_queue(self) -> bool:
         while len(self.deployed_jobs) < len(self.workers):
