@@ -68,6 +68,7 @@ class CollectionTrackerForSingleTask:
             assert result.filled_in_dem is not None
             self.task = Task(
                 circuit=self.task.circuit,
+                decoder=self.task.decoder,
                 detector_error_model=result.filled_in_dem,
                 postselection_mask=self.task.postselection_mask,
                 json_metadata=self.task.json_metadata,

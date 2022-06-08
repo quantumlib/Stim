@@ -36,7 +36,8 @@ def test_worker_loop_infers_dem():
         assert 0 < result.stats.errors < 1000
         assert result.work_key == 'test1'
         assert result.msg_error is None
-        assert result.task.detector_error_model == c.detector_error_model()
+        assert result.filled_in_dem == c.detector_error_model()
+        assert result.filled_in_strong_id is not None
 
 
 def test_worker_loop_does_not_recompute_dem():
@@ -70,4 +71,5 @@ def test_worker_loop_does_not_recompute_dem():
         assert 0 < result.stats.errors < 1000
         assert result.work_key == 'test1'
         assert result.msg_error is None
-        assert result.task.detector_error_model != c.detector_error_model()
+        assert result.filled_in_dem is None
+        assert result.filled_in_strong_id is None
