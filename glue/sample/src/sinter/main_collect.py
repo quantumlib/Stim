@@ -183,5 +183,5 @@ def main_collect(*, command_line_args: List[str]):
             start_batch_size=args.start_batch_size,
         )
     except KeyboardInterrupt:
+        printer.show_latest_progress('')
         print("\033[33m\nInterrupted\033[0m")
-        return
