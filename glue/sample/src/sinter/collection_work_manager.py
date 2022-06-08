@@ -2,10 +2,13 @@ import contextlib
 import multiprocessing
 import pathlib
 import tempfile
+from typing import cast
+
 import time
 from typing import Iterable
 from typing import Optional, Iterator, Tuple, Dict, List
 
+from sinter.collection_options import CollectionOptions
 from sinter.existing_data import ExistingData
 from sinter.task_stats import TaskStats
 from sinter.task import Task
@@ -16,11 +19,7 @@ from sinter.worker import worker_loop, WorkIn, WorkOut
 class CollectionWorkManager:
     def __init__(self, *,
                  tasks: Iterator[Task],
-                 max_shots: Optional[int],
-                 max_errors: Optional[int],
-                 max_batch_seconds: Optional[int],
-                 start_batch_size: Optional[int],
-                 max_batch_size: Optional[int],
+                 global_collection_options: CollectionOptions,
                  additional_existing_data: Optional[ExistingData],
                  decoders: Optional[Iterable[str]]):
         self.queue_from_workers: Optional[multiprocessing.Queue] = None
@@ -29,12 +28,8 @@ class CollectionWorkManager:
         self.tmp_dir: Optional[pathlib.Path] = None
         self.exit_stack: Optional[contextlib.ExitStack] = None
 
-        self.max_errors = max_errors
-        self.max_shots = max_shots
-        self.max_batch_seconds = max_batch_seconds
-        self.start_batch_size = start_batch_size
-        self.max_batch_size = max_batch_size
-        self.decoders = (None,) if decoders is None else tuple(decoders)
+        self.global_collection_options = global_collection_options
+        self.decoders: Optional[Tuple[str, ...]] = None if decoders is None else tuple(decoders)
         self.did_work = False
 
         self.workers: List[multiprocessing.Process] = []
@@ -107,10 +102,7 @@ class CollectionWorkManager:
             if work is None:
                 break
             self.did_work = True
-            self.queue_to_workers.put(WorkIn(key=(self.next_job_id, work.key),
-                                             task=work.task,
-                                             summary=work.summary,
-                                             num_shots=work.num_shots))
+            self.queue_to_workers.put(work.with_work_key((self.next_job_id, work.work_key)))
             self.deployed_jobs[self.next_job_id] = work
             self.next_job_id += 1
         return bool(self.deployed_jobs)
@@ -121,17 +113,35 @@ class CollectionWorkManager:
                              ) -> TaskStats:
         result = self.queue_from_workers.get(timeout=timeout)
         assert isinstance(result, WorkOut)
-        if result.error is not None:
-            if isinstance(result.error, KeyboardInterrupt):
-                raise KeyboardInterrupt() from result.error
-            raise RuntimeError("Worker failed") from result.error
-        elif result.sample is not None:
-            job_id, sub_key = result.key
-            self.work_completed(WorkOut(key=sub_key,
-                                        sample=result.sample,
-                                        error=result.error))
+        if result.msg_error is not None:
+            msg, error = result.msg_error
+            if isinstance(error, KeyboardInterrupt):
+                raise KeyboardInterrupt()
+            raise RuntimeError(f"Worker failed: {msg}") from error
+        elif result.stats is not None:
+            job_id, sub_key = result.work_key
+            stats = result.stats
+            task = self.deployed_jobs[job_id].task
+            strong_id = task.strong_id() if result.filled_in_strong_id is None else result.filled_in_strong_id
+
+            self.work_completed(WorkOut(
+                work_key=sub_key,
+                stats=stats,
+                filled_in_strong_id=result.filled_in_strong_id,
+                filled_in_dem=result.filled_in_dem,
+                msg_error=result.msg_error,
+            ))
             del self.deployed_jobs[job_id]
-            return result.sample
+            return TaskStats(
+                strong_id=strong_id,
+                decoder=task.decoder,
+                json_metadata=task.json_metadata,
+                shots=stats.shots,
+                errors=stats.errors,
+                discards=stats.discards,
+                seconds=stats.seconds,
+            )
+
         else:
             raise NotImplementedError(f'result={result!r}')
 
@@ -144,17 +154,28 @@ class CollectionWorkManager:
                 task = next(self.tasks)
             except StopIteration:
                 break
-            for decoder in self.decoders:
+            if task.decoder is None and self.decoders is None:
+                raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
+
+            task_decoders = []
+            if self.decoders is not None:
+                task_decoders.extend(self.decoders)
+            if task.decoder is not None and task.decoder not in task_decoders:
+                task_decoders.append(task.decoder)
+
+            for decoder in task_decoders:
+                full_task = Task(
+                    circuit=task.circuit,
+                    decoder=decoder,
+                    detector_error_model=task.detector_error_model,
+                    postselection_mask=task.postselection_mask,
+                    json_metadata=task.json_metadata,
+                    collection_options=task.collection_options.combine(self.global_collection_options),
+                    skip_validation=True,
+                )
                 collector = CollectionTrackerForSingleTask(
-                    task=task.with_merged_options(
-                        decoder=decoder,
-                        max_shots=self.max_shots,
-                        max_errors=self.max_errors,
-                        max_batch_size=self.max_batch_size,
-                        max_batch_seconds=self.max_batch_seconds,
-                        start_batch_size=self.start_batch_size,
-                        existing_data=self.additional_existing_data,
-                    ),
+                    task=full_task,
+                    existing_data=self.additional_existing_data,
                 )
                 if collector.is_done():
                     self.finished_count += 1
@@ -169,8 +190,8 @@ class CollectionWorkManager:
         return len(self.active_collectors) == 0
 
     def work_completed(self, result: WorkOut):
-        collector_index = result.key
-        assert isinstance(collector_index, int)
+        assert isinstance(result.work_key, int)
+        collector_index = cast(int, result.work_key)
         collector = self.active_collectors[collector_index]
         collector.work_completed(result)
         if collector.is_done():
@@ -184,11 +205,8 @@ class CollectionWorkManager:
             for collector_index, collector in iter_collectors:
                 w = collector.provide_more_work(desperate=desperate)
                 if w is not None:
-                    assert w.key is None
-                    return WorkIn(key=collector_index,
-                                  task=w.task,
-                                  summary=w.summary,
-                                  num_shots=w.num_shots)
+                    assert w.work_key is None
+                    return w.with_work_key(collector_index)
         return None
 
     def status(self, *, num_circuits: Optional[int]) -> str:
@@ -198,7 +216,7 @@ class CollectionWorkManager:
             else:
                 main_status = 'There was nothing additional to collect'
         elif num_circuits is not None:
-            main_status = f'{num_circuits - self.finished_count} cases not finished yet'
+            main_status = f'{num_circuits - self.finished_count} cases left'
         else:
             main_status = "Running..."
         collector_statuses = [

@@ -1,9 +1,8 @@
 import json
-from typing import Any, Dict, Union, List, TYPE_CHECKING
+from typing import Any, Dict, List, TYPE_CHECKING
 
 from sinter.task_stats import TaskStats
-from sinter.executable_task import ExecutableTask
-from sinter.task_summary import TaskSummary
+from sinter.task import Task
 from sinter.decoding import AnonTaskStats
 
 if TYPE_CHECKING:
@@ -14,11 +13,9 @@ class ExistingData:
     def __init__(self):
         self.data: Dict[str, TaskStats] = {}
 
-    def stats_for(self, case: Union[ExecutableTask, TaskSummary]) -> AnonTaskStats:
-        if isinstance(case, ExecutableTask):
+    def stats_for(self, case: Task) -> AnonTaskStats:
+        if isinstance(case, Task):
             key = case.strong_id()
-        elif isinstance(case, TaskSummary):
-            key = case.strong_id
         else:
             raise NotImplementedError(f'{type(case)}')
         if key not in self.data:

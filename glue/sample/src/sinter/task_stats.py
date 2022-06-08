@@ -1,7 +1,7 @@
 import dataclasses
 
 from sinter.anon_task_stats import AnonTaskStats
-from sinter.task_summary import JSON_TYPE, TaskSummary
+from sinter.json_type import JSON_TYPE
 from sinter.csv_out import csv_line
 
 
@@ -21,7 +21,7 @@ class TaskStats:
     seconds: float
 
     def __add__(self, other: 'TaskStats') -> 'TaskStats':
-        assert self.to_task_summary() == other.to_task_summary()
+        assert self.strong_id == other.strong_id
         return TaskStats(
             decoder=self.decoder,
             strong_id=self.strong_id,
@@ -30,13 +30,6 @@ class TaskStats:
             errors=self.errors + other.errors,
             discards=self.discards + other.discards,
             seconds=self.seconds + other.seconds,
-        )
-
-    def to_task_summary(self) -> TaskSummary:
-        return TaskSummary(
-            strong_id=self.strong_id,
-            decoder=self.decoder,
-            json_metadata=self.json_metadata,
         )
 
     def to_anon_stats(self) -> AnonTaskStats:

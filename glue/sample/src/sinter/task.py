@@ -1,47 +1,43 @@
-from typing import Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
+import hashlib
+import json
+import math
 import numpy as np
-import stim
 
-from sinter.executable_task import ExecutableTask
-from sinter.anon_task_stats import AnonTaskStats
-from sinter.task_summary import JSON_TYPE
-from sinter.existing_data import ExistingData
+from sinter.collection_options import CollectionOptions
+from sinter.json_type import JSON_TYPE
+
+if TYPE_CHECKING:
+    import sinter
+    import stim
 
 
 class Task:
-    """A decoding problem and a specification of how to take samples from it."""
+    """A decoding problem that can be sampled from."""
 
-    def __init__(self,
-                 *,
-                 # Information related to what the problem being sampled is.
-                 circuit: stim.Circuit,
-                 decoder: Optional[str] = None,
-                 error_model_for_decoder: Optional[stim.DetectorErrorModel] = None,
-                 postselection_mask: Optional[np.ndarray] = None,
-                 json_metadata: JSON_TYPE = None,
-
-                 # Information related to how to take samples from the problem.
-                 # This is not necessary to specify. If not specified, these
-                 # details must be given to `sinter.collect`.
-                 max_shots: Optional[int] = None,
-                 max_errors: Optional[int] = None,
-                 start_batch_size: Optional[int] = None,
-                 max_batch_size: Optional[int] = None,
-                 max_batch_seconds: Optional[float] = None,
-                 previous_stats: AnonTaskStats = AnonTaskStats(),
-                 existing_data: Optional[ExistingData] = None,
-                 ) -> None:
-        """Describes a decoding problem and roughly how to sample it.
-
+    def __init__(
+        self,
+        *,
+        circuit: 'stim.Circuit',
+        decoder: Optional[str] = None,
+        detector_error_model: Optional['stim.DetectorErrorModel'] = None,
+        postselection_mask: Optional[np.ndarray] = None,
+        json_metadata: JSON_TYPE = None,
+        collection_options: 'sinter.CollectionOptions' = CollectionOptions(),
+        skip_validation: bool = False,
+        _unvalidated_strong_id: Optional[str] = None,
+    ) -> None:
+        """
         Args:
             circuit: The annotated noisy circuit to sample detection event data
                 and logical observable data form.
             decoder: The decoder to use to predict the logical observable data
                 from the detection event data. This can be set to None if it
-                will be specified later.
-            error_model_for_decoder: Defaults to None (automatically derive from
-                circuit). The error model to configure the decoder with.
+                will be specified later (e.g. by the call to `collect`).
+            detector_error_model: Specifies the error model to give to the decoder.
+                Defaults to None, indicating that it should be automatically derived
+                using `stim.Circuit.detector_error_model`.
             postselection_mask: Defaults to None (unused). A bit packed bitmask
                 identifying detectors that must not fire. Shots where the
                 indicated detectors fire are discarded.
@@ -49,123 +45,104 @@ class Task:
                 the problem. Must be JSON serializable. For example, this could
                 be a dictionary with "physical_error_rate" and "code_distance"
                 keys.
-            max_shots: Defaults to None (unused). Stops the sampling process
-                after this many samples have been taken from the circuit.
-            max_errors: Defaults to None (unused). Stops the sampling process
-                after this many errors have been seen in samples taken from the
-                circuit. The actual number sampled errors may be larger due to
-                batching.
-            start_batch_size: Defaults to None (collector's choice). The very
-                first shots taken from the circuit will use a batch of this
-                size, and no other batches will be taken in parallel. Once this
-                initial fact finding batch is done, batches can be taken in
-                parallel and the normal batch size limiting processes take over.
-            max_batch_size: Defaults to None (unused). Limits batches from
-                taking more than this many shots at once. For example, this can
-                be used to ensure memory usage stays below some limit.
-            max_batch_seconds: Defaults to None (unused). When set, the recorded
-                data from previous shots is used to estimate how much time is
-                taken per shot. This information is then used to predict the
-                biggest batch size that can finish in under the given number of
-                seconds. Limits each batch to be no larger than that.
-            previous_stats: If previous information has already been collected,
-                it can be specified here. This is useful if you want the manager
-                to immediately know roughly what the error rate is and how long
-                a batch might take, instead of having to wait for new shots to
-                reveal this information again.
-            existing_data: If previous information has already been collected,
-                it can be specified here.
-        """
-        if max_shots is not None and max_shots < 0:
-            raise ValueError(f'max_shots is not None and max_shots={max_shots} < 0')
-        if max_errors is not None and max_errors < 0:
-            raise ValueError(f'max_errors is not None and max_errors={max_errors} < 0')
-        if start_batch_size is not None and start_batch_size <= 0:
-            raise ValueError(f'start_batch_size is not None and start_batch_size={start_batch_size} <= 0')
-        if max_batch_size is not None and max_batch_size <= 0:
-            raise ValueError(
-                f'max_batch_size={max_batch_size} is not None and max_batch_size <= 0')
-        if max_batch_seconds is not None and max_batch_seconds <= 0:
-            raise ValueError(
-                f'max_batch_seconds={max_batch_seconds} is not None and max_batch_seconds <= 0')
+            collection_options: Specifies custom options for collecting this
+                single task. These options are merged with the global options
+                to determine what happens.
 
+                For example, if a task has `collection_options` set to
+                `sinter.CollectionOptions(max_shots=1000, max_errors=100)` and
+                `sinter.collect` was called with `max_shots=500` and
+                `max_errors=200`, then either 500 shots or 100 errors will be
+                collected for the task (whichever comes first).
+            skip_validation: Defaults to False. Normally the arguments given to
+                this method are checked for consistency (e.g. the detector error
+                model should have the same number of detectors as the circuit).
+                Setting this argument to True will skip doing the consistency
+                checks. Note that this can result in confusing errors later, if
+                the arguments are not actually consistent.
+            _unvalidated_strong_id: Must be set to None unless `skip_validation`
+                is set to True. Otherwise, if this is specified then it should
+                be equal to the value returned by self.strong_id().
+        """
+        if not skip_validation:
+            if _unvalidated_strong_id is not None:
+                raise ValueError("_unvalidated_strong_id is not None and not skip_validation")
+            dem = detector_error_model
+            if dem is not None:
+                if circuit.num_detectors != dem.num_detectors:
+                    raise ValueError(f"circuit.num_detectors={circuit.num_detectors!r} != detector_error_model.num_detectors={dem.num_detectors!r}")
+                if circuit.num_observables != dem.num_observables:
+                    raise ValueError(f"circuit.num_observables={circuit.num_observables!r} != detector_error_model.num_observables={dem.num_observables!r}")
+            mask = postselection_mask
+            if mask is not None:
+                if not isinstance(mask, np.ndarray):
+                    raise ValueError(f"not isinstance(postselection_mask={mask!r}, np.ndarray)")
+                if mask.dtype != np.uint8:
+                    raise ValueError(f"postselection_mask.dtype={mask.dtype!r} != np.uint8")
+                shape = (math.ceil(circuit.num_detectors / 8),)
+                if mask.shape != shape:
+                    raise ValueError(f"postselection_mask.shape={mask.shape!r} != (math.ceil(circuit.num_detectors / 8),)={shape!r}")
         self.circuit = circuit
         self.decoder = decoder
-        self.error_model_for_decoder = error_model_for_decoder
+        self.detector_error_model = detector_error_model
         self.postselection_mask = postselection_mask
         self.json_metadata = json_metadata
+        self.collection_options = collection_options
+        self._unvalidated_strong_id = _unvalidated_strong_id
 
-        self.max_shots = max_shots
-        self.max_errors = max_errors
-        self.start_batch_size = start_batch_size
-        self.max_batch_size = max_batch_size
-        self.max_batch_seconds = max_batch_seconds
+    def strong_id_value(self) -> Dict[str, Any]:
+        """Contains all raw values that affect the strong id.
 
-        self.previous_stats = previous_stats
-        if existing_data is not None:
-            self.previous_stats += existing_data.stats_for(self.to_executable_task())
+        This value is converted into the actual strong id by:
+            - Serializing it into text using JSON.
+            - Serializing the JSON text into bytes using UTF8.
+            - Hashing the UTF8 bytes using SHA256.
+        """
+        if self.decoder is None:
+            raise ValueError("Can't compute strong_id until `decoder` is set.")
+        if self.detector_error_model is None:
+            raise ValueError("Can't compute strong_id until `detector_error_model` is set.")
+        return {
+            'circuit': str(self.circuit),
+            'decoder': self.decoder,
+            'decoder_error_model': str(self.detector_error_model),
+            'postselection_mask':
+                None
+                if self.postselection_mask is None
+                else [int(e) for e in self.postselection_mask],
+            'json_metadata': self.json_metadata,
+        }
+
+    def strong_id_text(self) -> str:
+        """The text that is serialized and hashed to get the strong id.
+
+        This value is converted into the actual strong id by:
+            - Serializing into bytes using UTF8.
+            - Hashing the UTF8 bytes using SHA256.
+        """
+        return json.dumps(self.strong_id_value())
+
+    def strong_id_bytes(self) -> bytes:
+        """The bytes that are hashed to get the strong id.
+
+        This value is converted into the actual strong id by:
+            - Hashing these bytes using SHA256.
+        """
+        return self.strong_id_text().encode('utf8')
+
+    def _recomputed_strong_id(self) -> str:
+        return hashlib.sha256(self.strong_id_bytes()).hexdigest()
 
     def strong_id(self) -> str:
         """A cryptographically unique identifier for this task.
 
-        Doesn't depend on properties related to how many shots to take (such as
-        max_batch_size).
+        This value is affected by:
+            - The exact circuit.
+            - The exact detector error model.
+            - The decoder.
+            - The json metadata.
+            - The postselection mask.
         """
-        return self.to_executable_task().strong_id()
-
-    def with_merged_options(self,
-             *,
-             decoder: Optional[str] = None,
-             max_shots: Optional[int] = None,
-             max_errors: Optional[int] = None,
-             start_batch_size: Optional[int] = None,
-             max_batch_size: Optional[int] = None,
-             max_batch_seconds: Optional[float] = None,
-             existing_data: Optional[ExistingData] = None) -> 'Task':
-        return Task(
-            circuit=self.circuit,
-            error_model_for_decoder=self.error_model_for_decoder,
-            postselection_mask=self.postselection_mask,
-            json_metadata=self.json_metadata,
-
-            decoder=nullable_single_decoder(self.decoder, decoder),
-
-            max_shots=nullable_min(self.max_shots, max_shots),
-            max_errors=nullable_min(self.max_errors, max_errors),
-            start_batch_size=nullable_min(self.start_batch_size, start_batch_size),
-            max_batch_size=nullable_min(self.max_batch_size, max_batch_size),
-            max_batch_seconds=nullable_min(self.max_batch_seconds, max_batch_seconds),
-            previous_stats=self.previous_stats,
-            existing_data=existing_data,
-        )
-
-    def to_executable_task(self) -> ExecutableTask:
-        """Strips off properties that are not needed in order to take a shot.
-
-        Omits things like max_errors but keeps things like the circuit.
-        """
-        if self.decoder is None:
-            raise ValueError('decoder is None')
-        return ExecutableTask(
-            decoder=self.decoder,
-            circuit=self.circuit,
-            error_model_for_decoder=self.error_model_for_decoder,
-            postselection_mask=self.postselection_mask,
-            json_metadata=self.json_metadata,
-        )
-
-
-def nullable_min(a: Optional[int], b: Optional[int]) -> Optional[int]:
-    if a is None:
-        return b
-    if b is None:
-        return a
-    return min(a, b)
-
-
-def nullable_single_decoder(a: Optional[str], b: Optional[str]) -> str:
-    if a is None and b is None:
-        raise ValueError('decoder not specified')
-    if a is not None and b is not None:
-        raise ValueError('decoder specified to both Task and sinter.collect')
-    return a if a is not None else b
+        if self._unvalidated_strong_id is None:
+            self._unvalidated_strong_id = self._recomputed_strong_id()
+        return self._unvalidated_strong_id

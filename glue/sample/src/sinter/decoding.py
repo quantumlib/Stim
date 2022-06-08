@@ -134,6 +134,9 @@ def sample_decode(*,
             files can be written as part of performing decoding. If set to
             None, one is created using the tempfile package.
     """
+    if num_shots == 0:
+        return AnonTaskStats()
+
     with contextlib.ExitStack() as exit_stack:
         if tmp_dir is None:
             tmp_dir = exit_stack.enter_context(tempfile.TemporaryDirectory())

@@ -133,7 +133,7 @@ def plot(
             total.add_sample(sample)
     total.data = {k: v
                   for k, v in total.data.items()
-                  if bool(filter_func(v.to_task_summary()))}
+                  if bool(filter_func(v))}
 
     if not include_error_rate_plot and not include_discard_rate_plot:
         include_error_rate_plot = True
