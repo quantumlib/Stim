@@ -5,6 +5,7 @@ These notes generally assume you are on a Linux system.
 
 # Index
 
+- [compatibility guarantees across versions](#compatibility)
 - [releasing a new version](#release-checklist)
 - [building `stim` command line tool](#build)
     - [with cmake](#build.cmake)
@@ -38,6 +39,26 @@ These notes generally assume you are on a Linux system.
     - [with emscripten](#jspackage.stimjs.emscripten)
 - [autoformating code](#autoformat)
     - [with clang-format](#autoformat.clang-format)
+
+# <a name="release-checklist"></a>Compatibility guarantees across versions
+
+A *bug* is bad behavior that wasn't intended. For example, the program crashing instead of returning empty results when sampling from an empty circuit would be a bug.
+
+A *trap* is originally-intended behavior that leads to the user making mistakes. For example, allowing the user to take a number of shots that wasn't a multiple of 64 when using the data format `ptb64` was a trap because the shots were padded up to a multiple of 64 using zeroes (and these fake shots could then easily be treated as real by later analysis steps).
+
+A *spandrel* is an implementation detail that has observable effects, but which is not really required to behave in that specific way. For example, when stim derives a detector error model from a circuit, the exact probability of an error instruction depends on minor details such as floating point error (which is sensitive to compiler optimizations). The exact floating point error that occurs is a spandrel.
+
+- **Stim Python API**
+    - The python API must maintain backwards compatibility from minor version to minor version (except for bug fixes, trap fixes, and spandrels). Violating this requires a new major version.
+    - Trap fixes must be documented as breaking changes in the release notes.
+    - The exact behavior of random seeding is a spandrel. The behavior must be consistent on a single machine for a single version, with the same seed always producing the same results, but it is **not** stable between minor versions. This is enforced by intentionally introducing changes for every single minor version.
+- **Stim Command Line API**
+    - The command land API must maintain backwards compatibility from minor version to minor version (except for bug fixes, trap fixes, and spandrels). Violating this requires a new major version.
+    - Trap fixes must be documented as breaking changes in the release notes.
+    - It is explicitly **not** allowed for a command to stop working due to, for example, a cleanup effort to make the commands more consistent. Violating this requires a new major version.
+    - The exact behavior of random seeding is a spandrel. The behavior must be consistent on a single machine for a single version, with the same seed always producing the same results, but it is **not** stable between minor versions. This is enforced by intentionally introducing changes for every single minor version.
+- **Stim C++ API**
+    - The C++ API makes no compatibility guarantees. It may change arbitrarily and catastrophically from minor version to minor version.
 
 # <a name="release-checklist"></a>Releasing a new version
 
