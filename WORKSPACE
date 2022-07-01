@@ -18,15 +18,20 @@ http_archive(
 
 http_archive(
     name = "rules_python",
-    sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
+    sha256 = "5fa3c738d33acca3b97622a13a741129f67ef43f5fdfcec63b29374cc0574c29",
+    strip_prefix = "rules_python-0.9.0",
+    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.9.0.tar.gz",
 )
 
 http_archive(
     name = "pybind11_bazel",
-    sha256 = "e4a9536f49d4a88e3c5a09954de49c4a18d6b1632c457a62d6ec4878c27f1b5b",
-    strip_prefix = "pybind11_bazel-7f397b5d2cc2434bbd651e096548f7b40c128044",
-    urls = ["https://github.com/pybind/pybind11_bazel/archive/7f397b5d2cc2434bbd651e096548f7b40c128044.zip"],
+    # Patch is a workaround for 3.10 deprecation of distutils causing python_configure to fail.
+    # The patch contents are from https://github.com/jeongukjae/nori-clone/commit/3e4fc321d570ce5dcabccdf1bab1144d839405a7
+    patch_args = ["-p1"],
+    patches = ["//:pybind11_bazel.patch"],
+    sha256 = "fec6281e4109115c5157ca720b8fe20c8f655f773172290b03f57353c11869c2",
+    strip_prefix = "pybind11_bazel-72cbbf1fbc830e487e3012862b7b720001b70672",
+    urls = ["https://github.com/pybind/pybind11_bazel/archive/72cbbf1fbc830e487e3012862b7b720001b70672.zip"],
 )
 
 load("@pybind11_bazel//:python_configure.bzl", "python_configure")

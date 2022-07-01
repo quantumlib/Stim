@@ -84,8 +84,6 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int):
     term_name = full_name.split(".")[-1]
     is_property = isinstance(obj, property)
     is_method = doc.startswith(term_name)
-    if term_name == "circuit_error_locations":
-        xxx = 0
     has_setter = False
     sig_name = ''
     if is_method or is_property:

@@ -261,7 +261,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("bit_pack") = false,
         clean_doc_string(u8R"DOC(
             Reads shot data, such as measurement samples, from a file.
-            @signature def read_shot_data_file(path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
+            @signature def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
 
             Args:
                 path: The path to the file to read the data from.

@@ -4384,7 +4384,7 @@ def main(*, command_line_args: List[str]) -> int:
         DETECTOR(1, 1) rec[-1] rec[-2] rec[-3]
         OBSERVABLE_INCLUDE(0) rec[-1]
     """
-def read_shot_data_file(path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
+def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
 
     """Reads shot data, such as measurement samples, from a file.
     
