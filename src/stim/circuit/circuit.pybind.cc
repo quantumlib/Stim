@@ -24,6 +24,7 @@
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
@@ -923,22 +924,16 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         [](pybind11::object &obj) {
             try {
                 auto path = pybind11::cast<std::string>(obj);
-                FILE *f = fopen(path.data(), "r");
-                if (f == nullptr) {
-                    throw std::invalid_argument("Failed to open " + path);
-                }
-                return Circuit::from_file(f);
+                RaiiFile f(path.data(), "r");
+                return Circuit::from_file(f.f);
             } catch (pybind11::cast_error &ex) {
             }
 
             auto py_path = pybind11::module::import("pathlib").attr("Path");
             if (pybind11::isinstance(obj, py_path)) {
                 auto path = pybind11::cast<std::string>(pybind11::str(obj));
-                FILE *f = fopen(path.data(), "r");
-                if (f == nullptr) {
-                    throw std::invalid_argument("Failed to open " + path);
-                }
-                return Circuit::from_file(f);
+                RaiiFile f(path.data(), "r");
+                return Circuit::from_file(f.f);
             }
 
             auto py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
