@@ -14,6 +14,8 @@
 
 #include "stim/circuit/circuit.pybind.h"
 
+#include <fstream>
+
 #include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
@@ -913,6 +915,142 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 DETECTOR(3, 1) rec[-2] rec[-3] rec[-6]
                 DETECTOR(5, 1) rec[-1] rec[-2] rec[-5]
                 OBSERVABLE_INCLUDE(0) rec[-1]
+        )DOC")
+            .data());
+
+    c.def_static(
+        "from_file",
+        [](pybind11::object &obj) {
+            try {
+                auto path = pybind11::cast<std::string>(obj);
+                FILE *f = fopen(path.data(), "r");
+                if (f == nullptr) {
+                    throw std::invalid_argument("Failed to open " + path);
+                }
+                return Circuit::from_file(f);
+            } catch (pybind11::cast_error &ex) {
+            }
+
+            auto py_path = pybind11::module::import("pathlib").attr("Path");
+            if (pybind11::isinstance(obj, py_path)) {
+                auto path = pybind11::cast<std::string>(pybind11::str(obj));
+                FILE *f = fopen(path.data(), "r");
+                if (f == nullptr) {
+                    throw std::invalid_argument("Failed to open " + path);
+                }
+                return Circuit::from_file(f);
+            }
+
+            auto py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
+            if (pybind11::isinstance(obj, py_text_io_base)) {
+                auto contents = obj.attr("read")();
+                return Circuit(pybind11::cast<std::string>(pybind11::str(contents)).data());
+            }
+
+            throw std::invalid_argument(
+                "Don't know how to read from " + pybind11::cast<std::string>(pybind11::str(obj)));
+        },
+        pybind11::arg("file"),
+        clean_doc_string(u8R"DOC(
+            Args:
+                file: A file path or open file object to read from.
+
+            Returns:
+                The circuit parsed from the file.
+
+            Examples:
+                >>> import stim
+                >>> import tempfile
+
+                >>> with tempfile.TemporaryDirectory() as tmpdir:
+                ...     path = tmpdir + '/tmp.stim'
+                ...     with open(path, 'w') as f:
+                ...         print('H 5', file=f)
+                ...     circuit = stim.Circuit.from_file(path)
+                >>> circuit
+                stim.Circuit('''
+                    H 5
+                ''')
+
+                >>> with tempfile.TemporaryDirectory() as tmpdir:
+                ...     path = tmpdir + '/tmp.stim'
+                ...     with open(path, 'w') as f:
+                ...         print('CNOT 4 5', file=f)
+                ...     with open(path) as f:
+                ...         circuit = stim.Circuit.from_file(path)
+                >>> circuit
+                stim.Circuit('''
+                    CX 4 5
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "to_file",
+        [](const Circuit &self, pybind11::object &obj) {
+            try {
+                auto path = pybind11::cast<std::string>(obj);
+                std::ofstream out(path, std::ofstream::out);
+                if (!out.is_open()) {
+                    throw std::invalid_argument("Failed to open " + path);
+                }
+                out << self << '\n';
+                return;
+            } catch (pybind11::cast_error &ex) {
+            }
+
+            auto py_path = pybind11::module::import("pathlib").attr("Path");
+            if (pybind11::isinstance(obj, py_path)) {
+                auto path = pybind11::cast<std::string>(pybind11::str(obj));
+                std::ofstream out(path, std::ofstream::out);
+                if (!out.is_open()) {
+                    throw std::invalid_argument("Failed to open " + path);
+                }
+                out << self << '\n';
+                return;
+            }
+
+            auto py_text_io_base = pybind11::module::import("io").attr("TextIOBase");
+            if (pybind11::isinstance(obj, py_text_io_base)) {
+                obj.attr("write")(pybind11::str(self.str()));
+                obj.attr("write")(pybind11::str("\n"));
+                return;
+            }
+
+            throw std::invalid_argument(
+                "Don't know how to write to " + pybind11::cast<std::string>(pybind11::str(obj)));
+        },
+        pybind11::arg("file"),
+        clean_doc_string(u8R"DOC(
+            @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
+            Writes the stim circuit to a file.
+
+            Args:
+                file: A file path or an open file to write to.
+
+            Examples:
+                >>> import stim
+                >>> import tempfile
+                >>> c = stim.Circuit('H 5\nX 0')
+
+                >>> with tempfile.TemporaryDirectory() as tmpdir:
+                ...     path = tmpdir + '/tmp.stim'
+                ...     with open(path, 'w') as f:
+                ...         c.to_file(f)
+                ...     with open(path, 'w') as f:
+                ...         contents = f.read()
+                >>> contents
+                H 5
+                X 0
+
+                >>> with tempfile.TemporaryDirectory() as tmpdir:
+                ...     path = tmpdir + '/tmp.stim'
+                ...     c.to_file(path)
+                ...     with open(path, 'w') as f:
+                ...         contents = f.read()
+                >>> contents
+                H 5
+                X 0
         )DOC")
             .data());
 
