@@ -1,7 +1,5 @@
 # sinter: fast QEC sampling
 
-> **sinter is still in development. Its API is not stable.** 
-
 Sinter is a software tool/library for doing fast monte carlo sampling of
 quantum error correction circuits.
 
@@ -13,8 +11,6 @@ quantum error correction circuits.
 
 <a name="how_to_works"></a>
 # How it works
-
-> **sinter is still in development. Its API is not stable.** 
 
 Sinter takes Stim circuits annotated with noise, detectors, and logical
 observables.
@@ -37,8 +33,6 @@ sinter generally achieves good resource utilization of the processes you assign 
 <a name="how_to_install"></a>
 # How to install
 
-**sinter is still in development. Its API is not stable.** 
-
 Sinter is available as a pypi package. It can be installed using pip:
 
 ```
@@ -52,8 +46,6 @@ to use sinter's python API.
 
 <a name="how_to_use_python"></a>
 # How to use: Python API
-
-> **sinter is still in development. Its API is not stable.** 
 
 This example assumes you are in a python environment with sinter
 installed.
@@ -143,8 +135,6 @@ and the corresponding image saved to `plot.png`:
 
 ## python API utility methods
 
-> **sinter is still in development. Its API is not stable.** 
-
 Sinter's python module exposes a variety of methods that are handy for plotting
 or analyzing QEC data. These include:
 
@@ -162,8 +152,6 @@ or analyzing QEC data. These include:
 
 <a name="how_to_use_linux"></a>
 # How to use: Linux Command Line
-
-> **sinter is still in development. Its API is not stable.** 
 
 This example assumes you are using a linux command line in a python virtualenv with `sinter` installed.
 
@@ -280,8 +268,6 @@ Which will save a png image of, and also open a window showing, a plot like this
 <a name="csv_format"></a>
 # The csv format for sample statistics
 
-
-> **sinter is still in development. Its API is not stable.** 
 
 Sinter saves samples as a table using a Comma Separated Value format.
 For example:

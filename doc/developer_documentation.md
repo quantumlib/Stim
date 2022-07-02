@@ -40,7 +40,7 @@ These notes generally assume you are on a Linux system.
 - [autoformating code](#autoformat)
     - [with clang-format](#autoformat.clang-format)
 
-# <a name="release-checklist"></a>Compatibility guarantees across versions
+# <a name="compatibility></a>Compatibility guarantees across versions
 
 A *bug* is bad behavior that wasn't intended. For example, the program crashing instead of returning empty results when sampling from an empty circuit would be a bug.
 
@@ -67,9 +67,12 @@ A *spandrel* is an implementation detail that has observable effects, but which 
     - Commit changes
     - `git tag vX.Y.Z`
     - Push tag to github
+    - Check github `Actions` tab and confirm ci is running on the tag
+    - Wait for ci to finish validating and producing artifacts for the tag
     - Get `stim` wheels [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
     - Build `stimcirq` sdist on this tag [using python setup.py sdist](#pypackage.stimcirq.python)
-    - Combine `stim` and `stimcirq` package files into one directory
+    - Build `sinter` sdist on this tag [using python setup.py sdist](#pypackage.sinter.python)
+    - Combine `stim`, `stimcirq`, and `sinter` package files into one directory
 - Bump to next dev version on main branch
     - Update version to `vX.Y.dev0` in all setup.py files
     - Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
@@ -79,7 +82,7 @@ A *spandrel* is an implementation detail that has observable effects, but which 
     - Flagship changes section
     - Notable changes section
     - Include wheels/sdists as attachments
-- Do irreversible steps last
+- Do these irreversible and public viewable steps last!
     - Upload wheels/sdists to pypi using `twine`
     - Publish the github release notes
     - Add gates reference page to wiki for the new version
