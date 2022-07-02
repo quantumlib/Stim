@@ -340,6 +340,11 @@ struct ErrorAnalyzer {
 
     /// Checks whether there any errors that need decomposing.
     bool has_unflushed_ungraphlike_errors() const;
+
+   private:
+    void check_can_approximate_disjoint(const char *op_name);
+    void add_composite_error(double probability, ConstPointerRange<GateTarget> targets);
+    void correlated_error_block(const std::vector<OperationData> &dats);
 };
 
 /// Determines if an error's targets are graphlike.

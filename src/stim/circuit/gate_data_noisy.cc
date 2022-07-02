@@ -415,6 +415,10 @@ Probabilistically applies a Pauli product error with a given probability, unless
 If the error occurs, sets the "correlated error occurred flag" to true.
 Otherwise leaves the flag alone.
 
+Note: when converting a circuit into a detector error model, every `ELSE_CORRELATED_ERROR` instruction must be preceded by
+an ELSE_CORRELATED_ERROR instruction or an E instruction. In other words, ELSE_CORRELATED_ERROR instructions should appear
+in contiguous chunks started by a CORRELATED_ERROR.
+
 See also: `CORRELATED_ERROR`.
 
 Parens Arguments:

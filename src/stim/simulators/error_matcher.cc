@@ -226,7 +226,7 @@ void ErrorMatcher::rev_process_instruction(const Operation &op) {
         }
     } else if (!(op.gate->flags & (GATE_IS_NOISE | GATE_PRODUCES_NOISY_RESULTS))) {
         (error_analyzer.*op.gate->reverse_error_analyzer_function)(op.target_data);
-    } else if (op.gate->id == gate_name_to_id("E")) {
+    } else if (op.gate->id == gate_name_to_id("E") || op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
         cur_loc.instruction_targets.target_range_start = 0;
         cur_loc.instruction_targets.target_range_end = op.target_data.targets.size();
         resolve_paulis_into(op.target_data.targets, 0, cur_loc.flipped_pauli_product);

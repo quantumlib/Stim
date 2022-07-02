@@ -759,16 +759,20 @@ PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0
 M 0
 DETECTOR rec[-1]
             )input")),
-        trim(R"OUTPUT(
+        trim(
+            R"OUTPUT(
 [stderr=)OUTPUT"
-             "\x1B"
-             R"OUTPUT([31mHandling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.
+            "\x1B"
+            R"OUTPUT([31mEncountered the operation PAULI_CHANNEL_1 during error analysis, but this operation requires the `approximate_disjoint_errors` option to be enabled.
+If you're' calling from python, using stim.Circuit.detector_error_model, you need to add the argument approximate_disjoint_errors=True.
+
+If you're' calling from the command line, you need to specify --approximate_disjoint_errors.
 
 Circuit stack trace:
     at instruction #2 [which is PAULI_CHANNEL_1(0.125, 0.25, 0.375) 0]
 )OUTPUT"
-             "\x1B"
-             R"OUTPUT([0m]
+            "\x1B"
+            R"OUTPUT([0m]
 )OUTPUT"));
 
     ASSERT_EQ(

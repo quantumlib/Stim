@@ -736,6 +736,53 @@ TEST(detector_error_model, final_detector_and_coord_shift) {
         (std::pair<uint64_t, std::vector<double>>{4000000, {2000000, 1000, 6000000000}}));
 }
 
+TEST(detector_error_model, rounded) {
+    DetectorErrorModel dem(R"DEM(
+        error(0.01000002) D0 D1
+        repeat 2 {
+            error(0.123456789) D1 D2 L3
+        }
+        detector(0.0200000334,0.12345) D0
+        shift_detectors(5.0300004,0.12345) 3
+    )DEM");
+
+    ASSERT_EQ(dem.rounded(0), DetectorErrorModel(R"DEM(
+        error(0) D0 D1
+        repeat 2 {
+            error(0) D1 D2 L3
+        }
+        detector(0,0) D0
+        shift_detectors(5,0) 3
+    )DEM"));
+
+    ASSERT_EQ(dem.rounded(1), DetectorErrorModel(R"DEM(
+        error(0) D0 D1
+        repeat 2 {
+            error(0.1) D1 D2 L3
+        }
+        detector(0,0.1) D0
+        shift_detectors(5,0.1) 3
+    )DEM"));
+
+    ASSERT_EQ(dem.rounded(2), DetectorErrorModel(R"DEM(
+        error(0.01) D0 D1
+        repeat 2 {
+            error(0.12) D1 D2 L3
+        }
+        detector(0.02,0.12) D0
+        shift_detectors(5.03,0.12) 3
+    )DEM"));
+
+    ASSERT_EQ(dem.rounded(3), DetectorErrorModel(R"DEM(
+        error(0.010) D0 D1
+        repeat 2 {
+            error(0.123) D1 D2 L3
+        }
+        detector(0.020,0.123) D0
+        shift_detectors(5.030,0.123) 3
+    )DEM"));
+}
+
 TEST(detector_error_model, surface_code_coords_dont_infinite_loop) {
     CircuitGenParameters params(7, 5, "rotated_memory_x");
     params.after_clifford_depolarization = 0.01;

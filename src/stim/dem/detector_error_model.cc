@@ -580,6 +580,29 @@ void DetectorErrorModel::clear() {
     blocks.clear();
 }
 
+DetectorErrorModel DetectorErrorModel::rounded(uint8_t sig_figs) const {
+    double scale = 1;
+    for (size_t k = 0; k < sig_figs; k++) {
+        scale *= 10;
+    }
+
+    DetectorErrorModel result;
+    for (const auto &e : instructions) {
+        if (e.type == DEM_REPEAT_BLOCK) {
+            auto reps = e.target_data[0].data;
+            auto &block = blocks[e.target_data[1].data];
+            result.append_repeat_block(reps, block.rounded(sig_figs));
+        } else {
+            std::vector<double> rounded_args;
+            for (auto a : e.arg_data) {
+                rounded_args.push_back(round(a * scale) / scale);
+            }
+            result.append_dem_instruction({rounded_args, e.target_data, e.type});
+        }
+    }
+    return result;
+}
+
 uint64_t DetectorErrorModel::total_detector_shift() const {
     uint64_t result = 0;
     for (const auto &e : instructions) {
