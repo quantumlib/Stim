@@ -69,8 +69,6 @@ stderr:
     Circuit contained gauge detectors but `--allow_gauge_detectors` wasn't set.
     Circuit contained disjoint error channels but `--approximate_disjoint_errors` wasn't set.
 
-Note: currently, the `ELSE_CORRELATED_ERROR` instruction is not supported by this mode.
-
 - Example:
 
     ```
