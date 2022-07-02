@@ -3592,6 +3592,37 @@ class Tableau:
             >>> t3(p) == t2(t1(p))
             True
         """
+    def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.float32]:
+        """Converts the tableau into a unitary matrix.
+
+        Args:
+            endian:
+                "little": The first qubit is the least significant (corresponds
+                    to an offset of 1 in the state vector).
+                "big": The first qubit is the most significant (corresponds
+                    to an offset of 2**(n - 1) in the state vector).
+
+        Returns:
+            A numpy array with dtype=np.complex64 and shape=(1 << len(tableau), 1 << len(tableau)).
+
+        Example:
+            >>> import stim
+            >>> cnot = stim.Tableau.from_conjugated_generators(
+            ...     xs=[
+            ...         stim.PauliString("XX"),
+            ...         stim.PauliString("_X"),
+            ...     ],
+            ...     zs=[
+            ...         stim.PauliString("Z_"),
+            ...         stim.PauliString("ZZ"),
+            ...     ],
+            ... )
+            >>> cnot.to_unitary_matrix(endian='big')
+            array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                   [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
+                   [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
+                   [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
+        """
     def x_output(self, target: int) -> stim.PauliString:
         """Returns the result of conjugating a Pauli X by the tableau's Clifford operation.
 
@@ -4409,34 +4440,46 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
-    def state_vector(self) -> np.ndarray[np.float32]:
+    def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.float32]:
         """Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
         This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
         done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
-        stabilizer of the state. The global phase of the result is arbitrary (and will vary from call to call).
+        stabilizer of the state. The state is then canonicalized so that zero values are actually exactly 0, and so
+        that the first non-zero entry is positive.
 
-        The result is in little endian order. The amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-        the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
-        qubit with index 1 is storing the bit b_1, etc.
+        Args:
+            endian:
+                "little" (default): state vector is in little endian order, where higher index qubits
+                    correspond to larger changes in the state index.
+                "big": state vector is in little endian order, where higher index qubits correspond to
+                    smaller changes in the state index.
 
         Returns:
-            A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes in little endian order.
+            A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
+
+            If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
+            qubit with index 1 is storing the bit b_1, etc.
+
+            If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
+            qubit with index 1 is storing the bit b_{n-2}, etc.
 
         Examples:
             >>> import stim
             >>> import numpy as np
-
-            >>> # Check that the qubit-to-amplitude-index ordering is little-endian.
             >>> s = stim.TableauSimulator()
-            >>> s.x(1)
-            >>> s.x(4)
-            >>> vector = s.state_vector()
-            >>> np.abs(vector[0b_10010]).round(2)
-            1.0
-            >>> tensor = vector.reshape((2, 2, 2, 2, 2))
-            >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
-            1.0
+            >>> s.x(2)
+            >>> list(s.state_vector(endian='little'))
+            [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+
+            >>> list(s.state_vector(endian='big'))
+            [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+
+            >>> s.sqrt_x(1, 2)
+            >>> list(s.state_vector())
+            [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
         """
     def swap(self, *targets) -> None:
         """Applies a swap gate to the simulator's state.

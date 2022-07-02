@@ -194,8 +194,16 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "state_vector",
-        [](const PyTableauSimulator &self) {
-            auto complex_vec = self.to_state_vector();
+        [](const PyTableauSimulator &self, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+            auto complex_vec = self.to_state_vector(little_endian);
             std::vector<float> float_vec;
             float_vec.reserve(complex_vec.size() * 2);
             for (const auto &e : complex_vec) {
@@ -211,34 +219,48 @@ void pybind_tableau_simulator(pybind11::module &m) {
             return pybind11::array_t<float>(
                 pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
         },
+        pybind11::kw_only(),
+        pybind11::arg("endian") = "little",
         clean_doc_string(u8R"DOC(
             Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
             This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
             done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
-            stabilizer of the state. The global phase of the result is arbitrary (and will vary from call to call).
+            stabilizer of the state. The state is then canonicalized so that zero values are actually exactly 0, and so
+            that the first non-zero entry is positive.
 
-            The result is in little endian order. The amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
-            qubit with index 1 is storing the bit b_1, etc.
+            Args:
+                endian:
+                    "little" (default): state vector is in little endian order, where higher index qubits
+                        correspond to larger changes in the state index.
+                    "big": state vector is in little endian order, where higher index qubits correspond to
+                        smaller changes in the state index.
 
             Returns:
-                A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes in little endian order.
+                A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
+
+                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+                the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
+                qubit with index 1 is storing the bit b_1, etc.
+
+                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+                the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
+                qubit with index 1 is storing the bit b_{n-2}, etc.
 
             Examples:
                 >>> import stim
                 >>> import numpy as np
-
-                >>> # Check that the qubit-to-amplitude-index ordering is little-endian.
                 >>> s = stim.TableauSimulator()
-                >>> s.x(1)
-                >>> s.x(4)
-                >>> vector = s.state_vector()
-                >>> np.abs(vector[0b_10010]).round(2)
-                1.0
-                >>> tensor = vector.reshape((2, 2, 2, 2, 2))
-                >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
-                1.0
+                >>> s.x(2)
+                >>> list(s.state_vector(endian='little'))
+                [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+
+                >>> list(s.state_vector(endian='big'))
+                [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+
+                >>> s.sqrt_x(1, 2)
+                >>> list(s.state_vector())
+                [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
         )DOC")
             .data());
 

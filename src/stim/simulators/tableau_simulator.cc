@@ -793,11 +793,17 @@ VectorSimulator TableauSimulator::to_vector_sim() const {
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.zs[k]);
     }
-    return VectorSimulator::from_stabilizers(stabilizers, rng);
+    return VectorSimulator::from_stabilizers(stabilizers);
 }
 
-std::vector<std::complex<float>> TableauSimulator::to_state_vector() const {
-    return to_vector_sim().state;
+std::vector<std::complex<float>> TableauSimulator::to_state_vector(bool little_endian) const {
+    auto sim = to_vector_sim();
+    if (!little_endian) {
+        for (size_t q = 0; q < inv_state.num_qubits - q - 1; q++) {
+            sim.apply("SWAP", q, inv_state.num_qubits - q - 1);
+        }
+    }
+    return sim.state;
 }
 
 void TableauSimulator::collapse_x(ConstPointerRange<GateTarget> targets) {

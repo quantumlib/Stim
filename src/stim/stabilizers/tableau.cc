@@ -26,6 +26,7 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/tableau_transposed_raii.h"
+#include "stim/simulators/vector_simulator.h"
 
 using namespace stim;
 
@@ -597,4 +598,55 @@ PauliString Tableau::inverse_z_output(size_t input_index, bool skip_sign) const 
         result.sign = (*this)(result).sign;
     }
     return result;
+}
+
+std::vector<std::complex<float>> Tableau::to_flat_unitary_matrix(bool little_endian) const {
+    VectorSimulator sim(2 * num_qubits);
+
+    std::vector<PauliString> pauli_strings;
+    size_t nw = xs[0].xs.num_simd_words;
+
+    // Add X transformation stabilizers.
+    for (size_t k = 0; k < num_qubits; k++) {
+        PauliString p(num_qubits * 2);
+        p.xs.word_range_ref(0, nw) = xs[k].xs;
+        p.zs.word_range_ref(0, nw) = xs[k].zs;
+        p.sign = xs[k].sign;
+        p.xs[num_qubits + k] ^= true;
+        pauli_strings.push_back(p);
+    }
+
+    // Add Z transformation stabilizers.
+    for (size_t k = 0; k < num_qubits; k++) {
+        PauliString p(num_qubits * 2);
+        p.xs.word_range_ref(0, nw) = zs[k].xs;
+        p.zs.word_range_ref(0, nw) = zs[k].zs;
+        p.sign = zs[k].sign;
+        p.zs[num_qubits + k] ^= true;
+        pauli_strings.push_back(p);
+    }
+
+    for (auto &p : pauli_strings) {
+        for (size_t q = 0; q < num_qubits - q - 1; q++) {
+            size_t q2 = num_qubits - q - 1;
+            if (!little_endian) {
+                p.xs[q].swap_with(p.xs[q2]);
+                p.zs[q].swap_with(p.zs[q2]);
+                p.xs[q + num_qubits].swap_with(p.xs[q2 + num_qubits]);
+                p.zs[q + num_qubits].swap_with(p.zs[q2 + num_qubits]);
+            }
+        }
+        for (size_t q = 0; q < num_qubits; q++) {
+            p.xs[q].swap_with(p.xs[q + num_qubits]);
+            p.zs[q].swap_with(p.zs[q + num_qubits]);
+        }
+    }
+
+    // Turn it into a vector.
+    std::vector<PauliStringRef> refs;
+    for (const auto &e : pauli_strings) {
+        refs.push_back(e.ref());
+    }
+
+    return VectorSimulator::state_vector_from_stabilizers(refs, 1 << num_qubits);
 }

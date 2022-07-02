@@ -393,7 +393,7 @@ TEST(TableauSimulator, to_vector_sim) {
 }
 
 TEST(TableauSimulator, to_state_vector) {
-    auto v = TableauSimulator(SHARED_TEST_RNG(), 0).to_state_vector();
+    auto v = TableauSimulator(SHARED_TEST_RNG(), 0).to_state_vector(true);
     ASSERT_EQ(v.size(), 1);
     auto r = v[0].real();
     auto i = v[0].imag();
@@ -402,8 +402,44 @@ TEST(TableauSimulator, to_state_vector) {
     TableauSimulator sim_tab(SHARED_TEST_RNG(), 3);
     auto sim_vec = sim_tab.to_vector_sim();
     VectorSimulator sim_vec2(3);
-    sim_vec2.state = sim_tab.to_state_vector();
+    sim_vec2.state = sim_tab.to_state_vector(true);
     ASSERT_TRUE(sim_vec.approximate_equals(sim_vec2, true));
+}
+
+TEST(TableauSimulator, to_state_vector_endian) {
+    VectorSimulator sim_vec0(3);
+    VectorSimulator sim_vec2(3);
+    sim_vec0.apply("H", 0);
+    sim_vec2.apply("H", 2);
+
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 3);
+    sim_tab.H_XZ(OpDat(2));
+
+    VectorSimulator cmp(3);
+    cmp.state = sim_tab.to_state_vector(true);
+    ASSERT_TRUE(cmp.approximate_equals(sim_vec2, true));
+    cmp.state = sim_tab.to_state_vector(false);
+    ASSERT_TRUE(cmp.approximate_equals(sim_vec0, true));
+}
+
+TEST(TableauSimulator, to_state_vector_canonical) {
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 3);
+    sim_tab.H_XZ(OpDat(2));
+    std::vector<float> expected;
+
+    auto actual = sim_tab.to_state_vector(true);
+    expected = {sqrtf(0.5), 0, 0, 0, sqrtf(0.5), 0, 0, 0};
+    ASSERT_EQ(actual.size(), expected.size());
+    for (size_t k = 0; k < 8; k++) {
+        ASSERT_LT(abs(actual[k] - expected[k]), 1e-4) << k;
+    }
+
+    actual = sim_tab.to_state_vector(false);
+    expected = {sqrtf(0.5), sqrtf(0.5), 0, 0, 0, 0, 0, 0};
+    ASSERT_EQ(actual.size(), expected.size());
+    for (size_t k = 0; k < 8; k++) {
+        ASSERT_LT(abs(actual[k] - expected[k]), 1e-4) << k;
+    }
 }
 
 bool vec_sim_corroborates_measurement_process(const Tableau &state, const std::vector<uint32_t> &measurement_targets) {

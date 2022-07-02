@@ -13,6 +13,7 @@
 # limitations under the License.
 import re
 
+import numpy as np
 import stim
 import pytest
 
@@ -681,3 +682,13 @@ def test_pickle():
     t = stim.Tableau.random(4)
     a = pickle.dumps(t)
     assert pickle.loads(a) == t
+
+
+def test_unitary():
+    swap = stim.Tableau.from_named_gate("SWAP")
+    np.testing.assert_array_equal(swap.to_unitary_matrix(endian='big'), [
+        [1, 0, 0, 0],
+        [0, 0, 1, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 1],
+    ])

@@ -182,7 +182,7 @@ TEST(tableau, str) {
 TEST(tableau, gate_tableau_data_vs_unitary_data) {
     for (const auto &gate : GATE_DATA.gates()) {
         if (gate.flags & GATE_IS_UNITARY) {
-            ASSERT_TRUE(tableau_agrees_with_unitary(gate.tableau(), gate.unitary())) << gate.name;
+            EXPECT_TRUE(tableau_agrees_with_unitary(gate.tableau(), gate.unitary())) << gate.name;
         }
     }
 }
@@ -900,4 +900,197 @@ TEST(tableau, inverse_pauli_string_acces_methods) {
     ASSERT_EQ(t.inverse_z_output(0, true), t_inv.zs[0]);
     ASSERT_EQ(t.inverse_z_output(1, true), t_inv.zs[1]);
     ASSERT_EQ(t.inverse_z_output(2, true), t_inv.zs[2]);
+}
+
+TEST(tableau, unitary_little_endian) {
+    Tableau t(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{1, 0, 0, 1}));
+    t.prepend_SQRT_Y(0);
+    auto s = sqrtf(0.5);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{s, -s, s, s}));
+    t.prepend_SQRT_Y(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{0, 1, -1, 0}));
+    t.prepend_SQRT_Y(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{s, s, -s, s}));
+
+    t = Tableau(2);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    }));
+    t.prepend_X(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        0, 1, 0, 0,
+        1, 0, 0, 0,
+        0, 0, 0, 1,
+        0, 0, 1, 0
+    }));
+    t.prepend_X(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        0, 0, 0, 1,
+        0, 0, 1, 0,
+        0, 1, 0, 0,
+        1, 0, 0, 0
+    }));
+    t.prepend_X(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+        1, 0, 0, 0,
+        0, 1, 0, 0
+    }));
+    t.prepend_X(0);
+
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    }));
+    t.prepend_Z(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, -1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -1
+    }));
+    t.prepend_Z(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, -1, 0, 0,
+        0, 0, -1, 0,
+        0, 0, 0, 1
+    }));
+    t.prepend_Z(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, -1, 0,
+        0, 0, 0, -1
+    }));
+    t.prepend_Z(0);
+
+    t.prepend_SQRT_Z(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, {0, 1}, 0,
+        0, 0, 0, {0, 1}
+    }));
+    t.prepend_SQRT_Z_DAG(0);
+
+    t.prepend_H_XZ(0);
+    t.prepend_H_XZ(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{
+        0.5, 0.5, 0.5, 0.5,
+        0.5, -0.5, 0.5, -0.5,
+        0.5, 0.5, -0.5, -0.5,
+        0.5, -0.5, -0.5, 0.5,
+    }));
+}
+
+TEST(tableau, unitary_big_endian) {
+    Tableau t(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{1, 0, 0, 1}));
+    t.prepend_SQRT_Y(0);
+    auto s = sqrtf(0.5);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{s, -s, s, s}));
+    t.prepend_SQRT_Y(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{0, 1, -1, 0}));
+    t.prepend_SQRT_Y(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(false), (std::vector<std::complex<float>>{s, s, -s, s}));
+
+    t = Tableau(2);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    }));
+    t.prepend_X(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+        1, 0, 0, 0,
+        0, 1, 0, 0
+    }));
+    t.prepend_X(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        0, 0, 0, 1,
+        0, 0, 1, 0,
+        0, 1, 0, 0,
+        1, 0, 0, 0
+    }));
+    t.prepend_X(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        0, 1, 0, 0,
+        1, 0, 0, 0,
+        0, 0, 0, 1,
+        0, 0, 1, 0
+    }));
+    t.prepend_X(0);
+
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    }));
+    t.prepend_Z(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, -1, 0,
+        0, 0, 0, -1
+    }));
+    t.prepend_Z(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, -1, 0, 0,
+        0, 0, -1, 0,
+        0, 0, 0, 1
+    }));
+    t.prepend_Z(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, -1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -1
+    }));
+    t.prepend_Z(0);
+
+    t.prepend_SQRT_Z(0);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        1, 0, 0, 0,
+        0, {0, 1}, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, {0, 1}
+    }));
+    t.prepend_SQRT_Z_DAG(0);
+
+    t.prepend_H_XZ(0);
+    t.prepend_H_XZ(1);
+    ASSERT_EQ(t.to_flat_unitary_matrix(true), (std::vector<std::complex<float>>{
+        0.5, 0.5, 0.5, 0.5,
+        0.5, -0.5, 0.5, -0.5,
+        0.5, 0.5, -0.5, -0.5,
+        0.5, -0.5, -0.5, 0.5,
+    }));
+}
+
+TEST(tableau, unitary_vs_gate_data) {
+    for (const auto &gate : GATE_DATA.gates()) {
+        if (gate.flags & GATE_IS_UNITARY) {
+            std::vector<std::complex<float>> flat_expected;
+            for (const auto &row : gate.unitary()) {
+                flat_expected.insert(flat_expected.end(), row.begin(), row.end());
+            }
+            VectorSimulator v(0);
+            v.state = std::move(flat_expected);
+            v.canonicalize_assuming_stabilizer_state((gate.flags & stim::GATE_TARGETS_PAIRS) ? 4 : 2);
+            EXPECT_EQ(gate.tableau().to_flat_unitary_matrix(true), v.state) << gate.name;
+        }
+    }
 }

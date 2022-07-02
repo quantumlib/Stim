@@ -39,7 +39,11 @@ struct VectorSimulator {
     ///
     /// Assumes the stabilizers commute. Works by generating a random state vector and projecting onto
     /// each of the given stabilizers. Global phase will vary.
-    static VectorSimulator from_stabilizers(const std::vector<PauliStringRef> &stabilizers, std::mt19937_64 &rng);
+    static VectorSimulator from_stabilizers(const std::vector<PauliStringRef> &stabilizers);
+
+    static std::vector<std::complex<float>> state_vector_from_stabilizers(
+        const std::vector<PauliStringRef> &stabilizers,
+        float norm2 = 1);
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);
@@ -63,6 +67,8 @@ struct VectorSimulator {
 
     /// A description of the state vector's state.
     std::string str() const;
+
+    void canonicalize_assuming_stabilizer_state(double norm2);
 };
 
 /// Writes a description of the state vector's state to an output stream.

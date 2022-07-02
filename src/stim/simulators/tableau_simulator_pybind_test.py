@@ -338,6 +338,29 @@ def test_to_state_vector():
     assert v[0, 1, 0] == 0
     assert v[0, 0, 1] == 0
 
+    s = stim.TableauSimulator()
+    s.set_num_qubits(3)
+    s.sqrt_x(2)
+    np.testing.assert_allclose(
+        s.state_vector(endian='little'),
+        [np.sqrt(0.5), 0, 0, 0, -1j*np.sqrt(0.5), 0, 0, 0],
+        atol=1e-4,
+    )
+    np.testing.assert_allclose(
+        s.state_vector(endian='big'),
+        [np.sqrt(0.5), -1j*np.sqrt(0.5), 0, 0, 0, 0, 0, 0],
+        atol=1e-4,
+    )
+    with pytest.raises(ValueError, match="endian"):
+        s.state_vector(endian='unknown')
+
+    # Exact precision.
+    s.h(1)
+    np.testing.assert_array_equal(
+        s.state_vector(),
+        [0.5, 0, 0.5, 0, -0.5j, 0, -0.5j, 0],
+    )
+
 
 def test_peek_observable_expectation():
     s = stim.TableauSimulator()

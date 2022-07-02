@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <complex>
 
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_util.h"
@@ -70,6 +71,7 @@ struct Tableau {
     /// Returns the Tableau raised to an integer power (using repeated squaring).
     Tableau raised_to(int64_t exponent) const;
 
+    std::vector<std::complex<float>> to_flat_unitary_matrix(bool little_endian) const;
     bool satisfies_invariants() const;
 
     /// Creates a Tableau representing a single qubit gate.

@@ -69,7 +69,7 @@ struct TableauSimulator {
     VectorSimulator to_vector_sim() const;
 
     /// Returns a state vector satisfying the current stabilizer generators.
-    std::vector<std::complex<float>> to_state_vector() const;
+    std::vector<std::complex<float>> to_state_vector(bool little_endian) const;
 
     /// Collapses then records the X signs of the target qubits. Supports flipping the result.
     ///
