@@ -72,7 +72,10 @@ def normalize_doc_string(d: str) -> str:
 
 
 def indented(*, paragraph: str, indentation: str) -> str:
-    return "".join(indentation + line for line in paragraph.splitlines(keepends=True))
+    return "".join(
+        indentation * (line != '\n') + line
+        for line in paragraph.splitlines(keepends=True)
+    )
 
 
 def print_doc(*, full_name: str, parent: object, obj: object, level: int):

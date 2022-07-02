@@ -1640,3 +1640,361 @@ TEST(TableauSimulator, peek_observable_expectation) {
     ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("XXX")), 0);
     ASSERT_EQ(t.peek_observable_expectation(PauliString::from_str("ZZZZZZZZ")), -1);
 }
+
+TEST(TableauSimulator, postselect_x) {
+    TableauSimulator sim(SHARED_TEST_RNG(), 2);
+
+    // Postselect from +X.
+    sim.reset_x(OpDat(0));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+
+    // Postselect from -X.
+    sim.reset_x(OpDat(0));
+    sim.Z(OpDat(0));
+    ASSERT_THROW({
+        sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    }, std::invalid_argument);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+
+    // Postselect from +Y.
+    sim.reset_y(OpDat(0));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+
+    // Postselect from -Y.
+    sim.reset_y(OpDat(0));
+    sim.X(OpDat(0));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+
+    // Postselect from +Z.
+    sim.reset_z(OpDat(0));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+
+    // Postselect from -Z.
+    sim.reset_z(OpDat(0));
+    sim.X(OpDat(0));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+
+    // Postselect entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(1)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
+
+    // Postselect opposite state entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+
+    // Postselect both independent.
+    sim.reset_z(OpDat({0, 1}));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+
+    // Postselect both entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+
+    // Contradiction reached during second postselection.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.Z(OpDat(0));
+    ASSERT_THROW({
+        sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    }, std::invalid_argument);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
+}
+
+TEST(TableauSimulator, postselect_y) {
+    TableauSimulator sim(SHARED_TEST_RNG(), 2);
+
+    // Postselect from +X.
+    sim.reset_x(OpDat(0));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+
+    // Postselect from -X.
+    sim.reset_x(OpDat(0));
+    sim.Z(OpDat(0));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+
+    // Postselect from +Y.
+    sim.reset_y(OpDat(0));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+
+    // Postselect from -Y.
+    sim.reset_y(OpDat(0));
+    sim.X(OpDat(0));
+    ASSERT_THROW({
+        sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    }, std::invalid_argument);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
+
+    // Postselect from +Z.
+    sim.reset_z(OpDat(0));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+
+    // Postselect from -Z.
+    sim.reset_z(OpDat(0));
+    sim.X(OpDat(0));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+
+    // Postselect entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(1)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
+
+    // Postselect opposite state entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Y"));
+
+    // Postselect both independent.
+    sim.reset_z(OpDat({0, 1}));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Y"));
+
+    // Postselect both entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.Z(OpDat(0));
+    sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Y"));
+
+    // Contradiction reached during second postselection.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    ASSERT_THROW({
+        sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    }, std::invalid_argument);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
+}
+
+TEST(TableauSimulator, postselect_z) {
+    TableauSimulator sim(SHARED_TEST_RNG(), 2);
+
+    // Postselect from +X.
+    sim.reset_x(OpDat(0));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+
+    // Postselect from -X.
+    sim.reset_x(OpDat(0));
+    sim.Z(OpDat(0));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+
+    // Postselect from +Y.
+    sim.reset_y(OpDat(0));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+
+    // Postselect from -Y.
+    sim.reset_y(OpDat(0));
+    sim.X(OpDat(0));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+
+    // Postselect from +Z.
+    sim.reset_z(OpDat(0));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+
+    // Postselect from -Z.
+    sim.reset_z(OpDat(0));
+    sim.X(OpDat(0));
+    ASSERT_THROW({
+        sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
+    }, std::invalid_argument);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
+
+    // Postselect entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(1)}, false);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("+Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+
+    // Postselect opposite state entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+
+    // Postselect both independent.
+    sim.reset_x(OpDat({0, 1}));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+
+    // Postselect both entangled.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-Z"));
+
+    // Contradiction reached during second postselection.
+    sim.reset_z(OpDat({0, 1}));
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.X(OpDat(0));
+    ASSERT_THROW({
+        sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+    }, std::invalid_argument);
+    ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
+}
+
+TEST(TableauSimulator, peek_x) {
+    TableauSimulator sim(SHARED_TEST_RNG(), 3);
+    ASSERT_EQ(sim.peek_x(0), 0);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), +1);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), +1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), 0);
+    ASSERT_EQ(sim.peek_z(2), +1);
+
+    sim.H_XZ(OpDat(0));
+    ASSERT_EQ(sim.peek_x(0), +1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), +1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), 0);
+    ASSERT_EQ(sim.peek_z(2), +1);
+
+    sim.X(OpDat(1));
+    ASSERT_EQ(sim.peek_x(0), +1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), -1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), 0);
+    ASSERT_EQ(sim.peek_z(2), +1);
+
+    sim.H_YZ(OpDat(2));
+    ASSERT_EQ(sim.peek_x(0), +1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), -1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), +1);
+    ASSERT_EQ(sim.peek_z(2), 0);
+
+    sim.X(OpDat(0));
+    sim.X(OpDat(1));
+    sim.X(OpDat(2));
+    ASSERT_EQ(sim.peek_x(0), +1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), +1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), -1);
+    ASSERT_EQ(sim.peek_z(2), 0);
+
+    sim.Y(OpDat(0));
+    sim.Y(OpDat(1));
+    sim.Y(OpDat(2));
+    ASSERT_EQ(sim.peek_x(0), -1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), -1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), -1);
+    ASSERT_EQ(sim.peek_z(2), 0);
+
+    sim.ZCZ(OpDat({0, 1}));
+    ASSERT_EQ(sim.peek_x(0), +1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), -1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), -1);
+    ASSERT_EQ(sim.peek_z(2), 0);
+
+    sim.ZCZ(OpDat({1, 2}));
+    ASSERT_EQ(sim.peek_x(0), +1);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), -1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), +1);
+    ASSERT_EQ(sim.peek_z(2), 0);
+
+    sim.ZCZ(OpDat({0, 2}));
+    ASSERT_EQ(sim.peek_x(0), 0);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), -1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), 0);
+    ASSERT_EQ(sim.peek_z(2), 0);
+
+    sim.X(OpDat(0));
+    sim.X(OpDat(1));
+    sim.X(OpDat(2));
+    ASSERT_EQ(sim.peek_x(0), 0);
+    ASSERT_EQ(sim.peek_y(0), 0);
+    ASSERT_EQ(sim.peek_z(0), 0);
+    ASSERT_EQ(sim.peek_x(1), 0);
+    ASSERT_EQ(sim.peek_y(1), 0);
+    ASSERT_EQ(sim.peek_z(1), +1);
+    ASSERT_EQ(sim.peek_x(2), 0);
+    ASSERT_EQ(sim.peek_y(2), 0);
+    ASSERT_EQ(sim.peek_z(2), 0);
+}
