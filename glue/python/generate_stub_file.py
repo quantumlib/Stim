@@ -190,8 +190,10 @@ def main():
 # (This a stubs file describing the classes and methods in stim.)
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
 if TYPE_CHECKING:
-    import stim
+    import io
+    import pathlib
     import numpy as np
+    import stim
 '''.strip())
 
     generate_documentation(obj=stim, full_name="stim", level=-1)

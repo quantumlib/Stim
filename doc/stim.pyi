@@ -2,8 +2,10 @@
 # (This a stubs file describing the classes and methods in stim.)
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
 if TYPE_CHECKING:
-    import stim
+    import io
+    import pathlib
     import numpy as np
+    import stim
 class Circuit:
     """A mutable stabilizer circuit.
 
@@ -678,6 +680,39 @@ class Circuit:
             [('H', [6], 0), ('H', [6], 0)]
         """
     @staticmethod
+    def from_file(file: object) -> stim.Circuit:
+        """Args:
+            file: A file path or open file object to read from.
+
+        Returns:
+            The circuit parsed from the file.
+
+        Examples:
+            >>> import stim
+            >>> import tempfile
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     with open(path, 'w') as f:
+            ...         print('H 5', file=f)
+            ...     circuit = stim.Circuit.from_file(path)
+            >>> circuit
+            stim.Circuit('''
+                H 5
+            ''')
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     with open(path, 'w') as f:
+            ...         print('CNOT 4 5', file=f)
+            ...     with open(path) as f:
+            ...         circuit = stim.Circuit.from_file(path)
+            >>> circuit
+            stim.Circuit('''
+                CX 4 5
+            ''')
+        """
+    @staticmethod
     def generated(code_task: str, *, distance: int, rounds: int, after_clifford_depolarization: float = 0.0, before_round_data_depolarization: float = 0.0, before_measure_flip_probability: float = 0.0, after_reset_flip_probability: float = 0.0) -> stim.Circuit:
         """Generates common circuits.
 
@@ -1015,6 +1050,37 @@ class Circuit:
             ...     before_round_data_depolarization=0.01)
             >>> len(circuit.shortest_graphlike_error())
             7
+        """
+    def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
+
+        """Writes the stim circuit to a file.
+
+        Args:
+            file: A file path or an open file to write to.
+
+        Examples:
+            >>> import stim
+            >>> import tempfile
+            >>> c = stim.Circuit('H 5\nX 0')
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     with open(path, 'w') as f:
+            ...         c.to_file(f)
+            ...     with open(path, 'w') as f:
+            ...         contents = f.read()
+            >>> contents
+            H 5
+            X 0
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     c.to_file(path)
+            ...     with open(path, 'w') as f:
+            ...         contents = f.read()
+            >>> contents
+            H 5
+            X 0
         """
     def without_noise(self) -> stim.Circuit:
         """Returns a copy of the circuit with all noise processes removed.
@@ -2252,6 +2318,39 @@ class DetectorErrorModel:
             >>> c2 == c1
             True
         """
+    @staticmethod
+    def from_file(file: object) -> stim.DetectorErrorModel:
+        """Args:
+            file: A file path or open file object to read from.
+
+        Returns:
+            The circuit parsed from the file.
+
+        Examples:
+            >>> import stim
+            >>> import tempfile
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     with open(path, 'w') as f:
+            ...         print('error(0.25) D2 D3', file=f)
+            ...     circuit = stim.DetectorErrorModel.from_file(path)
+            >>> circuit
+            stim.DetectorErrorModel('''
+                error(0.25) D2 D3
+            ''')
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     with open(path, 'w') as f:
+            ...         print('error(0.25) D2 D3', file=f)
+            ...     with open(path) as f:
+            ...         circuit = stim.DetectorErrorModel.from_file(path)
+            >>> circuit
+            stim.DetectorErrorModel('''
+                error(0.25) D2 D3
+            ''')
+        """
     def get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]:
         """Returns the coordinate metadata of detectors in the detector error model.
 
@@ -2424,6 +2523,35 @@ class DetectorErrorModel:
             >>> model = circuit.detector_error_model(decompose_errors=True)
             >>> len(model.shortest_graphlike_error())
             7
+        """
+    def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
+
+        """Writes the stim circuit to a file.
+
+        Args:
+            file: A file path or an open file to write to.
+
+        Examples:
+            >>> import stim
+            >>> import tempfile
+            >>> c = stim.DetectorErrorModel('error(0.25) D2 D3')
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     with open(path, 'w') as f:
+            ...         c.to_file(f)
+            ...     with open(path, 'w') as f:
+            ...         contents = f.read()
+            >>> contents
+            error(0.25) D2 D3
+
+            >>> with tempfile.TemporaryDirectory() as tmpdir:
+            ...     path = tmpdir + '/tmp.stim'
+            ...     c.to_file(path)
+            ...     with open(path, 'w') as f:
+            ...         contents = f.read()
+            >>> contents
+            error(0.25) D2 D3
         """
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.
