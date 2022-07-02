@@ -24,7 +24,7 @@ MAIN_FILES = glob.glob("src/**/main.cc", recursive=True)
 HEADER_FILES = glob.glob("src/**/*.h", recursive=True)
 RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FILES + MAIN_FILES + MUX_SOURCE_FILES))
 
-version = '1.9.dev0'
+version = '1.9.0'
 
 common_compile_args = [
     '-std=c++11',
