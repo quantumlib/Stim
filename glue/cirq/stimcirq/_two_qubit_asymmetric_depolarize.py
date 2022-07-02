@@ -53,5 +53,9 @@ class TwoQubitAsymmetricDepolarizingChannel(cirq.Gate):
     def __repr__(self):
         return f"stimcirq.TwoQubitAsymmetricDepolarizingChannel({self.probabilities!r})"
 
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
     def _json_dict_(self) -> Dict[str, Any]:
-        return {'cirq_type': self.__class__.__name__, 'probabilities': list(self.probabilities)}
+        return {'probabilities': list(self.probabilities)}

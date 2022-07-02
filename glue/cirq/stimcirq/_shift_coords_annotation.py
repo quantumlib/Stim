@@ -33,8 +33,12 @@ class ShiftCoordsAnnotation(cirq.Operation):
         k = ",".join(repr(e) for e in self.shift)
         return f"ShiftCoords({k})"
 
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
     def _json_dict_(self) -> Dict[str, Any]:
-        return {'cirq_type': self.__class__.__name__, 'shift': self.shift}
+        return {'shift': self.shift}
 
     def __repr__(self) -> str:
         return f'stimcirq.ShiftCoordsAnnotation({self.shift!r})'

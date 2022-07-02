@@ -44,3 +44,10 @@ def test_json_serialization():
     json = cirq.to_json(c)
     c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
     assert c == c2
+
+
+def test_json_backwards_compat_exact():
+    raw = stimcirq.TwoQubitAsymmetricDepolarizingChannel([0.0125, 0.1, 0, 0.23, 0, 0, 0.0375, 0, 0.01, 0, 0, 0, 0, 0.25, 0])
+    packed = '{\n  "cirq_type": "TwoQubitAsymmetricDepolarizingChannel",\n  "probabilities": [\n    0.0125,\n    0.1,\n    0,\n    0.23,\n    0,\n    0,\n    0.0375,\n    0,\n    0.01,\n    0,\n    0,\n    0,\n    0,\n    0.25,\n    0\n  ]\n}'
+    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert cirq.to_json(raw) == packed

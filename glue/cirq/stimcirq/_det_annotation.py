@@ -40,7 +40,7 @@ class DetAnnotation(cirq.Operation):
         return self
 
     def _value_equality_values_(self) -> Any:
-        return self.parity_keys, self.coordinate_metadata
+        return self.parity_keys, self.relative_keys, self.coordinate_metadata
 
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
@@ -48,9 +48,12 @@ class DetAnnotation(cirq.Operation):
         k = ",".join(str(e) for e in items)
         return f"Det({k})"
 
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
     def _json_dict_(self) -> Dict[str, Any]:
         result = {
-            'cirq_type': self.__class__.__name__,
             'parity_keys': sorted(self.parity_keys),
             'coordinate_metadata': self.coordinate_metadata,
         }

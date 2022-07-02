@@ -75,3 +75,10 @@ def test_json_serialization():
     json = cirq.to_json(c)
     c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
     assert c == c2
+
+
+def test_json_backwards_compat_exact():
+    raw = stimcirq.ShiftCoordsAnnotation([2, 3, 5])
+    packed = '{\n  "cirq_type": "ShiftCoordsAnnotation",\n  "shift": [\n    2,\n    3,\n    5\n  ]\n}'
+    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert cirq.to_json(raw) == packed
