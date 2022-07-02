@@ -219,6 +219,7 @@
     - [`stim.Tableau.prepend`](#stim.Tableau.prepend)
     - [`stim.Tableau.random`](#stim.Tableau.random)
     - [`stim.Tableau.then`](#stim.Tableau.then)
+    - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
     - [`stim.Tableau.x_output_pauli`](#stim.Tableau.x_output_pauli)
     - [`stim.Tableau.y_output`](#stim.Tableau.y_output)
@@ -244,7 +245,16 @@
     - [`stim.TableauSimulator.measure_many`](#stim.TableauSimulator.measure_many)
     - [`stim.TableauSimulator.peek_bloch`](#stim.TableauSimulator.peek_bloch)
     - [`stim.TableauSimulator.peek_observable_expectation`](#stim.TableauSimulator.peek_observable_expectation)
+    - [`stim.TableauSimulator.peek_x`](#stim.TableauSimulator.peek_x)
+    - [`stim.TableauSimulator.peek_y`](#stim.TableauSimulator.peek_y)
+    - [`stim.TableauSimulator.peek_z`](#stim.TableauSimulator.peek_z)
+    - [`stim.TableauSimulator.postselect_x`](#stim.TableauSimulator.postselect_x)
+    - [`stim.TableauSimulator.postselect_y`](#stim.TableauSimulator.postselect_y)
+    - [`stim.TableauSimulator.postselect_z`](#stim.TableauSimulator.postselect_z)
     - [`stim.TableauSimulator.reset`](#stim.TableauSimulator.reset)
+    - [`stim.TableauSimulator.reset_x`](#stim.TableauSimulator.reset_x)
+    - [`stim.TableauSimulator.reset_y`](#stim.TableauSimulator.reset_y)
+    - [`stim.TableauSimulator.reset_z`](#stim.TableauSimulator.reset_z)
     - [`stim.TableauSimulator.s`](#stim.TableauSimulator.s)
     - [`stim.TableauSimulator.s_dag`](#stim.TableauSimulator.s_dag)
     - [`stim.TableauSimulator.set_inverse_tableau`](#stim.TableauSimulator.set_inverse_tableau)
@@ -4738,6 +4748,40 @@
 >     True
 > ```
 
+<a name="stim.Tableau.to_unitary_matrix"></a>
+### `stim.Tableau.to_unitary_matrix(self, *, endian: str) -> numpy.ndarray[numpy.float32]`
+> ```
+> Converts the tableau into a unitary matrix.
+> 
+> Args:
+>     endian:
+>         "little": The first qubit is the least significant (corresponds
+>             to an offset of 1 in the state vector).
+>         "big": The first qubit is the most significant (corresponds
+>             to an offset of 2**(n - 1) in the state vector).
+> 
+> Returns:
+>     A numpy array with dtype=np.complex64 and shape=(1 << len(tableau), 1 << len(tableau)).
+> 
+> Example:
+>     >>> import stim
+>     >>> cnot = stim.Tableau.from_conjugated_generators(
+>     ...     xs=[
+>     ...         stim.PauliString("XX"),
+>     ...         stim.PauliString("_X"),
+>     ...     ],
+>     ...     zs=[
+>     ...         stim.PauliString("Z_"),
+>     ...         stim.PauliString("ZZ"),
+>     ...     ],
+>     ... )
+>     >>> cnot.to_unitary_matrix(endian='big')
+>     array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+>            [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
+>            [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
+>            [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
+> ```
+
 <a name="stim.Tableau.x_output"></a>
 ### `stim.Tableau.x_output(self, target: int) -> stim.PauliString`
 > ```
@@ -5309,13 +5353,226 @@
 >     IIZ 1
 > ```
 
+<a name="stim.TableauSimulator.peek_x"></a>
+### `stim.TableauSimulator.peek_x(self, target: int) -> int`
+> ```
+> Returns the expected value of a qubit's X observable (which will always be -1, 0, or +1).
+> 
+> This is a non-physical operation.
+> It reports information about the quantum state without disturbing it.
+> 
+> Args:
+>     target: The qubit to analyze.
+> 
+> Returns:
+>     +1: Qubit is in the |+> state.
+>     -1: Qubit is in the |-> state.
+>     0: Qubit is in some other state.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.reset_z(0)
+>     >>> s.peek_x(0)
+>     0
+>     >>> s.reset_x(0)
+>     >>> s.peek_x(0)
+>     1
+>     >>> s.Z(0)
+>     >>> s.peek_x(0)
+>     -1
+> ```
+
+<a name="stim.TableauSimulator.peek_y"></a>
+### `stim.TableauSimulator.peek_y(self, target: int) -> int`
+> ```
+> Returns the expected value of a qubit's Y observable (which will always be -1, 0, or +1).
+> 
+> This is a non-physical operation.
+> It reports information about the quantum state without disturbing it.
+> 
+> Args:
+>     target: The qubit to analyze.
+> 
+> Returns:
+>     +1: Qubit is in the |i> state.
+>     -1: Qubit is in the |-i> state.
+>     0: Qubit is in some other state.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.reset_z(0)
+>     >>> s.peek_y(0)
+>     0
+>     >>> s.reset_y(0)
+>     >>> s.peek_y(0)
+>     1
+>     >>> s.Z(0)
+>     >>> s.peek_y(0)
+>     -1
+> ```
+
+<a name="stim.TableauSimulator.peek_z"></a>
+### `stim.TableauSimulator.peek_z(self, target: int) -> int`
+> ```
+> Returns the expected value of a qubit's Z observable (which will always be -1, 0, or +1).
+> 
+> This is a non-physical operation.
+> It reports information about the quantum state without disturbing it.
+> 
+> Args:
+>     target: The qubit to analyze.
+> 
+> Returns:
+>     +1: Qubit is in the |0> state.
+>     -1: Qubit is in the |1> state.
+>     0: Qubit is in some other state.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.reset_x(0)
+>     >>> s.peek_z(0)
+>     0
+>     >>> s.reset_z(0)
+>     >>> s.peek_z(0)
+>     1
+>     >>> s.X(0)
+>     >>> s.peek_z(0)
+>     -1
+> ```
+
+<a name="stim.TableauSimulator.postselect_x"></a>
+### `stim.TableauSimulator.postselect_x(self, targets: object, *, desired_value: bool) -> None`
+> ```
+> Postselects qubits in the X basis, or raises an exception.
+> 
+> Postselecting a qubit forces it to collapse to a specific state, as
+> if it was measured and that state was the result of the measurement.
+> 
+> Args:
+>     targets: The qubit index or indices to postselect.
+>     desired_value:
+>         False: postselect targets into the |+> state.
+>         True: postselect targets into the |-> state.
+> 
+> Raises:
+>     ValueError:
+>         The postselection failed. One of the qubits was in a state
+>         orthogonal to the desired state, so it was literally
+>         impossible for a measurement of the qubit to return the
+>         desired result.
+> ```
+
+<a name="stim.TableauSimulator.postselect_y"></a>
+### `stim.TableauSimulator.postselect_y(self, targets: object, *, desired_value: bool) -> None`
+> ```
+> Postselects qubits in the Y basis, or raises an exception.
+> 
+> Postselecting a qubit forces it to collapse to a specific state, as
+> if it was measured and that state was the result of the measurement.
+> 
+> Args:
+>     targets: The qubit index or indices to postselect.
+>     desired_value:
+>         False: postselect targets into the |i> state.
+>         True: postselect targets into the |-i> state.
+> 
+> Raises:
+>     ValueError:
+>         The postselection failed. One of the qubits was in a state
+>         orthogonal to the desired state, so it was literally
+>         impossible for a measurement of the qubit to return the
+>         desired result.
+> ```
+
+<a name="stim.TableauSimulator.postselect_z"></a>
+### `stim.TableauSimulator.postselect_z(self, targets: object, *, desired_value: bool) -> None`
+> ```
+> Postselects qubits in the Z basis, or raises an exception.
+> 
+> Postselecting a qubit forces it to collapse to a specific state, as
+> if it was measured and that state was the result of the measurement.
+> 
+> Args:
+>     targets: The qubit index or indices to postselect.
+>     desired_value:
+>         False: postselect targets into the |0> state.
+>         True: postselect targets into the |1> state.
+> 
+> Raises:
+>     ValueError:
+>         The postselection failed. One of the qubits was in a state
+>         orthogonal to the desired state, so it was literally
+>         impossible for a measurement of the qubit to return the
+>         desired result.
+> ```
+
 <a name="stim.TableauSimulator.reset"></a>
 ### `stim.TableauSimulator.reset(self, *args) -> None`
 > ```
-> Resets qubits to zero (e.g. by swapping them for zero'd qubit from the environment).
+> Resets qubits to the |0> state.
 > 
 > Args:
 >     *targets: The indices of the qubits to reset.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.X(0)
+>     >>> s.reset(0)
+>     >>> s.peek_bloch(0)
+>     +Z
+> ```
+
+<a name="stim.TableauSimulator.reset_x"></a>
+### `stim.TableauSimulator.reset_x(self, *args) -> None`
+> ```
+> Resets qubits to the |+> state.
+> 
+> Args:
+>     *targets: The indices of the qubits to reset.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.reset_x(0)
+>     >>> s.peek_bloch(0)
+>     +X
+> ```
+
+<a name="stim.TableauSimulator.reset_y"></a>
+### `stim.TableauSimulator.reset_y(self, *args) -> None`
+> ```
+> Resets qubits to the |i> state.
+> 
+> Args:
+>     *targets: The indices of the qubits to reset.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.reset_y(0)
+>     >>> s.peek_bloch(0)
+>     +Y
+> ```
+
+<a name="stim.TableauSimulator.reset_z"></a>
+### `stim.TableauSimulator.reset_z(self, *args) -> None`
+> ```
+> Resets qubits to the |0> state.
+> 
+> Args:
+>     *targets: The indices of the qubits to reset.
+> 
+> Example:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.H(0)
+>     >>> s.reset_z(0)
+>     >>> s.peek_bloch(0)
+>     +Z
 > ```
 
 <a name="stim.TableauSimulator.s"></a>
@@ -5430,35 +5687,47 @@
 > ```
 
 <a name="stim.TableauSimulator.state_vector"></a>
-### `stim.TableauSimulator.state_vector(self) -> numpy.ndarray[numpy.float32]`
+### `stim.TableauSimulator.state_vector(self, *, endian: str = 'little') -> numpy.ndarray[numpy.float32]`
 > ```
 > Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 > 
 > This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
 > done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
-> stabilizer of the state. The global phase of the result is arbitrary (and will vary from call to call).
+> stabilizer of the state. The state is then canonicalized so that zero values are actually exactly 0, and so
+> that the first non-zero entry is positive.
 > 
-> The result is in little endian order. The amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-> the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
-> qubit with index 1 is storing the bit b_1, etc.
+> Args:
+>     endian:
+>         "little" (default): state vector is in little endian order, where higher index qubits
+>             correspond to larger changes in the state index.
+>         "big": state vector is in little endian order, where higher index qubits correspond to
+>             smaller changes in the state index.
 > 
 > Returns:
->     A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes in little endian order.
+>     A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
+> 
+>     If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+>     the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
+>     qubit with index 1 is storing the bit b_1, etc.
+> 
+>     If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+>     the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
+>     qubit with index 1 is storing the bit b_{n-2}, etc.
 > 
 > Examples:
 >     >>> import stim
 >     >>> import numpy as np
-> 
->     >>> # Check that the qubit-to-amplitude-index ordering is little-endian.
 >     >>> s = stim.TableauSimulator()
->     >>> s.x(1)
->     >>> s.x(4)
->     >>> vector = s.state_vector()
->     >>> np.abs(vector[0b_10010]).round(2)
->     1.0
->     >>> tensor = vector.reshape((2, 2, 2, 2, 2))
->     >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
->     1.0
+>     >>> s.x(2)
+>     >>> list(s.state_vector(endian='little'))
+>     [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+> 
+>     >>> list(s.state_vector(endian='big'))
+>     [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+> 
+>     >>> s.sqrt_x(1, 2)
+>     >>> list(s.state_vector())
+>     [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
 > ```
 
 <a name="stim.TableauSimulator.swap"></a>

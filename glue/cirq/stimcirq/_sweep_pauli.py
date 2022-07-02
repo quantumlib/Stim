@@ -57,9 +57,12 @@ class SweepPauli(cirq.Gate):
     def _circuit_diagram_info_(self, args: Any) -> str:
         return f"{self.pauli}^sweep[{self.stim_sweep_bit_index}]='{self.cirq_sweep_symbol}'"
 
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
     def _json_dict_(self) -> Dict[str, Any]:
         return {
-            'cirq_type': self.__class__.__name__,
             'pauli': self.pauli,
             'stim_sweep_bit_index': self.stim_sweep_bit_index,
             'cirq_sweep_symbol': self.cirq_sweep_symbol,

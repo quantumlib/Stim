@@ -47,8 +47,11 @@ void stim::measurements_to_detection_events_helper(
         throw std::invalid_argument("sweep_bits__minor_shot_index.num_minor_bits_padded() != batch_size");
     }
     // Tables should have the right number of bits per shot.
-    if (out_detection_results__minor_shot_index.num_major_bits_padded() < num_detectors + num_observables * append_observables) {
-        throw std::invalid_argument("out_detection_results__minor_shot_index.num_major_bits_padded() < num_detectors + num_observables * append_observables");
+    if (out_detection_results__minor_shot_index.num_major_bits_padded() <
+        num_detectors + num_observables * append_observables) {
+        throw std::invalid_argument(
+            "out_detection_results__minor_shot_index.num_major_bits_padded() < num_detectors + num_observables * "
+            "append_observables");
     }
     if (measurements__minor_shot_index.num_major_bits_padded() < num_measurements) {
         throw std::invalid_argument("measurements__minor_shot_index.num_major_bits_padded() < num_measurements");

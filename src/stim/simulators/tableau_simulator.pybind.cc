@@ -54,6 +54,31 @@ PyTableauSimulator create_tableau_simulator() {
     return PyTableauSimulator(make_py_seeded_rng(pybind11::none()));
 }
 
+std::vector<GateTarget> arg_to_qubit_or_qubits(PyTableauSimulator &self, const pybind11::object &obj) {
+    std::vector<GateTarget> arguments;
+    uint32_t max_q = 0;
+    try {
+        try {
+            uint32_t q = pybind11::cast<uint32_t>(obj);
+            arguments.push_back(GateTarget::qubit(q));
+            max_q = q;
+        } catch (const pybind11::cast_error &) {
+            for (const auto &e : obj) {
+                uint32_t q = e.cast<uint32_t>();
+                max_q = std::max(max_q, q);
+                arguments.push_back(GateTarget::qubit(q));
+            }
+        }
+    } catch (const pybind11::cast_error &) {
+        throw std::out_of_range("'targets' must be a non-negative integer or iterable of non-negative integers.");
+    }
+
+    // Note: quadratic behavior.
+    self.ensure_large_enough_for_qubits(max_q + 1);
+
+    return arguments;
+}
+
 TempViewableData args_to_targets(PyTableauSimulator &self, const pybind11::args &args) {
     std::vector<GateTarget> arguments;
     uint32_t max_q = 0;
@@ -169,8 +194,16 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "state_vector",
-        [](const PyTableauSimulator &self) {
-            auto complex_vec = self.to_state_vector();
+        [](const PyTableauSimulator &self, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+            auto complex_vec = self.to_state_vector(little_endian);
             std::vector<float> float_vec;
             float_vec.reserve(complex_vec.size() * 2);
             for (const auto &e : complex_vec) {
@@ -186,34 +219,48 @@ void pybind_tableau_simulator(pybind11::module &m) {
             return pybind11::array_t<float>(
                 pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
         },
+        pybind11::kw_only(),
+        pybind11::arg("endian") = "little",
         clean_doc_string(u8R"DOC(
             Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
             This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
             done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
-            stabilizer of the state. The global phase of the result is arbitrary (and will vary from call to call).
+            stabilizer of the state. The state is then canonicalized so that zero values are actually exactly 0, and so
+            that the first non-zero entry is positive.
 
-            The result is in little endian order. The amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
-            qubit with index 1 is storing the bit b_1, etc.
+            Args:
+                endian:
+                    "little" (default): state vector is in little endian order, where higher index qubits
+                        correspond to larger changes in the state index.
+                    "big": state vector is in little endian order, where higher index qubits correspond to
+                        smaller changes in the state index.
 
             Returns:
-                A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes in little endian order.
+                A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
+
+                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+                the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
+                qubit with index 1 is storing the bit b_1, etc.
+
+                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+                the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
+                qubit with index 1 is storing the bit b_{n-2}, etc.
 
             Examples:
                 >>> import stim
                 >>> import numpy as np
-
-                >>> # Check that the qubit-to-amplitude-index ordering is little-endian.
                 >>> s = stim.TableauSimulator()
-                >>> s.x(1)
-                >>> s.x(4)
-                >>> vector = s.state_vector()
-                >>> np.abs(vector[0b_10010]).round(2)
-                1.0
-                >>> tensor = vector.reshape((2, 2, 2, 2, 2))
-                >>> np.abs(tensor[1, 0, 0, 1, 0]).round(2)
-                1.0
+                >>> s.x(2)
+                >>> list(s.state_vector(endian='little'))
+                [0j, 0j, 0j, 0j, (1+0j), 0j, 0j, 0j]
+
+                >>> list(s.state_vector(endian='big'))
+                [0j, (1+0j), 0j, 0j, 0j, 0j, 0j, 0j]
+
+                >>> s.sqrt_x(1, 2)
+                >>> list(s.state_vector())
+                [(0.5+0j), 0j, -0.5j, 0j, 0.5j, 0j, (0.5+0j), 0j]
         )DOC")
             .data());
 
@@ -666,10 +713,187 @@ void pybind_tableau_simulator(pybind11::module &m) {
             self.reset_z(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
-            Resets qubits to zero (e.g. by swapping them for zero'd qubit from the environment).
+            Resets qubits to the |0> state.
 
             Args:
                 *targets: The indices of the qubits to reset.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.X(0)
+                >>> s.reset(0)
+                >>> s.peek_bloch(0)
+                +Z
+        )DOC")
+            .data());
+
+    c.def(
+        "reset_x",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.reset_x(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Resets qubits to the |+> state.
+
+            Args:
+                *targets: The indices of the qubits to reset.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.peek_bloch(0)
+                +X
+        )DOC")
+            .data());
+
+    c.def(
+        "reset_y",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.reset_y(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Resets qubits to the |i> state.
+
+            Args:
+                *targets: The indices of the qubits to reset.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_y(0)
+                >>> s.peek_bloch(0)
+                +Y
+        )DOC")
+            .data());
+
+    c.def(
+        "reset_z",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.reset_z(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Resets qubits to the |0> state.
+
+            Args:
+                *targets: The indices of the qubits to reset.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.H(0)
+                >>> s.reset_z(0)
+                >>> s.peek_bloch(0)
+                +Z
+        )DOC")
+            .data());
+
+    c.def(
+        "peek_x",
+        [](PyTableauSimulator &self, uint32_t target) -> int8_t {
+            self.ensure_large_enough_for_qubits(target + 1);
+            return self.peek_x(target);
+        },
+        pybind11::arg("target"),
+        clean_doc_string(u8R"DOC(
+            Returns the expected value of a qubit's X observable (which will always be -1, 0, or +1).
+
+            This is a non-physical operation.
+            It reports information about the quantum state without disturbing it.
+
+            Args:
+                target: The qubit to analyze.
+
+            Returns:
+                +1: Qubit is in the |+> state.
+                -1: Qubit is in the |-> state.
+                0: Qubit is in some other state.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_z(0)
+                >>> s.peek_x(0)
+                0
+                >>> s.reset_x(0)
+                >>> s.peek_x(0)
+                1
+                >>> s.Z(0)
+                >>> s.peek_x(0)
+                -1
+        )DOC")
+            .data());
+
+    c.def(
+        "peek_y",
+        [](PyTableauSimulator &self, uint32_t target) -> int8_t {
+            self.ensure_large_enough_for_qubits(target + 1);
+            return self.peek_y(target);
+        },
+        pybind11::arg("target"),
+        clean_doc_string(u8R"DOC(
+            Returns the expected value of a qubit's Y observable (which will always be -1, 0, or +1).
+
+            This is a non-physical operation.
+            It reports information about the quantum state without disturbing it.
+
+            Args:
+                target: The qubit to analyze.
+
+            Returns:
+                +1: Qubit is in the |i> state.
+                -1: Qubit is in the |-i> state.
+                0: Qubit is in some other state.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_z(0)
+                >>> s.peek_y(0)
+                0
+                >>> s.reset_y(0)
+                >>> s.peek_y(0)
+                1
+                >>> s.Z(0)
+                >>> s.peek_y(0)
+                -1
+        )DOC")
+            .data());
+
+    c.def(
+        "peek_z",
+        [](PyTableauSimulator &self, uint32_t target) -> int8_t {
+            self.ensure_large_enough_for_qubits(target + 1);
+            return self.peek_z(target);
+        },
+        pybind11::arg("target"),
+        clean_doc_string(u8R"DOC(
+            Returns the expected value of a qubit's Z observable (which will always be -1, 0, or +1).
+
+            This is a non-physical operation.
+            It reports information about the quantum state without disturbing it.
+
+            Args:
+                target: The qubit to analyze.
+
+            Returns:
+                +1: Qubit is in the |0> state.
+                -1: Qubit is in the |1> state.
+                0: Qubit is in some other state.
+
+            Example:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.reset_x(0)
+                >>> s.peek_z(0)
+                0
+                >>> s.reset_z(0)
+                >>> s.peek_z(0)
+                1
+                >>> s.X(0)
+                >>> s.peek_z(0)
+                -1
         )DOC")
             .data());
 
@@ -810,6 +1034,99 @@ void pybind_tableau_simulator(pybind11::module &m) {
 
             Returns:
                 The measurement results as a list of bools.
+        )DOC")
+            .data());
+
+    c.def(
+        "postselect_x",
+        [](PyTableauSimulator &self, const pybind11::object &targets, bool desired_value) {
+            auto gate_targets = arg_to_qubit_or_qubits(self, targets);
+            self.postselect_x(gate_targets, desired_value);
+        },
+        pybind11::arg("targets"),
+        pybind11::kw_only(),
+        pybind11::arg("desired_value"),
+        clean_doc_string(u8R"DOC(
+            @signature def postselect_x(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
+            Postselects qubits in the X basis, or raises an exception.
+
+            Postselecting a qubit forces it to collapse to a specific state, as
+            if it was measured and that state was the result of the measurement.
+
+            Args:
+                targets: The qubit index or indices to postselect.
+                desired_value:
+                    False: postselect targets into the |+> state.
+                    True: postselect targets into the |-> state.
+
+            Raises:
+                ValueError:
+                    The postselection failed. One of the qubits was in a state
+                    orthogonal to the desired state, so it was literally
+                    impossible for a measurement of the qubit to return the
+                    desired result.
+        )DOC")
+            .data());
+
+    c.def(
+        "postselect_y",
+        [](PyTableauSimulator &self, const pybind11::object &targets, bool desired_value) {
+            auto gate_targets = arg_to_qubit_or_qubits(self, targets);
+            self.postselect_y(gate_targets, desired_value);
+        },
+        pybind11::arg("targets"),
+        pybind11::kw_only(),
+        pybind11::arg("desired_value"),
+        clean_doc_string(u8R"DOC(
+            @signature def postselect_y(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
+            Postselects qubits in the Y basis, or raises an exception.
+
+            Postselecting a qubit forces it to collapse to a specific state, as
+            if it was measured and that state was the result of the measurement.
+
+            Args:
+                targets: The qubit index or indices to postselect.
+                desired_value:
+                    False: postselect targets into the |i> state.
+                    True: postselect targets into the |-i> state.
+
+            Raises:
+                ValueError:
+                    The postselection failed. One of the qubits was in a state
+                    orthogonal to the desired state, so it was literally
+                    impossible for a measurement of the qubit to return the
+                    desired result.
+        )DOC")
+            .data());
+
+    c.def(
+        "postselect_z",
+        [](PyTableauSimulator &self, const pybind11::object &targets, bool desired_value) {
+            auto gate_targets = arg_to_qubit_or_qubits(self, targets);
+            self.postselect_z(gate_targets, desired_value);
+        },
+        pybind11::arg("targets"),
+        pybind11::kw_only(),
+        pybind11::arg("desired_value"),
+        clean_doc_string(u8R"DOC(
+            @signature def postselect_z(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
+            Postselects qubits in the Z basis, or raises an exception.
+
+            Postselecting a qubit forces it to collapse to a specific state, as
+            if it was measured and that state was the result of the measurement.
+
+            Args:
+                targets: The qubit index or indices to postselect.
+                desired_value:
+                    False: postselect targets into the |0> state.
+                    True: postselect targets into the |1> state.
+
+            Raises:
+                ValueError:
+                    The postselection failed. One of the qubits was in a state
+                    orthogonal to the desired state, so it was literally
+                    impossible for a measurement of the qubit to return the
+                    desired result.
         )DOC")
             .data());
 

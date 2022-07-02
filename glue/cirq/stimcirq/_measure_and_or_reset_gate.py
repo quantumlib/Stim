@@ -122,9 +122,12 @@ class MeasureAndOrResetGate(cirq.Gate):
             f'measure_flip_probability={self.measure_flip_probability!r})'
         )
 
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
     def _json_dict_(self) -> Dict[str, Any]:
         return {
-            'cirq_type': self.__class__.__name__,
             'measure': self.measure,
             'reset': self.reset,
             'basis': self.basis,

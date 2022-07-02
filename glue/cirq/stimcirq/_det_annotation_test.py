@@ -162,3 +162,10 @@ def test_json_serialization():
     json = cirq.to_json(c)
     c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
     assert c == c2
+
+
+def test_json_backwards_compat_exact():
+    raw = stimcirq.DetAnnotation(parity_keys=['a'], relative_keys=[-2], coordinate_metadata=(3, 5))
+    packed = '{\n  "cirq_type": "DetAnnotation",\n  "parity_keys": [\n    "a"\n  ],\n  "coordinate_metadata": [\n    3,\n    5\n  ],\n  "relative_keys": [\n    -2\n  ]\n}'
+    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert cirq.to_json(raw) == packed

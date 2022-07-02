@@ -1,6 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@rules_python//python:packaging.bzl", "py_wheel")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
 
 SOURCE_FILES_NO_MAIN = glob(
     [

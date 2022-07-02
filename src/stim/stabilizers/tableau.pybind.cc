@@ -109,6 +109,64 @@ void pybind_tableau(pybind11::module &m) {
         )DOC")
             .data());
 
+    c.def(
+        "to_unitary_matrix",
+        [](Tableau &self, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+            auto data = self.to_flat_unitary_matrix(little_endian);
+
+            void *ptr = data.data();
+            pybind11::ssize_t itemsize = sizeof(float) * 2;
+            pybind11::ssize_t n = 1 << self.num_qubits;
+            std::vector<pybind11::ssize_t> shape{n, n};
+            std::vector<pybind11::ssize_t> stride{n * itemsize, itemsize};
+            const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
+            bool readonly = true;
+            return pybind11::array_t<float>(
+                pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+        },
+        pybind11::kw_only(),
+        pybind11::arg("endian"),
+        clean_doc_string(u8R"DOC(
+            Converts the tableau into a unitary matrix.
+
+            Args:
+                endian:
+                    "little": The first qubit is the least significant (corresponds
+                        to an offset of 1 in the state vector).
+                    "big": The first qubit is the most significant (corresponds
+                        to an offset of 2**(n - 1) in the state vector).
+
+            Returns:
+                A numpy array with dtype=np.complex64 and shape=(1 << len(tableau), 1 << len(tableau)).
+
+            Example:
+                >>> import stim
+                >>> cnot = stim.Tableau.from_conjugated_generators(
+                ...     xs=[
+                ...         stim.PauliString("XX"),
+                ...         stim.PauliString("_X"),
+                ...     ],
+                ...     zs=[
+                ...         stim.PauliString("Z_"),
+                ...         stim.PauliString("ZZ"),
+                ...     ],
+                ... )
+                >>> cnot.to_unitary_matrix(endian='big')
+                array([[1.+0.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                       [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
+                       [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
+                       [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
+        )DOC")
+            .data());
+
     c.def_static(
         "from_named_gate",
         [](const char *name) {

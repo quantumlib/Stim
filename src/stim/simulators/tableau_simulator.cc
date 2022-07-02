@@ -59,6 +59,63 @@ void TableauSimulator::MPP(const OperationData &target_data) {
         });
 }
 
+void TableauSimulator::postselect_helper(
+    ConstPointerRange<GateTarget> targets,
+    bool desired_result,
+    void (TableauSimulator::*basis_change)(const OperationData &),
+    const char *false_name,
+    const char *true_name) {
+    std::set<GateTarget> unique_targets;
+    unique_targets.insert(targets.begin(), targets.end());
+    std::vector<GateTarget> unique_targets_vec;
+    unique_targets_vec.insert(unique_targets_vec.end(), unique_targets.begin(), unique_targets.end());
+
+    size_t finished = 0;
+    (this->*basis_change)({{}, unique_targets_vec});
+    {
+        uint8_t old_bias = sign_bias;
+        sign_bias = desired_result ? -1 : +1;
+        TableauTransposedRaii temp_transposed(inv_state);
+        while (finished < targets.size()) {
+            size_t q = (size_t)targets[finished].qubit_value();
+            collapse_qubit_z(q, temp_transposed);
+            if (inv_state.zs.signs[q] != desired_result) {
+                break;
+            }
+            finished++;
+        }
+        sign_bias = old_bias;
+    }
+    (this->*basis_change)({{}, unique_targets_vec});
+
+    if (finished < targets.size()) {
+        std::stringstream msg;
+        msg << "The requested postselection was impossible.\n";
+        msg << "Desired state: |" << (desired_result ? true_name : false_name) << ">\n";
+        msg << "Qubit " << targets[finished] << " is in the perpendicular state |"
+            << (desired_result ? false_name : true_name) << ">\n";
+        if (finished > 0) {
+            msg << finished << " of the requested postselections were finished (";
+            for (size_t k = 0; k < finished; k++) {
+                msg << "qubit " << targets[k] << ", ";
+            }
+            msg << "[failed here])\n";
+        }
+        throw std::invalid_argument(msg.str());
+    }
+}
+
+void TableauSimulator::postselect_x(ConstPointerRange<GateTarget> targets, bool desired_result) {
+    postselect_helper(targets, desired_result, &TableauSimulator::H_XZ, "+", "-");
+}
+
+void TableauSimulator::postselect_y(ConstPointerRange<GateTarget> targets, bool desired_result) {
+    postselect_helper(targets, desired_result, &TableauSimulator::H_YZ, "i", "-i");
+}
+void TableauSimulator::postselect_z(ConstPointerRange<GateTarget> targets, bool desired_result) {
+    postselect_helper(targets, desired_result, &TableauSimulator::I, "0", "1");
+}
+
 void TableauSimulator::measure_x(const OperationData &target_data) {
     // Ensure measurement observables are collapsed.
     collapse_x(target_data.targets);
@@ -274,6 +331,21 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
     }
 
     return result;
+}
+
+int8_t TableauSimulator::peek_x(uint32_t target) const {
+    PauliStringRef x = inv_state.xs[target];
+    return x.xs.not_zero() ? 0 : x.sign ? -1 : +1;
+}
+
+int8_t TableauSimulator::peek_y(uint32_t target) const {
+    PauliString y = inv_state.eval_y_obs(target);
+    return y.xs.not_zero() ? 0 : y.sign ? -1 : +1;
+}
+
+int8_t TableauSimulator::peek_z(uint32_t target) const {
+    PauliStringRef z = inv_state.zs[target];
+    return z.xs.not_zero() ? 0 : z.sign ? -1 : +1;
 }
 
 void TableauSimulator::SQRT_X(const OperationData &target_data) {
@@ -701,11 +773,17 @@ VectorSimulator TableauSimulator::to_vector_sim() const {
     for (size_t k = 0; k < inv.num_qubits; k++) {
         stabilizers.push_back(inv.zs[k]);
     }
-    return VectorSimulator::from_stabilizers(stabilizers, rng);
+    return VectorSimulator::from_stabilizers(stabilizers);
 }
 
-std::vector<std::complex<float>> TableauSimulator::to_state_vector() const {
-    return to_vector_sim().state;
+std::vector<std::complex<float>> TableauSimulator::to_state_vector(bool little_endian) const {
+    auto sim = to_vector_sim();
+    if (!little_endian) {
+        for (size_t q = 0; q < inv_state.num_qubits - q - 1; q++) {
+            sim.apply("SWAP", q, inv_state.num_qubits - q - 1);
+        }
+    }
+    return sim.state;
 }
 
 void TableauSimulator::collapse_x(ConstPointerRange<GateTarget> targets) {

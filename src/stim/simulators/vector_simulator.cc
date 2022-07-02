@@ -18,6 +18,7 @@
 
 #include "stim/circuit/gate_data.h"
 #include "stim/mem/simd_util.h"
+#include "stim/probability_util.h"
 #include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
@@ -107,25 +108,35 @@ void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
     }
 }
 
-VectorSimulator VectorSimulator::from_stabilizers(
-    const std::vector<PauliStringRef> &stabilizers, std::mt19937_64 &rng) {
+std::vector<std::complex<float>> VectorSimulator::state_vector_from_stabilizers(
+    const std::vector<PauliStringRef> &stabilizers, float norm2) {
     size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
-    VectorSimulator result(num_qubits);
+    VectorSimulator sim(num_qubits);
 
     // Create an initial state $|A\rangle^{\otimes n}$ which overlaps with all possible stabilizers.
     std::uniform_real_distribution<float> dist(-1.0, +1.0);
-    for (auto &s : result.state) {
+
+    auto rng = externally_seeded_rng();
+    for (auto &s : sim.state) {
         s = {dist(rng), dist(rng)};
     }
 
     // Project out the non-overlapping parts.
     for (const auto &p : stabilizers) {
-        result.project(p);
+        sim.project(p);
     }
     if (stabilizers.empty()) {
-        result.project(PauliString(0));
+        sim.project(PauliString(0));
     }
 
+    sim.canonicalize_assuming_stabilizer_state(norm2);
+
+    return sim.state;
+}
+
+VectorSimulator VectorSimulator::from_stabilizers(const std::vector<PauliStringRef> &stabilizers) {
+    VectorSimulator result(0);
+    result.state = state_vector_from_stabilizers(stabilizers, 1);
     return result;
 }
 
@@ -208,4 +219,43 @@ std::ostream &stim::operator<<(std::ostream &out, const VectorSimulator &sim) {
     }
     out << "}";
     return out;
+}
+
+void VectorSimulator::canonicalize_assuming_stabilizer_state(double norm2) {
+    // Find a solid non-zero entry.
+    size_t nz = 0;
+    for (size_t k = 1; k < state.size(); k++) {
+        if (abs(state[k]) > abs(state[nz]) * 2) {
+            nz = k;
+        }
+    }
+
+    // Rescale so that the non-zero entries are 1, -1, 1j, or -1j.
+    size_t num_non_zero = 0;
+    std::complex<float> big_v = state[nz];
+    for (auto &v : state) {
+        v /= big_v;
+        if (abs(v) < 0.1) {
+            v = 0;
+            continue;
+        }
+        num_non_zero++;
+        if (abs(v - std::complex<float>{1, 0}) < 0.1) {
+            v = std::complex<float>{1, 0};
+        } else if (abs(v - std::complex<float>{0, 1}) < 0.1) {
+            v = std::complex<float>{0, 1};
+        } else if (abs(v - std::complex<float>{-1, 0}) < 0.1) {
+            v = std::complex<float>{-1, 0};
+        } else if (abs(v - std::complex<float>{0, -1}) < 0.1) {
+            v = std::complex<float>{0, -1};
+        } else {
+            throw std::invalid_argument("State vector extraction failed. This shouldn't occur.");
+        }
+    }
+
+    // Normalize the entries so the result is a unit vector.
+    std::complex<float> scale = (float)(sqrt(norm2 / (double)num_non_zero));
+    for (auto &v : state) {
+        v *= scale;
+    }
 }

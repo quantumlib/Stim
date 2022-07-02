@@ -338,6 +338,29 @@ def test_to_state_vector():
     assert v[0, 1, 0] == 0
     assert v[0, 0, 1] == 0
 
+    s = stim.TableauSimulator()
+    s.set_num_qubits(3)
+    s.sqrt_x(2)
+    np.testing.assert_allclose(
+        s.state_vector(endian='little'),
+        [np.sqrt(0.5), 0, 0, 0, -1j*np.sqrt(0.5), 0, 0, 0],
+        atol=1e-4,
+    )
+    np.testing.assert_allclose(
+        s.state_vector(endian='big'),
+        [np.sqrt(0.5), -1j*np.sqrt(0.5), 0, 0, 0, 0, 0, 0],
+        atol=1e-4,
+    )
+    with pytest.raises(ValueError, match="endian"):
+        s.state_vector(endian='unknown')
+
+    # Exact precision.
+    s.h(1)
+    np.testing.assert_array_equal(
+        s.state_vector(),
+        [0.5, 0, 0.5, 0, -0.5j, 0, -0.5j, 0],
+    )
+
 
 def test_peek_observable_expectation():
     s = stim.TableauSimulator()
@@ -365,3 +388,47 @@ def test_peek_observable_expectation():
         s.peek_observable_expectation(stim.PauliString("iZZ"))
     with pytest.raises(ValueError, match="imaginary sign"):
         s.peek_observable_expectation(stim.PauliString("-iZZ"))
+
+
+def test_postselect():
+    s = stim.TableauSimulator()
+    s.h(0)
+    s.cnot(0, 1)
+    s.postselect_x(0, desired_value=False)
+    assert s.peek_bloch(0) == stim.PauliString("+X")
+    assert s.peek_bloch(1) == stim.PauliString("+X")
+
+    s.postselect_y([2, 3, 4], desired_value=False)
+    assert s.peek_bloch(4) == stim.PauliString("+Y")
+    s.postselect_x(8, desired_value=True)
+    assert s.peek_bloch(8) == stim.PauliString("-X")
+
+    s.postselect_z(9, desired_value=False)
+    assert s.peek_bloch(9) == stim.PauliString("+Z")
+    with pytest.raises(ValueError, match="impossible"):
+        s.postselect_z(10, desired_value=True)
+
+    s.postselect_y(1000, desired_value=True)
+    assert s.peek_bloch(1000) == stim.PauliString("-Y")
+
+
+def test_peek_pauli():
+    s = stim.TableauSimulator()
+    assert s.peek_x(0) == 0
+    assert s.peek_y(0) == 0
+    assert s.peek_z(0) == +1
+
+    assert s.peek_x(1000) == 0
+    assert s.peek_y(1000) == 0
+    assert s.peek_z(1000) == +1
+
+    s.h(100)
+    s.z(100)
+    assert s.peek_x(100) == -1
+    assert s.peek_y(100) == 0
+    assert s.peek_z(100) == 0
+
+    s.h_xy(100)
+    assert s.peek_x(100) == 0
+    assert s.peek_y(100) == -1
+    assert s.peek_z(100) == 0

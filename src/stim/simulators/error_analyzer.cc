@@ -957,7 +957,11 @@ bool shifted_equals(int64_t shift, ConstPointerRange<DemTarget> unshifted, Const
     return true;
 }
 
-bool shifted_equals(int64_t m_shift, int64_t d_shift, const std::map<uint64_t, std::vector<DemTarget>> &unshifted, const std::map<uint64_t, std::vector<DemTarget>> &expected) {
+bool shifted_equals(
+    int64_t m_shift,
+    int64_t d_shift,
+    const std::map<uint64_t, std::vector<DemTarget>> &unshifted,
+    const std::map<uint64_t, std::vector<DemTarget>> &expected) {
     if (unshifted.size() != expected.size()) {
         return false;
     }

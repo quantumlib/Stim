@@ -38,7 +38,7 @@ class CumulativeObservableAnnotation(cirq.Operation):
         return self
 
     def _value_equality_values_(self) -> Any:
-        return self.parity_keys, self.observable_index
+        return self.parity_keys, self.relative_keys, self.observable_index
 
     def _circuit_diagram_info_(self, args: Any) -> str:
         items: List[str] = [repr(e) for e in sorted(self.parity_keys)]
@@ -54,9 +54,12 @@ class CumulativeObservableAnnotation(cirq.Operation):
             f'observable_index={self.observable_index!r})'
         )
 
+    @staticmethod
+    def _json_namespace_() -> str:
+        return ''
+
     def _json_dict_(self) -> Dict[str, Any]:
         result = {
-            'cirq_type': self.__class__.__name__,
             'parity_keys': sorted(self.parity_keys),
             'observable_index': self.observable_index,
         }

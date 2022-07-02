@@ -97,3 +97,10 @@ def test_json_serialization():
     json = cirq.to_json(c)
     c2 = cirq.read_json(json_text=json, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER])
     assert c == c2
+
+
+def test_json_backwards_compat_exact():
+    raw = stimcirq.SweepPauli(stim_sweep_bit_index=2, pauli=cirq.Z, cirq_sweep_symbol="abc")
+    packed = '{\n  "cirq_type": "SweepPauli",\n  "pauli": {\n    "cirq_type": "_PauliZ",\n    "exponent": 1.0,\n    "global_shift": 0.0\n  },\n  "stim_sweep_bit_index": 2,\n  "cirq_sweep_symbol": "abc"\n}'
+    assert cirq.read_json(json_text=packed, resolvers=[*cirq.DEFAULT_RESOLVERS, stimcirq.JSON_RESOLVER]) == raw
+    assert cirq.to_json(raw) == packed

@@ -69,7 +69,7 @@ struct TableauSimulator {
     VectorSimulator to_vector_sim() const;
 
     /// Returns a state vector satisfying the current stabilizer generators.
-    std::vector<std::complex<float>> to_state_vector() const;
+    std::vector<std::complex<float>> to_state_vector(bool little_endian) const;
 
     /// Collapses then records the X signs of the target qubits. Supports flipping the result.
     ///
@@ -190,6 +190,20 @@ struct TableauSimulator {
     /// Returns the single-qubit stabilizer of a target or, if it is entangled, the identity operation.
     PauliString peek_bloch(uint32_t target) const;
 
+    /// Returns the expectation value of measuring the qubit in the X basis.
+    int8_t peek_x(uint32_t target) const;
+    /// Returns the expectation value of measuring the qubit in the Y basis.
+    int8_t peek_y(uint32_t target) const;
+    /// Returns the expectation value of measuring the qubit in the Z basis.
+    int8_t peek_z(uint32_t target) const;
+
+    /// Forces a desired X basis measurement result, or raises an exception if it was impossible.
+    void postselect_x(ConstPointerRange<GateTarget> targets, bool desired_result);
+    /// Forces a desired Y basis measurement result, or raises an exception if it was impossible.
+    void postselect_y(ConstPointerRange<GateTarget> targets, bool desired_result);
+    /// Forces a desired Z basis measurement result, or raises an exception if it was impossible.
+    void postselect_z(ConstPointerRange<GateTarget> targets, bool desired_result);
+
     /// Applies all of the Pauli operations in the given PauliString to the simulator's state.
     void paulis(const PauliString &paulis);
 
@@ -263,6 +277,12 @@ struct TableauSimulator {
 
    private:
     void noisify_new_measurements(const OperationData &target_data);
+    void postselect_helper(
+        ConstPointerRange<GateTarget> targets,
+        bool desired_result,
+        void (TableauSimulator::*basis_change)(const OperationData &),
+        const char *false_name,
+        const char *true_name);
 };
 
 template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>
