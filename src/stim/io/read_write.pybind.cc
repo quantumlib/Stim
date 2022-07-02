@@ -17,6 +17,7 @@
 #include "stim/circuit/circuit.h"
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/measure_record_writer.h"
+#include "stim/io/raii_file.h"
 #include "stim/mem/simd_bits.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"

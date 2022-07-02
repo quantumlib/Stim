@@ -15,6 +15,7 @@
 #include "stim/py/compiled_detector_sampler.pybind.h"
 
 #include "stim/circuit/circuit.pybind.h"
+#include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"

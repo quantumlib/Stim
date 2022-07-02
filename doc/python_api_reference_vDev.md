@@ -27,6 +27,7 @@
     - [`stim.Circuit.explain_detector_error_model_errors`](#stim.Circuit.explain_detector_error_model_errors)
     - [`stim.Circuit.flattened`](#stim.Circuit.flattened)
     - [`stim.Circuit.flattened_operations`](#stim.Circuit.flattened_operations)
+    - [`stim.Circuit.from_file`](#stim.Circuit.from_file)
     - [`stim.Circuit.generated`](#stim.Circuit.generated)
     - [`stim.Circuit.get_detector_coordinates`](#stim.Circuit.get_detector_coordinates)
     - [`stim.Circuit.get_final_qubit_coordinates`](#stim.Circuit.get_final_qubit_coordinates)
@@ -37,6 +38,7 @@
     - [`stim.Circuit.num_sweep_bits`](#stim.Circuit.num_sweep_bits)
     - [`stim.Circuit.search_for_undetectable_logical_errors`](#stim.Circuit.search_for_undetectable_logical_errors)
     - [`stim.Circuit.shortest_graphlike_error`](#stim.Circuit.shortest_graphlike_error)
+    - [`stim.Circuit.to_file`](#stim.Circuit.to_file)
     - [`stim.Circuit.without_noise`](#stim.Circuit.without_noise)
 - [`stim.CircuitErrorLocation`](#stim.CircuitErrorLocation)
     - [`stim.CircuitErrorLocation.__init__`](#stim.CircuitErrorLocation.__init__)
@@ -139,11 +141,13 @@
     - [`stim.DetectorErrorModel.approx_equals`](#stim.DetectorErrorModel.approx_equals)
     - [`stim.DetectorErrorModel.clear`](#stim.DetectorErrorModel.clear)
     - [`stim.DetectorErrorModel.copy`](#stim.DetectorErrorModel.copy)
+    - [`stim.DetectorErrorModel.from_file`](#stim.DetectorErrorModel.from_file)
     - [`stim.DetectorErrorModel.get_detector_coordinates`](#stim.DetectorErrorModel.get_detector_coordinates)
     - [`stim.DetectorErrorModel.num_detectors`](#stim.DetectorErrorModel.num_detectors)
     - [`stim.DetectorErrorModel.num_errors`](#stim.DetectorErrorModel.num_errors)
     - [`stim.DetectorErrorModel.num_observables`](#stim.DetectorErrorModel.num_observables)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
+    - [`stim.DetectorErrorModel.to_file`](#stim.DetectorErrorModel.to_file)
 - [`stim.ExplainedError`](#stim.ExplainedError)
     - [`stim.ExplainedError.__init__`](#stim.ExplainedError.__init__)
     - [`stim.ExplainedError.circuit_error_locations`](#stim.ExplainedError.circuit_error_locations)
@@ -1610,6 +1614,41 @@
 >     [('H', [6], 0), ('H', [6], 0)]
 > ```
 
+<a name="stim.Circuit.from_file"></a>
+### `stim.Circuit.from_file(file: object) -> stim.Circuit`
+> ```
+> Args:
+>     file: A file path or open file object to read from.
+> 
+> Returns:
+>     The circuit parsed from the file.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     with open(path, 'w') as f:
+>     ...         print('H 5', file=f)
+>     ...     circuit = stim.Circuit.from_file(path)
+>     >>> circuit
+>     stim.Circuit('''
+>         H 5
+>     ''')
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     with open(path, 'w') as f:
+>     ...         print('CNOT 4 5', file=f)
+>     ...     with open(path) as f:
+>     ...         circuit = stim.Circuit.from_file(path)
+>     >>> circuit
+>     stim.Circuit('''
+>         CX 4 5
+>     ''')
+> ```
+
 <a name="stim.Circuit.generated"></a>
 ### `stim.Circuit.generated(code_task: str, *, distance: int, rounds: int, after_clifford_depolarization: float = 0.0, before_round_data_depolarization: float = 0.0, before_measure_flip_probability: float = 0.0, after_reset_flip_probability: float = 0.0) -> stim.Circuit`
 > ```
@@ -1971,6 +2010,39 @@
 >     ...     before_round_data_depolarization=0.01)
 >     >>> len(circuit.shortest_graphlike_error())
 >     7
+> ```
+
+<a name="stim.Circuit.to_file"></a>
+### `stim.Circuit.to_file(self, file: object) -> None`
+> ```
+> Writes the stim circuit to a file.
+> 
+> Args:
+>     file: A file path or an open file to write to.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+>     >>> c = stim.Circuit('H 5\nX 0')
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     with open(path, 'w') as f:
+>     ...         c.to_file(f)
+>     ...     with open(path, 'w') as f:
+>     ...         contents = f.read()
+>     >>> contents
+>     H 5
+>     X 0
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     c.to_file(path)
+>     ...     with open(path, 'w') as f:
+>     ...         contents = f.read()
+>     >>> contents
+>     H 5
+>     X 0
 > ```
 
 <a name="stim.Circuit.without_noise"></a>
@@ -3301,6 +3373,41 @@
 >     True
 > ```
 
+<a name="stim.DetectorErrorModel.from_file"></a>
+### `stim.DetectorErrorModel.from_file(file: object) -> stim.DetectorErrorModel`
+> ```
+> Args:
+>     file: A file path or open file object to read from.
+> 
+> Returns:
+>     The circuit parsed from the file.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     with open(path, 'w') as f:
+>     ...         print('error(0.25) D2 D3', file=f)
+>     ...     circuit = stim.DetectorErrorModel.from_file(path)
+>     >>> circuit
+>     stim.DetectorErrorModel('''
+>         error(0.25) D2 D3
+>     ''')
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     with open(path, 'w') as f:
+>     ...         print('error(0.25) D2 D3', file=f)
+>     ...     with open(path) as f:
+>     ...         circuit = stim.DetectorErrorModel.from_file(path)
+>     >>> circuit
+>     stim.DetectorErrorModel('''
+>         error(0.25) D2 D3
+>     ''')
+> ```
+
 <a name="stim.DetectorErrorModel.get_detector_coordinates"></a>
 ### `stim.DetectorErrorModel.get_detector_coordinates(self, only: object = None) -> Dict[int, List[float]]`
 > ```
@@ -3484,6 +3591,37 @@
 >     >>> model = circuit.detector_error_model(decompose_errors=True)
 >     >>> len(model.shortest_graphlike_error())
 >     7
+> ```
+
+<a name="stim.DetectorErrorModel.to_file"></a>
+### `stim.DetectorErrorModel.to_file(self, file: object) -> None`
+> ```
+> Writes the stim circuit to a file.
+> 
+> Args:
+>     file: A file path or an open file to write to.
+> 
+> Examples:
+>     >>> import stim
+>     >>> import tempfile
+>     >>> c = stim.DetectorErrorModel('error(0.25) D2 D3')
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     with open(path, 'w') as f:
+>     ...         c.to_file(f)
+>     ...     with open(path, 'w') as f:
+>     ...         contents = f.read()
+>     >>> contents
+>     error(0.25) D2 D3
+> 
+>     >>> with tempfile.TemporaryDirectory() as tmpdir:
+>     ...     path = tmpdir + '/tmp.stim'
+>     ...     c.to_file(path)
+>     ...     with open(path, 'w') as f:
+>     ...         contents = f.read()
+>     >>> contents
+>     error(0.25) D2 D3
 > ```
 
 <a name="stim.ExplainedError.__init__"></a>
