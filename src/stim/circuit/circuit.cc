@@ -785,7 +785,8 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
 }
 
 template <typename T>
-ConstPointerRange<T> mono_extend(MonotonicBuffer<T> &cur, ConstPointerRange<T> original, ConstPointerRange<T> additional) {
+ConstPointerRange<T> mono_extend(
+    MonotonicBuffer<T> &cur, ConstPointerRange<T> original, ConstPointerRange<T> additional) {
     if (original.ptr_end == cur.tail.ptr_start) {
         // Try to append new data right after the original data.
         cur.ensure_available(additional.size());
@@ -806,7 +807,8 @@ ConstPointerRange<T> mono_extend(MonotonicBuffer<T> &cur, ConstPointerRange<T> o
 Circuit &Circuit::operator+=(const Circuit &other) {
     ConstPointerRange<Operation> ops_to_add = other.operations;
     if (!operations.empty() && !ops_to_add.empty() && operations.back().can_fuse(ops_to_add[0])) {
-        operations.back().target_data.targets = mono_extend(target_buf, operations.back().target_data.targets, ops_to_add[0].target_data.targets);
+        operations.back().target_data.targets =
+            mono_extend(target_buf, operations.back().target_data.targets, ops_to_add[0].target_data.targets);
         ops_to_add.ptr_start++;
     }
 

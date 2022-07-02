@@ -3158,3 +3158,89 @@ TEST(ErrorAnalyzer, dont_fold_when_observable_dependencies_cross_iterations) {
     )CIRCUIT");
     ASSERT_ANY_THROW({ ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false); });
 }
+
+TEST(ErrorAnalyzer, else_correlated_error_block) {
+    Circuit c(R"CIRCUIT(
+        CORRELATED_ERROR(0.25) X0
+        ELSE_CORRELATED_ERROR(0.25) X1
+        ELSE_CORRELATED_ERROR(0.25) X2
+        M 0 1 2
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT");
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false), DetectorErrorModel(R"DEM(
+            error(0.25) D0
+            error(0.1875) D1
+            error(0.140625) D2
+        )DEM"));
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 0.25, false, false),
+        DetectorErrorModel(R"DEM(
+            error(0.25) D0
+            error(0.1875) D1
+            error(0.140625) D2
+        )DEM"));
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 0, false, false); },
+        std::invalid_argument);
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 0.1, false, false); },
+        std::invalid_argument);
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 0.24, false, false); },
+        std::invalid_argument);
+
+    c = Circuit(R"CIRCUIT(
+        CORRELATED_ERROR(0.25) X0
+        ELSE_CORRELATED_ERROR(0.25) X1
+        ELSE_CORRELATED_ERROR(0.25) X2
+        CORRELATED_ERROR(0.25) X3
+        ELSE_CORRELATED_ERROR(0.25) X4
+        ELSE_CORRELATED_ERROR(0.25) X5
+        M 0 1 2 3 4 5
+        DETECTOR rec[-6]
+        DETECTOR rec[-5]
+        DETECTOR rec[-4]
+        DETECTOR rec[-3]
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+    )CIRCUIT");
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false), DetectorErrorModel(R"DEM(
+            error(0.25) D0
+            error(0.1875) D1
+            error(0.140625) D2
+            error(0.25) D3
+            error(0.1875) D4
+            error(0.140625) D5
+        )DEM"));
+
+    c = Circuit(R"CIRCUIT(
+        CORRELATED_ERROR(0.25) X0
+        ELSE_CORRELATED_ERROR(0.25) Z1
+        H 1
+        ELSE_CORRELATED_ERROR(0.25) X2
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false); },
+        std::invalid_argument);
+
+    c = Circuit(R"CIRCUIT(
+        CORRELATED_ERROR(0.25) X0
+        REPEAT 1 {
+            ELSE_CORRELATED_ERROR(0.25) Z1
+        }
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false); },
+        std::invalid_argument);
+
+    c = Circuit(R"CIRCUIT(
+        ELSE_CORRELATED_ERROR(0.25) Z1
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false); },
+        std::invalid_argument);
+}

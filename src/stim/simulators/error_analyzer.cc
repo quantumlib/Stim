@@ -602,11 +602,21 @@ ErrorAnalyzer::ErrorAnalyzer(
 }
 
 void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
+    std::vector<OperationData> stacked_else_correlated_errors;
     for (size_t k = circuit.operations.size(); k--;) {
         const auto &op = circuit.operations[k];
         assert(op.gate != nullptr);
         try {
-            if (op.gate->id == gate_name_to_id("REPEAT")) {
+            if (op.gate->id == gate_name_to_id("ELSE_CORRELATED_ERROR")) {
+                stacked_else_correlated_errors.push_back(op.target_data);
+            } else if (op.gate->id == gate_name_to_id("E")) {
+                stacked_else_correlated_errors.push_back(op.target_data);
+                correlated_error_block(stacked_else_correlated_errors);
+                stacked_else_correlated_errors.clear();
+            } else if (!stacked_else_correlated_errors.empty()) {
+                throw std::invalid_argument(
+                    "ELSE_CORRELATED_ERROR wasn't preceded by ELSE_CORRELATED_ERROR or CORRELATED_ERROR (E)");
+            } else if (op.gate->id == gate_name_to_id("REPEAT")) {
                 assert(op.target_data.targets.size() == 3);
                 auto b = op.target_data.targets[0].data;
                 assert(op.target_data.targets[0].data < circuit.blocks.size());
@@ -640,6 +650,11 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
             }
             throw std::invalid_argument(error_msg.str());
         }
+    }
+
+    if (!stacked_else_correlated_errors.empty()) {
+        throw std::invalid_argument(
+            "ELSE_CORRELATED_ERROR wasn't preceded by ELSE_CORRELATED_ERROR or CORRELATED_ERROR (E)");
     }
 }
 
@@ -686,11 +701,11 @@ inline void inplace_xor_tail(MonotonicBuffer<T> &dst, const SparseXorVec<T> &src
     });
 }
 
-void ErrorAnalyzer::CORRELATED_ERROR(const OperationData &dat) {
+void ErrorAnalyzer::add_composite_error(double probability, ConstPointerRange<GateTarget> targets) {
     if (!accumulate_errors) {
         return;
     }
-    for (auto qp : dat.targets) {
+    for (auto qp : targets) {
         auto q = qp.qubit_value();
         if (qp.data & TARGET_PAULI_Z_BIT) {
             inplace_xor_tail(mono_buf, xs[q]);
@@ -699,7 +714,38 @@ void ErrorAnalyzer::CORRELATED_ERROR(const OperationData &dat) {
             inplace_xor_tail(mono_buf, zs[q]);
         }
     }
-    add_error_in_sorted_jagged_tail(dat.args[0]);
+    add_error_in_sorted_jagged_tail(probability);
+}
+
+void ErrorAnalyzer::correlated_error_block(const std::vector<OperationData> &dats) {
+    assert(!dats.empty());
+
+    if (dats.size() == 1) {
+        add_composite_error(dats[0].args[0], dats[0].targets);
+        return;
+    }
+    check_can_approximate_disjoint("ELSE_CORRELATED_ERROR");
+
+    double remaining_p = 1;
+    for (size_t k = dats.size(); k--;) {
+        OperationData dat = dats[k];
+        double actual_p = dat.args[0] * remaining_p;
+        remaining_p *= 1 - dat.args[0];
+        if (actual_p > approximate_disjoint_errors_threshold) {
+            throw std::invalid_argument(
+                "CORRELATED_ERROR/ELSE_CORRELATED_ERROR block has a component probability '" +
+                std::to_string(actual_p) +
+                "' larger than the "
+                "`approximate_disjoint_errors` threshold of "
+                "'" +
+                std::to_string(approximate_disjoint_errors_threshold) + "'.");
+        }
+        add_composite_error(actual_p, dat.targets);
+    }
+}
+
+void ErrorAnalyzer::CORRELATED_ERROR(const OperationData &dat) {
+    add_composite_error(dat.args[0], dat.targets);
 }
 
 void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
@@ -743,16 +789,23 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
-    throw std::invalid_argument(
-        "ELSE_CORRELATED_ERROR operations currently not supported in error analysis (cases may not be "
-        "independent).");
+    throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR" + dat.str());
 }
 
-void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
+void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name) {
     if (approximate_disjoint_errors_threshold == 0) {
-        throw std::invalid_argument(
-            "Handling PAULI_CHANNEL_1 requires `approximate_disjoint_errors` argument to be specified.");
+        std::stringstream msg;
+        msg << "Encountered the operation " << op_name
+            << " during error analysis, but this operation requires the `approximate_disjoint_errors` option to be "
+               "enabled.";
+        msg << "\nIf you're' calling from python, using stim.Circuit.detector_error_model, you need to add the "
+               "argument approximate_disjoint_errors=True.\n";
+        msg << "\nIf you're' calling from the command line, you need to specify --approximate_disjoint_errors.";
+        throw std::invalid_argument(msg.str());
     }
+}
+void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
+    check_can_approximate_disjoint("PAULI_CHANNEL_1");
     ConstPointerRange<double> args = dat.args;
     std::array<double, 4> probabilities;
     for (size_t k = 0; k < 3; k++) {
@@ -780,10 +833,7 @@ void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
-    if (approximate_disjoint_errors_threshold == 0) {
-        throw std::invalid_argument(
-            "Handling PAULI_CHANNEL_2 requires `approximate_disjoint_errors` argument to be specified.");
-    }
+    check_can_approximate_disjoint("PAULI_CHANNEL_2");
     ConstPointerRange<double> args = dat.args;
     std::array<double, 16> probabilities;
     for (size_t k = 0; k < 15; k++) {
