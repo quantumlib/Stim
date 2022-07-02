@@ -784,15 +784,40 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
     return result;
 }
 
+template <typename T>
+ConstPointerRange<T> mono_extend(MonotonicBuffer<T> &cur, ConstPointerRange<T> original, ConstPointerRange<T> additional) {
+    if (original.ptr_end == cur.tail.ptr_start) {
+        // Try to append new data right after the original data.
+        cur.ensure_available(additional.size());
+        if (original.ptr_end == cur.tail.ptr_start) {
+            cur.append_tail(additional);
+            auto added = cur.commit_tail();
+            return {original.ptr_start, added.ptr_end};
+        }
+    }
+
+    // Ensure necessary space is available, plus some padding to avoid quadratic behavior when repeatedly extending.
+    cur.ensure_available((int)(1.1 * (original.size() + additional.size())) + 10);
+    cur.append_tail(original);
+    cur.append_tail(additional);
+    return cur.commit_tail();
+}
+
 Circuit &Circuit::operator+=(const Circuit &other) {
+    ConstPointerRange<Operation> ops_to_add = other.operations;
+    if (!operations.empty() && !ops_to_add.empty() && operations.back().can_fuse(ops_to_add[0])) {
+        operations.back().target_data.targets = mono_extend(target_buf, operations.back().target_data.targets, ops_to_add[0].target_data.targets);
+        ops_to_add.ptr_start++;
+    }
+
     if (&other == this) {
-        operations.insert(operations.end(), operations.begin(), operations.end());
+        operations.insert(operations.end(), ops_to_add.begin(), ops_to_add.end());
         return *this;
     }
 
     uint32_t block_offset = (uint32_t)blocks.size();
     blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
-    for (const auto &op : other.operations) {
+    for (const auto &op : ops_to_add) {
         assert(op.gate != nullptr);
         auto target_data = append_operation(op);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
