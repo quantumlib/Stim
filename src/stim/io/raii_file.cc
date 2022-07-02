@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sstream>
 #include "stim/io/raii_file.h"
+
+#include <sstream>
 
 using namespace stim;
 

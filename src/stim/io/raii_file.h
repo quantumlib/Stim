@@ -20,13 +20,13 @@
 namespace stim {
 
 struct RaiiFile {
-  FILE* f;
-  RaiiFile(const char* path, const char* mode);
-  RaiiFile(const RaiiFile& other) = delete;
-  RaiiFile(RaiiFile&& other) = delete;
-  ~RaiiFile();
+    FILE* f;
+    RaiiFile(const char* path, const char* mode);
+    RaiiFile(const RaiiFile& other) = delete;
+    RaiiFile(RaiiFile&& other) = delete;
+    ~RaiiFile();
 };
 
-}
+}  // namespace stim
 
 #endif
