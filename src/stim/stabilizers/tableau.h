@@ -176,7 +176,7 @@ struct Tableau {
     void prepend_YCX(size_t control, size_t target);
     void prepend_YCY(size_t control, size_t target);
     void prepend_YCZ(size_t control, size_t target);
-    void prepend(const PauliStringRef &op);
+    void prepend_pauli_product(const PauliStringRef &op);
 
     uint8_t x_output_pauli_xyz(size_t input_index, size_t output_index) const;
     uint8_t y_output_pauli_xyz(size_t input_index, size_t output_index) const;

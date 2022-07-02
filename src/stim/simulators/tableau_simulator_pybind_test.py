@@ -432,3 +432,37 @@ def test_peek_pauli():
     assert s.peek_x(100) == 0
     assert s.peek_y(100) == -1
     assert s.peek_z(100) == 0
+
+
+def test_do_circuit():
+    s = stim.TableauSimulator()
+    s.do_circuit(stim.Circuit("""
+        H 0
+    """))
+    assert s.peek_bloch(0) == stim.PauliString('+X')
+
+
+def test_do_pauli_string():
+    s = stim.TableauSimulator()
+    s.do_pauli_string(stim.PauliString("IXYZ"))
+    assert s.peek_bloch(0) == stim.PauliString('+Z')
+    assert s.peek_bloch(1) == stim.PauliString('-Z')
+    assert s.peek_bloch(2) == stim.PauliString('-Z')
+    assert s.peek_bloch(3) == stim.PauliString('+Z')
+
+
+def test_do_tableau():
+    s = stim.TableauSimulator()
+    s.do_tableau(stim.Tableau.from_named_gate("H"), [0])
+    assert s.peek_bloch(0) == stim.PauliString('+X')
+    s.do_tableau(stim.Tableau.from_named_gate("CNOT"), [0, 1])
+    assert s.peek_bloch(0) == stim.PauliString('+I')
+    assert s.peek_observable_expectation(stim.PauliString('XX')) == +1
+    assert s.peek_observable_expectation(stim.PauliString('ZZ')) == +1
+
+    with pytest.raises(ValueError, match='len'):
+        s.do_tableau(stim.Tableau(1), [1, 2])
+    with pytest.raises(ValueError, match='duplicates'):
+        s.do_tableau(stim.Tableau(3), [2, 3, 2])
+
+    s.do_tableau(stim.Tableau(0), [])

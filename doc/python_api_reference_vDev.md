@@ -235,6 +235,9 @@
     - [`stim.TableauSimulator.cy`](#stim.TableauSimulator.cy)
     - [`stim.TableauSimulator.cz`](#stim.TableauSimulator.cz)
     - [`stim.TableauSimulator.do`](#stim.TableauSimulator.do)
+    - [`stim.TableauSimulator.do_circuit`](#stim.TableauSimulator.do_circuit)
+    - [`stim.TableauSimulator.do_pauli_string`](#stim.TableauSimulator.do_pauli_string)
+    - [`stim.TableauSimulator.do_tableau`](#stim.TableauSimulator.do_tableau)
     - [`stim.TableauSimulator.h`](#stim.TableauSimulator.h)
     - [`stim.TableauSimulator.h_xy`](#stim.TableauSimulator.h_xy)
     - [`stim.TableauSimulator.h_yz`](#stim.TableauSimulator.h_yz)
@@ -5137,6 +5140,81 @@
 >     >>> s.do(stim.PauliString("IXYZ"))
 >     >>> s.measure_many(0, 1, 2, 3)
 >     [False, True, True, False]
+> ```
+
+<a name="stim.TableauSimulator.do_circuit"></a>
+### `stim.TableauSimulator.do_circuit(self, circuit: stim.Circuit) -> None`
+> ```
+> Applies a circuit to the simulator's state.
+> 
+> Args:
+>     circuit: A stim.Circuit containing operations to apply.
+> 
+> Examples:
+>     >>> import stim
+>     >>> s = stim.TableauSimulator()
+>     >>> s.do_circuit(stim.Circuit('''
+>     ...     X 0
+>     ...     M 0
+>     ... '''))
+>     >>> s.current_measurement_record()
+>     [True]
+> ```
+
+<a name="stim.TableauSimulator.do_pauli_string"></a>
+### `stim.TableauSimulator.do_pauli_string(self, pauli_string: stim.PauliString) -> None`
+> ```
+> Applies the paulis from a pauli string to the simulator's state.
+> 
+> Args:
+>     pauli_string: A stim.PauliString containing Paulis to apply.
+> 
+> Examples:
+>     >>> s = stim.TableauSimulator()
+>     >>> s.do_pauli_string(stim.PauliString("IXYZ"))
+>     >>> s.measure_many(0, 1, 2, 3)
+>     [False, True, True, False]
+> ```
+
+<a name="stim.TableauSimulator.do_tableau"></a>
+### `stim.TableauSimulator.do_tableau(self, tableau: stim.Tableau, targets: List[int]) -> None`
+> ```
+> Applies a custom tableau operation to qubits in the simulator.
+> 
+> Note that this method has to compute the inverse of the tableau, because the
+> simulator's internal state is an inverse tableau.
+> 
+> Args:
+>     tableau: A stim.Tableau representing the Clifford operation to apply.
+>     targets: The indices of the qubits to operate on.
+> 
+> Examples:
+>     >>> import stim
+>     >>> sim = stim.TableauSimulator()
+>     >>> sim.h(1)
+>     >>> sim.h_yz(2)
+>     >>> [str(sim.peek_block(k)) for k in range(4)]
+>     ['+Z', '+X', '+Y', '+Z']
+>     >>> rot3 = stim.Tableau.from_conjugated_generators(
+>     ...     xs=[
+>     ...         stim.PauliString("_X_"),
+>     ...         stim.PauliString("__X"),
+>     ...         stim.PauliString("X__"),
+>     ...     ],
+>     ...     zs=[
+>     ...         stim.PauliString("_Z_"),
+>     ...         stim.PauliString("__Z"),
+>     ...         stim.PauliString("Z__"),
+>     ...     ],
+>     ... )
+> 
+>     >>> sim.do_tableau(rot3, [1, 2, 3])
+>     >>> [str(sim.peek_block(k)) for k in range(4)]
+>     ['+Z', '+Z', '+X', '+Y']
+> 
+>     >>> sim.do_tableau(rot3, [1, 2, 3])
+>     >>> [str(sim.peek_block(k)) for k in range(4)]
+>     ['+Z', '+Y', '+Z', '+X']
 > ```
 
 <a name="stim.TableauSimulator.h"></a>

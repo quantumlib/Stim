@@ -31,7 +31,7 @@ void Tableau::prepend_Z(size_t q) {
     xs[q].sign ^= 1;
 }
 
-void Tableau::prepend(const PauliStringRef &op) {
+void Tableau::prepend_pauli_product(const PauliStringRef &op) {
     assert(op.num_qubits == num_qubits);
     zs.signs ^= op.xs;
     xs.signs ^= op.zs;

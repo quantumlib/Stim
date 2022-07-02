@@ -237,17 +237,10 @@ TEST(circuit, append_circuit) {
     Circuit c2;
     c2.append_op("M", {7});
 
-    Circuit expected;
-    expected.append_op("X", {0, 1});
-    expected.append_op("M", {0, 1, 2, 4});
-    expected.append_op("M", {7});
-
     Circuit actual = c1;
     actual += c2;
-    ASSERT_EQ(actual.operations.size(), 3);
-    actual = Circuit(actual.str().data());
     ASSERT_EQ(actual.operations.size(), 2);
-    ASSERT_EQ(actual, expected);
+    ASSERT_EQ(actual, Circuit("X 0 1\nM 0 1 2 4 7"));
 
     actual *= 4;
     ASSERT_EQ(actual.str(), R"CIRCUIT(REPEAT 4 {
@@ -858,9 +851,20 @@ TEST(circuit, self_addition) {
         X 0
     )CIRCUIT");
     c += c;
-    ASSERT_EQ(c.operations.size(), 2);
+    ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c.blocks.size(), 0);
-    ASSERT_EQ(c.operations[0], c.operations[1]);
+    ASSERT_EQ(c, Circuit("X 0 0"));
+
+    c = Circuit(R"CIRCUIT(
+        X 0
+        Y 0
+    )CIRCUIT");
+    c += c;
+    ASSERT_EQ(c.operations.size(), 4);
+    ASSERT_EQ(c.blocks.size(), 0);
+    ASSERT_EQ(c.operations[0], c.operations[2]);
+    ASSERT_EQ(c.operations[1], c.operations[3]);
+    ASSERT_EQ(c, Circuit("X 0\nY 0\nX 0\nY 0"));
 
     c = Circuit(R"CIRCUIT(
         X 0
@@ -1273,4 +1277,19 @@ TEST(circuit, final_coord_shift) {
         }
     )CIRCUIT");
     ASSERT_EQ(c.final_coord_shift(), (std::vector<double>{2000000, 1000, 6000000000}));
+}
+
+TEST(circuit, concat_fuse) {
+    Circuit c1("H 0");
+    Circuit c2("H 1");
+    Circuit c3 = c1 + c2;
+    ASSERT_EQ(c3.operations.size(), 1);
+    ASSERT_EQ(c3, Circuit("H 0 1"));
+}
+
+TEST(circuit, concat_self_fuse) {
+    Circuit c("H 0");
+    c += c;
+    ASSERT_EQ(c.operations.size(), 1);
+    ASSERT_EQ(c, Circuit("H 0 0"));
 }

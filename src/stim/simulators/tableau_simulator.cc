@@ -776,6 +776,10 @@ VectorSimulator TableauSimulator::to_vector_sim() const {
     return VectorSimulator::from_stabilizers(stabilizers);
 }
 
+void TableauSimulator::apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets) {
+    inv_state.inplace_scatter_prepend(tableau.inverse(), targets);
+}
+
 std::vector<std::complex<float>> TableauSimulator::to_state_vector(bool little_endian) const {
     auto sim = to_vector_sim();
     if (!little_endian) {

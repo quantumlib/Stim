@@ -140,6 +140,8 @@ struct TableauSimulator {
     /// Automatically expands the tableau simulator's state, if needed.
     void expand_do_circuit(const Circuit &circuit);
 
+    void apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets);
+
     std::vector<PauliString> canonical_stabilizers() const;
 
     /// === SPECIALIZED VECTORIZED OPERATION IMPLEMENTATIONS ===

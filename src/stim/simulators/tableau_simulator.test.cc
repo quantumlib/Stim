@@ -2034,3 +2034,29 @@ TEST(TableauSimulator, peek_x) {
     ASSERT_EQ(sim.peek_y(2), 0);
     ASSERT_EQ(sim.peek_z(2), 0);
 }
+
+TEST(TableauSimulator, apply_tableau) {
+    auto cnot = GATE_DATA.at("CNOT").tableau();
+    auto s = GATE_DATA.at("S").tableau();
+    auto h = GATE_DATA.at("H").tableau();
+    auto cxyz = GATE_DATA.at("C_XYZ").tableau();
+
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
+    sim.apply_tableau(h, {1});
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
+    sim.apply_tableau(s, {1});
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
+    sim.apply_tableau(s, {1});
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    sim.apply_tableau(cnot, {2, 1});
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("-X"));
+    sim.apply_tableau(cnot, {1, 2});
+    ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("I"));
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IXXI")), -1);
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IZZI")), +1);
+
+    sim.apply_tableau(cxyz, {2});
+    sim.apply_tableau(cxyz.inverse(), {1});
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IZYI")), -1);
+    ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IYXI")), +1);
+}
