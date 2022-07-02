@@ -42,8 +42,7 @@ struct VectorSimulator {
     static VectorSimulator from_stabilizers(const std::vector<PauliStringRef> &stabilizers);
 
     static std::vector<std::complex<float>> state_vector_from_stabilizers(
-        const std::vector<PauliStringRef> &stabilizers,
-        float norm2 = 1);
+        const std::vector<PauliStringRef> &stabilizers, float norm2 = 1);
 
     /// Applies a unitary operation to the given qubits, updating the state vector.
     void apply(const std::vector<std::vector<std::complex<float>>> &matrix, const std::vector<size_t> &qubits);

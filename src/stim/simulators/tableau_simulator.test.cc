@@ -1688,9 +1688,7 @@ TEST(TableauSimulator, postselect_x) {
     // Postselect from -X.
     sim.reset_x(OpDat(0));
     sim.Z(OpDat(0));
-    ASSERT_THROW({
-        sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    }, std::invalid_argument);
+    ASSERT_THROW({ sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0)}, false); }, std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
 
     // Postselect from +Y.
@@ -1750,9 +1748,11 @@ TEST(TableauSimulator, postselect_x) {
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.Z(OpDat(0));
-    ASSERT_THROW({
-        sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            sim.postselect_x(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+        },
+        std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-X"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+X"));
 }
@@ -1779,9 +1779,7 @@ TEST(TableauSimulator, postselect_y) {
     // Postselect from -Y.
     sim.reset_y(OpDat(0));
     sim.X(OpDat(0));
-    ASSERT_THROW({
-        sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    }, std::invalid_argument);
+    ASSERT_THROW({ sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0)}, false); }, std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
 
     // Postselect from +Z.
@@ -1830,9 +1828,11 @@ TEST(TableauSimulator, postselect_y) {
     sim.reset_z(OpDat({0, 1}));
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
-    ASSERT_THROW({
-        sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            sim.postselect_y(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+        },
+        std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Y"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Y"));
 }
@@ -1870,9 +1870,7 @@ TEST(TableauSimulator, postselect_z) {
     // Postselect from -Z.
     sim.reset_z(OpDat(0));
     sim.X(OpDat(0));
-    ASSERT_THROW({
-        sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false);
-    }, std::invalid_argument);
+    ASSERT_THROW({ sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0)}, false); }, std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
 
     // Postselect entangled.
@@ -1910,9 +1908,11 @@ TEST(TableauSimulator, postselect_z) {
     sim.H_XZ(OpDat(0));
     sim.ZCX(OpDat({0, 1}));
     sim.X(OpDat(0));
-    ASSERT_THROW({
-        sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
-    }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            sim.postselect_z(std::vector<GateTarget>{GateTarget::qubit(0), GateTarget::qubit(1)}, true);
+        },
+        std::invalid_argument);
     ASSERT_EQ(sim.peek_bloch(0), PauliString::from_str("-Z"));
     ASSERT_EQ(sim.peek_bloch(1), PauliString::from_str("+Z"));
 }

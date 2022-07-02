@@ -17,9 +17,9 @@
 #ifndef _STIM_STABILIZERS_TABLEAU_H
 #define _STIM_STABILIZERS_TABLEAU_H
 
+#include <complex>
 #include <iostream>
 #include <unordered_map>
-#include <complex>
 
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_util.h"

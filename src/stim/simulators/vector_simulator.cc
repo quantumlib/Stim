@@ -18,8 +18,8 @@
 
 #include "stim/circuit/gate_data.h"
 #include "stim/mem/simd_util.h"
-#include "stim/stabilizers/pauli_string.h"
 #include "stim/probability_util.h"
+#include "stim/stabilizers/pauli_string.h"
 
 using namespace stim;
 
@@ -109,9 +109,7 @@ void VectorSimulator::apply(const PauliStringRef &gate, size_t qubit_offset) {
 }
 
 std::vector<std::complex<float>> VectorSimulator::state_vector_from_stabilizers(
-    const std::vector<PauliStringRef> &stabilizers,
-    float norm2) {
-
+    const std::vector<PauliStringRef> &stabilizers, float norm2) {
     size_t num_qubits = stabilizers.empty() ? 0 : stabilizers[0].num_qubits;
     VectorSimulator sim(num_qubits);
 
@@ -251,8 +249,7 @@ void VectorSimulator::canonicalize_assuming_stabilizer_state(double norm2) {
         } else if (abs(v - std::complex<float>{0, -1}) < 0.1) {
             v = std::complex<float>{0, -1};
         } else {
-            throw std::invalid_argument(
-                "State vector extraction failed. This shouldn't occur.");
+            throw std::invalid_argument("State vector extraction failed. This shouldn't occur.");
         }
     }
 

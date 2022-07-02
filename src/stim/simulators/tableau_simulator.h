@@ -278,11 +278,11 @@ struct TableauSimulator {
    private:
     void noisify_new_measurements(const OperationData &target_data);
     void postselect_helper(
-            ConstPointerRange<GateTarget> targets,
-            bool desired_result,
-            void (TableauSimulator::*basis_change)(const OperationData &),
-            const char *false_name,
-            const char *true_name);
+        ConstPointerRange<GateTarget> targets,
+        bool desired_result,
+        void (TableauSimulator::*basis_change)(const OperationData &),
+        const char *false_name,
+        const char *true_name);
 };
 
 template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>

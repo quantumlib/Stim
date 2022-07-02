@@ -60,11 +60,11 @@ void TableauSimulator::MPP(const OperationData &target_data) {
 }
 
 void TableauSimulator::postselect_helper(
-        ConstPointerRange<GateTarget> targets,
-        bool desired_result,
-        void (TableauSimulator::*basis_change)(const OperationData &),
-        const char *false_name,
-        const char *true_name) {
+    ConstPointerRange<GateTarget> targets,
+    bool desired_result,
+    void (TableauSimulator::*basis_change)(const OperationData &),
+    const char *false_name,
+    const char *true_name) {
     std::set<GateTarget> unique_targets;
     unique_targets.insert(targets.begin(), targets.end());
     std::vector<GateTarget> unique_targets_vec;
@@ -92,7 +92,8 @@ void TableauSimulator::postselect_helper(
         std::stringstream msg;
         msg << "The requested postselection was impossible.\n";
         msg << "Desired state: |" << (desired_result ? true_name : false_name) << ">\n";
-        msg << "Qubit " << targets[finished] << " is in the perpendicular state |" << (desired_result ? false_name : true_name) << ">\n";
+        msg << "Qubit " << targets[finished] << " is in the perpendicular state |"
+            << (desired_result ? false_name : true_name) << ">\n";
         if (finished > 0) {
             msg << finished << " of the requested postselections were finished (";
             for (size_t k = 0; k < finished; k++) {
@@ -105,29 +106,14 @@ void TableauSimulator::postselect_helper(
 }
 
 void TableauSimulator::postselect_x(ConstPointerRange<GateTarget> targets, bool desired_result) {
-    postselect_helper(
-        targets,
-        desired_result,
-        &TableauSimulator::H_XZ,
-        "+",
-        "-");
+    postselect_helper(targets, desired_result, &TableauSimulator::H_XZ, "+", "-");
 }
 
 void TableauSimulator::postselect_y(ConstPointerRange<GateTarget> targets, bool desired_result) {
-    postselect_helper(
-        targets,
-        desired_result,
-        &TableauSimulator::H_YZ,
-        "i",
-        "-i");
+    postselect_helper(targets, desired_result, &TableauSimulator::H_YZ, "i", "-i");
 }
 void TableauSimulator::postselect_z(ConstPointerRange<GateTarget> targets, bool desired_result) {
-    postselect_helper(
-        targets,
-        desired_result,
-        &TableauSimulator::I,
-        "0",
-        "1");
+    postselect_helper(targets, desired_result, &TableauSimulator::I, "0", "1");
 }
 
 void TableauSimulator::measure_x(const OperationData &target_data) {
@@ -349,23 +335,17 @@ PauliString TableauSimulator::peek_bloch(uint32_t target) const {
 
 int8_t TableauSimulator::peek_x(uint32_t target) const {
     PauliStringRef x = inv_state.xs[target];
-    return x.xs.not_zero() ? 0
-         : x.sign ? -1
-         : +1;
+    return x.xs.not_zero() ? 0 : x.sign ? -1 : +1;
 }
 
 int8_t TableauSimulator::peek_y(uint32_t target) const {
     PauliString y = inv_state.eval_y_obs(target);
-    return y.xs.not_zero() ? 0
-         : y.sign ? -1
-         : +1;
+    return y.xs.not_zero() ? 0 : y.sign ? -1 : +1;
 }
 
 int8_t TableauSimulator::peek_z(uint32_t target) const {
     PauliStringRef z = inv_state.zs[target];
-    return z.xs.not_zero() ? 0
-         : z.sign ? -1
-         : +1;
+    return z.xs.not_zero() ? 0 : z.sign ? -1 : +1;
 }
 
 void TableauSimulator::SQRT_X(const OperationData &target_data) {
