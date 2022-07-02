@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pathlib
+import tempfile
 
 import pytest
 
@@ -344,3 +346,56 @@ def test_coords():
         circuit.get_detector_coordinates([-1])
     with pytest.raises(ValueError, match="too big"):
         circuit.get_detector_coordinates([500])
+
+
+def test_dem_from_file():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        with open(path, 'w') as f:
+            print('error(0.125) D0 L5', file=f)
+        assert stim.DetectorErrorModel.from_file(path) == stim.DetectorErrorModel('error(0.125) D0 L5')
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = pathlib.Path(tmpdir) / 'tmp.stim'
+        with open(path, 'w') as f:
+            print('error(0.125) D0 L5', file=f)
+        assert stim.DetectorErrorModel.from_file(path) == stim.DetectorErrorModel('error(0.125) D0 L5')
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        with open(path, 'w') as f:
+            print('error(0.125) D0 L5', file=f)
+        with open(path) as f:
+            assert stim.DetectorErrorModel.from_file(f) == stim.DetectorErrorModel('error(0.125) D0 L5')
+
+    with pytest.raises(ValueError, match="how to read"):
+        stim.DetectorErrorModel.from_file(object())
+    with pytest.raises(ValueError, match="how to read"):
+        stim.DetectorErrorModel.from_file(123)
+
+
+def test_dem_to_file():
+    c = stim.DetectorErrorModel('error(0.125) D0 L5\n')
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        c.to_file(path)
+        with open(path) as f:
+            assert f.read() == 'error(0.125) D0 L5\n'
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = pathlib.Path(tmpdir) / 'tmp.stim'
+        c.to_file(path)
+        with open(path) as f:
+            assert f.read() == 'error(0.125) D0 L5\n'
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        with open(path, 'w') as f:
+            c.to_file(f)
+        with open(path) as f:
+            assert f.read() == 'error(0.125) D0 L5\n'
+
+    with pytest.raises(ValueError, match="how to write"):
+        c.to_file(object())
+    with pytest.raises(ValueError, match="how to write"):
+        c.to_file(123)

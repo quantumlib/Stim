@@ -59,6 +59,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/io/measure_record.cc
         src/stim/io/measure_record_reader.cc
         src/stim/io/measure_record_writer.cc
+        src/stim/io/raii_file.cc
         src/stim/io/stim_data_formats.cc
         src/stim/io/sparse_shot.cc
         src/stim/main_namespaced.cc

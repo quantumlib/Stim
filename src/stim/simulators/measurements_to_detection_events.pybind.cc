@@ -15,6 +15,7 @@
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 
 #include "stim/circuit/circuit.pybind.h"
+#include "stim/io/raii_file.h"
 #include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/detection_simulator.h"
@@ -45,34 +46,6 @@ std::string CompiledMeasurementsToDetectionEventsConverter::repr() const {
     }
     result << ")";
     return result.str();
-}
-
-RaiiFile::RaiiFile(const char *path, const char *mode) {
-    if (path == nullptr) {
-        f = nullptr;
-        return;
-    }
-
-    f = fopen(path, mode);
-    if (f == nullptr) {
-        std::stringstream ss;
-        ss << "Failed to open '";
-        ss << path;
-        ss << "' for ";
-        if (*mode == 'r') {
-            ss << "reading.";
-        } else {
-            ss << "writing.";
-        }
-        throw std::invalid_argument(ss.str());
-    }
-}
-
-RaiiFile::~RaiiFile() {
-    if (f != nullptr) {
-        fclose(f);
-        f = nullptr;
-    }
 }
 
 void CompiledMeasurementsToDetectionEventsConverter::convert_file(

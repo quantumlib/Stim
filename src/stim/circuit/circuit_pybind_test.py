@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pathlib
+import tempfile
 from typing import cast
 
 import stim
@@ -851,3 +853,56 @@ def test_flattened():
 def test_complex_slice_does_not_seg_fault():
     with pytest.raises(TypeError):
         _ = stim.Circuit()[1j]
+
+
+def test_circuit_from_file():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        with open(path, 'w') as f:
+            print('H 5', file=f)
+        assert stim.Circuit.from_file(path) == stim.Circuit('H 5')
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = pathlib.Path(tmpdir) / 'tmp.stim'
+        with open(path, 'w') as f:
+            print('H 5', file=f)
+        assert stim.Circuit.from_file(path) == stim.Circuit('H 5')
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        with open(path, 'w') as f:
+            print('CNOT 4 5', file=f)
+        with open(path) as f:
+            assert stim.Circuit.from_file(f) == stim.Circuit('CX 4 5')
+
+    with pytest.raises(ValueError, match="how to read"):
+        stim.Circuit.from_file(object())
+    with pytest.raises(ValueError, match="how to read"):
+        stim.Circuit.from_file(123)
+
+
+def test_circuit_to_file():
+    c = stim.Circuit('H 5\ncnot 0 1')
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        c.to_file(path)
+        with open(path) as f:
+            assert f.read() == 'H 5\nCX 0 1\n'
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = pathlib.Path(tmpdir) / 'tmp.stim'
+        c.to_file(path)
+        with open(path) as f:
+            assert f.read() == 'H 5\nCX 0 1\n'
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = tmpdir + '/tmp.stim'
+        with open(path, 'w') as f:
+            c.to_file(f)
+        with open(path) as f:
+            assert f.read() == 'H 5\nCX 0 1\n'
+
+    with pytest.raises(ValueError, match="how to write"):
+        c.to_file(object())
+    with pytest.raises(ValueError, match="how to write"):
+        c.to_file(123)
