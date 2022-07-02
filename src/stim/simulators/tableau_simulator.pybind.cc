@@ -372,6 +372,112 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "do_pauli_string",
+        [](PyTableauSimulator &self, PyPauliString &pauli_string) {
+            self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
+            self.paulis(pauli_string.value);
+        },
+        pybind11::arg("pauli_string"),
+        clean_doc_string(u8R"DOC(
+            Applies the paulis from a pauli string to the simulator's state.
+
+            Args:
+                pauli_string: A stim.PauliString containing Paulis to apply.
+
+            Examples:
+                >>> s = stim.TableauSimulator()
+                >>> s.do_pauli_string(stim.PauliString("IXYZ"))
+                >>> s.measure_many(0, 1, 2, 3)
+                [False, True, True, False]
+        )DOC")
+            .data());
+
+    c.def(
+        "do_circuit",
+        &PyTableauSimulator::expand_do_circuit,
+        pybind11::arg("circuit"),
+        clean_doc_string(u8R"DOC(
+            Applies a circuit to the simulator's state.
+
+            Args:
+                circuit: A stim.Circuit containing operations to apply.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.do_circuit(stim.Circuit('''
+                ...     X 0
+                ...     M 0
+                ... '''))
+                >>> s.current_measurement_record()
+                [True]
+        )DOC")
+            .data());
+
+    c.def(
+        "do_tableau",
+        [](PyTableauSimulator &self, const Tableau &tableau, const std::vector<size_t> &targets) {
+            if (targets.size() != tableau.num_qubits) {
+                throw std::invalid_argument("len(tableau) != len(targets)");
+            }
+            size_t max_target = 0;
+            for (size_t i = 0; i < targets.size(); i++) {
+                max_target = std::max(max_target, targets[i]);
+                for (size_t j = i + 1; j < targets.size(); j++) {
+                    if (targets[i] == targets[j]) {
+                        std::stringstream ss;
+                        ss << "targets contains duplicates: ";
+                        ss << comma_sep(targets);
+                        throw std::invalid_argument(ss.str());
+                    }
+                }
+            }
+            self.ensure_large_enough_for_qubits(max_target + 1);
+            self.apply_tableau(tableau, targets);
+        },
+        pybind11::arg("tableau"),
+        pybind11::arg("targets"),
+        clean_doc_string(u8R"DOC(
+            Applies a custom tableau operation to qubits in the simulator.
+
+            Note that this method has to compute the inverse of the tableau, because the
+            simulator's internal state is an inverse tableau.
+
+            Args:
+                tableau: A stim.Tableau representing the Clifford operation to apply.
+                targets: The indices of the qubits to operate on.
+
+            Examples:
+                >>> import stim
+                >>> sim = stim.TableauSimulator()
+                >>> sim.h(1)
+                >>> sim.h_yz(2)
+                >>> [str(sim.peek_block(k)) for k in range(4)]
+                ['+Z', '+X', '+Y', '+Z']
+                >>> rot3 = stim.Tableau.from_conjugated_generators(
+                ...     xs=[
+                ...         stim.PauliString("_X_"),
+                ...         stim.PauliString("__X"),
+                ...         stim.PauliString("X__"),
+                ...     ],
+                ...     zs=[
+                ...         stim.PauliString("_Z_"),
+                ...         stim.PauliString("__Z"),
+                ...         stim.PauliString("Z__"),
+                ...     ],
+                ... )
+
+                >>> sim.do_tableau(rot3, [1, 2, 3])
+                >>> [str(sim.peek_block(k)) for k in range(4)]
+                ['+Z', '+Z', '+X', '+Y']
+
+                >>> sim.do_tableau(rot3, [1, 2, 3])
+                >>> [str(sim.peek_block(k)) for k in range(4)]
+                ['+Z', '+Y', '+Z', '+X']
+        )DOC")
+            .data());
+
+    c.def(
         "h",
         [](PyTableauSimulator &self, pybind11::args args) {
             self.H_XZ(args_to_targets(self, args));

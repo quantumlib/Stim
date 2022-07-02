@@ -675,15 +675,15 @@ TEST(tableau, inverse) {
     }
 }
 
-TEST(tableau, prepend_pauli) {
+TEST(tableau, prepend_pauli_product) {
     Tableau t = Tableau::random(6, SHARED_TEST_RNG());
     Tableau ref = t;
-    t.prepend(PauliString::from_str("_XYZ__"));
+    t.prepend_pauli_product(PauliString::from_str("_XYZ__"));
     ref.prepend_X(1);
     ref.prepend_Y(2);
     ref.prepend_Z(3);
     ASSERT_EQ(t, ref);
-    t.prepend(PauliString::from_str("Y_ZX__"));
+    t.prepend_pauli_product(PauliString::from_str("Y_ZX__"));
     ref.prepend_X(3);
     ref.prepend_Y(0);
     ref.prepend_Z(2);
