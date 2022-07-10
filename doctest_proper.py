@@ -8,15 +8,51 @@ import sys
 from typing import Dict
 
 
+SKIPPED_FIELDS = {
+    '__base__',
+    '__name__',
+    '__path__',
+    '__spec__',
+    '__version__',
+    '__package__',
+    '__subclasshook__',
+    '__abstractmethods__',
+    '__bases__',
+    '__basicsize__',
+    '__class__',
+    '__builtins__',
+    '__cached__',
+    '__doc__',
+    '__loader__',
+    '__file__',
+}
+
+def wrap(v, fullname):
+    def standin():
+        pass
+    standin.__doc__ = v.__doc__
+    standin.__qualname__ = fullname
+    return standin
+
+
 def gen(*, obj: object, fullname: str, out: Dict[str, object]) -> None:
-    if inspect.isfunction(obj) or inspect.ismethod(obj):
-        out[fullname] = obj
-    if not inspect.ismodule(obj) and not inspect.isclass(obj):
+    if obj is None:
         return
-    out[fullname] = obj
+    if inspect.isfunction(obj) or inspect.ismethod(obj) or inspect.isbuiltin(obj) or inspect.isroutine(obj):
+        if hasattr(obj, '__doc__'):
+            out[fullname] = obj
+        return
+    if not inspect.ismodule(obj) and not inspect.isclass(obj):
+        if hasattr(obj, '__doc__'):
+            out[fullname] = wrap(obj, fullname)
+        return
+    if hasattr(obj, '__doc__'):
+        out[fullname] = obj
 
     for sub_name in dir(obj):
-        if sub_name.startswith('_'):
+        if sub_name in SKIPPED_FIELDS:
+            continue
+        if sub_name.startswith('__pybind11_module'):
             continue
         sub_obj = getattr(obj, sub_name, None)
         if inspect.ismodule(sub_obj):
@@ -49,7 +85,7 @@ def main():
         module = __import__(module_name)
         out = {}
         gen(obj=module, fullname=module_name, out=out)
-        module.__test__ = {k: v for k, v in out.items() if '__' not in k}
+        module.__test__ = {k: v for k, v in out.items()}
         if doctest.testmod(module, globs=globs).failed:
             any_failed = True
     if any_failed:
