@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #########################################################
 # Sets version numbers to a date-based dev version.
 #

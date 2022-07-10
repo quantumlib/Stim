@@ -63,32 +63,36 @@ A *spandrel* is an implementation detail that has observable effects, but which 
 # <a name="release-checklist"></a>Releasing a new version
 
 - Create an off-main-branch release commit
-    - Update version to `vX.Y.Z` in all setup.py files
-    - Commit changes
-    - `git tag vX.Y.Z`
-    - Push tag to github
-    - Check github `Actions` tab and confirm ci is running on the tag
-    - Wait for ci to finish validating and producing artifacts for the tag
-    - Get `stim` wheels [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
-    - Build `stimcirq` sdist on this tag [using python setup.py sdist](#pypackage.stimcirq.python)
-    - Build `sinter` sdist on this tag [using python setup.py sdist](#pypackage.sinter.python)
-    - Combine `stim`, `stimcirq`, and `sinter` package files into one directory
+    - [ ] `git checkout main -b SOMEBRANCHNAME`
+    - [ ] Update version to `vX.Y.Z` in `setup.py` (at repo root)
+    - [ ] Update version to `vX.Y.Z` in `glue/cirq/setup.py`
+    - [ ] Update version to `vX.Y.Z` in `glue/sinter/setup.py`
+    - [ ] Update version to `vX.Y.Z` in `glue/stimzx/setup.py`
+    - [ ] `git commit -a -m "Bump to vX.Y.Z"`
+    - [ ] `git tag vX.Y.Z`
+    - [ ] Push tag to github
+    - [ ] Check github `Actions` tab and confirm ci is running on the tag
+    - [ ] Wait for ci to finish validating and producing artifacts for the tag
+    - [ ] Get `stim` wheels [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
+    - [ ] Build `stimcirq` sdist on this tag [using python setup.py sdist](#pypackage.stimcirq.python)
+    - [ ] Build `sinter` sdist on this tag [using python setup.py sdist](#pypackage.sinter.python)
+    - [ ] Combine `stim`, `stimcirq`, and `sinter` package files into one directory
 - Bump to next dev version on main branch
-    - Update version to `vX.Y.dev0` in all setup.py files
-    - Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
-    - Push to github as a branch and merge into main using a pull request
+    - [ ] Update version to `vX.(Y+1).dev0` in all setup.py files
+    - [ ] Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
+    - [ ] Push to github as a branch and merge into main using a pull request
 - Write release notes on github
-    - In title, use two-word themeing of most important changes
-    - Flagship changes section
-    - Notable changes section
-    - Include wheels/sdists as attachments
+    - [ ] In title, use two-word themeing of most important changes
+    - [ ] Flagship changes section
+    - [ ] Notable changes section
+    - [ ] Include wheels/sdists as attachments
 - Do these irreversible and public viewable steps last!
-    - Upload wheels/sdists to pypi using `twine`
-    - Publish the github release notes
-    - Add gates reference page to wiki for the new version
-    - Add python api reference page to wiki for the new version
-    - Update main wiki page to point to latest reference pages
-    - Tweet about the release
+    - [ ] Upload wheels/sdists to pypi using `twine`
+    - [ ] Publish the github release notes
+    - [ ] Add gates reference page to wiki for the new version
+    - [ ] Add python api reference page to wiki for the new version
+    - [ ] Update main wiki page to point to latest reference pages
+    - [ ] Tweet about the release
 
 
 # <a name="build"></a>Building `stim` command line tool
