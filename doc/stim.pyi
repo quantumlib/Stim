@@ -3716,7 +3716,8 @@ class Tableau:
             >>> t3(p) == t2(t1(p))
             True
         """
-    def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.float32]:
+    def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
+
         """Converts the tableau into a unitary matrix.
 
         Args:
@@ -4673,7 +4674,8 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
-    def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.float32]:
+    def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
+
         """Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
         This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
@@ -4695,7 +4697,7 @@ class TableauSimulator:
             the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
             qubit with index 1 is storing the bit b_1, etc.
 
-            If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+            If the result is in big endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
             the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
             qubit with index 1 is storing the bit b_{n-2}, etc.
 

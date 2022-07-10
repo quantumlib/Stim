@@ -308,13 +308,13 @@ from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Itera
 import io
 import pathlib
 import numpy as np
-import stim
 ```
 
 <a name="stim.Circuit"></a>
 ```python
 # stim.Circuit
 
+# (at top-level in the stim module)
 class Circuit:
     """A mutable stabilizer circuit.
 
@@ -1686,6 +1686,7 @@ def without_noise(self) -> stim.Circuit:
 ```python
 # stim.CircuitErrorLocation
 
+# (at top-level in the stim module)
 class CircuitErrorLocation:
     """Describes the location of an error mechanism from a stim circuit.
     """
@@ -1767,6 +1768,7 @@ def tick_offset(self) -> int:
 ```python
 # stim.CircuitErrorLocationStackFrame
 
+# (at top-level in the stim module)
 class CircuitErrorLocationStackFrame:
     """Describes the location of an instruction being executed within a
     circuit or loop, distinguishing between separate loop iterations.
@@ -1832,6 +1834,7 @@ def iteration_index(self) -> int:
 ```python
 # stim.CircuitInstruction
 
+# (at top-level in the stim module)
 class CircuitInstruction:
     """An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
 
@@ -1946,6 +1949,7 @@ def targets_copy(self) -> List[stim.GateTarget]:
 ```python
 # stim.CircuitRepeatBlock
 
+# (at top-level in the stim module)
 class CircuitRepeatBlock:
     """A REPEAT block from a circuit.
 
@@ -2070,6 +2074,7 @@ def repeat_count(self) -> int:
 ```python
 # stim.CircuitTargetsInsideInstruction
 
+# (at top-level in the stim module)
 class CircuitTargetsInsideInstruction:
     """Describes a range of targets within a circuit instruction.
     """
@@ -2149,6 +2154,7 @@ def targets_in_range(self) -> List[stim.GateTargetWithCoords]:
 ```python
 # stim.CompiledDetectorSampler
 
+# (at top-level in the stim module)
 class CompiledDetectorSampler:
     """An analyzed stabilizer circuit whose detection events can be sampled quickly.
     """
@@ -2313,6 +2319,7 @@ def sample_write(self, shots: int, *, filepath: str, format: str = '01', prepend
 ```python
 # stim.CompiledMeasurementSampler
 
+# (at top-level in the stim module)
 class CompiledMeasurementSampler:
     """An analyzed stabilizer circuit whose measurements can be sampled quickly.
     """
@@ -2485,6 +2492,7 @@ def sample_write(self, shots: int, *, filepath: str, format: str = '01') -> None
 ```python
 # stim.CompiledMeasurementsToDetectionEventsConverter
 
+# (at top-level in the stim module)
 class CompiledMeasurementsToDetectionEventsConverter:
     """A tool for quickly converting measurements from an analyzed stabilizer circuit into detection events.
     """
@@ -2677,6 +2685,7 @@ def convert_file(self, *, measurements_filepath: str, measurements_format: str =
 ```python
 # stim.DemInstruction
 
+# (at top-level in the stim module)
 class DemInstruction:
     """An instruction from a detector error model.
 
@@ -2792,6 +2801,7 @@ def type(self) -> str:
 ```python
 # stim.DemRepeatBlock
 
+# (at top-level in the stim module)
 class DemRepeatBlock:
     """A repeat block from a detector error model.
 
@@ -2887,6 +2897,7 @@ def repeat_count(self) -> int:
 ```python
 # stim.DemTarget
 
+# (at top-level in the stim module)
 class DemTarget:
     """An instruction target from a detector error model (.dem) file.
     """
@@ -3065,6 +3076,7 @@ def val(self) -> int:
 ```python
 # stim.DemTargetWithCoords
 
+# (at top-level in the stim module)
 class DemTargetWithCoords:
     """A detector error model instruction target with associated coords.
 
@@ -3121,6 +3133,7 @@ def dem_target(self) -> stim.DemTarget:
 ```python
 # stim.DetectorErrorModel
 
+# (at top-level in the stim module)
 class DetectorErrorModel:
     """A list of instructions describing error mechanisms in terms of the detection events they produce.
 
@@ -3873,6 +3886,7 @@ def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
 ```python
 # stim.ExplainedError
 
+# (at top-level in the stim module)
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.
     """
@@ -3922,6 +3936,7 @@ def dem_error_terms(self) -> List[stim.DemTargetWithCoords]:
 ```python
 # stim.FlippedMeasurement
 
+# (at top-level in the stim module)
 class FlippedMeasurement:
     """Describes a measurement that was flipped.
 
@@ -3970,6 +3985,7 @@ def record_index(self) -> int:
 ```python
 # stim.GateTarget
 
+# (at top-level in the stim module)
 class GateTarget:
     """Represents a gate target, like `0` or `rec[-1]`, from a circuit.
 
@@ -4134,6 +4150,7 @@ def value(self) -> int:
 ```python
 # stim.GateTargetWithCoords
 
+# (at top-level in the stim module)
 class GateTargetWithCoords:
     """A gate target with associated coordinate information.
 
@@ -4186,6 +4203,7 @@ def gate_target(self) -> stim.GateTarget:
 ```python
 # stim.PauliString
 
+# (at top-level in the stim module)
 class PauliString:
     """A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
@@ -4826,6 +4844,7 @@ def sign(self, value: complex):
 ```python
 # stim.Tableau
 
+# (at top-level in the stim module)
 class Tableau:
     """A stabilizer tableau.
 
@@ -5560,7 +5579,8 @@ def then(self, second: stim.Tableau) -> stim.Tableau:
 # stim.Tableau.to_unitary_matrix
 
 # (in class stim.Tableau)
-def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.float32]:
+def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
+
     """Converts the tableau into a unitary matrix.
 
     Args:
@@ -5792,6 +5812,7 @@ def z_output_pauli(self, input_index: int, output_index: int) -> int:
 ```python
 # stim.TableauSimulator
 
+# (at top-level in the stim module)
 class TableauSimulator:
     """A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
 
@@ -6880,7 +6901,8 @@ def sqrt_y_dag(self, *targets) -> None:
 # stim.TableauSimulator.state_vector
 
 # (in class stim.TableauSimulator)
-def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.float32]:
+def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
+
     """Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
     This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
@@ -6902,7 +6924,7 @@ def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.float32]:
         the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
         qubit with index 1 is storing the bit b_1, etc.
 
-        If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+        If the result is in big endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
         the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
         qubit with index 1 is storing the bit b_{n-2}, etc.
 
@@ -7116,6 +7138,7 @@ def zcz(self, *targets) -> None:
 ```python
 # stim.main
 
+# (at top-level in the stim module)
 def main(*, command_line_args: List[str]) -> int:
     """Runs the command line tool version of stim on the given arguments.
 
@@ -7192,6 +7215,7 @@ def main(*, command_line_args: List[str]) -> int:
 ```python
 # stim.read_shot_data_file
 
+# (at top-level in the stim module)
 def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
 
     """Reads shot data, such as measurement samples, from a file.
@@ -7244,6 +7268,7 @@ def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, nu
 ```python
 # stim.target_combiner
 
+# (at top-level in the stim module)
 def target_combiner() -> stim.GateTarget:
     """Returns a target combiner (`*` in circuit files) that can be used as an operation target.
     """
@@ -7253,6 +7278,7 @@ def target_combiner() -> stim.GateTarget:
 ```python
 # stim.target_inv
 
+# (at top-level in the stim module)
 def target_inv(qubit_index: int) -> stim.GateTarget:
     """Returns a target flagged as inverted that can be passed into Circuit.append_operation
     For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
@@ -7264,6 +7290,7 @@ def target_inv(qubit_index: int) -> stim.GateTarget:
 ```python
 # stim.target_logical_observable_id
 
+# (at top-level in the stim module)
 def target_logical_observable_id(index: int) -> stim.DemTarget:
     """Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
 
@@ -7290,6 +7317,7 @@ def target_logical_observable_id(index: int) -> stim.DemTarget:
 ```python
 # stim.target_rec
 
+# (at top-level in the stim module)
 def target_rec(lookback_index: int) -> stim.GateTarget:
     """Returns a record target that can be passed into Circuit.append_operation.
     For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
@@ -7300,6 +7328,7 @@ def target_rec(lookback_index: int) -> stim.GateTarget:
 ```python
 # stim.target_relative_detector_id
 
+# (at top-level in the stim module)
 def target_relative_detector_id(index: int) -> stim.DemTarget:
     """Returns a relative detector id (e.g. "D5" in a .dem file).
 
@@ -7326,6 +7355,7 @@ def target_relative_detector_id(index: int) -> stim.DemTarget:
 ```python
 # stim.target_separator
 
+# (at top-level in the stim module)
 def target_separator() -> stim.DemTarget:
     """Returns a target separator (e.g. "^" in a .dem file).
 
@@ -7348,6 +7378,7 @@ def target_separator() -> stim.DemTarget:
 ```python
 # stim.target_sweep_bit
 
+# (at top-level in the stim module)
 def target_sweep_bit(sweep_bit_index: int) -> stim.GateTarget:
     """Returns a sweep bit target that can be passed into Circuit.append_operation
     For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
@@ -7358,6 +7389,7 @@ def target_sweep_bit(sweep_bit_index: int) -> stim.GateTarget:
 ```python
 # stim.target_x
 
+# (at top-level in the stim module)
 def target_x(qubit_index: int, invert: bool = False) -> stim.GateTarget:
     """Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
     For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
@@ -7368,6 +7400,7 @@ def target_x(qubit_index: int, invert: bool = False) -> stim.GateTarget:
 ```python
 # stim.target_y
 
+# (at top-level in the stim module)
 def target_y(qubit_index: int, invert: bool = False) -> stim.GateTarget:
     """Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
     For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
@@ -7378,6 +7411,7 @@ def target_y(qubit_index: int, invert: bool = False) -> stim.GateTarget:
 ```python
 # stim.target_z
 
+# (at top-level in the stim module)
 def target_z(qubit_index: int, invert: bool = False) -> stim.GateTarget:
     """Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
     For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
@@ -7388,6 +7422,7 @@ def target_z(qubit_index: int, invert: bool = False) -> stim.GateTarget:
 ```python
 # stim.write_shot_data_file
 
+# (at top-level in the stim module)
 def write_shot_data_file(*, data: object, path: str, format: str, num_measurements: Any = None, num_detectors: Any = None, num_observables: Any = None) -> None:
     """Writes shot data, such as measurement samples, to a file.
 

@@ -88,7 +88,6 @@ from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Itera
 import io
 import pathlib
 import numpy as np
-import stim
 ```
 '''.strip())
 
@@ -100,6 +99,8 @@ import stim
         print()
         if len(obj.full_name.split('.')) > 2:
             print(f'# (in class {".".join(obj.full_name.split(".")[:-1])})')
+        else:
+            print(f'# (at top-level in the stim module)')
         print('\n'.join(obj.lines))
         print("```")
 

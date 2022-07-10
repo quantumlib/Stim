@@ -222,6 +222,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
         clean_doc_string(u8R"DOC(
+            @signature def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
             Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
             This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
