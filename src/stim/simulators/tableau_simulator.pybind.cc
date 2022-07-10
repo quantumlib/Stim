@@ -492,6 +492,45 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "h_xz",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.H_XZ(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a Hadamard gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
+        "c_xyz",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.C_XYZ(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a C_XYZ gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
+        "c_zyx",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.C_ZYX(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a C_ZYX gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
         "h_xy",
         [](PyTableauSimulator &self, pybind11::args args) {
             self.H_XY(args_to_targets(self, args));
@@ -695,6 +734,36 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "zcx",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCX(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled X gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
+        "cx",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCX(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled X gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
         "cz",
         [](PyTableauSimulator &self, pybind11::args args) {
             self.ZCZ(args_to_target_pairs(self, args));
@@ -710,7 +779,37 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "zcz",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCZ(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled Z gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
         "cy",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCY(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled Y gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
+        "zcy",
         [](PyTableauSimulator &self, pybind11::args args) {
             self.ZCY(args_to_target_pairs(self, args));
         },
@@ -1234,6 +1333,28 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     orthogonal to the desired state, so it was literally
                     impossible for a measurement of the qubit to return the
                     desired result.
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "num_qubits",
+        [](const PyTableauSimulator &self) -> size_t {
+            return self.inv_state.num_qubits;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns the number of qubits currently being tracked by the simulator's internal state.
+
+            Note that the number of qubits being tracked will implicitly increase if qubits beyond
+            the current limit are touched. Untracked qubits are always assumed to be in the |0> state.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.num_qubits
+                0
+                >>> s.h(2)
+                >>> s.num_qubits
+                3
         )DOC")
             .data());
 

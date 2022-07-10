@@ -187,7 +187,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...         }
                 ...     }
                 ... ''').num_errors
-                502
+                501
         )DOC")
             .data());
 
