@@ -222,6 +222,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
         clean_doc_string(u8R"DOC(
+            @signature def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
             Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
 
             This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
@@ -243,7 +244,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
                 qubit with index 1 is storing the bit b_1, etc.
 
-                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+                If the result is in big endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
                 the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
                 qubit with index 1 is storing the bit b_{n-2}, etc.
 
@@ -385,6 +386,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 pauli_string: A stim.PauliString containing Paulis to apply.
 
             Examples:
+                >>> import stim
                 >>> s = stim.TableauSimulator()
                 >>> s.do_pauli_string(stim.PauliString("IXYZ"))
                 >>> s.measure_many(0, 1, 2, 3)
@@ -452,7 +454,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> sim = stim.TableauSimulator()
                 >>> sim.h(1)
                 >>> sim.h_yz(2)
-                >>> [str(sim.peek_block(k)) for k in range(4)]
+                >>> [str(sim.peek_bloch(k)) for k in range(4)]
                 ['+Z', '+X', '+Y', '+Z']
                 >>> rot3 = stim.Tableau.from_conjugated_generators(
                 ...     xs=[
@@ -468,11 +470,11 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 ... )
 
                 >>> sim.do_tableau(rot3, [1, 2, 3])
-                >>> [str(sim.peek_block(k)) for k in range(4)]
+                >>> [str(sim.peek_bloch(k)) for k in range(4)]
                 ['+Z', '+Z', '+X', '+Y']
 
                 >>> sim.do_tableau(rot3, [1, 2, 3])
-                >>> [str(sim.peek_block(k)) for k in range(4)]
+                >>> [str(sim.peek_bloch(k)) for k in range(4)]
                 ['+Z', '+Y', '+Z', '+X']
         )DOC")
             .data());
@@ -484,6 +486,45 @@ void pybind_tableau_simulator(pybind11::module &m) {
         },
         clean_doc_string(u8R"DOC(
             Applies a Hadamard gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
+        "h_xz",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.H_XZ(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a Hadamard gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
+        "c_xyz",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.C_XYZ(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a C_XYZ gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+        )DOC")
+            .data());
+
+    c.def(
+        "c_zyx",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.C_ZYX(args_to_targets(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a C_ZYX gate to the simulator's state.
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
@@ -694,6 +735,36 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "zcx",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCX(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled X gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
+        "cx",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCX(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled X gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
         "cz",
         [](PyTableauSimulator &self, pybind11::args args) {
             self.ZCZ(args_to_target_pairs(self, args));
@@ -709,7 +780,37 @@ void pybind_tableau_simulator(pybind11::module &m) {
             .data());
 
     c.def(
+        "zcz",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCZ(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled Z gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
         "cy",
+        [](PyTableauSimulator &self, pybind11::args args) {
+            self.ZCY(args_to_target_pairs(self, args));
+        },
+        clean_doc_string(u8R"DOC(
+            Applies a controlled Y gate to the simulator's state.
+
+            Args:
+                *targets: The indices of the qubits to target with the gate.
+                    Applies the gate to the first two targets, then the next two targets, and so forth.
+                    There must be an even number of targets.
+        )DOC")
+            .data());
+
+    c.def(
+        "zcy",
         [](PyTableauSimulator &self, pybind11::args args) {
             self.ZCY(args_to_target_pairs(self, args));
         },
@@ -827,10 +928,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
             Example:
                 >>> import stim
                 >>> s = stim.TableauSimulator()
-                >>> s.X(0)
+                >>> s.x(0)
                 >>> s.reset(0)
                 >>> s.peek_bloch(0)
-                +Z
+                stim.PauliString("+Z")
         )DOC")
             .data());
 
@@ -850,7 +951,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s = stim.TableauSimulator()
                 >>> s.reset_x(0)
                 >>> s.peek_bloch(0)
-                +X
+                stim.PauliString("+X")
         )DOC")
             .data());
 
@@ -870,7 +971,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s = stim.TableauSimulator()
                 >>> s.reset_y(0)
                 >>> s.peek_bloch(0)
-                +Y
+                stim.PauliString("+Y")
         )DOC")
             .data());
 
@@ -888,10 +989,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
             Example:
                 >>> import stim
                 >>> s = stim.TableauSimulator()
-                >>> s.H(0)
+                >>> s.h(0)
                 >>> s.reset_z(0)
                 >>> s.peek_bloch(0)
-                +Z
+                stim.PauliString("+Z")
         )DOC")
             .data());
 
@@ -925,7 +1026,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.reset_x(0)
                 >>> s.peek_x(0)
                 1
-                >>> s.Z(0)
+                >>> s.z(0)
                 >>> s.peek_x(0)
                 -1
         )DOC")
@@ -961,7 +1062,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.reset_y(0)
                 >>> s.peek_y(0)
                 1
-                >>> s.Z(0)
+                >>> s.z(0)
                 >>> s.peek_y(0)
                 -1
         )DOC")
@@ -997,7 +1098,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.reset_z(0)
                 >>> s.peek_z(0)
                 1
-                >>> s.X(0)
+                >>> s.x(0)
                 >>> s.peek_z(0)
                 -1
         )DOC")
@@ -1233,6 +1334,28 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     orthogonal to the desired state, so it was literally
                     impossible for a measurement of the qubit to return the
                     desired result.
+        )DOC")
+            .data());
+
+    c.def_property_readonly(
+        "num_qubits",
+        [](const PyTableauSimulator &self) -> size_t {
+            return self.inv_state.num_qubits;
+        },
+        clean_doc_string(u8R"DOC(
+            Returns the number of qubits currently being tracked by the simulator's internal state.
+
+            Note that the number of qubits being tracked will implicitly increase if qubits beyond
+            the current limit are touched. Untracked qubits are always assumed to be in the |0> state.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.num_qubits
+                0
+                >>> s.h(2)
+                >>> s.num_qubits
+                3
         )DOC")
             .data());
 

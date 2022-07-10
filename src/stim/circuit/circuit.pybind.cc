@@ -156,7 +156,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 >>> c.append("X", 0)
                 >>> c.append("M", 0)
                 >>> c.compile_sampler().sample(shots=1)
-                array([[1]], dtype=uint8)
+                array([[ True]])
 
                 >>> stim.Circuit('''
                 ...    H 0
@@ -164,7 +164,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 ...    M 0 1
                 ...    DETECTOR rec[-1] rec[-2]
                 ... ''').compile_detector_sampler().sample(shots=1)
-                array([[0]], dtype=uint8)
+                array([[False]])
 
         )DOC")
             .data());
@@ -354,7 +354,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
-                array([[0, 0, 1]], dtype=uint8)
+                array([[False, False,  True]])
         )DOC")
             .data());
 
@@ -439,7 +439,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 ... ''')
                 >>> s = c.compile_detector_sampler()
                 >>> s.sample(shots=1)
-                array([[0]], dtype=uint8)
+                array([[False]])
         )DOC")
             .data());
 
@@ -1032,20 +1032,18 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 ...     path = tmpdir + '/tmp.stim'
                 ...     with open(path, 'w') as f:
                 ...         c.to_file(f)
-                ...     with open(path, 'w') as f:
+                ...     with open(path) as f:
                 ...         contents = f.read()
                 >>> contents
-                H 5
-                X 0
+                'H 5\nX 0\n'
 
                 >>> with tempfile.TemporaryDirectory() as tmpdir:
                 ...     path = tmpdir + '/tmp.stim'
                 ...     c.to_file(path)
-                ...     with open(path, 'w') as f:
+                ...     with open(path) as f:
                 ...         contents = f.read()
                 >>> contents
-                H 5
-                X 0
+                'H 5\nX 0\n'
         )DOC")
             .data());
 
@@ -1649,13 +1647,13 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
             Examples:
                 >>> import stim
-                >>> circuit = stim.Circuit('''
+                >>> stim.Circuit('''
                 ...     X_ERROR(0.25) 0
                 ...     CNOT 0 1
                 ...     M(0.125) 0
                 ... ''').without_noise()
                 stim.Circuit('''
-                    CNOT 0 1
+                    CX 0 1
                     M 0
                 ''')
         )DOC")
@@ -1674,7 +1672,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
             Examples:
                 >>> import stim
-                >>> circuit = stim.Circuit('''
+                >>> stim.Circuit('''
                 ...     REPEAT 5 {
                 ...         MR 0 1
                 ...         DETECTOR(0, 0) rec[-2]

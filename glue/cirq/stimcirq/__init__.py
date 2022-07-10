@@ -19,16 +19,3 @@ JSON_RESOLVERS_DICT = {
     "TwoQubitAsymmetricDepolarizingChannel": TwoQubitAsymmetricDepolarizingChannel,
 }
 JSON_RESOLVER = JSON_RESOLVERS_DICT.get
-
-# Workaround for doctest not searching imported objects.
-__test__ = {
-    "cirq_circuit_to_stim_circuit": cirq_circuit_to_stim_circuit,
-    "CumulativeObservableAnnotation": CumulativeObservableAnnotation,
-    "DetAnnotation": DetAnnotation,
-    "MeasureAndOrResetGate": MeasureAndOrResetGate,
-    "ShiftCoordsAnnotation": ShiftCoordsAnnotation,
-    "stim_circuit_to_cirq_circuit": stim_circuit_to_cirq_circuit,
-    "StimSampler": StimSampler,
-    "SweepPauli": SweepPauli,
-    "TwoQubitAsymmetricDepolarizingChannel": TwoQubitAsymmetricDepolarizingChannel,
-}

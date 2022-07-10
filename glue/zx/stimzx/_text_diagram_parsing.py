@@ -18,8 +18,9 @@ def text_diagram_to_networkx_graph(text_diagram: str, *, value_func: Callable[[s
 
     Example:
 
+        >>> import stimzx
         >>> import networkx as nx
-        >>> actual = text_diagram_to_networkx_graph(r'''
+        >>> actual = stimzx.text_diagram_to_networkx_graph(r'''
         ...
         ...           A
         ...           |

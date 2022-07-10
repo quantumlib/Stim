@@ -343,15 +343,13 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
                 array([[False, False],
                        [False, False],
                        [False, False],
-                       [ True, False],
-                       [False, False],
+                       [False,  True],
                        [False, False]])
                 >>> obs
                 array([[False],
                        [False],
                        [False],
                        [ True],
-                       [False],
                        [False]])
         )DOC")
             .data());

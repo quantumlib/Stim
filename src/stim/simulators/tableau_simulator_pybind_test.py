@@ -466,3 +466,48 @@ def test_do_tableau():
         s.do_tableau(stim.Tableau(3), [2, 3, 2])
 
     s.do_tableau(stim.Tableau(0), [])
+
+
+def test_c_xyz_zyx():
+    s = stim.TableauSimulator()
+    s.c_xyz(0, 2)
+    s.c_zyx(1, 2)
+    assert s.peek_bloch(0) == stim.PauliString("X")
+    assert s.peek_bloch(1) == stim.PauliString("Y")
+    assert s.peek_bloch(2) == stim.PauliString("Z")
+
+
+def test_gate_aliases():
+    s = stim.TableauSimulator()
+    s.h_xz(0)
+    assert s.peek_bloch(0) == stim.PauliString("X")
+
+    s.zcx(0, 1)
+    assert s.canonical_stabilizers() == [
+        stim.PauliString("+XX"),
+        stim.PauliString("+ZZ")
+    ]
+    s.cx(0, 1)
+    assert s.canonical_stabilizers() == [
+        stim.PauliString("+X_"),
+        stim.PauliString("+_Z")
+    ]
+
+    s.zcy(0, 1)
+    assert s.canonical_stabilizers() == [
+        stim.PauliString("+XY"),
+        stim.PauliString("+ZZ")
+    ]
+
+    s.zcz(0, 1)
+    assert s.canonical_stabilizers() == [
+        stim.PauliString("-XY"),
+        stim.PauliString("+ZZ")
+    ]
+
+
+def test_num_qubits():
+    s = stim.TableauSimulator()
+    assert s.num_qubits == 0
+    s.cx(3, 1)
+    assert s.num_qubits == 4

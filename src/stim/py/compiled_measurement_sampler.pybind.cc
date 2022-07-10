@@ -158,7 +158,7 @@ void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasur
                 ... ''')
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
-                array([[1, 0, 1, 1]], dtype=uint8)
+                array([[ True, False,  True,  True]])
         )DOC")
             .data());
 
@@ -177,7 +177,7 @@ void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasur
                 ... ''')
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
-                array([[1, 0, 1, 1]], dtype=uint8)
+                array([[ True, False,  True,  True]])
 
             Args:
                 shots: The number of times to sample every measurement in the circuit.

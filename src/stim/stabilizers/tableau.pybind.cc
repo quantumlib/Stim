@@ -135,6 +135,7 @@ void pybind_tableau(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("endian"),
         clean_doc_string(u8R"DOC(
+            @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
             Converts the tableau into a unitary matrix.
 
             Args:

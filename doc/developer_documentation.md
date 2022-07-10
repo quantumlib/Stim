@@ -40,7 +40,7 @@ These notes generally assume you are on a Linux system.
 - [autoformating code](#autoformat)
     - [with clang-format](#autoformat.clang-format)
 
-# <a name="compatibility></a>Compatibility guarantees across versions
+# <a name="compatibility"></a>Compatibility guarantees across versions
 
 A *bug* is bad behavior that wasn't intended. For example, the program crashing instead of returning empty results when sampling from an empty circuit would be a bug.
 
@@ -410,17 +410,20 @@ See [creating a python dev environment](#venv) for instructions on creating a
 python virtual environment with your changes to stim installed.
 
 Unit tests are run using `pytest`.
-Examples in docstrings are tested using `doctest`.
+Examples in docstrings are tested using the `doctest_proper` script at the repo root,
+which uses python's [`doctest`](https://docs.python.org/3/library/doctest.html) module
+but ensures values added to a module at import time are also tested (instead of requiring
+them to be [manually listed in a `__test__` property](https://docs.python.org/3/library/doctest.html#which-docstrings-are-examined)).
 
 To test everything:
 
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest src glue
-python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
-python -c "import stimcirq; import doctest; assert doctest.testmod(stimcirq).failed == 0"
-python -c "import sinter; import doctest; assert doctest.testmod(sinter).failed == 0"
-python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
+./doctest_proper.py --module stim
+./doctest_proper.py --module stimcirq --import cirq sympy
+./doctest_proper.py --module sinter
+./doctest_proper.py --module stimzx
 ```
 
 Test only `stim`:
@@ -428,7 +431,7 @@ Test only `stim`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest src
-python -c "import stim; import doctest; assert doctest.testmod(stim).failed == 0"
+./doctest_proper.py --module stim
 ```
 
 Test only `stimcirq`:
@@ -436,7 +439,7 @@ Test only `stimcirq`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/cirq
-python -c "import stimcirq; import doctest; assert doctest.testmod(sitmcirq).failed == 0"
+./doctest_proper.py --module stimcirq --import cirq sympy
 ```
 
 Test only `sinter`:
@@ -444,7 +447,7 @@ Test only `sinter`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/sample
-python -c "import sinter; import doctest; assert doctest.testmod(sinter).failed == 0"
+./doctest_proper.py --module sinter
 ```
 
 Test only `stimzx`:
@@ -452,7 +455,7 @@ Test only `stimzx`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/zx
-python -c "import stimzx; import doctest; assert doctest.testmod(stimzx).failed == 0"
+./doctest_proper.py --module stimzx
 ```
 
 
