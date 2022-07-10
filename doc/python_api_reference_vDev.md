@@ -231,11 +231,14 @@
     - [`stim.Tableau.z_output`](#stim.Tableau.z_output)
     - [`stim.Tableau.z_output_pauli`](#stim.Tableau.z_output_pauli)
 - [`stim.TableauSimulator`](#stim.TableauSimulator)
+    - [`stim.TableauSimulator.c_xyz`](#stim.TableauSimulator.c_xyz)
+    - [`stim.TableauSimulator.c_zyx`](#stim.TableauSimulator.c_zyx)
     - [`stim.TableauSimulator.canonical_stabilizers`](#stim.TableauSimulator.canonical_stabilizers)
     - [`stim.TableauSimulator.cnot`](#stim.TableauSimulator.cnot)
     - [`stim.TableauSimulator.copy`](#stim.TableauSimulator.copy)
     - [`stim.TableauSimulator.current_inverse_tableau`](#stim.TableauSimulator.current_inverse_tableau)
     - [`stim.TableauSimulator.current_measurement_record`](#stim.TableauSimulator.current_measurement_record)
+    - [`stim.TableauSimulator.cx`](#stim.TableauSimulator.cx)
     - [`stim.TableauSimulator.cy`](#stim.TableauSimulator.cy)
     - [`stim.TableauSimulator.cz`](#stim.TableauSimulator.cz)
     - [`stim.TableauSimulator.do`](#stim.TableauSimulator.do)
@@ -244,12 +247,14 @@
     - [`stim.TableauSimulator.do_tableau`](#stim.TableauSimulator.do_tableau)
     - [`stim.TableauSimulator.h`](#stim.TableauSimulator.h)
     - [`stim.TableauSimulator.h_xy`](#stim.TableauSimulator.h_xy)
+    - [`stim.TableauSimulator.h_xz`](#stim.TableauSimulator.h_xz)
     - [`stim.TableauSimulator.h_yz`](#stim.TableauSimulator.h_yz)
     - [`stim.TableauSimulator.iswap`](#stim.TableauSimulator.iswap)
     - [`stim.TableauSimulator.iswap_dag`](#stim.TableauSimulator.iswap_dag)
     - [`stim.TableauSimulator.measure`](#stim.TableauSimulator.measure)
     - [`stim.TableauSimulator.measure_kickback`](#stim.TableauSimulator.measure_kickback)
     - [`stim.TableauSimulator.measure_many`](#stim.TableauSimulator.measure_many)
+    - [`stim.TableauSimulator.num_qubits`](#stim.TableauSimulator.num_qubits)
     - [`stim.TableauSimulator.peek_bloch`](#stim.TableauSimulator.peek_bloch)
     - [`stim.TableauSimulator.peek_observable_expectation`](#stim.TableauSimulator.peek_observable_expectation)
     - [`stim.TableauSimulator.peek_x`](#stim.TableauSimulator.peek_x)
@@ -281,6 +286,9 @@
     - [`stim.TableauSimulator.ycy`](#stim.TableauSimulator.ycy)
     - [`stim.TableauSimulator.ycz`](#stim.TableauSimulator.ycz)
     - [`stim.TableauSimulator.z`](#stim.TableauSimulator.z)
+    - [`stim.TableauSimulator.zcx`](#stim.TableauSimulator.zcx)
+    - [`stim.TableauSimulator.zcy`](#stim.TableauSimulator.zcy)
+    - [`stim.TableauSimulator.zcz`](#stim.TableauSimulator.zcz)
 - [`stim.main`](#stim.main)
 - [`stim.read_shot_data_file`](#stim.read_shot_data_file)
 - [`stim.target_combiner`](#stim.target_combiner)
@@ -315,7 +323,7 @@ class Circuit:
         >>> c.append("X", 0)
         >>> c.append("M", 0)
         >>> c.compile_sampler().sample(shots=1)
-        array([[1]], dtype=uint8)
+        array([[ True]])
 
         >>> stim.Circuit('''
         ...    H 0
@@ -323,7 +331,7 @@ class Circuit:
         ...    M 0 1
         ...    DETECTOR rec[-1] rec[-2]
         ... ''').compile_detector_sampler().sample(shots=1)
-        array([[0]], dtype=uint8)
+        array([[False]])
 
     """
 ```
@@ -794,7 +802,7 @@ def compile_detector_sampler(self, *, seed: object = None) -> stim.CompiledDetec
         ... ''')
         >>> s = c.compile_detector_sampler()
         >>> s.sample(shots=1)
-        array([[0]], dtype=uint8)
+        array([[False]])
     """
 ```
 
@@ -885,7 +893,7 @@ def compile_sampler(self, *, skip_reference_sample: bool = False, seed: object =
         ... ''')
         >>> s = c.compile_sampler()
         >>> s.sample(shots=1)
-        array([[0, 0, 1]], dtype=uint8)
+        array([[False, False,  True]])
     """
 ```
 
@@ -1050,7 +1058,7 @@ def flattened(self) -> stim.Circuit:
 
     Examples:
         >>> import stim
-        >>> circuit = stim.Circuit('''
+        >>> stim.Circuit('''
         ...     REPEAT 5 {
         ...         MR 0 1
         ...         DETECTOR(0, 0) rec[-2]
@@ -1552,11 +1560,10 @@ def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
         ...     path = tmpdir + '/tmp.stim'
         ...     with open(path, 'w') as f:
         ...         c.to_file(f)
-        ...     with open(path, 'w') as f:
+        ...     with open(path) as f:
         ...         contents = f.read()
         >>> contents
-        H 5
-        X 0
+        'H 5\nX 0\n'
 
         >>> with tempfile.TemporaryDirectory() as tmpdir:
         ...     path = tmpdir + '/tmp.stim'
@@ -1564,8 +1571,7 @@ def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
         ...     with open(path) as f:
         ...         contents = f.read()
         >>> contents
-        H 5
-        X 0
+        'H 5\nX 0\n'
     """
 ```
 
@@ -1593,7 +1599,7 @@ def without_noise(self) -> stim.Circuit:
         ...     M(0.125) 0
         ... ''').without_noise()
         stim.Circuit('''
-            CNOT 0 1
+            CX 0 1
             M 0
         ''')
     """
@@ -2047,7 +2053,7 @@ def __init__(self, circuit: stim.Circuit, *, seed: object = None) -> None:
         ... ''')
         >>> s = c.compile_detector_sampler()
         >>> s.sample(shots=1)
-        array([[1]], dtype=uint8)
+        array([[ True]])
     """
 ```
 
@@ -2213,7 +2219,7 @@ def __init__(self, circuit: stim.Circuit, *, skip_reference_sample: bool = False
         ... ''')
         >>> s = c.compile_sampler()
         >>> s.sample(shots=1)
-        array([[1, 0, 1, 1]], dtype=uint8)
+        array([[ True, False,  True,  True]])
     """
 ```
 
@@ -2239,7 +2245,7 @@ def sample(self, shots: int) -> np.ndarray[bool]:
         ... ''')
         >>> s = c.compile_sampler()
         >>> s.sample(shots=1)
-        array([[1, 0, 1, 1]], dtype=uint8)
+        array([[ True, False,  True,  True]])
 
     Args:
         shots: The number of times to sample every measurement in the circuit.
@@ -2428,15 +2434,13 @@ def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] 
         array([[False, False],
                [False, False],
                [False, False],
-               [ True, False],
-               [False, False],
+               [False,  True],
                [False, False]])
         >>> obs
         array([[False],
                [False],
                [False],
                [ True],
-               [False],
                [False]])
     """
 ```
@@ -3573,15 +3577,15 @@ def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
         ...     with open(path) as f:
         ...         contents = f.read()
         >>> contents
-        error(0.25) D2 D3
+        'error(0.25) D2 D3\n'
 
         >>> with tempfile.TemporaryDirectory() as tmpdir:
         ...     path = tmpdir + '/tmp.stim'
         ...     c.to_file(path)
-        ...     with open(path, 'w') as f:
+        ...     with open(path) as f:
         ...         contents = f.read()
         >>> contents
-        error(0.25) D2 D3
+        'error(0.25) D2 D3\n'
     """
 ```
 
@@ -5381,6 +5385,28 @@ class TableauSimulator:
     """
 ```
 
+<a name="stim.TableauSimulator.c_xyz"></a>
+```python
+# nested in stim.TableauSimulator
+def c_xyz(self, *targets) -> None:
+    """Applies a C_XYZ gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+    """
+```
+
+<a name="stim.TableauSimulator.c_zyx"></a>
+```python
+# nested in stim.TableauSimulator
+def c_zyx(self, *targets) -> None:
+    """Applies a C_ZYX gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+    """
+```
+
 <a name="stim.TableauSimulator.canonical_stabilizers"></a>
 ```python
 # nested in stim.TableauSimulator
@@ -5528,6 +5554,19 @@ def current_measurement_record(self) -> List[bool]:
 
     Returns:
         A list of booleans containing the result of every measurement performed by the simulator so far.
+    """
+```
+
+<a name="stim.TableauSimulator.cx"></a>
+```python
+# nested in stim.TableauSimulator
+def cx(self, *targets) -> None:
+    """Applies a controlled X gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+            Applies the gate to the first two targets, then the next two targets, and so forth.
+            There must be an even number of targets.
     """
 ```
 
@@ -5693,6 +5732,17 @@ def h_xy(self, *targets) -> None:
     """
 ```
 
+<a name="stim.TableauSimulator.h_xz"></a>
+```python
+# nested in stim.TableauSimulator
+def h_xz(self, *targets) -> None:
+    """Applies a Hadamard gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+    """
+```
+
 <a name="stim.TableauSimulator.h_yz"></a>
 ```python
 # nested in stim.TableauSimulator
@@ -5817,6 +5867,27 @@ def measure_many(self, *targets) -> List[bool]:
 
     Returns:
         The measurement results as a list of bools.
+    """
+```
+
+<a name="stim.TableauSimulator.num_qubits"></a>
+```python
+# nested in stim.TableauSimulator
+@property
+def num_qubits(self) -> int:
+    """Returns the number of qubits currently being tracked by the simulator's internal state.
+
+    Note that the number of qubits being tracked will implicitly increase if qubits beyond
+    the current limit are touched. Untracked qubits are always assumed to be in the |0> state.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.num_qubits
+        0
+        >>> s.h(2)
+        >>> s.num_qubits
+        3
     """
 ```
 
@@ -6444,6 +6515,45 @@ def z(self, *targets) -> None:
 
     Args:
         *targets: The indices of the qubits to target with the gate.
+    """
+```
+
+<a name="stim.TableauSimulator.zcx"></a>
+```python
+# nested in stim.TableauSimulator
+def zcx(self, *targets) -> None:
+    """Applies a controlled X gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+            Applies the gate to the first two targets, then the next two targets, and so forth.
+            There must be an even number of targets.
+    """
+```
+
+<a name="stim.TableauSimulator.zcy"></a>
+```python
+# nested in stim.TableauSimulator
+def zcy(self, *targets) -> None:
+    """Applies a controlled Y gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+            Applies the gate to the first two targets, then the next two targets, and so forth.
+            There must be an even number of targets.
+    """
+```
+
+<a name="stim.TableauSimulator.zcz"></a>
+```python
+# nested in stim.TableauSimulator
+def zcz(self, *targets) -> None:
+    """Applies a controlled Z gate to the simulator's state.
+
+    Args:
+        *targets: The indices of the qubits to target with the gate.
+            Applies the gate to the first two targets, then the next two targets, and so forth.
+            There must be an even number of targets.
     """
 ```
 

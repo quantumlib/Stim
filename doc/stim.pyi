@@ -15,7 +15,7 @@ class Circuit:
         >>> c.append("X", 0)
         >>> c.append("M", 0)
         >>> c.compile_sampler().sample(shots=1)
-        array([[1]], dtype=uint8)
+        array([[ True]])
 
         >>> stim.Circuit('''
         ...    H 0
@@ -23,7 +23,7 @@ class Circuit:
         ...    M 0 1
         ...    DETECTOR rec[-1] rec[-2]
         ... ''').compile_detector_sampler().sample(shots=1)
-        array([[0]], dtype=uint8)
+        array([[False]])
 
     """
     def __add__(self, second: stim.Circuit) -> stim.Circuit:
@@ -404,7 +404,7 @@ class Circuit:
             ... ''')
             >>> s = c.compile_detector_sampler()
             >>> s.sample(shots=1)
-            array([[0]], dtype=uint8)
+            array([[False]])
         """
     def compile_m2d_converter(self, *, skip_reference_sample: bool = False) -> stim.CompiledMeasurementsToDetectionEventsConverter:
         """Returns an object that can efficiently convert measurements into detection events for the given circuit.
@@ -485,7 +485,7 @@ class Circuit:
             ... ''')
             >>> s = c.compile_sampler()
             >>> s.sample(shots=1)
-            array([[0, 0, 1]], dtype=uint8)
+            array([[False, False,  True]])
         """
     def copy(self) -> stim.Circuit:
         """Returns a copy of the circuit. An independent circuit with the same contents.
@@ -630,7 +630,7 @@ class Circuit:
 
         Examples:
             >>> import stim
-            >>> circuit = stim.Circuit('''
+            >>> stim.Circuit('''
             ...     REPEAT 5 {
             ...         MR 0 1
             ...         DETECTOR(0, 0) rec[-2]
@@ -1067,11 +1067,10 @@ class Circuit:
             ...     path = tmpdir + '/tmp.stim'
             ...     with open(path, 'w') as f:
             ...         c.to_file(f)
-            ...     with open(path, 'w') as f:
+            ...     with open(path) as f:
             ...         contents = f.read()
             >>> contents
-            H 5
-            X 0
+            'H 5\nX 0\n'
 
             >>> with tempfile.TemporaryDirectory() as tmpdir:
             ...     path = tmpdir + '/tmp.stim'
@@ -1079,8 +1078,7 @@ class Circuit:
             ...     with open(path) as f:
             ...         contents = f.read()
             >>> contents
-            H 5
-            X 0
+            'H 5\nX 0\n'
         """
     def without_noise(self) -> stim.Circuit:
         """Returns a copy of the circuit with all noise processes removed.
@@ -1103,7 +1101,7 @@ class Circuit:
             ...     M(0.125) 0
             ... ''').without_noise()
             stim.Circuit('''
-                CNOT 0 1
+                CX 0 1
                 M 0
             ''')
         """
@@ -1372,7 +1370,7 @@ class CompiledDetectorSampler:
             ... ''')
             >>> s = c.compile_detector_sampler()
             >>> s.sample(shots=1)
-            array([[1]], dtype=uint8)
+            array([[ True]])
         """
     def __repr__(self) -> str:
         """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledDetectorSampler`.
@@ -1508,7 +1506,7 @@ class CompiledMeasurementSampler:
             ... ''')
             >>> s = c.compile_sampler()
             >>> s.sample(shots=1)
-            array([[1, 0, 1, 1]], dtype=uint8)
+            array([[ True, False,  True,  True]])
         """
     def __repr__(self) -> str:
         """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledMeasurementSampler`.
@@ -1524,7 +1522,7 @@ class CompiledMeasurementSampler:
             ... ''')
             >>> s = c.compile_sampler()
             >>> s.sample(shots=1)
-            array([[1, 0, 1, 1]], dtype=uint8)
+            array([[ True, False,  True,  True]])
 
         Args:
             shots: The number of times to sample every measurement in the circuit.
@@ -1683,15 +1681,13 @@ class CompiledMeasurementsToDetectionEventsConverter:
             array([[False, False],
                    [False, False],
                    [False, False],
-                   [ True, False],
-                   [False, False],
+                   [False,  True],
                    [False, False]])
             >>> obs
             array([[False],
                    [False],
                    [False],
                    [ True],
-                   [False],
                    [False]])
         """
     def convert_file(self, *, measurements_filepath: str, measurements_format: str = '01', sweep_bits_filepath: str = None, sweep_bits_format: str = '01', detection_events_filepath: str, detection_events_format: str = '01', append_observables: bool = False, obs_out_filepath: str = None, obs_out_format: str = '01') -> None:
@@ -2543,15 +2539,15 @@ class DetectorErrorModel:
             ...     with open(path) as f:
             ...         contents = f.read()
             >>> contents
-            error(0.25) D2 D3
+            'error(0.25) D2 D3\n'
 
             >>> with tempfile.TemporaryDirectory() as tmpdir:
             ...     path = tmpdir + '/tmp.stim'
             ...     c.to_file(path)
-            ...     with open(path, 'w') as f:
+            ...     with open(path) as f:
             ...         contents = f.read()
             >>> contents
-            error(0.25) D2 D3
+            'error(0.25) D2 D3\n'
         """
 class ExplainedError:
     """Describes the location of an error mechanism from a stim circuit.
@@ -3934,6 +3930,18 @@ class TableauSimulator:
             ],
         )
     """
+    def c_xyz(self, *targets) -> None:
+        """Applies a C_XYZ gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+        """
+    def c_zyx(self, *targets) -> None:
+        """Applies a C_ZYX gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+        """
     def canonical_stabilizers(self) -> List[stim.PauliString]:
         """Returns a list of the stabilizers of the simulator's current state in a standard form.
 
@@ -4059,6 +4067,14 @@ class TableauSimulator:
         Returns:
             A list of booleans containing the result of every measurement performed by the simulator so far.
         """
+    def cx(self, *targets) -> None:
+        """Applies a controlled X gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+                Applies the gate to the first two targets, then the next two targets, and so forth.
+                There must be an even number of targets.
+        """
     def cy(self, *targets) -> None:
         """Applies a controlled Y gate to the simulator's state.
 
@@ -4181,6 +4197,12 @@ class TableauSimulator:
         Args:
             *targets: The indices of the qubits to target with the gate.
         """
+    def h_xz(self, *targets) -> None:
+        """Applies a Hadamard gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+        """
     def h_yz(self, *targets) -> None:
         """Applies a variant of the Hadamard gate that swaps the Y and Z axes to the simulator's state.
 
@@ -4277,6 +4299,22 @@ class TableauSimulator:
 
         Returns:
             The measurement results as a list of bools.
+        """
+    @property
+    def num_qubits(self) -> int:
+        """Returns the number of qubits currently being tracked by the simulator's internal state.
+
+        Note that the number of qubits being tracked will implicitly increase if qubits beyond
+        the current limit are touched. Untracked qubits are always assumed to be in the |0> state.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator()
+            >>> s.num_qubits
+            0
+            >>> s.h(2)
+            >>> s.num_qubits
+            3
         """
     def peek_bloch(self, target: int) -> stim.PauliString:
         """Returns the current bloch vector of the qubit, represented as a stim.PauliString.
@@ -4749,6 +4787,30 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
+        """
+    def zcx(self, *targets) -> None:
+        """Applies a controlled X gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+                Applies the gate to the first two targets, then the next two targets, and so forth.
+                There must be an even number of targets.
+        """
+    def zcy(self, *targets) -> None:
+        """Applies a controlled Y gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+                Applies the gate to the first two targets, then the next two targets, and so forth.
+                There must be an even number of targets.
+        """
+    def zcz(self, *targets) -> None:
+        """Applies a controlled Z gate to the simulator's state.
+
+        Args:
+            *targets: The indices of the qubits to target with the gate.
+                Applies the gate to the first two targets, then the next two targets, and so forth.
+                There must be an even number of targets.
         """
 def main(*, command_line_args: List[str]) -> int:
     """Runs the command line tool version of stim on the given arguments.
