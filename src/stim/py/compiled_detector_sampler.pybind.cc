@@ -158,7 +158,7 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
                 ... ''')
                 >>> s = c.compile_detector_sampler()
                 >>> s.sample(shots=1)
-                array([[1]], dtype=uint8)
+                array([[ True]])
         )DOC")
             .data());
 

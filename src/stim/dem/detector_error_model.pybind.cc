@@ -909,15 +909,15 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...     with open(path) as f:
                 ...         contents = f.read()
                 >>> contents
-                error(0.25) D2 D3
+                'error(0.25) D2 D3\n'
 
                 >>> with tempfile.TemporaryDirectory() as tmpdir:
                 ...     path = tmpdir + '/tmp.stim'
                 ...     c.to_file(path)
-                ...     with open(path, 'w') as f:
+                ...     with open(path) as f:
                 ...         contents = f.read()
                 >>> contents
-                error(0.25) D2 D3
+                'error(0.25) D2 D3\n'
         )DOC")
             .data());
 }
