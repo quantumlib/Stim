@@ -1041,7 +1041,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 >>> with tempfile.TemporaryDirectory() as tmpdir:
                 ...     path = tmpdir + '/tmp.stim'
                 ...     c.to_file(path)
-                ...     with open(path, 'w') as f:
+                ...     with open(path) as f:
                 ...         contents = f.read()
                 >>> contents
                 H 5
@@ -1649,7 +1649,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
 
             Examples:
                 >>> import stim
-                >>> circuit = stim.Circuit('''
+                >>> stim.Circuit('''
                 ...     X_ERROR(0.25) 0
                 ...     CNOT 0 1
                 ...     M(0.125) 0

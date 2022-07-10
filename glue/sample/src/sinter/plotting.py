@@ -71,6 +71,7 @@ def group_by(items: Iterable[TVal],
         the list of items that produced that output.
 
     Examples:
+        >>> import sinter
         >>> sinter.group_by([1, 2, 3], key=lambda i: i == 2)
         {False: [1, 3], True: [2]}
 

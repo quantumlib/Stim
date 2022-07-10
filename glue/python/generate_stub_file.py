@@ -1,13 +1,15 @@
+#!/usr/bin/env python3
+
 """
-Iterates over modules and classes, listing their attributes and methods in markdown.
+Produces a .pyi file for stim, describing the contained classes and functions.
 """
+
+from typing import Optional, Iterator
 
 import stim
 
-import collections
 import inspect
 import sys
-from typing import DefaultDict, List, Union
 
 keep = {
     "__add__",
@@ -78,11 +80,21 @@ def indented(*, paragraph: str, indentation: str) -> str:
     )
 
 
-def print_doc(*, full_name: str, parent: object, obj: object, level: int):
+class DescribedObject:
+    def __init__(self):
+        self.full_name = ""
+        self.level = 0
+        self.lines = []
+
+
+def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Optional[DescribedObject]:
+    out_obj = DescribedObject()
+    out_obj.full_name = full_name
+    out_obj.level = level
     doc = getattr(obj, "__doc__", None) or ""
     doc = normalize_doc_string(doc)
     if full_name.endswith("__") and len(doc.splitlines()) <= 2:
-        return
+        return None
 
     term_name = full_name.split(".")[-1]
     is_property = isinstance(obj, property)
@@ -91,7 +103,7 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int):
     sig_name = ''
     if is_method or is_property:
         if is_property:
-            print("    " * level + "@property")
+            out_obj.lines.append("@property")
         doc_lines = doc.splitlines()
         doc_lines_left = []
         new_args_name = None
@@ -102,12 +114,12 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int):
                 new_args_name = line[line.index('*'):line.index(':')]
             if '@overload ' in line:
                 _, sig = line.split('@overload ')
-                print("    " * level + "@overload")
-                print("    " * level + sig)
-                print("    " * level + "    pass")
+                out_obj.lines.append("@overload")
+                out_obj.lines.append(sig)
+                out_obj.lines.append("    pass")
             elif '@signature ' in line:
                 _, sig = line.split('@signature ')
-                print("    " * level + sig)
+                out_obj.lines.append(sig)
                 sig_handled = True
             else:
                 doc_lines_left.append(line)
@@ -131,31 +143,32 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int):
             sig_name = sig_name[:k_low] + sig_name[k_high:]
         is_static = '(self' not in sig_name and inspect.isclass(parent)
         if is_static:
-            print("    " * level + "@staticmethod")
+            out_obj.lines.append("@staticmethod")
         sig_name = sig_name.replace(': handle', ': Any')
         sig_name = sig_name.replace('numpy.', 'np.')
         if new_args_name is not None:
             sig_name = sig_name.replace('*args', new_args_name)
         text = ""
         if not sig_handled:
-            text = "    " * level + f"def {sig_name}:"
+            text = f"def {sig_name}:"
     else:
-        text = "    " * level + f"class {term_name}:"
+        text = f"class {term_name}:"
     if doc:
         text += "\n" + indented(paragraph=f"\"\"\"{doc}\n\"\"\"",
-                                indentation="    " * level + "    ")
-    print(text.replace('._stim_avx2', ''))
+                                indentation="    ")
+    out_obj.lines.append(text.replace('._stim_avx2', ''))
     if has_setter:
         if '->' in sig_name:
             setter_type = sig_name[sig_name.index('->') + 2:].strip().replace('._stim_avx2', '')
         else:
             setter_type = 'Any'
-        print("    " * level + f"@{term_name}.setter")
-        print("    " * level + f"def {term_name}(self, value: {setter_type}):")
-        print("    " * level + f"    pass")
+        out_obj.lines.append(f"@{term_name}.setter")
+        out_obj.lines.append(f"def {term_name}(self, value: {setter_type}):")
+        out_obj.lines.append(f"    pass")
+    return out_obj
 
 
-def generate_documentation(*, obj: object, level: int, full_name: str):
+def generate_documentation(*, obj: object, level: int, full_name: str) -> Iterator[DescribedObject]:
 
     if full_name.endswith("__"):
         return
@@ -173,10 +186,13 @@ def generate_documentation(*, obj: object, level: int, full_name: str):
             raise ValueError("Need to classify " + sub_name + " as keep or skip.")
         sub_full_name = full_name + "." + sub_name
         sub_obj = getattr(obj, sub_name)
-        print_doc(full_name=sub_full_name, obj=sub_obj, level=level + 1, parent=obj)
-        generate_documentation(obj=sub_obj,
-                               level=level + 1,
-                               full_name=sub_full_name)
+        v = print_doc(full_name=sub_full_name, obj=sub_obj, level=level + 1, parent=obj)
+        if v is not None:
+            yield v
+        yield from generate_documentation(
+            obj=sub_obj,
+            level=level + 1,
+            full_name=sub_full_name)
 
 
 def main():
@@ -196,7 +212,11 @@ if TYPE_CHECKING:
     import stim
 '''.strip())
 
-    generate_documentation(obj=stim, full_name="stim", level=-1)
+    for obj in generate_documentation(obj=stim, full_name="stim", level=-1):
+
+        print('\n'.join(("    " * obj.level + line).rstrip()
+                        for paragraph in obj.lines
+                        for line in paragraph.splitlines()))
 
 
 if __name__ == '__main__':

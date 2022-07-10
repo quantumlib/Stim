@@ -1076,7 +1076,7 @@ class Circuit:
             >>> with tempfile.TemporaryDirectory() as tmpdir:
             ...     path = tmpdir + '/tmp.stim'
             ...     c.to_file(path)
-            ...     with open(path, 'w') as f:
+            ...     with open(path) as f:
             ...         contents = f.read()
             >>> contents
             H 5
@@ -1097,7 +1097,7 @@ class Circuit:
 
         Examples:
             >>> import stim
-            >>> circuit = stim.Circuit('''
+            >>> stim.Circuit('''
             ...     X_ERROR(0.25) 0
             ...     CNOT 0 1
             ...     M(0.125) 0
@@ -2540,7 +2540,7 @@ class DetectorErrorModel:
             ...     path = tmpdir + '/tmp.stim'
             ...     with open(path, 'w') as f:
             ...         c.to_file(f)
-            ...     with open(path, 'w') as f:
+            ...     with open(path) as f:
             ...         contents = f.read()
             >>> contents
             error(0.25) D2 D3
@@ -4125,6 +4125,7 @@ class TableauSimulator:
             pauli_string: A stim.PauliString containing Paulis to apply.
 
         Examples:
+            >>> import stim
             >>> s = stim.TableauSimulator()
             >>> s.do_pauli_string(stim.PauliString("IXYZ"))
             >>> s.measure_many(0, 1, 2, 3)
@@ -4145,7 +4146,7 @@ class TableauSimulator:
             >>> sim = stim.TableauSimulator()
             >>> sim.h(1)
             >>> sim.h_yz(2)
-            >>> [str(sim.peek_block(k)) for k in range(4)]
+            >>> [str(sim.peek_bloch(k)) for k in range(4)]
             ['+Z', '+X', '+Y', '+Z']
             >>> rot3 = stim.Tableau.from_conjugated_generators(
             ...     xs=[
@@ -4161,11 +4162,11 @@ class TableauSimulator:
             ... )
 
             >>> sim.do_tableau(rot3, [1, 2, 3])
-            >>> [str(sim.peek_block(k)) for k in range(4)]
+            >>> [str(sim.peek_bloch(k)) for k in range(4)]
             ['+Z', '+Z', '+X', '+Y']
 
             >>> sim.do_tableau(rot3, [1, 2, 3])
-            >>> [str(sim.peek_block(k)) for k in range(4)]
+            >>> [str(sim.peek_bloch(k)) for k in range(4)]
             ['+Z', '+Y', '+Z', '+X']
         """
     def h(self, *targets) -> None:
@@ -4375,7 +4376,7 @@ class TableauSimulator:
             >>> s.reset_x(0)
             >>> s.peek_x(0)
             1
-            >>> s.Z(0)
+            >>> s.z(0)
             >>> s.peek_x(0)
             -1
         """
@@ -4402,7 +4403,7 @@ class TableauSimulator:
             >>> s.reset_y(0)
             >>> s.peek_y(0)
             1
-            >>> s.Z(0)
+            >>> s.z(0)
             >>> s.peek_y(0)
             -1
         """
@@ -4429,7 +4430,7 @@ class TableauSimulator:
             >>> s.reset_z(0)
             >>> s.peek_z(0)
             1
-            >>> s.X(0)
+            >>> s.x(0)
             >>> s.peek_z(0)
             -1
         """
@@ -4502,10 +4503,10 @@ class TableauSimulator:
         Example:
             >>> import stim
             >>> s = stim.TableauSimulator()
-            >>> s.X(0)
+            >>> s.x(0)
             >>> s.reset(0)
             >>> s.peek_bloch(0)
-            +Z
+            stim.PauliString("+Z")
         """
     def reset_x(self, *targets) -> None:
         """Resets qubits to the |+> state.
@@ -4518,7 +4519,7 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.reset_x(0)
             >>> s.peek_bloch(0)
-            +X
+            stim.PauliString("+X")
         """
     def reset_y(self, *targets) -> None:
         """Resets qubits to the |i> state.
@@ -4531,7 +4532,7 @@ class TableauSimulator:
             >>> s = stim.TableauSimulator()
             >>> s.reset_y(0)
             >>> s.peek_bloch(0)
-            +Y
+            stim.PauliString("+Y")
         """
     def reset_z(self, *targets) -> None:
         """Resets qubits to the |0> state.
@@ -4542,10 +4543,10 @@ class TableauSimulator:
         Example:
             >>> import stim
             >>> s = stim.TableauSimulator()
-            >>> s.H(0)
+            >>> s.h(0)
             >>> s.reset_z(0)
             >>> s.peek_bloch(0)
-            +Z
+            stim.PauliString("+Z")
         """
     def s(self, *targets) -> None:
         """Applies a SQRT_Z gate to the simulator's state.
@@ -4767,13 +4768,22 @@ def main(*, command_line_args: List[str]) -> int:
         that something went wrong being the return code.
 
     Example:
-        >>> stim.main(command_line_args=[
-        ...     "gen",
-        ...     "--code=repetition_code",
-        ...     "--task=memory",
-        ...     "--rounds=1000",
-        ...     "--distance=2",
-        ... ])
+        >>> import stim
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     path = f'{d}/tmp.out'
+        ...     return_code = stim.main(command_line_args=[
+        ...         "gen",
+        ...         "--code=repetition_code",
+        ...         "--task=memory",
+        ...         "--rounds=1000",
+        ...         "--distance=2",
+        ...         "--out",
+        ...         path,
+        ...     ])
+        ...     assert return_code == 0
+        ...     with open(path) as f:
+        ...         print(f.read(), end='')
         # Generated repetition_code circuit.
         # task: memory
         # rounds: 1000
@@ -4844,7 +4854,7 @@ def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, nu
         >>> import tempfile
         >>> with tempfile.TemporaryDirectory() as d:
         ...     path = pathlib.Path(d) / 'shots'
-        ...     with open(path) as f:
+        ...     with open(path, 'w') as f:
         ...         print("0000", file=f)
         ...         print("0101", file=f)
         ...
@@ -4853,8 +4863,8 @@ def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, nu
         ...         format='01',
         ...         num_measurements=4)
         >>> read
-        [[False False False False]
-         [False  True False  True]]
+        array([[False, False, False, False],
+               [False,  True, False,  True]])
     """
 def target_combiner() -> stim.GateTarget:
     """Returns a target combiner (`*` in circuit files) that can be used as an operation target.
@@ -4963,6 +4973,7 @@ def write_shot_data_file(*, data: object, path: str, format: str, num_measuremen
         >>> import stim
         >>> import pathlib
         >>> import tempfile
+        >>> import numpy as np
         >>> with tempfile.TemporaryDirectory() as d:
         ...     path = pathlib.Path(d) / 'shots'
         ...     shot_data = np.array([

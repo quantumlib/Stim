@@ -385,6 +385,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 pauli_string: A stim.PauliString containing Paulis to apply.
 
             Examples:
+                >>> import stim
                 >>> s = stim.TableauSimulator()
                 >>> s.do_pauli_string(stim.PauliString("IXYZ"))
                 >>> s.measure_many(0, 1, 2, 3)
@@ -452,7 +453,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> sim = stim.TableauSimulator()
                 >>> sim.h(1)
                 >>> sim.h_yz(2)
-                >>> [str(sim.peek_block(k)) for k in range(4)]
+                >>> [str(sim.peek_bloch(k)) for k in range(4)]
                 ['+Z', '+X', '+Y', '+Z']
                 >>> rot3 = stim.Tableau.from_conjugated_generators(
                 ...     xs=[
@@ -468,11 +469,11 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 ... )
 
                 >>> sim.do_tableau(rot3, [1, 2, 3])
-                >>> [str(sim.peek_block(k)) for k in range(4)]
+                >>> [str(sim.peek_bloch(k)) for k in range(4)]
                 ['+Z', '+Z', '+X', '+Y']
 
                 >>> sim.do_tableau(rot3, [1, 2, 3])
-                >>> [str(sim.peek_block(k)) for k in range(4)]
+                >>> [str(sim.peek_bloch(k)) for k in range(4)]
                 ['+Z', '+Y', '+Z', '+X']
         )DOC")
             .data());
@@ -827,10 +828,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
             Example:
                 >>> import stim
                 >>> s = stim.TableauSimulator()
-                >>> s.X(0)
+                >>> s.x(0)
                 >>> s.reset(0)
                 >>> s.peek_bloch(0)
-                +Z
+                stim.PauliString("+Z")
         )DOC")
             .data());
 
@@ -850,7 +851,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s = stim.TableauSimulator()
                 >>> s.reset_x(0)
                 >>> s.peek_bloch(0)
-                +X
+                stim.PauliString("+X")
         )DOC")
             .data());
 
@@ -870,7 +871,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s = stim.TableauSimulator()
                 >>> s.reset_y(0)
                 >>> s.peek_bloch(0)
-                +Y
+                stim.PauliString("+Y")
         )DOC")
             .data());
 
@@ -888,10 +889,10 @@ void pybind_tableau_simulator(pybind11::module &m) {
             Example:
                 >>> import stim
                 >>> s = stim.TableauSimulator()
-                >>> s.H(0)
+                >>> s.h(0)
                 >>> s.reset_z(0)
                 >>> s.peek_bloch(0)
-                +Z
+                stim.PauliString("+Z")
         )DOC")
             .data());
 
@@ -925,7 +926,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.reset_x(0)
                 >>> s.peek_x(0)
                 1
-                >>> s.Z(0)
+                >>> s.z(0)
                 >>> s.peek_x(0)
                 -1
         )DOC")
@@ -961,7 +962,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.reset_y(0)
                 >>> s.peek_y(0)
                 1
-                >>> s.Z(0)
+                >>> s.z(0)
                 >>> s.peek_y(0)
                 -1
         )DOC")
@@ -997,7 +998,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.reset_z(0)
                 >>> s.peek_z(0)
                 1
-                >>> s.X(0)
+                >>> s.x(0)
                 >>> s.peek_z(0)
                 -1
         )DOC")

@@ -906,7 +906,7 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...     path = tmpdir + '/tmp.stim'
                 ...     with open(path, 'w') as f:
                 ...         c.to_file(f)
-                ...     with open(path, 'w') as f:
+                ...     with open(path) as f:
                 ...         contents = f.read()
                 >>> contents
                 error(0.25) D2 D3

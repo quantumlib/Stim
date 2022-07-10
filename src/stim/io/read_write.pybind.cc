@@ -294,7 +294,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 >>> import tempfile
                 >>> with tempfile.TemporaryDirectory() as d:
                 ...     path = pathlib.Path(d) / 'shots'
-                ...     with open(path) as f:
+                ...     with open(path, 'w') as f:
                 ...         print("0000", file=f)
                 ...         print("0101", file=f)
                 ...
@@ -303,8 +303,8 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 ...         format='01',
                 ...         num_measurements=4)
                 >>> read
-                [[False False False False]
-                 [False  True False  True]]
+                array([[False, False, False, False],
+                       [False,  True, False,  True]])
         )DOC")
             .data());
 
@@ -341,6 +341,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 >>> import stim
                 >>> import pathlib
                 >>> import tempfile
+                >>> import numpy as np
                 >>> with tempfile.TemporaryDirectory() as d:
                 ...     path = pathlib.Path(d) / 'shots'
                 ...     shot_data = np.array([

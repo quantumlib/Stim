@@ -236,13 +236,22 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
                 that something went wrong being the return code.
 
             Example:
-                >>> stim.main(command_line_args=[
-                ...     "gen",
-                ...     "--code=repetition_code",
-                ...     "--task=memory",
-                ...     "--rounds=1000",
-                ...     "--distance=2",
-                ... ])
+                >>> import stim
+                >>> import tempfile
+                >>> with tempfile.TemporaryDirectory() as d:
+                ...     path = f'{d}/tmp.out'
+                ...     return_code = stim.main(command_line_args=[
+                ...         "gen",
+                ...         "--code=repetition_code",
+                ...         "--task=memory",
+                ...         "--rounds=1000",
+                ...         "--distance=2",
+                ...         "--out",
+                ...         path,
+                ...     ])
+                ...     assert return_code == 0
+                ...     with open(path) as f:
+                ...         print(f.read(), end='')
                 # Generated repetition_code circuit.
                 # task: memory
                 # rounds: 1000
