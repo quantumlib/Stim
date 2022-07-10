@@ -243,7 +243,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
                 qubit with index 1 is storing the bit b_1, etc.
 
-                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
+                If the result is in big endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
                 the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
                 qubit with index 1 is storing the bit b_{n-2}, etc.
 

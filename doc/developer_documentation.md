@@ -40,7 +40,7 @@ These notes generally assume you are on a Linux system.
 - [autoformating code](#autoformat)
     - [with clang-format](#autoformat.clang-format)
 
-# <a name="compatibility></a>Compatibility guarantees across versions
+# <a name="compatibility"></a>Compatibility guarantees across versions
 
 A *bug* is bad behavior that wasn't intended. For example, the program crashing instead of returning empty results when sampling from an empty circuit would be a bug.
 

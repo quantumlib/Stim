@@ -96,7 +96,10 @@ import stim
         print()
         print(f'<a name="{obj.full_name}"></a>')
         print("```python")
-        print(f'# nested in {".".join(obj.full_name.split(".")[:-1])}')
+        print(f'# {obj.full_name}')
+        print()
+        if len(obj.full_name.split('.')) > 2:
+            print(f'# (in class {".".join(obj.full_name.split(".")[:-1])})')
         print('\n'.join(obj.lines))
         print("```")
 
