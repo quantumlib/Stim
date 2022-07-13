@@ -20,13 +20,11 @@
 #include <iostream>
 #include <map>
 #include <random>
-#include <sstream>
 #include <thread>
 
 #include "stim/circuit/gate_data.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/stabilizers/pauli_string.h"
-#include "stim/stabilizers/tableau_transposed_raii.h"
 
 using namespace stim;
 

@@ -36,6 +36,8 @@ keep = {
     "__repr__",
     "__rmul__",
     "__hash__",
+    "__iter__",
+    "__next__",
 }
 skip = {
     "__builtins__",

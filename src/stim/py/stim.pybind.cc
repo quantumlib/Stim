@@ -30,6 +30,7 @@
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
+#include "stim/stabilizers/tableau_iter.pybind.h"
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -131,6 +132,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c0 = pybind_compiled_detector_sampler_class(m);
     auto c1 = pybind_compiled_measurement_sampler_class(m);
     auto c2 = pybind_compiled_measurements_to_detection_events_converter_class(m);
+    auto c_tab_iter = pybind_tableau_iter(m);
     auto c_circuit = pybind_circuit(m);
     pybind_compiled_detector_sampler_methods(c0);
     pybind_compiled_measurement_sampler_methods(c1);
@@ -293,4 +295,5 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
     pybind_circuit_after_types_all_defined(c_circuit);
+    pybind_tableau_iter_after_types_all_defined(m, c_tab_iter);
 }

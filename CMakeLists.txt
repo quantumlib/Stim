@@ -92,6 +92,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/stabilizers/pauli_string.cc
         src/stim/stabilizers/pauli_string_ref.cc
         src/stim/stabilizers/tableau.cc
+        src/stim/stabilizers/tableau_iter.cc
         src/stim/stabilizers/tableau_specialized_prepend.cc
         src/stim/stabilizers/tableau_transposed_raii.cc
         src/stim.cc
@@ -144,6 +145,7 @@ set(TEST_FILES
         src/stim/simulators/vector_simulator.test.cc
         src/stim/stabilizers/pauli_string.test.cc
         src/stim/stabilizers/tableau.test.cc
+        src/stim/stabilizers/tableau_iter.test.cc
         src/stim.test.cc
         src/stim_included_twice.test.cc
         src/stim/str_util.test.cc
@@ -167,6 +169,7 @@ set(BENCHMARK_FILES
         src/stim/simulators/tableau_simulator.perf.cc
         src/stim/stabilizers/pauli_string.perf.cc
         src/stim/stabilizers/tableau.perf.cc
+        src/stim/stabilizers/tableau_iter.perf.cc
         )
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})

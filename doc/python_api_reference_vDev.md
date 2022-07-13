@@ -220,6 +220,7 @@
     - [`stim.Tableau.inverse_y_output_pauli`](#stim.Tableau.inverse_y_output_pauli)
     - [`stim.Tableau.inverse_z_output`](#stim.Tableau.inverse_z_output)
     - [`stim.Tableau.inverse_z_output_pauli`](#stim.Tableau.inverse_z_output_pauli)
+    - [`stim.Tableau.iter_all`](#stim.Tableau.iter_all)
     - [`stim.Tableau.prepend`](#stim.Tableau.prepend)
     - [`stim.Tableau.random`](#stim.Tableau.random)
     - [`stim.Tableau.then`](#stim.Tableau.then)
@@ -230,6 +231,9 @@
     - [`stim.Tableau.y_output_pauli`](#stim.Tableau.y_output_pauli)
     - [`stim.Tableau.z_output`](#stim.Tableau.z_output)
     - [`stim.Tableau.z_output_pauli`](#stim.Tableau.z_output_pauli)
+- [`stim.TableauIterator`](#stim.TableauIterator)
+    - [`stim.TableauIterator.__iter__`](#stim.TableauIterator.__iter__)
+    - [`stim.TableauIterator.__next__`](#stim.TableauIterator.__next__)
 - [`stim.TableauSimulator`](#stim.TableauSimulator)
     - [`stim.TableauSimulator.c_xyz`](#stim.TableauSimulator.c_xyz)
     - [`stim.TableauSimulator.c_zyx`](#stim.TableauSimulator.c_zyx)
@@ -5496,6 +5500,41 @@ def inverse_z_output_pauli(self, input_index: int, output_index: int) -> int:
     """
 ```
 
+<a name="stim.Tableau.iter_all"></a>
+```python
+# stim.Tableau.iter_all
+
+# (in class stim.Tableau)
+@staticmethod
+def iter_all(num_qubits: int, *, unsigned: bool = False) -> stim.TableauIterator:
+    """Returns an iterator that iterates over all Tableaus of a given size.
+
+    Args:
+        num_qubits: The size of tableau to iterate over.
+        unsigned: Defaults to False. If set to True, only tableaus where
+            all columns have positive sign are yielded by the iterator.
+            This substantially reduces the total number of tableaus to
+            iterate over.
+
+    Returns:
+        An Iterable[stim.Tableau] that yields the requested tableaus.
+
+    Examples:
+        >>> import stim
+        >>> single_qubit_gate_reprs = set()
+        >>> for t in stim.Tableau.iter_all(1):
+        ...     single_qubit_gate_reprs.add(repr(t))
+        >>> len(single_qubit_gate_reprs)
+        24
+
+        >>> num_2q_gates_mod_paulis = 0
+        >>> for _ in stim.Tableau.iter_all(2, unsigned=True):
+        ...     num_2q_gates_mod_paulis += 1
+        >>> num_2q_gates_mod_paulis
+        720
+    """
+```
+
 <a name="stim.Tableau.prepend"></a>
 ```python
 # stim.Tableau.prepend
@@ -5805,6 +5844,49 @@ def z_output_pauli(self, input_index: int, output_index: int) -> int:
         2
         >>> t.z_output_pauli(1, 1)
         1
+    """
+```
+
+<a name="stim.TableauIterator"></a>
+```python
+# stim.TableauIterator
+
+# (at top-level in the stim module)
+class TableauIterator:
+    """Iterates over all stabilizer tableaus of a specified size.
+
+    Examples:
+        >>> import stim
+        >>> tableau_iterator = stim.Tableau.iter_all(1)
+        >>> n = 0
+        >>> for single_qubit_clifford in tableau_iterator:
+        ...     n += 1
+        >>> n
+        24
+    """
+```
+
+<a name="stim.TableauIterator.__iter__"></a>
+```python
+# stim.TableauIterator.__iter__
+
+# (in class stim.TableauIterator)
+def __iter__(self) -> stim.TableauIterator:
+    """Returns an independent copy of the tableau iterator.
+
+    Since for-loops and loop-comprehensions call `iter` on things they
+    iterate, this effectively allows the iterator to be iterated
+    multiple times.
+    """
+```
+
+<a name="stim.TableauIterator.__next__"></a>
+```python
+# stim.TableauIterator.__next__
+
+# (in class stim.TableauIterator)
+def __next__(self) -> stim.Tableau:
+    """Returns the next iterated tableau.
     """
 ```
 

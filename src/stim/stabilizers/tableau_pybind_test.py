@@ -692,3 +692,24 @@ def test_unitary():
         [0, 1, 0, 0],
         [0, 0, 0, 1],
     ])
+
+
+def test_iter_1q():
+    r = stim.Tableau.iter_all(1, unsigned=True)
+    assert len(set(repr(e) for e in r)) == 6
+    assert len(set(repr(e) for e in r)) == 6  # Can re-iterate.
+    assert sum(1 for _ in stim.Tableau.iter_all(1)) == 24
+
+
+def test_iter_2q():
+    u2 = stim.Tableau.iter_all(2, unsigned=True)
+    assert sum(1 for _ in u2) == 720
+    assert sum(1 for _ in stim.Tableau.iter_all(2, unsigned=False)) == 11520
+    assert len(set(repr(e) for e in u2)) == 720
+
+
+def test_iter_3q():
+    n = 0
+    for _ in stim.Tableau.iter_all(3, unsigned=True):
+        n += 1
+    assert n == 1451520

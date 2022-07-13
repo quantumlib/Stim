@@ -19,6 +19,7 @@
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/stabilizers/tableau_iter.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -106,6 +107,43 @@ void pybind_tableau(pybind11::module &m) {
                 "Hadamard-free circuits expose the structure of the Clifford group"
                 Sergey Bravyi, Dmitri Maslov
                 https://arxiv.org/abs/2003.09412
+        )DOC")
+            .data());
+
+    c.def_static(
+        "iter_all",
+        [](size_t num_qubits, bool unsigned_only) {
+            return TableauIterator(num_qubits, !unsigned_only);
+        },
+        pybind11::arg("num_qubits"),
+        pybind11::kw_only(),
+        pybind11::arg("unsigned") = false,
+        clean_doc_string(u8R"DOC(
+            Returns an iterator that iterates over all Tableaus of a given size.
+
+            Args:
+                num_qubits: The size of tableau to iterate over.
+                unsigned: Defaults to False. If set to True, only tableaus where
+                    all columns have positive sign are yielded by the iterator.
+                    This substantially reduces the total number of tableaus to
+                    iterate over.
+
+            Returns:
+                An Iterable[stim.Tableau] that yields the requested tableaus.
+
+            Examples:
+                >>> import stim
+                >>> single_qubit_gate_reprs = set()
+                >>> for t in stim.Tableau.iter_all(1):
+                ...     single_qubit_gate_reprs.add(repr(t))
+                >>> len(single_qubit_gate_reprs)
+                24
+
+                >>> num_2q_gates_mod_paulis = 0
+                >>> for _ in stim.Tableau.iter_all(2, unsigned=True):
+                ...     num_2q_gates_mod_paulis += 1
+                >>> num_2q_gates_mod_paulis
+                720
         )DOC")
             .data());
 
