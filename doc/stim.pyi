@@ -3659,6 +3659,34 @@ class Tableau:
             >>> t_inv.inverse_z_output_pauli(1, 1)
             1
         """
+    @staticmethod
+    def iter_all(num_qubits: int, *, unsigned: bool = False) -> stim.TableauIterator:
+        """Returns an iterator that iterates over all Tableaus of a given size.
+
+        Args:
+            num_qubits: The size of tableau to iterate over.
+            unsigned: Defaults to False. If set to True, only tableaus where
+                all columns have positive sign are yielded by the iterator.
+                This substantially reduces the total number of tableaus to
+                iterate over.
+
+        Returns:
+            An Iterable[stim.Tableau] that yields the requested tableaus.
+
+        Examples:
+            >>> import stim
+            >>> single_qubit_gate_reprs = set()
+            >>> for t in stim.Tableau.iter_all(1):
+            ...     single_qubit_gate_reprs.add(repr(t))
+            >>> len(single_qubit_gate_reprs)
+            24
+
+            >>> num_2q_gates_mod_paulis = 0
+            >>> for _ in stim.Tableau.iter_all(2, unsigned=True):
+            ...     num_2q_gates_mod_paulis += 1
+            >>> num_2q_gates_mod_paulis
+            720
+        """
     def prepend(self, gate: stim.Tableau, targets: List[int]) -> None:
         """Prepends an operation's effect into this tableau, mutating this tableau.
 
@@ -3900,6 +3928,28 @@ class Tableau:
             2
             >>> t.z_output_pauli(1, 1)
             1
+        """
+class TableauIterator:
+    """Iterates over all stabilizer tableaus of a specified size.
+
+    Examples:
+        >>> import stim
+        >>> tableau_iterator = stim.Tableau.iter_all(1)
+        >>> n = 0
+        >>> for single_qubit_clifford in tableau_iterator:
+        ...     n += 1
+        >>> n
+        24
+    """
+    def __iter__(self) -> stim.TableauIterator:
+        """Returns an independent copy of the tableau iterator.
+
+        Since for-loops and loop-comprehensions call `iter` on things they
+        iterate, this effectively allows the iterator to be iterated
+        multiple times.
+        """
+    def __next__(self) -> stim.Tableau:
+        """Returns the next iterated tableau.
         """
 class TableauSimulator:
     """A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
