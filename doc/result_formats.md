@@ -431,13 +431,14 @@ events.
 *Example r8 parsing code (python)*:
 ```python
 from typing import List
+import math
 
 def parse_r8(data: bytes, bits_per_shot: int) -> List[List[bool]]:
     shots = []
     shot = []
     for byte in data:
         if byte != 255:
-            shot += [False] * byte
+            shot += [False] * math.min(byte, bits_per_shot)
             shot.append(True)
         if len(shot) > bits_per_shot:
             assert len(shot) == bits_per_shot + 1 and shot[-1]
