@@ -37,6 +37,6 @@ setup(
     install_requires=requirements,
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': ['sinter=sinter.main:main'],
+        'console_scripts': ['sinter=sinter._main:main'],
     },
 )

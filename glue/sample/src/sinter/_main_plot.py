@@ -3,10 +3,10 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-from sinter.main_combine import ExistingData
-from sinter.plotting import MARKERS
-from sinter.plotting import plot_discard_rate
-from sinter.plotting import plot_error_rate
+from sinter._main_combine import ExistingData
+from sinter._plotting import MARKERS
+from sinter._plotting import plot_discard_rate
+from sinter._plotting import plot_error_rate
 
 if TYPE_CHECKING:
     import sinter

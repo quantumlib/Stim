@@ -1,6 +1,6 @@
 from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union
 
-from sinter.probability_util import fit_binomial
+from sinter._probability_util import fit_binomial
 
 if TYPE_CHECKING:
     import sinter
@@ -165,7 +165,8 @@ def plot_discard_rate(
                 del kwargs['marker']
             if 'linestyle' in kwargs:
                 del kwargs['linestyle']
-            del kwargs['label']
+            if 'label' in kwargs:
+                del kwargs['label']
             ax.fill_between(xs_range, ys_low, ys_high, **kwargs)
 
 
@@ -247,5 +248,6 @@ def plot_error_rate(
                 del kwargs['marker']
             if 'linestyle' in kwargs:
                 del kwargs['linestyle']
-            del kwargs['label']
+            if 'label' in kwargs:
+                del kwargs['label']
             ax.fill_between(xs_range, ys_low, ys_high, **kwargs)

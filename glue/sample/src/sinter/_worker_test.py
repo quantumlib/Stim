@@ -4,7 +4,7 @@ import tempfile
 import stim
 
 import sinter
-from sinter.worker import WorkIn, WorkOut, worker_loop
+from sinter._worker import WorkIn, WorkOut, worker_loop
 
 
 def test_worker_loop_infers_dem():

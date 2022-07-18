@@ -311,6 +311,7 @@ jobs:
       - run: pip install pytest
       - run: pytest glue/sample
       - run: ./doctest_proper.py --module sinter
+      - run: sinter help
   test_stimzx:
     runs-on: ubuntu-latest
     steps:

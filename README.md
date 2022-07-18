@@ -1,62 +1,114 @@
-# What is Stim?
+# Stim
+
+- [What is Stim?](#what-is-stim)
+- [How do I use Stim?](#how-use-stim)
+- [How does Stim work?](#how-stim-work)
+- [How do I cite Stim?](#how-cite-stim)
+
+# <a name="what-is-stim"></a>What is Stim?
 
 Stim is a tool for high performance simulation and analysis of quantum stabilizer circuits,
-intended to help with research into quantum error correcting codes.
-Stim can be used as a python package (`pip install stim`),
-as a command line tool (built from source in this repo),
-or as a C++ library (also built from source in this repo).
+especially quantum error correction (QEC) circuits.
+Typically Stim is used as a python package (`pip install stim`), though stim can also be used as
+a command line tool or a C++ library.
 
 - [Watch the 15 minute lightning talk presenting Stim at QPL2021](https://youtu.be/7m_JrJIskPM?t=895).
 
-- [Watch Stim used to estimate the threshold of the honeycomb code within days of it being published](https://www.youtube.com/watch?v=E9yj0o1LGII).
+- [Watch Stim being used to estimate the threshold of the honeycomb code over a weekend](https://www.youtube.com/watch?v=E9yj0o1LGII).
 
-Important Stim features include:
+Stim's key features:
 
-1. **Really** fast simulation of stabilizer circuits.
-   As in thousands of times faster than what came before.
-   Stim can pull thousands of full shots out of circuits with millions of operations in seconds.
-2. Support for annotating noise, detection events, and logical observables directly into circuits.
-3. The ability to convert circuits into detector error models,
-   which is a convenient format for configuring syndrome decoders.
+1. **_Really_ fast simulation of stabilizer circuits**.
+Have a circuit with thousands of qubits and millions of operations?
+[`stim.Circuit.compile_sampler()`](doc/python_api_reference_vDev.md#stim.Circuit.compile_sampler)
+will perform a few seconds of analysis and then produce an object that can sample shots at kilohertz rates.
 
-The main limitations of Stim are:
+2. **Semi-automatic decoder configuration**.
+[`stim.Circuit.detector_error_model()`](doc/python_api_reference_vDev.md#stim.Circuit.detector_error_model)
+converts a noisy circuit into a detector error model (a [Tanner graph](https://en.wikipedia.org/wiki/Tanner_graph)) which can be used to configure decoders.
+Adding the option `decompose_operations=True` will additionally suggest how hyper errors can be decomposed
+into graphlike errors, making it easier to configure matching-based decoders. 
 
-1. All circuits must be stabilizer circuits (eg. no Toffoli gates).
-2. All error channels must be probabilistic Pauli channels (eg. no amplitude decay).
-3. All feedback must be Pauli feedback (eg. no classically controlled S gates).
+3. **Useful building blocks for working with stabilizers**, such as
+[`stim.PauliString`](doc/python_api_reference_vDev.md#stim.PauliString),
+[`stim.Tableau`](doc/python_api_reference_vDev.md#stim.Tableau),
+and [`stim.TableauSimulator`](doc/python_api_reference_vDev.md#stim.TableauSimulator).
 
-# How do I use Stim?
+Stim's main limitations are:
+
+1. There is no support for non-Clifford operations, such as T gates and Toffoli gates. Only stabilizer operations are supported.
+2. `stim.Circuit` only supports Pauli noise channels (eg. no amplitude decay). For more complex noise you must manually drive a `stim.TableauSimulator`.
+3. `stim.Circuit` only supports single-control Pauli feedback. For multi-control feedback, or non-Pauli feedback,  you must manually drive a `stim.TableauSimulator`.
+
+Stim's design philosophy:
+
+- **Performance is king.**
+The goal is not to be fast *enough*, it is to be fast in an absolute sense.
+Think of it this way.
+The difference between doing one thing per second (human speeds) and doing ten billion things
+per second (computer speeds) is 100 decibels (100 factors of 1.26).
+Because software slowdowns tend to compound exponentially, the choices we make can be thought of multiplicatively;
+they can be thought of as spending or saving decibels.
+For example, under default usage, python is 100 times slower than C++.
+That's 20dB of the 100dB budget!
+A *fifth* of the multiplicative performance budget allocated to *language choice*!
+Too expensive!
+Although stim will never achieve the glory of [30 GiB per second of FizzBuzz](https://codegolf.stackexchange.com/a/236630/74349),
+it at least *wishes* it could.
+- **Bottom up.**
+Stim is intended to be like an assembly language: a mostly straightforward layer upon which more complex layers can be built.
+The user may define QEC constructions at some high level, perhaps as a set of stabilizers or as a parity check matrix,
+but these concepts are explained to Stim at a low level (e.g. as circuits).
+Stim is not necessarily the abstraction that the user wants, but stim wants to implement low-level
+pieces simple enough and fast enough that the high-level pieces that the user wants can be built on top.
+- **Backwards compatibility.**
+Stim uses semantic versioning.
+Within a major version (1.X), stim guarantees backwards compatibility of its python API and of its command line API
+(modulo the usual caveats about allowing bug fixes and changing of undocumented-but-visible behavior
+such as the exact way floating point rounding error plays out).
+A specific example of something that is *not* allowed is to rename or remove a public method
+because "the API needs to be cleaner".
+The trickiest thing that *is* allowed is to fix a "trap"; to change a behavior that is actively
+causing users to do the wrong thing.
+A major exception is that stim DOESN'T guarantee backwards compatibility of the underlying C++ API,
+because this would often be a hindrance to extending the functionality exposed to the python API.
+
+# <a name="how-use-stim"></a>How do I use Stim?
 
 See the [Getting Started Notebook](doc/getting_started.ipynb).
 
-For using Stim from python, see the [python documentation](glue/python/README.md) and the [python API reference](doc/python_api_reference_vDev.md).
-For using Stim from the command line, see the [command line documentation](doc/usage_command_line.md).
-For building Stim for yourself, see the [developer documentation](doc/developer_documentation.md).
+Stuck?
+[Get help on the quantum computing stack exchange](https://quantumcomputing.stackexchange.com)
+and use the `stim` tag.
 
-Circuits are specified using the [stim circuit file format (.stim)](doc/file_format_stim_circuit.md).
-See the [supported gate reference](doc/gates.md) for a list of available circuit instructions, and details on what they do.
-Samples can be output using [a variety of text and binary formats](doc/result_formats.md).
+See the reference documentation:
 
-Error models are specified using the [detector error model file format (.dem)](doc/file_format_dem_detector_error_model.md).
+- [Stim Python API Reference](doc/python_api_reference_vDev.md)
+- [Stim Supported Gates Reference](doc/gates.md)
+- [Stim Command Line Reference](doc/usage_command_line.md)
+- [Stim Circuit File Format (.stim)](doc/file_format_stim_circuit.md)
+- [Stim Detector Error model Format (.dem)](doc/file_format_dem_detector_error_model.md)
+- [Stim Results Format Reference](doc/result_formats.md)
+- [Stim Internal Developer Reference](doc/developer_documentation.md)
 
-# How does Stim work?
+# <a name="how-stim-work"></a>How does Stim work?
 
-See [the paper describing Stim published in Quantum](https://quantum-journal.org/papers/q-2021-07-06-497/).
+See [the paper describing Stim](https://quantum-journal.org/papers/q-2021-07-06-497/).
+Stim makes three core improvements over previous stabilizer simulators:
 
-In terms of performance, Stim makes three core improvements over previous stabilizer simulators:
-
-1. Stim's hot loops are heavily vectorized, using 256 bit wide AVX instructions.
+1. **Vectorized code.** Stim's hot loops are heavily vectorized, using 256 bit wide AVX instructions.
    This makes them very fast.
    For example, Stim can multiply Pauli strings with 100 billion terms in one second.
-2. When bulk sampling, Stim only uses a general stabilizer simulator for an initial reference sample.
+2. **Reference Frame Sampling.** When bulk sampling, Stim only uses a general stabilizer simulator for an initial reference sample.
    After that, it cheaply derives as many samples as needed by propagating simulated errors diffed against the reference.
    This simple trick is *ridiculously* cheaper than the alternative: constant cost per gate, instead of linear cost or even quadratic cost.
-3. When doing general stabilizer simulation, Stim tracks the inverse of the stabilizer tableau that was historically used.
-   This has the unexpected benefit of making measurements with a deterministic result (given previous measurements) take
-   linear time instead of quadratic time.
+3. **Inverted Stabilizer Tableau.** When doing general stabilizer simulation, Stim tracks the inverse of the stabilizer tableau that was historically used.
+   This has the unexpected benefit of making measurements that commute with the current stabilizers take
+   linear time instead of quadratic time. This is beneficial in error correcting codes, because the measurements
+   they perform are usually redundant and so commute with the current stabilizers.
 
 
-# Attribution
+# <a name="how-cite-stim"></a>How do I cite Stim?
 
 When using Stim for research, [please cite](https://quantum-journal.org/papers/q-2021-07-06-497/):
 

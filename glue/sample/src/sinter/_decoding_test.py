@@ -3,8 +3,8 @@ import pytest
 import stim
 
 import sinter
-from sinter.collection import post_selection_mask_from_4th_coord
-from sinter.decoding import sample_decode
+from sinter._collection import post_selection_mask_from_4th_coord
+from sinter._decoding import sample_decode
 
 
 def test_decode_using_pymatching():

@@ -50,7 +50,7 @@ to use sinter's python API.
 This example assumes you are in a python environment with sinter
 installed.
 
-```bash
+```python
 import stim
 import sinter
 import matplotlib.pyplot as plt
@@ -170,7 +170,7 @@ import stim
 
 for p in [0.001, 0.005, 0.01]:
     for d in [3, 5]:
-        with open(f'circuits/rotated_d{d}_p{p}_surface_code.stim', 'w') as f:
+        with open(f'circuits/d={d},p={p},b=X,type=rotated_surface_memory.stim', 'w') as f:
             c = stim.Circuit.generated(
                 rounds=d,
                 distance=d,
@@ -180,7 +180,6 @@ for p in [0.001, 0.005, 0.01]:
                 before_round_data_depolarization=p,
                 code_task=f'surface_code:rotated_memory_x')
             print(c, file=f)
-
 "
 ```
 
@@ -195,6 +194,11 @@ But this is just an example, so we'll use normal surface code circuits.
 You can use sinter to collect statistics on each circuit by using the `sinter collect` command.
 This command takes options specifying how much data to collect, how to do decoding, etc.
 
+The `metadata_func` argument can be used to specify custom python expression that turns the `path`
+into a dictionary or other JSON object associated with the circuit.
+For convenience, sinter includes the method `sinter.comma_separated_key_values(path)` which parses
+stim circuit paths like `folder/a=2,b=test.stim` into a dictionary like `{'a': 2, 'b': 'test'}`.
+
 By default, sinter writes the collected statistics to stdout as CSV data.
 One particularly important option that changes this behavior is `--save_resume_filepath`,
 which allows the command to be interrupted and restarted without losing data.
@@ -206,10 +210,7 @@ instead of overwriting it.
 sinter collect \
     --processes 4 \
     --circuits circuits/*.stim \
-    --metadata_func "(v := path.split('/')[-1].split('_')) and {
-        'd': int(v[1][1:]),
-        'p': float(v[2][1:])
-    }" \
+    --metadata_func "sinter.comma_separated_key_values(path)" \
     --decoders pymatching \
     --max_shots 1_000_000 \
     --max_errors 1000 \
@@ -235,12 +236,12 @@ sinter combine stats.csv
 
 ```
      shots,    errors,  discards, seconds,decoder,strong_id,json_metadata
-   1000000,       837,         0,    36.6,pymatching,9f7e20c54fec45b6aef7491b774dd5c0a3b9a005aa82faf5b9c051d6e40d60a9,"{""d"":3,""p"":0.001}"
-     53498,      1099,         0,    6.52,pymatching,3f40432443a99b933fb548b831fb54e7e245d9d73a35c03ea5a2fb2ce270f8c8,"{""d"":3,""p"":0.005}"
-     16269,      1023,         0,    3.23,pymatching,17b2e0c99560d20307204494ac50e31b33e50721b4ebae99d9e3577ae7248874,"{""d"":3,""p"":0.01}"
-   1000000,       151,         0,    77.3,pymatching,e179a18739201250371ffaae0197d8fa19d26b58dfc2942f9f1c85568645387a,"{""d"":5,""p"":0.001}"
-     11363,      1068,         0,    12.5,pymatching,a4dec28934a033215ff1389651a26114ecc22016a6e122008830cf7dd04ba5ad,"{""d"":5,""p"":0.01}"
-     61569,      1001,         0,    24.5,pymatching,2fefcc356752482fb4c6d912c228f6d18762f5752796c668b6abeb7775f5de92,"{""d"":5,""p"":0.005}"
+     58591,      1067,         0,    5.50,pymatching,bb46c8fca4d9fd9d4d27a5039686332ac5e24011a7f2aea5a65f6040445567c0,"{""b"":""X"",""d"":3,""p"":0.005,""type"":""rotated_surface_memory""}"
+   1000000,       901,         0,    73.4,pymatching,4c0780830fe1747ab22767b69d1178f803943c83dd4afa6d241acf02e6dfa71f,"{""b"":""X"",""d"":3,""p"":0.001,""type"":""rotated_surface_memory""}"
+     16315,      1026,         0,    2.39,pymatching,64d81b177ef1a455644ac3e03f374394cd8ad385ba2ee0ac147b2405107564fc,"{""b"":""X"",""d"":3,""p"":0.01,""type"":""rotated_surface_memory""}"
+   1000000,       157,         0,   116.5,pymatching,100855c078af0936d098cecbd8bfb7591c0951ae69527c002c9c5f4c79bde129,"{""b"":""X"",""d"":5,""p"":0.001,""type"":""rotated_surface_memory""}"
+     61677,      1005,         0,    21.2,pymatching,6d7b8b312a5460c7fe08119d3c7a040daa25bd34d524611160e4aac6196293fe,"{""b"":""X"",""d"":5,""p"":0.005,""type"":""rotated_surface_memory""}"
+     10891,      1021,         0,    7.43,pymatching,477252e968f0f22f64ccb058c0e1e9c77b765f60f74df8b6707de7ec65ed13b7,"{""b"":""X"",""d"":5,""p"":0.01,""type"":""rotated_surface_memory""}"
 ```
 
 # plot

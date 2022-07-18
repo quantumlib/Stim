@@ -67,7 +67,7 @@ def worker_loop(tmp_dir: 'pathlib.Path',
 
                 used_task = work.task
                 if work.task.detector_error_model is None:
-                    from sinter.task import Task
+                    from sinter._task import Task
                     used_task = Task(
                         circuit=work.task.circuit,
                         decoder=work.task.decoder,
@@ -79,7 +79,7 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                     )
 
                 try:
-                    from sinter.decoding import sample_decode
+                    from sinter._decoding import sample_decode
                     stats: 'sinter.AnonTaskStats' = sample_decode(
                         num_shots=work.num_shots,
                         circuit=used_task.circuit,
@@ -99,7 +99,7 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                     ))
                     continue
 
-                from sinter.anon_task_stats import AnonTaskStats
+                from sinter._anon_task_stats import AnonTaskStats
                 stats = AnonTaskStats(
                     shots=stats.shots,
                     discards=stats.discards,

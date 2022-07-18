@@ -1,9 +1,9 @@
 import json
 from typing import Any, Dict, List, TYPE_CHECKING
 
-from sinter.task_stats import TaskStats
-from sinter.task import Task
-from sinter.decoding import AnonTaskStats
+from sinter._task_stats import TaskStats
+from sinter._task import Task
+from sinter._decoding import AnonTaskStats
 
 if TYPE_CHECKING:
     import sinter

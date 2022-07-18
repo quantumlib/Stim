@@ -58,10 +58,10 @@ import stim
 
 # Create a circuit that measures a large GHZ state.
 c = stim.Circuit()
-c.append_operation("H", [0])
+c.append("H", [0])
 for k in range(1, 30):
-    c.append_operation("CNOT", [0, k])
-c.append_operation("M", range(30))
+    c.append("CNOT", [0, k])
+c.append("M", range(30))
 
 # Compile the circuit into a high performance sampler.
 sampler = c.compile_sampler()
