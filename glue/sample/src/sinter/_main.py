@@ -19,16 +19,20 @@ def main(*, command_line_args: Optional[List[str]] = None):
     if mode == 'predict':
         from sinter._main_predict import main_predict
         return main_predict(command_line_args=command_line_args[1:])
-    if command_line_args and not command_line_args[0].startswith('-'):
-        print(f"\033[31mUnrecognized command: sinter {command_line_args[0]}\033[0m\n", file=sys.stderr)
-    else:
-        print(f"\033[31mDidn't specify a command.\033[0m\n", file=sys.stderr)
-    print(f"Known commands are:\n"
+
+    want_help = mode in ['help', 'h', '--help', '-help', '-h', '--h']
+    if not want_help:
+        if command_line_args and not command_line_args[0].startswith('-'):
+            print(f"\033[31mUnrecognized command: sinter {command_line_args[0]}\033[0m\n", file=sys.stderr)
+        else:
+            print(f"\033[31mDidn't specify a command.\033[0m\n", file=sys.stderr)
+    print(f"Available commands are:\n"
           f"    sinter collect\n"
           f"    sinter combine\n"
-          f"    sinter plot\n"
+          f"    sinter plot"
           f"", file=sys.stderr)
-    sys.exit(1)
+    if not want_help:
+        sys.exit(1)
 
 
 if __name__ == '__main__':
