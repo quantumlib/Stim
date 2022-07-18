@@ -5,11 +5,11 @@ from typing import Iterator, Any, Tuple, List, Callable
 import stim
 
 import sinter
-from sinter.printer import ThrottledProgressPrinter
-from sinter.task import Task
-from sinter.collection import collect, Progress, post_selection_mask_from_4th_coord
-from sinter.decoding import DECODER_METHODS
-from sinter.main_combine import ExistingData, CSV_HEADER
+from sinter._printer import ThrottledProgressPrinter
+from sinter._task import Task
+from sinter._collection import collect, Progress, post_selection_mask_from_4th_coord
+from sinter._decoding import DECODER_METHODS
+from sinter._main_combine import ExistingData, CSV_HEADER
 
 
 def iter_file_paths_into_goals(circuit_paths: Iterator[str],

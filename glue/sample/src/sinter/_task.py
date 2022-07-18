@@ -5,8 +5,8 @@ import json
 import math
 import numpy as np
 
-from sinter.collection_options import CollectionOptions
-from sinter.json_type import JSON_TYPE
+from sinter._collection_options import CollectionOptions
+from sinter._json_type import JSON_TYPE
 
 if TYPE_CHECKING:
     import sinter

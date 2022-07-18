@@ -8,7 +8,7 @@ import tempfile
 from typing import Optional, Union
 
 from sinter import post_selection_mask_from_4th_coord
-from sinter.decoding import DECODER_METHODS, streaming_post_select
+from sinter._decoding import DECODER_METHODS, streaming_post_select
 
 
 def _converted_on_disk(
@@ -203,6 +203,43 @@ def predict_discards_bit_packed(
     return np.any(dets_bit_packed & post_selection_mask, axis=1)
 
 
+def predict_observables(
+    *,
+    dem: stim.DetectorErrorModel,
+    dets: np.ndarray,
+    decoder: str,
+    bit_pack_result: bool = False,
+) -> np.ndarray:
+    """Predicts which observables were flipped based on detection event data by using a decoder.
+
+    Args:
+        dem: The detector error model the detector data applies to.
+            This is also where coordinate data is read from, in order to determine
+            which detectors to postselect as not having fired.
+        dets: The detection event data. Can be bit packed or not bit packed.
+            If dtype=np.bool8 then shape=(num_shots, num_detectors).
+            If dtype=np.uint8 then shape=(num_shots, math.ceil(num_detectors / 8)).
+        decoder: The decoder to use for decoding, e.g. "pymatching".
+        bit_pack_result: Defaults to False. Determines if the result is bit packed
+            or not.
+
+    Returns:
+        If bit_packed_result=False (default):
+            dtype=np.bool8
+            shape=(num_shots, num_observables)
+        If bit_packed_result=True:
+            dtype=np.uint8
+            shape=(num_shots, math.ceil(num_observables / 8))
+    """
+
+    if dets.dtype == np.bool8:
+        dets = np.packbits(dets, axis=1, bitorder='little')
+    result = predict_observables_bit_packed(dem=dem, dets_bit_packed=dets, decoder=decoder)
+    if not bit_pack_result:
+        result = np.unpackbits(result, axis=1, bitorder='little', count=dem.num_observables)
+    return result
+
+
 def predict_observables_bit_packed(
     *,
     dem: stim.DetectorErrorModel,
@@ -210,6 +247,8 @@ def predict_observables_bit_packed(
     decoder: str,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data by using a decoder.
+
+    This is a specialization of `sinter.predict_observables`, without optional bit packing.
 
     Args:
         dem: The detector error model the detector data applies to.

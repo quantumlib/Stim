@@ -4,12 +4,12 @@ import pathlib
 import tempfile
 from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
-from sinter.collection_options import CollectionOptions
-from sinter.existing_data import ExistingData
-from sinter.task_stats import TaskStats
-from sinter.task import Task
-from sinter.collection_tracker_for_single_task import CollectionTrackerForSingleTask
-from sinter.worker import worker_loop, WorkIn, WorkOut
+from sinter._collection_options import CollectionOptions
+from sinter._existing_data import ExistingData
+from sinter._task_stats import TaskStats
+from sinter._task import Task
+from sinter._collection_tracker_for_single_task import CollectionTrackerForSingleTask
+from sinter._worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:

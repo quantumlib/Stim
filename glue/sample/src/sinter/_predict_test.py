@@ -1,15 +1,10 @@
-import os.path
 import pathlib
 
-import math
 import numpy as np
 import stim
 import tempfile
-from typing import Optional, Union
 
-from sinter import post_selection_mask_from_4th_coord, predict_discards_bit_packed, predict_observables_bit_packed, \
-    predict_on_disk
-from sinter.decoding import DECODER_METHODS, streaming_post_select
+import sinter
 
 
 def test_predict_on_disk_no_postselect():
@@ -28,7 +23,7 @@ def test_predict_on_disk_no_postselect():
             print("0", file=f)
             print("1", file=f)
 
-        predict_on_disk(
+        sinter.predict_on_disk(
             decoder='pymatching',
             dem_path=dem_path,
             dets_path=dets_path,
@@ -61,7 +56,7 @@ def test_predict_on_disk_yes_postselect():
             print("0", file=f)
             print("1", file=f)
 
-        predict_on_disk(
+        sinter.predict_on_disk(
             decoder='pymatching',
             dem_path=dem_path,
             dets_path=dets_path,
@@ -83,7 +78,7 @@ def test_predict_discards_bit_packed_none_postselected():
     dem = stim.DetectorErrorModel("""
         error(0.1) D0 L0
     """)
-    actual = predict_discards_bit_packed(
+    actual = sinter.predict_discards_bit_packed(
         dem=dem,
         dets_bit_packed=np.packbits(np.array([
             [False],
@@ -102,7 +97,7 @@ def test_predict_discards_bit_packed_some_postselected():
         error(0.1) D0 L0
         detector(0, 0, 0, 1) D0
     """)
-    actual = predict_discards_bit_packed(
+    actual = sinter.predict_discards_bit_packed(
         dem=dem,
         dets_bit_packed=np.packbits(np.array([
             [False],
@@ -121,7 +116,7 @@ def test_predict_observables_bit_packed():
         error(0.1) D0 L0
     """)
 
-    actual = predict_observables_bit_packed(
+    actual = sinter.predict_observables_bit_packed(
         dem=dem,
         dets_bit_packed=np.packbits(np.array([
             [False],
@@ -135,4 +130,98 @@ def test_predict_observables_bit_packed():
             [False],
             [True],
         ],
+    )
+
+
+def test_predict_observables():
+    dem = stim.DetectorErrorModel("""
+        error(0.1) D0 L0
+    """)
+
+    actual = sinter.predict_observables(
+        dem=dem,
+        dets=np.packbits(np.array([
+            [False],
+            [True],
+        ], dtype=np.bool8), bitorder='little', axis=1),
+        decoder='pymatching',
+        bit_pack_result=True,
+    )
+    np.testing.assert_array_equal(
+        np.unpackbits(actual, bitorder='little', count=1, axis=1),
+        [
+            [False],
+            [True],
+        ],
+    )
+
+    actual = sinter.predict_observables(
+        dem=dem,
+        dets=np.array([
+            [False],
+            [True],
+        ], dtype=np.bool8),
+        decoder='pymatching',
+        bit_pack_result=True,
+    )
+    np.testing.assert_array_equal(
+        np.unpackbits(actual, bitorder='little', count=1, axis=1),
+        [
+            [False],
+            [True],
+        ],
+    )
+
+    actual = sinter.predict_observables(
+        dem=dem,
+        dets=np.packbits(np.array([
+            [False],
+            [True],
+        ], dtype=np.bool8), bitorder='little', axis=1),
+        decoder='pymatching',
+        bit_pack_result=False,
+    )
+    np.testing.assert_array_equal(
+        actual,
+        [[False], [True]],
+    )
+
+    actual = sinter.predict_observables(
+        dem=dem,
+        dets=np.array([
+            [False],
+            [True],
+        ], dtype=np.bool8),
+        decoder='pymatching',
+        bit_pack_result=False,
+    )
+    np.testing.assert_array_equal(
+        actual,
+        [[False], [True]],
+    )
+
+    actual = sinter.predict_observables(
+        dem=dem,
+        dets=np.packbits(np.array([
+            [False],
+            [True],
+        ], dtype=np.bool8), bitorder='little', axis=1),
+        decoder='pymatching',
+    )
+    np.testing.assert_array_equal(
+        actual,
+        [[False], [True]],
+    )
+
+    actual = sinter.predict_observables(
+        dem=dem,
+        dets=np.array([
+            [False],
+            [True],
+        ], dtype=np.bool8),
+        decoder='pymatching',
+    )
+    np.testing.assert_array_equal(
+        actual,
+        [[False], [True]],
     )

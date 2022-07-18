@@ -4,11 +4,11 @@ from typing import Union
 import numpy as np
 import pytest
 
-from sinter.probability_util import (
+from sinter._probability_util import (
     binary_search, log_binomial, log_factorial, fit_line_y_at_x, fit_line_slope,
     binary_intercept, least_squares_through_point, fit_binomial, shot_error_rate_to_piece_error_rate,
 )
-from sinter.probability_util import comma_separated_key_values
+from sinter._probability_util import comma_separated_key_values
 
 
 @pytest.mark.parametrize(

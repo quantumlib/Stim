@@ -7,12 +7,12 @@ import math
 import numpy as np
 import stim
 
-from sinter.collection_options import CollectionOptions
-from sinter.csv_out import CSV_HEADER
-from sinter.collection_work_manager import CollectionWorkManager
-from sinter.existing_data import ExistingData
-from sinter.printer import ThrottledProgressPrinter
-from sinter.task_stats import TaskStats
+from sinter._collection_options import CollectionOptions
+from sinter._csv_out import CSV_HEADER
+from sinter._collection_work_manager import CollectionWorkManager
+from sinter._existing_data import ExistingData
+from sinter._printer import ThrottledProgressPrinter
+from sinter._task_stats import TaskStats
 
 if TYPE_CHECKING:
     import sinter

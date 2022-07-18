@@ -1,8 +1,8 @@
 import dataclasses
 
-from sinter.anon_task_stats import AnonTaskStats
-from sinter.json_type import JSON_TYPE
-from sinter.csv_out import csv_line
+from sinter._anon_task_stats import AnonTaskStats
+from sinter._json_type import JSON_TYPE
+from sinter._csv_out import csv_line
 
 
 @dataclasses.dataclass(frozen=True)

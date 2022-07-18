@@ -2,7 +2,7 @@ import argparse
 from typing import Any
 from typing import List
 
-from sinter.predict import predict_on_disk
+from sinter._predict import predict_on_disk
 
 
 def parse_args(args: List[str]) -> Any:

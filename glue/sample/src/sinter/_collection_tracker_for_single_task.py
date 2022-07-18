@@ -2,11 +2,11 @@ import math
 from typing import Iterator
 from typing import Optional
 
-from sinter.anon_task_stats import AnonTaskStats
-from sinter.existing_data import ExistingData
-from sinter.task import Task
-from sinter.worker import WorkIn
-from sinter.worker import WorkOut
+from sinter._anon_task_stats import AnonTaskStats
+from sinter._existing_data import ExistingData
+from sinter._task import Task
+from sinter._worker import WorkIn
+from sinter._worker import WorkOut
 
 
 DEFAULT_MAX_BATCH_SECONDS = 120
