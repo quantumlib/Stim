@@ -516,7 +516,7 @@ def test_num_qubits():
 def test_set_state_from_state_vector():
     s = stim.TableauSimulator()
     expected = [0.5, 0.5, 0, 0, -0.5, 0.5, 0, 0]
-    s.set_state_from_state_vector(expected)
+    s.set_state_from_state_vector(expected, endian='little')
     np.testing.assert_allclose(s.state_vector(), expected, atol=1e-6)
 
 

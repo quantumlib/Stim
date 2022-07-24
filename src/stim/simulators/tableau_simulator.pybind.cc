@@ -1646,9 +1646,9 @@ void pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
-        pybind11::arg("endian") = "little",
+        pybind11::arg("endian"),
         clean_doc_string(u8R"DOC(
-            @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str = 'little') -> None:
+            @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> None:
             Sets the tableau simulator's state to a superposition specified by a vector of amplitudes.
 
             Args:
@@ -1656,7 +1656,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                     must correspond to a state that is reachable using Clifford operations, and must
                     be normalized (i.e. it must be a unit vector).
                 endian:
-                    "little" (default): state vector is in little endian order, where higher index qubits
+                    "little": state vector is in little endian order, where higher index qubits
                         correspond to larger changes in the state index.
                     "big": state vector is in little endian order, where higher index qubits correspond to
                         smaller changes in the state index.
@@ -1677,7 +1677,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> tab_sim.set_state_from_state_vector([
                 ...     0.5**0.5,
                 ...     0.5**0.5 * 1j,
-                ... ])
+                ... ], endian='little')
                 >>> tab_sim.current_inverse_tableau().inverse()
                 stim.Tableau.from_conjugated_generators(
                     xs=[
@@ -1692,7 +1692,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 ...     0,
                 ...     0,
                 ...     0.5**0.5,
-                ... ])
+                ... ], endian='little')
                 >>> tab_sim.current_inverse_tableau().inverse()
                 stim.Tableau.from_conjugated_generators(
                     xs=[

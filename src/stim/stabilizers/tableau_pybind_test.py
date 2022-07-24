@@ -713,3 +713,26 @@ def test_iter_3q():
     for _ in stim.Tableau.iter_all(3, unsigned=True):
         n += 1
     assert n == 1451520
+
+
+def test_from_unitary_matrix():
+    s = 0.5**0.5
+    t = stim.Tableau.from_unitary_matrix([
+        [s, s],
+        [s, -s]
+    ], endian='little')
+    assert t == stim.Tableau.from_named_gate("H")
+
+    with pytest.raises(ValueError, match="Clifford operation"):
+        stim.Tableau.from_unitary_matrix([
+            [1, 0],
+            [0, 0],
+        ], endian='little')
+
+
+def test_to_circuit():
+    t = stim.Tableau.random(4)
+    c = t.to_circuit(method="elimination")
+    sim = stim.TableauSimulator()
+    sim.do_circuit(c)
+    assert sim.current_inverse_tableau().inverse() == t

@@ -16,6 +16,7 @@
 
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
@@ -203,6 +204,68 @@ void pybind_tableau(pybind11::module &m) {
                        [0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j],
                        [0.+0.j, 0.+0.j, 0.+0.j, 1.+0.j],
                        [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
+        )DOC")
+            .data());
+
+    c.def(
+        "to_circuit",
+        [](Tableau &self, const std::string &method) {
+            return tableau_to_circuit(self, method);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("method"),
+        clean_doc_string(u8R"DOC(
+            @signature def to_circuit(self, *, method: str) -> stim.Circuit:
+            Synthesizes a circuit that implements the tableau's Clifford operation.
+
+            The circuits returned by this method are not guaranteed to be stable
+            from version to version, and may be produced using randomization.
+
+            Args:
+                method: The method to use when synthesizing the circuit. Available values are:
+                    "elimination": Uses Gaussian elimination to cancel off-diagonal terms one by one.
+                        Gate set: H, S, CX
+                        Circuit qubit count: n
+                        Circuit operation count: O(n^2)
+                        Circuit depth: O(n^2)
+
+            Returns:
+                The synthesized circuit.
+
+            Example:
+                >>> import stim
+                >>> tableau = stim.Tableau.from_conjugated_generators(
+                ...     xs=[
+                ...         stim.PauliString("-_YZ"),
+                ...         stim.PauliString("-YY_"),
+                ...         stim.PauliString("-XZX"),
+                ...     ],
+                ...     zs=[
+                ...         stim.PauliString("+Y_Y"),
+                ...         stim.PauliString("-_XY"),
+                ...         stim.PauliString("-Y__"),
+                ...     ],
+                ... )
+                >>> tableau.to_circuit(method="elimination")
+                stim.Circuit('''
+                    CX 2 0 0 2 2 0
+                    S 0
+                    H 0
+                    S 0
+                    H 1
+                    CX 0 1 0 2
+                    H 1 2
+                    CX 1 0 2 0 2 1 1 2 2 1
+                    H 1
+                    S 1 2
+                    H 2
+                    CX 2 1
+                    S 2
+                    H 0 1 2
+                    S 0 0 1 1 2 2
+                    H 0 1 2
+                    S 1 1 2 2
+                ''')
         )DOC")
             .data());
 
@@ -1024,6 +1087,82 @@ void pybind_tableau(pybind11::module &m) {
                 ... )
                 >>> identity3 == stim.Tableau(3)
                 True
+        )DOC")
+            .data());
+
+    c.def_static(
+        "from_unitary_matrix",
+        [](const pybind11::object &matrix, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+
+            std::vector<std::vector<std::complex<float>>> converted_matrix;
+            for (const auto &row : matrix) {
+                converted_matrix.push_back({});
+                for (const auto &cell : row) {
+                    converted_matrix.back().push_back(pybind11::cast<std::complex<float>>(cell));
+                }
+            }
+            return unitary_to_tableau(converted_matrix, little_endian);
+        },
+        pybind11::arg("matrix"),
+        pybind11::kw_only(),
+        pybind11::arg("endian"),
+        clean_doc_string(u8R"DOC(
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.Tableau:
+            Creates a tableau from the unitary matrix of a Clifford operation.
+
+            Args:
+                matrix: A unitary matrix specified as an iterable of rows, with each row is an iterable of amplitudes.
+                    The unitary matrix must correspond to a Clifford operation.
+                endian:
+                    "little": matrix entries are in little endian order, where higher index qubits
+                        correspond to larger changes in row/col indices.
+                    "big": matrix entries are in little endian order, where higher index qubits correspond to
+                        smaller changes in row/col indices.
+            Returns:
+                The tableau equivalent to the given unitary matrix (up to global phase).
+
+            Raises:
+                ValueError: The given matrix isn't the unitary matrix of a Clifford operation.
+
+            Examples:
+                >>> import stim
+                >>> stim.Tableau.from_unitary_matrix([
+                ...     [1, 0],
+                ...     [0, 1j],
+                ... ], endian='little')
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Y"),
+                    ],
+                    zs=[
+                        stim.PauliString("+Z"),
+                    ],
+                )
+
+                >>> stim.Tableau.from_unitary_matrix([
+                ...     [1, 0, 0, 0],
+                ...     [0, 1, 0, 0],
+                ...     [0, 0, 0, -1j],
+                ...     [0, 0, 1j, 0],
+                ... ], endian='little')
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+XZ"),
+                        stim.PauliString("+YX"),
+                    ],
+                    zs=[
+                        stim.PauliString("+ZZ"),
+                        stim.PauliString("+_Z"),
+                    ],
+                )
         )DOC")
             .data());
 
