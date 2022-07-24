@@ -17,8 +17,8 @@
 #ifndef _STIM_STABILIZERS_CONVERSIONS_H
 #define _STIM_STABILIZERS_CONVERSIONS_H
 
-#include "stim/stabilizers/tableau.h"
 #include "stim/circuit/circuit.h"
+#include "stim/stabilizers/tableau.h"
 
 namespace stim {
 
@@ -45,7 +45,8 @@ Circuit unitary_circuit_inverse(const Circuit &unitary_circuit);
 ///
 /// Throws:
 ///     std::invalid_argument: The given state vector cannot be produced by a stabilizer circuit.
-Circuit stabilizer_state_vector_to_circuit(const std::vector<std::complex<float>> &stabilizer_state_vector, bool little_endian);
+Circuit stabilizer_state_vector_to_circuit(
+    const std::vector<std::complex<float>> &stabilizer_state_vector, bool little_endian);
 
 /// Compiles the given circuit into a tableau.
 ///
@@ -113,7 +114,8 @@ Tableau unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &
 /// Returns:
 ///     A tableau containing the given stabilizers, but extended to also include matching stabilizers.
 ///     The Z outputs of the tableau will be the given stabilizers (skipping any redundant ones).
-Tableau stabilizers_to_tableau(const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert);
+Tableau stabilizers_to_tableau(
+    const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert);
 
 }  // namespace stim
 

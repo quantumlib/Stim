@@ -274,24 +274,15 @@ TEST(VectorSim, from_stabilizers) {
 
 TEST(VectorSim, smooth_stabilizer_state) {
     VectorSimulator sim(0);
-    sim.state = {
-        {1, 0},
-        {1, 1}
-    };
+    sim.state = {{1, 0}, {1, 1}};
     ASSERT_THROW({ sim.smooth_stabilizer_state(1); }, std::invalid_argument);
 
-    sim.state = {
-        {0.25, 0.25},
-        {-0.25, 0.25}
-    };
+    sim.state = {{0.25, 0.25}, {-0.25, 0.25}};
     ASSERT_THROW({ sim.smooth_stabilizer_state(1); }, std::invalid_argument);
 
-    sim.state = {
-        {0.25, 0.25},
-        {-0.25, 0.25}
-    };
+    sim.state = {{0.25, 0.25}, {-0.25, 0.25}};
     sim.smooth_stabilizer_state({-0.25, -0.25});
-    ASSERT_EQ(sim.state, (std::vector<std::complex<float>>{{-1, 0}, {0,-1}}));
+    ASSERT_EQ(sim.state, (std::vector<std::complex<float>>{{-1, 0}, {0, -1}}));
 }
 
 TEST(VectorSim, do_unitary_circuit) {
@@ -308,13 +299,7 @@ TEST(VectorSim, do_unitary_circuit) {
     )CIRCUIT"));
     ASSERT_EQ(sim.state, (std::vector<std::complex<float>>({1, 0, 1, 0, {0, 1}, 0, {0, 1}, 0})));
 
-    ASSERT_THROW({
-        sim.do_unitary_circuit(Circuit("H 3"));
-    }, std::invalid_argument);
-    ASSERT_THROW({
-        sim.do_unitary_circuit(Circuit("CX rec[-1] 0"));
-    }, std::invalid_argument);
-    ASSERT_THROW({
-        sim.do_unitary_circuit(Circuit("X_ERROR(0.1) 0"));
-    }, std::invalid_argument);
+    ASSERT_THROW({ sim.do_unitary_circuit(Circuit("H 3")); }, std::invalid_argument);
+    ASSERT_THROW({ sim.do_unitary_circuit(Circuit("CX rec[-1] 0")); }, std::invalid_argument);
+    ASSERT_THROW({ sim.do_unitary_circuit(Circuit("X_ERROR(0.1) 0")); }, std::invalid_argument);
 }

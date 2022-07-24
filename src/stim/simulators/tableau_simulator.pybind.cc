@@ -1537,7 +1537,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 }
                 converted_stabilizers.push_back(p.value);
             }
-            self.inv_state = stabilizers_to_tableau(converted_stabilizers, allow_redundant, allow_underconstrained, true);
+            self.inv_state =
+                stabilizers_to_tableau(converted_stabilizers, allow_redundant, allow_underconstrained, true);
         },
         pybind11::arg("stabilizers"),
         pybind11::kw_only(),
@@ -1642,7 +1643,8 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 v.push_back(pybind11::cast<std::complex<float>>(obj));
             }
 
-            self.inv_state = circuit_to_tableau(stabilizer_state_vector_to_circuit(v, little_endian), false, false, false).inverse();
+            self.inv_state =
+                circuit_to_tableau(stabilizer_state_vector_to_circuit(v, little_endian), false, false, false).inverse();
         },
         pybind11::arg("state_vector"),
         pybind11::kw_only(),

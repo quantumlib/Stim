@@ -15,8 +15,9 @@
 #include "stim/stabilizers/conversions.h"
 
 #include "gtest/gtest.h"
-#include "stim/test_util.test.h"
+
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 
@@ -46,11 +47,13 @@ TEST(conversions, floor_lg2) {
 }
 
 TEST(conversions, unitary_circuit_inverse) {
-    ASSERT_EQ(unitary_circuit_inverse(Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        unitary_circuit_inverse(Circuit(R"CIRCUIT(
         H 0
         ISWAP 0 1 1 2 3 2
         S 0 3 4
-    )CIRCUIT")), Circuit(R"CIRCUIT(
+    )CIRCUIT")),
+        Circuit(R"CIRCUIT(
         S_DAG 4 3 0
         ISWAP_DAG 3 2 1 2 0 1
         H 0
@@ -60,99 +63,151 @@ TEST(conversions, unitary_circuit_inverse) {
 }
 
 TEST(conversions, stabilizer_state_vector_to_circuit_basic) {
-    ASSERT_THROW(stabilizer_state_vector_to_circuit({
-        {0.5},
-    }, false), std::invalid_argument);
+    ASSERT_THROW(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0.5},
+            },
+            false),
+        std::invalid_argument);
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {1},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {1},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {-1},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {-1},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {0, 1},
-        {0},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0, 1},
+                {0},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
         I 0
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {0},
-        {1},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0},
+                {1},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
         X 0
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {sqrtf(0.5)},
-        {sqrtf(0.5)},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {sqrtf(0.5)},
+                {sqrtf(0.5)},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
         H 0
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {0},
-        {1},
-        {0},
-        {0},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0},
+                {1},
+                {0},
+                {0},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
         X 1
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {0},
-        {0},
-        {1},
-        {0},
-    }, false), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0},
+                {0},
+                {1},
+                {0},
+            },
+            false),
+        stim::Circuit(R"CIRCUIT(
         X 0
         I 1
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {0},
-        {1},
-        {0},
-        {0},
-    }, true), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0},
+                {1},
+                {0},
+                {0},
+            },
+            true),
+        stim::Circuit(R"CIRCUIT(
         X 0
         I 1
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {0},
-        {0},
-        {1},
-        {0},
-    }, true), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {0},
+                {0},
+                {1},
+                {0},
+            },
+            true),
+        stim::Circuit(R"CIRCUIT(
         X 1
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {sqrtf(0.5)},
-        {0, sqrtf(0.5)},
-    }, true), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {sqrtf(0.5)},
+                {0, sqrtf(0.5)},
+            },
+            true),
+        stim::Circuit(R"CIRCUIT(
         H 0
         S 0
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {sqrtf(0.5)},
-        {0, -sqrtf(0.5)},
-    }, true), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {sqrtf(0.5)},
+                {0, -sqrtf(0.5)},
+            },
+            true),
+        stim::Circuit(R"CIRCUIT(
         H 0
         S_DAG 0
     )CIRCUIT"));
 
-    ASSERT_EQ(stabilizer_state_vector_to_circuit({
-        {sqrtf(0.5)},
-        {-sqrtf(0.5)},
-    }, true), stim::Circuit(R"CIRCUIT(
+    ASSERT_EQ(
+        stabilizer_state_vector_to_circuit(
+            {
+                {sqrtf(0.5)},
+                {-sqrtf(0.5)},
+            },
+            true),
+        stim::Circuit(R"CIRCUIT(
         H 0
         Z 0
     )CIRCUIT"));
@@ -280,77 +335,95 @@ TEST(conversions, circuit_to_tableau_ignoring_gates) {
 
     ASSERT_EQ(circuit_to_tableau(annotations, false, false, false), Tableau(1));
 
-    ASSERT_EQ(circuit_to_tableau(annotations + measure_reset + measure + reset + unitary + noise, true, true, true).num_qubits, 2);
+    ASSERT_EQ(
+        circuit_to_tableau(annotations + measure_reset + measure + reset + unitary + noise, true, true, true)
+            .num_qubits,
+        2);
 }
 
 TEST(conversions, circuit_to_tableau) {
     ASSERT_EQ(
-        circuit_to_tableau(Circuit(R"CIRCUIT(
-        )CIRCUIT"), false, false, false),
+        circuit_to_tableau(
+            Circuit(R"CIRCUIT(
+        )CIRCUIT"),
+            false,
+            false,
+            false),
         Tableau(0));
 
     ASSERT_EQ(
-        circuit_to_tableau(Circuit(R"CIRCUIT(
+        circuit_to_tableau(
+            Circuit(R"CIRCUIT(
             REPEAT 10 {
                 X 0
                 TICK
             }
-        )CIRCUIT"), false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false),
         Tableau(1));
 
     ASSERT_EQ(
-        circuit_to_tableau(Circuit(R"CIRCUIT(
+        circuit_to_tableau(
+            Circuit(R"CIRCUIT(
             REPEAT 11 {
                 X 0
                 TICK
             }
-        )CIRCUIT"), false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false),
         GATE_DATA.at("X").tableau());
 
     ASSERT_EQ(
-        circuit_to_tableau(Circuit(R"CIRCUIT(
+        circuit_to_tableau(
+            Circuit(R"CIRCUIT(
             S 0
-        )CIRCUIT"), false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false),
         GATE_DATA.at("S").tableau());
 
     ASSERT_EQ(
-        circuit_to_tableau(Circuit(R"CIRCUIT(
+        circuit_to_tableau(
+            Circuit(R"CIRCUIT(
             SQRT_Y_DAG 1
             CZ 0 1
             SQRT_Y 1
-        )CIRCUIT"), false, false, false),
+        )CIRCUIT"),
+            false,
+            false,
+            false),
         GATE_DATA.at("CX").tableau());
 
-
     ASSERT_EQ(
-        circuit_to_tableau(Circuit(R"CIRCUIT(
+        circuit_to_tableau(
+            Circuit(R"CIRCUIT(
             R 0
             X_ERROR(0.1) 0
             SQRT_Y_DAG 1
             CZ 0 1
             SQRT_Y 1
             M 0
-        )CIRCUIT"), true, true, true),
+        )CIRCUIT"),
+            true,
+            true,
+            true),
         GATE_DATA.at("CX").tableau());
 }
 
 TEST(conversions, circuit_to_output_state_vector) {
-    ASSERT_EQ(
-        circuit_to_output_state_vector(Circuit(""), false),
-        (std::vector<std::complex<float>>{{1}})
-    );
+    ASSERT_EQ(circuit_to_output_state_vector(Circuit(""), false), (std::vector<std::complex<float>>{{1}}));
     ASSERT_EQ(
         circuit_to_output_state_vector(Circuit("H 0 1"), false),
-        (std::vector<std::complex<float>>{{0.5}, {0.5}, {0.5}, {0.5}})
-    );
+        (std::vector<std::complex<float>>{{0.5}, {0.5}, {0.5}, {0.5}}));
     ASSERT_EQ(
-        circuit_to_output_state_vector(Circuit("X 1"), false),
-        (std::vector<std::complex<float>>{{0}, {1}, {0}, {0}})
-    );
+        circuit_to_output_state_vector(Circuit("X 1"), false), (std::vector<std::complex<float>>{{0}, {1}, {0}, {0}}));
     ASSERT_EQ(
-        circuit_to_output_state_vector(Circuit("X 1"), true),
-        (std::vector<std::complex<float>>{{0}, {0}, {1}, {0}})
-    );
+        circuit_to_output_state_vector(Circuit("X 1"), true), (std::vector<std::complex<float>>{{0}, {0}, {1}, {0}}));
 }
 
 TEST(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau) {
@@ -361,39 +434,31 @@ TEST(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau) {
         ASSERT_EQ(actual, desired);
 
         for (const auto &op : circuit.operations) {
-            ASSERT_TRUE(op.gate == &GATE_DATA.at("S")
-                        || op.gate == &GATE_DATA.at("H")
-                        || op.gate == &GATE_DATA.at("CX")) << op;
+            ASSERT_TRUE(
+                op.gate == &GATE_DATA.at("S") || op.gate == &GATE_DATA.at("H") || op.gate == &GATE_DATA.at("CX"))
+                << op;
         }
     }
 }
 
 TEST(conversions, tableau_to_circuit) {
-    ASSERT_EQ(
-        tableau_to_circuit(GATE_DATA.at("I").tableau(), "elimination"),
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(tableau_to_circuit(GATE_DATA.at("I").tableau(), "elimination"), Circuit(R"CIRCUIT(
             H 0
             H 0
         )CIRCUIT"));
 
-    ASSERT_EQ(
-        tableau_to_circuit(GATE_DATA.at("X").tableau(), "elimination"),
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(tableau_to_circuit(GATE_DATA.at("X").tableau(), "elimination"), Circuit(R"CIRCUIT(
             H 0
             S 0
             S 0
             H 0
         )CIRCUIT"));
 
-    ASSERT_EQ(
-        tableau_to_circuit(GATE_DATA.at("S").tableau(), "elimination"),
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(tableau_to_circuit(GATE_DATA.at("S").tableau(), "elimination"), Circuit(R"CIRCUIT(
             S 0
         )CIRCUIT"));
 
-    ASSERT_EQ(
-        tableau_to_circuit(GATE_DATA.at("ISWAP").tableau(), "elimination"),
-        Circuit(R"CIRCUIT(
+    ASSERT_EQ(tableau_to_circuit(GATE_DATA.at("ISWAP").tableau(), "elimination"), Circuit(R"CIRCUIT(
             CX 1 0 0 1 1 0
             S 0
             H 1
@@ -461,29 +526,35 @@ TEST(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary) {
 }
 
 TEST(conversions, unitary_to_tableau_fail) {
-    ASSERT_THROW({
-        unitary_to_tableau({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false);
-    }, std::invalid_argument);
-    ASSERT_THROW({
-        unitary_to_tableau({
-            {1, 0, 0, 0},
-            {0, 1, 0, 0},
-            {0, 0, 1, 0},
-            {0, 0, 0, {0, 1}},
-        }, false);
-    }, std::invalid_argument);
-    ASSERT_THROW({
-        unitary_to_tableau({
-            {1, 0, 0, 0, 0, 0, 0, 0},
-            {0, 1, 0, 0, 0, 0, 0, 0},
-            {0, 0, 1, 0, 0, 0, 0, 0},
-            {0, 0, 0, 1, 0, 0, 0, 0},
-            {0, 0, 0, 0, 1, 0, 0, 0},
-            {0, 0, 0, 0, 0, 1, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0, 1},
-            {0, 0, 0, 0, 0, 0, 1, 0},
-        }, false);
-    }, std::invalid_argument);
+    ASSERT_THROW({ unitary_to_tableau({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false); }, std::invalid_argument);
+    ASSERT_THROW(
+        {
+            unitary_to_tableau(
+                {
+                    {1, 0, 0, 0},
+                    {0, 1, 0, 0},
+                    {0, 0, 1, 0},
+                    {0, 0, 0, {0, 1}},
+                },
+                false);
+        },
+        std::invalid_argument);
+    ASSERT_THROW(
+        {
+            unitary_to_tableau(
+                {
+                    {1, 0, 0, 0, 0, 0, 0, 0},
+                    {0, 1, 0, 0, 0, 0, 0, 0},
+                    {0, 0, 1, 0, 0, 0, 0, 0},
+                    {0, 0, 0, 1, 0, 0, 0, 0},
+                    {0, 0, 0, 0, 1, 0, 0, 0},
+                    {0, 0, 0, 0, 0, 1, 0, 0},
+                    {0, 0, 0, 0, 0, 0, 0, 1},
+                    {0, 0, 0, 0, 0, 0, 1, 0},
+                },
+                false);
+        },
+        std::invalid_argument);
 }
 
 TEST(conversions, stabilizers_to_tableau_fuzz) {
@@ -510,9 +581,7 @@ TEST(conversions, stabilizers_to_tableau_partial_fuzz) {
             for (size_t k = 0; k < n - skipped; k++) {
                 expected_stabilizers.push_back(t.zs[k]);
             }
-            ASSERT_THROW({
-                stabilizers_to_tableau(expected_stabilizers, false, false, false);
-            }, std::invalid_argument);
+            ASSERT_THROW({ stabilizers_to_tableau(expected_stabilizers, false, false, false); }, std::invalid_argument);
             auto actual = stabilizers_to_tableau(expected_stabilizers, false, true, false);
             for (size_t k = 0; k < n - skipped; k++) {
                 ASSERT_EQ(actual.zs[k], expected_stabilizers[k]);
@@ -541,9 +610,7 @@ TEST(conversions, stabilizers_to_tableau_overconstrained) {
         for (size_t k = 0; k < n; k++) {
             expected_stabilizers.push_back(t.zs[k]);
         }
-        ASSERT_THROW({
-            stabilizers_to_tableau(expected_stabilizers, false, false, false);
-        }, std::invalid_argument);
+        ASSERT_THROW({ stabilizers_to_tableau(expected_stabilizers, false, false, false); }, std::invalid_argument);
         auto actual = stabilizers_to_tableau(expected_stabilizers, true, false, false);
         for (size_t k = 0; k < n; k++) {
             ASSERT_EQ(actual.zs[k], expected_stabilizers[k + 1 + (k > 3)]);

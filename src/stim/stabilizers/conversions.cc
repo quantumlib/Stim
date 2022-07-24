@@ -1,7 +1,8 @@
 #include "stim/stabilizers/conversions.h"
-#include "stim/simulators/vector_simulator.h"
-#include "stim/simulators/tableau_simulator.h"
+
 #include "stim/probability_util.h"
+#include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/vector_simulator.h"
 
 using namespace stim;
 
@@ -57,7 +58,8 @@ size_t compute_occupation(const std::vector<std::complex<float>> &state_vector) 
     return c;
 }
 
-Circuit stim::stabilizer_state_vector_to_circuit(const std::vector<std::complex<float>> &state_vector, bool little_endian) {
+Circuit stim::stabilizer_state_vector_to_circuit(
+    const std::vector<std::complex<float>> &state_vector, bool little_endian) {
     if (!is_power_of_2(state_vector.size())) {
         std::stringstream ss;
         ss << "Expected number of amplitudes to be a power of 2.";
@@ -71,7 +73,8 @@ Circuit stim::stabilizer_state_vector_to_circuit(const std::vector<std::complex<
         weight += std::norm(c);
     }
     if (abs(weight - 1) > 0.125) {
-        throw std::invalid_argument("The given state vector wasn't a unit vector. It had a length of " + std::to_string(weight) + ".");
+        throw std::invalid_argument(
+            "The given state vector wasn't a unit vector. It had a length of " + std::to_string(weight) + ".");
     }
 
     VectorSimulator sim(num_qubits);
@@ -84,10 +87,12 @@ Circuit stim::stabilizer_state_vector_to_circuit(const std::vector<std::complex<
     };
     auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
         sim.apply(name, target, target2);
-        recorded.append_op(name, {
-            little_endian ? target : (num_qubits - target - 1),
-            little_endian ? target2 : (num_qubits - target2 - 1),
-        });
+        recorded.append_op(
+            name,
+            {
+                little_endian ? target : (num_qubits - target - 1),
+                little_endian ? target2 : (num_qubits - target2 - 1),
+            });
     };
 
     // Move biggest amplitude to start of state vector..
@@ -163,12 +168,13 @@ std::vector<std::vector<std::complex<float>>> stim::tableau_to_unitary(const Tab
     return result;
 }
 
-Tableau stim::circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
+Tableau stim::circuit_to_tableau(
+    const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
     Tableau result(circuit.count_qubits());
     std::mt19937_64 unused_rng(0);
     TableauSimulator sim(unused_rng, circuit.count_qubits());
 
-    circuit.for_each_operation([&](const Operation &op){
+    circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->flags & GATE_IS_UNITARY) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
         } else if (op.gate->flags & GATE_IS_NOISE) {
@@ -176,20 +182,23 @@ Tableau stim::circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool
                 throw std::invalid_argument(
                     "The circuit has no well-defined tableau because it contains noisy operations.\n"
                     "To ignore noisy operations, pass the argument ignore_noise=True.\n"
-                    "The first noisy operation is: " + op.str());
+                    "The first noisy operation is: " +
+                    op.str());
             }
         } else if (op.gate->flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
             if (!ignore_measurement && (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS)) {
                 throw std::invalid_argument(
                     "The circuit has no well-defined tableau because it contains measurement operations.\n"
                     "To ignore measurement operations, pass the argument ignore_measurement=True.\n"
-                    "The first measurement operation is: " + op.str());
+                    "The first measurement operation is: " +
+                    op.str());
             }
             if (!ignore_reset && (op.gate->flags & GATE_IS_RESET)) {
                 throw std::invalid_argument(
                     "The circuit has no well-defined tableau because it contains reset operations.\n"
                     "To ignore reset operations, pass the argument ignore_reset=True.\n"
-                    "The first reset operation is: " + op.str());
+                    "The first reset operation is: " +
+                    op.str());
             }
         } else {
             // Operation should be an annotation like TICK or DETECTOR.
@@ -204,13 +213,14 @@ std::vector<std::complex<float>> stim::circuit_to_output_state_vector(const Circ
     std::mt19937_64 unused_rng(0);
     TableauSimulator sim(unused_rng, circuit.count_qubits());
 
-    circuit.for_each_operation([&](const Operation &op){
+    circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->flags & GATE_IS_UNITARY) {
             (sim.*op.gate->tableau_simulator_function)(op.target_data);
         } else if (op.gate->flags & (GATE_IS_NOISE | GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
             throw std::invalid_argument(
                 "The circuit has no well-defined tableau because it contains noisy or dissipative operations.\n"
-                "The first such operation is: " + op.str());
+                "The first such operation is: " +
+                op.str());
         } else {
             // Operation should be an annotation like TICK or DETECTOR.
         }
@@ -360,7 +370,8 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     // Verify matrix is square.
     size_t num_amplitudes = matrix.size();
     if (!is_power_of_2(num_amplitudes)) {
-        throw std::invalid_argument("Matrix width and height must be a power of 2. Height was " + std::to_string(num_amplitudes));
+        throw std::invalid_argument(
+            "Matrix width and height must be a power of 2. Height was " + std::to_string(num_amplitudes));
     }
     for (size_t r = 0; r < num_amplitudes; r++) {
         if (matrix[r].size() != num_amplitudes) {
@@ -409,7 +420,7 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
 
         // Find the single entry in the column and move it to the diagonal.
         for (size_t r = 0; r < num_amplitudes; r++) {
-            auto ratio = sim.state[c*num_amplitudes + r];
+            auto ratio = sim.state[c * num_amplitudes + r];
             if (ratio != std::complex<float>{0, 0}) {
                 // Move to diagonal.
                 if (r != c) {
@@ -452,7 +463,7 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     // If we failed, it wasn't actually a Clifford.
     for (size_t r = 0; r < num_amplitudes; r++) {
         for (size_t c = 0; c < num_amplitudes; c++) {
-            if (sim.state[r*num_amplitudes + c] != std::complex<float>{r == c ? 1.0f : 0.0f}) {
+            if (sim.state[r * num_amplitudes + c] != std::complex<float>{r == c ? 1.0f : 0.0f}) {
                 throw std::invalid_argument("The given unitary matrix wasn't a Clifford operation.");
             }
         }
@@ -460,13 +471,13 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
 
     // Conjugate by swaps to handle endianness.
     if (!little_endian) {
-        for (size_t q = 0; 2*q + 1 < num_qubits; q++) {
+        for (size_t q = 0; 2 * q + 1 < num_qubits; q++) {
             recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
         }
     }
     recorded_circuit = unitary_circuit_inverse(recorded_circuit);
     if (!little_endian) {
-        for (size_t q = 0; 2*q + 1 < num_qubits; q++) {
+        for (size_t q = 0; 2 * q + 1 < num_qubits; q++) {
             recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
         }
     }
@@ -474,7 +485,8 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     return circuit_to_tableau(recorded_circuit, false, false, false);
 }
 
-Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
+Tableau stim::stabilizers_to_tableau(
+    const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
     size_t num_qubits = 0;
     for (const auto &e : stabilizers) {
         num_qubits = std::max(num_qubits, e.num_qubits);
@@ -487,7 +499,7 @@ Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabi
     while (targets.size() < num_qubits) {
         targets.push_back(targets.size());
     }
-    auto overwrite_cur_apply_recorded = [&](const PauliString &e){
+    auto overwrite_cur_apply_recorded = [&](const PauliString &e) {
         PauliStringRef cur_ref = cur.ref();
         cur.xs.clear();
         cur.zs.clear();
@@ -527,13 +539,18 @@ Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabi
 
         // Change pivot basis to the Z axis.
         if (cur.xs[pivot]) {
-            inverted.inplace_scatter_append(GATE_DATA.at(cur.zs[pivot] ? "H_YZ": "H_XZ").tableau(), {pivot});
+            inverted.inplace_scatter_append(GATE_DATA.at(cur.zs[pivot] ? "H_YZ" : "H_XZ").tableau(), {pivot});
         }
         // Cancel other terms in Pauli string.
         for (size_t q = 0; q < num_qubits; q++) {
             int p = cur.xs[q] + cur.zs[q] * 2;
             if (p && q != pivot) {
-                inverted.inplace_scatter_append(GATE_DATA.at(p == 1 ? "XCX" : p == 2 ? "XCZ" : "XCY").tableau(), {pivot, q});
+                inverted.inplace_scatter_append(
+                    GATE_DATA.at(p == 1   ? "XCX"
+                                 : p == 2 ? "XCZ"
+                                          : "XCY")
+                        .tableau(),
+                    {pivot, q});
             }
         }
 

@@ -199,7 +199,7 @@ M 0
             &TableauSimulator::measure_reset_x,
             &FrameSimulator::measure_reset_x,
             &ErrorAnalyzer::MRX,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES| GATE_IS_RESET),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -255,7 +255,7 @@ H 0
             &TableauSimulator::measure_reset_y,
             &FrameSimulator::measure_reset_y,
             &ErrorAnalyzer::MRY,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES| GATE_IS_RESET),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -315,7 +315,7 @@ S 0
             &TableauSimulator::measure_reset_z,
             &FrameSimulator::measure_reset_z,
             &ErrorAnalyzer::MRZ,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES| GATE_IS_RESET),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -375,7 +375,7 @@ R 0
             &TableauSimulator::reset_x,
             &FrameSimulator::reset_x,
             &ErrorAnalyzer::RX,
-             GATE_IS_RESET,
+            GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -417,7 +417,7 @@ H 0
             &TableauSimulator::reset_y,
             &FrameSimulator::reset_y,
             &ErrorAnalyzer::RY,
-             GATE_IS_RESET,
+            GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -463,7 +463,7 @@ S 0
             &TableauSimulator::reset_z,
             &FrameSimulator::reset_z,
             &ErrorAnalyzer::RZ,
-             GATE_IS_RESET,
+            GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
