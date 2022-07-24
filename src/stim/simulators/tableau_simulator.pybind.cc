@@ -16,6 +16,7 @@
 
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
 
@@ -1522,6 +1523,187 @@ void pybind_tableau_simulator(pybind11::module &m) {
                 >>> pseudo_post_select(qubit=2, desired_result=True)
                 >>> s.measure_many(0, 1, 2)
                 [True, True, True]
+        )DOC")
+            .data());
+
+    c.def(
+        "set_state_from_stabilizers",
+        [](PyTableauSimulator &self, pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
+            std::vector<PauliString> converted_stabilizers;
+            for (const auto &stabilizer : stabilizers) {
+                const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
+                if (p.imag) {
+                    throw std::invalid_argument("Stabilizers can't have imaginary sign.");
+                }
+                converted_stabilizers.push_back(p.value);
+            }
+            self.inv_state = stabilizers_to_tableau(converted_stabilizers, allow_redundant, allow_underconstrained, true);
+        },
+        pybind11::arg("stabilizers"),
+        pybind11::kw_only(),
+        pybind11::arg("allow_redundant") = false,
+        pybind11::arg("allow_underconstrained") = false,
+        clean_doc_string(u8R"DOC(
+            @signature def set_state_from_stabilizers(self, stabilizers: Iterable[stim.PauliString], *, bool allow_redundant = False, bool allow_underconstrained = False) -> None:
+            Sets the tableau simulator's state to a state satisfying the given stabilizers.
+
+            The old quantum state is completely overwritten, even if the new state is underconstrained
+            underconstrained by the given stabilizers. The number of qubits is changed to exactly match
+            the number of qubits in the longest given stabilizer.
+
+            Args:
+                stabilizers: A list of `stim.PauliString`s specifying the stabilizers that the new
+                    state must have. It is permitted for stabilizers to have different lengths. All
+                    stabilizers are padded up to the length of the longest stabilizer by appending
+                    identity terms.
+                allow_redundant: Defaults to False. If set to False, then the given stabilizers must
+                    all be independent. If any one of them is a product of the others (including the
+                    empty product), an exception will be raised. If set to True, then redundant
+                    stabilizers are simply ignored.
+                allow_underconstrained: Defaults to False. If set to False, then the given stabilizers
+                    must form a complete set of generators. They must exactly specify the desired
+                    stabilizer state, with no degrees of freedom left over. For an n-qubit state there
+                    must be n independent stabilizers. If set to True, then there can be leftover
+                    degrees of freedom which can be set arbitrarily.
+
+            Returns:
+                Nothing. Mutates the states of the simulator to match the desired stabilizers.
+                Guarantees that self.current_inverse_tableau().inverse_z_output(k) will be equal
+                to the k'th independent stabilizer from the `stabilizers` argument.
+
+            Raises:
+                ValueError:
+                    A stabilizer is redundant but allow_redundant=True wasn't set.
+                    OR
+                    The given stabilizers are contradictory (e.g. "+Z" and "-Z" both specified).
+                    OR
+                    The given stabilizers anticommute (e.g. "+Z" and "+X" both specified).
+                    OR
+                    The stabilizers left behind a degree of freedom but allow_underconstrained=True wasn't set.
+                    OR
+                    A stabilizer has an imaginary sign (i or -i).
+
+            Examples:
+
+                >>> import stim
+                >>> tab_sim = stim.TableauSimulator()
+                >>> tab_sim.set_state_from_stabilizers([
+                ...     stim.PauliString("XX"),
+                ...     stim.PauliString("ZZ"),
+                ... ])
+                >>> tab_sim.current_inverse_tableau().inverse()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
+
+                >>> tab_sim.set_state_from_stabilizers([
+                ...     stim.PauliString("XX_"),
+                ...     stim.PauliString("ZZ_"),
+                ...     stim.PauliString("-YY_"),
+                ...     stim.PauliString(""),
+                ... ], allow_underconstrained=True, allow_redundant=True)
+                >>> tab_sim.current_inverse_tableau().inverse()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z__"),
+                        stim.PauliString("+_X_"),
+                        stim.PauliString("+__X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX_"),
+                        stim.PauliString("+ZZ_"),
+                        stim.PauliString("+__Z"),
+                    ],
+                )
+        )DOC")
+            .data());
+
+    c.def(
+        "set_state_from_state_vector",
+        [](PyTableauSimulator &self, pybind11::object &state_vector, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+
+            std::vector<std::complex<float>> v;
+            for (const auto &obj : state_vector) {
+                v.push_back(pybind11::cast<std::complex<float>>(obj));
+            }
+
+            self.inv_state = circuit_to_tableau(stabilizer_state_vector_to_circuit(v, little_endian), false, false, false).inverse();
+        },
+        pybind11::arg("state_vector"),
+        pybind11::kw_only(),
+        pybind11::arg("endian") = "little",
+        clean_doc_string(u8R"DOC(
+            @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str = 'little') -> None:
+            Sets the tableau simulator's state to a superposition specified by a vector of amplitudes.
+
+            Args:
+                state_vector: A list of complex amplitudes specifying a superposition. The vector
+                    must correspond to a state that is reachable using Clifford operations, and must
+                    be normalized (i.e. it must be a unit vector).
+                endian:
+                    "little" (default): state vector is in little endian order, where higher index qubits
+                        correspond to larger changes in the state index.
+                    "big": state vector is in little endian order, where higher index qubits correspond to
+                        smaller changes in the state index.
+
+            Returns:
+                Nothing. Mutates the states of the simulator to match the desired state.
+
+            Raises:
+                ValueError:
+                    The given state vector isn't a list of complex values specifying a stabilizer state.
+                    OR
+                    The given endian value isn't 'little' or 'big'.
+
+            Examples:
+
+                >>> import stim
+                >>> tab_sim = stim.TableauSimulator()
+                >>> tab_sim.set_state_from_state_vector([
+                ...     0.5**0.5,
+                ...     0.5**0.5 * 1j,
+                ... ])
+                >>> tab_sim.current_inverse_tableau().inverse()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z"),
+                    ],
+                    zs=[
+                        stim.PauliString("+Y"),
+                    ],
+                )
+                >>> tab_sim.set_state_from_state_vector([
+                ...     0.5**0.5,
+                ...     0,
+                ...     0,
+                ...     0.5**0.5,
+                ... ])
+                >>> tab_sim.current_inverse_tableau().inverse()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
         )DOC")
             .data());
 }

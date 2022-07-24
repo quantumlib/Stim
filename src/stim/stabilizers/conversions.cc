@@ -474,13 +474,13 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     return circuit_to_tableau(recorded_circuit, false, false, false);
 }
 
-Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabilizers, bool ignore_redundant, bool ignore_underconstrained) {
+Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabilizers, bool allow_redundant, bool allow_underconstrained, bool invert) {
     size_t num_qubits = 0;
     for (const auto &e : stabilizers) {
         num_qubits = std::max(num_qubits, e.num_qubits);
     }
 
-    Tableau recorded(num_qubits);
+    Tableau inverted(num_qubits);
 
     PauliString cur(num_qubits);
     std::vector<size_t> targets;
@@ -494,7 +494,7 @@ Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabi
         cur.xs.word_range_ref(0, e.xs.num_simd_words) = e.xs;
         cur.zs.word_range_ref(0, e.xs.num_simd_words) = e.zs;
         cur.sign = e.sign;
-        recorded.apply_within(cur_ref, targets);
+        inverted.apply_within(cur_ref, targets);
     };
 
     size_t used = 0;
@@ -517,47 +517,50 @@ Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabi
             if (cur.sign) {
                 throw std::invalid_argument("Some of the given stabilizers contradict each other.");
             }
-            if (!ignore_redundant && cur.zs.not_zero()) {
+            if (!allow_redundant && cur.zs.not_zero()) {
                 throw std::invalid_argument(
-                    "Didn't specify ignore_redundant=True but one of the given stabilizers is a product of the others. "
-                    "To allow redundant stabilizers, pass the argument ignore_redundant=True.");
+                    "Didn't specify allow_redundant=True but one of the given stabilizers is a product of the others. "
+                    "To allow redundant stabilizers, pass the argument allow_redundant=True.");
             }
             continue;
         }
 
         // Change pivot basis to the Z axis.
         if (cur.xs[pivot]) {
-            recorded.inplace_scatter_append(GATE_DATA.at(cur.zs[pivot] ? "H_YZ": "H_XZ").tableau(), {pivot});
+            inverted.inplace_scatter_append(GATE_DATA.at(cur.zs[pivot] ? "H_YZ": "H_XZ").tableau(), {pivot});
         }
         // Cancel other terms in Pauli string.
         for (size_t q = 0; q < num_qubits; q++) {
             int p = cur.xs[q] + cur.zs[q] * 2;
             if (p && q != pivot) {
-                recorded.inplace_scatter_append(GATE_DATA.at(p == 1 ? "XCX" : p == 2 ? "XCZ" : "XCY").tableau(), {pivot, q});
+                inverted.inplace_scatter_append(GATE_DATA.at(p == 1 ? "XCX" : p == 2 ? "XCZ" : "XCY").tableau(), {pivot, q});
             }
         }
 
         // Move pivot to diagonal.
         if (pivot != used) {
-            recorded.inplace_scatter_append(GATE_DATA.at("SWAP").tableau(), {pivot, used});
+            inverted.inplace_scatter_append(GATE_DATA.at("SWAP").tableau(), {pivot, used});
         }
 
         // Fix sign.
         overwrite_cur_apply_recorded(e);
         if (cur.sign) {
-            recorded.inplace_scatter_append(GATE_DATA.at("X").tableau(), {used});
+            inverted.inplace_scatter_append(GATE_DATA.at("X").tableau(), {used});
         }
 
         used++;
     }
 
     if (used < num_qubits) {
-        if (!ignore_underconstrained) {
+        if (!allow_underconstrained) {
             throw std::invalid_argument(
                 "There weren't enough stabilizers to uniquely specify the state. "
-                "To allow underspecifying the state, pass the argument ignore_underconstrained=True.");
+                "To allow underspecifying the state, pass the argument allow_underconstrained=True.");
         }
     }
 
-    return recorded.inverse();
+    if (invert) {
+        return inverted;
+    }
+    return inverted.inverse();
 }

@@ -511,3 +511,18 @@ def test_num_qubits():
     assert s.num_qubits == 0
     s.cx(3, 1)
     assert s.num_qubits == 4
+
+
+def test_set_state_from_state_vector():
+    s = stim.TableauSimulator()
+    expected = [0.5, 0.5, 0, 0, -0.5, 0.5, 0, 0]
+    s.set_state_from_state_vector(expected)
+    np.testing.assert_allclose(s.state_vector(), expected, atol=1e-6)
+
+
+def test_set_state_from_stabilizers():
+    s = stim.TableauSimulator()
+    s.set_state_from_stabilizers([])
+    assert s.current_inverse_tableau() == stim.Tableau(0)
+    s.set_state_from_stabilizers([stim.PauliString("XXX"), stim.PauliString("_ZZ"), stim.PauliString("ZZ_")])
+    np.testing.assert_allclose(s.state_vector(), [0.5**0.5, 0, 0, 0, 0, 0, 0, 0.5**0.5], atol=1e-6)
