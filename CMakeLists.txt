@@ -81,6 +81,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/search/hyper/graph.cc
         src/stim/search/hyper/node.cc
         src/stim/search/hyper/search_state.cc
+        src/stim/simulators/dem_sampler.cc
         src/stim/simulators/detection_simulator.cc
         src/stim/simulators/error_analyzer.cc
         src/stim/simulators/error_matcher.cc
@@ -136,6 +137,7 @@ set(TEST_FILES
         src/stim/search/hyper/graph.test.cc
         src/stim/search/hyper/node.test.cc
         src/stim/search/hyper/search_state.test.cc
+        src/stim/simulators/dem_sampler.test.cc
         src/stim/simulators/detection_simulator.test.cc
         src/stim/simulators/error_analyzer.test.cc
         src/stim/simulators/error_matcher.test.cc
@@ -166,6 +168,7 @@ set(BENCHMARK_FILES
         src/stim/mem/sparse_xor_vec.perf.cc
         src/stim/probability_util.perf.cc
         src/stim/search/graphlike/algo.perf.cc
+        src/stim/simulators/dem_sampler.perf.cc
         src/stim/simulators/error_analyzer.perf.cc
         src/stim/simulators/frame_simulator.perf.cc
         src/stim/simulators/tableau_simulator.perf.cc

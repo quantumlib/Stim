@@ -57,3 +57,31 @@ RaiiTempNamedFile::~RaiiTempNamedFile() {
         path = "";
     }
 }
+
+std::string RaiiTempNamedFile::read_contents() {
+    FILE *f = fopen(path.c_str(), "r");
+    if (f == nullptr) {
+        throw std::runtime_error("Failed to open temp named file " + path);
+    }
+    std::string result;
+    while (true) {
+        int c = getc(f);
+        if (c == EOF) {
+            break;
+        }
+        result.push_back(c);
+    }
+    fclose(f);
+    return result;
+}
+
+void RaiiTempNamedFile::write_contents(const std::string &contents) {
+    FILE *f = fopen(path.c_str(), "w");
+    if (f == nullptr) {
+        throw std::runtime_error("Failed to open temp named file " + path);
+    }
+    for (char c : contents) {
+        putc(c, f);
+    }
+    fclose(f);
+}

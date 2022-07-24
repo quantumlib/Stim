@@ -18,7 +18,10 @@
 
 using namespace stim;
 
-RaiiFile::RaiiFile(const char *path, const char *mode) {
+RaiiFile::RaiiFile(FILE *claim_ownership) : f(claim_ownership), responsible_for_closing(true) {
+}
+
+RaiiFile::RaiiFile(const char *path, const char *mode) : f(nullptr), responsible_for_closing(true) {
     if (path == nullptr) {
         f = nullptr;
         return;
@@ -40,8 +43,13 @@ RaiiFile::RaiiFile(const char *path, const char *mode) {
 }
 
 RaiiFile::~RaiiFile() {
-    if (f != nullptr) {
+    done();
+}
+
+void RaiiFile::done() {
+    if (f != nullptr && responsible_for_closing) {
         fclose(f);
         f = nullptr;
+        responsible_for_closing = false;
     }
 }

@@ -129,6 +129,44 @@ stdout: The sample data.
         {"--out_format", "--seed", "--in", "--out", "--skip_reference_sample", "--shots"},
     };
 
+    modes["sample_dem"] = CommandLineSingleModeData{
+        "Samples detection events and observable flips from a detector error model.",
+        R"PARAGRAPH(
+stdin (or --in): The detector error model to sample from, specified using the [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
+
+stdout (or --out): The detection event data is written here.
+
+- Example:
+
+    ```bash
+    echo "error(0) D0" > example.dem
+    echo "error(0.5) D1 L0" >> example.dem
+    echo "error(1) D2 D3" >> example.dem
+    stim sample_dem \
+        --shots 5 \
+        --in example.dem \
+        --out dets.01 \
+        --out_format 01 \
+        --obs_out obs_flips.01 \
+        --obs_out_format 01 \
+        --seed 0
+    cat dets.01
+    # 0111
+    # 0011
+    # 0011
+    # 0111
+    # 0111
+    cat obs_flips.01
+    # 1
+    # 0
+    # 0
+    # 1
+    # 1
+    ```
+)PARAGRAPH",
+        {"--in", "--out", "--out_format", "--obs_out", "--obs_out_format", "--seed", "--shots"},
+    };
+
     modes["explain_errors"] = CommandLineSingleModeData{
         "Describes how detector error model errors correspond to circuit errors.",
         R"PARAGRAPH(

@@ -617,7 +617,11 @@ uint64_t DetectorErrorModel::total_detector_shift() const {
     return result;
 }
 
-void flattened_helper(const DetectorErrorModel &body, std::vector<double> &cur_coordinate_shift, uint64_t &cur_detector_shift, DetectorErrorModel &out) {
+void flattened_helper(
+    const DetectorErrorModel &body,
+    std::vector<double> &cur_coordinate_shift,
+    uint64_t &cur_detector_shift,
+    DetectorErrorModel &out) {
     for (const auto &op : body.instructions) {
         if (op.type == DEM_SHIFT_DETECTORS) {
             while (cur_coordinate_shift.size() < op.arg_data.size()) {
