@@ -100,6 +100,20 @@ Circuit tableau_to_circuit(const Tableau &tableau, const std::string &method);
 ///     std::invalid_argument: The given unitary matrix isn't a Clifford operation.
 Tableau unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian);
 
+/// Computes destabilizers for the given stabilizers, and packages into a tableau.
+///
+/// Args:
+///     stabilizers: The desired stabilizers for the tableau. Every stabilizer must have the same number of qubits.
+///     ignore_redundant: If false, including a redundant stabilizer will result in an error.
+///         If true, redundant stabilizers are quietly dropped.
+///     ignore_underconstrained: If false, the number of independent stabilizers must equal the number of qubits in each
+///         stabilizer. If true, the returned result will arbitrarily fill in missing stabilizers.
+///
+/// Returns:
+///     A tableau containing the given stabilizers, but extended to also include matching stabilizers.
+///     The Z outputs of the tableau will be the given stabilizers (skipping any redundant ones).
+Tableau stabilizers_to_tableau(const std::vector<stim::PauliString> &stabilizers, bool ignore_redundant, bool ignore_underconstrained);
+
 }  // namespace stim
 
 #endif

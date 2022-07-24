@@ -459,3 +459,115 @@ TEST(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary) {
         }
     }
 }
+
+TEST(conversions, unitary_to_tableau_fail) {
+    ASSERT_THROW({
+        unitary_to_tableau({{{1}, {0}}, {{0}, {sqrtf(0.5), sqrtf(0.5)}}}, false);
+    }, std::invalid_argument);
+    ASSERT_THROW({
+        unitary_to_tableau({
+            {1, 0, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 0},
+            {0, 0, 0, {0, 1}},
+        }, false);
+    }, std::invalid_argument);
+    ASSERT_THROW({
+        unitary_to_tableau({
+            {1, 0, 0, 0, 0, 0, 0, 0},
+            {0, 1, 0, 0, 0, 0, 0, 0},
+            {0, 0, 1, 0, 0, 0, 0, 0},
+            {0, 0, 0, 1, 0, 0, 0, 0},
+            {0, 0, 0, 0, 1, 0, 0, 0},
+            {0, 0, 0, 0, 0, 1, 0, 0},
+            {0, 0, 0, 0, 0, 0, 0, 1},
+            {0, 0, 0, 0, 0, 0, 1, 0},
+        }, false);
+    }, std::invalid_argument);
+}
+
+TEST(conversions, stabilizers_to_tableau_fuzz) {
+    for (size_t n = 0; n < 10; n++) {
+        Tableau t = Tableau::random(n, SHARED_TEST_RNG());
+        std::vector<stim::PauliString> expected_stabilizers;
+        for (size_t k = 0; k < n; k++) {
+            expected_stabilizers.push_back(t.zs[k]);
+        }
+        auto actual = stabilizers_to_tableau(expected_stabilizers, false, false);
+        for (size_t k = 0; k < n; k++) {
+            ASSERT_EQ(actual.zs[k], expected_stabilizers[k]);
+        }
+
+        ASSERT_TRUE(actual.satisfies_invariants());
+    }
+}
+
+TEST(conversions, stabilizers_to_tableau_partial_fuzz) {
+    for (size_t n = 0; n < 10; n++) {
+        for (size_t skipped = 1; skipped < n && skipped < 4; skipped++) {
+            Tableau t = Tableau::random(n, SHARED_TEST_RNG());
+            std::vector<stim::PauliString> expected_stabilizers;
+            for (size_t k = 0; k < n - skipped; k++) {
+                expected_stabilizers.push_back(t.zs[k]);
+            }
+            ASSERT_THROW({
+                stabilizers_to_tableau(expected_stabilizers, false, false);
+            }, std::invalid_argument);
+            auto actual = stabilizers_to_tableau(expected_stabilizers, false, true);
+            for (size_t k = 0; k < n - skipped; k++) {
+                ASSERT_EQ(actual.zs[k], expected_stabilizers[k]);
+            }
+
+            ASSERT_TRUE(actual.satisfies_invariants());
+        }
+    }
+}
+
+TEST(conversions, stabilizers_to_tableau_overconstrained) {
+    for (size_t n = 4; n < 10; n++) {
+        Tableau t = Tableau::random(n, SHARED_TEST_RNG());
+        std::vector<stim::PauliString> expected_stabilizers;
+        expected_stabilizers.push_back(PauliString(n));
+        expected_stabilizers.push_back(PauliString(n));
+        expected_stabilizers.back().ref().inplace_right_mul_returning_log_i_scalar(t.zs[1]);
+        expected_stabilizers.back().ref().inplace_right_mul_returning_log_i_scalar(t.zs[3]);
+        for (size_t k = 0; k < n; k++) {
+            expected_stabilizers.push_back(t.zs[k]);
+        }
+        ASSERT_THROW({
+            stabilizers_to_tableau(expected_stabilizers, false, false);
+        }, std::invalid_argument);
+        auto actual = stabilizers_to_tableau(expected_stabilizers, true, false);
+        for (size_t k = 0; k < n; k++) {
+            ASSERT_EQ(actual.zs[k], expected_stabilizers[k + 1 + (k > 3)]);
+        }
+
+        ASSERT_TRUE(actual.satisfies_invariants());
+    }
+}
+
+TEST(conversions, stabilizers_to_tableau_bell_pair) {
+    std::vector<stim::PauliString> input_stabilizers;
+    input_stabilizers.push_back(PauliString::from_str("XX"));
+    input_stabilizers.push_back(PauliString::from_str("ZZ"));
+    auto actual = stabilizers_to_tableau(input_stabilizers, false, false);
+    Tableau expected(2);
+    expected.zs[0] = PauliString::from_str("XX");
+    expected.zs[1] = PauliString::from_str("ZZ");
+    expected.xs[0] = PauliString::from_str("Z_");
+    expected.xs[1] = PauliString::from_str("_X");
+    ASSERT_EQ(actual, expected);
+
+    input_stabilizers.push_back(PauliString::from_str("-YY"));
+    ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, false, false); }, std::invalid_argument);
+    actual = stabilizers_to_tableau(input_stabilizers, true, false);
+    ASSERT_EQ(actual, expected);
+
+    input_stabilizers[2] = PauliString::from_str("+YY");
+    // Sign is wrong!
+    ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, true, true); }, std::invalid_argument);
+
+    input_stabilizers[2] = PauliString::from_str("+Z_");
+    // Anticommutes!
+    ASSERT_THROW({ stabilizers_to_tableau(input_stabilizers, true, true); }, std::invalid_argument);
+}

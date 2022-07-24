@@ -1,6 +1,7 @@
 #include "stim/stabilizers/conversions.h"
 #include "stim/simulators/vector_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/probability_util.h"
 
 using namespace stim;
 
@@ -356,6 +357,7 @@ size_t first_set_bit(size_t value, size_t min_result) {
 }
 
 Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian) {
+    // Verify matrix is square.
     size_t num_amplitudes = matrix.size();
     if (!is_power_of_2(num_amplitudes)) {
         throw std::invalid_argument("Matrix width and height must be a power of 2. Height was " + std::to_string(num_amplitudes));
@@ -370,12 +372,14 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
         }
     }
 
+    // Use first column to solve how to get out of superposition and to a phased permutation.
     std::vector<std::complex<float>> first_col;
     for (const auto &row : matrix) {
         first_col.push_back(row[0]);
     }
     Circuit recorded_circuit = unitary_circuit_inverse(stabilizer_state_vector_to_circuit(first_col, true));
 
+    // Use the state channel duality to get the operation into the vector simulator.
     VectorSimulator sim(0);
     float m2v = sqrtf(num_amplitudes);
     sim.state.clear();
@@ -385,8 +389,9 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
             sim.state.push_back(matrix[c][r] / m2v);
         }
     }
-
+    // Convert to a phased permutation (assuming the matrix was Clifford).
     sim.do_unitary_circuit(recorded_circuit);
+    sim.smooth_stabilizer_state(sim.state[0]);
 
     auto apply = [&](const std::string &name, uint32_t target) {
         sim.apply(name, target);
@@ -397,13 +402,16 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
         recorded_circuit.append_op(name, {target, target2});
     };
 
-    sim.smooth_stabilizer_state(sim.state[0]);
+    // Undo the permutation and also single-qubit phases.
     size_t num_qubits = floor_lg2(num_amplitudes);
     for (size_t q = 0; q < num_qubits; q++) {
         size_t c = 1 << q;
+
+        // Find the single entry in the column and move it to the diagonal.
         for (size_t r = 0; r < num_amplitudes; r++) {
             auto ratio = sim.state[c*num_amplitudes + r];
             if (ratio != std::complex<float>{0, 0}) {
+                // Move to diagonal.
                 if (r != c) {
                     size_t pivot = first_set_bit(r, q);
                     for (size_t b = 0; b < num_qubits; b++) {
@@ -415,6 +423,8 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
                         apply2("SWAP", q, pivot);
                     }
                 }
+
+                // Undo phasing on this qubit.
                 if (ratio.real() == -1) {
                     apply("Z", q);
                 } else if (ratio.imag() == -1) {
@@ -427,6 +437,7 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
         }
     }
 
+    // Undo double qubit phases.
     for (size_t q1 = 0; q1 < num_qubits; q1++) {
         for (size_t q2 = q1 + 1; q2 < num_qubits; q2++) {
             size_t v = (1 << q1) | (1 << q2);
@@ -436,6 +447,9 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
             }
         }
     }
+
+    // Verify that we actually reduced the matrix to the identity.
+    // If we failed, it wasn't actually a Clifford.
     for (size_t r = 0; r < num_amplitudes; r++) {
         for (size_t c = 0; c < num_amplitudes; c++) {
             if (sim.state[r*num_amplitudes + c] != std::complex<float>{r == c ? 1.0f : 0.0f}) {
@@ -444,6 +458,7 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
         }
     }
 
+    // Conjugate by swaps to handle endianness.
     if (!little_endian) {
         for (size_t q = 0; 2*q + 1 < num_qubits; q++) {
             recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
@@ -457,4 +472,92 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     }
 
     return circuit_to_tableau(recorded_circuit, false, false, false);
+}
+
+Tableau stim::stabilizers_to_tableau(const std::vector<stim::PauliString> &stabilizers, bool ignore_redundant, bool ignore_underconstrained) {
+    size_t num_qubits = 0;
+    for (const auto &e : stabilizers) {
+        num_qubits = std::max(num_qubits, e.num_qubits);
+    }
+
+    Tableau recorded(num_qubits);
+
+    PauliString cur(num_qubits);
+    std::vector<size_t> targets;
+    while (targets.size() < num_qubits) {
+        targets.push_back(targets.size());
+    }
+    auto overwrite_cur_apply_recorded = [&](const PauliString &e){
+        PauliStringRef cur_ref = cur.ref();
+        cur.xs.clear();
+        cur.zs.clear();
+        cur.xs.word_range_ref(0, e.xs.num_simd_words) = e.xs;
+        cur.zs.word_range_ref(0, e.xs.num_simd_words) = e.zs;
+        cur.sign = e.sign;
+        recorded.apply_within(cur_ref, targets);
+    };
+
+    size_t used = 0;
+    for (const auto &e : stabilizers) {
+        overwrite_cur_apply_recorded(e);
+
+        // Find a non-identity term in the Pauli string past the region used by other stabilizers.
+        size_t pivot;
+        for (pivot = used; pivot < num_qubits; pivot++) {
+            if (cur.xs[pivot] || cur.zs[pivot]) {
+                break;
+            }
+        }
+
+        // Check for incompatible / redundant stabilizers.
+        if (pivot == num_qubits) {
+            if (cur.xs.not_zero()) {
+                throw std::invalid_argument("Some of the given stabilizers anticommute.");
+            }
+            if (cur.sign) {
+                throw std::invalid_argument("Some of the given stabilizers contradict each other.");
+            }
+            if (!ignore_redundant && cur.zs.not_zero()) {
+                throw std::invalid_argument(
+                    "Didn't specify ignore_redundant=True but one of the given stabilizers is a product of the others. "
+                    "To allow redundant stabilizers, pass the argument ignore_redundant=True.");
+            }
+            continue;
+        }
+
+        // Change pivot basis to the Z axis.
+        if (cur.xs[pivot]) {
+            recorded.inplace_scatter_append(GATE_DATA.at(cur.zs[pivot] ? "H_YZ": "H_XZ").tableau(), {pivot});
+        }
+        // Cancel other terms in Pauli string.
+        for (size_t q = 0; q < num_qubits; q++) {
+            int p = cur.xs[q] + cur.zs[q] * 2;
+            if (p && q != pivot) {
+                recorded.inplace_scatter_append(GATE_DATA.at(p == 1 ? "XCX" : p == 2 ? "XCZ" : "XCY").tableau(), {pivot, q});
+            }
+        }
+
+        // Move pivot to diagonal.
+        if (pivot != used) {
+            recorded.inplace_scatter_append(GATE_DATA.at("SWAP").tableau(), {pivot, used});
+        }
+
+        // Fix sign.
+        overwrite_cur_apply_recorded(e);
+        if (cur.sign) {
+            recorded.inplace_scatter_append(GATE_DATA.at("X").tableau(), {used});
+        }
+
+        used++;
+    }
+
+    if (used < num_qubits) {
+        if (!ignore_underconstrained) {
+            throw std::invalid_argument(
+                "There weren't enough stabilizers to uniquely specify the state. "
+                "To allow underspecifying the state, pass the argument ignore_underconstrained=True.");
+        }
+    }
+
+    return recorded.inverse();
 }
