@@ -279,6 +279,7 @@ Circuit::Circuit(Circuit &&circuit) noexcept
 Circuit &Circuit::operator=(const Circuit &circuit) {
     if (&circuit != this) {
         blocks = circuit.blocks;
+        operations = circuit.operations;
 
         // Keep local copy of operation data.
         target_buf = MonotonicBuffer<GateTarget>(circuit.target_buf.total_allocated());

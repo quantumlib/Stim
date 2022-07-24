@@ -26,11 +26,19 @@ uint8_t floor_lg2(size_t value);
 
 uint8_t is_power_of_2(size_t value);
 
+/// Converts a tableau into a unitary matrix.
+std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau &tableau, bool little_endian);
+
+/// Inverts the given circuit, as long as it only contains unitary operations.
+Circuit unitary_circuit_inverse(const Circuit &unitary_circuit);
+
 /// Synthesizes a circuit to generate the given state vector.
 ///
 /// Args:
 ///     stabilizer_state_vector: The vector of amplitudes to produce using a circuit.
 ///     little_endian: Whether the vector is using little endian or big endian ordering.
+///     inverted_circuit: If false, returns a circuit that sends |000...0> to the state vector.
+///         If true, returns a circuit that sends the state vector to |000...0> instead of a cir.
 ///
 /// Returns:
 ///     A circuit that outputs the given state vector (up to global phase).
@@ -78,6 +86,19 @@ std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &c
 /// Returns:
 ///     The synthesized circuit.
 Circuit tableau_to_circuit(const Tableau &tableau, const std::string &method);
+
+/// Converts a unitary matrix into a stabilizer tableau.
+///
+/// Args:
+///     matrix: The unitary matrix to convert. Must correspond to a Clifford.
+//      little_endian: Whether the amplitude ordering is little endian or big endian.
+///
+/// Returns:
+///     A tableau implementing the same operation as the unitary matrix (up to global phase).
+///
+/// Throws:
+///     std::invalid_argument: The given unitary matrix isn't a Clifford operation.
+Tableau unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian);
 
 }  // namespace stim
 

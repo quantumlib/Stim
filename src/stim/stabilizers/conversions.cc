@@ -17,6 +17,22 @@ uint8_t stim::is_power_of_2(size_t value) {
     return value != 0 && (value & (value - 1)) == 0;
 }
 
+Circuit stim::unitary_circuit_inverse(const Circuit &unitary_circuit) {
+    Circuit inverted;
+    unitary_circuit.for_each_operation_reverse([&](const Operation &op) {
+        if (!(op.gate->flags & GATE_IS_UNITARY)) {
+            throw std::invalid_argument("Not unitary: " + op.str());
+        }
+        size_t step = (op.gate->flags & GATE_TARGETS_PAIRS) ? 2 : 1;
+        auto s = op.target_data.targets.ptr_start;
+        const auto &inv_gate = op.gate->inverse();
+        for (size_t k = op.target_data.targets.size(); k > 0; k -= step) {
+            inverted.append_operation(inv_gate, {s + k - step, s + k}, op.target_data.args);
+        }
+    });
+    return inverted;
+}
+
 size_t biggest_index(const std::vector<std::complex<float>> &state_vector) {
     size_t best_index = 0;
     float best_size = std::norm(state_vector[0]);
@@ -127,18 +143,23 @@ Circuit stim::stabilizer_state_vector_to_circuit(const std::vector<std::complex<
         occupation >>= 1;
     }
 
-    // Note: requires all targets within an individual CNOT to commute.
-    // This is guaranteed by the code above.
-    Circuit inverted;
-    recorded.for_each_operation_reverse([&](const Operation &op) {
-        inverted.append_operation(op.gate->inverse(), op.target_data.targets, op.target_data.args);
-    });
-
-    if (inverted.count_qubits() < num_qubits) {
-        inverted.append_op("I", {(uint32_t)(num_qubits - 1)});
+    recorded = unitary_circuit_inverse(recorded);
+    if (recorded.count_qubits() < num_qubits) {
+        recorded.append_op("I", {(uint32_t)(num_qubits - 1)});
     }
 
-    return inverted;
+    return recorded;
+}
+
+std::vector<std::vector<std::complex<float>>> stim::tableau_to_unitary(const Tableau &tableau, bool little_endian) {
+    auto flat = tableau.to_flat_unitary_matrix(little_endian);
+    std::vector<std::vector<std::complex<float>>> result;
+    size_t n = 1 << tableau.num_qubits;
+    for (size_t row = 0; row < n; row++) {
+        result.push_back({});
+        result.back().insert(result.back().end(), &flat[row * n], &flat[row * n + n]);
+    }
+    return result;
 }
 
 Tableau stim::circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
@@ -321,4 +342,119 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
         apply("H", n - 1);
     }
     return recorded_circuit;
+}
+
+size_t first_set_bit(size_t value, size_t min_result) {
+    size_t t = min_result;
+    value >>= min_result;
+    assert(value);
+    while (!(value & 1)) {
+        value >>= 1;
+        t += 1;
+    }
+    return t;
+}
+
+Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian) {
+    size_t num_amplitudes = matrix.size();
+    if (!is_power_of_2(num_amplitudes)) {
+        throw std::invalid_argument("Matrix width and height must be a power of 2. Height was " + std::to_string(num_amplitudes));
+    }
+    for (size_t r = 0; r < num_amplitudes; r++) {
+        if (matrix[r].size() != num_amplitudes) {
+            std::stringstream ss;
+            ss << "Matrix must be square, but row " << r;
+            ss << " had width " << matrix[r].size();
+            ss << " while matrix had height " << num_amplitudes;
+            throw std::invalid_argument(ss.str());
+        }
+    }
+
+    std::vector<std::complex<float>> first_col;
+    for (const auto &row : matrix) {
+        first_col.push_back(row[0]);
+    }
+    Circuit recorded_circuit = unitary_circuit_inverse(stabilizer_state_vector_to_circuit(first_col, true));
+
+    VectorSimulator sim(0);
+    float m2v = sqrtf(num_amplitudes);
+    sim.state.clear();
+    sim.state.reserve(num_amplitudes * num_amplitudes);
+    for (size_t r = 0; r < num_amplitudes; r++) {
+        for (size_t c = 0; c < num_amplitudes; c++) {
+            sim.state.push_back(matrix[c][r] / m2v);
+        }
+    }
+
+    sim.do_unitary_circuit(recorded_circuit);
+
+    auto apply = [&](const std::string &name, uint32_t target) {
+        sim.apply(name, target);
+        recorded_circuit.append_op(name, {target});
+    };
+    auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
+        sim.apply(name, target, target2);
+        recorded_circuit.append_op(name, {target, target2});
+    };
+
+    sim.smooth_stabilizer_state(sim.state[0]);
+    size_t num_qubits = floor_lg2(num_amplitudes);
+    for (size_t q = 0; q < num_qubits; q++) {
+        size_t c = 1 << q;
+        for (size_t r = 0; r < num_amplitudes; r++) {
+            auto ratio = sim.state[c*num_amplitudes + r];
+            if (ratio != std::complex<float>{0, 0}) {
+                if (r != c) {
+                    size_t pivot = first_set_bit(r, q);
+                    for (size_t b = 0; b < num_qubits; b++) {
+                        if (((r >> b) & 1) != 0 && b != pivot) {
+                            apply2("CX", pivot, b);
+                        }
+                    }
+                    if (pivot != q) {
+                        apply2("SWAP", q, pivot);
+                    }
+                }
+                if (ratio.real() == -1) {
+                    apply("Z", q);
+                } else if (ratio.imag() == -1) {
+                    apply("S", q);
+                } else if (ratio.imag() == +1) {
+                    apply("S_DAG", q);
+                }
+                break;
+            }
+        }
+    }
+
+    for (size_t q1 = 0; q1 < num_qubits; q1++) {
+        for (size_t q2 = q1 + 1; q2 < num_qubits; q2++) {
+            size_t v = (1 << q1) | (1 << q2);
+            size_t d = v * num_amplitudes + v;
+            if (sim.state[d].real() == -1) {
+                apply2("CZ", q1, q2);
+            }
+        }
+    }
+    for (size_t r = 0; r < num_amplitudes; r++) {
+        for (size_t c = 0; c < num_amplitudes; c++) {
+            if (sim.state[r*num_amplitudes + c] != std::complex<float>{r == c ? 1.0f : 0.0f}) {
+                throw std::invalid_argument("The given unitary matrix wasn't a Clifford operation.");
+            }
+        }
+    }
+
+    if (!little_endian) {
+        for (size_t q = 0; 2*q + 1 < num_qubits; q++) {
+            recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
+        }
+    }
+    recorded_circuit = unitary_circuit_inverse(recorded_circuit);
+    if (!little_endian) {
+        for (size_t q = 0; 2*q + 1 < num_qubits; q++) {
+            recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
+        }
+    }
+
+    return circuit_to_tableau(recorded_circuit, false, false, false);
 }

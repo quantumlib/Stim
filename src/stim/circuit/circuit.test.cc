@@ -1293,3 +1293,13 @@ TEST(circuit, concat_self_fuse) {
     ASSERT_EQ(c.operations.size(), 1);
     ASSERT_EQ(c, Circuit("H 0 0"));
 }
+
+TEST(circuit, assignment_copies_operations) {
+    Circuit c1("H 0 1\nS 0");
+    Circuit c2("TICK");
+    ASSERT_EQ(c1.operations.size(), 2);
+    ASSERT_EQ(c2.operations.size(), 1);
+    c2 = c1;
+    ASSERT_EQ(c2.operations.size(), 2);
+    ASSERT_EQ(c1, c2);
+}

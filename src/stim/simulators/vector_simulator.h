@@ -23,6 +23,7 @@
 #include <unordered_map>
 
 #include "stim/stabilizers/pauli_string.h"
+#include "stim/circuit/circuit.h"
 
 namespace stim {
 
@@ -53,6 +54,9 @@ struct VectorSimulator {
     void apply(const std::string &gate, size_t qubit1, size_t qubit2);
     /// Helper method for applying the gates in a Pauli string.
     void apply(const PauliStringRef &gate, size_t qubit_offset);
+
+    /// Applies the unitary operations within a circuit to the simulator's state.
+    void do_unitary_circuit(const Circuit &circuit);
 
     /// Modifies the state vector to be EXACTLY entries of 0, 1, -1, i, or -i.
     ///

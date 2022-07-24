@@ -45,6 +45,20 @@ TEST(conversions, floor_lg2) {
     ASSERT_EQ(floor_lg2(9), 3);
 }
 
+TEST(conversions, unitary_circuit_inverse) {
+    ASSERT_EQ(unitary_circuit_inverse(Circuit(R"CIRCUIT(
+        H 0
+        ISWAP 0 1 1 2 3 2
+        S 0 3 4
+    )CIRCUIT")), Circuit(R"CIRCUIT(
+        S_DAG 4 3 0
+        ISWAP_DAG 3 2 1 2 0 1
+        H 0
+    )CIRCUIT"));
+
+    ASSERT_THROW({ unitary_circuit_inverse(Circuit("M 0")); }, std::invalid_argument);
+}
+
 TEST(conversions, stabilizer_state_vector_to_circuit_basic) {
     ASSERT_THROW(stabilizer_state_vector_to_circuit({
         {0.5},
@@ -387,4 +401,61 @@ TEST(conversions, tableau_to_circuit) {
             H 1
             S 1
         )CIRCUIT"));
+}
+
+TEST(conversions, unitary_to_tableau_vs_gate_data) {
+    for (const auto &gate : GATE_DATA.gates()) {
+        if (gate.flags & GATE_IS_UNITARY) {
+            ASSERT_EQ(unitary_to_tableau(gate.unitary(), true), gate.tableau()) << gate.name;
+        }
+    }
+}
+
+TEST(conversions, tableau_to_unitary_vs_gate_data) {
+    VectorSimulator v1(2);
+    VectorSimulator v2(2);
+    for (const auto &gate : GATE_DATA.gates()) {
+        if (gate.flags & GATE_IS_UNITARY) {
+            auto actual = tableau_to_unitary(gate.tableau(), true);
+            auto expected = gate.unitary();
+            v1.state.clear();
+            for (const auto &row : actual) {
+                v1.state.insert(v1.state.end(), row.begin(), row.end());
+            }
+            v2.state.clear();
+            for (const auto &row : expected) {
+                v2.state.insert(v2.state.end(), row.begin(), row.end());
+            }
+            for (auto &v : v1.state) {
+                v /= sqrtf(actual.size());
+            }
+            for (auto &v : v2.state) {
+                v /= sqrtf(actual.size());
+            }
+            ASSERT_TRUE(v1.approximate_equals(v2, true)) << gate.name;
+        }
+    }
+}
+
+TEST(conversions, unitary_vs_tableau_basic) {
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("XCZ").unitary(), false), GATE_DATA.at("ZCX").tableau());
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("XCZ").unitary(), true), GATE_DATA.at("XCZ").tableau());
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("ZCX").unitary(), false), GATE_DATA.at("XCZ").tableau());
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("ZCX").unitary(), true), GATE_DATA.at("ZCX").tableau());
+
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("XCY").unitary(), false), GATE_DATA.at("YCX").tableau());
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("XCY").unitary(), true), GATE_DATA.at("XCY").tableau());
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("YCX").unitary(), false), GATE_DATA.at("XCY").tableau());
+    ASSERT_EQ(unitary_to_tableau(GATE_DATA.at("YCX").unitary(), true), GATE_DATA.at("YCX").tableau());
+}
+
+TEST(conversions, unitary_to_tableau_fuzz_vs_tableau_to_unitary) {
+    for (bool little_endian : std::vector<bool>{false, true}) {
+        for (size_t n = 0; n < 6; n++) {
+            Tableau desired = Tableau::random(n, SHARED_TEST_RNG());
+            auto unitary = tableau_to_unitary(desired, little_endian);
+            auto actual = unitary_to_tableau(unitary, little_endian);
+            ASSERT_EQ(actual, desired) << "little_endian=" << little_endian << ", n=" << n;
+        }
+    }
 }
