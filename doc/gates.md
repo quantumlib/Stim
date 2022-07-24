@@ -93,7 +93,7 @@ Targets:
 
     Qubits to do nothing to.
 
-- Example:
+Example:
 
     I 5
     I 42
@@ -134,7 +134,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     X 5
     X 42
@@ -177,7 +177,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     Y 5
     Y 42
@@ -223,7 +223,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     Z 5
     Z 42
@@ -266,7 +266,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     C_XYZ 5
     C_XYZ 42
@@ -309,7 +309,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     C_ZYX 5
     C_ZYX 42
@@ -353,7 +353,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     H 5
     H 42
@@ -395,7 +395,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     H_XY 5
     H_XY 42
@@ -439,7 +439,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     H_YZ 5
     H_YZ 42
@@ -486,7 +486,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     S 5
     S 42
@@ -529,7 +529,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     SQRT_X 5
     SQRT_X 42
@@ -572,7 +572,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     SQRT_X_DAG 5
     SQRT_X_DAG 42
@@ -615,7 +615,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     SQRT_Y 5
     SQRT_Y 42
@@ -658,7 +658,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     SQRT_Y_DAG 5
     SQRT_Y_DAG 42
@@ -703,7 +703,7 @@ Targets:
 
     Qubits to operate on.
 
-- Example:
+Example:
 
     S_DAG 5
     S_DAG 42
@@ -757,7 +757,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     CX 5 6
     CX 42 43
@@ -807,7 +807,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     CY 5 6
     CY 42 43
@@ -859,7 +859,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     CZ 5 6
     CZ 42 43
@@ -903,7 +903,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     ISWAP 5 6
     ISWAP 42 43
@@ -946,7 +946,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     ISWAP_DAG 5 6
     ISWAP_DAG 42 43
@@ -990,7 +990,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SQRT_XX 5 6
     SQRT_XX 42 43
@@ -1033,7 +1033,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SQRT_XX_DAG 5 6
     SQRT_XX_DAG 42 43
@@ -1076,7 +1076,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SQRT_YY 5 6
     SQRT_YY 42 43
@@ -1121,7 +1121,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SQRT_YY_DAG 5 6
     SQRT_YY_DAG 42 43
@@ -1166,7 +1166,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SQRT_ZZ 5 6
     SQRT_ZZ 42 43
@@ -1207,7 +1207,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SQRT_ZZ_DAG 5 6
     SQRT_ZZ_DAG 42 43
@@ -1254,7 +1254,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     SWAP 5 6
     SWAP 42 43
@@ -1300,7 +1300,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     XCX 5 6
     XCX 42 43
@@ -1346,7 +1346,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     XCY 5 6
     XCY 42 43
@@ -1395,7 +1395,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     XCZ 5 6
     XCZ 42 43
@@ -1440,7 +1440,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     YCX 5 6
     YCX 42 43
@@ -1488,7 +1488,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     YCY 5 6
     YCY 42 43
@@ -1539,7 +1539,7 @@ Targets:
 
     Qubit pairs to operate on.
 
-- Example:
+Example:
 
     YCZ 5 6
     YCZ 42 43
@@ -1589,14 +1589,12 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
     p/3: X
     p/3: Y
     p/3: Z
-    ```
 
-- Example:
+Example:
 
     DEPOLARIZE1(0.001) 5
     DEPOLARIZE1(0.001) 42
@@ -1620,7 +1618,6 @@ Targets:
 
 Pauli Mixture:
 
-    ```
      1-p: II
     p/15: IX
     p/15: IY
@@ -1637,9 +1634,8 @@ Pauli Mixture:
     p/15: ZX
     p/15: ZY
     p/15: ZZ
-    ```
 
-- Example:
+Example:
 
     DEPOLARIZE2(0.001) 5 6
     DEPOLARIZE2(0.001) 42 43
@@ -1669,12 +1665,10 @@ Targets:
 
 - Example:
 
-    ```
     # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
     CORRELATED_ERROR(0.2) X1 Y2
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
-    ```
 
 <a name="ELSE_CORRELATED_ERROR"></a>
 ### The 'ELSE_CORRELATED_ERROR' Instruction
@@ -1700,14 +1694,12 @@ Targets:
     Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
     They are implicitly all combined.
 
-- Example:
+Example:
 
-    ```
     # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
     CORRELATED_ERROR(0.2) X1 Y2
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
-    ```
 
 <a name="PAULI_CHANNEL_1"></a>
 ### The 'PAULI_CHANNEL_1' Instruction
@@ -1725,22 +1717,18 @@ Targets:
 
     Qubits to apply the custom noise channel to.
 
-- Example:
+Example:
 
-    ```
     # Sample errors from the distribution 10% X, 15% Y, 20% Z, 55% I.
     # Apply independently to qubits 1, 2, 4.
     PAULI_CHANNEL_1(0.1, 0.15, 0.2) 1 2 4
-    ```
 
 Pauli Mixture:
 
-    ```
     1-px-py-pz: I
     px: X
     py: Y
     pz: Z
-    ```
 
 <a name="PAULI_CHANNEL_2"></a>
 ### The 'PAULI_CHANNEL_2' Instruction
@@ -1774,17 +1762,14 @@ Targets:
     Pairs of qubits to apply the custom noise channel to.
     There must be an even number of targets.
 
-- Example:
+Example:
 
-    ```
     # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
     # Apply independently to qubit pairs (1,2), (5,6), and (8,3)
     PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
-    ```
 
 Pauli Mixture:
 
-    ```
     1-pix-piy-piz-pxi-pxx-pxy-pxz-pyi-pyx-pyy-pyz-pzi-pzx-pzy-pzz: II
     pix: IX
     piy: IY
@@ -1801,7 +1786,6 @@ Pauli Mixture:
     pzx: ZX
     pzy: ZY
     pzz: ZZ
-    ```
 
 <a name="X_ERROR"></a>
 ### The 'X_ERROR' Instruction
@@ -1818,12 +1802,10 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
      p : X
-    ```
 
-- Example:
+Example:
 
     X_ERROR(0.001) 5
     X_ERROR(0.001) 42
@@ -1845,12 +1827,10 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
      p : Y
-    ```
 
-- Example:
+Example:
 
     Y_ERROR(0.001) 5
     Y_ERROR(0.001) 42
@@ -1872,12 +1852,10 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
      p : Z
-    ```
 
-- Example:
+Example:
 
     Z_ERROR(0.001) 5
     Z_ERROR(0.001) 42
@@ -1928,7 +1906,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     M 5
     M !42
@@ -1982,7 +1960,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     MPP 5
     MPP !42
@@ -2037,7 +2015,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     MR 5
     MR !42
@@ -2093,7 +2071,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     MRX 5
     MRX !42
@@ -2151,7 +2129,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     MRY 5
     MRY !42
@@ -2212,7 +2190,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     MX 5
     MX !42
@@ -2268,7 +2246,7 @@ If this gate is parameterized by a probability argument, the recorded result wil
 
 Prefixing a target with ! inverts its recorded measurement result.
 
-- Example:
+Example:
 
     MY 5
     MY !42
@@ -2318,7 +2296,7 @@ Examples:
     # Reset multiple qubits into the |0> state.
     RZ 2 3 5
 
-- Example:
+Example:
 
     R 5
     R 42
@@ -2358,7 +2336,7 @@ Examples:
     # Result multiple qubits into the |+> state.
     RX 2 3 5
 
-- Example:
+Example:
 
     RX 5
     RX 42
@@ -2398,7 +2376,7 @@ Examples:
     # Result multiple qubits into the |i> state.
     RY 2 3 5
 
-- Example:
+Example:
 
     RY 5
     RY 42
@@ -2439,9 +2417,8 @@ Targets:
 
     A positive integer in [1, 10^18] specifying the number of repetitions.
 
-- Example:
+Example:
 
-    ```
     REPEAT 2 {
         CNOT 0 1
         CNOT 2 1
@@ -2453,7 +2430,6 @@ Targets:
         M 1
         DETECTOR rec[-1] rec[-3]
     }
-    ```
 
 ## Annotations
 
@@ -2498,9 +2474,8 @@ Targets:
 
     The measurement records to XOR together to get the deterministic-under-noiseless-execution parity.
 
-- Example:
+Example:
 
-    ```
     R 0
     X_ERROR(0.1) 0
     M 0  # This measurement is always False under noiseless execution.
@@ -2529,7 +2504,6 @@ Targets:
         SHIFT_COORDS(1, 2)
         DETECTOR(0, 3) rec[-1]
     }
-    ```
 
 <a name="OBSERVABLE_INCLUDE"></a>
 ### The 'OBSERVABLE_INCLUDE' Instruction
@@ -2571,9 +2545,8 @@ Targets:
 
     The measurement records to add to the specified observable.
 
-- Example:
+Example:
 
-    ```
     R 0 1
     H 0
     CNOT 0 1
@@ -2589,7 +2562,6 @@ Targets:
     OBSERVABLE_INCLUDE(1) rec[-1]
     # ...and the one before that.
     OBSERVABLE_INCLUDE(1) rec[-2]
-    ```
 
 <a name="QUBIT_COORDS"></a>
 ### The 'QUBIT_COORDS' Instruction
@@ -2616,15 +2588,13 @@ Targets:
 
     The qubit or qubits the coordinates apply to.
 
-- Example:
+Example:
 
-    ```
     # Annotate that qubits 0 to 3 are at the corners of a square.
     QUBIT_COORDS(0, 0) 0
     QUBIT_COORDS(0, 1) 1
     QUBIT_COORDS(1, 0) 2
     QUBIT_COORDS(1, 1) 3
-    ```
 
 <a name="SHIFT_COORDS"></a>
 ### The 'SHIFT_COORDS' Instruction
@@ -2646,9 +2616,8 @@ Targets:
 
     This instruction takes no targets.
 
-- Example:
+Example:
 
-    ```
     SHIFT_COORDS(500.5)
     QUBIT_COORDS(1510) 0  # Actually at 2010.5
     SHIFT_COORDS(1500)
@@ -2663,7 +2632,6 @@ Targets:
         DETECTOR(10.5, 0) rec[-1] rec[-2]  # Actually at (2011.0, iteration_count).
         SHIFT_COORDS(0, 1)  # Advance 2nd coordinate to track loop iterations.
     }
-    ```
 
 <a name="TICK"></a>
 ### The 'TICK' Instruction
@@ -2685,9 +2653,8 @@ Targets:
 
     This instruction takes no targets.
 
-- Example:
+Example:
 
-    ```
     # First time step.
     H 0
     CZ 1 2
@@ -2699,5 +2666,4 @@ Targets:
 
     # Empty time step.
     TICK
-    ```
 

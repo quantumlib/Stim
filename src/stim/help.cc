@@ -765,7 +765,7 @@ void print_fixed_width_float(Acc &out, float f, char u) {
 }
 
 void print_example(Acc &out, const char *name, const Gate &gate) {
-    out << "\n- Example:\n";
+    out << "\nExample:\n";
     out.change_indent(+4);
     for (size_t k = 0; k < 3; k++) {
         out << name;

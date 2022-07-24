@@ -71,9 +71,8 @@ Targets:
 
     The measurement records to XOR together to get the deterministic-under-noiseless-execution parity.
 
-- Example:
+Example:
 
-    ```
     R 0
     X_ERROR(0.1) 0
     M 0  # This measurement is always False under noiseless execution.
@@ -102,7 +101,6 @@ Targets:
         SHIFT_COORDS(1, 2)
         DETECTOR(0, 3) rec[-1]
     }
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -161,9 +159,8 @@ Targets:
 
     The measurement records to add to the specified observable.
 
-- Example:
+Example:
 
-    ```
     R 0 1
     H 0
     CNOT 0 1
@@ -179,7 +176,6 @@ Targets:
     OBSERVABLE_INCLUDE(1) rec[-1]
     # ...and the one before that.
     OBSERVABLE_INCLUDE(1) rec[-2]
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -218,9 +214,8 @@ Targets:
 
     This instruction takes no targets.
 
-- Example:
+Example:
 
-    ```
     # First time step.
     H 0
     CZ 1 2
@@ -232,7 +227,6 @@ Targets:
 
     # Empty time step.
     TICK
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -276,15 +270,13 @@ Targets:
 
     The qubit or qubits the coordinates apply to.
 
-- Example:
+Example:
 
-    ```
     # Annotate that qubits 0 to 3 are at the corners of a square.
     QUBIT_COORDS(0, 0) 0
     QUBIT_COORDS(0, 1) 1
     QUBIT_COORDS(1, 0) 2
     QUBIT_COORDS(1, 1) 3
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -323,9 +315,8 @@ Targets:
 
     This instruction takes no targets.
 
-- Example:
+Example:
 
-    ```
     SHIFT_COORDS(500.5)
     QUBIT_COORDS(1510) 0  # Actually at 2010.5
     SHIFT_COORDS(1500)
@@ -340,7 +331,6 @@ Targets:
         DETECTOR(10.5, 0) rec[-1] rec[-2]  # Actually at (2011.0, iteration_count).
         SHIFT_COORDS(0, 1)  # Advance 2nd coordinate to track loop iterations.
     }
-    ```
 )MARKDOWN",
                     {},
                     {},
