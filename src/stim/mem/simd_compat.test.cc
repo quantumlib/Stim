@@ -47,12 +47,6 @@ TEST(simd_compat, popcount) {
             for (size_t i = 0; i < n; i++) {
                 v.p[i >> 6] |= bits[i] << (i & 63);
             }
-            if (v.w.popcount() != expected) {
-                std::cerr << v.p[0] << "\n";
-                std::cerr << v.p[1] << "\n";
-                std::cerr << v.p[2] << "\n";
-                std::cerr << v.p[3] << "\n";
-            }
             ASSERT_EQ(v.w.popcount(), expected);
         }
     }
