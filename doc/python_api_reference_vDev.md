@@ -1,5 +1,9 @@
 # Stim (Development Version) API Reference
 
+*CAUTION*: this API reference is for the in-development version of Stim.
+Methods and arguments mentioned here may not be accessible in stable versions, yet.
+API references for stable versions are kept on the [stim github wiki](https://github.com/quantumlib/Stim/wiki)
+
 ## Index
 - [`stim.Circuit`](#stim.Circuit)
     - [`stim.Circuit.__add__`](#stim.Circuit.__add__)
@@ -211,8 +215,10 @@
     - [`stim.Tableau.__str__`](#stim.Tableau.__str__)
     - [`stim.Tableau.append`](#stim.Tableau.append)
     - [`stim.Tableau.copy`](#stim.Tableau.copy)
+    - [`stim.Tableau.from_circuit`](#stim.Tableau.from_circuit)
     - [`stim.Tableau.from_conjugated_generators`](#stim.Tableau.from_conjugated_generators)
     - [`stim.Tableau.from_named_gate`](#stim.Tableau.from_named_gate)
+    - [`stim.Tableau.from_unitary_matrix`](#stim.Tableau.from_unitary_matrix)
     - [`stim.Tableau.inverse`](#stim.Tableau.inverse)
     - [`stim.Tableau.inverse_x_output`](#stim.Tableau.inverse_x_output)
     - [`stim.Tableau.inverse_x_output_pauli`](#stim.Tableau.inverse_x_output_pauli)
@@ -224,6 +230,7 @@
     - [`stim.Tableau.prepend`](#stim.Tableau.prepend)
     - [`stim.Tableau.random`](#stim.Tableau.random)
     - [`stim.Tableau.then`](#stim.Tableau.then)
+    - [`stim.Tableau.to_circuit`](#stim.Tableau.to_circuit)
     - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
     - [`stim.Tableau.x_output_pauli`](#stim.Tableau.x_output_pauli)
@@ -275,6 +282,8 @@
     - [`stim.TableauSimulator.s_dag`](#stim.TableauSimulator.s_dag)
     - [`stim.TableauSimulator.set_inverse_tableau`](#stim.TableauSimulator.set_inverse_tableau)
     - [`stim.TableauSimulator.set_num_qubits`](#stim.TableauSimulator.set_num_qubits)
+    - [`stim.TableauSimulator.set_state_from_stabilizers`](#stim.TableauSimulator.set_state_from_stabilizers)
+    - [`stim.TableauSimulator.set_state_from_state_vector`](#stim.TableauSimulator.set_state_from_state_vector)
     - [`stim.TableauSimulator.sqrt_x`](#stim.TableauSimulator.sqrt_x)
     - [`stim.TableauSimulator.sqrt_x_dag`](#stim.TableauSimulator.sqrt_x_dag)
     - [`stim.TableauSimulator.sqrt_y`](#stim.TableauSimulator.sqrt_y)
@@ -5146,6 +5155,58 @@ def copy(self) -> stim.Tableau:
     """
 ```
 
+<a name="stim.Tableau.from_circuit"></a>
+```python
+# stim.Tableau.from_circuit
+
+# (in class stim.Tableau)
+@staticmethod
+def from_circuit(circuit: stim.Circuit, *, ignore_noise: bool = False, ignore_measurement: bool = False, ignore_reset: bool = False) -> stim.Tableau:
+
+    """Converts a circuit into an equivalent stabilizer tableau.
+
+    Args:
+        circuit: The circuit to compile into a tableau.
+        ignore_noise: Defaults to False. When False, any noise operations in the circuit will cause
+            the conversion to fail with an exception. When True, noise operations are skipped over
+            as if they weren't even present in the circuit.
+        ignore_measurement: Defaults to False. When False, any measurement operations in the circuit
+            will cause the conversion to fail with an exception. When True, measurement operations are
+            skipped over as if they weren't even present in the circuit.
+        ignore_reset: Defaults to False. When False, any reset operations in the circuit will cause
+            the conversion to fail with an exception. When True, reset operations are skipped over
+            as if they weren't even present in the circuit.
+
+    Returns:
+        The tableau equivalent to the given circuit (up to global phase).
+
+    Raises:
+        ValueError:
+            The circuit contains noise operations but ignore_noise=False.
+            OR
+            The circuit contains measurement operations but ignore_measurement=False.
+            OR
+            The circuit contains reset operations but ignore_reset=False.
+
+    Examples:
+        >>> import stim
+        >>> stim.Tableau.from_circuit(stim.Circuit("""
+        ...     H 0
+        ...     CNOT 0 1
+        ... """))
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
+    """
+```
+
 <a name="stim.Tableau.from_conjugated_generators"></a>
 ```python
 # stim.Tableau.from_conjugated_generators
@@ -5217,6 +5278,64 @@ def from_named_gate(name: str) -> stim.Tableau:
         +-xz-
         | ++
         | YZ
+    """
+```
+
+<a name="stim.Tableau.from_unitary_matrix"></a>
+```python
+# stim.Tableau.from_unitary_matrix
+
+# (in class stim.Tableau)
+@staticmethod
+def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.Tableau:
+
+    """Creates a tableau from the unitary matrix of a Clifford operation.
+
+    Args:
+        matrix: A unitary matrix specified as an iterable of rows, with each row is an iterable of amplitudes.
+            The unitary matrix must correspond to a Clifford operation.
+        endian:
+            "little": matrix entries are in little endian order, where higher index qubits
+                correspond to larger changes in row/col indices.
+            "big": matrix entries are in little endian order, where higher index qubits correspond to
+                smaller changes in row/col indices.
+    Returns:
+        The tableau equivalent to the given unitary matrix (up to global phase).
+
+    Raises:
+        ValueError: The given matrix isn't the unitary matrix of a Clifford operation.
+
+    Examples:
+        >>> import stim
+        >>> stim.Tableau.from_unitary_matrix([
+        ...     [1, 0],
+        ...     [0, 1j],
+        ... ], endian='little')
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Y"),
+            ],
+            zs=[
+                stim.PauliString("+Z"),
+            ],
+        )
+
+        >>> stim.Tableau.from_unitary_matrix([
+        ...     [1, 0, 0, 0],
+        ...     [0, 1, 0, 0],
+        ...     [0, 0, 0, -1j],
+        ...     [0, 0, 1j, 0],
+        ... ], endian='little')
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+XZ"),
+                stim.PauliString("+YX"),
+            ],
+            zs=[
+                stim.PauliString("+ZZ"),
+                stim.PauliString("+_Z"),
+            ],
+        )
     """
 ```
 
@@ -5610,6 +5729,66 @@ def then(self, second: stim.Tableau) -> stim.Tableau:
         >>> p = stim.PauliString.random(4)
         >>> t3(p) == t2(t1(p))
         True
+    """
+```
+
+<a name="stim.Tableau.to_circuit"></a>
+```python
+# stim.Tableau.to_circuit
+
+# (in class stim.Tableau)
+def to_circuit(self, *, method: str) -> stim.Circuit:
+
+    """Synthesizes a circuit that implements the tableau's Clifford operation.
+
+    The circuits returned by this method are not guaranteed to be stable
+    from version to version, and may be produced using randomization.
+
+    Args:
+        method: The method to use when synthesizing the circuit. Available values are:
+            "elimination": Uses Gaussian elimination to cancel off-diagonal terms one by one.
+                Gate set: H, S, CX
+                Circuit qubit count: n
+                Circuit operation count: O(n^2)
+                Circuit depth: O(n^2)
+
+    Returns:
+        The synthesized circuit.
+
+    Example:
+        >>> import stim
+        >>> tableau = stim.Tableau.from_conjugated_generators(
+        ...     xs=[
+        ...         stim.PauliString("-_YZ"),
+        ...         stim.PauliString("-YY_"),
+        ...         stim.PauliString("-XZX"),
+        ...     ],
+        ...     zs=[
+        ...         stim.PauliString("+Y_Y"),
+        ...         stim.PauliString("-_XY"),
+        ...         stim.PauliString("-Y__"),
+        ...     ],
+        ... )
+        >>> tableau.to_circuit(method="elimination")
+        stim.Circuit('''
+            CX 2 0 0 2 2 0
+            S 0
+            H 0
+            S 0
+            H 1
+            CX 0 1 0 2
+            H 1 2
+            CX 1 0 2 0 2 1 1 2 2 1
+            H 1
+            S 1 2
+            H 2
+            CX 2 1
+            S 2
+            H 0 1 2
+            S 0 0 1 1 2 2
+            H 0 1 2
+            S 1 1 2 2
+        ''')
     """
 ```
 
@@ -6923,6 +7102,158 @@ def set_num_qubits(self, new_num_qubits: int) -> None:
         >>> s.set_num_qubits(2)
         >>> s.measure_many(0, 1, 2, 3)
         [True, True, False, False]
+    """
+```
+
+<a name="stim.TableauSimulator.set_state_from_stabilizers"></a>
+```python
+# stim.TableauSimulator.set_state_from_stabilizers
+
+# (in class stim.TableauSimulator)
+def set_state_from_stabilizers(self, stabilizers: Iterable[stim.PauliString], *, bool allow_redundant = False, bool allow_underconstrained = False) -> None:
+
+    """Sets the tableau simulator's state to a state satisfying the given stabilizers.
+
+    The old quantum state is completely overwritten, even if the new state is underconstrained
+    underconstrained by the given stabilizers. The number of qubits is changed to exactly match
+    the number of qubits in the longest given stabilizer.
+
+    Args:
+        stabilizers: A list of `stim.PauliString`s specifying the stabilizers that the new
+            state must have. It is permitted for stabilizers to have different lengths. All
+            stabilizers are padded up to the length of the longest stabilizer by appending
+            identity terms.
+        allow_redundant: Defaults to False. If set to False, then the given stabilizers must
+            all be independent. If any one of them is a product of the others (including the
+            empty product), an exception will be raised. If set to True, then redundant
+            stabilizers are simply ignored.
+        allow_underconstrained: Defaults to False. If set to False, then the given stabilizers
+            must form a complete set of generators. They must exactly specify the desired
+            stabilizer state, with no degrees of freedom left over. For an n-qubit state there
+            must be n independent stabilizers. If set to True, then there can be leftover
+            degrees of freedom which can be set arbitrarily.
+
+    Returns:
+        Nothing. Mutates the states of the simulator to match the desired stabilizers.
+        Guarantees that self.current_inverse_tableau().inverse_z_output(k) will be equal
+        to the k'th independent stabilizer from the `stabilizers` argument.
+
+    Raises:
+        ValueError:
+            A stabilizer is redundant but allow_redundant=True wasn't set.
+            OR
+            The given stabilizers are contradictory (e.g. "+Z" and "-Z" both specified).
+            OR
+            The given stabilizers anticommute (e.g. "+Z" and "+X" both specified).
+            OR
+            The stabilizers left behind a degree of freedom but allow_underconstrained=True wasn't set.
+            OR
+            A stabilizer has an imaginary sign (i or -i).
+
+    Examples:
+
+        >>> import stim
+        >>> tab_sim = stim.TableauSimulator()
+        >>> tab_sim.set_state_from_stabilizers([
+        ...     stim.PauliString("XX"),
+        ...     stim.PauliString("ZZ"),
+        ... ])
+        >>> tab_sim.current_inverse_tableau().inverse()
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
+
+        >>> tab_sim.set_state_from_stabilizers([
+        ...     stim.PauliString("XX_"),
+        ...     stim.PauliString("ZZ_"),
+        ...     stim.PauliString("-YY_"),
+        ...     stim.PauliString(""),
+        ... ], allow_underconstrained=True, allow_redundant=True)
+        >>> tab_sim.current_inverse_tableau().inverse()
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z__"),
+                stim.PauliString("+_X_"),
+                stim.PauliString("+__X"),
+            ],
+            zs=[
+                stim.PauliString("+XX_"),
+                stim.PauliString("+ZZ_"),
+                stim.PauliString("+__Z"),
+            ],
+        )
+    """
+```
+
+<a name="stim.TableauSimulator.set_state_from_state_vector"></a>
+```python
+# stim.TableauSimulator.set_state_from_state_vector
+
+# (in class stim.TableauSimulator)
+def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> None:
+
+    """Sets the tableau simulator's state to a superposition specified by a vector of amplitudes.
+
+    Args:
+        state_vector: A list of complex amplitudes specifying a superposition. The vector
+            must correspond to a state that is reachable using Clifford operations, and must
+            be normalized (i.e. it must be a unit vector).
+        endian:
+            "little": state vector is in little endian order, where higher index qubits
+                correspond to larger changes in the state index.
+            "big": state vector is in little endian order, where higher index qubits correspond to
+                smaller changes in the state index.
+
+    Returns:
+        Nothing. Mutates the states of the simulator to match the desired state.
+
+    Raises:
+        ValueError:
+            The given state vector isn't a list of complex values specifying a stabilizer state.
+            OR
+            The given endian value isn't 'little' or 'big'.
+
+    Examples:
+
+        >>> import stim
+        >>> tab_sim = stim.TableauSimulator()
+        >>> tab_sim.set_state_from_state_vector([
+        ...     0.5**0.5,
+        ...     0.5**0.5 * 1j,
+        ... ], endian='little')
+        >>> tab_sim.current_inverse_tableau().inverse()
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z"),
+            ],
+            zs=[
+                stim.PauliString("+Y"),
+            ],
+        )
+        >>> tab_sim.set_state_from_state_vector([
+        ...     0.5**0.5,
+        ...     0,
+        ...     0,
+        ...     0.5**0.5,
+        ... ], endian='little')
+        >>> tab_sim.current_inverse_tableau().inverse()
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
     """
 ```
 

@@ -117,10 +117,16 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
             if '@overload ' in line:
                 _, sig = line.split('@overload ')
                 out_obj.lines.append("@overload")
+                is_static = '(self' not in sig and inspect.isclass(parent)
+                if is_static:
+                    out_obj.lines.append("@staticmethod")
                 out_obj.lines.append(sig)
                 out_obj.lines.append("    pass")
             elif '@signature ' in line:
                 _, sig = line.split('@signature ')
+                is_static = '(self' not in sig and inspect.isclass(parent)
+                if is_static:
+                    out_obj.lines.append("@staticmethod")
                 out_obj.lines.append(sig)
                 sig_handled = True
             else:
@@ -143,9 +149,10 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
             if '->' in sig_name: k_high = sig_name.index('->', k_low, k_high)
             k_high = sig_name.index(", " if ", " in sig_name[k_low:k_high] else ")", k_low, k_high)
             sig_name = sig_name[:k_low] + sig_name[k_high:]
-        is_static = '(self' not in sig_name and inspect.isclass(parent)
-        if is_static:
-            out_obj.lines.append("@staticmethod")
+        if not sig_handled:
+            is_static = '(self' not in sig_name and inspect.isclass(parent)
+            if is_static:
+                out_obj.lines.append("@staticmethod")
         sig_name = sig_name.replace(': handle', ': Any')
         sig_name = sig_name.replace('numpy.', 'np.')
         if new_args_name is not None:

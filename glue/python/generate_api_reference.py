@@ -70,12 +70,19 @@ def main():
     version = stim.__version__
     if "dev" in version or version == "VERSION_INFO" or "-dev" in sys.argv:
         version = "(Development Version)"
+        is_dev = True
     else:
         version = "v" + version
+        is_dev = False
     objects = list(generate_documentation(obj=stim, full_name="stim", level=0))
 
     print(f"# Stim {version} API Reference")
     print()
+    if is_dev:
+        print("*CAUTION*: this API reference is for the in-development version of Stim.")
+        print("Methods and arguments mentioned here may not be accessible in stable versions, yet.")
+        print("API references for stable versions are kept on the [stim github wiki](https://github.com/quantumlib/Stim/wiki)")
+        print()
     print("## Index")
     for obj in objects:
         level = obj.level
