@@ -47,12 +47,10 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
     p/3: X
     p/3: Y
     p/3: Z
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -88,7 +86,6 @@ Targets:
 
 Pauli Mixture:
 
-    ```
      1-p: II
     p/15: IX
     p/15: IY
@@ -105,7 +102,6 @@ Pauli Mixture:
     p/15: ZX
     p/15: ZY
     p/15: ZZ
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -139,10 +135,8 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
      p : X
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -176,10 +170,8 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
      p : Y
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -213,10 +205,8 @@ Targets:
 
 Pauli Mixture:
 
-    ```
     1-p: I
      p : Z
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -251,22 +241,18 @@ Targets:
 
     Qubits to apply the custom noise channel to.
 
-- Example:
+Example:
 
-    ```
     # Sample errors from the distribution 10% X, 15% Y, 20% Z, 55% I.
     # Apply independently to qubits 1, 2, 4.
     PAULI_CHANNEL_1(0.1, 0.15, 0.2) 1 2 4
-    ```
 
 Pauli Mixture:
 
-    ```
     1-px-py-pz: I
     px: X
     py: Y
     pz: Z
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -317,17 +303,14 @@ Targets:
     Pairs of qubits to apply the custom noise channel to.
     There must be an even number of targets.
 
-- Example:
+Example:
 
-    ```
     # Sample errors from the distribution 10% XX, 20% YZ, 70% II.
     # Apply independently to qubit pairs (1,2), (5,6), and (8,3)
     PAULI_CHANNEL_2(0,0,0, 0.1,0,0,0, 0,0,0,0.2, 0,0,0,0) 1 2 5 6 8 3
-    ```
 
 Pauli Mixture:
 
-    ```
     1-pix-piy-piz-pxi-pxx-pxy-pxz-pyi-pyx-pyy-pyz-pzi-pzx-pzy-pzz: II
     pix: IX
     piy: IY
@@ -344,7 +327,6 @@ Pauli Mixture:
     pzx: ZX
     pzy: ZY
     pzz: ZZ
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -384,12 +366,10 @@ Targets:
 
 - Example:
 
-    ```
     # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
     CORRELATED_ERROR(0.2) X1 Y2
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
-    ```
 )MARKDOWN",
                     {},
                     {},
@@ -432,14 +412,12 @@ Targets:
     Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
     They are implicitly all combined.
 
-- Example:
+Example:
 
-    ```
     # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
     CORRELATED_ERROR(0.2) X1 Y2
     ELSE_CORRELATED_ERROR(0.25) Z2 Z3
     ELSE_CORRELATED_ERROR(0.33333333333) X1 Y2 Z3
-    ```
 )MARKDOWN",
                     {},
                     {},

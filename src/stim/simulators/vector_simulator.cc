@@ -181,6 +181,29 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     return mag2;
 }
 
+void VectorSimulator::smooth_stabilizer_state(std::complex<float> base_value) {
+    std::vector<std::complex<float>> ratio_values{
+        {0, 0},
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+    };
+    for (size_t k = 0; k < state.size(); k++) {
+        auto ratio = state[k] / base_value;
+        bool solved = false;
+        for (const auto &r : ratio_values) {
+            if (std::norm(ratio - r) < 0.125) {
+                state[k] = r;
+                solved = true;
+            }
+        }
+        if (!solved) {
+            throw std::invalid_argument("The state vector wasn't a stabilizer state.");
+        }
+    }
+}
+
 bool VectorSimulator::approximate_equals(const VectorSimulator &other, bool up_to_global_phase) const {
     if (state.size() != other.state.size()) {
         return false;
@@ -258,4 +281,35 @@ void VectorSimulator::canonicalize_assuming_stabilizer_state(double norm2) {
     for (auto &v : state) {
         v *= scale;
     }
+}
+void VectorSimulator::do_unitary_circuit(const Circuit &circuit) {
+    std::vector<size_t> targets1{1};
+    std::vector<size_t> targets2{1, 2};
+    circuit.for_each_operation([&](const Operation &op) {
+        if (!(op.gate->flags & GATE_IS_UNITARY)) {
+            std::stringstream ss;
+            ss << "Not a unitary gate: " << op.gate->name;
+            throw std::invalid_argument(ss.str());
+        }
+        auto unitary = op.gate->unitary();
+        for (auto t : op.target_data.targets) {
+            if (!t.is_qubit_target() || (size_t{1} << t.data) >= state.size()) {
+                std::stringstream ss;
+                ss << "Targets out of range: " << op;
+                throw std::invalid_argument(ss.str());
+            }
+        }
+        if (op.gate->flags & stim::GATE_TARGETS_PAIRS) {
+            for (size_t k = 0; k < op.target_data.targets.size(); k += 2) {
+                targets2[0] = (size_t)op.target_data.targets[k].data;
+                targets2[1] = (size_t)op.target_data.targets[k + 1].data;
+                apply(unitary, targets2);
+            }
+        } else {
+            for (auto t : op.target_data.targets) {
+                targets1[0] = (size_t)t.data;
+                apply(unitary, targets1);
+            }
+        }
+    });
 }

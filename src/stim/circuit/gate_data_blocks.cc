@@ -47,9 +47,8 @@ Targets:
 
     A positive integer in [1, 10^18] specifying the number of repetitions.
 
-- Example:
+Example:
 
-    ```
     REPEAT 2 {
         CNOT 0 1
         CNOT 2 1
@@ -61,7 +60,6 @@ Targets:
         M 1
         DETECTOR rec[-1] rec[-3]
     }
-    ```
 )MARKDOWN",
                     {},
                     {},

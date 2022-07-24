@@ -34,18 +34,36 @@ void GateDataMap::add_gate_data_collapsing(bool &failed) {
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-X-basis measurement (optionally noisy).
+X-basis measurement.
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
 
 Targets:
 
     The qubits to measure in the X basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the X basis, and append the result into the measurement record.
+    MX 5
+
+    # Measure qubit 5 in the X basis, and append the INVERSE of its result into the measurement record.
+    MX !5
+
+    # Do a noisy measurement where the result put into the measurement record is wrong 1% of the time.
+    MX(0.01) 5
+
+    # Measure multiple qubits in the X basis, putting 3 bits into the measurement record.
+    MX 2 3 5
+
+    # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
+    MX(0.02) 2 3 5
 )MARKDOWN",
                     {},
                     {"X -> +m xor chance(p)", "X -> +X"},
@@ -70,18 +88,36 @@ H 0
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-Y-basis measurement (optionally noisy).
+Y-basis measurement.
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
 
 Targets:
 
     The qubits to measure in the Y basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Y basis, and append the result into the measurement record.
+    MY 5
+
+    # Measure qubit 5 in the Y basis, and append the INVERSE of its result into the measurement record.
+    MY !5
+
+    # Do a noisy measurement where the result put into the measurement record is wrong 1% of the time.
+    MY(0.01) 5
+
+    # Measure multiple qubits in the X basis, putting 3 bits into the measurement record.
+    MY 2 3 5
+
+    # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
+    MY(0.02) 2 3 5
 )MARKDOWN",
                     {},
                     {"Y -> m xor chance(p)", "Y -> +Y"},
@@ -110,18 +146,39 @@ S 0
                 return {
                     "L_Collapsing Gates",
                     R"MARKDOWN(
-Z-basis measurement (optionally noisy).
+Z-basis measurement.
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
 
 Targets:
 
     The qubits to measure in the Z basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Z basis, and append the result into the measurement record.
+    M 5
+
+    # 'MZ' is the same as 'M'. This also measures qubit 5 in the Z basis.
+    MZ 5
+
+    # Measure qubit 5 in the Z basis, and append the INVERSE of its result into the measurement record.
+    MZ !5
+
+    # Do a noisy measurement where the result put into the measurement record is wrong 1% of the time.
+    MZ(0.01) 5
+
+    # Measure multiple qubits in the Z basis, putting 3 bits into the measurement record.
+    MZ 2 3 5
+
+    # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
+    MZ(0.02) 2 3 5
 )MARKDOWN",
                     {},
                     {"Z -> m xor chance(p)", "Z -> +Z"},
@@ -142,7 +199,7 @@ M 0
             &TableauSimulator::measure_reset_x,
             &FrameSimulator::measure_reset_x,
             &ErrorAnalyzer::MRX,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -152,13 +209,32 @@ Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, 
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the demolition measurement is perfect.
+    If one parens argument is given, the demolition measurement's result is noisy.
+    The argument is the probability of returning the wrong result.
+    The argument does not affect the fidelity of the reset.
 
 Targets:
 
     The qubits to measure and reset in the X basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the X basis, reset it to the |+> state, append the measurement result into the measurement record.
+    MRX 5
+
+    # Demolition measure qubit 5 in the X basis, but append the INVERSE of its result into the measurement record.
+    MRX !5
+
+    # Do a noisy demolition measurement where the result put into the measurement record is wrong 1% of the time.
+    MRX(0.01) 5
+
+    # Demolition measure multiple qubits in the X basis, putting 3 bits into the measurement record.
+    MRX 2 3 5
+
+    # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
+    MRX(0.02) 2 3 5
 )MARKDOWN",
                     {},
                     {"X -> m xor chance(p)", "1 -> +X"},
@@ -179,7 +255,7 @@ H 0
             &TableauSimulator::measure_reset_y,
             &FrameSimulator::measure_reset_y,
             &ErrorAnalyzer::MRY,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -189,13 +265,32 @@ Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`,
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the demolition measurement is perfect.
+    If one parens argument is given, the demolition measurement's result is noisy.
+    The argument is the probability of returning the wrong result.
+    The argument does not affect the fidelity of the reset.
 
 Targets:
 
     The qubits to measure and reset in the Y basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Y basis, reset it to the |i> state, append the measurement result into the measurement record.
+    MRY 5
+
+    # Demolition measure qubit 5 in the Y basis, but append the INVERSE of its result into the measurement record.
+    MRY !5
+
+    # Do a noisy demolition measurement where the result put into the measurement record is wrong 1% of the time.
+    MRY(0.01) 5
+
+    # Demolition measure multiple qubits in the Y basis, putting 3 bits into the measurement record.
+    MRY 2 3 5
+
+    # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
+    MRY(0.02) 2 3 5
 )MARKDOWN",
                     {},
                     {"Y -> m xor chance(p)", "1 -> +Y"},
@@ -220,7 +315,7 @@ S 0
             &TableauSimulator::measure_reset_z,
             &FrameSimulator::measure_reset_z,
             &ErrorAnalyzer::MRZ,
-            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_PRODUCES_NOISY_RESULTS | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_IS_RESET),
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -230,13 +325,35 @@ Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, 
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the demolition measurement is perfect.
+    If one parens argument is given, the demolition measurement's result is noisy.
+    The argument is the probability of returning the wrong result.
+    The argument does not affect the fidelity of the reset.
 
 Targets:
 
     The qubits to measure and reset in the Z basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Z basis, reset it to the |0> state, append the measurement result into the measurement record.
+    MRZ 5
+
+    # MR is also a Z-basis demolition measurement.
+    MR 5
+
+    # Demolition measure qubit 5 in the Z basis, but append the INVERSE of its result into the measurement record.
+    MRZ !5
+
+    # Do a noisy demolition measurement where the result put into the measurement record is wrong 1% of the time.
+    MRZ(0.01) 5
+
+    # Demolition measure multiple qubits in the Z basis, putting 3 bits into the measurement record.
+    MRZ 2 3 5
+
+    # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
+    MRZ(0.02) 2 3 5
 )MARKDOWN",
                     {},
                     {"Z -> m xor chance(p)", "1 -> +Z"},
@@ -258,7 +375,7 @@ R 0
             &TableauSimulator::reset_x,
             &FrameSimulator::reset_x,
             &ErrorAnalyzer::RX,
-            GATE_NO_FLAGS,
+            GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -273,6 +390,14 @@ Parens Arguments:
 Targets:
 
     The qubits to reset in the X basis.
+
+Examples:
+
+    # Reset qubit 5 into the |+> state.
+    RX 5
+
+    # Result multiple qubits into the |+> state.
+    RX 2 3 5
 )MARKDOWN",
                     {},
                     {"1 -> +X"},
@@ -292,7 +417,7 @@ H 0
             &TableauSimulator::reset_y,
             &FrameSimulator::reset_y,
             &ErrorAnalyzer::RY,
-            GATE_NO_FLAGS,
+            GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -307,6 +432,14 @@ Parens Arguments:
 Targets:
 
     The qubits to reset in the Y basis.
+
+Examples:
+
+    # Reset qubit 5 into the |i> state.
+    RY 5
+
+    # Result multiple qubits into the |i> state.
+    RY 2 3 5
 )MARKDOWN",
                     {},
                     {"1 -> +Y"},
@@ -330,7 +463,7 @@ S 0
             &TableauSimulator::reset_z,
             &FrameSimulator::reset_z,
             &ErrorAnalyzer::RZ,
-            GATE_NO_FLAGS,
+            GATE_IS_RESET,
             []() -> ExtraGateData {
                 return {
                     "L_Collapsing Gates",
@@ -345,6 +478,17 @@ Parens Arguments:
 Targets:
 
     The qubits to reset in the Z basis.
+
+Examples:
+
+    # Reset qubit 5 into the |0> state.
+    RZ 5
+
+    # R means the same thing as RZ.
+    R 5
+
+    # Reset multiple qubits into the |0> state.
+    RZ 2 3 5
 )MARKDOWN",
                     {},
                     {"1 -> +Z"},
@@ -383,9 +527,8 @@ Targets:
     Each Pauli product is a series of Pauli targets (`[XYZ]#`) separated by combiners (`*`).
     Products can be negated by prefixing a Pauli target in the product with an inverter (`!`)
 
-- Example:
+Examples:
 
-    ```
     # Measure the two-body +X1*Y2 observable.
     MPP X1*Y2
 
@@ -397,7 +540,6 @@ Targets:
 
     # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
     MPP(0.001) Z1*Z2 X1*X2
-    ```
 
 )MARKDOWN",
                     {},
