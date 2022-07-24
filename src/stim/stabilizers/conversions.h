@@ -61,6 +61,24 @@ Tableau circuit_to_tableau(const Circuit &circuit, bool ignore_noise, bool ignor
 ///     The state vector, using the requested endianness.
 std::vector<std::complex<float>> circuit_to_output_state_vector(const Circuit &circuit, bool little_endian);
 
+/// Synthesizes a circuit that implements the given tableau's Clifford operation.
+///
+/// This method is allowed to output different circuits, from call to call or version
+/// to version, for the same input tableau.
+///
+/// Args:
+///     tableau: The tableau to synthesize into a circuit.
+///     method: The method to use when synthesizing the circuit. Available values are:
+///         "elimination": Uses Gaussian elimination to cancel off-diagonal terms one by one.
+///             Gate set: H, S, CX
+///             Circuit qubit count: n
+///             Circuit operation count: O(n^2)
+///             Circuit depth: O(n^2)
+///
+/// Returns:
+///     The synthesized circuit.
+Circuit tableau_to_circuit(const Tableau &tableau, const std::string &method);
+
 }  // namespace stim
 
 #endif

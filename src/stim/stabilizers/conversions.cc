@@ -196,3 +196,129 @@ std::vector<std::complex<float>> stim::circuit_to_output_state_vector(const Circ
 
     return sim.to_state_vector(little_endian);
 }
+
+Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &method) {
+    if (method != "elimination") {
+        std::stringstream ss;
+        ss << "Unknown method: '" << method << "'. Known methods:\n";
+        ss << "    - 'elimination'";
+        throw std::invalid_argument(ss.str());
+    }
+
+    Tableau remaining = tableau.inverse();
+    Circuit recorded_circuit;
+    auto apply = [&](const std::string &name, uint32_t target) {
+        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau(), {target});
+        recorded_circuit.append_op(name, {target});
+    };
+    auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
+        remaining.inplace_scatter_append(GATE_DATA.at(name).tableau(), {target, target2});
+        recorded_circuit.append_op(name, {target, target2});
+    };
+    auto x_out = [&](size_t inp, size_t out) {
+        const auto &p = remaining.xs[inp];
+        return p.xs[out] + 2 * p.zs[out];
+    };
+    auto z_out = [&](size_t inp, size_t out) {
+        const auto &p = remaining.zs[inp];
+        return p.xs[out] + 2 * p.zs[out];
+    };
+
+    size_t n = remaining.num_qubits;
+    for (size_t col = 0; col < n; col++) {
+        // Find a cell with an anti-commuting pair of Paulis.
+        size_t pivot_row;
+        for (pivot_row = col; pivot_row < n; pivot_row++) {
+            int px = x_out(col, pivot_row);
+            int pz = z_out(col, pivot_row);
+            if (px && pz && px != pz) {
+                break;
+            }
+        }
+        assert(pivot_row < n);  // Ensured by unitarity of the tableau.
+
+        // Move the pivot to the diagonal.
+        if (pivot_row != col) {
+            apply2("CNOT", pivot_row, col);
+            apply2("CNOT", col, pivot_row);
+            apply2("CNOT", pivot_row, col);
+        }
+
+        // Transform the pivot to XZ.
+        if (z_out(col, col) == 3) {
+            apply("S", col);
+        }
+        if (z_out(col, col) != 2) {
+            apply("H", col);
+        }
+        if (x_out(col, col) != 1) {
+            apply("S", col);
+        }
+
+        // Use the pivot to remove all other terms in the X observable.
+        for (size_t row = col + 1; row < n; row++) {
+            if (x_out(col, row) == 3) {
+                apply("S", row);
+            }
+        }
+        for (size_t row = col + 1; row < n; row++) {
+            if (x_out(col, row) == 2) {
+                apply("H", row);
+            }
+        }
+        for (size_t row = col + 1; row < n; row++) {
+            if (x_out(col, row)) {
+                apply2("CX", col, row);
+            }
+        }
+
+        // Use the pivot to remove all other terms in the Z observable.
+        for (size_t row = col + 1; row < n; row++) {
+            if (z_out(col, row) == 3) {
+                apply("S", row);
+            }
+        }
+        for (size_t row = col + 1; row < n; row++) {
+            if (z_out(col, row) == 1) {
+                apply("H", row);
+            }
+        }
+        for (size_t row = col + 1; row < n; row++) {
+            if (z_out(col, row)) {
+                apply2("CX", row, col);
+            }
+        }
+    }
+
+    // Fix pauli signs.
+    simd_bits signs_copy = remaining.zs.signs;
+    for (size_t col = 0; col < n; col++) {
+        if (signs_copy[col]) {
+            apply("H", col);
+        }
+    }
+    for (size_t col = 0; col < n; col++) {
+        if (signs_copy[col]) {
+            apply("S", col);
+            apply("S", col);
+        }
+    }
+    for (size_t col = 0; col < n; col++) {
+        if (signs_copy[col]) {
+            apply("H", col);
+        }
+    }
+    signs_copy = remaining.xs.signs;
+    for (size_t col = 0; col < n; col++) {
+        if (remaining.xs.signs[col]) {
+            apply("S", col);
+            apply("S", col);
+        }
+    }
+
+    if (recorded_circuit.count_qubits() < n) {
+        apply("H", n - 1);
+        apply("H", n - 1);
+    }
+    return recorded_circuit;
+}

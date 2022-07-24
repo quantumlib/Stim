@@ -338,3 +338,53 @@ TEST(conversions, circuit_to_output_state_vector) {
         (std::vector<std::complex<float>>{{0}, {0}, {1}, {0}})
     );
 }
+
+TEST(conversions, tableau_to_circuit_fuzz_vs_circuit_to_tableau) {
+    for (size_t n = 0; n < 10; n++) {
+        Tableau desired = Tableau::random(n, SHARED_TEST_RNG());
+        Circuit circuit = tableau_to_circuit(desired, "elimination");
+        Tableau actual = circuit_to_tableau(circuit, false, false, false);
+        ASSERT_EQ(actual, desired);
+
+        for (const auto &op : circuit.operations) {
+            ASSERT_TRUE(op.gate == &GATE_DATA.at("S")
+                        || op.gate == &GATE_DATA.at("H")
+                        || op.gate == &GATE_DATA.at("CX")) << op;
+        }
+    }
+}
+
+TEST(conversions, tableau_to_circuit) {
+    ASSERT_EQ(
+        tableau_to_circuit(GATE_DATA.at("I").tableau(), "elimination"),
+        Circuit(R"CIRCUIT(
+            H 0
+            H 0
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        tableau_to_circuit(GATE_DATA.at("X").tableau(), "elimination"),
+        Circuit(R"CIRCUIT(
+            H 0
+            S 0
+            S 0
+            H 0
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        tableau_to_circuit(GATE_DATA.at("S").tableau(), "elimination"),
+        Circuit(R"CIRCUIT(
+            S 0
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        tableau_to_circuit(GATE_DATA.at("ISWAP").tableau(), "elimination"),
+        Circuit(R"CIRCUIT(
+            CX 1 0 0 1 1 0
+            S 0
+            H 1
+            CX 0 1
+            H 1
+            S 1
+        )CIRCUIT"));
+}
