@@ -782,7 +782,7 @@ void TableauSimulator::apply_tableau(const Tableau &tableau, const std::vector<s
 
 std::vector<std::complex<float>> TableauSimulator::to_state_vector(bool little_endian) const {
     auto sim = to_vector_sim();
-    if (!little_endian) {
+    if (!little_endian && inv_state.num_qubits > 0) {
         for (size_t q = 0; q < inv_state.num_qubits - q - 1; q++) {
             sim.apply("SWAP", q, inv_state.num_qubits - q - 1);
         }

@@ -191,6 +191,7 @@ struct Circuit {
     /// Returns an equivalent circuit without REPEAT or SHIFT_COORDS instructions.
     Circuit flattened() const;
 
+    /// Helper method for executing the circuit, e.g. repeating REPEAT blocks.
     template <typename CALLBACK>
     void for_each_operation(const CALLBACK &callback) const {
         for (const auto &op : operations) {
@@ -210,6 +211,7 @@ struct Circuit {
         }
     }
 
+    /// Helper method for reverse-executing the circuit, e.g. repeating REPEAT blocks.
     template <typename CALLBACK>
     void for_each_operation_reverse(const CALLBACK &callback) const {
         for (size_t p = operations.size(); p-- > 0;) {
@@ -230,6 +232,7 @@ struct Circuit {
         }
     }
 
+    /// Helper method for counting measurements, detectors, etc.
     template <typename COUNT>
     uint64_t flat_count_operations(const COUNT &count) const {
         uint64_t n = 0;
@@ -248,6 +251,7 @@ struct Circuit {
         return n;
     }
 
+    /// Helper method for finding the largest observable, etc.
     template <typename MAP>
     uint64_t max_operation_property(const MAP &map) const {
         uint64_t n = 0;
@@ -270,10 +274,39 @@ struct Circuit {
     /// file, not time proportional to the amount of data produced by the circuit.
     std::map<uint64_t, std::vector<double>> get_final_qubit_coords() const;
 
+    /// Looks up the coordinate data of a detector.
+    ///
+    /// Args:
+    ///     detector_index: The index of the detector to get coordinate data for.
+    ///         Detectors are indexed by the order they appear in the circuit (accounting for repeat blocks).
+    ///
+    /// Returns:
+    ///     The coordinate data for the detector.
+    ///     If the detector has no coordinate data, an empty vector is returned.
+    ///
+    /// Throws:
+    ///     std::invalid_argument: The detector index is greater than or equal to circuit.count_detectors().
     std::vector<double> coords_of_detector(uint64_t detector_index) const;
+
+    /// Looks up the coordinate data of a given set of detectors.
+    ///
+    /// Args:
+    ///     included_detector_indices: An ordered set of the indices of detectors to get coordinate data for.
+    ///
+    /// Returns:
+    ///     A map from detector index to coordinate data.
+    ///     Every index from included_detector_indices will be in this map as a key.
+    ///     Detectors with no coordinate data are mapped to an empty vector.
+    ///
+    /// Throws:
+    ///     std::invalid_argument: A detector index is greater than or equal to circuit.count_detectors().
     std::map<uint64_t, std::vector<double>> get_detector_coordinates(
         const std::set<uint64_t> &included_detector_indices) const;
+
+    /// Returns the total coordinate shift accumulated over the entire circuit, accounting for REPEAT blocks.
     std::vector<double> final_coord_shift() const;
+
+    /// Helper method for building up human readable descriptions of circuit locations.
     std::string describe_instruction_location(size_t instruction_offset) const;
 };
 

@@ -54,6 +54,12 @@ struct VectorSimulator {
     /// Helper method for applying the gates in a Pauli string.
     void apply(const PauliStringRef &gate, size_t qubit_offset);
 
+    /// Modifies the state vector to be EXACTLY entries of 0, 1, -1, i, or -i.
+    ///
+    /// Each entry is a ratio relative to the given base value.
+    /// If any entry has a ratio not near the desired set, an exception is raised.
+    void smooth_stabilizer_state(std::complex<float> base_value);
+
     /// Projects the state vector into the +1 eigenstate of the given observable, and renormalizes.
     ///
     /// Returns:

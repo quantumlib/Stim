@@ -767,7 +767,6 @@ void print_fixed_width_float(Acc &out, float f, char u) {
 void print_example(Acc &out, const char *name, const Gate &gate) {
     out << "\n- Example:\n";
     out.change_indent(+4);
-    out << "```\n";
     for (size_t k = 0; k < 3; k++) {
         out << name;
         if ((gate.flags & GATE_IS_NOISE) || (k == 2 && (gate.flags & GATE_PRODUCES_NOISY_RESULTS))) {
@@ -799,7 +798,6 @@ void print_example(Acc &out, const char *name, const Gate &gate) {
             out << gate.name << " 111 rec[-1]\n";
         }
     }
-    out << "```\n";
     out.change_indent(-4);
 }
 
@@ -814,14 +812,12 @@ void print_decomposition(Acc &out, const Gate &gate) {
 
         out << "Decomposition (into H, S, CX, M, R):\n";
         out.change_indent(+4);
-        out << "```\n";
         out << "# The following circuit is equivalent (up to global phase) to `";
         out << undecomposed.str() << "`";
         out << decomposition;
         if (Circuit(decomposition) == Circuit(undecomposed.str().data())) {
             out << "\n# (The decomposition is trivial because this gate is in the target gate set.)\n";
         }
-        out << "```\n";
         out.change_indent(-4);
     }
 }
@@ -830,7 +826,6 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
     if (gate.flags & GATE_IS_UNITARY) {
         out << "Stabilizer Generators:\n";
         out.change_indent(+4);
-        out << "```\n";
         auto tableau = gate.tableau();
         if (gate.flags & GATE_TARGETS_PAIRS) {
             out << "X_ -> " << tableau.xs[0] << "\n";
@@ -841,18 +836,15 @@ void print_stabilizer_generators(Acc &out, const Gate &gate) {
             out << "X -> " << tableau.xs[0] << "\n";
             out << "Z -> " << tableau.zs[0] << "\n";
         }
-        out << "```\n";
         out.change_indent(-4);
     } else {
         auto data = gate.extra_data_func();
         if (data.tableau_data.size()) {
             out << "Stabilizer Generators:\n";
             out.change_indent(+4);
-            out << "```\n";
             for (const auto &e : data.tableau_data) {
                 out << e << "\n";
             }
-            out << "```\n";
             out.change_indent(-4);
         }
     }
@@ -865,7 +857,6 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
 
     out << "Bloch Rotation:\n";
     out.change_indent(+4);
-    out << "```\n";
     auto matrix = gate.unitary();
     auto a = matrix[0][0];
     auto b = matrix[0][1];
@@ -920,7 +911,6 @@ void print_bloch_vector(Acc &out, const Gate &gate) {
     }
     out << "\n";
     out << "Angle: " << angle << " degrees\n";
-    out << "```\n";
     out.change_indent(-4);
 }
 
@@ -929,7 +919,11 @@ void print_unitary_matrix(Acc &out, const Gate &gate) {
         return;
     }
     auto matrix = gate.unitary();
-    out << "Unitary Matrix:\n";
+    out << "Unitary Matrix";
+    if (gate.flags & GATE_TARGETS_PAIRS) {
+        out << " (little endian)";
+    }
+    out << ":\n";
     out.change_indent(+4);
     bool all_halves = true;
     bool all_sqrt_halves = true;
@@ -942,7 +936,6 @@ void print_unitary_matrix(Acc &out, const Gate &gate) {
             all_sqrt_halves &= fabs(fabs(cell.imag()) - s) < 0.001 || cell.imag() == 0;
         }
     }
-    out << "```\n";
     double factor = all_halves ? 2 : all_sqrt_halves ? 1 / s : 1;
     bool first_row = true;
     for (const auto &row : matrix) {
@@ -970,7 +963,7 @@ void print_unitary_matrix(Acc &out, const Gate &gate) {
     if (all_sqrt_halves) {
         out << " / sqrt(2)";
     }
-    out << "\n```\n";
+    out << "\n";
     out.change_indent(-4);
 }
 

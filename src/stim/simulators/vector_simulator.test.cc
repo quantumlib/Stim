@@ -271,3 +271,25 @@ TEST(VectorSim, from_stabilizers) {
     ref.state = {0, sqrtf(0.5), 0, 0, 0, 0, {0, -sqrtf(0.5)}, 0};
     ASSERT_TRUE(sim.approximate_equals(ref, true));
 }
+
+TEST(VectorSim, smooth_stabilizer_state) {
+    VectorSimulator sim(0);
+    sim.state = {
+        {1, 0},
+        {1, 1}
+    };
+    ASSERT_THROW({ sim.smooth_stabilizer_state(1); }, std::invalid_argument);
+
+    sim.state = {
+        {0.25, 0.25},
+        {-0.25, 0.25}
+    };
+    ASSERT_THROW({ sim.smooth_stabilizer_state(1); }, std::invalid_argument);
+
+    sim.state = {
+        {0.25, 0.25},
+        {-0.25, 0.25}
+    };
+    sim.smooth_stabilizer_state({-0.25, -0.25});
+    ASSERT_EQ(sim.state, (std::vector<std::complex<float>>{{-1, 0}, {0,-1}}));
+}

@@ -181,6 +181,29 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     return mag2;
 }
 
+void VectorSimulator::smooth_stabilizer_state(std::complex<float> base_value) {
+    std::vector<std::complex<float>> ratio_values{
+        {0, 0},
+        {1, 0},
+        {-1, 0},
+        {0, 1},
+        {0, -1},
+    };
+    for (size_t k = 0; k < state.size(); k++) {
+        auto ratio = state[k] / base_value;
+        bool solved = false;
+        for (const auto &r : ratio_values) {
+            if (std::norm(ratio - r) < 0.125) {
+                state[k] = r;
+                solved = true;
+            }
+        }
+        if (!solved) {
+            throw std::invalid_argument("The state vector wasn't a stabilizer state.");
+        }
+    }
+}
+
 bool VectorSimulator::approximate_equals(const VectorSimulator &other, bool up_to_global_phase) const {
     if (state.size() != other.state.size()) {
         return false;

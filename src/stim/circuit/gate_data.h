@@ -108,6 +108,8 @@ enum GateFlags : uint16_t {
     GATE_ARGS_ARE_UNSIGNED_INTEGERS = 1 << 11,
     // Controls instructions like MPP taking Pauli product combiners ("X1*Y2 Z3").
     GATE_TARGETS_COMBINERS = 1 << 12,
+    // Measurements and resets are dissipative operations.
+    GATE_IS_RESET = 1 << 13,
 };
 
 struct ExtraGateData {
