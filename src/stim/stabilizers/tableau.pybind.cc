@@ -1166,6 +1166,62 @@ void pybind_tableau(pybind11::module &m) {
         )DOC")
             .data());
 
+    c.def_static(
+        "from_circuit",
+        [](const Circuit &circuit, bool ignore_noise, bool ignore_measurement, bool ignore_reset) {
+            return circuit_to_tableau(circuit, ignore_noise, ignore_measurement, ignore_reset);
+        },
+        pybind11::arg("circuit"),
+        pybind11::kw_only(),
+        pybind11::arg("ignore_noise") = false,
+        pybind11::arg("ignore_measurement") = false,
+        pybind11::arg("ignore_reset") = false,
+        clean_doc_string(u8R"DOC(
+            @signature def from_circuit(circuit: stim.Circuit, *, ignore_noise: bool = False, ignore_measurement: bool = False, ignore_reset: bool = False) -> stim.Tableau:
+            Converts a circuit into an equivalent stabilizer tableau.
+
+            Args:
+                circuit: The circuit to compile into a tableau.
+                ignore_noise: Defaults to False. When False, any noise operations in the circuit will cause
+                    the conversion to fail with an exception. When True, noise operations are skipped over
+                    as if they weren't even present in the circuit.
+                ignore_measurement: Defaults to False. When False, any measurement operations in the circuit
+                    will cause the conversion to fail with an exception. When True, measurement operations are
+                    skipped over as if they weren't even present in the circuit.
+                ignore_reset: Defaults to False. When False, any reset operations in the circuit will cause
+                    the conversion to fail with an exception. When True, reset operations are skipped over
+                    as if they weren't even present in the circuit.
+
+            Returns:
+                The tableau equivalent to the given circuit (up to global phase).
+
+            Raises:
+                ValueError:
+                    The circuit contains noise operations but ignore_noise=False.
+                    OR
+                    The circuit contains measurement operations but ignore_measurement=False.
+                    OR
+                    The circuit contains reset operations but ignore_reset=False.
+
+            Examples:
+                >>> import stim
+                >>> stim.Tableau.from_circuit(stim.Circuit("""
+                ...     H 0
+                ...     CNOT 0 1
+                ... """))
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
+        )DOC")
+            .data());
+
     c.def(
         "__repr__",
         [](const Tableau &self) {

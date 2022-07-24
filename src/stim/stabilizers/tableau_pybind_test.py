@@ -730,9 +730,10 @@ def test_from_unitary_matrix():
         ], endian='little')
 
 
-def test_to_circuit():
+def test_to_circuit_vs_from_circuit():
     t = stim.Tableau.random(4)
     c = t.to_circuit(method="elimination")
     sim = stim.TableauSimulator()
     sim.do_circuit(c)
     assert sim.current_inverse_tableau().inverse() == t
+    assert stim.Tableau.from_circuit(c) == t
