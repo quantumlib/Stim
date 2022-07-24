@@ -95,39 +95,29 @@ Targets:
 
 - Example:
 
-    ```
     I 5
     I 42
     I 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +X
     Z -> +Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: 
     Angle: 0 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1  ,     ]
     [    , +1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `I 0`
     # (no operations)
-    ```
     
 
 <a name="X"></a>
@@ -146,42 +136,32 @@ Targets:
 
 - Example:
 
-    ```
     X 5
     X 42
     X 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +X
     Z -> -Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X
     Angle: 180 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [    , +1  ]
     [+1  ,     ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `X 0`
     H 0
     S 0
     S 0
     H 0
-    ```
     
 
 <a name="Y"></a>
@@ -199,36 +179,27 @@ Targets:
 
 - Example:
 
-    ```
     Y 5
     Y 42
     Y 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> -X
     Z -> -Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Y
     Angle: 180 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [    ,   -i]
     [  +i,     ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `Y 0`
     S 0
     S 0
@@ -236,7 +207,6 @@ Decomposition (into H, S, CX, M, R):
     S 0
     S 0
     H 0
-    ```
     
 
 <a name="Z"></a>
@@ -255,40 +225,30 @@ Targets:
 
 - Example:
 
-    ```
     Z 5
     Z 42
     Z 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> -X
     Z -> +Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Z
     Angle: 180 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1  ,     ]
     [    , -1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `Z 0`
     S 0
     S 0
-    ```
     
 
 ## Single Qubit Clifford Gates
@@ -308,42 +268,32 @@ Targets:
 
 - Example:
 
-    ```
     C_XYZ 5
     C_XYZ 42
     C_XYZ 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +Y
     Z -> +X
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X+Y+Z
     Angle: 120 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1-i, -1-i]
     [+1-i, +1+i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `C_XYZ 0`
     S 0
     S 0
     S 0
     H 0
-    ```
     
 
 <a name="C_ZYX"></a>
@@ -361,40 +311,30 @@ Targets:
 
 - Example:
 
-    ```
     C_ZYX 5
     C_ZYX 42
     C_ZYX 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +Z
     Z -> +Y
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X+Y+Z
     Angle: -120 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1+i, +1+i]
     [-1+i, +1-i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `C_ZYX 0`
     H 0
     S 0
-    ```
     
 
 <a name="H"></a>
@@ -415,41 +355,31 @@ Targets:
 
 - Example:
 
-    ```
     H 5
     H 42
     H 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +Z
     Z -> +X
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X+Z
     Angle: 180 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1  , +1  ]
     [+1  , -1  ] / sqrt(2)
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `H 0`
     H 0
     
     # (The decomposition is trivial because this gate is in the target gate set.)
-    ```
     
 
 <a name="H_XY"></a>
@@ -467,43 +397,33 @@ Targets:
 
 - Example:
 
-    ```
     H_XY 5
     H_XY 42
     H_XY 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +Y
     Z -> -Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X+Y
     Angle: 180 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [    , +1-i]
     [+1+i,     ] / sqrt(2)
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `H_XY 0`
     H 0
     S 0
     S 0
     H 0
     S 0
-    ```
     
 
 <a name="H_YZ"></a>
@@ -521,43 +441,33 @@ Targets:
 
 - Example:
 
-    ```
     H_YZ 5
     H_YZ 42
     H_YZ 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> -X
     Z -> +Y
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Y+Z
     Angle: 180 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1  ,   -i]
     [  +i, -1  ] / sqrt(2)
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `H_YZ 0`
     H 0
     S 0
     H 0
     S 0
     S 0
-    ```
     
 
 <a name="S"></a>
@@ -578,41 +488,31 @@ Targets:
 
 - Example:
 
-    ```
     S 5
     S 42
     S 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +Y
     Z -> +Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Z
     Angle: 90 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1  ,     ]
     [    ,   +i]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `S 0`
     S 0
     
     # (The decomposition is trivial because this gate is in the target gate set.)
-    ```
     
 
 <a name="SQRT_X"></a>
@@ -631,41 +531,31 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_X 5
     SQRT_X 42
     SQRT_X 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +X
     Z -> -Y
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X
     Angle: 90 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1+i, +1-i]
     [+1-i, +1+i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_X 0`
     H 0
     S 0
     H 0
-    ```
     
 
 <a name="SQRT_X_DAG"></a>
@@ -684,41 +574,31 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_X_DAG 5
     SQRT_X_DAG 42
     SQRT_X_DAG 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +X
     Z -> +Y
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +X
     Angle: -90 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1-i, +1+i]
     [+1+i, +1-i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_X_DAG 0`
     S 0
     H 0
     S 0
-    ```
     
 
 <a name="SQRT_Y"></a>
@@ -737,41 +617,31 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_Y 5
     SQRT_Y 42
     SQRT_Y 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> -Z
     Z -> +X
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Y
     Angle: 90 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1+i, -1-i]
     [+1+i, +1+i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_Y 0`
     S 0
     S 0
     H 0
-    ```
     
 
 <a name="SQRT_Y_DAG"></a>
@@ -790,41 +660,31 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_Y_DAG 5
     SQRT_Y_DAG 42
     SQRT_Y_DAG 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +Z
     Z -> -X
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Y
     Angle: -90 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1-i, +1-i]
     [-1+i, +1-i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_Y_DAG 0`
     H 0
     S 0
     S 0
-    ```
     
 
 <a name="S_DAG"></a>
@@ -845,41 +705,31 @@ Targets:
 
 - Example:
 
-    ```
     S_DAG 5
     S_DAG 42
     S_DAG 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> -Y
     Z -> +Z
-    ```
     
 Bloch Rotation:
 
-    ```
     Axis: +Z
     Angle: -90 degrees
-    ```
     
 Unitary Matrix:
 
-    ```
     [+1  ,     ]
     [    ,   -i]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `S_DAG 0`
     S 0
     S 0
     S 0
-    ```
     
 
 ## Two Qubit Clifford Gates
@@ -909,39 +759,31 @@ Targets:
 
 - Example:
 
-    ```
     CX 5 6
     CX 42 43
     CX 5 6 42 43
     CX rec[-1] 111
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +XX
     Z_ -> +Z_
     _X -> +_X
     _Z -> +ZZ
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,     ,     , +1  ]
     [    ,     , +1  ,     ]
     [    , +1  ,     ,     ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `CX 0 1`
     CNOT 0 1
     
     # (The decomposition is trivial because this gate is in the target gate set.)
-    ```
     
 
 <a name="CY"></a>
@@ -967,41 +809,33 @@ Targets:
 
 - Example:
 
-    ```
     CY 5 6
     CY 42 43
     CY 5 6 42 43
     CY rec[-1] 111
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +XY
     Z_ -> +Z_
     _X -> +ZX
     _Z -> +ZZ
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,     ,     ,   -i]
     [    ,     , +1  ,     ]
     [    ,   +i,     ,     ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `CY 0 1`
     S 1
     S 1
     S 1
     CNOT 0 1
     S 1
-    ```
     
 
 <a name="CZ"></a>
@@ -1027,40 +861,32 @@ Targets:
 
 - Example:
 
-    ```
     CZ 5 6
     CZ 42 43
     CZ 5 6 42 43
     CZ rec[-1] 111
     CZ 111 rec[-1]
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +XZ
     Z_ -> +Z_
     _X -> +ZX
     _Z -> +_Z
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    , +1  ,     ,     ]
     [    ,     , +1  ,     ]
     [    ,     ,     , -1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `CZ 0 1`
     H 1
     CNOT 0 1
     H 1
-    ```
     
 
 <a name="ISWAP"></a>
@@ -1079,39 +905,31 @@ Targets:
 
 - Example:
 
-    ```
     ISWAP 5 6
     ISWAP 42 43
     ISWAP 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +ZY
     Z_ -> +_Z
     _X -> +YZ
     _Z -> +Z_
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,     ,   +i,     ]
     [    ,   +i,     ,     ]
     [    ,     ,     , +1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `ISWAP 0 1`
     CNOT 0 1
     S 1
     CNOT 1 0
     CNOT 0 1
-    ```
     
 
 <a name="ISWAP_DAG"></a>
@@ -1130,33 +948,26 @@ Targets:
 
 - Example:
 
-    ```
     ISWAP_DAG 5 6
     ISWAP_DAG 42 43
     ISWAP_DAG 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> -ZY
     Z_ -> +_Z
     _X -> -YZ
     _Z -> +Z_
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,     ,   -i,     ]
     [    ,   -i,     ,     ]
     [    ,     ,     , +1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `ISWAP_DAG 0 1`
     CNOT 0 1
     S 1
@@ -1164,7 +975,6 @@ Decomposition (into H, S, CX, M, R):
     S 1
     CNOT 1 0
     CNOT 0 1
-    ```
     
 
 <a name="SQRT_XX"></a>
@@ -1182,40 +992,32 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_XX 5 6
     SQRT_XX 42 43
     SQRT_XX 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +X_
     Z_ -> -YX
     _X -> +_X
     _Z -> -XY
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1+i,     ,     , +1-i]
     [    , +1+i, +1-i,     ]
     [    , +1-i, +1+i,     ]
     [+1-i,     ,     , +1+i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_XX 0 1`
     CNOT 0 1
     H 0
     S 0
     H 0
     CNOT 0 1
-    ```
     
 
 <a name="SQRT_XX_DAG"></a>
@@ -1233,40 +1035,32 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_XX_DAG 5 6
     SQRT_XX_DAG 42 43
     SQRT_XX_DAG 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +X_
     Z_ -> +YX
     _X -> +_X
     _Z -> +XY
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1-i,     ,     , +1+i]
     [    , +1-i, +1+i,     ]
     [    , +1+i, +1-i,     ]
     [+1+i,     ,     , +1-i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_XX_DAG 0 1`
     S 0
     CNOT 0 1
     H 0
     S 0
     CNOT 0 1
-    ```
     
 
 <a name="SQRT_YY"></a>
@@ -1284,33 +1078,26 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_YY 5 6
     SQRT_YY 42 43
     SQRT_YY 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> -ZY
     Z_ -> +XY
     _X -> -YZ
     _Z -> +YX
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1+i,     ,     , -1+i]
     [    , +1+i, +1-i,     ]
     [    , +1-i, +1+i,     ]
     [-1+i,     ,     , +1+i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_YY 0 1`
     S 0
     CNOT 1 0
@@ -1319,7 +1106,6 @@ Decomposition (into H, S, CX, M, R):
     H 1
     CNOT 1 0
     S 0
-    ```
     
 
 <a name="SQRT_YY_DAG"></a>
@@ -1337,33 +1123,26 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_YY_DAG 5 6
     SQRT_YY_DAG 42 43
     SQRT_YY_DAG 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +ZY
     Z_ -> -XY
     _X -> +YZ
     _Z -> -YX
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1-i,     ,     , -1-i]
     [    , +1-i, +1+i,     ]
     [    , +1+i, +1-i,     ]
     [-1-i,     ,     , +1-i] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_YY_DAG 0 1`
     CNOT 0 1
     S 1
@@ -1372,7 +1151,6 @@ Decomposition (into H, S, CX, M, R):
     H 0
     CNOT 1 0
     CNOT 0 1
-    ```
     
 
 <a name="SQRT_ZZ"></a>
@@ -1390,38 +1168,30 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_ZZ 5 6
     SQRT_ZZ 42 43
     SQRT_ZZ 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +YZ
     Z_ -> +Z_
     _X -> +ZY
     _Z -> +_Z
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,   +i,     ,     ]
     [    ,     ,   +i,     ]
     [    ,     ,     , +1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_ZZ 0 1`
     CNOT 0 1
     S 1
     CNOT 0 1
-    ```
     
 
 <a name="SQRT_ZZ_DAG"></a>
@@ -1439,33 +1209,26 @@ Targets:
 
 - Example:
 
-    ```
     SQRT_ZZ_DAG 5 6
     SQRT_ZZ_DAG 42 43
     SQRT_ZZ_DAG 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> -YZ
     Z_ -> +Z_
     _X -> -ZY
     _Z -> +_Z
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,   -i,     ,     ]
     [    ,     ,   -i,     ]
     [    ,     ,     , +1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SQRT_ZZ_DAG 0 1`
     H 1
     CNOT 0 1
@@ -1476,7 +1239,6 @@ Decomposition (into H, S, CX, M, R):
     S 1
     S 1
     S 1
-    ```
     
 
 <a name="SWAP"></a>
@@ -1494,38 +1256,30 @@ Targets:
 
 - Example:
 
-    ```
     SWAP 5 6
     SWAP 42 43
     SWAP 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +_X
     Z_ -> +_Z
     _X -> +X_
     _Z -> +Z_
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    ,     , +1  ,     ]
     [    , +1  ,     ,     ]
     [    ,     ,     , +1  ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `SWAP 0 1`
     CNOT 0 1
     CNOT 1 0
     CNOT 0 1
-    ```
     
 
 <a name="XCX"></a>
@@ -1548,38 +1302,30 @@ Targets:
 
 - Example:
 
-    ```
     XCX 5 6
     XCX 42 43
     XCX 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +X_
     Z_ -> +ZX
     _X -> +_X
     _Z -> +XZ
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  , +1  , +1  , -1  ]
     [+1  , +1  , -1  , +1  ]
     [+1  , -1  , +1  , +1  ]
     [-1  , +1  , +1  , +1  ] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `XCX 0 1`
     H 0
     CNOT 0 1
     H 0
-    ```
     
 
 <a name="XCY"></a>
@@ -1602,40 +1348,32 @@ Targets:
 
 - Example:
 
-    ```
     XCY 5 6
     XCY 42 43
     XCY 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +X_
     Z_ -> +ZY
     _X -> +XX
     _Z -> +XZ
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  , +1  ,   -i,   +i]
     [+1  , +1  ,   +i,   -i]
     [  +i,   -i, +1  , +1  ]
     [  -i,   +i, +1  , +1  ] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `XCY 0 1`
     CNOT 1 0
     H 0
     S 0
     CNOT 0 1
     H 0
-    ```
     
 
 <a name="XCZ"></a>
@@ -1659,37 +1397,29 @@ Targets:
 
 - Example:
 
-    ```
     XCZ 5 6
     XCZ 42 43
     XCZ 5 6 42 43
     XCZ 111 rec[-1]
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +X_
     Z_ -> +ZZ
     _X -> +XX
     _Z -> +_Z
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    , +1  ,     ,     ]
     [    ,     ,     , +1  ]
     [    ,     , +1  ,     ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `XCZ 0 1`
     CNOT 1 0
-    ```
     
 
 <a name="YCX"></a>
@@ -1712,40 +1442,32 @@ Targets:
 
 - Example:
 
-    ```
     YCX 5 6
     YCX 42 43
     YCX 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +XX
     Z_ -> +ZX
     _X -> +_X
     _Z -> +YZ
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,   -i, +1  ,   +i]
     [  +i, +1  ,   -i, +1  ]
     [+1  ,   +i, +1  ,   -i]
     [  -i, +1  ,   +i, +1  ] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `YCX 0 1`
     CX 0 1
     H 1
     S 1
     CX 1 0
     H 1
-    ```
     
 
 <a name="YCY"></a>
@@ -1768,33 +1490,26 @@ Targets:
 
 - Example:
 
-    ```
     YCY 5 6
     YCY 42 43
     YCY 5 6 42 43
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +XY
     Z_ -> +ZY
     _X -> +YX
     _Z -> +YZ
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,   -i,   -i, +1  ]
     [  +i, +1  , -1  ,   -i]
     [  +i, -1  , +1  ,   -i]
     [+1  ,   +i,   +i, +1  ] / 2
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `YCY 0 1`
     H 0
     S 0
@@ -1803,7 +1518,6 @@ Decomposition (into H, S, CX, M, R):
     H 0
     CX 1 0
     S 0
-    ```
     
 
 <a name="YCZ"></a>
@@ -1827,41 +1541,33 @@ Targets:
 
 - Example:
 
-    ```
     YCZ 5 6
     YCZ 42 43
     YCZ 5 6 42 43
     YCZ 111 rec[-1]
-    ```
     
 Stabilizer Generators:
 
-    ```
     X_ -> +XZ
     Z_ -> +ZZ
     _X -> +YX
     _Z -> +_Z
-    ```
     
-Unitary Matrix:
+Unitary Matrix (little endian):
 
-    ```
     [+1  ,     ,     ,     ]
     [    , +1  ,     ,     ]
     [    ,     ,     ,   -i]
     [    ,     ,   +i,     ]
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `YCZ 0 1`
     S 0
     S 0
     S 0
     CNOT 1 0
     S 0
-    ```
     
 
 ## Noise Channels
@@ -1892,11 +1598,9 @@ Pauli Mixture:
 
 - Example:
 
-    ```
     DEPOLARIZE1(0.001) 5
     DEPOLARIZE1(0.001) 42
     DEPOLARIZE1(0.001) 5 42
-    ```
     
 
 <a name="DEPOLARIZE2"></a>
@@ -1937,11 +1641,9 @@ Pauli Mixture:
 
 - Example:
 
-    ```
     DEPOLARIZE2(0.001) 5 6
     DEPOLARIZE2(0.001) 42 43
     DEPOLARIZE2(0.001) 5 6 42 43
-    ```
     
 
 <a name="E"></a>
@@ -2123,11 +1825,9 @@ Pauli Mixture:
 
 - Example:
 
-    ```
     X_ERROR(0.001) 5
     X_ERROR(0.001) 42
     X_ERROR(0.001) 5 42
-    ```
     
 
 <a name="Y_ERROR"></a>
@@ -2152,11 +1852,9 @@ Pauli Mixture:
 
 - Example:
 
-    ```
     Y_ERROR(0.001) 5
     Y_ERROR(0.001) 42
     Y_ERROR(0.001) 5 42
-    ```
     
 
 <a name="Z_ERROR"></a>
@@ -2181,11 +1879,9 @@ Pauli Mixture:
 
 - Example:
 
-    ```
     Z_ERROR(0.001) 5
     Z_ERROR(0.001) 42
     Z_ERROR(0.001) 5 42
-    ```
     
 
 ## Collapsing Gates
@@ -2195,45 +1891,60 @@ Pauli Mixture:
 
 Alternate name: <a name="MZ"></a>`MZ`
 
-Z-basis measurement (optionally noisy).
+Z-basis measurement.
 Projects each target qubit into `|0>` or `|1>` and reports its value (false=`|0>`, true=`|1>`).
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
 
 Targets:
 
     The qubits to measure in the Z basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Z basis, and append the result into the measurement record.
+    M 5
+
+    # 'MZ' is the same as 'M'. This also measures qubit 5 in the Z basis.
+    MZ 5
+
+    # Measure qubit 5 in the Z basis, and append the INVERSE of its result into the measurement record.
+    MZ !5
+
+    # Do a noisy measurement where the result put into the measurement record is wrong 1% of the time.
+    MZ(0.01) 5
+
+    # Measure multiple qubits in the Z basis, putting 3 bits into the measurement record.
+    MZ 2 3 5
+
+    # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
+    MZ(0.02) 2 3 5
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
 
 - Example:
 
-    ```
     M 5
     M !42
     M(0.001) 5 !42
-    ```
     
 Stabilizer Generators:
 
-    ```
     Z -> m xor chance(p)
     Z -> +Z
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `M 0`
     M 0
     
     # (The decomposition is trivial because this gate is in the target gate set.)
-    ```
     
 
 <a name="MPP"></a>
@@ -2253,9 +1964,8 @@ Targets:
     Each Pauli product is a series of Pauli targets (`[XYZ]#`) separated by combiners (`*`).
     Products can be negated by prefixing a Pauli target in the product with an inverter (`!`)
 
-- Example:
+Examples:
 
-    ```
     # Measure the two-body +X1*Y2 observable.
     MPP X1*Y2
 
@@ -2267,17 +1977,21 @@ Targets:
 
     # Noisily measure +Z1+Z2 and +X1*X2 (independently flip each reported result 0.1% of the time).
     MPP(0.001) Z1*Z2 X1*X2
-    ```
 
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
+
+- Example:
+
+    MPP 5
+    MPP !42
+    MPP(0.001) 5 !42
+    
 Stabilizer Generators:
 
-    ```
     P -> m xor chance(p)
     P -> P
-    ```
     
 
 <a name="MR"></a>
@@ -2290,39 +2004,55 @@ Projects each target qubit into `|0>` or `|1>`, reports its value (false=`|0>`, 
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the demolition measurement is perfect.
+    If one parens argument is given, the demolition measurement's result is noisy.
+    The argument is the probability of returning the wrong result.
+    The argument does not affect the fidelity of the reset.
 
 Targets:
 
     The qubits to measure and reset in the Z basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Z basis, reset it to the |0> state, append the measurement result into the measurement record.
+    MRZ 5
+
+    # MR is also a Z-basis demolition measurement.
+    MR 5
+
+    # Demolition measure qubit 5 in the Z basis, but append the INVERSE of its result into the measurement record.
+    MRZ !5
+
+    # Do a noisy demolition measurement where the result put into the measurement record is wrong 1% of the time.
+    MRZ(0.01) 5
+
+    # Demolition measure multiple qubits in the Z basis, putting 3 bits into the measurement record.
+    MRZ 2 3 5
+
+    # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
+    MRZ(0.02) 2 3 5
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
 
 - Example:
 
-    ```
     MR 5
     MR !42
     MR(0.001) 5 !42
-    ```
     
 Stabilizer Generators:
 
-    ```
     Z -> m xor chance(p)
     1 -> +Z
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `MR 0`
     M 0
     R 0
-    ```
     
 
 <a name="MRX"></a>
@@ -2333,41 +2063,54 @@ Projects each target qubit into `|+>` or `|->`, reports its value (false=`|+>`, 
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the demolition measurement is perfect.
+    If one parens argument is given, the demolition measurement's result is noisy.
+    The argument is the probability of returning the wrong result.
+    The argument does not affect the fidelity of the reset.
 
 Targets:
 
     The qubits to measure and reset in the X basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the X basis, reset it to the |+> state, append the measurement result into the measurement record.
+    MRX 5
+
+    # Demolition measure qubit 5 in the X basis, but append the INVERSE of its result into the measurement record.
+    MRX !5
+
+    # Do a noisy demolition measurement where the result put into the measurement record is wrong 1% of the time.
+    MRX(0.01) 5
+
+    # Demolition measure multiple qubits in the X basis, putting 3 bits into the measurement record.
+    MRX 2 3 5
+
+    # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
+    MRX(0.02) 2 3 5
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
 
 - Example:
 
-    ```
     MRX 5
     MRX !42
     MRX(0.001) 5 !42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> m xor chance(p)
     1 -> +X
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `MRX 0`
     H 0
     M 0
     R 0
     H 0
-    ```
     
 
 <a name="MRY"></a>
@@ -2378,35 +2121,49 @@ Projects each target qubit into `|i>` or `|-i>`, reports its value (false=`|i>`,
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the demolition measurement is perfect.
+    If one parens argument is given, the demolition measurement's result is noisy.
+    The argument is the probability of returning the wrong result.
+    The argument does not affect the fidelity of the reset.
 
 Targets:
 
     The qubits to measure and reset in the Y basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Y basis, reset it to the |i> state, append the measurement result into the measurement record.
+    MRY 5
+
+    # Demolition measure qubit 5 in the Y basis, but append the INVERSE of its result into the measurement record.
+    MRY !5
+
+    # Do a noisy demolition measurement where the result put into the measurement record is wrong 1% of the time.
+    MRY(0.01) 5
+
+    # Demolition measure multiple qubits in the Y basis, putting 3 bits into the measurement record.
+    MRY 2 3 5
+
+    # Perform multiple noisy demolition measurements. Each measurement result is flipped independently with 2% probability.
+    MRY(0.02) 2 3 5
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
 
 - Example:
 
-    ```
     MRY 5
     MRY !42
     MRY(0.001) 5 !42
-    ```
     
 Stabilizer Generators:
 
-    ```
     Y -> m xor chance(p)
     1 -> +Y
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `MRY 0`
     S 0
     S 0
@@ -2416,90 +2173,114 @@ Decomposition (into H, S, CX, M, R):
     M 0
     H 0
     S 0
-    ```
     
 
 <a name="MX"></a>
 ### The 'MX' Instruction
 
-X-basis measurement (optionally noisy).
+X-basis measurement.
 Projects each target qubit into `|+>` or `|->` and reports its value (false=`|+>`, true=`|->`).
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
 
 Targets:
 
     The qubits to measure in the X basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the X basis, and append the result into the measurement record.
+    MX 5
+
+    # Measure qubit 5 in the X basis, and append the INVERSE of its result into the measurement record.
+    MX !5
+
+    # Do a noisy measurement where the result put into the measurement record is wrong 1% of the time.
+    MX(0.01) 5
+
+    # Measure multiple qubits in the X basis, putting 3 bits into the measurement record.
+    MX 2 3 5
+
+    # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
+    MX(0.02) 2 3 5
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
 
 - Example:
 
-    ```
     MX 5
     MX !42
     MX(0.001) 5 !42
-    ```
     
 Stabilizer Generators:
 
-    ```
     X -> +m xor chance(p)
     X -> +X
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `MX 0`
     H 0
     M 0
     H 0
-    ```
     
 
 <a name="MY"></a>
 ### The 'MY' Instruction
 
-Y-basis measurement (optionally noisy).
+Y-basis measurement.
 Projects each target qubit into `|i>` or `|-i>` and reports its value (false=`|i>`, true=`|-i>`).
 
 Parens Arguments:
 
-    Optional.
-    A single float specifying the probability of flipping each reported measurement result.
+    If no parens argument is given, the measurement is perfect.
+    If one parens argument is given, the measurement result is noisy.
+    The argument is the probability of returning the wrong result.
 
 Targets:
 
     The qubits to measure in the Y basis.
     Prefixing a qubit target with `!` flips its reported measurement result.
+
+Examples:
+
+    # Measure qubit 5 in the Y basis, and append the result into the measurement record.
+    MY 5
+
+    # Measure qubit 5 in the Y basis, and append the INVERSE of its result into the measurement record.
+    MY !5
+
+    # Do a noisy measurement where the result put into the measurement record is wrong 1% of the time.
+    MY(0.01) 5
+
+    # Measure multiple qubits in the X basis, putting 3 bits into the measurement record.
+    MY 2 3 5
+
+    # Perform multiple noisy measurements. Each measurement fails independently with 2% probability.
+    MY(0.02) 2 3 5
 If this gate is parameterized by a probability argument, the recorded result will be flipped with that probability. If not, the recorded result is noiseless. Note that the noise only affects the recorded result, not the target qubit's state.
 
 Prefixing a target with ! inverts its recorded measurement result.
 
 - Example:
 
-    ```
     MY 5
     MY !42
     MY(0.001) 5 !42
-    ```
     
 Stabilizer Generators:
 
-    ```
     Y -> m xor chance(p)
     Y -> +Y
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `MY 0`
     S 0
     S 0
@@ -2508,7 +2289,6 @@ Decomposition (into H, S, CX, M, R):
     M 0
     H 0
     S 0
-    ```
     
 
 <a name="R"></a>
@@ -2527,28 +2307,33 @@ Targets:
 
     The qubits to reset in the Z basis.
 
+Examples:
+
+    # Reset qubit 5 into the |0> state.
+    RZ 5
+
+    # R means the same thing as RZ.
+    R 5
+
+    # Reset multiple qubits into the |0> state.
+    RZ 2 3 5
+
 - Example:
 
-    ```
     R 5
     R 42
     R 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     1 -> +Z
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `R 0`
     R 0
     
     # (The decomposition is trivial because this gate is in the target gate set.)
-    ```
     
 
 <a name="RX"></a>
@@ -2565,28 +2350,30 @@ Targets:
 
     The qubits to reset in the X basis.
 
+Examples:
+
+    # Reset qubit 5 into the |+> state.
+    RX 5
+
+    # Result multiple qubits into the |+> state.
+    RX 2 3 5
+
 - Example:
 
-    ```
     RX 5
     RX 42
     RX 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     1 -> +X
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `RX 0`
     H 0
     R 0
     H 0
-    ```
     
 
 <a name="RY"></a>
@@ -2603,23 +2390,26 @@ Targets:
 
     The qubits to reset in the Y basis.
 
+Examples:
+
+    # Reset qubit 5 into the |i> state.
+    RY 5
+
+    # Result multiple qubits into the |i> state.
+    RY 2 3 5
+
 - Example:
 
-    ```
     RY 5
     RY 42
     RY 5 42
-    ```
     
 Stabilizer Generators:
 
-    ```
     1 -> +Y
-    ```
     
 Decomposition (into H, S, CX, M, R):
 
-    ```
     # The following circuit is equivalent (up to global phase) to `RY 0`
     S 0
     S 0
@@ -2628,7 +2418,6 @@ Decomposition (into H, S, CX, M, R):
     R 0
     H 0
     S 0
-    ```
     
 
 ## Control Flow
