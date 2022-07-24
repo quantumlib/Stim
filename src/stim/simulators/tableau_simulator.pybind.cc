@@ -1487,7 +1487,7 @@ void pybind_tableau_simulator(pybind11::module &m) {
             if in the previous example there was a third qubit in the |0> state, then both
             `stim.PauliString("XX_")` and `stim.PauliString("XXZ")` are valid kickbacks.
 
-            Measurements with determinist results don't have a Pauli kickback.
+            Measurements with deterministic results don't have a Pauli kickback.
 
             Args:
                 target: The index of the qubit to measure.
