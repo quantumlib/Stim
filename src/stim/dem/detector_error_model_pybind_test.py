@@ -399,3 +399,53 @@ def test_dem_to_file():
         c.to_file(object())
     with pytest.raises(ValueError, match="how to write"):
         c.to_file(123)
+
+
+def test_flattened():
+    dem = stim.DetectorErrorModel("""
+        shift_detectors 5
+        repeat 2 {
+            error(0.125) D0 D1
+        }
+    """)
+    assert dem.flattened() == stim.DetectorErrorModel("""
+        error(0.125) D5 D6
+        error(0.125) D5 D6
+    """)
+
+
+def test_rounded():
+    dem = stim.DetectorErrorModel("""
+        error(0.1248) D0 D1
+    """)
+    assert dem.rounded(1) == stim.DetectorErrorModel("""
+        error(0.1) D0 D1
+    """)
+    assert dem.rounded(2) == stim.DetectorErrorModel("""
+        error(0.12) D0 D1
+    """)
+    assert dem.rounded(3) == stim.DetectorErrorModel("""
+        error(0.125) D0 D1
+    """)
+    assert dem.rounded(4) == stim.DetectorErrorModel("""
+        error(0.1248) D0 D1
+    """)
+    assert dem.rounded(5) == stim.DetectorErrorModel("""
+        error(0.1248) D0 D1
+    """)
+
+    dem = stim.DetectorErrorModel("""
+        error(0.01248) D0 D1
+    """)
+    assert dem.rounded(1) == stim.DetectorErrorModel("""
+        error(0) D0 D1
+    """)
+    assert dem.rounded(2) == stim.DetectorErrorModel("""
+        error(0.01) D0 D1
+    """)
+    assert dem.rounded(3) == stim.DetectorErrorModel("""
+        error(0.012) D0 D1
+    """)
+    assert dem.rounded(4) == stim.DetectorErrorModel("""
+        error(0.0125) D0 D1
+    """)

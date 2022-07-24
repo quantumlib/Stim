@@ -20,7 +20,6 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.__str__`](#stim.Circuit.__str__)
     - [`stim.Circuit.append`](#stim.Circuit.append)
     - [`stim.Circuit.append_from_stim_program_text`](#stim.Circuit.append_from_stim_program_text)
-    - [`stim.Circuit.append_operation`](#stim.Circuit.append_operation)
     - [`stim.Circuit.approx_equals`](#stim.Circuit.approx_equals)
     - [`stim.Circuit.clear`](#stim.Circuit.clear)
     - [`stim.Circuit.compile_detector_sampler`](#stim.Circuit.compile_detector_sampler)
@@ -30,7 +29,6 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.detector_error_model`](#stim.Circuit.detector_error_model)
     - [`stim.Circuit.explain_detector_error_model_errors`](#stim.Circuit.explain_detector_error_model_errors)
     - [`stim.Circuit.flattened`](#stim.Circuit.flattened)
-    - [`stim.Circuit.flattened_operations`](#stim.Circuit.flattened_operations)
     - [`stim.Circuit.from_file`](#stim.Circuit.from_file)
     - [`stim.Circuit.generated`](#stim.Circuit.generated)
     - [`stim.Circuit.get_detector_coordinates`](#stim.Circuit.get_detector_coordinates)
@@ -145,11 +143,13 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DetectorErrorModel.approx_equals`](#stim.DetectorErrorModel.approx_equals)
     - [`stim.DetectorErrorModel.clear`](#stim.DetectorErrorModel.clear)
     - [`stim.DetectorErrorModel.copy`](#stim.DetectorErrorModel.copy)
+    - [`stim.DetectorErrorModel.flattened`](#stim.DetectorErrorModel.flattened)
     - [`stim.DetectorErrorModel.from_file`](#stim.DetectorErrorModel.from_file)
     - [`stim.DetectorErrorModel.get_detector_coordinates`](#stim.DetectorErrorModel.get_detector_coordinates)
     - [`stim.DetectorErrorModel.num_detectors`](#stim.DetectorErrorModel.num_detectors)
     - [`stim.DetectorErrorModel.num_errors`](#stim.DetectorErrorModel.num_errors)
     - [`stim.DetectorErrorModel.num_observables`](#stim.DetectorErrorModel.num_observables)
+    - [`stim.DetectorErrorModel.rounded`](#stim.DetectorErrorModel.rounded)
     - [`stim.DetectorErrorModel.shortest_graphlike_error`](#stim.DetectorErrorModel.shortest_graphlike_error)
     - [`stim.DetectorErrorModel.to_file`](#stim.DetectorErrorModel.to_file)
 - [`stim.ExplainedError`](#stim.ExplainedError)
@@ -198,7 +198,6 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.__truediv__`](#stim.PauliString.__truediv__)
     - [`stim.PauliString.commutes`](#stim.PauliString.commutes)
     - [`stim.PauliString.copy`](#stim.PauliString.copy)
-    - [`stim.PauliString.extended_product`](#stim.PauliString.extended_product)
     - [`stim.PauliString.random`](#stim.PauliString.random)
     - [`stim.PauliString.sign`](#stim.PauliString.sign)
 - [`stim.Tableau`](#stim.Tableau)
@@ -781,21 +780,6 @@ def append_from_stim_program_text(
     """
 ```
 
-<a name="stim.Circuit.append_operation"></a>
-```python
-# stim.Circuit.append_operation
-
-# (in class stim.Circuit)
-def append_operation(
-    self,
-    name: object,
-    targets: object = (),
-    arg: object = None,
-) -> None:
-    """[DEPRECATED] use stim.Circuit.append instead
-    """
-```
-
 <a name="stim.Circuit.approx_equals"></a>
 ```python
 # stim.Circuit.approx_equals
@@ -1243,38 +1227,6 @@ def flattened(
             DETECTOR(0, 4) rec[-2]
             DETECTOR(1, 4) rec[-1]
         ''')
-    """
-```
-
-<a name="stim.Circuit.flattened_operations"></a>
-```python
-# stim.Circuit.flattened_operations
-
-# (in class stim.Circuit)
-def flattened_operations(
-    self,
-) -> list:
-    """[DEPRECATED]
-
-    Returns a list of tuples encoding the contents of the circuit.
-    Instead of this method, use `for instruction in circuit` or, to
-    avoid REPEAT blocks, `for instruction in circuit.flattened()`.
-
-    Examples:
-        >>> import stim
-        >>> stim.Circuit('''
-        ...    H 0
-        ...    X_ERROR(0.125) 1
-        ...    M 0 !1
-        ... ''').flattened_operations()
-        [('H', [0], 0), ('X_ERROR', [1], 0.125), ('M', [0, ('inv', 1)], 0)]
-
-        >>> stim.Circuit('''
-        ...    REPEAT 2 {
-        ...        H 6
-        ...    }
-        ... ''').flattened_operations()
-        [('H', [6], 0), ('H', [6], 0)]
     """
 ```
 
@@ -4037,6 +3989,43 @@ def copy(
     """
 ```
 
+<a name="stim.DetectorErrorModel.flattened"></a>
+```python
+# stim.DetectorErrorModel.flattened
+
+# (in class stim.DetectorErrorModel)
+def flattened(
+    self,
+) -> stim.DetectorErrorModel:
+    """Creates an equivalent detector error model without repeat blocks or detector_shift instructions.
+
+    Returns:
+        A `stim.DetectorErrorModel` with the same errors in the same order,
+        but with loops flattened into repeated instructions and with
+        all coordinate/index shifts inlined.
+
+    Examples:
+        >>> import stim
+        >>> stim.DetectorErrorModel('''
+        ...     error(0.125) D0
+        ...     REPEAT 5 {
+        ...         error(0.25) D0 D1
+        ...         shift_detectors 1
+        ...     }
+        ...     error(0.125) D0 L0
+        ... ''').flattened()
+        stim.DetectorErrorModel('''
+            error(0.125) D0
+            error(0.25) D0 D1
+            error(0.25) D1 D2
+            error(0.25) D2 D3
+            error(0.25) D3 D4
+            error(0.25) D4 D5
+            error(0.125) D5 L0
+        ''')
+    """
+```
+
 <a name="stim.DetectorErrorModel.from_file"></a>
 ```python
 # stim.DetectorErrorModel.from_file
@@ -4211,6 +4200,49 @@ def num_observables(
         ...    error(0.1) L399
         ... ''').num_observables
         400
+    """
+```
+
+<a name="stim.DetectorErrorModel.rounded"></a>
+```python
+# stim.DetectorErrorModel.rounded
+
+# (in class stim.DetectorErrorModel)
+def rounded(
+    self,
+    arg0: int,
+) -> stim.DetectorErrorModel:
+    """Creates an equivalent detector error model but with rounded error probabilities.
+
+    Args:
+        digits: The number of digits to round to.
+
+    Returns:
+        A `stim.DetectorErrorModel` with the same instructions in the same order,
+        but with the parens arguments of error instructions rounded to the given
+        precision.
+
+        Instructions whose error probability was rounded to zero are still
+        included in the output.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...     error(0.019499) D0
+        ...     error(0.000001) D0 D1
+        ... ''')
+
+        >>> dem.rounded(2)
+        stim.DetectorErrorModel('''
+            error(0.02) D0
+            error(0) D0 D1
+        ''')
+
+        >>> dem.rounded(3)
+        stim.DetectorErrorModel('''
+            error(0.019) D0
+            error(0) D0 D1
+        ''')
     """
 ```
 
@@ -5338,19 +5370,6 @@ def copy(
         False
         >>> p2 == p1
         True
-    """
-```
-
-<a name="stim.PauliString.extended_product"></a>
-```python
-# stim.PauliString.extended_product
-
-# (in class stim.PauliString)
-def extended_product(
-    self,
-    other: stim.PauliString,
-) -> Tuple[complex, stim.PauliString]:
-    """[DEPRECATED] Use multiplication (__mul__ or *) instead.
     """
 ```
 

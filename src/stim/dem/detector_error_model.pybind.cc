@@ -821,6 +821,11 @@ void pybind_detector_error_model(pybind11::module &m) {
         },
         pybind11::arg("file"),
         clean_doc_string(u8R"DOC(
+            @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.DetectorErrorModel:
+            Reads a detector error model from a file.
+
+            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+
             Args:
                 file: A file path or open file object to read from.
 
@@ -892,7 +897,9 @@ void pybind_detector_error_model(pybind11::module &m) {
         pybind11::arg("file"),
         clean_doc_string(u8R"DOC(
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
-            Writes the stim circuit to a file.
+            Writes the detector error model to a file.
+
+            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
 
             Args:
                 file: A file path or an open file to write to.
@@ -918,6 +925,77 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...         contents = f.read()
                 >>> contents
                 'error(0.25) D2 D3\n'
+        )DOC")
+            .data());
+
+    c.def(
+        "flattened",
+        &DetectorErrorModel::flattened,
+        clean_doc_string(u8R"DOC(
+            Creates an equivalent detector error model without repeat blocks or detector_shift instructions.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same errors in the same order,
+                but with loops flattened into repeated instructions and with
+                all coordinate/index shifts inlined.
+
+            Examples:
+                >>> import stim
+                >>> stim.DetectorErrorModel('''
+                ...     error(0.125) D0
+                ...     REPEAT 5 {
+                ...         error(0.25) D0 D1
+                ...         shift_detectors 1
+                ...     }
+                ...     error(0.125) D0 L0
+                ... ''').flattened()
+                stim.DetectorErrorModel('''
+                    error(0.125) D0
+                    error(0.25) D0 D1
+                    error(0.25) D1 D2
+                    error(0.25) D2 D3
+                    error(0.25) D3 D4
+                    error(0.25) D4 D5
+                    error(0.125) D5 L0
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "rounded",
+        &DetectorErrorModel::rounded,
+        clean_doc_string(u8R"DOC(
+            Creates an equivalent detector error model but with rounded error probabilities.
+
+            Args:
+                digits: The number of digits to round to.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same instructions in the same order,
+                but with the parens arguments of error instructions rounded to the given
+                precision.
+
+                Instructions whose error probability was rounded to zero are still
+                included in the output.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error(0.019499) D0
+                ...     error(0.000001) D0 D1
+                ... ''')
+
+                >>> dem.rounded(2)
+                stim.DetectorErrorModel('''
+                    error(0.02) D0
+                    error(0) D0 D1
+                ''')
+
+                >>> dem.rounded(3)
+                stim.DetectorErrorModel('''
+                    error(0.019) D0
+                    error(0) D0 D1
+                ''')
         )DOC")
             .data());
 }

@@ -580,9 +580,9 @@ void DetectorErrorModel::clear() {
     blocks.clear();
 }
 
-DetectorErrorModel DetectorErrorModel::rounded(uint8_t sig_figs) const {
+DetectorErrorModel DetectorErrorModel::rounded(uint8_t digits) const {
     double scale = 1;
-    for (size_t k = 0; k < sig_figs; k++) {
+    for (size_t k = 0; k < digits; k++) {
         scale *= 10;
     }
 
@@ -591,13 +591,15 @@ DetectorErrorModel DetectorErrorModel::rounded(uint8_t sig_figs) const {
         if (e.type == DEM_REPEAT_BLOCK) {
             auto reps = e.target_data[0].data;
             auto &block = blocks[e.target_data[1].data];
-            result.append_repeat_block(reps, block.rounded(sig_figs));
-        } else {
+            result.append_repeat_block(reps, block.rounded(digits));
+        } else if (e.type == DEM_ERROR) {
             std::vector<double> rounded_args;
             for (auto a : e.arg_data) {
                 rounded_args.push_back(round(a * scale) / scale);
             }
-            result.append_dem_instruction({rounded_args, e.target_data, e.type});
+            result.append_dem_instruction({rounded_args, e.target_data, DEM_ERROR});
+        } else {
+            result.append_dem_instruction(e);
         }
     }
     return result;
@@ -612,6 +614,64 @@ uint64_t DetectorErrorModel::total_detector_shift() const {
             result += e.target_data[0].data * blocks[e.target_data[1].data].total_detector_shift();
         }
     }
+    return result;
+}
+
+void flattened_helper(const DetectorErrorModel &body, std::vector<double> &cur_coordinate_shift, uint64_t &cur_detector_shift, DetectorErrorModel &out) {
+    for (const auto &op : body.instructions) {
+        if (op.type == DEM_SHIFT_DETECTORS) {
+            while (cur_coordinate_shift.size() < op.arg_data.size()) {
+                cur_coordinate_shift.push_back(0);
+            }
+            for (size_t k = 0; k < op.arg_data.size(); k++) {
+                cur_coordinate_shift[k] += op.arg_data[k];
+            }
+            if (!op.target_data.empty()) {
+                cur_detector_shift += op.target_data[0].data;
+            }
+        } else if (op.type == DEM_REPEAT_BLOCK) {
+            const auto &loop_body = body.blocks[op.target_data[1].data];
+            auto reps = op.target_data[0].data;
+            for (uint64_t k = 0; k < reps; k++) {
+                flattened_helper(loop_body, cur_coordinate_shift, cur_detector_shift, out);
+            }
+        } else if (op.type == DEM_LOGICAL_OBSERVABLE) {
+            out.append_dem_instruction(DemInstruction{{}, op.target_data, DEM_LOGICAL_OBSERVABLE});
+        } else if (op.type == DEM_DETECTOR) {
+            while (cur_coordinate_shift.size() < op.arg_data.size()) {
+                cur_coordinate_shift.push_back(0);
+            }
+
+            std::vector<double> shifted_coords;
+            for (size_t k = 0; k < op.arg_data.size(); k++) {
+                shifted_coords.push_back(op.arg_data[k] + cur_coordinate_shift[k]);
+            }
+            std::vector<DemTarget> shifted_detectors;
+            for (DemTarget t : op.target_data) {
+                t.shift_if_detector_id(cur_detector_shift);
+                shifted_detectors.push_back(t);
+            }
+
+            out.append_dem_instruction(DemInstruction{shifted_coords, shifted_detectors, DEM_DETECTOR});
+        } else if (op.type == DEM_ERROR) {
+            std::vector<DemTarget> shifted_detectors;
+            for (DemTarget t : op.target_data) {
+                t.shift_if_detector_id(cur_detector_shift);
+                shifted_detectors.push_back(t);
+            }
+
+            out.append_dem_instruction(DemInstruction{op.arg_data, shifted_detectors, DEM_ERROR});
+        } else {
+            throw std::invalid_argument("Unrecognized instruction type: " + op.str());
+        }
+    }
+}
+
+DetectorErrorModel DetectorErrorModel::flattened() const {
+    DetectorErrorModel result;
+    std::vector<double> shift;
+    uint64_t det_shift = 0;
+    flattened_helper(*this, shift, det_shift, result);
     return result;
 }
 

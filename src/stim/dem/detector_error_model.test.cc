@@ -802,3 +802,59 @@ TEST(detector_error_model, surface_code_coords_dont_infinite_loop) {
     ASSERT_EQ(coords1.size(), n);
     ASSERT_EQ(n, 168);
 }
+
+TEST(detector_error_model, flattened) {
+    ASSERT_EQ(DetectorErrorModel().flattened(), DetectorErrorModel());
+
+    ASSERT_EQ(DetectorErrorModel(R"DEM(
+        error(0.125) D0 D1 L0
+    )DEM").flattened(), DetectorErrorModel(R"DEM(
+        error(0.125) D0 D1 L0
+    )DEM"));
+
+    ASSERT_EQ(DetectorErrorModel(R"DEM(
+        error(0.125) D0 D1 L0
+        shift_detectors 5
+    )DEM").flattened(), DetectorErrorModel(R"DEM(
+        error(0.125) D0 D1 L0
+    )DEM"));
+
+    ASSERT_EQ(DetectorErrorModel(R"DEM(
+        shift_detectors 5
+        error(0.125) D0 D1 L0
+    )DEM").flattened(), DetectorErrorModel(R"DEM(
+        error(0.125) D5 D6 L0
+    )DEM"));
+
+    ASSERT_EQ(DetectorErrorModel(R"DEM(
+        detector(10, 20) D0
+        detector(10, 20, 30, 40) D1
+        logical_observable L0
+        shift_detectors(1, 2, 3) 5
+        detector(10, 20) D0
+        detector(10, 20, 30, 40) D1
+        logical_observable L1
+    )DEM").flattened(), DetectorErrorModel(R"DEM(
+        detector(10, 20) D0
+        detector(10, 20, 30, 40) D1
+        logical_observable L0
+        detector(11, 22) D5
+        detector(11, 22, 33, 40) D6
+        logical_observable L1
+    )DEM"));
+
+    ASSERT_EQ(DetectorErrorModel(R"DEM(
+        repeat 5 {
+            error(0.125) D0
+            shift_detectors(3) 2
+        }
+        detector(10, 20, 30, 40) D0
+    )DEM").flattened(), DetectorErrorModel(R"DEM(
+        error(0.125) D0
+        error(0.125) D2
+        error(0.125) D4
+        error(0.125) D6
+        error(0.125) D8
+        detector(25, 20, 30, 40) D10
+    )DEM"));
+}

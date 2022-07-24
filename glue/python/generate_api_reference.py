@@ -74,7 +74,11 @@ def main():
     else:
         version = "v" + version
         is_dev = False
-    objects = list(generate_documentation(obj=stim, full_name="stim", level=0))
+    objects = [
+        obj
+        for obj in generate_documentation(obj=stim, full_name="stim", level=0)
+        if all('[DEPRECATED]' not in line for line in obj.lines)
+    ]
 
     print(f"# Stim {version} API Reference")
     print()

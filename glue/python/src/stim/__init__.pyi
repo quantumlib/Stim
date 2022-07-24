@@ -2740,6 +2740,36 @@ class DetectorErrorModel:
             >>> c2 == c1
             True
         """
+    def flattened(
+        self,
+    ) -> stim.DetectorErrorModel:
+        """Creates an equivalent detector error model without repeat blocks or detector_shift instructions.
+
+        Returns:
+            A `stim.DetectorErrorModel` with the same errors in the same order,
+            but with loops flattened into repeated instructions and with
+            all coordinate/index shifts inlined.
+
+        Examples:
+            >>> import stim
+            >>> stim.DetectorErrorModel('''
+            ...     error(0.125) D0
+            ...     REPEAT 5 {
+            ...         error(0.25) D0 D1
+            ...         shift_detectors 1
+            ...     }
+            ...     error(0.125) D0 L0
+            ... ''').flattened()
+            stim.DetectorErrorModel('''
+                error(0.125) D0
+                error(0.25) D0 D1
+                error(0.25) D1 D2
+                error(0.25) D2 D3
+                error(0.25) D3 D4
+                error(0.25) D4 D5
+                error(0.125) D5 L0
+            ''')
+        """
     @staticmethod
     def from_file(
         file: object,
@@ -2881,6 +2911,42 @@ class DetectorErrorModel:
             ...    error(0.1) L399
             ... ''').num_observables
             400
+        """
+    def rounded(
+        self,
+        arg0: int,
+    ) -> stim.DetectorErrorModel:
+        """Creates an equivalent detector error model but with rounded error probabilities.
+
+        Args:
+            digits: The number of digits to round to.
+
+        Returns:
+            A `stim.DetectorErrorModel` with the same instructions in the same order,
+            but with the parens arguments of error instructions rounded to the given
+            precision.
+
+            Instructions whose error probability was rounded to zero are still
+            included in the output.
+
+        Examples:
+            >>> import stim
+            >>> dem = stim.DetectorErrorModel('''
+            ...     error(0.019499) D0
+            ...     error(0.000001) D0 D1
+            ... ''')
+
+            >>> dem.rounded(2)
+            stim.DetectorErrorModel('''
+                error(0.02) D0
+                error(0) D0 D1
+            ''')
+
+            >>> dem.rounded(3)
+            stim.DetectorErrorModel('''
+                error(0.019) D0
+                error(0) D0 D1
+            ''')
         """
     def shortest_graphlike_error(
         self,
