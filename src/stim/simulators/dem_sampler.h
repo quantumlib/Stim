@@ -36,7 +36,7 @@ struct DemSampler {
     simd_bit_table det_buffer;
     simd_bit_table obs_buffer;
     simd_bit_table err_buffer;
-    uint64_t num_stripes;
+    size_t num_stripes;
 
     /// Compiles a sampler for the given detector error model.
     DemSampler(DetectorErrorModel model, std::mt19937_64 rng, size_t min_stripes);

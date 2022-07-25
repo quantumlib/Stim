@@ -16,6 +16,8 @@
 
 #include "stim/simulators/dem_sampler.h"
 
+#include <algorithm>
+
 #include "stim/io/measure_record_reader.h"
 #include "stim/io/measure_record_writer.h"
 #include "stim/probability_util.h"
@@ -28,9 +30,9 @@ DemSampler::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_
       num_observables(model.count_observables()),
       num_errors(model.count_errors()),
       rng(rng),
-      det_buffer(num_detectors, min_stripes),
-      obs_buffer(num_observables, min_stripes),
-      err_buffer(num_errors, min_stripes),
+      det_buffer((size_t)num_detectors, min_stripes),
+      obs_buffer((size_t)num_observables, min_stripes),
+      err_buffer((size_t)num_errors, min_stripes),
       num_stripes(det_buffer.num_minor_bits_padded()) {
 }
 
@@ -44,13 +46,13 @@ void DemSampler::resample(bool replay_errors) {
     model.iter_flatten_error_instructions([&](const DemInstruction &op) {
         simd_bits_range_ref err_row = err_buffer[error_index];
         if (!replay_errors) {
-            biased_randomize_bits(op.arg_data[0], err_row.u64, err_row.u64 + err_row.num_u64_padded(), rng);
+            biased_randomize_bits((float)op.arg_data[0], err_row.u64, err_row.u64 + err_row.num_u64_padded(), rng);
         }
         for (const auto &t : op.target_data) {
             if (t.is_relative_detector_id()) {
-                det_buffer[t.raw_id()] ^= err_row;
+                det_buffer[(size_t)t.raw_id()] ^= err_row;
             } else if (t.is_observable_id()) {
-                obs_buffer[t.raw_id()] ^= err_row;
+                obs_buffer[(size_t)t.raw_id()] ^= err_row;
             }
         }
         error_index++;
@@ -71,8 +73,8 @@ void DemSampler::sample_write(
         size_t shots_left = std::min(num_stripes, num_shots - k);
 
         if (err_in != nullptr) {
-            size_t errors_read =
-                read_file_data_into_shot_table(err_in, shots_left, num_errors, err_in_format, 'M', err_buffer, false);
+            size_t errors_read = read_file_data_into_shot_table(
+                err_in, shots_left, (size_t)num_errors, err_in_format, 'M', err_buffer, false);
             if (errors_read != shots_left) {
                 throw std::invalid_argument("Expected more error data for the requested number of shots.");
             }
@@ -81,17 +83,25 @@ void DemSampler::sample_write(
 
         if (err_out != nullptr) {
             write_table_data(
-                err_out, shots_left, num_errors, simd_bits(0), err_buffer, err_out_format, 'M', 'M', false);
+                err_out, shots_left, (size_t)num_errors, simd_bits(0), err_buffer, err_out_format, 'M', 'M', false);
         }
 
         if (obs_out != nullptr) {
             write_table_data(
-                obs_out, shots_left, num_observables, simd_bits(0), obs_buffer, obs_out_format, 'L', 'L', false);
+                obs_out,
+                shots_left,
+                (size_t)num_observables,
+                simd_bits(0),
+                obs_buffer,
+                obs_out_format,
+                'L',
+                'L',
+                false);
         }
 
         if (det_out != nullptr) {
             write_table_data(
-                det_out, shots_left, num_detectors, simd_bits(0), det_buffer, det_out_format, 'D', 'D', false);
+                det_out, shots_left, (size_t)num_detectors, simd_bits(0), det_buffer, det_out_format, 'D', 'D', false);
         }
     }
 }
