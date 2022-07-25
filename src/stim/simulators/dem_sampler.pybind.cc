@@ -75,7 +75,7 @@ pybind11::object dem_sampler_py_sample(
 pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m) {
     return pybind11::class_<DemSampler>(
         m,
-        "DemSampler",
+        "CompiledDemSampler",
         clean_doc_string(u8R"DOC(
             A helper class for efficiently sampler from a detector error model.
 

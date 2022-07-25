@@ -77,6 +77,9 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CircuitTargetsInsideInstruction.target_range_end`](#stim.CircuitTargetsInsideInstruction.target_range_end)
     - [`stim.CircuitTargetsInsideInstruction.target_range_start`](#stim.CircuitTargetsInsideInstruction.target_range_start)
     - [`stim.CircuitTargetsInsideInstruction.targets_in_range`](#stim.CircuitTargetsInsideInstruction.targets_in_range)
+- [`stim.CompiledDemSampler`](#stim.CompiledDemSampler)
+    - [`stim.CompiledDemSampler.sample`](#stim.CompiledDemSampler.sample)
+    - [`stim.CompiledDemSampler.sample_write`](#stim.CompiledDemSampler.sample_write)
 - [`stim.CompiledDetectorSampler`](#stim.CompiledDetectorSampler)
     - [`stim.CompiledDetectorSampler.__init__`](#stim.CompiledDetectorSampler.__init__)
     - [`stim.CompiledDetectorSampler.__repr__`](#stim.CompiledDetectorSampler.__repr__)
@@ -110,9 +113,6 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DemRepeatBlock.__repr__`](#stim.DemRepeatBlock.__repr__)
     - [`stim.DemRepeatBlock.body_copy`](#stim.DemRepeatBlock.body_copy)
     - [`stim.DemRepeatBlock.repeat_count`](#stim.DemRepeatBlock.repeat_count)
-- [`stim.DemSampler`](#stim.DemSampler)
-    - [`stim.DemSampler.sample`](#stim.DemSampler.sample)
-    - [`stim.DemSampler.sample_write`](#stim.DemSampler.sample_write)
 - [`stim.DemTarget`](#stim.DemTarget)
     - [`stim.DemTarget.__eq__`](#stim.DemTarget.__eq__)
     - [`stim.DemTarget.__ne__`](#stim.DemTarget.__ne__)
@@ -2354,6 +2354,261 @@ def targets_in_range(
     """
 ```
 
+<a name="stim.CompiledDemSampler"></a>
+```python
+# stim.CompiledDemSampler
+
+# (at top-level in the stim module)
+class CompiledDemSampler:
+    """A helper class for efficiently sampler from a detector error model.
+
+    Examples:
+        >>> import stim
+        >>> dem = stim.DetectorErrorModel('''
+        ...    error(0) D0
+        ...    error(1) D1 D2 L0
+        ... ''')
+        >>> sampler = dem.compile_sampler()
+        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+        >>> det_data
+        array([[False,  True,  True],
+               [False,  True,  True],
+               [False,  True,  True],
+               [False,  True,  True]])
+        >>> obs_data
+        array([[ True],
+               [ True],
+               [ True],
+               [ True]])
+        >>> err_data
+        array([[False,  True],
+               [False,  True],
+               [False,  True],
+               [False,  True]])
+    """
+```
+
+<a name="stim.CompiledDemSampler.sample"></a>
+```python
+# stim.CompiledDemSampler.sample
+
+# (in class stim.CompiledDemSampler)
+def sample(
+    self,
+    shots: int,
+    *,
+    bit_packed: bool = False,
+    return_errors: bool = False,
+    recorded_errors_to_replay: Optional[np.ndarray] = None,
+) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+
+    """Samples the detector error model's error mechanisms to produce sample data.
+
+    Args:
+        shots: The number of times to sample from the model.
+        bit_packed: Defaults to false.
+            False: the returned numpy arrays have dtype=np.bool8.
+            True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into each byte.
+
+            Setting this to True is equivalent to running np.packbits(data, endian='little', axis=1)
+            on each output value, but has the performance benefit of the data never being expanded
+            into an unpacked form.
+        return_errors: Defaults to False.
+            False: the first entry of the returned tuple is None.
+            True: the first entry of the returned tuple is a numpy array recording which errors were sampled.
+        recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
+            If not None, this is expected to be a 2d numpy array specifying which errors to apply (e.g. one
+            returned from a previous call to the sample method). The array must have
+            dtype=np.bool8 and shape=(num_shots, num_errors) or
+            dtype=np.uint8 and shape=(num_shots, math.ceil(num_errors / 8)).
+
+    Returns:
+        A tuple (detector_data, obs_data, error_data).
+
+        Assuming bit_packed is False and return_errors is True:
+            If error_data[s, k] is True, then the error with index k fired in the shot with index s.
+            If detector_data[s, k] is True, then the detector with index k ended up flipped in the shot with index s.
+            If obs_data[s, k] is True, then the observable with index k ended up flipped in the shot with index s.
+
+        The dtype and shape of the data depends on the arguments:
+            if bit_packed:
+                detector_data.shape == (num_shots, num_detectors)
+                detector_data.dtype == np.bool8
+                obs_data.shape == (num_shots, num_observables)
+                obs_data.dtype == np.bool8
+                if return_errors:
+                    error_data.shape = (num_shots, num_errors)
+                    error_data.dtype = np.bool8
+                else:
+                    error_data is None
+            else:
+                detector_data.shape == (num_shots, math.ceil(num_detectors / 8))
+                detector_data.dtype == np.uint8
+                obs_data.shape == (num_shots, math.ceil(num_observables / 8))
+                obs_data.dtype == np.uint8
+                if return_errors:
+                    error_data.shape = (num_shots, math.ceil(num_errors / 8))
+                    error_data.dtype = np.uint8
+                else:
+                    error_data is None
+
+        Note that bit packing is done using little endian order on the last axis
+        (i.e. like `np.packbits(data, endian='little', axis=1)`).
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+        >>> dem = stim.DetectorErrorModel('''
+        ...    error(0) D0
+        ...    error(1) D1 D2 L0
+        ... ''')
+        >>> sampler = dem.compile_sampler()
+
+        >>> # Taking samples.
+        >>> det_data, obs_data, err_data_not_requested = sampler.sample(shots=4)
+        >>> det_data
+        array([[False,  True,  True],
+               [False,  True,  True],
+               [False,  True,  True],
+               [False,  True,  True]])
+        >>> obs_data
+        array([[ True],
+               [ True],
+               [ True],
+               [ True]])
+        >>> err_data_not_requested is None
+        True
+
+        >>> # Recording errors.
+        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+        >>> det_data
+        array([[False,  True,  True],
+               [False,  True,  True],
+               [False,  True,  True],
+               [False,  True,  True]])
+        >>> obs_data
+        array([[ True],
+               [ True],
+               [ True],
+               [ True]])
+        >>> err_data
+        array([[False,  True],
+               [False,  True],
+               [False,  True],
+               [False,  True]])
+
+        >>> # Bit packing.
+        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True, bit_packed=True)
+        >>> det_data
+        array([[6],
+               [6],
+               [6],
+               [6]], dtype=uint8)
+        >>> obs_data
+        array([[1],
+               [1],
+               [1],
+               [1]], dtype=uint8)
+        >>> err_data
+        array([[2],
+               [2],
+               [2],
+               [2]], dtype=uint8)
+
+        >>> # Recording and replaying errors.
+        >>> noisy_dem = stim.DetectorErrorModel('''
+        ...    error(0.125) D0
+        ...    error(0.25) D1
+        ... ''')
+        >>> noisy_sampler = noisy_dem.compile_sampler()
+        >>> det_data, obs_data, err_data = noisy_sampler.sample(shots=100, return_errors=True)
+        >>> replay_det_data, replay_obs_data, _ = noisy_sampler.sample(shots=100, recorded_errors_to_replay=err_data)
+        >>> np.array_equal(det_data, replay_det_data)
+        True
+        >>> np.array_equal(obs_data, replay_obs_data)
+        True
+    """
+```
+
+<a name="stim.CompiledDemSampler.sample_write"></a>
+```python
+# stim.CompiledDemSampler.sample_write
+
+# (in class stim.CompiledDemSampler)
+def sample_write(
+    self,
+    shots: int,
+    *,
+    det_out_file: Union[None, str, pathlib.Path],
+    det_out_format: str = "01",
+    obs_out_file: Union[None, str, pathlib.Path],
+    obs_out_format: str = "01",
+    err_out_file: Union[None, str, pathlib.Path] = None,
+    err_out_format: str = "01",
+    replay_err_in_file: Union[None, str, pathlib.Path] = None,
+    replay_err_in_format: str = "01",
+) -> None:
+
+    """Samples the detector error model and writes the results to disk.
+
+    Args:
+        shots: The number of times to sample from the model.
+        det_out_file: Where to write detection event data.
+            If None: detection event data is not written.
+            If str or pathlib.Path: opens and overwrites the file at the given path.
+            NOT IMPLEMENTED: io.IOBase
+        det_out_format: The format to write the detection event data in (e.g. "01" or "b8").
+        obs_out_file: Where to write observable flip data.
+            If None: observable flip data is not written.
+            If str or pathlib.Path: opens and overwrites the file at the given path.
+            NOT IMPLEMENTED: io.IOBase
+        obs_out_format: The format to write the observable flip data in (e.g. "01" or "b8").
+        err_out_file: Where to write errors-that-occurred data.
+            If None: errors-that-occurred data is not written.
+            If str or pathlib.Path: opens and overwrites the file at the given path.
+            NOT IMPLEMENTED: io.IOBase
+        err_out_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
+        replay_err_in_file: If this is specified, errors are replayed from data instead of generated randomly.
+            If None: errors are generated randomly according to the probabilities in the detector error model.
+            If str or pathlib.Path: the file at the given path is opened and errors-to-apply data is read from there.
+            NOT IMPLEMENTED: io.IOBase
+        replay_err_in_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
+
+    Returns:
+        Nothing. Results are written to disk.
+
+    Examples:
+        >>> import stim
+        >>> import tempfile
+        >>> import pathlib
+        >>> dem = stim.DetectorErrorModel('''
+        ...    error(0) D0
+        ...    error(0) D1
+        ...    error(0) D0
+        ...    error(1) D1 D2 L0
+        ...    error(0) D0
+        ... ''')
+        >>> sampler = dem.compile_sampler()
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     d = pathlib.Path(d)
+        ...     sampler.sample_write(
+        ...         shots=1,
+        ...         det_out_file=d / 'dets.01',
+        ...         det_out_format='01',
+        ...         obs_out_file=d / 'obs.01',
+        ...         obs_out_format='01',
+        ...         err_out_file=d / 'err.hits',
+        ...         err_out_format='hits',
+        ...     )
+        ...     with open(d / 'dets.01') as f:
+        ...         assert f.read() == "011\n"
+        ...     with open(d / 'obs.01') as f:
+        ...         assert f.read() == "1\n"
+        ...     with open(d / 'err.hits') as f:
+        ...         assert f.read() == "3\n"
+    """
+```
+
 <a name="stim.CompiledDetectorSampler"></a>
 ```python
 # stim.CompiledDetectorSampler
@@ -3207,261 +3462,6 @@ def repeat_count(
     self,
 ) -> int:
     """The number of times the repeat block's body is supposed to execute.
-    """
-```
-
-<a name="stim.DemSampler"></a>
-```python
-# stim.DemSampler
-
-# (at top-level in the stim module)
-class DemSampler:
-    """A helper class for efficiently sampler from a detector error model.
-
-    Examples:
-        >>> import stim
-        >>> dem = stim.DetectorErrorModel('''
-        ...    error(0) D0
-        ...    error(1) D1 D2 L0
-        ... ''')
-        >>> sampler = dem.compile_sampler()
-        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
-        >>> det_data
-        array([[False,  True,  True],
-               [False,  True,  True],
-               [False,  True,  True],
-               [False,  True,  True]])
-        >>> obs_data
-        array([[ True],
-               [ True],
-               [ True],
-               [ True]])
-        >>> err_data
-        array([[False,  True],
-               [False,  True],
-               [False,  True],
-               [False,  True]])
-    """
-```
-
-<a name="stim.DemSampler.sample"></a>
-```python
-# stim.DemSampler.sample
-
-# (in class stim.DemSampler)
-def sample(
-    self,
-    shots: int,
-    *,
-    bit_packed: bool = False,
-    return_errors: bool = False,
-    recorded_errors_to_replay: Optional[np.ndarray] = None,
-) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-
-    """Samples the detector error model's error mechanisms to produce sample data.
-
-    Args:
-        shots: The number of times to sample from the model.
-        bit_packed: Defaults to false.
-            False: the returned numpy arrays have dtype=np.bool8.
-            True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into each byte.
-
-            Setting this to True is equivalent to running np.packbits(data, endian='little', axis=1)
-            on each output value, but has the performance benefit of the data never being expanded
-            into an unpacked form.
-        return_errors: Defaults to False.
-            False: the first entry of the returned tuple is None.
-            True: the first entry of the returned tuple is a numpy array recording which errors were sampled.
-        recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
-            If not None, this is expected to be a 2d numpy array specifying which errors to apply (e.g. one
-            returned from a previous call to the sample method). The array must have
-            dtype=np.bool8 and shape=(num_shots, num_errors) or
-            dtype=np.uint8 and shape=(num_shots, math.ceil(num_errors / 8)).
-
-    Returns:
-        A tuple (detector_data, obs_data, error_data).
-
-        Assuming bit_packed is False and return_errors is True:
-            If error_data[s, k] is True, then the error with index k fired in the shot with index s.
-            If detector_data[s, k] is True, then the detector with index k ended up flipped in the shot with index s.
-            If obs_data[s, k] is True, then the observable with index k ended up flipped in the shot with index s.
-
-        The dtype and shape of the data depends on the arguments:
-            if bit_packed:
-                detector_data.shape == (num_shots, num_detectors)
-                detector_data.dtype == np.bool8
-                obs_data.shape == (num_shots, num_observables)
-                obs_data.dtype == np.bool8
-                if return_errors:
-                    error_data.shape = (num_shots, num_errors)
-                    error_data.dtype = np.bool8
-                else:
-                    error_data is None
-            else:
-                detector_data.shape == (num_shots, math.ceil(num_detectors / 8))
-                detector_data.dtype == np.uint8
-                obs_data.shape == (num_shots, math.ceil(num_observables / 8))
-                obs_data.dtype == np.uint8
-                if return_errors:
-                    error_data.shape = (num_shots, math.ceil(num_errors / 8))
-                    error_data.dtype = np.uint8
-                else:
-                    error_data is None
-
-        Note that bit packing is done using little endian order on the last axis
-        (i.e. like `np.packbits(data, endian='little', axis=1)`).
-
-    Examples:
-        >>> import stim
-        >>> import numpy as np
-        >>> dem = stim.DetectorErrorModel('''
-        ...    error(0) D0
-        ...    error(1) D1 D2 L0
-        ... ''')
-        >>> sampler = dem.compile_sampler()
-
-        >>> # Taking samples.
-        >>> det_data, obs_data, err_data_not_requested = sampler.sample(shots=4)
-        >>> det_data
-        array([[False,  True,  True],
-               [False,  True,  True],
-               [False,  True,  True],
-               [False,  True,  True]])
-        >>> obs_data
-        array([[ True],
-               [ True],
-               [ True],
-               [ True]])
-        >>> err_data_not_requested is None
-        True
-
-        >>> # Recording errors.
-        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
-        >>> det_data
-        array([[False,  True,  True],
-               [False,  True,  True],
-               [False,  True,  True],
-               [False,  True,  True]])
-        >>> obs_data
-        array([[ True],
-               [ True],
-               [ True],
-               [ True]])
-        >>> err_data
-        array([[False,  True],
-               [False,  True],
-               [False,  True],
-               [False,  True]])
-
-        >>> # Bit packing.
-        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True, bit_packed=True)
-        >>> det_data
-        array([[6],
-               [6],
-               [6],
-               [6]], dtype=uint8)
-        >>> obs_data
-        array([[1],
-               [1],
-               [1],
-               [1]], dtype=uint8)
-        >>> err_data
-        array([[2],
-               [2],
-               [2],
-               [2]], dtype=uint8)
-
-        >>> # Recording and replaying errors.
-        >>> noisy_dem = stim.DetectorErrorModel('''
-        ...    error(0.125) D0
-        ...    error(0.25) D1
-        ... ''')
-        >>> noisy_sampler = noisy_dem.compile_sampler()
-        >>> det_data, obs_data, err_data = noisy_sampler.sample(shots=100, return_errors=True)
-        >>> replay_det_data, replay_obs_data, _ = noisy_sampler.sample(shots=100, recorded_errors_to_replay=err_data)
-        >>> np.array_equal(det_data, replay_det_data)
-        True
-        >>> np.array_equal(obs_data, replay_obs_data)
-        True
-    """
-```
-
-<a name="stim.DemSampler.sample_write"></a>
-```python
-# stim.DemSampler.sample_write
-
-# (in class stim.DemSampler)
-def sample_write(
-    self,
-    shots: int,
-    *,
-    det_out_file: Union[None, str, pathlib.Path],
-    det_out_format: str = "01",
-    obs_out_file: Union[None, str, pathlib.Path],
-    obs_out_format: str = "01",
-    err_out_file: Union[None, str, pathlib.Path] = None,
-    err_out_format: str = "01",
-    replay_err_in_file: Union[None, str, pathlib.Path] = None,
-    replay_err_in_format: str = "01",
-) -> None:
-
-    """Samples the detector error model and writes the results to disk.
-
-    Args:
-        shots: The number of times to sample from the model.
-        det_out_file: Where to write detection event data.
-            If None: detection event data is not written.
-            If str or pathlib.Path: opens and overwrites the file at the given path.
-            NOT IMPLEMENTED: io.IOBase
-        det_out_format: The format to write the detection event data in (e.g. "01" or "b8").
-        obs_out_file: Where to write observable flip data.
-            If None: observable flip data is not written.
-            If str or pathlib.Path: opens and overwrites the file at the given path.
-            NOT IMPLEMENTED: io.IOBase
-        obs_out_format: The format to write the observable flip data in (e.g. "01" or "b8").
-        err_out_file: Where to write errors-that-occurred data.
-            If None: errors-that-occurred data is not written.
-            If str or pathlib.Path: opens and overwrites the file at the given path.
-            NOT IMPLEMENTED: io.IOBase
-        err_out_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
-        replay_err_in_file: If this is specified, errors are replayed from data instead of generated randomly.
-            If None: errors are generated randomly according to the probabilities in the detector error model.
-            If str or pathlib.Path: the file at the given path is opened and errors-to-apply data is read from there.
-            NOT IMPLEMENTED: io.IOBase
-        replay_err_in_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
-
-    Returns:
-        Nothing. Results are written to disk.
-
-    Examples:
-        >>> import stim
-        >>> import tempfile
-        >>> import pathlib
-        >>> dem = stim.DetectorErrorModel('''
-        ...    error(0) D0
-        ...    error(0) D1
-        ...    error(0) D0
-        ...    error(1) D1 D2 L0
-        ...    error(0) D0
-        ... ''')
-        >>> sampler = dem.compile_sampler()
-        >>> with tempfile.TemporaryDirectory() as d:
-        ...     d = pathlib.Path(d)
-        ...     sampler.sample_write(
-        ...         shots=1,
-        ...         det_out_file=d / 'dets.01',
-        ...         det_out_format='01',
-        ...         obs_out_file=d / 'obs.01',
-        ...         obs_out_format='01',
-        ...         err_out_file=d / 'err.hits',
-        ...         err_out_format='hits',
-        ...     )
-        ...     with open(d / 'dets.01') as f:
-        ...         assert f.read() == "011\n"
-        ...     with open(d / 'obs.01') as f:
-        ...         assert f.read() == "1\n"
-        ...     with open(d / 'err.hits') as f:
-        ...         assert f.read() == "3\n"
     """
 ```
 
