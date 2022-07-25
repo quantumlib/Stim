@@ -49,11 +49,15 @@
     - [--shots](#--shots)
     - [--skip_reference_sample](#--skip_reference_sample)
 - **(mode)** [stim sample_dem](#sample_dem)
+    - [--err_out](#--err_out)
+    - [--err_out_format](#--err_out_format)
     - [--in](#--in)
     - [--obs_out](#--obs_out)
     - [--obs_out_format](#--obs_out_format)
     - [--out](#--out)
     - [--out_format](#--out_format)
+    - [--replay_err_in](#--replay_err_in)
+    - [--replay_err_in_format](#--replay_err_in_format)
     - [--seed](#--seed)
     - [--shots](#--shots)
 ## Modes
@@ -483,11 +487,15 @@ stdout (or --out): The detection event data is written here.
     ```
 
 Flags used with this mode:
+- [--err_out](#--err_out)
+- [--err_out_format](#--err_out_format)
 - [--in](#--in)
 - [--obs_out](#--obs_out)
 - [--obs_out_format](#--obs_out_format)
 - [--out](#--out)
 - [--out_format](#--out_format)
+- [--replay_err_in](#--replay_err_in)
+- [--replay_err_in_format](#--replay_err_in_format)
 - [--seed](#--seed)
 - [--shots](#--shots)
 
@@ -654,6 +662,16 @@ Flags used with this mode:
     (e.g. must be larger than 2 or must be odd or etc).
     
     
+- <a name="--err_out"></a>**`--err_out`**
+    Specifies a file to write a record of which errors occurred.
+    
+    This data can then be analyzed, modified, and later given to for example a --replay_err_in argument.
+    
+    
+- <a name="--err_out_format"></a>**`--err_out_format`**
+    The format to use when writing error data (e.g. b8 or 01).
+    
+    
 - <a name="--fold_loops"></a>**`--fold_loops`**
     
     Allows the output error model to contain `repeat` blocks.
@@ -723,6 +741,17 @@ Flags used with this mode:
     Defaults to `01` when not specified.
     
     See `stim help formats` for a list of supported formats.
+    
+    
+- <a name="--replay_err_in"></a>**`--replay_err_in`**
+    Specifies a file to read error data to replay from.
+    
+    When replaying error information, errors are no longer sampled randomly but instead driven by the file data.
+    For example, this file data could come from a previous run that wrote error data using --err_out.
+    
+    
+- <a name="--replay_err_in_format"></a>**`--replay_err_in_format`**
+    The format to use when reading error data to replay. (e.g. b8 or 01).
     
     
 - <a name="--rounds"></a>**`--rounds`**

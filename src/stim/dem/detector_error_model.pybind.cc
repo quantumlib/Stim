@@ -23,6 +23,7 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/search/search.h"
+#include "stim/simulators/dem_sampler.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -925,6 +926,66 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...         contents = f.read()
                 >>> contents
                 'error(0.25) D2 D3\n'
+        )DOC")
+            .data());
+
+    c.def(
+        "compile_sampler",
+        [](const DetectorErrorModel &self, const pybind11::object &seed) {
+            return DemSampler(self, *make_py_seeded_rng(seed), 1024);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            Returns a CompiledDemSampler, which can quickly batch sample from detector error models.
+
+            Args:
+                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+
+                    When set to an integer, making the exact same series calls on the exact same machine with the exact
+                    same version of Stim will produce the exact same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+                    present to make it possible to have future optimizations to the random sampling, and is enforced by
+                    introducing intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+                    instructions and one that only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+                    call.
+
+            Returns:
+                A seeded stim.CompiledDemSampler for the given detector error model.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...    error(0) D0
+                ...    error(1) D1 D2 L0
+                ... ''')
+                >>> sampler = dem.compile_sampler()
+                >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+                >>> det_data
+                array([[False,  True,  True],
+                       [False,  True,  True],
+                       [False,  True,  True],
+                       [False,  True,  True]])
+                >>> obs_data
+                array([[ True],
+                       [ True],
+                       [ True],
+                       [ True]])
+                >>> err_data
+                array([[False,  True],
+                       [False,  True],
+                       [False,  True],
+                       [False,  True]])
         )DOC")
             .data());
 

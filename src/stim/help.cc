@@ -164,7 +164,19 @@ stdout (or --out): The detection event data is written here.
     # 1
     ```
 )PARAGRAPH",
-        {"--in", "--out", "--out_format", "--obs_out", "--obs_out_format", "--seed", "--shots"},
+        {
+            "--in",
+            "--out",
+            "--out_format",
+            "--obs_out",
+            "--obs_out_format",
+            "--seed",
+            "--shots",
+            "--err_out",
+            "--err_out_format",
+            "--replay_err_in",
+            "--replay_err_in_format",
+        },
     };
 
     modes["explain_errors"] = CommandLineSingleModeData{
@@ -403,6 +415,23 @@ only in shots where the corresponding sweep data has the bit at index 5 set to T
 )PARAGRAPH";
 
     flags["--sweep_format"] = R"PARAGRAPH(Specifies the format sweep data is stored in (e.g. b8 or 01).
+)PARAGRAPH";
+
+    flags["--err_out"] = R"PARAGRAPH(Specifies a file to write a record of which errors occurred.
+
+This data can then be analyzed, modified, and later given to for example a --replay_err_in argument.
+)PARAGRAPH";
+
+    flags["--err_out_format"] = R"PARAGRAPH(The format to use when writing error data (e.g. b8 or 01).
+)PARAGRAPH";
+
+    flags["--replay_err_in"] = R"PARAGRAPH(Specifies a file to read error data to replay from.
+
+When replaying error information, errors are no longer sampled randomly but instead driven by the file data.
+For example, this file data could come from a previous run that wrote error data using --err_out.
+)PARAGRAPH";
+
+    flags["--replay_err_in_format"] = R"PARAGRAPH(The format to use when reading error data to replay. (e.g. b8 or 01).
 )PARAGRAPH";
 
     flags["--obs_out"] = R"PARAGRAPH(Specifies a file to write observable flip data to.

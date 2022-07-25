@@ -986,7 +986,7 @@ TEST(main, sample_dem) {
                 error(0) D0
                 error(1) D1 L2
             )input")),
-            trim(R"output(
+        trim(R"output(
 01
 01
 01

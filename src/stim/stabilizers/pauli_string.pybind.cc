@@ -215,7 +215,7 @@ PyPauliString PyPauliString::from_text(const char *text) {
     return value;
 }
 
-void pybind_pauli_string(pybind11::module &m) {
+void stim_pybind::pybind_pauli_string(pybind11::module &m) {
     auto c = pybind11::class_<PyPauliString>(
         m,
         "PauliString",

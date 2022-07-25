@@ -30,20 +30,43 @@ struct DemSampler {
     DetectorErrorModel model;
     uint64_t num_detectors;
     uint64_t num_observables;
+    uint64_t num_errors;
     std::mt19937_64 rng;
+    // TODO: allow these buffers to be streamed instead of entirely stored in memory.
     simd_bit_table det_buffer;
     simd_bit_table obs_buffer;
+    simd_bit_table err_buffer;
     uint64_t num_stripes;
 
     /// Compiles a sampler for the given detector error model.
     DemSampler(DetectorErrorModel model, std::mt19937_64 rng, size_t min_stripes);
 
     /// Clears the buffers and refills them with sampled shot data.
-    void resample();
+    void resample(bool replay_errors);
 
     /// Samples from the dem, writing results to files.
+    ///
+    /// Args:
+    ///     num_shots: The number of samples to take.
+    ///     det_out: Where to write detection event data. Set to nullptr to not write detection event data.
+    ///     det_out_format: The format to write detection event data in.
+    ///     obs_out: Where to write observable data. Set to nullptr to not write observable data.
+    ///     obs_out_format: The format to write observable data in.
+    ///     err_out: Where to write recorded error data. Set to nullptr to not write recorded error data.
+    ///     err_out_format: The format to write error data in.
+    ///     replay_err_in: If this argument is given a non-null file, error data will be read from that file
+    ///         and replayed (instead of generating new errors randomly).
+    ///     replay_err_in_format: The format to read recorded error data to replay in.
     void sample_write(
-        size_t num_shots, FILE *det_out, SampleFormat det_out_format, FILE *obs_out, SampleFormat obs_out_format);
+        size_t num_shots,
+        FILE *det_out,
+        SampleFormat det_out_format,
+        FILE *obs_out,
+        SampleFormat obs_out_format,
+        FILE *err_out,
+        SampleFormat err_out_format,
+        FILE *replay_err_in,
+        SampleFormat replay_err_in_format);
 };
 
 }  // namespace stim

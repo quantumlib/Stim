@@ -22,6 +22,8 @@
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
 
+namespace stim_pybind {
+
 struct CompiledMeasurementSampler {
     const stim::simd_bits ref_sample;
     const stim::Circuit circuit;
@@ -45,5 +47,7 @@ pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler
 void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c);
 CompiledMeasurementSampler py_init_compiled_sampler(
     const stim::Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed);
+
+}  // namespace stim_pybind
 
 #endif

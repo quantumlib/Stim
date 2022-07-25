@@ -19,7 +19,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
-pybind11::class_<TableauIterator> pybind_tableau_iter(pybind11::module &m) {
+pybind11::class_<TableauIterator> stim_pybind::pybind_tableau_iter(pybind11::module &m) {
     auto c = pybind11::class_<TableauIterator>(
         m,
         "TableauIterator",
@@ -39,7 +39,8 @@ pybind11::class_<TableauIterator> pybind_tableau_iter(pybind11::module &m) {
     return c;
 }
 
-void pybind_tableau_iter_after_types_all_defined(pybind11::module &m, pybind11::class_<TableauIterator> &c) {
+void stim_pybind::pybind_tableau_iter_after_types_all_defined(
+    pybind11::module &m, pybind11::class_<TableauIterator> &c) {
     c.def(
         "__iter__",
         [](TableauIterator &self) -> TableauIterator {

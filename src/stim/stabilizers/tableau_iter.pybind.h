@@ -19,7 +19,9 @@
 
 #include "stim/stabilizers/tableau_iter.h"
 
+namespace stim_pybind {
 pybind11::class_<stim::TableauIterator> pybind_tableau_iter(pybind11::module &m);
 void pybind_tableau_iter_after_types_all_defined(pybind11::module &m, pybind11::class_<stim::TableauIterator> &c);
+}  // namespace stim_pybind
 
 #endif

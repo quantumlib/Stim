@@ -27,7 +27,7 @@ TEST(DemSampler, basic_sizing) {
     ASSERT_EQ(sampler.obs_buffer.num_major_bits_padded(), 0);
     ASSERT_GE(sampler.det_buffer.num_minor_bits_padded(), 700);
     ASSERT_GE(sampler.obs_buffer.num_minor_bits_padded(), 700);
-    sampler.resample();
+    sampler.resample(false);
     ASSERT_FALSE(sampler.obs_buffer.data.not_zero());
     ASSERT_FALSE(sampler.det_buffer.data.not_zero());
 
@@ -42,7 +42,7 @@ TEST(DemSampler, basic_sizing) {
     ASSERT_GE(sampler.obs_buffer.num_major_bits_padded(), 2000);
     ASSERT_GE(sampler.det_buffer.num_minor_bits_padded(), 200);
     ASSERT_GE(sampler.obs_buffer.num_minor_bits_padded(), 200);
-    sampler.resample();
+    sampler.resample(false);
     ASSERT_FALSE(sampler.obs_buffer.data.not_zero());
     ASSERT_FALSE(sampler.det_buffer.data.not_zero());
 }
@@ -59,7 +59,7 @@ TEST(DemSampler, resample_basic_probabilities) {
         SHARED_TEST_RNG(),
         1000);
     for (size_t k = 0; k < 2; k++) {
-        sampler.resample();
+        sampler.resample(false);
         ASSERT_EQ(sampler.det_buffer[0].popcnt(), 0);
         ASSERT_GT(sampler.det_buffer[1].popcnt(), 0);
         ASSERT_LT(sampler.det_buffer[1].popcnt(), 500);
@@ -84,7 +84,7 @@ TEST(DemSampler, resample_combinations) {
         SHARED_TEST_RNG(),
         1000);
     for (size_t k = 0; k < 2; k++) {
-        sampler.resample();
+        sampler.resample(false);
         ASSERT_GT(sampler.det_buffer[0].popcnt(), 340 - 100);
         ASSERT_LT(sampler.det_buffer[0].popcnt(), 340 + 100);
         ASSERT_GT(sampler.det_buffer[1].popcnt(), 260 - 100);

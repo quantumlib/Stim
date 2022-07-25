@@ -294,20 +294,42 @@ int main_mode_repl(int argc, const char **argv) {
 
 int main_mode_sample_dem(int argc, const char **argv) {
     check_for_unknown_arguments(
-        {"--seed", "--shots", "--out_format", "--out", "--in", "--obs_out", "--obs_out_format"},
+        {
+            "--seed",
+            "--shots",
+            "--out_format",
+            "--out",
+            "--in",
+            "--obs_out",
+            "--obs_out_format",
+            "--err_out",
+            "--err_out_format",
+            "--replay_err_in",
+            "--replay_err_in_format",
+        },
         {},
         "sample_dem",
         argc,
         argv);
     const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
     const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &err_out_format = find_enum_argument("--err_out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &err_in_format = find_enum_argument("--replay_err_in_format", "01", format_name_to_enum_map, argc, argv);
     uint64_t num_shots = find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv);
 
     RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
     RaiiFile out(find_open_file_argument("--out", stdout, "w", argc, argv));
     RaiiFile obs_out(find_open_file_argument("--obs_out", stdout, "w", argc, argv));
+    RaiiFile err_out(find_open_file_argument("--err_out", stdout, "w", argc, argv));
+    RaiiFile err_in(find_open_file_argument("--replay_err_in", stdin, "r", argc, argv));
     if (obs_out.f == stdout) {
         obs_out.f = nullptr;
+    }
+    if (err_out.f == stdout) {
+        err_out.f = nullptr;
+    }
+    if (err_in.f == stdin) {
+        err_in.f = nullptr;
     }
     if (out.f == stdout) {
         out.responsible_for_closing = false;
@@ -323,7 +345,16 @@ int main_mode_sample_dem(int argc, const char **argv) {
     in.done();
 
     DemSampler sampler(std::move(dem), optionally_seeded_rng(argc, argv), 1024);
-    sampler.sample_write(num_shots, out.f, out_format.id, obs_out.f, obs_out_format.id);
+    sampler.sample_write(
+        num_shots,
+        out.f,
+        out_format.id,
+        obs_out.f,
+        obs_out_format.id,
+        err_out.f,
+        err_out_format.id,
+        err_in.f,
+        err_in_format.id);
 
     return EXIT_SUCCESS;
 }

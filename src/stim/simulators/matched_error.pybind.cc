@@ -632,7 +632,7 @@ void pybind_MatchedError(pybind11::module &m) {
     c.def("__str__", &ExplainedError::str);
 }
 
-void pybind_matched_error(pybind11::module &m) {
+void stim_pybind::pybind_matched_error(pybind11::module &m) {
     pybind_CircuitErrorLocationStackFrame(m);
     pybind_GateTargetWithCoords(m);
     pybind_DemTargetWithCoords(m);
