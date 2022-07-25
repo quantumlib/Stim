@@ -27,12 +27,7 @@ std::string execute(std::vector<const char *> flags, const char *std_in_content)
     // Setup input.
     RaiiTempNamedFile raii_temp_file;
     if (std_in_content != nullptr) {
-        FILE *tmp_in = fdopen(raii_temp_file.descriptor, "w");
-        if (tmp_in == nullptr) {
-            throw std::runtime_error("Failed to open temporary stdin file.");
-        }
-        fprintf(tmp_in, "%s", std_in_content);
-        fclose(tmp_in);
+        raii_temp_file.write_contents(std_in_content);
         flags.push_back("--in");
         flags.push_back(raii_temp_file.path.data());
     }
@@ -829,8 +824,7 @@ TEST(main, detection_event_simulator_counts_measurements_correctly) {
 
 TEST(main, m2d) {
     RaiiTempNamedFile tmp;
-    FILE *f = fopen(tmp.path.data(), "w");
-    fprintf(f, "%s", R"CIRCUIT(
+    tmp.write_contents(R"CIRCUIT(
         X 0
         M 0 1
         DETECTOR rec[-2]
@@ -944,9 +938,7 @@ TEST(main, explain_errors) {
     ASSERT_EQ(execute({"explain_errors"}, ""), "");
 
     RaiiTempNamedFile tmp;
-    FILE *f = fopen(tmp.path.data(), "w");
-    fprintf(f, "error(1) D0\n");
-    fclose(f);
+    tmp.write_contents("error(1) D0\n");
 
     ASSERT_EQ(
         trim(execute({"explain_errors", "--dem_filter", tmp.path.data()}, R"input(
@@ -968,4 +960,38 @@ ExplainedError {
     }
 }
             )output"));
+}
+
+TEST(main, sample_dem) {
+    ASSERT_EQ(execute({"sample_dem"}, ""), "\n");
+
+    RaiiTempNamedFile obs_out;
+
+    ASSERT_EQ(
+        trim(execute(
+            {
+                "sample_dem",
+                "--obs_out",
+                obs_out.path.data(),
+                "--out_format",
+                "01",
+                "--obs_out_format",
+                "01",
+                "--shots",
+                "5",
+                "--seed",
+                "0",
+            },
+            R"input(
+                error(0) D0
+                error(1) D1 L2
+            )input")),
+        trim(R"output(
+01
+01
+01
+01
+01
+            )output"));
+    ASSERT_EQ(obs_out.read_contents(), "001\n001\n001\n001\n001\n");
 }

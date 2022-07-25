@@ -23,6 +23,7 @@
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
 #include "stim/search/search.h"
+#include "stim/simulators/dem_sampler.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -821,6 +822,11 @@ void pybind_detector_error_model(pybind11::module &m) {
         },
         pybind11::arg("file"),
         clean_doc_string(u8R"DOC(
+            @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.DetectorErrorModel:
+            Reads a detector error model from a file.
+
+            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+
             Args:
                 file: A file path or open file object to read from.
 
@@ -892,7 +898,9 @@ void pybind_detector_error_model(pybind11::module &m) {
         pybind11::arg("file"),
         clean_doc_string(u8R"DOC(
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
-            Writes the stim circuit to a file.
+            Writes the detector error model to a file.
+
+            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
 
             Args:
                 file: A file path or an open file to write to.
@@ -918,6 +926,137 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...         contents = f.read()
                 >>> contents
                 'error(0.25) D2 D3\n'
+        )DOC")
+            .data());
+
+    c.def(
+        "compile_sampler",
+        [](const DetectorErrorModel &self, const pybind11::object &seed) {
+            return DemSampler(self, *make_py_seeded_rng(seed), 1024);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            Returns a CompiledDemSampler, which can quickly batch sample from detector error models.
+
+            Args:
+                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+
+                    When set to an integer, making the exact same series calls on the exact same machine with the exact
+                    same version of Stim will produce the exact same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
+                    present to make it possible to have future optimizations to the random sampling, and is enforced by
+                    introducing intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
+                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
+                    instructions and one that only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
+                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
+                    call.
+
+            Returns:
+                A seeded stim.CompiledDemSampler for the given detector error model.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...    error(0) D0
+                ...    error(1) D1 D2 L0
+                ... ''')
+                >>> sampler = dem.compile_sampler()
+                >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+                >>> det_data
+                array([[False,  True,  True],
+                       [False,  True,  True],
+                       [False,  True,  True],
+                       [False,  True,  True]])
+                >>> obs_data
+                array([[ True],
+                       [ True],
+                       [ True],
+                       [ True]])
+                >>> err_data
+                array([[False,  True],
+                       [False,  True],
+                       [False,  True],
+                       [False,  True]])
+        )DOC")
+            .data());
+
+    c.def(
+        "flattened",
+        &DetectorErrorModel::flattened,
+        clean_doc_string(u8R"DOC(
+            Creates an equivalent detector error model without repeat blocks or detector_shift instructions.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same errors in the same order,
+                but with loops flattened into repeated instructions and with
+                all coordinate/index shifts inlined.
+
+            Examples:
+                >>> import stim
+                >>> stim.DetectorErrorModel('''
+                ...     error(0.125) D0
+                ...     REPEAT 5 {
+                ...         error(0.25) D0 D1
+                ...         shift_detectors 1
+                ...     }
+                ...     error(0.125) D0 L0
+                ... ''').flattened()
+                stim.DetectorErrorModel('''
+                    error(0.125) D0
+                    error(0.25) D0 D1
+                    error(0.25) D1 D2
+                    error(0.25) D2 D3
+                    error(0.25) D3 D4
+                    error(0.25) D4 D5
+                    error(0.125) D5 L0
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "rounded",
+        &DetectorErrorModel::rounded,
+        clean_doc_string(u8R"DOC(
+            Creates an equivalent detector error model but with rounded error probabilities.
+
+            Args:
+                digits: The number of digits to round to.
+
+            Returns:
+                A `stim.DetectorErrorModel` with the same instructions in the same order,
+                but with the parens arguments of error instructions rounded to the given
+                precision.
+
+                Instructions whose error probability was rounded to zero are still
+                included in the output.
+
+            Examples:
+                >>> import stim
+                >>> dem = stim.DetectorErrorModel('''
+                ...     error(0.019499) D0
+                ...     error(0.000001) D0 D1
+                ... ''')
+
+                >>> dem.rounded(2)
+                stim.DetectorErrorModel('''
+                    error(0.02) D0
+                    error(0) D0 D1
+                ''')
+
+                >>> dem.rounded(3)
+                stim.DetectorErrorModel('''
+                    error(0.019) D0
+                    error(0) D0 D1
+                ''')
         )DOC")
             .data());
 }

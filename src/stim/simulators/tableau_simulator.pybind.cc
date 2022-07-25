@@ -116,7 +116,7 @@ TempViewableData args_to_target_pairs(PyTableauSimulator &self, const pybind11::
     return result;
 }
 
-void pybind_tableau_simulator(pybind11::module &m) {
+void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
     auto c = pybind11::class_<PyTableauSimulator>(
         m,
         "TableauSimulator",

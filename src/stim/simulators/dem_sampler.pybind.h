@@ -12,24 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _STIM_IO_RAII_FILE
-#define _STIM_IO_RAII_FILE
+#ifndef _STIM_SIMULATORS_DEM_SAMPLER_PYBIND_H
+#define _STIM_SIMULATORS_DEM_SAMPLER_PYBIND_H
 
-#include <cstdio>
+#include <pybind11/pybind11.h>
 
-namespace stim {
+#include "stim/simulators/dem_sampler.h"
 
-struct RaiiFile {
-    FILE* f;
-    bool responsible_for_closing;
-    RaiiFile(const char* path, const char* mode);
-    RaiiFile(FILE* claim_ownership);
-    RaiiFile(const RaiiFile& other) = delete;
-    RaiiFile(RaiiFile&& other) noexcept;
-    ~RaiiFile();
-    void done();
-};
+namespace stim_pybind {
 
-}  // namespace stim
+pybind11::class_<stim::DemSampler> pybind_dem_sampler(pybind11::module &m);
+void pybind_dem_sampler_after_types_all_defined(pybind11::module &m, pybind11::class_<stim::DemSampler> &c);
+
+}  // namespace stim_pybind
 
 #endif

@@ -947,6 +947,11 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         },
         pybind11::arg("file"),
         clean_doc_string(u8R"DOC(
+            @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.Circuit:
+            Reads a stim circuit from a file.
+
+            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+
             Args:
                 file: A file path or open file object to read from.
 
@@ -1019,6 +1024,8 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
             Writes the stim circuit to a file.
+
+            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
 
             Args:
                 file: A file path or an open file to write to.

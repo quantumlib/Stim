@@ -24,6 +24,7 @@
 #include "stim/py/compiled_detector_sampler.pybind.h"
 #include "stim/py/compiled_measurement_sampler.pybind.h"
 #include "stim/py/march.pybind.h"
+#include "stim/simulators/dem_sampler.pybind.h"
 #include "stim/simulators/matched_error.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
@@ -129,14 +130,15 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     pybind_detector_error_model(m);
 
-    auto c0 = pybind_compiled_detector_sampler_class(m);
-    auto c1 = pybind_compiled_measurement_sampler_class(m);
-    auto c2 = pybind_compiled_measurements_to_detection_events_converter_class(m);
-    auto c_tab_iter = pybind_tableau_iter(m);
+    auto c_compiled_detector_sampler = pybind_compiled_detector_sampler_class(m);
+    auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler_class(m);
+    auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
+    auto c_tableau_iter = pybind_tableau_iter(m);
     auto c_circuit = pybind_circuit(m);
-    pybind_compiled_detector_sampler_methods(c0);
-    pybind_compiled_measurement_sampler_methods(c1);
-    pybind_compiled_measurements_to_detection_events_converter_methods(c2);
+    auto c_dem_sampler = pybind_dem_sampler(m);
+    pybind_compiled_detector_sampler_methods(c_compiled_detector_sampler);
+    pybind_compiled_measurement_sampler_methods(c_compiled_measurement_sampler);
+    pybind_compiled_measurements_to_detection_events_converter_methods(c_compiled_m2d_converter);
     pybind_pauli_string(m);
     pybind_tableau(m);
     pybind_tableau_simulator(m);
@@ -295,5 +297,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
     pybind_circuit_after_types_all_defined(c_circuit);
-    pybind_tableau_iter_after_types_all_defined(m, c_tab_iter);
+    pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
+    pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
 }

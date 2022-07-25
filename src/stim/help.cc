@@ -129,6 +129,56 @@ stdout: The sample data.
         {"--out_format", "--seed", "--in", "--out", "--skip_reference_sample", "--shots"},
     };
 
+    modes["sample_dem"] = CommandLineSingleModeData{
+        "Samples detection events and observable flips from a detector error model.",
+        R"PARAGRAPH(
+stdin (or --in): The detector error model to sample from, specified using the [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
+
+stdout (or --out): The detection event data is written here.
+
+- Example:
+
+    ```bash
+    echo "error(0) D0" > example.dem
+    echo "error(0.5) D1 L0" >> example.dem
+    echo "error(1) D2 D3" >> example.dem
+    stim sample_dem \
+        --shots 5 \
+        --in example.dem \
+        --out dets.01 \
+        --out_format 01 \
+        --obs_out obs_flips.01 \
+        --obs_out_format 01 \
+        --seed 0
+    cat dets.01
+    # 0111
+    # 0011
+    # 0011
+    # 0111
+    # 0111
+    cat obs_flips.01
+    # 1
+    # 0
+    # 0
+    # 1
+    # 1
+    ```
+)PARAGRAPH",
+        {
+            "--in",
+            "--out",
+            "--out_format",
+            "--obs_out",
+            "--obs_out_format",
+            "--seed",
+            "--shots",
+            "--err_out",
+            "--err_out_format",
+            "--replay_err_in",
+            "--replay_err_in_format",
+        },
+    };
+
     modes["explain_errors"] = CommandLineSingleModeData{
         "Describes how detector error model errors correspond to circuit errors.",
         R"PARAGRAPH(
@@ -365,6 +415,23 @@ only in shots where the corresponding sweep data has the bit at index 5 set to T
 )PARAGRAPH";
 
     flags["--sweep_format"] = R"PARAGRAPH(Specifies the format sweep data is stored in (e.g. b8 or 01).
+)PARAGRAPH";
+
+    flags["--err_out"] = R"PARAGRAPH(Specifies a file to write a record of which errors occurred.
+
+This data can then be analyzed, modified, and later given to for example a --replay_err_in argument.
+)PARAGRAPH";
+
+    flags["--err_out_format"] = R"PARAGRAPH(The format to use when writing error data (e.g. b8 or 01).
+)PARAGRAPH";
+
+    flags["--replay_err_in"] = R"PARAGRAPH(Specifies a file to read error data to replay from.
+
+When replaying error information, errors are no longer sampled randomly but instead driven by the file data.
+For example, this file data could come from a previous run that wrote error data using --err_out.
+)PARAGRAPH";
+
+    flags["--replay_err_in_format"] = R"PARAGRAPH(The format to use when reading error data to replay. (e.g. b8 or 01).
 )PARAGRAPH";
 
     flags["--obs_out"] = R"PARAGRAPH(Specifies a file to write observable flip data to.

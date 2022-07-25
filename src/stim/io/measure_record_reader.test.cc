@@ -698,3 +698,39 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
     SparseShot discard;
     ASSERT_FALSE(reader->start_and_read_entire_record(discard));
 }
+
+TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
+    for (const auto &format_data : format_name_to_enum_map) {
+        SampleFormat format = format_data.second.id;
+        size_t num_shots = 500;
+        if (format == SAMPLE_FORMAT_PTB64) {
+            num_shots = 512 + 64;
+        }
+        size_t bits_per_shot = 1000;
+
+        simd_bit_table expected(num_shots, bits_per_shot);
+        for (size_t shot = 0; shot < num_shots; shot++) {
+            expected[shot].randomize(bits_per_shot, SHARED_TEST_RNG());
+        }
+        simd_bit_table expected_transposed = expected.transposed();
+
+        RaiiTempNamedFile tmp;
+        FILE *f = fopen(tmp.path.c_str(), "w");
+        write_table_data(f, num_shots, bits_per_shot, simd_bits(0), expected_transposed, format, 'M', 'M', 0);
+        fclose(f);
+
+        f = fopen(tmp.path.c_str(), "r");
+        simd_bit_table output(num_shots, bits_per_shot);
+        read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output, true);
+        ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", not transposed";
+        fclose(f);
+        ASSERT_EQ(output, expected) << format_data.second.name << ", not transposed";
+
+        f = fopen(tmp.path.c_str(), "r");
+        simd_bit_table output_transposed(bits_per_shot, num_shots);
+        read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output_transposed, false);
+        ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", yes transposed";
+        fclose(f);
+        ASSERT_EQ(output_transposed, expected_transposed) << format_data.second.name << ", yes transposed";
+    }
+}

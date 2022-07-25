@@ -17,8 +17,10 @@
 #include "stim/arg_parse.h"
 #include "stim/gen/circuit_gen_main.h"
 #include "stim/help.h"
+#include "stim/io/raii_file.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/probability_util.h"
+#include "stim/simulators/dem_sampler.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
@@ -82,40 +84,39 @@ int main_mode_detect(int argc, const char **argv) {
         find_argument("--shots", argc, argv)    ? (uint64_t)find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv)
         : find_argument("--detect", argc, argv) ? (uint64_t)find_int64_argument("--detect", 1, 0, INT64_MAX, argc, argv)
                                                 : 1;
-    if (num_shots == 0) {
-        return EXIT_SUCCESS;
-    }
     if (out_format.id == SAMPLE_FORMAT_DETS && !append_observables) {
         prepend_observables = true;
     }
 
-    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "w", argc, argv);
-    if (obs_out == stdout) {
-        obs_out = nullptr;
+    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile out(find_open_file_argument("--out", stdout, "w", argc, argv));
+    RaiiFile obs_out(find_open_file_argument("--obs_out", stdout, "w", argc, argv));
+    if (obs_out.f == stdout) {
+        obs_out.f = nullptr;
     }
-    auto circuit = Circuit::from_file(in);
-    if (in != stdin) {
-        fclose(in);
+    if (out.f == stdout) {
+        out.responsible_for_closing = false;
     }
+    if (in.f == stdin) {
+        out.responsible_for_closing = false;
+    }
+    if (num_shots == 0) {
+        return EXIT_SUCCESS;
+    }
+
+    auto circuit = Circuit::from_file(in.f);
+    in.done();
     auto rng = optionally_seeded_rng(argc, argv);
     detector_samples_out(
         circuit,
         num_shots,
         prepend_observables,
         append_observables,
-        out,
+        out.f,
         out_format.id,
         rng,
-        obs_out,
+        obs_out.f,
         obs_out_format.id);
-    if (obs_out != nullptr) {
-        fclose(obs_out);
-    }
-    if (out != stdout) {
-        fclose(out);
-    }
     return EXIT_SUCCESS;
 }
 
@@ -291,6 +292,73 @@ int main_mode_repl(int argc, const char **argv) {
     return EXIT_SUCCESS;
 }
 
+int main_mode_sample_dem(int argc, const char **argv) {
+    check_for_unknown_arguments(
+        {
+            "--seed",
+            "--shots",
+            "--out_format",
+            "--out",
+            "--in",
+            "--obs_out",
+            "--obs_out_format",
+            "--err_out",
+            "--err_out_format",
+            "--replay_err_in",
+            "--replay_err_in_format",
+        },
+        {},
+        "sample_dem",
+        argc,
+        argv);
+    const auto &out_format = find_enum_argument("--out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &err_out_format = find_enum_argument("--err_out_format", "01", format_name_to_enum_map, argc, argv);
+    const auto &err_in_format = find_enum_argument("--replay_err_in_format", "01", format_name_to_enum_map, argc, argv);
+    uint64_t num_shots = find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv);
+
+    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile out(find_open_file_argument("--out", stdout, "w", argc, argv));
+    RaiiFile obs_out(find_open_file_argument("--obs_out", stdout, "w", argc, argv));
+    RaiiFile err_out(find_open_file_argument("--err_out", stdout, "w", argc, argv));
+    RaiiFile err_in(find_open_file_argument("--replay_err_in", stdin, "r", argc, argv));
+    if (obs_out.f == stdout) {
+        obs_out.f = nullptr;
+    }
+    if (err_out.f == stdout) {
+        err_out.f = nullptr;
+    }
+    if (err_in.f == stdin) {
+        err_in.f = nullptr;
+    }
+    if (out.f == stdout) {
+        out.responsible_for_closing = false;
+    }
+    if (in.f == stdin) {
+        out.responsible_for_closing = false;
+    }
+    if (num_shots == 0) {
+        return EXIT_SUCCESS;
+    }
+
+    auto dem = DetectorErrorModel::from_file(in.f);
+    in.done();
+
+    DemSampler sampler(std::move(dem), optionally_seeded_rng(argc, argv), 1024);
+    sampler.sample_write(
+        num_shots,
+        out.f,
+        out_format.id,
+        obs_out.f,
+        obs_out_format.id,
+        err_out.f,
+        err_out_format.id,
+        err_in.f,
+        err_in_format.id);
+
+    return EXIT_SUCCESS;
+}
+
 int stim::main(int argc, const char **argv) {
     try {
         const char *mode = argc > 1 ? argv[1] : "";
@@ -298,7 +366,10 @@ int stim::main(int argc, const char **argv) {
             mode = "";
         }
         auto is_mode = [&](const char *name) {
-            return find_argument(name, argc, argv) != nullptr || strcmp(mode, name + 2) == 0;
+            if (name[0] == '-') {
+                return find_argument(name, argc, argv) != nullptr || strcmp(mode, name + 2) == 0;
+            }
+            return strcmp(mode, name) == 0;
         };
 
         if (is_mode("--help")) {
@@ -307,6 +378,7 @@ int stim::main(int argc, const char **argv) {
 
         bool mode_repl = is_mode("--repl");
         bool mode_sample = is_mode("--sample");
+        bool mode_sample_dem = is_mode("sample_dem");
         bool mode_detect = is_mode("--detect");
         bool mode_analyze_errors = is_mode("--analyze_errors");
         bool mode_gen = is_mode("--gen");
@@ -318,7 +390,7 @@ int stim::main(int argc, const char **argv) {
             mode_analyze_errors = true;
         }
         int modes_picked =
-            (mode_repl + mode_sample + mode_detect + mode_analyze_errors + mode_gen + mode_convert +
+            (mode_repl + mode_sample + mode_sample_dem + mode_detect + mode_analyze_errors + mode_gen + mode_convert +
              mode_explain_errors);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
@@ -352,6 +424,9 @@ int stim::main(int argc, const char **argv) {
         }
         if (mode_explain_errors) {
             return main_mode_explain_errors(argc, argv);
+        }
+        if (mode_sample_dem) {
+            return main_mode_sample_dem(argc, argv);
         }
 
         throw std::out_of_range("Mode not handled.");

@@ -17,6 +17,8 @@
 
 #include <pybind11/pybind11.h>
 
+namespace stim_pybind {
 void pybind_tableau(pybind11::module &m);
+}
 
 #endif

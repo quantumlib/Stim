@@ -184,7 +184,11 @@ struct DetectorErrorModel {
     /// Gets a python-style slice of the error model's instructions.
     DetectorErrorModel py_get_slice(int64_t start, int64_t step, int64_t slice_length) const;
 
-    DetectorErrorModel rounded(uint8_t sig_figs) const;
+    /// Rounds error probabilities to a given number of digits.
+    DetectorErrorModel rounded(uint8_t digits) const;
+
+    /// Returns an equivalent detector error model with no repeat blocks or detector_shift instructions.
+    DetectorErrorModel flattened() const;
 };
 
 void print_detector_error_model(std::ostream &out, const DetectorErrorModel &v, size_t indent);

@@ -20,6 +20,8 @@
 
 #include "stim/stabilizers/pauli_string.h"
 
+namespace stim_pybind {
+
 struct PyPauliString {
     stim::PauliString value;
     bool imag;
@@ -51,5 +53,7 @@ struct PyPauliString {
 };
 
 void pybind_pauli_string(pybind11::module &m);
+
+}  // namespace stim_pybind
 
 #endif

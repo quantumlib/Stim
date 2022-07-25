@@ -48,6 +48,18 @@
     - [--seed](#--seed)
     - [--shots](#--shots)
     - [--skip_reference_sample](#--skip_reference_sample)
+- **(mode)** [stim sample_dem](#sample_dem)
+    - [--err_out](#--err_out)
+    - [--err_out_format](#--err_out_format)
+    - [--in](#--in)
+    - [--obs_out](#--obs_out)
+    - [--obs_out_format](#--obs_out_format)
+    - [--out](#--out)
+    - [--out_format](#--out_format)
+    - [--replay_err_in](#--replay_err_in)
+    - [--replay_err_in_format](#--replay_err_in_format)
+    - [--seed](#--seed)
+    - [--shots](#--shots)
 ## Modes
 
 <a name="analyze_errors"></a>
@@ -437,6 +449,56 @@ Flags used with this mode:
 - [--shots](#--shots)
 - [--skip_reference_sample](#--skip_reference_sample)
 
+<a name="sample_dem"></a>
+### stim sample_dem
+
+*Samples detection events and observable flips from a detector error model.*
+
+stdin (or --in): The detector error model to sample from, specified using the [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
+
+stdout (or --out): The detection event data is written here.
+
+- Example:
+
+    ```bash
+    echo "error(0) D0" > example.dem
+    echo "error(0.5) D1 L0" >> example.dem
+    echo "error(1) D2 D3" >> example.dem
+    stim sample_dem \
+        --shots 5 \
+        --in example.dem \
+        --out dets.01 \
+        --out_format 01 \
+        --obs_out obs_flips.01 \
+        --obs_out_format 01 \
+        --seed 0
+    cat dets.01
+    # 0111
+    # 0011
+    # 0011
+    # 0111
+    # 0111
+    cat obs_flips.01
+    # 1
+    # 0
+    # 0
+    # 1
+    # 1
+    ```
+
+Flags used with this mode:
+- [--err_out](#--err_out)
+- [--err_out_format](#--err_out_format)
+- [--in](#--in)
+- [--obs_out](#--obs_out)
+- [--obs_out_format](#--obs_out_format)
+- [--out](#--out)
+- [--out_format](#--out_format)
+- [--replay_err_in](#--replay_err_in)
+- [--replay_err_in_format](#--replay_err_in_format)
+- [--seed](#--seed)
+- [--shots](#--shots)
+
 ## Flags
 
 - <a name="--after_clifford_depolarization"></a>**`--after_clifford_depolarization`**
@@ -600,6 +662,16 @@ Flags used with this mode:
     (e.g. must be larger than 2 or must be odd or etc).
     
     
+- <a name="--err_out"></a>**`--err_out`**
+    Specifies a file to write a record of which errors occurred.
+    
+    This data can then be analyzed, modified, and later given to for example a --replay_err_in argument.
+    
+    
+- <a name="--err_out_format"></a>**`--err_out_format`**
+    The format to use when writing error data (e.g. b8 or 01).
+    
+    
 - <a name="--fold_loops"></a>**`--fold_loops`**
     
     Allows the output error model to contain `repeat` blocks.
@@ -669,6 +741,17 @@ Flags used with this mode:
     Defaults to `01` when not specified.
     
     See `stim help formats` for a list of supported formats.
+    
+    
+- <a name="--replay_err_in"></a>**`--replay_err_in`**
+    Specifies a file to read error data to replay from.
+    
+    When replaying error information, errors are no longer sampled randomly but instead driven by the file data.
+    For example, this file data could come from a previous run that wrote error data using --err_out.
+    
+    
+- <a name="--replay_err_in_format"></a>**`--replay_err_in_format`**
+    The format to use when reading error data to replay. (e.g. b8 or 01).
     
     
 - <a name="--rounds"></a>**`--rounds`**
