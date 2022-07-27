@@ -80,7 +80,7 @@ def parse_args(args: List[str]) -> Any:
                         default=None,
                         help='Output file to write the plot to.\n'
                              'The file extension determines the type of image.\n'
-                             'Either this or -show must be specified.')
+                             'Either this or --show must be specified.')
     parser.add_argument('--xaxis',
                         type=str,
                         default='[log]',
@@ -88,7 +88,11 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--show',
                         action='store_true',
                         help='Displays the plot in a window.\n'
-                             'Either this or -out must be specified.')
+                             'Either this or --out must be specified.')
+    parser.add_argument('--ymin',
+                        default=None,
+                        type=float,
+                        help='Sets the minimum value of the y axis (max always 1).')
     parser.add_argument('--highlight_max_likelihood_factor',
                         type=float,
                         default=1000,
@@ -97,7 +101,7 @@ def parse_args(args: List[str]) -> Any:
 
     a = parser.parse_args(args=args)
     if not a.show and a.out is None:
-        raise ValueError("Must specify '-out file' or '-show'.")
+        raise ValueError("Must specify '--out file' or '--show'.")
     a.x_func = eval(compile(
         'lambda *, decoder, metadata, strong_id: ' + a.x_func,
         filename='x_func:command_line_arg',
@@ -123,6 +127,7 @@ def plot(
     include_error_rate_plot: bool = False,
     highlight_max_likelihood_factor: Optional[float] = 1e-3,
     xaxis: str,
+    min_y: Optional[float] = None,
     fig_size: Optional[Tuple[int, int]] = None,
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
@@ -168,11 +173,14 @@ def plot(
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
-        min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
-        low_d = 4
-        while 10**-low_d > min_y*0.9 and low_d < 10:
-            low_d += 1
-        ax_err.set_ylim(10**-low_d, 1e-0)
+        if min_y is None:
+            data_min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
+            low_d = 4
+            while 10**-low_d > data_min_y*0.9 and low_d < 10:
+                low_d += 1
+            ax_err.set_ylim(10**-low_d, 1e-0)
+        else:
+            ax_err.set_ylim(min_y, 1e-0)
         ax_err.set_ylabel("Logical Error Probability (per shot)")
         ax_err.grid()
         ax_err.legend()
@@ -247,6 +255,7 @@ def main_plot(*, command_line_args: List[str]):
         include_error_rate_plot='error_rate' in args.type,
         xaxis=args.xaxis,
         fig_size=args.fig_size,
+        min_y=args.ymin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
     )
     if args.out is not None:
