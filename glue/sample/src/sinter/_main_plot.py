@@ -93,6 +93,10 @@ def parse_args(args: List[str]) -> Any:
                         default=None,
                         type=float,
                         help='Sets the minimum value of the y axis (max always 1).')
+    parser.add_argument('--title',
+                        default=None,
+                        type=str,
+                        help='Sets the title of the plot.')
     parser.add_argument('--highlight_max_likelihood_factor',
                         type=float,
                         default=1000,
@@ -117,18 +121,19 @@ def parse_args(args: List[str]) -> Any:
     return a
 
 
-def plot(
+def _plot_helper(
     *,
     samples: Union[Iterable['sinter.TaskStats'], ExistingData],
     group_func: Callable[['sinter.TaskStats'], Any],
-    filter_func: Callable[['sinter.TaskStats'], Any] = lambda e: True,
+    filter_func: Callable[['sinter.TaskStats'], Any],
     x_func: Callable[['sinter.TaskStats'], Any],
-    include_discard_rate_plot: bool = False,
-    include_error_rate_plot: bool = False,
-    highlight_max_likelihood_factor: Optional[float] = 1e-3,
+    include_discard_rate_plot: bool,
+    include_error_rate_plot: bool,
+    highlight_max_likelihood_factor: Optional[float],
     xaxis: str,
-    min_y: Optional[float] = None,
-    fig_size: Optional[Tuple[int, int]] = None,
+    min_y: Optional[float],
+    title: Optional[str],
+    fig_size: Optional[Tuple[int, int]],
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
         total = samples
@@ -164,6 +169,16 @@ def plot(
         if filter_func(stat)
     ]
 
+    if xaxis.startswith('[log]'):
+        if ax_err is not None:
+            ax_err.loglog()
+        if ax_dis is not None:
+            ax_dis.semilogx()
+        xaxis = xaxis[5:]
+    else:
+        if ax_err is not None:
+            ax_err.semilogy()
+
     if ax_err is not None:
         plot_error_rate(
             ax=ax_err,
@@ -174,15 +189,20 @@ def plot(
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
         if min_y is None:
-            data_min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
+            min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
             low_d = 4
-            while 10**-low_d > data_min_y*0.9 and low_d < 10:
+            while 10**-low_d > min_y*0.9 and low_d < 10:
                 low_d += 1
-            ax_err.set_ylim(10**-low_d, 1e-0)
-        else:
-            ax_err.set_ylim(min_y, 1e-0)
+            min_y = 10**-low_d
+        major_tick_steps = 1
+        while 10**-major_tick_steps >= min_y * 0.1:
+            major_tick_steps += 1
+        ax_err.set_yticks([10**-d for d in range(major_tick_steps)])
+        ax_err.set_yticks([b*10**-d for d in range(1, major_tick_steps) for b in range(2, 10)], minor=True)
+        ax_err.set_ylim(min_y, 1e-0)
         ax_err.set_ylabel("Logical Error Probability (per shot)")
-        ax_err.grid()
+        ax_err.grid(which='major', color='#000000')
+        ax_err.grid(which='minor', color='#DDDDDD')
         ax_err.legend()
     if ax_dis is not None:
         plot_discard_rate(
@@ -194,19 +214,10 @@ def plot(
             plot_args_func=lambda k, _: {'marker': MARKERS[k]},
         )
         ax_dis.set_ylim(0, 1)
-        ax_dis.grid()
+        ax_err.grid()
         ax_dis.set_ylabel("Discard Probability")
         ax_dis.legend()
 
-    if xaxis.startswith('[log]'):
-        if ax_err is not None:
-            ax_err.loglog()
-        if ax_dis is not None:
-            ax_dis.semilogx()
-        xaxis = xaxis[5:]
-    else:
-        if ax_err is not None:
-            ax_err.semilogy()
     if xaxis:
         if ax_err is not None:
             ax_err.set_xlabel(xaxis)
@@ -219,6 +230,8 @@ def plot(
             ax_err.set_title('Logical Error Rates')
         if ax_dis is not None:
             ax_dis.set_title('Discard Rates')
+    if ax_err is not None and title is not None:
+        ax_err.set_title(title)
     if fig_size is None:
         fig.set_size_inches(10 * (include_discard_rate_plot + include_error_rate_plot), 10)
         fig.set_dpi(100)
@@ -237,7 +250,7 @@ def main_plot(*, command_line_args: List[str]):
     for file in getattr(args, 'in'):
         total += ExistingData.from_file(file)
 
-    fig, _ = plot(
+    fig, _ = _plot_helper(
         samples=total,
         group_func=lambda summary: args.group_func(
             decoder=summary.decoder,
@@ -257,6 +270,7 @@ def main_plot(*, command_line_args: List[str]):
         fig_size=args.fig_size,
         min_y=args.ymin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
+        title=args.title,
     )
     if args.out is not None:
         fig.savefig(args.out)

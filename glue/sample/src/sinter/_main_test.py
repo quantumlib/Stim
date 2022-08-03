@@ -204,6 +204,10 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
                 "int('a' in metadata['path'])",
                 "--group_func",
                 "decoder",
+                "--ymin",
+                "1e-3",
+                "--title",
+                "test_plot",
             ])
         assert (d / "output.png").exists()
 
