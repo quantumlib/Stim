@@ -33,3 +33,4 @@ venv/*
 *.so
 .clwb/*
 .cmake/*
+coverage/*

@@ -1086,6 +1086,8 @@ TEST(circuit, aliased_noiseless_circuit) {
     ASSERT_EQ(c1, noiseless);
     initial.clear();
     ASSERT_EQ(c1, c2);
+
+    ASSERT_EQ(Circuit("H 0\nX_ERROR(0.01) 0\nH 0").without_noise(), Circuit("H 0 0"));
 }
 
 TEST(circuit, validate_nan_probability) {
@@ -1302,4 +1304,12 @@ TEST(circuit, assignment_copies_operations) {
     c2 = c1;
     ASSERT_EQ(c2.operations.size(), 2);
     ASSERT_EQ(c1, c2);
+}
+
+TEST(circuit, flattened) {
+    ASSERT_EQ(Circuit().flattened(), Circuit());
+    ASSERT_EQ(Circuit("SHIFT_COORDS(1, 2)").flattened(), Circuit());
+    ASSERT_EQ(Circuit("H 1").flattened(), Circuit("H 1"));
+    ASSERT_EQ(Circuit("REPEAT 100 {\n}").flattened(), Circuit());
+    ASSERT_EQ(Circuit("REPEAT 3 {\nH 0\n}").flattened(), Circuit("H 0 0 0"));
 }
