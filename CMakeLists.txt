@@ -48,6 +48,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/circuit/gate_data_swaps.cc
         src/stim/circuit/gate_target.cc
         src/stim/dem/detector_error_model.cc
+        src/stim/draw/draw.cc
         src/stim/help.cc
         src/stim/gen/circuit_gen_main.cc
         src/stim/gen/circuit_gen_params.cc
@@ -105,6 +106,7 @@ set(TEST_FILES
         src/stim/circuit/gate_data.test.cc
         src/stim/circuit/gate_target.test.cc
         src/stim/dem/detector_error_model.test.cc
+        src/stim/draw/draw.test.cc
         src/stim/gen/circuit_gen_main.test.cc
         src/stim/gen/circuit_gen_params.test.cc
         src/stim/gen/gen_color_code.test.cc
