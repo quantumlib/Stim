@@ -26,6 +26,7 @@ struct DiagramBox {
     DiagramPos center;
     std::string label;
     std::vector<std::string> annotations;
+    const char *stroke;
 };
 
 struct DiagramLine {
@@ -45,6 +46,17 @@ struct DiagramLayout {
     std::vector<size_t> z_offsets;
 };
 
+size_t stim::utf8_char_count(const std::string &s) {
+    size_t t = 0;
+    for (uint8_t c : s) {
+        // Continuation bytes start with "10" in binary.
+        if ((c & 0xC0) != 0x80) {
+            t++;
+        }
+    }
+    return t;
+}
+
 struct Diagram {
     std::map<DiagramPos, DiagramBox> boxes;
     std::vector<DiagramLine> lines;
@@ -60,6 +72,21 @@ struct Diagram {
         for (const auto &item : lines) {
             callback(item.p1);
             callback(item.p2);
+        }
+    }
+
+    void compactify() {
+        for (auto &item : boxes) {
+            auto &label = item.second.label;
+            if (label.find("SQRT_") == 0) {
+                label = "√" + label.substr(5);
+            }
+            if (label.find("_DAG") == label.size() - 4) {
+                label = label.substr(0, label.size() - 4) + "†"; //"⁻¹";
+            }
+            while (!label.empty() && label.back() == ' ') {
+                label.pop_back();
+            }
         }
     }
 
@@ -79,9 +106,9 @@ struct Diagram {
             auto &dx = layout.x_widths[box.center.x];
             auto &dy = layout.y_heights[box.center.y];
 //            auto &dz = layout.z_depths[box.center.z];
-            dx = std::max(dx, box.label.size());
+            dx = std::max(dx, utf8_char_count(box.label));
             for (const auto &annotation : box.annotations) {
-                dx = std::max(dx, annotation.size());
+                dx = std::max(dx, utf8_char_count(annotation));
             }
             dy = std::max(dy, box.annotations.size());
         }
@@ -143,6 +170,7 @@ Diagram to_diagram(const Circuit &circuit) {
             {m2x(cur_moment), q2y(target.qubit_value()), 0},
             ss.str(),
             {},
+            "black",
         });
         cur_moment_used++;
     };
@@ -193,11 +221,13 @@ Diagram to_diagram(const Circuit &circuit) {
             pos1,
             first.str(),
             {},
+            "black",
         };
         diagram.boxes[pos2] = DiagramBox{
             pos2,
             second.str(),
             {},
+            "black",
         };
         diagram.lines.push_back({pos1, pos2});
         cur_moment_used++;
@@ -252,6 +282,7 @@ Diagram to_diagram(const Circuit &circuit) {
                 {m2x(cur_moment), q2y(t.qubit_value()), 0},
                 ss.str(),
                 {},
+                "black",
             });
         }
         if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
@@ -274,6 +305,12 @@ Diagram to_diagram(const Circuit &circuit) {
                     drawGateMQ(op, {&op.target_data.targets[start], &op.target_data.targets[end]});
                     start = end;
                 }
+            } else if (op.gate->id == gate_name_to_id("DETECTOR")) {
+                // TODO.
+            } else if (op.gate->id == gate_name_to_id("OBSERVABLE_INCLUDE")) {
+                // TODO.
+            } else if (op.gate->id == gate_name_to_id("SHIFT_COORDS")) {
+                // TODO.
             } else if (op.gate->id == gate_name_to_id("E")) {
                 if (cur_moment_used) {
                     start_next_moment();
@@ -298,11 +335,13 @@ Diagram to_diagram(const Circuit &circuit) {
                     top,
                     "/REP " + std::to_string(reps),
                     {},
+                    "none",
                 });
                 diagram.add_box(DiagramBox{
                     bot,
                     "\\",
                     {},
+                    "none",
                 });
                 cur_moment++;
                 size_t old_m = measure_offset;
@@ -318,11 +357,13 @@ Diagram to_diagram(const Circuit &circuit) {
                     top,
                     "\\",
                     {},
+                    "none",
                 });
                 diagram.add_box(DiagramBox{
                     bot,
                     "/",
                     {},
+                    "none",
                 });
                 cur_moment++;
             } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
@@ -344,7 +385,12 @@ Diagram to_diagram(const Circuit &circuit) {
     diagram.lines.insert(diagram.lines.begin(), num_qubits, {});
     for (size_t q = 0; q < num_qubits; q++) {
         diagram.lines[q] = {{0, q2y(q), 0}, {m2x(cur_moment) + 1, q2y(q), 0}};
-        diagram.add_box(DiagramBox{{0, q2y(q), 0}, "q" + std::to_string(q) + ": ", {}});
+        diagram.add_box(DiagramBox{
+            {0, q2y(q), 0},
+            "q" + std::to_string(q) + ": ",
+            {},
+            "none",
+        });
     }
 
     return diagram;
@@ -412,4 +458,83 @@ std::string stim::draw(const Circuit &circuit) {
     }
 
     return result;
+}
+
+std::string stim::draw_svg(const Circuit &circuit) {
+    Diagram diagram = to_diagram(circuit);
+    diagram.compactify();
+    DiagramLayout layout = diagram.to_layout();
+    std::stringstream out;
+    const size_t h_scale = 16;
+    const size_t v_scale = 24;
+    const size_t font_height = 24;
+    const size_t font_width = 16;
+
+    out << R"SVG(<svg width=")SVG" << layout.x_offsets.back() * h_scale << R"SVG(" height=")SVG" << layout.y_offsets.back() * v_scale << R"SVG(" version="1.1" xmlns="http://www.w3.org/2000/svg">)SVG" << '\n';
+
+    for (const auto &e : diagram.lines) {
+        double x1 = layout.x_offsets[e.p1.x] * h_scale;
+        double x2 = layout.x_offsets[e.p2.x] * h_scale;
+        auto w1 = layout.x_widths[e.p1.x] * h_scale;
+        auto h1 = layout.y_heights[e.p1.y] * v_scale;
+        double y1 = layout.y_offsets[e.p1.y] * v_scale;
+        double y2 = layout.y_offsets[e.p2.y] * v_scale;
+        auto w2 = layout.x_widths[e.p2.x] * h_scale;
+        auto h2 = layout.y_heights[e.p2.y] * v_scale;
+        x1 += w1 / 2.0;
+        y1 += h1 / 2.0;
+        x2 += w2 / 2.0;
+        y2 += h2 / 2.0;
+        out << " <line x1=\"" << x1 << "\" x2=\"" << x2 << "\" y1=\"" << y1 << "\" y2=\"" << y2 << "\" stroke=\"black\" stroke-width=\"1\"/>\n";
+    }
+
+    for (const auto &item : diagram.boxes) {
+        const auto &box = item.second;
+        auto lx = layout.x_offsets[box.center.x] * h_scale;
+        auto ly = layout.y_offsets[box.center.y] * v_scale;
+        auto w = layout.x_widths[box.center.x] * h_scale;
+        auto h = layout.y_heights[box.center.y] * v_scale;
+        auto cx = lx + w / 2.0;
+        auto cy = ly + h / 2.0;
+        w = utf8_char_count(box.label) * font_width;
+        auto w2 = w + (font_height - font_width);
+        auto h2 = h + 4;
+        if (box.label == "@") {
+            out << " <circle cx=\"" << cx
+                << "\" cy=\"" << cy
+                << "\" r=\"" << 8
+                << "\" stroke=\"none"
+                << "\" fill=\"black\"/>\n";
+            continue;
+        }
+        if (box.label == "X") {
+            out << " <circle cx=\"" << cx
+                << "\" cy=\"" << cy
+                << "\" r=\"" << 12
+                << "\" stroke=\"black"
+                << "\" fill=\"white\"/>\n";
+            out << " <line x1=\"" << (cx - 12)
+                << "\" x2=\"" << (cx + 12)
+                << "\" y1=\"" << cy
+                << "\" y2=\"" << cy
+                << "\" stroke=\"black\"/>\n";
+            out << " <line x1=\"" << cx
+                << "\" x2=\"" << cx
+                << "\" y1=\"" << (cy + 12)
+                << "\" y2=\"" << (cy - 12)
+                << "\" stroke=\"black\"/>\n";
+            continue;
+        }
+        out << " <rect x=\"" << (cx - w2 / 2.0)
+            << "\" y=\"" << (cy - h2 / 2.0)
+            << "\" width=\"" << w2
+            << "\" height=\"" << h2
+            << "\" stroke=\"" << box.stroke
+            << "\" fill=\"white\" stroke-width=\"1\"/>\n";
+        out << " <text dominant-baseline=\"central\" textLength=\"" << w << "\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"" << font_height << "px\" x=\"" << cx << "\" y=\"" << cy << "\">" << box.label << "</text>\n";
+    }
+
+    out << "</svg>\n";
+
+    return out.str();
 }

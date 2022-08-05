@@ -24,6 +24,8 @@
 namespace stim {
 
 std::string draw(const Circuit &circuit);
+std::string draw_svg(const Circuit &circuit);
+size_t utf8_char_count(const std::string &s);
 
 }  // namespace stim
 
