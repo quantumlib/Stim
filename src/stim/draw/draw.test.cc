@@ -43,13 +43,13 @@ TEST(draw, single_qubit_gates) {
         H 2 0 3
     )CIRCUIT");
     ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
-q0: -I-C_XYZ-H------SQRT_X_DAG-S_DAG-H-
+q0: -I-C_XYZ---H----SQRT_X_DAG-S_DAG-H-
 
-q1: -X-C_ZYX-H_YZ---SQRT_Y-----S_DAG---
+q1: -X-C_ZYX--H_YZ----SQRT_Y---S_DAG---
 
-q2: -Y-H-----S------SQRT_Y_DAG-H-------
+q2: -Y---H-----S----SQRT_Y_DAG---H-----
 
-q3: -Z-H_XY--SQRT_X-S----------------H-
+q3: -Z-H_XY--SQRT_X-----S------------H-
 )DIAGRAM");
 }
 
@@ -79,16 +79,16 @@ TEST(draw, two_qubits_gates) {
         ZCZ 0 5 2 3 1 4
     )CIRCUIT");
     ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
-q0: -@-@-------------------------SQRT_XX_DAG---------SQRT_YY_DAG-SWAP----------X-Y---@-----
-     | |                         |                   |           |             | |   |
-q1: -X-|-ISWAP-------------------|-------------------SQRT_YY_DAG-SWAP----------@-@---|---@-
-       | |                       |                                                   |   |
-q2: -@-@-|-----ISWAP_DAG---------|-------------------------------SQRT_ZZ-----X---Y-@-|-@-|-
-     |   |     |                 |                               |           |   | | | | |
-q3: -X---ISWAP-|---------SQRT_XX-|-----------SQRT_YY-SQRT_YY-----SQRT_ZZ-----X-X-X-X-|-@-|-
-               |         |       |           |       |                         |     |   |
-q4: -@-Y-------ISWAP_DAG-|-------|-----------SQRT_YY-SQRT_YY-----SQRT_ZZ_DAG---Y-Y-@-|---@-
-     | |                 |       |                               |               | | |
+q0: -@-@-------------------------SQRT_XX_DAG---------SQRT_YY_DAG----SWAP-------X-Y---@-----
+     | |                              |                   |           |        | |   |
+q1: -X-|-ISWAP------------------------|--------------SQRT_YY_DAG----SWAP-------@-@---|---@-
+       |   |                          |                                              |   |
+q2: -@-@---|---ISWAP_DAG--------------|----------------------------SQRT_ZZ---X---Y-@-|-@-|-
+     |     |       |                  |                               |      |   | | | | |
+q3: -X---ISWAP-----|-----SQRT_XX------|------SQRT_YY---SQRT_YY-----SQRT_ZZ---X-X-X-X-|-@-|-
+                   |        |         |         |         |                    |     |   |
+q4: -@-Y-------ISWAP_DAG----|---------|------SQRT_YY---SQRT_YY---SQRT_ZZ_DAG---Y-Y-@-|---@-
+     | |                    |         |                               |          | | |
 q5: -Y-@-----------------SQRT_XX-SQRT_XX_DAG---------------------SQRT_ZZ_DAG-----Y-Y-@-----
 )DIAGRAM");
 }
@@ -103,15 +103,15 @@ TEST(draw, noise_gates) {
     )CIRCUIT");
     ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
 q0: -DEPOLARIZE1(0.125)-DEPOLARIZE2(0.125)-X_ERROR(0.125)-Y_ERROR(0.125)-
-                        |
-q1: -DEPOLARIZE1(0.125)-|------------------X_ERROR(0.125)-Y_ERROR(0.125)-
-                        |
+                                |
+q1: -DEPOLARIZE1(0.125)---------|----------X_ERROR(0.125)-Y_ERROR(0.125)-
+                                |
 q2: --------------------DEPOLARIZE2(0.125)-X_ERROR(0.125)-Z_ERROR(0.125)-
 
 q3: ------------------------------------------------------Z_ERROR(0.125)-
 
 q4: --------------------DEPOLARIZE2(0.125)----------------Y_ERROR(0.125)-
-                        |
+                                |
 q5: --------------------DEPOLARIZE2(0.125)----------------Z_ERROR(0.125)-
 )DIAGRAM");
 
@@ -125,11 +125,11 @@ q5: --------------------DEPOLARIZE2(0.125)----------------Z_ERROR(0.125)-
 q0: --------------------------------------------------------------------------------------
 
 q1: -E[X](0.25)-E[X](0.125)---------------------------------------------------------------
-     |          |
+         |           |
 q2: -E[X](0.25)-E[Y](0.125)-ELSE_CORRELATED_ERROR[X](0.25)--------------------------------
-                |           |
+                     |                    |
 q3: ------------E[Z](0.125)-ELSE_CORRELATED_ERROR[Z](0.25)--------------------------------
-                            |
+                                          |
 q4: ------------------------ELSE_CORRELATED_ERROR[Y](0.25)--------------------------------
 
 q5: -------------------------------------------------------ELSE_CORRELATED_ERROR[X](0.25)-
@@ -141,13 +141,13 @@ q5: -------------------------------------------------------ELSE_CORRELATED_ERROR
     )CIRCUIT");
     ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
 q0: -PAULI_CHANNEL_1(0.125,0.25,0.125)-PAULI_CHANNEL_2[0](0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01)-
-                                       |
+                                                                                     |
 q1: -PAULI_CHANNEL_1(0.125,0.25,0.125)-PAULI_CHANNEL_2[1](0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01)-
 
 q2: -PAULI_CHANNEL_1(0.125,0.25,0.125)-PAULI_CHANNEL_2[0](0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01)-
-                                       |
-q3: -PAULI_CHANNEL_1(0.125,0.25,0.125)-|----------------------------------------------------------------------------------------------
-                                       |
+                                                                                     |
+q3: -PAULI_CHANNEL_1(0.125,0.25,0.125)-----------------------------------------------|------------------------------------------------
+                                                                                     |
 q4: -----------------------------------PAULI_CHANNEL_2[1](0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01)-
 )DIAGRAM");
 }
@@ -170,11 +170,11 @@ TEST(draw, collapsing) {
     )CIRCUIT");
     ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
 q0: -R--M[0](0.001)-MR[3]-MRY[6]-MR[9]---------MPP[X][13]------------
-                                               |
-q1: -RX-M[1](0.001)-MR[2]-MRX[4]-MRY[8]-MX[10]-|----------MPP[X][15]-
-                                               |
+                                                   |
+q1: -RX-M[1](0.001)-MR[2]-MRX[4]-MRY[8]-MX[10]-----|------MPP[X][15]-
+                                                   |
 q2: -RY-------------------MRX[5]--------MY[11]-MPP[Y][13]-MPP[Z][16]-
-                                                          |
+                                                              |
 q3: -R--------------------MRY[7]--------M[12]--MPP[Z][14]-MPP[Y][16]-
 )DIAGRAM");
 }
@@ -190,15 +190,76 @@ TEST(draw, repeat) {
         }
     )CIRCUIT");
     ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
-       /REP 5    /REP 100     \ \
-q0: -H-|---------|--------H---|-|---
-       |         |            | |
-q1: -H-|---------|--------H---|-|---
-       |         |            | |
-q2: -H-|------RX-|------------|-|---
-       |         |            | |
-q3: ---|---------|--------H-H-|-|---
-       \         \            / /
+       /REP 5   /REP 100    \ \
+q0: -H-|--------|-------H---|-|---
+       |        |           | |
+q1: -H-|--------|-------H---|-|---
+       |        |           | |
+q2: -H-|-----RX-|-----------|-|---
+       |        |           | |
+q3: ---|--------|-------H-H-|-|---
+       \        \           / /
+)DIAGRAM");
+}
+
+TEST(draw, classical_feedback) {
+    auto circuit = Circuit(R"CIRCUIT(
+        M 0
+        CX rec[-1] 1
+        YCZ 2 sweep[5]
+    )CIRCUIT");
+    ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
+q0: ----M[0]----
+
+q1: ----X^m0----
+
+q2: -Y^sweep[5]-
+)DIAGRAM");
+}
+
+TEST(draw, lattice_surgery_cnot) {
+    auto circuit = Circuit(R"CIRCUIT(
+        R 2
+        MPP X1*X2
+        MPP Z0*Z2
+        MX 2
+        CZ rec[-3] 0
+        CX rec[-2] 1
+        CZ rec[-1] 0
+    )CIRCUIT");
+    ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
+q0: ----------MZZ[1]-Z^m0--Z^m2-
+                |
+q1: ---MXX[0]---|----X^m1-------
+         |      |
+q2: -R-MXX[0]-MZZ[1]-MX[2]------
+)DIAGRAM");
+}
+
+TEST(draw, tick) {
+    auto circuit = Circuit(R"CIRCUIT(
+        H 0 0
+        TICK
+        H 0 1
+        TICK
+        H 0
+        REPEAT 1 {
+            H 0 1
+            TICK
+            H 0
+            S 0
+        }
+        H 0 0
+        SQRT_X 0
+        TICK
+        H 0 0
+    )CIRCUIT");
+    ASSERT_EQ("\n" + draw(circuit), R"DIAGRAM(
+     /-\     /REP 1  /-\ \ /--------\
+q0: -H-H-H-H-|-----H-H-S-|-H-H-SQRT_X-H-H-
+             |           |
+q1: -----H---|-----H-----|----------------
+     \-/     \       \-/ / \--------/
 )DIAGRAM");
 }
 
@@ -255,19 +316,16 @@ TEST(draw, repeat2) {
     )CIRCUIT");
     CircuitGenParameters params(999999, 5, "unrotated_memory_z");
     circuit = generate_surface_code_circuit(params).circuit;
+
     auto tx = draw_svg(circuit);
     FILE *f = fopen("/usr/local/google/home/craiggidney/tmp/x.svg", "w");
     fprintf(f, "%s", tx.data());
     fclose(f);
+    std::cerr << draw(circuit);
 }
 
 /*
 TODO:
- SWEEP BITS
- REC BITS
 DETECTOR
 OBSERVABLE_INCLUDE
-QUBIT_COORDS
-SHIFT_COORDS
-TICK
 */
