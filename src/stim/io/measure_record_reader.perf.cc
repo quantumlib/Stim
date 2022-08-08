@@ -84,7 +84,7 @@ BENCHMARK(read_01_sparse_per10) {
 }
 
 BENCHMARK(read_b8_dense_per10) {
-    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(5.6);
+    dense_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(0.65);
 }
 BENCHMARK(read_b8_sparse_per10) {
     sparse_reader_benchmark<10000, 10, SAMPLE_FORMAT_B8>(8);

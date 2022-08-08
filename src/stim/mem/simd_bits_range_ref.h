@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "stim/mem/bit_ref.h"
-#include "stim/mem/simd_compat.h"
+#include "stim/mem/simd_word.h"
 
 namespace stim {
 

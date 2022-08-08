@@ -42,7 +42,7 @@
 #include "stim/mem/simd_bit_table.h"
 #include "stim/mem/simd_bits.h"
 #include "stim/mem/simd_bits_range_ref.h"
-#include "stim/mem/simd_compat.h"
+#include "stim/mem/simd_word.h"
 #include "stim/mem/simd_util.h"
 #include "stim/mem/sparse_xor_vec.h"
 #include "stim/probability_util.h"

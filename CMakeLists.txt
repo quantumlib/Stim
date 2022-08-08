@@ -68,7 +68,7 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/mem/simd_bit_table.cc
         src/stim/mem/simd_bits.cc
         src/stim/mem/simd_bits_range_ref.cc
-        src/stim/mem/simd_compat.cc
+        src/stim/mem/simd_word.cc
         src/stim/mem/simd_util.cc
         src/stim/mem/sparse_xor_vec.cc
         src/stim/probability_util.cc
@@ -125,7 +125,7 @@ set(TEST_FILES
         src/stim/mem/simd_bit_table.test.cc
         src/stim/mem/simd_bits.test.cc
         src/stim/mem/simd_bits_range_ref.test.cc
-        src/stim/mem/simd_compat.test.cc
+        src/stim/mem/simd_word.test.cc
         src/stim/mem/simd_util.test.cc
         src/stim/mem/sparse_xor_vec.test.cc
         src/stim/probability_util.test.cc
@@ -166,7 +166,7 @@ set(BENCHMARK_FILES
         src/stim/main_namespaced.perf.cc
         src/stim/mem/simd_bit_table.perf.cc
         src/stim/mem/simd_bits.perf.cc
-        src/stim/mem/simd_compat.perf.cc
+        src/stim/mem/simd_word.perf.cc
         src/stim/mem/sparse_xor_vec.perf.cc
         src/stim/probability_util.perf.cc
         src/stim/search/graphlike/algo.perf.cc
@@ -209,8 +209,8 @@ find_package(GTest QUIET)
 if(${GTest_FOUND})
     add_executable(stim_test ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(stim_test GTest::gtest GTest::gtest_main)
-    target_compile_options(stim_test PRIVATE -Wall -Wpedantic -Werror -fno-strict-aliasing -fsanitize=undefined -fsanitize=address ${MACHINE_FLAG})
-    target_link_options(stim_test PRIVATE -fsanitize=undefined -fsanitize=address -pthread)
+    target_compile_options(stim_test PRIVATE --coverage -Wall -Wpedantic -Werror -fno-strict-aliasing -fsanitize=undefined -fsanitize=address ${MACHINE_FLAG})
+    target_link_options(stim_test PRIVATE --coverage -fsanitize=undefined -fsanitize=address -pthread)
 
     add_executable(stim_test_o3 ${SOURCE_FILES_NO_MAIN} ${TEST_FILES})
     target_link_libraries(stim_test_o3 GTest::gtest GTest::gtest_main)

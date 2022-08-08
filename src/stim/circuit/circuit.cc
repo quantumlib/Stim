@@ -784,6 +784,15 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
     return result;
 }
 
+/// Helper method for fusing during concatenation. If the data being extended is at the end of
+/// the monotonic buffer and there's space for the additional data, put it there in place.
+/// Otherwise it needs to be copied to the new location.
+///
+/// CAUTION: This violates the usual guarantee that once data is committed to a monotonic
+/// buffer it cannot be moved. The old data is still readable in its original location, but
+/// the caller is responsible for guaranteeing that no dangling writeable pointers remain
+/// that point to the old location (since they will write data that is no longer read by
+/// other parts of the code).
 template <typename T>
 ConstPointerRange<T> mono_extend(
     MonotonicBuffer<T> &cur, ConstPointerRange<T> original, ConstPointerRange<T> additional) {

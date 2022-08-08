@@ -34,3 +34,4 @@ venv/*
 .clwb/*
 .cmake/*
 coverage/*
+cmake-build-debug-coverage/*
