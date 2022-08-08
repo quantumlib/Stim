@@ -20,6 +20,7 @@
 /// Implements `simd_word` using SSE+SSE2 intrinsic instructions.
 /// For example, `_mm_set1_epi8` is SSE2.
 
+#include <algorithm>
 #include <immintrin.h>
 
 #include "stim/mem/simd_util.h"
@@ -28,6 +29,9 @@ namespace stim {
 
 #define simd_word simd_word_sse2
 struct simd_word_sse2 {
+    constexpr static size_t BIT_SIZE = 128;
+    constexpr static size_t BIT_POW = 7;
+
     union {
         __m128i val;
         __m128i u128[1];
@@ -98,26 +102,43 @@ struct simd_word_sse2 {
         return {_mm_andnot_si128(val, other.val)};
     }
 
-    inline simd_word leftshift_tile64(uint8_t offset) const {
-        return {_mm_slli_epi64(val, offset)};
-    }
-
-    inline simd_word rightshift_tile64(uint8_t offset) const {
-        return {_mm_srli_epi64(val, offset)};
-    }
-
     inline uint16_t popcount() const {
         return popcnt64(u64[0]) + popcnt64(u64[1]);
     }
 
-    /// For each 128 bit word pair between the two registers, the byte order goes from this:
-    /// [a0 a1 a2 a3 ... a14 a15] [b0 b1 b2 b3 ... b14 b15]
-    /// to this:
-    /// [a0 b0 a1 b1 ...  a7  b7] [a8 b8 a9 b9 ... a15 b15]
-    inline void do_interleave8_tile128(simd_word &other) {
-        auto t = _mm_unpackhi_epi8(val, other.val);
-        val = _mm_unpacklo_epi8(val, other.val);
-        other.val = t;
+    template <uint64_t shift>
+    static void inplace_transpose_block_pass(simd_word *data, size_t stride, __m128i mask) {
+        for (size_t k = 0; k < 128; k++) {
+            if (k & shift) {
+                continue;
+            }
+            simd_word& x = data[stride * k];
+            simd_word& y = data[stride * (k + shift)];
+            simd_word a = x & mask;
+            simd_word b = x & ~mask;
+            simd_word c = y & mask;
+            simd_word d = y & ~mask;
+            x = a | simd_word(_mm_slli_epi64(c.val, shift));
+            y = simd_word(_mm_srli_epi64(b.val, shift)) | d;
+        }
+    }
+
+    static void inplace_transpose_block_pass64(simd_word *data, size_t stride) {
+        uint64_t *ptr = (uint64_t *)data;
+        stride <<= 1;
+        for (size_t k = 0; k < 64; k++) {
+            std::swap(ptr[stride * k + 1], ptr[stride * (k + 64)]);
+        }
+    }
+
+    static void inplace_transpose_square(simd_word *data, size_t stride) {
+        inplace_transpose_block_pass<1>(data, stride, _mm_set1_epi8(0x55));
+        inplace_transpose_block_pass<2>(data, stride, _mm_set1_epi8(0x33));
+        inplace_transpose_block_pass<4>(data, stride, _mm_set1_epi8(0xF));
+        inplace_transpose_block_pass<8>(data, stride, _mm_set1_epi16(0xFF));
+        inplace_transpose_block_pass<16>(data, stride, _mm_set1_epi32(0xFFFF));
+        inplace_transpose_block_pass<32>(data, stride, _mm_set1_epi64x(0xFFFFFFFF));
+        inplace_transpose_block_pass64(data, stride);
     }
 };
 

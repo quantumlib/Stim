@@ -29,6 +29,9 @@ namespace stim {
 
 #define simd_word simd_word_avx2
 struct simd_word_avx2 {
+    constexpr static size_t BIT_SIZE = 256;
+    constexpr static size_t BIT_POW = 8;
+
     union {
         __m256i val;
         __m128i u128[2];
@@ -99,27 +102,50 @@ struct simd_word_avx2 {
         return {_mm256_andnot_si256(val, other.val)};
     }
 
-    inline simd_word leftshift_tile64(uint8_t offset) const {
-        return {_mm256_slli_epi64(val, offset)};
-    }
-
-    inline simd_word rightshift_tile64(uint8_t offset) const {
-        return {_mm256_srli_epi64(val, offset)};
-    }
-
     inline uint16_t popcount() const {
         return stim::popcnt64(u64[0]) + stim::popcnt64(u64[1]) + stim::popcnt64(u64[2]) +
                (uint16_t)stim::popcnt64(u64[3]);
     }
 
-    /// For each 128 bit word pair between the two registers, the byte order goes from this:
-    /// [a0 a1 a2 a3 ... a14 a15] [b0 b1 b2 b3 ... b14 b15]
-    /// to this:
-    /// [a0 b0 a1 b1 ...  a7  b7] [a8 b8 a9 b9 ... a15 b15]
-    inline void do_interleave8_tile128(simd_word &other) {
-        auto t = _mm256_unpackhi_epi8(val, other.val);
-        val = _mm256_unpacklo_epi8(val, other.val);
-        other.val = t;
+    template <uint64_t shift>
+    static void inplace_transpose_block_pass(simd_word *data, size_t stride, __m256i mask) {
+        for (size_t k = 0; k < 256; k++) {
+            if (k & shift) {
+                continue;
+            }
+            simd_word& x = data[stride * k];
+            simd_word& y = data[stride * (k + shift)];
+            simd_word a = x & mask;
+            simd_word b = x & ~mask;
+            simd_word c = y & mask;
+            simd_word d = y & ~mask;
+            x = a | simd_word(_mm256_slli_epi64(c.val, shift));
+            y = simd_word(_mm256_srli_epi64(b.val, shift)) | d;
+        }
+    }
+
+    static void inplace_transpose_block_pass_64_and_128(simd_word *data, size_t stride) {
+        uint64_t *ptr = (uint64_t *)data;
+        stride <<= 2;
+
+        for (size_t k = 0; k < 64; k++) {
+            std::swap(ptr[stride * (k + 64 * 0) + 1], ptr[stride * (k + 64 * 1) + 0]);
+            std::swap(ptr[stride * (k + 64 * 0) + 2], ptr[stride * (k + 64 * 2) + 0]);
+            std::swap(ptr[stride * (k + 64 * 0) + 3], ptr[stride * (k + 64 * 3) + 0]);
+            std::swap(ptr[stride * (k + 64 * 1) + 2], ptr[stride * (k + 64 * 2) + 1]);
+            std::swap(ptr[stride * (k + 64 * 1) + 3], ptr[stride * (k + 64 * 3) + 1]);
+            std::swap(ptr[stride * (k + 64 * 2) + 3], ptr[stride * (k + 64 * 3) + 2]);
+        }
+    }
+
+    static void inplace_transpose_square(simd_word *data, size_t stride) {
+        inplace_transpose_block_pass<1>(data, stride, _mm256_set1_epi8(0x55));
+        inplace_transpose_block_pass<2>(data, stride, _mm256_set1_epi8(0x33));
+        inplace_transpose_block_pass<4>(data, stride, _mm256_set1_epi8(0xF));
+        inplace_transpose_block_pass<8>(data, stride, _mm256_set1_epi16(0xFF));
+        inplace_transpose_block_pass<16>(data, stride, _mm256_set1_epi32(0xFFFF));
+        inplace_transpose_block_pass<32>(data, stride, _mm256_set1_epi64x(0xFFFFFFFF));
+        inplace_transpose_block_pass_64_and_128(data, stride);
     }
 };
 
