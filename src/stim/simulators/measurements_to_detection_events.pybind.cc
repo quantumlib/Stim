@@ -160,7 +160,7 @@ pybind_compiled_measurements_to_detection_events_converter_class(pybind11::modul
         "A tool for quickly converting measurements from an analyzed stabilizer circuit into detection events.");
 }
 
-CompiledMeasurementsToDetectionEventsConverter py_init_compiled_measurements_to_detection_events_converter(
+CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_measurements_to_detection_events_converter(
     const Circuit &circuit, bool skip_reference_sample) {
     simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
                                                  : TableauSimulator::reference_sample_circuit(circuit);
