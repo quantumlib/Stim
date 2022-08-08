@@ -1,0 +1,168 @@
+#include "stim/draw/json_obj.h"
+
+using namespace stim;
+using namespace stim_internal;
+
+JsonObj::JsonObj(int num) : num(num), type(0) {
+}
+JsonObj::JsonObj(size_t num) : num(num), type(0) {
+}
+JsonObj::JsonObj(double num) : num(num), type(0) {
+}
+
+JsonObj::JsonObj(std::string text) : text(text), type(1) {
+}
+
+JsonObj::JsonObj(const char *text) : text(text), type(1) {
+}
+
+JsonObj::JsonObj(std::map<std::string, JsonObj> map) : map(map), type(2) {
+}
+
+JsonObj::JsonObj(std::vector<JsonObj> arr) : arr(arr), type(3) {
+}
+
+JsonObj::~JsonObj() {
+    if (type == 1) {
+        text.~basic_string();
+    } else if (type == 2) {
+        map.~map<std::string, JsonObj>();
+    } else if (type == 3) {
+        arr.~vector<JsonObj>();
+    }
+    type = 0;
+}
+
+JsonObj::JsonObj(JsonObj &&other) noexcept {
+    if (this == &other) {
+        return;
+    }
+
+    (*this).~JsonObj();
+    if (other.type == 0) {
+        new (this) JsonObj(std::move(other.num));
+    } else if (other.type == 1) {
+        new (this) JsonObj(std::move(other.text));
+    } else if (other.type == 2) {
+        new (this) JsonObj(std::move(other.map));
+    } else if (other.type == 3) {
+        new (this) JsonObj(std::move(other.arr));
+    }
+}
+
+JsonObj::JsonObj(const JsonObj &other) {
+    if (this == &other) {
+        return;
+    }
+
+    (*this).~JsonObj();
+    if (other.type == 0) {
+        new (this) JsonObj(other.num);
+    } else if (other.type == 1) {
+        new (this) JsonObj(other.text);
+    } else if (other.type == 2) {
+        new (this) JsonObj(other.map);
+    } else if (other.type == 3) {
+        new (this) JsonObj(other.arr);
+    }
+}
+
+void JsonObj::write_str(const std::string &s, std::ostream &out) {
+    out << '"';
+    for (char c : s) {
+        if (c == '\0') {
+            out << "\\0";
+        } else if (c == '\n') {
+            out << "\\n";
+        } else if (c == '"') {
+            out << "\\\"";
+        } else if (c == '\\') {
+            out << "\\\\";
+        } else {
+            out << c;
+        }
+    }
+    out << '"';
+}
+
+void JsonObj::write(std::ostream &out) const {
+    if (type == 0) {
+        out << num;
+    } else if (type == 1) {
+        write_str(text, out);
+    } else if (type == 2) {
+        out << "{";
+        bool first = true;
+        for (const auto &e : map) {
+            if (first) {
+                first = false;
+            } else {
+                out << ',';
+            }
+            write_str(e.first, out);
+            out << ':';
+            e.second.write(out);
+        }
+        out << "}";
+    } else if (type == 3) {
+        out << "[";
+        bool first = true;
+        for (const auto &e : arr) {
+            if (first) {
+                first = false;
+            } else {
+                out << ',';
+            }
+            e.write(out);
+        }
+        out << "]";
+    } else {
+        throw std::invalid_argument("unknown type");
+    }
+}
+
+std::string JsonObj::str() const {
+    std::stringstream ss;
+    write(ss);
+    return ss.str();
+}
+
+char u6_to_base64_char(uint8_t v) {
+    if (v < 26) {
+        return 'A' + v;
+    } else if (v < 52) {
+        return 'a' + v - 26;
+    } else if (v < 62) {
+        return '0' + v - 52;
+    } else if (v == 62) {
+        return '+';
+    } else {
+        return '/';
+    }
+}
+
+void stim_internal::write_base64(const char *data, size_t n, std::ostream &out) {
+    uint32_t buf = 0;
+    size_t bits_in_buf = 0;
+    for (size_t k = 0; k < n; k++) {
+        buf <<= 8;
+        buf |= (uint8_t)data[k];
+        bits_in_buf += 8;
+        if (bits_in_buf == 24) {
+            out << u6_to_base64_char((buf >> 18) & 0x3F);
+            out << u6_to_base64_char((buf >> 12) & 0x3F);
+            out << u6_to_base64_char((buf >> 6) & 0x3F);
+            out << u6_to_base64_char((buf >> 0) & 0x3F);
+            bits_in_buf = 0;
+            buf = 0;
+        }
+    }
+
+    if (bits_in_buf) {
+        buf <<= (24 - bits_in_buf);
+        out << u6_to_base64_char((buf >> 18) & 0x3F);
+        out << u6_to_base64_char((buf >> 12) & 0x3F);
+        out << (bits_in_buf == 8 ? '=' : u6_to_base64_char((buf >> 6) & 0x3F));
+        out << '=';
+    }
+}

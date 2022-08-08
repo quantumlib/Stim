@@ -23,32 +23,7 @@
 
 namespace stim {
 
-struct JsonObj {
-    union {
-        double num;
-        std::string text;
-        std::map<std::string, JsonObj> map;
-        std::vector<JsonObj> arr;
-    };
-    uint8_t type;
-
-    JsonObj(int num);
-    JsonObj(size_t num);
-    JsonObj(double num);
-    JsonObj(std::string text);
-    JsonObj(const char *text);
-    JsonObj(std::map<std::string, JsonObj> map);
-    JsonObj(std::vector<JsonObj> arr);
-    ~JsonObj();
-    JsonObj(JsonObj &&other) noexcept;
-    JsonObj(const JsonObj &other);
-    static void write_str(const std::string &s, std::ostream &out);
-    void write(std::ostream &out) const;
-    std::string str() const;
-};
-
 std::string circuit_diagram_timeline_3d(const Circuit &circuit);
-void write_base64(const char *data, size_t n, std::ostream &out);
 
 }  // namespace stim
 
