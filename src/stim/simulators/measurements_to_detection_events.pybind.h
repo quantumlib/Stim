@@ -22,9 +22,11 @@
 #include "stim/circuit/circuit.h"
 #include "stim/mem/simd_bits.h"
 
+namespace stim_pybind {
+
 struct CompiledMeasurementsToDetectionEventsConverter {
     const bool skip_reference_sample;
-    const stim::simd_bits ref_sample;
+    const stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample;
     const uint64_t circuit_num_measurements;
     const uint64_t circuit_num_sweep_bits;
     const uint64_t circuit_num_detectors;
@@ -37,7 +39,7 @@ struct CompiledMeasurementsToDetectionEventsConverter {
     CompiledMeasurementsToDetectionEventsConverter(CompiledMeasurementsToDetectionEventsConverter &&) = default;
 
     CompiledMeasurementsToDetectionEventsConverter(
-        stim::simd_bits ref_sample, stim::Circuit circuit, bool skip_reference_sample);
+        stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample, stim::Circuit circuit, bool skip_reference_sample);
 
     pybind11::object convert(
         const pybind11::object &measurements,
@@ -65,5 +67,7 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
     pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c);
 CompiledMeasurementsToDetectionEventsConverter py_init_compiled_measurements_to_detection_events_converter(
     const stim::Circuit &circuit, bool skip_reference_sample);
+
+}
 
 #endif

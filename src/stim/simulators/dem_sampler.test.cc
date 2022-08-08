@@ -92,7 +92,7 @@ TEST(DemSampler, resample_combinations) {
         ASSERT_GT(sampler.det_buffer[2].popcnt(), 380 - 100);
         ASSERT_LT(sampler.det_buffer[2].popcnt(), 380 + 100);
 
-        simd_bits total = sampler.det_buffer[0];
+        simd_bits<MAX_BITWORD_WIDTH> total = sampler.det_buffer[0];
         total ^= sampler.det_buffer[1];
         total ^= sampler.det_buffer[2];
         ASSERT_FALSE(total.not_zero());

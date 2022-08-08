@@ -25,7 +25,7 @@
 namespace stim_pybind {
 
 struct CompiledMeasurementSampler {
-    const stim::simd_bits ref_sample;
+    const stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample;
     const stim::Circuit circuit;
     const bool skip_reference_sample;
     std::shared_ptr<std::mt19937_64> prng;
@@ -33,7 +33,7 @@ struct CompiledMeasurementSampler {
     CompiledMeasurementSampler(const CompiledMeasurementSampler &) = delete;
     CompiledMeasurementSampler(CompiledMeasurementSampler &&) = default;
     CompiledMeasurementSampler(
-        stim::simd_bits ref_sample,
+        stim::simd_bits<stim::MAX_BITWORD_WIDTH> ref_sample,
         stim::Circuit circuit,
         bool skip_reference_sample,
         std::shared_ptr<std::mt19937_64> prng);

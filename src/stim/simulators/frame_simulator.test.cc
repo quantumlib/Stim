@@ -90,7 +90,7 @@ TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
     }
 }
 
-bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref output) {
+bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref<MAX_BITWORD_WIDTH> output) {
     auto tableau_sim = TableauSimulator(SHARED_TEST_RNG(), circuit.count_qubits());
     size_t out_p = 0;
     bool pass = true;
@@ -118,7 +118,7 @@ TEST(FrameSimulator, test_util_is_output_possible) {
         "X 0\n"
         "M 0\n"
         "M 1\n");
-    auto data = simd_bits(2);
+    auto data = simd_bits<MAX_BITWORD_WIDTH>(2);
     data.u64[0] = 0;
     ASSERT_EQ(false, is_output_possible_promising_no_bare_resets(circuit, data));
     data.u64[0] = 1;
@@ -135,7 +135,7 @@ bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     auto samples = FrameSimulator::sample(circuit, reference_sample, 10, SHARED_TEST_RNG());
 
     for (size_t k = 0; k < 10; k++) {
-        simd_bits_range_ref sample = samples[k];
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> sample = samples[k];
         if (!is_output_possible_promising_no_bare_resets(circuit, sample)) {
             std::cerr << "Impossible output: ";
             for (size_t k2 = 0; k2 < circuit.count_measurements(); k2++) {
@@ -403,8 +403,8 @@ TEST(FrameSimulator, big_circuit_random_measurements) {
 }
 
 TEST(FrameSimulator, correlated_error) {
-    simd_bits ref(5);
-    simd_bits expected(5);
+    simd_bits<MAX_BITWORD_WIDTH> ref(5);
+    simd_bits<MAX_BITWORD_WIDTH> expected(5);
 
     expected.clear();
     ASSERT_EQ(
@@ -543,7 +543,7 @@ TEST(FrameSimulator, correlated_error) {
 }
 
 TEST(FrameSimulator, quantum_cannot_control_classical) {
-    simd_bits ref(128);
+    simd_bits<MAX_BITWORD_WIDTH> ref(128);
 
     // Quantum controlling classical operation is not allowed.
     ASSERT_THROW(
@@ -609,8 +609,8 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
 }
 
 TEST(FrameSimulator, classical_can_control_quantum) {
-    simd_bits ref(128);
-    simd_bits expected(5);
+    simd_bits<MAX_BITWORD_WIDTH> ref(128);
+    simd_bits<MAX_BITWORD_WIDTH> expected(5);
     expected.clear();
     expected[0] = true;
     expected[1] = true;
@@ -665,8 +665,8 @@ TEST(FrameSimulator, classical_can_control_quantum) {
 }
 
 TEST(FrameSimulator, classical_controls) {
-    simd_bits ref(128);
-    simd_bits expected(5);
+    simd_bits<MAX_BITWORD_WIDTH> ref(128);
+    simd_bits<MAX_BITWORD_WIDTH> expected(5);
 
     expected.clear();
     ASSERT_EQ(
@@ -783,7 +783,7 @@ TEST(FrameSimulator, record_gets_trimmed) {
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
         sim.measure_z(c.operations[0].target_data);
-        sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits(0));
+        sim.m_record.intermediate_write_unwritten_results_to(b, simd_bits<MAX_BITWORD_WIDTH>(0));
         ASSERT_LT(sim.m_record.storage.num_major_bits_padded(), 2500);
     }
 }
@@ -797,7 +797,7 @@ TEST(FrameSimulator, stream_huge_case) {
                 M 0 1 2 3
             }
         )CIRCUIT"),
-        simd_bits(0),
+        simd_bits<MAX_BITWORD_WIDTH>(0),
         256,
         tmp,
         SAMPLE_FORMAT_B8,
@@ -818,7 +818,7 @@ TEST(FrameSimulator, block_results_single_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -838,7 +838,7 @@ TEST(FrameSimulator, block_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -862,7 +862,7 @@ TEST(FrameSimulator, stream_results) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -880,7 +880,7 @@ TEST(FrameSimulator, stream_many_shots) {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {
@@ -901,7 +901,7 @@ TEST(FrameSimulator, stream_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -961,11 +961,11 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
 
 TEST(FrameSimulator, resets_vs_measurements) {
     auto check = [&](const char *circuit, std::vector<bool> results) {
-        simd_bits ref(results.size());
+        simd_bits<MAX_BITWORD_WIDTH> ref(results.size());
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
-        simd_bit_table t = FrameSimulator::sample(Circuit(circuit), ref, 100, SHARED_TEST_RNG());
+        simd_bit_table<MAX_BITWORD_WIDTH> t = FrameSimulator::sample(Circuit(circuit), ref, 100, SHARED_TEST_RNG());
         return !t.data.not_zero();
     };
 

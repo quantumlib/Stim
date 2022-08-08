@@ -62,16 +62,9 @@ but these concepts are explained to Stim at a low level (e.g. as circuits).
 Stim is not necessarily the abstraction that the user wants, but stim wants to implement low-level
 pieces simple enough and fast enough that the high-level pieces that the user wants can be built on top.
 - **Backwards compatibility.**
-Stim uses semantic versioning.
-Within a major version (1.X), stim guarantees backwards compatibility of its python API and of its command line API
-(modulo the usual caveats about allowing bug fixes and changing of undocumented-but-visible behavior
-such as the exact way floating point rounding error plays out).
-A specific example of something that is *not* allowed is to rename or remove a public method
-because "the API needs to be cleaner".
-The trickiest thing that *is* allowed is to fix a "trap"; to change a behavior that is actively
-causing users to do the wrong thing.
-A major exception is that stim DOESN'T guarantee backwards compatibility of the underlying C++ API,
-because this would often be a hindrance to extending the functionality exposed to the python API.
+Stim's python package uses semantic versioning.
+Within a major version (1.X), stim guarantees backwards compatibility of its python API and of its command line API.
+Note stim DOESN'T guarantee backwards compatibility of the underlying C++ API.
 
 # <a name="how-use-stim"></a>How do I use Stim?
 

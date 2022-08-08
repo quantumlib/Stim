@@ -32,7 +32,7 @@ MeasureRecordBatch::MeasureRecordBatch(size_t num_shots, size_t max_lookback)
 
 void MeasureRecordBatch::reserve_space_for_results(size_t count) {
     if (stored + count > storage.num_major_bits_padded()) {
-        simd_bit_table new_storage((stored + count) * 2, storage.num_minor_bits_padded());
+        simd_bit_table<MAX_BITWORD_WIDTH> new_storage((stored + count) * 2, storage.num_minor_bits_padded());
         new_storage.data.word_range_ref(0, storage.data.num_simd_words) = storage.data;
         storage = std::move(new_storage);
     }
@@ -45,14 +45,14 @@ void MeasureRecordBatch::reserve_noisy_space_for_results(const OperationData &ta
     biased_randomize_bits(p, storage[stored].u64, storage[stored + count].u64, rng);
 }
 
-void MeasureRecordBatch::xor_record_reserved_result(simd_bits_range_ref result) {
+void MeasureRecordBatch::xor_record_reserved_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result) {
     storage[stored] ^= result;
     storage[stored] &= shot_mask;
     stored++;
     unwritten++;
 }
 
-void MeasureRecordBatch::record_result(simd_bits_range_ref result) {
+void MeasureRecordBatch::record_result(simd_bits_range_ref<MAX_BITWORD_WIDTH> result) {
     reserve_space_for_results(1);
     storage[stored] = result;
     storage[stored] &= shot_mask;
@@ -60,7 +60,7 @@ void MeasureRecordBatch::record_result(simd_bits_range_ref result) {
     unwritten++;
 }
 
-simd_bits_range_ref MeasureRecordBatch::lookback(size_t lookback) const {
+simd_bits_range_ref<MAX_BITWORD_WIDTH> MeasureRecordBatch::lookback(size_t lookback) const {
     if (lookback > stored) {
         throw std::out_of_range("Referred to a measurement record before the beginning of time.");
     }
@@ -83,7 +83,7 @@ void MeasureRecordBatch::mark_all_as_written() {
 }
 
 void MeasureRecordBatch::intermediate_write_unwritten_results_to(
-    MeasureRecordBatchWriter &writer, simd_bits_range_ref ref_sample) {
+    MeasureRecordBatchWriter &writer, simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample) {
     while (unwritten >= 1024) {
         auto slice = storage.slice_maj(stored - unwritten, stored - unwritten + 1024);
         for (size_t k = 0; k < 1024; k++) {
@@ -105,7 +105,7 @@ void MeasureRecordBatch::intermediate_write_unwritten_results_to(
 }
 
 void MeasureRecordBatch::final_write_unwritten_results_to(
-    MeasureRecordBatchWriter &writer, simd_bits_range_ref ref_sample) {
+    MeasureRecordBatchWriter &writer, simd_bits_range_ref<MAX_BITWORD_WIDTH> ref_sample) {
     size_t n = stored;
     for (size_t k = n - unwritten; k < n; k++) {
         bool invert = written < ref_sample.num_bits_padded() && ref_sample[written];

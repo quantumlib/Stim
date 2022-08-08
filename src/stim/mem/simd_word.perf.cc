@@ -20,7 +20,7 @@
 using namespace stim;
 
 BENCHMARK(simd_compat_popcnt) {
-    simd_bits d(1024 * 256);
+    simd_bits<MAX_BITWORD_WIDTH> d(1024 * 256);
     std::mt19937_64 rng(0);
     d.randomize(d.num_bits_padded(), rng);
 

@@ -22,7 +22,7 @@ using namespace stim;
 
 BENCHMARK(simd_bits_randomize_10K) {
     size_t n = 10 * 1000;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     std::mt19937_64 rng(0);
     benchmark_go([&]() {
         data.randomize(n, rng);
@@ -33,8 +33,8 @@ BENCHMARK(simd_bits_randomize_10K) {
 
 BENCHMARK(simd_bits_xor_10K) {
     size_t n = 10 * 1000;
-    simd_bits d1(n);
-    simd_bits d2(n);
+    simd_bits<MAX_BITWORD_WIDTH> d1(n);
+    simd_bits<MAX_BITWORD_WIDTH> d2(n);
     benchmark_go([&]() {
         d2 ^= d1;
     })
@@ -44,10 +44,14 @@ BENCHMARK(simd_bits_xor_10K) {
 
 BENCHMARK(simd_bits_not_zero_100K) {
     size_t n = 10 * 100;
-    simd_bits d(n);
+    simd_bits<MAX_BITWORD_WIDTH> d(n);
+    size_t total = 0;
     benchmark_go([&]() {
-        d.not_zero();
+        total += d.not_zero();
     })
         .goal_nanos(4)
         .show_rate("Bits", n);
+    if (total) {
+        std::cerr << "data dependency";
+    }
 }

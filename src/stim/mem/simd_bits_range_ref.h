@@ -27,18 +27,21 @@
 
 namespace stim {
 
+template <size_t W>
 constexpr size_t min_bits_to_num_bits_padded(size_t min_bits) {
-    return (min_bits + (sizeof(simd_word) * 8 - 1)) & ~(sizeof(simd_word) * 8 - 1);
+    return (min_bits + (sizeof(bitword<W>) * 8 - 1)) & ~(sizeof(bitword<W>) * 8 - 1);
 }
 
+template <size_t W>
 constexpr size_t min_bits_to_num_simd_words(size_t min_bits) {
-    return (min_bits_to_num_bits_padded(min_bits) / sizeof(simd_word)) >> 3;
+    return (min_bits_to_num_bits_padded<W>(min_bits) / sizeof(bitword<W>)) >> 3;
 }
 
 /// A reference to a range of bits that support SIMD operations (e.g. they are aligned and padded correctly).
 ///
 /// Conceptually behaves the same as a reference like `int &`, as opposed to a pointer like `int *`. For example, the
 /// `=` operator overwrites the contents of the range being referenced instead of changing which range is pointed to.
+template <size_t W>
 struct simd_bits_range_ref {
     union {
         // It is fair to say that this is the most dangerous block, or danger-enabling block, in the entire codebase.
@@ -46,15 +49,13 @@ struct simd_bits_range_ref {
         // If you know how to make something *for sure work as a flexibly-accessible bag of bits*, please fix this.
         // In the meantime, always build with `-fno-strict-aliasing` and a short ritual prayer to the compiler gods.
         uint8_t *const u8;
-        uint16_t *const u16;
-        uint32_t *const u32;
         uint64_t *const u64;
-        simd_word *const ptr_simd;
+        bitword<W> *const ptr_simd;
     };
     const size_t num_simd_words;
 
     /// Construct a simd_bits_range_ref from a given pointer and word count.
-    simd_bits_range_ref(simd_word *ptr_simd, size_t num_simd_words);
+    simd_bits_range_ref(bitword<W> *ptr_simd, size_t num_simd_words);
 
     /// Overwrite assignment.
     simd_bits_range_ref operator=(
@@ -85,7 +86,7 @@ struct simd_bits_range_ref {
     }
     /// Returns a reference to a sub-range of the bits at the start of this simd_bits.
     inline simd_bits_range_ref prefix_ref(size_t unpadded_bit_length) {
-        return simd_bits_range_ref(ptr_simd, min_bits_to_num_simd_words(unpadded_bit_length));
+        return simd_bits_range_ref(ptr_simd, min_bits_to_num_simd_words<W>(unpadded_bit_length));
     }
     /// Returns a reference to a sub-range of the bits in the referenced range.
     inline simd_bits_range_ref word_range_ref(size_t word_offset, size_t sub_num_simd_words) {
@@ -116,28 +117,28 @@ struct simd_bits_range_ref {
 
     /// Number of 64 bit words in the referenced range.
     inline size_t num_u64_padded() const {
-        return num_simd_words * (sizeof(simd_word) / sizeof(uint64_t));
+        return num_simd_words * (sizeof(bitword<W>) / sizeof(uint64_t));
     }
     /// Number of 32 bit words in the referenced range.
     inline size_t num_u32_padded() const {
-        return num_simd_words * (sizeof(simd_word) / sizeof(uint32_t));
+        return num_simd_words * (sizeof(bitword<W>) / sizeof(uint32_t));
     }
     /// Number of 16 bit words in the referenced range.
     inline size_t num_u16_padded() const {
-        return num_simd_words * (sizeof(simd_word) / sizeof(uint16_t));
+        return num_simd_words * (sizeof(bitword<W>) / sizeof(uint16_t));
     }
     /// Number of 8 bit words in the referenced range.
     inline size_t num_u8_padded() const {
-        return num_simd_words * (sizeof(simd_word) / sizeof(uint8_t));
+        return num_simd_words * (sizeof(bitword<W>) / sizeof(uint8_t));
     }
     /// Number of bits in the referenced range.
     inline size_t num_bits_padded() const {
-        return num_simd_words * sizeof(simd_word) << 3;
+        return num_simd_words * sizeof(bitword<W>) << 3;
     }
 
     /// Runs a function on each word in the range, in sequential order.
     ///
-    /// The words are passed by reference and have type simd_word.
+    /// The words are passed by reference and have type bitword<W>.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -165,7 +166,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from two ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type simd_word.
+    /// The words are passed by reference and have type bitword<W>.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -180,7 +181,7 @@ struct simd_bits_range_ref {
     ///
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
-    inline void for_each_word(simd_bits_range_ref other, FUNC body) const {
+    inline void for_each_word(simd_bits_range_ref<W> other, FUNC body) const {
         auto *v0 = ptr_simd;
         auto *v1 = other.ptr_simd;
         auto *v0_end = v0 + num_simd_words;
@@ -193,7 +194,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from three ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type simd_word.
+    /// The words are passed by reference and have type bitword<W>.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -209,7 +210,7 @@ struct simd_bits_range_ref {
     ///
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
-    inline void for_each_word(simd_bits_range_ref other1, simd_bits_range_ref other2, FUNC body) const {
+    inline void for_each_word(simd_bits_range_ref<W> other1, simd_bits_range_ref<W> other2, FUNC body) const {
         auto *v0 = ptr_simd;
         auto *v1 = other1.ptr_simd;
         auto *v2 = other2.ptr_simd;
@@ -224,7 +225,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from four ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type simd_word.
+    /// The words are passed by reference and have type bitword<W>.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -242,7 +243,7 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(
-        simd_bits_range_ref other1, simd_bits_range_ref other2, simd_bits_range_ref other3, FUNC body) const {
+        simd_bits_range_ref<W> other1, simd_bits_range_ref<W> other2, simd_bits_range_ref<W> other3, FUNC body) const {
         auto *v0 = ptr_simd;
         auto *v1 = other1.ptr_simd;
         auto *v2 = other2.ptr_simd;
@@ -259,7 +260,7 @@ struct simd_bits_range_ref {
 
     /// Runs a function on paired up words from five ranges, in sequential order.
     ///
-    /// The words are passed by reference and have type simd_word.
+    /// The words are passed by reference and have type bitword<W>.
     ///
     /// This is a boilerplate reduction method. It could be an iterator, but when experimenting I found that the
     /// compiler seemed much more amenable to inline the function in the way I wanted when using this approach rather
@@ -280,10 +281,10 @@ struct simd_bits_range_ref {
     /// HACK: Templating the function type makes inlining significantly more likely.
     template <typename FUNC>
     inline void for_each_word(
-        simd_bits_range_ref other1,
-        simd_bits_range_ref other2,
-        simd_bits_range_ref other3,
-        simd_bits_range_ref other4,
+        simd_bits_range_ref<W> other1,
+        simd_bits_range_ref<W> other2,
+        simd_bits_range_ref<W> other3,
+        simd_bits_range_ref<W> other4,
         FUNC body) const {
         auto *v0 = ptr_simd;
         auto *v1 = other1.ptr_simd;
@@ -316,11 +317,15 @@ struct simd_bits_range_ref {
             }
         }
     }
+
 };
 
 /// Writes a description of the contents of the range to `out`.
-std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref m);
+template <size_t W>
+std::ostream &operator<<(std::ostream &out, const simd_bits_range_ref<W> m);
 
 }  // namespace stim
+
+#include "stim/mem/simd_bits_range_ref.inl"
 
 #endif

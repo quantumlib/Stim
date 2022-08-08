@@ -36,10 +36,10 @@ struct PauliStringRef {
     bit_ref sign;
     /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use vectorized instructions.
     /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
-    simd_bits_range_ref xs, zs;
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> xs, zs;
 
     /// Constructs a PauliStringRef pointing at the given sign, x, and z data.
-    PauliStringRef(size_t num_qubits, bit_ref sign, simd_bits_range_ref xs, simd_bits_range_ref zs);
+    PauliStringRef(size_t num_qubits, bit_ref sign, simd_bits_range_ref<MAX_BITWORD_WIDTH> xs, simd_bits_range_ref<MAX_BITWORD_WIDTH> zs);
 
     /// Equality.
     bool operator==(const PauliStringRef &other) const;

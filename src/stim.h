@@ -17,6 +17,10 @@
 #ifndef _STIM_H
 #define _STIM_H
 
+/// WARNING: THE STIM C++ API MAKES NO COMPATIBILITY GUARANTEES.
+/// It may change arbitrarily and catastrophically from minor version to minor version.
+/// If you need a stable API, use stim's Python API.
+
 #include "stim/arg_parse.h"
 #include "stim/circuit/circuit.h"
 #include "stim/circuit/gate_data.h"

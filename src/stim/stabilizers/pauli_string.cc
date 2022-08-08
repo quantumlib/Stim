@@ -127,8 +127,8 @@ void PauliString::ensure_num_qubits(size_t min_num_qubits) {
         return;
     }
 
-    simd_bits new_xs(min_num_qubits);
-    simd_bits new_zs(min_num_qubits);
+    simd_bits<MAX_BITWORD_WIDTH> new_xs(min_num_qubits);
+    simd_bits<MAX_BITWORD_WIDTH> new_zs(min_num_qubits);
     new_xs.truncated_overwrite_from(xs, num_qubits);
     new_zs.truncated_overwrite_from(zs, num_qubits);
     xs = std::move(new_xs);

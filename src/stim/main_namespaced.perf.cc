@@ -84,7 +84,7 @@ BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(0);
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
@@ -99,7 +99,7 @@ BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(circuit.count_measurements());
+    simd_bits<MAX_BITWORD_WIDTH> ref(circuit.count_measurements());
     benchmark_go([&]() {
         rewind(out);
         detector_samples_out(circuit, 1, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
@@ -114,7 +114,7 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(0);
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
@@ -129,7 +129,7 @@ BENCHMARK(main_sample256_pauliframe_b8_rep_d1000_r1000_stream) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(0);
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         FrameSimulator::sample_out(circuit, ref, 256, out, SAMPLE_FORMAT_B8, rng);
@@ -144,7 +144,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r100) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(0);
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);
@@ -159,7 +159,7 @@ BENCHMARK(main_sample256_detectors_b8_rep_d1000_r1000_stream) {
     auto circuit = make_rep_code(distance, rounds);
     FILE *out = tmpfile();
     std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits ref(0);
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
     benchmark_go([&]() {
         rewind(out);
         detector_samples_out(circuit, 256, false, true, out, SAMPLE_FORMAT_B8, rng, nullptr, SAMPLE_FORMAT_01);

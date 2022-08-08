@@ -99,15 +99,15 @@ struct MeasureRecordWriterFormatDets : MeasureRecordWriter {
     void write_end() override;
 };
 
-simd_bit_table transposed_vs_ref(
-    size_t num_samples_raw, const simd_bit_table &table, const simd_bits &reference_sample);
+simd_bit_table<MAX_BITWORD_WIDTH> transposed_vs_ref(
+    size_t num_samples_raw, const simd_bit_table<MAX_BITWORD_WIDTH> &table, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample);
 
 void write_table_data(
     FILE *out,
     size_t num_shots,
     size_t num_measurements,
-    const simd_bits &reference_sample,
-    const simd_bit_table &table,
+    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
     SampleFormat format,
     char dets_prefix_1,
     char dets_prefix_2,
