@@ -86,41 +86,11 @@ simd_bit_table simd_bit_table::inverse_assuming_lower_triangular(size_t n) const
     return result;
 }
 
-template <uint8_t step>
-void rc_address_bit_swap(simd_bit_table &table, size_t base, size_t end) {
-    auto mask = simd_word::tile64(interleave_mask(step));
-    for (size_t major = base; major < end; major++, major += major & step) {
-        table[major].for_each_word(table[major + step], [&mask](simd_word &a, simd_word &b) {
-            auto t0 = a ^ b.leftshift_tile64(step);
-            auto t1 = a.rightshift_tile64(step) ^ b;
-            a ^= mask.andnot(t0);
-            b ^= mask & t1;
-        });
-    }
-}
-
-template <uint8_t step>
-void rc3456_address_bit_rotate_swap(simd_bit_table &table, size_t m1, size_t m2) {
-    for (size_t major = m1; major < m2; major++, major += major & step) {
-        table[major].for_each_word(table[major + step], [](simd_word &a, simd_word &b) {
-            a.do_interleave8_tile128(b);
-        });
-    }
-}
-
-void rc_address_word_swap(simd_bit_table &t) {
-    constexpr uint16_t block_diameter = sizeof(uint64_t) << 4;
-    constexpr uint8_t block_shift = lg(block_diameter);
-    size_t n = t.num_major_bits_padded();
-    size_t num_blocks = n >> block_shift;
-    auto *words = &t.data.ptr_simd[0].u128[0];
-    for (size_t block_row = 0; block_row < num_blocks; block_row++) {
-        for (size_t block_col = block_row + 1; block_col < num_blocks; block_col++) {
-            size_t rc = block_row * n + block_col;
-            size_t cr = block_col * n + block_row;
-            for (size_t k = 0; k < n; k += num_blocks) {
-                std::swap(words[rc + k], words[cr + k]);
-            }
+void exchange_low_indices(simd_bit_table &table) {
+    for (size_t maj_high = 0; maj_high < table.num_simd_words_major; maj_high++) {
+        auto *block_start = table.data.ptr_simd + (maj_high << simd_word::BIT_POW) * table.num_simd_words_minor;
+        for (size_t min_high = 0; min_high < table.num_simd_words_minor; min_high++) {
+            simd_word::inplace_transpose_square(block_start + min_high, table.num_simd_words_minor);
         }
     }
 }
@@ -128,18 +98,25 @@ void rc_address_word_swap(simd_bit_table &t) {
 void simd_bit_table::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
 
-    size_t n = num_major_bits_padded();
-    for (size_t base = 0; base < n; base += 128) {
-        size_t end = base + 128;
-        rc3456_address_bit_rotate_swap<64>(*this, base, end);
-        rc3456_address_bit_rotate_swap<32>(*this, base, end);
-        rc_address_bit_swap<1>(*this, base, end);
-        rc_address_bit_swap<2>(*this, base, end);
-        rc_address_bit_swap<4>(*this, base, end);
-        rc3456_address_bit_rotate_swap<16>(*this, base, end);
-        rc3456_address_bit_rotate_swap<8>(*this, base, end);
+    // Current address tensor indices: [...min_low ...min_high ...maj_low ...maj_high]
+
+    exchange_low_indices(*this);
+
+    // Current address tensor indices: [...maj_low ...min_high ...min_low ...maj_high]
+
+    // Permute data such that high address bits of majors and minors are exchanged.
+    for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
+        for (size_t min_high = maj_high + 1; min_high < num_simd_words_minor; min_high++) {
+            for (size_t maj_low = 0; maj_low < simd_word::BIT_SIZE; maj_low++) {
+                std::swap(
+                    data.ptr_simd[(maj_low + (maj_high << simd_word::BIT_POW)) * num_simd_words_minor + min_high],
+                    data.ptr_simd[(maj_low + (min_high << simd_word::BIT_POW)) * num_simd_words_minor + maj_high]
+                );
+            }
+        }
     }
-    rc_address_word_swap(*this);
+
+    // Current address tensor indices: [...maj_low ...maj_high ...min_low ...min_high]
 }
 
 simd_bit_table simd_bit_table::transposed() const {
@@ -160,25 +137,17 @@ void simd_bit_table::transpose_into(simd_bit_table &out) const {
     assert(out.num_simd_words_minor == num_simd_words_major);
     assert(out.num_simd_words_major == num_simd_words_minor);
 
-    auto n_maj = num_major_bits_padded();
-    auto n_min = num_minor_bits_padded();
-    for (size_t min = 0; min < n_min; min += 128) {
-        for (size_t maj = 0; maj < n_maj; maj += 128) {
-            for (size_t common = 0; common < 128; common++) {
-                auto *dst = &out[min | common].ptr_simd[0].u128[0];
-                auto *src = &(*this)[maj | common].ptr_simd[0].u128[0];
-                dst[maj >> 7] = src[min >> 7];
+    for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
+        for (size_t min_high = 0; min_high < num_simd_words_minor; min_high++) {
+            for (size_t maj_low = 0; maj_low < simd_word::BIT_SIZE; maj_low++) {
+                size_t src_index = (maj_low + (maj_high << simd_word::BIT_POW)) * num_simd_words_minor + min_high;
+                size_t dst_index = (maj_low + (min_high << simd_word::BIT_POW)) * out.num_simd_words_minor + maj_high;
+                out.data.ptr_simd[dst_index] = data.ptr_simd[src_index];
             }
         }
-        size_t end = min + 128;
-        rc3456_address_bit_rotate_swap<64>(out, min, end);
-        rc3456_address_bit_rotate_swap<32>(out, min, end);
-        rc_address_bit_swap<1>(out, min, end);
-        rc_address_bit_swap<2>(out, min, end);
-        rc_address_bit_swap<4>(out, min, end);
-        rc3456_address_bit_rotate_swap<16>(out, min, end);
-        rc3456_address_bit_rotate_swap<8>(out, min, end);
     }
+
+    exchange_low_indices(out);
 }
 
 simd_bit_table simd_bit_table::from_quadrants(

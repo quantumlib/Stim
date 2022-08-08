@@ -15,13 +15,13 @@
 #include "stim/mem/simd_util.h"
 
 template <uint64_t mask, uint64_t shift>
-void inplace_transpose_64x64_pass(uint64_t* data) {
+void inplace_transpose_64x64_pass(uint64_t* data, size_t stride) {
     for (size_t k = 0; k < 64; k++) {
         if (k & shift) {
             continue;
         }
-        uint64_t& x = data[k];
-        uint64_t& y = data[k + shift];
+        uint64_t& x = data[stride * k];
+        uint64_t& y = data[stride * (k + shift)];
         uint64_t a = x & mask;
         uint64_t b = x & ~mask;
         uint64_t c = y & mask;
@@ -31,11 +31,11 @@ void inplace_transpose_64x64_pass(uint64_t* data) {
     }
 }
 
-void stim::inplace_transpose_64x64(uint64_t* data) {
-    inplace_transpose_64x64_pass<0x5555555555555555UL, 1>(data);
-    inplace_transpose_64x64_pass<0x3333333333333333UL, 2>(data);
-    inplace_transpose_64x64_pass<0x0F0F0F0F0F0F0F0FUL, 4>(data);
-    inplace_transpose_64x64_pass<0x00FF00FF00FF00FFUL, 8>(data);
-    inplace_transpose_64x64_pass<0x0000FFFF0000FFFFUL, 16>(data);
-    inplace_transpose_64x64_pass<0x00000000FFFFFFFFUL, 32>(data);
+void stim::inplace_transpose_64x64(uint64_t* data, size_t stride) {
+    inplace_transpose_64x64_pass<0x5555555555555555UL, 1>(data, stride);
+    inplace_transpose_64x64_pass<0x3333333333333333UL, 2>(data, stride);
+    inplace_transpose_64x64_pass<0x0F0F0F0F0F0F0F0FUL, 4>(data, stride);
+    inplace_transpose_64x64_pass<0x00FF00FF00FF00FFUL, 8>(data, stride);
+    inplace_transpose_64x64_pass<0x0000FFFF0000FFFFUL, 16>(data, stride);
+    inplace_transpose_64x64_pass<0x00000000FFFFFFFFUL, 32>(data, stride);
 }

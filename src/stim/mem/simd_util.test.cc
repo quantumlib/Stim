@@ -36,7 +36,7 @@ simd_bits reference_transpose_of(size_t bit_width, const simd_bits &data) {
 }
 
 template <size_t w>
-uint8_t determine_permutation_bit(const std::function<void(simd_bits &)> &func, uint8_t bit) {
+uint8_t determine_permutation_bit_else_0xFF(const std::function<void(simd_bits &)> &func, uint8_t bit) {
     auto data = simd_bits(1 << w);
     data[1 << bit] = true;
     func(data);
@@ -47,19 +47,19 @@ uint8_t determine_permutation_bit(const std::function<void(simd_bits &)> &func, 
         }
     }
     if (seen != 1) {
-        throw std::runtime_error("Not a permutation.");
+        return 0xFF;
     }
     for (uint8_t k = 0; k < w; k++) {
         if (data[1 << k]) {
             return k;
         }
     }
-    throw std::runtime_error("Not a permutation.");
+    return 0xFF;
 }
 
 template <size_t w>
-bool function_performs_address_bit_permutation(
-    const std::function<void(simd_bits &)> &func, const std::vector<uint8_t> &bit_permutation) {
+std::string determine_if_function_performs_bit_permutation_helper(
+    const std::function<void(simd_bits &)> &func, const std::array<uint8_t, w> &bit_permutation) {
     size_t area = 1 << w;
     auto data = simd_bits::random(area, SHARED_TEST_RNG());
     auto expected = simd_bits(area);
@@ -76,30 +76,307 @@ bool function_performs_address_bit_permutation(
     func(data);
     bool result = data == expected;
     if (!result) {
-        std::vector<uint8_t> perm;
-        std::cerr << "actual permutation:";
+        std::stringstream ss;
+        std::array<uint8_t, w> perm;
+        ss << "actual permutation:";
         for (uint8_t k = 0; k < w; k++) {
-            auto v = (uint32_t)determine_permutation_bit<w>(func, k);
-            std::cerr << " " << v << ",";
-            perm.push_back(v);
+            auto v = (uint32_t)determine_permutation_bit_else_0xFF<w>(func, k);
+            if (v == 0xFF) {
+                ss << " [not a permutation],";
+            } else {
+                ss << " " << v << ",";
+            }
+            perm[k] = v;
         }
-        std::cerr << "\n";
+        ss << "\n";
         if (perm == bit_permutation) {
-            std::cerr << "[BUT PERMUTATION ACTS INCORRECTLY ON SOME BITS.]\n";
+            ss << "[BUT PERMUTATION ACTS INCORRECTLY ON SOME BITS.]\n";
+        }
+        return ss.str();
+    }
+    return "";
+}
+
+template <size_t w>
+void EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION(
+    const std::function<void(simd_bits &)> &func, const std::array<uint8_t, w> &bit_permutation) {
+    size_t area = 1 << w;
+    auto data = simd_bits::random(area, SHARED_TEST_RNG());
+    auto expected = simd_bits(area);
+
+    for (size_t k_in = 0; k_in < area; k_in++) {
+        size_t k_out = 0;
+        for (size_t bit = 0; bit < w; bit++) {
+            if ((k_in >> bit) & 1) {
+                k_out ^= 1 << bit_permutation[bit];
+            }
+        }
+        expected[k_out] = data[k_in];
+    }
+    func(data);
+    if (data != expected) {
+        std::stringstream ss;
+        std::array<uint8_t, w> perm;
+        ss << "\nexpected permutation:";
+        for (const auto &e : bit_permutation) {
+            ss << " " << (int)e << ",";
+        }
+
+        ss << "\n  actual permutation:";
+        for (uint8_t k = 0; k < w; k++) {
+            auto v = (uint32_t)determine_permutation_bit_else_0xFF<w>(func, k);
+            if (v == 0xFF) {
+                ss << " [not a permutation],";
+            } else {
+                ss << " " << v << ",";
+            }
+            perm[k] = v;
+        }
+        ss << "\n";
+        if (perm == bit_permutation) {
+            ss << "[BUT PERMUTATION ACTS INCORRECTLY ON SOME BITS.]\n";
+        }
+        EXPECT_TRUE(false) << ss.str();
+    }
+}
+
+TEST(simd_util, inplace_transpose_64x64) {
+    simd_bits data = simd_bits::random(64 * 64, SHARED_TEST_RNG());
+    simd_bits copy = data;
+    inplace_transpose_64x64(copy.u64, 1);
+    for (size_t i = 0; i < 64; i++) {
+        for (size_t j = 0; j < 64; j++) {
+            ASSERT_EQ(data[i * 64 + j], copy[j * 64 + i]);
         }
     }
-    return result;
+}
+
+TEST(simd_util, inplace_transpose_64x64_permutation) {
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<12>(
+        [](simd_bits &d) {
+            inplace_transpose_64x64(d.u64, 1);
+        },
+        {
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+        });
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<13>(
+        [](simd_bits &d) {
+            inplace_transpose_64x64(d.u64, 1);
+            inplace_transpose_64x64(d.u64 + 64, 1);
+        },
+        {
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            12,
+        });
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<13>(
+        [](simd_bits &d) {
+            inplace_transpose_64x64(d.u64, 2);
+            inplace_transpose_64x64(d.u64 + 1, 2);
+        },
+        {
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            6,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+        });
+}
+
+TEST(simd_util, inplace_transpose_128x128_permutation) {
+    if (simd_word::BIT_SIZE != 128) {
+        std::cerr << "SKIPPED inplace_transpose_128x128_permutation";
+        return;
+    }
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<14>(
+        [](simd_bits &d) {
+            simd_word::inplace_transpose_square(d.ptr_simd, 1);
+        },
+        {
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+        });
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<15>(
+        [](simd_bits &d) {
+            simd_word::inplace_transpose_square(d.ptr_simd, 1);
+            simd_word::inplace_transpose_square(d.ptr_simd + 128, 1);
+        },
+        {
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            14,
+        });
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<15>(
+        [](simd_bits &d) {
+            simd_word::inplace_transpose_square(d.ptr_simd, 2);
+            simd_word::inplace_transpose_square(d.ptr_simd + 1, 2);
+        },
+        {
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            7,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+        });
+}
+
+TEST(simd_util, inplace_transpose_256x256_permutation) {
+    if (simd_word::BIT_SIZE != 256) {
+        std::cerr << "SKIPPED inplace_transpose_256x256_permutation";
+        return;
+    }
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<16>(
+        [](simd_bits &d) {
+            simd_word::inplace_transpose_square(d.ptr_simd, 1);
+        },
+        {
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+        });
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<17>(
+        [](simd_bits &d) {
+            simd_word::inplace_transpose_square(d.ptr_simd, 1);
+            simd_word::inplace_transpose_square(d.ptr_simd + 256, 1);
+        },
+        {
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            16,
+        });
+
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<17>(
+        [](simd_bits &d) {
+            simd_word::inplace_transpose_square(d.ptr_simd, 2);
+            simd_word::inplace_transpose_square(d.ptr_simd + 1, 2);
+        },
+        {
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            8,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+        });
 }
 
 TEST(simd_bit_matrix, transpose) {
-    ASSERT_TRUE(function_performs_address_bit_permutation<20>(
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<20>(
         [](simd_bits &d) {
             d = reference_transpose_of(1024, d);
         },
         {
             10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-        }));
-    ASSERT_TRUE(function_performs_address_bit_permutation<18>(
+        });
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<18>(
         [](simd_bits &d) {
             simd_bit_table t(512, 512);
             t.data = d;
@@ -125,8 +402,8 @@ TEST(simd_bit_matrix, transpose) {
             6,
             7,
             8,
-        }));
-    ASSERT_TRUE(function_performs_address_bit_permutation<20>(
+        });
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<20>(
         [](simd_bits &d) {
             simd_bit_table t(1024, 1024);
             t.data = d;
@@ -135,8 +412,8 @@ TEST(simd_bit_matrix, transpose) {
         },
         {
             10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-        }));
-    ASSERT_TRUE(function_performs_address_bit_permutation<19>(
+        });
+    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<19>(
         [](simd_bits &d) {
             simd_bit_table t(512, 1024);
             t.data = d;
@@ -145,7 +422,7 @@ TEST(simd_bit_matrix, transpose) {
         },
         {
             9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-        }));
+        });
 }
 
 TEST(simd_util, interleave_mask) {
@@ -170,17 +447,6 @@ TEST(simd_util, popcnt64) {
                 v |= bits[i] << i;
             }
             ASSERT_EQ(popcnt64(v), expected);
-        }
-    }
-}
-
-TEST(simd_util, inplace_transpose_64x64) {
-    simd_bits data = simd_bits::random(64 * 64, SHARED_TEST_RNG());
-    simd_bits copy = data;
-    inplace_transpose_64x64(copy.u64);
-    for (size_t i = 0; i < 64; i++) {
-        for (size_t j = 0; j < 64; j++) {
-            ASSERT_EQ(data[i * 64 + j], copy[j * 64 + i]);
         }
     }
 }

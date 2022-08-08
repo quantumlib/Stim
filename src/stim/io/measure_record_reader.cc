@@ -112,9 +112,8 @@ void MeasureRecordReader::move_obs_in_shots_to_mask_assuming_sorted(SparseShot &
     }
 }
 
-size_t MeasureRecordReader::read_into_table_with_major_shot_index(simd_bit_table &out_table) {
+size_t MeasureRecordReader::read_into_table_with_major_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t read_shots = 0;
-    size_t max_shots = out_table.num_major_bits_padded();
     while (read_shots < max_shots && start_and_read_entire_record(out_table[read_shots])) {
         read_shots++;
     }
@@ -153,8 +152,7 @@ bool MeasureRecordReaderFormat01::expects_empty_serialized_data_for_each_shot() 
     return false;
 }
 
-size_t MeasureRecordReaderFormat01::read_into_table_with_minor_shot_index(simd_bit_table &out_table) {
-    size_t max_shots = out_table.num_minor_bits_padded();
+size_t MeasureRecordReaderFormat01::read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t read_shots = 0;
     while (read_shots < max_shots) {
         bool more = start_and_read_entire_record_helper(
@@ -196,8 +194,7 @@ bool MeasureRecordReaderFormatB8::start_and_read_entire_record(simd_bits_range_r
     return true;
 }
 
-size_t MeasureRecordReaderFormatB8::read_into_table_with_minor_shot_index(simd_bit_table &out_table) {
-    size_t max_shots = out_table.num_minor_bits_padded();
+size_t MeasureRecordReaderFormatB8::read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t n = bits_per_record();
     if (n == 0) {
         return 0;  // Ambiguous when the data ends. Stop as early as possible.
@@ -287,8 +284,7 @@ bool MeasureRecordReaderFormatHits::expects_empty_serialized_data_for_each_shot(
     return false;
 }
 
-size_t MeasureRecordReaderFormatHits::read_into_table_with_minor_shot_index(simd_bit_table &out_table) {
-    size_t max_shots = out_table.num_minor_bits_padded();
+size_t MeasureRecordReaderFormatHits::read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t read_shots = 0;
     out_table.clear();
     while (read_shots < max_shots) {
@@ -329,8 +325,7 @@ bool MeasureRecordReaderFormatR8::expects_empty_serialized_data_for_each_shot() 
     return false;
 }
 
-size_t MeasureRecordReaderFormatR8::read_into_table_with_minor_shot_index(simd_bit_table &out_table) {
-    size_t max_shots = out_table.num_minor_bits_padded();
+size_t MeasureRecordReaderFormatR8::read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t read_shots = 0;
     out_table.clear();
     while (read_shots < max_shots) {
@@ -374,8 +369,7 @@ bool MeasureRecordReaderFormatDets::expects_empty_serialized_data_for_each_shot(
     return false;
 }
 
-size_t MeasureRecordReaderFormatDets::read_into_table_with_minor_shot_index(simd_bit_table &out_table) {
-    size_t max_shots = out_table.num_minor_bits_padded();
+size_t MeasureRecordReaderFormatDets::read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t read_shots = 0;
     out_table.clear();
     while (read_shots < max_shots) {
@@ -423,7 +417,7 @@ bool MeasureRecordReaderFormatPTB64::load_cache() {
 
     // Convert from bit interleaving to uint64_t interleaving.
     for (size_t k = 0; k < n; k += 64) {
-        inplace_transpose_64x64(buf.u64 + k);
+        inplace_transpose_64x64(buf.u64 + k, 1);
     }
 
     num_unread_shots_in_buf = 64;
@@ -478,13 +472,14 @@ bool MeasureRecordReaderFormatPTB64::expects_empty_serialized_data_for_each_shot
     return bits_per_record() == 0;
 }
 
-size_t MeasureRecordReaderFormatPTB64::read_into_table_with_minor_shot_index(simd_bit_table &out_table) {
+size_t MeasureRecordReaderFormatPTB64::read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t n = bits_per_record();
     if (n == 0) {
         return 0;  // Ambiguous when the data ends. Stop as early as possible.
     }
-    size_t max_shots = out_table.num_minor_bits_padded();
-    assert(max_shots % 64 == 0);
+    if (max_shots % 64 != 0) {
+        throw std::invalid_argument("max_shots must be a multiple of 64 when using PTB64 format");
+    }
     for (size_t shots_read = 0; shots_read < max_shots; shots_read += 64) {
         for (size_t bit = 0; bit < n; bit++) {
             size_t read = fread(&out_table[bit].u64[shots_read >> 6], 1, sizeof(uint64_t), in);
@@ -502,13 +497,12 @@ size_t MeasureRecordReaderFormatPTB64::read_into_table_with_minor_shot_index(sim
     return max_shots;
 }
 
-size_t MeasureRecordReaderFormatPTB64::read_into_table_with_major_shot_index(simd_bit_table &out_table) {
+size_t MeasureRecordReaderFormatPTB64::read_into_table_with_major_shot_index(simd_bit_table &out_table, size_t max_shots) {
     size_t n = bits_per_record();
     if (n == 0) {
         return 0;  // Ambiguous when the data ends. Stop as early as possible.
     }
     uint64_t buffer[64];
-    size_t max_shots = out_table.num_minor_bits_padded();
     assert(max_shots % 64 == 0);
     for (size_t shot = 0; shot < max_shots; shot += 64) {
         for (size_t bit = 0; bit < n; bit += 64) {
@@ -528,7 +522,7 @@ size_t MeasureRecordReaderFormatPTB64::read_into_table_with_major_shot_index(sim
                     }
                 }
             }
-            inplace_transpose_64x64(buffer);
+            inplace_transpose_64x64(buffer, 1);
             for (size_t s = 0; s < 64; s++) {
                 out_table[shot + s].u64[bit >> 6] = buffer[s];
             }
@@ -552,8 +546,8 @@ size_t stim::read_file_data_into_shot_table(
         dets_char == 'D' ? num_bits_per_shot : 0,
         dets_char == 'L' ? num_bits_per_shot : 0);
     if (shots_is_major_index_of_out_table) {
-        return reader->read_into_table_with_major_shot_index(out_table);
+        return reader->read_into_table_with_major_shot_index(out_table, max_shots);
     } else {
-        return reader->read_into_table_with_minor_shot_index(out_table);
+        return reader->read_into_table_with_minor_shot_index(out_table, max_shots);
     }
 }
