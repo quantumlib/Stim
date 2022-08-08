@@ -153,7 +153,7 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
 }
 
 pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>
-pybind_compiled_measurements_to_detection_events_converter_class(pybind11::module &m) {
+stim_pybind::pybind_compiled_measurements_to_detection_events_converter_class(pybind11::module &m) {
     return pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>(
         m,
         "CompiledMeasurementsToDetectionEventsConverter",
