@@ -876,6 +876,56 @@ Circuit::Circuit(const char *text) {
     append_from_text(text);
 }
 
+DetectorsAndObservables::DetectorsAndObservables(DetectorsAndObservables &&other) noexcept
+    : jagged_detector_data(other.jagged_detector_data.total_allocated()),
+      detectors(std::move(other.detectors)),
+      observables(std::move(other.observables)) {
+    // Keep a local copy of the detector data.
+    for (PointerRange<uint64_t> &e : detectors) {
+        e = jagged_detector_data.take_copy(e);
+    }
+}
+
+DetectorsAndObservables &DetectorsAndObservables::operator=(DetectorsAndObservables &&other) noexcept {
+    observables = std::move(other.observables);
+    detectors = std::move(other.detectors);
+
+    // Keep a local copy of the detector data.
+    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
+    for (PointerRange<uint64_t> &e : detectors) {
+        e = jagged_detector_data.take_copy(e);
+    }
+
+    return *this;
+}
+
+DetectorsAndObservables::DetectorsAndObservables(const DetectorsAndObservables &other)
+    : jagged_detector_data(other.jagged_detector_data.total_allocated()),
+      detectors(other.detectors),
+      observables(other.observables) {
+    // Keep a local copy of the detector data.
+    for (PointerRange<uint64_t> &e : detectors) {
+        e = jagged_detector_data.take_copy(e);
+    }
+}
+
+DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndObservables &other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    observables = other.observables;
+    detectors = other.detectors;
+
+    // Keep a local copy of the detector data.
+    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
+    for (PointerRange<uint64_t> &e : detectors) {
+        e = jagged_detector_data.take_copy(e);
+    }
+
+    return *this;
+}
+
 size_t Circuit::count_qubits() const {
     return (uint32_t)max_operation_property([](const Operation &op) -> uint32_t {
         uint32_t r = 0;
