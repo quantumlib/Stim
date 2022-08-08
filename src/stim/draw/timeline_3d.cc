@@ -6,7 +6,7 @@ using namespace stim;
 using namespace stim_internal;
 
 struct V3 {
-    std::array<double, 3> xyz;
+    std::array<float, 3> xyz;
     bool operator<(V3 other) const {
         if (xyz[0] != other.xyz[0]) {
             return xyz[0] < other.xyz[0];
@@ -20,6 +20,7 @@ struct V3 {
         return xyz == other.xyz;
     }
 };
+
 struct Triangle {
     V3 c;
     std::array<V3, 3> v;
@@ -37,6 +38,34 @@ JsonObj make_buffer(const std::vector<T> items) {
     };
 }
 
+struct Material {
+    std::string name;
+    std::array<float, 4> base_color_factor_rgba;
+    float metallic_factor;
+    float roughness_factor;
+    bool double_sided;
+
+    std::pair<std::string, JsonObj> to_named_json() {
+        return {name, to_json()};
+    }
+
+    JsonObj to_json() {
+        return std::map<std::string, JsonObj>{
+            {"name", name},
+            {"pbrMetallicRoughness", std::map<std::string, JsonObj>{
+                {"baseColorFactor", std::vector<JsonObj>{
+                    base_color_factor_rgba[0],
+                    base_color_factor_rgba[1],
+                    base_color_factor_rgba[2],
+                    base_color_factor_rgba[3],
+                }},
+                {"metallicFactor", metallic_factor},
+                {"roughnessFactor", roughness_factor}}},
+            {"doubleSided", double_sided},
+        };
+    }
+};
+
 std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
     constexpr size_t GL_UNSIGNED_SHORT = 5123;
     constexpr size_t GL_FLOAT = 5126;
@@ -51,23 +80,22 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
     std::map<V3, size_t> color_to_material_index = {};
     std::map<V3, size_t> vertex_to_index = {};
     std::vector<JsonObj> materials;
+    materials.push_back(Material{
+        .name="reddish",
+        .base_color_factor_rgba={1, 0, 0.1, 1},
+        .metallic_factor=0.1,
+        .roughness_factor=0.5,
+        .double_sided=true,
+    }.to_json());
+    std::map<std::string, size_t> material_index_map;
+    for (size_t k = 0; k < materials.size(); k++) {
+        material_index_map.insert({materials[k].map.at("name").text, k});
+    }
+
     std::vector<JsonObj> meshes;
-    std::vector<std::vector<std::array<V3, 3>>> triangle_lists;
+    std::vector<std::vector<std::array<V3, 3>>> triangle_lists{{}};
     std::vector<float> vert_data;
     for (const auto &t : triangles) {
-        auto color_key = t.c;
-        if (color_to_material_index.find(color_key) == color_to_material_index.end()) {
-            triangle_lists.push_back({});
-            color_to_material_index[color_key] = materials.size();
-            materials.push_back(std::map<std::string, JsonObj>{
-                {"pbrMetallicRoughness", std::map<std::string, JsonObj>{
-                    {"baseColorFactor", std::vector<JsonObj>{t.c.xyz[0], t.c.xyz[1], t.c.xyz[2], 1.0}},
-                    {"metallicFactor", 0.5},
-                    {"roughnessFactor", 0.1},
-                }},
-            });
-        }
-        auto color_id = color_to_material_index.at(color_key);
         for (V3 v : t.v) {
             V3 vertex_key = v;
             if (vertex_to_index.find(vertex_key) == vertex_to_index.end()) {
@@ -78,7 +106,7 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
                 }
             }
         }
-        triangle_lists[color_id].push_back(t.v);
+        triangle_lists[0].push_back(t.v);
     }
 
     std::vector<JsonObj> buffer_views{
@@ -90,6 +118,18 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         },
     };
 
+    V3 v_min{INFINITY, INFINITY, INFINITY};
+    V3 v_max{-INFINITY, -INFINITY, -INFINITY};
+    for (const auto &a : triangle_lists) {
+        for (const auto &b : a) {
+            for (const auto &c : b) {
+                for (size_t k = 0; k < 3; k++) {
+                    v_min.xyz[k] = std::min(v_min.xyz[k], c.xyz[k]);
+                    v_max.xyz[k] = std::max(v_max.xyz[k], c.xyz[k]);
+                }
+            }
+        }
+    }
     std::vector<JsonObj> accessors{
         std::map<std::string, JsonObj>{
             {"bufferView", 0},
@@ -97,8 +137,8 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
             {"componentType", GL_FLOAT},
             {"count", vert_data.size() / 3},
             {"type", "VEC3"},
-            {"min", std::vector<JsonObj>{-100, -100, -100}},
-            {"max", std::vector<JsonObj>{100, 100, 100}},
+            {"min", std::vector<JsonObj>{v_min.xyz[0], v_min.xyz[1], v_min.xyz[2]}},
+            {"max", std::vector<JsonObj>{v_max.xyz[0], v_max.xyz[1], v_max.xyz[2]}},
         },
     };
 
@@ -113,9 +153,6 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
             index_data.push_back(a);
             index_data.push_back(b);
             index_data.push_back(c);
-            index_data.push_back(c);
-            index_data.push_back(b);
-            index_data.push_back(a);
         }
 
         meshes.push_back(std::map<std::string, JsonObj>{
@@ -123,7 +160,7 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
              std::vector<JsonObj>{{std::map<std::string, JsonObj>{
                  {"attributes", {std::map<std::string, JsonObj>{{"POSITION", 0}}}},
                  {"indices", mesh_index + 1},
-                 {"material", mesh_index},
+                 {"material", material_index_map.at("reddish")},
                  {"mode", GL_TRIANGLE_STRIP},
              }}}}});
 
@@ -137,7 +174,7 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
             {"bufferView", mesh_index + 1},
             {"byteOffset", 0},
             {"componentType", GL_UNSIGNED_SHORT},
-            {"count", tlist.size() * 6},
+            {"count", tlist.size() * 3},
             {"type", "SCALAR"},
             {"max", std::vector<JsonObj>{vertex_to_index.size() - 1}},
             {"min", std::vector<JsonObj>{0}},

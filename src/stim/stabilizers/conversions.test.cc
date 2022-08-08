@@ -21,31 +21,6 @@
 
 using namespace stim;
 
-TEST(conversions, is_power_of_2) {
-    ASSERT_FALSE(is_power_of_2(0));
-    ASSERT_TRUE(is_power_of_2(1));
-    ASSERT_TRUE(is_power_of_2(2));
-    ASSERT_FALSE(is_power_of_2(3));
-    ASSERT_TRUE(is_power_of_2(4));
-    ASSERT_FALSE(is_power_of_2(5));
-    ASSERT_FALSE(is_power_of_2(6));
-    ASSERT_FALSE(is_power_of_2(7));
-    ASSERT_TRUE(is_power_of_2(8));
-    ASSERT_FALSE(is_power_of_2(9));
-}
-
-TEST(conversions, floor_lg2) {
-    ASSERT_EQ(floor_lg2(1), 0);
-    ASSERT_EQ(floor_lg2(2), 1);
-    ASSERT_EQ(floor_lg2(3), 1);
-    ASSERT_EQ(floor_lg2(4), 2);
-    ASSERT_EQ(floor_lg2(5), 2);
-    ASSERT_EQ(floor_lg2(6), 2);
-    ASSERT_EQ(floor_lg2(7), 2);
-    ASSERT_EQ(floor_lg2(8), 3);
-    ASSERT_EQ(floor_lg2(9), 3);
-}
-
 TEST(conversions, unitary_circuit_inverse) {
     ASSERT_EQ(
         unitary_circuit_inverse(Circuit(R"CIRCUIT(

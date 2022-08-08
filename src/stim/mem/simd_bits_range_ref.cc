@@ -123,7 +123,7 @@ size_t simd_bits_range_ref::popcnt() const {
     auto end = u64 + num_u64_padded();
     size_t result = 0;
     for (const uint64_t *p = u64; p != end; p++) {
-        result += popcnt64(*p);
+        result += std::popcount(*p);
     }
     return result;
 }

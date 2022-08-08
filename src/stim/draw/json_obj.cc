@@ -3,6 +3,8 @@
 using namespace stim;
 using namespace stim_internal;
 
+JsonObj::JsonObj(bool boolean) : boolean(boolean), type(4) {
+}
 JsonObj::JsonObj(int num) : num(num), type(0) {
 }
 JsonObj::JsonObj(size_t num) : num(num), type(0) {
@@ -47,6 +49,11 @@ JsonObj::JsonObj(JsonObj &&other) noexcept {
         new (this) JsonObj(std::move(other.map));
     } else if (other.type == 3) {
         new (this) JsonObj(std::move(other.arr));
+    } else if (other.type == 4) {
+        new (this) JsonObj(std::move(other.boolean));
+    } else {
+        // Not handled.
+        assert(false);
     }
 }
 
@@ -64,6 +71,11 @@ JsonObj::JsonObj(const JsonObj &other) {
         new (this) JsonObj(other.map);
     } else if (other.type == 3) {
         new (this) JsonObj(other.arr);
+    } else if (other.type == 4) {
+        new (this) JsonObj(other.boolean);
+    } else {
+        // Not handled.
+        assert(false);
     }
 }
 
@@ -116,6 +128,8 @@ void JsonObj::write(std::ostream &out) const {
             e.write(out);
         }
         out << "]";
+    } else if (type == 4) {
+        out << (boolean ? "true" : "false");
     } else {
         throw std::invalid_argument("unknown type");
     }

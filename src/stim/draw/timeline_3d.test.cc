@@ -21,7 +21,7 @@
 using namespace stim;
 
 TEST(circuit_diagram_timeline_3d, XXXXXXXXXXX) {
-    FILE *f = fopen("/home/craiggidney/w/stim/model.gltf", "w");
+    FILE *f = fopen("/usr/local/google/home/craiggidney/tmp/test.gltf", "w");
     auto s = circuit_diagram_timeline_3d(Circuit());
     fprintf(f, "%s", s.data());
     fclose(f);

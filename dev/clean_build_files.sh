@@ -24,3 +24,4 @@ rm bazel-testlogs -rf
 rm Testing -rf
 rm out -rf
 rm cmake-build-debug -rf
+rm .cmake -rf

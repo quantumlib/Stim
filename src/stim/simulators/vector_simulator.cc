@@ -165,7 +165,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     float mag2 = 0;
     for (size_t i = 0; i < state.size(); i++) {
         bool reject = observable.sign;
-        reject ^= (popcnt64(i & mask) & 1) != 0;
+        reject ^= (std::popcount(i & mask) & 1) != 0;
         if (reject) {
             state[i] = 0;
         } else {

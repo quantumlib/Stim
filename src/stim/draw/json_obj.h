@@ -29,9 +29,11 @@ struct JsonObj {
         std::string text;
         std::map<std::string, JsonObj> map;
         std::vector<JsonObj> arr;
+        bool boolean;
     };
     uint8_t type;
 
+    JsonObj(bool boolean);
     JsonObj(int num);
     JsonObj(size_t num);
     JsonObj(double num);
