@@ -73,7 +73,7 @@ struct PauliString {
     bool sign;
     /// The Paulis in the Pauli string, densely bit packed in a fashion enabling the use vectorized instructions.
     /// Paulis are xz-encoded (P=xz: I=00, X=10, Y=11, Z=01) pairwise across the two bit vectors.
-    simd_bits xs, zs;
+    simd_bits<MAX_BITWORD_WIDTH> xs, zs;
 
     /// Identity constructor.
     explicit PauliString(size_t num_qubits);

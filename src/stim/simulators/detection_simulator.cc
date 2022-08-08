@@ -20,14 +20,14 @@ using namespace stim;
 
 template <typename T>
 void xor_measurement_set_into_result(
-    const T &measurement_set, simd_bit_table &frame_samples, simd_bit_table &output, size_t &output_index_ticker) {
-    simd_bits_range_ref dst = output[output_index_ticker++];
+    const T &measurement_set, simd_bit_table<MAX_BITWORD_WIDTH> &frame_samples, simd_bit_table<MAX_BITWORD_WIDTH> &output, size_t &output_index_ticker) {
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dst = output[output_index_ticker++];
     for (auto i : measurement_set) {
         dst ^= frame_samples[i];
     }
 }
 
-simd_bit_table stim::detector_samples(
+simd_bit_table<MAX_BITWORD_WIDTH> stim::detector_samples(
     const Circuit &circuit,
     const DetectorsAndObservables &det_obs,
     size_t num_shots,
@@ -35,12 +35,12 @@ simd_bit_table stim::detector_samples(
     bool append_observables,
     std::mt19937_64 &rng) {
     // Start from measurement samples.
-    simd_bit_table frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
+    simd_bit_table<MAX_BITWORD_WIDTH> frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
 
     auto num_detectors = det_obs.detectors.size();
     auto num_obs = det_obs.observables.size();
     size_t num_results = num_detectors + num_obs * (prepend_observables + append_observables);
-    simd_bit_table result(num_results, num_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> result(num_results, num_shots);
 
     // Xor together measurement samples to form detector samples.
     size_t offset = 0;
@@ -61,7 +61,7 @@ simd_bit_table stim::detector_samples(
     return result;
 }
 
-simd_bit_table stim::detector_samples(
+simd_bit_table<MAX_BITWORD_WIDTH> stim::detector_samples(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng) {
     return detector_samples(
         circuit, DetectorsAndObservables(circuit), num_shots, prepend_observables, append_observables, rng);
@@ -75,14 +75,14 @@ void detector_sample_out_helper_stream(
     FILE *out,
     SampleFormat format) {
     MeasureRecordBatchWriter writer(out, num_samples, format);
-    std::vector<simd_bits> observables;
+    std::vector<simd_bits<MAX_BITWORD_WIDTH>> observables;
     sim.reset_all();
     writer.begin_result_type('D');
-    simd_bit_table detector_buffer(1024, num_samples);
+    simd_bit_table<MAX_BITWORD_WIDTH> detector_buffer(1024, num_samples);
     size_t buffered_detectors = 0;
     circuit.for_each_operation([&](const Operation &op) {
         if (op.gate->id == gate_name_to_id("DETECTOR")) {
-            simd_bits_range_ref result = detector_buffer[buffered_detectors];
+            simd_bits_range_ref<MAX_BITWORD_WIDTH> result = detector_buffer[buffered_detectors];
             result.clear();
             for (auto t : op.target_data.targets) {
                 assert(t.data & TARGET_RECORD_BIT);
@@ -99,7 +99,7 @@ void detector_sample_out_helper_stream(
                 while (observables.size() <= id) {
                     observables.emplace_back(num_samples);
                 }
-                simd_bits_range_ref result = observables[id];
+                simd_bits_range_ref<MAX_BITWORD_WIDTH> result = observables[id];
 
                 for (auto t : op.target_data.targets) {
                     assert(t.data & TARGET_RECORD_BIT);
@@ -160,15 +160,15 @@ void detector_samples_out_in_memory(
         circuit, det_obs, num_shots, prepend_observables, append_observables || obs_out != nullptr, rng);
 
     if (obs_out != nullptr) {
-        simd_bit_table obs_data(no, num_shots);
+        simd_bit_table<MAX_BITWORD_WIDTH> obs_data(no, num_shots);
         for (size_t k = 0; k < no; k++) {
             obs_data[k] = table[nd + k];
             table[nd + k].clear();
         }
-        write_table_data(obs_out, num_shots, no, simd_bits(0), obs_data, obs_out_format, 'L', 'L', no);
+        write_table_data(obs_out, num_shots, no, simd_bits<MAX_BITWORD_WIDTH>(0), obs_data, obs_out_format, 'L', 'L', no);
     }
 
-    write_table_data(out, num_shots, nd + no * obs_in_det_output, simd_bits(0), table, format, c1, c2, ct);
+    write_table_data(out, num_shots, nd + no * obs_in_det_output, simd_bits<MAX_BITWORD_WIDTH>(0), table, format, c1, c2, ct);
 }
 
 void detector_sample_out_helper(

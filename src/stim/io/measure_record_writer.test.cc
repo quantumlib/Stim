@@ -164,8 +164,8 @@ TEST(MeasureRecordWriter, FormatR8_LongGap) {
 }
 
 TEST(MeasureRecordWriter, write_table_data_small) {
-    simd_bit_table results(4, 5);
-    simd_bits ref_sample(0);
+    simd_bit_table<MAX_BITWORD_WIDTH> results(4, 5);
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample(0);
     results[1][0] ^= 1;
     results[1][1] ^= 1;
     results[1][2] ^= 1;
@@ -211,8 +211,8 @@ TEST(MeasureRecordWriter, write_table_data_small) {
 }
 
 TEST(MeasureRecordWriter, write_table_data_large) {
-    simd_bit_table results(100, 2);
-    simd_bits ref_sample(100);
+    simd_bit_table<MAX_BITWORD_WIDTH> results(100, 2);
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample(100);
     ref_sample[2] ^= true;
     ref_sample[3] ^= true;
     ref_sample[5] ^= true;

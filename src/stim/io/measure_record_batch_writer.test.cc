@@ -25,7 +25,7 @@ using namespace stim;
 TEST(MeasureRecordBatchWriter, basic_usage) {
     FILE *tmp = tmpfile();
     MeasureRecordBatchWriter w(tmp, 5, SAMPLE_FORMAT_01);
-    simd_bits v(5);
+    simd_bits<MAX_BITWORD_WIDTH> v(5);
     v[1] = true;
     w.batch_write_bit(v);
     w.write_end();

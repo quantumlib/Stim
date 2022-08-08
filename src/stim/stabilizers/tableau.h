@@ -29,9 +29,9 @@ namespace stim {
 
 struct TableauHalf {
     size_t num_qubits;
-    simd_bit_table xt;
-    simd_bit_table zt;
-    simd_bits signs;
+    simd_bit_table<MAX_BITWORD_WIDTH> xt;
+    simd_bit_table<MAX_BITWORD_WIDTH> zt;
+    simd_bits<MAX_BITWORD_WIDTH> signs;
     PauliStringRef operator[](size_t input_qubit);
     const PauliStringRef operator[](size_t input_qubit) const;
     TableauHalf(size_t num_qubits);

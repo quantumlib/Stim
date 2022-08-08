@@ -64,9 +64,6 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/io/sparse_shot.cc
         src/stim/main_namespaced.cc
         src/stim/mem/bit_ref.cc
-        src/stim/mem/simd_bit_table.cc
-        src/stim/mem/simd_bits.cc
-        src/stim/mem/simd_bits_range_ref.cc
         src/stim/mem/simd_word.cc
         src/stim/mem/simd_util.cc
         src/stim/mem/sparse_xor_vec.cc

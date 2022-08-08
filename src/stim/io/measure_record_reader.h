@@ -90,7 +90,7 @@ struct MeasureRecordReader {
     ///         The major axis of the table has length zero.
     ///         The reader is not at the start of a record.
     virtual size_t read_records_into(
-        simd_bit_table &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
+        simd_bit_table<MAX_BITWORD_WIDTH> &out, bool major_index_is_shot_index, size_t max_shots = UINT32_MAX);
 
     /// Reads an entire record from start to finish, returning False if there are no more records.
     /// The data from the record is bit packed into a simd_bits.
@@ -104,7 +104,7 @@ struct MeasureRecordReader {
     ///
     /// Throws:
     ///     std::invalid_argument: A record was only partially read.
-    virtual bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) = 0;
+    virtual bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) = 0;
 
     /// Reads an entire record from start to finish, returning False if there are no more records.
     /// The data from the record is stored as sparse indices-of-ones data.
@@ -134,7 +134,7 @@ struct MeasureRecordReader {
     ///
     /// Returns:
     ///     The number of shots that were read.
-    virtual size_t read_into_table_with_major_shot_index(simd_bit_table &out_table, size_t max_shots);
+    virtual size_t read_into_table_with_major_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots);
 
     /// Reads many records into a shot table.
     ///
@@ -147,7 +147,7 @@ struct MeasureRecordReader {
     ///
     /// Returns:
     ///     The number of shots that were read.
-    virtual size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) = 0;
+    virtual size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) = 0;
 
    protected:
     void move_obs_in_shots_to_mask_assuming_sorted(SparseShot &shot);
@@ -157,16 +157,16 @@ struct MeasureRecordReaderFormatPTB64 : MeasureRecordReader {
     FILE *in;
     // This buffer stores partially transposed shots.
     // The uint64_t for index k of shot s is stored in the buffer at offset k*64 + s.
-    simd_bits buf;
+    simd_bits<MAX_BITWORD_WIDTH> buf;
     size_t num_unread_shots_in_buf;
 
     MeasureRecordReaderFormatPTB64(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-    size_t read_into_table_with_major_shot_index(simd_bit_table &out_table, size_t max_shots) override;
-    size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) override;
+    size_t read_into_table_with_major_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
+    size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
 
    private:
     bool load_cache();
@@ -177,10 +177,10 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
 
     MeasureRecordReaderFormat01(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-    size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) override;
+    size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
 
    private:
     template <typename SAW0, typename SAW1>
@@ -225,10 +225,10 @@ struct MeasureRecordReaderFormatB8 : MeasureRecordReader {
 
     MeasureRecordReaderFormatB8(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-    size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) override;
+    size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
 };
 
 struct MeasureRecordReaderFormatHits : MeasureRecordReader {
@@ -236,10 +236,10 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
 
     MeasureRecordReaderFormatHits(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-    size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) override;
+    size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
 
    private:
     template <typename HANDLE_HIT>
@@ -274,10 +274,10 @@ struct MeasureRecordReaderFormatR8 : MeasureRecordReader {
 
     MeasureRecordReaderFormatR8(FILE *in, size_t num_measurements, size_t num_detectors, size_t num_observables);
 
-    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-    size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) override;
+    size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
 
    private:
     template <typename HANDLE_HIT>
@@ -319,10 +319,10 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
     MeasureRecordReaderFormatDets(
         FILE *in, size_t num_measurements, size_t num_detectors = 0, size_t num_observables = 0);
 
-    bool start_and_read_entire_record(simd_bits_range_ref dirty_out_buffer) override;
+    bool start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) override;
     bool start_and_read_entire_record(SparseShot &cleared_out) override;
     bool expects_empty_serialized_data_for_each_shot() const override;
-    size_t read_into_table_with_minor_shot_index(simd_bit_table &out_table, size_t max_shots) override;
+    size_t read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) override;
 
    private:
     template <typename HANDLE_HIT>
@@ -391,7 +391,7 @@ size_t read_file_data_into_shot_table(
     size_t num_bits_per_shot,
     SampleFormat format,
     char dets_char,
-    simd_bit_table &out_table,
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table,
     bool shots_is_major_index_of_out_table);
 
 }  // namespace stim

@@ -27,7 +27,7 @@ using namespace stim;
 using namespace stim_pybind;
 
 CompiledMeasurementsToDetectionEventsConverter::CompiledMeasurementsToDetectionEventsConverter(
-    simd_bits ref_sample, Circuit circuit, bool skip_reference_sample)
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample, Circuit circuit, bool skip_reference_sample)
     : skip_reference_sample(skip_reference_sample),
       ref_sample(ref_sample),
       circuit_num_measurements(circuit.count_measurements()),
@@ -100,10 +100,10 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
     bool separate_observables = pybind11::cast<bool>(separate_observables_obj);
     bool append_observables = pybind11::cast<bool>(append_observables_obj);
     size_t num_shots;
-    simd_bit_table measurements_minor_shot_index =
+    simd_bit_table<MAX_BITWORD_WIDTH> measurements_minor_shot_index =
         numpy_array_to_transposed_simd_table(measurements, circuit_num_measurements, &num_shots);
 
-    simd_bit_table sweep_bits_minor_shot_index{0, num_shots};
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_bits_minor_shot_index{0, num_shots};
     if (!sweep_bits.is_none()) {
         size_t num_sweep_shots;
         sweep_bits_minor_shot_index =
@@ -115,7 +115,7 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
 
     size_t num_intermediate_bits =
         circuit_num_detectors + circuit_num_observables * (append_observables || separate_observables);
-    simd_bit_table out_detection_results_minor_shot_index(num_intermediate_bits, num_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> out_detection_results_minor_shot_index(num_intermediate_bits, num_shots);
     stim::measurements_to_detection_events_helper(
         measurements_minor_shot_index,
         sweep_bits_minor_shot_index,
@@ -131,7 +131,7 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
     size_t num_output_bits = circuit_num_detectors + circuit_num_observables * append_observables;
     pybind11::object obs_data = pybind11::none();
     if (separate_observables) {
-        simd_bit_table obs_table(circuit_num_observables, num_shots);
+        simd_bit_table<MAX_BITWORD_WIDTH> obs_table(circuit_num_observables, num_shots);
         for (size_t obs = 0; obs < circuit_num_observables; obs++) {
             auto obs_slice = out_detection_results_minor_shot_index[circuit_num_detectors + obs];
             obs_table[obs] = obs_slice;
@@ -162,12 +162,12 @@ pybind_compiled_measurements_to_detection_events_converter_class(pybind11::modul
 
 CompiledMeasurementsToDetectionEventsConverter py_init_compiled_measurements_to_detection_events_converter(
     const Circuit &circuit, bool skip_reference_sample) {
-    simd_bits ref_sample = skip_reference_sample ? simd_bits(circuit.count_measurements())
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
                                                  : TableauSimulator::reference_sample_circuit(circuit);
     return CompiledMeasurementsToDetectionEventsConverter(ref_sample, circuit, skip_reference_sample);
 }
 
-void pybind_compiled_measurements_to_detection_events_converter_methods(
+void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_methods(
     pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
     c.def(
         pybind11::init(&py_init_compiled_measurements_to_detection_events_converter),

@@ -70,7 +70,7 @@ void stream_measurements_to_detection_events_helper(
     SampleFormat results_out_format,
     const Circuit &circuit,
     bool append_observables,
-    simd_bits_range_ref reference_sample,
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample,
     FILE *obs_out,
     SampleFormat obs_out_format,
     size_t num_measurements,
@@ -102,19 +102,19 @@ void stream_measurements_to_detection_events_helper(
 ///
 /// Returns:
 ///     Detection event data. Major axis is detector index (+ observable index). Minor axis is shot index.
-simd_bit_table measurements_to_detection_events(
-    const simd_bit_table &measurements__minor_shot_index,
-    const simd_bit_table &sweep_bits__minor_shot_index,
+simd_bit_table<MAX_BITWORD_WIDTH> measurements_to_detection_events(
+    const simd_bit_table<MAX_BITWORD_WIDTH> &measurements__minor_shot_index,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample);
 /// A variant of `stim::measurements_to_detection_events` with derived values passed in, not recomputed.
 void measurements_to_detection_events_helper(
-    const simd_bit_table &measurements__minor_shot_index,
-    const simd_bit_table &sweep_bits__minor_shot_index,
-    simd_bit_table &out_detection_results__minor_shot_index,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &measurements__minor_shot_index,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_detection_results__minor_shot_index,
     const Circuit &noiseless_circuit,
-    const simd_bits &reference_sample,
+    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
     bool append_observables,
     size_t num_measurements,
     size_t num_detectors,

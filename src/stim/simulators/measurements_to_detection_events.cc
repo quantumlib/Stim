@@ -28,11 +28,11 @@
 using namespace stim;
 
 void stim::measurements_to_detection_events_helper(
-    const simd_bit_table &measurements__minor_shot_index,
-    const simd_bit_table &sweep_bits__minor_shot_index,
-    simd_bit_table &out_detection_results__minor_shot_index,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &measurements__minor_shot_index,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_detection_results__minor_shot_index,
     const Circuit &noiseless_circuit,
-    const simd_bits &reference_sample,
+    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
     bool append_observables,
     size_t num_measurements,
     size_t num_detectors,
@@ -108,9 +108,9 @@ void stim::measurements_to_detection_events_helper(
     }
 }
 
-simd_bit_table stim::measurements_to_detection_events(
-    const simd_bit_table &measurements__minor_shot_index,
-    const simd_bit_table &sweep_bits__minor_shot_index,
+simd_bit_table<MAX_BITWORD_WIDTH> stim::measurements_to_detection_events(
+    const simd_bit_table<MAX_BITWORD_WIDTH> &measurements__minor_shot_index,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &sweep_bits__minor_shot_index,
     const Circuit &circuit,
     bool append_observables,
     bool skip_reference_sample) {
@@ -118,11 +118,11 @@ simd_bit_table stim::measurements_to_detection_events(
     size_t num_detectors = circuit.count_detectors();
     size_t num_observables = circuit.count_observables();
     size_t num_qubits = circuit.count_qubits();
-    simd_bits reference_sample(num_measurements);
+    simd_bits<MAX_BITWORD_WIDTH> reference_sample(num_measurements);
     if (!skip_reference_sample) {
         reference_sample = TableauSimulator::reference_sample_circuit(circuit);
     }
-    simd_bit_table out(
+    simd_bit_table<MAX_BITWORD_WIDTH> out(
         num_detectors + num_observables * append_observables, measurements__minor_shot_index.num_minor_bits_padded());
     measurements_to_detection_events_helper(
         measurements__minor_shot_index,
@@ -156,7 +156,7 @@ void stim::stream_measurements_to_detection_events(
     size_t num_detectors = circuit.count_detectors();
     size_t num_qubits = circuit.count_qubits();
     size_t num_sweep_bits = circuit.count_sweep_bits();
-    simd_bits reference_sample(num_measurements);
+    simd_bits<MAX_BITWORD_WIDTH> reference_sample(num_measurements);
     Circuit noiseless_circuit = circuit.aliased_noiseless_circuit();
     if (!skip_reference_sample) {
         reference_sample = TableauSimulator::reference_sample_circuit(circuit);
@@ -190,7 +190,7 @@ void stim::stream_measurements_to_detection_events_helper(
     SampleFormat results_out_format,
     const Circuit &noiseless_circuit,
     bool append_observables,
-    simd_bits_range_ref reference_sample,
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> reference_sample,
     FILE *obs_out,
     SampleFormat obs_out_format,
     size_t num_measurements,
@@ -215,10 +215,10 @@ void stim::stream_measurements_to_detection_events_helper(
     }
 
     // Buffers and transposed buffers.
-    simd_bit_table measurements__minor_shot_index(num_measurements, num_buffered_shots);
-    simd_bit_table out__minor_shot_index(num_out_bits, num_buffered_shots);
-    simd_bit_table out__major_shot_index(num_buffered_shots, num_out_bits);
-    simd_bit_table sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> measurements__minor_shot_index(num_measurements, num_buffered_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> out__minor_shot_index(num_out_bits, num_buffered_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> out__major_shot_index(num_buffered_shots, num_out_bits);
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_bits__minor_shot_index(num_sweep_bits_available, num_buffered_shots);
     if (reader->expects_empty_serialized_data_for_each_shot()) {
         throw std::invalid_argument(
             "Can't tell how many shots are in the measurement data.\n"
@@ -266,7 +266,7 @@ void stim::stream_measurements_to_detection_events_helper(
 
         // Write detection event data.
         for (size_t k = 0; k < record_count; k++) {
-            simd_bits_range_ref record = out__major_shot_index[k];
+            simd_bits_range_ref<MAX_BITWORD_WIDTH> record = out__major_shot_index[k];
             writer->begin_result_type('D');
             writer->write_bits(record.u8, num_detectors);
             if (append_observables) {

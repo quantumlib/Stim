@@ -57,7 +57,7 @@ TEST(read_unsigned_int, ValueTooBig) {
 void assert_contents_load_correctly(SampleFormat format, const std::string &contents) {
     FILE *tmp = tmpfile_with_contents(contents);
     auto reader = MeasureRecordReader::make(tmp, format, 18);
-    simd_bits buf(18);
+    simd_bits<MAX_BITWORD_WIDTH> buf(18);
     reader->start_and_read_entire_record(buf);
     ASSERT_EQ(buf[0], 0);
     ASSERT_EQ(buf[1], 0);
@@ -123,7 +123,7 @@ size_t read_records_as_bytes(FILE *in, PointerRange<uint8_t> buf, SampleFormat f
     if (buf.size() * 8 < reader->bits_per_record()) {
         throw std::invalid_argument("buf too small");
     }
-    simd_bits buf2(reader->bits_per_record());
+    simd_bits<MAX_BITWORD_WIDTH> buf2(reader->bits_per_record());
     bool success = reader->start_and_read_entire_record(buf2);
     EXPECT_TRUE(success);
     memcpy(buf.ptr_start, buf2.u8, (reader->bits_per_record() + 7) / 8);
@@ -216,7 +216,7 @@ TEST(MeasureRecordReader, Format01_WriteRead_MultipleRecords) {
 
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, bits_per_record);
 
-    simd_bits buf(num_bytes * 8);
+    simd_bits<MAX_BITWORD_WIDTH> buf(num_bytes * 8);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf.u8[i], record1[i]);
@@ -254,7 +254,7 @@ TEST(MeasureRecordReader, FormatHits_WriteRead_MultipleRecords) {
     rewind(tmp);
 
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, bits_per_record);
-    simd_bits buf(num_bytes * 8);
+    simd_bits<MAX_BITWORD_WIDTH> buf(num_bytes * 8);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf.u8[i], record1[i]);
@@ -292,7 +292,7 @@ TEST(MeasureRecordReader, FormatDets_WriteRead_MultipleRecords) {
     rewind(tmp);
 
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, bits_per_record);
-    simd_bits buf(num_bytes * 8);
+    simd_bits<MAX_BITWORD_WIDTH> buf(num_bytes * 8);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     for (size_t i = 0; i < num_bytes; ++i) {
         ASSERT_EQ(buf.u8[i], record1[i]);
@@ -315,7 +315,7 @@ TEST(MeasureRecordReader, Format01_MultipleRecords) {
     FILE *tmp = tmpfile_with_contents("111011001\n010000000\n101100011\n");
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, 9);
-    simd_bits buf(9);
+    simd_bits<MAX_BITWORD_WIDTH> buf(9);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
@@ -326,7 +326,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
     FILE *tmp = tmpfile_with_contents("shot M0\nshot M1\nshot M0\nshot\n");
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 2);
 
-    simd_bits buf(2);
+    simd_bits<MAX_BITWORD_WIDTH> buf(2);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_EQ(buf[0], 1);
     ASSERT_EQ(buf[1], 0);
@@ -345,7 +345,7 @@ TEST(MeasureRecordReader, FormatDets_MultipleShortRecords) {
 TEST(MeasureRecordReader, FormatDets_MultipleResultTypes_D0L0) {
     FILE *tmp = tmpfile_with_contents("shot D0 D3 D5 L1 L2\n");
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 0, 7, 4);
-    simd_bits buf(11);
+    simd_bits<MAX_BITWORD_WIDTH> buf(11);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_EQ(buf[0], 1);
     ASSERT_EQ(buf[1], 0);
@@ -371,14 +371,14 @@ TEST(MeasureRecordReader, Format01_InvalidInput) {
     FILE *tmp = tmpfile_with_contents("012\n");
     ASSERT_NE(tmp, nullptr);
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_01, 3);
-    simd_bits buf(3);
+    simd_bits<MAX_BITWORD_WIDTH> buf(3);
     ASSERT_THROW({ reader->start_and_read_entire_record(buf); }, std::invalid_argument);
 }
 
 TEST(MeasureRecordReader, FormatHits_InvalidInput) {
     FILE *tmp = tmpfile_with_contents("100,1\n");
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
-    simd_bits buf(3);
+    simd_bits<MAX_BITWORD_WIDTH> buf(3);
     ASSERT_THROW({ reader->start_and_read_entire_record(buf); }, std::invalid_argument);
 }
 
@@ -392,7 +392,7 @@ TEST(MeasureRecordReader, FormatHits_InvalidInput_sparse) {
 TEST(MeasureRecordReader, FormatHits_Repeated_Dense) {
     FILE *tmp = tmpfile_with_contents("1,1\n");
     auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_HITS, 3);
-    simd_bits buf(3);
+    simd_bits<MAX_BITWORD_WIDTH> buf(3);
     ASSERT_TRUE(reader->start_and_read_entire_record(buf));
     ASSERT_EQ(buf[0], 0);
     ASSERT_EQ(buf[1], 0);
@@ -417,7 +417,7 @@ TEST(MeasureRecordReader, FormatDets_InvalidInput_Sparse) {
 TEST(MeasureRecordReader, FormatDets_InvalidInput_Dense) {
     FILE *tmp = tmpfile_with_contents("D2\n");
     auto r = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_DETS, 3);
-    simd_bits buf(3);
+    simd_bits<MAX_BITWORD_WIDTH> buf(3);
     ASSERT_THROW({ r->start_and_read_entire_record(buf); }, std::invalid_argument);
 }
 
@@ -425,8 +425,8 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
     size_t n_shots = 100;
     size_t n_results = 512 - 8;
 
-    simd_bit_table shot_maj_data = simd_bit_table::random(n_shots, n_results, SHARED_TEST_RNG());
-    simd_bit_table shot_min_data = shot_maj_data.transposed();
+    simd_bit_table<MAX_BITWORD_WIDTH> shot_maj_data = simd_bit_table<MAX_BITWORD_WIDTH>::random(n_shots, n_results, SHARED_TEST_RNG());
+    simd_bit_table<MAX_BITWORD_WIDTH> shot_min_data = shot_maj_data.transposed();
     for (const auto &kv : format_name_to_enum_map) {
         SampleFormat format = kv.second.id;
         if (format == SampleFormat::SAMPLE_FORMAT_PTB64) {
@@ -448,7 +448,7 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
         rewind(f);
         {
             auto reader = MeasureRecordReader::make(f, format, n_results, 0, 0);
-            simd_bit_table read_shot_min_data(n_results, n_shots);
+            simd_bit_table<MAX_BITWORD_WIDTH> read_shot_min_data(n_results, n_shots);
             size_t n = reader->read_records_into(read_shot_min_data, false);
             EXPECT_EQ(n, n_shots) << kv.second.name << " (not striped)";
             EXPECT_EQ(read_shot_min_data, shot_min_data) << kv.second.name << " (not striped)";
@@ -458,7 +458,7 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
         rewind(f);
         {
             auto reader = MeasureRecordReader::make(f, format, n_results, 0, 0);
-            simd_bit_table read_shot_maj_data(n_shots, n_results);
+            simd_bit_table<MAX_BITWORD_WIDTH> read_shot_maj_data(n_shots, n_results);
             size_t n = reader->read_records_into(read_shot_maj_data, true);
             EXPECT_EQ(n, n_shots) << kv.second.name << " (striped)";
             EXPECT_EQ(read_shot_maj_data, shot_maj_data) << kv.second.name << " (striped)";
@@ -471,7 +471,7 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
 TEST(MeasureRecordReader, read_bits_into_bytes_entire_record_across_result_type) {
     FILE *f = tmpfile_with_contents("shot D1 L1");
     auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_DETS, 0, 3, 3);
-    simd_bit_table read(6, 1);
+    simd_bit_table<MAX_BITWORD_WIDTH> read(6, 1);
     size_t n = reader->read_records_into(read, false);
     fclose(f);
     ASSERT_EQ(n, 1);
@@ -490,7 +490,7 @@ TEST(MeasureRecordReader, read_r8_detection_event_data) {
     putc(4, f);
     rewind(f);
     auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_R8, 0, 3, 3);
-    simd_bit_table read(6, 2);
+    simd_bit_table<MAX_BITWORD_WIDTH> read(6, 2);
     size_t n = reader->read_records_into(read, false);
     fclose(f);
     ASSERT_EQ(n, 2);
@@ -516,7 +516,7 @@ TEST(MeasureRecordReader, read_b8_detection_event_data_full_run_together) {
     putc(3, f);
     rewind(f);
     auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_B8, 0, 27, 0);
-    simd_bit_table read(27, 1);
+    simd_bit_table<MAX_BITWORD_WIDTH> read(27, 1);
     size_t n = reader->read_records_into(read, false);
     fclose(f);
     ASSERT_EQ(n, 1);
@@ -533,7 +533,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
     size_t nd = n - no;
 
     // Compute expected data.
-    simd_bits test_data(n);
+    simd_bits<MAX_BITWORD_WIDTH> test_data(n);
     biased_randomize_bits(0.1, test_data.u64, test_data.u64 + test_data.num_u64_padded(), SHARED_TEST_RNG());
     SparseShot sparse_test_data;
     for (size_t k = 0; k < nd; k++) {
@@ -579,7 +579,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
             ASSERT_FALSE(reader->start_and_read_entire_record(sparse_out));
 
             rewind(f);
-            simd_bits dense_out(n);
+            simd_bits<MAX_BITWORD_WIDTH> dense_out(n);
             ASSERT_TRUE(reader->start_and_read_entire_record(dense_out));
             for (size_t k = 0; k < n; k++) {
                 ASSERT_EQ(dense_out[k], test_data[k]);
@@ -592,7 +592,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record) {
 }
 
 TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
-    simd_bits test_data(256);
+    simd_bits<MAX_BITWORD_WIDTH> test_data(256);
     SparseShot sparse_test_data;
 
     for (const auto &kv : format_name_to_enum_map) {
@@ -620,7 +620,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
             ASSERT_FALSE(reader->start_and_read_entire_record(sparse_out));
 
             rewind(f);
-            simd_bits dense_out(256);
+            simd_bits<MAX_BITWORD_WIDTH> dense_out(256);
             ASSERT_TRUE(reader->start_and_read_entire_record(dense_out));
             ASSERT_EQ(dense_out, test_data);
             ASSERT_FALSE(reader->start_and_read_entire_record(dense_out));
@@ -632,8 +632,8 @@ TEST(MeasureRecordReader, start_and_read_entire_record_all_zero) {
 
 TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
     FILE *f = tmpfile();
-    simd_bits saved1 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
-    simd_bits saved2 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
+    simd_bits<MAX_BITWORD_WIDTH> saved1 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
+    simd_bits<MAX_BITWORD_WIDTH> saved2 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
     for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved1.u8[k], f);
     }
@@ -642,7 +642,7 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
     }
     rewind(f);
 
-    simd_bits loaded(71);
+    simd_bits<MAX_BITWORD_WIDTH> loaded(71);
     auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_PTB64, 71, 0, 0);
     for (size_t shot = 0; shot < 64; shot++) {
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
@@ -661,8 +661,8 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
 
 TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
     FILE *f = tmpfile();
-    simd_bits saved1 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
-    simd_bits saved2 = simd_bits::random(64 * 71, SHARED_TEST_RNG());
+    simd_bits<MAX_BITWORD_WIDTH> saved1 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
+    simd_bits<MAX_BITWORD_WIDTH> saved2 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
     for (size_t k = 0; k < 64 * 71 / 8; k++) {
         putc(saved1.u8[k], f);
     }
@@ -708,26 +708,26 @@ TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
         }
         size_t bits_per_shot = 1000;
 
-        simd_bit_table expected(num_shots, bits_per_shot);
+        simd_bit_table<MAX_BITWORD_WIDTH> expected(num_shots, bits_per_shot);
         for (size_t shot = 0; shot < num_shots; shot++) {
             expected[shot].randomize(bits_per_shot, SHARED_TEST_RNG());
         }
-        simd_bit_table expected_transposed = expected.transposed();
+        simd_bit_table<MAX_BITWORD_WIDTH> expected_transposed = expected.transposed();
 
         RaiiTempNamedFile tmp;
         FILE *f = fopen(tmp.path.c_str(), "w");
-        write_table_data(f, num_shots, bits_per_shot, simd_bits(0), expected_transposed, format, 'M', 'M', 0);
+        write_table_data(f, num_shots, bits_per_shot, simd_bits<MAX_BITWORD_WIDTH>(0), expected_transposed, format, 'M', 'M', 0);
         fclose(f);
 
         f = fopen(tmp.path.c_str(), "r");
-        simd_bit_table output(num_shots, bits_per_shot);
+        simd_bit_table<MAX_BITWORD_WIDTH> output(num_shots, bits_per_shot);
         read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output, true);
         ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", not transposed";
         fclose(f);
         ASSERT_EQ(output, expected) << format_data.second.name << ", not transposed";
 
         f = fopen(tmp.path.c_str(), "r");
-        simd_bit_table output_transposed(bits_per_shot, num_shots);
+        simd_bit_table<MAX_BITWORD_WIDTH> output_transposed(bits_per_shot, num_shots);
         read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output_transposed, false);
         ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", yes transposed";
         fclose(f);

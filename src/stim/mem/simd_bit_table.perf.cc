@@ -20,7 +20,7 @@ using namespace stim;
 
 BENCHMARK(simd_bit_table_inplace_square_transpose_diam10K) {
     size_t n = 10 * 1000;
-    simd_bit_table table(n, n);
+    simd_bit_table<MAX_BITWORD_WIDTH> table(n, n);
     benchmark_go([&]() {
         table.do_square_transpose();
     })
@@ -30,8 +30,8 @@ BENCHMARK(simd_bit_table_inplace_square_transpose_diam10K) {
 
 BENCHMARK(simd_bit_table_out_of_place_transpose_diam10K) {
     size_t n = 10 * 1000;
-    simd_bit_table table(n, n);
-    simd_bit_table out(n, n);
+    simd_bit_table<MAX_BITWORD_WIDTH> table(n, n);
+    simd_bit_table<MAX_BITWORD_WIDTH> out(n, n);
     benchmark_go([&]() {
         table.transpose_into(out);
     })

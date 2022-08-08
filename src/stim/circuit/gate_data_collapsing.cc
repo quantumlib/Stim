@@ -556,8 +556,8 @@ void stim::decompose_mpp_operation(
     const std::function<void(
         const OperationData &h_xz, const OperationData &h_yz, const OperationData &cnot, const OperationData &meas)>
         &callback) {
-    simd_bits used(num_qubits);
-    simd_bits inner_used(num_qubits);
+    simd_bits<MAX_BITWORD_WIDTH> used(num_qubits);
+    simd_bits<MAX_BITWORD_WIDTH> inner_used(num_qubits);
     std::vector<GateTarget> h_xz;
     std::vector<GateTarget> h_yz;
     std::vector<GateTarget> cnot;

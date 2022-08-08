@@ -42,7 +42,7 @@ struct MeasureRecordBatchWriter {
     ///
     /// Args:
     ///     bits: The measurement results. The bit at offset k is the bit for the writer at offset k.
-    void batch_write_bit(simd_bits_range_ref bits);
+    void batch_write_bit(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits);
     /// Writes multiple separate measurement results to each MeasureRecordWriter.
     ///
     /// This method can be called after calling `batch_write_bit`, but for performance reasons it is recommended to not
@@ -54,7 +54,7 @@ struct MeasureRecordBatchWriter {
     ///         writer at offset k.
     ///     num_major_u64: The number of measurement results (divided by 64) for each writer. The actual number of
     ///         results is required to be a multiple of 64 for performance reasons.
-    void batch_write_bytes(const simd_bit_table &table, size_t num_major_u64);
+    void batch_write_bytes(const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_u64);
     /// Tells each writer to finish up, then concatenates all of their data into the `out` stream and cleans up.
     void write_end();
 };

@@ -36,7 +36,7 @@ namespace stim {
 ///
 /// Returns:
 ///     A simd_bit_table with detector/observable index as the major index and shot index as the minor index.
-simd_bit_table detector_samples(
+simd_bit_table<MAX_BITWORD_WIDTH> detector_samples(
     const Circuit &circuit, size_t num_shots, bool prepend_observables, bool append_observables, std::mt19937_64 &rng);
 
 /// Samples detection events from the circuit and returns them in a simd_bit_table.
@@ -54,7 +54,7 @@ simd_bit_table detector_samples(
 ///
 /// Returns:
 ///     A simd_bit_table with detector/observable index as the major index and shot index as the minor index.
-simd_bit_table detector_samples(
+simd_bit_table<MAX_BITWORD_WIDTH> detector_samples(
     const Circuit &circuit,
     const DetectorsAndObservables &det_obs,
     size_t num_shots,
