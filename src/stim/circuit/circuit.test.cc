@@ -386,11 +386,12 @@ TEST(circuit, pauli_err_1_validation) {
 }
 
 TEST(circuit, pauli_err_2_validation) {
-    Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1");
-    Circuit("PAULI_CHANNEL_2(0.1,0,0,0,0,0,0,0,0,0,0.1,0,0,0,0.1) 1");
-    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0.4,0,0,0,0,0.4,0,0,0,0,0,0,0,0,0.4) 1"); }, std::invalid_argument);
-    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1"); }, std::invalid_argument);
-    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1"); }, std::invalid_argument);
+    Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1 2");
+    Circuit("PAULI_CHANNEL_2(0.1,0,0,0,0,0,0,0,0,0,0.1,0,0,0,0.1) 1 2");
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0.1,0,0,0,0,0,0,0,0,0,0.1,0,0,0,0.1) 1"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0.4,0,0,0,0,0.4,0,0,0,0,0,0,0,0,0.4) 1 2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1 2"); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("PAULI_CHANNEL_2(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) 1 2"); }, std::invalid_argument);
 }
 
 TEST(circuit, qubit_coords) {
@@ -832,10 +833,18 @@ TEST(circuit, multiplication_repeats) {
         H 0
         M 0 1
     )CIRCUIT");
-    ASSERT_EQ((c * 2).str(), R"CIRCUIT(REPEAT 2 {
-    H 0
-    M 0 1
-})CIRCUIT");
+    ASSERT_EQ(c * 2, Circuit(R"CIRCUIT(
+        REPEAT 2 {
+            H 0
+            M 0 1
+        }
+    )CIRCUIT"));
+    ASSERT_EQ((c * 2) * 3, Circuit(R"CIRCUIT(
+        REPEAT 6 {
+            H 0
+            M 0 1
+        }
+    )CIRCUIT"));
 
     ASSERT_EQ(c * 0, Circuit());
     ASSERT_EQ(c * 1, c);
@@ -1086,6 +1095,8 @@ TEST(circuit, aliased_noiseless_circuit) {
     ASSERT_EQ(c1, noiseless);
     initial.clear();
     ASSERT_EQ(c1, c2);
+
+    ASSERT_EQ(Circuit("H 0\nX_ERROR(0.01) 0\nH 0").without_noise(), Circuit("H 0 0"));
 }
 
 TEST(circuit, validate_nan_probability) {
@@ -1302,4 +1313,106 @@ TEST(circuit, assignment_copies_operations) {
     c2 = c1;
     ASSERT_EQ(c2.operations.size(), 2);
     ASSERT_EQ(c1, c2);
+}
+
+TEST(circuit, flattened) {
+    ASSERT_EQ(Circuit().flattened(), Circuit());
+    ASSERT_EQ(Circuit("SHIFT_COORDS(1, 2)").flattened(), Circuit());
+    ASSERT_EQ(Circuit("H 1").flattened(), Circuit("H 1"));
+    ASSERT_EQ(Circuit("REPEAT 100 {\n}").flattened(), Circuit());
+    ASSERT_EQ(Circuit("REPEAT 3 {\nH 0\n}").flattened(), Circuit("H 0 0 0"));
+}
+
+TEST(circuit, approx_equals) {
+    Circuit ref(R"CIRCUIT(
+        H 0
+        X_ERROR(0.02) 0
+        QUBIT_COORDS(0.08, 0.06) 0
+    )CIRCUIT");
+
+    ASSERT_TRUE(ref.approx_equals(ref, 1e-4));
+    ASSERT_TRUE(ref.approx_equals(ref, 0));
+
+    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 0
+        X_ERROR(0.021) 0
+        QUBIT_COORDS(0.08, 0.06) 0
+    )CIRCUIT"), 1e-4));
+    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 0
+        X_ERROR(0.02) 0
+        QUBIT_COORDS(0.081, 0.06) 0
+    )CIRCUIT"), 1e-4));
+    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 0
+        X_ERROR(0.02) 0
+        QUBIT_COORDS(0.08, 0.06) 0
+        TICK
+    )CIRCUIT"), 1e-4));
+    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 0
+        X_ERROR(0.02) 0
+        REPEAT 1 {
+            QUBIT_COORDS(0.08, 0.06) 0
+        }
+    )CIRCUIT"), 1e-4));
+    ASSERT_TRUE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 0
+        X_ERROR(0.021) 0
+        QUBIT_COORDS(0.081, 0.06) 0
+    )CIRCUIT"), 1e-2));
+    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 1
+        X_ERROR(0.02) 0
+        QUBIT_COORDS(0.08, 0.06) 0
+    )CIRCUIT"), 100));
+    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+        H 0
+        QUBIT_COORDS(0.08, 0.06) 0
+        X_ERROR(0.02) 0
+    )CIRCUIT"), 100));
+    Circuit rep2(R"CIRCUIT(
+        H 0
+        X_ERROR(0.02) 0
+        REPEAT 1 {
+            QUBIT_COORDS(0.08, 0.06) 0
+        }
+    )CIRCUIT");
+    ASSERT_FALSE(ref.approx_equals(rep2, 100));
+    ASSERT_TRUE(rep2.approx_equals(rep2, 0));
+}
+
+TEST(circuit, equality) {
+    Circuit a(R"CIRCUIT(
+        H 0
+        REPEAT 100 {
+            X_ERROR(0.25) 1
+        }
+    )CIRCUIT");
+    Circuit b(R"CIRCUIT(
+        H 1
+        REPEAT 100 {
+            X_ERROR(0.25) 1
+        }
+    )CIRCUIT");
+    Circuit c(R"CIRCUIT(
+        H 0
+        REPEAT 100 {
+            X_ERROR(0.125) 1
+        }
+    )CIRCUIT");
+
+    ASSERT_FALSE(a == b);
+    ASSERT_FALSE(a == c);
+    ASSERT_FALSE(b == c);
+    ASSERT_TRUE(a == Circuit(a));
+    ASSERT_TRUE(b == Circuit(b));
+    ASSERT_TRUE(c == Circuit(c));
+
+    ASSERT_TRUE(a != b);
+    ASSERT_TRUE(a != c);
+    ASSERT_TRUE(b != c);
+    ASSERT_FALSE(a != Circuit(a));
+    ASSERT_FALSE(b != Circuit(b));
+    ASSERT_FALSE(c != Circuit(c));
 }

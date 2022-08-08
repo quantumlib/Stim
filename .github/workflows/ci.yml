@@ -282,7 +282,7 @@ jobs:
       - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install pytest
       - run: pytest src
-      - run: ./doctest_proper.py --module stim
+      - run: dev/doctest_proper.py --module stim
   test_stimcirq:
     runs-on: ubuntu-latest
     steps:
@@ -296,7 +296,7 @@ jobs:
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
-      - run: ./doctest_proper.py --module stimcirq --import cirq sympy
+      - run: dev/doctest_proper.py --module stimcirq --import cirq sympy
   test_sinter:
     runs-on: ubuntu-latest
     steps:
@@ -310,7 +310,7 @@ jobs:
       - run: pip install -e glue/sample
       - run: pip install pytest
       - run: pytest glue/sample
-      - run: ./doctest_proper.py --module sinter
+      - run: dev/doctest_proper.py --module sinter
       - run: sinter help
   test_stimzx:
     runs-on: ubuntu-latest
@@ -325,7 +325,7 @@ jobs:
       - run: pip install -e glue/zx
       - run: pip install pytest
       - run: pytest glue/zx
-      - run: ./doctest_proper.py --module stimzx
+      - run: dev/doctest_proper.py --module stimzx
   test_stimjs:
     runs-on: ubuntu-latest
     steps:

@@ -414,7 +414,7 @@ See [creating a python dev environment](#venv) for instructions on creating a
 python virtual environment with your changes to stim installed.
 
 Unit tests are run using `pytest`.
-Examples in docstrings are tested using the `doctest_proper` script at the repo root,
+Examples in docstrings are tested using the `dev/doctest_proper` script,
 which uses python's [`doctest`](https://docs.python.org/3/library/doctest.html) module
 but ensures values added to a module at import time are also tested (instead of requiring
 them to be [manually listed in a `__test__` property](https://docs.python.org/3/library/doctest.html#which-docstrings-are-examined)).
@@ -424,10 +424,10 @@ To test everything:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest src glue
-./doctest_proper.py --module stim
-./doctest_proper.py --module stimcirq --import cirq sympy
-./doctest_proper.py --module sinter
-./doctest_proper.py --module stimzx
+dev/doctest_proper.py --module stim
+dev/doctest_proper.py --module stimcirq --import cirq sympy
+dev/doctest_proper.py --module sinter
+dev/doctest_proper.py --module stimzx
 ```
 
 Test only `stim`:
@@ -435,7 +435,7 @@ Test only `stim`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest src
-./doctest_proper.py --module stim
+dev/doctest_proper.py --module stim
 ```
 
 Test only `stimcirq`:
@@ -443,7 +443,7 @@ Test only `stimcirq`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/cirq
-./doctest_proper.py --module stimcirq --import cirq sympy
+dev/doctest_proper.py --module stimcirq --import cirq sympy
 ```
 
 Test only `sinter`:
@@ -451,7 +451,7 @@ Test only `sinter`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/sample
-./doctest_proper.py --module sinter
+dev/doctest_proper.py --module sinter
 ```
 
 Test only `stimzx`:
@@ -459,7 +459,7 @@ Test only `stimzx`:
 ```bash
 # from the repository root in a virtualenv with development wheels installed:
 pytest glue/zx
-./doctest_proper.py --module stimzx
+dev/doctest_proper.py --module stimzx
 ```
 
 

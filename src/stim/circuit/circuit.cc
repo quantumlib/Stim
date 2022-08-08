@@ -14,7 +14,6 @@
 
 #include "stim/circuit/circuit.h"
 
-#include <cctype>
 #include <string>
 #include <utility>
 
@@ -785,6 +784,15 @@ Circuit Circuit::operator*(uint64_t repetitions) const {
     return result;
 }
 
+/// Helper method for fusing during concatenation. If the data being extended is at the end of
+/// the monotonic buffer and there's space for the additional data, put it there in place.
+/// Otherwise it needs to be copied to the new location.
+///
+/// CAUTION: This violates the usual guarantee that once data is committed to a monotonic
+/// buffer it cannot be moved. The old data is still readable in its original location, but
+/// the caller is responsible for guaranteeing that no dangling writeable pointers remain
+/// that point to the old location (since they will write data that is no longer read by
+/// other parts of the code).
 template <typename T>
 ConstPointerRange<T> mono_extend(
     MonotonicBuffer<T> &cur, ConstPointerRange<T> original, ConstPointerRange<T> additional) {
@@ -866,56 +874,6 @@ Circuit Circuit::from_file(FILE *file) {
 
 Circuit::Circuit(const char *text) {
     append_from_text(text);
-}
-
-DetectorsAndObservables::DetectorsAndObservables(DetectorsAndObservables &&other) noexcept
-    : jagged_detector_data(other.jagged_detector_data.total_allocated()),
-      detectors(std::move(other.detectors)),
-      observables(std::move(other.observables)) {
-    // Keep a local copy of the detector data.
-    for (PointerRange<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-}
-
-DetectorsAndObservables &DetectorsAndObservables::operator=(DetectorsAndObservables &&other) noexcept {
-    observables = std::move(other.observables);
-    detectors = std::move(other.detectors);
-
-    // Keep a local copy of the detector data.
-    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
-    for (PointerRange<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-
-    return *this;
-}
-
-DetectorsAndObservables::DetectorsAndObservables(const DetectorsAndObservables &other)
-    : jagged_detector_data(other.jagged_detector_data.total_allocated()),
-      detectors(other.detectors),
-      observables(other.observables) {
-    // Keep a local copy of the detector data.
-    for (PointerRange<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-}
-
-DetectorsAndObservables &DetectorsAndObservables::operator=(const DetectorsAndObservables &other) {
-    if (this == &other) {
-        return *this;
-    }
-
-    observables = other.observables;
-    detectors = other.detectors;
-
-    // Keep a local copy of the detector data.
-    jagged_detector_data = MonotonicBuffer<uint64_t>(other.jagged_detector_data.total_allocated());
-    for (PointerRange<uint64_t> &e : detectors) {
-        e = jagged_detector_data.take_copy(e);
-    }
-
-    return *this;
 }
 
 size_t Circuit::count_qubits() const {
@@ -1065,12 +1023,12 @@ Circuit Circuit::without_noise() const {
     for (const auto &op : operations) {
         if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
             // Drop result flip probabilities.
-            result.operations.push_back(Operation{op.gate, {{}, result.target_buf.take_copy(op.target_data.targets)}});
+            result.append_operation(*op.gate, result.target_buf.take_copy(op.target_data.targets), {});
+        } else if (op.gate->id == gate_name_to_id("REPEAT")) {
+            result.operations.push_back({op.gate, {op.target_data.args, op.target_data.targets}});
         } else if (!(op.gate->flags & GATE_IS_NOISE)) {
             // Keep noiseless operations.
-            result.operations.push_back(Operation{
-                op.gate,
-                {result.arg_buf.take_copy(op.target_data.args), result.target_buf.take_copy(op.target_data.targets)}});
+            result.append_operation(*op.gate, op.target_data.targets, op.target_data.args);
         }
     }
     for (const auto &block : blocks) {
@@ -1079,7 +1037,8 @@ Circuit Circuit::without_noise() const {
     return result;
 }
 
-void flattened_helper(const Circuit &body, std::vector<double> &cur_coordinate_shift, Circuit &out) {
+void flattened_helper(
+    const Circuit &body, std::vector<double> &cur_coordinate_shift, std::vector<double> &coord_buffer, Circuit &out) {
     const uint8_t shift = gate_name_to_id("SHIFT_COORDS");
     const uint8_t rep = gate_name_to_id("REPEAT");
     const uint8_t qubit_coords = gate_name_to_id("QUBIT_COORDS");
@@ -1097,17 +1056,17 @@ void flattened_helper(const Circuit &body, std::vector<double> &cur_coordinate_s
             uint64_t reps = op_data_rep_count(op.target_data);
             const auto &loop_body = op_data_block_body(body, op.target_data);
             for (uint64_t k = 0; k < reps; k++) {
-                flattened_helper(loop_body, cur_coordinate_shift, out);
+                flattened_helper(loop_body, cur_coordinate_shift, coord_buffer, out);
             }
         } else {
-            auto t = out.target_buf.take_copy(op.target_data.targets);
-            auto a = out.arg_buf.take_copy(op.target_data.args);
+            coord_buffer.clear();
+            coord_buffer.insert(coord_buffer.end(), op.target_data.args.begin(), op.target_data.args.end());
             if (id == qubit_coords || op.gate->id == detector) {
-                for (size_t k = 0; k < a.size() && k < cur_coordinate_shift.size(); k++) {
-                    a[k] += cur_coordinate_shift[k];
+                for (size_t k = 0; k < coord_buffer.size() && k < cur_coordinate_shift.size(); k++) {
+                    coord_buffer[k] += cur_coordinate_shift[k];
                 }
             }
-            out.operations.push_back({op.gate, {a, t}});
+            out.append_operation(*op.gate, op.target_data.targets, coord_buffer);
         }
     }
 }
@@ -1115,7 +1074,8 @@ void flattened_helper(const Circuit &body, std::vector<double> &cur_coordinate_s
 Circuit Circuit::flattened() const {
     Circuit result;
     std::vector<double> shift;
-    flattened_helper(*this, shift, result);
+    std::vector<double> coord_buffer;
+    flattened_helper(*this, shift, coord_buffer, result);
     return result;
 }
 

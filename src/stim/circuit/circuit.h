@@ -319,10 +319,10 @@ struct DetectorsAndObservables {
     std::vector<std::vector<uint64_t>> observables;
     DetectorsAndObservables(const Circuit &circuit);
 
-    DetectorsAndObservables(DetectorsAndObservables &&other) noexcept;
-    DetectorsAndObservables &operator=(DetectorsAndObservables &&other) noexcept;
-    DetectorsAndObservables(const DetectorsAndObservables &other);
-    DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
+    DetectorsAndObservables(DetectorsAndObservables &&other) noexcept = delete;
+    DetectorsAndObservables &operator=(DetectorsAndObservables &&other) noexcept = delete;
+    DetectorsAndObservables(const DetectorsAndObservables &other) = delete;
+    DetectorsAndObservables &operator=(const DetectorsAndObservables &other) = delete;
 };
 
 Circuit &op_data_block_body(Circuit &host, const OperationData &data);

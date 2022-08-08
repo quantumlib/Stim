@@ -269,7 +269,7 @@ Pauli Mixture:
             &TableauSimulator::PAULI_CHANNEL_2,
             &FrameSimulator::PAULI_CHANNEL_2,
             &ErrorAnalyzer::PAULI_CHANNEL_2,
-            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
+            (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
                     "F_Noise Channels",

@@ -33,3 +33,5 @@ venv/*
 *.so
 .clwb/*
 .cmake/*
+coverage/*
+cmake-build-debug-coverage/*
