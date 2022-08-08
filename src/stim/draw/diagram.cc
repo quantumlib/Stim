@@ -1,68 +1,6 @@
-#include "stim/draw/draw.h"
+#include "stim/draw/diagram.h"
 
 using namespace stim;
-
-struct DiagramPos {
-    size_t x;
-    size_t y;
-    size_t z;
-    float align_x;
-    float align_y;
-    float align_z;
-
-    DiagramPos(size_t x, size_t y, size_t z, float align_x, float align_y, float align_z) :
-        x(x),
-        y(y),
-        z(z),
-        align_x(align_x),
-        align_y(align_y),
-        align_z(align_z) {
-    }
-
-    bool operator==(const DiagramPos &other) const {
-        return x == other.x && y == other.y && z == other.z;
-    }
-
-    bool operator<(const DiagramPos &other) const {
-        if (x != other.x) {
-            return x < other.x;
-        }
-        if (y != other.y) {
-            return y < other.y;
-        }
-        return z < other.z;
-    }
-};
-
-struct DiagramBox {
-    DiagramPos center;
-    std::string label;
-    std::vector<std::string> annotations;
-    const char *stroke;
-    DiagramBox(DiagramPos center, std::string label, std::vector<std::string> annotations, const char *stroke) :
-        center(center),
-        label(label),
-        annotations(annotations),
-        stroke(stroke) {
-    }
-};
-
-struct DiagramLine {
-    DiagramPos p1;
-    DiagramPos p2;
-};
-
-struct DiagramLayout {
-    size_t num_x;
-    size_t num_y;
-    size_t num_z;
-    std::vector<size_t> x_widths;
-    std::vector<size_t> y_heights;
-    std::vector<size_t> z_depths;
-    std::vector<size_t> x_offsets;
-    std::vector<size_t> y_offsets;
-    std::vector<size_t> z_offsets;
-};
 
 size_t stim::utf8_char_count(const std::string &s) {
     size_t t = 0;
@@ -75,80 +13,105 @@ size_t stim::utf8_char_count(const std::string &s) {
     return t;
 }
 
-struct Diagram {
-    std::map<DiagramPos, DiagramBox> boxes;
-    std::vector<DiagramLine> lines;
+DiagramPos::DiagramPos(size_t x, size_t y, size_t z, float align_x, float align_y, float align_z) :
+    x(x),
+    y(y),
+    z(z),
+    align_x(align_x),
+    align_y(align_y),
+    align_z(align_z) {
+}
 
-    void add_box(DiagramBox box) {
-        boxes.insert({box.center, box});
+bool DiagramPos::operator==(const DiagramPos &other) const {
+    return x == other.x && y == other.y && z == other.z;
+}
+
+bool DiagramPos::operator<(const DiagramPos &other) const {
+    if (x != other.x) {
+        return x < other.x;
     }
+    if (y != other.y) {
+        return y < other.y;
+    }
+    return z < other.z;
+}
 
-    void for_each_pos(const std::function<void(DiagramPos pos)> &callback) {
-        for (const auto &item : boxes) {
-            callback(item.first);
+DiagramBox::DiagramBox(DiagramPos center, std::string label, std::vector<std::string> annotations, const char *stroke) :
+    center(center),
+    label(label),
+    annotations(annotations),
+    stroke(stroke) {
+}
+
+void Diagram::add_box(DiagramBox box) {
+    boxes.insert({box.center, box});
+}
+
+void Diagram::for_each_pos(const std::function<void(DiagramPos pos)> &callback) {
+    for (const auto &item : boxes) {
+        callback(item.first);
+    }
+    for (const auto &item : lines) {
+        callback(item.p1);
+        callback(item.p2);
+    }
+}
+
+void Diagram::compactify() {
+    for (auto &item : boxes) {
+        auto &label = item.second.label;
+        if (label.find("SQRT_") == 0) {
+            label = "√" + label.substr(5);
         }
-        for (const auto &item : lines) {
-            callback(item.p1);
-            callback(item.p2);
+        if (label.find("_DAG") == label.size() - 4) {
+            label = label.substr(0, label.size() - 4) + "†"; //"⁻¹";
+        }
+        while (!label.empty() && label.back() == ' ') {
+            label.pop_back();
         }
     }
+}
 
-    void compactify() {
-        for (auto &item : boxes) {
-            auto &label = item.second.label;
-            if (label.find("SQRT_") == 0) {
-                label = "√" + label.substr(5);
-            }
-            if (label.find("_DAG") == label.size() - 4) {
-                label = label.substr(0, label.size() - 4) + "†"; //"⁻¹";
-            }
-            while (!label.empty() && label.back() == ' ') {
-                label.pop_back();
-            }
-        }
-    }
+DiagramLayout Diagram::to_layout() {
+    DiagramLayout layout{0, 0, 0, {}, {}, {}, {}, {}, {}};
+    for_each_pos([&](DiagramPos pos) {
+        layout.num_x = std::max(layout.num_x, pos.x + 1);
+        layout.num_y = std::max(layout.num_y, pos.y + 1);
+        layout.num_z = std::max(layout.num_z, pos.z + 1);
+    });
+    layout.x_widths.resize(layout.num_x, 1);
+    layout.y_heights.resize(layout.num_y, 1);
+    layout.z_depths.resize(layout.num_z, 1);
 
-    DiagramLayout to_layout() {
-        DiagramLayout layout{0, 0, 0, {}, {}, {}, {}, {}, {}};
-        for_each_pos([&](DiagramPos pos) {
-            layout.num_x = std::max(layout.num_x, pos.x + 1);
-            layout.num_y = std::max(layout.num_y, pos.y + 1);
-            layout.num_z = std::max(layout.num_z, pos.z + 1);
-        });
-        layout.x_widths.resize(layout.num_x, 1);
-        layout.y_heights.resize(layout.num_y, 1);
-        layout.z_depths.resize(layout.num_z, 1);
-
-        for (const auto &item : boxes) {
-            const auto &box = item.second;
-            auto &dx = layout.x_widths[box.center.x];
-            auto &dy = layout.y_heights[box.center.y];
+    for (const auto &item : boxes) {
+        const auto &box = item.second;
+        auto &dx = layout.x_widths[box.center.x];
+        auto &dy = layout.y_heights[box.center.y];
 //            auto &dz = layout.z_depths[box.center.z];
-            dx = std::max(dx, utf8_char_count(box.label));
-            for (const auto &annotation : box.annotations) {
-                dx = std::max(dx, utf8_char_count(annotation));
-            }
-            dy = std::max(dy, box.annotations.size());
+        dx = std::max(dx, utf8_char_count(box.label));
+        for (const auto &annotation : box.annotations) {
+            dx = std::max(dx, utf8_char_count(annotation));
         }
-
-        layout.x_offsets.push_back(0);
-        layout.y_offsets.push_back(0);
-        layout.z_offsets.push_back(0);
-        for (const auto &e : layout.x_widths) {
-            layout.x_offsets.push_back(layout.x_offsets.back() + e);
-        }
-        for (const auto &e : layout.y_heights) {
-            layout.y_offsets.push_back(layout.y_offsets.back() + e);
-        }
-        for (const auto &e : layout.z_depths) {
-            layout.z_offsets.push_back(layout.z_offsets.back() + e);
-        }
-
-        return layout;
+        dy = std::max(dy, box.annotations.size());
     }
-};
 
-Diagram to_diagram(const Circuit &circuit) {
+    layout.x_offsets.push_back(0);
+    layout.y_offsets.push_back(0);
+    layout.z_offsets.push_back(0);
+    for (const auto &e : layout.x_widths) {
+        layout.x_offsets.push_back(layout.x_offsets.back() + e);
+    }
+    for (const auto &e : layout.y_heights) {
+        layout.y_offsets.push_back(layout.y_offsets.back() + e);
+    }
+    for (const auto &e : layout.z_depths) {
+        layout.z_offsets.push_back(layout.z_offsets.back() + e);
+    }
+
+    return layout;
+}
+
+Diagram stim::to_diagram(const Circuit &circuit) {
     size_t num_qubits = circuit.count_qubits();
     size_t num_ticks = circuit.count_ticks();
 
@@ -572,158 +535,4 @@ Diagram to_diagram(const Circuit &circuit) {
     }
 
     return diagram;
-}
-
-
-std::string stim::draw(const Circuit &circuit) {
-    Diagram diagram = to_diagram(circuit);
-    DiagramLayout layout = diagram.to_layout();
-
-    std::vector<std::string> lines;
-    lines.resize(layout.y_offsets.back());
-    for (auto &line : lines) {
-        line.resize(layout.x_offsets.back(), ' ');
-    }
-
-    for (const auto &line : diagram.lines) {
-        auto x = layout.x_offsets[line.p1.x];
-        auto y = layout.y_offsets[line.p1.y];
-        auto x2 = layout.x_offsets[line.p2.x];
-        auto y2 = layout.y_offsets[line.p2.y];
-        x += (int)floor(line.p1.align_x * (layout.x_widths[line.p1.x] - 1));
-        y += (int)floor(line.p1.align_y * (layout.y_heights[line.p1.y] - 1));
-        x2 += (int)floor(line.p2.align_x * (layout.x_widths[line.p2.x] - 1));
-        y2 += (int)floor(line.p2.align_y * (layout.y_heights[line.p2.y] - 1));
-        while (x != x2) {
-            lines[y][x] = '-';
-            x += x < x2 ? 1 : -1;
-        }
-        if (line.p1.x != line.p2.x && line.p1.y != line.p2.y) {
-            lines[y][x] = '.';
-        } else if (line.p1.x != line.p2.x) {
-            lines[y][x] = '-';
-        } else if (line.p1.y != line.p2.y) {
-            lines[y][x] = '|';
-        } else {
-            lines[y][x] = '.';
-        }
-        while (y != y2) {
-            y += y < y2 ? 1 : -1;
-            lines[y][x] = '|';
-        }
-    }
-
-    for (const auto &item : diagram.boxes) {
-        const auto &box = item.second;
-        auto x = layout.x_offsets[box.center.x];
-        auto y = layout.y_offsets[box.center.y];
-        x += (int)floor(box.center.align_x * (layout.x_widths[box.center.x] - box.label.size()));
-        y += (int)floor(box.center.align_y * (layout.y_heights[box.center.y] - 1));
-        for (size_t k = 0; k < box.label.size(); k++) {
-            lines[y][x + k] = box.label[k];
-        }
-        for (size_t a = 0; a < box.annotations.size(); a++) {
-            for (size_t k = 0; k < box.label.size(); k++) {
-                lines[y + a][x + k] = box.label[k];
-            }
-        }
-    }
-
-    std::string result;
-    for (const auto &line : lines) {
-        result.append(line);
-        while (result.size() > 0 && result[0] == '\n') {
-            result.erase(result.begin());
-        }
-        while (result.size() > 0 && result.back() == ' ') {
-            result.pop_back();
-        }
-        result.push_back('\n');
-    }
-
-    return result;
-}
-
-std::string stim::draw_svg(const Circuit &circuit) {
-    Diagram diagram = to_diagram(circuit);
-    diagram.compactify();
-    DiagramLayout layout = diagram.to_layout();
-    std::stringstream out;
-    const size_t h_scale = 16;
-    const size_t v_scale = 24;
-    const size_t font_height = 24;
-    const size_t font_width = 16;
-
-    out << R"SVG(<svg width=")SVG" << layout.x_offsets.back() * h_scale << R"SVG(" height=")SVG" << layout.y_offsets.back() * v_scale + 10 << R"SVG(" version="1.1" xmlns="http://www.w3.org/2000/svg">)SVG" << '\n';
-
-    for (const auto &e : diagram.lines) {
-        double x1 = layout.x_offsets[e.p1.x] * h_scale;
-        double x2 = layout.x_offsets[e.p2.x] * h_scale;
-        auto w1 = layout.x_widths[e.p1.x] * h_scale;
-        auto h1 = layout.y_heights[e.p1.y] * v_scale;
-        double y1 = layout.y_offsets[e.p1.y] * v_scale;
-        double y2 = layout.y_offsets[e.p2.y] * v_scale;
-        auto w2 = layout.x_widths[e.p2.x] * h_scale;
-        auto h2 = layout.y_heights[e.p2.y] * v_scale;
-        x1 += w1 * e.p1.align_x;
-        y1 += h1 * e.p1.align_y;
-        x2 += w2 * e.p2.align_x;
-        y2 += h2 * e.p2.align_y;
-        out << " <line x1=\"" << x1 << "\" x2=\"" << x2 << "\" y1=\"" << y1 << "\" y2=\"" << y2 << "\" stroke=\"black\" stroke-width=\"1\"/>\n";
-    }
-
-    for (const auto &item : diagram.boxes) {
-        const auto &box = item.second;
-        auto cx = layout.x_offsets[box.center.x] * h_scale;
-        auto cy = layout.y_offsets[box.center.y] * v_scale;
-        auto w = layout.x_widths[box.center.x] * h_scale;
-        auto h = layout.y_heights[box.center.y] * v_scale;
-        cx += w * box.center.align_x;
-        cy += h * box.center.align_y;
-        w = utf8_char_count(box.label) * font_width;
-        auto w2 = w + (font_height - font_width);
-        auto h2 = h + 4;
-        if (box.label == "@") {
-            out << " <circle cx=\"" << cx
-                << "\" cy=\"" << cy
-                << "\" r=\"" << 8
-                << "\" stroke=\"none"
-                << "\" fill=\"black\"/>\n";
-            continue;
-        }
-        if (box.label == "X") {
-            out << " <circle cx=\"" << cx
-                << "\" cy=\"" << cy
-                << "\" r=\"" << 12
-                << "\" stroke=\"black"
-                << "\" fill=\"white\"/>\n";
-            out << " <line x1=\"" << (cx - 12)
-                << "\" x2=\"" << (cx + 12)
-                << "\" y1=\"" << cy
-                << "\" y2=\"" << cy
-                << "\" stroke=\"black\"/>\n";
-            out << " <line x1=\"" << cx
-                << "\" x2=\"" << cx
-                << "\" y1=\"" << (cy + 12)
-                << "\" y2=\"" << (cy - 12)
-                << "\" stroke=\"black\"/>\n";
-            continue;
-        }
-        out << " <rect x=\"" << (cx - w2 * box.center.align_x)
-            << "\" y=\"" << (cy - h2 * box.center.align_y)
-            << "\" width=\"" << w2
-            << "\" height=\"" << h2
-            << "\" stroke=\"" << box.stroke
-            << "\" fill=\"white\" stroke-width=\"1\"/>\n";
-        out << " <text dominant-baseline=\"central\" textLength=\"" << w
-            << "\" text-anchor=\"" << (box.center.align_x == 0 ? "start" : box.center.align_x == 1 ? "end" : "middle")
-            << "\" font-family=\"monospace\" font-size=\""
-            << font_height << "px\" x=\"" << cx
-            << "\" y=\"" << cy
-            << "\">" << box.label << "</text>\n";
-    }
-
-    out << "</svg>\n";
-
-    return out.str();
 }

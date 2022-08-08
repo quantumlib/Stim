@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_CIRCUIT_DRAW_H
-#define _STIM_CIRCUIT_DRAW_H
+#ifndef _STIM_DRAW_TIMELINE_3D_H
+#define _STIM_DRAW_TIMELINE_3D_H
 
 #include <iostream>
 
@@ -23,9 +23,7 @@
 
 namespace stim {
 
-std::string draw(const Circuit &circuit);
-std::string draw_svg(const Circuit &circuit);
-size_t utf8_char_count(const std::string &s);
+std::string circuit_diagram_timeline_3d(const Circuit &circuit);
 
 }  // namespace stim
 
