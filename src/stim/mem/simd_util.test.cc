@@ -142,7 +142,8 @@ void EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION(
     }
 }
 
-TEST_EACH_WORD_SIZE_W(simd_util, inplace_transpose_64x64, {
+TEST(simd_util, inplace_transpose_64x64) {
+    constexpr size_t W = 64;
     simd_bits<W> data = simd_bits<W>::random(64 * 64, SHARED_TEST_RNG());
     simd_bits<W> copy = data;
     inplace_transpose_64x64(copy.u64, 1);
@@ -151,218 +152,212 @@ TEST_EACH_WORD_SIZE_W(simd_util, inplace_transpose_64x64, {
             ASSERT_EQ(data[i * 64 + j], copy[j * 64 + i]);
         }
     }
-})
-
-TEST_EACH_WORD_SIZE_W(simd_util, inplace_transpose_64x64_permutation, {
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<12, W>(
-        [](simd_bits<W> &d) {
-            inplace_transpose_64x64(d.u64, 1);
-        },
-        {
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-        });
-
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<13, W>(
-        [](simd_bits<W> &d) {
-            inplace_transpose_64x64(d.u64, 1);
-            inplace_transpose_64x64(d.u64 + 64, 1);
-        },
-        {
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            12,
-        });
-
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<13, W>(
-        [](simd_bits<W> &d) {
-            inplace_transpose_64x64(d.u64, 2);
-            inplace_transpose_64x64(d.u64 + 1, 2);
-        },
-        {
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            6,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-        });
-})
-
-TEST(simd_util, inplace_transpose_128x128_permutation) {
-    constexpr size_t W = 128;
-
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<14, W>(
-        [](simd_bits<W> &d) {
-            bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
-        },
-        {
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-        });
-
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<15, W>(
-        [](simd_bits<W> &d) {
-            bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
-            bitword<W>::inplace_transpose_square(d.ptr_simd + 128, 1);
-        },
-        {
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            14,
-        });
-
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<15, W>(
-        [](simd_bits<W> &d) {
-            bitword<W>::inplace_transpose_square(d.ptr_simd, 2);
-            bitword<W>::inplace_transpose_square(d.ptr_simd + 1, 2);
-        },
-        {
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            7,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-        });
 }
 
-TEST(simd_util, inplace_transpose_256x256_permutation) {
-    constexpr size_t W = 256;
+TEST_EACH_WORD_SIZE_W(simd_util, inplace_transpose, {
+    if (W == 64) {
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<12, W>(
+            [](simd_bits<W> &d) {
+                inplace_transpose_64x64(d.u64, 1);
+            },
+            {
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+            });
 
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<16, W>(
-        [](simd_bits<W> &d) {
-            bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
-        },
-        {
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-        });
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<13, W>(
+            [](simd_bits<W> &d) {
+                inplace_transpose_64x64(d.u64, 1);
+                inplace_transpose_64x64(d.u64 + 64, 1);
+            },
+            {
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                12,
+            });
 
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<17, W>(
-        [](simd_bits<W> &d) {
-            bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
-            bitword<W>::inplace_transpose_square(d.ptr_simd + 256, 1);
-        },
-        {
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            16,
-        });
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<13, W>(
+            [](simd_bits<W> &d) {
+                inplace_transpose_64x64(d.u64, 2);
+                inplace_transpose_64x64(d.u64 + 1, 2);
+            },
+            {
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                6,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+            });
+    } else if (W == 128) {
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<14, W>(
+            [](simd_bits<W> &d) {
+                bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
+            },
+            {
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+            });
 
-    EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<17, W>(
-        [](simd_bits<W> &d) {
-            bitword<W>::inplace_transpose_square(d.ptr_simd, 2);
-            bitword<W>::inplace_transpose_square(d.ptr_simd + 1, 2);
-        },
-        {
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            8,
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-        });
-}
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<15, W>(
+            [](simd_bits<W> &d) {
+                bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
+                bitword<W>::inplace_transpose_square(d.ptr_simd + 128, 1);
+            },
+            {
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                14,
+            });
+
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<15, W>(
+            [](simd_bits<W> &d) {
+                bitword<W>::inplace_transpose_square(d.ptr_simd, 2);
+                bitword<W>::inplace_transpose_square(d.ptr_simd + 1, 2);
+            },
+            {
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                7,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+            });
+    } else if (W == 256) {
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<16, W>(
+            [](simd_bits<W> &d) {
+                bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
+            },
+            {
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+            });
+
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<17, W>(
+            [](simd_bits<W> &d) {
+                bitword<W>::inplace_transpose_square(d.ptr_simd, 1);
+                bitword<W>::inplace_transpose_square(d.ptr_simd + 256, 1);
+            },
+            {
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                16,
+            });
+
+        EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<17, W>(
+            [](simd_bits<W> &d) {
+                bitword<W>::inplace_transpose_square(d.ptr_simd, 2);
+                bitword<W>::inplace_transpose_square(d.ptr_simd + 1, 2);
+            },
+            {
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                8,
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+            });
+    }
+})
 
 TEST_EACH_WORD_SIZE_W(simd_util, simd_bit_table_transpose, {
     EXPECT_FUNCTION_PERFORMS_ADDRESS_BIT_PERMUTATION<20, W>(
