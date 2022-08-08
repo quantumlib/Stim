@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/mem/simd_compat.h"
+#include "stim/mem/simd_word.h"
 
 #include "stim/benchmark_util.perf.h"
 #include "stim/mem/simd_bits.h"
-#include "stim/mem/simd_compat.h"
 
 using namespace stim;
 

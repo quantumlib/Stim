@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_MEM_SIMD_COMPAT_SSE2_H
-#define _STIM_MEM_SIMD_COMPAT_SSE2_H
+#ifndef _STIM_MEM_SIMD_WORD_128_SSE_H
+#define _STIM_MEM_SIMD_WORD_128_SSE_H
 
 /// Implements `simd_word` using SSE+SSE2 intrinsic instructions.
 /// For example, `_mm_set1_epi8` is SSE2.
@@ -27,43 +27,48 @@
 
 namespace stim {
 
-#define simd_word simd_word_sse2
-struct simd_word_sse2 {
+template <size_t bit_size>
+struct bitword;
+
+#ifdef __SSE2__
+
+/// Implements a 128 bit bitword using SSE instructions.
+template <>
+struct bitword<128> {
     constexpr static size_t BIT_SIZE = 128;
     constexpr static size_t BIT_POW = 7;
 
     union {
         __m128i val;
-        __m128i u128[1];
         uint64_t u64[2];
         uint8_t u8[16];
     };
 
     static void *aligned_malloc(size_t bytes) {
-        return _mm_malloc(bytes, sizeof(simd_word));
+        return _mm_malloc(bytes, sizeof(__m128i));
     }
     static void aligned_free(void *ptr) {
         _mm_free(ptr);
     }
 
-    inline simd_word() : val(__m128i{}) {
+    inline bitword<128>() : val(__m128i{}) {
     }
-    inline simd_word(__m128i val) : val(val) {
+    inline bitword<128>(__m128i val) : val(val) {
     }
 
-    inline static simd_word tile8(uint8_t pattern) {
+    inline static bitword<128> tile8(uint8_t pattern) {
         return {_mm_set1_epi8(pattern)};
     }
 
-    inline static simd_word tile16(uint16_t pattern) {
+    inline static bitword<128> tile16(uint16_t pattern) {
         return {_mm_set1_epi16(pattern)};
     }
 
-    inline static simd_word tile32(uint32_t pattern) {
+    inline static bitword<128> tile32(uint32_t pattern) {
         return {_mm_set1_epi32(pattern)};
     }
 
-    inline static simd_word tile64(uint64_t pattern) {
+    inline static bitword<128> tile64(uint64_t pattern) {
         return {_mm_set1_epi64x(pattern)};
     }
 
@@ -71,34 +76,34 @@ struct simd_word_sse2 {
         return u64[0] | u64[1];
     }
 
-    inline simd_word &operator^=(const simd_word &other) {
+    inline bitword<128> &operator^=(const bitword<128> &other) {
         val = _mm_xor_si128(val, other.val);
         return *this;
     }
 
-    inline simd_word &operator&=(const simd_word &other) {
+    inline bitword<128> &operator&=(const bitword<128> &other) {
         val = _mm_and_si128(val, other.val);
         return *this;
     }
 
-    inline simd_word &operator|=(const simd_word &other) {
+    inline bitword<128> &operator|=(const bitword<128> &other) {
         val = _mm_or_si128(val, other.val);
         return *this;
     }
 
-    inline simd_word operator^(const simd_word &other) const {
+    inline bitword<128> operator^(const bitword<128> &other) const {
         return {_mm_xor_si128(val, other.val)};
     }
 
-    inline simd_word operator&(const simd_word &other) const {
+    inline bitword<128> operator&(const bitword<128> &other) const {
         return {_mm_and_si128(val, other.val)};
     }
 
-    inline simd_word operator|(const simd_word &other) const {
+    inline bitword<128> operator|(const bitword<128> &other) const {
         return {_mm_or_si128(val, other.val)};
     }
 
-    inline simd_word andnot(const simd_word &other) const {
+    inline bitword<128> andnot(const bitword<128> &other) const {
         return {_mm_andnot_si128(val, other.val)};
     }
 
@@ -107,23 +112,23 @@ struct simd_word_sse2 {
     }
 
     template <uint64_t shift>
-    static void inplace_transpose_block_pass(simd_word *data, size_t stride, __m128i mask) {
+    static void inplace_transpose_block_pass(bitword<128> *data, size_t stride, __m128i mask) {
         for (size_t k = 0; k < 128; k++) {
             if (k & shift) {
                 continue;
             }
-            simd_word& x = data[stride * k];
-            simd_word& y = data[stride * (k + shift)];
-            simd_word a = x & mask;
-            simd_word b = x & ~mask;
-            simd_word c = y & mask;
-            simd_word d = y & ~mask;
-            x = a | simd_word(_mm_slli_epi64(c.val, shift));
-            y = simd_word(_mm_srli_epi64(b.val, shift)) | d;
+            bitword<128>& x = data[stride * k];
+            bitword<128>& y = data[stride * (k + shift)];
+            bitword<128> a = x & mask;
+            bitword<128> b = x & ~mask;
+            bitword<128> c = y & mask;
+            bitword<128> d = y & ~mask;
+            x = a | bitword<128>(_mm_slli_epi64(c.val, shift));
+            y = bitword<128>(_mm_srli_epi64(b.val, shift)) | d;
         }
     }
 
-    static void inplace_transpose_block_pass64(simd_word *data, size_t stride) {
+    static void inplace_transpose_block_pass64(bitword<128> *data, size_t stride) {
         uint64_t *ptr = (uint64_t *)data;
         stride <<= 1;
         for (size_t k = 0; k < 64; k++) {
@@ -131,7 +136,7 @@ struct simd_word_sse2 {
         }
     }
 
-    static void inplace_transpose_square(simd_word *data, size_t stride) {
+    static void inplace_transpose_square(bitword<128> *data, size_t stride) {
         inplace_transpose_block_pass<1>(data, stride, _mm_set1_epi8(0x55));
         inplace_transpose_block_pass<2>(data, stride, _mm_set1_epi8(0x33));
         inplace_transpose_block_pass<4>(data, stride, _mm_set1_epi8(0xF));
@@ -141,6 +146,7 @@ struct simd_word_sse2 {
         inplace_transpose_block_pass64(data, stride);
     }
 };
+#endif
 
 }  // namespace stim
 

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_MEM_SIMD_COMPAT_AVX2_H
-#define _STIM_MEM_SIMD_COMPAT_AVX2_H
+#ifndef _STIM_MEM_SIMD_WORD_256_AVX_H
+#define _STIM_MEM_SIMD_WORD_256_AVX_H
 
 /// Implements `simd_word` using AVX+AVX2 intrinsic instructions.
 /// For example, `_mm256_xor_si256` is AVX2.
@@ -27,43 +27,48 @@
 
 namespace stim {
 
-#define simd_word simd_word_avx2
-struct simd_word_avx2 {
+template <size_t bit_size>
+struct bitword;
+
+#if __AVX2__
+
+/// Implements a 128 bit bitword using AVX instructions.
+template <>
+struct bitword<256> {
     constexpr static size_t BIT_SIZE = 256;
     constexpr static size_t BIT_POW = 8;
 
     union {
         __m256i val;
-        __m128i u128[2];
         uint64_t u64[4];
         uint8_t u8[32];
     };
 
     static void *aligned_malloc(size_t bytes) {
-        return _mm_malloc(bytes, sizeof(simd_word));
+        return _mm_malloc(bytes, sizeof(__m256i));
     }
     static void aligned_free(void *ptr) {
         _mm_free(ptr);
     }
 
-    inline simd_word() : val(__m256i{}) {
+    inline bitword<256>() : val(__m256i{}) {
     }
-    inline simd_word(__m256i val) : val(val) {
+    inline bitword<256>(__m256i val) : val(val) {
     }
 
-    inline static simd_word tile8(uint8_t pattern) {
+    inline static bitword<256> tile8(uint8_t pattern) {
         return {_mm256_set1_epi8(pattern)};
     }
 
-    inline static simd_word tile16(uint16_t pattern) {
+    inline static bitword<256> tile16(uint16_t pattern) {
         return {_mm256_set1_epi16(pattern)};
     }
 
-    inline static simd_word tile32(uint32_t pattern) {
+    inline static bitword<256> tile32(uint32_t pattern) {
         return {_mm256_set1_epi32(pattern)};
     }
 
-    inline static simd_word tile64(uint64_t pattern) {
+    inline static bitword<256> tile64(uint64_t pattern) {
         return {_mm256_set1_epi64x(pattern)};
     }
 
@@ -71,34 +76,34 @@ struct simd_word_avx2 {
         return u64[0] | u64[1] | u64[2] | u64[3];
     }
 
-    inline simd_word &operator^=(const simd_word &other) {
+    inline bitword<256> &operator^=(const bitword<256> &other) {
         val = _mm256_xor_si256(val, other.val);
         return *this;
     }
 
-    inline simd_word &operator&=(const simd_word &other) {
+    inline bitword<256> &operator&=(const bitword<256> &other) {
         val = _mm256_and_si256(val, other.val);
         return *this;
     }
 
-    inline simd_word &operator|=(const simd_word &other) {
+    inline bitword<256> &operator|=(const bitword<256> &other) {
         val = _mm256_or_si256(val, other.val);
         return *this;
     }
 
-    inline simd_word operator^(const simd_word &other) const {
+    inline bitword<256> operator^(const bitword<256> &other) const {
         return {_mm256_xor_si256(val, other.val)};
     }
 
-    inline simd_word operator&(const simd_word &other) const {
+    inline bitword<256> operator&(const bitword<256> &other) const {
         return {_mm256_and_si256(val, other.val)};
     }
 
-    inline simd_word operator|(const simd_word &other) const {
+    inline bitword<256> operator|(const bitword<256> &other) const {
         return {_mm256_or_si256(val, other.val)};
     }
 
-    inline simd_word andnot(const simd_word &other) const {
+    inline bitword<256> andnot(const bitword<256> &other) const {
         return {_mm256_andnot_si256(val, other.val)};
     }
 
@@ -108,23 +113,23 @@ struct simd_word_avx2 {
     }
 
     template <uint64_t shift>
-    static void inplace_transpose_block_pass(simd_word *data, size_t stride, __m256i mask) {
+    static void inplace_transpose_block_pass(bitword<256> *data, size_t stride, __m256i mask) {
         for (size_t k = 0; k < 256; k++) {
             if (k & shift) {
                 continue;
             }
-            simd_word& x = data[stride * k];
-            simd_word& y = data[stride * (k + shift)];
-            simd_word a = x & mask;
-            simd_word b = x & ~mask;
-            simd_word c = y & mask;
-            simd_word d = y & ~mask;
-            x = a | simd_word(_mm256_slli_epi64(c.val, shift));
-            y = simd_word(_mm256_srli_epi64(b.val, shift)) | d;
+            bitword<256>& x = data[stride * k];
+            bitword<256>& y = data[stride * (k + shift)];
+            bitword<256> a = x & mask;
+            bitword<256> b = x & ~mask;
+            bitword<256> c = y & mask;
+            bitword<256> d = y & ~mask;
+            x = a | bitword<256>(_mm256_slli_epi64(c.val, shift));
+            y = bitword<256>(_mm256_srli_epi64(b.val, shift)) | d;
         }
     }
 
-    static void inplace_transpose_block_pass_64_and_128(simd_word *data, size_t stride) {
+    static void inplace_transpose_block_pass_64_and_128(bitword<256> *data, size_t stride) {
         uint64_t *ptr = (uint64_t *)data;
         stride <<= 2;
 
@@ -138,7 +143,7 @@ struct simd_word_avx2 {
         }
     }
 
-    static void inplace_transpose_square(simd_word *data, size_t stride) {
+    static void inplace_transpose_square(bitword<256> *data, size_t stride) {
         inplace_transpose_block_pass<1>(data, stride, _mm256_set1_epi8(0x55));
         inplace_transpose_block_pass<2>(data, stride, _mm256_set1_epi8(0x33));
         inplace_transpose_block_pass<4>(data, stride, _mm256_set1_epi8(0xF));
@@ -148,6 +153,7 @@ struct simd_word_avx2 {
         inplace_transpose_block_pass_64_and_128(data, stride);
     }
 };
+#endif
 
 }  // namespace stim
 

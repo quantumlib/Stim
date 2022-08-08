@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_MEM_SIMD_COMPAT_POLYFILL_H
-#define _STIM_MEM_SIMD_COMPAT_POLYFILL_H
-
-/// Implements `simd_word` using no architecture-specific instructions, just raw C++11 code.
+#ifndef _STIM_MEM_SIMD_WORD_64_STD_H
+#define _STIM_MEM_SIMD_WORD_64_STD_H
 
 #include <stdlib.h>
 
@@ -25,8 +23,12 @@
 
 namespace stim {
 
-#define simd_word simd_word_polyfill
-struct simd_word_polyfill {
+template <size_t bit_size>
+struct bitword;
+
+/// Implements a 64 bit bitword using no architecture-specific instructions, just standard C++.
+template <>
+struct bitword<64> {
     constexpr static size_t BIT_SIZE = 64;
     constexpr static size_t BIT_POW = 6;
 
@@ -42,59 +44,59 @@ struct simd_word_polyfill {
         free(ptr);
     }
 
-    inline constexpr simd_word() : u64{} {
+    inline constexpr bitword<64>() : u64{} {
     }
-    inline constexpr explicit simd_word(uint64_t v) : u64{v} {
-    }
-
-    constexpr inline static simd_word tile64(uint64_t pattern) {
-        return simd_word(pattern);
+    inline constexpr explicit bitword<64>(uint64_t v) : u64{v} {
     }
 
-    constexpr inline static simd_word tile8(uint8_t pattern) {
-        return simd_word(tile64_helper(pattern, 8));
+    constexpr inline static bitword<64> tile64(uint64_t pattern) {
+        return bitword<64>(pattern);
+    }
+
+    constexpr inline static bitword<64> tile8(uint8_t pattern) {
+        return bitword<64>(tile64_helper(pattern, 8));
     }
 
     inline operator bool() const {  // NOLINT(hicpp-explicit-conversions)
         return (bool)u64[0];
     }
 
-    inline simd_word &operator^=(const simd_word &other) {
+    inline bitword<64> &operator^=(const bitword<64> &other) {
         u64[0] ^= other.u64[0];
         return *this;
     }
 
-    inline simd_word &operator&=(const simd_word &other) {
+    inline bitword<64> &operator&=(const bitword<64> &other) {
         u64[0] &= other.u64[0];
         return *this;
     }
 
-    inline simd_word &operator|=(const simd_word &other) {
+    inline bitword<64> &operator|=(const bitword<64> &other) {
         u64[0] |= other.u64[0];
         return *this;
     }
 
-    inline simd_word operator^(const simd_word &other) const {
-        return simd_word(u64[0] ^ other.u64[0]);
+    inline bitword<64> operator^(const bitword<64> &other) const {
+        return bitword<64>(u64[0] ^ other.u64[0]);
     }
 
-    inline simd_word operator&(const simd_word &other) const {
-        return simd_word(u64[0] & other.u64[0]);
+    inline bitword<64> operator&(const bitword<64> &other) const {
+        return bitword<64>(u64[0] & other.u64[0]);
     }
 
-    inline simd_word operator|(const simd_word &other) const {
-        return simd_word(u64[0] | other.u64[0]);
+    inline bitword<64> operator|(const bitword<64> &other) const {
+        return bitword<64>(u64[0] | other.u64[0]);
     }
 
-    inline simd_word andnot(const simd_word &other) const {
-        return simd_word(~u64[0] & other.u64[0]);
+    inline bitword<64> andnot(const bitword<64> &other) const {
+        return bitword<64>(~u64[0] & other.u64[0]);
     }
 
     inline uint16_t popcount() const {
         return popcnt64(u64[0]);
     }
 
-    static void inplace_transpose_square(simd_word *data_block, size_t stride) {
+    static void inplace_transpose_square(bitword<64> *data_block, size_t stride) {
         inplace_transpose_64x64((uint64_t *)data_block, stride);
     }
 };

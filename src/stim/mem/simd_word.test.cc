@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/mem/simd_compat.h"
+#include "stim/mem/simd_word.h"
 
 #include <algorithm>
 
 #include "gtest/gtest.h"
 
 #include "stim/test_util.test.h"
+#include "stim/mem/simd_word.test.h"
 
 using namespace stim;
 
@@ -30,7 +31,7 @@ union WordOr64 {
     }
 };
 
-TEST(simd_compat, popcount) {
+TEST(simd_word_pick, popcount) {
     WordOr64 v;
     auto n = sizeof(simd_word) * 8;
 
@@ -52,17 +53,17 @@ TEST(simd_compat, popcount) {
     }
 }
 
-TEST(simd_word, operator_bool) {
-    simd_word w{};
+TEST_EACH_WORD_SIZE_W(simd_word_pick, operator_bool, {
+    bitword<W> w{};
     auto p = &w.u64[0];
     ASSERT_EQ((bool)w, false);
     p[0] = 5;
     ASSERT_EQ((bool)w, true);
     p[0] = 0;
-    if (simd_word::BIT_SIZE > 64) {
+    if (bitword<W>::BIT_SIZE > 64) {
         p[1] = 5;
         ASSERT_EQ((bool)w, true);
         p[1] = 0;
         ASSERT_EQ((bool)w, false);
     }
-}
+})
