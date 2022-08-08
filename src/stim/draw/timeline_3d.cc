@@ -201,6 +201,13 @@ JsonObj make_buffer(const std::vector<T> items) {
 }
 
 std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
+    constexpr size_t GL_UNSIGNED_SHORT = 5123;
+    constexpr size_t GL_FLOAT = 5126;
+    constexpr size_t GL_ARRAY_BUFFER = 34962;
+    constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
+    constexpr size_t GL_TRIANGLE_STRIP = 5;
+//    constexpr size_t GL_LINE_STRIP = 3;
+
     std::vector<Triangle> triangles;
     triangles.push_back({{1, 1, 0}, std::array<V3, 3>{{{0, 0, 0}, {1, 1, 1}, {2, 0, 0}}}});
 
@@ -242,7 +249,7 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
             {"buffer", 0},
             {"byteOffset", 0},
             {"byteLength", vert_data.size() * sizeof(float)},
-            {"target", 34962},
+            {"target", GL_ARRAY_BUFFER},
         },
     };
 
@@ -250,7 +257,7 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         std::map<std::string, JsonObj>{
             {"bufferView", 0},
             {"byteOffset", 0},
-            {"componentType", 5126},
+            {"componentType", GL_FLOAT},
             {"count", vert_data.size() / 3},
             {"type", "VEC3"},
             {"min", std::vector<JsonObj>{-100, -100, -100}},
@@ -280,18 +287,19 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
                  {"attributes", {std::map<std::string, JsonObj>{{"POSITION", 0}}}},
                  {"indices", mesh_index + 1},
                  {"material", mesh_index},
+                 {"mode", GL_TRIANGLE_STRIP},
              }}}}});
 
         buffer_views.push_back(std::map<std::string, JsonObj>{
             {"buffer", 1},
             {"byteOffset", index_data_offset},
             {"byteLength", index_data.size() * sizeof(float) * 3 - index_data_offset},
-            {"target", 34963},
+            {"target", GL_ELEMENT_ARRAY_BUFFER},
         });
         accessors.push_back(std::map<std::string, JsonObj>{
             {"bufferView", mesh_index + 1},
             {"byteOffset", 0},
-            {"componentType", 5123},
+            {"componentType", GL_UNSIGNED_SHORT},
             {"count", tlist.size() * 6},
             {"type", "SCALAR"},
             {"max", std::vector<JsonObj>{vertex_to_index.size() - 1}},
@@ -300,8 +308,6 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         mesh_index++;
     }
 
-//    b_uri = 'data:application/octet-stream;base64,' + base64.b64encode(vert_data).decode('ascii')
-//    i_uri = 'data:application/octet-stream;base64,' + base64.b64encode(index_data).decode('ascii')
     std::vector<JsonObj> scene_nodes;
     for (size_t k = 0; k < triangle_lists.size(); k++) {
         scene_nodes.push_back(k);
