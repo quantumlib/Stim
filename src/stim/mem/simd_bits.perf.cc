@@ -45,9 +45,13 @@ BENCHMARK(simd_bits_xor_10K) {
 BENCHMARK(simd_bits_not_zero_100K) {
     size_t n = 10 * 100;
     simd_bits<MAX_BITWORD_WIDTH> d(n);
+    size_t total = 0;
     benchmark_go([&]() {
-        d.not_zero();
+        total += d.not_zero();
     })
         .goal_nanos(4)
         .show_rate("Bits", n);
+    if (total) {
+        std::cerr << "data dependency";
+    }
 }
