@@ -85,6 +85,16 @@ TEST(simd_util, min_bits_to_num_bits_padded) {
         ASSERT_EQ(f((1 << 30) - 1), 1 << 30);
         ASSERT_EQ(f(1 << 30), 1 << 30);
         ASSERT_EQ(f((1 << 30) + 1), (1 << 30) + 128);
+    } else if (sizeof(simd_word) == 64 / 8) {
+        ASSERT_EQ(f(0), 0);
+        ASSERT_EQ(f(1), 64);
+        ASSERT_EQ(f(100), 128);
+        ASSERT_EQ(f(255), 256);
+        ASSERT_EQ(f(256), 256);
+        ASSERT_EQ(f(257), 256 + 64);
+        ASSERT_EQ(f((1 << 30) - 1), 1 << 30);
+        ASSERT_EQ(f(1 << 30), 1 << 30);
+        ASSERT_EQ(f((1 << 30) + 1), (1 << 30) + 64);
     } else {
         ASSERT_TRUE(false) << "Unrecognized size.";
     }
