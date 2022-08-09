@@ -7,6 +7,15 @@ using namespace stim_internal;
 
 constexpr size_t GL_FLOAT = 5126;
 constexpr size_t GL_ARRAY_BUFFER = 34962;
+//    constexpr size_t GL_UNSIGNED_SHORT = 5123;
+//    constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
+    constexpr size_t GL_TRIANGLE_STRIP = 5;
+    constexpr size_t GL_TRIANGLES = 4;
+    constexpr size_t GL_TRIANGLE_FAN = 6;
+
+    constexpr size_t GL_LINES = 1;
+    constexpr size_t GL_LINE_STRIP = 3;
+//    constexpr size_t GL_LINE_LOOP = 2;
 
 struct V3 {
     std::array<float, 3> xyz;
@@ -89,7 +98,7 @@ struct VertexPrimitive {
     JsonObj primitive(size_t position_buffer_index, const std::map<std::string, size_t> &material_index_map, const std::string &material_name) const {
         return std::map<std::string, JsonObj>{
              {"attributes", {std::map<std::string, JsonObj>{{"POSITION", position_buffer_index}}}},
-             {"material", material_index_map.at(material_name)},
+            {"material", material_index_map.at(material_name)},
              {"mode", element_type},
         };
     }
@@ -170,15 +179,42 @@ std::vector<V3> cube_triangle_strip() {
     };
 }
 
-std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
-//    constexpr size_t GL_UNSIGNED_SHORT = 5123;
-//    constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
-    constexpr size_t GL_TRIANGLE_STRIP = 5;
-    constexpr size_t GL_TRIANGLES = 4;
-//    constexpr size_t GL_LINE_STRIP = 3;
+std::vector<V3> circle_line_loop(size_t n) {
+    std::vector<V3> result;
+    result.push_back({0.5f, 0, 0});
+    for (size_t k = 1; k < n; k++) {
+        float t = k*M_PI*2/n;
+        result.push_back({cosf(t) * 0.5f, 0, sinf(t) * 0.5f});
+    }
+    result.push_back({0.5f, 0, 0});
+    return result;
+}
 
+struct Mesh {
+    std::string name;
+    std::vector<std::string> primitive_names;
+    std::vector<std::string> material_names;
+
+    JsonObj to_json(const std::vector<VertexPrimitive> &primitives,
+              const std::map<std::string, size_t> primitive_index_map,
+              const std::map<std::string, size_t> buffer_index_map,
+              const std::map<std::string, size_t> material_index_map) {
+        std::vector<JsonObj> json_primitives;
+        for (size_t k = 0; k < material_names.size(); k++) {
+            auto &p = primitives[primitive_index_map.at(primitive_names[k])];
+            json_primitives.push_back(
+                p.primitive(buffer_index_map, material_index_map, material_names[k])
+            );
+        }
+        return std::map<std::string, JsonObj>{
+            {"primitives", std::move(json_primitives)},
+        };
+    }
+};
+
+std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
     std::map<V3, size_t> color_to_material_index = {};
-    std::vector<JsonObj> materials;
+    std::vector<Material> materials;
 
     materials.push_back(Material{
         .name="reddish",
@@ -186,103 +222,159 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         .metallic_factor=0.1,
         .roughness_factor=0.5,
         .double_sided=true,
-    }.to_json());
+    });
     materials.push_back(Material{
         .name="hyper_blue",
         .base_color_factor_rgba={0.1, 0, 1, 1},
         .metallic_factor=0.4,
         .roughness_factor=0.5,
         .double_sided=true,
-    }.to_json());
+    });
+    materials.push_back(Material{
+        .name="white",
+        .base_color_factor_rgba={1, 1, 1, 1},
+        .metallic_factor=0.4,
+        .roughness_factor=0.5,
+        .double_sided=true,
+    });
+    materials.push_back(Material{
+        .name="black",
+        .base_color_factor_rgba={0, 0, 0, 1},
+        .metallic_factor=0,
+        .roughness_factor=0.95,
+        .double_sided=true,
+    });
     materials.push_back(Material{
         .name="yellow",
         .base_color_factor_rgba={1, 1, 0, 1},
         .metallic_factor=0.4,
         .roughness_factor=0.5,
         .double_sided=false,
-    }.to_json());
+    });
+
 
     std::map<std::string, size_t> material_index_map;
     for (size_t k = 0; k < materials.size(); k++) {
-        material_index_map.insert({materials[k].map.at("name").text, k});
+        material_index_map.insert({materials[k].name, k});
     }
 
-    VertexPrimitive cube{"cube", cube_triangle_strip(), GL_TRIANGLE_STRIP};
-    VertexPrimitive first_triangle{"first_triangle", {
-        {0, 0, 0},
-        {0, 1, 0},
-        {1, 0, 0},
-    }, GL_TRIANGLES};
-    VertexPrimitive second_triangle{"second_triangle", {
-        {2, 0, 1},
-        {0, 2, 1},
-        {2, 2, 1},
-    }, GL_TRIANGLES};
-
-    std::vector<VertexPrimitive> vertex_data_buffers{
-        first_triangle,
-        second_triangle,
-        cube,
+    std::vector<VertexPrimitive> primitives{
+        {"disk", circle_line_loop(16), GL_TRIANGLE_FAN},
+        {"circle", circle_line_loop(16), GL_LINE_STRIP},
+        {"cube", cube_triangle_strip(), GL_TRIANGLE_STRIP},
+        {"cross", {{-0.5f, 0, 0}, {+0.5f, 0, 0}, {0, 0, -0.5f}, {0, 0, +0.5f}}, GL_LINES},
+        {"abs_lines", {}, GL_LINES},
     };
-    std::vector<JsonObj> buffers;
     std::map<std::string, size_t> buffer_index_map;
-    std::vector<JsonObj> buffer_views;
-    std::vector<JsonObj> accessors;
-    for (size_t k = 0; k < vertex_data_buffers.size(); k++) {
-        const auto& v = vertex_data_buffers[k];
-        buffers.push_back(v.buffer());
+    for (size_t k = 0; k < primitives.size(); k++) {
+        const auto& v = primitives[k];
         buffer_index_map.insert({v.name, k});
-        buffer_views.push_back(v.buffer_view(k));
-        accessors.push_back(v.accessor(k));
     }
 
-    std::vector<JsonObj> meshes;
-    meshes.push_back(std::map<std::string, JsonObj>{
-        {"primitives", std::vector<JsonObj>{
-            first_triangle.primitive(buffer_index_map, material_index_map, "reddish"),
-        }}
+    std::vector<Mesh> meshes;
+    meshes.push_back(Mesh{
+        "insta_disk",
+        {"disk"},
+        {"reddish"}
     });
-    meshes.push_back(std::map<std::string, JsonObj>{
-        {"primitives", std::vector<JsonObj>{
-            cube.primitive(buffer_index_map, material_index_map, "yellow"),
-        }}
+    meshes.push_back(Mesh{
+        "insta_cube",
+        {"cube"},
+        {"yellow"}
+    });
+    meshes.push_back(Mesh{
+        "X",
+        {"disk", "circle", "cross"},
+        {"white", "black", "black"}
+    });
+    meshes.push_back(Mesh{
+        "@",
+        {"disk"},
+        {"black"}
+    });
+    meshes.push_back(Mesh{
+        "abs_lines",
+        {"abs_lines"},
+        {"black"}
     });
 
-    std::vector<JsonObj> nodes;
-    for (size_t k = 0; k < 20; k++) {
-        nodes.push_back(std::map<std::string, JsonObj>{
-            {"mesh", 1},
-            {"translation", std::vector<JsonObj>{
-                0,
-                0,
-                -(float)k * 2,
-            }},
-        });
+    std::map<std::string, size_t> mesh_index_map;
+    for (size_t k = 0; k < meshes.size(); k++) {
+        mesh_index_map.insert({meshes[k].name, k});
     }
-    nodes.push_back(std::map<std::string, JsonObj>{
-        {"mesh", 0},
+
+    std::vector<JsonObj> nodes_json;
+    nodes_json.push_back(std::map<std::string, JsonObj>{
+        {"mesh", mesh_index_map.at("X")},
+        {"translation", std::vector<JsonObj>{
+            0,
+            0,
+            0,
+        }},
     });
-    std::vector<JsonObj> scene_nodes;
-    for (size_t k = 0; k < nodes.size(); k++) {
-        scene_nodes.push_back(k);
+    nodes_json.push_back(std::map<std::string, JsonObj>{
+        {"mesh", mesh_index_map.at("@")},
+        {"translation", std::vector<JsonObj>{
+            2,
+            0,
+            0,
+        }},
+    });
+    nodes_json.push_back(std::map<std::string, JsonObj>{
+        {"mesh", mesh_index_map.at("abs_lines")},
+    });
+    {
+        auto &v = primitives[buffer_index_map.at("abs_lines")].vertices;
+        v.push_back({0, 0, 0});
+        v.push_back({2, 0, 0});
+    }
+
+    std::vector<JsonObj> json_meshes;
+    for (auto &m : meshes) {
+        json_meshes.push_back(m.to_json(
+            primitives,
+            buffer_index_map,
+            buffer_index_map,
+            material_index_map
+        ));
+    }
+
+    std::vector<JsonObj> scene_nodes_json;
+    for (size_t k = 0; k < nodes_json.size(); k++) {
+        scene_nodes_json.push_back(k);
+    }
+
+    std::vector<JsonObj> buffers_json;
+    std::vector<JsonObj> buffer_views_json;
+    std::vector<JsonObj> accessors_json;
+    for (size_t k = 0; k < primitives.size(); k++) {
+        const auto& v = primitives[k];
+        buffers_json.push_back(v.buffer());
+        buffer_views_json.push_back(v.buffer_view(k));
+        accessors_json.push_back(v.accessor(k));
+    }
+
+    std::vector<JsonObj> materials_json;
+    for (size_t k = 0; k < materials.size(); k++) {
+        materials_json.push_back(materials[k].to_json());
     }
 
     JsonObj result(std::map<std::string, JsonObj>{
         {"scene", 0},
         {"scenes", std::vector<JsonObj>{
             std::map<std::string, JsonObj>{
-                {"nodes", std::move(scene_nodes)},
+                {"nodes", std::move(scene_nodes_json)},
             },
         }},
         {"asset", std::map<std::string, JsonObj>{
             {"version", "2.0"},
         }},
-        {"nodes", std::move(nodes)},
-        {"meshes", std::move(meshes)},
-        {"buffers", buffers},
-        {"bufferViews", std::move(buffer_views)},
-        {"accessors", std::move(accessors)},
-        {"materials", std::move(materials)},
+        {"nodes", std::move(nodes_json)},
+        {"meshes", std::move(json_meshes)},
+        {"buffers", std::move(buffers_json)},
+        {"bufferViews", std::move(buffer_views_json)},
+        {"accessors", std::move(accessors_json)},
+        {"materials", std::move(materials_json)},
     });
     return result.str();
 }
