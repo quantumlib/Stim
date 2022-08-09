@@ -1,5 +1,6 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
 # (This a stubs file describing the classes and methods in stim.)
+from __future__ import annotations
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
 if TYPE_CHECKING:
     import io
@@ -73,18 +74,19 @@ class Circuit:
         """Returns copies of instructions from the circuit.
 
         Args:
-            index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
-                of instructions to return as a circuit.
+            index_or_slice: An integer index picking out an instruction to return, or a
+                slice picking out a range of instructions to return as a circuit.
 
         Returns:
             If the index was an integer, then an instruction from the circuit.
-            If the index was a slice, then a circuit made up of the instructions in that slice.
+            If the index was a slice, then a circuit made up of the instructions in that
+            slice.
 
         Examples:
             >>> import stim
             >>> circuit = stim.Circuit('''
             ...    X 0
-            ...    X_ERROR(0.5) 1 2
+            ...    X_ERROR(0.5) 2
             ...    REPEAT 100 {
             ...        X 0
             ...        Y 1 2
@@ -93,8 +95,8 @@ class Circuit:
             ...    M 0
             ...    DETECTOR rec[-1]
             ... ''')
-            >>> circuit[1]
-            stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], [0.5])
+            >>> circuit[0]
+            stim.CircuitInstruction('X_ERROR', [stim.GateTarget(2)], [0.5])
             >>> circuit[2]
             stim.CircuitRepeatBlock(100, stim.Circuit('''
                 X 0
@@ -102,7 +104,7 @@ class Circuit:
             '''))
             >>> circuit[1::2]
             stim.Circuit('''
-                X_ERROR(0.5) 1 2
+                X_ERROR(0.5) 2
                 TICK
                 DETECTOR rec[-1]
             ''')
@@ -164,7 +166,8 @@ class Circuit:
         """Creates a stim.Circuit.
 
         Args:
-            stim_program_text: Defaults to empty. Describes operations to append into the circuit.
+            stim_program_text: Defaults to empty. Describes operations to append into
+                the circuit.
 
         Examples:
             >>> import stim
@@ -206,13 +209,18 @@ class Circuit:
         self,
         repetitions: int,
     ) -> stim.Circuit:
-        """Returns a circuit with a REPEAT block containing the current circuit's instructions.
+        """Repeats the circuit using a REPEAT block.
 
-        Special case: if the repetition count is 0, an empty circuit is returned.
-        Special case: if the repetition count is 1, an equal circuit with no REPEAT block is returned.
+        Has special cases for 0 repetitions and 1 repetitions.
 
         Args:
             repetitions: The number of times the REPEAT block should repeat.
+
+        Returns:
+            repetitions=0: An empty circuit.
+            repetitions=1: A copy of this circuit.
+            repetitions>=2: A circuit with a single REPEAT block, where the contents of
+                that repeat block are this circuit.
 
         Examples:
             >>> import stim
@@ -243,13 +251,18 @@ class Circuit:
         self,
         repetitions: int,
     ) -> stim.Circuit:
-        """Returns a circuit with a REPEAT block containing the current circuit's instructions.
+        """Repeats the circuit using a REPEAT block.
 
-        Special case: if the repetition count is 0, an empty circuit is returned.
-        Special case: if the repetition count is 1, an equal circuit with no REPEAT block is returned.
+        Has special cases for 0 repetitions and 1 repetitions.
 
         Args:
             repetitions: The number of times the REPEAT block should repeat.
+
+        Returns:
+            repetitions=0: An empty circuit.
+            repetitions=1: A copy of this circuit.
+            repetitions>=2: A circuit with a single REPEAT block, where the contents of
+                that repeat block are this circuit.
 
         Examples:
             >>> import stim
@@ -316,23 +329,29 @@ class Circuit:
         Args:
             name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
 
-                This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
-                results in the instruction or block being appended to the circuit. The other arguments (targets and
-                arg) can't be specified when doing so.
+                This argument can also be set to a `stim.CircuitInstruction` or
+                `stim.CircuitInstructionBlock`, which results in the instruction or
+                block being appended to the circuit. The other arguments (targets
+                and arg) can't be specified when doing so.
 
-                (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
-            targets: The objects operated on by the gate. This can be either a single target or an iterable of
-                multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
-                stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
-                measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
-            arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
-                list of doubles parameterizing the gate. Different gates take different parens arguments. For
-                example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
-                PAULI_CHANNEL_1 takes three disjoint probabilities.
+                (The argument being called `name` is no longer quite right, but
+                is being kept for backwards compatibility.)
+            targets: The objects operated on by the gate. This can be either a
+                single target or an iterable of multiple targets to broadcast the
+                gate over. Each target can be an integer (a qubit), a
+                stim.GateTarget, or a special target from one of the `stim.target_*`
+                methods (such as a measurement record target like `rec[-1]` from
+                `stim.target_rec(-1)`).
+            arg: The "parens arguments" for the gate, such as the probability for a
+                noise operation. A double or list of doubles parameterizing the
+                gate. Different gates take different parens arguments. For example,
+                X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable
+                index, and PAULI_CHANNEL_1 takes three disjoint probabilities.
 
-                Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
-                `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
-                that take exactly one argument.
+                Note: Defaults to no parens arguments. Except, for backwards
+                compatibility reasons, `cirq.append_operation` (but not
+                `cirq.append`) will default to a single 0.0 argument for gates that
+                take exactly one argument.
         """
     def append_from_stim_program_text(
         self,
@@ -357,7 +376,8 @@ class Circuit:
             CX rec[-1] 1
 
         Args:
-            stim_program_text: The STIM program text containing the circuit operations to append.
+            stim_program_text: The STIM program text containing the circuit operations
+                to append.
         """
     def append_operation(
         self,
@@ -375,18 +395,20 @@ class Circuit:
     ) -> bool:
         """Checks if a circuit is approximately equal to another circuit.
 
-        Two circuits are approximately equal if they are equal up to slight perturbations of instruction arguments
-        such as probabilities. For example `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an
-        absolute tolerance of 0.002. All other details of the circuits (such as the ordering of instructions and
-        targets) must be exactly the same.
+        Two circuits are approximately equal if they are equal up to slight
+        perturbations of instruction arguments such as probabilities. For example,
+        `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an absolute
+        tolerance of 0.002. All other details of the circuits (such as the ordering of
+        instructions and targets) must be exactly the same.
 
         Args:
             other: The circuit, or other object, to compare to this one.
-            atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+            atol: The absolute error tolerance. The maximum amount each probability may
+                have been perturbed by.
 
         Returns:
-            True if the given object is a circuit approximately equal up to the receiving circuit up to the given
-            tolerance, otherwise False.
+            True if the given object is a circuit approximately equal up to the
+            receiving circuit up to the given tolerance, otherwise False.
 
         Examples:
             >>> import stim
@@ -442,28 +464,33 @@ class Circuit:
         *,
         seed: object = None,
     ) -> stim.CompiledDetectorSampler:
-        """Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
+        """Returns an object that can batch sample detection events from the circuit.
 
         Args:
-            seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
                 Must be None or an integer in range(2**64).
 
-                Defaults to None. When set to None, a prng seeded by system entropy is used.
+                Defaults to None. When None, the prng is seeded from system entropy.
 
-                When set to an integer, making the exact same series calls on the exact same machine with the exact
-                same version of Stim will produce the exact same simulation results.
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
 
-                CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                present to make it possible to have future optimizations to the random sampling, and is enforced by
-                introducing intentional differences in the seeding strategy from version to version.
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
 
-                CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                instructions and one that only supports SSE instructions may produce different simulation results.
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
 
-                CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                call.
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                shots are taken. For example, taking 10 shots and then 90 shots will
+                give different results from taking 100 shots in one call.
 
         Examples:
             >>> import stim
@@ -482,21 +509,23 @@ class Circuit:
         *,
         skip_reference_sample: bool = False,
     ) -> stim.CompiledMeasurementsToDetectionEventsConverter:
-        """Returns an object that can efficiently convert measurements into detection events for the given circuit.
+        """Creates a measurement-to-detection-event converter for the given circuit.
 
-        The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
-        during initialization of the converter, as a baseline for determining what the expected value of a detector
-        is.
+        The converter uses a noiseless reference sample, collected from the circuit
+        using stim's Tableau simulator during initialization of the converter, as a
+        baseline for determining what the expected value of a detector is.
 
-        Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
-        noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
-        the same reference sample for a given circuit.
+        Note that the expected behavior of gauge detectors (detectors that are not
+        actually deterministic under noiseless execution) can vary depending on the
+        reference sample. Stim mitigates this by always generating the same reference
+        sample for a given circuit.
 
         Args:
-            skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
-                is initialized to all-zeroes instead of being collected from the circuit. This should only be used
-                if it's known that the all-zeroes sample is actually a possible result from the circuit (under
-                noiseless execution).
+            skip_reference_sample: Defaults to False. When set to True, the reference
+                sample used by the converter is initialized to all-zeroes instead of
+                being collected from the circuit. This should only be used if it's known
+                that the all-zeroes sample is actually a possible result from the
+                circuit (under noiseless execution).
 
         Returns:
             An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
@@ -522,40 +551,48 @@ class Circuit:
         skip_reference_sample: bool = False,
         seed: object = None,
     ) -> stim.CompiledMeasurementSampler:
-        """Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
+        """Returns an object that can quickly batch sample measurements from the circuit.
 
         Args:
-            skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
-                initialized to all-zeroes instead of being collected from the circuit. This means that the results
-                returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
-                measurement results.
+            skip_reference_sample: Defaults to False. When set to True, the reference
+                sample used by the sampler is initialized to all-zeroes instead of being
+                collected from the circuit. This means that the results returned by the
+                sampler are actually whether or not each measurement was *flipped*,
+                instead of true measurement results.
 
-                Forcing an all-zero reference sample is useful when you are only interested in error propagation and
-                don't want to have to deal with the fact that some measurements want to be On when no errors occur.
-                It is also useful when you know for sure that the all-zero result is actually a possible result from
-                the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
-                other. Computing the reference sample is the most time consuming and memory intensive part of
-                simulating the circuit, so promising that the simulator can safely skip that step is an effective
-                optimization.
-            seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                Forcing an all-zero reference sample is useful when you are only
+                interested in error propagation and don't want to have to deal with the
+                fact that some measurements want to be On when no errors occur. It is
+                also useful when you know for sure that the all-zero result is actually
+                a possible result from the circuit (under noiseless execution), meaning
+                it is a valid reference sample as good as any other. Computing the
+                reference sample is the most time consuming and memory intensive part of
+                simulating the circuit, so promising that the simulator can safely skip
+                that step is an effective optimization.
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
                 Must be None or an integer in range(2**64).
 
-                Defaults to None. When set to None, a prng seeded by system entropy is used.
+                Defaults to None. When None, the prng is seeded from system entropy.
 
-                When set to an integer, making the exact same series calls on the exact same machine with the exact
-                same version of Stim will produce the exact same simulation results.
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
 
-                CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                present to make it possible to have future optimizations to the random sampling, and is enforced by
-                introducing intentional differences in the seeding strategy from version to version.
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
 
-                CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                instructions and one that only supports SSE instructions may produce different simulation results.
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
 
-                CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                call.
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                shots are taken. For example, taking 10 shots and then 90 shots will
+                give different results from taking 100 shots in one call.
 
         Examples:
             >>> import stim
@@ -595,54 +632,68 @@ class Circuit:
         """Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 
         Args:
-            decompose_errors: Defaults to false. When set to true, the error analysis attempts to decompose the
-                components of composite error mechanisms (such as depolarization errors) into simpler errors, and
-                suggest this decomposition via `stim.target_separator()` between the components. For example, in an
-                XZ surface code, single qubit depolarization has a Y error term which can be decomposed into simpler
-                X and Z error terms. Decomposition fails (causing this method to throw) if it's not possible to
-                decompose large errors into simple errors that affect at most two detectors.
-            flatten_loops: Defaults to false. When set to true, the output will not contain any `repeat` blocks.
-                When set to false, the error analysis watches for loops in the circuit reaching a periodic steady
-                state with respect to the detectors being introduced, the error mechanisms that affect them, and the
-                locations of the logical observables. When it identifies such a steady state, it outputs a repeat
-                block. This is massively more efficient than flattening for circuits that contain loops, but creates
-                a more complex output.
-            allow_gauge_detectors: Defaults to false. When set to false, the error analysis verifies that detectors
-                in the circuit are actually deterministic under noiseless execution of the circuit. When set to
-                true, these detectors are instead considered to be part of degrees freedom that can be removed from
-                the error model. For example, if detectors D1 and D3 both anti-commute with a reset, then the error
-                model has a gauge `error(0.5) D1 D3`. When gauges are identified, one of the involved detectors is
-                removed from the system using Gaussian elimination.
+            decompose_errors: Defaults to false. When set to true, the error analysis
+                attempts to decompose the components of composite error mechanisms (such
+                as depolarization errors) into simpler errors, and suggest this
+                decomposition via `stim.target_separator()` between the components. For
+                example, in an XZ surface code, single qubit depolarization has a Y
+                error term which can be decomposed into simpler X and Z error terms.
+                Decomposition fails (causing this method to throw) if it's not possible
+                to decompose large errors into simple errors that affect at most two
+                detectors.
+            flatten_loops: Defaults to false. When set to True, the output will not
+                contain any `repeat` blocks. When set to False, the error analysis
+                watches for loops in the circuit reaching a periodic steady state with
+                respect to the detectors being introduced, the error mechanisms that
+                affect them, and the locations of the logical observables. When it
+                identifies such a steady state, it outputs a repeat block. This is
+                massively more efficient than flattening for circuits that contain
+                loops, but creates a more complex output.
+            allow_gauge_detectors: Defaults to false. When set to false, the error
+                analysis verifies that detectors in the circuit are actually
+                deterministic under noiseless execution of the circuit. When set to
+                True, these detectors are instead considered to be part of degrees
+                freedom that can be removed from the error model. For example, if
+                detectors D1 and D3 both anti-commute with a reset, then the error model
+                has a gauge `error(0.5) D1 D3`. When gauges are identified, one of the
+                involved detectors is removed from the system using Gaussian
+                elimination.
 
-                Note that logical observables are still verified to be deterministic, even if this option is set.
-            approximate_disjoint_errors: Defaults to false. When set to false, composite error mechanisms with
-                disjoint components (such as `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`) can cause the error analysis to throw
-                exceptions (because detector error models can only contain independent error mechanisms). When set
-                to true, the probabilities of the disjoint cases are instead assumed to be independent
-                probabilities. For example, a ``PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
-                `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an approximation, but it is a good
-                approximation for small probabilities.
+                Note that logical observables are still verified to be deterministic,
+                even if this option is set.
+            approximate_disjoint_errors: Defaults to false. When set to false, composite
+                error mechanisms with disjoint components (such as
+                `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`) can cause the error analysis to throw
+                exceptions (because detector error models can only contain independent
+                error mechanisms). When set to true, the probabilities of the disjoint
+                cases are instead assumed to be independent probabilities. For example,
+                a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
+                `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an
+                approximation, but it is a good approximation for small probabilities.
 
-                This argument can also be set to a probability between 0 and 1, setting a threshold below which the
-                approximation is acceptable. Any error mechanisms that have a component probability above the
-                threshold will cause an exception to be thrown.
+                This argument can also be set to a probability between 0 and 1, setting
+                a threshold below which the approximation is acceptable. Any error
+                mechanisms that have a component probability above the threshold will
+                cause an exception to be thrown.
             ignore_decomposition_failures: Defaults to False.
-                When this is set to True, circuit errors that fail to decompose into graphlike
-                detector error model errors no longer cause the conversion process to abort.
-                Instead, the undecomposed error is inserted into the output. Whatever tool
-                the detector error model is then given to is responsible for dealing with the
-                undecomposed errors (e.g. a tool may choose to simply ignore them).
+                When this is set to True, circuit errors that fail to decompose into
+                graphlike detector error model errors no longer cause the conversion
+                process to abort. Instead, the undecomposed error is inserted into the
+                output. Whatever tool the detector error model is then given to is
+                responsible for dealing with the undecomposed errors (e.g. a tool may
+                choose to simply ignore them).
 
                 Irrelevant unless decompose_errors=True.
             block_decomposition_from_introducing_remnant_edges: Defaults to False.
-                Requires that both A B and C D be present elsewhere in the detector error model
-                in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
-                needs to appear to allow this decomposition.
+                Requires that both A B and C D be present elsewhere in the detector
+                error model in order to decompose A B C D into A B ^ C D. Normally, only
+                one of A B or C D needs to appear to allow this decomposition.
 
-                Remnant edges can be a useful feature for ensuring decomposition succeeds, but
-                they can also reduce the effective code distance by giving the decoder single
-                edges that actually represent multiple errors in the circuit (resulting in the
-                decoder making misinformed choices when decoding).
+                Remnant edges can be a useful feature for ensuring decomposition
+                succeeds, but they can also reduce the effective code distance by giving
+                the decoder single edges that actually represent multiple errors in the
+                circuit (resulting in the decoder making misinformed choices when
+                decoding).
 
                 Irrelevant unless decompose_errors=True.
 
@@ -672,16 +723,19 @@ class Circuit:
         """Explains how detector error model errors are produced by circuit errors.
 
         Args:
-            dem_filter: Defaults to None (unused). When used, the output will only contain detector error
-                model errors that appear in the given `stim.DetectorErrorModel`. Any error mechanisms from the
-                detector error model that can't be reproduced using one error from the circuit will also be included
-                in the result, but with an empty list of associated circuit error mechanisms.
-            reduce_to_one_representative_error: Defaults to False. When True, the items in the result will contain
-                at most one circuit error mechanism.
+            dem_filter: Defaults to None (unused). When used, the output will only
+                contain detector error model errors that appear in the given
+                `stim.DetectorErrorModel`. Any error mechanisms from the detector error
+                model that can't be reproduced using one error from the circuit will
+                also be included in the result, but with an empty list of associated
+                circuit error mechanisms.
+            reduce_to_one_representative_error: Defaults to False. When True, the items
+                in the result will contain at most one circuit error mechanism.
 
         Returns:
-            A `List[stim.ExplainedError]` (see `stim.ExplainedError` for more information). Each item in the list
-            describes how a detector error model error can be produced by individual circuit errors.
+            A `List[stim.ExplainedError]` (see `stim.ExplainedError` for more
+            information). Each item in the list describes how a detector error model
+            error can be produced by individual circuit errors.
 
         Examples:
             >>> import stim
@@ -786,7 +840,8 @@ class Circuit:
 
         """Reads a stim circuit from a file.
 
-        The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+        The file format is defined at
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
 
         Args:
             file: A file path or open file object to read from.
@@ -834,38 +889,45 @@ class Circuit:
 
         The generated circuits can include configurable noise.
 
-        The generated circuits include DETECTOR and OBSERVABLE_INCLUDE annotations so that their detection events
-        and logical observables can be sampled.
+        The generated circuits include DETECTOR and OBSERVABLE_INCLUDE annotations so
+        that their detection events and logical observables can be sampled.
 
-        The generated circuits include TICK annotations to mark the progression of time. (E.g. so that converting
-        them using `stimcirq.stim_circuit_to_cirq_circuit` will produce a `cirq.Circuit` with the intended moment
-        structure.)
+        The generated circuits include TICK annotations to mark the progression of time.
+        (E.g. so that converting them using `stimcirq.stim_circuit_to_cirq_circuit` will
+        produce a `cirq.Circuit` with the intended moment structure.)
 
         Args:
-            code_task: A string identifying the type of circuit to generate. Available types are:
-                - `repetition_code:memory`
-                - `surface_code:rotated_memory_x`
-                - `surface_code:rotated_memory_z`
-                - `surface_code:unrotated_memory_x`
-                - `surface_code:unrotated_memory_z`
-                - `color_code:memory_xyz`
-            distance: The desired code distance of the generated circuit. The code distance is the minimum number
-                of physical errors needed to cause a logical error. This parameter indirectly determines how many
-                qubits the generated circuit uses.
-            rounds: How many times the measurement qubits in the generated circuit will be measured. Indirectly
-                determines the duration of the generated circuit.
-            after_clifford_depolarization: Defaults to 0. The probability (p) of `DEPOLARIZE1(p)` operations to add
-                after every single-qubit Clifford operation and `DEPOLARIZE2(p)` operations to add after every
-                two-qubit Clifford operation. The after-Clifford depolarizing operations are only included if this
-                probability is not 0.
-            before_round_data_depolarization: Defaults to 0. The probability (p) of `DEPOLARIZE1(p)` operations to
-                apply to every data qubit at the start of a round of stabilizer measurements. The start-of-round
-                depolarizing operations are only included if this probability is not 0.
-            before_measure_flip_probability: Defaults to 0. The probability (p) of `X_ERROR(p)` operations applied
-                to qubits before each measurement (X basis measurements use `Z_ERROR(p)` instead). The
-                before-measurement flips are only included if this probability is not 0.
-            after_reset_flip_probability: Defaults to 0. The probability (p) of `X_ERROR(p)` operations applied
-                to qubits after each reset (X basis resets use `Z_ERROR(p)` instead). The after-reset flips are only
+            code_task: A string identifying the type of circuit to generate. Available
+                code tasks are:
+                    - "repetition_code:memory"
+                    - "surface_code:rotated_memory_x"
+                    - "surface_code:rotated_memory_z"
+                    - "surface_code:unrotated_memory_x"
+                    - "surface_code:unrotated_memory_z"
+                    - "color_code:memory_xyz"
+            distance: The desired code distance of the generated circuit. The code
+                distance is the minimum number of physical errors needed to cause a
+                logical error. This parameter indirectly determines how many qubits the
+                generated circuit uses.
+            rounds: How many times the measurement qubits in the generated circuit will
+                be measured. Indirectly determines the duration of the generated
+                circuit.
+            after_clifford_depolarization: Defaults to 0. The probability (p) of
+                `DEPOLARIZE1(p)` operations to add after every single-qubit Clifford
+                operation and `DEPOLARIZE2(p)` operations to add after every two-qubit
+                Clifford operation. The after-Clifford depolarizing operations are only
+                included if this probability is not 0.
+            before_round_data_depolarization: Defaults to 0. The probability (p) of
+                `DEPOLARIZE1(p)` operations to apply to every data qubit at the start of
+                a round of stabilizer measurements. The start-of-round depolarizing
+                operations are only included if this probability is not 0.
+            before_measure_flip_probability: Defaults to 0. The probability (p) of
+                `X_ERROR(p)` operations applied to qubits before each measurement (X
+                basis measurements use `Z_ERROR(p)` instead). The before-measurement
+                flips are only included if this probability is not 0.
+            after_reset_flip_probability: Defaults to 0. The probability (p) of
+                `X_ERROR(p)` operations applied to qubits after each reset (X basis
+                resets use `Z_ERROR(p)` instead). The after-reset flips are only
                 included if this probability is not 0.
 
         Returns:
@@ -918,12 +980,14 @@ class Circuit:
         """Returns the coordinate metadata of detectors in the circuit.
 
         Args:
-            only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
-                result. Detector indices beyond the end of the detector error model of the circuit cause an error.
+            only: Defaults to None (meaning include all detectors). A list of detector
+                indices to include in the result. Detector indices beyond the end of the
+                detector error model of the circuit cause an error.
 
         Returns:
-            A dictionary mapping integers (detector indices) to lists of floats (coordinates).
-            A dictionary mapping detector indices to lists of floats.
+            A dictionary mapping integers (detector indices) to lists of floats
+            (coordinates).
+
             Detectors with no specified coordinate data are mapped to an empty tuple.
             If `only` is specified, then `set(result.keys()) == set(only)`.
 
@@ -948,11 +1012,13 @@ class Circuit:
     ) -> Dict[int, List[float]]:
         """Returns the coordinate metadata of qubits in the circuit.
 
-        If a qubit's coordinates are specified multiple times, only the last specified coordinates are returned.
+        If a qubit's coordinates are specified multiple times, only the last specified
+        coordinates are returned.
 
         Returns:
-            A dictionary mapping qubit indices (integers) to coordinates (lists of floats).
-            Qubits that never had their coordinates specified are not included in the result.
+            A dictionary mapping qubit indices (integers) to coordinates (lists of
+            floats). Qubits that never had their coordinates specified are not included
+            in the result.
 
         Examples:
             >>> import stim
@@ -1003,9 +1069,10 @@ class Circuit:
     def num_observables(
         self,
     ) -> int:
-        """Counts the number of bits produced when sampling the circuit's logical observables.
+        """Counts the number of logical observables defined by the circuit.
 
-        This is one more than the largest observable index given to OBSERVABLE_INCLUDE.
+        This is one more than the largest index that appears as an argument to an
+        OBSERVABLE_INCLUDE instruction.
 
         Examples:
             >>> import stim
@@ -1067,62 +1134,76 @@ class Circuit:
         dont_explore_edges_increasing_symptom_degree: bool,
         canonicalize_circuit_errors: bool = False,
     ) -> List[stim.ExplainedError]:
-        """Searches for lists of errors from the model that form an undetectable logical error.
+        """Searches for small sets of errors that form an undetectable logical error.
 
-        THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of particular
-        sizes, or with particular properties. The errors it finds are a tangled combination of the
-        truncation parameters you specify, internal optimizations which are correct when not
-        truncating, and minutia of the circuit being considered.
+        THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of
+        particular sizes, or with particular properties. The errors it finds are a
+        tangled combination of the truncation parameters you specify, internal
+        optimizations which are correct when not truncating, and minutia of the circuit
+        being considered.
 
-        If you want a well behaved method that does provide guarantees of finding errors of a
-        particular type, use `stim.Circuit.shortest_graphlike_error`. This method is more
-        thorough than that (assuming you don't truncate so hard you omit graphlike edges),
-        but exactly how thorough is difficult to describe. It's also not guaranteed that the
-        behavior of this method will not be changed in the future in a way that permutes which
-        logical errors are found and which are missed.
+        If you want a well behaved method that does provide guarantees of finding errors
+        of a particular type, use `stim.Circuit.shortest_graphlike_error`. This method
+        is more thorough than that (assuming you don't truncate so hard you omit
+        graphlike edges), but exactly how thorough is difficult to describe. It's also
+        not guaranteed that the behavior of this method will not be changed in the
+        future in a way that permutes which logical errors are found and which are
+        missed.
 
-        This search method considers hyper errors, so it has worst case exponential runtime. It is
-        important to carefully consider the arguments you are providing, which truncate the search
-        space and trade cost for quality.
+        This search method considers hyper errors, so it has worst case exponential
+        runtime. It is important to carefully consider the arguments you are providing,
+        which truncate the search space and trade cost for quality.
 
-        The search progresses by starting from each error that crosses a logical observable, noting
-        which detection events each error produces, and then iteratively adding in errors touching
-        those detection events attempting to cancel out the detection event with the lowest index.
+        The search progresses by starting from each error that crosses a logical
+        observable, noting which detection events each error produces, and then
+        iteratively adding in errors touching those detection events attempting to
+        cancel out the detection event with the lowest index.
 
-        Beware that the choice of logical observable can interact with the truncation options. Using
-        different observables can change whether or not the search succeeds, even if those observables
-        are equal modulo the stabilizers of the code. This is because the edges crossing logical
-        observables are used as starting points for the search, and starting from different places along
-        a path will result in different numbers of symptoms in intermediate states as the search
-        progresses. For example, if the logical observable is next to a boundary, then the starting
-        edges are likely boundary edges (degree 1) with 'room to grow', whereas if the observable was
-        running through the bulk then the starting edges will have degree at least 2.
+        Beware that the choice of logical observable can interact with the truncation
+        options. Using different observables can change whether or not the search
+        succeeds, even if those observables are equal modulo the stabilizers of the
+        code. This is because the edges crossing logical observables are used as
+        starting points for the search, and starting from different places along a path
+        will result in different numbers of symptoms in intermediate states as the
+        search progresses. For example, if the logical observable is next to a boundary,
+        then the starting edges are likely boundary edges (degree 1) with 'room to
+        grow', whereas if the observable was running through the bulk then the starting
+        edges will have degree at least 2.
 
         Args:
-            dont_explore_detection_event_sets_with_size_above: Truncates the search space by refusing to
-                cross an edge (i.e. add an error) when doing so would produce an intermediate state that
-                has more detection events than this limit.
-            dont_explore_edges_with_degree_above: Truncates the search space by refusing to consider
-                errors that cause a lot of detection events. For example, you may only want to consider
-                graphlike errors which have two or fewer detection events.
-            dont_explore_edges_increasing_symptom_degree: Truncates the search space by refusing to
-                cross an edge (i.e. add an error) when doing so would produce an intermediate state that
-                has more detection events that the previous intermediate state. This massively improves
-                the efficiency of the search because instead of, for example, exploring all n^4 possible
-                detection event sets with 4 symptoms, the search will attempt to cancel out symptoms one
-                by one.
-            canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
-                False (default): Each DEM error lists every possible circuit error that single handedly produces
-                    those symptoms as a potential match. This is verbose but gives complete information.
-                True: Each DEM error is matched with one possible circuit error that single handedly produces those
-                    symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
-                    This discards mostly-redundant information about different ways to produce the same symptoms in
-                    order to give a succinct result.
+            dont_explore_detection_event_sets_with_size_above: Truncates the search
+                space by refusing to cross an edge (i.e. add an error) when doing so
+                would produce an intermediate state that has more detection events than
+                this limit.
+            dont_explore_edges_with_degree_above: Truncates the search space by refusing
+                to consider errors that cause a lot of detection events. For example,
+                you may only want to consider graphlike errors which have two or fewer
+                detection events.
+            dont_explore_edges_increasing_symptom_degree: Truncates the search space by
+                refusing to cross an edge (i.e. add an error) when doing so would
+                produce an intermediate state that has more detection events that the
+                previous intermediate state. This massively improves the efficiency of
+                the search because instead of, for example, exploring all n^4 possible
+                detection event sets with 4 symptoms, the search will attempt to cancel
+                out symptoms one by one.
+            canonicalize_circuit_errors: Whether or not to use one representative for
+                equal-symptom circuit errors.
+
+                False (default): Each DEM error lists every possible circuit error that
+                    single handedly produces those symptoms as a potential match. This
+                    is verbose but gives complete information.
+                True: Each DEM error is matched with one possible circuit error that
+                    single handedly produces those symptoms, with a preference towards
+                    errors that are simpler (e.g. apply Paulis to fewer qubits). This
+                    discards mostly-redundant information about different ways to
+                    produce the same symptoms in order to give a succinct result.
 
         Returns:
-            A detector error model containing only the error mechanisms that cause the undetectable
-            logical error. The error mechanisms will have their probabilities set to 1 (indicating that
-            they are necessary) and will not suggest a decomposition.
+            A list of error mechanisms that cause an undetected logical error.
+
+            Each entry in the list is a `stim.ExplainedError` detailing the location
+            and effects of a single physical error. The effects of the entire list
+            combine to produce a logical frame change without any detection events.
 
         Examples:
             >>> import stim
@@ -1144,44 +1225,58 @@ class Circuit:
         ignore_ungraphlike_errors: bool = True,
         canonicalize_circuit_errors: bool = False,
     ) -> List[stim.ExplainedError]:
-        """Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+        """Finds a minimum set of graphlike errors to produce an undetected logical error.
 
-        A "graphlike error" is an error that creates at most two detection events (causes a change in the parity of
-        the measurement sets of at most two DETECTOR annotations).
+        A "graphlike error" is an error that creates at most two detection events
+        (causes a change in the parity of the measurement sets of at most two DETECTOR
+        annotations).
 
-        Note that this method does not pay attention to error probabilities (other than ignoring errors with
-        probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
-        maximum probability of those physical errors all occurring.
+        Note that this method does not pay attention to error probabilities (other than
+        ignoring errors with probability 0). It searches for a logical error with the
+        minimum *number* of physical errors, not the maximum probability of those
+        physical errors all occurring.
 
-        This method works by converting the circuit into a `stim.DetectorErrorModel` using
-        `circuit.detector_error_model(...)`, computing the shortest graphlike error of the error model, and then
-        converting the physical errors making up that logical error back into representative circuit errors.
+        This method works by converting the circuit into a `stim.DetectorErrorModel`
+        using `circuit.detector_error_model(...)`, computing the shortest graphlike
+        error of the error model, and then converting the physical errors making up that
+        logical error back into representative circuit errors.
 
         Args:
             ignore_ungraphlike_errors:
-                False: Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
-                    If this fails, raise an exception instead of continuing.
-                    Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
-                    This can produce a result that lists DEM errors with zero matching circuit errors, because the
-                    only way to achieve those errors is by combining a decomposed error with a graphlike error.
-                    As a result, when using this option it is NOT guaranteed that the length of the result is an
-                    upper bound on the true code distance. That is only the case if every item in the result lists
-                    at least one matching circuit error.
-                True (default): Ungraphlike errors are simply skipped as if they weren't present, even if they could
-                    become graphlike if decomposed. This guarantees the length of the result is an upper bound on
-                    the true code distance.
-            canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
-                False (default): Each DEM error lists every possible circuit error that single handedly produces
-                    those symptoms as a potential match. This is verbose but gives complete information.
-                True: Each DEM error is matched with one possible circuit error that single handedly produces those
-                    symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
-                    This discards mostly-redundant information about different ways to produce the same symptoms in
-                    order to give a succinct result.
+                False: Attempt to decompose any ungraphlike errors in the circuit into
+                    graphlike parts. If this fails, raise an exception instead of
+                    continuing.
+
+                    Note: in some cases, graphlike errors only appear as parts of
+                    decomposed ungraphlike errors. This can produce a result that lists
+                    DEM errors with zero matching circuit errors, because the only way
+                    to achieve those errors is by combining a decomposed error with a
+                    graphlike error. As a result, when using this option it is NOT
+                    guaranteed that the length of the result is an upper bound on the
+                    true code distance. That is only the case if every item in the
+                    result lists at least one matching circuit error.
+                True (default): Ungraphlike errors are simply skipped as if they weren't
+                    present, even if they could become graphlike if decomposed. This
+                    guarantees the length of the result is an upper bound on the true
+                    code distance.
+            canonicalize_circuit_errors: Whether or not to use one representative for
+                equal-symptom circuit errors.
+
+                False (default): Each DEM error lists every possible circuit error that
+                    single handedly produces those symptoms as a potential match. This
+                    is verbose but gives complete information.
+                True: Each DEM error is matched with one possible circuit error that
+                    single handedly produces those symptoms, with a preference towards
+                    errors that are simpler (e.g. apply Paulis to fewer qubits). This
+                    discards mostly-redundant information about different ways to
+                    produce the same symptoms in order to give a succinct result.
 
         Returns:
-            A detector error model containing only the error mechanisms that cause the undetectable
-            logical error. The error mechanisms will have their probabilities set to 1 (indicating that
-            they are necessary) and will not suggest a decomposition.
+            A list of error mechanisms that cause an undetected logical error.
+
+            Each entry in the list is a `stim.ExplainedError` detailing the location
+            and effects of a single physical error. The effects of the entire list
+            combine to produce a logical frame change without any detection events.
 
         Examples:
             >>> import stim
@@ -1201,7 +1296,8 @@ class Circuit:
 
         """Writes the stim circuit to a file.
 
-        The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+        The file format is defined at
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
 
         Args:
             file: A file path or an open file to write to.
@@ -1356,15 +1452,15 @@ class CircuitInstruction:
         >>> import stim
         >>> circuit = stim.Circuit('''
         ...     H 0
-        ...     M 0 !1
-        ...     X_ERROR(0.125) 5 3
+        ...     M 0 1
+        ...     X_ERROR(0.125) 5
         ... ''')
         >>> circuit[0]
         stim.CircuitInstruction('H', [stim.GateTarget(0)], [])
         >>> circuit[1]
-        stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], [])
+        stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(1)], [])
         >>> circuit[2]
-        stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], [0.125])
+        stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5)], [0.125])
     """
     def __eq__(
         self,
@@ -1382,10 +1478,12 @@ class CircuitInstruction:
 
         Args:
             name: The name of the instruction being applied.
-            targets: The targets the instruction is being applied to. These can be raw values like `0` and
-                `stim.target_rec(-1)`, or instances of `stim.GateTarget`.
-            gate_args: The sequence of numeric arguments parameterizing a gate. For noise gates this is their
-                probabilities. For OBSERVABLE_INCLUDE it's the logical observable's index.
+            targets: The targets the instruction is being applied to. These can be raw
+                values like `0` and `stim.target_rec(-1)`, or instances of
+                `stim.GateTarget`.
+            gate_args: The sequence of numeric arguments parameterizing a gate. For
+                noise gates this is their probabilities. For `OBSERVABLE_INCLUDE`
+                instructions it's the index of the logical observable to affect.
         """
     def __ne__(
         self,
@@ -1409,7 +1507,8 @@ class CircuitInstruction:
         """Returns the gate's arguments (numbers parameterizing the instruction).
 
         For noisy gates this typically a list of probabilities.
-        For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable index.
+        For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable
+        index.
         """
     @property
     def name(
@@ -1469,15 +1568,15 @@ class CircuitRepeatBlock:
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitRepeatBlock`.
+        """Returns valid python code evaluating to an equivalent `stim.CircuitRepeatBlock`.
         """
     def body_copy(
         self,
     ) -> stim.Circuit:
         """Returns a copy of the body of the repeat block.
 
-        The copy is forced to ensure it's clear that editing the result will not change the circuit that the repeat
-        block came from.
+        (Making a copy is enforced to make it clear that editing the result won't change
+        the block's body.)
 
         Examples:
             >>> import stim
@@ -1559,7 +1658,7 @@ class CircuitTargetsInsideInstruction:
     def targets_in_range(
         self,
     ) -> List[stim.GateTargetWithCoords]:
-        """Returns the subset of targets of the gate / instruction that were being executed.
+        """Returns the subset of targets of the gate/instruction that were being executed.
 
         Includes coordinate data with the targets.
         """
@@ -1573,7 +1672,9 @@ class CompiledDemSampler:
         ...    error(1) D1 D2 L0
         ... ''')
         >>> sampler = dem.compile_sampler()
-        >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+        >>> det_data, obs_data, err_data = sampler.sample(
+        ...     shots=4,
+        ...     return_errors=True)
         >>> det_data
         array([[False,  True,  True],
                [False,  True,  True],
@@ -1605,27 +1706,34 @@ class CompiledDemSampler:
             shots: The number of times to sample from the model.
             bit_packed: Defaults to false.
                 False: the returned numpy arrays have dtype=np.bool8.
-                True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into each byte.
+                True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into
+                    each byte.
 
-                Setting this to True is equivalent to running np.packbits(data, endian='little', axis=1)
-                on each output value, but has the performance benefit of the data never being expanded
-                into an unpacked form.
+                Setting this to True is equivalent to running
+                `np.packbits(data, endian='little', axis=1)` on each output value, but
+                has the performance benefit of the data never being expanded into an
+                unpacked form.
             return_errors: Defaults to False.
                 False: the first entry of the returned tuple is None.
-                True: the first entry of the returned tuple is a numpy array recording which errors were sampled.
+                True: the first entry of the returned tuple is a numpy array recording
+                which errors were sampled.
             recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
-                If not None, this is expected to be a 2d numpy array specifying which errors to apply (e.g. one
-                returned from a previous call to the sample method). The array must have
-                dtype=np.bool8 and shape=(num_shots, num_errors) or
-                dtype=np.uint8 and shape=(num_shots, math.ceil(num_errors / 8)).
+                If not None, this is expected to be a 2d numpy array specifying which
+                errors to apply (e.g. one returned from a previous call to the sample
+                method). The array must have dtype=np.bool8 and
+                shape=(num_shots, num_errors) or dtype=np.uint8 and
+                shape=(num_shots, math.ceil(num_errors / 8)).
 
         Returns:
             A tuple (detector_data, obs_data, error_data).
 
             Assuming bit_packed is False and return_errors is True:
-                If error_data[s, k] is True, then the error with index k fired in the shot with index s.
-                If detector_data[s, k] is True, then the detector with index k ended up flipped in the shot with index s.
-                If obs_data[s, k] is True, then the observable with index k ended up flipped in the shot with index s.
+                - If error_data[s, k] is True, then the error with index k fired in the
+                    shot with index s.
+                - If detector_data[s, k] is True, then the detector with index k ended
+                    up flipped in the shot with index s.
+                - If obs_data[s, k] is True, then the observable with index k ended up
+                    flipped in the shot with index s.
 
             The dtype and shape of the data depends on the arguments:
                 if bit_packed:
@@ -1677,7 +1785,9 @@ class CompiledDemSampler:
             True
 
             >>> # Recording errors.
-            >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+            >>> det_data, obs_data, err_data = sampler.sample(
+            ...     shots=4,
+            ...     return_errors=True)
             >>> det_data
             array([[False,  True,  True],
                    [False,  True,  True],
@@ -1695,7 +1805,10 @@ class CompiledDemSampler:
                    [False,  True]])
 
             >>> # Bit packing.
-            >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True, bit_packed=True)
+            >>> det_data, obs_data, err_data = sampler.sample(
+            ...     shots=4,
+            ...     return_errors=True,
+            ...     bit_packed=True)
             >>> det_data
             array([[6],
                    [6],
@@ -1718,8 +1831,12 @@ class CompiledDemSampler:
             ...    error(0.25) D1
             ... ''')
             >>> noisy_sampler = noisy_dem.compile_sampler()
-            >>> det_data, obs_data, err_data = noisy_sampler.sample(shots=100, return_errors=True)
-            >>> replay_det_data, replay_obs_data, _ = noisy_sampler.sample(shots=100, recorded_errors_to_replay=err_data)
+            >>> det_data, obs_data, err_data = noisy_sampler.sample(
+            ...     shots=100,
+            ...     return_errors=True)
+            >>> replay_det_data, replay_obs_data, _ = noisy_sampler.sample(
+            ...     shots=100,
+            ...     recorded_errors_to_replay=err_data)
             >>> np.array_equal(det_data, replay_det_data)
             True
             >>> np.array_equal(obs_data, replay_obs_data)
@@ -1747,22 +1864,29 @@ class CompiledDemSampler:
                 If None: detection event data is not written.
                 If str or pathlib.Path: opens and overwrites the file at the given path.
                 NOT IMPLEMENTED: io.IOBase
-            det_out_format: The format to write the detection event data in (e.g. "01" or "b8").
+            det_out_format: The format to write the detection event data in
+                (e.g. "01" or "b8").
             obs_out_file: Where to write observable flip data.
                 If None: observable flip data is not written.
                 If str or pathlib.Path: opens and overwrites the file at the given path.
                 NOT IMPLEMENTED: io.IOBase
-            obs_out_format: The format to write the observable flip data in (e.g. "01" or "b8").
+            obs_out_format: The format to write the observable flip data in
+                (e.g. "01" or "b8").
             err_out_file: Where to write errors-that-occurred data.
                 If None: errors-that-occurred data is not written.
                 If str or pathlib.Path: opens and overwrites the file at the given path.
                 NOT IMPLEMENTED: io.IOBase
-            err_out_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
-            replay_err_in_file: If this is specified, errors are replayed from data instead of generated randomly.
-                If None: errors are generated randomly according to the probabilities in the detector error model.
-                If str or pathlib.Path: the file at the given path is opened and errors-to-apply data is read from there.
-                NOT IMPLEMENTED: io.IOBase
-            replay_err_in_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
+            err_out_format: The format to write the errors-that-occurred data in
+                (e.g. "01" or "b8").
+            replay_err_in_file: If this is specified, errors are replayed from data
+                instead of generated randomly. The following types are supported:
+                - None: errors are generated randomly according to the probabilities
+                    in the detector error model.
+                - str or pathlib.Path: the file at the given path is opened and
+                    errors-to-apply data is read from there.
+                - io.IOBase: NOT IMPLEMENTED
+            replay_err_in_format: The format to write the errors-that-occurred data in
+                (e.g. "01" or "b8").
 
         Returns:
             Nothing. Results are written to disk.
@@ -1806,29 +1930,34 @@ class CompiledDetectorSampler:
         *,
         seed: object = None,
     ) -> None:
-        """Creates a detector sampler, which can sample the detectors (and optionally observables) in a circuit.
+        """Creates an object that can sample the detection events from a circuit.
 
         Args:
             circuit: The circuit to sample from.
-            seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
                 Must be None or an integer in range(2**64).
 
-                Defaults to None. When set to None, a prng seeded by system entropy is used.
+                Defaults to None. When None, the prng is seeded from system entropy.
 
-                When set to an integer, making the exact same series calls on the exact same machine with the exact
-                same version of Stim will produce the exact same simulation results.
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
 
-                CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                present to make it possible to have future optimizations to the random sampling, and is enforced by
-                introducing intentional differences in the seeding strategy from version to version.
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
 
-                CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                instructions and one that only supports SSE instructions may produce different simulation results.
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
 
-                CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                call.
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                shots are taken. For example, taking 10 shots and then 90 shots will
+                give different results from taking 100 shots in one call.
 
         Returns:
             An initialized stim.CompiledDetectorSampler.
@@ -1849,7 +1978,7 @@ class CompiledDetectorSampler:
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledDetectorSampler`.
+        """Returns valid python code evaluating to an equivalent `stim.CompiledDetectorSampler`.
         """
     def sample(
         self,
@@ -1860,19 +1989,21 @@ class CompiledDetectorSampler:
     ) -> np.ndarray[bool]:
         """Returns a numpy array containing a batch of detector samples from the circuit.
 
-        The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
-        instructions can also be included in the results as honorary detectors.
+        The circuit must define the detectors using DETECTOR instructions. Observables
+        defined by OBSERVABLE_INCLUDE instructions can also be included in the results
+        as honorary detectors.
 
         Args:
             shots: The number of times to sample every detector in the circuit.
-            prepend_observables: Defaults to false. When set, observables are included with the detectors and are
-                placed at the start of the results.
-            append_observables: Defaults to false. When set, observables are included with the detectors and are
-                placed at the end of the results.
+            prepend_observables: Defaults to false. When set, observables are included
+                with the detectors and are placed at the start of the results.
+            append_observables: Defaults to false. When set, observables are included
+                with the detectors and are placed at the end of the results.
 
         Returns:
-            A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-            `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
+            A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
+            `num_detectors + num_observables*(append_observables+prepend_observables)`.
+
             The bit for detection event `m` in shot `s` is at `result[s, m]`.
         """
     def sample_bit_packed(
@@ -1882,22 +2013,24 @@ class CompiledDetectorSampler:
         prepend_observables: bool = False,
         append_observables: bool = False,
     ) -> np.ndarray[np.uint8]:
-        """Returns a numpy array containing bit packed batch of detector samples from the circuit.
+        """Returns a numpy array containing bit packed detector samples from the circuit.
 
-        The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
-        instructions can also be included in the results as honorary detectors.
+        The circuit must define the detectors using DETECTOR instructions. Observables
+        defined by OBSERVABLE_INCLUDE instructions can also be included in the results
+        as honorary detectors.
 
         Args:
             shots: The number of times to sample every detector in the circuit.
-            prepend_observables: Defaults to false. When set, observables are included with the detectors and are
-                placed at the start of the results.
-            append_observables: Defaults to false. When set, observables are included with the detectors and are
-                placed at the end of the results.
+            prepend_observables: Defaults to false. When set, observables are included
+                with the detectors and are placed at the start of the results.
+            append_observables: Defaults to false. When set, observables are included
+                with the detectors and are placed at the end of the results.
 
         Returns:
-            A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-            `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
-            The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+            A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
+            `num_detectors + num_observables*(append_observables+prepend_observables)`.
+            The bit for detection event `m` in shot `s` is at
+            `result[s, (m // 8)] & 2**(m % 8)`.
         """
     def sample_write(
         self,
@@ -1912,6 +2045,28 @@ class CompiledDetectorSampler:
     ) -> None:
         """Samples detection events from the circuit and writes them to a file.
 
+        Args:
+            shots: The number of times to sample every measurement in the circuit.
+            filepath: The file to write the results to.
+            format: The output format to write the results with.
+                Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                Defaults to "01".
+            obs_out_filepath: Sample observables as part of each shot, and write them to
+                this file. This keeps the observable data separate from the detector
+                data.
+            obs_out_format: If writing the observables to a file, this is the format to
+                write them in.
+
+                Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                Defaults to "01".
+            prepend_observables: Sample observables as part of each shot, and put them
+                at the start of the detector data.
+            append_observables: Sample observables as part of each shot, and put them at
+                the end of the detector data.
+
+        Returns:
+            None.
+
         Examples:
             >>> import stim
             >>> import tempfile
@@ -1923,31 +2078,15 @@ class CompiledDetectorSampler:
             ...         DETECTOR rec[-2]
             ...         DETECTOR rec[-1]
             ...     ''')
-            ...     c.compile_detector_sampler().sample_write(3, filepath=path, format="dets")
+            ...     c.compile_detector_sampler().sample_write(
+            ...         shots=3,
+            ...         filepath=path,
+            ...         format="dets")
             ...     with open(path) as f:
             ...         print(f.read(), end='')
             shot D0
             shot D0
             shot D0
-
-        Args:
-            shots: The number of times to sample every measurement in the circuit.
-            filepath: The file to write the results to.
-            format: The output format to write the results with.
-                Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
-                Defaults to "01".
-            obs_out_filepath: Sample observables as part of each shot, and write them to this file.
-                This keeps the observable data separate from the detector data.
-            obs_out_format: If writing the observables to a file, this is the format to write them in.
-                Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
-                Defaults to "01".
-            prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
-                data.
-            append_observables: Sample observables as part of each shot, and put them at the end of the detector
-                data.
-
-        Returns:
-            None.
         """
 class CompiledMeasurementSampler:
     """An analyzed stabilizer circuit whose measurements can be sampled quickly.
@@ -1961,43 +2100,51 @@ class CompiledMeasurementSampler:
     ) -> None:
         """Creates a measurement sampler for the given circuit.
 
-        The sampler uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
-        during initialization of the sampler, as a baseline for deriving more samples using an error propagation
-        simulator.
+        The sampler uses a noiseless reference sample, collected from the circuit using
+        stim's Tableau simulator during initialization of the sampler, as a baseline for
+        deriving more samples using an error propagation simulator.
 
         Args:
             circuit: The stim circuit to sample from.
-            skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
-                initialized to all-zeroes instead of being collected from the circuit. This means that the results
-                returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
-                measurement results.
+            skip_reference_sample: Defaults to False. When set to True, the reference
+                sample used by the sampler is initialized to all-zeroes instead of being
+                collected from the circuit. This means that the results returned by the
+                sampler are actually whether or not each measurement was *flipped*,
+                instead of true measurement results.
 
-                Forcing an all-zero reference sample is useful when you are only interested in error propagation and
-                don't want to have to deal with the fact that some measurements want to be On when no errors occur.
-                It is also useful when you know for sure that the all-zero result is actually a possible result from
-                the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
-                other. Computing the reference sample is the most time consuming and memory intensive part of
-                simulating the circuit, so promising that the simulator can safely skip that step is an effective
-                optimization.
-            seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                Forcing an all-zero reference sample is useful when you are only
+                interested in error propagation and don't want to have to deal with the
+                fact that some measurements want to be On when no errors occur. It is
+                also useful when you know for sure that the all-zero result is actually
+                a possible result from the circuit (under noiseless execution), meaning
+                it is a valid reference sample as good as any other. Computing the
+                reference sample is the most time consuming and memory intensive part of
+                simulating the circuit, so promising that the simulator can safely skip
+                that step is an effective optimization.
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
                 Must be None or an integer in range(2**64).
 
-                Defaults to None. When set to None, a prng seeded by system entropy is used.
+                Defaults to None. When None, the prng is seeded from system entropy.
 
-                When set to an integer, making the exact same series calls on the exact same machine with the exact
-                same version of Stim will produce the exact same simulation results.
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
 
-                CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                present to make it possible to have future optimizations to the random sampling, and is enforced by
-                introducing intentional differences in the seeding strategy from version to version.
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
 
-                CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                instructions and one that only supports SSE instructions may produce different simulation results.
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
 
-                CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                call.
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                shots are taken. For example, taking 10 shots and then 90 shots will
+                give different results from taking 100 shots in one call.
 
         Returns:
             An initialized stim.CompiledMeasurementSampler.
@@ -2021,7 +2168,14 @@ class CompiledMeasurementSampler:
         self,
         shots: int,
     ) -> np.ndarray[bool]:
-        """Returns a numpy array containing a batch of measurement samples from the circuit.
+        """Samples a batch of measurement samples from the circuit.
+
+        Args:
+            shots: The number of times to sample every measurement in the circuit.
+
+        Returns:
+            A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
+            The bit for measurement `m` in shot `s` is at `result[s, m]`.
 
         Examples:
             >>> import stim
@@ -2032,19 +2186,22 @@ class CompiledMeasurementSampler:
             >>> s = c.compile_sampler()
             >>> s.sample(shots=1)
             array([[ True, False,  True,  True]])
-
-        Args:
-            shots: The number of times to sample every measurement in the circuit.
-
-        Returns:
-            A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-            The bit for measurement `m` in shot `s` is at `result[s, m]`.
         """
     def sample_bit_packed(
         self,
         shots: int,
     ) -> np.ndarray[np.uint8]:
-        """Returns a numpy array containing a bit packed batch of measurement samples from the circuit.
+        """Samples a bit packed batch of measurement samples from the circuit.
+
+        Args:
+            shots: The number of times to sample every measurement in the circuit.
+
+        Returns:
+            A numpy array with `dtype=uint8` and
+            `shape=(shots, (num_measurements + 7) // 8)`.
+
+            The bit for measurement `m` in shot `s` is at
+            `result[s, (m // 8)] & 2**(m % 8)`.
 
         Examples:
             >>> import stim
@@ -2055,13 +2212,6 @@ class CompiledMeasurementSampler:
             >>> s = c.compile_sampler()
             >>> s.sample_bit_packed(shots=1)
             array([[255,   4]], dtype=uint8)
-
-        Args:
-            shots: The number of times to sample every measurement in the circuit.
-
-        Returns:
-            A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
-            The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
         """
     def sample_write(
         self,
@@ -2111,20 +2261,22 @@ class CompiledMeasurementsToDetectionEventsConverter:
     ) -> None:
         """Creates a measurement-to-detection-events converter for the given circuit.
 
-        The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
-        during initialization of the converter, as a baseline for determining what the expected value of a detector
-        is.
+        The converter uses a noiseless reference sample, collected from the circuit
+        using stim's Tableau simulator during initialization of the converter, as a
+        baseline for determining what the expected value of a detector is.
 
-        Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
-        noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
-        the same reference sample for a given circuit.
+        Note that the expected behavior of gauge detectors (detectors that are not
+        actually deterministic under noiseless execution) can vary depending on the
+        reference sample. Stim mitigates this by always generating the same reference
+        sample for a given circuit.
 
         Args:
             circuit: The stim circuit to use for conversions.
-            skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
-                is initialized to all-zeroes instead of being collected from the circuit. This should only be used
-                if it's known that the all-zeroes sample is actually a possible result from the circuit (under
-                noiseless execution).
+            skip_reference_sample: Defaults to False. When set to True, the reference
+                sample used by the converter is initialized to all-zeroes instead of
+                being collected from the circuit. This should only be used if it's known
+                that the all-zeroes sample is actually a possible result from the
+                circuit (under noiseless execution).
 
         Returns:
             An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
@@ -2162,35 +2314,46 @@ class CompiledMeasurementsToDetectionEventsConverter:
         """Converts measurement data into detection event data.
 
         Args:
-            measurements: A numpy array containing measurement data. The dtype of the array is used
-                to determine if it is bit packed or not.
+            measurements: A numpy array containing measurement data.
 
+                The dtype of the array is used to determine if it is bit packed or not.
                 dtype=np.bool8 (unpacked data):
                     shape=(num_shots, circuit.num_measurements)
                 dtype=np.uint8 (bit packed data):
                     shape=(num_shots, math.ceil(circuit.num_measurements / 8))
-            sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]` controls in the circuit.
-                The dtype of the array is used to determine if it is bit packed or not.
+            sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]`
+                controls in the circuit.
 
+                The dtype of the array is used to determine if it is bit packed or not.
                 dtype=np.bool8 (unpacked data):
                     shape=(num_shots, circuit.num_sweep_bits)
                 dtype=np.uint8 (bit packed data):
                     shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
-            separate_observables: Defaults to False. When set to True, two numpy arrays are returned instead of one,
-                with the second array containing the observable flip data.
-            append_observables: Defaults to False. When set to True, the observables in the circuit are treated as
-                if they were additional detectors. Their results are appended to the end of the detection event
-                data.
-            bit_pack_result: Defaults to False. When set to True, the returned numpy array contains bit packed
-                data (dtype=np.uint8 with 8 bits per item) instead of unpacked data (dtype=np.bool8).
+            separate_observables: Defaults to False. When set to True, two numpy arrays
+                are returned instead of one, with the second array containing the
+                observable flip data.
+            append_observables: Defaults to False. When set to True, the observables in
+                the circuit are treated as if they were additional detectors. Their
+                results are appended to the end of the detection event data.
+            bit_pack_result: Defaults to False. When set to True, the returned numpy
+                array contains bit packed data (dtype=np.uint8 with 8 bits per item)
+                instead of unpacked data (dtype=np.bool8).
 
         Returns:
-            The detection event data and (optionally) observable data.
-            The result is a single numpy array if separate_observables is false, otherwise it's a tuple of two numpy arrays.
-            When returning two numpy arrays, the first array is the detection event data and the second is the observable flip data.
-            The dtype of the returned arrays is np.bool8 if bit_pack_result is false, otherwise they're np.uint8 arrays.
+            The detection event data and (optionally) observable data. The result is a
+            single numpy array if separate_observables is false, otherwise it's a tuple
+            of two numpy arrays.
+
+            When returning two numpy arrays, the first array is the detection event data
+            and the second is the observable flip data.
+
+            The dtype of the returned arrays is np.bool8 if bit_pack_result is false,
+            otherwise they're np.uint8 arrays.
+
             shape[0] of the array(s) is the number of shots.
-            shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit packed) (e.g. for just detection event data it would be circuit.num_detectors).
+            shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit
+            packed) (e.g. for just detection event data it would be
+            circuit.num_detectors).
 
         Examples:
             >>> import stim
@@ -2236,7 +2399,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         obs_out_filepath: str = None,
         obs_out_format: str = '01',
     ) -> None:
-        """Reads measurement data from a file, converts it, and writes the detection events to another file.
+        """Reads measurement data from a file and writes detection events to another file.
 
         Args:
             measurements_filepath: A file containing measurement data to be converted.
@@ -2247,21 +2410,25 @@ class CompiledMeasurementsToDetectionEventsConverter:
             detection_events_format: The format to save the detection event data in.
                 Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                 Defaults to "01".
-            sweep_bits_filepath: Defaults to None. A file containing sweep data, or None.
-                When specified, sweep data (used for `sweep[k]` controls in the circuit, which can vary from shot to
-                shot) will be read from the given file.
-                When not specified, all sweep bits default to False and no sweep-controlled operations occur.
+            sweep_bits_filepath: Defaults to None. A file containing sweep data, or
+                None. When specified, sweep data (used for `sweep[k]` controls in the
+                circuit, which can vary from shot to shot) will be read from the given
+                file. When not specified, all sweep bits default to False and no
+                sweep-controlled operations occur.
             sweep_bits_format: The format the sweep data is stored in.
                 Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                 Defaults to "01".
-            obs_out_filepath: Sample observables as part of each shot, and write them to this file.
-                This keeps the observable data separate from the detector data.
-            obs_out_format: If writing the observables to a file, this is the format to write them in.
+            obs_out_filepath: Sample observables as part of each shot, and write them to
+                this file. This keeps the observable data separate from the detector
+                data.
+            obs_out_format: If writing the observables to a file, this is the format to
+                write them in.
                 Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                 Defaults to "01".
-            append_observables: When True, the observables in the circuit are included as part of the detection
-                event data. Specifically, they are treated as if they were additional detectors at the end of the
-                circuit. When False, observable data is not output.
+            append_observables: When True, the observables in the circuit are included
+                as part of the detection event data. Specifically, they are treated as
+                if they were additional detectors at the end of the circuit. When False,
+                observable data is not output.
 
         Examples:
             >>> import stim
@@ -2317,12 +2484,17 @@ class DemInstruction:
 
         Args:
             type: The name of the instruction type (e.g. "error" or "shift_detectors").
-            args: Numeric values parameterizing the instruction (e.g. the 0.1 in "error(0.1)").
-            targets: The objects the instruction involves (e.g. the "D0" and "L1" in "error(0.1) D0 L1").
+            args: Numeric values parameterizing the instruction (e.g. the 0.1 in
+                "error(0.1)").
+            targets: The objects the instruction involves (e.g. the "D0" and "L1" in
+                "error(0.1) D0 L1").
 
         Examples:
             >>> import stim
-            >>> instruction = stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(5)])
+            >>> instruction = stim.DemInstruction(
+            ...     'error',
+            ...     [0.125],
+            ...     [stim.target_relative_detector_id(5)])
             >>> print(instruction)
             error(0.125) D5
         """
@@ -2351,7 +2523,10 @@ class DemInstruction:
         self,
     ) -> List[Union[int, stim.DemTarget]]:
 
-        """Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.
+        """Returns a copy of the instruction's targets.
+
+        (Making a copy is enforced to make it clear that editing the result won't change
+        the instruction's targets.)
         """
     @property
     def type(
@@ -2390,8 +2565,10 @@ class DemRepeatBlock:
         """Creates a stim.DemRepeatBlock.
 
         Args:
-            repeat_count: The number of times the repeat block's body is supposed to execute.
-            block: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
+            repeat_count: The number of times the repeat block's body is supposed to
+                execute.
+            block: The body of the repeat block as a DetectorErrorModel containing the
+                instructions to repeat.
 
         Examples:
             >>> import stim
@@ -2440,7 +2617,7 @@ class DemTarget:
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.DemTarget`.
+        """Returns valid python code evaluating to an equivalent `stim.DemTarget`.
         """
     def __str__(
         self,
@@ -2450,23 +2627,32 @@ class DemTarget:
     def is_logical_observable_id(
         self,
     ) -> bool:
-        """Determines if the detector error model target is a logical observable id target (like "L5" in a .dem file).
+        """Determines if the detector error model target is a logical observable id target.
+
+        In a detector error model file, observable targets are prefixed by `L`. For
+        example, in `error(0.25) D0 L1` the `L1` is an observable target.
         """
     def is_relative_detector_id(
         self,
     ) -> bool:
-        """Determines if the detector error model target is a relative detector id target (like "D4" in a .dem file).
+        """Determines if the detector error model target is a relative detector id target.
+
+        In a detector error model file, detectors are prefixed by `D`. For
+        example, in `error(0.25) D0 L1` the `D0` is a relative detector target.
         """
     def is_separator(
         self,
     ) -> bool:
-        """Determines if the detector error model target is a separator (like "^" in a .dem file).
+        """Determines if the detector error model target is a separator.
+
+        Separates separate the components of a suggested decompositions within an error.
+        For example, the `^` in `error(0.25) D1 D2 ^ D3 D4` is the separator.
         """
     @staticmethod
     def logical_observable_id(
         index: int,
     ) -> stim.DemTarget:
-        """Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
+        """Returns a logical observable id identifying a frame change.
 
         Args:
             index: The index of the observable.
@@ -2579,7 +2765,13 @@ class DemTargetWithCoords:
         """Returns the actual DEM target as a `stim.DemTarget`.
         """
 class DetectorErrorModel:
-    """A list of instructions describing error mechanisms in terms of the detection events they produce.
+    """An error model built out of independent error mechanics.
+
+    Error mechanisms are described in terms of the visible detection events and the
+    hidden observable frame changes that they causes. Error mechanisms can also
+    suggest decompositions of their effects into components, which can be helpful
+    for decoders that want to work with a simpler decomposed error model instead of
+    the full error model.
 
     Examples:
         >>> import stim
@@ -2652,10 +2844,10 @@ class DetectorErrorModel:
         """Returns copies of instructions from the detector error model.
 
         Args:
-            index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
-                of instructions to return as a detector error model.
+            index_or_slice: An integer index picking out an instruction to return, or a
+                slice picking out a range of instructions to return as a detector error
+                model.
 
-        Examples:
         Examples:
             >>> import stim
             >>> model = stim.DetectorErrorModel('''
@@ -2669,8 +2861,8 @@ class DetectorErrorModel:
             ...    logical_observable L0
             ...    detector D5
             ... ''')
-            >>> model[1]
-            stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(1), stim.target_logical_observable_id(1)])
+            >>> model[0]
+            stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(0)])
             >>> model[2]
             stim.DemRepeatBlock(100, stim.DetectorErrorModel('''
                 error(0.125) D1 D2
@@ -2736,8 +2928,8 @@ class DetectorErrorModel:
         """Creates a stim.DetectorErrorModel.
 
         Args:
-            detector_error_model_text: Defaults to empty. Describes instructions to append into the circuit in the
-                detector error model (.dem) format.
+            detector_error_model_text: Defaults to empty. Describes instructions to
+                append into the circuit in the detector error model (.dem) format.
 
         Examples:
             >>> import stim
@@ -2749,7 +2941,7 @@ class DetectorErrorModel:
     def __len__(
         self,
     ) -> int:
-        """Returns the number of top-level instructions and blocks in the detector error model.
+        """Returns the number of top-level instructions/blocks in the detector error model.
 
         Instructions inside of blocks are not included in this count.
 
@@ -2775,13 +2967,18 @@ class DetectorErrorModel:
         self,
         repetitions: int,
     ) -> stim.DetectorErrorModel:
-        """Returns a detector error model with a repeat block containing the current model's instructions.
+        """Repeats the detector error model using a repeat block.
 
-        Special case: if the repetition count is 0, an empty model is returned.
-        Special case: if the repetition count is 1, an equal model with no repeat block is returned.
+        Has special cases for 0 repetitions and 1 repetitions.
 
         Args:
             repetitions: The number of times the repeat block should repeat.
+
+        Returns:
+            repetitions=0: An empty detector error model.
+            repetitions=1: A copy of this detector error model.
+            repetitions>=2: A detector error model with a single repeat block, where the
+            contents of that repeat block are this detector error model.
 
         Examples:
             >>> import stim
@@ -2806,19 +3003,24 @@ class DetectorErrorModel:
     def __repr__(
         self,
     ) -> str:
-        """"Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`."
+        """Returns valid python code evaluating to an equivalent `stim.DetectorErrorModel`.
         """
     def __rmul__(
         self,
         repetitions: int,
     ) -> stim.DetectorErrorModel:
-        """Returns a detector error model with a repeat block containing the current model's instructions.
+        """Repeats the detector error model using a repeat block.
 
-        Special case: if the repetition count is 0, an empty model is returned.
-        Special case: if the repetition count is 1, an equal model with no repeat block is returned.
+        Has special cases for 0 repetitions and 1 repetitions.
 
         Args:
             repetitions: The number of times the repeat block should repeat.
+
+        Returns:
+            repetitions=0: An empty detector error model.
+            repetitions=1: A copy of this detector error model.
+            repetitions>=2: A detector error model with a single repeat block, where the
+            contents of that repeat block are this detector error model.
 
         Examples:
             >>> import stim
@@ -2837,7 +3039,7 @@ class DetectorErrorModel:
     def __str__(
         self,
     ) -> str:
-        """"Returns detector error model (.dem) instructions (that can be parsed by stim) for the model.");
+        """Returns the contents of a detector error model file (.dem) encoding the model.
         """
     def append(
         self,
@@ -2848,11 +3050,13 @@ class DetectorErrorModel:
         """Appends an instruction to the detector error model.
 
         Args:
-            instruction: Either the name of an instruction, a stim.DemInstruction, or a stim.DemRepeatBlock.
-                The `parens_arguments` and `targets` arguments are given if and only if the instruction is a name.
-            parens_arguments: Numeric values parameterizing the instruction. The numbers inside parentheses in a
-                detector error model file (eg. the `0.25` in `error(0.25) D0`). This argument can be given either
-                a list of doubles, or a single double (which will be implicitly wrapped into a list).
+            instruction: Either the name of an instruction, a stim.DemInstruction, or a
+                stim.DemRepeatBlock. The `parens_arguments` and `targets` arguments are
+                given if and only if the instruction is a name.
+            parens_arguments: Numeric values parameterizing the instruction. The numbers
+                inside parentheses in a detector error model file (eg. the `0.25` in
+                `error(0.25) D0`). This argument can be given either a list of doubles,
+                or a single double (which will be implicitly wrapped into a list).
             targets: The instruction targets, such as the `D0` in `error(0.25) D0`.
 
         Examples:
@@ -2908,20 +3112,22 @@ class DetectorErrorModel:
         *,
         atol: float,
     ) -> bool:
-        """Checks if a detector error model is approximately equal to another detector error model.
+        """Checks if detector error models are approximately equal.
 
-        Two detector error model are approximately equal if they are equal up to slight perturbations of instruction
-        arguments such as probabilities. For example `error(0.100) D0` is approximately equal to `error(0.099) D0`
-        within an absolute tolerance of 0.002. All other details of the models (such as the ordering of errors and
-        their targets) must be exactly the same.
+        Two detector error model are approximately equal if they are equal up to slight
+        perturbations of instruction arguments such as probabilities. For example
+        `error(0.100) D0` is approximately equal to `error(0.099) D0` within an absolute
+        tolerance of 0.002. All other details of the models (such as the ordering of
+        errors and their targets) must be exactly the same.
 
         Args:
             other: The detector error model, or other object, to compare to this one.
-            atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+            atol: The absolute error tolerance. The maximum amount each probability may
+                have been perturbed by.
 
         Returns:
-            True if the given object is a detector error model approximately equal up to the receiving circuit up to
-            the given tolerance, otherwise False.
+            True if the given object is a detector error model approximately equal up to
+            the receiving circuit up to the given tolerance, otherwise False.
 
         Examples:
             >>> import stim
@@ -2970,29 +3176,34 @@ class DetectorErrorModel:
         self,
         *,
         seed: object = None,
-    ) -> stim::DemSampler:
-        """Returns a CompiledDemSampler, which can quickly batch sample from detector error models.
+    ) -> stim.CompiledDemSampler:
+        """Returns a CompiledDemSampler that can batch sample from detector error models.
 
         Args:
-            seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
                 Must be None or an integer in range(2**64).
 
-                Defaults to None. When set to None, a prng seeded by system entropy is used.
+                Defaults to None. When None, the prng is seeded from system entropy.
 
-                When set to an integer, making the exact same series calls on the exact same machine with the exact
-                same version of Stim will produce the exact same simulation results.
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
 
-                CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                present to make it possible to have future optimizations to the random sampling, and is enforced by
-                introducing intentional differences in the seeding strategy from version to version.
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
 
-                CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                instructions and one that only supports SSE instructions may produce different simulation results.
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
 
-                CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                call.
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                shots are taken. For example, taking 10 shots and then 90 shots will
+                give different results from taking 100 shots in one call.
 
         Returns:
             A seeded stim.CompiledDemSampler for the given detector error model.
@@ -3004,7 +3215,9 @@ class DetectorErrorModel:
             ...    error(1) D1 D2 L0
             ... ''')
             >>> sampler = dem.compile_sampler()
-            >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+            >>> det_data, obs_data, err_data = sampler.sample(
+            ...     shots=4,
+            ...     return_errors=True)
             >>> det_data
             array([[False,  True,  True],
                    [False,  True,  True],
@@ -3024,7 +3237,9 @@ class DetectorErrorModel:
     def copy(
         self,
     ) -> stim.DetectorErrorModel:
-        """Returns a copy of the detector error model. An independent model with the same contents.
+        """Returns a copy of the detector error model.
+
+        The copy is an independent detector error model with the same contents.
 
         Examples:
             >>> import stim
@@ -3039,12 +3254,12 @@ class DetectorErrorModel:
     def flattened(
         self,
     ) -> stim.DetectorErrorModel:
-        """Creates an equivalent detector error model without repeat blocks or detector_shift instructions.
+        """Returns the detector error model without repeat or detector_shift instructions.
 
         Returns:
-            A `stim.DetectorErrorModel` with the same errors in the same order,
-            but with loops flattened into repeated instructions and with
-            all coordinate/index shifts inlined.
+            A `stim.DetectorErrorModel` with the same errors in the same order, but with
+            repeat loops flattened into actually repeated instructions and with all
+            coordinate/index shifts inlined.
 
         Examples:
             >>> import stim
@@ -3073,7 +3288,8 @@ class DetectorErrorModel:
 
         """Reads a detector error model from a file.
 
-        The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+        The file format is defined at
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
 
         Args:
             file: A file path or open file object to read from.
@@ -3113,13 +3329,14 @@ class DetectorErrorModel:
         """Returns the coordinate metadata of detectors in the detector error model.
 
         Args:
-            only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
-                result. Detector indices beyond the end of the detector error model cause an error.
+            only: Defaults to None (meaning include all detectors). A list of detector
+                indices to include in the result. Detector indices beyond the end of the
+                detector error model cause an error.
 
         Returns:
-            A dictionary mapping integers (detector indices) to lists of floats (coordinates).
-            Detectors with no specified coordinate data are mapped to an empty tuple.
-            If `only` is specified, then `set(result.keys()) == set(only)`.
+            A dictionary mapping integers (detector indices) to lists of floats
+            (coordinates). Detectors with no specified coordinate data are mapped to an
+            empty tuple. If `only` is specified, then `set(result.keys()) == set(only)`.
 
         Examples:
             >>> import stim
@@ -3140,8 +3357,9 @@ class DetectorErrorModel:
     ) -> int:
         """Counts the number of detectors (e.g. `D2`) in the error model.
 
-        Detector indices are assumed to be contiguous from 0 up to whatever the maximum detector id is.
-        If the largest detector's absolute id is n-1, then the number of detectors is n.
+        Detector indices are assumed to be contiguous from 0 up to whatever the maximum
+        detector id is. If the largest detector's absolute id is n-1, then the number of
+        detectors is n.
 
         Examples:
             >>> import stim
@@ -3195,8 +3413,9 @@ class DetectorErrorModel:
     ) -> int:
         """Counts the number of frame changes (e.g. `L2`) in the error model.
 
-        Observable indices are assumed to be contiguous from 0 up to whatever the maximum observable id is.
-        If the largest observable's id is n-1, then the number of observables is n.
+        Observable indices are assumed to be contiguous from 0 up to whatever the
+        maximum observable id is. If the largest observable's id is n-1, then the number
+        of observables is n.
 
         Examples:
             >>> import stim
@@ -3253,48 +3472,59 @@ class DetectorErrorModel:
         self,
         ignore_ungraphlike_errors: bool = False,
     ) -> stim.DetectorErrorModel:
-        """Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+        """Finds a minimum set of graphlike errors to produce an undetected logical error.
 
-        Note that this method does not pay attention to error probabilities (other than ignoring errors with
-        probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
-        maximum probability of those physical errors all occurring.
+        Note that this method does not pay attention to error probabilities (other than
+        ignoring errors with probability 0). It searches for a logical error with the
+        minimum *number* of physical errors, not the maximum probability of those
+        physical errors all occurring.
 
-        This method works by looking for errors that have frame changes (eg. "error(0.1) D0 D1 L5" flips the frame
-        of observable 5). These errors are converted into one or two symptoms and a net frame change. The symptoms
-        can then be moved around by following errors touching that symptom. Each symptom is moved until it
-        disappears into a boundary or cancels against another remaining symptom, while leaving the other symptoms
-        alone (ensuring only one symptom is allowed to move significantly reduces waste in the search space).
-        Eventually a path or cycle of errors is found that cancels out the symptoms, and if there is still a frame
-        change at that point then that path or cycle is a logical error (otherwise all that was found was a
-        stabilizer of the system; a dead end). The search process advances like a breadth first search, seeded from
-        all the frame-change errors and branching them outward in tandem, until one of them wins the race to find a
-        solution.
+        This method works by looking for errors that have frame changes (eg.
+        "error(0.1) D0 D1 L5" flips the frame of observable 5). These errors are
+        converted into one or two symptoms and a net frame change. The symptoms can then
+        be moved around by following errors touching that symptom. Each symptom is moved
+        until it disappears into a boundary or cancels against another remaining
+        symptom, while leaving the other symptoms alone (ensuring only one symptom is
+        allowed to move significantly reduces waste in the search space). Eventually a
+        path or cycle of errors is found that cancels out the symptoms, and if there is
+        still a frame change at that point then that path or cycle is a logical error
+        (otherwise all that was found was a stabilizer of the system; a dead end). The
+        search process advances like a breadth first search, seeded from all the
+        frame-change errors and branching them outward in tandem, until one of them wins
+        the race to find a solution.
 
         Args:
-            ignore_ungraphlike_errors: Defaults to False. When False, an exception is raised if there are any
-                errors in the model that are not graphlike. When True, those errors are skipped as if they weren't
-                present.
+            ignore_ungraphlike_errors: Defaults to False. When False, an exception is
+                raised if there are any errors in the model that are not graphlike. When
+                True, those errors are skipped as if they weren't present.
 
-                A graphlike error is an error with at most two symptoms per decomposed component.
-                    graphlike:
-                        error(0.1) D0
-                        error(0.1) D0 D1
-                        error(0.1) D0 D1 L0
-                        error(0.1) D0 D1 ^ D2
-                    not graphlike:
-                        error(0.1) D0 D1 D2
-                        error(0.1) D0 D1 D2 ^ D3
+                A graphlike error is an error with less than two symptoms. For the
+                purposes of this method, errors are also considered graphlike if they
+                are decomposed into graphlike components:
+
+                graphlike:
+                    error(0.1) D0
+                    error(0.1) D0 D1
+                    error(0.1) D0 D1 L0
+                not graphlike but decomposed into graphlike components:
+                    error(0.1) D0 D1 ^ D2
+                not graphlike, not decomposed into graphlike components:
+                    error(0.1) D0 D1 D2
+                    error(0.1) D0 D1 D2 ^ D3
 
         Returns:
-            A detector error model containing just the error instructions corresponding to an undetectable logical
-            error. There will be no other kinds of instructions (no `repeat`s, no `shift_detectors`, etc).
-            The error probabilities will all be set to 1.
+            A detector error model containing just the error instructions corresponding
+            to an undetectable logical error. There will be no other kinds of
+            instructions (no `repeat`s, no `shift_detectors`, etc). The error
+            probabilities will all be set to 1.
 
-            The `len` of the returned model is the graphlike code distance of the circuit. But beware that in
-            general the true code distance may be smaller. For example, in the XZ surface code with twists, the true
-            minimum sized logical error is likely to use Y errors. But each Y error decomposes into two graphlike
-            components (the X part and the Z part). As a result, the graphlike code distance in that context is
-            likely to be nearly twice as large as the true code distance.
+            The `len` of the returned model is the graphlike code distance of the
+            circuit. But beware that in general the true code distance may be smaller.
+            For example, in the XZ surface code with twists, the true minimum sized
+            logical error is likely to use Y errors. But each Y error decomposes into
+            two graphlike components (the X part and the Z part). As a result, the
+            graphlike code distance in that context is likely to be nearly twice as
+            large as the true code distance.
 
         Examples:
             >>> import stim
@@ -3334,7 +3564,8 @@ class DetectorErrorModel:
 
         """Writes the detector error model to a file.
 
-        The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+        The file format is defined at
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
 
         Args:
             file: A file path or an open file to write to.
@@ -3465,7 +3696,7 @@ class GateTarget:
     def is_combiner(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_combiner()` (a `*` in a circuit file).
+        """Returns whether or not this is a `stim.target_combiner()`.
         """
     @property
     def is_inverted_result_target(
@@ -3473,50 +3704,71 @@ class GateTarget:
     ) -> bool:
         """Returns whether or not this is an inverted target.
 
-        Inverted targets include inverted qubit targets `stim.target_inv(5)` (`!5` in a circuit file) and
-        inverted Pauli targets like `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
+        Inverted targets include inverted qubit targets `stim.target_inv(5)`
+        (`!5` in a circuit file) and inverted Pauli targets like
+        `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
         """
     @property
     def is_measurement_record_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_rec` target (e.g. `rec[-5]` in a circuit file).
+        """Returns whether or not this is a measurement record target.
+
+        The value returned by `stim.target_rec(-5)`, which would be `rec[-5]` in a
+        circuit file, is a measurement record target.
         """
     @property
     def is_qubit_target(
         self,
     ) -> bool:
-        """Returns true if this is a qubit target (e.g. `5`) or an inverted qubit target (e.g. `stim.target_inv(4)`).
+        """Returns whether or not this is a (possibly inverted) qubit target.
+
+        For example, `5` on its own in a stim circuit is a raw qubit target.
         """
     @property
     def is_sweep_bit_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_sweep_bit` target (e.g. `sweep[5]` in a circuit file).
+        """Returns whether or not this is a sweep bit target.
+
+        For example, `sweep[5]` in a circuit file is a sweep target, and the value
+        returned by `stim.target_sweep_bit` is a sweep target.
         """
     @property
     def is_x_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_x` target (e.g. `X5` in a circuit file).
+        """Returns whether or not this is a (possibly inverted) X pauli target.
+
+        For example, `X5` in a stim circuit is a X Pauli target. The value returned by
+        `stim.target_x` is a X pauli target.
         """
     @property
     def is_y_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_y` target (e.g. `Y5` in a circuit file).
+        """Returns whether or not this is a (possibly inverted) Y pauli target.
+
+        For example, `Y5` in a stim circuit is a Y Pauli target. The value returned by
+        `stim.target_y` is a Y pauli target.
         """
     @property
     def is_z_target(
         self,
     ) -> bool:
-        """Returns whether or not this is a `stim.target_z` target (e.g. `Z5` in a circuit file).
+        """Returns whether or not this is a (possibly inverted) Z pauli target.
+
+        For example, `Z5` in a stim circuit is a Z Pauli target. The value returned by
+        `stim.target_z` is a Z pauli target.
         """
     @property
     def value(
         self,
     ) -> int:
-        """The numeric part of the target. Positive for qubit targets, negative for measurement record targets.
+        """The numeric part of the target.
+
+        This is non-negative integer for qubit targets, and a negative integer for
+        measurement record targets.
         """
 class GateTargetWithCoords:
     """A gate target with associated coordinate information.
@@ -3555,7 +3807,8 @@ class GateTargetWithCoords:
 class PauliString:
     """A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
-    Represents a collection of Pauli operations (I, X, Y, Z) applied pairwise to a collection of qubits.
+    Represents a collection of Pauli operations (I, X, Y, Z) applied pairwise to a
+    collection of qubits.
 
     Examples:
         >>> import stim
@@ -3627,7 +3880,8 @@ class PauliString:
             stim.PauliString("+ZYX_")
 
         Args:
-            index_or_slice: The index of the pauli to return, or the slice of paulis to return.
+            index_or_slice: The index of the pauli to return, or the slice of paulis to
+                return.
 
         Returns:
             0: Identity.
@@ -3641,7 +3895,8 @@ class PauliString:
     ) -> stim.PauliString:
         """Performs an inplace tensor product.
 
-        Concatenates the given Pauli string onto the receiving string and multiplies their signs.
+        Concatenates the given Pauli string onto the receiving string and multiplies
+        their signs.
 
         Args:
             rhs: A second stim.PauliString.
@@ -3664,13 +3919,18 @@ class PauliString:
         self,
         rhs: object,
     ) -> stim.PauliString:
-        """Inplace right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+        """Inplace right-multiplies the Pauli string.
+
+        Can multiply by another Pauli string, a complex unit, or a tensor power.
 
         Args:
             rhs: The right hand side of the multiplication. This can be:
-                - A stim.PauliString to right-multiply term-by-term into the paulis of the pauli string.
-                - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
-                - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+                - A stim.PauliString to right-multiply term-by-term into the paulis of
+                    the pauli string.
+                - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli
+                    string.
+                - A non-negative integer indicating the tensor power to raise the pauli
+                    string to (how many times to repeat it).
 
         Examples:
             >>> import stim
@@ -3726,7 +3986,8 @@ class PauliString:
 
         The string can optionally start with a sign ('+', '-', 'i', '+i', or '-i').
         The rest of the string should be characters from '_IXYZ' where
-        '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z.
+        '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means
+        Pauli Z.
 
         Examples:
             >>> import stim
@@ -3740,7 +4001,11 @@ class PauliString:
             +iX
 
         Args:
-            text: A text description of the Pauli string's contents, such as "+XXX" or "-_YX".
+            text: A text description of the Pauli string's contents, such as "+XXX" or
+                "-_YX" or "-iZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZY".
+
+        Returns:
+            The created stim.PauliString.
 
 
         3. __init__(self: stim.PauliString, copy: stim.PauliString) -> None
@@ -3776,7 +4041,8 @@ class PauliString:
             stim.PauliString("+_XYZ_Z")
 
         Args:
-            pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating paulis.
+            pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating
+                paulis.
         """
     def __itruediv__(
         self,
@@ -3810,13 +4076,18 @@ class PauliString:
         self,
         rhs: object,
     ) -> stim.PauliString:
-        """Right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+        """Right-multiplies the Pauli string.
+
+        Can multiply by another Pauli string, a complex unit, or a tensor power.
 
         Args:
             rhs: The right hand side of the multiplication. This can be:
-                - A stim.PauliString to right-multiply term-by-term with the paulis of the pauli string.
-                - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli string.
-                - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+                - A stim.PauliString to right-multiply term-by-term with the paulis of
+                    the pauli string.
+                - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli
+                    string.
+                - A non-negative integer indicating the tensor power to raise the pauli
+                    string to (how many times to repeat it).
 
         Examples:
             >>> import stim
@@ -3850,7 +4121,8 @@ class PauliString:
             The product or tensor power.
 
         Raises:
-            TypeError: The right hand side isn't a stim.PauliString, a non-negative integer, or a complex unit (1, -1, 1j, or -1j).
+            TypeError: The right hand side isn't a stim.PauliString, a non-negative
+                integer, or a complex unit (1, -1, 1j, or -1j).
         """
     def __ne__(
         self,
@@ -3889,19 +4161,24 @@ class PauliString:
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.PauliString`.
+        """Returns valid python code evaluating to an equivalent `stim.PauliString`.
         """
     def __rmul__(
         self,
         lhs: object,
     ) -> stim.PauliString:
-        """Left-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+        """Left-multiplies the Pauli string.
+
+        Can multiply by another Pauli string, a complex unit, or a tensor power.
 
         Args:
             lhs: The left hand side of the multiplication. This can be:
-                - A stim.PauliString to left-multiply term-by-term into the paulis of the pauli string.
-                - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
-                - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+                - A stim.PauliString to right-multiply term-by-term with the paulis of
+                    the pauli string.
+                - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli
+                    string.
+                - A non-negative integer indicating the tensor power to raise the pauli
+                    string to (how many times to repeat it).
 
         Examples:
             >>> import stim
@@ -4031,7 +4308,9 @@ class PauliString:
     def copy(
         self,
     ) -> stim.PauliString:
-        """Returns a copy of the pauli string. An independent pauli string with the same contents.
+        """Returns a copy of the pauli string.
+
+        The copy is an independent pauli string with the same contents.
 
         Examples:
             >>> import stim
@@ -4054,13 +4333,13 @@ class PauliString:
         *,
         allow_imaginary: bool = False,
     ) -> stim.PauliString:
-        """Samples a uniformly random Hermitian Pauli string over the given number of qubits.
+        """Samples a uniformly random Hermitian Pauli string.
 
         Args:
             num_qubits: The number of qubits the Pauli string should act on.
-            allow_imaginary: Defaults to False. If True, the sign of the result may be 1j or -1j
-                in addition to +1 or -1. In other words, setting this to True allows the result
-                to be non-Hermitian.
+            allow_imaginary: Defaults to False. If True, the sign of the result may be
+                1j or -1j in addition to +1 or -1. In other words, setting this to True
+                allows the result to be non-Hermitian.
 
         Examples:
             >>> import stim
@@ -4102,8 +4381,8 @@ class PauliString:
 class Tableau:
     """A stabilizer tableau.
 
-    Represents a Clifford operation by explicitly storing how that operation conjugates a list of Pauli
-    group generators into composite Pauli products.
+    Represents a Clifford operation by explicitly storing how that operation
+    conjugates a list of Pauli group generators into composite Pauli products.
 
     Examples:
         >>> import stim
@@ -4160,7 +4439,10 @@ class Tableau:
         self,
         pauli_string: stim.PauliString,
     ) -> stim.PauliString:
-        """Returns the result of conjugating the given PauliString by the Tableau's Clifford operation.
+        """Returns the conjugation of a PauliString by the Tableau's Clifford operation.
+
+        The conjugation of P by C is equal to C**-1 * P * C. If P is a Pauli product
+        before C, then P2 = C**-1 * P * C is an equivalent Pauli product after C.
 
         Args:
             pauli_string: The pauli string to conjugate.
@@ -4295,7 +4577,7 @@ class Tableau:
     def __repr__(
         self,
     ) -> str:
-        """Returns text that is a valid python expression evaluating to an equivalent `stim.Tableau`.
+        """Returns valid python code evaluating to an equal `stim.Tableau`.
         """
     def __str__(
         self,
@@ -4352,15 +4634,18 @@ class Tableau:
 
         Args:
             circuit: The circuit to compile into a tableau.
-            ignore_noise: Defaults to False. When False, any noise operations in the circuit will cause
-                the conversion to fail with an exception. When True, noise operations are skipped over
-                as if they weren't even present in the circuit.
-            ignore_measurement: Defaults to False. When False, any measurement operations in the circuit
-                will cause the conversion to fail with an exception. When True, measurement operations are
-                skipped over as if they weren't even present in the circuit.
-            ignore_reset: Defaults to False. When False, any reset operations in the circuit will cause
-                the conversion to fail with an exception. When True, reset operations are skipped over
-                as if they weren't even present in the circuit.
+            ignore_noise: Defaults to False. When False, any noise operations in the
+                circuit will cause the conversion to fail with an exception. When True,
+                noise operations are skipped over as if they weren't even present in the
+                circuit.
+            ignore_measurement: Defaults to False. When False, any measurement
+                operations in the circuit will cause the conversion to fail with an
+                exception. When True, measurement operations are skipped over as if they
+                weren't even present in the circuit.
+            ignore_reset: Defaults to False. When False, any reset operations in the
+                circuit will cause the conversion to fail with an exception. When True,
+                reset operations are skipped over as if they weren't even present in the
+                circuit.
 
         Returns:
             The tableau equivalent to the given circuit (up to global phase).
@@ -4369,16 +4654,17 @@ class Tableau:
             ValueError:
                 The circuit contains noise operations but ignore_noise=False.
                 OR
-                The circuit contains measurement operations but ignore_measurement=False.
+                The circuit contains measurement operations but
+                ignore_measurement=False.
                 OR
                 The circuit contains reset operations but ignore_reset=False.
 
         Examples:
             >>> import stim
-            >>> stim.Tableau.from_circuit(stim.Circuit("""
+            >>> stim.Tableau.from_circuit(stim.Circuit('''
             ...     H 0
             ...     CNOT 0 1
-            ... """))
+            ... '''))
             stim.Tableau.from_conjugated_generators(
                 xs=[
                     stim.PauliString("+Z_"),
@@ -4466,18 +4752,20 @@ class Tableau:
         """Creates a tableau from the unitary matrix of a Clifford operation.
 
         Args:
-            matrix: A unitary matrix specified as an iterable of rows, with each row is an iterable of amplitudes.
-                The unitary matrix must correspond to a Clifford operation.
+            matrix: A unitary matrix specified as an iterable of rows, with each row is
+                an iterable of amplitudes. The unitary matrix must correspond to a
+                Clifford operation.
             endian:
-                "little": matrix entries are in little endian order, where higher index qubits
-                    correspond to larger changes in row/col indices.
-                "big": matrix entries are in little endian order, where higher index qubits correspond to
-                    smaller changes in row/col indices.
+                "little": matrix entries are in little endian order, where higher index
+                    qubits correspond to larger changes in row/col indices.
+                "big": matrix entries are in little endian order, where higher index
+                    qubits correspond to smaller changes in row/col indices.
         Returns:
             The tableau equivalent to the given unitary matrix (up to global phase).
 
         Raises:
-            ValueError: The given matrix isn't the unitary matrix of a Clifford operation.
+            ValueError: The given matrix isn't the unitary matrix of a Clifford
+                operation.
 
         Examples:
             >>> import stim
@@ -4518,14 +4806,16 @@ class Tableau:
     ) -> stim.Tableau:
         """Computes the inverse of the tableau.
 
-        The inverse T^-1 of a tableau T is the unique tableau with the property that T * T^-1 = T^-1 * T = I where
-        I is the identity tableau.
+        The inverse T^-1 of a tableau T is the unique tableau with the property that
+        T * T^-1 = T^-1 * T = I where I is the identity tableau.
 
         Args:
-            unsigned: Defaults to false. When set to true, skips computing the signs of the output observables and
-                instead just set them all to be positive. This is beneficial because computing the signs takes
-                O(n^3) time and the rest of the inverse computation is O(n^2) where n is the number of qubits in the
-                tableau. So, if you only need the Pauli terms (not the signs), it is significantly cheaper.
+            unsigned: Defaults to false. When set to true, skips computing the signs of
+                the output observables and instead just set them all to be positive.
+                This is beneficial because computing the signs takes O(n^3) time and the
+                rest of the inverse computation is O(n^2) where n is the number of
+                qubits in the tableau. So, if you only need the Pauli terms (not the
+                signs), it is significantly cheaper.
 
         Returns:
             The inverse tableau.
@@ -4533,7 +4823,7 @@ class Tableau:
         Examples:
             >>> import stim
 
-            >>> # Check that the inverse agrees with hard-coded tableaus in the gate data.
+            >>> # Check that the inverse agrees with hard-coded tableaus.
             >>> s = stim.Tableau.from_named_gate("S")
             >>> s_dag = stim.Tableau.from_named_gate("S_DAG")
             >>> s.inverse() == s_dag
@@ -4551,8 +4841,16 @@ class Tableau:
 
             >>> # Check a manual case.
             >>> t = stim.Tableau.from_conjugated_generators(
-            ...     xs=[stim.PauliString("-__Z"), stim.PauliString("+XZ_"), stim.PauliString("+_ZZ")],
-            ...     zs=[stim.PauliString("-YYY"), stim.PauliString("+Z_Z"), stim.PauliString("-ZYZ")],
+            ...     xs=[
+            ...         stim.PauliString("-__Z"),
+            ...         stim.PauliString("+XZ_"),
+            ...         stim.PauliString("+_ZZ"),
+            ...     ],
+            ...     zs=[
+            ...         stim.PauliString("-YYY"),
+            ...         stim.PauliString("+Z_Z"),
+            ...         stim.PauliString("-ZYZ")
+            ...     ],
             ... )
             >>> print(t.inverse())
             +-xz-xz-xz-
@@ -4573,15 +4871,18 @@ class Tableau:
         *,
         unsigned: bool = False,
     ) -> stim.PauliString:
-        """Returns the result of conjugating an X Pauli generator by the inverse of the tableau.
+        """Conjugates a single-qubit X Pauli generator by the inverse of the tableau.
 
         A faster version of `tableau.inverse(unsigned).x_output(input_index)`.
 
         Args:
-            input_index: Identifies the column (the qubit of the X generator) to return from the inverse tableau.
-            unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
-                it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
-                parts of the computation take O(n) time where n is the number of qubits in the tableau.
+            input_index: Identifies the column (the qubit of the X generator) to return
+                from the inverse tableau.
+            unsigned: Defaults to false. When set to true, skips computing the result's
+                sign and instead just sets it to positive. This is beneficial because
+                computing the sign takes O(n^2) time whereas all other parts of the
+                computation take O(n) time where n is the number of qubits in the
+                tableau.
 
         Returns:
             The result of conjugating an X generator by the inverse of the tableau.
@@ -4603,12 +4904,11 @@ class Tableau:
         input_index: int,
         output_index: int,
     ) -> int:
-        """Returns a Pauli term from the tableau's inverse's output pauli string for an input X generator.
-
-        A constant-time equivalent for `tableau.inverse().x_output(input_index)[output_index]`.
+        """Constant-time version of `tableau.inverse().x_output(input_index)[output_index]`
 
         Args:
-            input_index: Identifies the column (the qubit of the input X generator) in the inverse tableau.
+            input_index: Identifies the column (the qubit of the input X generator) in
+                the inverse tableau.
             output_index: Identifies the row (the output qubit) in the inverse tableau.
 
         Returns:
@@ -4641,15 +4941,18 @@ class Tableau:
         *,
         unsigned: bool = False,
     ) -> stim.PauliString:
-        """Returns the result of conjugating a Y Pauli generator by the inverse of the tableau.
+        """Conjugates a single-qubit Y Pauli generator by the inverse of the tableau.
 
         A faster version of `tableau.inverse(unsigned).y_output(input_index)`.
 
         Args:
-            input_index: Identifies the column (the qubit of the Y generator) to return from the inverse tableau.
-            unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
-                it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
-                parts of the computation take O(n) time where n is the number of qubits in the tableau.
+            input_index: Identifies the column (the qubit of the Y generator) to return
+                from the inverse tableau.
+            unsigned: Defaults to false. When set to true, skips computing the result's
+                sign and instead just sets it to positive. This is beneficial because
+                computing the sign takes O(n^2) time whereas all other parts of the
+                computation take O(n) time where n is the number of qubits in the
+                tableau.
 
         Returns:
             The result of conjugating a Y generator by the inverse of the tableau.
@@ -4671,12 +4974,11 @@ class Tableau:
         input_index: int,
         output_index: int,
     ) -> int:
-        """Returns a Pauli term from the tableau's inverse's output pauli string for an input Y generator.
-
-        A constant-time equivalent for `tableau.inverse().y_output(input_index)[output_index]`.
+        """Constant-time version of `tableau.inverse().y_output(input_index)[output_index]`
 
         Args:
-            input_index: Identifies the column (the qubit of the input Y generator) in the inverse tableau.
+            input_index: Identifies the column (the qubit of the input Y generator) in
+                the inverse tableau.
             output_index: Identifies the row (the output qubit) in the inverse tableau.
 
         Returns:
@@ -4709,15 +5011,18 @@ class Tableau:
         *,
         unsigned: bool = False,
     ) -> stim.PauliString:
-        """Returns the result of conjugating a Z Pauli generator by the inverse of the tableau.
+        """Conjugates a single-qubit Z Pauli generator by the inverse of the tableau.
 
         A faster version of `tableau.inverse(unsigned).z_output(input_index)`.
 
         Args:
-            input_index: Identifies the column (the qubit of the Z generator) to return from the inverse tableau.
-            unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
-                it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
-                parts of the computation take O(n) time where n is the number of qubits in the tableau.
+            input_index: Identifies the column (the qubit of the Z generator) to return
+                from the inverse tableau.
+            unsigned: Defaults to false. When set to true, skips computing the result's
+                sign and instead just sets it to positive. This is beneficial because
+                computing the sign takes O(n^2) time whereas all other parts of the
+                computation take O(n) time where n is the number of qubits in the
+                tableau.
 
         Returns:
             The result of conjugating a Z generator by the inverse of the tableau.
@@ -4741,12 +5046,11 @@ class Tableau:
         input_index: int,
         output_index: int,
     ) -> int:
-        """Returns a Pauli term from the tableau's inverse's output pauli string for an input Z generator.
-
-        A constant-time equivalent for `tableau.inverse().z_output(input_index)[output_index]`.
+        """Constant-time version of `tableau.inverse().z_output(input_index)[output_index]`
 
         Args:
-            input_index: Identifies the column (the qubit of the input Z generator) in the inverse tableau.
+            input_index: Identifies the column (the qubit of the input Z generator) in
+                the inverse tableau.
             output_index: Identifies the row (the output qubit) in the inverse tableau.
 
         Returns:
@@ -4831,7 +5135,7 @@ class Tableau:
     def random(
         num_qubits: int,
     ) -> stim.Tableau:
-        """Samples a uniformly random Clifford operation over the given number of qubits and returns its tableau.
+        """Samples a uniformly random Clifford operation and returns its tableau.
 
         Args:
             num_qubits: The number of qubits the tableau should act on.
@@ -4856,7 +5160,8 @@ class Tableau:
 
         If the tableau T1 represents the Clifford operation with unitary C1,
         and the tableau T2 represents the Clifford operation with unitary C2,
-        then the tableau T1.then(T2) represents the Clifford operation with unitary C2*C1.
+        then the tableau T1.then(T2) represents the Clifford operation with unitary
+        C2*C1.
 
         Args:
             second: The result is equivalent to applying the second tableau after
@@ -4883,8 +5188,8 @@ class Tableau:
         from version to version, and may be produced using randomization.
 
         Args:
-            method: The method to use when synthesizing the circuit. Available values are:
-                "elimination": Uses Gaussian elimination to cancel off-diagonal terms one by one.
+            method: The method to use when synthesizing the circuit. Available values:
+                "elimination": Cancels off-diagonal terms using Gaussian elimination.
                     Gate set: H, S, CX
                     Circuit qubit count: n
                     Circuit operation count: O(n^2)
@@ -4944,7 +5249,8 @@ class Tableau:
                     to an offset of 2**(n - 1) in the state vector).
 
         Returns:
-            A numpy array with dtype=np.complex64 and shape=(1 << len(tableau), 1 << len(tableau)).
+            A numpy array with dtype=np.complex64 and
+            shape=(1 << len(tableau), 1 << len(tableau)).
 
         Example:
             >>> import stim
@@ -4990,12 +5296,11 @@ class Tableau:
         input_index: int,
         output_index: int,
     ) -> int:
-        """Returns a Pauli term from the tableau's output pauli string for an input X generator.
-
-        A constant-time equivalent for `tableau.x_output(input_index)[output_index]`.
+        """Constant-time version of `tableau.x_output(input_index)[output_index]`
 
         Args:
-            input_index: Identifies the tableau column (the qubit of the input X generator).
+            input_index: Identifies the tableau column (the qubit of the input X
+                generator).
             output_index: Identifies the tableau row (the output qubit).
 
         Returns:
@@ -5048,12 +5353,11 @@ class Tableau:
         input_index: int,
         output_index: int,
     ) -> int:
-        """Returns a Pauli term from the tableau's output pauli string for an input Y generator.
-
-        A constant-time equivalent for `tableau.y_output(input_index)[output_index]`.
+        """Constant-time version of `tableau.y_output(input_index)[output_index]`
 
         Args:
-            input_index: Identifies the tableau column (the qubit of the input Y generator).
+            input_index: Identifies the tableau column (the qubit of the input Y
+                generator).
             output_index: Identifies the tableau row (the output qubit).
 
         Returns:
@@ -5106,12 +5410,11 @@ class Tableau:
         input_index: int,
         output_index: int,
     ) -> int:
-        """Returns a Pauli term from the tableau's output pauli string for an input Z generator.
-
-        A constant-time equivalent for `tableau.z_output(input_index)[output_index]`.
+        """Constant-time version of `tableau.z_output(input_index)[output_index]`
 
         Args:
-            input_index: Identifies the tableau column (the qubit of the input Z generator).
+            input_index: Identifies the tableau column (the qubit of the input Z
+                generator).
             output_index: Identifies the tableau row (the output qubit).
 
         Returns:
@@ -5165,7 +5468,7 @@ class TableauIterator:
         """Returns the next iterated tableau.
         """
 class TableauSimulator:
-    """A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
+    """A stabilizer circuit simulator that tracks an inverse stabilizer tableau.
 
     Supports interactive usage, where gates and measurements are applied on demand.
 
@@ -5215,18 +5518,23 @@ class TableauSimulator:
     def canonical_stabilizers(
         self,
     ) -> List[stim.PauliString]:
-        """Returns a list of the stabilizers of the simulator's current state in a standard form.
+        """Returns a standardized list of the simulator's current stabilizer generators.
 
-        Two simulators have the same canonical stabilizers if and only if their current quantum state is equal
-        (and tracking the same number of qubits).
+        Two simulators have the same canonical stabilizers if and only if their current
+        quantum state is equal (and tracking the same number of qubits).
 
         The canonical form is computed as follows:
 
-            1. Get a list of stabilizers using the `z_output`s of `simulator.current_inverse_tableau()**-1`.
-            2. Perform Gaussian elimination on each generator g (ordered X0, Z0, X1, Z1, X2, Z2, etc).
-                2a) Pick any stabilizer that uses the generator g. If there are none, go to the next g.
-                2b) Multiply that stabilizer into all other stabilizers that use the generator g.
-                2c) Swap that stabilizer with the stabilizer at position `next_output` then increment `next_output`.
+            1. Get a list of stabilizers using the `z_output`s of
+                `simulator.current_inverse_tableau()**-1`.
+            2. Perform Gaussian elimination on each generator g.
+                2a) The generators are considered in order X0, Z0, X1, Z1, X2, Z2, etc.
+                2b) Pick any stabilizer that uses the generator g. If there are none,
+                    go to the next g.
+                2c) Multiply that stabilizer into all other stabilizers that use the
+                    generator g.
+                2d) Swap that stabilizer with the stabilizer at position `next_output`
+                    then increment `next_output`.
 
         Returns:
             A List[stim.PauliString] of the simulator's state's stabilizers.
@@ -5237,18 +5545,24 @@ class TableauSimulator:
             >>> s.h(0)
             >>> s.cnot(0, 1)
             >>> s.x(2)
-            >>> s.canonical_stabilizers()
-            [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
+            >>> for e in s.canonical_stabilizers():
+            ...     print(repr(e))
+            stim.PauliString("+XX_")
+            stim.PauliString("+ZZ_")
+            stim.PauliString("-__Z")
 
-            >>> # Scramble the stabilizers then check that the canonical form is unchanged.
+            >>> # Scramble the stabilizers then check the canonical form is unchanged.
             >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
             >>> s.cnot(0, 1)
             >>> s.cz(0, 2)
             >>> s.s(0, 2)
             >>> s.cy(2, 1)
             >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
-            >>> s.canonical_stabilizers()
-            [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
+            >>> for e in s.canonical_stabilizers():
+            ...     print(repr(e))
+            stim.PauliString("+XX_")
+            stim.PauliString("+ZZ_")
+            stim.PauliString("-__Z")
         """
     def cnot(
         self,
@@ -5258,8 +5572,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def copy(
         self,
@@ -5346,7 +5660,8 @@ class TableauSimulator:
             [False, True, True]
 
         Returns:
-            A list of booleans containing the result of every measurement performed by the simulator so far.
+            A list of booleans containing the result of every measurement performed by
+            the simulator so far.
         """
     def cx(
         self,
@@ -5356,8 +5671,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def cy(
         self,
@@ -5367,8 +5682,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def cz(
         self,
@@ -5378,8 +5693,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     @overload
     def do(
@@ -5400,7 +5715,8 @@ class TableauSimulator:
         """Applies a circuit or pauli string to the simulator's state.
 
         Args:
-            circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing operations to apply.
+            circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing
+                operations to apply to the simulator's state.
 
         Examples:
             >>> import stim
@@ -5507,7 +5823,7 @@ class TableauSimulator:
         self,
         *targets,
     ) -> None:
-        """Applies a variant of the Hadamard gate that swaps the X and Y axes to the simulator's state.
+        """Applies an operation that swaps the X and Y axes to the simulator's state.
 
         Args:
             *targets: The indices of the qubits to target with the gate.
@@ -5525,7 +5841,7 @@ class TableauSimulator:
         self,
         *targets,
     ) -> None:
-        """Applies a variant of the Hadamard gate that swaps the Y and Z axes to the simulator's state.
+        """Applies an operation that swaps the Y and Z axes to the simulator's state.
 
         Args:
             *targets: The indices of the qubits to target with the gate.
@@ -5538,8 +5854,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def iswap_dag(
         self,
@@ -5549,8 +5865,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def measure(
         self,
@@ -5576,16 +5892,17 @@ class TableauSimulator:
     ) -> tuple:
         """Measures a qubit and returns the result as well as its Pauli kickback (if any).
 
-        The "Pauli kickback" of a stabilizer circuit measurement is a set of Pauli operations that
-        flip the post-measurement system state between the two possible post-measurement states.
-        For example, consider measuring one of the qubits in the state |00>+|11> in the Z basis.
-        If the measurement result is False, then the system projects into the state |00>.
-        If the measurement result is True, then the system projects into the state |11>.
-        Applying a Pauli X operation to both qubits flips between |00> and |11>.
-        Therefore the Pauli kickback of the measurement is `stim.PauliString("XX")`.
-        Note that there are often many possible equivalent Pauli kickbacks. For example,
-        if in the previous example there was a third qubit in the |0> state, then both
-        `stim.PauliString("XX_")` and `stim.PauliString("XXZ")` are valid kickbacks.
+        The "Pauli kickback" of a stabilizer circuit measurement is a set of Pauli
+        operations that flip the post-measurement system state between the two possible
+        post-measurement states. For example, consider measuring one of the qubits in
+        the state |00>+|11> in the Z basis. If the measurement result is False, then the
+        system projects into the state |00>. If the measurement result is True, then the
+        system projects into the state |11>. Applying a Pauli X operation to both qubits
+        flips between |00> and |11>. Therefore the Pauli kickback of the measurement is
+        `stim.PauliString("XX")`. Note that there are often many possible equivalent
+        Pauli kickbacks. For example, if in the previous example there was a third qubit
+        in the |0> state, then both `stim.PauliString("XX_")` and
+        `stim.PauliString("XXZ")` are valid kickbacks.
 
         Measurements with deterministic results don't have a Pauli kickback.
 
@@ -5595,9 +5912,9 @@ class TableauSimulator:
         Returns:
             A (result, kickback) tuple.
             The result is a bool containing the measurement's output.
-            The kickback is either None (meaning the measurement was deterministic) or a stim.PauliString
-            (meaning the measurement was random, and the operations in the Pauli string flip between the
-            two possible post-measurement states).
+            The kickback is either None (meaning the measurement was deterministic) or a
+            stim.PauliString (meaning the measurement was random, and the operations in
+            the Pauli string flip between the two possible post-measurement states).
 
         Examples:
             >>> import stim
@@ -5614,7 +5931,7 @@ class TableauSimulator:
             ...     m, kick = s.measure_kickback(qubit)
             ...     if m != desired_result:
             ...         if kick is None:
-            ...             raise ValueError("Deterministic measurement differed from desired result.")
+            ...             raise ValueError("Post-selected the impossible!")
             ...         s.do(kick)
             >>> s = stim.TableauSimulator()
             >>> s.h(0)
@@ -5640,10 +5957,11 @@ class TableauSimulator:
     def num_qubits(
         self,
     ) -> int:
-        """Returns the number of qubits currently being tracked by the simulator's internal state.
+        """Returns the number of qubits currently being tracked by the simulator.
 
-        Note that the number of qubits being tracked will implicitly increase if qubits beyond
-        the current limit are touched. Untracked qubits are always assumed to be in the |0> state.
+        Note that the number of qubits being tracked will implicitly increase if qubits
+        beyond the current limit are touched. Untracked qubits are always assumed to be
+        in the |0> state.
 
         Examples:
             >>> import stim
@@ -5658,21 +5976,29 @@ class TableauSimulator:
         self,
         target: int,
     ) -> stim.PauliString:
-        """Returns the current bloch vector of the qubit, represented as a stim.PauliString.
+        """Returns the state of the qubit as a single-qubit stim.PauliString stabilizer.
 
-        This is a non-physical operation. It reports information about the qubit without disturbing it.
+        This is a non-physical operation. It reports information about the qubit without
+        disturbing it.
 
         Args:
             target: The qubit to peek at.
 
         Returns:
-            stim.PauliString("I"): The qubit is entangled. Its bloch vector is x=y=z=0.
-            stim.PauliString("+Z"): The qubit is in the |0> state. Its bloch vector is z=+1, x=y=0.
-            stim.PauliString("-Z"): The qubit is in the |1> state. Its bloch vector is z=-1, x=y=0.
-            stim.PauliString("+Y"): The qubit is in the |i> state. Its bloch vector is y=+1, x=z=0.
-            stim.PauliString("-Y"): The qubit is in the |-i> state. Its bloch vector is y=-1, x=z=0.
-            stim.PauliString("+X"): The qubit is in the |+> state. Its bloch vector is x=+1, y=z=0.
-            stim.PauliString("-X"): The qubit is in the |-> state. Its bloch vector is x=-1, y=z=0.
+            stim.PauliString("I"):
+                The qubit is entangled. Its bloch vector is x=y=z=0.
+            stim.PauliString("+Z"):
+                The qubit is in the |0> state. Its bloch vector is z=+1, x=y=0.
+            stim.PauliString("-Z"):
+                The qubit is in the |1> state. Its bloch vector is z=-1, x=y=0.
+            stim.PauliString("+Y"):
+                The qubit is in the |i> state. Its bloch vector is y=+1, x=z=0.
+            stim.PauliString("-Y"):
+                The qubit is in the |-i> state. Its bloch vector is y=-1, x=z=0.
+            stim.PauliString("+X"):
+                The qubit is in the |+> state. Its bloch vector is x=+1, y=z=0.
+            stim.PauliString("-X"):
+                The qubit is in the |-> state. Its bloch vector is x=-1, y=z=0.
 
         Examples:
             >>> import stim
@@ -5696,7 +6022,10 @@ class TableauSimulator:
         self,
         observable: stim.PauliString,
     ) -> int:
-        """Determines the expected value of an observable (which will always be -1, 0, or +1).
+        """Determines the expected value of an observable.
+
+        Because the simulator's state is always a stabilizer state, the expectation will
+        always be exactly -1, 0, or +1.
 
         This is a non-physical operation.
         It reports information about the quantum state without disturbing it.
@@ -5739,7 +6068,10 @@ class TableauSimulator:
         self,
         target: int,
     ) -> int:
-        """Returns the expected value of a qubit's X observable (which will always be -1, 0, or +1).
+        """Returns the expected value of a qubit's X observable.
+
+        Because the simulator's state is always a stabilizer state, the expectation will
+        always be exactly -1, 0, or +1.
 
         This is a non-physical operation.
         It reports information about the quantum state without disturbing it.
@@ -5769,7 +6101,10 @@ class TableauSimulator:
         self,
         target: int,
     ) -> int:
-        """Returns the expected value of a qubit's Y observable (which will always be -1, 0, or +1).
+        """Returns the expected value of a qubit's Y observable.
+
+        Because the simulator's state is always a stabilizer state, the expectation will
+        always be exactly -1, 0, or +1.
 
         This is a non-physical operation.
         It reports information about the quantum state without disturbing it.
@@ -5799,7 +6134,10 @@ class TableauSimulator:
         self,
         target: int,
     ) -> int:
-        """Returns the expected value of a qubit's Z observable (which will always be -1, 0, or +1).
+        """Returns the expected value of a qubit's Z observable.
+
+        Because the simulator's state is always a stabilizer state, the expectation will
+        always be exactly -1, 0, or +1.
 
         This is a non-physical operation.
         It reports information about the quantum state without disturbing it.
@@ -5884,8 +6222,8 @@ class TableauSimulator:
 
         """Postselects qubits in the Z basis, or raises an exception.
 
-        Postselecting a qubit forces it to collapse to a specific state, as
-        if it was measured and that state was the result of the measurement.
+        Postselecting a qubit forces it to collapse to a specific state, as if it was
+        measured and that state was the result of the measurement.
 
         Args:
             targets: The qubit index or indices to postselect.
@@ -5988,14 +6326,15 @@ class TableauSimulator:
         self,
         new_inverse_tableau: stim.Tableau,
     ) -> None:
-        """Overwrites the simulator's internal state with a copy of the given inverse tableau.
+        """Overwrites the simulator's internal state with the given inverse tableau.
 
-        The inverse tableau specifies how Pauli product observables of qubits at the current time transform
-        into equivalent Pauli product observables at the beginning of time, when all qubits were in the
-        |0> state. For example, if the Z observable on qubit 5 maps to a product of Z observables at the
-        start of time then a Z basis measurement on qubit 5 will be deterministic and equal to the sign
-        of the product. Whereas if it mapped to a product of observables including an X or a Y then the Z
-        basis measurement would be random.
+        The inverse tableau specifies how Pauli product observables of qubits at the
+        current time transform into equivalent Pauli product observables at the
+        beginning of time, when all qubits were in the |0> state. For example, if the Z
+        observable on qubit 5 maps to a product of Z observables at the start of time
+        then a Z basis measurement on qubit 5 will be deterministic and equal to the
+        sign of the product. Whereas if it mapped to a product of observables including
+        an X or a Y then the Z basis measurement would be random.
 
         Any qubits not within the length of the tableau are implicitly in the |0> state.
 
@@ -6014,17 +6353,23 @@ class TableauSimulator:
         self,
         new_num_qubits: int,
     ) -> None:
-        """Forces the simulator's internal state to track exactly the qubits whose indices are in range(new_num_qubits).
+        """Resizes the simulator's internal state.
 
-        Note that untracked qubits are always assumed to be in the |0> state. Therefore, calling this method
-        will effectively force any qubit whose index is outside range(new_num_qubits) to be reset to |0>.
+        This forces the simulator's internal state to track exactly the qubits whose
+        indices are in `range(new_num_qubits)`.
 
-        Note that this method does not prevent future operations from implicitly expanding the size of the
-        tracked state (e.g. setting the number of qubits to 5 will not prevent a Hadamard from then being
-        applied to qubit 100, increasing the number of qubits to 101).
+        Note that untracked qubits are always assumed to be in the |0> state. Therefore,
+        calling this method will effectively force any qubit whose index is outside
+        `range(new_num_qubits)` to be reset to |0>.
+
+        Note that this method does not prevent future operations from implicitly
+        expanding the size of the tracked state (e.g. setting the number of qubits to 5
+        will not prevent a Hadamard from then being applied to qubit 100, increasing the
+        number of qubits back to 101).
 
         Args:
-            new_num_qubits: The length of the range of qubits the internal simulator should be tracking.
+            new_num_qubits: The length of the range of qubits the internal simulator
+                should be tracking.
 
         Examples:
             >>> import stim
@@ -6045,45 +6390,50 @@ class TableauSimulator:
         self,
         stabilizers: Iterable[stim.PauliString],
         *,
-        bool allow_redundant = False,
-        bool allow_underconstrained = False,
+        allow_redundant: bool = False,
+        allow_underconstrained: bool = False,
     ) -> None:
 
         """Sets the tableau simulator's state to a state satisfying the given stabilizers.
 
-        The old quantum state is completely overwritten, even if the new state is underconstrained
-        underconstrained by the given stabilizers. The number of qubits is changed to exactly match
-        the number of qubits in the longest given stabilizer.
+        The old quantum state is completely overwritten, even if the new state is
+        underconstrained by the given stabilizers. The number of qubits is changed to
+        exactly match the number of qubits in the longest given stabilizer.
 
         Args:
-            stabilizers: A list of `stim.PauliString`s specifying the stabilizers that the new
-                state must have. It is permitted for stabilizers to have different lengths. All
-                stabilizers are padded up to the length of the longest stabilizer by appending
-                identity terms.
-            allow_redundant: Defaults to False. If set to False, then the given stabilizers must
-                all be independent. If any one of them is a product of the others (including the
-                empty product), an exception will be raised. If set to True, then redundant
-                stabilizers are simply ignored.
-            allow_underconstrained: Defaults to False. If set to False, then the given stabilizers
-                must form a complete set of generators. They must exactly specify the desired
-                stabilizer state, with no degrees of freedom left over. For an n-qubit state there
-                must be n independent stabilizers. If set to True, then there can be leftover
-                degrees of freedom which can be set arbitrarily.
+            stabilizers: A list of `stim.PauliString`s specifying the stabilizers that
+                the new state must have. It is permitted for stabilizers to have
+                different lengths. All stabilizers are padded up to the length of the
+                longest stabilizer by appending identity terms.
+            allow_redundant: Defaults to False. If set to False, then the given
+                stabilizers must all be independent. If any one of them is a product of
+                the others (including the empty product), an exception will be raised.
+                If set to True, then redundant stabilizers are simply ignored.
+            allow_underconstrained: Defaults to False. If set to False, then the given
+                stabilizers must form a complete set of generators. They must exactly
+                specify the desired stabilizer state, with no degrees of freedom left
+                over. For an n-qubit state there must be n independent stabilizers. If
+                set to True, then there can be leftover degrees of freedom which can be
+                set arbitrarily.
 
         Returns:
-            Nothing. Mutates the states of the simulator to match the desired stabilizers.
-            Guarantees that self.current_inverse_tableau().inverse_z_output(k) will be equal
-            to the k'th independent stabilizer from the `stabilizers` argument.
+            Nothing. Mutates the states of the simulator to match the desired
+            stabilizers.
+
+            Guarantees that self.current_inverse_tableau().inverse_z_output(k) will be
+            equal to the k'th independent stabilizer from the `stabilizers` argument.
 
         Raises:
             ValueError:
                 A stabilizer is redundant but allow_redundant=True wasn't set.
                 OR
-                The given stabilizers are contradictory (e.g. "+Z" and "-Z" both specified).
+                The given stabilizers are contradictory (e.g. "+Z" and "-Z" both
+                specified).
                 OR
                 The given stabilizers anticommute (e.g. "+Z" and "+X" both specified).
                 OR
-                The stabilizers left behind a degree of freedom but allow_underconstrained=True wasn't set.
+                The stabilizers left behind a degree of freedom but
+                allow_underconstrained=True wasn't set.
                 OR
                 A stabilizer has an imaginary sign (i or -i).
 
@@ -6134,24 +6484,25 @@ class TableauSimulator:
         endian: str,
     ) -> None:
 
-        """Sets the tableau simulator's state to a superposition specified by a vector of amplitudes.
+        """Sets the simulator's state to a superposition specified by an amplitude vector.
 
         Args:
-            state_vector: A list of complex amplitudes specifying a superposition. The vector
-                must correspond to a state that is reachable using Clifford operations, and must
-                be normalized (i.e. it must be a unit vector).
+            state_vector: A list of complex amplitudes specifying a superposition. The
+                vector must correspond to a state that is reachable using Clifford
+                operations, and must be normalized (i.e. it must be a unit vector).
             endian:
-                "little": state vector is in little endian order, where higher index qubits
-                    correspond to larger changes in the state index.
-                "big": state vector is in little endian order, where higher index qubits correspond to
-                    smaller changes in the state index.
+                "little": state vector is in little endian order, where higher index
+                    qubits correspond to larger changes in the state index.
+                "big": state vector is in big endian order, where higher index qubits
+                    correspond to smaller changes in the state index.
 
         Returns:
             Nothing. Mutates the states of the simulator to match the desired state.
 
         Raises:
             ValueError:
-                The given state vector isn't a list of complex values specifying a stabilizer state.
+                The given state vector isn't a list of complex values specifying a
+                stabilizer state.
                 OR
                 The given endian value isn't 'little' or 'big'.
 
@@ -6232,30 +6583,33 @@ class TableauSimulator:
         endian: str = 'little',
     ) -> np.ndarray[np.complex64]:
 
-        """Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
+        """Returns a wavefunction for the simulator's current state.
 
-        This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
-        done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
-        stabilizer of the state. The state is then canonicalized so that zero values are actually exactly 0, and so
-        that the first non-zero entry is positive.
+        This function takes O(n * 2**n) time and O(2**n) space, where n is the number of
+        qubits. The computation is done by initialization a random state vector and
+        iteratively projecting it into the +1 eigenspace of each stabilizer of the
+        state. The state is then canonicalized so that zero values are actually exactly
+        0, and so that the first non-zero entry is positive.
 
         Args:
             endian:
-                "little" (default): state vector is in little endian order, where higher index qubits
-                    correspond to larger changes in the state index.
-                "big": state vector is in little endian order, where higher index qubits correspond to
-                    smaller changes in the state index.
+                "little" (default): state vector is in little endian order, where higher
+                    index qubits correspond to larger changes in the state index.
+                "big": state vector is in big endian order, where higher index qubits
+                    correspond to smaller changes in the state index.
 
         Returns:
             A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
 
-            If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
-            qubit with index 1 is storing the bit b_1, etc.
+            If the result is in little endian order then the amplitude at offset
+            b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+            computational basis state where the qubit with index 0 is storing the bit
+            b_0, the qubit with index 1 is storing the bit b_1, etc.
 
-            If the result is in big endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-            the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
-            qubit with index 1 is storing the bit b_{n-2}, etc.
+            If the result is in big endian order then the amplitude at offset
+            b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+            computational basis state where the qubit with index 0 is storing the bit
+            b_{n-1}, the qubit with index 1 is storing the bit b_{n-2}, etc.
 
         Examples:
             >>> import stim
@@ -6280,8 +6634,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def x(
         self,
@@ -6300,8 +6654,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def xcy(
         self,
@@ -6311,8 +6665,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def xcz(
         self,
@@ -6322,8 +6676,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def y(
         self,
@@ -6342,8 +6696,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def ycy(
         self,
@@ -6353,8 +6707,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def ycz(
         self,
@@ -6364,8 +6718,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def z(
         self,
@@ -6384,8 +6738,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def zcy(
         self,
@@ -6395,8 +6749,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
     def zcz(
         self,
@@ -6406,8 +6760,8 @@ class TableauSimulator:
 
         Args:
             *targets: The indices of the qubits to target with the gate.
-                Applies the gate to the first two targets, then the next two targets, and so forth.
-                There must be an even number of targets.
+                Applies the gate to the first two targets, then the next two targets,
+                and so forth. There must be an even number of targets.
         """
 def main(
     *,
@@ -6498,8 +6852,9 @@ def read_shot_data_file(
         path: The path to the file to read the data from.
         format: The format that the data is stored in, such as 'b8'.
             See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-        bit_pack: Defaults to false. Determines whether the result is a bool8 numpy array
-            with one bit per byte, or a uint8 numpy array with 8 bits per byte.
+        bit_pack: Defaults to false. Determines whether the result is a bool8 numpy
+            array with one bit per byte, or a uint8 numpy array with 8 bits per
+            byte.
         num_measurements: How many measurements there are per shot.
         num_detectors: How many detectors there are per shot.
         num_observables: How many observables there are per shot.
@@ -6515,7 +6870,8 @@ def read_shot_data_file(
             bit b from shot s is at result[s, b]
         If bit_pack=True:
             dtype = np.uint8
-            shape = (num_shots, math.ceil((num_measurements + num_detectors + num_observables) / 8))
+            shape = (num_shots, math.ceil(
+                (num_measurements + num_detectors + num_observables) / 8))
             bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
 
     Examples:
@@ -6538,19 +6894,49 @@ def read_shot_data_file(
     """
 def target_combiner(
 ) -> stim.GateTarget:
-    """Returns a target combiner (`*` in circuit files) that can be used as an operation target.
+    """Returns a target combiner that can be used to build Pauli products.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     stim.target_x(2),
+        ...     stim.target_combiner(),
+        ...     stim.target_y(3),
+        ...     stim.target_combiner(),
+        ...     stim.target_z(5),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*Y3*Z5
+        ''')
     """
 def target_inv(
     qubit_index: int,
 ) -> stim.GateTarget:
-    """Returns a target flagged as inverted that can be passed into Circuit.append_operation
+    """Returns a target flagged as inverted.
+
+    Inverted targets are used to indicate measurement results should be flipped.
+
+    Args:
+        qubit_index: The underlying qubit index of the inverted target.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("M", [2, stim.target_inv(3)])
+        >>> circuit
+        stim.Circuit('''
+            M 2 !3
+        ''')
+
     For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
     meaning the measurement result from qubit 1 should be inverted when reported.
     """
 def target_logical_observable_id(
     index: int,
 ) -> stim.DemTarget:
-    """Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
+    """Returns a logical observable id identifying a frame change.
 
     Args:
         index: The index of the observable.
@@ -6572,8 +6958,29 @@ def target_logical_observable_id(
 def target_rec(
     lookback_index: int,
 ) -> stim.GateTarget:
-    """Returns a record target that can be passed into Circuit.append_operation.
-    For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
+    """Returns a measurement record target with the given lookback.
+
+    Measurement record targets are used to refer back to the measurement record;
+    the list of measurements that have been performed so far. Measurement record
+    targets always specify an index relative to the *end* of the measurement record.
+    The latest measurement is `stim.target_rec(-1)`, the next most recent
+    measurement is `stim.target_rec(-2)`, and so forth. Indexing is done this way
+    in order to make it possible to write loops.
+
+    Args:
+        lookback_index: A negative integer indicating how far to look back, relative
+            to the end of the measurement record.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("M", [5, 7, 11])
+        >>> circuit.append("CX", [stim.target_rec(-2), 3])
+        >>> circuit
+        stim.Circuit('''
+            M 5 7 11
+            CX rec[-1] 3
+        ''')
     """
 def target_relative_detector_id(
     index: int,
@@ -6617,29 +7024,97 @@ def target_separator(
 def target_sweep_bit(
     sweep_bit_index: int,
 ) -> stim.GateTarget:
-    """Returns a sweep bit target that can be passed into Circuit.append_operation
-    For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
+    """Returns a sweep bit target that can be passed into `stim.Circuit.append`.
+
+    Args:
+        sweep_bit_index: The index of the sweep bit to target.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("CX", [stim.target_sweep_bit(2), 5])
+        >>> circuit
+        stim.Circuit('''
+            CX sweep[2] 5
+        ''')
     """
 def target_x(
     qubit_index: int,
     invert: bool = False,
 ) -> stim.GateTarget:
-    """Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
-    For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
+    """Returns a Pauli X target that can be passed into `stim.Circuit.append`.
+
+    Args:
+        qubit_index: The qubit that the Pauli applies to.
+        invert: Defaults to False. If True, the target is inverted (indicating
+            that, for example, measurement results should be inverted).
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     stim.target_x(2),
+        ...     stim.target_combiner(),
+        ...     stim.target_y(3, invert=True),
+        ...     stim.target_combiner(),
+        ...     stim.target_z(5),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3*Z5
+        ''')
     """
 def target_y(
     qubit_index: int,
     invert: bool = False,
 ) -> stim.GateTarget:
-    """Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
-    For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
+    """Returns a Pauli Y target that can be passed into `stim.Circuit.append`.
+
+    Args:
+        qubit_index: The qubit that the Pauli applies to.
+        invert: Defaults to False. If True, the target is inverted (indicating
+            that, for example, measurement results should be inverted).
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     stim.target_x(2),
+        ...     stim.target_combiner(),
+        ...     stim.target_y(3, invert=True),
+        ...     stim.target_combiner(),
+        ...     stim.target_z(5),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3*Z5
+        ''')
     """
 def target_z(
     qubit_index: int,
     invert: bool = False,
 ) -> stim.GateTarget:
-    """Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
-    For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
+    """Returns a Pauli Z target that can be passed into `stim.Circuit.append`.
+
+    Args:
+        qubit_index: The qubit that the Pauli applies to.
+        invert: Defaults to False. If True, the target is inverted (indicating
+            that, for example, measurement results should be inverted).
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit()
+        >>> circuit.append("MPP", [
+        ...     stim.target_x(2),
+        ...     stim.target_combiner(),
+        ...     stim.target_y(3, invert=True),
+        ...     stim.target_combiner(),
+        ...     stim.target_z(5),
+        ... ])
+        >>> circuit
+        stim.Circuit('''
+            MPP X2*!Y3*Z5
+        ''')
     """
 def write_shot_data_file(
     *,
@@ -6657,16 +7132,19 @@ def write_shot_data_file(
             of the array determines whether or not the data is bit packed, and the
             shape must match the bits per shot.
 
-            dtype=np.bool8: Not bit packed. Shape must be (num_shots, num_measurements + num_detectors + num_observables).
-            dtype=np.uint8: Yes bit packed. Shape must be (num_shots, math.ceil((num_measurements + num_detectors + num_observables) / 8)).
+            dtype=np.bool8: Not bit packed. Shape must be
+                (num_shots, num_measurements + num_detectors + num_observables).
+            dtype=np.uint8: Yes bit packed. Shape must be
+                (num_shots, math.ceil(
+                    (num_measurements + num_detectors + num_observables) / 8)).
         path: The path to the file to write the data to.
         format: The format that the data is stored in, such as 'b8'.
             See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         num_measurements: How many measurements there are per shot.
         num_detectors: How many detectors there are per shot.
         num_observables: How many observables there are per shot.
-            Note that this only refers to observables *in the given shot data*, not to
-            observables from the original circuit that was sampled.
+            Note that this only refers to observables *in the given shot data*, not
+            to observables from the original circuit that was sampled.
 
     Examples:
         >>> import stim

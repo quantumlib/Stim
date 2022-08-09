@@ -177,20 +177,22 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
         clean_doc_string(u8R"DOC(
             Creates a measurement-to-detection-events converter for the given circuit.
 
-            The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
-            during initialization of the converter, as a baseline for determining what the expected value of a detector
-            is.
+            The converter uses a noiseless reference sample, collected from the circuit
+            using stim's Tableau simulator during initialization of the converter, as a
+            baseline for determining what the expected value of a detector is.
 
-            Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
-            noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
-            the same reference sample for a given circuit.
+            Note that the expected behavior of gauge detectors (detectors that are not
+            actually deterministic under noiseless execution) can vary depending on the
+            reference sample. Stim mitigates this by always generating the same reference
+            sample for a given circuit.
 
             Args:
                 circuit: The stim circuit to use for conversions.
-                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
-                    is initialized to all-zeroes instead of being collected from the circuit. This should only be used
-                    if it's known that the all-zeroes sample is actually a possible result from the circuit (under
-                    noiseless execution).
+                skip_reference_sample: Defaults to False. When set to True, the reference
+                    sample used by the converter is initialized to all-zeroes instead of
+                    being collected from the circuit. This should only be used if it's known
+                    that the all-zeroes sample is actually a possible result from the
+                    circuit (under noiseless execution).
 
             Returns:
                 An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
@@ -226,7 +228,7 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
         pybind11::arg("obs_out_filepath") = nullptr,
         pybind11::arg("obs_out_format") = "01",
         clean_doc_string(u8R"DOC(
-            Reads measurement data from a file, converts it, and writes the detection events to another file.
+            Reads measurement data from a file and writes detection events to another file.
 
             Args:
                 measurements_filepath: A file containing measurement data to be converted.
@@ -237,21 +239,25 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
                 detection_events_format: The format to save the detection event data in.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                     Defaults to "01".
-                sweep_bits_filepath: Defaults to None. A file containing sweep data, or None.
-                    When specified, sweep data (used for `sweep[k]` controls in the circuit, which can vary from shot to
-                    shot) will be read from the given file.
-                    When not specified, all sweep bits default to False and no sweep-controlled operations occur.
+                sweep_bits_filepath: Defaults to None. A file containing sweep data, or
+                    None. When specified, sweep data (used for `sweep[k]` controls in the
+                    circuit, which can vary from shot to shot) will be read from the given
+                    file. When not specified, all sweep bits default to False and no
+                    sweep-controlled operations occur.
                 sweep_bits_format: The format the sweep data is stored in.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                     Defaults to "01".
-                obs_out_filepath: Sample observables as part of each shot, and write them to this file.
-                    This keeps the observable data separate from the detector data.
-                obs_out_format: If writing the observables to a file, this is the format to write them in.
+                obs_out_filepath: Sample observables as part of each shot, and write them to
+                    this file. This keeps the observable data separate from the detector
+                    data.
+                obs_out_format: If writing the observables to a file, this is the format to
+                    write them in.
                     Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
                     Defaults to "01".
-                append_observables: When True, the observables in the circuit are included as part of the detection
-                    event data. Specifically, they are treated as if they were additional detectors at the end of the
-                    circuit. When False, observable data is not output.
+                append_observables: When True, the observables in the circuit are included
+                    as part of the detection event data. Specifically, they are treated as
+                    if they were additional detectors at the end of the circuit. When False,
+                    observable data is not output.
 
             Examples:
                 >>> import stim
@@ -291,35 +297,46 @@ void pybind_compiled_measurements_to_detection_events_converter_methods(
             @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:
-                measurements: A numpy array containing measurement data. The dtype of the array is used
-                    to determine if it is bit packed or not.
+                measurements: A numpy array containing measurement data.
 
+                    The dtype of the array is used to determine if it is bit packed or not.
                     dtype=np.bool8 (unpacked data):
                         shape=(num_shots, circuit.num_measurements)
                     dtype=np.uint8 (bit packed data):
                         shape=(num_shots, math.ceil(circuit.num_measurements / 8))
-                sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]` controls in the circuit.
-                    The dtype of the array is used to determine if it is bit packed or not.
+                sweep_bits: Optional. A numpy array containing sweep data for the `sweep[k]`
+                    controls in the circuit.
 
+                    The dtype of the array is used to determine if it is bit packed or not.
                     dtype=np.bool8 (unpacked data):
                         shape=(num_shots, circuit.num_sweep_bits)
                     dtype=np.uint8 (bit packed data):
                         shape=(num_shots, math.ceil(circuit.num_sweep_bits / 8))
-                separate_observables: Defaults to False. When set to True, two numpy arrays are returned instead of one,
-                    with the second array containing the observable flip data.
-                append_observables: Defaults to False. When set to True, the observables in the circuit are treated as
-                    if they were additional detectors. Their results are appended to the end of the detection event
-                    data.
-                bit_pack_result: Defaults to False. When set to True, the returned numpy array contains bit packed
-                    data (dtype=np.uint8 with 8 bits per item) instead of unpacked data (dtype=np.bool8).
+                separate_observables: Defaults to False. When set to True, two numpy arrays
+                    are returned instead of one, with the second array containing the
+                    observable flip data.
+                append_observables: Defaults to False. When set to True, the observables in
+                    the circuit are treated as if they were additional detectors. Their
+                    results are appended to the end of the detection event data.
+                bit_pack_result: Defaults to False. When set to True, the returned numpy
+                    array contains bit packed data (dtype=np.uint8 with 8 bits per item)
+                    instead of unpacked data (dtype=np.bool8).
 
             Returns:
-                The detection event data and (optionally) observable data.
-                The result is a single numpy array if separate_observables is false, otherwise it's a tuple of two numpy arrays.
-                When returning two numpy arrays, the first array is the detection event data and the second is the observable flip data.
-                The dtype of the returned arrays is np.bool8 if bit_pack_result is false, otherwise they're np.uint8 arrays.
+                The detection event data and (optionally) observable data. The result is a
+                single numpy array if separate_observables is false, otherwise it's a tuple
+                of two numpy arrays.
+
+                When returning two numpy arrays, the first array is the detection event data
+                and the second is the observable flip data.
+
+                The dtype of the returned arrays is np.bool8 if bit_pack_result is false,
+                otherwise they're np.uint8 arrays.
+
                 shape[0] of the array(s) is the number of shots.
-                shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit packed) (e.g. for just detection event data it would be circuit.num_detectors).
+                shape[1] of the array(s) is the number of bits per shot (divided by 8 if bit
+                packed) (e.g. for just detection event data it would be
+                circuit.num_detectors).
 
             Examples:
                 >>> import stim

@@ -86,7 +86,9 @@ pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m
                 ...    error(1) D1 D2 L0
                 ... ''')
                 >>> sampler = dem.compile_sampler()
-                >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+                >>> det_data, obs_data, err_data = sampler.sample(
+                ...     shots=4,
+                ...     return_errors=True)
                 >>> det_data
                 array([[False,  True,  True],
                        [False,  True,  True],
@@ -124,27 +126,34 @@ void stim_pybind::pybind_dem_sampler_after_types_all_defined(
                 shots: The number of times to sample from the model.
                 bit_packed: Defaults to false.
                     False: the returned numpy arrays have dtype=np.bool8.
-                    True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into each byte.
+                    True: the returned numpy arrays have dtype=np.uint8 and pack 8 bits into
+                        each byte.
 
-                    Setting this to True is equivalent to running np.packbits(data, endian='little', axis=1)
-                    on each output value, but has the performance benefit of the data never being expanded
-                    into an unpacked form.
+                    Setting this to True is equivalent to running
+                    `np.packbits(data, endian='little', axis=1)` on each output value, but
+                    has the performance benefit of the data never being expanded into an
+                    unpacked form.
                 return_errors: Defaults to False.
                     False: the first entry of the returned tuple is None.
-                    True: the first entry of the returned tuple is a numpy array recording which errors were sampled.
+                    True: the first entry of the returned tuple is a numpy array recording
+                    which errors were sampled.
                 recorded_errors_to_replay: Defaults to None, meaning sample errors randomly.
-                    If not None, this is expected to be a 2d numpy array specifying which errors to apply (e.g. one
-                    returned from a previous call to the sample method). The array must have
-                    dtype=np.bool8 and shape=(num_shots, num_errors) or
-                    dtype=np.uint8 and shape=(num_shots, math.ceil(num_errors / 8)).
+                    If not None, this is expected to be a 2d numpy array specifying which
+                    errors to apply (e.g. one returned from a previous call to the sample
+                    method). The array must have dtype=np.bool8 and
+                    shape=(num_shots, num_errors) or dtype=np.uint8 and
+                    shape=(num_shots, math.ceil(num_errors / 8)).
 
             Returns:
                 A tuple (detector_data, obs_data, error_data).
 
                 Assuming bit_packed is False and return_errors is True:
-                    If error_data[s, k] is True, then the error with index k fired in the shot with index s.
-                    If detector_data[s, k] is True, then the detector with index k ended up flipped in the shot with index s.
-                    If obs_data[s, k] is True, then the observable with index k ended up flipped in the shot with index s.
+                    - If error_data[s, k] is True, then the error with index k fired in the
+                        shot with index s.
+                    - If detector_data[s, k] is True, then the detector with index k ended
+                        up flipped in the shot with index s.
+                    - If obs_data[s, k] is True, then the observable with index k ended up
+                        flipped in the shot with index s.
 
                 The dtype and shape of the data depends on the arguments:
                     if bit_packed:
@@ -196,7 +205,9 @@ void stim_pybind::pybind_dem_sampler_after_types_all_defined(
                 True
 
                 >>> # Recording errors.
-                >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+                >>> det_data, obs_data, err_data = sampler.sample(
+                ...     shots=4,
+                ...     return_errors=True)
                 >>> det_data
                 array([[False,  True,  True],
                        [False,  True,  True],
@@ -214,7 +225,10 @@ void stim_pybind::pybind_dem_sampler_after_types_all_defined(
                        [False,  True]])
 
                 >>> # Bit packing.
-                >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True, bit_packed=True)
+                >>> det_data, obs_data, err_data = sampler.sample(
+                ...     shots=4,
+                ...     return_errors=True,
+                ...     bit_packed=True)
                 >>> det_data
                 array([[6],
                        [6],
@@ -237,8 +251,12 @@ void stim_pybind::pybind_dem_sampler_after_types_all_defined(
                 ...    error(0.25) D1
                 ... ''')
                 >>> noisy_sampler = noisy_dem.compile_sampler()
-                >>> det_data, obs_data, err_data = noisy_sampler.sample(shots=100, return_errors=True)
-                >>> replay_det_data, replay_obs_data, _ = noisy_sampler.sample(shots=100, recorded_errors_to_replay=err_data)
+                >>> det_data, obs_data, err_data = noisy_sampler.sample(
+                ...     shots=100,
+                ...     return_errors=True)
+                >>> replay_det_data, replay_obs_data, _ = noisy_sampler.sample(
+                ...     shots=100,
+                ...     recorded_errors_to_replay=err_data)
                 >>> np.array_equal(det_data, replay_det_data)
                 True
                 >>> np.array_equal(obs_data, replay_obs_data)
@@ -293,22 +311,29 @@ void stim_pybind::pybind_dem_sampler_after_types_all_defined(
                     If None: detection event data is not written.
                     If str or pathlib.Path: opens and overwrites the file at the given path.
                     NOT IMPLEMENTED: io.IOBase
-                det_out_format: The format to write the detection event data in (e.g. "01" or "b8").
+                det_out_format: The format to write the detection event data in
+                    (e.g. "01" or "b8").
                 obs_out_file: Where to write observable flip data.
                     If None: observable flip data is not written.
                     If str or pathlib.Path: opens and overwrites the file at the given path.
                     NOT IMPLEMENTED: io.IOBase
-                obs_out_format: The format to write the observable flip data in (e.g. "01" or "b8").
+                obs_out_format: The format to write the observable flip data in
+                    (e.g. "01" or "b8").
                 err_out_file: Where to write errors-that-occurred data.
                     If None: errors-that-occurred data is not written.
                     If str or pathlib.Path: opens and overwrites the file at the given path.
                     NOT IMPLEMENTED: io.IOBase
-                err_out_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
-                replay_err_in_file: If this is specified, errors are replayed from data instead of generated randomly.
-                    If None: errors are generated randomly according to the probabilities in the detector error model.
-                    If str or pathlib.Path: the file at the given path is opened and errors-to-apply data is read from there.
-                    NOT IMPLEMENTED: io.IOBase
-                replay_err_in_format: The format to write the errors-that-occurred data in (e.g. "01" or "b8").
+                err_out_format: The format to write the errors-that-occurred data in
+                    (e.g. "01" or "b8").
+                replay_err_in_file: If this is specified, errors are replayed from data
+                    instead of generated randomly. The following types are supported:
+                    - None: errors are generated randomly according to the probabilities
+                        in the detector error model.
+                    - str or pathlib.Path: the file at the given path is opened and
+                        errors-to-apply data is read from there.
+                    - io.IOBase: NOT IMPLEMENTED
+                replay_err_in_format: The format to write the errors-that-occurred data in
+                    (e.g. "01" or "b8").
 
             Returns:
                 Nothing. Results are written to disk.

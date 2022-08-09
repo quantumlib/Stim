@@ -243,6 +243,7 @@ def main():
     print(f'''
 """Stim {version}: a fast quantum stabilizer circuit library."""
 # (This a stubs file describing the classes and methods in stim.)
+from __future__ import annotations
 from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
 if TYPE_CHECKING:
     import io
@@ -252,10 +253,11 @@ if TYPE_CHECKING:
 '''.strip())
 
     for obj in generate_documentation(obj=stim, full_name="stim", level=-1):
-
-        print('\n'.join(("    " * obj.level + line).rstrip()
+        text = '\n'.join(("    " * obj.level + line).rstrip()
                         for paragraph in obj.lines
-                        for line in paragraph.splitlines()))
+                        for line in paragraph.splitlines())
+        assert "stim::" not in text, "CONTAINS C++ STYLE TYPE SIGNATURE!!:\n" + text
+        print(text)
 
 
 if __name__ == '__main__':

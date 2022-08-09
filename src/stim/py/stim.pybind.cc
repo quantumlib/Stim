@@ -128,14 +128,13 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
     // described as `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
 
-    pybind_detector_error_model(m);
-
+    auto c_dem_sampler = pybind_dem_sampler(m);
     auto c_compiled_detector_sampler = pybind_compiled_detector_sampler_class(m);
     auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler_class(m);
     auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
     auto c_circuit = pybind_circuit(m);
-    auto c_dem_sampler = pybind_dem_sampler(m);
+    auto c_detector_error_model = pybind_detector_error_model(m);
     pybind_compiled_detector_sampler_methods(c_compiled_detector_sampler);
     pybind_compiled_measurement_sampler_methods(c_compiled_measurement_sampler);
     pybind_compiled_measurements_to_detection_events_converter_methods(c_compiled_m2d_converter);
@@ -150,8 +149,29 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         &target_rec,
         pybind11::arg("lookback_index"),
         clean_doc_string(u8R"DOC(
-            Returns a record target that can be passed into Circuit.append_operation.
-            For example, the 'rec[-2]' in 'DETECTOR rec[-2]' is a record target.
+            Returns a measurement record target with the given lookback.
+
+            Measurement record targets are used to refer back to the measurement record;
+            the list of measurements that have been performed so far. Measurement record
+            targets always specify an index relative to the *end* of the measurement record.
+            The latest measurement is `stim.target_rec(-1)`, the next most recent
+            measurement is `stim.target_rec(-2)`, and so forth. Indexing is done this way
+            in order to make it possible to write loops.
+
+            Args:
+                lookback_index: A negative integer indicating how far to look back, relative
+                    to the end of the measurement record.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("M", [5, 7, 11])
+                >>> circuit.append("CX", [stim.target_rec(-2), 3])
+                >>> circuit
+                stim.Circuit('''
+                    M 5 7 11
+                    CX rec[-1] 3
+                ''')
         )DOC")
             .data());
 
@@ -160,7 +180,22 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         &target_inv,
         pybind11::arg("qubit_index"),
         clean_doc_string(u8R"DOC(
-            Returns a target flagged as inverted that can be passed into Circuit.append_operation
+            Returns a target flagged as inverted.
+
+            Inverted targets are used to indicate measurement results should be flipped.
+
+            Args:
+                qubit_index: The underlying qubit index of the inverted target.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("M", [2, stim.target_inv(3)])
+                >>> circuit
+                stim.Circuit('''
+                    M 2 !3
+                ''')
+
             For example, the '!1' in 'M 0 !1 2' is qubit 1 flagged as inverted,
             meaning the measurement result from qubit 1 should be inverted when reported.
         )DOC")
@@ -170,7 +205,22 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         "target_combiner",
         &GateTarget::combiner,
         clean_doc_string(u8R"DOC(
-            Returns a target combiner (`*` in circuit files) that can be used as an operation target.
+            Returns a target combiner that can be used to build Pauli products.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("MPP", [
+                ...     stim.target_x(2),
+                ...     stim.target_combiner(),
+                ...     stim.target_y(3),
+                ...     stim.target_combiner(),
+                ...     stim.target_z(5),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP X2*Y3*Z5
+                ''')
         )DOC")
             .data());
 
@@ -180,8 +230,27 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
         clean_doc_string(u8R"DOC(
-            Returns a target flagged as Pauli X that can be passed into Circuit.append_operation
-            For example, the 'X1' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 1 flagged as Pauli X.
+            Returns a Pauli X target that can be passed into `stim.Circuit.append`.
+
+            Args:
+                qubit_index: The qubit that the Pauli applies to.
+                invert: Defaults to False. If True, the target is inverted (indicating
+                    that, for example, measurement results should be inverted).
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("MPP", [
+                ...     stim.target_x(2),
+                ...     stim.target_combiner(),
+                ...     stim.target_y(3, invert=True),
+                ...     stim.target_combiner(),
+                ...     stim.target_z(5),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP X2*!Y3*Z5
+                ''')
         )DOC")
             .data());
 
@@ -191,8 +260,27 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
         clean_doc_string(u8R"DOC(
-            Returns a target flagged as Pauli Y that can be passed into Circuit.append_operation
-            For example, the 'Y2' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 2 flagged as Pauli Y.
+            Returns a Pauli Y target that can be passed into `stim.Circuit.append`.
+
+            Args:
+                qubit_index: The qubit that the Pauli applies to.
+                invert: Defaults to False. If True, the target is inverted (indicating
+                    that, for example, measurement results should be inverted).
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("MPP", [
+                ...     stim.target_x(2),
+                ...     stim.target_combiner(),
+                ...     stim.target_y(3, invert=True),
+                ...     stim.target_combiner(),
+                ...     stim.target_z(5),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP X2*!Y3*Z5
+                ''')
         )DOC")
             .data());
 
@@ -202,8 +290,27 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
         clean_doc_string(u8R"DOC(
-            Returns a target flagged as Pauli Z that can be passed into Circuit.append_operation
-            For example, the 'Z3' in 'CORRELATED_ERROR(0.1) X1 Y2 Z3' is qubit 3 flagged as Pauli Z.
+            Returns a Pauli Z target that can be passed into `stim.Circuit.append`.
+
+            Args:
+                qubit_index: The qubit that the Pauli applies to.
+                invert: Defaults to False. If True, the target is inverted (indicating
+                    that, for example, measurement results should be inverted).
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("MPP", [
+                ...     stim.target_x(2),
+                ...     stim.target_combiner(),
+                ...     stim.target_y(3, invert=True),
+                ...     stim.target_combiner(),
+                ...     stim.target_z(5),
+                ... ])
+                >>> circuit
+                stim.Circuit('''
+                    MPP X2*!Y3*Z5
+                ''')
         )DOC")
             .data());
 
@@ -212,8 +319,19 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         &target_sweep_bit,
         pybind11::arg("sweep_bit_index"),
         clean_doc_string(u8R"DOC(
-            Returns a sweep bit target that can be passed into Circuit.append_operation
-            For example, the 'sweep[5]' in 'CNOT sweep[5] 7' is from `stim.target_sweep_bit(5)`.
+            Returns a sweep bit target that can be passed into `stim.Circuit.append`.
+
+            Args:
+                sweep_bit_index: The index of the sweep bit to target.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit()
+                >>> circuit.append("CX", [stim.target_sweep_bit(2), 5])
+                >>> circuit
+                stim.Circuit('''
+                    CX sweep[2] 5
+                ''')
         )DOC")
             .data());
 
@@ -299,4 +417,5 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_after_types_all_defined(c_circuit);
     pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
     pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
+    pybind_detector_error_model_after_types_all_defined(m, c_detector_error_model);
 }

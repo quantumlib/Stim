@@ -70,7 +70,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "value",
         &GateTarget::value,
         clean_doc_string(u8R"DOC(
-            The numeric part of the target. Positive for qubit targets, negative for measurement record targets.
+            The numeric part of the target.
+
+            This is non-negative integer for qubit targets, and a negative integer for
+            measurement record targets.
         )DOC")
             .data());
 
@@ -78,7 +81,9 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_qubit_target",
         &GateTarget::is_qubit_target,
         clean_doc_string(u8R"DOC(
-            Returns true if this is a qubit target (e.g. `5`) or an inverted qubit target (e.g. `stim.target_inv(4)`).
+            Returns whether or not this is a (possibly inverted) qubit target.
+
+            For example, `5` on its own in a stim circuit is a raw qubit target.
         )DOC")
             .data());
 
@@ -86,7 +91,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_x_target",
         &GateTarget::is_x_target,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_x` target (e.g. `X5` in a circuit file).
+            Returns whether or not this is a (possibly inverted) X pauli target.
+
+            For example, `X5` in a stim circuit is a X Pauli target. The value returned by
+            `stim.target_x` is a X pauli target.
         )DOC")
             .data());
 
@@ -94,7 +102,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_y_target",
         &GateTarget::is_y_target,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_y` target (e.g. `Y5` in a circuit file).
+            Returns whether or not this is a (possibly inverted) Y pauli target.
+
+            For example, `Y5` in a stim circuit is a Y Pauli target. The value returned by
+            `stim.target_y` is a Y pauli target.
         )DOC")
             .data());
 
@@ -102,7 +113,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_z_target",
         &GateTarget::is_z_target,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_z` target (e.g. `Z5` in a circuit file).
+            Returns whether or not this is a (possibly inverted) Z pauli target.
+
+            For example, `Z5` in a stim circuit is a Z Pauli target. The value returned by
+            `stim.target_z` is a Z pauli target.
         )DOC")
             .data());
 
@@ -112,8 +126,9 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Returns whether or not this is an inverted target.
 
-            Inverted targets include inverted qubit targets `stim.target_inv(5)` (`!5` in a circuit file) and
-            inverted Pauli targets like `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
+            Inverted targets include inverted qubit targets `stim.target_inv(5)`
+            (`!5` in a circuit file) and inverted Pauli targets like
+            `stim.target_x(4, invert=True)` (`!X4` in a circuit file).
         )DOC")
             .data());
 
@@ -121,7 +136,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_measurement_record_target",
         &GateTarget::is_measurement_record_target,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_rec` target (e.g. `rec[-5]` in a circuit file).
+            Returns whether or not this is a measurement record target.
+
+            The value returned by `stim.target_rec(-5)`, which would be `rec[-5]` in a
+            circuit file, is a measurement record target.
         )DOC")
             .data());
 
@@ -129,7 +147,7 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_combiner",
         &GateTarget::is_combiner,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_combiner()` (a `*` in a circuit file).
+            Returns whether or not this is a `stim.target_combiner()`.
         )DOC")
             .data());
 
@@ -137,7 +155,10 @@ void pybind_circuit_gate_target(pybind11::module &m) {
         "is_sweep_bit_target",
         &GateTarget::is_sweep_bit_target,
         clean_doc_string(u8R"DOC(
-            Returns whether or not this is a `stim.target_sweep_bit` target (e.g. `sweep[5]` in a circuit file).
+            Returns whether or not this is a sweep bit target.
+
+            For example, `sweep[5]` in a circuit file is a sweep target, and the value
+            returned by `stim.target_sweep_bit` is a sweep target.
         )DOC")
             .data());
 

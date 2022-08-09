@@ -28,7 +28,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
-std::string detector_error_model_repr(const DetectorErrorModel &self) {
+std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &self) {
     if (self.instructions.empty()) {
         return "stim.DetectorErrorModel()";
     }
@@ -71,12 +71,18 @@ DemInstructionType non_block_instruction_name_to_enum(const std::string &name) {
     throw std::invalid_argument("Not a non-block detector error model instruction name: " + name);
 }
 
-void pybind_detector_error_model(pybind11::module &m) {
+pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_model(pybind11::module &m) {
     auto c = pybind11::class_<DetectorErrorModel>(
         m,
         "DetectorErrorModel",
         clean_doc_string(u8R"DOC(
-            A list of instructions describing error mechanisms in terms of the detection events they produce.
+            An error model built out of independent error mechanics.
+
+            Error mechanisms are described in terms of the visible detection events and the
+            hidden observable frame changes that they causes. Error mechanisms can also
+            suggest decompositions of their effects into components, which can be helpful
+            for decoders that want to work with a simpler decomposed error model instead of
+            the full error model.
 
             Examples:
                 >>> import stim
@@ -109,7 +115,10 @@ void pybind_detector_error_model(pybind11::module &m) {
     pybind_detector_error_model_instruction(m);
     pybind_detector_error_model_target(m);
     pybind_detector_error_model_repeat_block(m);
+    return c;
+}
 
+void stim_pybind::pybind_detector_error_model_after_types_all_defined(pybind11::module &m, pybind11::class_<stim::DetectorErrorModel> &c) {
     c.def(
         pybind11::init([](const char *detector_error_model_text) {
             DetectorErrorModel self;
@@ -121,8 +130,8 @@ void pybind_detector_error_model(pybind11::module &m) {
             Creates a stim.DetectorErrorModel.
 
             Args:
-                detector_error_model_text: Defaults to empty. Describes instructions to append into the circuit in the
-                    detector error model (.dem) format.
+                detector_error_model_text: Defaults to empty. Describes instructions to
+                    append into the circuit in the detector error model (.dem) format.
 
             Examples:
                 >>> import stim
@@ -139,8 +148,9 @@ void pybind_detector_error_model(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Counts the number of detectors (e.g. `D2`) in the error model.
 
-            Detector indices are assumed to be contiguous from 0 up to whatever the maximum detector id is.
-            If the largest detector's absolute id is n-1, then the number of detectors is n.
+            Detector indices are assumed to be contiguous from 0 up to whatever the maximum
+            detector id is. If the largest detector's absolute id is n-1, then the number of
+            detectors is n.
 
             Examples:
                 >>> import stim
@@ -198,8 +208,9 @@ void pybind_detector_error_model(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Counts the number of frame changes (e.g. `L2`) in the error model.
 
-            Observable indices are assumed to be contiguous from 0 up to whatever the maximum observable id is.
-            If the largest observable's id is n-1, then the number of observables is n.
+            Observable indices are assumed to be contiguous from 0 up to whatever the
+            maximum observable id is. If the largest observable's id is n-1, then the number
+            of observables is n.
 
             Examples:
                 >>> import stim
@@ -242,14 +253,14 @@ void pybind_detector_error_model(pybind11::module &m) {
         "__str__",
         &DetectorErrorModel::str,
         clean_doc_string(u8R"DOC(
-            "Returns detector error model (.dem) instructions (that can be parsed by stim) for the model.");
+            Returns the contents of a detector error model file (.dem) encoding the model.
         )DOC")
             .data());
     c.def(
         "__repr__",
         &detector_error_model_repr,
         clean_doc_string(u8R"DOC(
-            "Returns text that is a valid python expression evaluating to an equivalent `stim.DetectorErrorModel`."
+            Returns valid python code evaluating to an equivalent `stim.DetectorErrorModel`.
         )DOC")
             .data());
 
@@ -259,7 +270,9 @@ void pybind_detector_error_model(pybind11::module &m) {
             return self;
         },
         clean_doc_string(u8R"DOC(
-            Returns a copy of the detector error model. An independent model with the same contents.
+            Returns a copy of the detector error model.
+
+            The copy is an independent detector error model with the same contents.
 
             Examples:
                 >>> import stim
@@ -279,7 +292,7 @@ void pybind_detector_error_model(pybind11::module &m) {
             return self.instructions.size();
         },
         clean_doc_string(u8R"DOC(
-            Returns the number of top-level instructions and blocks in the detector error model.
+            Returns the number of top-level instructions/blocks in the detector error model.
 
             Instructions inside of blocks are not included in this count.
 
@@ -329,10 +342,10 @@ void pybind_detector_error_model(pybind11::module &m) {
             @overload def __getitem__(self, index_or_slice: slice) -> stim.DetectorErrorModel:
 
             Args:
-                index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
-                    of instructions to return as a detector error model.
+                index_or_slice: An integer index picking out an instruction to return, or a
+                    slice picking out a range of instructions to return as a detector error
+                    model.
 
-            Examples:
             Examples:
                 >>> import stim
                 >>> model = stim.DetectorErrorModel('''
@@ -346,8 +359,8 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...    logical_observable L0
                 ...    detector D5
                 ... ''')
-                >>> model[1]
-                stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(1), stim.target_logical_observable_id(1)])
+                >>> model[0]
+                stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(0)])
                 >>> model[2]
                 stim.DemRepeatBlock(100, stim.DetectorErrorModel('''
                     error(0.125) D1 D2
@@ -375,20 +388,22 @@ void pybind_detector_error_model(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("atol"),
         clean_doc_string(u8R"DOC(
-            Checks if a detector error model is approximately equal to another detector error model.
+            Checks if detector error models are approximately equal.
 
-            Two detector error model are approximately equal if they are equal up to slight perturbations of instruction
-            arguments such as probabilities. For example `error(0.100) D0` is approximately equal to `error(0.099) D0`
-            within an absolute tolerance of 0.002. All other details of the models (such as the ordering of errors and
-            their targets) must be exactly the same.
+            Two detector error model are approximately equal if they are equal up to slight
+            perturbations of instruction arguments such as probabilities. For example
+            `error(0.100) D0` is approximately equal to `error(0.099) D0` within an absolute
+            tolerance of 0.002. All other details of the models (such as the ordering of
+            errors and their targets) must be exactly the same.
 
             Args:
                 other: The detector error model, or other object, to compare to this one.
-                atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+                atol: The absolute error tolerance. The maximum amount each probability may
+                    have been perturbed by.
 
             Returns:
-                True if the given object is a detector error model approximately equal up to the receiving circuit up to
-                the given tolerance, otherwise False.
+                True if the given object is a detector error model approximately equal up to
+                the receiving circuit up to the given tolerance, otherwise False.
 
             Examples:
                 >>> import stim
@@ -481,11 +496,13 @@ void pybind_detector_error_model(pybind11::module &m) {
             Appends an instruction to the detector error model.
 
             Args:
-                instruction: Either the name of an instruction, a stim.DemInstruction, or a stim.DemRepeatBlock.
-                    The `parens_arguments` and `targets` arguments are given if and only if the instruction is a name.
-                parens_arguments: Numeric values parameterizing the instruction. The numbers inside parentheses in a
-                    detector error model file (eg. the `0.25` in `error(0.25) D0`). This argument can be given either
-                    a list of doubles, or a single double (which will be implicitly wrapped into a list).
+                instruction: Either the name of an instruction, a stim.DemInstruction, or a
+                    stim.DemRepeatBlock. The `parens_arguments` and `targets` arguments are
+                    given if and only if the instruction is a name.
+                parens_arguments: Numeric values parameterizing the instruction. The numbers
+                    inside parentheses in a detector error model file (eg. the `0.25` in
+                    `error(0.25) D0`). This argument can be given either a list of doubles,
+                    or a single double (which will be implicitly wrapped into a list).
                 targets: The instruction targets, such as the `D0` in `error(0.25) D0`.
 
             Examples:
@@ -577,13 +594,14 @@ void pybind_detector_error_model(pybind11::module &m) {
             Returns the coordinate metadata of detectors in the detector error model.
 
             Args:
-                only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
-                    result. Detector indices beyond the end of the detector error model cause an error.
+                only: Defaults to None (meaning include all detectors). A list of detector
+                    indices to include in the result. Detector indices beyond the end of the
+                    detector error model cause an error.
 
             Returns:
-                A dictionary mapping integers (detector indices) to lists of floats (coordinates).
-                Detectors with no specified coordinate data are mapped to an empty tuple.
-                If `only` is specified, then `set(result.keys()) == set(only)`.
+                A dictionary mapping integers (detector indices) to lists of floats
+                (coordinates). Detectors with no specified coordinate data are mapped to an
+                empty tuple. If `only` is specified, then `set(result.keys()) == set(only)`.
 
             Examples:
                 >>> import stim
@@ -652,13 +670,18 @@ void pybind_detector_error_model(pybind11::module &m) {
         &DetectorErrorModel::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Returns a detector error model with a repeat block containing the current model's instructions.
+            Repeats the detector error model using a repeat block.
 
-            Special case: if the repetition count is 0, an empty model is returned.
-            Special case: if the repetition count is 1, an equal model with no repeat block is returned.
+            Has special cases for 0 repetitions and 1 repetitions.
 
             Args:
                 repetitions: The number of times the repeat block should repeat.
+
+            Returns:
+                repetitions=0: An empty detector error model.
+                repetitions=1: A copy of this detector error model.
+                repetitions>=2: A detector error model with a single repeat block, where the
+                contents of that repeat block are this detector error model.
 
             Examples:
                 >>> import stim
@@ -681,13 +704,18 @@ void pybind_detector_error_model(pybind11::module &m) {
         &DetectorErrorModel::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Returns a detector error model with a repeat block containing the current model's instructions.
+            Repeats the detector error model using a repeat block.
 
-            Special case: if the repetition count is 0, an empty model is returned.
-            Special case: if the repetition count is 1, an equal model with no repeat block is returned.
+            Has special cases for 0 repetitions and 1 repetitions.
 
             Args:
                 repetitions: The number of times the repeat block should repeat.
+
+            Returns:
+                repetitions=0: An empty detector error model.
+                repetitions=1: A copy of this detector error model.
+                repetitions>=2: A detector error model with a single repeat block, where the
+                contents of that repeat block are this detector error model.
 
             Examples:
                 >>> import stim
@@ -718,48 +746,59 @@ void pybind_detector_error_model(pybind11::module &m) {
         &shortest_graphlike_undetectable_logical_error,
         pybind11::arg("ignore_ungraphlike_errors") = false,
         clean_doc_string(u8R"DOC(
-            Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+            Finds a minimum set of graphlike errors to produce an undetected logical error.
 
-            Note that this method does not pay attention to error probabilities (other than ignoring errors with
-            probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
-            maximum probability of those physical errors all occurring.
+            Note that this method does not pay attention to error probabilities (other than
+            ignoring errors with probability 0). It searches for a logical error with the
+            minimum *number* of physical errors, not the maximum probability of those
+            physical errors all occurring.
 
-            This method works by looking for errors that have frame changes (eg. "error(0.1) D0 D1 L5" flips the frame
-            of observable 5). These errors are converted into one or two symptoms and a net frame change. The symptoms
-            can then be moved around by following errors touching that symptom. Each symptom is moved until it
-            disappears into a boundary or cancels against another remaining symptom, while leaving the other symptoms
-            alone (ensuring only one symptom is allowed to move significantly reduces waste in the search space).
-            Eventually a path or cycle of errors is found that cancels out the symptoms, and if there is still a frame
-            change at that point then that path or cycle is a logical error (otherwise all that was found was a
-            stabilizer of the system; a dead end). The search process advances like a breadth first search, seeded from
-            all the frame-change errors and branching them outward in tandem, until one of them wins the race to find a
-            solution.
+            This method works by looking for errors that have frame changes (eg.
+            "error(0.1) D0 D1 L5" flips the frame of observable 5). These errors are
+            converted into one or two symptoms and a net frame change. The symptoms can then
+            be moved around by following errors touching that symptom. Each symptom is moved
+            until it disappears into a boundary or cancels against another remaining
+            symptom, while leaving the other symptoms alone (ensuring only one symptom is
+            allowed to move significantly reduces waste in the search space). Eventually a
+            path or cycle of errors is found that cancels out the symptoms, and if there is
+            still a frame change at that point then that path or cycle is a logical error
+            (otherwise all that was found was a stabilizer of the system; a dead end). The
+            search process advances like a breadth first search, seeded from all the
+            frame-change errors and branching them outward in tandem, until one of them wins
+            the race to find a solution.
 
             Args:
-                ignore_ungraphlike_errors: Defaults to False. When False, an exception is raised if there are any
-                    errors in the model that are not graphlike. When True, those errors are skipped as if they weren't
-                    present.
+                ignore_ungraphlike_errors: Defaults to False. When False, an exception is
+                    raised if there are any errors in the model that are not graphlike. When
+                    True, those errors are skipped as if they weren't present.
 
-                    A graphlike error is an error with at most two symptoms per decomposed component.
-                        graphlike:
-                            error(0.1) D0
-                            error(0.1) D0 D1
-                            error(0.1) D0 D1 L0
-                            error(0.1) D0 D1 ^ D2
-                        not graphlike:
-                            error(0.1) D0 D1 D2
-                            error(0.1) D0 D1 D2 ^ D3
+                    A graphlike error is an error with less than two symptoms. For the
+                    purposes of this method, errors are also considered graphlike if they
+                    are decomposed into graphlike components:
+
+                    graphlike:
+                        error(0.1) D0
+                        error(0.1) D0 D1
+                        error(0.1) D0 D1 L0
+                    not graphlike but decomposed into graphlike components:
+                        error(0.1) D0 D1 ^ D2
+                    not graphlike, not decomposed into graphlike components:
+                        error(0.1) D0 D1 D2
+                        error(0.1) D0 D1 D2 ^ D3
 
             Returns:
-                A detector error model containing just the error instructions corresponding to an undetectable logical
-                error. There will be no other kinds of instructions (no `repeat`s, no `shift_detectors`, etc).
-                The error probabilities will all be set to 1.
+                A detector error model containing just the error instructions corresponding
+                to an undetectable logical error. There will be no other kinds of
+                instructions (no `repeat`s, no `shift_detectors`, etc). The error
+                probabilities will all be set to 1.
 
-                The `len` of the returned model is the graphlike code distance of the circuit. But beware that in
-                general the true code distance may be smaller. For example, in the XZ surface code with twists, the true
-                minimum sized logical error is likely to use Y errors. But each Y error decomposes into two graphlike
-                components (the X part and the Z part). As a result, the graphlike code distance in that context is
-                likely to be nearly twice as large as the true code distance.
+                The `len` of the returned model is the graphlike code distance of the
+                circuit. But beware that in general the true code distance may be smaller.
+                For example, in the XZ surface code with twists, the true minimum sized
+                logical error is likely to use Y errors. But each Y error decomposes into
+                two graphlike components (the X part and the Z part). As a result, the
+                graphlike code distance in that context is likely to be nearly twice as
+                large as the true code distance.
 
             Examples:
                 >>> import stim
@@ -825,7 +864,8 @@ void pybind_detector_error_model(pybind11::module &m) {
             @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.DetectorErrorModel:
             Reads a detector error model from a file.
 
-            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+            The file format is defined at
+            https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
 
             Args:
                 file: A file path or open file object to read from.
@@ -900,7 +940,8 @@ void pybind_detector_error_model(pybind11::module &m) {
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
             Writes the detector error model to a file.
 
-            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+            The file format is defined at
+            https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
 
             Args:
                 file: A file path or an open file to write to.
@@ -931,34 +972,39 @@ void pybind_detector_error_model(pybind11::module &m) {
 
     c.def(
         "compile_sampler",
-        [](const DetectorErrorModel &self, const pybind11::object &seed) {
+        [](const DetectorErrorModel &self, const pybind11::object &seed) -> DemSampler {
             return DemSampler(self, *make_py_seeded_rng(seed), 1024);
         },
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            Returns a CompiledDemSampler, which can quickly batch sample from detector error models.
+            Returns a CompiledDemSampler that can batch sample from detector error models.
 
             Args:
-                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
                     Must be None or an integer in range(2**64).
 
-                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+                    Defaults to None. When None, the prng is seeded from system entropy.
 
-                    When set to an integer, making the exact same series calls on the exact same machine with the exact
-                    same version of Stim will produce the exact same simulation results.
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
 
-                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                    present to make it possible to have future optimizations to the random sampling, and is enforced by
-                    introducing intentional differences in the seeding strategy from version to version.
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
 
-                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                    instructions and one that only supports SSE instructions may produce different simulation results.
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
 
-                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                    call.
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
 
             Returns:
                 A seeded stim.CompiledDemSampler for the given detector error model.
@@ -970,7 +1016,9 @@ void pybind_detector_error_model(pybind11::module &m) {
                 ...    error(1) D1 D2 L0
                 ... ''')
                 >>> sampler = dem.compile_sampler()
-                >>> det_data, obs_data, err_data = sampler.sample(shots=4, return_errors=True)
+                >>> det_data, obs_data, err_data = sampler.sample(
+                ...     shots=4,
+                ...     return_errors=True)
                 >>> det_data
                 array([[False,  True,  True],
                        [False,  True,  True],
@@ -993,12 +1041,12 @@ void pybind_detector_error_model(pybind11::module &m) {
         "flattened",
         &DetectorErrorModel::flattened,
         clean_doc_string(u8R"DOC(
-            Creates an equivalent detector error model without repeat blocks or detector_shift instructions.
+            Returns the detector error model without repeat or detector_shift instructions.
 
             Returns:
-                A `stim.DetectorErrorModel` with the same errors in the same order,
-                but with loops flattened into repeated instructions and with
-                all coordinate/index shifts inlined.
+                A `stim.DetectorErrorModel` with the same errors in the same order, but with
+                repeat loops flattened into actually repeated instructions and with all
+                coordinate/index shifts inlined.
 
             Examples:
                 >>> import stim
