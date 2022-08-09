@@ -73,7 +73,6 @@ struct VertexPrimitive {
     std::string name;
     std::vector<V3> vertices;
     size_t element_type;
-    std::string material_name;
 
     std::pair<V3, V3> min_max() const {
         V3 v_min{INFINITY, INFINITY, INFINITY};
@@ -87,12 +86,16 @@ struct VertexPrimitive {
         return {v_min, v_max};
     }
 
-    JsonObj primitive(size_t position_buffer_index, const std::map<std::string, size_t> material_index_map) const {
+    JsonObj primitive(size_t position_buffer_index, const std::map<std::string, size_t> &material_index_map, const std::string &material_name) const {
         return std::map<std::string, JsonObj>{
              {"attributes", {std::map<std::string, JsonObj>{{"POSITION", position_buffer_index}}}},
              {"material", material_index_map.at(material_name)},
              {"mode", element_type},
         };
+    }
+
+    JsonObj primitive(const std::map<std::string, size_t> &buffer_index_map, const std::map<std::string, size_t> &material_index_map, const std::string &material_name) const {
+        return primitive(buffer_index_map.at(name), material_index_map, material_name);
     }
 
     JsonObj buffer() const {
@@ -140,10 +143,37 @@ struct VertexPrimitive {
     }
 };
 
+/// @inproceedings{evans1996optimizing,
+///     title={Optimizing triangle strips for fast rendering},
+///     author={Evans, Francine and Skiena, Steven and Varshney, Amitabh},
+///     booktitle={Proceedings of Seventh Annual IEEE Visualization'96},
+///     pages={319--326},
+///     year={1996},
+///     organization={IEEE}
+/// }
+std::vector<V3> cube_triangle_strip() {
+    return {
+        {-0.5f, -0.5f, -0.5f},
+        {-0.5f, +0.5f, -0.5f},
+        {+0.5f, -0.5f, -0.5f},
+        {+0.5f, +0.5f, -0.5f},
+        {+0.5f, +0.5f, +0.5f},
+        {-0.5f, +0.5f, -0.5f},
+        {-0.5f, +0.5f, +0.5f},
+        {-0.5f, -0.5f, +0.5f},
+        {+0.5f, +0.5f, +0.5f},
+        {+0.5f, -0.5f, +0.5f},
+        {+0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f, +0.5f},
+        {-0.5f, -0.5f, -0.5f},
+        {-0.5f, +0.5f, -0.5f},
+    };
+}
+
 std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
 //    constexpr size_t GL_UNSIGNED_SHORT = 5123;
 //    constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
-//    constexpr size_t GL_TRIANGLE_STRIP = 5;
+    constexpr size_t GL_TRIANGLE_STRIP = 5;
     constexpr size_t GL_TRIANGLES = 4;
 //    constexpr size_t GL_LINE_STRIP = 3;
 
@@ -164,26 +194,35 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         .roughness_factor=0.5,
         .double_sided=true,
     }.to_json());
+    materials.push_back(Material{
+        .name="yellow",
+        .base_color_factor_rgba={1, 1, 0, 1},
+        .metallic_factor=0.4,
+        .roughness_factor=0.5,
+        .double_sided=false,
+    }.to_json());
 
     std::map<std::string, size_t> material_index_map;
     for (size_t k = 0; k < materials.size(); k++) {
         material_index_map.insert({materials[k].map.at("name").text, k});
     }
 
+    VertexPrimitive cube{"cube", cube_triangle_strip(), GL_TRIANGLE_STRIP};
     VertexPrimitive first_triangle{"first_triangle", {
         {0, 0, 0},
         {0, 1, 0},
         {1, 0, 0},
-    }, GL_TRIANGLES, "reddish"};
+    }, GL_TRIANGLES};
     VertexPrimitive second_triangle{"second_triangle", {
         {2, 0, 1},
         {0, 2, 1},
         {2, 2, 1},
-    }, GL_TRIANGLES, "hyper_blue"};
+    }, GL_TRIANGLES};
 
     std::vector<VertexPrimitive> vertex_data_buffers{
         first_triangle,
         second_triangle,
+        cube,
     };
     std::vector<JsonObj> buffers;
     std::map<std::string, size_t> buffer_index_map;
@@ -200,25 +239,33 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
     std::vector<JsonObj> meshes;
     meshes.push_back(std::map<std::string, JsonObj>{
         {"primitives", std::vector<JsonObj>{
-            first_triangle.primitive(buffer_index_map.at("first_triangle"), material_index_map),
+            first_triangle.primitive(buffer_index_map, material_index_map, "reddish"),
         }}
     });
     meshes.push_back(std::map<std::string, JsonObj>{
         {"primitives", std::vector<JsonObj>{
-            second_triangle.primitive(buffer_index_map.at("second_triangle"), material_index_map),
+            cube.primitive(buffer_index_map, material_index_map, "yellow"),
         }}
     });
 
-    std::vector<JsonObj> scene_nodes;
-    scene_nodes.push_back(0);
-    scene_nodes.push_back(1);
     std::vector<JsonObj> nodes;
+    for (size_t k = 0; k < 20; k++) {
+        nodes.push_back(std::map<std::string, JsonObj>{
+            {"mesh", 1},
+            {"translation", std::vector<JsonObj>{
+                0,
+                0,
+                -(float)k * 2,
+            }},
+        });
+    }
     nodes.push_back(std::map<std::string, JsonObj>{
         {"mesh", 0},
     });
-    nodes.push_back(std::map<std::string, JsonObj>{
-        {"mesh", 1},
-    });
+    std::vector<JsonObj> scene_nodes;
+    for (size_t k = 0; k < nodes.size(); k++) {
+        scene_nodes.push_back(k);
+    }
 
     JsonObj result(std::map<std::string, JsonObj>{
         {"scene", 0},
