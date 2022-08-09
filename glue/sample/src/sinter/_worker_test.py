@@ -28,7 +28,7 @@ def test_worker_loop_infers_dem():
         ))
         inp.put(None)
         worker_loop(tmp_dir, inp, out)
-        result: WorkOut = out.get_nowait()
+        result: WorkOut = out.get(timeout=1)
         assert out.empty()
 
         assert result.stats.shots == 1000
@@ -63,7 +63,7 @@ def test_worker_loop_does_not_recompute_dem():
         ))
         inp.put(None)
         worker_loop(tmp_dir, inp, out)
-        result: WorkOut = out.get_nowait()
+        result: WorkOut = out.get(timeout=1)
         assert out.empty()
 
         assert result.stats.shots == 1000
