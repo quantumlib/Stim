@@ -440,7 +440,7 @@ def __getitem__(
         ...    M 0
         ...    DETECTOR rec[-1]
         ... ''')
-        >>> circuit[0]
+        >>> circuit[1]
         stim.CircuitInstruction('X_ERROR', [stim.GateTarget(2)], [0.5])
         >>> circuit[2]
         stim.CircuitRepeatBlock(100, stim.Circuit('''
@@ -9399,7 +9399,7 @@ def target_rec(
         >>> circuit
         stim.Circuit('''
             M 5 7 11
-            CX rec[-1] 3
+            CX rec[-2] 3
         ''')
     """
 ```
