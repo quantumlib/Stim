@@ -55,7 +55,7 @@ void stim_pybind::pybind_detector_error_model_target(pybind11::module &m) {
         &ExposedDemTarget::observable_id,
         pybind11::arg("index"),
         clean_doc_string(u8R"DOC(
-            Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
+            Returns a logical observable id identifying a frame change.
 
             Args:
                 index: The index of the observable.
@@ -131,7 +131,7 @@ void stim_pybind::pybind_detector_error_model_target(pybind11::module &m) {
         &ExposedDemTarget::observable_id,
         pybind11::arg("index"),
         clean_doc_string(u8R"DOC(
-            Returns a logical observable id identifying a frame change (e.g. "L5" in a .dem file).
+            Returns a logical observable id identifying a frame change.
 
             Args:
                 index: The index of the observable.
@@ -176,7 +176,7 @@ void stim_pybind::pybind_detector_error_model_target(pybind11::module &m) {
     c.def(
         "__repr__",
         &ExposedDemTarget::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.DemTarget`.");
+        "Returns valid python code evaluating to an equivalent `stim.DemTarget`.");
 
     c.def("__str__", &ExposedDemTarget::str, "Returns a text description of the detector error model target.");
 
@@ -184,7 +184,10 @@ void stim_pybind::pybind_detector_error_model_target(pybind11::module &m) {
         "is_relative_detector_id",
         &ExposedDemTarget::is_relative_detector_id,
         clean_doc_string(u8R"DOC(
-            Determines if the detector error model target is a relative detector id target (like "D4" in a .dem file).
+            Determines if the detector error model target is a relative detector id target.
+
+            In a detector error model file, detectors are prefixed by `D`. For
+            example, in `error(0.25) D0 L1` the `D0` is a relative detector target.
         )DOC")
             .data());
 
@@ -192,7 +195,10 @@ void stim_pybind::pybind_detector_error_model_target(pybind11::module &m) {
         "is_logical_observable_id",
         &ExposedDemTarget::is_observable_id,
         clean_doc_string(u8R"DOC(
-            Determines if the detector error model target is a logical observable id target (like "L5" in a .dem file).
+            Determines if the detector error model target is a logical observable id target.
+
+            In a detector error model file, observable targets are prefixed by `L`. For
+            example, in `error(0.25) D0 L1` the `L1` is an observable target.
         )DOC")
             .data());
 
@@ -216,7 +222,10 @@ void stim_pybind::pybind_detector_error_model_target(pybind11::module &m) {
         "is_separator",
         &ExposedDemTarget::is_separator,
         clean_doc_string(u8R"DOC(
-            Determines if the detector error model target is a separator (like "^" in a .dem file).
+            Determines if the detector error model target is a separator.
+
+            Separates separate the components of a suggested decompositions within an error.
+            For example, the `^` in `error(0.25) D1 D2 ^ D3 D4` is the separator.
         )DOC")
             .data());
 

@@ -222,7 +222,8 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
-            Represents a collection of Pauli operations (I, X, Y, Z) applied pairwise to a collection of qubits.
+            Represents a collection of Pauli operations (I, X, Y, Z) applied pairwise to a
+            collection of qubits.
 
             Examples:
                 >>> import stim
@@ -261,7 +262,8 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
 
             The string can optionally start with a sign ('+', '-', 'i', '+i', or '-i').
             The rest of the string should be characters from '_IXYZ' where
-            '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means Pauli Z.
+            '_' and 'I' mean identity, 'X' means Pauli X, 'Y' means Pauli Y, and 'Z' means
+            Pauli Z.
 
             Examples:
                 >>> import stim
@@ -275,7 +277,11 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
                 +iX
 
             Args:
-                text: A text description of the Pauli string's contents, such as "+XXX" or "-_YX".
+                text: A text description of the Pauli string's contents, such as "+XXX" or
+                    "-_YX" or "-iZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZY".
+
+            Returns:
+                The created stim.PauliString.
         )DOC")
             .data());
 
@@ -334,7 +340,8 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
                 stim.PauliString("+_XYZ_Z")
 
             Args:
-                pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating paulis.
+                pauli_indices: A sequence of integers from 0 to 3 (inclusive) indicating
+                    paulis.
         )DOC")
             .data());
 
@@ -348,13 +355,13 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("allow_imaginary") = false,
         clean_doc_string(u8R"DOC(
-            Samples a uniformly random Hermitian Pauli string over the given number of qubits.
+            Samples a uniformly random Hermitian Pauli string.
 
             Args:
                 num_qubits: The number of qubits the Pauli string should act on.
-                allow_imaginary: Defaults to False. If True, the sign of the result may be 1j or -1j
-                    in addition to +1 or -1. In other words, setting this to True allows the result
-                    to be non-Hermitian.
+                allow_imaginary: Defaults to False. If True, the sign of the result may be
+                    1j or -1j in addition to +1 or -1. In other words, setting this to True
+                    allows the result to be non-Hermitian.
 
             Examples:
                 >>> import stim
@@ -420,7 +427,7 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         [](const PyPauliString &self) {
             return "stim.PauliString(\"" + self.str() + "\")";
         },
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.PauliString`.");
+        "Returns valid python code evaluating to an equivalent `stim.PauliString`.");
 
     c.def_property(
         "sign",
@@ -513,7 +520,8 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Performs an inplace tensor product.
 
-            Concatenates the given Pauli string onto the receiving string and multiplies their signs.
+            Concatenates the given Pauli string onto the receiving string and multiplies
+            their signs.
 
             Args:
                 rhs: A second stim.PauliString.
@@ -538,13 +546,18 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         pybind11::self * pybind11::object(),
         pybind11::arg("rhs"),
         clean_doc_string(u8R"DOC(
-            Right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+            Right-multiplies the Pauli string.
+
+            Can multiply by another Pauli string, a complex unit, or a tensor power.
 
             Args:
                 rhs: The right hand side of the multiplication. This can be:
-                    - A stim.PauliString to right-multiply term-by-term with the paulis of the pauli string.
-                    - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli string.
-                    - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+                    - A stim.PauliString to right-multiply term-by-term with the paulis of
+                        the pauli string.
+                    - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli
+                        string.
+                    - A non-negative integer indicating the tensor power to raise the pauli
+                        string to (how many times to repeat it).
 
             Examples:
                 >>> import stim
@@ -578,7 +591,8 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
                 The product or tensor power.
 
             Raises:
-                TypeError: The right hand side isn't a stim.PauliString, a non-negative integer, or a complex unit (1, -1, 1j, or -1j).
+                TypeError: The right hand side isn't a stim.PauliString, a non-negative
+                    integer, or a complex unit (1, -1, 1j, or -1j).
         )DOC")
             .data());
 
@@ -592,13 +606,18 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         },
         pybind11::arg("lhs"),
         clean_doc_string(u8R"DOC(
-            Left-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+            Left-multiplies the Pauli string.
+
+            Can multiply by another Pauli string, a complex unit, or a tensor power.
 
             Args:
                 lhs: The left hand side of the multiplication. This can be:
-                    - A stim.PauliString to left-multiply term-by-term into the paulis of the pauli string.
-                    - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
-                    - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+                    - A stim.PauliString to right-multiply term-by-term with the paulis of
+                        the pauli string.
+                    - A complex unit (1, -1, 1j, -1j) to multiply with the sign of the pauli
+                        string.
+                    - A non-negative integer indicating the tensor power to raise the pauli
+                        string to (how many times to repeat it).
 
             Examples:
                 >>> import stim
@@ -640,13 +659,18 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
         pybind11::self *= pybind11::object(),
         pybind11::arg("rhs"),
         clean_doc_string(u8R"DOC(
-            Inplace right-multiplies the Pauli string by another Pauli string, a complex unit, or a tensor power.
+            Inplace right-multiplies the Pauli string.
+
+            Can multiply by another Pauli string, a complex unit, or a tensor power.
 
             Args:
                 rhs: The right hand side of the multiplication. This can be:
-                    - A stim.PauliString to right-multiply term-by-term into the paulis of the pauli string.
-                    - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli string.
-                    - A non-negative integer indicating the tensor power to raise the pauli string to (how many times to repeat it).
+                    - A stim.PauliString to right-multiply term-by-term into the paulis of
+                        the pauli string.
+                    - A complex unit (1, -1, 1j, -1j) to multiply into the sign of the pauli
+                        string.
+                    - A non-negative integer indicating the tensor power to raise the pauli
+                        string to (how many times to repeat it).
 
             Examples:
                 >>> import stim
@@ -757,7 +781,9 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
             return copy;
         },
         clean_doc_string(u8R"DOC(
-            Returns a copy of the pauli string. An independent pauli string with the same contents.
+            Returns a copy of the pauli string.
+
+            The copy is an independent pauli string with the same contents.
 
             Examples:
                 >>> import stim
@@ -892,7 +918,8 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
                 stim.PauliString("+ZYX_")
 
             Args:
-                index_or_slice: The index of the pauli to return, or the slice of paulis to return.
+                index_or_slice: The index of the pauli to return, or the slice of paulis to
+                    return.
 
             Returns:
                 0: Identity.

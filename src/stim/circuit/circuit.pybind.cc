@@ -173,6 +173,53 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
     pybind_circuit_gate_target(m);
     pybind_circuit_instruction(m);
 
+    return c;
+}
+
+uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
+    try {
+        return obj.cast<uint64_t>();
+    } catch (const pybind11::cast_error &) {
+    }
+    try {
+        ExposedDemTarget t = obj.cast<ExposedDemTarget>();
+        if (t.is_relative_detector_id()) {
+            return t.data;
+        }
+    } catch (const pybind11::cast_error &) {
+    }
+    if (!fail) {
+        return UINT64_MAX;
+    }
+
+    std::stringstream ss;
+    ss << "Expected a detector id but didn't get a stim.DemTarget or a uint64_t.";
+    ss << " Got " << pybind11::repr(obj);
+    throw std::invalid_argument(ss.str());
+}
+
+std::set<uint64_t> obj_to_abs_detector_id_set(
+    const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors) {
+    std::set<uint64_t> filter;
+    if (obj.is_none()) {
+        size_t n = get_num_detectors();
+        for (size_t k = 0; k < n; k++) {
+            filter.insert(k);
+        }
+    } else {
+        uint64_t single = obj_to_abs_detector_id(obj, false);
+        if (single != UINT64_MAX) {
+            filter.insert(single);
+        } else {
+            for (const auto &e : obj) {
+                filter.insert(obj_to_abs_detector_id(e, true));
+            }
+        }
+    }
+    return filter;
+}
+
+void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
     c.def(
         pybind11::init([](const char *stim_program_text) {
             Circuit self;
@@ -184,7 +231,8 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             Creates a stim.Circuit.
 
             Args:
-                stim_program_text: Defaults to empty. Describes operations to append into the circuit.
+                stim_program_text: Defaults to empty. Describes operations to append into
+                    the circuit.
 
             Examples:
                 >>> import stim
@@ -242,9 +290,10 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         "num_observables",
         &Circuit::count_observables,
         clean_doc_string(u8R"DOC(
-            Counts the number of bits produced when sampling the circuit's logical observables.
+            Counts the number of logical observables defined by the circuit.
 
-            This is one more than the largest observable index given to OBSERVABLE_INCLUDE.
+            This is one more than the largest index that appears as an argument to an
+            OBSERVABLE_INCLUDE instruction.
 
             Examples:
                 >>> import stim
@@ -311,40 +360,48 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         pybind11::arg("skip_reference_sample") = false,
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            Returns a CompiledMeasurementSampler, which can quickly batch sample measurements, for the circuit.
+            Returns an object that can quickly batch sample measurements from the circuit.
 
             Args:
-                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
-                    initialized to all-zeroes instead of being collected from the circuit. This means that the results
-                    returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
-                    measurement results.
+                skip_reference_sample: Defaults to False. When set to True, the reference
+                    sample used by the sampler is initialized to all-zeroes instead of being
+                    collected from the circuit. This means that the results returned by the
+                    sampler are actually whether or not each measurement was *flipped*,
+                    instead of true measurement results.
 
-                    Forcing an all-zero reference sample is useful when you are only interested in error propagation and
-                    don't want to have to deal with the fact that some measurements want to be On when no errors occur.
-                    It is also useful when you know for sure that the all-zero result is actually a possible result from
-                    the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
-                    other. Computing the reference sample is the most time consuming and memory intensive part of
-                    simulating the circuit, so promising that the simulator can safely skip that step is an effective
-                    optimization.
-                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Forcing an all-zero reference sample is useful when you are only
+                    interested in error propagation and don't want to have to deal with the
+                    fact that some measurements want to be On when no errors occur. It is
+                    also useful when you know for sure that the all-zero result is actually
+                    a possible result from the circuit (under noiseless execution), meaning
+                    it is a valid reference sample as good as any other. Computing the
+                    reference sample is the most time consuming and memory intensive part of
+                    simulating the circuit, so promising that the simulator can safely skip
+                    that step is an effective optimization.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
                     Must be None or an integer in range(2**64).
 
-                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+                    Defaults to None. When None, the prng is seeded from system entropy.
 
-                    When set to an integer, making the exact same series calls on the exact same machine with the exact
-                    same version of Stim will produce the exact same simulation results.
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
 
-                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                    present to make it possible to have future optimizations to the random sampling, and is enforced by
-                    introducing intentional differences in the seeding strategy from version to version.
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
 
-                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                    instructions and one that only supports SSE instructions may produce different simulation results.
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
 
-                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                    call.
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
 
             Examples:
                 >>> import stim
@@ -364,21 +421,23 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         clean_doc_string(u8R"DOC(
-            Returns an object that can efficiently convert measurements into detection events for the given circuit.
+            Creates a measurement-to-detection-event converter for the given circuit.
 
-            The converter uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
-            during initialization of the converter, as a baseline for determining what the expected value of a detector
-            is.
+            The converter uses a noiseless reference sample, collected from the circuit
+            using stim's Tableau simulator during initialization of the converter, as a
+            baseline for determining what the expected value of a detector is.
 
-            Note that the expected behavior of gauge detectors (detectors that are not actually deterministic under
-            noiseless execution) can vary depending on the reference sample. Stim mitigates this by always generating
-            the same reference sample for a given circuit.
+            Note that the expected behavior of gauge detectors (detectors that are not
+            actually deterministic under noiseless execution) can vary depending on the
+            reference sample. Stim mitigates this by always generating the same reference
+            sample for a given circuit.
 
             Args:
-                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the converter
-                    is initialized to all-zeroes instead of being collected from the circuit. This should only be used
-                    if it's known that the all-zeroes sample is actually a possible result from the circuit (under
-                    noiseless execution).
+                skip_reference_sample: Defaults to False. When set to True, the reference
+                    sample used by the converter is initialized to all-zeroes instead of
+                    being collected from the circuit. This should only be used if it's known
+                    that the all-zeroes sample is actually a possible result from the
+                    circuit (under noiseless execution).
 
             Returns:
                 An initialized stim.CompiledMeasurementsToDetectionEventsConverter.
@@ -406,28 +465,33 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            Returns a CompiledDetectorSampler, which can quickly batch sample detection events, for the circuit.
+            Returns an object that can batch sample detection events from the circuit.
 
             Args:
-                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
                     Must be None or an integer in range(2**64).
 
-                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+                    Defaults to None. When None, the prng is seeded from system entropy.
 
-                    When set to an integer, making the exact same series calls on the exact same machine with the exact
-                    same version of Stim will produce the exact same simulation results.
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
 
-                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                    present to make it possible to have future optimizations to the random sampling, and is enforced by
-                    introducing intentional differences in the seeding strategy from version to version.
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
 
-                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                    instructions and one that only supports SSE instructions may produce different simulation results.
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
 
-                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                    call.
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
 
             Examples:
                 >>> import stim
@@ -617,13 +681,18 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         &Circuit::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Returns a circuit with a REPEAT block containing the current circuit's instructions.
+            Repeats the circuit using a REPEAT block.
 
-            Special case: if the repetition count is 0, an empty circuit is returned.
-            Special case: if the repetition count is 1, an equal circuit with no REPEAT block is returned.
+            Has special cases for 0 repetitions and 1 repetitions.
 
             Args:
                 repetitions: The number of times the REPEAT block should repeat.
+
+            Returns:
+                repetitions=0: An empty circuit.
+                repetitions=1: A copy of this circuit.
+                repetitions>=2: A circuit with a single REPEAT block, where the contents of
+                    that repeat block are this circuit.
 
             Examples:
                 >>> import stim
@@ -646,13 +715,18 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         &Circuit::operator*,
         pybind11::arg("repetitions"),
         clean_doc_string(u8R"DOC(
-            Returns a circuit with a REPEAT block containing the current circuit's instructions.
+            Repeats the circuit using a REPEAT block.
 
-            Special case: if the repetition count is 0, an empty circuit is returned.
-            Special case: if the repetition count is 1, an equal circuit with no REPEAT block is returned.
+            Has special cases for 0 repetitions and 1 repetitions.
 
             Args:
                 repetitions: The number of times the REPEAT block should repeat.
+
+            Returns:
+                repetitions=0: An empty circuit.
+                repetitions=1: A copy of this circuit.
+                repetitions>=2: A circuit with a single REPEAT block, where the contents of
+                    that repeat block are this circuit.
 
             Examples:
                 >>> import stim
@@ -707,23 +781,29 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 Args:
                     name: The name of the operation's gate (e.g. "H" or "M" or "CNOT").
 
-                        This argument can also be set to a `stim.CircuitInstruction` or `stim.CircuitInstructionBlock`, which
-                        results in the instruction or block being appended to the circuit. The other arguments (targets and
-                        arg) can't be specified when doing so.
+                        This argument can also be set to a `stim.CircuitInstruction` or
+                        `stim.CircuitInstructionBlock`, which results in the instruction or
+                        block being appended to the circuit. The other arguments (targets
+                        and arg) can't be specified when doing so.
 
-                        (The argument name `name` is no longer quite right, but being kept for backwards compatibility.)
-                    targets: The objects operated on by the gate. This can be either a single target or an iterable of
-                        multiple targets to broadcast the gate over. Each target can be an integer (a qubit), a
-                        stim.GateTarget, or a special target from one of the `stim.target_*` methods (such as a
-                        measurement record target like `rec[-1]` from `stim.target_rec(-1)`).
-                    arg: The "parens arguments" for the gate, such as the probability for a noise operation. A double or
-                        list of doubles parameterizing the gate. Different gates take different parens arguments. For
-                        example, X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable index, and
-                        PAULI_CHANNEL_1 takes three disjoint probabilities.
+                        (The argument being called `name` is no longer quite right, but
+                        is being kept for backwards compatibility.)
+                    targets: The objects operated on by the gate. This can be either a
+                        single target or an iterable of multiple targets to broadcast the
+                        gate over. Each target can be an integer (a qubit), a
+                        stim.GateTarget, or a special target from one of the `stim.target_*`
+                        methods (such as a measurement record target like `rec[-1]` from
+                        `stim.target_rec(-1)`).
+                    arg: The "parens arguments" for the gate, such as the probability for a
+                        noise operation. A double or list of doubles parameterizing the
+                        gate. Different gates take different parens arguments. For example,
+                        X_ERROR takes a probability, OBSERVABLE_INCLUDE takes an observable
+                        index, and PAULI_CHANNEL_1 takes three disjoint probabilities.
 
-                        Note: Defaults to no parens arguments. Except, for backwards compatibility reasons,
-                        `cirq.append_operation` (but not `cirq.append`) will default to a single 0.0 argument for gates
-                        that take exactly one argument.
+                        Note: Defaults to no parens arguments. Except, for backwards
+                        compatibility reasons, `cirq.append_operation` (but not
+                        `cirq.append`) will default to a single 0.0 argument for gates that
+                        take exactly one argument.
             )DOC")
                          .data());
     }
@@ -754,7 +834,8 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 CX rec[-1] 1
 
             Args:
-                stim_program_text: The STIM program text containing the circuit operations to append.
+                stim_program_text: The STIM program text containing the circuit operations
+                    to append.
         )DOC")
             .data());
 
@@ -840,38 +921,45 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
 
             The generated circuits can include configurable noise.
 
-            The generated circuits include DETECTOR and OBSERVABLE_INCLUDE annotations so that their detection events
-            and logical observables can be sampled.
+            The generated circuits include DETECTOR and OBSERVABLE_INCLUDE annotations so
+            that their detection events and logical observables can be sampled.
 
-            The generated circuits include TICK annotations to mark the progression of time. (E.g. so that converting
-            them using `stimcirq.stim_circuit_to_cirq_circuit` will produce a `cirq.Circuit` with the intended moment
-            structure.)
+            The generated circuits include TICK annotations to mark the progression of time.
+            (E.g. so that converting them using `stimcirq.stim_circuit_to_cirq_circuit` will
+            produce a `cirq.Circuit` with the intended moment structure.)
 
             Args:
-                code_task: A string identifying the type of circuit to generate. Available types are:
-                    - `repetition_code:memory`
-                    - `surface_code:rotated_memory_x`
-                    - `surface_code:rotated_memory_z`
-                    - `surface_code:unrotated_memory_x`
-                    - `surface_code:unrotated_memory_z`
-                    - `color_code:memory_xyz`
-                distance: The desired code distance of the generated circuit. The code distance is the minimum number
-                    of physical errors needed to cause a logical error. This parameter indirectly determines how many
-                    qubits the generated circuit uses.
-                rounds: How many times the measurement qubits in the generated circuit will be measured. Indirectly
-                    determines the duration of the generated circuit.
-                after_clifford_depolarization: Defaults to 0. The probability (p) of `DEPOLARIZE1(p)` operations to add
-                    after every single-qubit Clifford operation and `DEPOLARIZE2(p)` operations to add after every
-                    two-qubit Clifford operation. The after-Clifford depolarizing operations are only included if this
-                    probability is not 0.
-                before_round_data_depolarization: Defaults to 0. The probability (p) of `DEPOLARIZE1(p)` operations to
-                    apply to every data qubit at the start of a round of stabilizer measurements. The start-of-round
-                    depolarizing operations are only included if this probability is not 0.
-                before_measure_flip_probability: Defaults to 0. The probability (p) of `X_ERROR(p)` operations applied
-                    to qubits before each measurement (X basis measurements use `Z_ERROR(p)` instead). The
-                    before-measurement flips are only included if this probability is not 0.
-                after_reset_flip_probability: Defaults to 0. The probability (p) of `X_ERROR(p)` operations applied
-                    to qubits after each reset (X basis resets use `Z_ERROR(p)` instead). The after-reset flips are only
+                code_task: A string identifying the type of circuit to generate. Available
+                    code tasks are:
+                        - "repetition_code:memory"
+                        - "surface_code:rotated_memory_x"
+                        - "surface_code:rotated_memory_z"
+                        - "surface_code:unrotated_memory_x"
+                        - "surface_code:unrotated_memory_z"
+                        - "color_code:memory_xyz"
+                distance: The desired code distance of the generated circuit. The code
+                    distance is the minimum number of physical errors needed to cause a
+                    logical error. This parameter indirectly determines how many qubits the
+                    generated circuit uses.
+                rounds: How many times the measurement qubits in the generated circuit will
+                    be measured. Indirectly determines the duration of the generated
+                    circuit.
+                after_clifford_depolarization: Defaults to 0. The probability (p) of
+                    `DEPOLARIZE1(p)` operations to add after every single-qubit Clifford
+                    operation and `DEPOLARIZE2(p)` operations to add after every two-qubit
+                    Clifford operation. The after-Clifford depolarizing operations are only
+                    included if this probability is not 0.
+                before_round_data_depolarization: Defaults to 0. The probability (p) of
+                    `DEPOLARIZE1(p)` operations to apply to every data qubit at the start of
+                    a round of stabilizer measurements. The start-of-round depolarizing
+                    operations are only included if this probability is not 0.
+                before_measure_flip_probability: Defaults to 0. The probability (p) of
+                    `X_ERROR(p)` operations applied to qubits before each measurement (X
+                    basis measurements use `Z_ERROR(p)` instead). The before-measurement
+                    flips are only included if this probability is not 0.
+                after_reset_flip_probability: Defaults to 0. The probability (p) of
+                    `X_ERROR(p)` operations applied to qubits after each reset (X basis
+                    resets use `Z_ERROR(p)` instead). The after-reset flips are only
                     included if this probability is not 0.
 
             Returns:
@@ -950,7 +1038,8 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.Circuit:
             Reads a stim circuit from a file.
 
-            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+            The file format is defined at
+            https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
 
             Args:
                 file: A file path or open file object to read from.
@@ -1025,7 +1114,8 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
             Writes the stim circuit to a file.
 
-            The file format is defined at https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+            The file format is defined at
+            https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
 
             Args:
                 file: A file path or an open file to write to.
@@ -1116,18 +1206,19 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             @overload def __getitem__(self, index_or_slice: slice) -> stim.Circuit:
 
             Args:
-                index_or_slice: An integer index picking out an instruction to return, or a slice picking out a range
-                    of instructions to return as a circuit.
+                index_or_slice: An integer index picking out an instruction to return, or a
+                    slice picking out a range of instructions to return as a circuit.
 
             Returns:
                 If the index was an integer, then an instruction from the circuit.
-                If the index was a slice, then a circuit made up of the instructions in that slice.
+                If the index was a slice, then a circuit made up of the instructions in that
+                slice.
 
             Examples:
                 >>> import stim
                 >>> circuit = stim.Circuit('''
                 ...    X 0
-                ...    X_ERROR(0.5) 1 2
+                ...    X_ERROR(0.5) 2
                 ...    REPEAT 100 {
                 ...        X 0
                 ...        Y 1 2
@@ -1137,7 +1228,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 ...    DETECTOR rec[-1]
                 ... ''')
                 >>> circuit[1]
-                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(1), stim.GateTarget(2)], [0.5])
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(2)], [0.5])
                 >>> circuit[2]
                 stim.CircuitRepeatBlock(100, stim.Circuit('''
                     X 0
@@ -1145,7 +1236,7 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
                 '''))
                 >>> circuit[1::2]
                 stim.Circuit('''
-                    X_ERROR(0.5) 1 2
+                    X_ERROR(0.5) 2
                     TICK
                     DETECTOR rec[-1]
                 ''')
@@ -1181,54 +1272,68 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 
             Args:
-                decompose_errors: Defaults to false. When set to true, the error analysis attempts to decompose the
-                    components of composite error mechanisms (such as depolarization errors) into simpler errors, and
-                    suggest this decomposition via `stim.target_separator()` between the components. For example, in an
-                    XZ surface code, single qubit depolarization has a Y error term which can be decomposed into simpler
-                    X and Z error terms. Decomposition fails (causing this method to throw) if it's not possible to
-                    decompose large errors into simple errors that affect at most two detectors.
-                flatten_loops: Defaults to false. When set to true, the output will not contain any `repeat` blocks.
-                    When set to false, the error analysis watches for loops in the circuit reaching a periodic steady
-                    state with respect to the detectors being introduced, the error mechanisms that affect them, and the
-                    locations of the logical observables. When it identifies such a steady state, it outputs a repeat
-                    block. This is massively more efficient than flattening for circuits that contain loops, but creates
-                    a more complex output.
-                allow_gauge_detectors: Defaults to false. When set to false, the error analysis verifies that detectors
-                    in the circuit are actually deterministic under noiseless execution of the circuit. When set to
-                    true, these detectors are instead considered to be part of degrees freedom that can be removed from
-                    the error model. For example, if detectors D1 and D3 both anti-commute with a reset, then the error
-                    model has a gauge `error(0.5) D1 D3`. When gauges are identified, one of the involved detectors is
-                    removed from the system using Gaussian elimination.
+                decompose_errors: Defaults to false. When set to true, the error analysis
+                    attempts to decompose the components of composite error mechanisms (such
+                    as depolarization errors) into simpler errors, and suggest this
+                    decomposition via `stim.target_separator()` between the components. For
+                    example, in an XZ surface code, single qubit depolarization has a Y
+                    error term which can be decomposed into simpler X and Z error terms.
+                    Decomposition fails (causing this method to throw) if it's not possible
+                    to decompose large errors into simple errors that affect at most two
+                    detectors.
+                flatten_loops: Defaults to false. When set to True, the output will not
+                    contain any `repeat` blocks. When set to False, the error analysis
+                    watches for loops in the circuit reaching a periodic steady state with
+                    respect to the detectors being introduced, the error mechanisms that
+                    affect them, and the locations of the logical observables. When it
+                    identifies such a steady state, it outputs a repeat block. This is
+                    massively more efficient than flattening for circuits that contain
+                    loops, but creates a more complex output.
+                allow_gauge_detectors: Defaults to false. When set to false, the error
+                    analysis verifies that detectors in the circuit are actually
+                    deterministic under noiseless execution of the circuit. When set to
+                    True, these detectors are instead considered to be part of degrees
+                    freedom that can be removed from the error model. For example, if
+                    detectors D1 and D3 both anti-commute with a reset, then the error model
+                    has a gauge `error(0.5) D1 D3`. When gauges are identified, one of the
+                    involved detectors is removed from the system using Gaussian
+                    elimination.
 
-                    Note that logical observables are still verified to be deterministic, even if this option is set.
-                approximate_disjoint_errors: Defaults to false. When set to false, composite error mechanisms with
-                    disjoint components (such as `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`) can cause the error analysis to throw
-                    exceptions (because detector error models can only contain independent error mechanisms). When set
-                    to true, the probabilities of the disjoint cases are instead assumed to be independent
-                    probabilities. For example, a ``PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
-                    `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an approximation, but it is a good
-                    approximation for small probabilities.
+                    Note that logical observables are still verified to be deterministic,
+                    even if this option is set.
+                approximate_disjoint_errors: Defaults to false. When set to false, composite
+                    error mechanisms with disjoint components (such as
+                    `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`) can cause the error analysis to throw
+                    exceptions (because detector error models can only contain independent
+                    error mechanisms). When set to true, the probabilities of the disjoint
+                    cases are instead assumed to be independent probabilities. For example,
+                    a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` becomes equivalent to an
+                    `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`. This assumption is an
+                    approximation, but it is a good approximation for small probabilities.
 
-                    This argument can also be set to a probability between 0 and 1, setting a threshold below which the
-                    approximation is acceptable. Any error mechanisms that have a component probability above the
-                    threshold will cause an exception to be thrown.
+                    This argument can also be set to a probability between 0 and 1, setting
+                    a threshold below which the approximation is acceptable. Any error
+                    mechanisms that have a component probability above the threshold will
+                    cause an exception to be thrown.
                 ignore_decomposition_failures: Defaults to False.
-                    When this is set to True, circuit errors that fail to decompose into graphlike
-                    detector error model errors no longer cause the conversion process to abort.
-                    Instead, the undecomposed error is inserted into the output. Whatever tool
-                    the detector error model is then given to is responsible for dealing with the
-                    undecomposed errors (e.g. a tool may choose to simply ignore them).
+                    When this is set to True, circuit errors that fail to decompose into
+                    graphlike detector error model errors no longer cause the conversion
+                    process to abort. Instead, the undecomposed error is inserted into the
+                    output. Whatever tool the detector error model is then given to is
+                    responsible for dealing with the undecomposed errors (e.g. a tool may
+                    choose to simply ignore them).
 
                     Irrelevant unless decompose_errors=True.
                 block_decomposition_from_introducing_remnant_edges: Defaults to False.
-                    Requires that both A B and C D be present elsewhere in the detector error model
-                    in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
-                    needs to appear to allow this decomposition.
+                    Requires that both A B and C D be present elsewhere in the detector
+                    error model in order to decompose A B C D into A B ^ C D. Normally, only
+                    one of A B or C D needs to appear to allow this decomposition.
 
-                    Remnant edges can be a useful feature for ensuring decomposition succeeds, but
-                    they can also reduce the effective code distance by giving the decoder single
-                    edges that actually represent multiple errors in the circuit (resulting in the
-                    decoder making misinformed choices when decoding).
+                    Remnant edges can be a useful feature for ensuring decomposition
+                    succeeds, but they can also reduce the effective code distance by giving
+                    the decoder single edges that actually represent multiple errors in the
+                    circuit (resulting in the decoder making misinformed choices when
+                    decoding).
 
                     Irrelevant unless decompose_errors=True.
 
@@ -1266,18 +1371,20 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Checks if a circuit is approximately equal to another circuit.
 
-            Two circuits are approximately equal if they are equal up to slight perturbations of instruction arguments
-            such as probabilities. For example `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an
-            absolute tolerance of 0.002. All other details of the circuits (such as the ordering of instructions and
-            targets) must be exactly the same.
+            Two circuits are approximately equal if they are equal up to slight
+            perturbations of instruction arguments such as probabilities. For example,
+            `X_ERROR(0.100) 0` is approximately equal to `X_ERROR(0.099)` within an absolute
+            tolerance of 0.002. All other details of the circuits (such as the ordering of
+            instructions and targets) must be exactly the same.
 
             Args:
                 other: The circuit, or other object, to compare to this one.
-                atol: The absolute error tolerance. The maximum amount each probability may have been perturbed by.
+                atol: The absolute error tolerance. The maximum amount each probability may
+                    have been perturbed by.
 
             Returns:
-                True if the given object is a circuit approximately equal up to the receiving circuit up to the given
-                tolerance, otherwise False.
+                True if the given object is a circuit approximately equal up to the
+                receiving circuit up to the given tolerance, otherwise False.
 
             Examples:
                 >>> import stim
@@ -1327,12 +1434,14 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             Returns the coordinate metadata of detectors in the circuit.
 
             Args:
-                only: Defaults to None (meaning include all detectors). A list of detector indices to include in the
-                    result. Detector indices beyond the end of the detector error model of the circuit cause an error.
+                only: Defaults to None (meaning include all detectors). A list of detector
+                    indices to include in the result. Detector indices beyond the end of the
+                    detector error model of the circuit cause an error.
 
             Returns:
-                A dictionary mapping integers (detector indices) to lists of floats (coordinates).
-                A dictionary mapping detector indices to lists of floats.
+                A dictionary mapping integers (detector indices) to lists of floats
+                (coordinates).
+
                 Detectors with no specified coordinate data are mapped to an empty tuple.
                 If `only` is specified, then `set(result.keys()) == set(only)`.
 
@@ -1360,11 +1469,13 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Returns the coordinate metadata of qubits in the circuit.
 
-            If a qubit's coordinates are specified multiple times, only the last specified coordinates are returned.
+            If a qubit's coordinates are specified multiple times, only the last specified
+            coordinates are returned.
 
             Returns:
-                A dictionary mapping qubit indices (integers) to coordinates (lists of floats).
-                Qubits that never had their coordinates specified are not included in the result.
+                A dictionary mapping qubit indices (integers) to coordinates (lists of
+                floats). Qubits that never had their coordinates specified are not included
+                in the result.
 
             Examples:
                 >>> import stim
@@ -1384,53 +1495,6 @@ pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
             return Circuit(pybind11::cast<std::string>(text).data());
         }));
 
-    return c;
-}
-
-uint64_t obj_to_abs_detector_id(const pybind11::handle &obj, bool fail) {
-    try {
-        return obj.cast<uint64_t>();
-    } catch (const pybind11::cast_error &) {
-    }
-    try {
-        ExposedDemTarget t = obj.cast<ExposedDemTarget>();
-        if (t.is_relative_detector_id()) {
-            return t.data;
-        }
-    } catch (const pybind11::cast_error &) {
-    }
-    if (!fail) {
-        return UINT64_MAX;
-    }
-
-    std::stringstream ss;
-    ss << "Expected a detector id but didn't get a stim.DemTarget or a uint64_t.";
-    ss << " Got " << pybind11::repr(obj);
-    throw std::invalid_argument(ss.str());
-}
-
-std::set<uint64_t> obj_to_abs_detector_id_set(
-    const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors) {
-    std::set<uint64_t> filter;
-    if (obj.is_none()) {
-        size_t n = get_num_detectors();
-        for (size_t k = 0; k < n; k++) {
-            filter.insert(k);
-        }
-    } else {
-        uint64_t single = obj_to_abs_detector_id(obj, false);
-        if (single != UINT64_MAX) {
-            filter.insert(single);
-        } else {
-            for (const auto &e : obj) {
-                filter.insert(obj_to_abs_detector_id(e, true));
-            }
-        }
-    }
-    return filter;
-}
-
-void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
     c.def(
         "shortest_graphlike_error",
         &circuit_shortest_graphlike_error,
@@ -1438,44 +1502,58 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
         pybind11::arg("ignore_ungraphlike_errors") = true,
         pybind11::arg("canonicalize_circuit_errors") = false,
         clean_doc_string(u8R"DOC(
-            Finds a minimum sized set of graphlike errors that produce an undetected logical error.
+            Finds a minimum set of graphlike errors to produce an undetected logical error.
 
-            A "graphlike error" is an error that creates at most two detection events (causes a change in the parity of
-            the measurement sets of at most two DETECTOR annotations).
+            A "graphlike error" is an error that creates at most two detection events
+            (causes a change in the parity of the measurement sets of at most two DETECTOR
+            annotations).
 
-            Note that this method does not pay attention to error probabilities (other than ignoring errors with
-            probability 0). It searches for a logical error with the minimum *number* of physical errors, not the
-            maximum probability of those physical errors all occurring.
+            Note that this method does not pay attention to error probabilities (other than
+            ignoring errors with probability 0). It searches for a logical error with the
+            minimum *number* of physical errors, not the maximum probability of those
+            physical errors all occurring.
 
-            This method works by converting the circuit into a `stim.DetectorErrorModel` using
-            `circuit.detector_error_model(...)`, computing the shortest graphlike error of the error model, and then
-            converting the physical errors making up that logical error back into representative circuit errors.
+            This method works by converting the circuit into a `stim.DetectorErrorModel`
+            using `circuit.detector_error_model(...)`, computing the shortest graphlike
+            error of the error model, and then converting the physical errors making up that
+            logical error back into representative circuit errors.
 
             Args:
                 ignore_ungraphlike_errors:
-                    False: Attempt to decompose any ungraphlike errors in the circuit into graphlike parts.
-                        If this fails, raise an exception instead of continuing.
-                        Note: in some cases, graphlike errors only appear as parts of decomposed ungraphlike errors.
-                        This can produce a result that lists DEM errors with zero matching circuit errors, because the
-                        only way to achieve those errors is by combining a decomposed error with a graphlike error.
-                        As a result, when using this option it is NOT guaranteed that the length of the result is an
-                        upper bound on the true code distance. That is only the case if every item in the result lists
-                        at least one matching circuit error.
-                    True (default): Ungraphlike errors are simply skipped as if they weren't present, even if they could
-                        become graphlike if decomposed. This guarantees the length of the result is an upper bound on
-                        the true code distance.
-                canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
-                    False (default): Each DEM error lists every possible circuit error that single handedly produces
-                        those symptoms as a potential match. This is verbose but gives complete information.
-                    True: Each DEM error is matched with one possible circuit error that single handedly produces those
-                        symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
-                        This discards mostly-redundant information about different ways to produce the same symptoms in
-                        order to give a succinct result.
+                    False: Attempt to decompose any ungraphlike errors in the circuit into
+                        graphlike parts. If this fails, raise an exception instead of
+                        continuing.
+
+                        Note: in some cases, graphlike errors only appear as parts of
+                        decomposed ungraphlike errors. This can produce a result that lists
+                        DEM errors with zero matching circuit errors, because the only way
+                        to achieve those errors is by combining a decomposed error with a
+                        graphlike error. As a result, when using this option it is NOT
+                        guaranteed that the length of the result is an upper bound on the
+                        true code distance. That is only the case if every item in the
+                        result lists at least one matching circuit error.
+                    True (default): Ungraphlike errors are simply skipped as if they weren't
+                        present, even if they could become graphlike if decomposed. This
+                        guarantees the length of the result is an upper bound on the true
+                        code distance.
+                canonicalize_circuit_errors: Whether or not to use one representative for
+                    equal-symptom circuit errors.
+
+                    False (default): Each DEM error lists every possible circuit error that
+                        single handedly produces those symptoms as a potential match. This
+                        is verbose but gives complete information.
+                    True: Each DEM error is matched with one possible circuit error that
+                        single handedly produces those symptoms, with a preference towards
+                        errors that are simpler (e.g. apply Paulis to fewer qubits). This
+                        discards mostly-redundant information about different ways to
+                        produce the same symptoms in order to give a succinct result.
 
             Returns:
-                A detector error model containing only the error mechanisms that cause the undetectable
-                logical error. The error mechanisms will have their probabilities set to 1 (indicating that
-                they are necessary) and will not suggest a decomposition.
+                A list of error mechanisms that cause an undetected logical error.
+
+                Each entry in the list is a `stim.ExplainedError` detailing the location
+                and effects of a single physical error. The effects of the entire list
+                combine to produce a logical frame change without any detection events.
 
             Examples:
                 >>> import stim
@@ -1499,62 +1577,76 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
         pybind11::arg("dont_explore_edges_increasing_symptom_degree"),
         pybind11::arg("canonicalize_circuit_errors") = false,
         clean_doc_string(u8R"DOC(
-            Searches for lists of errors from the model that form an undetectable logical error.
+            Searches for small sets of errors that form an undetectable logical error.
 
-            THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of particular
-            sizes, or with particular properties. The errors it finds are a tangled combination of the
-            truncation parameters you specify, internal optimizations which are correct when not
-            truncating, and minutia of the circuit being considered.
+            THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of
+            particular sizes, or with particular properties. The errors it finds are a
+            tangled combination of the truncation parameters you specify, internal
+            optimizations which are correct when not truncating, and minutia of the circuit
+            being considered.
 
-            If you want a well behaved method that does provide guarantees of finding errors of a
-            particular type, use `stim.Circuit.shortest_graphlike_error`. This method is more
-            thorough than that (assuming you don't truncate so hard you omit graphlike edges),
-            but exactly how thorough is difficult to describe. It's also not guaranteed that the
-            behavior of this method will not be changed in the future in a way that permutes which
-            logical errors are found and which are missed.
+            If you want a well behaved method that does provide guarantees of finding errors
+            of a particular type, use `stim.Circuit.shortest_graphlike_error`. This method
+            is more thorough than that (assuming you don't truncate so hard you omit
+            graphlike edges), but exactly how thorough is difficult to describe. It's also
+            not guaranteed that the behavior of this method will not be changed in the
+            future in a way that permutes which logical errors are found and which are
+            missed.
 
-            This search method considers hyper errors, so it has worst case exponential runtime. It is
-            important to carefully consider the arguments you are providing, which truncate the search
-            space and trade cost for quality.
+            This search method considers hyper errors, so it has worst case exponential
+            runtime. It is important to carefully consider the arguments you are providing,
+            which truncate the search space and trade cost for quality.
 
-            The search progresses by starting from each error that crosses a logical observable, noting
-            which detection events each error produces, and then iteratively adding in errors touching
-            those detection events attempting to cancel out the detection event with the lowest index.
+            The search progresses by starting from each error that crosses a logical
+            observable, noting which detection events each error produces, and then
+            iteratively adding in errors touching those detection events attempting to
+            cancel out the detection event with the lowest index.
 
-            Beware that the choice of logical observable can interact with the truncation options. Using
-            different observables can change whether or not the search succeeds, even if those observables
-            are equal modulo the stabilizers of the code. This is because the edges crossing logical
-            observables are used as starting points for the search, and starting from different places along
-            a path will result in different numbers of symptoms in intermediate states as the search
-            progresses. For example, if the logical observable is next to a boundary, then the starting
-            edges are likely boundary edges (degree 1) with 'room to grow', whereas if the observable was
-            running through the bulk then the starting edges will have degree at least 2.
+            Beware that the choice of logical observable can interact with the truncation
+            options. Using different observables can change whether or not the search
+            succeeds, even if those observables are equal modulo the stabilizers of the
+            code. This is because the edges crossing logical observables are used as
+            starting points for the search, and starting from different places along a path
+            will result in different numbers of symptoms in intermediate states as the
+            search progresses. For example, if the logical observable is next to a boundary,
+            then the starting edges are likely boundary edges (degree 1) with 'room to
+            grow', whereas if the observable was running through the bulk then the starting
+            edges will have degree at least 2.
 
             Args:
-                dont_explore_detection_event_sets_with_size_above: Truncates the search space by refusing to
-                    cross an edge (i.e. add an error) when doing so would produce an intermediate state that
-                    has more detection events than this limit.
-                dont_explore_edges_with_degree_above: Truncates the search space by refusing to consider
-                    errors that cause a lot of detection events. For example, you may only want to consider
-                    graphlike errors which have two or fewer detection events.
-                dont_explore_edges_increasing_symptom_degree: Truncates the search space by refusing to
-                    cross an edge (i.e. add an error) when doing so would produce an intermediate state that
-                    has more detection events that the previous intermediate state. This massively improves
-                    the efficiency of the search because instead of, for example, exploring all n^4 possible
-                    detection event sets with 4 symptoms, the search will attempt to cancel out symptoms one
-                    by one.
-                canonicalize_circuit_errors: Whether or not to use one representative for equal-symptom circuit errors.
-                    False (default): Each DEM error lists every possible circuit error that single handedly produces
-                        those symptoms as a potential match. This is verbose but gives complete information.
-                    True: Each DEM error is matched with one possible circuit error that single handedly produces those
-                        symptoms, with a preference towards errors that are simpler (e.g. apply Paulis to fewer qubits).
-                        This discards mostly-redundant information about different ways to produce the same symptoms in
-                        order to give a succinct result.
+                dont_explore_detection_event_sets_with_size_above: Truncates the search
+                    space by refusing to cross an edge (i.e. add an error) when doing so
+                    would produce an intermediate state that has more detection events than
+                    this limit.
+                dont_explore_edges_with_degree_above: Truncates the search space by refusing
+                    to consider errors that cause a lot of detection events. For example,
+                    you may only want to consider graphlike errors which have two or fewer
+                    detection events.
+                dont_explore_edges_increasing_symptom_degree: Truncates the search space by
+                    refusing to cross an edge (i.e. add an error) when doing so would
+                    produce an intermediate state that has more detection events that the
+                    previous intermediate state. This massively improves the efficiency of
+                    the search because instead of, for example, exploring all n^4 possible
+                    detection event sets with 4 symptoms, the search will attempt to cancel
+                    out symptoms one by one.
+                canonicalize_circuit_errors: Whether or not to use one representative for
+                    equal-symptom circuit errors.
+
+                    False (default): Each DEM error lists every possible circuit error that
+                        single handedly produces those symptoms as a potential match. This
+                        is verbose but gives complete information.
+                    True: Each DEM error is matched with one possible circuit error that
+                        single handedly produces those symptoms, with a preference towards
+                        errors that are simpler (e.g. apply Paulis to fewer qubits). This
+                        discards mostly-redundant information about different ways to
+                        produce the same symptoms in order to give a succinct result.
 
             Returns:
-                A detector error model containing only the error mechanisms that cause the undetectable
-                logical error. The error mechanisms will have their probabilities set to 1 (indicating that
-                they are necessary) and will not suggest a decomposition.
+                A list of error mechanisms that cause an undetected logical error.
+
+                Each entry in the list is a `stim.ExplainedError` detailing the location
+                and effects of a single physical error. The effects of the entire list
+                combine to produce a logical frame change without any detection events.
 
             Examples:
                 >>> import stim
@@ -1590,16 +1682,19 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
             Explains how detector error model errors are produced by circuit errors.
 
             Args:
-                dem_filter: Defaults to None (unused). When used, the output will only contain detector error
-                    model errors that appear in the given `stim.DetectorErrorModel`. Any error mechanisms from the
-                    detector error model that can't be reproduced using one error from the circuit will also be included
-                    in the result, but with an empty list of associated circuit error mechanisms.
-                reduce_to_one_representative_error: Defaults to False. When True, the items in the result will contain
-                    at most one circuit error mechanism.
+                dem_filter: Defaults to None (unused). When used, the output will only
+                    contain detector error model errors that appear in the given
+                    `stim.DetectorErrorModel`. Any error mechanisms from the detector error
+                    model that can't be reproduced using one error from the circuit will
+                    also be included in the result, but with an empty list of associated
+                    circuit error mechanisms.
+                reduce_to_one_representative_error: Defaults to False. When True, the items
+                    in the result will contain at most one circuit error mechanism.
 
             Returns:
-                A `List[stim.ExplainedError]` (see `stim.ExplainedError` for more information). Each item in the list
-                describes how a detector error model error can be produced by individual circuit errors.
+                A `List[stim.ExplainedError]` (see `stim.ExplainedError` for more
+                information). Each item in the list describes how a detector error model
+                error can be produced by individual circuit errors.
 
             Examples:
                 >>> import stim

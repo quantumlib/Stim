@@ -52,8 +52,10 @@ void pybind_detector_error_model_repeat_block(pybind11::module &m) {
             Creates a stim.DemRepeatBlock.
 
             Args:
-                repeat_count: The number of times the repeat block's body is supposed to execute.
-                block: The body of the repeat block as a DetectorErrorModel containing the instructions to repeat.
+                repeat_count: The number of times the repeat block's body is supposed to
+                    execute.
+                block: The body of the repeat block as a DetectorErrorModel containing the
+                    instructions to repeat.
 
             Examples:
                 >>> import stim

@@ -438,7 +438,7 @@ void pybind_CircuitTargetsInsideInstruction(pybind11::module &m) {
         "targets_in_range",
         &CircuitTargetsInsideInstruction::targets_in_range,
         clean_doc_string(u8R"DOC(
-            Returns the subset of targets of the gate / instruction that were being executed.
+            Returns the subset of targets of the gate/instruction that were being executed.
 
             Includes coordinate data with the targets.
         )DOC")

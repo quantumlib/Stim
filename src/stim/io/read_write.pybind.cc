@@ -268,8 +268,9 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                 path: The path to the file to read the data from.
                 format: The format that the data is stored in, such as 'b8'.
                     See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-                bit_pack: Defaults to false. Determines whether the result is a bool8 numpy array
-                    with one bit per byte, or a uint8 numpy array with 8 bits per byte.
+                bit_pack: Defaults to false. Determines whether the result is a bool8 numpy
+                    array with one bit per byte, or a uint8 numpy array with 8 bits per
+                    byte.
                 num_measurements: How many measurements there are per shot.
                 num_detectors: How many detectors there are per shot.
                 num_observables: How many observables there are per shot.
@@ -285,7 +286,8 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                     bit b from shot s is at result[s, b]
                 If bit_pack=True:
                     dtype = np.uint8
-                    shape = (num_shots, math.ceil((num_measurements + num_detectors + num_observables) / 8))
+                    shape = (num_shots, math.ceil(
+                        (num_measurements + num_detectors + num_observables) / 8))
                     bit b from shot s is at result[s, b // 8] & (1 << (b % 8))
 
             Examples:
@@ -326,16 +328,19 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
                     of the array determines whether or not the data is bit packed, and the
                     shape must match the bits per shot.
 
-                    dtype=np.bool8: Not bit packed. Shape must be (num_shots, num_measurements + num_detectors + num_observables).
-                    dtype=np.uint8: Yes bit packed. Shape must be (num_shots, math.ceil((num_measurements + num_detectors + num_observables) / 8)).
+                    dtype=np.bool8: Not bit packed. Shape must be
+                        (num_shots, num_measurements + num_detectors + num_observables).
+                    dtype=np.uint8: Yes bit packed. Shape must be
+                        (num_shots, math.ceil(
+                            (num_measurements + num_detectors + num_observables) / 8)).
                 path: The path to the file to write the data to.
                 format: The format that the data is stored in, such as 'b8'.
                     See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
                 num_measurements: How many measurements there are per shot.
                 num_detectors: How many detectors there are per shot.
                 num_observables: How many observables there are per shot.
-                    Note that this only refers to observables *in the given shot data*, not to
-                    observables from the original circuit that was sampled.
+                    Note that this only refers to observables *in the given shot data*, not
+                    to observables from the original circuit that was sampled.
 
             Examples:
                 >>> import stim

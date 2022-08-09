@@ -91,15 +91,15 @@ void pybind_circuit_instruction(pybind11::module &m) {
                 >>> import stim
                 >>> circuit = stim.Circuit('''
                 ...     H 0
-                ...     M 0 !1
-                ...     X_ERROR(0.125) 5 3
+                ...     M 0 1
+                ...     X_ERROR(0.125) 5
                 ... ''')
                 >>> circuit[0]
                 stim.CircuitInstruction('H', [stim.GateTarget(0)], [])
                 >>> circuit[1]
-                stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(stim.target_inv(1))], [])
+                stim.CircuitInstruction('M', [stim.GateTarget(0), stim.GateTarget(1)], [])
                 >>> circuit[2]
-                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5), stim.GateTarget(3)], [0.125])
+                stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5)], [0.125])
         )DOC")
             .data());
 
@@ -113,10 +113,12 @@ void pybind_circuit_instruction(pybind11::module &m) {
 
             Args:
                 name: The name of the instruction being applied.
-                targets: The targets the instruction is being applied to. These can be raw values like `0` and
-                    `stim.target_rec(-1)`, or instances of `stim.GateTarget`.
-                gate_args: The sequence of numeric arguments parameterizing a gate. For noise gates this is their
-                    probabilities. For OBSERVABLE_INCLUDE it's the logical observable's index.
+                targets: The targets the instruction is being applied to. These can be raw
+                    values like `0` and `stim.target_rec(-1)`, or instances of
+                    `stim.GateTarget`.
+                gate_args: The sequence of numeric arguments parameterizing a gate. For
+                    noise gates this is their probabilities. For `OBSERVABLE_INCLUDE`
+                    instructions it's the index of the logical observable to affect.
         )DOC")
             .data());
 
@@ -143,7 +145,8 @@ void pybind_circuit_instruction(pybind11::module &m) {
             Returns the gate's arguments (numbers parameterizing the instruction).
 
             For noisy gates this typically a list of probabilities.
-            For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable index.
+            For OBSERVABLE_INCLUDE it's a singleton list containing the logical observable
+            index.
         )DOC")
             .data());
 
