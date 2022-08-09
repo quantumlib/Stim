@@ -121,7 +121,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         m,
         "TableauSimulator",
         clean_doc_string(u8R"DOC(
-            A quantum stabilizer circuit simulator whose internal state is an inverse stabilizer tableau.
+            A stabilizer circuit simulator that tracks an inverse stabilizer tableau.
 
             Supports interactive usage, where gates and measurements are applied on demand.
 
@@ -224,30 +224,33 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         pybind11::arg("endian") = "little",
         clean_doc_string(u8R"DOC(
             @signature def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
-            Returns a wavefunction that satisfies the stabilizers of the simulator's current state.
+            Returns a wavefunction for the simulator's current state.
 
-            This function takes O(n * 2**n) time and O(2**n) space, where n is the number of qubits. The computation is
-            done by initialization a random state vector and iteratively projecting it into the +1 eigenspace of each
-            stabilizer of the state. The state is then canonicalized so that zero values are actually exactly 0, and so
-            that the first non-zero entry is positive.
+            This function takes O(n * 2**n) time and O(2**n) space, where n is the number of
+            qubits. The computation is done by initialization a random state vector and
+            iteratively projecting it into the +1 eigenspace of each stabilizer of the
+            state. The state is then canonicalized so that zero values are actually exactly
+            0, and so that the first non-zero entry is positive.
 
             Args:
                 endian:
-                    "little" (default): state vector is in little endian order, where higher index qubits
-                        correspond to larger changes in the state index.
-                    "big": state vector is in little endian order, where higher index qubits correspond to
-                        smaller changes in the state index.
+                    "little" (default): state vector is in little endian order, where higher
+                        index qubits correspond to larger changes in the state index.
+                    "big": state vector is in big endian order, where higher index qubits
+                        correspond to smaller changes in the state index.
 
             Returns:
                 A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
 
-                If the result is in little endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-                the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_0, the
-                qubit with index 1 is storing the bit b_1, etc.
+                If the result is in little endian order then the amplitude at offset
+                b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+                computational basis state where the qubit with index 0 is storing the bit
+                b_0, the qubit with index 1 is storing the bit b_1, etc.
 
-                If the result is in big endian order then the amplitude at offset b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is
-                the amplitude for the computational basis state where the qubit with index 0 is storing the bit b_{n-1}, the
-                qubit with index 1 is storing the bit b_{n-2}, etc.
+                If the result is in big endian order then the amplitude at offset
+                b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+                computational basis state where the qubit with index 0 is storing the bit
+                b_{n-1}, the qubit with index 1 is storing the bit b_{n-2}, etc.
 
             Examples:
                 >>> import stim
@@ -278,18 +281,23 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             return result;
         },
         clean_doc_string(u8R"DOC(
-            Returns a list of the stabilizers of the simulator's current state in a standard form.
+            Returns a standardized list of the simulator's current stabilizer generators.
 
-            Two simulators have the same canonical stabilizers if and only if their current quantum state is equal
-            (and tracking the same number of qubits).
+            Two simulators have the same canonical stabilizers if and only if their current
+            quantum state is equal (and tracking the same number of qubits).
 
             The canonical form is computed as follows:
 
-                1. Get a list of stabilizers using the `z_output`s of `simulator.current_inverse_tableau()**-1`.
-                2. Perform Gaussian elimination on each generator g (ordered X0, Z0, X1, Z1, X2, Z2, etc).
-                    2a) Pick any stabilizer that uses the generator g. If there are none, go to the next g.
-                    2b) Multiply that stabilizer into all other stabilizers that use the generator g.
-                    2c) Swap that stabilizer with the stabilizer at position `next_output` then increment `next_output`.
+                1. Get a list of stabilizers using the `z_output`s of
+                    `simulator.current_inverse_tableau()**-1`.
+                2. Perform Gaussian elimination on each generator g.
+                    2a) The generators are considered in order X0, Z0, X1, Z1, X2, Z2, etc.
+                    2b) Pick any stabilizer that uses the generator g. If there are none,
+                        go to the next g.
+                    2c) Multiply that stabilizer into all other stabilizers that use the
+                        generator g.
+                    2d) Swap that stabilizer with the stabilizer at position `next_output`
+                        then increment `next_output`.
 
             Returns:
                 A List[stim.PauliString] of the simulator's state's stabilizers.
@@ -300,18 +308,24 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 >>> s.h(0)
                 >>> s.cnot(0, 1)
                 >>> s.x(2)
-                >>> s.canonical_stabilizers()
-                [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
+                >>> for e in s.canonical_stabilizers():
+                ...     print(repr(e))
+                stim.PauliString("+XX_")
+                stim.PauliString("+ZZ_")
+                stim.PauliString("-__Z")
 
-                >>> # Scramble the stabilizers then check that the canonical form is unchanged.
+                >>> # Scramble the stabilizers then check the canonical form is unchanged.
                 >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
                 >>> s.cnot(0, 1)
                 >>> s.cz(0, 2)
                 >>> s.s(0, 2)
                 >>> s.cy(2, 1)
                 >>> s.set_inverse_tableau(s.current_inverse_tableau()**-1)
-                >>> s.canonical_stabilizers()
-                [stim.PauliString("+XX_"), stim.PauliString("+ZZ_"), stim.PauliString("-__Z")]
+                >>> for e in s.canonical_stabilizers():
+                ...     print(repr(e))
+                stim.PauliString("+XX_")
+                stim.PauliString("+ZZ_")
+                stim.PauliString("-__Z")
         )DOC")
             .data());
 
@@ -340,7 +354,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 [False, True, True]
 
             Returns:
-                A list of booleans containing the result of every measurement performed by the simulator so far.
+                A list of booleans containing the result of every measurement performed by
+                the simulator so far.
         )DOC")
             .data());
 
@@ -354,7 +369,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             @overload def do(self, circuit_or_pauli_string: stim.PauliString) -> None:
 
             Args:
-                circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing operations to apply.
+                circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing
+                    operations to apply to the simulator's state.
 
             Examples:
                 >>> import stim
@@ -538,7 +554,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             self.H_XY(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
-            Applies a variant of the Hadamard gate that swaps the X and Y axes to the simulator's state.
+            Applies an operation that swaps the X and Y axes to the simulator's state.
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
@@ -551,7 +567,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             self.H_YZ(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
-            Applies a variant of the Hadamard gate that swaps the Y and Z axes to the simulator's state.
+            Applies an operation that swaps the Y and Z axes to the simulator's state.
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
@@ -685,8 +701,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -700,8 +716,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -715,8 +731,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -730,8 +746,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -745,8 +761,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -760,8 +776,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -775,8 +791,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -790,8 +806,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -805,8 +821,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -820,8 +836,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -835,8 +851,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -850,8 +866,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -865,8 +881,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -880,8 +896,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -895,8 +911,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -910,8 +926,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
             Args:
                 *targets: The indices of the qubits to target with the gate.
-                    Applies the gate to the first two targets, then the next two targets, and so forth.
-                    There must be an even number of targets.
+                    Applies the gate to the first two targets, then the next two targets,
+                    and so forth. There must be an even number of targets.
         )DOC")
             .data());
 
@@ -1005,7 +1021,10 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("target"),
         clean_doc_string(u8R"DOC(
-            Returns the expected value of a qubit's X observable (which will always be -1, 0, or +1).
+            Returns the expected value of a qubit's X observable.
+
+            Because the simulator's state is always a stabilizer state, the expectation will
+            always be exactly -1, 0, or +1.
 
             This is a non-physical operation.
             It reports information about the quantum state without disturbing it.
@@ -1041,7 +1060,10 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("target"),
         clean_doc_string(u8R"DOC(
-            Returns the expected value of a qubit's Y observable (which will always be -1, 0, or +1).
+            Returns the expected value of a qubit's Y observable.
+
+            Because the simulator's state is always a stabilizer state, the expectation will
+            always be exactly -1, 0, or +1.
 
             This is a non-physical operation.
             It reports information about the quantum state without disturbing it.
@@ -1077,7 +1099,10 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("target"),
         clean_doc_string(u8R"DOC(
-            Returns the expected value of a qubit's Z observable (which will always be -1, 0, or +1).
+            Returns the expected value of a qubit's Z observable.
+
+            Because the simulator's state is always a stabilizer state, the expectation will
+            always be exactly -1, 0, or +1.
 
             This is a non-physical operation.
             It reports information about the quantum state without disturbing it.
@@ -1113,21 +1138,29 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("target"),
         clean_doc_string(u8R"DOC(
-            Returns the current bloch vector of the qubit, represented as a stim.PauliString.
+            Returns the state of the qubit as a single-qubit stim.PauliString stabilizer.
 
-            This is a non-physical operation. It reports information about the qubit without disturbing it.
+            This is a non-physical operation. It reports information about the qubit without
+            disturbing it.
 
             Args:
                 target: The qubit to peek at.
 
             Returns:
-                stim.PauliString("I"): The qubit is entangled. Its bloch vector is x=y=z=0.
-                stim.PauliString("+Z"): The qubit is in the |0> state. Its bloch vector is z=+1, x=y=0.
-                stim.PauliString("-Z"): The qubit is in the |1> state. Its bloch vector is z=-1, x=y=0.
-                stim.PauliString("+Y"): The qubit is in the |i> state. Its bloch vector is y=+1, x=z=0.
-                stim.PauliString("-Y"): The qubit is in the |-i> state. Its bloch vector is y=-1, x=z=0.
-                stim.PauliString("+X"): The qubit is in the |+> state. Its bloch vector is x=+1, y=z=0.
-                stim.PauliString("-X"): The qubit is in the |-> state. Its bloch vector is x=-1, y=z=0.
+                stim.PauliString("I"):
+                    The qubit is entangled. Its bloch vector is x=y=z=0.
+                stim.PauliString("+Z"):
+                    The qubit is in the |0> state. Its bloch vector is z=+1, x=y=0.
+                stim.PauliString("-Z"):
+                    The qubit is in the |1> state. Its bloch vector is z=-1, x=y=0.
+                stim.PauliString("+Y"):
+                    The qubit is in the |i> state. Its bloch vector is y=+1, x=z=0.
+                stim.PauliString("-Y"):
+                    The qubit is in the |-i> state. Its bloch vector is y=-1, x=z=0.
+                stim.PauliString("+X"):
+                    The qubit is in the |+> state. Its bloch vector is x=+1, y=z=0.
+                stim.PauliString("-X"):
+                    The qubit is in the |-> state. Its bloch vector is x=-1, y=z=0.
 
             Examples:
                 >>> import stim
@@ -1160,7 +1193,10 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("observable"),
         clean_doc_string(u8R"DOC(
-            Determines the expected value of an observable (which will always be -1, 0, or +1).
+            Determines the expected value of an observable.
+
+            Because the simulator's state is always a stabilizer state, the expectation will
+            always be exactly -1, 0, or +1.
 
             This is a non-physical operation.
             It reports information about the quantum state without disturbing it.
@@ -1320,8 +1356,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             @signature def postselect_z(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
             Postselects qubits in the Z basis, or raises an exception.
 
-            Postselecting a qubit forces it to collapse to a specific state, as
-            if it was measured and that state was the result of the measurement.
+            Postselecting a qubit forces it to collapse to a specific state, as if it was
+            measured and that state was the result of the measurement.
 
             Args:
                 targets: The qubit index or indices to postselect.
@@ -1344,10 +1380,11 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             return self.inv_state.num_qubits;
         },
         clean_doc_string(u8R"DOC(
-            Returns the number of qubits currently being tracked by the simulator's internal state.
+            Returns the number of qubits currently being tracked by the simulator.
 
-            Note that the number of qubits being tracked will implicitly increase if qubits beyond
-            the current limit are touched. Untracked qubits are always assumed to be in the |0> state.
+            Note that the number of qubits being tracked will implicitly increase if qubits
+            beyond the current limit are touched. Untracked qubits are always assumed to be
+            in the |0> state.
 
             Examples:
                 >>> import stim
@@ -1367,17 +1404,23 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("new_num_qubits"),
         clean_doc_string(u8R"DOC(
-            Forces the simulator's internal state to track exactly the qubits whose indices are in range(new_num_qubits).
+            Resizes the simulator's internal state.
 
-            Note that untracked qubits are always assumed to be in the |0> state. Therefore, calling this method
-            will effectively force any qubit whose index is outside range(new_num_qubits) to be reset to |0>.
+            This forces the simulator's internal state to track exactly the qubits whose
+            indices are in `range(new_num_qubits)`.
 
-            Note that this method does not prevent future operations from implicitly expanding the size of the
-            tracked state (e.g. setting the number of qubits to 5 will not prevent a Hadamard from then being
-            applied to qubit 100, increasing the number of qubits to 101).
+            Note that untracked qubits are always assumed to be in the |0> state. Therefore,
+            calling this method will effectively force any qubit whose index is outside
+            `range(new_num_qubits)` to be reset to |0>.
+
+            Note that this method does not prevent future operations from implicitly
+            expanding the size of the tracked state (e.g. setting the number of qubits to 5
+            will not prevent a Hadamard from then being applied to qubit 100, increasing the
+            number of qubits back to 101).
 
             Args:
-                new_num_qubits: The length of the range of qubits the internal simulator should be tracking.
+                new_num_qubits: The length of the range of qubits the internal simulator
+                    should be tracking.
 
             Examples:
                 >>> import stim
@@ -1403,14 +1446,15 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         },
         pybind11::arg("new_inverse_tableau"),
         clean_doc_string(u8R"DOC(
-            Overwrites the simulator's internal state with a copy of the given inverse tableau.
+            Overwrites the simulator's internal state with the given inverse tableau.
 
-            The inverse tableau specifies how Pauli product observables of qubits at the current time transform
-            into equivalent Pauli product observables at the beginning of time, when all qubits were in the
-            |0> state. For example, if the Z observable on qubit 5 maps to a product of Z observables at the
-            start of time then a Z basis measurement on qubit 5 will be deterministic and equal to the sign
-            of the product. Whereas if it mapped to a product of observables including an X or a Y then the Z
-            basis measurement would be random.
+            The inverse tableau specifies how Pauli product observables of qubits at the
+            current time transform into equivalent Pauli product observables at the
+            beginning of time, when all qubits were in the |0> state. For example, if the Z
+            observable on qubit 5 maps to a product of Z observables at the start of time
+            then a Z basis measurement on qubit 5 will be deterministic and equal to the
+            sign of the product. Whereas if it mapped to a product of observables including
+            an X or a Y then the Z basis measurement would be random.
 
             Any qubits not within the length of the tableau are implicitly in the |0> state.
 
@@ -1476,16 +1520,17 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Measures a qubit and returns the result as well as its Pauli kickback (if any).
 
-            The "Pauli kickback" of a stabilizer circuit measurement is a set of Pauli operations that
-            flip the post-measurement system state between the two possible post-measurement states.
-            For example, consider measuring one of the qubits in the state |00>+|11> in the Z basis.
-            If the measurement result is False, then the system projects into the state |00>.
-            If the measurement result is True, then the system projects into the state |11>.
-            Applying a Pauli X operation to both qubits flips between |00> and |11>.
-            Therefore the Pauli kickback of the measurement is `stim.PauliString("XX")`.
-            Note that there are often many possible equivalent Pauli kickbacks. For example,
-            if in the previous example there was a third qubit in the |0> state, then both
-            `stim.PauliString("XX_")` and `stim.PauliString("XXZ")` are valid kickbacks.
+            The "Pauli kickback" of a stabilizer circuit measurement is a set of Pauli
+            operations that flip the post-measurement system state between the two possible
+            post-measurement states. For example, consider measuring one of the qubits in
+            the state |00>+|11> in the Z basis. If the measurement result is False, then the
+            system projects into the state |00>. If the measurement result is True, then the
+            system projects into the state |11>. Applying a Pauli X operation to both qubits
+            flips between |00> and |11>. Therefore the Pauli kickback of the measurement is
+            `stim.PauliString("XX")`. Note that there are often many possible equivalent
+            Pauli kickbacks. For example, if in the previous example there was a third qubit
+            in the |0> state, then both `stim.PauliString("XX_")` and
+            `stim.PauliString("XXZ")` are valid kickbacks.
 
             Measurements with deterministic results don't have a Pauli kickback.
 
@@ -1495,9 +1540,9 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
             Returns:
                 A (result, kickback) tuple.
                 The result is a bool containing the measurement's output.
-                The kickback is either None (meaning the measurement was deterministic) or a stim.PauliString
-                (meaning the measurement was random, and the operations in the Pauli string flip between the
-                two possible post-measurement states).
+                The kickback is either None (meaning the measurement was deterministic) or a
+                stim.PauliString (meaning the measurement was random, and the operations in
+                the Pauli string flip between the two possible post-measurement states).
 
             Examples:
                 >>> import stim
@@ -1514,7 +1559,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 ...     m, kick = s.measure_kickback(qubit)
                 ...     if m != desired_result:
                 ...         if kick is None:
-                ...             raise ValueError("Deterministic measurement differed from desired result.")
+                ...             raise ValueError("Post-selected the impossible!")
                 ...         s.do(kick)
                 >>> s = stim.TableauSimulator()
                 >>> s.h(0)
@@ -1545,42 +1590,47 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         pybind11::arg("allow_redundant") = false,
         pybind11::arg("allow_underconstrained") = false,
         clean_doc_string(u8R"DOC(
-            @signature def set_state_from_stabilizers(self, stabilizers: Iterable[stim.PauliString], *, bool allow_redundant = False, bool allow_underconstrained = False) -> None:
+            @signature def set_state_from_stabilizers(self, stabilizers: Iterable[stim.PauliString], *, allow_redundant: bool = False, allow_underconstrained: bool = False) -> None:
             Sets the tableau simulator's state to a state satisfying the given stabilizers.
 
-            The old quantum state is completely overwritten, even if the new state is underconstrained
-            underconstrained by the given stabilizers. The number of qubits is changed to exactly match
-            the number of qubits in the longest given stabilizer.
+            The old quantum state is completely overwritten, even if the new state is
+            underconstrained by the given stabilizers. The number of qubits is changed to
+            exactly match the number of qubits in the longest given stabilizer.
 
             Args:
-                stabilizers: A list of `stim.PauliString`s specifying the stabilizers that the new
-                    state must have. It is permitted for stabilizers to have different lengths. All
-                    stabilizers are padded up to the length of the longest stabilizer by appending
-                    identity terms.
-                allow_redundant: Defaults to False. If set to False, then the given stabilizers must
-                    all be independent. If any one of them is a product of the others (including the
-                    empty product), an exception will be raised. If set to True, then redundant
-                    stabilizers are simply ignored.
-                allow_underconstrained: Defaults to False. If set to False, then the given stabilizers
-                    must form a complete set of generators. They must exactly specify the desired
-                    stabilizer state, with no degrees of freedom left over. For an n-qubit state there
-                    must be n independent stabilizers. If set to True, then there can be leftover
-                    degrees of freedom which can be set arbitrarily.
+                stabilizers: A list of `stim.PauliString`s specifying the stabilizers that
+                    the new state must have. It is permitted for stabilizers to have
+                    different lengths. All stabilizers are padded up to the length of the
+                    longest stabilizer by appending identity terms.
+                allow_redundant: Defaults to False. If set to False, then the given
+                    stabilizers must all be independent. If any one of them is a product of
+                    the others (including the empty product), an exception will be raised.
+                    If set to True, then redundant stabilizers are simply ignored.
+                allow_underconstrained: Defaults to False. If set to False, then the given
+                    stabilizers must form a complete set of generators. They must exactly
+                    specify the desired stabilizer state, with no degrees of freedom left
+                    over. For an n-qubit state there must be n independent stabilizers. If
+                    set to True, then there can be leftover degrees of freedom which can be
+                    set arbitrarily.
 
             Returns:
-                Nothing. Mutates the states of the simulator to match the desired stabilizers.
-                Guarantees that self.current_inverse_tableau().inverse_z_output(k) will be equal
-                to the k'th independent stabilizer from the `stabilizers` argument.
+                Nothing. Mutates the states of the simulator to match the desired
+                stabilizers.
+
+                Guarantees that self.current_inverse_tableau().inverse_z_output(k) will be
+                equal to the k'th independent stabilizer from the `stabilizers` argument.
 
             Raises:
                 ValueError:
                     A stabilizer is redundant but allow_redundant=True wasn't set.
                     OR
-                    The given stabilizers are contradictory (e.g. "+Z" and "-Z" both specified).
+                    The given stabilizers are contradictory (e.g. "+Z" and "-Z" both
+                    specified).
                     OR
                     The given stabilizers anticommute (e.g. "+Z" and "+X" both specified).
                     OR
-                    The stabilizers left behind a degree of freedom but allow_underconstrained=True wasn't set.
+                    The stabilizers left behind a degree of freedom but
+                    allow_underconstrained=True wasn't set.
                     OR
                     A stabilizer has an imaginary sign (i or -i).
 
@@ -1651,24 +1701,25 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
         pybind11::arg("endian"),
         clean_doc_string(u8R"DOC(
             @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> None:
-            Sets the tableau simulator's state to a superposition specified by a vector of amplitudes.
+            Sets the simulator's state to a superposition specified by an amplitude vector.
 
             Args:
-                state_vector: A list of complex amplitudes specifying a superposition. The vector
-                    must correspond to a state that is reachable using Clifford operations, and must
-                    be normalized (i.e. it must be a unit vector).
+                state_vector: A list of complex amplitudes specifying a superposition. The
+                    vector must correspond to a state that is reachable using Clifford
+                    operations, and must be normalized (i.e. it must be a unit vector).
                 endian:
-                    "little": state vector is in little endian order, where higher index qubits
-                        correspond to larger changes in the state index.
-                    "big": state vector is in little endian order, where higher index qubits correspond to
-                        smaller changes in the state index.
+                    "little": state vector is in little endian order, where higher index
+                        qubits correspond to larger changes in the state index.
+                    "big": state vector is in big endian order, where higher index qubits
+                        correspond to smaller changes in the state index.
 
             Returns:
                 Nothing. Mutates the states of the simulator to match the desired state.
 
             Raises:
                 ValueError:
-                    The given state vector isn't a list of complex values specifying a stabilizer state.
+                    The given state vector isn't a list of complex values specifying a
+                    stabilizer state.
                     OR
                     The given endian value isn't 'little' or 'big'.
 

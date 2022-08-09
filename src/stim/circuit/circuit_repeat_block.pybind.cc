@@ -109,8 +109,8 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Returns a copy of the body of the repeat block.
 
-            The copy is forced to ensure it's clear that editing the result will not change the circuit that the repeat
-            block came from.
+            (Making a copy is enforced to make it clear that editing the result won't change
+            the block's body.)
 
             Examples:
                 >>> import stim
@@ -135,5 +135,5 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
     c.def(
         "__repr__",
         &CircuitRepeatBlock::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.CircuitRepeatBlock`.");
+        "Returns valid python code evaluating to an equivalent `stim.CircuitRepeatBlock`.");
 }

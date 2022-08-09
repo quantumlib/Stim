@@ -160,12 +160,17 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
 
             Args:
                 type: The name of the instruction type (e.g. "error" or "shift_detectors").
-                args: Numeric values parameterizing the instruction (e.g. the 0.1 in "error(0.1)").
-                targets: The objects the instruction involves (e.g. the "D0" and "L1" in "error(0.1) D0 L1").
+                args: Numeric values parameterizing the instruction (e.g. the 0.1 in
+                    "error(0.1)").
+                targets: The objects the instruction involves (e.g. the "D0" and "L1" in
+                    "error(0.1) D0 L1").
 
             Examples:
                 >>> import stim
-                >>> instruction = stim.DemInstruction('error', [0.125], [stim.target_relative_detector_id(5)])
+                >>> instruction = stim.DemInstruction(
+                ...     'error',
+                ...     [0.125],
+                ...     [stim.target_relative_detector_id(5)])
                 >>> print(instruction)
                 error(0.125) D5
         )DOC")
@@ -179,8 +184,11 @@ void pybind_detector_error_model_instruction(pybind11::module &m) {
         "targets_copy",
         &ExposedDemInstruction::targets_copy,
         clean_doc_string(u8R"DOC(
-            Returns a copy of the list of objects the instruction applies to (e.g. affected detectors.
             @signature def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
+            Returns a copy of the instruction's targets.
+
+            (Making a copy is enforced to make it clear that editing the result won't change
+            the instruction's targets.)
         )DOC")
             .data());
     c.def_property_readonly(

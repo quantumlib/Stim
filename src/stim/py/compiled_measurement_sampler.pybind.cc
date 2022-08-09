@@ -110,43 +110,51 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
         clean_doc_string(u8R"DOC(
             Creates a measurement sampler for the given circuit.
 
-            The sampler uses a noiseless reference sample, collected from the circuit using stim's Tableau simulator
-            during initialization of the sampler, as a baseline for deriving more samples using an error propagation
-            simulator.
+            The sampler uses a noiseless reference sample, collected from the circuit using
+            stim's Tableau simulator during initialization of the sampler, as a baseline for
+            deriving more samples using an error propagation simulator.
 
             Args:
                 circuit: The stim circuit to sample from.
-                skip_reference_sample: Defaults to False. When set to True, the reference sample used by the sampler is
-                    initialized to all-zeroes instead of being collected from the circuit. This means that the results
-                    returned by the sampler are actually whether or not each measurement was *flipped*, instead of true
-                    measurement results.
+                skip_reference_sample: Defaults to False. When set to True, the reference
+                    sample used by the sampler is initialized to all-zeroes instead of being
+                    collected from the circuit. This means that the results returned by the
+                    sampler are actually whether or not each measurement was *flipped*,
+                    instead of true measurement results.
 
-                    Forcing an all-zero reference sample is useful when you are only interested in error propagation and
-                    don't want to have to deal with the fact that some measurements want to be On when no errors occur.
-                    It is also useful when you know for sure that the all-zero result is actually a possible result from
-                    the circuit (under noiseless execution), meaning it is a valid reference sample as good as any
-                    other. Computing the reference sample is the most time consuming and memory intensive part of
-                    simulating the circuit, so promising that the simulator can safely skip that step is an effective
-                    optimization.
-                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                    Forcing an all-zero reference sample is useful when you are only
+                    interested in error propagation and don't want to have to deal with the
+                    fact that some measurements want to be On when no errors occur. It is
+                    also useful when you know for sure that the all-zero result is actually
+                    a possible result from the circuit (under noiseless execution), meaning
+                    it is a valid reference sample as good as any other. Computing the
+                    reference sample is the most time consuming and memory intensive part of
+                    simulating the circuit, so promising that the simulator can safely skip
+                    that step is an effective optimization.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
                     Must be None or an integer in range(2**64).
 
-                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+                    Defaults to None. When None, the prng is seeded from system entropy.
 
-                    When set to an integer, making the exact same series calls on the exact same machine with the exact
-                    same version of Stim will produce the exact same simulation results.
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
 
-                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                    present to make it possible to have future optimizations to the random sampling, and is enforced by
-                    introducing intentional differences in the seeding strategy from version to version.
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
 
-                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                    instructions and one that only supports SSE instructions may produce different simulation results.
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
 
-                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                    call.
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
 
             Returns:
                 An initialized stim.CompiledMeasurementSampler.
@@ -168,7 +176,14 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
         &CompiledMeasurementSampler::sample,
         pybind11::arg("shots"),
         clean_doc_string(u8R"DOC(
-            Returns a numpy array containing a batch of measurement samples from the circuit.
+            Samples a batch of measurement samples from the circuit.
+
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+
+            Returns:
+                A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
+                The bit for measurement `m` in shot `s` is at `result[s, m]`.
 
             Examples:
                 >>> import stim
@@ -179,13 +194,6 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
                 >>> s = c.compile_sampler()
                 >>> s.sample(shots=1)
                 array([[ True, False,  True,  True]])
-
-            Args:
-                shots: The number of times to sample every measurement in the circuit.
-
-            Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-                The bit for measurement `m` in shot `s` is at `result[s, m]`.
         )DOC")
             .data());
 
@@ -194,7 +202,17 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
         &CompiledMeasurementSampler::sample_bit_packed,
         pybind11::arg("shots"),
         clean_doc_string(u8R"DOC(
-            Returns a numpy array containing a bit packed batch of measurement samples from the circuit.
+            Samples a bit packed batch of measurement samples from the circuit.
+
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+
+            Returns:
+                A numpy array with `dtype=uint8` and
+                `shape=(shots, (num_measurements + 7) // 8)`.
+
+                The bit for measurement `m` in shot `s` is at
+                `result[s, (m // 8)] & 2**(m % 8)`.
 
             Examples:
                 >>> import stim
@@ -205,13 +223,6 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
                 >>> s = c.compile_sampler()
                 >>> s.sample_bit_packed(shots=1)
                 array([[255,   4]], dtype=uint8)
-
-            Args:
-                shots: The number of times to sample every measurement in the circuit.
-
-            Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, (num_measurements + 7) // 8)`.
-                The bit for measurement `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
         )DOC")
             .data());
 

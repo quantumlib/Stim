@@ -120,29 +120,34 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            Creates a detector sampler, which can sample the detectors (and optionally observables) in a circuit.
+            Creates an object that can sample the detection events from a circuit.
 
             Args:
                 circuit: The circuit to sample from.
-                seed: PARTIALLY determines simulation results by deterministically seeding the random number generator.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
                     Must be None or an integer in range(2**64).
 
-                    Defaults to None. When set to None, a prng seeded by system entropy is used.
+                    Defaults to None. When None, the prng is seeded from system entropy.
 
-                    When set to an integer, making the exact same series calls on the exact same machine with the exact
-                    same version of Stim will produce the exact same simulation results.
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
 
-                    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-                    present to make it possible to have future optimizations to the random sampling, and is enforced by
-                    introducing intentional differences in the seeding strategy from version to version.
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
 
-                    CAUTION: simulation results *MAY NOT* be consistent across machines that differ in the width of
-                    supported SIMD instructions. For example, using the same seed on a machine that supports AVX
-                    instructions and one that only supports SSE instructions may produce different simulation results.
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
 
-                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many shots are taken. For
-                    example, taking 10 shots and then 90 shots will give different results from taking 100 shots in one
-                    call.
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
 
             Returns:
                 An initialized stim.CompiledDetectorSampler.
@@ -172,19 +177,21 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
         clean_doc_string(u8R"DOC(
             Returns a numpy array containing a batch of detector samples from the circuit.
 
-            The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
-            instructions can also be included in the results as honorary detectors.
+            The circuit must define the detectors using DETECTOR instructions. Observables
+            defined by OBSERVABLE_INCLUDE instructions can also be included in the results
+            as honorary detectors.
 
             Args:
                 shots: The number of times to sample every detector in the circuit.
-                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
-                    placed at the start of the results.
-                append_observables: Defaults to false. When set, observables are included with the detectors and are
-                    placed at the end of the results.
+                prepend_observables: Defaults to false. When set, observables are included
+                    with the detectors and are placed at the start of the results.
+                append_observables: Defaults to false. When set, observables are included
+                    with the detectors and are placed at the end of the results.
 
             Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-                `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
+                A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
+                `num_detectors + num_observables*(append_observables+prepend_observables)`.
+
                 The bit for detection event `m` in shot `s` is at `result[s, m]`.
         )DOC")
             .data());
@@ -197,22 +204,24 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
         clean_doc_string(u8R"DOC(
-            Returns a numpy array containing bit packed batch of detector samples from the circuit.
+            Returns a numpy array containing bit packed detector samples from the circuit.
 
-            The circuit must define the detectors using DETECTOR instructions. Observables defined by OBSERVABLE_INCLUDE
-            instructions can also be included in the results as honorary detectors.
+            The circuit must define the detectors using DETECTOR instructions. Observables
+            defined by OBSERVABLE_INCLUDE instructions can also be included in the results
+            as honorary detectors.
 
             Args:
                 shots: The number of times to sample every detector in the circuit.
-                prepend_observables: Defaults to false. When set, observables are included with the detectors and are
-                    placed at the start of the results.
-                append_observables: Defaults to false. When set, observables are included with the detectors and are
-                    placed at the end of the results.
+                prepend_observables: Defaults to false. When set, observables are included
+                    with the detectors and are placed at the start of the results.
+                append_observables: Defaults to false. When set, observables are included
+                    with the detectors and are placed at the end of the results.
 
             Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, n)` where
-                `n = num_detectors + num_observables*(append_observables + prepend_observables)`.
-                The bit for detection event `m` in shot `s` is at `result[s, (m // 8)] & 2**(m % 8)`.
+                A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
+                `num_detectors + num_observables*(append_observables+prepend_observables)`.
+                The bit for detection event `m` in shot `s` is at
+                `result[s, (m // 8)] & 2**(m % 8)`.
         )DOC")
             .data());
 
@@ -230,6 +239,28 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
         clean_doc_string(u8R"DOC(
             Samples detection events from the circuit and writes them to a file.
 
+            Args:
+                shots: The number of times to sample every measurement in the circuit.
+                filepath: The file to write the results to.
+                format: The output format to write the results with.
+                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                    Defaults to "01".
+                obs_out_filepath: Sample observables as part of each shot, and write them to
+                    this file. This keeps the observable data separate from the detector
+                    data.
+                obs_out_format: If writing the observables to a file, this is the format to
+                    write them in.
+
+                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
+                    Defaults to "01".
+                prepend_observables: Sample observables as part of each shot, and put them
+                    at the start of the detector data.
+                append_observables: Sample observables as part of each shot, and put them at
+                    the end of the detector data.
+
+            Returns:
+                None.
+
             Examples:
                 >>> import stim
                 >>> import tempfile
@@ -241,36 +272,20 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(pybind11::class_<Comp
                 ...         DETECTOR rec[-2]
                 ...         DETECTOR rec[-1]
                 ...     ''')
-                ...     c.compile_detector_sampler().sample_write(3, filepath=path, format="dets")
+                ...     c.compile_detector_sampler().sample_write(
+                ...         shots=3,
+                ...         filepath=path,
+                ...         format="dets")
                 ...     with open(path) as f:
                 ...         print(f.read(), end='')
                 shot D0
                 shot D0
                 shot D0
-
-            Args:
-                shots: The number of times to sample every measurement in the circuit.
-                filepath: The file to write the results to.
-                format: The output format to write the results with.
-                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
-                    Defaults to "01".
-                obs_out_filepath: Sample observables as part of each shot, and write them to this file.
-                    This keeps the observable data separate from the detector data.
-                obs_out_format: If writing the observables to a file, this is the format to write them in.
-                    Valid values are "01", "b8", "r8", "hits", "dets", and "ptb64".
-                    Defaults to "01".
-                prepend_observables: Sample observables as part of each shot, and put them at the start of the detector
-                    data.
-                append_observables: Sample observables as part of each shot, and put them at the end of the detector
-                    data.
-
-            Returns:
-                None.
         )DOC")
             .data());
 
     c.def(
         "__repr__",
         &CompiledDetectorSampler::repr,
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.CompiledDetectorSampler`.");
+        "Returns valid python code evaluating to an equivalent `stim.CompiledDetectorSampler`.");
 }

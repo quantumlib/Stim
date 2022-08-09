@@ -32,8 +32,8 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             A stabilizer tableau.
 
-            Represents a Clifford operation by explicitly storing how that operation conjugates a list of Pauli
-            group generators into composite Pauli products.
+            Represents a Clifford operation by explicitly storing how that operation
+            conjugates a list of Pauli group generators into composite Pauli products.
 
             Examples:
                 >>> import stim
@@ -92,7 +92,7 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         },
         pybind11::arg("num_qubits"),
         clean_doc_string(u8R"DOC(
-            Samples a uniformly random Clifford operation over the given number of qubits and returns its tableau.
+            Samples a uniformly random Clifford operation and returns its tableau.
 
             Args:
                 num_qubits: The number of qubits the tableau should act on.
@@ -185,7 +185,8 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                         to an offset of 2**(n - 1) in the state vector).
 
             Returns:
-                A numpy array with dtype=np.complex64 and shape=(1 << len(tableau), 1 << len(tableau)).
+                A numpy array with dtype=np.complex64 and
+                shape=(1 << len(tableau), 1 << len(tableau)).
 
             Example:
                 >>> import stim
@@ -222,8 +223,8 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             from version to version, and may be produced using randomization.
 
             Args:
-                method: The method to use when synthesizing the circuit. Available values are:
-                    "elimination": Uses Gaussian elimination to cancel off-diagonal terms one by one.
+                method: The method to use when synthesizing the circuit. Available values:
+                    "elimination": Cancels off-diagonal terms using Gaussian elimination.
                         Gate set: H, S, CX
                         Circuit qubit count: n
                         Circuit operation count: O(n^2)
@@ -359,14 +360,16 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         clean_doc_string(u8R"DOC(
             Computes the inverse of the tableau.
 
-            The inverse T^-1 of a tableau T is the unique tableau with the property that T * T^-1 = T^-1 * T = I where
-            I is the identity tableau.
+            The inverse T^-1 of a tableau T is the unique tableau with the property that
+            T * T^-1 = T^-1 * T = I where I is the identity tableau.
 
             Args:
-                unsigned: Defaults to false. When set to true, skips computing the signs of the output observables and
-                    instead just set them all to be positive. This is beneficial because computing the signs takes
-                    O(n^3) time and the rest of the inverse computation is O(n^2) where n is the number of qubits in the
-                    tableau. So, if you only need the Pauli terms (not the signs), it is significantly cheaper.
+                unsigned: Defaults to false. When set to true, skips computing the signs of
+                    the output observables and instead just set them all to be positive.
+                    This is beneficial because computing the signs takes O(n^3) time and the
+                    rest of the inverse computation is O(n^2) where n is the number of
+                    qubits in the tableau. So, if you only need the Pauli terms (not the
+                    signs), it is significantly cheaper.
 
             Returns:
                 The inverse tableau.
@@ -374,7 +377,7 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             Examples:
                 >>> import stim
 
-                >>> # Check that the inverse agrees with hard-coded tableaus in the gate data.
+                >>> # Check that the inverse agrees with hard-coded tableaus.
                 >>> s = stim.Tableau.from_named_gate("S")
                 >>> s_dag = stim.Tableau.from_named_gate("S_DAG")
                 >>> s.inverse() == s_dag
@@ -392,8 +395,16 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
 
                 >>> # Check a manual case.
                 >>> t = stim.Tableau.from_conjugated_generators(
-                ...     xs=[stim.PauliString("-__Z"), stim.PauliString("+XZ_"), stim.PauliString("+_ZZ")],
-                ...     zs=[stim.PauliString("-YYY"), stim.PauliString("+Z_Z"), stim.PauliString("-ZYZ")],
+                ...     xs=[
+                ...         stim.PauliString("-__Z"),
+                ...         stim.PauliString("+XZ_"),
+                ...         stim.PauliString("+_ZZ"),
+                ...     ],
+                ...     zs=[
+                ...         stim.PauliString("-YYY"),
+                ...         stim.PauliString("+Z_Z"),
+                ...         stim.PauliString("-ZYZ")
+                ...     ],
                 ... )
                 >>> print(t.inverse())
                 +-xz-xz-xz-
@@ -465,7 +476,8 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
 
             If the tableau T1 represents the Clifford operation with unitary C1,
             and the tableau T2 represents the Clifford operation with unitary C2,
-            then the tableau T1.then(T2) represents the Clifford operation with unitary C2*C1.
+            then the tableau T1.then(T2) represents the Clifford operation with unitary
+            C2*C1.
 
             Args:
                 second: The result is equivalent to applying the second tableau after
@@ -652,12 +664,11 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(u8R"DOC(
-            Returns a Pauli term from the tableau's output pauli string for an input X generator.
-
-            A constant-time equivalent for `tableau.x_output(input_index)[output_index]`.
+            Constant-time version of `tableau.x_output(input_index)[output_index]`
 
             Args:
-                input_index: Identifies the tableau column (the qubit of the input X generator).
+                input_index: Identifies the tableau column (the qubit of the input X
+                    generator).
                 output_index: Identifies the tableau row (the output qubit).
 
             Returns:
@@ -692,12 +703,11 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(u8R"DOC(
-            Returns a Pauli term from the tableau's output pauli string for an input Y generator.
-
-            A constant-time equivalent for `tableau.y_output(input_index)[output_index]`.
+            Constant-time version of `tableau.y_output(input_index)[output_index]`
 
             Args:
-                input_index: Identifies the tableau column (the qubit of the input Y generator).
+                input_index: Identifies the tableau column (the qubit of the input Y
+                    generator).
                 output_index: Identifies the tableau row (the output qubit).
 
             Returns:
@@ -732,12 +742,11 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(u8R"DOC(
-            Returns a Pauli term from the tableau's output pauli string for an input Z generator.
-
-            A constant-time equivalent for `tableau.z_output(input_index)[output_index]`.
+            Constant-time version of `tableau.z_output(input_index)[output_index]`
 
             Args:
-                input_index: Identifies the tableau column (the qubit of the input Z generator).
+                input_index: Identifies the tableau column (the qubit of the input Z
+                    generator).
                 output_index: Identifies the tableau row (the output qubit).
 
             Returns:
@@ -772,12 +781,11 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(u8R"DOC(
-            Returns a Pauli term from the tableau's inverse's output pauli string for an input X generator.
-
-            A constant-time equivalent for `tableau.inverse().x_output(input_index)[output_index]`.
+            Constant-time version of `tableau.inverse().x_output(input_index)[output_index]`
 
             Args:
-                input_index: Identifies the column (the qubit of the input X generator) in the inverse tableau.
+                input_index: Identifies the column (the qubit of the input X generator) in
+                    the inverse tableau.
                 output_index: Identifies the row (the output qubit) in the inverse tableau.
 
             Returns:
@@ -812,12 +820,11 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(u8R"DOC(
-            Returns a Pauli term from the tableau's inverse's output pauli string for an input Y generator.
-
-            A constant-time equivalent for `tableau.inverse().y_output(input_index)[output_index]`.
+            Constant-time version of `tableau.inverse().y_output(input_index)[output_index]`
 
             Args:
-                input_index: Identifies the column (the qubit of the input Y generator) in the inverse tableau.
+                input_index: Identifies the column (the qubit of the input Y generator) in
+                    the inverse tableau.
                 output_index: Identifies the row (the output qubit) in the inverse tableau.
 
             Returns:
@@ -852,12 +859,11 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
         clean_doc_string(u8R"DOC(
-            Returns a Pauli term from the tableau's inverse's output pauli string for an input Z generator.
-
-            A constant-time equivalent for `tableau.inverse().z_output(input_index)[output_index]`.
+            Constant-time version of `tableau.inverse().z_output(input_index)[output_index]`
 
             Args:
-                input_index: Identifies the column (the qubit of the input Z generator) in the inverse tableau.
+                input_index: Identifies the column (the qubit of the input Z generator) in
+                    the inverse tableau.
                 output_index: Identifies the row (the output qubit) in the inverse tableau.
 
             Returns:
@@ -895,15 +901,18 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(u8R"DOC(
-            Returns the result of conjugating an X Pauli generator by the inverse of the tableau.
+            Conjugates a single-qubit X Pauli generator by the inverse of the tableau.
 
             A faster version of `tableau.inverse(unsigned).x_output(input_index)`.
 
             Args:
-                input_index: Identifies the column (the qubit of the X generator) to return from the inverse tableau.
-                unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
-                    it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
-                    parts of the computation take O(n) time where n is the number of qubits in the tableau.
+                input_index: Identifies the column (the qubit of the X generator) to return
+                    from the inverse tableau.
+                unsigned: Defaults to false. When set to true, skips computing the result's
+                    sign and instead just sets it to positive. This is beneficial because
+                    computing the sign takes O(n^2) time whereas all other parts of the
+                    computation take O(n) time where n is the number of qubits in the
+                    tableau.
 
             Returns:
                 The result of conjugating an X generator by the inverse of the tableau.
@@ -931,15 +940,18 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(u8R"DOC(
-            Returns the result of conjugating a Y Pauli generator by the inverse of the tableau.
+            Conjugates a single-qubit Y Pauli generator by the inverse of the tableau.
 
             A faster version of `tableau.inverse(unsigned).y_output(input_index)`.
 
             Args:
-                input_index: Identifies the column (the qubit of the Y generator) to return from the inverse tableau.
-                unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
-                    it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
-                    parts of the computation take O(n) time where n is the number of qubits in the tableau.
+                input_index: Identifies the column (the qubit of the Y generator) to return
+                    from the inverse tableau.
+                unsigned: Defaults to false. When set to true, skips computing the result's
+                    sign and instead just sets it to positive. This is beneficial because
+                    computing the sign takes O(n^2) time whereas all other parts of the
+                    computation take O(n) time where n is the number of qubits in the
+                    tableau.
 
             Returns:
                 The result of conjugating a Y generator by the inverse of the tableau.
@@ -967,15 +979,18 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
         clean_doc_string(u8R"DOC(
-            Returns the result of conjugating a Z Pauli generator by the inverse of the tableau.
+            Conjugates a single-qubit Z Pauli generator by the inverse of the tableau.
 
             A faster version of `tableau.inverse(unsigned).z_output(input_index)`.
 
             Args:
-                input_index: Identifies the column (the qubit of the Z generator) to return from the inverse tableau.
-                unsigned: Defaults to false. When set to true, skips computing the result's sign and instead just sets
-                    it to positive. This is beneficial because computing the sign takes O(n^2) time whereas all other
-                    parts of the computation take O(n) time where n is the number of qubits in the tableau.
+                input_index: Identifies the column (the qubit of the Z generator) to return
+                    from the inverse tableau.
+                unsigned: Defaults to false. When set to true, skips computing the result's
+                    sign and instead just sets it to positive. This is beneficial because
+                    computing the sign takes O(n^2) time whereas all other parts of the
+                    computation take O(n) time where n is the number of qubits in the
+                    tableau.
 
             Returns:
                 The result of conjugating a Z generator by the inverse of the tableau.
@@ -1119,18 +1134,20 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             Creates a tableau from the unitary matrix of a Clifford operation.
 
             Args:
-                matrix: A unitary matrix specified as an iterable of rows, with each row is an iterable of amplitudes.
-                    The unitary matrix must correspond to a Clifford operation.
+                matrix: A unitary matrix specified as an iterable of rows, with each row is
+                    an iterable of amplitudes. The unitary matrix must correspond to a
+                    Clifford operation.
                 endian:
-                    "little": matrix entries are in little endian order, where higher index qubits
-                        correspond to larger changes in row/col indices.
-                    "big": matrix entries are in little endian order, where higher index qubits correspond to
-                        smaller changes in row/col indices.
+                    "little": matrix entries are in little endian order, where higher index
+                        qubits correspond to larger changes in row/col indices.
+                    "big": matrix entries are in little endian order, where higher index
+                        qubits correspond to smaller changes in row/col indices.
             Returns:
                 The tableau equivalent to the given unitary matrix (up to global phase).
 
             Raises:
-                ValueError: The given matrix isn't the unitary matrix of a Clifford operation.
+                ValueError: The given matrix isn't the unitary matrix of a Clifford
+                    operation.
 
             Examples:
                 >>> import stim
@@ -1182,15 +1199,18 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
 
             Args:
                 circuit: The circuit to compile into a tableau.
-                ignore_noise: Defaults to False. When False, any noise operations in the circuit will cause
-                    the conversion to fail with an exception. When True, noise operations are skipped over
-                    as if they weren't even present in the circuit.
-                ignore_measurement: Defaults to False. When False, any measurement operations in the circuit
-                    will cause the conversion to fail with an exception. When True, measurement operations are
-                    skipped over as if they weren't even present in the circuit.
-                ignore_reset: Defaults to False. When False, any reset operations in the circuit will cause
-                    the conversion to fail with an exception. When True, reset operations are skipped over
-                    as if they weren't even present in the circuit.
+                ignore_noise: Defaults to False. When False, any noise operations in the
+                    circuit will cause the conversion to fail with an exception. When True,
+                    noise operations are skipped over as if they weren't even present in the
+                    circuit.
+                ignore_measurement: Defaults to False. When False, any measurement
+                    operations in the circuit will cause the conversion to fail with an
+                    exception. When True, measurement operations are skipped over as if they
+                    weren't even present in the circuit.
+                ignore_reset: Defaults to False. When False, any reset operations in the
+                    circuit will cause the conversion to fail with an exception. When True,
+                    reset operations are skipped over as if they weren't even present in the
+                    circuit.
 
             Returns:
                 The tableau equivalent to the given circuit (up to global phase).
@@ -1199,16 +1219,17 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                 ValueError:
                     The circuit contains noise operations but ignore_noise=False.
                     OR
-                    The circuit contains measurement operations but ignore_measurement=False.
+                    The circuit contains measurement operations but
+                    ignore_measurement=False.
                     OR
                     The circuit contains reset operations but ignore_reset=False.
 
             Examples:
                 >>> import stim
-                >>> stim.Tableau.from_circuit(stim.Circuit("""
+                >>> stim.Tableau.from_circuit(stim.Circuit('''
                 ...     H 0
                 ...     CNOT 0 1
-                ... """))
+                ... '''))
                 stim.Tableau.from_conjugated_generators(
                     xs=[
                         stim.PauliString("+Z_"),
@@ -1237,7 +1258,7 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             result << "    ],\n)";
             return result.str();
         },
-        "Returns text that is a valid python expression evaluating to an equivalent `stim.Tableau`.");
+        "Returns valid python code evaluating to an equal `stim.Tableau`.");
 
     c.def(
         "__call__",
@@ -1250,7 +1271,10 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
         },
         pybind11::arg("pauli_string"),
         clean_doc_string(u8R"DOC(
-             Returns the result of conjugating the given PauliString by the Tableau's Clifford operation.
+             Returns the conjugation of a PauliString by the Tableau's Clifford operation.
+
+             The conjugation of P by C is equal to C**-1 * P * C. If P is a Pauli product
+             before C, then P2 = C**-1 * P * C is an equivalent Pauli product after C.
 
              Args:
                  pauli_string: The pauli string to conjugate.
