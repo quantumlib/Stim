@@ -5,6 +5,9 @@
 using namespace stim;
 using namespace stim_internal;
 
+constexpr size_t GL_FLOAT = 5126;
+constexpr size_t GL_ARRAY_BUFFER = 34962;
+
 struct V3 {
     std::array<float, 3> xyz;
     bool operator<(V3 other) const {
@@ -66,20 +69,87 @@ struct Material {
     }
 };
 
+struct VertexPrimitive {
+    std::string name;
+    std::vector<V3> vertices;
+    size_t element_type;
+    std::string material_name;
+
+    std::pair<V3, V3> min_max() const {
+        V3 v_min{INFINITY, INFINITY, INFINITY};
+        V3 v_max{-INFINITY, -INFINITY, -INFINITY};
+        for (const auto &v : vertices) {
+            for (size_t k = 0; k < 3; k++) {
+                v_min.xyz[k] = std::min(v_min.xyz[k], v.xyz[k]);
+                v_max.xyz[k] = std::max(v_max.xyz[k], v.xyz[k]);
+            }
+        }
+        return {v_min, v_max};
+    }
+
+    JsonObj primitive(size_t position_buffer_index, const std::map<std::string, size_t> material_index_map) const {
+        return std::map<std::string, JsonObj>{
+             {"attributes", {std::map<std::string, JsonObj>{{"POSITION", position_buffer_index}}}},
+             {"material", material_index_map.at(material_name)},
+             {"mode", element_type},
+        };
+    }
+
+    JsonObj buffer() const {
+        std::stringstream ss;
+        ss << "data:application/octet-stream;base64,";
+        size_t n = vertices.size() * sizeof(V3);
+        write_base64((const char *)(const void *)vertices.data(), n, ss);
+        return std::map<std::string, JsonObj>{
+            {"name", name},
+            {"uri", ss.str()},
+            {"byteLength", n},
+        };
+    }
+
+    JsonObj buffer_view(size_t index) const {
+        return std::map<std::string, JsonObj>{
+            {"name", name},
+            {"buffer", index},
+            {"byteOffset", 0},
+            {"byteLength", vertices.size() * sizeof(V3)},
+            {"target", GL_ARRAY_BUFFER},
+        };
+    }
+
+    JsonObj buffer_view(const std::map<std::string, size_t> &index_map) const {
+        return buffer_view(index_map.at(name));
+    }
+
+    JsonObj accessor(size_t index) const {
+        auto mima = min_max();
+        return std::map<std::string, JsonObj>{
+            {"name", name},
+            {"bufferView", index},
+            {"byteOffset", 0},
+            {"componentType", GL_FLOAT},
+            {"count", vertices.size()},
+            {"type", "VEC3"},
+            {"min", std::vector<JsonObj>{mima.first.xyz[0], mima.first.xyz[1], mima.first.xyz[2]}},
+            {"max", std::vector<JsonObj>{mima.second.xyz[0], mima.second.xyz[1], mima.second.xyz[2]}},
+        };
+    }
+
+    JsonObj accessor(const std::map<std::string, size_t> &index_map) const {
+        return accessor(index_map.at(name));
+    }
+};
+
 std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
-    constexpr size_t GL_UNSIGNED_SHORT = 5123;
-    constexpr size_t GL_FLOAT = 5126;
-    constexpr size_t GL_ARRAY_BUFFER = 34962;
-    constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
-    constexpr size_t GL_TRIANGLE_STRIP = 5;
+//    constexpr size_t GL_UNSIGNED_SHORT = 5123;
+//    constexpr size_t GL_ELEMENT_ARRAY_BUFFER = 34963;
+//    constexpr size_t GL_TRIANGLE_STRIP = 5;
+    constexpr size_t GL_TRIANGLES = 4;
 //    constexpr size_t GL_LINE_STRIP = 3;
 
-    std::vector<Triangle> triangles;
-    triangles.push_back({{1, 1, 0}, std::array<V3, 3>{{{0, 0, 0}, {1, 1, 1}, {2, 0, 0}}}});
-
     std::map<V3, size_t> color_to_material_index = {};
-    std::map<V3, size_t> vertex_to_index = {};
     std::vector<JsonObj> materials;
+
     materials.push_back(Material{
         .name="reddish",
         .base_color_factor_rgba={1, 0, 0.1, 1},
@@ -87,111 +157,68 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         .roughness_factor=0.5,
         .double_sided=true,
     }.to_json());
+    materials.push_back(Material{
+        .name="hyper_blue",
+        .base_color_factor_rgba={0.1, 0, 1, 1},
+        .metallic_factor=0.4,
+        .roughness_factor=0.5,
+        .double_sided=true,
+    }.to_json());
+
     std::map<std::string, size_t> material_index_map;
     for (size_t k = 0; k < materials.size(); k++) {
         material_index_map.insert({materials[k].map.at("name").text, k});
     }
 
+    VertexPrimitive first_triangle{"first_triangle", {
+        {0, 0, 0},
+        {0, 1, 0},
+        {1, 0, 0},
+    }, GL_TRIANGLES, "reddish"};
+    VertexPrimitive second_triangle{"second_triangle", {
+        {2, 0, 1},
+        {0, 2, 1},
+        {2, 2, 1},
+    }, GL_TRIANGLES, "hyper_blue"};
+
+    std::vector<VertexPrimitive> vertex_data_buffers{
+        first_triangle,
+        second_triangle,
+    };
+    std::vector<JsonObj> buffers;
+    std::map<std::string, size_t> buffer_index_map;
+    std::vector<JsonObj> buffer_views;
+    std::vector<JsonObj> accessors;
+    for (size_t k = 0; k < vertex_data_buffers.size(); k++) {
+        const auto& v = vertex_data_buffers[k];
+        buffers.push_back(v.buffer());
+        buffer_index_map.insert({v.name, k});
+        buffer_views.push_back(v.buffer_view(k));
+        accessors.push_back(v.accessor(k));
+    }
+
     std::vector<JsonObj> meshes;
-    std::vector<std::vector<std::array<V3, 3>>> triangle_lists{{}};
-    std::vector<float> vert_data;
-    for (const auto &t : triangles) {
-        for (V3 v : t.v) {
-            V3 vertex_key = v;
-            if (vertex_to_index.find(vertex_key) == vertex_to_index.end()) {
-                auto n = vertex_to_index.size();
-                vertex_to_index.insert({vertex_key, n});
-                for (const auto &c : v.xyz) {
-                    vert_data.push_back(c);
-                }
-            }
-        }
-        triangle_lists[0].push_back(t.v);
-    }
-
-    std::vector<JsonObj> buffer_views{
-        std::map<std::string, JsonObj>{
-            {"buffer", 0},
-            {"byteOffset", 0},
-            {"byteLength", vert_data.size() * sizeof(float)},
-            {"target", GL_ARRAY_BUFFER},
-        },
-    };
-
-    V3 v_min{INFINITY, INFINITY, INFINITY};
-    V3 v_max{-INFINITY, -INFINITY, -INFINITY};
-    for (const auto &a : triangle_lists) {
-        for (const auto &b : a) {
-            for (const auto &c : b) {
-                for (size_t k = 0; k < 3; k++) {
-                    v_min.xyz[k] = std::min(v_min.xyz[k], c.xyz[k]);
-                    v_max.xyz[k] = std::max(v_max.xyz[k], c.xyz[k]);
-                }
-            }
-        }
-    }
-    std::vector<JsonObj> accessors{
-        std::map<std::string, JsonObj>{
-            {"bufferView", 0},
-            {"byteOffset", 0},
-            {"componentType", GL_FLOAT},
-            {"count", vert_data.size() / 3},
-            {"type", "VEC3"},
-            {"min", std::vector<JsonObj>{v_min.xyz[0], v_min.xyz[1], v_min.xyz[2]}},
-            {"max", std::vector<JsonObj>{v_max.xyz[0], v_max.xyz[1], v_max.xyz[2]}},
-        },
-    };
-
-    std::vector<uint16_t> index_data;
-    size_t mesh_index = 0;
-    for (const auto &tlist : triangle_lists) {
-        auto index_data_offset = index_data.size();
-        for (const auto &v123 : tlist) {
-            auto a = vertex_to_index[v123[0]];
-            auto b = vertex_to_index[v123[1]];
-            auto c = vertex_to_index[v123[2]];
-            index_data.push_back(a);
-            index_data.push_back(b);
-            index_data.push_back(c);
-        }
-
-        meshes.push_back(std::map<std::string, JsonObj>{
-            {"primitives",
-             std::vector<JsonObj>{{std::map<std::string, JsonObj>{
-                 {"attributes", {std::map<std::string, JsonObj>{{"POSITION", 0}}}},
-                 {"indices", mesh_index + 1},
-                 {"material", material_index_map.at("reddish")},
-                 {"mode", GL_TRIANGLE_STRIP},
-             }}}}});
-
-        buffer_views.push_back(std::map<std::string, JsonObj>{
-            {"buffer", 1},
-            {"byteOffset", index_data_offset},
-            {"byteLength", index_data.size() * sizeof(float) * 3 - index_data_offset},
-            {"target", GL_ELEMENT_ARRAY_BUFFER},
-        });
-        accessors.push_back(std::map<std::string, JsonObj>{
-            {"bufferView", mesh_index + 1},
-            {"byteOffset", 0},
-            {"componentType", GL_UNSIGNED_SHORT},
-            {"count", tlist.size() * 3},
-            {"type", "SCALAR"},
-            {"max", std::vector<JsonObj>{vertex_to_index.size() - 1}},
-            {"min", std::vector<JsonObj>{0}},
-        });
-        mesh_index++;
-    }
+    meshes.push_back(std::map<std::string, JsonObj>{
+        {"primitives", std::vector<JsonObj>{
+            first_triangle.primitive(buffer_index_map.at("first_triangle"), material_index_map),
+        }}
+    });
+    meshes.push_back(std::map<std::string, JsonObj>{
+        {"primitives", std::vector<JsonObj>{
+            second_triangle.primitive(buffer_index_map.at("second_triangle"), material_index_map),
+        }}
+    });
 
     std::vector<JsonObj> scene_nodes;
-    for (size_t k = 0; k < triangle_lists.size(); k++) {
-        scene_nodes.push_back(k);
-    }
+    scene_nodes.push_back(0);
+    scene_nodes.push_back(1);
     std::vector<JsonObj> nodes;
-    for (size_t k = 0; k < triangle_lists.size(); k++) {
-        nodes.push_back(std::map<std::string, JsonObj>{
-            {"mesh", k},
-        });
-    }
+    nodes.push_back(std::map<std::string, JsonObj>{
+        {"mesh", 0},
+    });
+    nodes.push_back(std::map<std::string, JsonObj>{
+        {"mesh", 1},
+    });
 
     JsonObj result(std::map<std::string, JsonObj>{
         {"scene", 0},
@@ -205,10 +232,7 @@ std::string stim::circuit_diagram_timeline_3d(const Circuit &circuit) {
         }},
         {"nodes", std::move(nodes)},
         {"meshes", std::move(meshes)},
-        {"buffers", std::vector<JsonObj>{
-            make_buffer(vert_data),
-            make_buffer(index_data),
-        }},
+        {"buffers", buffers},
         {"bufferViews", std::move(buffer_views)},
         {"accessors", std::move(accessors)},
         {"materials", std::move(materials)},
