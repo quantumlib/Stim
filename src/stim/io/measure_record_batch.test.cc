@@ -23,8 +23,8 @@
 using namespace stim;
 
 TEST(MeasureRecordBatch, basic_usage) {
-    simd_bits s0(5);
-    simd_bits s1(5);
+    simd_bits<MAX_BITWORD_WIDTH> s0(5);
+    simd_bits<MAX_BITWORD_WIDTH> s1(5);
     s0[0] = true;
     s1[1] = true;
     s0[2] = true;
@@ -48,7 +48,7 @@ TEST(MeasureRecordBatch, basic_usage) {
     ASSERT_EQ(r.stored, 102);
     FILE *tmp = tmpfile();
     MeasureRecordBatchWriter w(tmp, 5, SAMPLE_FORMAT_01);
-    r.intermediate_write_unwritten_results_to(w, simd_bits(0));
+    r.intermediate_write_unwritten_results_to(w, simd_bits<MAX_BITWORD_WIDTH>(0));
     ASSERT_EQ(r.unwritten, 102);
 
     for (size_t k = 0; k < 500; k++) {
@@ -57,16 +57,16 @@ TEST(MeasureRecordBatch, basic_usage) {
     }
     ASSERT_EQ(r.unwritten, 1102);
     ASSERT_EQ(r.stored, 1102);
-    r.intermediate_write_unwritten_results_to(w, simd_bits(0));
+    r.intermediate_write_unwritten_results_to(w, simd_bits<MAX_BITWORD_WIDTH>(0));
     ASSERT_LT(r.unwritten, 100);
     ASSERT_LT(r.stored, 100);
-    r.final_write_unwritten_results_to(w, simd_bits(0));
+    r.final_write_unwritten_results_to(w, simd_bits<MAX_BITWORD_WIDTH>(0));
     ASSERT_EQ(r.unwritten, 0);
     ASSERT_LT(r.stored, 100);
 
     rewind(tmp);
     for (size_t s = 0; s < 5; s++) {
-        simd_bits sk = (s & 1) ? s1 : s0;
+        simd_bits<MAX_BITWORD_WIDTH> sk = (s & 1) ? s1 : s0;
         for (size_t k = 0; k < 1102; k++) {
             ASSERT_EQ(getc(tmp), '0' + ((s + k + 1) & 1));
         }

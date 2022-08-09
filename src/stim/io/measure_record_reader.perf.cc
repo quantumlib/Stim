@@ -26,7 +26,7 @@ void dense_reader_benchmark(double goal_micros) {
     FILE *f = tmpfile();
     {
         auto writer = MeasureRecordWriter::make(f, format);
-        simd_bits data(n);
+        simd_bits<MAX_BITWORD_WIDTH> data(n);
         std::mt19937_64 rng(0);
         biased_randomize_bits(p, data.u64, data.u64 + (n >> 6), rng);
         writer->write_bytes({data.u8, data.u8 + (n >> 3)});
@@ -34,7 +34,7 @@ void dense_reader_benchmark(double goal_micros) {
     }
 
     auto reader = MeasureRecordReader::make(f, format, n, 0, 0);
-    simd_bits buffer(n);
+    simd_bits<MAX_BITWORD_WIDTH> buffer(n);
     benchmark_go([&]() {
         rewind(f);
         reader->start_and_read_entire_record(buffer);
@@ -53,7 +53,7 @@ void sparse_reader_benchmark(double goal_micros) {
     FILE *f = tmpfile();
     {
         auto writer = MeasureRecordWriter::make(f, format);
-        simd_bits data(n);
+        simd_bits<MAX_BITWORD_WIDTH> data(n);
         std::mt19937_64 rng(0);
         biased_randomize_bits(p, data.u64, data.u64 + (n >> 6), rng);
         writer->write_bytes({data.u8, data.u8 + (n >> 3)});

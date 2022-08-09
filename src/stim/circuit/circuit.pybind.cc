@@ -1227,7 +1227,7 @@ void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
                 ...    M 0
                 ...    DETECTOR rec[-1]
                 ... ''')
-                >>> circuit[0]
+                >>> circuit[1]
                 stim.CircuitInstruction('X_ERROR', [stim.GateTarget(2)], [0.5])
                 >>> circuit[2]
                 stim.CircuitRepeatBlock(100, stim.Circuit('''

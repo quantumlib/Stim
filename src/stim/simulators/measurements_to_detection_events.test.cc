@@ -23,9 +23,9 @@
 using namespace stim;
 
 TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
-    simd_bit_table measurement_data(1, 256);
-    simd_bit_table sweep_data(0, 256);
-    simd_bit_table converted(1, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(1, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> converted(1, 256);
 
     // Matches false expectation.
     ASSERT_EQ(
@@ -38,7 +38,7 @@ TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
             )CIRCUIT"),
             false,
             false),
-        simd_bit_table::from_text("0", 1, 256));
+        simd_bit_table<MAX_BITWORD_WIDTH>::from_text("0", 1, 256));
 
     // Violates true expectation.
     converted = measurements_to_detection_events(
@@ -143,7 +143,7 @@ TEST(measurements_to_detection_events, single_detector_no_sweep_data) {
 }
 
 TEST(measurements_to_detection_events, sweep_data) {
-    auto expected = simd_bit_table::from_text(R"DETECTOR_DATA(
+    auto expected = simd_bit_table<MAX_BITWORD_WIDTH>::from_text(R"DETECTOR_DATA(
             ..1.....1
             111....1.
             .._1..1..
@@ -162,7 +162,7 @@ TEST(measurements_to_detection_events, sweep_data) {
 
     ASSERT_EQ(
         measurements_to_detection_events(
-            simd_bit_table::from_text(R"MEASUREMENT_DATA(
+            simd_bit_table<MAX_BITWORD_WIDTH>::from_text(R"MEASUREMENT_DATA(
                 .........1
                 ........1.
                 .......1..
@@ -176,7 +176,7 @@ TEST(measurements_to_detection_events, sweep_data) {
                 ..........
             )MEASUREMENT_DATA")
                 .transposed(),
-            simd_bit_table::from_text(R"SWEEP_DATA(
+            simd_bit_table<MAX_BITWORD_WIDTH>::from_text(R"SWEEP_DATA(
                 ....
                 1...
                 .1..
@@ -215,9 +215,9 @@ TEST(measurements_to_detection_events, sweep_data) {
 }
 
 TEST(measurements_to_detection_events, empty_cases) {
-    simd_bit_table measurement_data(256, 256);
-    simd_bit_table converted(256, 256);
-    simd_bit_table sweep_data(0, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
 
     converted = measurements_to_detection_events(
         measurement_data,
@@ -243,9 +243,9 @@ TEST(measurements_to_detection_events, empty_cases) {
 }
 
 TEST(measurements_to_detection_events, big_shots) {
-    simd_bit_table measurement_data(256, 512);
-    simd_bit_table converted(256, 512);
-    simd_bit_table sweep_data(0, 512);
+    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 512);
+    simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 512);
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 512);
 
     converted = measurements_to_detection_events(
         measurement_data,
@@ -270,9 +270,9 @@ TEST(measurements_to_detection_events, big_shots) {
 }
 
 TEST(measurements_to_detection_events, big_data) {
-    simd_bit_table measurement_data(512, 256);
-    simd_bit_table converted(512, 256);
-    simd_bit_table sweep_data(0, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(512, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> converted(512, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
 
     converted = measurements_to_detection_events(
         measurement_data,
@@ -297,9 +297,9 @@ TEST(measurements_to_detection_events, big_data) {
 }
 
 TEST(measurements_to_detection_events, append_observables) {
-    simd_bit_table measurement_data(256, 256);
-    simd_bit_table sweep_data(0, 256);
-    simd_bit_table converted(256, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> measurement_data(256, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> sweep_data(0, 256);
+    simd_bit_table<MAX_BITWORD_WIDTH> converted(256, 256);
     size_t min_bits = sizeof(simd_word) * 8;
 
     // Appended.

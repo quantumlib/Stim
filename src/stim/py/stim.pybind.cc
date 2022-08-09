@@ -170,7 +170,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
                 >>> circuit
                 stim.Circuit('''
                     M 5 7 11
-                    CX rec[-1] 3
+                    CX rec[-2] 3
                 ''')
         )DOC")
             .data());

@@ -23,7 +23,7 @@ BENCHMARK(biased_random_1024_0point1percent) {
     std::mt19937_64 rng(0);
     float p = 0.001;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })
@@ -35,7 +35,7 @@ BENCHMARK(biased_random_1024_0point01percent) {
     std::mt19937_64 rng(0);
     float p = 0.0001;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })
@@ -47,7 +47,7 @@ BENCHMARK(biased_random_1024_1percent) {
     std::mt19937_64 rng(0);
     float p = 0.01;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })
@@ -59,7 +59,7 @@ BENCHMARK(biased_random_1024_40percent) {
     std::mt19937_64 rng(0);
     float p = 0.4;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })
@@ -71,7 +71,7 @@ BENCHMARK(biased_random_1024_50percent) {
     std::mt19937_64 rng(0);
     float p = 0.5;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })
@@ -83,7 +83,7 @@ BENCHMARK(biased_random_1024_90percent) {
     std::mt19937_64 rng(0);
     float p = 0.9;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })
@@ -95,7 +95,7 @@ BENCHMARK(biased_random_1024_99percent) {
     std::mt19937_64 rng(0);
     float p = 0.99;
     size_t n = 1024;
-    simd_bits data(n);
+    simd_bits<MAX_BITWORD_WIDTH> data(n);
     benchmark_go([&]() {
         biased_randomize_bits(p, data.u64, data.u64 + data.num_u64_padded(), rng);
     })

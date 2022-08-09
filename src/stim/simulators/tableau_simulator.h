@@ -50,8 +50,8 @@ struct TableauSimulator {
     /// Samples the given circuit in a deterministic fashion.
     ///
     /// Discards all noisy operations, and biases all collapse events towards +Z instead of randomly +Z/-Z.
-    static simd_bits reference_sample_circuit(const Circuit &circuit);
-    static simd_bits sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
+    static simd_bits<MAX_BITWORD_WIDTH> reference_sample_circuit(const Circuit &circuit);
+    static simd_bits<MAX_BITWORD_WIDTH> sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
     static void sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng);
 
     /// Expands the internal state of the simulator (if needed) to ensure the given qubit exists.

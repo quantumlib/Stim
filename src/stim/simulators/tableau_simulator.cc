@@ -715,12 +715,12 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-simd_bits TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
+simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator sim(rng, circuit.count_qubits(), sign_bias);
     sim.expand_do_circuit(circuit);
 
     const std::vector<bool> &v = sim.measurement_record.storage;
-    simd_bits result(v.size());
+    simd_bits<MAX_BITWORD_WIDTH> result(v.size());
     for (size_t k = 0; k < v.size(); k++) {
         result[k] ^= v[k];
     }
@@ -947,7 +947,7 @@ void TableauSimulator::expand_do_circuit(const Circuit &circuit) {
     });
 }
 
-simd_bits TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
+simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
     std::mt19937_64 irrelevant_rng(0);
     return TableauSimulator::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
 }

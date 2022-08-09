@@ -26,7 +26,7 @@ using namespace stim;
 using namespace stim_pybind;
 
 pybind11::object transposed_simd_bit_table_to_numpy_uint8(
-    const simd_bit_table &table, size_t bits_per_shot, size_t num_shots) {
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots) {
     std::vector<uint8_t> bytes;
     bytes.resize(bits_per_shot * num_shots);
     size_t bytes_per_shot = (bits_per_shot + 7) / 8;
@@ -49,7 +49,7 @@ pybind11::object transposed_simd_bit_table_to_numpy_uint8(
 }
 
 pybind11::object transposed_simd_bit_table_to_numpy_bool8(
-    const simd_bit_table &table, size_t bits_per_shot, size_t num_shots) {
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots) {
     std::vector<uint8_t> bytes;
     bytes.resize(bits_per_shot * num_shots);
     size_t k = 0;
@@ -68,7 +68,7 @@ pybind11::object transposed_simd_bit_table_to_numpy_bool8(
 }
 
 pybind11::object stim_pybind::transposed_simd_bit_table_to_numpy(
-    const simd_bit_table &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result) {
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result) {
     if (bit_pack_result) {
         return transposed_simd_bit_table_to_numpy_uint8(table, bits_per_shot, num_shots);
     } else {
@@ -100,7 +100,7 @@ pybind11::object read_shot_data_file(
         RaiiFile f(path, "r");
         auto reader = MeasureRecordReader::make(f.f, parsed_format, nm, nd, no);
 
-        simd_bits buffer(num_bits_per_shot);
+        simd_bits<MAX_BITWORD_WIDTH> buffer(num_bits_per_shot);
         while (true) {
             if (!reader->start_and_read_entire_record(buffer)) {
                 break;
@@ -137,7 +137,7 @@ pybind11::object read_shot_data_file(
     }
 }
 
-simd_bit_table bit_packed_numpy_uint8_array_to_transposed_simd_table(
+simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_uint8_array_to_transposed_simd_table(
     const pybind11::array_t<uint8_t> &data_u8, size_t expected_bits_per_shot, size_t *num_shots_out) {
     size_t num_shots = data_u8.shape(0);
     *num_shots_out = num_shots;
@@ -157,7 +157,7 @@ simd_bit_table bit_packed_numpy_uint8_array_to_transposed_simd_table(
         throw std::invalid_argument(ss.str());
     }
 
-    simd_bit_table result(actual_bytes_per_shot * 8, num_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> result(actual_bytes_per_shot * 8, num_shots);
 
     auto u = data_u8.unchecked();
     for (size_t a = 0; a < num_shots; a++) {
@@ -172,7 +172,7 @@ simd_bit_table bit_packed_numpy_uint8_array_to_transposed_simd_table(
     return result;
 }
 
-simd_bit_table bit_packed_numpy_bool8_array_to_transposed_simd_table(
+simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_bool8_array_to_transposed_simd_table(
     const pybind11::array_t<bool> &data_bool8, size_t expected_bits_per_shot, size_t *num_shots_out) {
     size_t num_shots = data_bool8.shape(0);
     *num_shots_out = num_shots;
@@ -188,7 +188,7 @@ simd_bit_table bit_packed_numpy_bool8_array_to_transposed_simd_table(
         ss << "Got unpacked boolean data (dtype=np.bool8) but data.shape[1]=" << actual_bits_per_shot;
         throw std::invalid_argument(ss.str());
     }
-    simd_bit_table result(actual_bits_per_shot, num_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> result(actual_bits_per_shot, num_shots);
 
     auto u = data_bool8.unchecked();
     for (size_t a = 0; a < num_shots; a++) {
@@ -200,7 +200,7 @@ simd_bit_table bit_packed_numpy_bool8_array_to_transposed_simd_table(
     return result;
 }
 
-simd_bit_table stim_pybind::numpy_array_to_transposed_simd_table(
+simd_bit_table<MAX_BITWORD_WIDTH> stim_pybind::numpy_array_to_transposed_simd_table(
     const pybind11::object &data, size_t bits_per_shot, size_t *num_shots_out) {
     if (pybind11::isinstance<pybind11::array_t<uint8_t>>(data)) {
         return bit_packed_numpy_uint8_array_to_transposed_simd_table(
@@ -233,10 +233,10 @@ void write_shot_data_file(
     }
     size_t num_bits_per_shot = nm + nd + no;
     size_t num_shots;
-    simd_bit_table buffer = numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> buffer = numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
 
     RaiiFile f(path, "w");
-    simd_bits unused(0);
+    simd_bits<MAX_BITWORD_WIDTH> unused(0);
     write_table_data(
         f.f,
         num_shots,

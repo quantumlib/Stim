@@ -44,7 +44,7 @@ void DemSampler::resample(bool replay_errors) {
     }
     size_t error_index = 0;
     model.iter_flatten_error_instructions([&](const DemInstruction &op) {
-        simd_bits_range_ref err_row = err_buffer[error_index];
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> err_row = err_buffer[error_index];
         if (!replay_errors) {
             biased_randomize_bits((float)op.arg_data[0], err_row.u64, err_row.u64 + err_row.num_u64_padded(), rng);
         }
@@ -83,7 +83,7 @@ void DemSampler::sample_write(
 
         if (err_out != nullptr) {
             write_table_data(
-                err_out, shots_left, (size_t)num_errors, simd_bits(0), err_buffer, err_out_format, 'M', 'M', false);
+                err_out, shots_left, (size_t)num_errors, simd_bits<MAX_BITWORD_WIDTH>(0), err_buffer, err_out_format, 'M', 'M', false);
         }
 
         if (obs_out != nullptr) {
@@ -91,7 +91,7 @@ void DemSampler::sample_write(
                 obs_out,
                 shots_left,
                 (size_t)num_observables,
-                simd_bits(0),
+                simd_bits<MAX_BITWORD_WIDTH>(0),
                 obs_buffer,
                 obs_out_format,
                 'L',
@@ -101,7 +101,7 @@ void DemSampler::sample_write(
 
         if (det_out != nullptr) {
             write_table_data(
-                det_out, shots_left, (size_t)num_detectors, simd_bits(0), det_buffer, det_out_format, 'D', 'D', false);
+                det_out, shots_left, (size_t)num_detectors, simd_bits<MAX_BITWORD_WIDTH>(0), det_buffer, det_out_format, 'D', 'D', false);
         }
     }
 }

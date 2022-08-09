@@ -310,7 +310,7 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
     }
 
     // Fix pauli signs.
-    simd_bits signs_copy = remaining.zs.signs;
+    simd_bits<MAX_BITWORD_WIDTH> signs_copy = remaining.zs.signs;
     for (size_t col = 0; col < n; col++) {
         if (signs_copy[col]) {
             apply("H", col);

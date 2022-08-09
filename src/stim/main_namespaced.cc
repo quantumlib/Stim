@@ -149,7 +149,7 @@ int main_mode_sample(int argc, const char **argv) {
         TableauSimulator::sample_stream(in, out, out_format.id, false, rng);
     } else if (num_shots > 0) {
         auto circuit = Circuit::from_file(in);
-        simd_bits ref(0);
+        simd_bits<MAX_BITWORD_WIDTH> ref(0);
         if (!skip_reference_sample) {
             ref = TableauSimulator::reference_sample_circuit(circuit);
         }

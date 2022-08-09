@@ -7,6 +7,7 @@ SOURCE_FILES_NO_MAIN = glob(
     [
         "src/**/*.cc",
         "src/**/*.h",
+        "src/**/*.inl",
     ],
     exclude = glob([
         "src/**/*.test.cc",

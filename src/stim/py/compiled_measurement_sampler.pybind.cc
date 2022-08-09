@@ -24,14 +24,14 @@ using namespace stim;
 using namespace stim_pybind;
 
 CompiledMeasurementSampler::CompiledMeasurementSampler(
-    simd_bits ref_sample, Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng)
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample, Circuit circuit, bool skip_reference_sample, std::shared_ptr<std::mt19937_64> prng)
     : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), prng(prng) {
 }
 
 pybind11::array_t<bool> CompiledMeasurementSampler::sample(size_t num_samples) {
     auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
 
-    const simd_bits &flat = sample.data;
+    const simd_bits<MAX_BITWORD_WIDTH> &flat = sample.data;
     std::vector<uint8_t> bytes;
     bytes.reserve(flat.num_bits_padded());
     auto *end = flat.u64 + flat.num_u64_padded();
@@ -95,7 +95,7 @@ pybind11::class_<CompiledMeasurementSampler> stim_pybind::pybind_compiled_measur
 
 CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
     const Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed) {
-    simd_bits ref_sample = skip_reference_sample ? simd_bits(circuit.count_measurements())
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
                                                  : TableauSimulator::reference_sample_circuit(circuit);
     return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
 }

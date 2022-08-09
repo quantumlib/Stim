@@ -33,9 +33,9 @@ struct DemSampler {
     uint64_t num_errors;
     std::mt19937_64 rng;
     // TODO: allow these buffers to be streamed instead of entirely stored in memory.
-    simd_bit_table det_buffer;
-    simd_bit_table obs_buffer;
-    simd_bit_table err_buffer;
+    simd_bit_table<MAX_BITWORD_WIDTH> det_buffer;
+    simd_bit_table<MAX_BITWORD_WIDTH> obs_buffer;
+    simd_bit_table<MAX_BITWORD_WIDTH> err_buffer;
     size_t num_stripes;
 
     /// Compiles a sampler for the given detector error model.

@@ -484,7 +484,7 @@ TEST(TableauSimulator, measurement_vs_vector_sim) {
 }
 
 TEST(TableauSimulator, correlated_error) {
-    simd_bits expected(5);
+    simd_bits<MAX_BITWORD_WIDTH> expected(5);
 
     expected.clear();
     ASSERT_EQ(
@@ -661,7 +661,7 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
 }
 
 TEST(TableauSimulator, classical_can_control_quantum) {
-    simd_bits expected(5);
+    simd_bits<MAX_BITWORD_WIDTH> expected(5);
     expected.clear();
     expected[0] = true;
     expected[1] = true;
@@ -704,7 +704,7 @@ TEST(TableauSimulator, classical_can_control_quantum) {
 }
 
 TEST(TableauSimulator, classical_control_cases) {
-    simd_bits expected(5);
+    simd_bits<MAX_BITWORD_WIDTH> expected(5);
     expected.clear();
     expected[0] = true;
     expected[1] = true;
@@ -768,7 +768,7 @@ TEST(TableauSimulator, classical_control_cases) {
 }
 
 TEST(TableauSimulator, mr_repeated_target) {
-    simd_bits expected(2);
+    simd_bits<MAX_BITWORD_WIDTH> expected(2);
     expected[0] = true;
     auto r = TableauSimulator::sample_circuit(Circuit("X 0\nMR 0 0"), SHARED_TEST_RNG());
     ASSERT_EQ(r, expected);
@@ -1213,12 +1213,12 @@ TEST(TableauSimulator, measure_reset_z_entangled) {
 
 TEST(TableauSimulator, resets_vs_measurements) {
     auto check = [&](const char *circuit, std::vector<bool> results) {
-        simd_bits ref(results.size());
+        simd_bits<MAX_BITWORD_WIDTH> ref(results.size());
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
         for (size_t reps = 0; reps < 5; reps++) {
-            simd_bits t = TableauSimulator::sample_circuit(Circuit(circuit), SHARED_TEST_RNG());
+            simd_bits<MAX_BITWORD_WIDTH> t = TableauSimulator::sample_circuit(Circuit(circuit), SHARED_TEST_RNG());
             if (t != ref) {
                 return false;
             }

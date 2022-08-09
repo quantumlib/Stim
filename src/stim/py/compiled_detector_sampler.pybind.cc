@@ -34,7 +34,7 @@ pybind11::array_t<bool> CompiledDetectorSampler::sample(
     auto sample =
         detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
 
-    const simd_bits &flat = sample.data;
+    const simd_bits<MAX_BITWORD_WIDTH> &flat = sample.data;
     std::vector<uint8_t> bytes;
     bytes.reserve(flat.num_bits_padded());
     auto *end = flat.u64 + flat.num_u64_padded();

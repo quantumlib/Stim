@@ -40,7 +40,7 @@ RaiiFile optional_py_path_to_raii_file(const pybind11::object &obj, const char *
 pybind11::object dem_sampler_py_sample(
     DemSampler &self, size_t shots, bool bit_packed, bool return_errors, pybind11::object &recorded_errors_to_replay) {
     bool replay = !recorded_errors_to_replay.is_none();
-    if (replay && min_bits_to_num_bits_padded(shots) != self.num_stripes) {
+    if (replay && min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(shots) != self.num_stripes) {
         DemSampler perfect_size(self.model, std::move(self.rng), shots);
         auto result = dem_sampler_py_sample(perfect_size, shots, bit_packed, return_errors, recorded_errors_to_replay);
         self.rng = std::move(perfect_size.rng);
@@ -49,7 +49,7 @@ pybind11::object dem_sampler_py_sample(
 
     if (replay) {
         size_t out_shots;
-        simd_bit_table converted =
+        simd_bit_table<MAX_BITWORD_WIDTH> converted =
             numpy_array_to_transposed_simd_table(recorded_errors_to_replay, self.num_errors, &out_shots);
         if (out_shots != shots) {
             throw std::invalid_argument("recorded_errors_to_replay.shape[0] != shots");

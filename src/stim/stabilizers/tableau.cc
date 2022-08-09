@@ -51,7 +51,7 @@ void Tableau::expand(size_t new_num_qubits) {
     new (this) Tableau(new_num_qubits);
 
     // Copy stored state back into new larger space.
-    auto partial_copy = [=](simd_bits_range_ref dst, simd_bits_range_ref src) {
+    auto partial_copy = [=](simd_bits_range_ref<MAX_BITWORD_WIDTH> dst, simd_bits_range_ref<MAX_BITWORD_WIDTH> src) {
         dst.word_range_ref(0, old_num_simd_words) = src;
     };
     partial_copy(xs.signs, old_state.xs.signs);
@@ -275,12 +275,12 @@ std::pair<std::vector<bool>, std::vector<size_t>> sample_qmallows(size_t n, std:
 ///     "Hadamard-free circuits expose the structure of the Clifford group"
 ///     Sergey Bravyi, Dmitri Maslov
 ///     https://arxiv.org/abs/2003.09412
-simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
+simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
     auto hs_pair = sample_qmallows(n, rng);
     const auto &hada = hs_pair.first;
     const auto &perm = hs_pair.second;
 
-    simd_bit_table symmetric(n, n);
+    simd_bit_table<MAX_BITWORD_WIDTH> symmetric(n, n);
     for (size_t row = 0; row < n; row++) {
         symmetric[row].randomize(row + 1, rng);
         for (size_t col = 0; col < row; col++) {
@@ -288,7 +288,7 @@ simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
         }
     }
 
-    simd_bit_table symmetric_m(n, n);
+    simd_bit_table<MAX_BITWORD_WIDTH> symmetric_m(n, n);
     for (size_t row = 0; row < n; row++) {
         symmetric_m[row].randomize(row + 1, rng);
         symmetric_m[row][row] &= hada[row];
@@ -301,12 +301,12 @@ simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
         }
     }
 
-    auto lower = simd_bit_table::identity(n);
+    auto lower = simd_bit_table<MAX_BITWORD_WIDTH>::identity(n);
     for (size_t row = 0; row < n; row++) {
         lower[row].randomize(row, rng);
     }
 
-    auto lower_m = simd_bit_table::identity(n);
+    auto lower_m = simd_bit_table<MAX_BITWORD_WIDTH>::identity(n);
     for (size_t row = 0; row < n; row++) {
         lower_m[row].randomize(row, rng);
         for (size_t col = 0; col < row; col++) {
@@ -325,10 +325,10 @@ simd_bit_table random_stabilizer_tableau_raw(size_t n, std::mt19937_64 &rng) {
     inv.do_square_transpose();
     inv_m.do_square_transpose();
 
-    auto fused = simd_bit_table::from_quadrants(n, lower, simd_bit_table(n, n), prod, inv);
-    auto fused_m = simd_bit_table::from_quadrants(n, lower_m, simd_bit_table(n, n), prod_m, inv_m);
+    auto fused = simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(n, lower, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod, inv);
+    auto fused_m = simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(n, lower_m, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod_m, inv_m);
 
-    simd_bit_table u(2 * n, 2 * n);
+    simd_bit_table<MAX_BITWORD_WIDTH> u(2 * n, 2 * n);
 
     // Apply permutation.
     for (size_t row = 0; row < n; row++) {
