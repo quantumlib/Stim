@@ -27,7 +27,7 @@ RELEVANT_SOURCE_FILES = sorted(set(ALL_SOURCE_FILES) - set(TEST_FILES + PERF_FIL
 version = '1.10.dev0'
 
 common_compile_args = [
-    '-std=c++20',
+    '-std=c++11',
     '-fno-strict-aliasing',
     '-O3',
     '-g0',
