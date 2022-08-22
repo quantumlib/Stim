@@ -375,7 +375,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
             }
             if (value >= length) {
                 std::stringstream msg;
-                msg << "DETS data had a value that larger than expected. ";
+                msg << "DETS data had a value larger than expected. ";
                 msg << "Got " << prefix << value << " but expected length of " << prefix << " space to be " << length
                     << ".";
                 throw std::invalid_argument(msg.str());
