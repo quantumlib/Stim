@@ -2,6 +2,7 @@
 #include "stim/draw/timeline_svg.h"
 
 using namespace stim;
+using namespace stim_draw_internal;
 
 std::string stim::circuit_diagram_timeline_svg(const Circuit &circuit) {
     Diagram diagram = to_diagram(circuit);

@@ -1,8 +1,9 @@
 #include "stim/draw/diagram.h"
 
 using namespace stim;
+using namespace stim_draw_internal;
 
-size_t stim::utf8_char_count(const std::string &s) {
+size_t stim_draw_internal::utf8_char_count(const std::string &s) {
     size_t t = 0;
     for (uint8_t c : s) {
         // Continuation bytes start with "10" in binary.
@@ -111,7 +112,7 @@ DiagramLayout Diagram::to_layout() {
     return layout;
 }
 
-Diagram stim::to_diagram(const Circuit &circuit) {
+Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
     size_t num_qubits = circuit.count_qubits();
     size_t num_ticks = circuit.count_ticks();
 

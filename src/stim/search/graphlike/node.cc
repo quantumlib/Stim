@@ -20,8 +20,6 @@
 using namespace stim;
 using namespace stim::impl_search_graphlike;
 
-constexpr uint64_t NO_NODE_INDEX = UINT64_MAX;
-
 std::string Node::str() const {
     std::stringstream result;
     result << *this;

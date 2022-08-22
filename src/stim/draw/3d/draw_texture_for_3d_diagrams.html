@@ -1,0 +1,144 @@
+<meta charset="utf-8">
+<body style="margin: 0">
+<canvas width="512" height="512" id="cv" style="border: 1px solid black; margin: 0; padding: 0">
+</canvas>
+<script>
+
+/**
+ *
+ * @param {!CanvasRenderingContext2D} ctx
+ * @param {!string} text
+ * @param {!string} fill
+ * @param {!string} stroke
+ * @param {!int} i
+ */
+function drawRect(ctx, text, fill, stroke, i) {
+    if (i >= 6 * 16 && i <= 8 * 16) {
+        i -= 6 * 16;
+        i = Math.floor(i / 3) + (i % 3) * 16;
+        i += 6 * 16;
+    }
+    let x = i % 16;
+    let y = Math.floor(i / 16);
+    ctx.fillStyle = fill;
+    ctx.fillRect(x * 32, y * 32, 32, 32);
+
+    ctx.fillStyle = 'black';
+    let main = "";
+    let sub = "";
+    let sup = "";
+    if (text.indexOf("_") !== -1 && text !== '_') {
+        [main, sub] = text.split("_");
+    } else {
+        main = text;
+    }
+    if (main.indexOf("^") !== -1 && main !== '^') {
+        [main, sup] = main.split("^");
+    }
+    if (sub.indexOf("^") !== -1 && sub !== '^') {
+        [sub, sup] = sub.split("^");
+    }
+    let vert = Math.max(sub.length, sup.length, main.length) >= 3;
+    let fontSize = 18;
+    while (fontSize > 6) {
+        let bigFont = fontSize + 'pt serif';
+        let smallFont = (fontSize * 0.75) + 'pt serif';
+        ctx.font = bigFont;
+        let w_main = ctx.measureText(main).width;
+        ctx.font = smallFont;
+        let w_sub = ctx.measureText(sub).width;
+        let w_sup = ctx.measureText(sup).width;
+        let w_subsup = Math.max(ctx.measureText(sub).width, ctx.measureText(sup).width);
+        let w_total = vert ? Math.max(w_main, w_subsup) : w_main + w_subsup;
+        if (w_total < 32) {
+            if (vert) {
+                ctx.fillStyle = stroke;
+                ctx.font = bigFont;
+                ctx.textBaseline = 'middle'
+                ctx.fillText(main, x * 32 + 16 - w_main / 2, y * 32 + 10);
+                ctx.font = smallFont;
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(sub, x * 32 + 16 - w_sub / 2, y * 32 + 34);
+                ctx.textBaseline = 'hanging';
+                ctx.fillText(sup, x * 32 + 16 - w_sup / 2, y * 32);
+            } else {
+                ctx.fillStyle = stroke;
+                ctx.font = bigFont;
+                ctx.textBaseline = 'middle'
+                ctx.fillText(main, x * 32 + 16 - w_main / 2 - w_subsup / 2, y * 32 + 18);
+                ctx.font = smallFont;
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(sub, x * 32 + 16 + w_main / 2 - w_sub / 2, y * 32 + (sup !== "" ? 34 : 32));
+                ctx.textBaseline = 'hanging';
+                ctx.fillText(sup, x * 32 + 16 + w_main / 2 - w_sup / 2, y * 32);
+            }
+            break;
+        }
+        fontSize--;
+    }
+
+    // ctx.strokeStyle = 'black';
+    // ctx.strokeRect(x * 32, y * 32, 32, 32);
+}
+
+
+/**
+ * @param {!CanvasRenderingContext2D} ctx
+ */
+function draw(ctx) {
+    for (let a = 32; a < 127; a++) {
+        drawRect(ctx, String.fromCharCode(a), "#fff", "#000", a - 32);
+    }
+    drawRect(ctx, "?", "white", 127 - 32);
+    let n = 128 - 32;
+
+    drawRect(ctx, "X", "#FEE", "#000", n++);
+    drawRect(ctx, "Y", "#EFE", "#000", n++);
+    drawRect(ctx, "Z", "#EEF", "#000", n++);
+
+    drawRect(ctx, "H_YZ", "#FAA", "#000", n++);
+    drawRect(ctx, "H", "#AFA", "#000", n++);
+    drawRect(ctx, "H_XY", "#AAF", "#000", n++);
+
+    drawRect(ctx, "S_X", "#FAA", "#000", n++);
+    drawRect(ctx, "S_Y", "#AFA", "#000", n++);
+    drawRect(ctx, "S", "#AAF", "#000", n++);
+    drawRect(ctx, "S_X^†", "#FAA", "#000", n++);
+    drawRect(ctx, "S_Y^†", "#AFA", "#000", n++);
+    drawRect(ctx, "S^†", "#AAF", "#000", n++);
+
+    drawRect(ctx, "M_X", "#F44", "#000", n++);
+    drawRect(ctx, "M_Y", "#4F4", "#000", n++);
+    drawRect(ctx, "M", "#44F", "#000", n++);
+
+    drawRect(ctx, "R_X", "#F44", "#000", n++);
+    drawRect(ctx, "R_Y", "#4F4", "#000", n++);
+    drawRect(ctx, "R", "#44F", "#000", n++);
+
+    drawRect(ctx, "MR_X", "#F44", "#000", n++);
+    drawRect(ctx, "MR_Y", "#4F4", "#000", n++);
+    drawRect(ctx, "MR", "#44F", "#000", n++);
+
+    drawRect(ctx, "X_ERR", "#000", "#F44", n++);
+    drawRect(ctx, "Y_ERR", "#000", "#4F4", n++);
+    drawRect(ctx, "Z_ERR", "#000", "#44F", n++);
+
+    drawRect(ctx, "X_CErr", "#000", "#F44", n++);
+    drawRect(ctx, "Y_CErr", "#000", "#4F4", n++);
+    drawRect(ctx, "Z_CErr", "#000", "#44F", n++);
+
+    drawRect(ctx, "X_ElErr", "#000", "#F44", n++);
+    drawRect(ctx, "Y_ElErr", "#000", "#4F4", n++);
+    drawRect(ctx, "Z_ElErr", "#000", "#44F", n++);
+
+    n = 128 + 16;
+    drawRect(ctx, "C_XYZ", "#FFA", "#000", n++);
+    drawRect(ctx, "C_ZYX", "#AFF", "#000", n++);
+    drawRect(ctx, "DEP_1", "#000", "#FFF", n++);
+    drawRect(ctx, "DEP_2", "#000", "#FFF", n++);
+}
+
+draw(document.getElementById('cv').getContext('2d'))
+
+</script>
+</body>

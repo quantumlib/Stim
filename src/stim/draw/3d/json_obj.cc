@@ -1,7 +1,7 @@
-#include "stim/draw/json_obj.h"
+#include "stim/draw/3d/json_obj.h"
 
 using namespace stim;
-using namespace stim_internal;
+using namespace stim_draw_internal;
 
 JsonObj::JsonObj(bool boolean) : boolean(boolean), type(4) {
 }
@@ -97,35 +97,54 @@ void JsonObj::write_str(const std::string &s, std::ostream &out) {
     out << '"';
 }
 
-void JsonObj::write(std::ostream &out) const {
+void indented_new_line(std::ostream &out, int64_t indent) {
+    if (indent >= 0) {
+        out << '\n';
+        for (int64_t k = 0; k < indent; k++) {
+            out << ' ';
+        }
+    }
+}
+
+void JsonObj::write(std::ostream &out, int64_t indent) const {
     if (type == 0) {
         out << num;
     } else if (type == 1) {
         write_str(text, out);
     } else if (type == 2) {
         out << "{";
+        indented_new_line(out, indent + 2);
         bool first = true;
         for (const auto &e : map) {
             if (first) {
                 first = false;
             } else {
                 out << ',';
+                indented_new_line(out, indent + 2);
             }
             write_str(e.first, out);
             out << ':';
-            e.second.write(out);
+            e.second.write(out, indent + 2);
+        }
+        if (!first) {
+            indented_new_line(out, indent);
         }
         out << "}";
     } else if (type == 3) {
         out << "[";
+        indented_new_line(out, indent + 2);
         bool first = true;
         for (const auto &e : arr) {
             if (first) {
                 first = false;
             } else {
                 out << ',';
+                indented_new_line(out, indent + 2);
             }
-            e.write(out);
+            e.write(out, indent + 2);
+        }
+        if (!first) {
+            indented_new_line(out, indent);
         }
         out << "]";
     } else if (type == 4) {
@@ -135,9 +154,9 @@ void JsonObj::write(std::ostream &out) const {
     }
 }
 
-std::string JsonObj::str() const {
+std::string JsonObj::str(bool indent) const {
     std::stringstream ss;
-    write(ss);
+    write(ss, indent ? 0 : INT64_MIN);
     return ss.str();
 }
 
@@ -155,7 +174,7 @@ char u6_to_base64_char(uint8_t v) {
     }
 }
 
-void stim_internal::write_base64(const char *data, size_t n, std::ostream &out) {
+void stim_draw_internal::write_base64(const char *data, size_t n, std::ostream &out) {
     uint32_t buf = 0;
     size_t bits_in_buf = 0;
     for (size_t k = 0; k < n; k++) {

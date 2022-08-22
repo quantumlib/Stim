@@ -17,6 +17,7 @@
 #include "gtest/gtest.h"
 
 using namespace stim;
+using namespace stim_draw_internal;
 
 TEST(draw, utf8_char_count) {
     ASSERT_EQ(utf8_char_count("√XX†"), 4);

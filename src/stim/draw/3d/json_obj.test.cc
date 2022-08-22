@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/json_obj.h"
+#include "stim/draw/3d/json_obj.h"
 
 #include "gtest/gtest.h"
 
 using namespace stim;
-using namespace stim_internal;
+using namespace stim_draw_internal;
 
 TEST(json_obj, str) {
     EXPECT_EQ(JsonObj(1).str(), "1");

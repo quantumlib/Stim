@@ -2,6 +2,7 @@
 #include "stim/draw/timeline_text.h"
 
 using namespace stim;
+using namespace stim_draw_internal;
 
 std::string stim::circuit_diagram_timeline_text(const Circuit &circuit) {
     Diagram diagram = to_diagram(circuit);

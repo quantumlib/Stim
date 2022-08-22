@@ -49,8 +49,8 @@ set(SOURCE_FILES_NO_MAIN
         src/stim/circuit/gate_target.cc
         src/stim/dem/detector_error_model.cc
         src/stim/draw/diagram.cc
-        src/stim/draw/json_obj.cc
-        src/stim/draw/timeline_3d.cc
+        src/stim/draw/3d/json_obj.cc
+        src/stim/draw/3d/timeline_3d.cc
         src/stim/draw/timeline_svg.cc
         src/stim/draw/timeline_text.cc
         src/stim/help.cc
@@ -108,8 +108,8 @@ set(TEST_FILES
         src/stim/circuit/gate_target.test.cc
         src/stim/dem/detector_error_model.test.cc
         src/stim/draw/diagram.test.cc
-        src/stim/draw/json_obj.test.cc
-        src/stim/draw/timeline_3d.test.cc
+        src/stim/draw/3d/json_obj.test.cc
+        src/stim/draw/3d/timeline_3d.test.cc
         src/stim/draw/timeline_svg.test.cc
         src/stim/draw/timeline_text.test.cc
         src/stim/gen/circuit_gen_main.test.cc

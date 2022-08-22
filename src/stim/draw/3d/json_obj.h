@@ -21,7 +21,7 @@
 
 #include "stim/circuit/circuit.h"
 
-namespace stim_internal {
+namespace stim_draw_internal {
 
 struct JsonObj {
     union {
@@ -41,12 +41,14 @@ struct JsonObj {
     JsonObj(const char *text);
     JsonObj(std::map<std::string, JsonObj> map);
     JsonObj(std::vector<JsonObj> arr);
+
     ~JsonObj();
     JsonObj(JsonObj &&other) noexcept;
     JsonObj(const JsonObj &other);
+
     static void write_str(const std::string &s, std::ostream &out);
-    void write(std::ostream &out) const;
-    std::string str() const;
+    void write(std::ostream &out, int64_t indent) const;
+    std::string str(bool indent = false) const;
 };
 
 void write_base64(const char *data, size_t n, std::ostream &out);

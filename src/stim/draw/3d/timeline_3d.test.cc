@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/timeline_3d.h"
+#include "stim/draw/3d/timeline_3d.h"
 
 #include "gtest/gtest.h"
 #include "stim/gen/circuit_gen_params.h"
@@ -21,7 +21,11 @@
 using namespace stim;
 
 TEST(circuit_diagram_timeline_3d, XXXXXXXXXXX) {
-    auto s = circuit_diagram_timeline_3d(Circuit());
+    CircuitGenParameters params(999999, 5, "unrotated_memory_z");
+    Circuit circuit = generate_surface_code_circuit(params).circuit;
+
+    auto s = circuit_diagram_timeline_3d(circuit);
+
     FILE *f = fopen("/home/craiggidney/tmp/test.gltf", "w");
     fprintf(f, "%s", s.data());
     fclose(f);

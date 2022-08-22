@@ -21,7 +21,7 @@
 
 #include "stim/circuit/circuit.h"
 
-namespace stim {
+namespace stim_draw_internal {
 
 size_t utf8_char_count(const std::string &s);
 
@@ -73,8 +73,8 @@ struct Diagram {
     DiagramLayout to_layout();
 };
 
-Diagram to_diagram(const Circuit &circuit);
+Diagram to_diagram(const stim::Circuit &circuit);
 
-}  // namespace stim
+}
 
 #endif
