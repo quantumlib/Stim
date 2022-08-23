@@ -35,3 +35,4 @@ venv/*
 .cmake/*
 coverage/*
 cmake-build-debug-coverage/*
+compile_commands.json
