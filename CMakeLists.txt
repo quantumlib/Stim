@@ -173,6 +173,29 @@ set(BENCHMARK_FILES
         src/stim/stabilizers/tableau.perf.cc
         src/stim/stabilizers/tableau_iter.perf.cc
         )
+set(PYTHON_API_FILES
+        src/stim/stabilizers/tableau_iter.pybind.cc
+        src/stim/stabilizers/tableau.pybind.cc
+        src/stim/stabilizers/pauli_string.pybind.cc
+        src/stim/simulators/dem_sampler.pybind.cc
+        src/stim/simulators/tableau_simulator.pybind.cc
+        src/stim/simulators/matched_error.pybind.cc
+        src/stim/simulators/measurements_to_detection_events.pybind.cc
+        src/stim/circuit/circuit.pybind.cc
+        src/stim/circuit/circuit_gate_target.pybind.cc
+        src/stim/circuit/circuit_instruction.pybind.cc
+        src/stim/circuit/circuit_repeat_block.pybind.cc
+        src/stim/py/stim.pybind.cc
+        src/stim/py/compiled_measurement_sampler.pybind.cc
+        src/stim/py/base.pybind.cc
+        src/stim/py/march.pybind.cc
+        src/stim/py/compiled_detector_sampler.pybind.cc
+        src/stim/dem/detector_error_model_target.pybind.cc
+        src/stim/dem/detector_error_model_instruction.pybind.cc
+        src/stim/dem/detector_error_model_repeat_block.pybind.cc
+        src/stim/dem/detector_error_model.pybind.cc
+        src/stim/io/read_write.pybind.cc
+        )
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 if(NOT(MSVC))
@@ -213,4 +236,14 @@ if(${GTest_FOUND})
     target_link_options(stim_test_o3 PRIVATE -pthread)
 else()
     message("WARNING: Skipped stim_test target. `GTest` not found. To fix, follow Standalone CMake Project install instructions at https://github.com/google/googletest/blob/master/googletest/README.md")
+endif()
+
+find_package(Python COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG)
+if (${pybind11_FOUND} AND ${Python_FOUND})
+  pybind11_add_module(stim_python_bindings ${PYTHON_API_FILES} ${SOURCE_FILES_NO_MAIN})
+  set_target_properties(stim_python_bindings PROPERTIES OUTPUT_NAME stim)
+  add_compile_definitions(STIM_PYBIND11_MODULE_NAME=stim)
+else()
+  message("WARNING: Skipped stim_python_bindings target. `pybind11` not found")
 endif()
