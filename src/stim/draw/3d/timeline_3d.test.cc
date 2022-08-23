@@ -21,8 +21,22 @@
 using namespace stim;
 
 TEST(circuit_diagram_timeline_3d, XXXXXXXXXXX) {
-    CircuitGenParameters params(999999, 5, "unrotated_memory_z");
+    CircuitGenParameters params(10, 31, "rotated_memory_z");
+//    params.before_measure_flip_probability = 0.001;
+//    params.after_reset_flip_probability = 0.001;
+//    params.after_clifford_depolarization = 0.001;
     Circuit circuit = generate_surface_code_circuit(params).circuit;
+//    circuit = stim::Circuit(R"CIRCUIT(
+//        QUBIT_COORDS(0, 0) 0
+//        QUBIT_COORDS(0, 1) 1
+//        QUBIT_COORDS(1, 0) 2
+//        QUBIT_COORDS(1, 2) 3
+//        H 0 2
+//        CX 0 1 2 3
+//        TICK
+//        CX 0 2 1 3
+//        M 0 1 2 3
+//    )CIRCUIT");
 
     auto s = circuit_diagram_timeline_3d(circuit);
 

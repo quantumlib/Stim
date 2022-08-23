@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "stim/mem/pointer_range.h"
 #include "stim/draw/3d/json_obj.h"
 
 namespace stim_draw_internal {
@@ -54,22 +55,18 @@ struct Coord {
     bool operator==(Coord<DIM> other) const {
         return xyz == other.xyz;
     }
-};
 
-/// A named data buffer. Contains packed coordinate data.
-template <size_t DIM>
-struct GltfBuffer {
-    GltfId id;
-    std::vector<Coord<DIM>> vertices;
-
-    std::pair<Coord<DIM>, Coord<DIM>> min_max() const {
+    static std::pair<Coord<DIM>, Coord<DIM>> min_max(stim::ConstPointerRange<Coord<DIM>> coords) {
+        if (coords.empty()) {
+            throw std::invalid_argument("coords.empty()");
+        }
         Coord<DIM> v_min;
         Coord<DIM> v_max;
         for (size_t k = 0; k < DIM; k++) {
             v_min.xyz[k] = INFINITY;
             v_max.xyz[k] = -INFINITY;
         }
-        for (const auto &v : vertices) {
+        for (const auto &v : coords) {
             for (size_t k = 0; k < DIM; k++) {
                 v_min.xyz[k] = std::min(v_min.xyz[k], v.xyz[k]);
                 v_max.xyz[k] = std::max(v_max.xyz[k], v.xyz[k]);
@@ -77,6 +74,13 @@ struct GltfBuffer {
         }
         return {v_min, v_max};
     }
+};
+
+/// A named data buffer. Contains packed coordinate data.
+template <size_t DIM>
+struct GltfBuffer {
+    GltfId id;
+    std::vector<Coord<DIM>> vertices;
 
     void visit(const gltf_visit_callback &callback) {
         callback(
@@ -125,7 +129,7 @@ struct GltfBuffer {
     }
 
     JsonObj to_json_accessor() const {
-        auto mima = min_max();
+        auto mima = Coord<DIM>::min_max(vertices);
         std::vector<JsonObj> min_v;
         std::vector<JsonObj> max_v;
         for (size_t k = 0; k < DIM; k++) {
@@ -309,6 +313,13 @@ struct GltfPrimitive {
 struct GltfMesh {
     GltfId id;
     std::vector<std::shared_ptr<GltfPrimitive>> primitives;
+
+    static std::shared_ptr<GltfMesh> from_singleton_primitive(std::shared_ptr<GltfPrimitive> primitive) {
+        return std::shared_ptr<GltfMesh>(new GltfMesh{
+            {"mesh_" + primitive->id.name},
+            {primitive},
+        });
+    }
 
     void visit(const gltf_visit_callback &callback) {
         callback(

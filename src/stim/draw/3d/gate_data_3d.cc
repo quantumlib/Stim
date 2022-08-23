@@ -4,7 +4,13 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_cube(const std::string &name, size_t tex_tile_x, size_t tex_tile_y) {
+constexpr float CONTROL_RADIUS = 0.4f;
+
+std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_cube(
+        const std::string &name,
+        size_t tex_tile_x,
+        size_t tex_tile_y,
+        bool actually_just_square) {
     constexpr size_t diam = 16;
     float d = (float)1.0 / diam;
     float dx = d * tex_tile_x;
@@ -13,6 +19,12 @@ std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_
     Coord<2> v01{dx + 0, dy + d};
     Coord<2> v10{dx + d, dy + 0};
     Coord<2> v11{dx + d, dy + d};
+    if (actually_just_square) {
+        return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>({{name}, {
+            v10, v00, v11, v00, v01, v11,
+            v11, v10, v01, v01, v10, v00,
+        }}));
+    }
 
     return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>({{name}, {
         v00, v01, v10, v01, v11, v10,
@@ -29,7 +41,8 @@ std::shared_ptr<GltfPrimitive> cube_gate(
         size_t tex_tile_x,
         size_t tex_tile_y,
         std::shared_ptr<GltfBuffer<3>> cube_position_buffer,
-        std::shared_ptr<GltfMaterial> material) {
+        std::shared_ptr<GltfMaterial> material,
+        bool actually_just_square) {
     return std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
         {"primitive_gate_" + gate_canonical_name},
         GL_TRIANGLES,
@@ -37,12 +50,13 @@ std::shared_ptr<GltfPrimitive> cube_gate(
         texture_coords_for_showing_on_spacelike_faces_of_cube(
             "tex_coords_gate_" + gate_canonical_name,
             tex_tile_x,
-            tex_tile_y),
+            tex_tile_y,
+            actually_just_square),
         material,
     });
 }
 
-std::shared_ptr<GltfBuffer<3>> make_cube_triangle_list() {
+std::shared_ptr<GltfBuffer<3>> make_cube_triangle_list(bool actually_just_square) {
     Coord<3> v000{-0.5f, +0.5f, +0.5f};
     Coord<3> v001{-0.5f, +0.5f, -0.5f};
     Coord<3> v010{-0.5f, -0.5f, +0.5f};
@@ -51,9 +65,23 @@ std::shared_ptr<GltfBuffer<3>> make_cube_triangle_list() {
     Coord<3> v101{+0.5f, +0.5f, -0.5f};
     Coord<3> v110{+0.5f, -0.5f, +0.5f};
     Coord<3> v111{+0.5f, -0.5f, -0.5f};
+    if (actually_just_square) {
+        v000.xyz[0] = 0;
+        v001.xyz[0] = 0;
+        v010.xyz[0] = 0;
+        v011.xyz[0] = 0;
+        return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{{"cube"}, {
+            v000, v001, v010,
+            v001, v011, v010,
+
+            v011, v001, v010,
+            v010, v001, v000,
+        }});
+    }
     return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{{"cube"}, {
         v000, v010, v100,
         v010, v110, v100,
+
         v000, v100, v001,
         v001, v100, v101,
 
@@ -71,8 +99,144 @@ std::shared_ptr<GltfBuffer<3>> make_cube_triangle_list() {
     }});
 }
 
-std::map<std::string, std::shared_ptr<GltfPrimitive>> stim_draw_internal::make_gate_primitives() {
-    auto cube = make_cube_triangle_list();
+std::shared_ptr<GltfBuffer<3>> make_circle_loop(size_t n, float r, bool repeat_boundary) {
+    std::vector<Coord<3>> vertices;
+    vertices.push_back({0, r, 0});
+    for (size_t k = 1; k < n; k++) {
+        float t = k*M_PI*2/n;
+        vertices.push_back({0, cosf(t) * r, sinf(t) * r});
+    }
+    if (repeat_boundary) {
+        vertices.push_back({0, r, 0});
+    }
+    return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+        {"circle_loop"},
+        std::move(vertices),
+    });
+}
+
+std::pair<std::string, std::shared_ptr<GltfMesh>> make_x_control_mesh() {
+    auto line_cross = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+        {"control_x_line_cross"},
+        {{0, -CONTROL_RADIUS, 0}, {0, +CONTROL_RADIUS, 0}, {0, 0, -CONTROL_RADIUS}, {0, 0, +CONTROL_RADIUS}},
+    });
+    auto circle = make_circle_loop(16, CONTROL_RADIUS, true);
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto white_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"white"},
+        {1, 1, 1, 1},
+        0.4,
+        0.5,
+        true,
+        nullptr,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_X_CONTROL"},
+        {
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_circle_interior"},
+                GL_TRIANGLE_FAN,
+                circle,
+                nullptr,
+                white_material,
+            }),
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_circle_perimeter"},
+                GL_LINE_STRIP,
+                circle,
+                nullptr,
+                black_material,
+            }),
+            std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+                {"primitive_line_cross"},
+                GL_LINES,
+                line_cross,
+                nullptr,
+                black_material,
+            }),
+        },
+    });
+    return {"X_CONTROL", mesh};
+}
+
+std::pair<std::string, std::shared_ptr<GltfMesh>> make_y_control_mesh() {
+    auto gray_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"gray"},
+        {0.5, 0.5, 0.5, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto tri_buf = make_circle_loop(3, CONTROL_RADIUS, false);
+    auto triangle_perimeter = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"primitive_triangle_perimeter"},
+        GL_LINE_LOOP,
+        tri_buf,
+        nullptr,
+        black_material,
+    });
+    auto triangle_interior = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"primitive_triangle_interior"},
+        GL_TRIANGLES,
+        tri_buf,
+        nullptr,
+        gray_material,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_control_Y"},
+        {
+            triangle_perimeter,
+            triangle_interior,
+        },
+    });
+    return {"Y_CONTROL", mesh};
+}
+
+std::pair<std::string, std::shared_ptr<GltfMesh>> make_z_control_mesh() {
+    auto circle = make_circle_loop(16, CONTROL_RADIUS, true);
+    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
+        {"black"},
+        {0, 0, 0, 1},
+        1,
+        1,
+        true,
+        nullptr,
+    });
+    auto disc_interior = std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
+        {"primitive_circle_interior"},
+        GL_TRIANGLE_FAN,
+        circle,
+        nullptr,
+        black_material,
+    });
+    auto mesh = std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_Z_CONTROL"},
+        {
+            disc_interior,
+        },
+    });
+    return {"Z_CONTROL", mesh};
+}
+
+std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_primitives() {
+    bool actually_square = true;
+    auto cube = make_cube_triangle_list(actually_square);
     auto image = std::shared_ptr<GltfImage>(new GltfImage{
         {"gates_image"},
         GATE_DATA_3D_TEXTURE_DATA_URI,
@@ -98,11 +262,11 @@ std::map<std::string, std::shared_ptr<GltfPrimitive>> stim_draw_internal::make_g
         texture,
     });
 
-    auto f = [&](const char *s, size_t x, size_t y) -> std::pair<std::string, std::shared_ptr<GltfPrimitive>>{
-        return {s, cube_gate(s, x, y, cube, material)};
+    auto f = [&](const char *s, size_t x, size_t y) -> std::pair<std::string, std::shared_ptr<GltfMesh>>{
+        return {s, GltfMesh::from_singleton_primitive(cube_gate(s, x, y, cube, material, actually_square))};
     };
 
-    return std::map<std::string, std::shared_ptr<GltfPrimitive>>{
+    return std::map<std::string, std::shared_ptr<GltfMesh>>{
         f("X", 0, 6),
         f("Y", 0, 7),
         f("Z", 0, 8),
@@ -131,9 +295,9 @@ std::map<std::string, std::shared_ptr<GltfPrimitive>> stim_draw_internal::make_g
         f("MRY", 6, 7),
         f("MR", 6, 8),
 
-        f("X_ERR", 7, 6),
-        f("Y_ERR", 7, 7),
-        f("Z_ERR", 7, 8),
+        f("X_ERROR", 7, 6),
+        f("Y_ERROR", 7, 7),
+        f("Z_ERROR", 7, 8),
 
         f("E:X", 8, 6),
         f("E:Y", 8, 7),
@@ -143,9 +307,28 @@ std::map<std::string, std::shared_ptr<GltfPrimitive>> stim_draw_internal::make_g
         f("ELSE_CORRELATED_ERROR:Y", 9, 7),
         f("ELSE_CORRELATED_ERROR:Z", 9, 8),
 
-        f("C_XYZ", 0, 9),
-        f("C_ZYX", 1, 9),
-        f("DEPOLARIZE1", 2, 9),
-        f("DEPOLARIZE2", 3, 9),
+        f("MPP:X", 10, 6),
+        f("MPP:Y", 10, 7),
+        f("MPP:Z", 10, 8),
+
+        f("SQRT_XX", 11, 6),
+        f("SQRT_YY", 11, 7),
+        f("SQRT_ZZ", 11, 8),
+
+        f("SQRT_XX_DAG", 12, 6),
+        f("SQRT_YY_DAG", 12, 7),
+        f("SQRT_ZZ_DAG", 12, 8),
+
+        f("I", 0, 6),
+        f("C_XYZ", 1, 9),
+        f("C_ZYX", 2, 9),
+        f("DEPOLARIZE1", 3, 9),
+        f("DEPOLARIZE2", 4, 9),
+        f("ISWAP", 5, 9),
+        f("ISWAP_DAG", 6, 9),
+
+        make_x_control_mesh(),
+        make_y_control_mesh(),
+        make_z_control_mesh(),
     };
 };

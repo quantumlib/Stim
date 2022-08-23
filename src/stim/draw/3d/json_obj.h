@@ -25,7 +25,7 @@ namespace stim_draw_internal {
 
 struct JsonObj {
     union {
-        double num;
+        float num;
         std::string text;
         std::map<std::string, JsonObj> map;
         std::vector<JsonObj> arr;
@@ -36,7 +36,7 @@ struct JsonObj {
     JsonObj(bool boolean);
     JsonObj(int num);
     JsonObj(size_t num);
-    JsonObj(double num);
+    JsonObj(float num);
     JsonObj(std::string text);
     JsonObj(const char *text);
     JsonObj(std::map<std::string, JsonObj> map);

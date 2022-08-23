@@ -13,7 +13,7 @@
  * @param {!int} i
  */
 function drawRect(ctx, text, fill, stroke, i) {
-    if (i >= 6 * 16 && i <= 8 * 16) {
+    if (i >= 6 * 16 && i < 9 * 16) {
         i -= 6 * 16;
         i = Math.floor(i / 3) + (i % 3) * 16;
         i += 6 * 16;
@@ -38,7 +38,7 @@ function drawRect(ctx, text, fill, stroke, i) {
     if (sub.indexOf("^") !== -1 && sub !== '^') {
         [sub, sup] = sub.split("^");
     }
-    let vert = Math.max(sub.length, sup.length, main.length) >= 3;
+    let vert = Math.max(sub.length, sup.length, main.length) >= 3 && sub.length > 0;
     let fontSize = 18;
     while (fontSize > 6) {
         let bigFont = fontSize + 'pt serif';
@@ -52,13 +52,18 @@ function drawRect(ctx, text, fill, stroke, i) {
         let w_total = vert ? Math.max(w_main, w_subsup) : w_main + w_subsup;
         if (w_total < 32) {
             if (vert) {
+                let dy = 0;
+                if (w_sub < w_main * 0.8) {
+                    smallFont = bigFont;
+                    dy = -2;
+                }
                 ctx.fillStyle = stroke;
                 ctx.font = bigFont;
                 ctx.textBaseline = 'middle'
-                ctx.fillText(main, x * 32 + 16 - w_main / 2, y * 32 + 10);
+                ctx.fillText(main, x * 32 + 16 - w_main / 2, y * 32 + 11);
                 ctx.font = smallFont;
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(sub, x * 32 + 16 - w_sub / 2, y * 32 + 34);
+                ctx.fillText(sub, x * 32 + 16 - w_sub / 2, y * 32 + 34 + dy);
                 ctx.textBaseline = 'hanging';
                 ctx.fillText(sup, x * 32 + 16 - w_sup / 2, y * 32);
             } else {
@@ -131,11 +136,26 @@ function draw(ctx) {
     drawRect(ctx, "Y_ElErr", "#000", "#4F4", n++);
     drawRect(ctx, "Z_ElErr", "#000", "#44F", n++);
 
+    drawRect(ctx, "MPP_X", "#F44", "#000", n++);
+    drawRect(ctx, "MPP_Y", "#4F4", "#000", n++);
+    drawRect(ctx, "MPP_Z", "#44F", "#000", n++);
+
+    drawRect(ctx, "√XX", "#FAA", "#000", n++);
+    drawRect(ctx, "√YY", "#AFA", "#000", n++);
+    drawRect(ctx, "√ZZ", "#AAF", "#000", n++);
+
+    drawRect(ctx, "√XX_†", "#FAA", "#000", n++);
+    drawRect(ctx, "√YY_†", "#AFA", "#000", n++);
+    drawRect(ctx, "√ZZ_†", "#AAF", "#000", n++);
+
     n = 128 + 16;
+    drawRect(ctx, "I", "#FFF", "#000", n++);
     drawRect(ctx, "C_XYZ", "#FFA", "#000", n++);
     drawRect(ctx, "C_ZYX", "#AFF", "#000", n++);
     drawRect(ctx, "DEP_1", "#000", "#FFF", n++);
     drawRect(ctx, "DEP_2", "#000", "#FFF", n++);
+    drawRect(ctx, "iSw_ap", "#FFF", "#000", n++);
+    drawRect(ctx, "iSw_ap†", "#FFF", "#000", n++);
 }
 
 draw(document.getElementById('cv').getContext('2d'))

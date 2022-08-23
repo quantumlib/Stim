@@ -21,12 +21,12 @@ using namespace stim_draw_internal;
 
 TEST(json_obj, str) {
     EXPECT_EQ(JsonObj(1).str(), "1");
-    EXPECT_EQ(JsonObj(2.5).str(), "2.5");
+    EXPECT_EQ(JsonObj(2.5f).str(), "2.5");
     EXPECT_EQ(JsonObj("test").str(), "\"test\"");
 
     EXPECT_EQ(JsonObj(std::vector<JsonObj>{}).str(), "[]");
     EXPECT_EQ(JsonObj(std::vector<JsonObj>{1}).str(), "[1]");
-    EXPECT_EQ(JsonObj(std::vector<JsonObj>{1, 2.5, "5"}).str(), "[1,2.5,\"5\"]");
+    EXPECT_EQ(JsonObj(std::vector<JsonObj>{1, 2.5f, "5"}).str(), "[1,2.5,\"5\"]");
 
     EXPECT_EQ(JsonObj(std::map<std::string, JsonObj>{}).str(), "{}");
     EXPECT_EQ(JsonObj(std::map<std::string, JsonObj>{{"a", 1}}).str(), "{\"a\":1}");
