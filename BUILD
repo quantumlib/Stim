@@ -2,6 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("@rules_python//python:packaging.bzl", "py_wheel")
 load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("print_source_files.bzl", "print_source_files")
 
 SOURCE_FILES_NO_MAIN = glob(
     [
@@ -39,6 +40,14 @@ PYBIND_FILES = glob(
         "src/**/*.pybind.cc",
         "src/**/*.pybind.h",
     ],
+)
+
+print_source_files(
+    name = "print_source_files",
+    source_files_no_main = SOURCE_FILES_NO_MAIN,
+    test_files = TEST_FILES,
+    perf_files = PERF_FILES,
+    pybind_files = PYBIND_FILES
 )
 
 cc_library(
