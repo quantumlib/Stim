@@ -31,9 +31,11 @@ elseif(SIMD_WIDTH EQUAL 64)
     set(MACHINE_FLAG "-mno-avx2" "-mno-sse2")
 endif()
 
-file(STRINGS bazel-bin/source_files_no_main.out SOURCE_FILES_NO_MAIN)
-file(STRINGS bazel-bin/test_files.out TEST_FILES)
-file(STRINGS bazel-bin/perf_files.out BENCHMARK_FILES)
+# use bazel to update the file lists
+# bazel build print_source_files; cp bazel-bin/*.out ./file_lists
+file(STRINGS file_lists/source_files_no_main.out SOURCE_FILES_NO_MAIN)
+file(STRINGS file_lists/test_files.out TEST_FILES)
+file(STRINGS file_lists/perf_files.out BENCHMARK_FILES)
 
 add_executable(stim src/main.cc ${SOURCE_FILES_NO_MAIN})
 if(NOT(MSVC))
