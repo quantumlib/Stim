@@ -29,6 +29,7 @@ These notes generally assume you are on a Linux system.
     - [with bazel](#pypackage.stim.bazel)
     - [with python setup.py](#pypackage.stim.python)
     - [with pip install -e](#pypackage.stim.pip)
+    - [with cmake](#pypackage.stim.cmake)
 - [python packaging `stimcirq`](#pypackage.stimcirq)
     - [with python setup.py](#pypackage.stimcirq.python)
     - [with pip install -e](#pypackage.stimcirq.pip)
@@ -544,6 +545,16 @@ A python module can be built using cmake. The output can be imported as `import 
 # from the repository root
 cmake stim_python_bindings
 # output is at out/stim.cpython-${PYTHON_VERSION}-${ARCH}.so
+```
+to import the module we need to add `out` to the python import path:
+```python
+# from the repository root
+# python
+import sys
+import os
+sys.path.append(os.getcwd() + '/out')
+import stim
+print(stim.__version__)
 ```
 
 
