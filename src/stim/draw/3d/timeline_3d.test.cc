@@ -21,7 +21,7 @@
 using namespace stim;
 
 TEST(circuit_diagram_timeline_3d, XXXXXXXXXXX) {
-    CircuitGenParameters params(10, 31, "rotated_memory_z");
+    CircuitGenParameters params(10, 5, "rotated_memory_z");
 //    params.before_measure_flip_probability = 0.001;
 //    params.after_reset_flip_probability = 0.001;
 //    params.after_clifford_depolarization = 0.001;
