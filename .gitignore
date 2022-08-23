@@ -35,4 +35,6 @@ venv/*
 .cmake/*
 coverage/*
 cmake-build-debug-coverage/*
+# clangd generated files
 compile_commands.json
+.cache/*
