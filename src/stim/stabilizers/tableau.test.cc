@@ -411,12 +411,12 @@ TEST(tableau, check_invariants) {
 TEST(tableau, is_conjugation_by_pauli) {
     Tableau tableau(8);
     ASSERT_TRUE(tableau.is_conjugation_by_pauli());
-    tableau.xs.signs.randomize(7, SHARED_TEST_RNG());
+    tableau.xs.signs[0] = true;
+    tableau.xs.signs[3] = true;
     ASSERT_TRUE(tableau.is_conjugation_by_pauli());
     tableau.xs.zt[0][2] = true;
     tableau.zs.zt[0][2] = true;
     ASSERT_FALSE(tableau.is_conjugation_by_pauli());
-
 }
 
 TEST(tableau, random) {

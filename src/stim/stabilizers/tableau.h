@@ -74,8 +74,11 @@ struct Tableau {
     std::vector<std::complex<float>> to_flat_unitary_matrix(bool little_endian) const;
     bool satisfies_invariants() const;
 
-    /// if a Tableau fixes each pauli upto sign, then it is conjugation by a pauli
+    /// If a Tableau fixes each pauli upto sign, then it is conjugation by a pauli
     bool is_conjugation_by_pauli();
+
+    /// If tableau is conjugation by a pauli, then return that pauli. Else throw exception.
+    PauliString to_pauli_string();
 
     /// Creates a Tableau representing a single qubit gate.
     ///

@@ -393,6 +393,17 @@ bool Tableau::is_conjugation_by_pauli() {
     return true;
 }
 
+PauliString Tableau::to_pauli_string() {
+    if ( ! is_conjugation_by_pauli() ) {
+        throw std::invalid_argument("tableau is not conjugation by a pauli");
+    }
+
+    PauliString pauli_string(num_qubits);
+    pauli_string.xs = zs.signs;
+    pauli_string.zs = xs.signs;
+    return pauli_string;
+}
+
 Tableau Tableau::inverse(bool skip_signs) const {
     Tableau result(num_qubits);
 
