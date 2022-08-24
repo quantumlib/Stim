@@ -33,6 +33,9 @@ endif()
 
 # use bazel to update the file lists
 # bazel build print_source_files; cp bazel-bin/*.out ./file_lists
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS file_lists/source_files_no_main.out)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS file_lists/test_files.out)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS file_lists/perf_files.out)
 file(STRINGS file_lists/source_files_no_main.out SOURCE_FILES_NO_MAIN)
 file(STRINGS file_lists/test_files.out TEST_FILES)
 file(STRINGS file_lists/perf_files.out BENCHMARK_FILES)
