@@ -379,6 +379,19 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
+bool Tableau::is_conjugation_by_pauli() {
+    for (size_t q = 0; q < num_qubits; q++) {
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> x_bits = xs[q].xs;
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> z_bits = xs[q].zs;
+
+        if ( z_bits.not_zero() || x_bits.popcnt() != 1 /* || check if we are not Xq */ ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 Tableau Tableau::inverse(bool skip_signs) const {
     Tableau result(num_qubits);
 
