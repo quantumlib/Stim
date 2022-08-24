@@ -408,6 +408,17 @@ TEST(tableau, check_invariants) {
     ASSERT_FALSE(Tableau::gate2("XI", "II", "IX", "IZ").satisfies_invariants());
 }
 
+TEST(tableau, is_conjugation_by_pauli) {
+    Tableau tableau(8);
+    ASSERT_TRUE(tableau.is_conjugation_by_pauli());
+    tableau.xs.signs.randomize(7, SHARED_TEST_RNG());
+    ASSERT_TRUE(tableau.is_conjugation_by_pauli());
+    tableau.xs.zt[0][2] = true;
+    tableau.zs.zt[0][2] = true;
+    ASSERT_FALSE(tableau.is_conjugation_by_pauli());
+
+}
+
 TEST(tableau, random) {
     for (size_t k = 0; k < 20; k++) {
         auto t = Tableau::random(1, SHARED_TEST_RNG());
