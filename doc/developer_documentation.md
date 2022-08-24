@@ -545,16 +545,7 @@ A python module can be built using cmake. The output can be imported as `import 
 # from the repository root
 cmake stim_python_bindings
 # output is at out/stim.cpython-${PYTHON_VERSION}-${ARCH}.so
-```
-to import the module we need to add `out` to the python import path:
-```python
-# from the repository root
-# python
-import sys
-import os
-sys.path.append(os.getcwd() + '/out')
-import stim
-print(stim.__version__)
+PYTHONPATH=out python -c "import stim; print(stim.__version__)"
 ```
 
 
