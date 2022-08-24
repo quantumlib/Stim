@@ -380,15 +380,16 @@ bool Tableau::satisfies_invariants() const {
 }
 
 bool Tableau::is_conjugation_by_pauli() {
-    for (size_t q = 0; q < num_qubits; q++) {
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> x_bits = xs[q].xs;
-        simd_bits_range_ref<MAX_BITWORD_WIDTH> z_bits = xs[q].zs;
+    simd_bit_table<MAX_BITWORD_WIDTH> scratch_matrix =
+        simd_bit_table<MAX_BITWORD_WIDTH>::identity(num_qubits);
 
-        if ( z_bits.not_zero() || x_bits.popcnt() != 1 /* || check if we are not Xq */ ) {
-            return false;
-        }
+    if ( xs.xt != scratch_matrix || zs.zt != scratch_matrix ) {
+        return false;
     }
-
+    scratch_matrix.clear();
+    if ( xs.zt != scratch_matrix || zs.xt != scratch_matrix) {
+        return false;
+    }
     return true;
 }
 
