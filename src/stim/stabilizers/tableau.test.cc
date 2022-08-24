@@ -419,6 +419,22 @@ TEST(tableau, is_conjugation_by_pauli) {
     ASSERT_FALSE(tableau.is_conjugation_by_pauli());
 }
 
+TEST(tableau, to_pauli_string) {
+    Tableau tableau(8);
+    tableau.xs.signs[3] = true;
+    PauliString pauli_string_z = tableau.to_pauli_string();
+    ASSERT_EQ(pauli_string_z.str(), "+___Z____");
+    tableau.zs.signs[3] = true;
+    PauliString pauli_string_y = tableau.to_pauli_string();
+    ASSERT_EQ(pauli_string_y.str(), "+___Y____");
+    tableau.xs.signs[3] = false;
+    tableau.xs.signs[5] = true;
+    PauliString pauli_string_xz = tableau.to_pauli_string();
+    ASSERT_EQ(pauli_string_xz.str(), "+___X_Z__");
+    tableau.xs.zt[0][1] = true;
+    ASSERT_THROW(tableau.to_pauli_string(), std::invalid_argument);
+}
+
 TEST(tableau, random) {
     for (size_t k = 0; k < 20; k++) {
         auto t = Tableau::random(1, SHARED_TEST_RNG());
