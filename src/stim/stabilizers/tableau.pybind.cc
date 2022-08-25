@@ -214,8 +214,10 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             return PyPauliString(self.to_pauli_string());
         },
         clean_doc_string(u8R"DOC(
-            If the tableau fixes each pauli upto sign, creates the pauli
-            string which represents the tableau.
+            Return a Pauli string equivalent to the tableau.
+
+            If the tableau fixes each pauli, creates an equivalent
+            pauli string. If not, then an error is raised.
 
             Returns:
                 The created pauli string
@@ -225,15 +227,19 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
 
             Example:
                 >>> import stim
-                >>> p = stim.PauliString("+YX_Z")
-                >>> t = p.to_tableau()
-                >>> t.to_pauli_string()
-                stim.PauliString("+YX_Z")
-                >>> cnot = stim.Tableau.from_named_gate("CNOT")
-                >>> cnot.to_pauli_string()
-                Traceback (most recent call last):
-                  File "<stdin>", line 1, in <module>
-                ValueError: The Tableau isn't equivalent to a Pauli product.
+                >>> t = (stim.Tableau.from_named_gate("Z") +
+                ...      stim.Tableau.from_named_gate("Y") +
+                ...      stim.Tableau.from_named_gate("I") +
+                ...      stim.Tableau.from_named_gate("X"))
+                >>> print(t)
+                +-xz-xz-xz-xz-
+                | -+ -- ++ +-
+                | XZ __ __ __
+                | __ XZ __ __
+                | __ __ XZ __
+                | __ __ __ XZ
+                >>> print(t.to_pauli_string())
+                +ZY_X
         )DOC").data());
 
     c.def(

@@ -699,7 +699,7 @@ def test_to_pauli_string():
     assert p.to_tableau().to_pauli_string() == p
 
     cnot = stim.Tableau.from_named_gate("CNOT")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="The Tableau isn't equivalent to a Pauli product."):
         cnot.to_pauli_string()
 
 
