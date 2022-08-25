@@ -61,6 +61,8 @@ struct Tableau {
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
+    /// Creates a Tableau from a PauliString via conjugation
+    static Tableau from_pauli_string(PauliString &pauli_string);
     /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
     static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
     /// Returns the inverse Tableau.

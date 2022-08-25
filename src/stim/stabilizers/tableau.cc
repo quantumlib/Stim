@@ -98,6 +98,13 @@ Tableau Tableau::identity(size_t num_qubits) {
     return Tableau(num_qubits);
 }
 
+Tableau Tableau::from_pauli_string(PauliString &pauli_string) {
+    Tableau tableau = identity(pauli_string.num_qubits);
+    tableau.xs.signs = pauli_string.zs;
+    tableau.zs.signs = pauli_string.xs;
+    return tableau;
+}
+
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
     result.xs[0] = PauliString::from_str(x);

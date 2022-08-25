@@ -435,6 +435,12 @@ TEST(tableau, to_pauli_string) {
     ASSERT_THROW(tableau.to_pauli_string(), std::invalid_argument);
 }
 
+TEST(tableau, from_pauli_string) {
+    PauliString pauli_string = PauliString::from_str("+XZXYZZX");
+    Tableau tableau = Tableau::from_pauli_string(pauli_string);
+    ASSERT_EQ(tableau.to_pauli_string().str(), pauli_string.str());
+}
+
 TEST(tableau, random) {
     for (size_t k = 0; k < 20; k++) {
         auto t = Tableau::random(1, SHARED_TEST_RNG());
