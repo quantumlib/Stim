@@ -62,7 +62,7 @@ struct Tableau {
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
     /// Creates a Tableau from a PauliString via conjugation
-    static Tableau from_pauli_string(PauliString &pauli_string);
+    static Tableau from_pauli_string(const PauliString &pauli_string);
     /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
     static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
     /// Returns the inverse Tableau.
@@ -77,7 +77,7 @@ struct Tableau {
     bool satisfies_invariants() const;
 
     /// If a Tableau fixes each pauli upto sign, then it is conjugation by a pauli
-    bool is_conjugation_by_pauli();
+    const bool is_pauli_product();
 
     /// If tableau is conjugation by a pauli, then return that pauli. Else throw exception.
     PauliString to_pauli_string();

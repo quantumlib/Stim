@@ -98,7 +98,7 @@ Tableau Tableau::identity(size_t num_qubits) {
     return Tableau(num_qubits);
 }
 
-Tableau Tableau::from_pauli_string(PauliString &pauli_string) {
+Tableau Tableau::from_pauli_string(const PauliString &pauli_string) {
     Tableau tableau = identity(pauli_string.num_qubits);
     tableau.xs.signs = pauli_string.zs;
     tableau.zs.signs = pauli_string.xs;
@@ -386,22 +386,32 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
-bool Tableau::is_conjugation_by_pauli() {
-    simd_bit_table<MAX_BITWORD_WIDTH> scratch_matrix =
-        simd_bit_table<MAX_BITWORD_WIDTH>::identity(num_qubits);
+const bool Tableau::is_pauli_product() {
+    size_t pop_count =
+        xs.xt.data.popcnt() +
+        xs.zt.data.popcnt() +
+        zs.xt.data.popcnt() +
+        zs.zt.data.popcnt();
 
-    if ( xs.xt != scratch_matrix || zs.zt != scratch_matrix ) {
+    if ( pop_count != 2 * num_qubits ) {
         return false;
     }
-    scratch_matrix.clear();
-    if ( xs.zt != scratch_matrix || zs.xt != scratch_matrix) {
-        return false;
+
+    for ( size_t q = 0; q < num_qubits; q++ ) {
+        if ( xs.xt[q][q] == false )
+            return false;
     }
+
+    for ( size_t q = 0; q < num_qubits; q++ ) {
+        if ( zs.zt[q][q] == false )
+            return false;
+    }
+
     return true;
 }
 
 PauliString Tableau::to_pauli_string() {
-    if ( ! is_conjugation_by_pauli() ) {
+    if ( ! is_pauli_product() ) {
         throw std::invalid_argument("tableau is not conjugation by a pauli");
     }
 

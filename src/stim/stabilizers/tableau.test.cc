@@ -410,13 +410,13 @@ TEST(tableau, check_invariants) {
 
 TEST(tableau, is_conjugation_by_pauli) {
     Tableau tableau(8);
-    ASSERT_TRUE(tableau.is_conjugation_by_pauli());
+    ASSERT_TRUE(tableau.is_pauli_product());
     tableau.xs.signs[0] = true;
     tableau.xs.signs[3] = true;
-    ASSERT_TRUE(tableau.is_conjugation_by_pauli());
+    ASSERT_TRUE(tableau.is_pauli_product());
     tableau.xs.zt[0][2] = true;
     tableau.zs.zt[0][2] = true;
-    ASSERT_FALSE(tableau.is_conjugation_by_pauli());
+    ASSERT_FALSE(tableau.is_pauli_product());
 }
 
 TEST(tableau, to_pauli_string) {
