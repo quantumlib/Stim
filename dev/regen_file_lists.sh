@@ -11,17 +11,13 @@ else
     FOLDER=$1
 fi
 
-# force sorting by byte value
-export LC_ALL=C
-
-echo "forcing locale: LC_ALL=$LC_ALL"
 echo "generating file lists in $FOLDER"
 
 # Get to this script's git repo root.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 cd "$(git rev-parse --show-toplevel)"
 
-find src | grep \.cc | grep -Ev "test|pybind|perf|^src/main\.cc" | sort > $FOLDER/source_files_no_main
-find src | grep \.cc | grep test | sort > $FOLDER/test_files
-find src | grep \.cc | grep perf | sort > $FOLDER/benchmark_files
-find src | grep \.cc | grep pybind | sort > $FOLDER/python_api_files
+find src | grep \.cc | grep -Ev "test|pybind|perf|^src/main\.cc" | LC_ALL=C sort > $FOLDER/source_files_no_main
+find src | grep \.cc | grep test | LC_ALL=C sort > $FOLDER/test_files
+find src | grep \.cc | grep perf | LC_ALL=C sort > $FOLDER/benchmark_files
+find src | grep \.cc | grep pybind | LC_ALL=C sort > $FOLDER/python_api_files
