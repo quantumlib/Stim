@@ -1,4 +1,3 @@
-#include "stim/draw/diagram.h"
 #include "stim/draw/3d/timeline_3d.h"
 #include "stim/draw/3d/gate_data_3d.h"
 #include "stim/draw/3d/diagram_3d.h"

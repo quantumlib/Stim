@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/diagram.h"
+#include "stim/draw/timeline/timeline_layout.h"
 
 #include "gtest/gtest.h"
 

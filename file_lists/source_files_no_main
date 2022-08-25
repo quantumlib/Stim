@@ -20,9 +20,9 @@ src/stim/draw/3d/gate_data_3d.cc
 src/stim/draw/3d/gltf.cc
 src/stim/draw/3d/json_obj.cc
 src/stim/draw/3d/timeline_3d.cc
-src/stim/draw/diagram.cc
-src/stim/draw/timeline_svg.cc
-src/stim/draw/timeline_text.cc
+src/stim/draw/timeline/timeline_layout.cc
+src/stim/draw/timeline/timeline_svg.cc
+src/stim/draw/timeline/timeline_text.cc
 src/stim/gen/circuit_gen_main.cc
 src/stim/gen/circuit_gen_params.cc
 src/stim/gen/gen_color_code.cc

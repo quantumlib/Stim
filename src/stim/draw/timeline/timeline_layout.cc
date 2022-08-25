@@ -1,4 +1,4 @@
-#include "stim/draw/diagram.h"
+#include "stim/draw/timeline/timeline_layout.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -14,52 +14,46 @@ size_t stim_draw_internal::utf8_char_count(const std::string &s) {
     return t;
 }
 
-DiagramPos::DiagramPos(size_t x, size_t y, size_t z, float align_x, float align_y, float align_z) :
+CellDiagramAlignedPos::CellDiagramAlignedPos(size_t x, size_t y, float align_x, float align_y) :
     x(x),
     y(y),
-    z(z),
     align_x(align_x),
-    align_y(align_y),
-    align_z(align_z) {
+    align_y(align_y) {
 }
 
-bool DiagramPos::operator==(const DiagramPos &other) const {
-    return x == other.x && y == other.y && z == other.z;
+bool CellDiagramAlignedPos::operator==(const CellDiagramAlignedPos &other) const {
+    return x == other.x && y == other.y;
 }
 
-bool DiagramPos::operator<(const DiagramPos &other) const {
+bool CellDiagramAlignedPos::operator<(const CellDiagramAlignedPos &other) const {
     if (x != other.x) {
         return x < other.x;
     }
-    if (y != other.y) {
-        return y < other.y;
-    }
-    return z < other.z;
+    return y < other.y;
 }
 
-DiagramBox::DiagramBox(DiagramPos center, std::string label, std::vector<std::string> annotations, const char *stroke) :
+CellDiagramCellContents::CellDiagramCellContents(CellDiagramAlignedPos center, std::string label, const char *stroke) :
     center(center),
     label(label),
-    annotations(annotations),
     stroke(stroke) {
 }
 
-void Diagram::add_box(DiagramBox box) {
-    boxes.insert({box.center, box});
+void CellDiagram::add_cell(CellDiagramCellContents cell) {
+    cells.insert({cell.center, cell});
 }
 
-void Diagram::for_each_pos(const std::function<void(DiagramPos pos)> &callback) {
-    for (const auto &item : boxes) {
+void CellDiagram::for_each_pos(const std::function<void(CellDiagramAlignedPos pos)> &callback) {
+    for (const auto &item : cells) {
         callback(item.first);
     }
     for (const auto &item : lines) {
-        callback(item.p1);
-        callback(item.p2);
+        callback(item.first);
+        callback(item.second);
     }
 }
 
-void Diagram::compactify() {
-    for (auto &item : boxes) {
+void CellDiagram::compactify() {
+    for (auto &item : cells) {
         auto &label = item.second.label;
         if (label.find("SQRT_") == 0) {
             label = "√" + label.substr(5);
@@ -73,46 +67,36 @@ void Diagram::compactify() {
     }
 }
 
-DiagramLayout Diagram::to_layout() {
-    DiagramLayout layout{0, 0, 0, {}, {}, {}, {}, {}, {}};
-    for_each_pos([&](DiagramPos pos) {
+CellDiagramSizing CellDiagram::compute_sizing() {
+    CellDiagramSizing layout{0, 0, {}, {}, {}, {}};
+    for_each_pos([&](CellDiagramAlignedPos pos) {
         layout.num_x = std::max(layout.num_x, pos.x + 1);
         layout.num_y = std::max(layout.num_y, pos.y + 1);
-        layout.num_z = std::max(layout.num_z, pos.z + 1);
     });
-    layout.x_widths.resize(layout.num_x, 1);
-    layout.y_heights.resize(layout.num_y, 1);
-    layout.z_depths.resize(layout.num_z, 1);
+    layout.x_spans.resize(layout.num_x, 1);
+    layout.y_spans.resize(layout.num_y, 1);
 
-    for (const auto &item : boxes) {
+    for (const auto &item : cells) {
         const auto &box = item.second;
-        auto &dx = layout.x_widths[box.center.x];
-        auto &dy = layout.y_heights[box.center.y];
-//            auto &dz = layout.z_depths[box.center.z];
+        auto &dx = layout.x_spans[box.center.x];
+        auto &dy = layout.y_spans[box.center.y];
         dx = std::max(dx, utf8_char_count(box.label));
-        for (const auto &annotation : box.annotations) {
-            dx = std::max(dx, utf8_char_count(annotation));
-        }
-        dy = std::max(dy, box.annotations.size());
+        dy = std::max(dy, (size_t)1);
     }
 
     layout.x_offsets.push_back(0);
     layout.y_offsets.push_back(0);
-    layout.z_offsets.push_back(0);
-    for (const auto &e : layout.x_widths) {
+    for (const auto &e : layout.x_spans) {
         layout.x_offsets.push_back(layout.x_offsets.back() + e);
     }
-    for (const auto &e : layout.y_heights) {
+    for (const auto &e : layout.y_spans) {
         layout.y_offsets.push_back(layout.y_offsets.back() + e);
-    }
-    for (const auto &e : layout.z_depths) {
-        layout.z_offsets.push_back(layout.z_offsets.back() + e);
     }
 
     return layout;
 }
 
-Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
+CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
     size_t num_qubits = circuit.count_qubits();
     size_t num_ticks = circuit.count_ticks();
 
@@ -123,7 +107,7 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
     std::vector<bool> cur_moment_used_flags;
     cur_moment_used_flags.resize(num_qubits);
 
-    Diagram diagram;
+    CellDiagram diagram;
 
     auto m2x = [](size_t m) { return m * 2 + 2; };
     auto q2y = [](size_t q) { return q * 2 + 1; };
@@ -136,33 +120,27 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
     auto do_tick = [&]() {
         if (num_ticks > 0 && cur_moment > tick_start_moment) {
             for (size_t y = 0; y < 2; y++) {
-                DiagramPos start{
+                CellDiagramAlignedPos start{
                     m2x(tick_start_moment),
                     y * (q2y(num_qubits - 1) + 1),
-                    0,
                     0.0,
                     0.5,
-                    0.5,
                 };
-                DiagramPos end{
+                CellDiagramAlignedPos end{
                     m2x(cur_moment),
                     y * (q2y(num_qubits - 1) + 1),
-                    0,
                     1.0,
-                    0.5,
                     0.5,
                 };
                 diagram.lines.push_back({start, end});
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     start,
                     y == 0 ? "/" : "\\",
-                    {},
                     "none",
                 });
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     end,
                     y == 1 ? "/" : "\\",
-                    {},
                     "none",
                 });
             }
@@ -188,23 +166,20 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
         if (!op.target_data.args.empty()) {
             ss << "(" << comma_sep(op.target_data.args, ",") << ")";
         }
-        diagram.add_box(DiagramBox{
+        diagram.add_cell(CellDiagramCellContents{
             {
                 m2x(cur_moment),
                 q2y(target.qubit_value()),
-                0,
-                0.5,
                 0.5,
                 0.5,
             },
             ss.str(),
-            {},
             "black",
         });
         cur_moment_num_used++;
     };
 
-    auto drawFeedback = [&](char gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+    auto drawFeedback = [&](const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
         size_t q = qubit_target.qubit_value();
         if (cur_moment_used_flags[q]) {
             start_next_moment();
@@ -219,54 +194,33 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
         } else if (feedback_target.is_measurement_record_target()) {
             ss << "m" << (feedback_target.value() + measure_offset);
         }
-        diagram.add_box(DiagramBox{
+        diagram.add_cell(CellDiagramCellContents{
             {
                 m2x(cur_moment),
                 q2y(qubit_target.qubit_value()),
-                0,
-                0.5,
                 0.5,
                 0.5,
             },
             ss.str(),
-            {},
             "black",
         });
         cur_moment_num_used++;
     };
 
     auto drawGate2Q = [&](const Operation &op, const GateTarget &target1, const GateTarget &target2) {
+        auto ends = two_qubit_gate_pieces(op.gate->name, true);
+        if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
+            drawFeedback(ends.second, target2, target1);
+            return;
+        }
+        if (target2.is_measurement_record_target() || target2.is_sweep_bit_target()) {
+            drawFeedback(ends.first, target1, target2);
+            return;
+        }
         std::stringstream first;
         std::stringstream second;
-        if ((op.gate->name_len == 2 || op.gate->name_len == 3) && op.gate->name[op.gate->name_len - 2] == 'C') {
-            char front = op.gate->name[0];
-            char back = op.gate->name[op.gate->name_len - 1];
-            if (front == 'C') {
-                front = 'Z';
-            }
-            if (back == 'C') {
-                back = 'Z';
-            }
-            if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
-                drawFeedback(back, target2, target1);
-                return;
-            }
-            if (target2.is_measurement_record_target() || target2.is_sweep_bit_target()) {
-                drawFeedback(front, target1, target2);
-                return;
-            }
-            if (front == 'Z') {
-                front = '@';
-            }
-            if (back == 'Z') {
-                back = '@';
-            }
-            first << front;
-            second << back;
-        } else {
-            first << op.gate->name;
-            second << op.gate->name;
-        }
+        first << (ends.first == "Z" ? "@" : ends.first);
+        second << (ends.second == "Z" ? "@" : ends.second);
 
         size_t q1 = target1.qubit_value();
         size_t q2 = target2.qubit_value();
@@ -283,19 +237,15 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
             cur_moment_used_flags[q] = true;
         }
 
-        DiagramPos pos1{
+        CellDiagramAlignedPos pos1{
             m2x(cur_moment),
             q2y(target1.qubit_value()),
-            0,
-            0.5,
             0.5,
             0.5,
         };
-        DiagramPos pos2{
+        CellDiagramAlignedPos pos2{
             m2x(cur_moment),
             q2y(target2.qubit_value()),
-            0,
-            0.5,
             0.5,
             0.5,
         };
@@ -307,16 +257,14 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
             first << "(" << comma_sep(op.target_data.args, ",") << ")";
             second << "(" << comma_sep(op.target_data.args, ",") << ")";
         }
-        diagram.add_box(DiagramBox{
+        diagram.add_cell(CellDiagramCellContents{
             pos1,
             first.str(),
-            {},
             "black",
         });
-        diagram.add_box(DiagramBox{
+        diagram.add_cell(CellDiagramCellContents{
             pos2,
             second.str(),
-            {},
             "black",
         });
         diagram.lines.push_back({pos1, pos2});
@@ -384,17 +332,14 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
             if (!op.target_data.args.empty()) {
                 ss << "(" << comma_sep(op.target_data.args, ",") << ")";
             }
-            diagram.add_box(DiagramBox{
+            diagram.add_cell(CellDiagramCellContents{
                 {
                     m2x(cur_moment),
                     q2y(t.qubit_value()),
-                    0,
-                    0.5,
                     0.5,
                     0.5,
                 },
                 ss.str(),
-                {},
                 "black",
             });
         }
@@ -405,16 +350,12 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
             {
                 m2x(cur_moment),
                 q2y(min_q),
-                0,
-                0.5,
                 0.5,
                 0.5,
             },
             {
                 m2x(cur_moment),
                 q2y(max_q),
-                0,
-                0.5,
                 0.5,
                 0.5,
             }});
@@ -456,27 +397,24 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
                 if (cur_moment_num_used) {
                     do_tick();
                 }
-                DiagramPos top{m2x(cur_moment), 0, 0, 0.5, 0.5, 0.5};
-                DiagramPos bot{m2x(cur_moment), q2y(num_qubits - 1) + 1, 0, 0.5, 0.5, 0.5};
+                CellDiagramAlignedPos top{m2x(cur_moment), 0, 0.5, 0.5};
+                CellDiagramAlignedPos bot{m2x(cur_moment), q2y(num_qubits - 1) + 1, 0.5, 0.5};
                 diagram.lines.push_back({top, bot});
                 size_t reps = op_data_rep_count(op.target_data);
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     top,
                     "/",
-                    {},
                     "none",
                 });
                 top.x += 1;
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     top,
                     "REP " + std::to_string(reps),
-                    {},
                     "none",
                 });
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     bot,
                     "\\",
-                    {},
                     "none",
                 });
                 cur_moment++;
@@ -491,16 +429,14 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
                 top.x = m2x(cur_moment);
                 bot.x = m2x(cur_moment);
                 diagram.lines.push_back({top, bot});
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     top,
                     "\\",
-                    {},
                     "none",
                 });
-                diagram.add_box(DiagramBox{
+                diagram.add_cell(CellDiagramCellContents{
                     bot,
                     "/",
-                    {},
                     "none",
                 });
                 start_next_moment();
@@ -521,19 +457,47 @@ Diagram stim_draw_internal::to_diagram(const Circuit &circuit) {
 
     process_ops(circuit);
 
-    diagram.lines.insert(diagram.lines.begin(), num_qubits, {{0, 0, 0, 0.0, 0.5, 0.5}, {0, 0, 0, 1.0, 0.5, 0.5}});
+    diagram.lines.insert(diagram.lines.begin(), num_qubits, {{0, 0, 0.0, 0.5}, {0, 0, 1.0, 0.5}});
     for (size_t q = 0; q < num_qubits; q++) {
         diagram.lines[q] = {
-            {0, q2y(q), 0, 1.0, 0.5, 0.5},
-            {m2x(cur_moment) + 1, q2y(q), 0, 1.0, 0.5, 0.5},
+            {0, q2y(q), 1.0, 0.5},
+            {m2x(cur_moment) + 1, q2y(q), 1.0, 0.5},
         };
-        diagram.add_box(DiagramBox{
-            {0, q2y(q), 0, 1.0, 0.5, 0.5},
+        diagram.add_cell(CellDiagramCellContents{
+            {0, q2y(q), 1.0, 0.5},
             "q" + std::to_string(q) + ": ",
-            {},
             "none",
         });
     }
 
     return diagram;
+}
+
+std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(const std::string &name, bool keep_it_short) {
+    std::pair<std::string, std::string> result;
+    if (name == "CX") {
+        result = {"Z_CONTROL", "X_CONTROL"};
+    } else if (name == "CY") {
+        result = {"Z_CONTROL", "Y_CONTROL"};
+    } else if (name == "CZ") {
+        result = {"Z_CONTROL", "Z_CONTROL"};
+    } else if (name == "XCX") {
+        result = {"X_CONTROL", "X_CONTROL"};
+    } else if (name == "XCY") {
+        result = {"X_CONTROL", "Y_CONTROL"};
+    } else if (name == "XCZ") {
+        result = {"X_CONTROL", "Z_CONTROL"};
+    } else if (name == "YCX") {
+        result = {"Y_CONTROL", "X_CONTROL"};
+    } else if (name == "YCY") {
+        result = {"Y_CONTROL", "Y_CONTROL"};
+    } else if (name == "YCZ") {
+        result = {"Y_CONTROL", "Z_CONTROL"};
+    } else {
+        return {name, name};
+    }
+    if (keep_it_short) {
+        return {result.first.substr(0, 1), result.second.substr(0, 1)};
+    }
+    return result;
 }

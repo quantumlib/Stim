@@ -1,5 +1,6 @@
 #include "stim/draw/3d/diagram_3d.h"
 #include "stim/mem/simd_bits.h"
+#include "stim/draw/timeline/timeline_layout.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -111,30 +112,6 @@ std::vector<Coord<2>> coordinates_for(const stim::Circuit &circuit, const simd_b
     return result;
 }
 
-std::pair<std::string, std::string> two_qubit_gate_pieces(const std::string &name) {
-    if (name == "CX") {
-        return {"Z_CONTROL", "X_CONTROL"};
-    } else if (name == "CY") {
-        return {"Z_CONTROL", "Y_CONTROL"};
-    } else if (name == "CZ") {
-        return {"Z_CONTROL", "Z_CONTROL"};
-    } else if (name == "XCX") {
-        return {"X_CONTROL", "X_CONTROL"};
-    } else if (name == "XCY") {
-        return {"X_CONTROL", "Y_CONTROL"};
-    } else if (name == "XCZ") {
-        return {"X_CONTROL", "Z_CONTROL"};
-    } else if (name == "YCX") {
-        return {"Y_CONTROL", "X_CONTROL"};
-    } else if (name == "YCY") {
-        return {"Y_CONTROL", "Y_CONTROL"};
-    } else if (name == "YCZ") {
-        return {"Y_CONTROL", "Z_CONTROL"};
-    } else {
-        return {name, name};
-    }
-}
-
 void qubits_used_by_circuit_helper(const stim::Circuit &circuit, simd_bits<MAX_BITWORD_WIDTH> &out) {
     for (const auto &op : circuit.operations) {
         if (op.gate->id == gate_name_to_id("REPEAT")) {
@@ -205,7 +182,7 @@ Diagram3D Diagram3D::from_circuit(const stim::Circuit &circuit) {
     };
 
     auto drawGate2Q = [&](const Operation &op, const GateTarget &target1, const GateTarget &target2) {
-        auto pair = two_qubit_gate_pieces(op.gate->name);
+        auto pair = two_qubit_gate_pieces(op.gate->name, false);
         if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
             drawFeedback(pair.first[0], target2, target1);
             return;
