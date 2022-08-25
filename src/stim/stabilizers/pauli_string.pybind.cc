@@ -383,6 +383,48 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
             .data());
 
     c.def(
+        "to_tableau",
+        [](const PyPauliString &self) {
+            return Tableau::from_pauli_string(self.value);
+        },
+        clean_doc_string(u8R"DOC(
+            Construct the Tableau defined by conjugating by a pauli product.
+
+            Args:
+
+            Examples:
+                >>> import stim
+                >>> p = stim.PauliString("ZZ")
+                >>> p.to_tableau()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("-X_"),
+                        stim.PauliString("-_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+_Z"),
+                    ],
+                )
+                >>> q = stim.PauliString("YX_Z")
+                >>> q.to_tableau()
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("-X___"),
+                        stim.PauliString("+_X__"),
+                        stim.PauliString("+__X_"),
+                        stim.PauliString("-___X"),
+                    ],
+                    zs=[
+                        stim.PauliString("-Z___"),
+                        stim.PauliString("-_Z__"),
+                        stim.PauliString("+__Z_"),
+                        stim.PauliString("+___Z"),
+                    ],
+                )
+        )DOC").data());
+
+    c.def(
         "commutes",
         [](const PyPauliString &self, const PyPauliString &other) {
             return self.value.ref().commutes(other.value.ref());
