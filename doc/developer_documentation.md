@@ -655,12 +655,4 @@ find src | grep "\.\(cc\|h\)$" | xargs clang-format -i
 # <a name="newfile"></a>Adding new C++ files
 
 For the cmake build system, we maintain C++ file lists in the folder `file_lists`.
-When you add a new C++ file, they can be updated as follows:
-
-```bash
-# from repo root
-find src | grep \.cc | grep -Ev "test|pybind|perf|^src/main\.cc" > file_lists/source_files_no_main
-find src | grep \.cc | grep test > file_lists/test_files
-find src | grep \.cc | grep perf > file_lists/benchmark_files
-find src | grep \.cc | grep pybind > file_lists/python_api_files
-```
+When you add a new C++ file, they can be updated using `dev/regen_file_lists.sh`

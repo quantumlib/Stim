@@ -271,6 +271,15 @@ jobs:
       - run: diff <(stim help formats_markdown) doc/result_formats.md
       - run: diff <(stim help flags_markdown) doc/usage_command_line.md
       - run: python doc/stim.pyi
+  test_generated_file_lists_are_fresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: dev/regen_file_lists.sh /tmp
+      - run: diff /tmp/benchmark_files file_lists/benchmark_files
+      - run: diff /tmp/python_api_files file_lists/python_api_files
+      - run: diff /tmp/source_files_no_main file_lists/source_files_no_main
+      - run: diff /tmp/test_files file_lists/test_files
   test_pybind:
     runs-on: ubuntu-latest
     steps:
