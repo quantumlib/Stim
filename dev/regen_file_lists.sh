@@ -11,6 +11,10 @@ else
     FOLDER=$1
 fi
 
+# force sorting by byte value
+export LC_ALL=C
+
+echo "forcing locale: LC_ALL=$LC_ALL"
 echo "generating file lists in $FOLDER"
 
 # Get to this script's git repo root.

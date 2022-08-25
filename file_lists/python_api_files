@@ -1,9 +1,9 @@
+src/stim/circuit/circuit.pybind.cc
 src/stim/circuit/circuit_gate_target.pybind.cc
 src/stim/circuit/circuit_instruction.pybind.cc
-src/stim/circuit/circuit.pybind.cc
 src/stim/circuit/circuit_repeat_block.pybind.cc
-src/stim/dem/detector_error_model_instruction.pybind.cc
 src/stim/dem/detector_error_model.pybind.cc
+src/stim/dem/detector_error_model_instruction.pybind.cc
 src/stim/dem/detector_error_model_repeat_block.pybind.cc
 src/stim/dem/detector_error_model_target.pybind.cc
 src/stim/io/read_write.pybind.cc
@@ -17,5 +17,5 @@ src/stim/simulators/matched_error.pybind.cc
 src/stim/simulators/measurements_to_detection_events.pybind.cc
 src/stim/simulators/tableau_simulator.pybind.cc
 src/stim/stabilizers/pauli_string.pybind.cc
-src/stim/stabilizers/tableau_iter.pybind.cc
 src/stim/stabilizers/tableau.pybind.cc
+src/stim/stabilizers/tableau_iter.pybind.cc
