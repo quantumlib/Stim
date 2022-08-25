@@ -392,6 +392,9 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
 
             Args:
 
+            Returns:
+                The created tableau
+
             Examples:
                 >>> import stim
                 >>> p = stim.PauliString("ZZ")

@@ -127,6 +127,17 @@ def test_repr():
         r = repr(v)
         assert eval(r, {'stim': stim}) == v
 
+def test_to_tableau():
+    p = stim.PauliString("XZ_Y")
+    t = p.to_tableau()
+    assert t.x_output(0) == stim.PauliString("+X___")
+    assert t.x_output(1) == stim.PauliString("-_X__")
+    assert t.x_output(2) == stim.PauliString("+__X_")
+    assert t.x_output(3) == stim.PauliString("-___X")
+    assert t.z_output(0) == stim.PauliString("-Z___")
+    assert t.z_output(1) == stim.PauliString("+_Z__")
+    assert t.z_output(2) == stim.PauliString("+__Z_")
+    assert t.z_output(3) == stim.PauliString("-___Z")
 
 def test_commutes():
     def c(a: str, b: str) -> bool:
