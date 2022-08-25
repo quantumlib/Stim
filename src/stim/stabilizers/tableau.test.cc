@@ -439,7 +439,7 @@ TEST(tableau, from_pauli_string) {
     PauliString pauli_string_empty = PauliString::from_str("");
     Tableau tableau_empty = Tableau::from_pauli_string(pauli_string_empty);
     ASSERT_EQ(tableau_empty.to_pauli_string(), pauli_string_empty);
-    PauliString pauli_string = PauliString::from_str("+XZXYZZX");
+    PauliString pauli_string = PauliString::from_str("+_XZX__YZZX");
     Tableau tableau = Tableau::from_pauli_string(pauli_string);
     ASSERT_EQ(tableau.to_pauli_string(), pauli_string);
 }
