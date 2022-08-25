@@ -141,8 +141,8 @@ simd_bit_table<MAX_BITWORD_WIDTH> stim::measurements_to_detection_events(
 void stim::stream_measurements_to_detection_events(
     FILE *measurements_in,
     SampleFormat measurements_in_format,
-    FILE *optional_initial_error_frames_in,
-    SampleFormat initial_error_frames_in_format,
+    FILE *optional_sweep_bits_in,
+    SampleFormat sweep_bits_format,
     FILE *results_out,
     SampleFormat results_out_format,
     const Circuit &circuit,
@@ -165,8 +165,8 @@ void stim::stream_measurements_to_detection_events(
     stream_measurements_to_detection_events_helper(
         measurements_in,
         measurements_in_format,
-        optional_initial_error_frames_in,
-        initial_error_frames_in_format,
+        optional_sweep_bits_in,
+        sweep_bits_format,
         results_out,
         results_out_format,
         noiseless_circuit,

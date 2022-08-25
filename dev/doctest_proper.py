@@ -27,12 +27,13 @@ SKIPPED_FIELDS = {
     '__file__',
 }
 
-def wrap(v, fullname):
-    def standin():
+
+def no_really_i_have_a_doc_why_is_this_needed_argh(v: object, fullname: str) -> object:
+    def so_much_doc():
         pass
-    standin.__doc__ = v.__doc__
-    standin.__qualname__ = fullname
-    return standin
+    so_much_doc.__doc__ = v.__doc__
+    so_much_doc.__qualname__ = fullname
+    return so_much_doc
 
 
 def gen(*, obj: object, fullname: str, out: Dict[str, object]) -> None:
@@ -44,7 +45,7 @@ def gen(*, obj: object, fullname: str, out: Dict[str, object]) -> None:
         return
     if not inspect.ismodule(obj) and not inspect.isclass(obj):
         if hasattr(obj, '__doc__'):
-            out[fullname] = wrap(obj, fullname)
+            out[fullname] = no_really_i_have_a_doc_why_is_this_needed_argh(obj, fullname)
         return
     if hasattr(obj, '__doc__'):
         out[fullname] = obj
@@ -68,7 +69,10 @@ def main():
         type=str,
         required=True,
         nargs='+',
-        help="The module to test. This module will be imported, its imported values will be recursively explored, and doctests will be run on them.")
+        help="The module to test. "
+             "This module will be imported, "
+             "its imported values will be recursively explored, "
+             "and doctests will be run on them.")
     parser.add_argument(
         '--import',
         default=(),

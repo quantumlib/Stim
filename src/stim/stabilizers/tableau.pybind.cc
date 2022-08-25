@@ -1140,7 +1140,7 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                 endian:
                     "little": matrix entries are in little endian order, where higher index
                         qubits correspond to larger changes in row/col indices.
-                    "big": matrix entries are in little endian order, where higher index
+                    "big": matrix entries are in big endian order, where higher index
                         qubits correspond to smaller changes in row/col indices.
             Returns:
                 The tableau equivalent to the given unitary matrix (up to global phase).
