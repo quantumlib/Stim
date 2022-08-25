@@ -386,7 +386,7 @@ bool Tableau::satisfies_invariants() const {
     return true;
 }
 
-const bool Tableau::is_pauli_product() {
+bool Tableau::is_pauli_product() const {
     size_t pop_count =
         xs.xt.data.popcnt() +
         xs.zt.data.popcnt() +
@@ -410,9 +410,9 @@ const bool Tableau::is_pauli_product() {
     return true;
 }
 
-PauliString Tableau::to_pauli_string() {
+PauliString Tableau::to_pauli_string() const {
     if ( ! is_pauli_product() ) {
-        throw std::invalid_argument("tableau is not conjugation by a pauli");
+        throw std::invalid_argument("The Tableau isn't equivalent to a Pauli product.");
     }
 
     PauliString pauli_string(num_qubits);

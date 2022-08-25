@@ -77,10 +77,10 @@ struct Tableau {
     bool satisfies_invariants() const;
 
     /// If a Tableau fixes each pauli upto sign, then it is conjugation by a pauli
-    const bool is_pauli_product();
+    bool is_pauli_product() const;
 
     /// If tableau is conjugation by a pauli, then return that pauli. Else throw exception.
-    PauliString to_pauli_string();
+    PauliString to_pauli_string() const;
 
     /// Creates a Tableau representing a single qubit gate.
     ///

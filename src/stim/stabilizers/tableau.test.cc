@@ -436,9 +436,12 @@ TEST(tableau, to_pauli_string) {
 }
 
 TEST(tableau, from_pauli_string) {
+    PauliString pauli_string_empty = PauliString::from_str("");
+    Tableau tableau_empty = Tableau::from_pauli_string(pauli_string_empty);
+    ASSERT_EQ(tableau_empty.to_pauli_string(), pauli_string_empty);
     PauliString pauli_string = PauliString::from_str("+XZXYZZX");
     Tableau tableau = Tableau::from_pauli_string(pauli_string);
-    ASSERT_EQ(tableau.to_pauli_string().str(), pauli_string.str());
+    ASSERT_EQ(tableau.to_pauli_string(), pauli_string);
 }
 
 TEST(tableau, random) {
