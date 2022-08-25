@@ -44,10 +44,6 @@ PYBIND_FILES = glob(
 cc_library(
     name = "stim_lib",
     srcs = SOURCE_FILES_NO_MAIN,
-    copts = [
-        "-std=c++20",
-        "-O3",
-    ],
     includes = ["src/"],
     linkopts = ["-lpthread"],
 )
@@ -57,7 +53,6 @@ cc_binary(
     srcs = SOURCE_FILES_NO_MAIN + glob(["src/**/main.cc"]),
     copts = [
         "-march=native",
-        "-std=c++20",
         "-O3",
     ],
     includes = ["src/"],
@@ -69,7 +64,6 @@ cc_binary(
     srcs = SOURCE_FILES_NO_MAIN + PERF_FILES,
     copts = [
         "-march=native",
-        "-std=c++20",
         "-O3",
     ],
     includes = ["src/"],
@@ -81,7 +75,6 @@ cc_test(
     srcs = SOURCE_FILES_NO_MAIN + TEST_FILES,
     copts = [
         "-march=native",
-        "-std=c++20",
     ],
     includes = ["src/"],
     linkopts = ["-lpthread"],
@@ -98,7 +91,6 @@ cc_binary(
         "-O3",
         "-fvisibility=hidden",
         "-march=native",
-        "-std=c++20",
         "-DSTIM_PYBIND11_MODULE_NAME=stim",
     ],
     includes = ["src/"],

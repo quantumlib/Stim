@@ -22,6 +22,10 @@
 
 namespace stim {
 
+uint8_t floor_lg2(size_t value);
+
+uint8_t is_power_of_2(size_t value);
+
 /// Converts a tableau into a unitary matrix.
 std::vector<std::vector<std::complex<float>>> tableau_to_unitary(const Tableau &tableau, bool little_endian);
 

@@ -6,6 +6,19 @@
 
 using namespace stim;
 
+uint8_t stim::floor_lg2(size_t value) {
+    uint8_t result = 0;
+    while (value > 1) {
+        result += 1;
+        value >>= 1;
+    }
+    return result;
+}
+
+uint8_t stim::is_power_of_2(size_t value) {
+    return value != 0 && (value & (value - 1)) == 0;
+}
+
 Circuit stim::unitary_circuit_inverse(const Circuit &unitary_circuit) {
     Circuit inverted;
     unitary_circuit.for_each_operation_reverse([&](const Operation &op) {
@@ -47,14 +60,14 @@ size_t compute_occupation(const std::vector<std::complex<float>> &state_vector) 
 
 Circuit stim::stabilizer_state_vector_to_circuit(
     const std::vector<std::complex<float>> &state_vector, bool little_endian) {
-    if (!std::has_single_bit(state_vector.size())) {
+    if (!is_power_of_2(state_vector.size())) {
         std::stringstream ss;
         ss << "Expected number of amplitudes to be a power of 2.";
         ss << " The given state vector had " << state_vector.size() << " amplitudes.";
         throw std::invalid_argument(ss.str());
     }
 
-    uint8_t num_qubits = std::bit_floor(state_vector.size());
+    uint8_t num_qubits = floor_lg2(state_vector.size());
     double weight = 0;
     for (const auto &c : state_vector) {
         weight += std::norm(c);
@@ -91,7 +104,7 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     }
     sim.smooth_stabilizer_state(sim.state[0]);
     size_t occupation = compute_occupation(sim.state);
-    if (!std::has_single_bit(occupation)) {
+    if (!is_power_of_2(occupation)) {
         throw std::invalid_argument("State vector isn't a stabilizer state.");
     }
 
@@ -356,7 +369,7 @@ size_t first_set_bit(size_t value, size_t min_result) {
 Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<float>>> &matrix, bool little_endian) {
     // Verify matrix is square.
     size_t num_amplitudes = matrix.size();
-    if (!std::has_single_bit(num_amplitudes)) {
+    if (!is_power_of_2(num_amplitudes)) {
         throw std::invalid_argument(
             "Matrix width and height must be a power of 2. Height was " + std::to_string(num_amplitudes));
     }
@@ -401,7 +414,7 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     };
 
     // Undo the permutation and also single-qubit phases.
-    size_t num_qubits = std::bit_floor(num_amplitudes);
+    size_t num_qubits = floor_lg2(num_amplitudes);
     for (size_t q = 0; q < num_qubits; q++) {
         size_t c = 1 << q;
 
