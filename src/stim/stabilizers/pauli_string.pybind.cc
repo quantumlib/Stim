@@ -388,9 +388,10 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
             return Tableau::from_pauli_string(self.value);
         },
         clean_doc_string(u8R"DOC(
-            Construct the Tableau defined by conjugating by a pauli product.
+            Creates a Tableau equivalent to this Pauli string.
 
-            Args:
+            The tableau represents a Clifford operation that multiplies qubits
+            by the corresponding Pauli operations from this Pauli string.
 
             Returns:
                 The created tableau

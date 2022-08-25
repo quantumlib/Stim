@@ -694,6 +694,16 @@ def test_unitary():
     ])
 
 
+def test_to_pauli_string():
+    p = stim.PauliString("+YX_Z")
+    assert p.to_tableau().to_pauli_string() == p
+
+    cnot = stim.Tableau.from_named_gate("CNOT")
+    with pytest.raises(ValueError):
+        cnot.to_pauli_string()
+
+
+
 def test_iter_1q():
     r = stim.Tableau.iter_all(1, unsigned=True)
     assert len(set(repr(e) for e in r)) == 6
