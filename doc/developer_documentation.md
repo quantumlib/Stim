@@ -40,6 +40,7 @@ These notes generally assume you are on a Linux system.
     - [with emscripten](#jspackage.stimjs.emscripten)
 - [autoformating code](#autoformat)
     - [with clang-format](#autoformat.clang-format)
+- [adding new c++ files](#newfile)
 
 # <a name="compatibility"></a>Compatibility guarantees across versions
 
@@ -143,8 +144,8 @@ bazel run stim
 ```bash
 # from the repository root:
 find src \
-    | grep "\\.cc" \
-    | grep -v "\\.\(test\|perf\|pybind\)\\.cc" \
+    | grep "\\.cc$" \
+    | grep -v "\\.\(test\|perf\|pybind\)\\.cc$" \
     | xargs g++ -I src -pthread -std=c++11 -O3 -march=native
 
 # output binary ends up at:
@@ -650,3 +651,8 @@ Run the following command from the repo root to auto-format all C++ code:
 ```bash
 find src | grep "\.\(cc\|h\)$" | xargs clang-format -i
 ```
+
+# <a name="newfile"></a>Adding new C++ files
+
+For the cmake build system, we maintain C++ file lists in the folder `file_lists`.
+When you add a new C++ file, they can be updated using `dev/regen_file_lists.sh`
