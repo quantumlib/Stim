@@ -290,7 +290,7 @@ struct TableauSimulator {
 template <size_t Q, typename RESET_FLAG, typename ELSE_CORR>
 void perform_pauli_errors_via_correlated_errors(
     const OperationData &target_data, RESET_FLAG reset_flag, ELSE_CORR else_corr) {
-    double target_p;
+    double target_p{};
     GateTarget target_t[Q];
     OperationData data{{&target_p}, {&target_t[0], &target_t[Q]}};
     for (size_t k = 0; k < target_data.targets.size(); k += Q) {
