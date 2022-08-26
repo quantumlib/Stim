@@ -6065,9 +6065,10 @@ def to_tableau(
 
     The tableau represents a Clifford operation that multiplies qubits
     by the corresponding Pauli operations from this Pauli string.
+    The global phase of the pauli operation is lost in the conversion.
 
     Returns:
-        The created tableau
+        The created tableau.
 
     Examples:
         >>> import stim
@@ -7177,8 +7178,8 @@ def to_pauli_string(
 ) -> stim.PauliString:
     """Return a Pauli string equivalent to the tableau.
 
-    If the tableau fixes each pauli, creates an equivalent
-    pauli string. If not, then an error is raised.
+    If the tableau is equivalent to a pauli product, creates
+    an equivalent pauli string. If not, then an error is raised.
 
     Returns:
         The created pauli string

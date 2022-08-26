@@ -695,13 +695,13 @@ def test_unitary():
 
 
 def test_to_pauli_string():
+    assert stim.PauliString(0).to_tableau() == stim.Tableau(0)
     p = stim.PauliString("+YX_Z")
     assert p.to_tableau().to_pauli_string() == p
 
     cnot = stim.Tableau.from_named_gate("CNOT")
     with pytest.raises(ValueError, match="The Tableau isn't equivalent to a Pauli product."):
         cnot.to_pauli_string()
-
 
 
 def test_iter_1q():

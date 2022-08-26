@@ -139,6 +139,11 @@ def test_to_tableau():
     assert t.z_output(2) == stim.PauliString("+__Z_")
     assert t.z_output(3) == stim.PauliString("-___Z")
 
+    p_random = stim.PauliString.random(32)
+    p_random.sign = 1
+    p_random_roundtrip = p_random.to_tableau().to_pauli_string()
+    assert p_random == p_random_roundtrip
+
 def test_commutes():
     def c(a: str, b: str) -> bool:
         return stim.PauliString(a).commutes(stim.PauliString(b))

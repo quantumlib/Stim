@@ -218,8 +218,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         clean_doc_string(u8R"DOC(
             Return a Pauli string equivalent to the tableau.
 
-            If the tableau fixes each pauli, creates an equivalent
-            pauli string. If not, then an error is raised.
+            If the tableau is equivalent to a pauli product, creates
+            an equivalent pauli string. If not, then an error is raised.
 
             Returns:
                 The created pauli string

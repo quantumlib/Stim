@@ -392,9 +392,10 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
 
             The tableau represents a Clifford operation that multiplies qubits
             by the corresponding Pauli operations from this Pauli string.
+            The global phase of the pauli operation is lost in the conversion.
 
             Returns:
-                The created tableau
+                The created tableau.
 
             Examples:
                 >>> import stim
