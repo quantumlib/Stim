@@ -117,6 +117,7 @@ pybind11::dict raw_format_data() {
     return result;
 }
 
+
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.attr("__version__") = xstr(VERSION_INFO);
     m.doc() = R"pbdoc(
@@ -139,7 +140,8 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_compiled_measurement_sampler_methods(c_compiled_measurement_sampler);
     pybind_compiled_measurements_to_detection_events_converter_methods(c_compiled_m2d_converter);
     pybind_pauli_string(m);
-    pybind_tableau(m);
+    auto c_tableau = pybind_tableau(m);
+    pybind_tableau_methods(m, c_tableau);
     pybind_tableau_simulator(m);
     pybind_matched_error(m);
     pybind_read_write(m);

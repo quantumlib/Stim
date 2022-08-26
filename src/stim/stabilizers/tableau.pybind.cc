@@ -25,8 +25,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-void stim_pybind::pybind_tableau(pybind11::module &m) {
-    auto c = pybind11::class_<Tableau>(
+pybind11::class_<Tableau> pybind_tableau(pybind11::module &m) {
+    return pybind11::class_<Tableau>(
         m,
         "Tableau",
         clean_doc_string(u8R"DOC(
@@ -63,7 +63,9 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+__XZ_")
         )DOC")
             .data());
+}
 
+void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<Tableau> &c) {
     c.def(
         pybind11::init<size_t>(),
         pybind11::arg("num_qubits"),
