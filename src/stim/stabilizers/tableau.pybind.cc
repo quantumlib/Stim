@@ -25,7 +25,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
-pybind11::class_<Tableau> pybind_tableau(pybind11::module &m) {
+pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
     return pybind11::class_<Tableau>(
         m,
         "Tableau",
