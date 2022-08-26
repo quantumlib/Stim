@@ -4378,6 +4378,48 @@ class PauliString:
     @sign.setter
     def sign(self, value: complex):
         pass
+    def to_tableau(
+        self,
+    ) -> stim.Tableau:
+        """Creates a Tableau equivalent to this Pauli string.
+
+        The tableau represents a Clifford operation that multiplies qubits
+        by the corresponding Pauli operations from this Pauli string.
+
+        Returns:
+            The created tableau
+
+        Examples:
+            >>> import stim
+            >>> p = stim.PauliString("ZZ")
+            >>> p.to_tableau()
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("-X_"),
+                    stim.PauliString("-_X"),
+                ],
+                zs=[
+                    stim.PauliString("+Z_"),
+                    stim.PauliString("+_Z"),
+                ],
+            )
+            >>> q = stim.PauliString("YX_Z")
+            >>> q.to_tableau()
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("-X___"),
+                    stim.PauliString("+_X__"),
+                    stim.PauliString("+__X_"),
+                    stim.PauliString("-___X"),
+                ],
+                zs=[
+                    stim.PauliString("-Z___"),
+                    stim.PauliString("-_Z__"),
+                    stim.PauliString("+__Z_"),
+                    stim.PauliString("+___Z"),
+                ],
+            )
+        """
 class Tableau:
     """A stabilizer tableau.
 
@@ -5232,6 +5274,36 @@ class Tableau:
                 H 0 1 2
                 S 1 1 2 2
             ''')
+        """
+    def to_pauli_string(
+        self,
+    ) -> stim.PauliString:
+        """Return a Pauli string equivalent to the tableau.
+
+        If the tableau fixes each pauli, creates an equivalent
+        pauli string. If not, then an error is raised.
+
+        Returns:
+            The created pauli string
+
+        Raises:
+            ValueError: The Tableau isn't equivalent to a Pauli product.
+
+        Example:
+            >>> import stim
+            >>> t = (stim.Tableau.from_named_gate("Z") +
+            ...      stim.Tableau.from_named_gate("Y") +
+            ...      stim.Tableau.from_named_gate("I") +
+            ...      stim.Tableau.from_named_gate("X"))
+            >>> print(t)
+            +-xz-xz-xz-xz-
+            | -+ -- ++ +-
+            | XZ __ __ __
+            | __ XZ __ __
+            | __ __ XZ __
+            | __ __ __ XZ
+            >>> print(t.to_pauli_string())
+            +ZY_X
         """
     def to_unitary_matrix(
         self,
