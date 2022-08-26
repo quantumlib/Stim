@@ -25,8 +25,8 @@
 using namespace stim;
 using namespace stim_pybind;
 
-void stim_pybind::pybind_tableau(pybind11::module &m) {
-    auto c = pybind11::class_<Tableau>(
+pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
+    return pybind11::class_<Tableau>(
         m,
         "Tableau",
         clean_doc_string(u8R"DOC(
@@ -63,7 +63,9 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+__XZ_")
         )DOC")
             .data());
+}
 
+void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<Tableau> &c) {
     c.def(
         pybind11::init<size_t>(),
         pybind11::arg("num_qubits"),
@@ -207,6 +209,40 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                        [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
         )DOC")
             .data());
+
+    c.def(
+        "to_pauli_string",
+        [](const Tableau &self) {
+            return PyPauliString(self.to_pauli_string());
+        },
+        clean_doc_string(u8R"DOC(
+            Return a Pauli string equivalent to the tableau.
+
+            If the tableau is equivalent to a pauli product, creates
+            an equivalent pauli string. If not, then an error is raised.
+
+            Returns:
+                The created pauli string
+
+            Raises:
+                ValueError: The Tableau isn't equivalent to a Pauli product.
+
+            Example:
+                >>> import stim
+                >>> t = (stim.Tableau.from_named_gate("Z") +
+                ...      stim.Tableau.from_named_gate("Y") +
+                ...      stim.Tableau.from_named_gate("I") +
+                ...      stim.Tableau.from_named_gate("X"))
+                >>> print(t)
+                +-xz-xz-xz-xz-
+                | -+ -- ++ +-
+                | XZ __ __ __
+                | __ XZ __ __
+                | __ __ XZ __
+                | __ __ __ XZ
+                >>> print(t.to_pauli_string())
+                +ZY_X
+        )DOC").data());
 
     c.def(
         "to_circuit",
