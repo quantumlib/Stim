@@ -111,9 +111,6 @@ pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_mo
         )DOC")
             .data());
 
-    pybind_detector_error_model_instruction(m);
-    pybind_detector_error_model_target(m);
-    pybind_detector_error_model_repeat_block(m);
     return c;
 }
 

@@ -20,6 +20,9 @@
 #include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/circuit/circuit.pybind.h"
+#include "stim/dem/detector_error_model_instruction.pybind.h"
+#include "stim/dem/detector_error_model_repeat_block.pybind.h"
+#include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/io/read_write.pybind.h"
 #include "stim/main_namespaced.h"
@@ -142,6 +145,9 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_circuit_instruction = pybind_circuit_instruction(m);
     auto c_circuit_repeat_block = pybind_circuit_repeat_block(m);
     auto c_circuit = pybind_circuit(m);
+    auto c_detector_error_model_instruction = pybind_detector_error_model_instruction(m);
+    pybind_detector_error_model_target(m);
+    pybind_detector_error_model_repeat_block(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
     pybind_compiled_detector_sampler_methods(c_compiled_detector_sampler);
     pybind_compiled_measurement_sampler_methods(c_compiled_measurement_sampler);
@@ -427,6 +433,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_methods(m, c_circuit);
     pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
     pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
+    pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);
     pybind_detector_error_model_methods(m, c_detector_error_model);
     pybind_tableau_methods(m, c_tableau);
 }

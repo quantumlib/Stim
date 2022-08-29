@@ -18,7 +18,6 @@
 #include <pybind11/pybind11.h>
 
 #include "stim/dem/detector_error_model.h"
-#include "stim/dem/detector_error_model_target.pybind.h"
 
 struct ExposedDemInstruction {
     std::vector<double> arguments;
@@ -35,6 +34,10 @@ struct ExposedDemInstruction {
     bool operator!=(const ExposedDemInstruction &other) const;
 };
 
-void pybind_detector_error_model_instruction(pybind11::module &m);
+namespace stim_pybind {
 
+pybind11::class_<ExposedDemInstruction> pybind_detector_error_model_instruction(pybind11::module &m);
+void pybind_detector_error_model_instruction_methods(pybind11::module &m, pybind11::class_<ExposedDemInstruction> &c);
+
+}
 #endif
