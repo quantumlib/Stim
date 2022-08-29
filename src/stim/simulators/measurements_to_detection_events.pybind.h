@@ -62,7 +62,7 @@ struct CompiledMeasurementsToDetectionEventsConverter {
 };
 
 pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>
-pybind_compiled_measurements_to_detection_events_converter_class(pybind11::module &m);
+pybind_compiled_measurements_to_detection_events_converter(pybind11::module &m);
 void pybind_compiled_measurements_to_detection_events_converter_methods(
     pybind11::module &m,
     pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c);

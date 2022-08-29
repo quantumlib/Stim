@@ -412,9 +412,9 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     /// class definitions
     auto c_dem_sampler = pybind_dem_sampler(m);
-    auto c_compiled_detector_sampler = pybind_compiled_detector_sampler_class(m);
-    auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler_class(m);
-    auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
+    auto c_compiled_detector_sampler = pybind_compiled_detector_sampler(m);
+    auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler(m);
+    auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter(m);
     auto c_pauli_string = pybind_pauli_string(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
