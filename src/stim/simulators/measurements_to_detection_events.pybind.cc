@@ -168,6 +168,7 @@ CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_mea
 }
 
 void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_methods(
+    pybind11::module &m,
     pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
     c.def(
         pybind11::init(&py_init_compiled_measurements_to_detection_events_converter),

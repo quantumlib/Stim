@@ -46,7 +46,7 @@ struct CompiledDetectorSampler {
 };
 
 pybind11::class_<CompiledDetectorSampler> pybind_compiled_detector_sampler_class(pybind11::module &m);
-void pybind_compiled_detector_sampler_methods(pybind11::class_<CompiledDetectorSampler> &c);
+void pybind_compiled_detector_sampler_methods(pybind11::module &m, pybind11::class_<CompiledDetectorSampler> &c);
 CompiledDetectorSampler py_init_compiled_detector_sampler(const stim::Circuit &circuit, const pybind11::object &seed);
 
 }  // namespace stim_pybind

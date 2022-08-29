@@ -152,10 +152,8 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
 
-    pybind_compiled_detector_sampler_methods(c_compiled_detector_sampler);
-    pybind_compiled_measurement_sampler_methods(c_compiled_measurement_sampler);
-    pybind_compiled_measurements_to_detection_events_converter_methods(c_compiled_m2d_converter);
-    pybind_pauli_string(m);
+
+    auto c_pauli_string = pybind_pauli_string(m);
     pybind_tableau_simulator(m);
     pybind_matched_error(m);
     pybind_read_write(m);
@@ -445,4 +443,9 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_detector_error_model_methods(m, c_detector_error_model);
 
     pybind_tableau_methods(m, c_tableau);
+    pybind_pauli_string_methods(m, c_pauli_string);
+
+    pybind_compiled_detector_sampler_methods(m, c_compiled_detector_sampler);
+    pybind_compiled_measurement_sampler_methods(m, c_compiled_measurement_sampler);
+    pybind_compiled_measurements_to_detection_events_converter_methods(m, c_compiled_m2d_converter);
 }

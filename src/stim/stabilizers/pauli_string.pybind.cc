@@ -215,8 +215,8 @@ PyPauliString PyPauliString::from_text(const char *text) {
     return value;
 }
 
-void stim_pybind::pybind_pauli_string(pybind11::module &m) {
-    auto c = pybind11::class_<PyPauliString>(
+pybind11::class_<PyPauliString> stim_pybind::pybind_pauli_string(pybind11::module &m) {
+    return pybind11::class_<PyPauliString>(
         m,
         "PauliString",
         clean_doc_string(u8R"DOC(
@@ -233,7 +233,9 @@ void stim_pybind::pybind_pauli_string(pybind11::module &m) {
                 +_____
         )DOC")
             .data());
+}
 
+void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<PyPauliString> &c) {
     c.def(
         pybind11::init([](size_t num_qubits) {
             PyPauliString result{PauliString(num_qubits), false};
