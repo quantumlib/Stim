@@ -17,11 +17,8 @@
 
 #include <pybind11/pybind11.h>
 
-#include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/gate_target.h"
-
-void pybind_circuit_instruction(pybind11::module &m);
 
 struct CircuitInstruction {
     const stim::Gate &gate;
@@ -42,5 +39,12 @@ struct CircuitInstruction {
     std::string repr() const;
     std::string str() const;
 };
+
+namespace stim_pybind {
+
+pybind11::class_<CircuitInstruction> pybind_circuit_instruction(pybind11::module &m);
+void pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<CircuitInstruction> &c);
+
+}
 
 #endif
