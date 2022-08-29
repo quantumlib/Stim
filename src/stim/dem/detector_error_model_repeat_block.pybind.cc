@@ -19,6 +19,7 @@
 #include "stim/py/base.pybind.h"
 
 using namespace stim;
+using namespace stim_pybind;
 
 pybind11::class_<ExposedDemRepeatBlock> stim_pybind::pybind_detector_error_model_repeat_block(pybind11::module &m) {
     return pybind11::class_<ExposedDemRepeatBlock>(
@@ -46,7 +47,7 @@ pybind11::class_<ExposedDemRepeatBlock> stim_pybind::pybind_detector_error_model
 
 void stim_pybind::pybind_detector_error_model_repeat_block_methods(
     pybind11::module &m,
-    pybind11::class_<ExposedDemRepeatBlock> c) {
+    pybind11::class_<ExposedDemRepeatBlock> &c) {
 
     c.def(
         pybind11::init<uint64_t, DetectorErrorModel>(),

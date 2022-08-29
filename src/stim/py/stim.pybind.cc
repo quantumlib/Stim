@@ -148,7 +148,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_circuit = pybind_circuit(m);
 
     auto c_detector_error_model_instruction = pybind_detector_error_model_instruction(m);
-    pybind_detector_error_model_target(m);
+    auto c_detector_error_model_target = pybind_detector_error_model_target(m);
     auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
 
@@ -441,6 +441,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);
     pybind_detector_error_model_repeat_block_methods(m, c_detector_error_model_repeat_block);
+    pybind_detector_error_model_target_methods(m, c_detector_error_model_target);
     pybind_detector_error_model_methods(m, c_detector_error_model);
 
     pybind_tableau_methods(m, c_tableau);

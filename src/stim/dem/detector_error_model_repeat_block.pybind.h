@@ -19,6 +19,10 @@
 
 #include "stim/dem/detector_error_model.h"
 
+
+
+namespace stim_pybind {
+
 struct ExposedDemRepeatBlock {
     uint64_t repeat_count;
     stim::DetectorErrorModel body;
@@ -29,10 +33,8 @@ struct ExposedDemRepeatBlock {
     bool operator!=(const ExposedDemRepeatBlock &other) const;
 };
 
-namespace stim_pybind {
-
 pybind11::class_<ExposedDemRepeatBlock> pybind_detector_error_model_repeat_block(pybind11::module &m);
-void pybind_detector_error_model_repeat_block_methods(pybind11::module &m, pybind11::class_<ExposedDemRepeatBlock> c);
+void pybind_detector_error_model_repeat_block_methods(pybind11::module &m, pybind11::class_<ExposedDemRepeatBlock> &c);
 
 }
 
