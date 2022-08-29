@@ -29,6 +29,11 @@ struct ExposedDemRepeatBlock {
     bool operator!=(const ExposedDemRepeatBlock &other) const;
 };
 
-void pybind_detector_error_model_repeat_block(pybind11::module &m);
+namespace stim_pybind {
+
+pybind11::class_<ExposedDemRepeatBlock> pybind_detector_error_model_repeat_block(pybind11::module &m);
+void pybind_detector_error_model_repeat_block_methods(pybind11::module &m, pybind11::class_<ExposedDemRepeatBlock> c);
+
+}
 
 #endif

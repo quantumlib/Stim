@@ -141,14 +141,17 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
+
     auto c_circuit_gate_target = pybind_circuit_gate_target(m);
     auto c_circuit_instruction = pybind_circuit_instruction(m);
     auto c_circuit_repeat_block = pybind_circuit_repeat_block(m);
     auto c_circuit = pybind_circuit(m);
+
     auto c_detector_error_model_instruction = pybind_detector_error_model_instruction(m);
     pybind_detector_error_model_target(m);
-    pybind_detector_error_model_repeat_block(m);
+    auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
+
     pybind_compiled_detector_sampler_methods(c_compiled_detector_sampler);
     pybind_compiled_measurement_sampler_methods(c_compiled_measurement_sampler);
     pybind_compiled_measurements_to_detection_events_converter_methods(c_compiled_m2d_converter);
@@ -427,13 +430,18 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
+
     pybind_circuit_instruction_methods(m, c_circuit_instruction);
     pybind_circuit_gate_target_methods(m, c_circuit_gate_target);
     pybind_circuit_repeat_block_methods(m, c_circuit_repeat_block);
     pybind_circuit_methods(m, c_circuit);
+
     pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
     pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
+
     pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);
+    pybind_detector_error_model_repeat_block_methods(m, c_detector_error_model_repeat_block);
     pybind_detector_error_model_methods(m, c_detector_error_model);
+
     pybind_tableau_methods(m, c_tableau);
 }
