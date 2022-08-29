@@ -135,10 +135,13 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
     // described as `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
 
+
+    /// class definitions
     auto c_dem_sampler = pybind_dem_sampler(m);
     auto c_compiled_detector_sampler = pybind_compiled_detector_sampler_class(m);
     auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler_class(m);
     auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
+    auto c_pauli_string = pybind_pauli_string(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
 
@@ -152,10 +155,10 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
 
-
-    auto c_pauli_string = pybind_pauli_string(m);
-    pybind_tableau_simulator(m);
+    auto c_tableau_simulator = pybind_tableau_simulator(m);
     pybind_matched_error(m);
+
+    /// top level function definitions
     pybind_read_write(m);
 
     m.def(
@@ -434,8 +437,8 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_repeat_block_methods(m, c_circuit_repeat_block);
     pybind_circuit_methods(m, c_circuit);
 
-    pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
-    pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
+    pybind_tableau_iter_methods(m, c_tableau_iter);
+    pybind_dem_sampler_methods(m, c_dem_sampler);
 
     pybind_detector_error_model_instruction_methods(m, c_detector_error_model_instruction);
     pybind_detector_error_model_repeat_block_methods(m, c_detector_error_model_repeat_block);
@@ -448,4 +451,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_compiled_detector_sampler_methods(m, c_compiled_detector_sampler);
     pybind_compiled_measurement_sampler_methods(m, c_compiled_measurement_sampler);
     pybind_compiled_measurements_to_detection_events_converter_methods(m, c_compiled_m2d_converter);
+
+    pybind_tableau_simulator_methods(m, c_tableau_simulator);
+
 }
