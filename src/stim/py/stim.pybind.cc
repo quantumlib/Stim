@@ -124,52 +124,7 @@ pybind11::dict raw_format_data() {
 }
 
 
-PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
-    m.attr("__version__") = xstr(VERSION_INFO);
-    m.doc() = R"pbdoc(
-        Stim: A fast stabilizer circuit library.
-    )pbdoc";
-
-    // CAUTION: The ordering of these is important!
-    // If a class references another before it is registered, method signatures can get messed up.
-    // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
-    // described as `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
-
-
-    /// class definitions
-    auto c_dem_sampler = pybind_dem_sampler(m);
-    auto c_compiled_detector_sampler = pybind_compiled_detector_sampler_class(m);
-    auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler_class(m);
-    auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
-    auto c_pauli_string = pybind_pauli_string(m);
-    auto c_tableau = pybind_tableau(m);
-    auto c_tableau_iter = pybind_tableau_iter(m);
-
-    auto c_circuit_gate_target = pybind_circuit_gate_target(m);
-    auto c_circuit_instruction = pybind_circuit_instruction(m);
-    auto c_circuit_repeat_block = pybind_circuit_repeat_block(m);
-    auto c_circuit = pybind_circuit(m);
-
-    auto c_detector_error_model_instruction = pybind_detector_error_model_instruction(m);
-    auto c_detector_error_model_target = pybind_detector_error_model_target(m);
-    auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
-    auto c_detector_error_model = pybind_detector_error_model(m);
-
-    auto c_tableau_simulator = pybind_tableau_simulator(m);
-
-
-    auto c_circuit_error_location_stack_frame = pybind_circuit_error_location_stack_frame(m);
-    auto c_gate_target_with_coords = pybind_gate_target_with_coords(m);
-    auto c_dem_target_with_coords = pybind_dem_target_with_coords(m);
-    auto c_flipped_measurement = pybind_flipped_measurement(m);
-    auto c_circuit_targets_inside_instruction = pybind_circuit_targets_inside_instruction(m);
-    auto c_circuit_error_location = pybind_circuit_error_location(m);
-    auto c_circuit_error_location_methods = pybind_explained_error(m);
-
-
-    /// top level function definitions
-    pybind_read_write(m);
-
+void top_level(pybind11::module &m) {
     m.def(
         "target_rec",
         &target_rec,
@@ -440,7 +395,58 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
+}
 
+
+PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
+    m.attr("__version__") = xstr(VERSION_INFO);
+    m.doc() = R"pbdoc(
+        Stim: A fast stabilizer circuit library.
+    )pbdoc";
+
+    // CAUTION: The ordering of these is important!
+    // If a class references another before it is registered, method signatures can get messed up.
+    // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
+    // described as `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
+
+
+    /// class definitions
+    auto c_dem_sampler = pybind_dem_sampler(m);
+    auto c_compiled_detector_sampler = pybind_compiled_detector_sampler_class(m);
+    auto c_compiled_measurement_sampler = pybind_compiled_measurement_sampler_class(m);
+    auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
+    auto c_pauli_string = pybind_pauli_string(m);
+    auto c_tableau = pybind_tableau(m);
+    auto c_tableau_iter = pybind_tableau_iter(m);
+
+    auto c_circuit_gate_target = pybind_circuit_gate_target(m);
+    auto c_circuit_instruction = pybind_circuit_instruction(m);
+    auto c_circuit_repeat_block = pybind_circuit_repeat_block(m);
+    auto c_circuit = pybind_circuit(m);
+
+    auto c_detector_error_model_instruction = pybind_detector_error_model_instruction(m);
+    auto c_detector_error_model_target = pybind_detector_error_model_target(m);
+    auto c_detector_error_model_repeat_block = pybind_detector_error_model_repeat_block(m);
+    auto c_detector_error_model = pybind_detector_error_model(m);
+
+    auto c_tableau_simulator = pybind_tableau_simulator(m);
+
+
+    auto c_circuit_error_location_stack_frame = pybind_circuit_error_location_stack_frame(m);
+    auto c_gate_target_with_coords = pybind_gate_target_with_coords(m);
+    auto c_dem_target_with_coords = pybind_dem_target_with_coords(m);
+    auto c_flipped_measurement = pybind_flipped_measurement(m);
+    auto c_circuit_targets_inside_instruction = pybind_circuit_targets_inside_instruction(m);
+    auto c_circuit_error_location = pybind_circuit_error_location(m);
+    auto c_circuit_error_location_methods = pybind_explained_error(m);
+
+
+    /// top level function definitions
+    top_level(m);
+    pybind_read_write(m);
+
+
+    // method definitions
     pybind_circuit_instruction_methods(m, c_circuit_instruction);
     pybind_circuit_gate_target_methods(m, c_circuit_gate_target);
     pybind_circuit_repeat_block_methods(m, c_circuit_repeat_block);
@@ -470,5 +476,4 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_targets_inside_instruction_methods(m, c_circuit_targets_inside_instruction);
     pybind_circuit_error_location_methods(m, c_circuit_error_location);
     pybind_explained_error_methods(m, c_circuit_error_location_methods);
-
 }
