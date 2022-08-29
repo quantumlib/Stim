@@ -170,7 +170,6 @@ pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
             .data());
 
     pybind_circuit_repeat_block(m);
-    pybind_circuit_gate_target(m);
     pybind_circuit_instruction(m);
 
     return c;

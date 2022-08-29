@@ -37,8 +37,8 @@ GateTarget obj_to_gate_target(const pybind11::object &obj) {
     return handle_to_gate_target(obj);
 }
 
-void pybind_circuit_gate_target(pybind11::module &m) {
-    auto c = pybind11::class_<GateTarget>(
+pybind11::class_<stim::GateTarget> stim_pybind::pybind_circuit_gate_target(pybind11::module &m) {
+    return pybind11::class_<GateTarget>(
         m,
         "GateTarget",
         clean_doc_string(u8R"DOC(
@@ -55,6 +55,9 @@ void pybind_circuit_gate_target(pybind11::module &m) {
                 stim.GateTarget(stim.target_inv(1))
         )DOC")
             .data());
+}
+
+void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind11::class_<stim::GateTarget> &c) {
     c.def(
         pybind11::init(&obj_to_gate_target),
         pybind11::arg("value"),

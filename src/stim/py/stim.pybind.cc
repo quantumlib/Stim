@@ -16,6 +16,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/io/read_write.pybind.h"
@@ -135,6 +136,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_compiled_m2d_converter = pybind_compiled_measurements_to_detection_events_converter_class(m);
     auto c_tableau = pybind_tableau(m);
     auto c_tableau_iter = pybind_tableau_iter(m);
+    auto c_circuit_gate_target = pybind_circuit_gate_target(m);
     auto c_circuit = pybind_circuit(m);
     auto c_detector_error_model = pybind_detector_error_model(m);
     pybind_compiled_detector_sampler_methods(c_compiled_detector_sampler);
@@ -415,6 +417,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
+    pybind_circuit_gate_target_methods(m, c_circuit_gate_target);
     pybind_circuit_methods(m, c_circuit);
     pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
     pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
