@@ -143,7 +143,7 @@ void circuit_append_strict(
     circuit_append(self, obj, targets, arg, false);
 }
 
-pybind11::class_<Circuit> pybind_circuit(pybind11::module &m) {
+pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
         m,
         "Circuit",
@@ -219,7 +219,7 @@ std::set<uint64_t> obj_to_abs_detector_id_set(
     return filter;
 }
 
-void pybind_circuit_after_types_all_defined(pybind11::class_<Circuit> &c) {
+void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Circuit> &c) {
     c.def(
         pybind11::init([](const char *stim_program_text) {
             Circuit self;

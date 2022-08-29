@@ -415,7 +415,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     m.def("_UNSTABLE_raw_gate_data", &raw_gate_data);
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
-    pybind_circuit_after_types_all_defined(c_circuit);
+    pybind_circuit_methods(m, c_circuit);
     pybind_tableau_iter_after_types_all_defined(m, c_tableau_iter);
     pybind_dem_sampler_after_types_all_defined(m, c_dem_sampler);
     pybind_detector_error_model_after_types_all_defined(m, c_detector_error_model);
