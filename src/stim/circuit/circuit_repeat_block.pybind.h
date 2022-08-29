@@ -19,8 +19,6 @@
 
 #include "stim/circuit/circuit.h"
 
-void pybind_circuit_repeat_block(pybind11::module &m);
-
 struct CircuitRepeatBlock {
     uint64_t repeat_count;
     stim::Circuit body;
@@ -30,5 +28,12 @@ struct CircuitRepeatBlock {
     bool operator!=(const CircuitRepeatBlock &other) const;
     std::string repr() const;
 };
+
+namespace stim_pybind {
+
+pybind11::class_<CircuitRepeatBlock> pybind_circuit_repeat_block(pybind11::module &m);
+void pybind_circuit_repeat_block_methods(pybind11::module &m, pybind11::class_<CircuitRepeatBlock> &c);
+
+}
 
 #endif

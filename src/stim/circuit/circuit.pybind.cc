@@ -169,8 +169,6 @@ pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
         )DOC")
             .data());
 
-    pybind_circuit_repeat_block(m);
-
     return c;
 }
 
