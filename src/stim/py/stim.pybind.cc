@@ -404,11 +404,12 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
         Stim: A fast stabilizer circuit library.
     )pbdoc";
 
-    // CAUTION: The ordering of these is important!
-    // If a class references another before it is registered, method signatures can get messed up.
-    // For example, if DetectorErrorModel is defined after Circuit then Circuit.detector_error_model's return type is
-    // described as `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
-
+    /// class registration happens before function/method
+    /// registration. If a class references another before it is
+    /// registered, method signatures can get messed up.  For example,
+    /// if DetectorErrorModel is defined after Circuit then
+    /// Circuit.detector_error_model's return type is described as
+    /// `stim::DetectorErrorModel` instead of `stim.DetectorErrorModel`.
 
     /// class definitions
     auto c_dem_sampler = pybind_dem_sampler(m);

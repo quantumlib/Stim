@@ -114,7 +114,7 @@ pybind11::class_<CompiledDetectorSampler> stim_pybind::pybind_compiled_detector_
 }
 
 void stim_pybind::pybind_compiled_detector_sampler_methods(
-    pybind11::module &,
+    pybind11::module &m,
     pybind11::class_<CompiledDetectorSampler> &c) {
     c.def(
         pybind11::init(&py_init_compiled_detector_sampler),

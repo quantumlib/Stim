@@ -175,6 +175,4 @@ std::ostream &operator<<(std::ostream &out, const ExplainedError &e);
 
 }  // namespace stim
 
-
-
 #endif

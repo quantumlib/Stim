@@ -21,11 +21,11 @@
 
 namespace stim_pybind {
 
+std::string detector_error_model_repr(const stim::DetectorErrorModel &self);
 pybind11::class_<stim::DetectorErrorModel> pybind_detector_error_model(pybind11::module &m);
 void pybind_detector_error_model_methods(pybind11::module &m, pybind11::class_<stim::DetectorErrorModel> &c);
 
 }
 
-std::string detector_error_model_repr(const stim::DetectorErrorModel &self);
 
 #endif

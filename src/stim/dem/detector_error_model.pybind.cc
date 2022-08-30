@@ -27,7 +27,7 @@
 
 using namespace stim;
 
-std::string detector_error_model_repr(const DetectorErrorModel &self) {
+std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &self) {
     if (self.instructions.empty()) {
         return "stim.DetectorErrorModel()";
     }
