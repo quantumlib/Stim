@@ -26,7 +26,6 @@
 #include "stim/simulators/dem_sampler.h"
 
 using namespace stim;
-using namespace stim_pybind;
 
 std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &self) {
     if (self.instructions.empty()) {
@@ -112,13 +111,10 @@ pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_mo
         )DOC")
             .data());
 
-    pybind_detector_error_model_instruction(m);
-    pybind_detector_error_model_target(m);
-    pybind_detector_error_model_repeat_block(m);
     return c;
 }
 
-void stim_pybind::pybind_detector_error_model_after_types_all_defined(pybind11::module &m, pybind11::class_<stim::DetectorErrorModel> &c) {
+void stim_pybind::pybind_detector_error_model_methods(pybind11::module &m, pybind11::class_<stim::DetectorErrorModel> &c) {
     c.def(
         pybind11::init([](const char *detector_error_model_text) {
             DetectorErrorModel self;

@@ -87,7 +87,7 @@ std::string CompiledMeasurementSampler::repr() const {
     return result.str();
 }
 
-pybind11::class_<CompiledMeasurementSampler> stim_pybind::pybind_compiled_measurement_sampler_class(
+pybind11::class_<CompiledMeasurementSampler> stim_pybind::pybind_compiled_measurement_sampler(
     pybind11::module &m) {
     return pybind11::class_<CompiledMeasurementSampler>(
         m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
@@ -100,7 +100,9 @@ CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
     return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
 }
 
-void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c) {
+void stim_pybind::pybind_compiled_measurement_sampler_methods(
+    pybind11::module &m,
+    pybind11::class_<CompiledMeasurementSampler> &c) {
     c.def(
         pybind11::init(&py_init_compiled_sampler),
         pybind11::arg("circuit"),

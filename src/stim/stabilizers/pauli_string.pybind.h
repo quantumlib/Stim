@@ -52,7 +52,8 @@ struct PyPauliString {
     std::string str() const;
 };
 
-void pybind_pauli_string(pybind11::module &m);
+pybind11::class_<PyPauliString> pybind_pauli_string(pybind11::module &m);
+void pybind_pauli_string_methods(pybind11::module &m, pybind11::class_<PyPauliString> &c);
 
 }  // namespace stim_pybind
 

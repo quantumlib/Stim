@@ -116,8 +116,8 @@ TempViewableData args_to_target_pairs(PyTableauSimulator &self, const pybind11::
     return result;
 }
 
-void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
-    auto c = pybind11::class_<PyTableauSimulator>(
+pybind11::class_<PyTableauSimulator> stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
+    return pybind11::class_<PyTableauSimulator>(
         m,
         "TableauSimulator",
         clean_doc_string(u8R"DOC(
@@ -151,6 +151,8 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 )
         )DOC")
             .data());
+}
+void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<PyTableauSimulator> &c) {
 
     c.def(pybind11::init(&create_tableau_simulator));
 
