@@ -91,6 +91,22 @@ simd_bit_table<W> simd_bit_table<W>::inverse_assuming_lower_triangular(size_t n)
     return result;
 }
 
+/// SIMD transpose:
+/// Suppose we have a matrix with minor axis contiguous in memory
+///
+/// A11  A12  ...  A1n
+/// A21  A22  ...  A2n
+///           ...
+/// An1  An2  ...  Ann
+///
+/// Aij consists of W words (W * W bits), and it is stored in memory
+/// with stride n. In order to do a bitwise transpose, we need to
+/// first bitwise transpose each Aij and then swap Aij with Aji. We
+/// have inplace_transpose_square(bitword<W> *data, size_t stride)
+/// which handles the first part and std::swap which handles the
+/// second part.
+
+/// transpose each Aij block
 template <size_t W>
 void exchange_low_indices(simd_bit_table<W> &table) {
     for (size_t maj_high = 0; maj_high < table.num_simd_words_major; maj_high++) {
@@ -104,8 +120,11 @@ void exchange_low_indices(simd_bit_table<W> &table) {
 template <size_t W>
 void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
+
+    // transpose each Aij block
     exchange_low_indices(*this);
 
+    // swap Aij and Aji
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = maj_high + 1; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {

@@ -79,7 +79,7 @@ struct simd_bit_table {
     inline const simd_bits_range_ref<W> operator[](size_t major_index) const {
         return data.word_range_ref(major_index * num_simd_words_minor, num_simd_words_minor);
     }
-    /// Return the index in data of the first row of a W bit x W bit block
+    /// Return the index in data of the first row of a W * W bit block
     /// from a major simd index and a minor simd index
     inline const size_t data_index(size_t major_index, size_t minor_index) const {
         return major_index * W * num_simd_words_minor + minor_index;
