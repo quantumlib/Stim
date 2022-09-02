@@ -121,10 +121,13 @@ template <size_t W>
 void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
 
+    // Current address tensor indices: [...min_low ...min_high ...maj_low ...maj_high]
     // transpose each Aij block
     exchange_low_indices(*this);
 
+    // Current address tensor indices: [...maj_low ...min_high ...min_low ...maj_high]
     // swap Aij and Aji
+    // Permutes data such that high address bits of majors and minors are exchanged.
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = maj_high + 1; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
@@ -135,6 +138,7 @@ void simd_bit_table<W>::do_square_transpose() {
             }
         }
     }
+    // Current address tensor indices: [...maj_low ...maj_high ...min_low ...min_high]
 }
 
 template <size_t W>
