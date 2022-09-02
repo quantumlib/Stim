@@ -94,10 +94,10 @@ simd_bit_table<W> simd_bit_table<W>::inverse_assuming_lower_triangular(size_t n)
 /// SIMD transpose:
 /// Suppose we have a matrix with minor axis contiguous in memory
 ///
-/// A11  A12  ...  A1n
-/// A21  A22  ...  A2n
+/// A00  A01  ...  A0n
+/// A10  A11  ...  A1n
 ///           ...
-/// An1  An2  ...  Ann
+/// An0  An1  ...  A2n
 ///
 /// Aij consists of W words (W * W bits), and it is stored in memory
 /// with stride n. In order to do a bitwise transpose, we need to
@@ -111,7 +111,7 @@ template <size_t W>
 void exchange_low_indices(simd_bit_table<W> &table) {
     for (size_t maj_high = 0; maj_high < table.num_simd_words_major; maj_high++) {
         for (size_t min_high = 0; min_high < table.num_simd_words_minor; min_high++) {
-            size_t block_start = table.data_index(maj_high, min_high);
+            size_t block_start = table.data_index(maj_high, min_high, 0);
             bitword<W>::inplace_transpose_square(table.data.ptr_simd + block_start, table.num_simd_words_minor);
         }
     }
@@ -132,8 +132,8 @@ void simd_bit_table<W>::do_square_transpose() {
         for (size_t min_high = maj_high + 1; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
                 std::swap(
-                    data.ptr_simd[maj_low * num_simd_words_minor + data_index(maj_high, min_high)],
-                    data.ptr_simd[maj_low * num_simd_words_minor + data_index(min_high, maj_high)]
+                    data.ptr_simd[data_index(maj_high, min_high, maj_low)],
+                    data.ptr_simd[data_index(min_high, maj_high, maj_low)]
                 );
             }
         }
@@ -165,8 +165,8 @@ void simd_bit_table<W>::transpose_into(simd_bit_table<W> &out) const {
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = 0; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
-                size_t src_index = maj_low * num_simd_words_minor + data_index(maj_high, min_high);
-                size_t dst_index = maj_low * out.num_simd_words_minor + out.data_index(min_high, maj_high);
+                size_t src_index = data_index(maj_high, min_high, maj_low);
+                size_t dst_index = out.data_index(min_high, maj_high, maj_low);
                 out.data.ptr_simd[dst_index] = data.ptr_simd[src_index];
             }
         }
