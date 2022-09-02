@@ -17,6 +17,7 @@
 #include <cstring>
 #include <sstream>
 
+
 namespace stim {
 
 template <size_t W>
@@ -93,9 +94,9 @@ simd_bit_table<W> simd_bit_table<W>::inverse_assuming_lower_triangular(size_t n)
 template <size_t W>
 void exchange_low_indices(simd_bit_table<W> &table) {
     for (size_t maj_high = 0; maj_high < table.num_simd_words_major; maj_high++) {
-        auto *block_start = table.data.ptr_simd + (maj_high << bitword<W>::BIT_POW) * table.num_simd_words_minor;
         for (size_t min_high = 0; min_high < table.num_simd_words_minor; min_high++) {
-            bitword<W>::inplace_transpose_square(block_start + min_high, table.num_simd_words_minor);
+            size_t block_start = table.data_index(maj_high, min_high);
+            bitword<W>::inplace_transpose_square(table.data.ptr_simd + block_start, table.num_simd_words_minor);
         }
     }
 }
@@ -103,26 +104,18 @@ void exchange_low_indices(simd_bit_table<W> &table) {
 template <size_t W>
 void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
-
-    // Current address tensor indices: [...min_low ...min_high ...maj_low ...maj_high]
-
     exchange_low_indices(*this);
 
-    // Current address tensor indices: [...maj_low ...min_high ...min_low ...maj_high]
-
-    // Permute data such that high address bits of majors and minors are exchanged.
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = maj_high + 1; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
                 std::swap(
-                    data.ptr_simd[(maj_low + (maj_high << bitword<W>::BIT_POW)) * num_simd_words_minor + min_high],
-                    data.ptr_simd[(maj_low + (min_high << bitword<W>::BIT_POW)) * num_simd_words_minor + maj_high]
+                    data.ptr_simd[maj_low * num_simd_words_minor + data_index(maj_high, min_high)],
+                    data.ptr_simd[maj_low * num_simd_words_minor + data_index(min_high, maj_high)]
                 );
             }
         }
     }
-
-    // Current address tensor indices: [...maj_low ...maj_high ...min_low ...min_high]
 }
 
 template <size_t W>
@@ -149,8 +142,8 @@ void simd_bit_table<W>::transpose_into(simd_bit_table<W> &out) const {
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = 0; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
-                size_t src_index = (maj_low + (maj_high << bitword<W>::BIT_POW)) * num_simd_words_minor + min_high;
-                size_t dst_index = (maj_low + (min_high << bitword<W>::BIT_POW)) * out.num_simd_words_minor + maj_high;
+                size_t src_index = maj_low * num_simd_words_minor + data_index(maj_high, min_high);
+                size_t dst_index = maj_low * out.num_simd_words_minor + out.data_index(min_high, maj_high);
                 out.data.ptr_simd[dst_index] = data.ptr_simd[src_index];
             }
         }
