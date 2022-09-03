@@ -99,11 +99,11 @@ simd_bit_table<W> simd_bit_table<W>::inverse_assuming_lower_triangular(size_t n)
 /// An0  An1  ...  A2n
 ///
 /// Aij consists of W words (W * W bits), and it is stored in memory
-/// with stride n. In order to do a bitwise transpose, we need to
-/// first bitwise transpose each Aij and then swap Aij with Aji. We
-/// have inplace_transpose_square(bitword<W> *data, size_t stride)
-/// which handles the first part and std::swap which handles the
-/// second part.
+/// with stride num_simd_words_minor. In order to do a bitwise
+/// transpose, we need to first bitwise transpose each Aij and then
+/// swap Aij with Aji. We have inplace_transpose_square(bitword<W>
+/// *data, size_t stride) which handles the first part and std::swap
+/// which handles the second part.
 
 /// transpose each Aij block
 template <size_t W>
