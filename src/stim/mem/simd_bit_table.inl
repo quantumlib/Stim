@@ -17,7 +17,6 @@
 #include <cstring>
 #include <sstream>
 
-
 namespace stim {
 
 template <size_t W>
