@@ -526,3 +526,17 @@ def test_set_state_from_stabilizers():
     assert s.current_inverse_tableau() == stim.Tableau(0)
     s.set_state_from_stabilizers([stim.PauliString("XXX"), stim.PauliString("_ZZ"), stim.PauliString("ZZ_")])
     np.testing.assert_allclose(s.state_vector(), [0.5**0.5, 0, 0, 0, 0, 0, 0, 0.5**0.5], atol=1e-6)
+
+
+def test_seed():
+    s = stim.TableauSimulator(seed=0)
+    s.h(0)
+    assert s.measure(0) is True
+    s.h(0)
+    assert s.measure(0) is True
+    s.h(0)
+    assert s.measure(0) is False
+    s.h(0)
+    assert s.measure(0) is True
+    s.h(0)
+    assert s.measure(0) is False

@@ -51,8 +51,8 @@ struct TempViewableData {
     }
 };
 
-PyTableauSimulator create_tableau_simulator() {
-    return PyTableauSimulator(make_py_seeded_rng(pybind11::none()));
+PyTableauSimulator create_tableau_simulator(const pybind11::object &seed) {
+    return PyTableauSimulator(make_py_seeded_rng(seed));
 }
 
 std::vector<GateTarget> arg_to_qubit_or_qubits(PyTableauSimulator &self, const pybind11::object &obj) {
@@ -154,7 +154,27 @@ pybind11::class_<PyTableauSimulator> stim_pybind::pybind_tableau_simulator(pybin
 }
 void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<PyTableauSimulator> &c) {
 
-    c.def(pybind11::init(&create_tableau_simulator));
+    c.def(
+        pybind11::init(&create_tableau_simulator),
+        pybind11::kw_only(),
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            Initializes a stim.TableauSimulator.
+
+            Args:
+                seed: Optional seed for the pseudo-random number generator.
+
+            Returns:
+                An initialized stim.TableauSimulator.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator(seed=0)
+                >>> s.h(0)
+                >>> s.measure(0)
+                True
+        )DOC")
+            .data());
 
     c.def(
         "current_inverse_tableau",
