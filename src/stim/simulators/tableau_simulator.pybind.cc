@@ -163,6 +163,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
+            @signature def __init__(self, *, seed: Optional[int] = None) -> None:
             Initializes a stim.TableauSimulator.
 
             Args:

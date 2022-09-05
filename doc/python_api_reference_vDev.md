@@ -247,6 +247,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauIterator.__iter__`](#stim.TableauIterator.__iter__)
     - [`stim.TableauIterator.__next__`](#stim.TableauIterator.__next__)
 - [`stim.TableauSimulator`](#stim.TableauSimulator)
+    - [`stim.TableauSimulator.__init__`](#stim.TableauSimulator.__init__)
     - [`stim.TableauSimulator.c_xyz`](#stim.TableauSimulator.c_xyz)
     - [`stim.TableauSimulator.c_zyx`](#stim.TableauSimulator.c_zyx)
     - [`stim.TableauSimulator.canonical_stabilizers`](#stim.TableauSimulator.canonical_stabilizers)
@@ -7546,6 +7547,34 @@ class TableauSimulator:
     """
 ```
 
+<a name="stim.TableauSimulator.__init__"></a>
+```python
+# stim.TableauSimulator.__init__
+
+# (in class stim.TableauSimulator)
+def __init__(
+    self,
+    *,
+    seed: Optional[int] = None,
+) -> None:
+
+    """Initializes a stim.TableauSimulator.
+
+    Args:
+        seed: Optional seed for the pseudo-random number generator.
+
+    Returns:
+        An initialized stim.TableauSimulator.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator(seed=0)
+        >>> s.h(0)
+        >>> s.measure(0)
+        True
+    """
+```
+
 <a name="stim.TableauSimulator.c_xyz"></a>
 ```python
 # stim.TableauSimulator.c_xyz
@@ -7659,8 +7688,17 @@ def cnot(
 # (in class stim.TableauSimulator)
 def copy(
     self,
+    *,
+    copy_rng: bool = False,
 ) -> stim.TableauSimulator:
     """Returns a copy of the simulator. A simulator with the same internal state.
+
+    Args:
+        copy_rng: If False, old and new simulators share the random number
+            generator. If True, a new random number generator is created
+            and initialized to the same internal state as the old. In the
+            latter case, measurement outcomes produced by the two simulators
+            will agree. Defaults to False.
 
     Examples:
         >>> import stim
