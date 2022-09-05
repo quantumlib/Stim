@@ -29,6 +29,14 @@ TableauSimulator::TableauSimulator(std::mt19937_64 &rng, size_t num_qubits, int8
       last_correlated_error_occurred(false) {
 }
 
+TableauSimulator::TableauSimulator(const TableauSimulator& other, std::mt19937_64 &rng)
+    : inv_state(other.inv_state),
+      rng(rng),
+      sign_bias(other.sign_bias),
+      measurement_record(other.measurement_record),
+      last_correlated_error_occurred(other.last_correlated_error_occurred) {
+}
+
 bool TableauSimulator::is_deterministic_x(size_t target) const {
     return !inv_state.xs[target].xs.not_zero();
 }

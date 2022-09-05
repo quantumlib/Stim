@@ -46,6 +46,10 @@ struct TableauSimulator {
     ///     record: Measurement record configuration.
     explicit TableauSimulator(
         std::mt19937_64 &rng, size_t num_qubits = 0, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
+    /// Args:
+    ///     other: TableauSimulator to copy state from.
+    ///     rng: The random number generator to use for random operations.
+    TableauSimulator(const TableauSimulator& other, std::mt19937_64 &rng);
 
     /// Samples the given circuit in a deterministic fashion.
     ///

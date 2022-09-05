@@ -27,6 +27,10 @@ PyTableauSimulator::PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng)
     : TableauSimulator(*rng), rng_reference(rng) {
 }
 
+PyTableauSimulator::PyTableauSimulator(const TableauSimulator &simulator, std::shared_ptr<std::mt19937_64> rng)
+    : TableauSimulator(simulator, *rng), rng_reference(rng) {
+}
+
 void do_obj(PyTableauSimulator &self, const pybind11::object &obj) {
     if (pybind11::isinstance<Circuit>(obj)) {
         self.expand_do_circuit(pybind11::cast<Circuit>(obj));
@@ -1495,12 +1499,24 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "copy",
-        [](const PyTableauSimulator &self) {
+        [](const PyTableauSimulator &self, bool copy_rng) {
+            if (copy_rng) {
+                return PyTableauSimulator(self, std::make_shared<std::mt19937_64>(*self.rng_reference));
+            }
             PyTableauSimulator copy = self;
             return copy;
         },
+        pybind11::kw_only(),
+        pybind11::arg("copy_rng") = false,
         clean_doc_string(u8R"DOC(
             Returns a copy of the simulator. A simulator with the same internal state.
+
+            Args:
+                copy_rng: If False, old and new simulators share the random number
+                    generator. If True, a new random number generator is created
+                    and initialized to the same internal state as the old. In the
+                    latter case, measurement outcomes produced by the two simulators
+                    will agree. Defaults to False.
 
             Examples:
                 >>> import stim
