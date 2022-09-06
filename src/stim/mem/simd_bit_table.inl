@@ -90,27 +90,11 @@ simd_bit_table<W> simd_bit_table<W>::inverse_assuming_lower_triangular(size_t n)
     return result;
 }
 
-/// SIMD transpose:
-/// Suppose we have a matrix with minor axis contiguous in memory
-///
-/// A00  A01  ...  A0n
-/// A10  A11  ...  A1n
-///           ...
-/// An0  An1  ...  A2n
-///
-/// Aij consists of W words (W * W bits), and it is stored in memory
-/// with stride num_simd_words_minor. In order to do a bitwise
-/// transpose, we need to first bitwise transpose each Aij and then
-/// swap Aij with Aji. We have inplace_transpose_square(bitword<W>
-/// *data, size_t stride) which handles the first part and std::swap
-/// which handles the second part.
-
-/// transpose each Aij block
 template <size_t W>
 void exchange_low_indices(simd_bit_table<W> &table) {
     for (size_t maj_high = 0; maj_high < table.num_simd_words_major; maj_high++) {
         for (size_t min_high = 0; min_high < table.num_simd_words_minor; min_high++) {
-            size_t block_start = table.data_index(maj_high, min_high, 0);
+            size_t block_start = table.get_index_of_bitword(maj_high, 0, min_high);
             bitword<W>::inplace_transpose_square(table.data.ptr_simd + block_start, table.num_simd_words_minor);
         }
     }
@@ -121,18 +105,18 @@ void simd_bit_table<W>::do_square_transpose() {
     assert(num_simd_words_minor == num_simd_words_major);
 
     // Current address tensor indices: [...min_low ...min_high ...maj_low ...maj_high]
-    // transpose each Aij block
+
     exchange_low_indices(*this);
 
     // Current address tensor indices: [...maj_low ...min_high ...min_low ...maj_high]
-    // swap Aij and Aji
-    // Permutes data such that high address bits of majors and minors are exchanged.
+
+    // Permute data such that high address bits of majors and minors are exchanged.
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = maj_high + 1; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
                 std::swap(
-                    data.ptr_simd[data_index(maj_high, min_high, maj_low)],
-                    data.ptr_simd[data_index(min_high, maj_high, maj_low)]
+                    data.ptr_simd[get_index_of_bitword(maj_high, maj_low, min_high)],
+                    data.ptr_simd[get_index_of_bitword(min_high, maj_low, maj_high)]
                 );
             }
         }
@@ -164,8 +148,8 @@ void simd_bit_table<W>::transpose_into(simd_bit_table<W> &out) const {
     for (size_t maj_high = 0; maj_high < num_simd_words_major; maj_high++) {
         for (size_t min_high = 0; min_high < num_simd_words_minor; min_high++) {
             for (size_t maj_low = 0; maj_low < W; maj_low++) {
-                size_t src_index = data_index(maj_high, min_high, maj_low);
-                size_t dst_index = out.data_index(min_high, maj_high, maj_low);
+                size_t src_index = get_index_of_bitword(maj_high, maj_low, min_high);
+                size_t dst_index = out.get_index_of_bitword(min_high, maj_low, maj_high);
                 out.data.ptr_simd[dst_index] = data.ptr_simd[src_index];
             }
         }
