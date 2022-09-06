@@ -5570,6 +5570,27 @@ class TableauSimulator:
             ],
         )
     """
+    def __init__(
+        self,
+        *,
+        seed: Optional[int] = None,
+    ) -> None:
+
+        """Initializes a stim.TableauSimulator.
+
+        Args:
+            seed: Optional seed for the pseudo-random number generator.
+
+        Returns:
+            An initialized stim.TableauSimulator.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator(seed=0)
+            >>> s.h(0)
+            >>> s.measure(0)
+            True
+        """
     def c_xyz(
         self,
         *targets,
@@ -5650,8 +5671,17 @@ class TableauSimulator:
         """
     def copy(
         self,
+        *,
+        copy_rng: bool = False,
     ) -> stim.TableauSimulator:
         """Returns a copy of the simulator. A simulator with the same internal state.
+
+        Args:
+            copy_rng: If False, old and new simulators share the random number
+                generator. If True, a new random number generator is created
+                and initialized to the same internal state as the old. In the
+                latter case, measurement outcomes produced by the two simulators
+                will agree. Defaults to False.
 
         Examples:
             >>> import stim
