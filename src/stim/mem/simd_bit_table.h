@@ -79,11 +79,11 @@ struct simd_bit_table {
     inline const simd_bits_range_ref<W> operator[](size_t major_index) const {
         return data.word_range_ref(major_index * num_simd_words_minor, num_simd_words_minor);
     }
-    /// operator[] lets us extract a specified bit as *this[major_index][minor_index].
+    /// operator[] lets us extract a specified bit as (*this)[major_index][minor_index].
     /// We can decompose these indicies as
     /// major_index = (major_index_high << bitword<W>::BIT_POW) + major_index_low
     /// minor_index = (minor_index_high << bitword<W>::BIT_POW) + minor_index_low
-    /// As minor_index_low ranges from 0 to W-1, *this[major_index][minor_index] ranges over the
+    /// As minor_index_low ranges from 0 to W-1, (*this)[major_index][minor_index] ranges over the
     /// bits of an aligned SIMD word. get_index_of_bitword returns the index in data of
     /// the corresponding simd word.
     inline const size_t get_index_of_bitword(size_t major_index_high, size_t major_index_low, size_t minor_index_high) const {
