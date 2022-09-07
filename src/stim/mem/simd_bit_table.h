@@ -84,7 +84,7 @@ struct simd_bit_table {
     /// major_index = (major_index_high << bitword<W>::BIT_POW) + major_index_low
     /// minor_index = (minor_index_high << bitword<W>::BIT_POW) + minor_index_low
     /// As minor_index_low ranges from 0 to W-1, (*this)[major_index][minor_index] ranges over the
-    /// bits of an aligned SIMD word. get_index_of_bitword returns the index in data of
+    /// bits of an aligned SIMD word. get_index_of_bitword returns the index in data.ptr_simd of
     /// the corresponding simd word.
     inline const size_t get_index_of_bitword(size_t major_index_high, size_t major_index_low, size_t minor_index_high) const {
         size_t major_index = (major_index_high << bitword<W>::BIT_POW) + major_index_low;
