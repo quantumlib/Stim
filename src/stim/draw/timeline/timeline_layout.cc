@@ -119,31 +119,17 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
     };
     auto do_tick = [&]() {
         if (num_ticks > 0 && cur_moment > tick_start_moment) {
-            for (size_t y = 0; y < 2; y++) {
-                CellDiagramAlignedPos start{
-                    m2x(tick_start_moment),
-                    y * (q2y(num_qubits - 1) + 1),
-                    0.0,
-                    0.5,
-                };
-                CellDiagramAlignedPos end{
-                    m2x(cur_moment),
-                    y * (q2y(num_qubits - 1) + 1),
-                    1.0,
-                    0.5,
-                };
-                diagram.lines.push_back({start, end});
-                diagram.add_cell(CellDiagramCellContents{
-                    start,
-                    y == 0 ? "/" : "\\",
-                    "none",
-                });
-                diagram.add_cell(CellDiagramCellContents{
-                    end,
-                    y == 1 ? "/" : "\\",
-                    "none",
-                });
-            }
+            size_t x1 = m2x(tick_start_moment);
+            size_t x2 = m2x(cur_moment);
+            size_t y1 = 0;
+            size_t y2 = q2y(num_qubits - 1) + 1;
+            diagram.lines.push_back({{x1, y1, 0.0, 0.0}, {x2, y1, 1.0, 0.0}});
+            diagram.lines.push_back({{x1, y1, 0.0, 0.0}, {x1, y1, 0.0, 1.0}});
+            diagram.lines.push_back({{x2, y1, 1.0, 0.0}, {x2, y1, 1.0, 1.0}});
+
+            diagram.lines.push_back({{x1, y2, 0.0, 0.0}, {x2, y2, 1.0, 0.0}});
+            diagram.lines.push_back({{x1, y2, 0.0, 0.0}, {x1, y2, 0.0, 1.0}});
+            diagram.lines.push_back({{x2, y2, 1.0, 0.0}, {x2, y2, 1.0, 1.0}});
         }
         start_next_moment();
         tick_start_moment = cur_moment;
@@ -397,26 +383,11 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
                 if (cur_moment_num_used) {
                     do_tick();
                 }
-                CellDiagramAlignedPos top{m2x(cur_moment), 0, 0.5, 0.5};
-                CellDiagramAlignedPos bot{m2x(cur_moment), q2y(num_qubits - 1) + 1, 0.5, 0.5};
-                diagram.lines.push_back({top, bot});
+
+                size_t x1 = m2x(cur_moment);
+                size_t y1 = 0;
+                size_t y2 = q2y(num_qubits - 1) + 1;
                 size_t reps = op_data_rep_count(op.target_data);
-                diagram.add_cell(CellDiagramCellContents{
-                    top,
-                    "/",
-                    "none",
-                });
-                top.x += 1;
-                diagram.add_cell(CellDiagramCellContents{
-                    top,
-                    "REP " + std::to_string(reps),
-                    "none",
-                });
-                diagram.add_cell(CellDiagramCellContents{
-                    bot,
-                    "\\",
-                    "none",
-                });
                 cur_moment++;
                 tick_start_moment = cur_moment;
                 size_t old_m = measure_offset;
@@ -426,17 +397,19 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
                     do_tick();
                 }
                 tick_start_moment = cur_moment;
-                top.x = m2x(cur_moment);
-                bot.x = m2x(cur_moment);
-                diagram.lines.push_back({top, bot});
+
+                size_t x2 = m2x(cur_moment);
+                CellDiagramAlignedPos top_left{x1, y1, 0.0, 0.0};
+                CellDiagramAlignedPos top_right{x2, y1, 1.0, 0.0};
+                CellDiagramAlignedPos bottom_left{x1, y2, 0.0, 1.0};
+                CellDiagramAlignedPos bottom_right{x2, y2, 1.0, 1.0};
+                diagram.lines.push_back({top_left, top_right});
+                diagram.lines.push_back({top_right, bottom_right});
+                diagram.lines.push_back({bottom_right, bottom_left});
+                diagram.lines.push_back({bottom_left, top_left});
                 diagram.add_cell(CellDiagramCellContents{
-                    top,
-                    "\\",
-                    "none",
-                });
-                diagram.add_cell(CellDiagramCellContents{
-                    bot,
-                    "/",
+                    top_left,
+                    "REP " + std::to_string(reps),
                     "none",
                 });
                 start_next_moment();

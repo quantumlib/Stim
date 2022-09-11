@@ -23,6 +23,7 @@ src/stim/draw/3d/timeline_3d.cc
 src/stim/draw/timeline/timeline_layout.cc
 src/stim/draw/timeline/timeline_svg.cc
 src/stim/draw/timeline/timeline_text.cc
+src/stim/draw/timeline/timeline_tikz.cc
 src/stim/gen/circuit_gen_main.cc
 src/stim/gen/circuit_gen_params.cc
 src/stim/gen/gen_color_code.cc

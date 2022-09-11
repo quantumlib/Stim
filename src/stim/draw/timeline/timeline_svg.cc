@@ -5,16 +5,25 @@ using namespace stim;
 using namespace stim_draw_internal;
 
 std::string stim::circuit_diagram_timeline_svg(const Circuit &circuit) {
+    std::stringstream out;
+    write_circuit_diagram_timeline_svg(circuit, out);
+    return out.str();
+}
+
+void stim::write_circuit_diagram_timeline_svg(const Circuit &circuit, std::ostream &out) {
     CellDiagram diagram = CellDiagram::from_circuit(circuit);
     diagram.compactify();
     CellDiagramSizing layout = diagram.compute_sizing();
-    std::stringstream out;
     const size_t h_scale = 16;
     const size_t v_scale = 24;
     const size_t font_height = 24;
     const size_t font_width = 16;
 
-    out << R"SVG(<svg width=")SVG" << layout.x_offsets.back() * h_scale << R"SVG(" height=")SVG" << layout.y_offsets.back() * v_scale + 10 << R"SVG(" version="1.1" xmlns="http://www.w3.org/2000/svg">)SVG" << '\n';
+    out << "<svg width=\"" << layout.x_offsets.back() * h_scale
+        << "\" height=\"" << layout.y_offsets.back() * v_scale + 10
+        << "\" version=\"1.1"
+        << "\" xmlns=\"http://www.w3.org/2000/svg"
+        << "\">\n";
 
     for (const auto &e : diagram.lines) {
         auto &p1 = e.first;
@@ -86,6 +95,4 @@ std::string stim::circuit_diagram_timeline_svg(const Circuit &circuit) {
     }
 
     out << "</svg>\n";
-
-    return out.str();
 }

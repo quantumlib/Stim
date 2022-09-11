@@ -10,6 +10,7 @@ src/stim/draw/3d/timeline_3d.test.cc
 src/stim/draw/timeline/timeline_layout.test.cc
 src/stim/draw/timeline/timeline_svg.test.cc
 src/stim/draw/timeline/timeline_text.test.cc
+src/stim/draw/timeline/timeline_tikz.test.cc
 src/stim/gen/circuit_gen_main.test.cc
 src/stim/gen/circuit_gen_params.test.cc
 src/stim/gen/gen_color_code.test.cc
