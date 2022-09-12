@@ -287,7 +287,7 @@ The columns are:
 
 - `shots` (unsigned int): How many times the circuit was sampled.
 - `errors` (unsigned int): How many times the decoder failed to predict the logical observable.
-- `discards` (unsigned int): How many times decoding was skipped because a postselected detector fired.
+- `discards` (unsigned int): How many times a shot was discarded because a postselected detector fired or because the decoder incorrectly predicted the value of a postselected observable. Discarded shots never count as errors.
 - `seconds` (non-negative float): How many CPU core seconds it took to simulate and decode these shots.
 - `decoder` (str): Which decoder was used.
 - `strong_id` (str):
