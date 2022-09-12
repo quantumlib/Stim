@@ -1,10 +1,9 @@
-from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict
 import argparse
 
 import matplotlib.pyplot as plt
 
 from sinter._main_combine import ExistingData
-from sinter._plotting import MARKERS
 from sinter._plotting import plot_discard_rate
 from sinter._plotting import plot_error_rate
 
@@ -23,11 +22,11 @@ def parse_args(args: List[str]) -> Any:
                              '    metadata: The parsed value from the json_metadata column.\n'
                              '    decoder: The decoder that decoded the case.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled.\n'
-                             'Expected type:\n'
+                             'Expected expression type:\n'
                              '    Something that can be given to `bool` to get True or False.\n'
                              'Examples:\n'
-                             '''    -filter_func "decoder=='pymatching'"\n'''
-                             '''    -filter_func "0.001 < metadata['p'] < 0.005"\n''')
+                             '''    --filter_func "decoder=='pymatching'"\n'''
+                             '''    --filter_func "0.001 < metadata['p'] < 0.005"\n''')
     parser.add_argument('--x_func',
                         type=str,
                         default="1",
@@ -36,11 +35,11 @@ def parse_args(args: List[str]) -> Any:
                              '    metadata: The parsed value from the json_metadata column.\n'
                              '    decoder: The decoder that decoded the case.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled.\n'
-                             'Expected type:\n'
+                             'Expected expression type:\n'
                              '    Something that can be given to `float` to get a float.\n'
                              'Examples:\n'
-                             '''    -x_func "metadata['p']"\n'''
-                             '''    -x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
+                             '''    --x_func "metadata['p']"\n'''
+                             '''    --x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
                         )
     parser.add_argument('--fig_size',
                         type=int,
@@ -59,11 +58,24 @@ def parse_args(args: List[str]) -> Any:
                              '    metadata: The parsed value from the json_metadata column.\n'
                              '    decoder: The decoder that decoded the case.\n'
                              '    strong_id: The cryptographic hash of the case that was sampled.\n'
-                             'Expected type:\n'
+                             'Expected expression type:\n'
                              '    Something that can be given to `str` to get a useful string.\n'
                              'Examples:\n'
-                             '''    -group_func "(decoder, metadata['d'])"\n'''
-                             '''    -group_func "metadata['path'].split('/')[-2]"\n'''
+                             '''    --group_func "(decoder, metadata['d'])"\n'''
+                             '''    --group_func "metadata['path'].split('/')[-2]"\n'''
+                        )
+    parser.add_argument('--plot_args_func',
+                        type=str,
+                        default='''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}''',
+                        help='A python expression used to customize the look of curves.\n'
+                             'Available values:\n'
+                             '    index: A unique integer identifying the curve.\n'
+                             '    key: The group key (returned from --group_func) identifying the curve.\n'
+                             'Expected expression type:\n'
+                             '    A dictionary to give to matplotlib plotting functions as a **kwargs argument.\n'
+                             'Examples:\n'
+                             """    --plot_args_func "'''{'label': 'curve #' + str(index), 'linewidth': 5}'''"\n"""
+                             """    --plot_args_func "'''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}'''"\n"""
                         )
     parser.add_argument('--in',
                         type=str,
@@ -118,6 +130,10 @@ def parse_args(args: List[str]) -> Any:
         'lambda *, decoder, metadata, strong_id: ' + a.filter_func,
         filename='filter_func:command_line_arg',
         mode='eval'))
+    a.plot_args_func = eval(compile(
+        'lambda index, key: ' + a.plot_args_func,
+        filename='plot_args_func:command_line_arg',
+        mode='eval'))
     return a
 
 
@@ -134,6 +150,7 @@ def _plot_helper(
     min_y: Optional[float],
     title: Optional[str],
     fig_size: Optional[Tuple[int, int]],
+    plot_args_func: Callable[[int, Any], Dict[str, Any]],
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
         total = samples
@@ -186,7 +203,7 @@ def _plot_helper(
             group_func=group_func,
             x_func=x_func,
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
-            plot_args_func=lambda k, _: {'marker': MARKERS[k]},
+            plot_args_func=plot_args_func,
         )
         if min_y is None:
             min_y = min((stat.errors / (stat.shots - stat.discards) for stat in plotted_stats if stat.errors), default=1e-4)
@@ -211,7 +228,7 @@ def _plot_helper(
             group_func=group_func,
             x_func=x_func,
             highlight_max_likelihood_factor=highlight_max_likelihood_factor,
-            plot_args_func=lambda k, _: {'marker': MARKERS[k]},
+            plot_args_func=plot_args_func,
         )
         ax_dis.set_ylim(0, 1)
         ax_err.grid()
@@ -271,6 +288,7 @@ def main_plot(*, command_line_args: List[str]):
         min_y=args.ymin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
         title=args.title,
+        plot_args_func=args.plot_args_func,
     )
     if args.out is not None:
         fig.savefig(args.out)

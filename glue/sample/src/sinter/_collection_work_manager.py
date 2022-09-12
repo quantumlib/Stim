@@ -1,3 +1,5 @@
+import os
+
 import contextlib
 import multiprocessing
 import pathlib
@@ -50,10 +52,11 @@ class CollectionWorkManager:
             self.queue_from_workers.cancel_join_thread()
             self.queue_to_workers.cancel_join_thread()
 
-            for _ in range(num_workers):
+            num_cpus = os.cpu_count()
+            for index in range(num_workers):
                 w = multiprocessing.Process(
                     target=worker_loop,
-                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers))
+                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers, index % num_cpus))
                 w.start()
                 self.workers.append(w)
         finally:
@@ -153,6 +156,7 @@ class CollectionWorkManager:
                     decoder=decoder,
                     detector_error_model=task.detector_error_model,
                     postselection_mask=task.postselection_mask,
+                    postselected_observables_mask=task.postselected_observables_mask,
                     json_metadata=task.json_metadata,
                     collection_options=task.collection_options.combine(self.global_collection_options),
                     skip_validation=True,
