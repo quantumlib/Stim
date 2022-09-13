@@ -1546,29 +1546,31 @@ void ErrorAnalyzer::add_error_combinations(
     std::array<ConstPointerRange<DemTarget>, 1 << s> stored_ids;
 
     for (size_t k = 0; k < s; k++) {
-        for (const auto &id : basis_errors[k]) {
-            if (id.is_relative_detector_id()) {
-                auto r = involved_detectors.find(id);
-                if (r == involved_detectors.end()) {
-                    try {
-                        involved_detectors.push_back(id);
-                    } catch (const std::out_of_range &ex) {
-                        std::stringstream message;
-                        message << "An error case in a composite error exceeded that max supported number of symptoms "
-                                   "(<=15). ";
-                        message << "\nThe " << std::to_string(s)
-                                << " basis error cases (e.g. X, Z) used to form the combined ";
-                        message << "error cases (e.g. Y = X*Z) are:\n";
-                        for (size_t k2 = 0; k2 < s; k2++) {
-                            message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
+        stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
+        if (decompose_errors) {
+            for (const auto &id : basis_errors[k]) {
+                if (id.is_relative_detector_id()) {
+                    auto r = involved_detectors.find(id);
+                    if (r == involved_detectors.end()) {
+                        try {
+                            involved_detectors.push_back(id);
+                        } catch (const std::out_of_range &ex) {
+                            std::stringstream message;
+                            message << "An error case in a composite error exceeded that max supported number of symptoms "
+                                    "(<=15). ";
+                            message << "\nThe " << std::to_string(s)
+                                    << " basis error cases (e.g. X, Z) used to form the combined ";
+                            message << "error cases (e.g. Y = X*Z) are:\n";
+                            for (size_t k2 = 0; k2 < s; k2++) {
+                                message << std::to_string(k2) << ": " << comma_sep_workaround(basis_errors[k2]) << "\n";
+                            }
+                            throw std::invalid_argument(message.str());
                         }
-                        throw std::invalid_argument(message.str());
                     }
+                    detector_masks[1 << k] ^= 1 << (r - involved_detectors.begin());
                 }
-                detector_masks[1 << k] ^= 1 << (r - involved_detectors.begin());
             }
         }
-        stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
     }
 
     // Fill in all 2**s - 1 possible combinations from the initial basis values.
@@ -1579,7 +1581,9 @@ void ErrorAnalyzer::add_error_combinations(
             mono_buf.ensure_available(stored_ids[c1].size() + stored_ids[c2].size());
             mono_buf.tail.ptr_end = xor_merge_sort(stored_ids[c1], stored_ids[c2], mono_buf.tail.ptr_end);
             stored_ids[k] = mono_dedupe_store_tail();
-            detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];
+            if (decompose_errors) {
+                detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];    
+            }
         }
     }
 
