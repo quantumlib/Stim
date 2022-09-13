@@ -1547,6 +1547,7 @@ void ErrorAnalyzer::add_error_combinations(
 
     for (size_t k = 0; k < s; k++) {
         stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
+        
         if (decompose_errors) {
             for (const auto &id : basis_errors[k]) {
                 if (id.is_relative_detector_id()) {
@@ -1581,9 +1582,7 @@ void ErrorAnalyzer::add_error_combinations(
             mono_buf.ensure_available(stored_ids[c1].size() + stored_ids[c2].size());
             mono_buf.tail.ptr_end = xor_merge_sort(stored_ids[c1], stored_ids[c2], mono_buf.tail.ptr_end);
             stored_ids[k] = mono_dedupe_store_tail();
-            if (decompose_errors) {
-                detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];    
-            }
+            detector_masks[k] = detector_masks[c1] ^ detector_masks[c2];
         }
     }
 
