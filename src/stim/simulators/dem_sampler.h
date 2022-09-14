@@ -31,7 +31,7 @@ struct DemSampler {
     uint64_t num_detectors;
     uint64_t num_observables;
     uint64_t num_errors;
-    std::mt19937_64 rng;
+    std::mt19937_64 &rng;
     // TODO: allow these buffers to be streamed instead of entirely stored in memory.
     simd_bit_table<MAX_BITWORD_WIDTH> det_buffer;
     simd_bit_table<MAX_BITWORD_WIDTH> obs_buffer;
@@ -39,7 +39,7 @@ struct DemSampler {
     size_t num_stripes;
 
     /// Compiles a sampler for the given detector error model.
-    DemSampler(DetectorErrorModel model, std::mt19937_64 rng, size_t min_stripes);
+    DemSampler(DetectorErrorModel model, std::mt19937_64 &rng, size_t min_stripes);
 
     /// Clears the buffers and refills them with sampled shot data.
     void resample(bool replay_errors);

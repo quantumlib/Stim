@@ -41,9 +41,11 @@ pybind11::object dem_sampler_py_sample(
     PyDemSampler &self, size_t shots, bool bit_packed, bool return_errors, pybind11::object &recorded_errors_to_replay) {
     bool replay = !recorded_errors_to_replay.is_none();
     if (replay && min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(shots) != self.dem_sampler.num_stripes) {
-        PyDemSampler perfect_size(DemSampler(self.dem_sampler.model, std::move(self.dem_sampler.rng), shots));
+        PyDemSampler perfect_size(
+            std::move(self.dem_sampler.model),
+            std::move(self.dem_sampler.rng),
+            shots);
         auto result = dem_sampler_py_sample(perfect_size, shots, bit_packed, return_errors, recorded_errors_to_replay);
-        self.dem_sampler.rng = std::move(perfect_size.dem_sampler.rng);
         return result;
     }
 

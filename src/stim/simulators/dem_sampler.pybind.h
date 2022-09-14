@@ -23,7 +23,10 @@ namespace stim_pybind {
 
 struct PyDemSampler {
     stim::DemSampler dem_sampler;
-    PyDemSampler(stim::DemSampler dem_sampler) : dem_sampler(dem_sampler) {};
+    std::mt19937_64 rng;
+    PyDemSampler(stim::DetectorErrorModel model, std::mt19937_64 rng, size_t min_stripes) :
+        dem_sampler(model, rng, min_stripes),
+        rng(rng) {};
 };
 
 pybind11::class_<PyDemSampler> pybind_dem_sampler(pybind11::module &m);

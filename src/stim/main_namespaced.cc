@@ -344,7 +344,8 @@ int main_mode_sample_dem(int argc, const char **argv) {
     auto dem = DetectorErrorModel::from_file(in.f);
     in.done();
 
-    DemSampler sampler(std::move(dem), optionally_seeded_rng(argc, argv), 1024);
+    std::mt19937_64 rng = optionally_seeded_rng(argc, argv);
+    DemSampler sampler(std::move(dem), rng, 1024);
     sampler.sample_write(
         num_shots,
         out.f,

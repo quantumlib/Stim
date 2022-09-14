@@ -31,20 +31,20 @@ TEST(DemSampler, basic_sizing) {
     ASSERT_FALSE(sampler.obs_buffer.data.not_zero());
     ASSERT_FALSE(sampler.det_buffer.data.not_zero());
 
-    sampler = DemSampler(
+    DemSampler sampler2 = DemSampler(
         DetectorErrorModel(R"DEM(
             logical_observable L2000
             detector D1000
          )DEM"),
         irrelevant_rng,
         200);
-    ASSERT_GE(sampler.det_buffer.num_major_bits_padded(), 1000);
-    ASSERT_GE(sampler.obs_buffer.num_major_bits_padded(), 2000);
-    ASSERT_GE(sampler.det_buffer.num_minor_bits_padded(), 200);
-    ASSERT_GE(sampler.obs_buffer.num_minor_bits_padded(), 200);
-    sampler.resample(false);
-    ASSERT_FALSE(sampler.obs_buffer.data.not_zero());
-    ASSERT_FALSE(sampler.det_buffer.data.not_zero());
+    ASSERT_GE(sampler2.det_buffer.num_major_bits_padded(), 1000);
+    ASSERT_GE(sampler2.obs_buffer.num_major_bits_padded(), 2000);
+    ASSERT_GE(sampler2.det_buffer.num_minor_bits_padded(), 200);
+    ASSERT_GE(sampler2.obs_buffer.num_minor_bits_padded(), 200);
+    sampler2.resample(false);
+    ASSERT_FALSE(sampler2.obs_buffer.data.not_zero());
+    ASSERT_FALSE(sampler2.det_buffer.data.not_zero());
 }
 
 TEST(DemSampler, resample_basic_probabilities) {
