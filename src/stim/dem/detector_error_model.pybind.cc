@@ -971,6 +971,9 @@ void stim_pybind::pybind_detector_error_model_methods(pybind11::module &m, pybin
         "compile_sampler",
         [](const DetectorErrorModel &self, const pybind11::object &seed) -> stim_pybind::PyDemSampler {
             std::mt19937_64 rng = make_py_seeded_rng_move(seed);
+            // Since PyDemSampler expects a DectorErrorModel, there is an implicit copy here
+            // We want this copy anyway, since it would be strange at the python level if
+            // compiling a DectectorErrorModel invalidated it
             return stim_pybind::PyDemSampler(self, std::move(rng), 1024);
         },
         pybind11::kw_only(),
