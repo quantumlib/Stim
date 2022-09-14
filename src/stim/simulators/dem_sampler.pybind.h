@@ -21,8 +21,13 @@
 
 namespace stim_pybind {
 
-pybind11::class_<stim::DemSampler> pybind_dem_sampler(pybind11::module &m);
-void pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<stim::DemSampler> &c);
+struct PyDemSampler {
+    stim::DemSampler dem_sampler;
+    PyDemSampler(stim::DemSampler dem_sampler) : dem_sampler(dem_sampler) {};
+};
+
+pybind11::class_<PyDemSampler> pybind_dem_sampler(pybind11::module &m);
+void pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<PyDemSampler> &c);
 
 }  // namespace stim_pybind
 

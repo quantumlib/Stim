@@ -38,42 +38,42 @@ RaiiFile optional_py_path_to_raii_file(const pybind11::object &obj, const char *
 }
 
 pybind11::object dem_sampler_py_sample(
-    DemSampler &self, size_t shots, bool bit_packed, bool return_errors, pybind11::object &recorded_errors_to_replay) {
+    PyDemSampler &self, size_t shots, bool bit_packed, bool return_errors, pybind11::object &recorded_errors_to_replay) {
     bool replay = !recorded_errors_to_replay.is_none();
-    if (replay && min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(shots) != self.num_stripes) {
-        DemSampler perfect_size(self.model, std::move(self.rng), shots);
+    if (replay && min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(shots) != self.dem_sampler.num_stripes) {
+        PyDemSampler perfect_size(DemSampler(self.dem_sampler.model, std::move(self.dem_sampler.rng), shots));
         auto result = dem_sampler_py_sample(perfect_size, shots, bit_packed, return_errors, recorded_errors_to_replay);
-        self.rng = std::move(perfect_size.rng);
+        self.dem_sampler.rng = std::move(perfect_size.dem_sampler.rng);
         return result;
     }
 
     if (replay) {
         size_t out_shots;
         simd_bit_table<MAX_BITWORD_WIDTH> converted =
-            numpy_array_to_transposed_simd_table(recorded_errors_to_replay, self.num_errors, &out_shots);
+            numpy_array_to_transposed_simd_table(recorded_errors_to_replay, self.dem_sampler.num_errors, &out_shots);
         if (out_shots != shots) {
             throw std::invalid_argument("recorded_errors_to_replay.shape[0] != shots");
         }
-        assert(converted.num_minor_bits_padded() == self.err_buffer.num_minor_bits_padded());
-        assert(converted.num_major_bits_padded() == self.err_buffer.num_major_bits_padded());
-        self.err_buffer = std::move(converted);
+        assert(converted.num_minor_bits_padded() == self.dem_sampler.err_buffer.num_minor_bits_padded());
+        assert(converted.num_major_bits_padded() == self.dem_sampler.err_buffer.num_major_bits_padded());
+        self.dem_sampler.err_buffer = std::move(converted);
     }
 
-    self.resample(replay);
+    self.dem_sampler.resample(replay);
 
     pybind11::object err_out = pybind11::none();
     if (return_errors) {
-        err_out = transposed_simd_bit_table_to_numpy(self.err_buffer, self.num_errors, shots, bit_packed);
+        err_out = transposed_simd_bit_table_to_numpy(self.dem_sampler.err_buffer, self.dem_sampler.num_errors, shots, bit_packed);
     }
     pybind11::object det_out =
-        transposed_simd_bit_table_to_numpy(self.det_buffer, self.num_detectors, shots, bit_packed);
+        transposed_simd_bit_table_to_numpy(self.dem_sampler.det_buffer, self.dem_sampler.num_detectors, shots, bit_packed);
     pybind11::object obs_out =
-        transposed_simd_bit_table_to_numpy(self.obs_buffer, self.num_observables, shots, bit_packed);
+        transposed_simd_bit_table_to_numpy(self.dem_sampler.obs_buffer, self.dem_sampler.num_observables, shots, bit_packed);
     return pybind11::make_tuple(det_out, obs_out, err_out);
 }
 
-pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m) {
-    return pybind11::class_<DemSampler>(
+pybind11::class_<stim_pybind::PyDemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m) {
+    return pybind11::class_<stim_pybind::PyDemSampler>(
         m,
         "CompiledDemSampler",
         clean_doc_string(u8R"DOC(
@@ -109,7 +109,7 @@ pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m
 }
 
 void stim_pybind::pybind_dem_sampler_methods(
-    pybind11::module &m, pybind11::class_<stim::DemSampler> &c) {
+    pybind11::module &m, pybind11::class_<stim_pybind::PyDemSampler> &c) {
     c.def(
         "sample",
         &dem_sampler_py_sample,
@@ -266,7 +266,7 @@ void stim_pybind::pybind_dem_sampler_methods(
 
     c.def(
         "sample_write",
-        [](DemSampler &self,
+        [](PyDemSampler &self,
            size_t shots,
            pybind11::object &det_out_file,
            const std::string &det_out_format,
@@ -280,7 +280,7 @@ void stim_pybind::pybind_dem_sampler_methods(
             RaiiFile fo = optional_py_path_to_raii_file(obs_out_file, "w");
             RaiiFile feo = optional_py_path_to_raii_file(err_out_file, "w");
             RaiiFile fei = optional_py_path_to_raii_file(replay_err_in_file, "r");
-            self.sample_write(
+            self.dem_sampler.sample_write(
                 shots,
                 fd.f,
                 format_to_enum(det_out_format),

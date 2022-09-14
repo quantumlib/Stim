@@ -24,7 +24,7 @@
 #include "stim/py/base.pybind.h"
 #include "stim/search/search.h"
 #include "stim/simulators/dem_sampler.h"
-
+#include "stim/simulators/dem_sampler.pybind.h"
 using namespace stim;
 
 std::string stim_pybind::detector_error_model_repr(const DetectorErrorModel &self) {
@@ -968,8 +968,8 @@ void stim_pybind::pybind_detector_error_model_methods(pybind11::module &m, pybin
 
     c.def(
         "compile_sampler",
-        [](const DetectorErrorModel &self, const pybind11::object &seed) -> DemSampler {
-            return DemSampler(self, *make_py_seeded_rng(seed), 1024);
+        [](const DetectorErrorModel &self, const pybind11::object &seed) -> stim_pybind::PyDemSampler {
+            return stim_pybind::PyDemSampler(DemSampler(self, *make_py_seeded_rng(seed), 1024));
         },
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
