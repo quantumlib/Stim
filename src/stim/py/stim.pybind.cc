@@ -33,6 +33,7 @@
 #include "stim/simulators/dem_sampler.pybind.h"
 #include "stim/simulators/matched_error.pybind.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/simulators/frame_simulator.pybind.h"
 #include "stim/simulators/tableau_simulator.pybind.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
 #include "stim/stabilizers/tableau.h"
@@ -431,6 +432,7 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_detector_error_model = pybind_detector_error_model(m);
 
     auto c_tableau_simulator = pybind_tableau_simulator(m);
+    auto c_frame_simulator = pybind_frame_simulator(m);
 
 
     auto c_circuit_error_location_stack_frame = pybind_circuit_error_location_stack_frame(m);
@@ -469,6 +471,8 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_compiled_measurements_to_detection_events_converter_methods(m, c_compiled_m2d_converter);
 
     pybind_tableau_simulator_methods(m, c_tableau_simulator);
+    pybind_frame_simulator_methods(m, c_frame_simulator);
+
 
     pybind_circuit_error_location_stack_frame_methods(m, c_circuit_error_location_stack_frame);
     pybind_gate_target_with_coords_methods(m, c_gate_target_with_coords);

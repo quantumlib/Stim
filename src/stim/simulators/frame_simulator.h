@@ -49,7 +49,7 @@ struct FrameSimulator {
     // propagate, without interference from other effects.
     bool guarantee_anticommutation_via_frame_randomization = true;
 
-    FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng);
+    FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 rng);
 
     /// Returns a batch of measurement-flipped samples from the circuit.
     ///
