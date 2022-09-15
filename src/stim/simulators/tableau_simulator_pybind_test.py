@@ -529,17 +529,24 @@ def test_set_state_from_stabilizers():
 
 
 def test_seed():
-    s = stim.TableauSimulator(seed=0)
-    s.h(0)
-    assert s.measure(0) is True
-    s.h(0)
-    assert s.measure(0) is True
-    s.h(0)
-    assert s.measure(0) is False
-    s.h(0)
-    assert s.measure(0) is True
-    s.h(0)
-    assert s.measure(0) is False
+    ss1 = [stim.TableauSimulator(seed=0) for _ in range(5)]
+    ss2 = [stim.TableauSimulator(seed=1) for _ in range(5)]
+
+    def hadamard_and_measure(sim, reps=5):
+        """Repeats Hadamard+measurement reps times and returns result as reps-bit integer."""
+        r, v = 0, 1
+        for _ in range(reps):
+            sim.h(0)
+            r += v * sim.measure(0)
+            v *= 2
+        return r
+
+    ms1 = {hadamard_and_measure(sim) for sim in ss1}
+    ms2 = {hadamard_and_measure(sim) for sim in ss2}
+
+    assert len(ms1) == 1
+    assert len(ms2) == 1
+    assert ms1 != ms2
 
 
 def test_copy_simulator_sharing_rng():
