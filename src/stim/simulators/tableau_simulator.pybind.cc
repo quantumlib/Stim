@@ -167,7 +167,30 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             Initializes a stim.TableauSimulator.
 
             Args:
-                seed: Optional seed for the pseudo-random number generator.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When None, the prng is seeded from system entropy.
+
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
 
             Returns:
                 An initialized stim.TableauSimulator.
@@ -175,8 +198,10 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             Examples:
                 >>> import stim
                 >>> s = stim.TableauSimulator(seed=0)
+                >>> s2 = stim.TableauSimulator(seed=0)
                 >>> s.h(0)
-                >>> s.measure(0)
+                >>> s2.h(0)
+                >>> s.measure(0) == s2.measure(0)
                 True
         )DOC")
             .data());
