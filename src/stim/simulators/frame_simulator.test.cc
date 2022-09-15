@@ -19,11 +19,12 @@
 #include "stim/circuit/circuit.test.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/test_util.test.h"
+#include "stim/probability_util.h"
 
 using namespace stim;
 
 TEST(FrameSimulator, get_set_frame) {
-    FrameSimulator sim(6, 4, 999, SHARED_TEST_RNG());
+    FrameSimulator sim(6, 4, 999, externally_seeded_rng());
     ASSERT_EQ(sim.get_frame(0), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(1), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
@@ -39,7 +40,7 @@ TEST(FrameSimulator, get_set_frame) {
     ASSERT_EQ(sim.get_frame(2), PauliString::from_str("______"));
     ASSERT_EQ(sim.get_frame(3), PauliString::from_str("ZZZZZZ"));
 
-    FrameSimulator big_sim(501, 1001, 999, SHARED_TEST_RNG());
+    FrameSimulator big_sim(501, 1001, 999, externally_seeded_rng());
     big_sim.set_frame(258, PauliString::from_func(false, 501, [](size_t k) {
                           return "_X"[k == 303];
                       }));
@@ -54,7 +55,7 @@ bool is_bulk_frame_operation_consistent_with_tableau(const Gate &gate) {
     size_t num_qubits = 500;
     size_t num_samples = 1000;
     size_t max_lookback = 10;
-    FrameSimulator sim(num_qubits, num_samples, max_lookback, SHARED_TEST_RNG());
+    FrameSimulator sim(num_qubits, num_samples, max_lookback, externally_seeded_rng());
     size_t num_targets = tableau.num_qubits;
     assert(num_targets == 1 || num_targets == 2);
     std::vector<GateTarget> targets{{101}, {403}, {202}, {100}};
@@ -132,7 +133,7 @@ TEST(FrameSimulator, test_util_is_output_possible) {
 bool is_sim_frame_consistent_with_sim_tableau(const char *program_text) {
     auto circuit = Circuit(program_text);
     auto reference_sample = TableauSimulator::reference_sample_circuit(circuit);
-    auto samples = FrameSimulator::sample(circuit, reference_sample, 10, SHARED_TEST_RNG());
+    auto samples = FrameSimulator::sample(circuit, reference_sample, 10, externally_seeded_rng());
 
     for (size_t k = 0; k < 10; k++) {
         simd_bits_range_ref<MAX_BITWORD_WIDTH> sample = samples[k];
@@ -278,17 +279,17 @@ TEST(FrameSimulator, sample_out) {
         "M 2\n"
         "M 3\n");
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    auto r = FrameSimulator::sample(circuit, ref, 10, SHARED_TEST_RNG());
+    auto r = FrameSimulator::sample(circuit, ref, 10, externally_seeded_rng());
     for (size_t k = 0; k < 10; k++) {
         ASSERT_EQ(r[k].u64[0], 2);
     }
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
     ASSERT_EQ(rewind_read_close(tmp), "0100\n0100\n0100\n0100\n0100\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 5, tmp, SAMPLE_FORMAT_B8, externally_seeded_rng());
     rewind(tmp);
     for (size_t k = 0; k < 5; k++) {
         ASSERT_EQ(getc(tmp), 2);
@@ -296,7 +297,7 @@ TEST(FrameSimulator, sample_out) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 64, tmp, SAMPLE_FORMAT_PTB64, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 64, tmp, SAMPLE_FORMAT_PTB64, externally_seeded_rng());
     rewind(tmp);
     for (size_t k = 0; k < 8; k++) {
         ASSERT_EQ(getc(tmp), 0);
@@ -320,7 +321,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
         circuit.append_op("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    auto r = FrameSimulator::sample(circuit, ref, 750, SHARED_TEST_RNG());
+    auto r = FrameSimulator::sample(circuit, ref, 750, externally_seeded_rng());
     for (size_t i = 0; i < 750; i++) {
         for (size_t k = 0; k < 1250; k++) {
             ASSERT_EQ(r[i][k], k % 3 == 0) << k;
@@ -328,7 +329,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
     }
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k++) {
@@ -339,7 +340,7 @@ TEST(FrameSimulator, big_circuit_measurements) {
     ASSERT_EQ(getc(tmp), EOF);
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_B8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 750, tmp, SAMPLE_FORMAT_B8, externally_seeded_rng());
     rewind(tmp);
     for (size_t s = 0; s < 750; s++) {
         for (size_t k = 0; k < 1250; k += 8) {
@@ -361,17 +362,17 @@ TEST(FrameSimulator, run_length_measurement_formats) {
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
 
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_HITS, externally_seeded_rng());
     ASSERT_EQ(rewind_read_close(tmp), "100,500,501,551,1200\n100,500,501,551,1200\n100,500,501,551,1200\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_DETS, externally_seeded_rng());
     ASSERT_EQ(
         rewind_read_close(tmp),
         "shot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\nshot M100 M500 M501 M551 M1200\n");
 
     tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, ref, 3, tmp, SAMPLE_FORMAT_R8, externally_seeded_rng());
     rewind(tmp);
     for (size_t k = 0; k < 3; k++) {
         ASSERT_EQ(getc(tmp), 100);
@@ -396,7 +397,7 @@ TEST(FrameSimulator, big_circuit_random_measurements) {
         circuit.append_op("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
-    auto r = FrameSimulator::sample(circuit, ref, 1000, SHARED_TEST_RNG());
+    auto r = FrameSimulator::sample(circuit, ref, 1000, externally_seeded_rng());
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_TRUE(r[k].not_zero()) << k;
     }
@@ -417,7 +418,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -433,7 +434,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -449,7 +450,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -465,7 +466,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -481,7 +482,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -497,7 +498,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -516,7 +517,7 @@ TEST(FrameSimulator, correlated_error) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     int hits[3]{};
@@ -555,7 +556,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                externally_seeded_rng());
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -567,7 +568,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                externally_seeded_rng());
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -579,7 +580,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                externally_seeded_rng());
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -591,7 +592,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                externally_seeded_rng());
         },
         std::invalid_argument);
     ASSERT_THROW(
@@ -603,7 +604,7 @@ TEST(FrameSimulator, quantum_cannot_control_classical) {
         )circuit"),
                 ref,
                 1,
-                SHARED_TEST_RNG());
+                externally_seeded_rng());
         },
         std::invalid_argument);
 }
@@ -624,7 +625,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
@@ -636,7 +637,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
@@ -648,7 +649,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
     ASSERT_EQ(
         FrameSimulator::sample(
@@ -660,7 +661,7 @@ TEST(FrameSimulator, classical_can_control_quantum) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 }
 
@@ -678,7 +679,7 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -691,7 +692,7 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -707,7 +708,7 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -723,7 +724,7 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
     auto r = FrameSimulator::sample(
         Circuit(R"circuit(
@@ -734,7 +735,7 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
         ref,
         1000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     size_t hits = 0;
     for (size_t k = 0; k < 1000; k++) {
         ASSERT_EQ(r[k][0], r[k][1]);
@@ -757,7 +758,7 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 
     expected.clear();
@@ -773,12 +774,12 @@ TEST(FrameSimulator, classical_controls) {
     )circuit"),
             ref,
             1,
-            SHARED_TEST_RNG())[0],
+            externally_seeded_rng())[0],
         expected);
 }
 
 TEST(FrameSimulator, record_gets_trimmed) {
-    FrameSimulator sim(100, 768, 5, SHARED_TEST_RNG());
+    FrameSimulator sim(100, 768, 5, externally_seeded_rng());
     Circuit c = Circuit("M 0 1 2 3 4 5 6 7 8 9");
     MeasureRecordBatchWriter b(tmpfile(), 768, SAMPLE_FORMAT_B8);
     for (size_t k = 0; k < 1000; k++) {
@@ -801,7 +802,7 @@ TEST(FrameSimulator, stream_huge_case) {
         256,
         tmp,
         SAMPLE_FORMAT_B8,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     rewind(tmp);
     for (size_t k = 0; k < 256 * 100000 * 4 / 8; k++) {
         ASSERT_EQ(getc(tmp), 0x44);
@@ -818,7 +819,7 @@ TEST(FrameSimulator, block_results_single_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -838,7 +839,7 @@ TEST(FrameSimulator, block_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -862,7 +863,7 @@ TEST(FrameSimulator, stream_results) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 30000; k += 3) {
@@ -880,7 +881,7 @@ TEST(FrameSimulator, stream_many_shots) {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2048, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {
@@ -901,7 +902,7 @@ TEST(FrameSimulator, stream_results_triple_shot) {
         }
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 3, tmp, SAMPLE_FORMAT_01, externally_seeded_rng());
 
     auto result = rewind_read_close(tmp);
     for (size_t rep = 0; rep < 3; rep++) {
@@ -929,7 +930,7 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
         MY 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_EQ(r[0].popcnt(), 0);
     ASSERT_EQ(r[1].popcnt(), 0);
     ASSERT_EQ(r[2].popcnt(), 10000);
@@ -950,7 +951,7 @@ TEST(FrameSimulator, measure_y_without_reset_doesnt_reset) {
         MRY 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_EQ(r[0].popcnt(), 0);
     ASSERT_EQ(r[1].popcnt(), 0);
     ASSERT_EQ(r[2].popcnt(), 10000);
@@ -965,7 +966,7 @@ TEST(FrameSimulator, resets_vs_measurements) {
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
-        simd_bit_table<MAX_BITWORD_WIDTH> t = FrameSimulator::sample(Circuit(circuit), ref, 100, SHARED_TEST_RNG());
+        simd_bit_table<MAX_BITWORD_WIDTH> t = FrameSimulator::sample(Circuit(circuit), ref, 100, externally_seeded_rng());
         return !t.data.not_zero();
     };
 
@@ -1116,7 +1117,7 @@ TEST(FrameSimulator, noisy_measurement_x) {
         MX 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
@@ -1130,7 +1131,7 @@ TEST(FrameSimulator, noisy_measurement_x) {
         MX 0 1
     )CIRCUIT"),
         5000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1146,7 +1147,7 @@ TEST(FrameSimulator, noisy_measurement_y) {
         MY 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
@@ -1160,7 +1161,7 @@ TEST(FrameSimulator, noisy_measurement_y) {
         MY 0 1
     )CIRCUIT"),
         5000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1176,7 +1177,7 @@ TEST(FrameSimulator, noisy_measurement_z) {
         MZ 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
@@ -1190,7 +1191,7 @@ TEST(FrameSimulator, noisy_measurement_z) {
         MZ 0 1
     )CIRCUIT"),
         5000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1206,7 +1207,7 @@ TEST(FrameSimulator, noisy_measure_reset_x) {
         MRX 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
@@ -1220,7 +1221,7 @@ TEST(FrameSimulator, noisy_measure_reset_x) {
         MRX 0 1
     )CIRCUIT"),
         5000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1236,7 +1237,7 @@ TEST(FrameSimulator, noisy_measure_reset_y) {
         MRY 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
@@ -1250,7 +1251,7 @@ TEST(FrameSimulator, noisy_measure_reset_y) {
         MRY 0 1
     )CIRCUIT"),
         5000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1266,7 +1267,7 @@ TEST(FrameSimulator, noisy_measure_reset_z) {
         MRZ 0
     )CIRCUIT"),
         10000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     ASSERT_FALSE(r[1].not_zero());
     auto m1 = r[0].popcnt();
     ASSERT_GT(m1, 300);
@@ -1280,7 +1281,7 @@ TEST(FrameSimulator, noisy_measure_reset_z) {
         MRZ 0 1
     )CIRCUIT"),
         5000,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     auto m2 = r[0].popcnt() + r[1].popcnt();
     ASSERT_LT(m2, 10000 - 300);
     ASSERT_GT(m2, 10000 - 700);
@@ -1299,7 +1300,7 @@ TEST(FrameSimulator, measure_pauli_product_4body) {
         MPP Z0*Z1*Z4*Z5 !Y0*Y1*Y4*Y5
     )CIRCUIT"),
         10,
-        SHARED_TEST_RNG());
+        externally_seeded_rng());
     for (size_t k = 0; k < 10; k++) {
         auto x0123 = r[0][k];
         auto x0 = r[1][k];
@@ -1324,7 +1325,7 @@ TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
             DETECTOR rec[-1]
         )CIRCUIT"),
                  1000,
-                 SHARED_TEST_RNG())[0]
+                 externally_seeded_rng())[0]
                  .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 
@@ -1334,7 +1335,7 @@ TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
             DETECTOR rec[-1]
         )CIRCUIT"),
             1000,
-            SHARED_TEST_RNG())[0]
+            externally_seeded_rng())[0]
             .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 
@@ -1344,7 +1345,7 @@ TEST(FrameSimulator, non_deterministic_pauli_product_detectors) {
             DETECTOR rec[-1]
         )CIRCUIT"),
             1000,
-            SHARED_TEST_RNG())[0]
+            externally_seeded_rng())[0]
             .popcnt();
     ASSERT_TRUE(400 < n && n < 600);
 }
@@ -1357,7 +1358,7 @@ TEST(FrameSimulator, ignores_sweep_controls_when_given_no_sweep_data) {
             DETECTOR rec[-1]
         )CIRCUIT"),
                  1000,
-                 SHARED_TEST_RNG())[0]
+                 externally_seeded_rng())[0]
                  .popcnt();
     ASSERT_EQ(n, 0);
 }

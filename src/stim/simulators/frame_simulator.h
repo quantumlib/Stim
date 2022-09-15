@@ -61,7 +61,7 @@ struct FrameSimulator {
     /// Returns:
     ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
     ///     Each bit in the table is whether a specific measurement was flipped in a specific shot.
-    static simd_bit_table<MAX_BITWORD_WIDTH> sample_flipped_measurements(const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
+    static simd_bit_table<MAX_BITWORD_WIDTH> sample_flipped_measurements(const Circuit &circuit, size_t num_shots, std::mt19937_64 rng);
 
     /// Returns a batch of samples from the circuit.
     ///
@@ -75,7 +75,7 @@ struct FrameSimulator {
     ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
     ///     Each bit in the table is a measurement result.
     static simd_bit_table<MAX_BITWORD_WIDTH> sample(
-        const Circuit &circuit, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample, size_t num_samples, std::mt19937_64 &rng);
+        const Circuit &circuit, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample, size_t num_samples, std::mt19937_64 rng);
 
     static void sample_out(
         const Circuit &circuit,
@@ -83,7 +83,7 @@ struct FrameSimulator {
         uint64_t num_shots,
         FILE *out,
         SampleFormat format,
-        std::mt19937_64 &rng);
+        std::mt19937_64 rng);
 
     PauliString get_frame(size_t sample_index) const;
     void set_frame(size_t sample_index, const PauliStringRef &new_frame);

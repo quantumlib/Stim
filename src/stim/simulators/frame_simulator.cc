@@ -527,14 +527,14 @@ void FrameSimulator::PAULI_CHANNEL_2(const OperationData &target_data) {
 }
 
 simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample_flipped_measurements(
-    const Circuit &circuit, size_t num_samples, std::mt19937_64 &rng) {
+    const Circuit &circuit, size_t num_samples, std::mt19937_64 rng) {
     FrameSimulator sim(circuit.count_qubits(), num_samples, SIZE_MAX, rng);
     sim.reset_all_and_run(circuit);
     return sim.m_record.storage;
 }
 
 simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample(
-    const Circuit &circuit, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample, size_t num_samples, std::mt19937_64 &rng) {
+    const Circuit &circuit, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample, size_t num_samples, std::mt19937_64 rng) {
     return transposed_vs_ref(
         num_samples, FrameSimulator::sample_flipped_measurements(circuit, num_samples, rng), reference_sample);
 }
@@ -601,7 +601,7 @@ void FrameSimulator::sample_out(
     uint64_t num_shots,
     FILE *out,
     SampleFormat format,
-    std::mt19937_64 &rng) {
+    std::mt19937_64 rng) {
     constexpr size_t GOOD_BLOCK_SIZE = 768;
     size_t num_qubits = circuit.count_qubits();
     size_t max_lookback = circuit.max_lookback();

@@ -21,6 +21,7 @@ using namespace stim;
 static bool shared_test_rng_initialized;
 static std::mt19937_64 shared_test_rng;
 
+// TODO: eventually remove this function
 std::mt19937_64 &SHARED_TEST_RNG() {
     if (!shared_test_rng_initialized) {
         shared_test_rng = externally_seeded_rng();
