@@ -543,22 +543,22 @@ def test_seed():
 
 
 def test_copy_simulator_sharing_rng():
-    s = stim.TableauSimulator(seed=0)
-    s2 = s.copy(copy_rng=False)
+    s1 = stim.TableauSimulator(seed=0)
+    s2 = s1.copy(copy_rng=False)
 
     eq = set()
     for _ in range(100):
-        s.h(0)
+        s1.h(0)
         s2.h(0)
-        eq.add(s.measure(0) == s2.measure(0))
+        eq.add(s1.measure(0) == s2.measure(0))
     assert eq == {False, True}
 
 
 def test_copy_simulator_and_rng():
-    s = stim.TableauSimulator(seed=0)
-    s2 = s.copy(copy_rng=True)
+    s1 = stim.TableauSimulator(seed=0)
+    s2 = s1.copy(copy_rng=True)
 
     for _ in range(100):
-        s.h(0)
+        s1.h(0)
         s2.h(0)
-        assert s.measure(0) == s2.measure(0)
+        assert s1.measure(0) == s2.measure(0)
