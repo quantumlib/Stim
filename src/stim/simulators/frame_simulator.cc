@@ -48,7 +48,7 @@ inline void for_each_target_pair(FrameSimulator &sim, const OperationData &targe
     }
 }
 
-FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 rng)
+FrameSimulator::FrameSimulator(size_t num_qubits, size_t batch_size, size_t max_lookback, std::mt19937_64 &rng)
     : num_qubits(num_qubits),
       batch_size(batch_size),
       x_table(num_qubits, batch_size),
