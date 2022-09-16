@@ -21,7 +21,7 @@
 
 using namespace stim;
 
-TableauSimulator::TableauSimulator(std::mt19937_64 &rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
+TableauSimulator::TableauSimulator(const std::mt19937_64 &rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
     : inv_state(Tableau::identity(num_qubits)),
       rng(rng),
       sign_bias(sign_bias),
@@ -29,7 +29,7 @@ TableauSimulator::TableauSimulator(std::mt19937_64 &rng, size_t num_qubits, int8
       last_correlated_error_occurred(false) {
 }
 
-TableauSimulator::TableauSimulator(const TableauSimulator& other, std::mt19937_64 &rng)
+TableauSimulator::TableauSimulator(const TableauSimulator& other, const std::mt19937_64 &rng)
     : inv_state(other.inv_state),
       rng(rng),
       sign_bias(other.sign_bias),
@@ -723,7 +723,7 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
+simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(const Circuit &circuit, const std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator sim(rng, circuit.count_qubits(), sign_bias);
     sim.expand_do_circuit(circuit);
 
@@ -742,7 +742,7 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
     inv_state.expand(num_qubits);
 }
 
-void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng) {
+void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, const std::mt19937_64 &rng) {
     TableauSimulator sim(rng, 1);
     auto writer = MeasureRecordWriter::make(out, format);
     Circuit unprocessed;

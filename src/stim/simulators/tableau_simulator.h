@@ -34,7 +34,7 @@ namespace stim {
 
 struct TableauSimulator {
     Tableau inv_state;
-    std::mt19937_64 &rng;
+    std::mt19937_64 rng;
     int8_t sign_bias;
     MeasureRecord measurement_record;
     bool last_correlated_error_occurred;
@@ -45,18 +45,18 @@ struct TableauSimulator {
     ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
     ///     record: Measurement record configuration.
     explicit TableauSimulator(
-        std::mt19937_64 &rng, size_t num_qubits = 0, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
+        const std::mt19937_64 &rng, size_t num_qubits = 0, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
     /// Args:
     ///     other: TableauSimulator to copy state from.
     ///     rng: The random number generator to use for random operations.
-    TableauSimulator(const TableauSimulator& other, std::mt19937_64 &rng);
+    TableauSimulator(const TableauSimulator& other, const std::mt19937_64 &rng);
 
     /// Samples the given circuit in a deterministic fashion.
     ///
     /// Discards all noisy operations, and biases all collapse events towards +Z instead of randomly +Z/-Z.
     static simd_bits<MAX_BITWORD_WIDTH> reference_sample_circuit(const Circuit &circuit);
-    static simd_bits<MAX_BITWORD_WIDTH> sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
-    static void sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng);
+    static simd_bits<MAX_BITWORD_WIDTH> sample_circuit(const Circuit &circuit, const std::mt19937_64 &rng, int8_t sign_bias = 0);
+    static void sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, const std::mt19937_64 &rng);
 
     /// Expands the internal state of the simulator (if needed) to ensure the given qubit exists.
     ///
