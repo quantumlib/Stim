@@ -1518,12 +1518,12 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "copy",
-        [](const TableauSimulator &self, bool fresh_entropy, pybind11::object &seed) {
-            if (!fresh_entropy && !seed.is_none()) {
-                throw std::invalid_argument("seed and fresh_entropy are incompatible");
+        [](const TableauSimulator &self, bool also_copy_rng_state, pybind11::object &seed) {
+            if (also_copy_rng_state && !seed.is_none()) {
+                throw std::invalid_argument("seed and also_copy_rng_state are incompatible");
             }
 
-            if (fresh_entropy || !seed.is_none()) {
+            if (!also_copy_rng_state || !seed.is_none()) {
                 TableauSimulator copy(self, *make_py_seeded_rng(seed));
                 return copy;
             }
@@ -1532,18 +1532,18 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return copy;
         },
         pybind11::kw_only(),
-        pybind11::arg("fresh_entropy") = true,
+        pybind11::arg("also_copy_rng_state") = false,
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            @signature def copy(self, *, fresh_entropy: bool = True, seed: Optional[int] = None) -> stim.TableauSimulator
+            @signature def copy(self, *, also_copy_rng_state: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator
             Returns a copy of the simulator. A simulator with the same internal state.
 
             Args:
-                fresh_entropy: If False, the RNG state is copied together with the rest
-                    of the simulator. The two copies will produce the same measurement
-                    outcomes for the same quantum circuits. If True (the default), the
-                    RNG is reinitialized using a random seed. If both fresh_entropy and
-                    seed are used, an exception is raised. Defaults to True.
+                also_copy_rng_state: If False, RNG is reinitialized using a random seed.
+                    If True, RNG state is copied together with the simulator. The two
+                    copies will then produce the same measurement outcomes for the same
+                    quantum circuits. If both also_copy_rng_state and seed are used,
+                    an exception is raised. Defaults to False.
                 seed: PARTIALLY determines simulation results by deterministically seeding
                     the random number generator.
 

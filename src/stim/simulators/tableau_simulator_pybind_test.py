@@ -549,9 +549,9 @@ def test_seed():
     assert ms1 != ms2
 
 
-def test_copy_without_fresh_entropy():
+def test_copy_with_rng_state():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy(fresh_entropy=False)
+    s2 = s1.copy(also_copy_rng_state=True)
 
     for _ in range(100):
         s1.h(0)
@@ -559,7 +559,7 @@ def test_copy_without_fresh_entropy():
         assert s1.measure(0) == s2.measure(0)
 
 
-def test_copy_with_fresh_entropy():
+def test_copy_without_rng_state():
     s1 = stim.TableauSimulator(seed=0)
     s2 = s1.copy()
 
@@ -590,7 +590,7 @@ def test_copy_with_explicit_seed():
     assert eq == {False, True}
 
 
-def test_copy_with_fresh_entropy_and_explicit_seed():
+def test_copy_with_rng_state_and_explicit_seed():
     s = stim.TableauSimulator()
-    with pytest.raises(ValueError, match='seed and fresh_entropy are incompatible'):
-        _ = s.copy(fresh_entropy=False, seed=0)
+    with pytest.raises(ValueError, match='seed and also_copy_rng_state are incompatible'):
+        _ = s.copy(also_copy_rng_state=True, seed=0)
