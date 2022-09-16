@@ -1535,7 +1535,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("fresh_entropy") = false,
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            @signature def copy(*, fresh_entropy: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator
+            @signature def copy(self, *, fresh_entropy: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator
             Returns a copy of the simulator. A simulator with the same internal state.
 
             Args:
