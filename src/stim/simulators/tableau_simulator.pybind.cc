@@ -1535,7 +1535,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("also_copy_rng_state") = false,
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            @signature def copy(self, *, also_copy_rng_state: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator
+            @signature def copy(self, *, also_copy_rng_state: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator:
             Returns a copy of the simulator. A simulator with the same internal state.
 
             Args:

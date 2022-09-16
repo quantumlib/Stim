@@ -7716,7 +7716,7 @@ def copy(
     *,
     also_copy_rng_state: bool = False,
     seed: Optional[int] = None,
-) -> stim.TableauSimulator
+) -> stim.TableauSimulator:
 
     """Returns a copy of the simulator. A simulator with the same internal state.
 
