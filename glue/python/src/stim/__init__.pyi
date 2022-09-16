@@ -5697,20 +5697,18 @@ class TableauSimulator:
     def copy(
         self,
         *,
-        fresh_entropy: bool = False,
+        fresh_entropy: bool = True,
         seed: Optional[int] = None,
     ) -> stim.TableauSimulator
 
         """Returns a copy of the simulator. A simulator with the same internal state.
 
         Args:
-            fresh_entropy: If False and no seed is specified, the RNG state is copied
-                together with the rest of the simulator. The two copies will produce
-                the same measurement outcomes for the same quantum circuits. This is
-                the default behavior. If False and seed is specified, the RNG is
-                reinitialized using the new seed. If True and no seed is specified,
-                the RNG is reinitialized using a random seed. If True and seed is
-                specified, exception is raised. Defaults to False.
+            fresh_entropy: If False, the RNG state is copied together with the rest
+                of the simulator. The two copies will produce the same measurement
+                outcomes for the same quantum circuits. If True (the default), the
+                RNG is reinitialized using a random seed. If both fresh_entropy and
+                seed are used, an exception is raised. Defaults to True.
             seed: PARTIALLY determines simulation results by deterministically seeding
                 the random number generator.
 

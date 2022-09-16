@@ -214,7 +214,7 @@ def test_measure_kickback_random_branches():
     for _ in range(100):
         if post_false is not None and post_true is not None:
             break
-        copy = s.copy(fresh_entropy=True)
+        copy = s.copy()
         if copy.measure(4):
             post_true = copy
         else:
@@ -549,9 +549,9 @@ def test_seed():
     assert ms1 != ms2
 
 
-def test_copy():
+def test_copy_without_fresh_entropy():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy()
+    s2 = s1.copy(fresh_entropy=False)
 
     for _ in range(100):
         s1.h(0)
@@ -561,7 +561,7 @@ def test_copy():
 
 def test_copy_with_fresh_entropy():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy(fresh_entropy=True)
+    s2 = s1.copy()
 
     eq = set()
     for _ in range(100):
@@ -593,4 +593,4 @@ def test_copy_with_explicit_seed():
 def test_copy_with_fresh_entropy_and_explicit_seed():
     s = stim.TableauSimulator()
     with pytest.raises(ValueError, match='seed and fresh_entropy are incompatible'):
-        _ = s.copy(fresh_entropy=True, seed=0)
+        _ = s.copy(fresh_entropy=False, seed=0)

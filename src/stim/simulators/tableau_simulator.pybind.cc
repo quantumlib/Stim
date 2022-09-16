@@ -1519,7 +1519,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
     c.def(
         "copy",
         [](const TableauSimulator &self, bool fresh_entropy, pybind11::object &seed) {
-            if (fresh_entropy and !seed.is_none()) {
+            if (!fresh_entropy and !seed.is_none()) {
                 throw std::invalid_argument("seed and fresh_entropy are incompatible");
             }
 
@@ -1532,20 +1532,18 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return copy;
         },
         pybind11::kw_only(),
-        pybind11::arg("fresh_entropy") = false,
+        pybind11::arg("fresh_entropy") = true,
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            @signature def copy(self, *, fresh_entropy: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator
+            @signature def copy(self, *, fresh_entropy: bool = True, seed: Optional[int] = None) -> stim.TableauSimulator
             Returns a copy of the simulator. A simulator with the same internal state.
 
             Args:
-                fresh_entropy: If False and no seed is specified, the RNG state is copied
-                    together with the rest of the simulator. The two copies will produce
-                    the same measurement outcomes for the same quantum circuits. This is
-                    the default behavior. If False and seed is specified, the RNG is
-                    reinitialized using the new seed. If True and no seed is specified,
-                    the RNG is reinitialized using a random seed. If True and seed is
-                    specified, exception is raised. Defaults to False.
+                fresh_entropy: If False, the RNG state is copied together with the rest
+                    of the simulator. The two copies will produce the same measurement
+                    outcomes for the same quantum circuits. If True (the default), the
+                    RNG is reinitialized using a random seed. If both fresh_entropy and
+                    seed are used, an exception is raised. Defaults to True.
                 seed: PARTIALLY determines simulation results by deterministically seeding
                     the random number generator.
 
