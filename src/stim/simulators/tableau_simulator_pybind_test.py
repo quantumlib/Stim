@@ -214,7 +214,7 @@ def test_measure_kickback_random_branches():
     for _ in range(100):
         if post_false is not None and post_true is not None:
             break
-        copy = s.copy()
+        copy = s.copy(fresh_entropy=True)
         if copy.measure(4):
             post_true = copy
         else:
@@ -549,9 +549,19 @@ def test_seed():
     assert ms1 != ms2
 
 
-def test_copy_simulator_sharing_rng():
+def test_copy():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy(copy_rng=False)
+    s2 = s1.copy()
+
+    for _ in range(100):
+        s1.h(0)
+        s2.h(0)
+        assert s1.measure(0) == s2.measure(0)
+
+
+def test_copy_with_fresh_entropy():
+    s1 = stim.TableauSimulator(seed=0)
+    s2 = s1.copy(fresh_entropy=True)
 
     eq = set()
     for _ in range(100):
@@ -561,11 +571,26 @@ def test_copy_simulator_sharing_rng():
     assert eq == {False, True}
 
 
-def test_copy_simulator_and_rng():
+def test_copy_with_explicit_seed():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy(copy_rng=True)
+    s2 = stim.TableauSimulator(seed=1)
+    s3 = s1.copy(seed=1)
 
+    eq = set()
     for _ in range(100):
         s1.h(0)
         s2.h(0)
-        assert s1.measure(0) == s2.measure(0)
+        s3.h(0)
+        m1 = s1.measure(0)
+        m2 = s2.measure(0)
+        m3 = s3.measure(0)
+        assert m2 == m3
+        eq.add(m1 == m3)
+
+    assert eq == {False, True}
+
+
+def test_copy_with_fresh_entropy_and_explicit_seed():
+    s = stim.TableauSimulator()
+    with pytest.raises(ValueError, match='seed and fresh_entropy are incompatible'):
+        _ = s.copy(fresh_entropy=True, seed=0)

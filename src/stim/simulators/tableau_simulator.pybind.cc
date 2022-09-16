@@ -1518,24 +1518,59 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "copy",
-        [](const TableauSimulator &self, bool copy_rng) {
-            TableauSimulator copy = self;
-            if (!copy_rng) {
-                copy.rng = externally_seeded_rng();
+        [](const TableauSimulator &self, bool fresh_entropy, pybind11::object &seed) {
+            if (fresh_entropy and !seed.is_none()) {
+                throw std::invalid_argument("seed and fresh_entropy are incompatible");
             }
+
+            if (fresh_entropy or !seed.is_none()) {
+                TableauSimulator copy(self, *make_py_seeded_rng(seed));
+                return copy;
+            }
+
+            TableauSimulator copy = self;
             return copy;
         },
         pybind11::kw_only(),
-        pybind11::arg("copy_rng") = false,
+        pybind11::arg("fresh_entropy") = false,
+        pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
+            @signature def copy(*, fresh_entropy: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator
             Returns a copy of the simulator. A simulator with the same internal state.
 
             Args:
-                copy_rng: If False, old and new simulators share the random number
-                    generator. If True, a new random number generator is created
-                    and initialized to the same internal state as the old. In the
-                    latter case, measurement outcomes produced by the two simulators
-                    will agree. Defaults to False.
+                fresh_entropy: If False and no seed is specified, the RNG state is copied
+                    together with the rest of the simulator. The two copies will produce
+                    the same measurement outcomes for the same quantum circuits. This is
+                    the default behavior. If False and seed is specified, the RNG is
+                    reinitialized using the new seed. If True and no seed is specified,
+                    the RNG is reinitialized using a random seed. If True and seed is
+                    specified, exception is raised. Defaults to False.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When None, the prng is seeded from system entropy.
+
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how many
+                    shots are taken. For example, taking 10 shots and then 90 shots will
+                    give different results from taking 100 shots in one call.
+
 
             Examples:
                 >>> import stim
