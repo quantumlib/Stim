@@ -1519,11 +1519,11 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
     c.def(
         "copy",
         [](const TableauSimulator &self, bool fresh_entropy, pybind11::object &seed) {
-            if (!fresh_entropy and !seed.is_none()) {
+            if (!fresh_entropy && !seed.is_none()) {
                 throw std::invalid_argument("seed and fresh_entropy are incompatible");
             }
 
-            if (fresh_entropy or !seed.is_none()) {
+            if (fresh_entropy || !seed.is_none()) {
                 TableauSimulator copy(self, *make_py_seeded_rng(seed));
                 return copy;
             }
