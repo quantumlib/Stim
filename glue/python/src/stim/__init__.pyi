@@ -5498,7 +5498,7 @@ class Tableau:
             If bit_packed=True then:
                 *.dtype = = np.uint8
                 *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
-                *_signs.shape = len(tableau)
+                *_signs.shape = math.ceil(len(tableau) / 8)
                 (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
                 (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
                 (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
