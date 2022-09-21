@@ -4323,7 +4323,7 @@ class PauliString:
         xs: np.ndarray,
         zs: np.ndarray,
         sign: Union[int, float, complex] = +1,
-        num: Optional[int] = None,
+        num_qubits: Optional[int] = None,
     ) -> stim.PauliString:
         """Creates a pauli string from X bit and Z bit numpy arrays, using the encoding:
 
@@ -4336,19 +4336,19 @@ class PauliString:
             xs: The X bits of the pauli string. This array can either be a 1-dimensional
                 numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
                 array with dtype=np.uint8. If the dtype is np.uint8 then the array is
-                assumed to be bit packed in little endian order and the "num" argument
-                must be specified. When bit packed, the x bit with offset k is stored at
-                (xs[k // 8] >> (k % 8)) & 1.
+                assumed to be bit packed in little endian order and the "num_qubits"
+                argument must be specified. When bit packed, the x bit with offset k is
+                stored at (xs[k // 8] >> (k % 8)) & 1.
             zs: The Z bits of the pauli string. This array can either be a 1-dimensional
                 numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
                 array with dtype=np.uint8. If the dtype is np.uint8 then the array is
-                assumed to be bit packed in little endian order and the "num" argument
-                must be specified. When bit packed, the x bit with offset k is stored at
-                (xs[k // 8] >> (k % 8)) & 1.
+                assumed to be bit packed in little endian order and the "num_qubits"
+                argument must be specified. When bit packed, the x bit with offset k is
+                stored at (xs[k // 8] >> (k % 8)) & 1.
             sign: Defaults to +1. Set to +1, -1, 1j, or -1j to control the sign of the
                 returned Pauli string.
-            num: Must be specified if xs or zs is a bit packed array. Specifies the
-                expected length of the Pauli string.
+            num_qubits: Must be specified if xs or zs is a bit packed array. Specifies
+                the expected length of the Pauli string.
 
         Returns:
             The created pauli string.
@@ -4364,7 +4364,7 @@ class PauliString:
 
             >>> xs = np.array([127, 0], dtype=np.uint8)
             >>> zs = np.array([240, 1], dtype=np.uint8)
-            >>> stim.PauliString.from_numpy(xs=xs, zs=zs, num=9)
+            >>> stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=9)
             stim.PauliString("+XXXXYYYZZ")
         """
     @staticmethod
@@ -4876,6 +4876,100 @@ class Tableau:
             | ++
             | YZ
         """
+    def to_numpy(
+        self,
+        *,
+        bit_packed: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
+
+        The x2x, x2z, z2x, z2z arrays are the four quadrants of the table defined in
+        Aaronson and Gottesman's "Improved Simulation of Stabilizer Circuits"
+        ( https://arxiv.org/abs/quant-ph/0406196 ).
+
+        Args:
+            x2x: A 2d numpy array containing the x-to-x coupling bits. The bits can be
+                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                result will satisfy result.x_output_pauli(i, j) in [1, 2] == x2x[i, j].
+                Bit packing must be in little endian order and only applies to the
+                second axis.
+            x2z: A 2d numpy array containing the x-to-z coupling bits. The bits can be
+                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                result will satisfy result.x_output_pauli(i, j) in [2, 3] == x2z[i, j].
+                Bit packing must be in little endian order and only applies to the
+                second axis.
+            z2x: A 2d numpy array containing the z-to-x coupling bits. The bits can be
+                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                result will satisfy result.z_output_pauli(i, j) in [1, 2] == z2x[i, j].
+                Bit packing must be in little endian order and only applies to the
+                second axis.
+            z2z: A 2d numpy array containing the z-to-z coupling bits. The bits can be
+                bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                result will satisfy result.z_output_pauli(i, j) in [2, 3] == z2z[i, j].
+                Bit packing must be in little endian order and only applies to the
+                second axis.
+            x_signs: Defaults to all-positive if not specified. A 1d numpy array
+                containing the sign bits for the X generator outputs. False means
+                positive and True means negative. The bits can be bit packed
+                (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                order.
+            z_signs: Defaults to all-positive if not specified. A 1d numpy array
+                containing the sign bits for the Z generator outputs. False means
+                positive and True means negative. The bits can be bit packed
+                (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                order.
+
+        Returns:
+            The tableau created from the numpy data.
+
+        Examples:
+            >>> import stim
+            >>> import numpy as np
+
+            >>> tableau = stim.Tableau.from_numpy(
+            ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool8),
+            ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool8),
+            ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool8),
+            ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool8),
+            ... )
+            >>> print(repr(tableau))
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("+XX"),
+                    stim.PauliString("+_X"),
+                ],
+                zs=[
+                    stim.PauliString("+Z_"),
+                    stim.PauliString("+ZZ"),
+                ],
+            )
+            >>> tableau == stim.Tableau.from_named_gate("CNOT")
+            True
+
+            >>> tableau = stim.Tableau.from_numpy(
+            ...     x2x=np.array([[9], [5], [7], [6]], dtype=np.uint8),
+            ...     x2z=np.array([[13], [13], [0], [3]], dtype=np.uint8),
+            ...     z2x=np.array([[8], [5], [9], [15]], dtype=np.uint8),
+            ...     z2z=np.array([[6], [11], [2], [3]], dtype=np.uint8),
+            ...     x_signs=np.array([7], dtype=np.uint8),
+            ...     z_signs=np.array([9], dtype=np.uint8),
+            ... )
+            >>> print(repr(tableau))
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("-Y_ZY"),
+                    stim.PauliString("-Y_YZ"),
+                    stim.PauliString("-XXX_"),
+                    stim.PauliString("+ZYX_"),
+                ],
+                zs=[
+                    stim.PauliString("-_ZZX"),
+                    stim.PauliString("+YZXZ"),
+                    stim.PauliString("+XZ_X"),
+                    stim.PauliString("-YYXX"),
+                ],
+            )
+        """
     @staticmethod
     def from_unitary_matrix(
         matrix: Iterable[Iterable[float]],
@@ -5364,6 +5458,150 @@ class Tableau:
                 H 0 1 2
                 S 1 1 2 2
             ''')
+        """
+    def to_numpy(
+        self,
+        *,
+        bit_packed: bool = False,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Decomposes the contents of the tableau into six numpy arrays.
+
+        The first four numpy arrays correspond to the four quadrants of the table
+        defined in Aaronson and Gottesman's "Improved Simulation of Stabilizer Circuits"
+        ( https://arxiv.org/abs/quant-ph/0406196 ).
+
+        The last two numpy arrays are the X and Z sign bit vectors of the tableau.
+
+        Args:
+            bit_packed: Defaults to False. Determines whether the output numpy arrays
+                use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+
+        Returns:
+            An (x2x, x2z, z2x, z2x, x_signs, z_signs) tuple encoding the tableau.
+
+            x2x: A 2d table of whether tableau(X_i)_j is X or Y (instead of I or Z).
+            x2z: A 2d table of whether tableau(X_i)_j is Z or Y (instead of I or X).
+            z2x: A 2d table of whether tableau(Z_i)_j is X or Y (instead of I or Z).
+            z2z: A 2d table of whether tableau(Z_i)_j is Z or Y (instead of I or X).
+            x_signs: A vector of whether tableau(X_i) is negative.
+            z_signs: A vector of whether tableau(Z_i) is negative.
+
+            If bit_packed=False then:
+                *.dtype = = np.bool8
+                *2*.shape = (len(tableau), len(tableau))
+                *_signs.shape = len(tableau)
+                x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
+                x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
+                z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
+                z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
+
+            If bit_packed=True then:
+                *.dtype = = np.uint8
+                *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                *_signs.shape = len(tableau)
+                (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
+                (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
+                (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
+                (z2z[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [2, 3]
+
+        Examples:
+            >>> import stim
+            >>> cnot = stim.Tableau.from_named_gate("CNOT")
+            >>> print(repr(cnot))
+            stim.Tableau.from_conjugated_generators(
+                xs=[
+                    stim.PauliString("+XX"),
+                    stim.PauliString("+_X"),
+                ],
+                zs=[
+                    stim.PauliString("+Z_"),
+                    stim.PauliString("+ZZ"),
+                ],
+            )
+            >>> x2x, x2z, z2x, z2z, x_signs, z_signs = cnot.to_numpy()
+            >>> x2x
+            array([[ True,  True],
+                   [False,  True]])
+            >>> x2z
+            array([[False, False],
+                   [False, False]])
+            >>> z2x
+            array([[False, False],
+                   [False, False]])
+            >>> z2z
+            array([[ True, False],
+                   [ True,  True]])
+            >>> x_signs
+            array([False, False])
+            >>> z_signs
+            array([False, False])
+
+            >>> t = stim.Tableau.from_conjugated_generators(
+            ...     xs=[
+            ...         stim.PauliString("-Y_ZY"),
+            ...         stim.PauliString("-Y_YZ"),
+            ...         stim.PauliString("-XXX_"),
+            ...         stim.PauliString("+ZYX_"),
+            ...     ],
+            ...     zs=[
+            ...         stim.PauliString("-_ZZX"),
+            ...         stim.PauliString("+YZXZ"),
+            ...         stim.PauliString("+XZ_X"),
+            ...         stim.PauliString("-YYXX"),
+            ...     ],
+            ... )
+
+            >>> x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
+            >>> x2x
+            array([[ True, False, False,  True],
+                   [ True, False,  True, False],
+                   [ True,  True,  True, False],
+                   [False,  True,  True, False]])
+            >>> x2z
+            array([[ True, False,  True,  True],
+                   [ True, False,  True,  True],
+                   [False, False, False, False],
+                   [ True,  True, False, False]])
+            >>> z2x
+            array([[False, False, False,  True],
+                   [ True, False,  True, False],
+                   [ True, False, False,  True],
+                   [ True,  True,  True,  True]])
+            >>> z2z
+            array([[False,  True,  True, False],
+                   [ True,  True, False,  True],
+                   [False,  True, False, False],
+                   [ True,  True, False, False]])
+            >>> x_signs
+            array([ True,  True,  True, False])
+            >>> z_signs
+            array([ True, False, False,  True])
+
+            >>> x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
+            >>> x2x
+            array([[9],
+                   [5],
+                   [7],
+                   [6]], dtype=uint8)
+            >>> x2z
+            array([[13],
+                   [13],
+                   [ 0],
+                   [ 3]], dtype=uint8)
+            >>> z2x
+            array([[ 8],
+                   [ 5],
+                   [ 9],
+                   [15]], dtype=uint8)
+            >>> z2z
+            array([[ 6],
+                   [11],
+                   [ 2],
+                   [ 3]], dtype=uint8)
+            >>> x_signs
+            array([7], dtype=uint8)
+            >>> z_signs
+            array([9], dtype=uint8)
         """
     def to_pauli_string(
         self,
