@@ -139,12 +139,12 @@ pybind11::object read_shot_data_file(
 
 simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_uint8_array_to_transposed_simd_table(
     const pybind11::array_t<uint8_t> &data_u8, size_t expected_bits_per_shot, size_t *num_shots_out) {
-    size_t num_shots = data_u8.shape(0);
-    *num_shots_out = num_shots;
-
     if (data_u8.ndim() != 2) {
         throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
     }
+
+    size_t num_shots = data_u8.shape(0);
+    *num_shots_out = num_shots;
 
     size_t expected_bytes_per_shot = (expected_bits_per_shot + 7) / 8;
     size_t actual_bytes_per_shot = data_u8.shape(1);

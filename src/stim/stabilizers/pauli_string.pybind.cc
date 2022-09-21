@@ -154,6 +154,118 @@ bool PyPauliString::operator!=(const PyPauliString &other) const {
     return !(*this == other);
 }
 
+pybind11::object bits_to_numpy_bool8(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits) {
+    std::vector<uint8_t> bytes;
+    bytes.reserve(num_bits);
+    for (size_t k = 0; k < num_bits; k++) {
+        bytes.push_back(bits[k]);
+    }
+    void *ptr = bytes.data();
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_bits};
+    std::vector<pybind11::ssize_t> stride{1};
+    const std::string &np_format = pybind11::format_descriptor<bool>::value;
+    bool readonly = true;
+    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, np_format, (ssize_t)shape.size(), shape, stride, readonly));
+}
+
+pybind11::object bits_to_numpy_uint8_packed(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits) {
+    void *ptr = bits.ptr_simd;
+    pybind11::ssize_t itemsize = sizeof(uint8_t);
+    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)(num_bits + 7) / 8};
+    std::vector<pybind11::ssize_t> stride{1};
+    const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
+    bool readonly = true;
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, (ssize_t)shape.size(), shape, stride, readonly));
+}
+
+pybind11::object bits_to_numpy(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits, bool bit_packed) {
+    if (bit_packed) {
+        return bits_to_numpy_uint8_packed(bits, num_bits);
+    }
+    return bits_to_numpy_bool8(bits, num_bits);
+}
+
+size_t numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) {
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(numpy_array);
+        if (arr.ndim() == 1) {
+            size_t max_n = arr.shape(0) * 8;
+            size_t min_n = max_n == 0 ? 0 : max_n - 7;
+            if (expected_size == SIZE_MAX) {
+                throw std::invalid_argument(
+                    "Need to specify expected number of pauli terms (the `num` argument) when bit packing.\n"
+                    "A numpy array is bit packed (has dtype=np.uint8) but `num=None`.");
+            }
+            if (expected_size < min_n || expected_size > max_n) {
+                std::stringstream ss;
+                ss << "Numpy array has dtype=np.uint8 (meaning it is bit packed) and shape=";
+                ss << arr.shape(0) << " (meaning it has between " << min_n << " and " << max_n << " bits)";
+                ss << " but len=" << expected_size << " is outside that range.";
+                throw std::invalid_argument(ss.str());
+            }
+            return expected_size;
+        }
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<bool>>(numpy_array);
+        if (arr.ndim() == 1) {
+            size_t num_bits = arr.shape(0);
+            if (expected_size != SIZE_MAX && num_bits != expected_size) {
+                std::stringstream ss;
+                ss << "Numpy array has dtype=bool8 and shape=" << num_bits << " which is different from the given len=" << expected_size;
+                ss << ".\nEither don't specify len (as it is not needed when using bool8 arrays) or ensure the given len agrees with the given array shapes.";
+                throw std::invalid_argument(ss.str());
+            }
+            return num_bits;
+        }
+    }
+    throw std::invalid_argument("Bit data must be a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+}
+
+size_t numpy_pair_to_size(const pybind11::object &numpy_array1, const pybind11::object &numpy_array2, const pybind11::object &expected_size) {
+    size_t n0 = SIZE_MAX;
+    if (!expected_size.is_none()) {
+        n0 = pybind11::cast<size_t>(expected_size);
+    }
+    size_t n1 = numpy_to_size(numpy_array1, n0);
+    size_t n2 = numpy_to_size(numpy_array2, n0);
+    if (n1 != n2) {
+        throw std::invalid_argument("Inconsistent array shapes.");
+    }
+    return n2;
+}
+
+void memcpy_bits_from_numpy_to_simd(size_t num_bits, const pybind11::object &src, simd_bits_range_ref<MAX_BITWORD_WIDTH> dst) {
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(src)) {
+        auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(src);
+        if (arr.ndim() == 1) {
+            size_t num_bytes = (num_bits + 7) / 8;
+            auto u = arr.unchecked();
+            for (size_t k = 0; k < num_bytes; k++) {
+                uint8_t v = u(k);
+                dst.u8[k] = v;
+            }
+
+            // Clear overwrite.
+            for (size_t k = num_bits; k < num_bytes * 8; k++) {
+                dst[k] = false;
+            }
+            return;
+        }
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(src)) {
+        auto arr = pybind11::cast<pybind11::array_t<bool>>(src);
+        if (arr.ndim() == 1) {
+            auto u = arr.unchecked();
+            for (size_t k = 0; k < num_bits; k++) {
+                dst[k] = u(k);
+            }
+            return;
+        }
+    }
+
+    throw std::invalid_argument("Expected a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
+}
+
 std::complex<float> PyPauliString::get_phase() const {
     std::complex<float> result{value.sign ? -1.0f : +1.0f};
     if (imag) {
@@ -842,6 +954,129 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 False
                 >>> p2 == p1
                 True
+        )DOC")
+            .data());
+
+    c.def(
+        "to_numpy",
+        [](const PyPauliString &self, bool bit_packed) {
+            return pybind11::make_tuple(
+                bits_to_numpy(self.value.xs, self.value.num_qubits, bit_packed),
+                bits_to_numpy(self.value.zs, self.value.num_qubits, bit_packed));
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
+        clean_doc_string(u8R"DOC(
+            @signature def to_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+
+            Decomposes the contents of the pauli string into X bit and Z bit numpy arrays.
+
+            Args:
+                bit_packed: Defaults to False. Determines whether the output numpy arrays
+                    use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+
+            Returns:
+                An (xs, zs) tuple encoding the paulis from the string. The k'th Pauli from
+                the string is encoded into k'th bit of xs and the k'th bit of zs using
+                the "xz" encoding:
+
+                    P=I -> x=0 and z=0
+                    P=X -> x=1 and z=0
+                    P=Y -> x=1 and z=1
+                    P=Z -> x=0 and z=1
+
+                The dtype and shape of the result depends on the bit_packed argument.
+
+                If bit_packed=False:
+                    Each bit gets its own byte.
+                    xs.dtype = zs.dtype = np.bool8
+                    xs.shape = zs.shape = len(self)
+                    xs_k = xs[k]
+                    zs_k = zs[k]
+
+                If bit_packed=True:
+                    Equivalent to applying np.packbits(bitorder='little') to the result.
+                    xs.dtype = zs.dtype = np.uint8
+                    xs.shape = zs.shape = math.ceil(len(self) / 8)
+                    xs_k = (xs[k // 8] >> (k % 8)) & 1
+                    zs_k = (zs[k // 8] >> (k % 8)) & 1
+
+            Examples:
+                >>> import stim
+
+                >>> xs, zs = stim.PauliString("XXXXYYYZZ").to_numpy()
+                >>> xs
+                array([ True,  True,  True,  True,  True,  True,  True, False, False])
+                >>> zs
+                array([False, False, False, False,  True,  True,  True,  True,  True])
+
+                >>> xs, zs = stim.PauliString("XXXXYYYZZ").to_numpy(bit_packed=True)
+                >>> xs
+                array([127,   0], dtype=uint8)
+                >>> zs
+                array([240,   1], dtype=uint8)
+        )DOC")
+            .data());
+
+    c.def_static(
+        "from_numpy",
+        [](const pybind11::object &xs, const pybind11::object &zs, const pybind11::object &sign, const pybind11::object &num) -> PyPauliString {
+            size_t n = numpy_pair_to_size(xs, zs, num);
+            PyPauliString result{PauliString(n)};
+            memcpy_bits_from_numpy_to_simd(n, xs, result.value.xs);
+            memcpy_bits_from_numpy_to_simd(n, zs, result.value.zs);
+            result *= sign;
+            return result;
+        },
+        pybind11::kw_only(),
+        pybind11::arg("xs"),
+        pybind11::arg("zs"),
+        pybind11::arg("sign") = +1,
+        pybind11::arg("num") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            @signature def from_numpy(*, xs: np.ndarray, zs: np.ndarray, sign: Union[int, float, complex] = +1, num: Optional[int] = None) -> stim.PauliString:
+
+            Creates a pauli string from X bit and Z bit numpy arrays, using the encoding:
+
+                x=0 and z=0 -> P=I
+                x=1 and z=0 -> P=X
+                x=1 and z=1 -> P=Y
+                x=0 and z=1 -> P=Z
+
+            Args:
+                xs: The X bits of the pauli string. This array can either be a 1-dimensional
+                    numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+                    array with dtype=np.uint8. If the dtype is np.uint8 then the array is
+                    assumed to be bit packed in little endian order and the "num" argument
+                    must be specified. When bit packed, the x bit with offset k is stored at
+                    (xs[k // 8] >> (k % 8)) & 1.
+                zs: The Z bits of the pauli string. This array can either be a 1-dimensional
+                    numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+                    array with dtype=np.uint8. If the dtype is np.uint8 then the array is
+                    assumed to be bit packed in little endian order and the "num" argument
+                    must be specified. When bit packed, the x bit with offset k is stored at
+                    (xs[k // 8] >> (k % 8)) & 1.
+                sign: Defaults to +1. Set to +1, -1, 1j, or -1j to control the sign of the
+                    returned Pauli string.
+                num: Must be specified if xs or zs is a bit packed array. Specifies the
+                    expected length of the Pauli string.
+
+            Returns:
+                The created pauli string.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+
+                >>> xs = np.array([1, 1, 1, 1, 1, 1, 1, 0, 0], dtype=np.bool8)
+                >>> zs = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.bool8)
+                >>> stim.PauliString.from_numpy(xs=xs, zs=zs, sign=-1)
+                stim.PauliString("-XXXXYYYZZ")
+
+                >>> xs = np.array([127, 0], dtype=np.uint8)
+                >>> zs = np.array([240, 1], dtype=np.uint8)
+                >>> stim.PauliString.from_numpy(xs=xs, zs=zs, num=9)
+                stim.PauliString("+XXXXYYYZZ")
         )DOC")
             .data());
 

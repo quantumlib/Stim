@@ -193,8 +193,10 @@ def print_doc(*, full_name: str, parent: object, obj: object, level: int) -> Opt
     else:
         text = f"class {term_name}:"
     if doc:
-        text += "\n" + indented(paragraph=f"\"\"\"{doc}\n\"\"\"",
-                                indentation="    ")
+        if text:
+            text += "\n"
+        text += indented(paragraph=f"\"\"\"{doc}\n\"\"\"",
+                         indentation="    ")
     out_obj.lines.append(text.replace('._stim_avx2', ''))
     if has_setter:
         if '->' in sig_name:
