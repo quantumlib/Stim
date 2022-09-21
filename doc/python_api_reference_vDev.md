@@ -6700,7 +6700,7 @@ def from_named_gate(
 # stim.Tableau.from_numpy
 
 # (in class stim.Tableau)
-def to_numpy(
+def from_numpy(
     self,
     *,
     bit_packed: bool = False,

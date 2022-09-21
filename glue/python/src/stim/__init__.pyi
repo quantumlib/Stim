@@ -4876,7 +4876,7 @@ class Tableau:
             | ++
             | YZ
         """
-    def to_numpy(
+    def from_numpy(
         self,
         *,
         bit_packed: bool = False,
