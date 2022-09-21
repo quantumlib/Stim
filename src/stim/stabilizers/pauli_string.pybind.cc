@@ -166,7 +166,7 @@ pybind11::object bits_to_numpy_bool8(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits
     std::vector<pybind11::ssize_t> stride{1};
     const std::string &np_format = pybind11::format_descriptor<bool>::value;
     bool readonly = true;
-    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, np_format, (ssize_t)shape.size(), shape, stride, readonly));
+    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, np_format, (pybind11::ssize_t)shape.size(), shape, stride, readonly));
 }
 
 pybind11::object bits_to_numpy_uint8_packed(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits) {
@@ -176,7 +176,7 @@ pybind11::object bits_to_numpy_uint8_packed(simd_bits_range_ref<MAX_BITWORD_WIDT
     std::vector<pybind11::ssize_t> stride{1};
     const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
     bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, (ssize_t)shape.size(), shape, stride, readonly));
+    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, (pybind11::ssize_t)shape.size(), shape, stride, readonly));
 }
 
 pybind11::object bits_to_numpy(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits, bool bit_packed) {
