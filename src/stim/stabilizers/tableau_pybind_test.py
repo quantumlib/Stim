@@ -747,3 +747,133 @@ def test_to_circuit_vs_from_circuit():
     sim.do_circuit(c)
     assert sim.current_inverse_tableau().inverse() == t
     assert stim.Tableau.from_circuit(c) == t
+
+
+def test_to_numpy():
+    t = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("+_XXY"),
+            stim.PauliString("+X_ZX"),
+            stim.PauliString("+_X__"),
+            stim.PauliString("-XXXY"),
+        ],
+        zs=[
+            stim.PauliString("+Z_ZY"),
+            stim.PauliString("+_X_Y"),
+            stim.PauliString("-_ZXZ"),
+            stim.PauliString("-Y_X_"),
+        ],
+    )
+
+    x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
+    np.testing.assert_array_equal(x_signs, [0, 0, 0, 1])
+    np.testing.assert_array_equal(z_signs, [0, 0, 1, 1])
+    np.testing.assert_array_equal(x2x, [
+        [0, 1, 1, 1],
+        [1, 0, 0, 1],
+        [0, 1, 0, 0],
+        [1, 1, 1, 1],
+    ])
+    np.testing.assert_array_equal(x2z, [
+        [0, 0, 0, 1],
+        [0, 0, 1, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 1],
+    ])
+    np.testing.assert_array_equal(z2x, [
+        [0, 0, 0, 1],
+        [0, 1, 0, 1],
+        [0, 0, 1, 0],
+        [1, 0, 1, 0],
+    ])
+    np.testing.assert_array_equal(z2z, [
+        [1, 0, 1, 1],
+        [0, 0, 0, 1],
+        [0, 1, 0, 1],
+        [1, 0, 0, 0],
+    ])
+
+    x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
+    np.testing.assert_array_equal(x_signs, [8])
+    np.testing.assert_array_equal(z_signs, [12])
+    np.testing.assert_array_equal(x2x, [
+        [14],
+        [9],
+        [2],
+        [15],
+    ])
+    np.testing.assert_array_equal(x2z, [
+        [8],
+        [4],
+        [0],
+        [8],
+    ])
+    np.testing.assert_array_equal(z2x, [
+        [8],
+        [10],
+        [4],
+        [5],
+    ])
+    np.testing.assert_array_equal(z2z, [
+        [13],
+        [8],
+        [10],
+        [1],
+    ])
+
+
+def test_from_numpy():
+    expected = stim.Tableau.from_conjugated_generators(
+        xs=[
+            stim.PauliString("+_XXY"),
+            stim.PauliString("+X_ZX"),
+            stim.PauliString("+_X__"),
+            stim.PauliString("-XXXY"),
+        ],
+        zs=[
+            stim.PauliString("+Z_ZY"),
+            stim.PauliString("+_X_Y"),
+            stim.PauliString("-_ZXZ"),
+            stim.PauliString("-Y_X_"),
+        ],
+    )
+
+    assert stim.Tableau.from_numpy(
+        x_signs=np.array([0, 0, 0, 1], dtype=np.bool8),
+        z_signs=np.array([0, 0, 1, 1], dtype=np.bool8),
+        x2x=np.array([
+            [0, 1, 1, 1],
+            [1, 0, 0, 1],
+            [0, 1, 0, 0],
+            [1, 1, 1, 1],
+        ], dtype=np.bool8),
+        x2z=np.array([
+            [0, 0, 0, 1],
+            [0, 0, 1, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 1],
+        ], dtype=np.bool8),
+        z2x=np.array([
+            [0, 0, 0, 1],
+            [0, 1, 0, 1],
+            [0, 0, 1, 0],
+            [1, 0, 1, 0],
+        ], dtype=np.bool8),
+        z2z=np.array([
+            [1, 0, 1, 1],
+            [0, 0, 0, 1],
+            [0, 1, 0, 1],
+            [1, 0, 0, 0],
+        ], dtype=np.bool8),
+    ) == expected
+
+
+@pytest.mark.parametrize("n", [0, 1, 15, 16, 17, 301])
+def test_to_from_numpy_fuzz(n: int):
+    t = stim.Tableau.random(n)
+    x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
+    t1 = stim.Tableau.from_numpy(x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs)
+    assert t1 == t
+    x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
+    t2 = stim.Tableau.from_numpy(x2x=x2x, x2z=x2z, z2x=z2x, z2z=z2z, x_signs=x_signs, z_signs=z_signs)
+    assert t2 == t

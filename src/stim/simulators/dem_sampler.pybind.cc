@@ -15,8 +15,8 @@
 #include "stim/simulators/dem_sampler.pybind.h"
 
 #include "stim/io/raii_file.h"
-#include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;

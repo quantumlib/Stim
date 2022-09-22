@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import numpy as np
 import stim
 import pytest
 
@@ -488,3 +488,106 @@ def test_pickle():
     t = stim.PauliString("i_XYZ")
     a = pickle.dumps(t)
     assert pickle.loads(a) == t
+
+
+def test_to_numpy():
+    p = stim.PauliString("_XYZ___XYXZYZ")
+
+    xs, zs = p.to_numpy()
+    assert xs.dtype == np.bool8
+    assert zs.dtype == np.bool8
+    np.testing.assert_array_equal(xs, [0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0])
+    np.testing.assert_array_equal(zs, [0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1])
+
+    xs, zs = p.to_numpy(bit_packed=True)
+    assert xs.dtype == np.uint8
+    assert zs.dtype == np.uint8
+    np.testing.assert_array_equal(xs, [0x86, 0x0B])
+    np.testing.assert_array_equal(zs, [0x0C, 0x1D])
+
+
+def test_from_numpy():
+    p = stim.PauliString.from_numpy(
+        xs=np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool8),
+        zs=np.array([0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1], dtype=np.bool8))
+    assert p == stim.PauliString("_XYZ___XYXZYZ")
+
+    p = stim.PauliString.from_numpy(
+        xs=np.array([0x86, 0x0B], dtype=np.uint8),
+        zs=np.array([0x0C, 0x1D], dtype=np.uint8),
+        num_qubits=13)
+
+    assert p == stim.PauliString("_XYZ___XYXZYZ")
+    p = stim.PauliString.from_numpy(
+        xs=np.array([0x86, 0x0B], dtype=np.uint8),
+        zs=np.array([0x0C, 0x1D], dtype=np.uint8),
+        num_qubits=15,
+        sign=1j)
+    assert p == stim.PauliString("i_XYZ___XYXZYZ__")
+
+
+def test_from_numpy_bad_bit_packed_len():
+    xs = np.array([0x86, 0x0B], dtype=np.uint8)
+    zs = np.array([0x0C, 0x1D], dtype=np.uint8)
+    with pytest.raises(ValueError, match="specify expected number"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs)
+
+    with pytest.raises(ValueError, match="between 9 and 16 bits"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=100)
+
+    with pytest.raises(ValueError, match="between 9 and 16 bits"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=0)
+
+    with pytest.raises(ValueError, match="between 9 and 16 bits"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=8)
+
+    with pytest.raises(ValueError, match="between 9 and 16 bits"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=17)
+
+    with pytest.raises(ValueError, match="between 0 and 0 bits"):
+        stim.PauliString.from_numpy(xs=xs[:0], zs=zs, num_qubits=9)
+
+    with pytest.raises(ValueError, match="between 1 and 8 bits"):
+        stim.PauliString.from_numpy(xs=xs[:1], zs=zs, num_qubits=9)
+
+    with pytest.raises(ValueError, match="between 1 and 8 bits"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs[:1], num_qubits=9)
+
+    with pytest.raises(ValueError, match="1-dimensional"):
+        stim.PauliString.from_numpy(xs=np.array([xs, xs]), zs=np.array([zs, zs]), num_qubits=9)
+
+    with pytest.raises(ValueError, match="uint8"):
+        stim.PauliString.from_numpy(xs=np.array(xs, dtype=np.uint64), zs=np.array(xs, dtype=np.uint64), num_qubits=9)
+
+
+def test_from_numpy_bad_bool_len():
+    xs = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool8)
+    zs = np.array([0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], dtype=np.bool8)
+    with pytest.raises(ValueError, match="shape=13"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=12)
+
+    with pytest.raises(ValueError, match="shape=13"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=14)
+
+    with pytest.raises(ValueError, match="shape=12"):
+        stim.PauliString.from_numpy(xs=xs[:-1], zs=zs, num_qubits=13)
+
+    with pytest.raises(ValueError, match="shape=12"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs[:-1], num_qubits=13)
+
+    with pytest.raises(ValueError, match="Inconsistent"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs[:-1])
+
+    with pytest.raises(RuntimeError, match="Unable to cast"):
+        stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=-1)
+
+
+@pytest.mark.parametrize("n", [0, 1, 41, 42, 1023, 1024, 1025])
+def test_to_from_numpy_round_trip(n: int):
+    p = stim.PauliString.random(n)
+    xs, zs = p.to_numpy()
+    p2 = stim.PauliString.from_numpy(xs=xs, zs=zs, sign=p.sign)
+    assert p2 == p
+    xs, zs = p.to_numpy(bit_packed=True)
+    p2 = stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=n, sign=p.sign)
+    assert p2 == p

@@ -16,8 +16,8 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/io/raii_file.h"
-#include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
