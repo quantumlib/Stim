@@ -200,16 +200,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install googletest
-      run: |
+    - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.10.0
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make
         sudo make install
-    - name: Set up Clang 14
-      uses: egor-tensin/setup-clang@v1
+    - uses: egor-tensin/setup-clang@v1
       with:
         version: 14
         platform: x64
@@ -249,8 +247,7 @@ jobs:
         simd_width: [64, 128, 256]
     steps:
     - uses: actions/checkout@v1
-    - name: install googletest
-      run: |
+    - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.10.0
         mkdir googletest/build && cd googletest/build
@@ -264,8 +261,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: install googletest
-      run: |
+    - run: |
         cd ..
         git clone https://github.com/google/googletest.git -b release-1.10.0
         mkdir googletest/build && cd googletest/build
