@@ -155,11 +155,24 @@ float VectorSimulator::project(const PauliStringRef &observable) {
     };
 
     uint64_t mask = 0;
+
+    /// clang 14+ has flag -Wbitwise-instead-of-logical.
+    /// we want bitwise or here since observable.xs[k] and
+    /// observable.zs[k] are bit_refs pointing into simd words
+    #if defined __clang__ && __clang_major__ >= 14
+      #pragma clang diagnostic push
+      #pragma clang diagnostic ignored "-Wbitwise-instead-of-logical"
+    #endif
+
     for (size_t k = 0; k < observable.num_qubits; k++) {
         if (observable.xs[k] | observable.zs[k]) {
             mask |= 1ULL << k;
         }
     }
+
+    #if defined __clang__ && __clang_major__ >= 14
+      #pragma clang diagnostic pop
+    #endif
 
     basis_change();
     float mag2 = 0;
