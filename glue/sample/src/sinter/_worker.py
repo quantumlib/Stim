@@ -1,3 +1,5 @@
+import os
+
 from typing import Any, Optional, Tuple, TYPE_CHECKING
 import tempfile
 
@@ -56,8 +58,11 @@ class WorkOut:
 
 def worker_loop(tmp_dir: 'pathlib.Path',
                 inp: 'multiprocessing.Queue',
-                out: 'multiprocessing.Queue') -> None:
+                out: 'multiprocessing.Queue',
+                core_affinity: Optional[int]) -> None:
     try:
+        if core_affinity is not None:
+            os.sched_setaffinity(0, {core_affinity})
         with tempfile.TemporaryDirectory(dir=tmp_dir) as child_dir:
             while True:
                 work: Optional[WorkIn] = inp.get()
@@ -73,6 +78,7 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                         decoder=work.task.decoder,
                         detector_error_model=auto_dem(work.task.circuit),
                         postselection_mask=work.task.postselection_mask,
+                        postselected_observables_mask=work.task.postselected_observables_mask,
                         json_metadata=work.task.json_metadata,
                         collection_options=work.task.collection_options,
                         skip_validation=True,
@@ -84,6 +90,7 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                         num_shots=work.num_shots,
                         circuit=used_task.circuit,
                         post_mask=used_task.postselection_mask,
+                        postselected_observable_mask=used_task.postselected_observables_mask,
                         decoder_error_model=used_task.detector_error_model,
                         decoder=used_task.decoder,
                         tmp_dir=child_dir,

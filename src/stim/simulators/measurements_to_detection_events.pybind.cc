@@ -16,8 +16,8 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/io/raii_file.h"
-#include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
@@ -153,7 +153,7 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
 }
 
 pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>
-stim_pybind::pybind_compiled_measurements_to_detection_events_converter_class(pybind11::module &m) {
+stim_pybind::pybind_compiled_measurements_to_detection_events_converter(pybind11::module &m) {
     return pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>(
         m,
         "CompiledMeasurementsToDetectionEventsConverter",
@@ -168,6 +168,7 @@ CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_mea
 }
 
 void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_methods(
+    pybind11::module &m,
     pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
     c.def(
         pybind11::init(&py_init_compiled_measurements_to_detection_events_converter),

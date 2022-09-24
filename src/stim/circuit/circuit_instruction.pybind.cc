@@ -80,8 +80,8 @@ std::vector<double> CircuitInstruction::gate_args_copy() const {
     return gate_args;
 }
 
-void pybind_circuit_instruction(pybind11::module &m) {
-    auto c = pybind11::class_<CircuitInstruction>(
+pybind11::class_<CircuitInstruction> stim_pybind::pybind_circuit_instruction(pybind11::module &m) {
+    return pybind11::class_<CircuitInstruction>(
         m,
         "CircuitInstruction",
         clean_doc_string(u8R"DOC(
@@ -102,7 +102,8 @@ void pybind_circuit_instruction(pybind11::module &m) {
                 stim.CircuitInstruction('X_ERROR', [stim.GateTarget(5)], [0.125])
         )DOC")
             .data());
-
+}
+void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<CircuitInstruction> &c) {
     c.def(
         pybind11::init<const char *, std::vector<pybind11::object>, std::vector<double>>(),
         pybind11::arg("name"),

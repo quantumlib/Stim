@@ -408,6 +408,42 @@ TEST(tableau, check_invariants) {
     ASSERT_FALSE(Tableau::gate2("XI", "II", "IX", "IZ").satisfies_invariants());
 }
 
+TEST(tableau, is_conjugation_by_pauli) {
+    Tableau tableau(8);
+    ASSERT_TRUE(tableau.is_pauli_product());
+    tableau.xs.signs[0] = true;
+    tableau.xs.signs[3] = true;
+    ASSERT_TRUE(tableau.is_pauli_product());
+    tableau.xs.zt[0][2] = true;
+    tableau.zs.zt[0][2] = true;
+    ASSERT_FALSE(tableau.is_pauli_product());
+}
+
+TEST(tableau, to_pauli_string) {
+    Tableau tableau(8);
+    tableau.xs.signs[3] = true;
+    PauliString pauli_string_z = tableau.to_pauli_string();
+    ASSERT_EQ(pauli_string_z.str(), "+___Z____");
+    tableau.zs.signs[3] = true;
+    PauliString pauli_string_y = tableau.to_pauli_string();
+    ASSERT_EQ(pauli_string_y.str(), "+___Y____");
+    tableau.xs.signs[3] = false;
+    tableau.xs.signs[5] = true;
+    PauliString pauli_string_xz = tableau.to_pauli_string();
+    ASSERT_EQ(pauli_string_xz.str(), "+___X_Z__");
+    tableau.xs.zt[0][1] = true;
+    ASSERT_THROW(tableau.to_pauli_string(), std::invalid_argument);
+}
+
+TEST(tableau, from_pauli_string) {
+    PauliString pauli_string_empty = PauliString::from_str("");
+    Tableau tableau_empty = Tableau::from_pauli_string(pauli_string_empty);
+    ASSERT_EQ(tableau_empty.to_pauli_string(), pauli_string_empty);
+    PauliString pauli_string = PauliString::from_str("+_XZX__YZZX");
+    Tableau tableau = Tableau::from_pauli_string(pauli_string);
+    ASSERT_EQ(tableau.to_pauli_string(), pauli_string);
+}
+
 TEST(tableau, random) {
     for (size_t k = 0; k < 20; k++) {
         auto t = Tableau::random(1, SHARED_TEST_RNG());

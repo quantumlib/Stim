@@ -97,6 +97,7 @@ def plot_discard_rate(
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
@@ -110,6 +111,10 @@ def plot_discard_rate(
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
+        filter_func: Optional. When specified, some curves will not be plotted.
+            The statistics are filtered and only plotted if filter_func(stat) returns True.
+            For example, `filter_func=lambda s: s.json_metadata['basis'] == 'x'` would plot only stats
+            where the saved metadata indicates the basis was 'x'.
         plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
@@ -124,19 +129,25 @@ def plot_discard_rate(
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
     """
+    filtered_stats: List['sinter.TaskStats'] = [
+        stat
+        for stat in stats
+        if filter_func(stat)
+    ]
+
     if not (highlight_max_likelihood_factor >= 1):
         raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
-    curve_groups = group_by(stats, key=group_func)
+    curve_groups = group_by(filtered_stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
-        stats = sorted(curve_groups[curve_id], key=x_func)
+        this_group_stats = sorted(curve_groups[curve_id], key=x_func)
 
         xs = []
         ys = []
         xs_range = []
         ys_low = []
         ys_high = []
-        for stat in stats:
+        for stat in this_group_stats:
             x = float(x_func(stat))
             if stat.shots:
                 fit = fit_binomial(
@@ -176,6 +187,7 @@ def plot_error_rate(
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
@@ -189,6 +201,10 @@ def plot_error_rate(
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
+        filter_func: Optional. When specified, some curves will not be plotted.
+            The statistics are filtered and only plotted if filter_func(stat) returns True.
+            For example, `filter_func=lambda s: s.json_metadata['basis'] == 'x'` would plot only stats
+            where the saved metadata indicates the basis was 'x'.
         plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
@@ -206,16 +222,22 @@ def plot_error_rate(
     if not (highlight_max_likelihood_factor >= 1):
         raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
-    curve_groups = group_by(stats, key=group_func)
+    filtered_stats: List['sinter.TaskStats'] = [
+        stat
+        for stat in stats
+        if filter_func(stat)
+    ]
+
+    curve_groups = group_by(filtered_stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
-        stats = sorted(curve_groups[curve_id], key=x_func)
+        this_group_stats = sorted(curve_groups[curve_id], key=x_func)
 
         xs = []
         ys = []
         xs_range = []
         ys_low = []
         ys_high = []
-        for stat in stats:
+        for stat in this_group_stats:
             num_kept = stat.shots - stat.discards
             if num_kept == 0:
                 continue

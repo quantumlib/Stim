@@ -61,6 +61,8 @@ struct Tableau {
 
     /// Creates a Tableau representing the identity operation.
     static Tableau identity(size_t num_qubits);
+    /// Creates a Tableau from a PauliString via conjugation
+    static Tableau from_pauli_string(const PauliString &pauli_string);
     /// Creates a Tableau representing a randomly sampled Clifford operation from a uniform distribution.
     static Tableau random(size_t num_qubits, std::mt19937_64 &rng);
     /// Returns the inverse Tableau.
@@ -73,6 +75,12 @@ struct Tableau {
 
     std::vector<std::complex<float>> to_flat_unitary_matrix(bool little_endian) const;
     bool satisfies_invariants() const;
+
+    /// If a Tableau fixes each pauli upto sign, then it is conjugation by a pauli
+    bool is_pauli_product() const;
+
+    /// If tableau is conjugation by a pauli, then return that pauli. Else throw exception.
+    PauliString to_pauli_string() const;
 
     /// Creates a Tableau representing a single qubit gate.
     ///

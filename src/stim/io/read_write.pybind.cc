@@ -20,61 +20,10 @@
 #include "stim/io/raii_file.h"
 #include "stim/mem/simd_bits.h"
 #include "stim/py/base.pybind.h"
-#include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/py/numpy.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
-
-pybind11::object transposed_simd_bit_table_to_numpy_uint8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots) {
-    std::vector<uint8_t> bytes;
-    bytes.resize(bits_per_shot * num_shots);
-    size_t bytes_per_shot = (bits_per_shot + 7) / 8;
-    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-        size_t shot_offset = bytes_per_shot * shot_index;
-        for (size_t o_index = 0; o_index < bits_per_shot; o_index += 8) {
-            for (size_t b = 0; b < 8; b++) {
-                bool bit = table[o_index + b][shot_index];
-                bytes[shot_offset + o_index / 8] |= bit << b;
-            }
-        }
-    }
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)bytes_per_shot};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)bytes_per_shot, 1};
-    const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
-}
-
-pybind11::object transposed_simd_bit_table_to_numpy_bool8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots) {
-    std::vector<uint8_t> bytes;
-    bytes.resize(bits_per_shot * num_shots);
-    size_t k = 0;
-    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-        for (size_t o_index = 0; o_index < bits_per_shot; o_index++) {
-            bytes[k++] = table[o_index][shot_index];
-        }
-    }
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)bits_per_shot};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)bits_per_shot, 1};
-    const std::string &format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
-}
-
-pybind11::object stim_pybind::transposed_simd_bit_table_to_numpy(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result) {
-    if (bit_pack_result) {
-        return transposed_simd_bit_table_to_numpy_uint8(table, bits_per_shot, num_shots);
-    } else {
-        return transposed_simd_bit_table_to_numpy_bool8(table, bits_per_shot, num_shots);
-    }
-}
 
 pybind11::object read_shot_data_file(
     const char *path,
@@ -137,81 +86,6 @@ pybind11::object read_shot_data_file(
     }
 }
 
-simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_uint8_array_to_transposed_simd_table(
-    const pybind11::array_t<uint8_t> &data_u8, size_t expected_bits_per_shot, size_t *num_shots_out) {
-    size_t num_shots = data_u8.shape(0);
-    *num_shots_out = num_shots;
-
-    if (data_u8.ndim() != 2) {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
-    }
-
-    size_t expected_bytes_per_shot = (expected_bits_per_shot + 7) / 8;
-    size_t actual_bytes_per_shot = data_u8.shape(1);
-    if (actual_bytes_per_shot != expected_bytes_per_shot) {
-        std::stringstream ss;
-        ss << "Expected " << expected_bits_per_shot << " bits per shot. ";
-        ss << "Got bit packed data (dtype=np.uint8) but data.shape[1]=";
-        ss << actual_bytes_per_shot << " != math.ceil(" << expected_bits_per_shot
-           << " / 8)=" << expected_bytes_per_shot;
-        throw std::invalid_argument(ss.str());
-    }
-
-    simd_bit_table<MAX_BITWORD_WIDTH> result(actual_bytes_per_shot * 8, num_shots);
-
-    auto u = data_u8.unchecked();
-    for (size_t a = 0; a < num_shots; a++) {
-        for (size_t b = 0; b < actual_bytes_per_shot; b++) {
-            uint8_t v = u(a, b);
-            for (size_t k = 0; k < 8; k++) {
-                result[b * 8 + k][a] |= ((v >> k) & 1) != 0;
-            }
-        }
-    }
-
-    return result;
-}
-
-simd_bit_table<MAX_BITWORD_WIDTH> bit_packed_numpy_bool8_array_to_transposed_simd_table(
-    const pybind11::array_t<bool> &data_bool8, size_t expected_bits_per_shot, size_t *num_shots_out) {
-    size_t num_shots = data_bool8.shape(0);
-    *num_shots_out = num_shots;
-
-    if (data_bool8.ndim() != 2) {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
-    }
-
-    size_t actual_bits_per_shot = data_bool8.shape(1);
-    if (actual_bits_per_shot != expected_bits_per_shot) {
-        std::stringstream ss;
-        ss << "Expected " << expected_bits_per_shot << " bits per shot. ";
-        ss << "Got unpacked boolean data (dtype=np.bool8) but data.shape[1]=" << actual_bits_per_shot;
-        throw std::invalid_argument(ss.str());
-    }
-    simd_bit_table<MAX_BITWORD_WIDTH> result(actual_bits_per_shot, num_shots);
-
-    auto u = data_bool8.unchecked();
-    for (size_t a = 0; a < num_shots; a++) {
-        for (size_t b = 0; b < actual_bits_per_shot; b++) {
-            result[b][a] |= u(a, b);
-        }
-    }
-
-    return result;
-}
-
-simd_bit_table<MAX_BITWORD_WIDTH> stim_pybind::numpy_array_to_transposed_simd_table(
-    const pybind11::object &data, size_t bits_per_shot, size_t *num_shots_out) {
-    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(data)) {
-        return bit_packed_numpy_uint8_array_to_transposed_simd_table(
-            pybind11::cast<pybind11::array_t<uint8_t>>(data), bits_per_shot, num_shots_out);
-    } else if (pybind11::isinstance<pybind11::array_t<bool>>(data)) {
-        return bit_packed_numpy_bool8_array_to_transposed_simd_table(
-            pybind11::cast<pybind11::array_t<bool>>(data), bits_per_shot, num_shots_out);
-    } else {
-        throw std::invalid_argument("data must be a 2-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
-    }
-}
 
 void write_shot_data_file(
     const pybind11::object &data,

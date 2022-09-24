@@ -30,7 +30,8 @@ struct ExposedDemTarget : stim::DemTarget {
     static ExposedDemTarget separator();
 };
 
-void pybind_detector_error_model_target(pybind11::module &m);
+pybind11::class_<ExposedDemTarget> pybind_detector_error_model_target(pybind11::module &m);
+void pybind_detector_error_model_target_methods(pybind11::module &m, pybind11::class_<ExposedDemTarget> &c);
 
 }  // namespace stim_pybind
 
