@@ -84,13 +84,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CompiledDetectorSampler.__init__`](#stim.CompiledDetectorSampler.__init__)
     - [`stim.CompiledDetectorSampler.__repr__`](#stim.CompiledDetectorSampler.__repr__)
     - [`stim.CompiledDetectorSampler.sample`](#stim.CompiledDetectorSampler.sample)
-    - [`stim.CompiledDetectorSampler.sample_bit_packed`](#stim.CompiledDetectorSampler.sample_bit_packed)
     - [`stim.CompiledDetectorSampler.sample_write`](#stim.CompiledDetectorSampler.sample_write)
 - [`stim.CompiledMeasurementSampler`](#stim.CompiledMeasurementSampler)
     - [`stim.CompiledMeasurementSampler.__init__`](#stim.CompiledMeasurementSampler.__init__)
     - [`stim.CompiledMeasurementSampler.__repr__`](#stim.CompiledMeasurementSampler.__repr__)
     - [`stim.CompiledMeasurementSampler.sample`](#stim.CompiledMeasurementSampler.sample)
-    - [`stim.CompiledMeasurementSampler.sample_bit_packed`](#stim.CompiledMeasurementSampler.sample_bit_packed)
     - [`stim.CompiledMeasurementSampler.sample_write`](#stim.CompiledMeasurementSampler.sample_write)
 - [`stim.CompiledMeasurementsToDetectionEventsConverter`](#stim.CompiledMeasurementsToDetectionEventsConverter)
     - [`stim.CompiledMeasurementsToDetectionEventsConverter.__init__`](#stim.CompiledMeasurementsToDetectionEventsConverter.__init__)
@@ -2823,7 +2821,8 @@ def sample(
     *,
     prepend_observables: bool = False,
     append_observables: bool = False,
-) -> np.ndarray[bool]:
+    bit_packed: bool = False,
+) -> object:
     """Returns a numpy array containing a batch of detector samples from the circuit.
 
     The circuit must define the detectors using DETECTOR instructions. Observables
@@ -2836,45 +2835,25 @@ def sample(
             with the detectors and are placed at the start of the results.
         append_observables: Defaults to false. When set, observables are included
             with the detectors and are placed at the end of the results.
+        bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+            a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
     Returns:
-        A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
-        `num_detectors + num_observables*(append_observables+prepend_observables)`.
+        A numpy array containing the samples.
 
-        The bit for detection event `m` in shot `s` is at `result[s, m]`.
-    """
-```
+        bits_per_shot = num_detectors + num_observables * (
+            append_observables + prepend_observables)
 
-<a name="stim.CompiledDetectorSampler.sample_bit_packed"></a>
-```python
-# stim.CompiledDetectorSampler.sample_bit_packed
-
-# (in class stim.CompiledDetectorSampler)
-def sample_bit_packed(
-    self,
-    shots: int,
-    *,
-    prepend_observables: bool = False,
-    append_observables: bool = False,
-) -> np.ndarray[np.uint8]:
-    """Returns a numpy array containing bit packed detector samples from the circuit.
-
-    The circuit must define the detectors using DETECTOR instructions. Observables
-    defined by OBSERVABLE_INCLUDE instructions can also be included in the results
-    as honorary detectors.
-
-    Args:
-        shots: The number of times to sample every detector in the circuit.
-        prepend_observables: Defaults to false. When set, observables are included
-            with the detectors and are placed at the start of the results.
-        append_observables: Defaults to false. When set, observables are included
-            with the detectors and are placed at the end of the results.
-
-    Returns:
-        A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
-        `num_detectors + num_observables*(append_observables+prepend_observables)`.
-        The bit for detection event `m` in shot `s` is at
-        `result[s, (m // 8)] & 2**(m % 8)`.
+        If bit_packed=False:
+            dtype=bool8
+            shape=(shots, bits_per_shot)
+            The bit for detection event `m` in shot `s` is at
+                result[s, m]
+        If bit_packed=True:
+            dtype=uint8
+            shape=(shots, math.ceil(bits_per_shot / 8))
+            The bit for detection event `m` in shot `s` is at
+                (result[s, m // 8] >> (m % 8)) & 1
     """
 ```
 
@@ -3046,15 +3025,29 @@ def __repr__(
 def sample(
     self,
     shots: int,
-) -> np.ndarray[bool]:
+    *,
+    bit_packed: bool = False,
+) -> object:
     """Samples a batch of measurement samples from the circuit.
 
     Args:
         shots: The number of times to sample every measurement in the circuit.
+        bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+            a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
     Returns:
-        A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-        The bit for measurement `m` in shot `s` is at `result[s, m]`.
+        A numpy array containing the samples.
+
+        If bit_packed=False:
+            dtype=bool8
+            shape=(shots, circuit.num_measurements)
+            The bit for measurement `m` in shot `s` is at
+                result[s, m]
+        If bit_packed=True:
+            dtype=uint8
+            shape=(shots, math.ceil(circuit.num_measurements / 8))
+            The bit for measurement `m` in shot `s` is at
+                (result[s, m // 8] >> (m % 8)) & 1
 
     Examples:
         >>> import stim
@@ -3065,39 +3058,6 @@ def sample(
         >>> s = c.compile_sampler()
         >>> s.sample(shots=1)
         array([[ True, False,  True,  True]])
-    """
-```
-
-<a name="stim.CompiledMeasurementSampler.sample_bit_packed"></a>
-```python
-# stim.CompiledMeasurementSampler.sample_bit_packed
-
-# (in class stim.CompiledMeasurementSampler)
-def sample_bit_packed(
-    self,
-    shots: int,
-) -> np.ndarray[np.uint8]:
-    """Samples a bit packed batch of measurement samples from the circuit.
-
-    Args:
-        shots: The number of times to sample every measurement in the circuit.
-
-    Returns:
-        A numpy array with `dtype=uint8` and
-        `shape=(shots, (num_measurements + 7) // 8)`.
-
-        The bit for measurement `m` in shot `s` is at
-        `result[s, (m // 8)] & 2**(m % 8)`.
-
-    Examples:
-        >>> import stim
-        >>> c = stim.Circuit('''
-        ...    X 0 1 2 3 4 5 6 7     10
-        ...    M 0 1 2 3 4 5 6 7 8 9 10
-        ... ''')
-        >>> s = c.compile_sampler()
-        >>> s.sample_bit_packed(shots=1)
-        array([[255,   4]], dtype=uint8)
     """
 ```
 
@@ -7399,7 +7359,7 @@ def to_numpy(
             use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
 
     Returns:
-        An (x2x, x2z, z2x, z2x, x_signs, z_signs) tuple encoding the tableau.
+        An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
 
         x2x: A 2d table of whether tableau(X_i)_j is X or Y (instead of I or Z).
         x2z: A 2d table of whether tableau(X_i)_j is Z or Y (instead of I or X).

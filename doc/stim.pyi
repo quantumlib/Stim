@@ -1980,7 +1980,8 @@ class CompiledDetectorSampler:
         *,
         prepend_observables: bool = False,
         append_observables: bool = False,
-    ) -> np.ndarray[bool]:
+        bit_packed: bool = False,
+    ) -> object:
         """Returns a numpy array containing a batch of detector samples from the circuit.
 
         The circuit must define the detectors using DETECTOR instructions. Observables
@@ -1993,12 +1994,25 @@ class CompiledDetectorSampler:
                 with the detectors and are placed at the start of the results.
             append_observables: Defaults to false. When set, observables are included
                 with the detectors and are placed at the end of the results.
+            bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+                a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
         Returns:
-            A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
-            `num_detectors + num_observables*(append_observables+prepend_observables)`.
+            A numpy array containing the samples.
 
-            The bit for detection event `m` in shot `s` is at `result[s, m]`.
+            bits_per_shot = num_detectors + num_observables * (
+                append_observables + prepend_observables)
+
+            If bit_packed=False:
+                dtype=bool8
+                shape=(shots, bits_per_shot)
+                The bit for detection event `m` in shot `s` is at
+                    result[s, m]
+            If bit_packed=True:
+                dtype=uint8
+                shape=(shots, math.ceil(bits_per_shot / 8))
+                The bit for detection event `m` in shot `s` is at
+                    (result[s, m // 8] >> (m % 8)) & 1
         """
     def sample_bit_packed(
         self,
@@ -2006,8 +2020,10 @@ class CompiledDetectorSampler:
         *,
         prepend_observables: bool = False,
         append_observables: bool = False,
-    ) -> np.ndarray[np.uint8]:
-        """Returns a numpy array containing bit packed detector samples from the circuit.
+    ) -> object:
+        """[DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
+
+        Returns a numpy array containing bit packed detector samples from the circuit.
 
         The circuit must define the detectors using DETECTOR instructions. Observables
         defined by OBSERVABLE_INCLUDE instructions can also be included in the results
@@ -2161,15 +2177,29 @@ class CompiledMeasurementSampler:
     def sample(
         self,
         shots: int,
-    ) -> np.ndarray[bool]:
+        *,
+        bit_packed: bool = False,
+    ) -> object:
         """Samples a batch of measurement samples from the circuit.
 
         Args:
             shots: The number of times to sample every measurement in the circuit.
+            bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+                a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
         Returns:
-            A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-            The bit for measurement `m` in shot `s` is at `result[s, m]`.
+            A numpy array containing the samples.
+
+            If bit_packed=False:
+                dtype=bool8
+                shape=(shots, circuit.num_measurements)
+                The bit for measurement `m` in shot `s` is at
+                    result[s, m]
+            If bit_packed=True:
+                dtype=uint8
+                shape=(shots, math.ceil(circuit.num_measurements / 8))
+                The bit for measurement `m` in shot `s` is at
+                    (result[s, m // 8] >> (m % 8)) & 1
 
         Examples:
             >>> import stim
@@ -2184,8 +2214,10 @@ class CompiledMeasurementSampler:
     def sample_bit_packed(
         self,
         shots: int,
-    ) -> np.ndarray[np.uint8]:
-        """Samples a bit packed batch of measurement samples from the circuit.
+    ) -> object:
+        """[DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
+
+        Samples a bit packed batch of measurement samples from the circuit.
 
         Args:
             shots: The number of times to sample every measurement in the circuit.
@@ -5477,7 +5509,7 @@ class Tableau:
                 use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
 
         Returns:
-            An (x2x, x2z, z2x, z2x, x_signs, z_signs) tuple encoding the tableau.
+            An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
 
             x2x: A 2d table of whether tableau(X_i)_j is X or Y (instead of I or Z).
             x2z: A 2d table of whether tableau(X_i)_j is Z or Y (instead of I or X).

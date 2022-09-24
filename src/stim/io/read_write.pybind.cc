@@ -60,29 +60,38 @@ pybind11::object read_shot_data_file(
     }
 
     if (bit_pack) {
-        void *ptr = full_buffer.data();
-        pybind11::ssize_t itemsize = sizeof(uint8_t);
-        std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bytes_per_shot};
-        std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)num_bytes_per_shot, 1};
-        const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
-        bool readonly = true;
-        return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
+        size_t num_bytes = full_buffer.size();
+        uint8_t *buffer = new uint8_t[num_bytes];
+        memcpy(buffer, full_buffer.data(), num_bytes);
+
+        pybind11::capsule free_when_done(buffer, [](void *f) {
+            delete[] reinterpret_cast<uint8_t *>(f);
+        });
+
+        return pybind11::array_t<uint8_t>(
+            {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bytes_per_shot},
+            {(pybind11::ssize_t)num_bytes_per_shot, (pybind11::ssize_t)1},
+            buffer,
+            free_when_done);
     } else {
-        std::vector<uint8_t> unpacked_buffer;
+        bool *buffer = new bool[num_bits_per_shot];
+        size_t t = 0;
         for (size_t s = 0; s < num_shots; s++) {
             for (size_t k = 0; k < num_bits_per_shot; k++) {
                 auto bi = (s * num_bytes_per_shot + (k / 8));
-                unpacked_buffer.push_back((full_buffer[bi] >> (k % 8)) & 1);
+                buffer[t++] = (full_buffer[bi] >> (k % 8)) & 1;
             }
         }
 
-        void *ptr = unpacked_buffer.data();
-        pybind11::ssize_t itemsize = sizeof(uint8_t);
-        std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bits_per_shot};
-        std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)num_bits_per_shot, 1};
-        const std::string &np_format = pybind11::format_descriptor<bool>::value;
-        bool readonly = true;
-        return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
+        pybind11::capsule free_when_done(buffer, [](void *f) {
+            delete[] reinterpret_cast<bool *>(f);
+        });
+
+        return pybind11::array_t<bool>(
+            {(pybind11::ssize_t)num_shots, (pybind11::ssize_t)num_bits_per_shot},
+            {(pybind11::ssize_t)num_bits_per_shot, (pybind11::ssize_t)1},
+            buffer,
+            free_when_done);
     }
 }
 
