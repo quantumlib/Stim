@@ -296,6 +296,7 @@ int main_mode_repl(int argc, const char **argv) {
 int main_mode_diagram(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
+            "--remove_noise",
             "--in",
             "--out",
         },
@@ -314,6 +315,9 @@ int main_mode_diagram(int argc, const char **argv) {
 
     auto circuit = Circuit::from_file(in.f);
     in.done();
+    if (find_bool_argument("--remove_noise", argc, argv)) {
+        circuit = circuit.without_noise();
+    }
 
     auto diagram = circuit_diagram_timeline_3d(circuit);
     fprintf(out.f, "%s", diagram.data());
