@@ -24,13 +24,11 @@
 namespace stim_draw_internal {
 
 struct JsonObj {
-    union {
-        float num;
-        std::string text;
-        std::map<std::string, JsonObj> map;
-        std::vector<JsonObj> arr;
-        bool boolean;
-    };
+    float num;
+    std::string text;
+    std::map<std::string, JsonObj> map;
+    std::vector<JsonObj> arr;
+    bool boolean;
     uint8_t type;
 
     JsonObj(bool boolean);
@@ -42,10 +40,7 @@ struct JsonObj {
     JsonObj(std::map<std::string, JsonObj> map);
     JsonObj(std::vector<JsonObj> arr);
 
-    ~JsonObj();
-    JsonObj(JsonObj &&other) noexcept;
-    JsonObj(const JsonObj &other);
-
+    void clear();
     static void write_str(const std::string &s, std::ostream &out);
     void write(std::ostream &out, int64_t indent) const;
     std::string str(bool indent = false) const;

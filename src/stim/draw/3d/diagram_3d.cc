@@ -101,8 +101,8 @@ std::vector<Coord<2>> coordinates_for(const stim::Circuit &circuit, const simd_b
     if (d == 0) {
         throw std::invalid_argument("What");
     }
-    if (d < 1) {
-        float f = 1 / d;
+    if (d < 2) {
+        float f = 2 / d;
         for (auto &c : result) {
             c.xyz[0] *= f;
             c.xyz[1] *= f;

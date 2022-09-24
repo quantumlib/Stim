@@ -25,59 +25,17 @@ JsonObj::JsonObj(std::map<std::string, JsonObj> map) : map(map), type(2) {
 JsonObj::JsonObj(std::vector<JsonObj> arr) : arr(arr), type(3) {
 }
 
-JsonObj::~JsonObj() {
-    if (type == 1) {
-        text.~basic_string();
-    } else if (type == 2) {
-        map.~map<std::string, JsonObj>();
-    } else if (type == 3) {
-        arr.~vector<JsonObj>();
+void JsonObj::clear() {
+    auto old_type = type;
+    if (old_type == 1) {
+        text.clear();
+    } else if (old_type == 2) {
+        map.clear();
+    } else if (old_type == 3) {
+        arr.clear();
     }
     type = 0;
-}
-
-JsonObj::JsonObj(JsonObj &&other) noexcept {
-    if (this == &other) {
-        return;
-    }
-
-    (*this).~JsonObj();
-    if (other.type == 0) {
-        new (this) JsonObj(std::move(other.num));
-    } else if (other.type == 1) {
-        new (this) JsonObj(std::move(other.text));
-    } else if (other.type == 2) {
-        new (this) JsonObj(std::move(other.map));
-    } else if (other.type == 3) {
-        new (this) JsonObj(std::move(other.arr));
-    } else if (other.type == 4) {
-        new (this) JsonObj(std::move(other.boolean));
-    } else {
-        // Not handled.
-        assert(false);
-    }
-}
-
-JsonObj::JsonObj(const JsonObj &other) {
-    if (this == &other) {
-        return;
-    }
-
-    (*this).~JsonObj();
-    if (other.type == 0) {
-        new (this) JsonObj(other.num);
-    } else if (other.type == 1) {
-        new (this) JsonObj(other.text);
-    } else if (other.type == 2) {
-        new (this) JsonObj(other.map);
-    } else if (other.type == 3) {
-        new (this) JsonObj(other.arr);
-    } else if (other.type == 4) {
-        new (this) JsonObj(other.boolean);
-    } else {
-        // Not handled.
-        assert(false);
-    }
+    num = 0;
 }
 
 void JsonObj::write_str(const std::string &s, std::ostream &out) {

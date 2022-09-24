@@ -27,6 +27,7 @@
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/draw/3d/timeline_3d.h"
 
 using namespace stim;
 
@@ -292,6 +293,34 @@ int main_mode_repl(int argc, const char **argv) {
     return EXIT_SUCCESS;
 }
 
+int main_mode_diagram(int argc, const char **argv) {
+    check_for_unknown_arguments(
+        {
+            "--in",
+            "--out",
+        },
+        {},
+        "diagram",
+        argc,
+        argv);
+    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile out(find_open_file_argument("--out", stdout, "w", argc, argv));
+    if (out.f == stdout) {
+        out.responsible_for_closing = false;
+    }
+    if (in.f == stdin) {
+        out.responsible_for_closing = false;
+    }
+
+    auto circuit = Circuit::from_file(in.f);
+    in.done();
+
+    auto diagram = circuit_diagram_timeline_3d(circuit);
+    fprintf(out.f, "%s", diagram.data());
+
+    return EXIT_SUCCESS;
+}
+
 int main_mode_sample_dem(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
@@ -379,6 +408,7 @@ int stim::main(int argc, const char **argv) {
         bool mode_repl = is_mode("--repl");
         bool mode_sample = is_mode("--sample");
         bool mode_sample_dem = is_mode("sample_dem");
+        bool mode_diagram = is_mode("diagram");
         bool mode_detect = is_mode("--detect");
         bool mode_analyze_errors = is_mode("--analyze_errors");
         bool mode_gen = is_mode("--gen");
@@ -391,7 +421,7 @@ int stim::main(int argc, const char **argv) {
         }
         int modes_picked =
             (mode_repl + mode_sample + mode_sample_dem + mode_detect + mode_analyze_errors + mode_gen + mode_convert +
-             mode_explain_errors);
+             mode_explain_errors + mode_diagram);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
             if (modes_picked > 1) {
@@ -427,6 +457,9 @@ int stim::main(int argc, const char **argv) {
         }
         if (mode_sample_dem) {
             return main_mode_sample_dem(argc, argv);
+        }
+        if (mode_diagram) {
+            return main_mode_diagram(argc, argv);
         }
 
         throw std::out_of_range("Mode not handled.");
