@@ -253,15 +253,22 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             }
             auto data = self.to_flat_unitary_matrix(little_endian);
 
-            void *ptr = data.data();
-            pybind11::ssize_t itemsize = sizeof(float) * 2;
+            std::complex<float> *buffer = new std::complex<float>[data.size()];
+            for (size_t k = 0; k < data.size(); k++) {
+                buffer[k] = data[k];
+            }
+
+            pybind11::capsule free_when_done(buffer, [](void *f) {
+                delete[] reinterpret_cast<std::complex<float> *>(f);
+            });
+
             pybind11::ssize_t n = 1 << self.num_qubits;
-            std::vector<pybind11::ssize_t> shape{n, n};
-            std::vector<pybind11::ssize_t> stride{n * itemsize, itemsize};
-            const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
-            bool readonly = true;
-            return pybind11::array_t<float>(
-                pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+            pybind11::ssize_t itemsize = sizeof(std::complex<float>);
+            return pybind11::array_t<std::complex<float>>(
+                {n, n},
+                {n * itemsize, itemsize},
+                buffer,
+                free_when_done);
         },
         pybind11::kw_only(),
         pybind11::arg("endian"),
@@ -304,6 +311,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         "to_numpy",
         [](const Tableau &self, bool bit_packed) {
             auto n = self.num_qubits;
+
             return pybind11::make_tuple(
                 simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed),
                 simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed),
@@ -330,7 +338,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                     use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
 
             Returns:
-                An (x2x, x2z, z2x, z2x, x_signs, z_signs) tuple encoding the tableau.
+                An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
 
                 x2x: A 2d table of whether tableau(X_i)_j is X or Y (instead of I or Z).
                 x2z: A 2d table of whether tableau(X_i)_j is Z or Y (instead of I or X).

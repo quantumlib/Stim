@@ -18,85 +18,105 @@ using namespace stim;
 using namespace stim_pybind;
 
 pybind11::object transposed_simd_bit_table_to_numpy_uint8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots) {
-    std::vector<uint8_t> bytes;
-    bytes.resize(bits_per_shot * num_shots);
-    size_t bytes_per_shot = (bits_per_shot + 7) / 8;
-    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-        size_t shot_offset = bytes_per_shot * shot_index;
-        for (size_t o_index = 0; o_index < bits_per_shot; o_index += 8) {
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in) {
+
+    size_t num_major_bytes_in = (num_major_in + 7) / 8;
+    uint8_t *buffer = new uint8_t[num_major_bytes_in * num_minor_in];
+    size_t t = 0;
+    for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
+        for (size_t major_in = 0; major_in < num_major_in; major_in += 8) {
+            uint8_t v = 0;
             for (size_t b = 0; b < 8; b++) {
-                bool bit = table[o_index + b][shot_index];
-                bytes[shot_offset + o_index / 8] |= bit << b;
+                bool bit = table[major_in + b][minor_in];
+                v |= bit << b;
             }
+            buffer[t++] = v;
         }
     }
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)bytes_per_shot};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)bytes_per_shot, 1};
-    const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<uint8_t *>(f);
+    });
+
+    return pybind11::array_t<uint8_t>(
+        {(pybind11::ssize_t)num_minor_in, (pybind11::ssize_t)num_major_bytes_in},
+        {(pybind11::ssize_t)num_major_bytes_in, (pybind11::ssize_t)1},
+        buffer,
+        free_when_done);
 }
 
 pybind11::object transposed_simd_bit_table_to_numpy_bool8(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots) {
-    std::vector<uint8_t> bytes;
-    bytes.resize(bits_per_shot * num_shots);
-    size_t k = 0;
-    for (size_t shot_index = 0; shot_index < num_shots; shot_index++) {
-        for (size_t o_index = 0; o_index < bits_per_shot; o_index++) {
-            bytes[k++] = table[o_index][shot_index];
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in) {
+
+    bool *buffer = new bool[num_major_in * num_minor_in];
+    size_t t = 0;
+    for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
+        for (size_t major_in = 0; major_in < num_major_in; major_in++) {
+            buffer[t++] = table[major_in][minor_in];
         }
     }
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)bits_per_shot};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)bits_per_shot, 1};
-    const std::string &format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<bool *>(f);
+    });
+
+    return pybind11::array_t<bool>(
+        {(pybind11::ssize_t)num_minor_in, (pybind11::ssize_t)num_major_in},
+        {(pybind11::ssize_t)num_major_in, (pybind11::ssize_t)1},
+        buffer,
+        free_when_done);
 }
 
 pybind11::object stim_pybind::transposed_simd_bit_table_to_numpy(
-    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result) {
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in, bool bit_pack_result) {
     if (bit_pack_result) {
-        return transposed_simd_bit_table_to_numpy_uint8(table, bits_per_shot, num_shots);
+        return transposed_simd_bit_table_to_numpy_uint8(table, num_major_in, num_minor_in);
     } else {
-        return transposed_simd_bit_table_to_numpy_bool8(table, bits_per_shot, num_shots);
+        return transposed_simd_bit_table_to_numpy_bool8(table, num_major_in, num_minor_in);
     }
 }
 
 pybind11::object simd_bit_table_to_numpy_uint8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor) {
-    void *ptr = table.data.ptr_simd;
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_major, (pybind11::ssize_t)(num_minor + 7) / 8};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)table.num_minor_bits_padded() >> 3, 1};
-    const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, 2, shape, stride, readonly));
+
+    size_t num_minor_bytes = (num_minor + 7) / 8;
+    uint8_t *buffer = new uint8_t[num_major * num_minor_bytes];
+    for (size_t k = 0; k < num_major; k++) {
+        memcpy(&buffer[num_minor_bytes * k], table[k].u8, num_minor_bytes);
+    }
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<uint8_t *>(f);
+    });
+
+    return pybind11::array_t<uint8_t>(
+        {(pybind11::ssize_t)num_major, (pybind11::ssize_t)num_minor_bytes},
+        {(pybind11::ssize_t)num_minor_bytes, (pybind11::ssize_t)1},
+        buffer,
+        free_when_done);
 }
 
 pybind11::object simd_bit_table_to_numpy_bool8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor) {
-    std::vector<uint8_t> bytes;
-    bytes.resize(num_major * num_minor);
-    size_t k = 0;
+
+    bool *buffer = new bool[num_major * num_minor];
+    size_t t = 0;
     for (size_t major = 0; major < num_major; major++) {
         auto row = table[major];
         for (size_t minor = 0; minor < num_minor; minor++) {
-            bytes[k++] = row[minor];
+            buffer[t++] = row[minor];
         }
     }
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_major, (pybind11::ssize_t)num_minor};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)num_minor, 1};
-    const std::string &format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<bool *>(f);
+    });
+
+    return pybind11::array_t<bool>(
+        {(pybind11::ssize_t)num_major, (pybind11::ssize_t)num_minor},
+        {(pybind11::ssize_t)num_minor, (pybind11::ssize_t)1},
+        buffer,
+        free_when_done);
 }
 
 pybind11::object stim_pybind::simd_bit_table_to_numpy(
@@ -220,28 +240,36 @@ simd_bit_table<MAX_BITWORD_WIDTH> stim_pybind::numpy_array_to_transposed_simd_ta
 }
 
 pybind11::object bits_to_numpy_bool8(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits) {
-    std::vector<uint8_t> bytes;
-    bytes.reserve(num_bits);
-    for (size_t k = 0; k < num_bits; k++) {
-        bytes.push_back(bits[k]);
+    bool *buffer = new bool[num_bits];
+    for (size_t minor = 0; minor < num_bits; minor++) {
+        buffer[minor] = bits[minor];
     }
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_bits};
-    std::vector<pybind11::ssize_t> stride{1};
-    const std::string &np_format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<bool>(pybind11::buffer_info(ptr, itemsize, np_format, (pybind11::ssize_t)shape.size(), shape, stride, readonly));
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<bool *>(f);
+    });
+
+    return pybind11::array_t<bool>(
+        {(pybind11::ssize_t)num_bits},
+        {(pybind11::ssize_t)1},
+        buffer,
+        free_when_done);
 }
 
 pybind11::object bits_to_numpy_uint8_packed(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits) {
-    void *ptr = bits.ptr_simd;
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)(num_bits + 7) / 8};
-    std::vector<pybind11::ssize_t> stride{1};
-    const std::string &np_format = pybind11::format_descriptor<uint8_t>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, np_format, (pybind11::ssize_t)shape.size(), shape, stride, readonly));
+    size_t num_bytes = (num_bits + 7) / 8;
+    uint8_t *buffer = new uint8_t[num_bytes];
+    memcpy(buffer, bits.u8, num_bytes);
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<uint8_t *>(f);
+    });
+
+    return pybind11::array_t<uint8_t>(
+        {(pybind11::ssize_t)num_bytes},
+        {(pybind11::ssize_t)1},
+        buffer,
+        free_when_done);
 }
 
 pybind11::object stim_pybind::simd_bits_to_numpy(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits, bool bit_packed) {
