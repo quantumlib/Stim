@@ -28,6 +28,7 @@
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/draw/3d/timeline_3d.h"
+#include "stim/draw/timeline/timeline_text.h"
 
 using namespace stim;
 
@@ -297,6 +298,7 @@ int main_mode_diagram(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
             "--remove_noise",
+            "--3d",
             "--in",
             "--out",
         },
@@ -319,8 +321,13 @@ int main_mode_diagram(int argc, const char **argv) {
         circuit = circuit.without_noise();
     }
 
-    auto diagram = circuit_diagram_timeline_3d(circuit);
-    fprintf(out.f, "%s", diagram.data());
+    if (find_bool_argument("--3d", argc, argv)) {
+        auto diagram = circuit_diagram_timeline_3d(circuit);
+        fprintf(out.f, "%s", diagram.data());
+    } else {
+        auto diagram = circuit_diagram_timeline_text(circuit);
+        fprintf(out.f, "%s", diagram.data());
+    }
 
     return EXIT_SUCCESS;
 }
