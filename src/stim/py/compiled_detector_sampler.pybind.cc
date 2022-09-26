@@ -17,6 +17,7 @@
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/io/raii_file.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
@@ -29,46 +30,12 @@ CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_pt
     : dets_obs(circuit), circuit(std::move(circuit)), prng(prng) {
 }
 
-pybind11::array_t<bool> CompiledDetectorSampler::sample(
-    size_t num_shots, bool prepend_observables, bool append_observables) {
-    auto sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
-
-    const simd_bits<MAX_BITWORD_WIDTH> &flat = sample.data;
-    std::vector<uint8_t> bytes;
-    bytes.reserve(flat.num_bits_padded());
-    auto *end = flat.u64 + flat.num_u64_padded();
-    for (auto u64 = flat.u64; u64 != end; u64++) {
-        auto v = *u64;
-        for (size_t k = 0; k < 64; k++) {
-            bytes.push_back((v >> k) & 1);
-        }
-    }
-
-    size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
-
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)n};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_bits_padded(), 1};
-    const std::string &format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
-}
-
-pybind11::array_t<uint8_t> CompiledDetectorSampler::sample_bit_packed(
-    size_t num_shots, bool prepend_observables, bool append_observables) {
-    auto sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng).transposed();
-    size_t n = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
-
-    void *ptr = sample.data.u8;
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)num_shots, (pybind11::ssize_t)(n + 7) / 8};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_u8_padded(), 1};
-    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+pybind11::object CompiledDetectorSampler::sample_to_numpy(
+    size_t num_shots, bool prepend_observables, bool append_observables, bool bit_packed) {
+    simd_bit_table<MAX_BITWORD_WIDTH> sample =
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng);
+    size_t bits_per_sample = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
+    return transposed_simd_bit_table_to_numpy(sample, bits_per_sample, num_shots, bit_packed);
 }
 
 void CompiledDetectorSampler::sample_write(
@@ -171,11 +138,14 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
 
     c.def(
         "sample",
-        &CompiledDetectorSampler::sample,
+        [](CompiledDetectorSampler &self, size_t shots, bool prepend, bool append, bool bit_packed) {
+            return self.sample_to_numpy(shots, prepend, append, bit_packed);
+        },
         pybind11::arg("shots"),
         pybind11::kw_only(),
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
+        pybind11::arg("bit_packed") = false,
         clean_doc_string(u8R"DOC(
             Returns a numpy array containing a batch of detector samples from the circuit.
 
@@ -189,23 +159,40 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
                     with the detectors and are placed at the start of the results.
                 append_observables: Defaults to false. When set, observables are included
                     with the detectors and are placed at the end of the results.
+                bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+                    a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
             Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
-                `num_detectors + num_observables*(append_observables+prepend_observables)`.
+                A numpy array containing the samples.
 
-                The bit for detection event `m` in shot `s` is at `result[s, m]`.
+                bits_per_shot = num_detectors + num_observables * (
+                    append_observables + prepend_observables)
+
+                If bit_packed=False:
+                    dtype=bool8
+                    shape=(shots, bits_per_shot)
+                    The bit for detection event `m` in shot `s` is at
+                        result[s, m]
+                If bit_packed=True:
+                    dtype=uint8
+                    shape=(shots, math.ceil(bits_per_shot / 8))
+                    The bit for detection event `m` in shot `s` is at
+                        (result[s, m // 8] >> (m % 8)) & 1
         )DOC")
             .data());
 
     c.def(
         "sample_bit_packed",
-        &CompiledDetectorSampler::sample_bit_packed,
+        [](CompiledDetectorSampler &self, size_t shots, bool prepend, bool append) {
+            return self.sample_to_numpy(shots, prepend, append, true);
+        },
         pybind11::arg("shots"),
         pybind11::kw_only(),
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
         clean_doc_string(u8R"DOC(
+            [DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
+
             Returns a numpy array containing bit packed detector samples from the circuit.
 
             The circuit must define the detectors using DETECTOR instructions. Observables

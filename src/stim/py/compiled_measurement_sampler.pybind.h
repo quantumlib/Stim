@@ -37,8 +37,7 @@ struct CompiledMeasurementSampler {
         stim::Circuit circuit,
         bool skip_reference_sample,
         std::shared_ptr<std::mt19937_64> prng);
-    pybind11::array_t<bool> sample(size_t num_samples);
-    pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples);
+    pybind11::object sample_to_numpy(size_t num_shots, bool bit_packed);
     void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
     std::string repr() const;
 };
