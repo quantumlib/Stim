@@ -72,7 +72,8 @@ BENCHMARK(main_sample1_tableau_rep_d1000_r100) {
     benchmark_go([&]() {
         rewind(in);
         rewind(out);
-        TableauSimulator::sample_stream(in, out, SAMPLE_FORMAT_B8, false, rng);
+        TableauSimulator sim(rng, 1);
+        sim.sample_stream(in, out, SAMPLE_FORMAT_B8, false);
     })
         .goal_millis(30)
         .show_rate("Samples", circuit.count_measurements());

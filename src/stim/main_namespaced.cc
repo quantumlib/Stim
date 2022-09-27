@@ -146,7 +146,8 @@ int main_mode_sample(int argc, const char **argv) {
     }
 
     if (num_shots == 1 && !skip_reference_sample) {
-        TableauSimulator::sample_stream(in, out, out_format.id, false, rng);
+        TableauSimulator sim(rng, 1);
+        sim.sample_stream(in, out, out_format.id, false);
     } else if (num_shots > 0) {
         auto circuit = Circuit::from_file(in);
         simd_bits<MAX_BITWORD_WIDTH> ref(0);
@@ -287,8 +288,8 @@ int main_mode_analyze_errors(int argc, const char **argv) {
 
 int main_mode_repl(int argc, const char **argv) {
     check_for_unknown_arguments({}, {"--repl"}, "repl", argc, argv);
-    auto rng = externally_seeded_rng();
-    TableauSimulator::sample_stream(stdin, stdout, SAMPLE_FORMAT_01, true, rng);
+    TableauSimulator sim(externally_seeded_rng(), 1);
+    sim.sample_stream(stdin, stdout, SAMPLE_FORMAT_01, true);
     return EXIT_SUCCESS;
 }
 

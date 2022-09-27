@@ -337,26 +337,26 @@ TEST(TableauSimulator, certain_errors_consistent_with_gates) {
 }
 
 TEST(TableauSimulator, simulate) {
-    auto results = TableauSimulator::sample_circuit(
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 2);
+    auto results = sim_tab.sample_circuit(
         Circuit("H 0\n"
                 "CNOT 0 1\n"
                 "M 0\n"
                 "M 1\n"
-                "M 2\n"),
-        SHARED_TEST_RNG());
+                "M 2\n"));
     ASSERT_EQ(results[0], results[1]);
     ASSERT_EQ(results[2], false);
 }
 
 TEST(TableauSimulator, simulate_reset) {
-    auto results = TableauSimulator::sample_circuit(
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 1);
+    auto results = sim_tab.sample_circuit(
         Circuit("X 0\n"
                 "M 0\n"
                 "R 0\n"
                 "M 0\n"
                 "R 0\n"
-                "M 0\n"),
-        SHARED_TEST_RNG());
+                "M 0\n"));
     ASSERT_EQ(results[0], true);
     ASSERT_EQ(results[1], false);
     ASSERT_EQ(results[2], false);
@@ -488,84 +488,78 @@ TEST(TableauSimulator, correlated_error) {
 
     expected.clear();
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[1] = true;
     expected[2] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[2] = true;
     expected[3] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(0) X0 X1
         ELSE_CORRELATED_ERROR(0) X1 X2
         ELSE_CORRELATED_ERROR(1) X2 X3
         M 0 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(0) X2 X3
         M 0 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(1) X2 X3
         M 0 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
@@ -574,29 +568,27 @@ TEST(TableauSimulator, correlated_error) {
     expected[3] = true;
     expected[4] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 5).sample_circuit(
             Circuit(R"circuit(
         CORRELATED_ERROR(1) X0 X1
         ELSE_CORRELATED_ERROR(1) X1 X2
         ELSE_CORRELATED_ERROR(1) X2 X3
         CORRELATED_ERROR(1) X3 X4
         M 0 1 2 3 4
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     int hits[3]{};
     size_t n = 10000;
     for (size_t k = 0; k < n; k++) {
         std::mt19937_64 rng(k);
-        auto sample = TableauSimulator::sample_circuit(
+        auto sample = TableauSimulator(rng, 3).sample_circuit(
             Circuit(R"circuit(
             CORRELATED_ERROR(0.5) X0
             ELSE_CORRELATED_ERROR(0.25) X1
             ELSE_CORRELATED_ERROR(0.75) X2
             M 0 1 2
-        )circuit"),
-            rng);
+        )circuit"));
         hits[0] += sample[0];
         hits[1] += sample[1];
         hits[2] += sample[2];
@@ -610,52 +602,47 @@ TEST(TableauSimulator, quantum_cannot_control_classical) {
     // Quantum controlling classical operation is not allowed.
     ASSERT_THROW(
         {
-            TableauSimulator::sample_circuit(
+            TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
                 Circuit(R"circuit(
             M 0
             CNOT 1 rec[-1]
-        )circuit"),
-                SHARED_TEST_RNG());
+        )circuit"));
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            TableauSimulator::sample_circuit(
+            TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
                 Circuit(R"circuit(
             M 0
             CY 1 rec[-1]
-        )circuit"),
-                SHARED_TEST_RNG());
+        )circuit"));
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            TableauSimulator::sample_circuit(
+            TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
                 Circuit(R"circuit(
             M 0
             YCZ rec[-1] 1
-        )circuit"),
-                SHARED_TEST_RNG());
+        )circuit"));
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            TableauSimulator::sample_circuit(
+            TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
                 Circuit(R"circuit(
             M 0
             XCZ rec[-1] 1
-        )circuit"),
-                SHARED_TEST_RNG());
+        )circuit"));
         },
         std::invalid_argument);
     ASSERT_THROW(
         {
-            TableauSimulator::sample_circuit(
+            TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
                 Circuit(R"circuit(
             M 0
             SWAP 1 rec[-1]
-        )circuit"),
-                SHARED_TEST_RNG());
+        )circuit"));
         },
         std::invalid_argument);
 }
@@ -666,40 +653,36 @@ TEST(TableauSimulator, classical_can_control_quantum) {
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M !0
         CX rec[-1] 1
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M !0
         CY rec[-1] 1
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M !0
         XCZ 1 rec[-1]
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M !0
         YCZ 1 rec[-1]
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 }
 
@@ -709,41 +692,38 @@ TEST(TableauSimulator, classical_control_cases) {
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M !0
         H 1
         CZ rec[-1] 1
         H 1
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[0] = true;
     expected[1] = true;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M !0
         CY rec[-1] 1
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
     expected[0] = false;
     expected[1] = false;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 2).sample_circuit(
             Circuit(R"circuit(
         M 0
         CX rec[-1] 1
         M 1
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 
     expected.clear();
@@ -753,7 +733,7 @@ TEST(TableauSimulator, classical_control_cases) {
     expected[3] = false;
     expected[4] = false;
     ASSERT_EQ(
-        TableauSimulator::sample_circuit(
+        TableauSimulator(SHARED_TEST_RNG(), 4).sample_circuit(
             Circuit(R"circuit(
         X 0
         M 0
@@ -762,15 +742,14 @@ TEST(TableauSimulator, classical_control_cases) {
         CX rec[-2] 1
         CX rec[-1] 2
         M 1 2 3
-    )circuit"),
-            SHARED_TEST_RNG()),
+    )circuit")),
         expected);
 }
 
 TEST(TableauSimulator, mr_repeated_target) {
     simd_bits<MAX_BITWORD_WIDTH> expected(2);
     expected[0] = true;
-    auto r = TableauSimulator::sample_circuit(Circuit("X 0\nMR 0 0"), SHARED_TEST_RNG());
+    auto r = TableauSimulator(SHARED_TEST_RNG(), 1).sample_circuit(Circuit("X 0\nMR 0 0"));
     ASSERT_EQ(r, expected);
 }
 
@@ -1212,13 +1191,14 @@ TEST(TableauSimulator, measure_reset_z_entangled) {
 }
 
 TEST(TableauSimulator, resets_vs_measurements) {
-    auto check = [&](const char *circuit, std::vector<bool> results) {
+    auto check = [&](const char *circuit_str, std::vector<bool> results) {
         simd_bits<MAX_BITWORD_WIDTH> ref(results.size());
         for (size_t k = 0; k < results.size(); k++) {
             ref[k] = results[k];
         }
         for (size_t reps = 0; reps < 5; reps++) {
-            simd_bits<MAX_BITWORD_WIDTH> t = TableauSimulator::sample_circuit(Circuit(circuit), SHARED_TEST_RNG());
+            Circuit circuit(circuit_str);
+            simd_bits<MAX_BITWORD_WIDTH> t = TableauSimulator(SHARED_TEST_RNG(), circuit.count_qubits()).sample_circuit(circuit);
             if (t != ref) {
                 return false;
             }
