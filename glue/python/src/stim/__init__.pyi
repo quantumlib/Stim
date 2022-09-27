@@ -5933,7 +5933,6 @@ class TableauSimulator:
         *,
         seed: Optional[int] = None,
     ) -> None:
-
         """Initializes a stim.TableauSimulator.
 
         Args:
@@ -6264,7 +6263,6 @@ class TableauSimulator:
         fresh_entropy: bool = True,
         seed: Optional[int] = None,
     ) -> stim.TableauSimulator:
-
         """Returns a simulator with the same internal state, except perhaps its prng.
 
         Args:

@@ -7875,7 +7875,6 @@ def __init__(
     *,
     seed: Optional[int] = None,
 ) -> None:
-
     """Initializes a stim.TableauSimulator.
 
     Args:
@@ -8304,7 +8303,6 @@ def fork(
     fresh_entropy: bool = True,
     seed: Optional[int] = None,
 ) -> stim.TableauSimulator:
-
     """Returns a simulator with the same internal state, except perhaps its prng.
 
     Args:
