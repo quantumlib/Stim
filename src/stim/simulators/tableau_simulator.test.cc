@@ -337,7 +337,7 @@ TEST(TableauSimulator, certain_errors_consistent_with_gates) {
 }
 
 TEST(TableauSimulator, simulate) {
-    TableauSimulator sim_tab(SHARED_TEST_RNG(), 2);
+    TableauSimulator sim_tab(SHARED_TEST_RNG(), 3);
     auto results = sim_tab.sample_circuit(
         Circuit("H 0\n"
                 "CNOT 0 1\n"
