@@ -1517,39 +1517,42 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             .data());
 
     c.def(
-        "copy",
-        [](const TableauSimulator &self, bool also_copy_rng_state, pybind11::object &seed) {
-            if (also_copy_rng_state && !seed.is_none()) {
-                throw std::invalid_argument("seed and also_copy_rng_state are incompatible");
+        "fork",
+        [](const TableauSimulator &self, bool fresh_entropy, pybind11::object &seed) {
+            if (!fresh_entropy && !seed.is_none()) {
+                throw std::invalid_argument("seed and fresh_entropy are incompatible");
             }
 
-            if (!also_copy_rng_state || !seed.is_none()) {
-                TableauSimulator copy(self, *make_py_seeded_rng(seed));
-                return copy;
+            if (fresh_entropy || !seed.is_none()) {
+                TableauSimulator copy_with_new_rng(self, *make_py_seeded_rng(seed));
+                return copy_with_new_rng;
             }
 
             TableauSimulator copy = self;
             return copy;
         },
         pybind11::kw_only(),
-        pybind11::arg("also_copy_rng_state") = false,
+        pybind11::arg("fresh_entropy") = true,
         pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            @signature def copy(self, *, also_copy_rng_state: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator:
-            Returns a copy of the simulator. A simulator with the same internal state.
+            @signature def fork(self, *, fresh_entropy: bool = True, seed: Optional[int] = None) -> stim.TableauSimulator:
+            Returns a simulator with the same internal state, except perhaps its prng.
 
             Args:
-                also_copy_rng_state: If False, RNG is reinitialized using a random seed.
-                    If True, RNG state is copied together with the simulator. The two
-                    copies will then produce the same measurement outcomes for the same
-                    quantum circuits. If both also_copy_rng_state and seed are used,
-                    an exception is raised. Defaults to False.
+                fresh_entropy: If True, new simulator's prng is reinitialized with a random
+                    seed. If False, the prng state is copied together with the rest of the
+                    original simulator's state. Consequently, in the latter case the two
+                    simulators will produce the same measurement outcomes for the same
+                    quantum circuits.  If both fresh_entropy and seed are set, an exception
+                    is raised.  Defaults to True.
                 seed: PARTIALLY determines simulation results by deterministically seeding
                     the random number generator.
 
                     Must be None or an integer in range(2**64).
 
-                    Defaults to None. When None, the prng is seeded from system entropy.
+                    Defaults to None. When None, the prng state is either copied from the
+                    original simulator or reseeded from system entropy, depending on the
+                    fresh_entropy argument.
 
                     When set to an integer, making the exact same series calls on the exact
                     same machine with the exact same version of Stim will produce the exact
@@ -1575,7 +1578,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
                 >>> s1 = stim.TableauSimulator()
                 >>> s1.set_inverse_tableau(stim.Tableau.random(1))
-                >>> s2 = s1.copy()
+                >>> s2 = s1.fork()
                 >>> s2 is s1
                 False
                 >>> s2.current_inverse_tableau() == s1.current_inverse_tableau()
@@ -1585,9 +1588,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
                 >>> def brute_force_post_select(qubit, desired_result):
                 ...     global s
                 ...     while True:
-                ...         copy = s.copy()
-                ...         if copy.measure(qubit) == desired_result:
-                ...             s = copy
+                ...         s2 = s.fork()
+                ...         if s2.measure(qubit) == desired_result:
+                ...             s = s2
                 ...             break
                 >>> s.h(0)
                 >>> brute_force_post_select(qubit=0, desired_result=True)

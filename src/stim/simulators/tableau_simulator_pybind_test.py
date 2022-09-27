@@ -124,10 +124,10 @@ def test_peek_bloch():
     assert s.peek_bloch(1) == stim.PauliString("+I")
 
 
-def test_copy():
+def test_fork():
     s = stim.TableauSimulator()
     s.h(0)
-    s2 = s.copy()
+    s2 = s.fork()
     assert s.current_inverse_tableau() == s2.current_inverse_tableau()
     assert s is not s2
 
@@ -214,11 +214,11 @@ def test_measure_kickback_random_branches():
     for _ in range(100):
         if post_false is not None and post_true is not None:
             break
-        copy = s.copy()
-        if copy.measure(4):
-            post_true = copy
+        s2 = s.fork()
+        if s2.measure(4):
+            post_true = s2
         else:
-            post_false = copy
+            post_false = s2
     assert post_false is not None and post_true is not None
 
     result, kick = s.measure_kickback(4)
@@ -549,9 +549,9 @@ def test_seed():
     assert ms1 != ms2
 
 
-def test_copy_with_rng_state():
+def test_fork_without_fresh_entropy():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy(also_copy_rng_state=True)
+    s2 = s1.fork(fresh_entropy=False)
 
     for _ in range(100):
         s1.h(0)
@@ -559,9 +559,9 @@ def test_copy_with_rng_state():
         assert s1.measure(0) == s2.measure(0)
 
 
-def test_copy_without_rng_state():
+def test_fork_with_fresh_entropy():
     s1 = stim.TableauSimulator(seed=0)
-    s2 = s1.copy()
+    s2 = s1.fork()
 
     eq = set()
     for _ in range(100):
@@ -571,10 +571,10 @@ def test_copy_without_rng_state():
     assert eq == {False, True}
 
 
-def test_copy_with_explicit_seed():
+def test_fork_with_explicit_seed():
     s1 = stim.TableauSimulator(seed=0)
     s2 = stim.TableauSimulator(seed=1)
-    s3 = s1.copy(seed=1)
+    s3 = s1.fork(seed=1)
 
     eq = set()
     for _ in range(100):
@@ -590,7 +590,7 @@ def test_copy_with_explicit_seed():
     assert eq == {False, True}
 
 
-def test_copy_with_rng_state_and_explicit_seed():
+def test_fork_explicit_fresh_entropy_and_seed():
     s = stim.TableauSimulator()
-    with pytest.raises(ValueError, match='seed and also_copy_rng_state are incompatible'):
-        _ = s.copy(also_copy_rng_state=True, seed=0)
+    with pytest.raises(ValueError, match='seed and fresh_entropy are incompatible'):
+        _ = s.fork(fresh_entropy=False, seed=0)
