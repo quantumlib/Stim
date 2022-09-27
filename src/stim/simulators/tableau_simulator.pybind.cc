@@ -250,20 +250,21 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
                 throw std::invalid_argument("endian not in ['little', 'big']");
             }
             auto complex_vec = self.to_state_vector(little_endian);
-            std::vector<float> float_vec;
-            float_vec.reserve(complex_vec.size() * 2);
-            for (const auto &e : complex_vec) {
-                float_vec.push_back(e.real());
-                float_vec.push_back(e.imag());
+
+            std::complex<float> *buffer = new std::complex<float>[complex_vec.size()];
+            for (size_t k = 0; k < complex_vec.size(); k++) {
+                buffer[k] = complex_vec[k];
             }
-            void *ptr = float_vec.data();
-            pybind11::ssize_t itemsize = sizeof(float) * 2;
-            std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)complex_vec.size()};
-            std::vector<pybind11::ssize_t> stride{itemsize};
-            const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
-            bool readonly = true;
-            return pybind11::array_t<float>(
-                pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+
+            pybind11::capsule free_when_done(buffer, [](void *f) {
+                delete[] reinterpret_cast<std::complex<float> *>(f);
+            });
+
+            return pybind11::array_t<std::complex<float>>(
+                {(pybind11::ssize_t)complex_vec.size()},
+                {(pybind11::ssize_t)sizeof(std::complex<float>)},
+                buffer,
+                free_when_done);
         },
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",

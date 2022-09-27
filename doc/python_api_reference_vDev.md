@@ -84,13 +84,11 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.CompiledDetectorSampler.__init__`](#stim.CompiledDetectorSampler.__init__)
     - [`stim.CompiledDetectorSampler.__repr__`](#stim.CompiledDetectorSampler.__repr__)
     - [`stim.CompiledDetectorSampler.sample`](#stim.CompiledDetectorSampler.sample)
-    - [`stim.CompiledDetectorSampler.sample_bit_packed`](#stim.CompiledDetectorSampler.sample_bit_packed)
     - [`stim.CompiledDetectorSampler.sample_write`](#stim.CompiledDetectorSampler.sample_write)
 - [`stim.CompiledMeasurementSampler`](#stim.CompiledMeasurementSampler)
     - [`stim.CompiledMeasurementSampler.__init__`](#stim.CompiledMeasurementSampler.__init__)
     - [`stim.CompiledMeasurementSampler.__repr__`](#stim.CompiledMeasurementSampler.__repr__)
     - [`stim.CompiledMeasurementSampler.sample`](#stim.CompiledMeasurementSampler.sample)
-    - [`stim.CompiledMeasurementSampler.sample_bit_packed`](#stim.CompiledMeasurementSampler.sample_bit_packed)
     - [`stim.CompiledMeasurementSampler.sample_write`](#stim.CompiledMeasurementSampler.sample_write)
 - [`stim.CompiledMeasurementsToDetectionEventsConverter`](#stim.CompiledMeasurementsToDetectionEventsConverter)
     - [`stim.CompiledMeasurementsToDetectionEventsConverter.__init__`](#stim.CompiledMeasurementsToDetectionEventsConverter.__init__)
@@ -202,8 +200,10 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.__truediv__`](#stim.PauliString.__truediv__)
     - [`stim.PauliString.commutes`](#stim.PauliString.commutes)
     - [`stim.PauliString.copy`](#stim.PauliString.copy)
+    - [`stim.PauliString.from_numpy`](#stim.PauliString.from_numpy)
     - [`stim.PauliString.random`](#stim.PauliString.random)
     - [`stim.PauliString.sign`](#stim.PauliString.sign)
+    - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
@@ -222,6 +222,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.from_circuit`](#stim.Tableau.from_circuit)
     - [`stim.Tableau.from_conjugated_generators`](#stim.Tableau.from_conjugated_generators)
     - [`stim.Tableau.from_named_gate`](#stim.Tableau.from_named_gate)
+    - [`stim.Tableau.from_numpy`](#stim.Tableau.from_numpy)
     - [`stim.Tableau.from_unitary_matrix`](#stim.Tableau.from_unitary_matrix)
     - [`stim.Tableau.inverse`](#stim.Tableau.inverse)
     - [`stim.Tableau.inverse_x_output`](#stim.Tableau.inverse_x_output)
@@ -235,6 +236,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.random`](#stim.Tableau.random)
     - [`stim.Tableau.then`](#stim.Tableau.then)
     - [`stim.Tableau.to_circuit`](#stim.Tableau.to_circuit)
+    - [`stim.Tableau.to_numpy`](#stim.Tableau.to_numpy)
     - [`stim.Tableau.to_pauli_string`](#stim.Tableau.to_pauli_string)
     - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
@@ -1299,7 +1301,6 @@ def flattened(
 def from_file(
     file: Union[io.TextIOBase, str, pathlib.Path],
 ) -> stim.Circuit:
-
     """Reads a stim circuit from a file.
 
     The file format is defined at
@@ -1832,7 +1833,6 @@ def to_file(
     self,
     file: Union[io.TextIOBase, str, pathlib.Path],
 ) -> None:
-
     """Writes the stim circuit to a file.
 
     The file format is defined at
@@ -1936,7 +1936,6 @@ def __init__(
 def flipped_measurement(
     self,
 ) -> Optional[stim.FlippedMeasurement]:
-
     """The measurement that was flipped by the error mechanism.
     If the error isn't a measurement error, this will be None.
     """
@@ -2407,7 +2406,6 @@ def args(
 def gate(
     self,
 ) -> Optional[str]:
-
     """Returns the name of the gate / instruction that was being executed.
     """
 ```
@@ -2504,7 +2502,6 @@ def sample(
     return_errors: bool = False,
     recorded_errors_to_replay: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-
     """Samples the detector error model's error mechanisms to produce sample data.
 
     Args:
@@ -2667,7 +2664,6 @@ def sample_write(
     replay_err_in_file: Union[None, str, pathlib.Path] = None,
     replay_err_in_format: str = "01",
 ) -> None:
-
     """Samples the detector error model and writes the results to disk.
 
     Args:
@@ -2826,7 +2822,8 @@ def sample(
     *,
     prepend_observables: bool = False,
     append_observables: bool = False,
-) -> np.ndarray[bool]:
+    bit_packed: bool = False,
+) -> object:
     """Returns a numpy array containing a batch of detector samples from the circuit.
 
     The circuit must define the detectors using DETECTOR instructions. Observables
@@ -2839,45 +2836,25 @@ def sample(
             with the detectors and are placed at the start of the results.
         append_observables: Defaults to false. When set, observables are included
             with the detectors and are placed at the end of the results.
+        bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+            a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
     Returns:
-        A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
-        `num_detectors + num_observables*(append_observables+prepend_observables)`.
+        A numpy array containing the samples.
 
-        The bit for detection event `m` in shot `s` is at `result[s, m]`.
-    """
-```
+        bits_per_shot = num_detectors + num_observables * (
+            append_observables + prepend_observables)
 
-<a name="stim.CompiledDetectorSampler.sample_bit_packed"></a>
-```python
-# stim.CompiledDetectorSampler.sample_bit_packed
-
-# (in class stim.CompiledDetectorSampler)
-def sample_bit_packed(
-    self,
-    shots: int,
-    *,
-    prepend_observables: bool = False,
-    append_observables: bool = False,
-) -> np.ndarray[np.uint8]:
-    """Returns a numpy array containing bit packed detector samples from the circuit.
-
-    The circuit must define the detectors using DETECTOR instructions. Observables
-    defined by OBSERVABLE_INCLUDE instructions can also be included in the results
-    as honorary detectors.
-
-    Args:
-        shots: The number of times to sample every detector in the circuit.
-        prepend_observables: Defaults to false. When set, observables are included
-            with the detectors and are placed at the start of the results.
-        append_observables: Defaults to false. When set, observables are included
-            with the detectors and are placed at the end of the results.
-
-    Returns:
-        A numpy array with `dtype=uint8` and `shape=(shots, n)` where `n` is
-        `num_detectors + num_observables*(append_observables+prepend_observables)`.
-        The bit for detection event `m` in shot `s` is at
-        `result[s, (m // 8)] & 2**(m % 8)`.
+        If bit_packed=False:
+            dtype=bool8
+            shape=(shots, bits_per_shot)
+            The bit for detection event `m` in shot `s` is at
+                result[s, m]
+        If bit_packed=True:
+            dtype=uint8
+            shape=(shots, math.ceil(bits_per_shot / 8))
+            The bit for detection event `m` in shot `s` is at
+                (result[s, m // 8] >> (m % 8)) & 1
     """
 ```
 
@@ -3049,15 +3026,29 @@ def __repr__(
 def sample(
     self,
     shots: int,
-) -> np.ndarray[bool]:
+    *,
+    bit_packed: bool = False,
+) -> object:
     """Samples a batch of measurement samples from the circuit.
 
     Args:
         shots: The number of times to sample every measurement in the circuit.
+        bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+            a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
     Returns:
-        A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-        The bit for measurement `m` in shot `s` is at `result[s, m]`.
+        A numpy array containing the samples.
+
+        If bit_packed=False:
+            dtype=bool8
+            shape=(shots, circuit.num_measurements)
+            The bit for measurement `m` in shot `s` is at
+                result[s, m]
+        If bit_packed=True:
+            dtype=uint8
+            shape=(shots, math.ceil(circuit.num_measurements / 8))
+            The bit for measurement `m` in shot `s` is at
+                (result[s, m // 8] >> (m % 8)) & 1
 
     Examples:
         >>> import stim
@@ -3068,39 +3059,6 @@ def sample(
         >>> s = c.compile_sampler()
         >>> s.sample(shots=1)
         array([[ True, False,  True,  True]])
-    """
-```
-
-<a name="stim.CompiledMeasurementSampler.sample_bit_packed"></a>
-```python
-# stim.CompiledMeasurementSampler.sample_bit_packed
-
-# (in class stim.CompiledMeasurementSampler)
-def sample_bit_packed(
-    self,
-    shots: int,
-) -> np.ndarray[np.uint8]:
-    """Samples a bit packed batch of measurement samples from the circuit.
-
-    Args:
-        shots: The number of times to sample every measurement in the circuit.
-
-    Returns:
-        A numpy array with `dtype=uint8` and
-        `shape=(shots, (num_measurements + 7) // 8)`.
-
-        The bit for measurement `m` in shot `s` is at
-        `result[s, (m // 8)] & 2**(m % 8)`.
-
-    Examples:
-        >>> import stim
-        >>> c = stim.Circuit('''
-        ...    X 0 1 2 3 4 5 6 7     10
-        ...    M 0 1 2 3 4 5 6 7 8 9 10
-        ... ''')
-        >>> s = c.compile_sampler()
-        >>> s.sample_bit_packed(shots=1)
-        array([[255,   4]], dtype=uint8)
     """
 ```
 
@@ -3234,7 +3192,6 @@ def convert(
     append_observables: bool = False,
     bit_pack_result: bool = False,
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
-
     """Converts measurement data into detection event data.
 
     Args:
@@ -3509,7 +3466,6 @@ def args_copy(
 def targets_copy(
     self,
 ) -> List[Union[int, stim.DemTarget]]:
-
     """Returns a copy of the instruction's targets.
 
     (Making a copy is enforced to make it clear that editing the result won't change
@@ -4580,7 +4536,6 @@ def flattened(
 def from_file(
     file: Union[io.TextIOBase, str, pathlib.Path],
 ) -> stim.DetectorErrorModel:
-
     """Reads a detector error model from a file.
 
     The file format is defined at
@@ -4905,7 +4860,6 @@ def to_file(
     self,
     file: Union[io.TextIOBase, str, pathlib.Path],
 ) -> None:
-
     """Writes the detector error model to a file.
 
     The file format is defined at
@@ -5989,6 +5943,63 @@ def copy(
     """
 ```
 
+<a name="stim.PauliString.from_numpy"></a>
+```python
+# stim.PauliString.from_numpy
+
+# (in class stim.PauliString)
+@staticmethod
+def from_numpy(
+    *,
+    xs: np.ndarray,
+    zs: np.ndarray,
+    sign: Union[int, float, complex] = +1,
+    num_qubits: Optional[int] = None,
+) -> stim.PauliString:
+    """Creates a pauli string from X bit and Z bit numpy arrays, using the encoding:
+
+        x=0 and z=0 -> P=I
+        x=1 and z=0 -> P=X
+        x=1 and z=1 -> P=Y
+        x=0 and z=1 -> P=Z
+
+    Args:
+        xs: The X bits of the pauli string. This array can either be a 1-dimensional
+            numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+            array with dtype=np.uint8. If the dtype is np.uint8 then the array is
+            assumed to be bit packed in little endian order and the "num_qubits"
+            argument must be specified. When bit packed, the x bit with offset k is
+            stored at (xs[k // 8] >> (k % 8)) & 1.
+        zs: The Z bits of the pauli string. This array can either be a 1-dimensional
+            numpy array with dtype=np.bool8, or a bit packed 1-dimensional numpy
+            array with dtype=np.uint8. If the dtype is np.uint8 then the array is
+            assumed to be bit packed in little endian order and the "num_qubits"
+            argument must be specified. When bit packed, the x bit with offset k is
+            stored at (xs[k // 8] >> (k % 8)) & 1.
+        sign: Defaults to +1. Set to +1, -1, 1j, or -1j to control the sign of the
+            returned Pauli string.
+        num_qubits: Must be specified if xs or zs is a bit packed array. Specifies
+            the expected length of the Pauli string.
+
+    Returns:
+        The created pauli string.
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+
+        >>> xs = np.array([1, 1, 1, 1, 1, 1, 1, 0, 0], dtype=np.bool8)
+        >>> zs = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1], dtype=np.bool8)
+        >>> stim.PauliString.from_numpy(xs=xs, zs=zs, sign=-1)
+        stim.PauliString("-XXXXYYYZZ")
+
+        >>> xs = np.array([127, 0], dtype=np.uint8)
+        >>> zs = np.array([240, 1], dtype=np.uint8)
+        >>> stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=9)
+        stim.PauliString("+XXXXYYYZZ")
+    """
+```
+
 <a name="stim.PauliString.random"></a>
 ```python
 # stim.PauliString.random
@@ -6052,6 +6063,65 @@ def sign(
 @sign.setter
 def sign(self, value: complex):
     pass
+```
+
+<a name="stim.PauliString.to_numpy"></a>
+```python
+# stim.PauliString.to_numpy
+
+# (in class stim.PauliString)
+def to_numpy(
+    self,
+    *,
+    bit_packed: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Decomposes the contents of the pauli string into X bit and Z bit numpy arrays.
+
+    Args:
+        bit_packed: Defaults to False. Determines whether the output numpy arrays
+            use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+
+    Returns:
+        An (xs, zs) tuple encoding the paulis from the string. The k'th Pauli from
+        the string is encoded into k'th bit of xs and the k'th bit of zs using
+        the "xz" encoding:
+
+            P=I -> x=0 and z=0
+            P=X -> x=1 and z=0
+            P=Y -> x=1 and z=1
+            P=Z -> x=0 and z=1
+
+        The dtype and shape of the result depends on the bit_packed argument.
+
+        If bit_packed=False:
+            Each bit gets its own byte.
+            xs.dtype = zs.dtype = np.bool8
+            xs.shape = zs.shape = len(self)
+            xs_k = xs[k]
+            zs_k = zs[k]
+
+        If bit_packed=True:
+            Equivalent to applying np.packbits(bitorder='little') to the result.
+            xs.dtype = zs.dtype = np.uint8
+            xs.shape = zs.shape = math.ceil(len(self) / 8)
+            xs_k = (xs[k // 8] >> (k % 8)) & 1
+            zs_k = (zs[k // 8] >> (k % 8)) & 1
+
+    Examples:
+        >>> import stim
+
+        >>> xs, zs = stim.PauliString("XXXXYYYZZ").to_numpy()
+        >>> xs
+        array([ True,  True,  True,  True,  True,  True,  True, False, False])
+        >>> zs
+        array([False, False, False, False,  True,  True,  True,  True,  True])
+
+        >>> xs, zs = stim.PauliString("XXXXYYYZZ").to_numpy(bit_packed=True)
+        >>> xs
+        array([127,   0], dtype=uint8)
+        >>> zs
+        array([240,   1], dtype=uint8)
+    """
 ```
 
 <a name="stim.PauliString.to_tableau"></a>
@@ -6458,7 +6528,6 @@ def from_circuit(
     ignore_measurement: bool = False,
     ignore_reset: bool = False,
 ) -> stim.Tableau:
-
     """Converts a circuit into an equivalent stabilizer tableau.
 
     Args:
@@ -6587,6 +6656,107 @@ def from_named_gate(
     """
 ```
 
+<a name="stim.Tableau.from_numpy"></a>
+```python
+# stim.Tableau.from_numpy
+
+# (in class stim.Tableau)
+def from_numpy(
+    self,
+    *,
+    bit_packed: bool = False,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
+
+    The x2x, x2z, z2x, z2z arrays are the four quadrants of the table defined in
+    Aaronson and Gottesman's "Improved Simulation of Stabilizer Circuits"
+    ( https://arxiv.org/abs/quant-ph/0406196 ).
+
+    Args:
+        x2x: A 2d numpy array containing the x-to-x coupling bits. The bits can be
+            bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+            result will satisfy result.x_output_pauli(i, j) in [1, 2] == x2x[i, j].
+            Bit packing must be in little endian order and only applies to the
+            second axis.
+        x2z: A 2d numpy array containing the x-to-z coupling bits. The bits can be
+            bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+            result will satisfy result.x_output_pauli(i, j) in [2, 3] == x2z[i, j].
+            Bit packing must be in little endian order and only applies to the
+            second axis.
+        z2x: A 2d numpy array containing the z-to-x coupling bits. The bits can be
+            bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+            result will satisfy result.z_output_pauli(i, j) in [1, 2] == z2x[i, j].
+            Bit packing must be in little endian order and only applies to the
+            second axis.
+        z2z: A 2d numpy array containing the z-to-z coupling bits. The bits can be
+            bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+            result will satisfy result.z_output_pauli(i, j) in [2, 3] == z2z[i, j].
+            Bit packing must be in little endian order and only applies to the
+            second axis.
+        x_signs: Defaults to all-positive if not specified. A 1d numpy array
+            containing the sign bits for the X generator outputs. False means
+            positive and True means negative. The bits can be bit packed
+            (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+            order.
+        z_signs: Defaults to all-positive if not specified. A 1d numpy array
+            containing the sign bits for the Z generator outputs. False means
+            positive and True means negative. The bits can be bit packed
+            (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+            order.
+
+    Returns:
+        The tableau created from the numpy data.
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+
+        >>> tableau = stim.Tableau.from_numpy(
+        ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool8),
+        ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool8),
+        ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool8),
+        ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool8),
+        ... )
+        >>> print(repr(tableau))
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
+        >>> tableau == stim.Tableau.from_named_gate("CNOT")
+        True
+
+        >>> tableau = stim.Tableau.from_numpy(
+        ...     x2x=np.array([[9], [5], [7], [6]], dtype=np.uint8),
+        ...     x2z=np.array([[13], [13], [0], [3]], dtype=np.uint8),
+        ...     z2x=np.array([[8], [5], [9], [15]], dtype=np.uint8),
+        ...     z2z=np.array([[6], [11], [2], [3]], dtype=np.uint8),
+        ...     x_signs=np.array([7], dtype=np.uint8),
+        ...     z_signs=np.array([9], dtype=np.uint8),
+        ... )
+        >>> print(repr(tableau))
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("-Y_ZY"),
+                stim.PauliString("-Y_YZ"),
+                stim.PauliString("-XXX_"),
+                stim.PauliString("+ZYX_"),
+            ],
+            zs=[
+                stim.PauliString("-_ZZX"),
+                stim.PauliString("+YZXZ"),
+                stim.PauliString("+XZ_X"),
+                stim.PauliString("-YYXX"),
+            ],
+        )
+    """
+```
+
 <a name="stim.Tableau.from_unitary_matrix"></a>
 ```python
 # stim.Tableau.from_unitary_matrix
@@ -6598,7 +6768,6 @@ def from_unitary_matrix(
     *,
     endian: str = 'little',
 ) -> stim.Tableau:
-
     """Creates a tableau from the unitary matrix of a Clifford operation.
 
     Args:
@@ -7115,7 +7284,6 @@ def to_circuit(
     *,
     method: str,
 ) -> stim.Circuit:
-
     """Synthesizes a circuit that implements the tableau's Clifford operation.
 
     The circuits returned by this method are not guaranteed to be stable
@@ -7169,6 +7337,157 @@ def to_circuit(
     """
 ```
 
+<a name="stim.Tableau.to_numpy"></a>
+```python
+# stim.Tableau.to_numpy
+
+# (in class stim.Tableau)
+def to_numpy(
+    self,
+    *,
+    bit_packed: bool = False,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Decomposes the contents of the tableau into six numpy arrays.
+
+    The first four numpy arrays correspond to the four quadrants of the table
+    defined in Aaronson and Gottesman's "Improved Simulation of Stabilizer Circuits"
+    ( https://arxiv.org/abs/quant-ph/0406196 ).
+
+    The last two numpy arrays are the X and Z sign bit vectors of the tableau.
+
+    Args:
+        bit_packed: Defaults to False. Determines whether the output numpy arrays
+            use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+
+    Returns:
+        An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
+
+        x2x: A 2d table of whether tableau(X_i)_j is X or Y (instead of I or Z).
+        x2z: A 2d table of whether tableau(X_i)_j is Z or Y (instead of I or X).
+        z2x: A 2d table of whether tableau(Z_i)_j is X or Y (instead of I or Z).
+        z2z: A 2d table of whether tableau(Z_i)_j is Z or Y (instead of I or X).
+        x_signs: A vector of whether tableau(X_i) is negative.
+        z_signs: A vector of whether tableau(Z_i) is negative.
+
+        If bit_packed=False then:
+            *.dtype = = np.bool8
+            *2*.shape = (len(tableau), len(tableau))
+            *_signs.shape = len(tableau)
+            x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
+            x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
+            z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
+            z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
+
+        If bit_packed=True then:
+            *.dtype = = np.uint8
+            *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
+            *_signs.shape = math.ceil(len(tableau) / 8)
+            (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
+            (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
+            (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
+            (z2z[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [2, 3]
+
+    Examples:
+        >>> import stim
+        >>> cnot = stim.Tableau.from_named_gate("CNOT")
+        >>> print(repr(cnot))
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
+        >>> x2x, x2z, z2x, z2z, x_signs, z_signs = cnot.to_numpy()
+        >>> x2x
+        array([[ True,  True],
+               [False,  True]])
+        >>> x2z
+        array([[False, False],
+               [False, False]])
+        >>> z2x
+        array([[False, False],
+               [False, False]])
+        >>> z2z
+        array([[ True, False],
+               [ True,  True]])
+        >>> x_signs
+        array([False, False])
+        >>> z_signs
+        array([False, False])
+
+        >>> t = stim.Tableau.from_conjugated_generators(
+        ...     xs=[
+        ...         stim.PauliString("-Y_ZY"),
+        ...         stim.PauliString("-Y_YZ"),
+        ...         stim.PauliString("-XXX_"),
+        ...         stim.PauliString("+ZYX_"),
+        ...     ],
+        ...     zs=[
+        ...         stim.PauliString("-_ZZX"),
+        ...         stim.PauliString("+YZXZ"),
+        ...         stim.PauliString("+XZ_X"),
+        ...         stim.PauliString("-YYXX"),
+        ...     ],
+        ... )
+
+        >>> x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
+        >>> x2x
+        array([[ True, False, False,  True],
+               [ True, False,  True, False],
+               [ True,  True,  True, False],
+               [False,  True,  True, False]])
+        >>> x2z
+        array([[ True, False,  True,  True],
+               [ True, False,  True,  True],
+               [False, False, False, False],
+               [ True,  True, False, False]])
+        >>> z2x
+        array([[False, False, False,  True],
+               [ True, False,  True, False],
+               [ True, False, False,  True],
+               [ True,  True,  True,  True]])
+        >>> z2z
+        array([[False,  True,  True, False],
+               [ True,  True, False,  True],
+               [False,  True, False, False],
+               [ True,  True, False, False]])
+        >>> x_signs
+        array([ True,  True,  True, False])
+        >>> z_signs
+        array([ True, False, False,  True])
+
+        >>> x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
+        >>> x2x
+        array([[9],
+               [5],
+               [7],
+               [6]], dtype=uint8)
+        >>> x2z
+        array([[13],
+               [13],
+               [ 0],
+               [ 3]], dtype=uint8)
+        >>> z2x
+        array([[ 8],
+               [ 5],
+               [ 9],
+               [15]], dtype=uint8)
+        >>> z2z
+        array([[ 6],
+               [11],
+               [ 2],
+               [ 3]], dtype=uint8)
+        >>> x_signs
+        array([7], dtype=uint8)
+        >>> z_signs
+        array([9], dtype=uint8)
+    """
+```
+
 <a name="stim.Tableau.to_pauli_string"></a>
 ```python
 # stim.Tableau.to_pauli_string
@@ -7216,7 +7535,6 @@ def to_unitary_matrix(
     *,
     endian: str,
 ) -> np.ndarray[np.complex64]:
-
     """Converts the tableau into a unitary matrix.
 
     Args:
@@ -8519,7 +8837,6 @@ def postselect_x(
     *,
     desired_value: bool,
 ) -> None:
-
     """Postselects qubits in the X basis, or raises an exception.
 
     Postselecting a qubit forces it to collapse to a specific state, as
@@ -8551,7 +8868,6 @@ def postselect_y(
     *,
     desired_value: bool,
 ) -> None:
-
     """Postselects qubits in the Y basis, or raises an exception.
 
     Postselecting a qubit forces it to collapse to a specific state, as
@@ -8583,7 +8899,6 @@ def postselect_z(
     *,
     desired_value: bool,
 ) -> None:
-
     """Postselects qubits in the Z basis, or raises an exception.
 
     Postselecting a qubit forces it to collapse to a specific state, as if it was
@@ -8820,7 +9135,6 @@ def set_state_from_stabilizers(
     allow_redundant: bool = False,
     allow_underconstrained: bool = False,
 ) -> None:
-
     """Sets the tableau simulator's state to a state satisfying the given stabilizers.
 
     The old quantum state is completely overwritten, even if the new state is
@@ -8917,7 +9231,6 @@ def set_state_from_state_vector(
     *,
     endian: str,
 ) -> None:
-
     """Sets the simulator's state to a superposition specified by an amplitude vector.
 
     Args:
@@ -9051,7 +9364,6 @@ def state_vector(
     *,
     endian: str = 'little',
 ) -> np.ndarray[np.complex64]:
-
     """Returns a wavefunction for the simulator's current state.
 
     This function takes O(n * 2**n) time and O(2**n) space, where n is the number of
@@ -9419,7 +9731,6 @@ def read_shot_data_file(
     num_observables: int = 0,
     bit_pack: bool = False,
 ) -> np.ndarray:
-
     """Reads shot data, such as measurement samples, from a file.
 
     Args:

@@ -76,6 +76,15 @@ def test_compiled_detector_sampler_sample():
             [0b011],
             [0b011],
         ], dtype=np.uint8))
+    np.testing.assert_array_equal(
+        c.compile_detector_sampler().sample(5, bit_packed=True),
+        np.array([
+            [0b011],
+            [0b011],
+            [0b011],
+            [0b011],
+            [0b011],
+        ], dtype=np.uint8))
 
     with tempfile.TemporaryDirectory() as d:
         path = f"{d}/tmp.dat"

@@ -156,7 +156,7 @@ float VectorSimulator::project(const PauliStringRef &observable) {
 
     uint64_t mask = 0;
     for (size_t k = 0; k < observable.num_qubits; k++) {
-        if (observable.xs[k] | observable.zs[k]) {
+        if (observable.xs[k] || observable.zs[k]) {
             mask |= 1ULL << k;
         }
     }
