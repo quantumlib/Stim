@@ -8031,7 +8031,7 @@ def cnot(
 def copy(
     self,
     *,
-    copy_rng: bool = True,
+    copy_rng: bool = False,
     seed: Optional[int] = None,
 ) -> stim.TableauSimulator:
     """Returns a simulator with the same internal state, except perhaps its prng.
