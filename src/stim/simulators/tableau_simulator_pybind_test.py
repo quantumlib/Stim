@@ -590,7 +590,7 @@ def test_copy_with_explicit_seed():
     assert eq == {False, True}
 
 
-def test_copy_explicit_fresh_entropy_and_seed():
+def test_copy_with_explicit_copy_rng_and_seed():
     s = stim.TableauSimulator()
     with pytest.raises(ValueError, match='seed and copy_rng are incompatible'):
         _ = s.copy(copy_rng=True, seed=0)
