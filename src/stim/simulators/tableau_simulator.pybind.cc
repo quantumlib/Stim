@@ -1572,9 +1572,10 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
                     only supports SSE instructions may produce different simulation results.
 
                     CAUTION: simulation results *MAY NOT* be consistent if you vary how the
-                    circuit is executed. For example, reordering whether a reset on one qubit
-                    happens before or after a reset on another qubit can result in different
-                    measurement results being observed starting from the same seed.
+                    circuit is executed. For example, reordering whether a reset on one
+                    qubit happens before or after a reset on another qubit can result in
+                    different measurement results being observed starting from the same
+                    seed.
 
             Examples:
                 >>> import stim
