@@ -1365,6 +1365,24 @@ TEST(TableauSimulator, resets_vs_measurements) {
         }));
 }
 
+TEST(TableauSimulator, sample_circuit_mutates_rng_state) {
+  std::mt19937_64 rng(1234);
+  TableauSimulator::sample_circuit(Circuit("H 0\nM 0"), rng);
+  ASSERT_NE(rng, std::mt19937_64(1234));
+}
+
+TEST(TableauSimulator, sample_stream_mutates_rng_state) {
+  FILE *in = tmpfile();
+  FILE *out = tmpfile();
+  fprintf(in, "H 0\nM 0\n");
+  rewind(in);
+
+  std::mt19937_64 rng(2345);
+  TableauSimulator::sample_stream(in, out, SAMPLE_FORMAT_B8, false, rng);
+
+  ASSERT_NE(rng, std::mt19937_64(2345));
+}
+
 TEST(TableauSimulator, noisy_measurement_x) {
     TableauSimulator t(SHARED_TEST_RNG());
     t.expand_do_circuit(R"CIRCUIT(

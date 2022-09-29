@@ -5928,6 +5928,53 @@ class TableauSimulator:
             ],
         )
     """
+    def __init__(
+        self,
+        *,
+        seed: Optional[int] = None,
+    ) -> None:
+        """Initializes a stim.TableauSimulator.
+
+        Args:
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
+                Must be None or an integer in range(2**64).
+
+                Defaults to None. When None, the prng is seeded from system entropy.
+
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
+
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
+
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
+
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+                circuit is executed. For example, reordering whether a reset on one
+                qubit happens before or after a reset on another qubit can result in
+                different measurement results being observed starting from the same
+                seed.
+
+        Returns:
+            An initialized stim.TableauSimulator.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator(seed=0)
+            >>> s2 = stim.TableauSimulator(seed=0)
+            >>> s.h(0)
+            >>> s2.h(0)
+            >>> s.measure(0) == s2.measure(0)
+            True
+        """
     def c_xyz(
         self,
         *targets,
@@ -6008,8 +6055,47 @@ class TableauSimulator:
         """
     def copy(
         self,
+        *,
+        copy_rng: bool = False,
+        seed: Optional[int] = None,
     ) -> stim.TableauSimulator:
-        """Returns a copy of the simulator. A simulator with the same internal state.
+        """Returns a simulator with the same internal state, except perhaps its prng.
+
+        Args:
+            copy_rng: By default, new simulator's prng is reinitialized with a random
+                seed. However, one can set this argument to True in order to have the
+                prng state copied together with the rest of the original simulator's
+                state. Consequently, in this case the two simulators will produce the
+                same measurement outcomes for the same quantum circuits.  If both seed
+                and copy_rng are set, an exception is raised. Defaults to False.
+            seed: PARTIALLY determines simulation results by deterministically seeding
+                the random number generator.
+
+                Must be None or an integer in range(2**64).
+
+                Defaults to None. When None, the prng state is either copied from the
+                original simulator or reseeded from system entropy, depending on the
+                copy_rng argument.
+
+                When set to an integer, making the exact same series calls on the exact
+                same machine with the exact same version of Stim will produce the exact
+                same simulation results.
+
+                CAUTION: simulation results *WILL NOT* be consistent between versions of
+                Stim. This restriction is present to make it possible to have future
+                optimizations to the random sampling, and is enforced by introducing
+                intentional differences in the seeding strategy from version to version.
+
+                CAUTION: simulation results *MAY NOT* be consistent across machines that
+                differ in the width of supported SIMD instructions. For example, using
+                the same seed on a machine that supports AVX instructions and one that
+                only supports SSE instructions may produce different simulation results.
+
+                CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+                circuit is executed. For example, reordering whether a reset on one
+                qubit happens before or after a reset on another qubit can result in
+                different measurement results being observed starting from the same
+                seed.
 
         Examples:
             >>> import stim
@@ -6022,13 +6108,19 @@ class TableauSimulator:
             >>> s2.current_inverse_tableau() == s1.current_inverse_tableau()
             True
 
+            >>> s1 = stim.TableauSimulator()
+            >>> s2 = s1.copy(copy_rng=True)
+            >>> s1.h(0)
+            >>> s2.h(0)
+            >>> assert s1.measure(0) == s2.measure(0)
+
             >>> s = stim.TableauSimulator()
             >>> def brute_force_post_select(qubit, desired_result):
             ...     global s
             ...     while True:
-            ...         copy = s.copy()
-            ...         if copy.measure(qubit) == desired_result:
-            ...             s = copy
+            ...         s2 = s.copy()
+            ...         if s2.measure(qubit) == desired_result:
+            ...             s = s2
             ...             break
             >>> s.h(0)
             >>> brute_force_post_select(qubit=0, desired_result=True)

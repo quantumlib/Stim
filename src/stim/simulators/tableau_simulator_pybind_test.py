@@ -214,11 +214,11 @@ def test_measure_kickback_random_branches():
     for _ in range(100):
         if post_false is not None and post_true is not None:
             break
-        copy = s.copy()
-        if copy.measure(4):
-            post_true = copy
+        s2 = s.copy()
+        if s2.measure(4):
+            post_true = s2
         else:
-            post_false = copy
+            post_false = s2
     assert post_false is not None and post_true is not None
 
     result, kick = s.measure_kickback(4)
@@ -526,3 +526,71 @@ def test_set_state_from_stabilizers():
     assert s.current_inverse_tableau() == stim.Tableau(0)
     s.set_state_from_stabilizers([stim.PauliString("XXX"), stim.PauliString("_ZZ"), stim.PauliString("ZZ_")])
     np.testing.assert_allclose(s.state_vector(), [0.5**0.5, 0, 0, 0, 0, 0, 0, 0.5**0.5], atol=1e-6)
+
+
+def test_seed():
+    ss1 = [stim.TableauSimulator(seed=0) for _ in range(5)]
+    ss2 = [stim.TableauSimulator(seed=1) for _ in range(5)]
+
+    def hadamard_and_measure(sim, reps=5):
+        """Repeats Hadamard+measurement reps times and returns result as reps-bit integer."""
+        r, v = 0, 1
+        for _ in range(reps):
+            sim.h(0)
+            r += v * sim.measure(0)
+            v *= 2
+        return r
+
+    ms1 = {hadamard_and_measure(sim) for sim in ss1}
+    ms2 = {hadamard_and_measure(sim) for sim in ss2}
+
+    assert len(ms1) == 1
+    assert len(ms2) == 1
+    assert ms1 != ms2
+
+
+def test_copy_without_fresh_entropy():
+    s1 = stim.TableauSimulator(seed=0)
+    s2 = s1.copy(copy_rng=True)
+
+    for _ in range(100):
+        s1.h(0)
+        s2.h(0)
+        assert s1.measure(0) == s2.measure(0)
+
+
+def test_copy_with_fresh_entropy():
+    s1 = stim.TableauSimulator(seed=0)
+    s2 = s1.copy()
+
+    eq = set()
+    for _ in range(100):
+        s1.h(0)
+        s2.h(0)
+        eq.add(s1.measure(0) == s2.measure(0))
+    assert eq == {False, True}
+
+
+def test_copy_with_explicit_seed():
+    s1 = stim.TableauSimulator(seed=0)
+    s2 = stim.TableauSimulator(seed=1)
+    s3 = s1.copy(seed=1)
+
+    eq = set()
+    for _ in range(100):
+        s1.h(0)
+        s2.h(0)
+        s3.h(0)
+        m1 = s1.measure(0)
+        m2 = s2.measure(0)
+        m3 = s3.measure(0)
+        assert m2 == m3
+        eq.add(m1 == m3)
+
+    assert eq == {False, True}
+
+
+def test_copy_with_explicit_copy_rng_and_seed():
+    s = stim.TableauSimulator()
+    with pytest.raises(ValueError, match='seed and copy_rng are incompatible'):
+        _ = s.copy(copy_rng=True, seed=0)
