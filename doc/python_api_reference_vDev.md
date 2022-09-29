@@ -7899,9 +7899,11 @@ def __init__(
             the same seed on a machine that supports AVX instructions and one that
             only supports SSE instructions may produce different simulation results.
 
-            CAUTION: simulation results *MAY NOT* be consistent if you vary how many
-            shots are taken. For example, taking 10 shots and then 90 shots will
-            give different results from taking 100 shots in one call.
+            CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+            circuit is executed. For example, reordering whether a reset on one
+            qubit happens before or after a reset on another qubit can result in
+            different measurement results being observed starting from the same
+            seed.
 
     Returns:
         An initialized stim.TableauSimulator.
@@ -8066,10 +8068,11 @@ def copy(
             the same seed on a machine that supports AVX instructions and one that
             only supports SSE instructions may produce different simulation results.
 
-            CAUTION: simulation results *MAY NOT* be consistent if you vary how many
-            shots are taken. For example, taking 10 shots and then 90 shots will
-            give different results from taking 100 shots in one call.
-
+            CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+            circuit is executed. For example, reordering whether a reset on one
+            qubit happens before or after a reset on another qubit can result in
+            different measurement results being observed starting from the same
+            seed.
 
     Examples:
         >>> import stim
@@ -8081,6 +8084,12 @@ def copy(
         False
         >>> s2.current_inverse_tableau() == s1.current_inverse_tableau()
         True
+
+        >>> s1 = stim.TableauSimulator()
+        >>> s2 = s1.copy(copy_rng=True)
+        >>> s1.h(0)
+        >>> s2.h(0)
+        >>> assert s1.measure(0) == s2.measure(0)
 
         >>> s = stim.TableauSimulator()
         >>> def brute_force_post_select(qubit, desired_result):
