@@ -587,8 +587,8 @@ TEST(TableauSimulator, correlated_error) {
 
     int hits[3]{};
     size_t n = 10000;
+    std::mt19937_64 rng(0);
     for (size_t k = 0; k < n; k++) {
-        std::mt19937_64 rng(k);
         auto sample = TableauSimulator::sample_circuit(
             Circuit(R"circuit(
             CORRELATED_ERROR(0.5) X0
