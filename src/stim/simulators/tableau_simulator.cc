@@ -723,10 +723,11 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(const Circuit &circuit) {
-    expand_do_circuit(circuit);
+simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(const Circuit &circuit, const std::mt19937_64 &rng, int8_t sign_bias) {
+    TableauSimulator sim(rng, circuit.count_qubits(), sign_bias);
+    sim.expand_do_circuit(circuit);
 
-    const std::vector<bool> &v = measurement_record.storage;
+    const std::vector<bool> &v = sim.measurement_record.storage;
     simd_bits<MAX_BITWORD_WIDTH> result(v.size());
     for (size_t k = 0; k < v.size(); k++) {
         result[k] ^= v[k];
@@ -741,7 +742,8 @@ void TableauSimulator::ensure_large_enough_for_qubits(size_t num_qubits) {
     inv_state.expand(num_qubits);
 }
 
-void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive) {
+void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, const std::mt19937_64 &rng) {
+    TableauSimulator sim(rng, 1);
     auto writer = MeasureRecordWriter::make(out, format);
     Circuit unprocessed;
     while (true) {
@@ -759,11 +761,11 @@ void TableauSimulator::sample_stream(FILE *in, FILE *out, SampleFormat format, b
         if (unprocessed.operations.empty()) {
             break;
         }
-        ensure_large_enough_for_qubits(unprocessed.count_qubits());
+        sim.ensure_large_enough_for_qubits(unprocessed.count_qubits());
 
         unprocessed.for_each_operation([&](const Operation &op) {
-            (this->*op.gate->tableau_simulator_function)(op.target_data);
-            measurement_record.write_unwritten_results_to(*writer);
+            (sim.*op.gate->tableau_simulator_function)(op.target_data);
+            sim.measurement_record.write_unwritten_results_to(*writer);
             if (interactive && op.count_measurement_results()) {
                 putc('\n', out);
                 fflush(out);
@@ -955,8 +957,7 @@ void TableauSimulator::expand_do_circuit(const Circuit &circuit) {
 
 simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
     std::mt19937_64 irrelevant_rng(0);
-    TableauSimulator sim(irrelevant_rng, circuit.count_qubits(), +1);
-    return sim.sample_circuit(circuit.aliased_noiseless_circuit());
+    return TableauSimulator::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
 }
 
 void TableauSimulator::paulis(const PauliString &paulis) {
