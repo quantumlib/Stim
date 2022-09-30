@@ -36,6 +36,18 @@ DemSampler::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_
       num_stripes(det_buffer.num_minor_bits_padded()) {
 }
 
+void DemSampler::set_min_stripes(size_t min_stripes) {
+    size_t new_num_stripes = min_stripes;
+    if (new_num_stripes == num_stripes) {
+        return;
+    }
+    det_buffer = simd_bit_table<MAX_BITWORD_WIDTH>((size_t)num_detectors, min_stripes),
+    obs_buffer = simd_bit_table<MAX_BITWORD_WIDTH>((size_t)num_observables, min_stripes),
+    err_buffer = simd_bit_table<MAX_BITWORD_WIDTH>((size_t)num_errors, min_stripes),
+    num_stripes = new_num_stripes;
+}
+
+
 void DemSampler::resample(bool replay_errors) {
     det_buffer.clear();
     obs_buffer.clear();
