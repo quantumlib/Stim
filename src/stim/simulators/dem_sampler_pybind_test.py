@@ -71,3 +71,12 @@ def test_dem_sampler_sampler_write():
             assert f.read() == "3\n"
         with open(d / 'err2.01') as f:
             assert f.read() == "00010\n"
+
+
+def test_dem_sampler_actually_fills_obs_array():
+    dem = stim.DetectorErrorModel('''
+       error(1) L0
+    ''')
+    sampler = dem.compile_sampler()
+    _, obs_data, _ = sampler.sample(shots=10000)
+    assert np.all(obs_data)
