@@ -37,7 +37,7 @@ DemSampler::DemSampler(DetectorErrorModel init_model, std::mt19937_64 rng, size_
 }
 
 void DemSampler::set_min_stripes(size_t min_stripes) {
-    size_t new_num_stripes = min_stripes;
+    size_t new_num_stripes =  min_bits_to_num_bits_padded<MAX_BITWORD_WIDTH>(min_stripes);
     if (new_num_stripes == num_stripes) {
         return;
     }
