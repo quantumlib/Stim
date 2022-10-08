@@ -1,6 +1,6 @@
 from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union
 
-from sinter._probability_util import fit_binomial
+from sinter._probability_util import fit_binomial, shot_error_rate_to_piece_error_rate
 
 if TYPE_CHECKING:
     import sinter
@@ -96,6 +96,7 @@ def plot_discard_rate(
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
+        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
@@ -108,6 +109,11 @@ def plot_discard_rate(
         stats: The collected statistics to plot.
         x_func: The X coordinate to use for each stat's data point. For example, this could be
             `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
+        failure_units_per_shot_func: How many discard chances there are per shot. This rescales what the
+            discard rate means. By default, it is the discard rate per shot, but this allows
+            you to instead make it the discard rate per round. For example, if the metadata
+            associated with a shot has a field 'r' which is the number of rounds, then this can be
+            achieved with `failure_units_per_shot_func=lambda stats: stats.metadata['r']`.
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
@@ -154,12 +160,13 @@ def plot_discard_rate(
                     num_shots=stat.shots,
                     num_hits=stat.discards,
                     max_likelihood_factor=highlight_max_likelihood_factor)
+                pieces = failure_units_per_shot_func(stat)
                 if stat.discards:
                     xs.append(x)
-                    ys.append(fit.best)
+                    ys.append(shot_error_rate_to_piece_error_rate(fit.best, pieces=pieces))
                 xs_range.append(x)
-                ys_low.append(fit.low)
-                ys_high.append(fit.high)
+                ys_low.append(shot_error_rate_to_piece_error_rate(fit.low, pieces=pieces))
+                ys_high.append(shot_error_rate_to_piece_error_rate(fit.high, pieces=pieces))
 
         kwargs = dict(plot_args_func(k, curve_id))
         if 'label' not in kwargs and curve_id is not None:
@@ -186,6 +193,7 @@ def plot_error_rate(
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
+        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
@@ -198,6 +206,11 @@ def plot_error_rate(
         stats: The collected statistics to plot.
         x_func: The X coordinate to use for each stat's data point. For example, this could be
             `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
+        failure_units_per_shot_func: How many error chances there are per shot. This rescales what the
+            logical error rate means. By default, it is the logical error rate per shot, but this allows
+            you to instead make it the logical error rate per round. For example, if the metadata
+            associated with a shot has a field 'r' which is the number of rounds, then this can be
+            achieved with `failure_units_per_shot_func=lambda stats: stats.metadata['r']`.
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
@@ -247,13 +260,14 @@ def plot_error_rate(
                 num_hits=stat.errors,
                 max_likelihood_factor=highlight_max_likelihood_factor,
             )
+            pieces = failure_units_per_shot_func(stat)
             if stat.errors:
                 xs.append(x)
-                ys.append(fit.best)
+                ys.append(shot_error_rate_to_piece_error_rate(fit.best, pieces=pieces))
             if highlight_max_likelihood_factor > 1:
                 xs_range.append(x)
-                ys_low.append(fit.low)
-                ys_high.append(fit.high)
+                ys_low.append(shot_error_rate_to_piece_error_rate(fit.low, pieces=pieces))
+                ys_high.append(shot_error_rate_to_piece_error_rate(fit.high, pieces=pieces))
 
         kwargs = dict(plot_args_func(k, curve_id))
         if 'label' not in kwargs and curve_id is not None:
