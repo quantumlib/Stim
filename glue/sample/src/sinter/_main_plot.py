@@ -256,6 +256,8 @@ def _plot_helper(
         if min_y is None:
             min_y = 1
             for stat in plotted_stats:
+                if stat.shots <= stat.discards:
+                    continue
                 err_rate = stat.errors / (stat.shots - stat.discards)
                 pieces = failure_units_per_shot_func(stat)
                 err_rate = shot_error_rate_to_piece_error_rate(err_rate, pieces=pieces)
