@@ -15,6 +15,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/iostream.h>
 
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_gate_target.pybind.h"
@@ -70,6 +71,14 @@ GateTarget target_sweep_bit(uint32_t qubit) {
 }
 
 int stim_main(const std::vector<std::string> &args) {
+    pybind11::scoped_ostream_redirect redirect_out(
+        std::cout,
+        pybind11::module_::import("sys").attr("stdout")
+    );
+    pybind11::scoped_ostream_redirect redirect_err(
+        std::cerr,
+        pybind11::module_::import("sys").attr("stderr")
+    );
     std::vector<const char *> argv;
     argv.push_back("stim.main");
     for (const auto &arg : args) {
