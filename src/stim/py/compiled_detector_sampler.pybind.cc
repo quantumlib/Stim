@@ -20,7 +20,6 @@
 #include "stim/py/numpy.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
-#include "stim/simulators/measurements_to_detection_events.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 
 using namespace stim;
@@ -31,11 +30,37 @@ CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_pt
 }
 
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
-    size_t num_shots, bool prepend_observables, bool append_observables, bool bit_packed) {
+    size_t num_shots, bool prepend_observables, bool append_observables, bool separate_observables, bool bit_packed) {
+    if (separate_observables && (append_observables || prepend_observables)) {
+        throw std::invalid_argument("Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
+    }
     simd_bit_table<MAX_BITWORD_WIDTH> sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables, *prng);
-    size_t bits_per_sample = dets_obs.detectors.size() + dets_obs.observables.size() * (prepend_observables + append_observables);
-    return transposed_simd_bit_table_to_numpy(sample, bits_per_sample, num_shots, bit_packed);
+        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables || separate_observables, *prng);
+    size_t num_dets = dets_obs.detectors.size();
+    size_t num_obs = dets_obs.observables.size();
+
+    size_t num_det_bits;
+    pybind11::object obs_data = pybind11::none();
+    if (separate_observables) {
+        num_det_bits = num_dets;
+        simd_bit_table<MAX_BITWORD_WIDTH> obs_table(num_obs, num_shots);
+        for (size_t obs = 0; obs < num_obs; obs++) {
+            auto obs_slice = sample[num_dets + obs];
+            obs_table[obs] = obs_slice;
+            obs_slice.clear();
+        }
+        obs_data = transposed_simd_bit_table_to_numpy(obs_table, num_obs, num_shots, bit_packed);
+    } else {
+        num_det_bits = num_dets + num_obs * (append_observables + prepend_observables);
+    }
+
+    // Caution: only do this after extracting the observable data, lest it leak into the packed bytes.
+    pybind11::object det_data = transposed_simd_bit_table_to_numpy(sample, num_det_bits, num_shots, bit_packed);
+
+    if (separate_observables) {
+        return pybind11::make_tuple(det_data, obs_data);
+    }
+    return det_data;
 }
 
 void CompiledDetectorSampler::sample_write(
@@ -138,16 +163,20 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
 
     c.def(
         "sample",
-        [](CompiledDetectorSampler &self, size_t shots, bool prepend, bool append, bool bit_packed) {
-            return self.sample_to_numpy(shots, prepend, append, bit_packed);
+        [](CompiledDetectorSampler &self, size_t shots, bool prepend, bool append, bool separate_observables, bool bit_packed) {
+            return self.sample_to_numpy(shots, prepend, append, separate_observables, bit_packed);
         },
         pybind11::arg("shots"),
         pybind11::kw_only(),
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
+        pybind11::arg("separate_observables") = false,
         pybind11::arg("bit_packed") = false,
         clean_doc_string(u8R"DOC(
             Returns a numpy array containing a batch of detector samples from the circuit.
+            @overload def sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False, bit_packed: bool = False) -> np.ndarray:
+            @overload def sample(self, shots: int, *, separate_observables: Literal[True], bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
+            @signature def sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False, separate_observables: bool = False, bit_packed: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             The circuit must define the detectors using DETECTOR instructions. Observables
             defined by OBSERVABLE_INCLUDE instructions can also be included in the results
@@ -155,6 +184,9 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
 
             Args:
                 shots: The number of times to sample every detector in the circuit.
+                separate_observables: Defaults to False. When set to True, the return value
+                    is a (detection_events, observable_flips) tuple instead of a flat
+                    detection_events array.
                 prepend_observables: Defaults to false. When set, observables are included
                     with the detectors and are placed at the start of the results.
                 append_observables: Defaults to false. When set, observables are included
@@ -163,28 +195,58 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
                     a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
             Returns:
-                A numpy array containing the samples.
+                A numpy array or tuple of numpy arrays containing the samples.
 
-                bits_per_shot = num_detectors + num_observables * (
-                    append_observables + prepend_observables)
-
-                If bit_packed=False:
+                if separate_observables=False and bit_packed=False:
+                    A single numpy array.
                     dtype=bool8
-                    shape=(shots, bits_per_shot)
+                    shape=(
+                        shots,
+                        num_detectors + num_observables * (
+                            append_observables + prepend_observables),
+                    )
                     The bit for detection event `m` in shot `s` is at
                         result[s, m]
-                If bit_packed=True:
+
+                if separate_observables=False and bit_packed=True:
+                    A single numpy array.
                     dtype=uint8
-                    shape=(shots, math.ceil(bits_per_shot / 8))
+                    shape=(
+                        shots,
+                        math.ceil((num_detectors + num_observables * (
+                            append_observables + prepend_observables)) / 8),
+                    )
                     The bit for detection event `m` in shot `s` is at
                         (result[s, m // 8] >> (m % 8)) & 1
+
+                if separate_observables=True and bit_packed=False:
+                    A (dets, obs) tuple.
+                    dets.dtype=bool8
+                    dets.shape=(shots, num_detectors)
+                    obs.dtype=bool8
+                    obs.shape=(shots, num_observables)
+                    The bit for detection event `m` in shot `s` is at
+                        dets[s, m]
+                    The bit for observable `m` in shot `s` is at
+                        obs[s, m]
+
+                if separate_observables=True and bit_packed=True:
+                    A (dets, obs) tuple.
+                    dets.dtype=uint8
+                    dets.shape=(shots, math.ceil(num_detectors / 8))
+                    obs.dtype=uint8
+                    obs.shape=(shots, math.ceil(num_observables / 8))
+                    The bit for detection event `m` in shot `s` is at
+                        (dets[s, m // 8] >> (m % 8)) & 1
+                    The bit for observable `m` in shot `s` is at
+                        (obs[s, m // 8] >> (m % 8)) & 1
         )DOC")
             .data());
 
     c.def(
         "sample_bit_packed",
         [](CompiledDetectorSampler &self, size_t shots, bool prepend, bool append) {
-            return self.sample_to_numpy(shots, prepend, append, true);
+            return self.sample_to_numpy(shots, prepend, append, false, true);
         },
         pybind11::arg("shots"),
         pybind11::kw_only(),

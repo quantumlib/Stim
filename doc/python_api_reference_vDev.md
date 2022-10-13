@@ -223,6 +223,8 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.from_conjugated_generators`](#stim.Tableau.from_conjugated_generators)
     - [`stim.Tableau.from_named_gate`](#stim.Tableau.from_named_gate)
     - [`stim.Tableau.from_numpy`](#stim.Tableau.from_numpy)
+    - [`stim.Tableau.from_stabilizers`](#stim.Tableau.from_stabilizers)
+    - [`stim.Tableau.from_state_vector`](#stim.Tableau.from_state_vector)
     - [`stim.Tableau.from_unitary_matrix`](#stim.Tableau.from_unitary_matrix)
     - [`stim.Tableau.inverse`](#stim.Tableau.inverse)
     - [`stim.Tableau.inverse_x_output`](#stim.Tableau.inverse_x_output)
@@ -238,6 +240,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Tableau.to_circuit`](#stim.Tableau.to_circuit)
     - [`stim.Tableau.to_numpy`](#stim.Tableau.to_numpy)
     - [`stim.Tableau.to_pauli_string`](#stim.Tableau.to_pauli_string)
+    - [`stim.Tableau.to_state_vector`](#stim.Tableau.to_state_vector)
     - [`stim.Tableau.to_unitary_matrix`](#stim.Tableau.to_unitary_matrix)
     - [`stim.Tableau.x_output`](#stim.Tableau.x_output)
     - [`stim.Tableau.x_output_pauli`](#stim.Tableau.x_output_pauli)
@@ -2816,6 +2819,7 @@ def __repr__(
 # stim.CompiledDetectorSampler.sample
 
 # (in class stim.CompiledDetectorSampler)
+@overload
 def sample(
     self,
     shots: int,
@@ -2823,7 +2827,26 @@ def sample(
     prepend_observables: bool = False,
     append_observables: bool = False,
     bit_packed: bool = False,
-) -> object:
+) -> np.ndarray:
+    pass
+@overload
+def sample(
+    self,
+    shots: int,
+    *,
+    separate_observables: Literal[True],
+    bit_packed: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    pass
+def sample(
+    self,
+    shots: int,
+    *,
+    prepend_observables: bool = False,
+    append_observables: bool = False,
+    separate_observables: bool = False,
+    bit_packed: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """Returns a numpy array containing a batch of detector samples from the circuit.
 
     The circuit must define the detectors using DETECTOR instructions. Observables
@@ -2832,6 +2855,9 @@ def sample(
 
     Args:
         shots: The number of times to sample every detector in the circuit.
+        separate_observables: Defaults to False. When set to True, the return value
+            is a (detection_events, observable_flips) tuple instead of a flat
+            detection_events array.
         prepend_observables: Defaults to false. When set, observables are included
             with the detectors and are placed at the start of the results.
         append_observables: Defaults to false. When set, observables are included
@@ -2840,21 +2866,51 @@ def sample(
             a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
     Returns:
-        A numpy array containing the samples.
+        A numpy array or tuple of numpy arrays containing the samples.
 
-        bits_per_shot = num_detectors + num_observables * (
-            append_observables + prepend_observables)
-
-        If bit_packed=False:
+        if separate_observables=False and bit_packed=False:
+            A single numpy array.
             dtype=bool8
-            shape=(shots, bits_per_shot)
+            shape=(
+                shots,
+                num_detectors + num_observables * (
+                    append_observables + prepend_observables),
+            )
             The bit for detection event `m` in shot `s` is at
                 result[s, m]
-        If bit_packed=True:
+
+        if separate_observables=False and bit_packed=True:
+            A single numpy array.
             dtype=uint8
-            shape=(shots, math.ceil(bits_per_shot / 8))
+            shape=(
+                shots,
+                math.ceil((num_detectors + num_observables * (
+                    append_observables + prepend_observables)) / 8),
+            )
             The bit for detection event `m` in shot `s` is at
                 (result[s, m // 8] >> (m % 8)) & 1
+
+        if separate_observables=True and bit_packed=False:
+            A (dets, obs) tuple.
+            dets.dtype=bool8
+            dets.shape=(shots, num_detectors)
+            obs.dtype=bool8
+            obs.shape=(shots, num_observables)
+            The bit for detection event `m` in shot `s` is at
+                dets[s, m]
+            The bit for observable `m` in shot `s` is at
+                obs[s, m]
+
+        if separate_observables=True and bit_packed=True:
+            A (dets, obs) tuple.
+            dets.dtype=uint8
+            dets.shape=(shots, math.ceil(num_detectors / 8))
+            obs.dtype=uint8
+            obs.shape=(shots, math.ceil(num_observables / 8))
+            The bit for detection event `m` in shot `s` is at
+                (dets[s, m // 8] >> (m % 8)) & 1
+            The bit for observable `m` in shot `s` is at
+                (obs[s, m // 8] >> (m % 8)) & 1
     """
 ```
 
@@ -3183,6 +3239,27 @@ def __repr__(
 # stim.CompiledMeasurementsToDetectionEventsConverter.convert
 
 # (in class stim.CompiledMeasurementsToDetectionEventsConverter)
+@overload
+def convert(
+    self,
+    *,
+    measurements: np.ndarray,
+    sweep_bits: Optional[np.ndarray] = None,
+    append_observables: bool = False,
+    bit_pack_result: bool = False,
+) -> np.ndarray:
+    pass
+@overload
+def convert(
+    self,
+    *,
+    measurements: np.ndarray,
+    sweep_bits: Optional[np.ndarray] = None,
+    separate_observables: Literal[True],
+    append_observables: bool = False,
+    bit_pack_result: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    pass
 def convert(
     self,
     *,
@@ -6757,6 +6834,164 @@ def from_numpy(
     """
 ```
 
+<a name="stim.Tableau.from_stabilizers"></a>
+```python
+# stim.Tableau.from_stabilizers
+
+# (in class stim.Tableau)
+@staticmethod
+def from_stabilizers(
+    stabilizers: Iterable[stim.PauliString],
+    *,
+    allow_redundant: bool = False,
+    allow_underconstrained: bool = False,
+) -> stim.Tableau:
+    """Creates a tableau representing a state with the given stabilizers.
+
+    Args:
+        stabilizers: A list of `stim.PauliString`s specifying the stabilizers that
+            the state must have. It is permitted for stabilizers to have different
+            lengths. All stabilizers are padded up to the length of the longest
+            stabilizer by appending identity terms.
+        allow_redundant: Defaults to False. If set to False, then the given
+            stabilizers must all be independent. If any one of them is a product of
+            the others (including the empty product), an exception will be raised.
+            If set to True, then redundant stabilizers are simply ignored.
+        allow_underconstrained: Defaults to False. If set to False, then the given
+            stabilizers must form a complete set of generators. They must exactly
+            specify the desired stabilizer state, with no degrees of freedom left
+            over. For an n-qubit state there must be n independent stabilizers. If
+            set to True, then there can be leftover degrees of freedom which can be
+            set arbitrarily.
+
+    Returns:
+        A tableau which, when applied to the all-zeroes state, produces a state
+        with the given stabilizers.
+
+        Guarantees that result.z_output(k) will be equal to the k'th independent
+        stabilizer from the `stabilizers` argument.
+
+    Raises:
+        ValueError:
+            A stabilizer is redundant but allow_redundant=True wasn't set.
+            OR
+            The given stabilizers are contradictory (e.g. "+Z" and "-Z" both
+            specified).
+            OR
+            The given stabilizers anticommute (e.g. "+Z" and "+X" both specified).
+            OR
+            The stabilizers left behind a degree of freedom but
+            allow_underconstrained=True wasn't set.
+            OR
+            A stabilizer has an imaginary sign (i or -i).
+
+    Examples:
+
+        >>> import stim
+        >>> stim.Tableau.from_stabilizers([
+        ...     stim.PauliString("XX"),
+        ...     stim.PauliString("ZZ"),
+        ... ])
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
+
+        >>> stim.Tableau.from_stabilizers([
+        ...     stim.PauliString("XX_"),
+        ...     stim.PauliString("ZZ_"),
+        ...     stim.PauliString("-YY_"),
+        ...     stim.PauliString(""),
+        ... ], allow_underconstrained=True, allow_redundant=True)
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z__"),
+                stim.PauliString("+_X_"),
+                stim.PauliString("+__X"),
+            ],
+            zs=[
+                stim.PauliString("+XX_"),
+                stim.PauliString("+ZZ_"),
+                stim.PauliString("+__Z"),
+            ],
+        )
+    """
+```
+
+<a name="stim.Tableau.from_state_vector"></a>
+```python
+# stim.Tableau.from_state_vector
+
+# (in class stim.Tableau)
+def from_state_vector(
+    self,
+    state_vector: Iterable[float],
+    *,
+    endian: str,
+) -> stim.Tableau:
+    """Creates a tableau representing the stabilizer state of the given state vector.
+
+    Args:
+        state_vector: A list of complex amplitudes specifying a superposition. The
+            vector must correspond to a state that is reachable using Clifford
+            operations, and must be normalized (i.e. it must be a unit vector).
+        endian:
+            "little": state vector is in little endian order, where higher index
+                qubits correspond to larger changes in the state index.
+            "big": state vector is in big endian order, where higher index qubits
+                correspond to smaller changes in the state index.
+
+    Returns:
+        A tableau which, when applied to the all-zeroes state, produces a state
+        with the given state vector.
+
+    Raises:
+        ValueError:
+            The given state vector isn't a list of complex values specifying a
+            stabilizer state.
+            OR
+            The given endian value isn't 'little' or 'big'.
+
+    Examples:
+
+        >>> import stim
+        >>> stim.Tableau.from_state_vector([
+        ...     0.5**0.5,
+        ...     0.5**0.5 * 1j,
+        ... ], endian='little')
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z"),
+            ],
+            zs=[
+                stim.PauliString("+Y"),
+            ],
+        )
+        >>> stim.Tableau.from_state_vector([
+        ...     0.5**0.5,
+        ...     0,
+        ...     0,
+        ...     0.5**0.5,
+        ... ], endian='little')
+        stim.Tableau.from_conjugated_generators(
+            xs=[
+                stim.PauliString("+Z_"),
+                stim.PauliString("+_X"),
+            ],
+            zs=[
+                stim.PauliString("+XX"),
+                stim.PauliString("+ZZ"),
+            ],
+        )
+    """
+```
+
 <a name="stim.Tableau.from_unitary_matrix"></a>
 ```python
 # stim.Tableau.from_unitary_matrix
@@ -7522,6 +7757,65 @@ def to_pauli_string(
         | __ __ __ XZ
         >>> print(t.to_pauli_string())
         +ZY_X
+    """
+```
+
+<a name="stim.Tableau.to_state_vector"></a>
+```python
+# stim.Tableau.to_state_vector
+
+# (in class stim.Tableau)
+def to_state_vector(
+    self,
+    *,
+    endian: str = 'little',
+) -> np.ndarray[np.complex64]:
+    """Returns the state vector produced by applying the tableau to the |0..0> state.
+
+    This function takes O(n * 2**n) time and O(2**n) space, where n is the number of
+    qubits. The computation is done by initialization a random state vector and
+    iteratively projecting it into the +1 eigenspace of each stabilizer of the
+    state. The state is then canonicalized so that zero values are actually exactly
+    0, and so that the first non-zero entry is positive.
+
+    Args:
+        endian:
+            "little" (default): state vector is in little endian order, where higher
+                index qubits correspond to larger changes in the state index.
+            "big": state vector is in big endian order, where higher index qubits
+                correspond to smaller changes in the state index.
+
+    Returns:
+        A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
+
+        If the result is in little endian order then the amplitude at offset
+        b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+        computational basis state where the qubit with index 0 is storing the bit
+        b_0, the qubit with index 1 is storing the bit b_1, etc.
+
+        If the result is in big endian order then the amplitude at offset
+        b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+        computational basis state where the qubit with index 0 is storing the bit
+        b_{n-1}, the qubit with index 1 is storing the bit b_{n-2}, etc.
+
+    Examples:
+        >>> import stim
+        >>> import numpy as np
+        >>> i2 = stim.Tableau.from_named_gate('I')
+        >>> x = stim.Tableau.from_named_gate('X')
+        >>> h = stim.Tableau.from_named_gate('H')
+
+        >>> (x + i2).to_state_vector(endian='little')
+        array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j], dtype=complex64)
+
+        >>> (i2 + x).to_state_vector(endian='little')
+        array([0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j], dtype=complex64)
+
+        >>> (i2 + x).to_state_vector(endian='big')
+        array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j], dtype=complex64)
+
+        >>> (h + h).to_state_vector(endian='little')
+        array([0.5+0.j, 0.5+0.j, 0.5+0.j, 0.5+0.j], dtype=complex64)
     """
 ```
 
