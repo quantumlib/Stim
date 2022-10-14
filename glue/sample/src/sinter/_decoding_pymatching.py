@@ -16,9 +16,18 @@ def decode_using_pymatching(*,
                             obs_predictions_b8_out_path: pathlib.Path,
                             tmp_dir: pathlib.Path,
                             ) -> None:
+
+    try:
+        import pymatching
+    except ImportError as ex:
+        raise ImportError(
+            "The decoder 'pymatching' isn't installed\n"
+            "To fix this, install the python package 'pymatching' into your environment.\n"
+            "For example, if you are using pip, run `pip install pymatching`.\n"
+        ) from ex
+
     global _method_to_use
     if _method_to_use is None:
-        import pymatching
         if getattr(getattr(pymatching, '_cpp_pymatching', None), 'main') is not None:
             _method_to_use = decode_using_pymatching_v2
         else:

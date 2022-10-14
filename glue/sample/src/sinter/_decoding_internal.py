@@ -13,7 +13,14 @@ def decode_using_internal_decoder(*,
                                   tmp_dir: pathlib.Path,
                                   use_correlated_decoding: bool,
                                   ) -> None:
-    import gqec  # Internal python wheel.
+    try:
+        import gqec  # Internal python wheel.
+    except ImportError as ex:
+        raise ImportError(
+            "The decoder 'internal' isn't installed\n"
+            "The decoder 'internal_correlated' isn't installed\n"
+            "These decoders aren't publicly available.\n"
+        ) from ex
 
     gqec.run_finite_match_main(
         dem_filepath=str(dem_path),
