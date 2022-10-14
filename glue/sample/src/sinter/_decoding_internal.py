@@ -7,7 +7,7 @@ def decode_using_internal_decoder(*,
                                   num_shots: int,
                                   num_dets: int,
                                   num_obs: int,
-                                  error_model: stim.DetectorErrorModel,
+                                  dem_path: pathlib.Path,
                                   dets_b8_in_path: pathlib.Path,
                                   obs_predictions_b8_out_path: pathlib.Path,
                                   tmp_dir: pathlib.Path,
@@ -15,12 +15,8 @@ def decode_using_internal_decoder(*,
                                   ) -> None:
     import gqec  # Internal python wheel.
 
-    dem_file = f"{tmp_dir}/model.dem"
-    with open(dem_file, "w") as f:
-        print(error_model, file=f)
-
     gqec.run_finite_match_main(
-        dem_filepath=dem_file,
+        dem_filepath=str(dem_path),
         output_type="predictions:b8",
         output_filepath=str(obs_predictions_b8_out_path),
         dets_has_observables=False,

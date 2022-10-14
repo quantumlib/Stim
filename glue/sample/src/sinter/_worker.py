@@ -5,9 +5,48 @@ import tempfile
 
 if TYPE_CHECKING:
     import multiprocessing
+    import numpy as np
     import pathlib
     import sinter
     import stim
+    from sinter._json_type import JSON_TYPE
+
+
+class WorkIn:
+    def __init__(
+            self,
+            *,
+            work_key: Any,
+            circuit_path: str,
+            dem_path: str,
+            decoder: str,
+            strong_id: Optional[str],
+            postselection_mask: 'Optional[np.ndarray]',
+            postselected_observables_mask: 'Optional[np.ndarray]',
+            json_metadata: 'JSON_TYPE',
+            num_shots: int):
+        self.work_key = work_key
+        self.circuit_path = circuit_path
+        self.dem_path = dem_path
+        self.decoder = decoder
+        self.strong_id = strong_id
+        self.postselection_mask = postselection_mask
+        self.postselected_observables_mask = postselected_observables_mask
+        self.json_metadata = json_metadata
+        self.num_shots = num_shots
+
+    def with_work_key(self, work_key: Any) -> 'WorkIn':
+        return WorkIn(
+            work_key=work_key,
+            circuit_path=self.circuit_path,
+            dem_path=self.dem_path,
+            decoder=self.decoder,
+            postselection_mask=self.postselection_mask,
+            postselected_observables_mask=self.postselected_observables_mask,
+            json_metadata=self.json_metadata,
+            strong_id=self.strong_id,
+            num_shots=self.num_shots,
+        )
 
 
 def auto_dem(circuit: 'stim.Circuit') -> 'stim.DetectorErrorModel':
@@ -21,38 +60,17 @@ def auto_dem(circuit: 'stim.Circuit') -> 'stim.DetectorErrorModel':
     )
 
 
-class WorkIn:
-    def __init__(
-            self,
-            *,
-            work_key: Any,
-            task: 'sinter.Task',
-            num_shots: int):
-        self.work_key = work_key
-        self.task = task
-        self.num_shots = num_shots
-
-    def with_work_key(self, work_key: Any) -> 'WorkIn':
-        return WorkIn(
-            work_key=work_key,
-            task=self.task,
-            num_shots=self.num_shots,
-        )
-
-
 class WorkOut:
     def __init__(
             self,
             *,
             work_key: Any,
             stats: Optional['sinter.AnonTaskStats'],
-            filled_in_dem: Optional['stim.DetectorErrorModel'],
-            filled_in_strong_id: Optional[str],
+            strong_id: str,
             msg_error: Optional[Tuple[str, BaseException]]):
         self.work_key = work_key
         self.stats = stats
-        self.filled_in_dem = filled_in_dem
-        self.filled_in_strong_id = filled_in_strong_id
+        self.strong_id = strong_id
         self.msg_error = msg_error
 
 
@@ -68,57 +86,65 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                 work: Optional[WorkIn] = inp.get()
                 if work is None:
                     return
-                assert isinstance(work, WorkIn)
-
-                used_task = work.task
-                if work.task.detector_error_model is None:
-                    from sinter._task import Task
-                    used_task = Task(
-                        circuit=work.task.circuit,
-                        decoder=work.task.decoder,
-                        detector_error_model=auto_dem(work.task.circuit),
-                        postselection_mask=work.task.postselection_mask,
-                        postselected_observables_mask=work.task.postselected_observables_mask,
-                        json_metadata=work.task.json_metadata,
-                        collection_options=work.task.collection_options,
-                        skip_validation=True,
-                    )
-
-                try:
-                    from sinter._decoding import sample_decode
-                    stats: 'sinter.AnonTaskStats' = sample_decode(
-                        num_shots=work.num_shots,
-                        circuit=used_task.circuit,
-                        post_mask=used_task.postselection_mask,
-                        postselected_observable_mask=used_task.postselected_observables_mask,
-                        decoder_error_model=used_task.detector_error_model,
-                        decoder=used_task.decoder,
-                        tmp_dir=child_dir,
-                    )
-                except BaseException as ex:
-                    import traceback
-                    out.put(WorkOut(
-                        work_key=work.work_key,
-                        stats=None,
-                        filled_in_dem=None,
-                        filled_in_strong_id=None,
-                        msg_error=(traceback.format_exc(), ex),
-                    ))
-                    continue
-
-                from sinter._anon_task_stats import AnonTaskStats
-                stats = AnonTaskStats(
-                    shots=stats.shots,
-                    discards=stats.discards,
-                    errors=stats.errors,
-                    seconds=stats.seconds,
-                )
-                out.put(WorkOut(
-                    stats=stats,
-                    filled_in_dem=None if used_task is work.task else used_task.detector_error_model,
-                    filled_in_strong_id=None if used_task is work.task else used_task.strong_id(),
-                    work_key=work.work_key,
-                    msg_error=None,
-                ))
+                out.put(do_work_safely(work, child_dir))
     except KeyboardInterrupt:
         pass
+
+
+def do_work_safely(work: WorkIn, child_dir: str) -> WorkOut:
+    try:
+        return do_work(work, child_dir)
+    except BaseException as ex:
+        import traceback
+        return WorkOut(
+            work_key=work.work_key,
+            stats=None,
+            strong_id=work.strong_id,
+            msg_error=(traceback.format_exc(), ex),
+        )
+
+
+def do_work(work: WorkIn, child_dir: str) -> WorkOut:
+    import stim
+    from sinter._task import Task
+    from sinter._decoding import sample_decode
+
+    if work.strong_id is None:
+        circuit = stim.Circuit.from_file(work.circuit_path)
+        dem = auto_dem(circuit)
+        dem.to_file(work.dem_path)
+
+        task = Task(
+            circuit=circuit,
+            decoder=work.decoder,
+            detector_error_model=dem,
+            postselection_mask=work.postselection_mask,
+            postselected_observables_mask=work.postselected_observables_mask,
+            json_metadata=work.json_metadata,
+        )
+
+        return WorkOut(
+            work_key=work.work_key,
+            stats=None,
+            strong_id=task.strong_id(),
+            msg_error=None,
+        )
+
+    stats: 'sinter.AnonTaskStats' = sample_decode(
+        num_shots=work.num_shots,
+        circuit_path=work.circuit_path,
+        circuit_obj=None,
+        dem_path=work.dem_path,
+        dem_obj=None,
+        post_mask=work.postselection_mask,
+        postselected_observable_mask=work.postselected_observables_mask,
+        decoder=work.decoder,
+        tmp_dir=child_dir,
+    )
+
+    return WorkOut(
+        stats=stats,
+        work_key=work.work_key,
+        strong_id=work.strong_id,
+        msg_error=None,
+    )

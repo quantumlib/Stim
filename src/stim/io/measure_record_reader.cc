@@ -219,6 +219,9 @@ size_t MeasureRecordReaderFormatB8::read_into_table_with_minor_shot_index(simd_b
 bool MeasureRecordReaderFormatB8::start_and_read_entire_record(SparseShot &cleared_out) {
     size_t n = bits_per_record();
     size_t nb = (n + 7) >> 3;
+    if (n == 0) {
+        return 0;  // Ambiguous when the data ends. Stop as early as possible.
+    }
     for (size_t k = 0; k < nb; k++) {
         int b = getc(in);
         if (b == EOF) {
