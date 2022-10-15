@@ -9,6 +9,7 @@ import tempfile
 import math
 import time
 from typing import Optional, Dict, Callable, Tuple, Iterable
+from typing import Union
 
 import numpy as np
 import stim
@@ -120,18 +121,26 @@ def _streaming_count_mistakes(
 
 
 def sample_decode(*,
-                  circuit: stim.Circuit,
-                  decoder_error_model: stim.DetectorErrorModel,
+                  circuit_obj: Optional[stim.Circuit],
+                  circuit_path: Union[None, str, pathlib.Path],
+                  dem_obj: Optional[stim.DetectorErrorModel],
+                  dem_path: Union[None, str, pathlib.Path],
                   post_mask: Optional[np.ndarray] = None,
                   postselected_observable_mask: Optional[np.ndarray] = None,
                   num_shots: int,
                   decoder: str,
-                  tmp_dir: Optional[pathlib.Path] = None) -> AnonTaskStats:
+                  tmp_dir: Union[str, pathlib.Path, None] = None) -> AnonTaskStats:
     """Samples how many times a decoder correctly predicts the logical frame.
 
     Args:
-        circuit: The noisy circuit to sample from and decode results for.
-        decoder_error_model: The error model to give to the decoder.
+        circuit_obj: The noisy circuit to sample from and decode results for.
+            Must specify circuit_obj XOR circuit_path.
+        circuit_path: The file storing the circuit to sample from.
+            Must specify circuit_obj XOR circuit_path.
+        dem_obj: The error model to give to the decoder.
+            Must specify dem_obj XOR dem_path.
+        dem_path: The file storing the error model to give to the decoder.
+            Must specify dem_obj XOR dem_path.
         post_mask: Postselection mask. Any samples that have a non-zero result
             at a location where the mask has a 1 bit are discarded. If set to
             None, no postselection is performed.
@@ -150,14 +159,27 @@ def sample_decode(*,
             files can be written as part of performing decoding. If set to
             None, one is created using the tempfile package.
     """
+    if (circuit_obj is None) == (circuit_path is None):
+        raise ValueError('(circuit_obj is None) == (circuit_path is None)')
+    if (dem_obj is None) == (dem_path is None):
+        raise ValueError('(dem_obj is None) == (dem_path is None)')
     if num_shots == 0:
         return AnonTaskStats()
 
     with contextlib.ExitStack() as exit_stack:
+        start_time = time.monotonic()
+
+        if circuit_path is not None:
+            circuit = stim.Circuit.from_file(circuit_path)
+        else:
+            circuit = circuit_obj
         if tmp_dir is None:
             tmp_dir = exit_stack.enter_context(tempfile.TemporaryDirectory())
         tmp_dir = pathlib.Path(tmp_dir)
-        start_time = time.monotonic()
+        if dem_path is None:
+            dem_path = tmp_dir / 'tmp.dem'
+            dem_obj.to_file(dem_path)
+        dem_path = pathlib.Path(dem_path)
 
         dets_all_path = tmp_dir / 'sinter_dets.all.b8'
         obs_all_path = tmp_dir / 'sinter_obs.all.b8'
@@ -167,8 +189,6 @@ def sample_decode(*,
 
         num_dets = circuit.num_detectors
         num_obs = circuit.num_observables
-        assert decoder_error_model.num_detectors == num_dets
-        assert decoder_error_model.num_observables == num_obs
 
         # Sample data using Stim.
         sampler: stim.CompiledDetectorSampler = circuit.compile_detector_sampler()
@@ -209,7 +229,7 @@ def sample_decode(*,
             num_shots=num_kept_shots,
             num_dets=num_dets,
             num_obs=num_obs,
-            error_model=decoder_error_model,
+            dem_path=dem_path,
             dets_b8_in_path=dets_used_path,
             obs_predictions_b8_out_path=predictions_path,
             tmp_dir=tmp_dir,

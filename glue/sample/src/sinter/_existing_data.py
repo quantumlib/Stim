@@ -1,4 +1,5 @@
 import json
+import pathlib
 from typing import Any, Dict, List, TYPE_CHECKING
 
 from sinter._task_stats import TaskStats
@@ -36,37 +37,39 @@ class ExistingData:
 
     @staticmethod
     def from_file(path_or_file: Any) -> 'ExistingData':
+        expected_fields = {
+            "shots",
+            "discards",
+            "errors",
+            "seconds",
+            "strong_id",
+            "decoder",
+            "json_metadata",
+        }
         # Import is done locally to reduce cost of importing sinter.
-        import pandas as pd
-        frame = pd.read_csv(path_or_file, skipinitialspace=True)
-        expected_columns = sorted(["shots",
-                                   "discards",
-                                   "errors",
-                                   "seconds",
-                                   "strong_id",
-                                   "decoder",
-                                   "json_metadata"])
-        actual_columns = sorted(frame.columns)
-        if actual_columns != expected_columns:
+        import csv
+        if isinstance(path_or_file, (str, pathlib.Path)):
+            with open(path_or_file) as csvfile:
+                return ExistingData.from_file(csvfile)
+        reader = csv.DictReader(path_or_file)
+        reader.fieldnames = [e.strip() for e in reader.fieldnames]
+        actual_fields = set(reader.fieldnames)
+        if actual_fields != expected_fields:
             raise ValueError(
-                    f"Bad CSV Data. Expected columns {expected_columns!r} "
-                    f"but got {actual_columns!r}.")
-        id_to_stats = (frame.
-                       groupby(['strong_id', 'decoder', 'json_metadata'], sort=False).
-                       sum().
-                       to_dict(orient='index'))
+                f"Bad CSV data. "
+                f"Got columns {sorted(actual_fields)!r} "
+                f"but expected columns {sorted(expected_fields)!r}")
         result = ExistingData()
-        for (strong_id, decoder, custom_json), row in id_to_stats.items():
-            assert strong_id not in result.data
-            result.data[strong_id] = TaskStats(
-                strong_id=strong_id,
-                decoder=decoder,
-                json_metadata=json.loads(custom_json),
-                shots=row['shots'],
-                discards=row['discards'],
-                errors=row['errors'],
-                seconds=row['seconds'],
-            )
+        for row in reader:
+            result.add_sample(TaskStats(
+                shots=int(row['shots']),
+                discards=int(row['discards']),
+                errors=int(row['errors']),
+                seconds=float(row['seconds']),
+                strong_id=row['strong_id'],
+                decoder=row['decoder'],
+                json_metadata=json.loads(row['json_metadata']),
+            ))
         return result
 
 

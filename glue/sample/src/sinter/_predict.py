@@ -145,7 +145,7 @@ def predict_on_disk(
             num_shots=num_kept_shots,
             num_dets=num_dets,
             num_obs=num_obs,
-            error_model=dem,
+            dem_path=dem_path,
             dets_b8_in_path=kept_dets_b8_path,
             obs_predictions_b8_out_path=obs_inter,
             tmp_dir=tmp_dir,
@@ -271,6 +271,8 @@ def predict_observables_bit_packed(
         tmp_dir = pathlib.Path(tmp_dir)
         dets_b8_path = tmp_dir / 'sinter_dets.b8'
         pred_b8_path = tmp_dir / 'sinter_predictions.b8'
+        dem_path = tmp_dir / 'dem.dem'
+        dem.to_file(dem_path)
         num_dets = dem.num_detectors
         num_obs = dem.num_observables
 
@@ -286,7 +288,7 @@ def predict_observables_bit_packed(
             num_shots=dets_bit_packed.shape[0],
             num_dets=num_dets,
             num_obs=num_obs,
-            error_model=dem,
+            dem_path=dem_path,
             dets_b8_in_path=dets_b8_path,
             obs_predictions_b8_out_path=pred_b8_path,
             tmp_dir=tmp_dir,
