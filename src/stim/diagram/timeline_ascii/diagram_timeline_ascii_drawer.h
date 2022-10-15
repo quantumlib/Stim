@@ -36,6 +36,7 @@ struct DiagramTimelineAsciiAlignedPos {
     DiagramTimelineAsciiAlignedPos(size_t x, size_t y, float align_x, float align_y);
     bool operator==(const DiagramTimelineAsciiAlignedPos &other) const;
     bool operator<(const DiagramTimelineAsciiAlignedPos &other) const;
+    DiagramTimelineAsciiAlignedPos transposed() const;
 };
 
 /// Describes what to draw within a cell of a diagram with variable-sized columns and rows.
@@ -46,6 +47,7 @@ struct DiagramTimelineAsciiCellContents {
     std::string label;
 
     DiagramTimelineAsciiCellContents(DiagramTimelineAsciiAlignedPos center, std::string label);
+    DiagramTimelineAsciiCellContents transposed() const;
 };
 
 /// Describes sizes and offsets within a diagram with variable-sized columns and rows.
@@ -100,6 +102,8 @@ struct DiagramTimelineAsciiDrawer {
     void draw_repeat_block(const stim::Circuit &circuit, const stim::Operation &op);
     void draw_next_operation(const stim::Circuit &circuit, const stim::Operation &op);
     void draw_circuit(const stim::Circuit &circuit);
+
+    DiagramTimelineAsciiDrawer transposed() const;
 };
 
 std::ostream &operator<<(std::ostream &out, const DiagramTimelineAsciiDrawer &drawer);

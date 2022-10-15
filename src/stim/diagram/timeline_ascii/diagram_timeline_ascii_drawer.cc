@@ -90,7 +90,7 @@ void DiagramTimelineAsciiDrawer::draw_feedback(const std::string &gate, const Ga
     if (feedback_target.is_sweep_bit_target()) {
         ss << "sweep[" << feedback_target.value() << "]";
     } else if (feedback_target.is_measurement_record_target()) {
-        ss << "m" << (feedback_target.value() + measure_offset);
+        ss << "rec[" << (feedback_target.value() + measure_offset) << "]";
     }
     add_cell(DiagramTimelineAsciiCellContents{
         {
@@ -375,6 +375,25 @@ void DiagramTimelineAsciiDrawer::draw_repeat_block(const Circuit &circuit, const
 
     start_next_moment();
     tick_start_moment = cur_moment;
+}
+
+DiagramTimelineAsciiAlignedPos DiagramTimelineAsciiAlignedPos::transposed() const {
+    return {y, x, align_y, align_x};
+}
+DiagramTimelineAsciiCellContents DiagramTimelineAsciiCellContents::transposed() const {
+    return {center.transposed(), label};
+}
+
+DiagramTimelineAsciiDrawer DiagramTimelineAsciiDrawer::transposed() const {
+    DiagramTimelineAsciiDrawer result;
+    for (const auto &e : cells) {
+        result.cells.insert({e.first.transposed(), e.second.transposed()});
+    }
+    result.lines.reserve(lines.size());
+    for (const auto &e : lines) {
+        result.lines.push_back({e.first.transposed(), e.second.transposed()});
+    }
+    return result;
 }
 
 void DiagramTimelineAsciiDrawer::draw_next_operation(const Circuit &circuit, const Operation &op) {

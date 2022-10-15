@@ -212,7 +212,7 @@ TEST(circuit_diagram_timeline_text, classical_feedback) {
     ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
 q0: ----M[0]----
 
-q1: ----X^m0----
+q1: --X^rec[0]--
 
 q2: -Y^sweep[5]-
 )DIAGRAM");
@@ -229,11 +229,26 @@ TEST(circuit_diagram_timeline_text, lattice_surgery_cnot) {
         CZ rec[-1] 0
     )CIRCUIT");
     ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
-q0: ----------MZZ[1]-Z^m0--Z^m2-
+q0: ----------MZZ[1]-Z^rec[0]-Z^rec[2]-
                 |
-q1: ---MXX[0]---|----X^m1-------
+q1: ---MXX[0]---|----X^rec[1]----------
          |      |
-q2: -R-MXX[0]-MZZ[1]-MX[2]------
+q2: -R-MXX[0]-MZZ[1]--MX[2]------------
+)DIAGRAM");
+
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).transposed().str(), R"DIAGRAM(
+   q0:      q1:     q2:
+    |        |       |
+    |        |       R
+    |        |       |
+    |      MXX[0]--MXX[0]
+    |        |       |
+  MZZ[1]-----------MZZ[1]
+    |        |       |
+ Z^rec[0] X^rec[1] MX[2]
+    |        |       |
+ Z^rec[2]    |       |
+    |        |       |
 )DIAGRAM");
 }
 
