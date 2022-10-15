@@ -1,4 +1,4 @@
-#include "stim/draw/3d/json_obj.h"
+#include "stim/diagram/timeline_3d/json_obj.h"
 #include <limits>
 
 using namespace stim;

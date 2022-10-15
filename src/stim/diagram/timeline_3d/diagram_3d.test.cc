@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/3d/diagram_3d.h"
+#include "stim/diagram/timeline_3d/diagram_3d.h"
 
 #include "gtest/gtest.h"
 

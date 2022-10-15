@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/3d/json_obj.h"
+#include "stim/diagram/timeline_3d/json_obj.h"
 
 #include "gtest/gtest.h"
 

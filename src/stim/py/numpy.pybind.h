@@ -10,7 +10,7 @@ stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> numpy_array_to_transposed_simd_tab
     const pybind11::object &data, size_t expected_bits_per_shot, size_t *num_shots_out);
 
 pybind11::object transposed_simd_bit_table_to_numpy(
-    const stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result);
+    const stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in, bool bit_pack_result);
 
 pybind11::object simd_bit_table_to_numpy(
     const stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> &table,

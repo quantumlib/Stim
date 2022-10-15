@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/timeline/timeline_svg.h"
+#include "stim/diagram/timeline_img/timeline_svg.h"
 
 #include "gtest/gtest.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_surface_code.h"
-#include "stim/draw/timeline/timeline_tikz.h"
+#include "stim/diagram/timeline_img/timeline_tikz.h"
 
 using namespace stim;
 

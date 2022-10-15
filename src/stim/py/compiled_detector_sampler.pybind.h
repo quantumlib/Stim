@@ -32,8 +32,7 @@ struct CompiledDetectorSampler {
     CompiledDetectorSampler(const CompiledDetectorSampler &) = delete;
     CompiledDetectorSampler(CompiledDetectorSampler &&) = default;
     CompiledDetectorSampler(stim::Circuit circuit, std::shared_ptr<std::mt19937_64> prng);
-    pybind11::array_t<bool> sample(size_t num_shots, bool prepend_observables, bool append_observables);
-    pybind11::array_t<uint8_t> sample_bit_packed(size_t num_shots, bool prepend_observables, bool append_observables);
+    pybind11::object sample_to_numpy(size_t num_shots, bool prepend_observables, bool append_observables, bool separate_observables, bool bit_packed);
     void sample_write(
         size_t num_samples,
         const std::string &filepath,

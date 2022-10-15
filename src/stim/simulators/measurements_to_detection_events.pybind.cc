@@ -295,6 +295,8 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("bit_pack_result") = false,
         clean_doc_string(u8R"DOC(
             Converts measurement data into detection event data.
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_pack_result: bool = False) -> np.ndarray:
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: Literal[True], append_observables: bool = False, bit_pack_result: bool = False) -> Tuple[np.ndarray, np.ndarray]:
             @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:

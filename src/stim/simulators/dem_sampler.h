@@ -44,6 +44,9 @@ struct DemSampler {
     /// Clears the buffers and refills them with sampled shot data.
     void resample(bool replay_errors);
 
+    /// Ensures the internal buffers are sized for a given number of shots.
+    void set_min_stripes(size_t min_stripes);
+
     /// Samples from the dem, writing results to files.
     ///
     /// Args:
