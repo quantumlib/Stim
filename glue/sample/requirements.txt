@@ -3,3 +3,4 @@ networkx ~= 2.6
 numpy ~= 1.22
 pytest ~= 7.0
 stim ~= 1.9
+scipy ~= 1.9
