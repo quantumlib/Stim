@@ -1,11 +1,14 @@
+import os
+
 import contextlib
 import functools
 import pathlib
+import subprocess
 import tempfile
 
 import math
 import time
-from typing import Optional, Dict, Callable, Tuple
+from typing import Optional, Dict, Callable, Tuple, Iterable
 
 import numpy as np
 import stim
@@ -86,12 +89,14 @@ def _streaming_count_mistakes(
         *,
         num_shots: int,
         num_obs: int,
+        postselected_observable_mask: Optional[np.ndarray] = None,
         obs_in: pathlib.Path,
-        predictions_in: pathlib.Path) -> int:
+        predictions_in: pathlib.Path) -> Tuple[int, int]:
 
     num_obs_bytes = math.ceil(num_obs / 8)
     num_shots_left = num_shots
     num_errors = 0
+    num_discards = 0
     with open(obs_in, 'rb') as obs_in_f:
         with open(predictions_in, 'rb') as predictions_in_f:
             while num_shots_left:
@@ -102,15 +107,23 @@ def _streaming_count_mistakes(
                 obs_batch.shape = (batch_size, num_obs_bytes)
                 pred_batch.shape = (batch_size, num_obs_bytes)
 
-                num_errors += np.count_nonzero(np.any(pred_batch != obs_batch, axis=1))
+                cmp_table = pred_batch ^ obs_batch
+                if postselected_observable_mask is None:
+                    local_discards = 0
+                else:
+                    local_discards = np.count_nonzero(np.any(cmp_table & postselected_observable_mask, axis=1))
+                local_errors_or_discards = np.count_nonzero(np.any(cmp_table, axis=1))
+                num_discards += local_discards
+                num_errors += local_errors_or_discards - local_discards
                 num_shots_left -= batch_size
-    return num_errors
+    return num_discards, num_errors
 
 
 def sample_decode(*,
                   circuit: stim.Circuit,
                   decoder_error_model: stim.DetectorErrorModel,
                   post_mask: Optional[np.ndarray] = None,
+                  postselected_observable_mask: Optional[np.ndarray] = None,
                   num_shots: int,
                   decoder: str,
                   tmp_dir: Optional[pathlib.Path] = None) -> AnonTaskStats:
@@ -122,6 +135,9 @@ def sample_decode(*,
         post_mask: Postselection mask. Any samples that have a non-zero result
             at a location where the mask has a 1 bit are discarded. If set to
             None, no postselection is performed.
+        postselected_observable_mask: Bit packed mask indicating which observables to
+            postselect on. If the decoder incorrectly predicts any of these observables, the
+            shot is discarded instead of counted as an error.
         num_shots: The number of sample shots to take from the circuit.
         decoder: The name of the decoder to use. Allowed values are:
             "pymatching":
@@ -166,11 +182,11 @@ def sample_decode(*,
 
         # Postselect, then split into detection event data and observable data.
         if post_mask is None:
-            num_discards = 0
+            num_det_discards = 0
             dets_used_path = dets_all_path
             obs_used_path = obs_all_path
         else:
-            num_discards = streaming_post_select(
+            num_det_discards = streaming_post_select(
                 num_shots=num_shots,
                 num_dets=num_dets,
                 num_obs=num_obs,
@@ -183,7 +199,7 @@ def sample_decode(*,
             )
             dets_used_path = dets_kept_path
             obs_used_path = obs_kept_path
-        num_kept_shots = num_shots - num_discards
+        num_kept_shots = num_shots - num_det_discards
 
         # Perform syndrome decoding to predict observables from detection events.
         decode_method = DECODER_METHODS.get(decoder)
@@ -200,16 +216,17 @@ def sample_decode(*,
         )
 
         # Count how many predictions matched the actual observable data.
-        num_errors = _streaming_count_mistakes(
+        num_obs_discards, num_errors = _streaming_count_mistakes(
             num_shots=num_kept_shots,
             num_obs=num_obs,
             obs_in=obs_used_path,
             predictions_in=predictions_path,
+            postselected_observable_mask=postselected_observable_mask,
         )
 
         return AnonTaskStats(
             shots=num_shots,
             errors=num_errors,
-            discards=num_discards,
+            discards=num_obs_discards + num_det_discards,
             seconds=time.monotonic() - start_time,
         )

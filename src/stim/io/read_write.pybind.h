@@ -22,12 +22,6 @@
 
 namespace stim_pybind {
 
-stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> numpy_array_to_transposed_simd_table(
-    const pybind11::object &data, size_t expected_bits_per_shot, size_t *num_shots_out);
-
-pybind11::object transposed_simd_bit_table_to_numpy(
-    const stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> &table, size_t bits_per_shot, size_t num_shots, bool bit_pack_result);
-
 void pybind_read_write(pybind11::module &m);
 
 }  // namespace stim_pybind

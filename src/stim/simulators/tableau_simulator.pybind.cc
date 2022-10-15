@@ -14,6 +14,7 @@
 
 #include "stim/simulators/tableau_simulator.pybind.h"
 
+#include "stim/probability_util.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/conversions.h"
@@ -23,11 +24,7 @@
 using namespace stim;
 using namespace stim_pybind;
 
-PyTableauSimulator::PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng)
-    : TableauSimulator(*rng), rng_reference(rng) {
-}
-
-void do_obj(PyTableauSimulator &self, const pybind11::object &obj) {
+void do_obj(TableauSimulator &self, const pybind11::object &obj) {
     if (pybind11::isinstance<Circuit>(obj)) {
         self.expand_do_circuit(pybind11::cast<Circuit>(obj));
     } else if (pybind11::isinstance<PyPauliString>(obj)) {
@@ -51,11 +48,11 @@ struct TempViewableData {
     }
 };
 
-PyTableauSimulator create_tableau_simulator() {
-    return PyTableauSimulator(make_py_seeded_rng(pybind11::none()));
+TableauSimulator create_tableau_simulator(const pybind11::object &seed) {
+    return TableauSimulator(*make_py_seeded_rng(seed));
 }
 
-std::vector<GateTarget> arg_to_qubit_or_qubits(PyTableauSimulator &self, const pybind11::object &obj) {
+std::vector<GateTarget> arg_to_qubit_or_qubits(TableauSimulator &self, const pybind11::object &obj) {
     std::vector<GateTarget> arguments;
     uint32_t max_q = 0;
     try {
@@ -80,7 +77,7 @@ std::vector<GateTarget> arg_to_qubit_or_qubits(PyTableauSimulator &self, const p
     return arguments;
 }
 
-TempViewableData args_to_targets(PyTableauSimulator &self, const pybind11::args &args) {
+TempViewableData args_to_targets(TableauSimulator &self, const pybind11::args &args) {
     std::vector<GateTarget> arguments;
     uint32_t max_q = 0;
     try {
@@ -103,7 +100,7 @@ TempViewableData args_to_targets(PyTableauSimulator &self, const pybind11::args 
     return TempViewableData(arguments);
 }
 
-TempViewableData args_to_target_pairs(PyTableauSimulator &self, const pybind11::args &args) {
+TempViewableData args_to_target_pairs(TableauSimulator &self, const pybind11::args &args) {
     if (pybind11::len(args) & 1) {
         throw std::invalid_argument("Two qubit operation requires an even number of targets.");
     }
@@ -116,8 +113,8 @@ TempViewableData args_to_target_pairs(PyTableauSimulator &self, const pybind11::
     return result;
 }
 
-void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
-    auto c = pybind11::class_<PyTableauSimulator>(
+pybind11::class_<TableauSimulator> stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
+    return pybind11::class_<TableauSimulator>(
         m,
         "TableauSimulator",
         clean_doc_string(u8R"DOC(
@@ -151,12 +148,62 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 )
         )DOC")
             .data());
+}
 
-    c.def(pybind11::init(&create_tableau_simulator));
+void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<TableauSimulator> &c) {
+    c.def(
+        pybind11::init(&create_tableau_simulator),
+        pybind11::kw_only(),
+        pybind11::arg("seed") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            @signature def __init__(self, *, seed: Optional[int] = None) -> None:
+            Initializes a stim.TableauSimulator.
+
+            Args:
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When None, the prng is seeded from system entropy.
+
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+                    circuit is executed. For example, reordering whether a reset on one
+                    qubit happens before or after a reset on another qubit can result in
+                    different measurement results being observed starting from the same
+                    seed.
+
+            Returns:
+                An initialized stim.TableauSimulator.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator(seed=0)
+                >>> s2 = stim.TableauSimulator(seed=0)
+                >>> s.h(0)
+                >>> s2.h(0)
+                >>> s.measure(0) == s2.measure(0)
+                True
+        )DOC")
+            .data());
 
     c.def(
         "current_inverse_tableau",
-        [](PyTableauSimulator &self) {
+        [](TableauSimulator &self) {
             return self.inv_state;
         },
         clean_doc_string(u8R"DOC(
@@ -195,7 +242,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "state_vector",
-        [](const PyTableauSimulator &self, const std::string &endian) {
+        [](const TableauSimulator &self, const std::string &endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;
@@ -205,20 +252,21 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 throw std::invalid_argument("endian not in ['little', 'big']");
             }
             auto complex_vec = self.to_state_vector(little_endian);
-            std::vector<float> float_vec;
-            float_vec.reserve(complex_vec.size() * 2);
-            for (const auto &e : complex_vec) {
-                float_vec.push_back(e.real());
-                float_vec.push_back(e.imag());
+
+            std::complex<float> *buffer = new std::complex<float>[complex_vec.size()];
+            for (size_t k = 0; k < complex_vec.size(); k++) {
+                buffer[k] = complex_vec[k];
             }
-            void *ptr = float_vec.data();
-            pybind11::ssize_t itemsize = sizeof(float) * 2;
-            std::vector<pybind11::ssize_t> shape{(pybind11::ssize_t)complex_vec.size()};
-            std::vector<pybind11::ssize_t> stride{itemsize};
-            const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
-            bool readonly = true;
-            return pybind11::array_t<float>(
-                pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+
+            pybind11::capsule free_when_done(buffer, [](void *f) {
+                delete[] reinterpret_cast<std::complex<float> *>(f);
+            });
+
+            return pybind11::array_t<std::complex<float>>(
+                {(pybind11::ssize_t)complex_vec.size()},
+                {(pybind11::ssize_t)sizeof(std::complex<float>)},
+                buffer,
+                free_when_done);
         },
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
@@ -271,7 +319,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "canonical_stabilizers",
-        [](const PyTableauSimulator &self) {
+        [](const TableauSimulator &self) {
             auto stabilizers = self.canonical_stabilizers();
             std::vector<PyPauliString> result;
             result.reserve(stabilizers.size());
@@ -331,7 +379,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "current_measurement_record",
-        [](const PyTableauSimulator &self) {
+        [](const TableauSimulator &self) {
             return self.measurement_record.storage;
         },
         clean_doc_string(u8R"DOC(
@@ -391,7 +439,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "do_pauli_string",
-        [](PyTableauSimulator &self, PyPauliString &pauli_string) {
+        [](TableauSimulator &self, PyPauliString &pauli_string) {
             self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
             self.paulis(pauli_string.value);
         },
@@ -413,7 +461,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "do_circuit",
-        &PyTableauSimulator::expand_do_circuit,
+        &TableauSimulator::expand_do_circuit,
         pybind11::arg("circuit"),
         clean_doc_string(u8R"DOC(
             Applies a circuit to the simulator's state.
@@ -435,7 +483,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "do_tableau",
-        [](PyTableauSimulator &self, const Tableau &tableau, const std::vector<size_t> &targets) {
+        [](TableauSimulator &self, const Tableau &tableau, const std::vector<size_t> &targets) {
             if (targets.size() != tableau.num_qubits) {
                 throw std::invalid_argument("len(tableau) != len(targets)");
             }
@@ -498,7 +546,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "h",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.H_XZ(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -511,7 +559,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "h_xz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.H_XZ(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -524,7 +572,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "c_xyz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.C_XYZ(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -537,7 +585,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "c_zyx",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.C_ZYX(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -550,7 +598,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "h_xy",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.H_XY(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -563,7 +611,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "h_yz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.H_YZ(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -576,7 +624,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "x",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.X(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -589,7 +637,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "y",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.Y(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -602,7 +650,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "z",
-        [](PyTableauSimulator &self, pybind11::args targets) {
+        [](TableauSimulator &self, pybind11::args targets) {
             self.Z(args_to_targets(self, targets));
         },
         clean_doc_string(u8R"DOC(
@@ -615,7 +663,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "s",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Z(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -628,7 +676,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "s_dag",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Z_DAG(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -641,7 +689,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "sqrt_x",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_X(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -654,7 +702,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "sqrt_x_dag",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_X_DAG(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -667,7 +715,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "sqrt_y",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Y(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -680,7 +728,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "sqrt_y_dag",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Y_DAG(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -693,7 +741,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "swap",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.SWAP(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -708,7 +756,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "iswap",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ISWAP(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -723,7 +771,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "iswap_dag",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ISWAP_DAG(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -738,7 +786,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "cnot",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCX(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -753,7 +801,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "zcx",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCX(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -768,7 +816,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "cx",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCX(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -783,7 +831,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "cz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCZ(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -798,7 +846,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "zcz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCZ(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -813,7 +861,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "cy",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCY(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -828,7 +876,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "zcy",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.ZCY(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -843,7 +891,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "xcx",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.XCX(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -858,7 +906,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "xcy",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.XCY(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -873,7 +921,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "xcz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.XCZ(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -888,7 +936,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "ycx",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.YCX(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -903,7 +951,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "ycy",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.YCY(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -918,7 +966,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "ycz",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.YCZ(args_to_target_pairs(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -933,7 +981,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "reset",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.reset_z(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -954,7 +1002,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "reset_x",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.reset_x(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -974,7 +1022,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "reset_y",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.reset_y(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -994,7 +1042,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "reset_z",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             self.reset_z(args_to_targets(self, args));
         },
         clean_doc_string(u8R"DOC(
@@ -1015,7 +1063,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "peek_x",
-        [](PyTableauSimulator &self, uint32_t target) -> int8_t {
+        [](TableauSimulator &self, uint32_t target) -> int8_t {
             self.ensure_large_enough_for_qubits(target + 1);
             return self.peek_x(target);
         },
@@ -1054,7 +1102,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "peek_y",
-        [](PyTableauSimulator &self, uint32_t target) -> int8_t {
+        [](TableauSimulator &self, uint32_t target) -> int8_t {
             self.ensure_large_enough_for_qubits(target + 1);
             return self.peek_y(target);
         },
@@ -1093,7 +1141,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "peek_z",
-        [](PyTableauSimulator &self, uint32_t target) -> int8_t {
+        [](TableauSimulator &self, uint32_t target) -> int8_t {
             self.ensure_large_enough_for_qubits(target + 1);
             return self.peek_z(target);
         },
@@ -1132,7 +1180,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "peek_bloch",
-        [](PyTableauSimulator &self, size_t target) {
+        [](TableauSimulator &self, size_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             return PyPauliString(self.peek_bloch(target));
         },
@@ -1184,7 +1232,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "peek_observable_expectation",
-        [](const PyTableauSimulator &self, const PyPauliString &observable) -> int8_t {
+        [](const TableauSimulator &self, const PyPauliString &observable) -> int8_t {
             if (observable.imag) {
                 throw std::invalid_argument(
                     "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
@@ -1239,7 +1287,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "measure",
-        [](PyTableauSimulator &self, uint32_t target) {
+        [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             self.measure_z(TempViewableData({GateTarget{target}}));
             return (bool)self.measurement_record.storage.back();
@@ -1264,7 +1312,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "measure_many",
-        [](PyTableauSimulator &self, pybind11::args args) {
+        [](TableauSimulator &self, pybind11::args args) {
             auto converted_args = args_to_targets(self, args);
             self.measure_z(converted_args);
             auto e = self.measurement_record.storage.end();
@@ -1283,7 +1331,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "postselect_x",
-        [](PyTableauSimulator &self, const pybind11::object &targets, bool desired_value) {
+        [](TableauSimulator &self, const pybind11::object &targets, bool desired_value) {
             auto gate_targets = arg_to_qubit_or_qubits(self, targets);
             self.postselect_x(gate_targets, desired_value);
         },
@@ -1314,7 +1362,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "postselect_y",
-        [](PyTableauSimulator &self, const pybind11::object &targets, bool desired_value) {
+        [](TableauSimulator &self, const pybind11::object &targets, bool desired_value) {
             auto gate_targets = arg_to_qubit_or_qubits(self, targets);
             self.postselect_y(gate_targets, desired_value);
         },
@@ -1345,7 +1393,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "postselect_z",
-        [](PyTableauSimulator &self, const pybind11::object &targets, bool desired_value) {
+        [](TableauSimulator &self, const pybind11::object &targets, bool desired_value) {
             auto gate_targets = arg_to_qubit_or_qubits(self, targets);
             self.postselect_z(gate_targets, desired_value);
         },
@@ -1376,7 +1424,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def_property_readonly(
         "num_qubits",
-        [](const PyTableauSimulator &self) -> size_t {
+        [](const TableauSimulator &self) -> size_t {
             return self.inv_state.num_qubits;
         },
         clean_doc_string(u8R"DOC(
@@ -1399,7 +1447,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "set_num_qubits",
-        [](PyTableauSimulator &self, uint32_t new_num_qubits) {
+        [](TableauSimulator &self, uint32_t new_num_qubits) {
             self.set_num_qubits(new_num_qubits);
         },
         pybind11::arg("new_num_qubits"),
@@ -1441,7 +1489,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "set_inverse_tableau",
-        [](PyTableauSimulator &self, const Tableau &new_inverse_tableau) {
+        [](TableauSimulator &self, const Tableau &new_inverse_tableau) {
             self.inv_state = new_inverse_tableau;
         },
         pybind11::arg("new_inverse_tableau"),
@@ -1473,12 +1521,61 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "copy",
-        [](const PyTableauSimulator &self) {
-            PyTableauSimulator copy = self;
+        [](const TableauSimulator &self, bool copy_rng, pybind11::object &seed) {
+            if (copy_rng && !seed.is_none()) {
+                throw std::invalid_argument("seed and copy_rng are incompatible");
+            }
+
+            if (!copy_rng || !seed.is_none()) {
+                TableauSimulator copy_with_new_rng(self, *make_py_seeded_rng(seed));
+                return copy_with_new_rng;
+            }
+
+            TableauSimulator copy = self;
             return copy;
         },
+        pybind11::kw_only(),
+        pybind11::arg("copy_rng") = false,
+        pybind11::arg("seed") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            Returns a copy of the simulator. A simulator with the same internal state.
+            @signature def copy(self, *, copy_rng: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator:
+            Returns a simulator with the same internal state, except perhaps its prng.
+
+            Args:
+                copy_rng: By default, new simulator's prng is reinitialized with a random
+                    seed. However, one can set this argument to True in order to have the
+                    prng state copied together with the rest of the original simulator's
+                    state. Consequently, in this case the two simulators will produce the
+                    same measurement outcomes for the same quantum circuits.  If both seed
+                    and copy_rng are set, an exception is raised. Defaults to False.
+                seed: PARTIALLY determines simulation results by deterministically seeding
+                    the random number generator.
+
+                    Must be None or an integer in range(2**64).
+
+                    Defaults to None. When None, the prng state is either copied from the
+                    original simulator or reseeded from system entropy, depending on the
+                    copy_rng argument.
+
+                    When set to an integer, making the exact same series calls on the exact
+                    same machine with the exact same version of Stim will produce the exact
+                    same simulation results.
+
+                    CAUTION: simulation results *WILL NOT* be consistent between versions of
+                    Stim. This restriction is present to make it possible to have future
+                    optimizations to the random sampling, and is enforced by introducing
+                    intentional differences in the seeding strategy from version to version.
+
+                    CAUTION: simulation results *MAY NOT* be consistent across machines that
+                    differ in the width of supported SIMD instructions. For example, using
+                    the same seed on a machine that supports AVX instructions and one that
+                    only supports SSE instructions may produce different simulation results.
+
+                    CAUTION: simulation results *MAY NOT* be consistent if you vary how the
+                    circuit is executed. For example, reordering whether a reset on one
+                    qubit happens before or after a reset on another qubit can result in
+                    different measurement results being observed starting from the same
+                    seed.
 
             Examples:
                 >>> import stim
@@ -1491,13 +1588,19 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
                 >>> s2.current_inverse_tableau() == s1.current_inverse_tableau()
                 True
 
+                >>> s1 = stim.TableauSimulator()
+                >>> s2 = s1.copy(copy_rng=True)
+                >>> s1.h(0)
+                >>> s2.h(0)
+                >>> assert s1.measure(0) == s2.measure(0)
+
                 >>> s = stim.TableauSimulator()
                 >>> def brute_force_post_select(qubit, desired_result):
                 ...     global s
                 ...     while True:
-                ...         copy = s.copy()
-                ...         if copy.measure(qubit) == desired_result:
-                ...             s = copy
+                ...         s2 = s.copy()
+                ...         if s2.measure(qubit) == desired_result:
+                ...             s = s2
                 ...             break
                 >>> s.h(0)
                 >>> brute_force_post_select(qubit=0, desired_result=True)
@@ -1508,7 +1611,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "measure_kickback",
-        [](PyTableauSimulator &self, uint32_t target) {
+        [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);
             auto result = self.measure_kickback_z({target});
             if (result.second.num_qubits == 0) {
@@ -1573,7 +1676,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "set_state_from_stabilizers",
-        [](PyTableauSimulator &self, pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
+        [](TableauSimulator &self, pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
             std::vector<PauliString> converted_stabilizers;
             for (const auto &stabilizer : stabilizers) {
                 const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
@@ -1678,7 +1781,7 @@ void stim_pybind::pybind_tableau_simulator(pybind11::module &m) {
 
     c.def(
         "set_state_from_state_vector",
-        [](PyTableauSimulator &self, pybind11::object &state_vector, const std::string &endian) {
+        [](TableauSimulator &self, pybind11::object &state_vector, const std::string &endian) {
             bool little_endian;
             if (endian == "little") {
                 little_endian = true;

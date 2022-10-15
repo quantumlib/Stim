@@ -119,7 +119,7 @@ def test_format_data():
         assert doctest.testmod(mod).failed == 0, k
 
 
-def test_main():
+def test_main_write_to_file():
     with tempfile.TemporaryDirectory() as d:
         p = pathlib.Path(d) / 'tmp'
         assert stim.main(command_line_args=[
@@ -132,3 +132,29 @@ def test_main():
         ]) == 0
         with open(p) as f:
             assert "Generated repetition_code" in f.read()
+
+
+def test_main_redirects_stdout(capsys):
+    assert stim.main(command_line_args=[
+        "gen",
+        "--code=repetition_code",
+        "--task=memory",
+        "--rounds=1000",
+        "--distance=2",
+    ]) == 0
+    captured = capsys.readouterr()
+    assert "Generated repetition_code" in captured.out
+    assert captured.err == ""
+
+
+def test_main_redirects_stderr(capsys):
+    assert stim.main(command_line_args=[
+        "gen",
+        "--code=XXXXX",
+        "--task=memory",
+        "--rounds=1000",
+        "--distance=2",
+    ]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "Unrecognized value 'XXXXX'" in captured.err

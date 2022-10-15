@@ -42,8 +42,8 @@ std::string CircuitRepeatBlock::repr() const {
     return "stim.CircuitRepeatBlock(" + std::to_string(repeat_count) + ", " + circuit_repr(body) + ")";
 }
 
-void pybind_circuit_repeat_block(pybind11::module &m) {
-    auto c = pybind11::class_<CircuitRepeatBlock>(
+pybind11::class_<CircuitRepeatBlock> stim_pybind::pybind_circuit_repeat_block(pybind11::module &m) {
+    return pybind11::class_<CircuitRepeatBlock>(
         m,
         "CircuitRepeatBlock",
         clean_doc_string(u8R"DOC(
@@ -68,6 +68,9 @@ void pybind_circuit_repeat_block(pybind11::module &m) {
                 ''')
         )DOC")
             .data());
+}
+
+void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybind11::class_<CircuitRepeatBlock> &c) {
 
     c.def(
         pybind11::init<uint64_t, Circuit>(),

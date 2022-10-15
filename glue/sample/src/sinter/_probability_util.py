@@ -286,14 +286,18 @@ def fit_binomial(
     return Fit(best=num_hits / num_shots, low=low / num_shots, high=high / num_shots)
 
 
-def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: int) -> float:
+def shot_error_rate_to_piece_error_rate(shot_error_rate: float, *, pieces: float) -> float:
     """Convert from total error rate to per-piece error rate.
 
     Works by assuming pieces fail independently and a shot fails if an any single
     piece fails.
     """
     if not (0 <= shot_error_rate <= 1):
-        raise ValueError(f'not (0 <= shot_error_rate={shot_error_rate} <= 1)')
+        raise ValueError(f'need (0 <= shot_error_rate={shot_error_rate} <= 1)')
+    if pieces <= 0:
+        raise ValueError('need pieces > 0')
+    if not isinstance(pieces, (int, float)):
+        raise ValueError('need isinstance(pieces, (int, float)')
     if pieces == 1:
         return shot_error_rate
     if shot_error_rate > 0.5:

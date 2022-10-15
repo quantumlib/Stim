@@ -2420,9 +2420,11 @@ TEST(ErrorAnalyzer, too_many_symptoms) {
     ASSERT_EQ("", check_catch<std::invalid_argument>("max supported number of symptoms", [&] {
                   ErrorAnalyzer::circuit_to_detector_error_model(symptoms_20, true, false, false, 0.0, false, true);
               }));
-    ASSERT_EQ("", check_catch<std::invalid_argument>("max supported number of symptoms", [&] {
-                  ErrorAnalyzer::circuit_to_detector_error_model(symptoms_20, false, false, false, 0.0, false, true);
-              }));
+    ASSERT_EQ(
+        ErrorAnalyzer::circuit_to_detector_error_model(symptoms_20, false, false, false, 0.0, false, true),
+        R"model(
+            error(0.0006666666666666692465) D0 D1 D2 D3 D4 D5 D6 D7 D8 D9 D10 D11 D12 D13 D14 D15 D16 D17 D18 D19
+        )model");
 }
 
 TEST(ErrorAnalyzer, decompose_error_failures) {

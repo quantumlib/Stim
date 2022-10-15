@@ -21,12 +21,8 @@
 
 namespace stim_pybind {
 
-struct PyTableauSimulator : stim::TableauSimulator {
-    std::shared_ptr<std::mt19937_64> rng_reference;
-    explicit PyTableauSimulator(std::shared_ptr<std::mt19937_64> rng);
-};
-
-void pybind_tableau_simulator(pybind11::module &m);
+pybind11::class_<stim::TableauSimulator> pybind_tableau_simulator(pybind11::module &m);
+void pybind_tableau_simulator_methods(pybind11::module &m, pybind11::class_<stim::TableauSimulator> &c);
 
 }  // namespace stim_pybind
 

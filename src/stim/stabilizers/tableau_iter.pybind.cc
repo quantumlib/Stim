@@ -39,7 +39,7 @@ pybind11::class_<TableauIterator> stim_pybind::pybind_tableau_iter(pybind11::mod
     return c;
 }
 
-void stim_pybind::pybind_tableau_iter_after_types_all_defined(
+void stim_pybind::pybind_tableau_iter_methods(
     pybind11::module &m, pybind11::class_<TableauIterator> &c) {
     c.def(
         "__iter__",

@@ -16,6 +16,7 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
@@ -28,41 +29,11 @@ CompiledMeasurementSampler::CompiledMeasurementSampler(
     : ref_sample(ref_sample), circuit(circuit), skip_reference_sample(skip_reference_sample), prng(prng) {
 }
 
-pybind11::array_t<bool> CompiledMeasurementSampler::sample(size_t num_samples) {
-    auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
-
-    const simd_bits<MAX_BITWORD_WIDTH> &flat = sample.data;
-    std::vector<uint8_t> bytes;
-    bytes.reserve(flat.num_bits_padded());
-    auto *end = flat.u64 + flat.num_u64_padded();
-    for (auto u64 = flat.u64; u64 != end; u64++) {
-        auto v = *u64;
-        for (size_t k = 0; k < 64; k++) {
-            bytes.push_back((v >> k) & 1);
-        }
-    }
-
-    void *ptr = bytes.data();
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{
-        (pybind11::ssize_t)num_samples, (pybind11::ssize_t)circuit.count_measurements()};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_bits_padded(), 1};
-    const std::string &format = pybind11::format_descriptor<bool>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
-}
-
-pybind11::array_t<uint8_t> CompiledMeasurementSampler::sample_bit_packed(size_t num_samples) {
-    auto sample = FrameSimulator::sample(circuit, ref_sample, num_samples, *prng);
-
-    void *ptr = sample.data.u8;
-    pybind11::ssize_t itemsize = sizeof(uint8_t);
-    std::vector<pybind11::ssize_t> shape{
-        (pybind11::ssize_t)num_samples, (pybind11::ssize_t)(circuit.count_measurements() + 7) / 8};
-    std::vector<pybind11::ssize_t> stride{(pybind11::ssize_t)sample.num_minor_u8_padded(), 1};
-    const std::string &format = pybind11::format_descriptor<uint8_t>::value;
-    bool readonly = true;
-    return pybind11::array_t<uint8_t>(pybind11::buffer_info(ptr, itemsize, format, 2, shape, stride, readonly));
+pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, bool bit_packed) {
+    simd_bit_table<MAX_BITWORD_WIDTH> sample =
+        FrameSimulator::sample(circuit, ref_sample, num_shots, *prng);
+    size_t bits_per_sample = circuit.count_measurements();
+    return simd_bit_table_to_numpy(sample, num_shots, bits_per_sample, bit_packed);
 }
 
 void CompiledMeasurementSampler::sample_write(
@@ -87,7 +58,7 @@ std::string CompiledMeasurementSampler::repr() const {
     return result.str();
 }
 
-pybind11::class_<CompiledMeasurementSampler> stim_pybind::pybind_compiled_measurement_sampler_class(
+pybind11::class_<CompiledMeasurementSampler> stim_pybind::pybind_compiled_measurement_sampler(
     pybind11::module &m) {
     return pybind11::class_<CompiledMeasurementSampler>(
         m, "CompiledMeasurementSampler", "An analyzed stabilizer circuit whose measurements can be sampled quickly.");
@@ -100,7 +71,9 @@ CompiledMeasurementSampler stim_pybind::py_init_compiled_sampler(
     return CompiledMeasurementSampler(ref_sample, circuit, skip_reference_sample, make_py_seeded_rng(seed));
 }
 
-void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c) {
+void stim_pybind::pybind_compiled_measurement_sampler_methods(
+    pybind11::module &m,
+    pybind11::class_<CompiledMeasurementSampler> &c) {
     c.def(
         pybind11::init(&py_init_compiled_sampler),
         pybind11::arg("circuit"),
@@ -173,17 +146,33 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
 
     c.def(
         "sample",
-        &CompiledMeasurementSampler::sample,
+        [](CompiledMeasurementSampler &self, size_t shots, bool bit_packed) {
+            return self.sample_to_numpy(shots, bit_packed);
+        },
         pybind11::arg("shots"),
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
         clean_doc_string(u8R"DOC(
             Samples a batch of measurement samples from the circuit.
 
             Args:
                 shots: The number of times to sample every measurement in the circuit.
+                bit_packed: Returns a uint8 numpy array with 8 bits per byte, instead of
+                    a bool8 numpy array with 1 bit per byte. Uses little endian packing.
 
             Returns:
-                A numpy array with `dtype=uint8` and `shape=(shots, num_measurements)`.
-                The bit for measurement `m` in shot `s` is at `result[s, m]`.
+                A numpy array containing the samples.
+
+                If bit_packed=False:
+                    dtype=bool8
+                    shape=(shots, circuit.num_measurements)
+                    The bit for measurement `m` in shot `s` is at
+                        result[s, m]
+                If bit_packed=True:
+                    dtype=uint8
+                    shape=(shots, math.ceil(circuit.num_measurements / 8))
+                    The bit for measurement `m` in shot `s` is at
+                        (result[s, m // 8] >> (m % 8)) & 1
 
             Examples:
                 >>> import stim
@@ -199,9 +188,13 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(pybind11::class_<C
 
     c.def(
         "sample_bit_packed",
-        &CompiledMeasurementSampler::sample_bit_packed,
+        [](CompiledMeasurementSampler &self, size_t shots) {
+            return self.sample_to_numpy(shots, true);
+        },
         pybind11::arg("shots"),
         clean_doc_string(u8R"DOC(
+            [DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
+
             Samples a bit packed batch of measurement samples from the circuit.
 
             Args:

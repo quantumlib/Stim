@@ -1,6 +1,6 @@
 from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union
 
-from sinter._probability_util import fit_binomial
+from sinter._probability_util import fit_binomial, shot_error_rate_to_piece_error_rate
 
 if TYPE_CHECKING:
     import sinter
@@ -96,7 +96,9 @@ def plot_discard_rate(
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
+        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
@@ -107,9 +109,18 @@ def plot_discard_rate(
         stats: The collected statistics to plot.
         x_func: The X coordinate to use for each stat's data point. For example, this could be
             `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
+        failure_units_per_shot_func: How many discard chances there are per shot. This rescales what the
+            discard rate means. By default, it is the discard rate per shot, but this allows
+            you to instead make it the discard rate per round. For example, if the metadata
+            associated with a shot has a field 'r' which is the number of rounds, then this can be
+            achieved with `failure_units_per_shot_func=lambda stats: stats.metadata['r']`.
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
+        filter_func: Optional. When specified, some curves will not be plotted.
+            The statistics are filtered and only plotted if filter_func(stat) returns True.
+            For example, `filter_func=lambda s: s.json_metadata['basis'] == 'x'` would plot only stats
+            where the saved metadata indicates the basis was 'x'.
         plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
@@ -124,31 +135,38 @@ def plot_discard_rate(
             Must be 1 or larger. Hypothesis probabilities at most that many times as unlikely as the max likelihood
             hypothesis will be highlighted.
     """
+    filtered_stats: List['sinter.TaskStats'] = [
+        stat
+        for stat in stats
+        if filter_func(stat)
+    ]
+
     if not (highlight_max_likelihood_factor >= 1):
         raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
-    curve_groups = group_by(stats, key=group_func)
+    curve_groups = group_by(filtered_stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
-        stats = sorted(curve_groups[curve_id], key=x_func)
+        this_group_stats = sorted(curve_groups[curve_id], key=x_func)
 
         xs = []
         ys = []
         xs_range = []
         ys_low = []
         ys_high = []
-        for stat in stats:
+        for stat in this_group_stats:
             x = float(x_func(stat))
             if stat.shots:
                 fit = fit_binomial(
                     num_shots=stat.shots,
                     num_hits=stat.discards,
                     max_likelihood_factor=highlight_max_likelihood_factor)
+                pieces = failure_units_per_shot_func(stat)
                 if stat.discards:
                     xs.append(x)
-                    ys.append(fit.best)
+                    ys.append(shot_error_rate_to_piece_error_rate(fit.best, pieces=pieces))
                 xs_range.append(x)
-                ys_low.append(fit.low)
-                ys_high.append(fit.high)
+                ys_low.append(shot_error_rate_to_piece_error_rate(fit.low, pieces=pieces))
+                ys_high.append(shot_error_rate_to_piece_error_rate(fit.high, pieces=pieces))
 
         kwargs = dict(plot_args_func(k, curve_id))
         if 'label' not in kwargs and curve_id is not None:
@@ -175,7 +193,9 @@ def plot_error_rate(
         ax: 'plt.Axes',
         stats: 'Iterable[sinter.TaskStats]',
         x_func: Callable[['sinter.TaskStats'], Any],
+        failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
+        filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
         plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
@@ -186,9 +206,18 @@ def plot_error_rate(
         stats: The collected statistics to plot.
         x_func: The X coordinate to use for each stat's data point. For example, this could be
             `x_func=lambda stat: stat.json_metadata['physical_error_rate']`.
+        failure_units_per_shot_func: How many error chances there are per shot. This rescales what the
+            logical error rate means. By default, it is the logical error rate per shot, but this allows
+            you to instead make it the logical error rate per round. For example, if the metadata
+            associated with a shot has a field 'r' which is the number of rounds, then this can be
+            achieved with `failure_units_per_shot_func=lambda stats: stats.metadata['r']`.
         group_func: Optional. When specified, multiple curves will be plotted instead of one curve.
             The statistics are grouped into curves based on whether or not they get the same result
             out of this function. For example, this could be `group_func=lambda stat: stat.decoder`.
+        filter_func: Optional. When specified, some curves will not be plotted.
+            The statistics are filtered and only plotted if filter_func(stat) returns True.
+            For example, `filter_func=lambda s: s.json_metadata['basis'] == 'x'` would plot only stats
+            where the saved metadata indicates the basis was 'x'.
         plot_args_func: Optional. Specifies additional arguments to give the the underlying calls to
             `plot` and `fill_between` used to do the actual plotting. For example, this can be used
             to specify markers and colors. Takes the index of the curve in sorted order and also a
@@ -206,16 +235,22 @@ def plot_error_rate(
     if not (highlight_max_likelihood_factor >= 1):
         raise ValueError(f"not (highlight_max_likelihood_factor={highlight_max_likelihood_factor} >= 1)")
 
-    curve_groups = group_by(stats, key=group_func)
+    filtered_stats: List['sinter.TaskStats'] = [
+        stat
+        for stat in stats
+        if filter_func(stat)
+    ]
+
+    curve_groups = group_by(filtered_stats, key=group_func)
     for k, curve_id in enumerate(sorted(curve_groups.keys(), key=better_sorted_str_terms)):
-        stats = sorted(curve_groups[curve_id], key=x_func)
+        this_group_stats = sorted(curve_groups[curve_id], key=x_func)
 
         xs = []
         ys = []
         xs_range = []
         ys_low = []
         ys_high = []
-        for stat in stats:
+        for stat in this_group_stats:
             num_kept = stat.shots - stat.discards
             if num_kept == 0:
                 continue
@@ -225,13 +260,14 @@ def plot_error_rate(
                 num_hits=stat.errors,
                 max_likelihood_factor=highlight_max_likelihood_factor,
             )
+            pieces = failure_units_per_shot_func(stat)
             if stat.errors:
                 xs.append(x)
-                ys.append(fit.best)
+                ys.append(shot_error_rate_to_piece_error_rate(fit.best, pieces=pieces))
             if highlight_max_likelihood_factor > 1:
                 xs_range.append(x)
-                ys_low.append(fit.low)
-                ys_high.append(fit.high)
+                ys_low.append(shot_error_rate_to_piece_error_rate(fit.low, pieces=pieces))
+                ys_high.append(shot_error_rate_to_piece_error_rate(fit.high, pieces=pieces))
 
         kwargs = dict(plot_args_func(k, curve_id))
         if 'label' not in kwargs and curve_id is not None:

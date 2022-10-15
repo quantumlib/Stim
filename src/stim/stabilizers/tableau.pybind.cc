@@ -15,6 +15,7 @@
 #include "stim/stabilizers/tableau.pybind.h"
 
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.h"
@@ -25,8 +26,97 @@
 using namespace stim;
 using namespace stim_pybind;
 
-void stim_pybind::pybind_tableau(pybind11::module &m) {
-    auto c = pybind11::class_<Tableau>(
+void check_tableau_signs_shape(const pybind11::object &numpy_array, size_t n, const char *name) {
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(numpy_array);
+        if (arr.ndim() == 1) {
+            size_t minor = arr.shape(0);
+            if (minor != (n + 7) / 8) {
+                std::stringstream ss;
+                ss << name << " had dtype=uint8 (meaning it is bit packed) ";
+                ss << "but its shape was " << minor << " instead of ";
+                ss << (n + 7) / 8 << ".";
+                throw std::invalid_argument(ss.str());
+            }
+            return;
+        }
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<bool>>(numpy_array);
+        if (arr.ndim() == 1) {
+            size_t minor = arr.shape(0);
+            if (minor != n) {
+                std::stringstream ss;
+                ss << name << " had dtype=bool8 ";
+                ss << "but its shape was " << minor << " instead of ";
+                ss << n << ".";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+        return;
+    }
+
+    std::stringstream ss;
+    ss << name << " wasn't a 1d numpy array with dtype=bool8 or dtype=uint8";
+    throw std::invalid_argument(ss.str());
+}
+
+void check_tableau_shape(const pybind11::object &numpy_array, size_t n, const char *name) {
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(numpy_array);
+        if (arr.ndim() == 2) {
+            size_t major = arr.shape(0);
+            size_t minor = arr.shape(1);
+            if (major != n || minor != (n + 7) / 8) {
+                std::stringstream ss;
+                ss << name << " had dtype=uint8 (meaning it is bit packed) ";
+                ss << "but its shape was (" << major << ", " << minor << ") instead of (";
+                ss << n << ", " << (n + 7) / 8 << ").";
+                throw std::invalid_argument(ss.str());
+            }
+            return;
+        }
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<bool>>(numpy_array);
+        if (arr.ndim() == 2) {
+            size_t major = arr.shape(0);
+            size_t minor = arr.shape(1);
+            if (major != n || minor != n) {
+                std::stringstream ss;
+                ss << name << " had dtype=bool8 ";
+                ss << "but its shape was (" << major << ", " << minor << ") instead of (";
+                ss << n << ", " << n << ").";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+        return;
+    }
+
+    std::stringstream ss;
+    ss << name << " wasn't a 2d numpy array with dtype=bool8 or dtype=uint8";
+    throw std::invalid_argument(ss.str());
+}
+
+size_t determine_tableau_shape(const pybind11::object &numpy_array, const char *name) {
+    size_t n = 0;
+    if (pybind11::isinstance<pybind11::array_t<uint8_t>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(numpy_array);
+        if (arr.ndim() == 2) {
+            n = arr.shape(0);
+        }
+    } else if (pybind11::isinstance<pybind11::array_t<bool>>(numpy_array)) {
+        auto arr = pybind11::cast<pybind11::array_t<bool>>(numpy_array);
+        if (arr.ndim() == 2) {
+            n = arr.shape(0);
+        }
+    }
+
+    check_tableau_shape(numpy_array, n, name);
+    return n;
+}
+
+
+pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
+    return pybind11::class_<Tableau>(
         m,
         "Tableau",
         clean_doc_string(u8R"DOC(
@@ -63,7 +153,9 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                 stim.PauliString("+__XZ_")
         )DOC")
             .data());
+}
 
+void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<Tableau> &c) {
     c.def(
         pybind11::init<size_t>(),
         pybind11::arg("num_qubits"),
@@ -161,15 +253,22 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             }
             auto data = self.to_flat_unitary_matrix(little_endian);
 
-            void *ptr = data.data();
-            pybind11::ssize_t itemsize = sizeof(float) * 2;
+            std::complex<float> *buffer = new std::complex<float>[data.size()];
+            for (size_t k = 0; k < data.size(); k++) {
+                buffer[k] = data[k];
+            }
+
+            pybind11::capsule free_when_done(buffer, [](void *f) {
+                delete[] reinterpret_cast<std::complex<float> *>(f);
+            });
+
             pybind11::ssize_t n = 1 << self.num_qubits;
-            std::vector<pybind11::ssize_t> shape{n, n};
-            std::vector<pybind11::ssize_t> stride{n * itemsize, itemsize};
-            const std::string &format = pybind11::format_descriptor<std::complex<float>>::value;
-            bool readonly = true;
-            return pybind11::array_t<float>(
-                pybind11::buffer_info(ptr, itemsize, format, shape.size(), shape, stride, readonly));
+            pybind11::ssize_t itemsize = sizeof(std::complex<float>);
+            return pybind11::array_t<std::complex<float>>(
+                {n, n},
+                {n * itemsize, itemsize},
+                buffer,
+                free_when_done);
         },
         pybind11::kw_only(),
         pybind11::arg("endian"),
@@ -207,6 +306,339 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                        [0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j]], dtype=complex64)
         )DOC")
             .data());
+
+    c.def(
+        "to_numpy",
+        [](const Tableau &self, bool bit_packed) {
+            auto n = self.num_qubits;
+
+            return pybind11::make_tuple(
+                simd_bit_table_to_numpy(self.xs.xt, n, n, bit_packed),
+                simd_bit_table_to_numpy(self.xs.zt, n, n, bit_packed),
+                simd_bit_table_to_numpy(self.zs.xt, n, n, bit_packed),
+                simd_bit_table_to_numpy(self.zs.zt, n, n, bit_packed),
+                simd_bits_to_numpy(self.xs.signs, n, bit_packed),
+                simd_bits_to_numpy(self.zs.signs, n, bit_packed));
+        },
+        pybind11::kw_only(),
+        pybind11::arg("bit_packed") = false,
+        clean_doc_string(u8R"DOC(
+            @signature def to_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+
+            Decomposes the contents of the tableau into six numpy arrays.
+
+            The first four numpy arrays correspond to the four quadrants of the table
+            defined in Aaronson and Gottesman's "Improved Simulation of Stabilizer Circuits"
+            ( https://arxiv.org/abs/quant-ph/0406196 ).
+
+            The last two numpy arrays are the X and Z sign bit vectors of the tableau.
+
+            Args:
+                bit_packed: Defaults to False. Determines whether the output numpy arrays
+                    use dtype=bool8 or dtype=uint8 with 8 bools packed into each byte.
+
+            Returns:
+                An (x2x, x2z, z2x, z2z, x_signs, z_signs) tuple encoding the tableau.
+
+                x2x: A 2d table of whether tableau(X_i)_j is X or Y (instead of I or Z).
+                x2z: A 2d table of whether tableau(X_i)_j is Z or Y (instead of I or X).
+                z2x: A 2d table of whether tableau(Z_i)_j is X or Y (instead of I or Z).
+                z2z: A 2d table of whether tableau(Z_i)_j is Z or Y (instead of I or X).
+                x_signs: A vector of whether tableau(X_i) is negative.
+                z_signs: A vector of whether tableau(Z_i) is negative.
+
+                If bit_packed=False then:
+                    *.dtype = = np.bool8
+                    *2*.shape = (len(tableau), len(tableau))
+                    *_signs.shape = len(tableau)
+                    x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
+                    x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
+                    z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
+                    z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
+
+                If bit_packed=True then:
+                    *.dtype = = np.uint8
+                    *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    *_signs.shape = math.ceil(len(tableau) / 8)
+                    (x2x[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [1, 2]
+                    (x2z[i, j // 8] >> (j % 8)) & 1 = tableau.x_output_pauli(i, j) in [2, 3]
+                    (z2x[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [1, 2]
+                    (z2z[i, j // 8] >> (j % 8)) & 1 = tableau.z_output_pauli(i, j) in [2, 3]
+
+            Examples:
+                >>> import stim
+                >>> cnot = stim.Tableau.from_named_gate("CNOT")
+                >>> print(repr(cnot))
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
+                >>> x2x, x2z, z2x, z2z, x_signs, z_signs = cnot.to_numpy()
+                >>> x2x
+                array([[ True,  True],
+                       [False,  True]])
+                >>> x2z
+                array([[False, False],
+                       [False, False]])
+                >>> z2x
+                array([[False, False],
+                       [False, False]])
+                >>> z2z
+                array([[ True, False],
+                       [ True,  True]])
+                >>> x_signs
+                array([False, False])
+                >>> z_signs
+                array([False, False])
+
+                >>> t = stim.Tableau.from_conjugated_generators(
+                ...     xs=[
+                ...         stim.PauliString("-Y_ZY"),
+                ...         stim.PauliString("-Y_YZ"),
+                ...         stim.PauliString("-XXX_"),
+                ...         stim.PauliString("+ZYX_"),
+                ...     ],
+                ...     zs=[
+                ...         stim.PauliString("-_ZZX"),
+                ...         stim.PauliString("+YZXZ"),
+                ...         stim.PauliString("+XZ_X"),
+                ...         stim.PauliString("-YYXX"),
+                ...     ],
+                ... )
+
+                >>> x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy()
+                >>> x2x
+                array([[ True, False, False,  True],
+                       [ True, False,  True, False],
+                       [ True,  True,  True, False],
+                       [False,  True,  True, False]])
+                >>> x2z
+                array([[ True, False,  True,  True],
+                       [ True, False,  True,  True],
+                       [False, False, False, False],
+                       [ True,  True, False, False]])
+                >>> z2x
+                array([[False, False, False,  True],
+                       [ True, False,  True, False],
+                       [ True, False, False,  True],
+                       [ True,  True,  True,  True]])
+                >>> z2z
+                array([[False,  True,  True, False],
+                       [ True,  True, False,  True],
+                       [False,  True, False, False],
+                       [ True,  True, False, False]])
+                >>> x_signs
+                array([ True,  True,  True, False])
+                >>> z_signs
+                array([ True, False, False,  True])
+
+                >>> x2x, x2z, z2x, z2z, x_signs, z_signs = t.to_numpy(bit_packed=True)
+                >>> x2x
+                array([[9],
+                       [5],
+                       [7],
+                       [6]], dtype=uint8)
+                >>> x2z
+                array([[13],
+                       [13],
+                       [ 0],
+                       [ 3]], dtype=uint8)
+                >>> z2x
+                array([[ 8],
+                       [ 5],
+                       [ 9],
+                       [15]], dtype=uint8)
+                >>> z2z
+                array([[ 6],
+                       [11],
+                       [ 2],
+                       [ 3]], dtype=uint8)
+                >>> x_signs
+                array([7], dtype=uint8)
+                >>> z_signs
+                array([9], dtype=uint8)
+        )DOC")
+            .data());
+
+    c.def_static(
+        "from_numpy",
+        [](const pybind11::object &x2x,
+           const pybind11::object &x2z,
+           const pybind11::object &z2x,
+           const pybind11::object &z2z,
+           const pybind11::object &x_signs,
+           const pybind11::object &z_signs) {
+
+            size_t n = determine_tableau_shape(x2x, "x2x");
+            check_tableau_shape(x2z, n, "x2z");
+            check_tableau_shape(z2x, n, "z2x");
+            check_tableau_shape(z2z, n, "z2z");
+            if (!x_signs.is_none()) {
+                check_tableau_signs_shape(x_signs, n, "x_signs");
+            }
+            if (!z_signs.is_none()) {
+                check_tableau_signs_shape(z_signs, n, "z_signs");
+            }
+
+            Tableau result(n);
+            memcpy_bits_from_numpy_to_simd_bit_table(n, n, x2x, result.xs.xt);
+            memcpy_bits_from_numpy_to_simd_bit_table(n, n, x2z, result.xs.zt);
+            memcpy_bits_from_numpy_to_simd_bit_table(n, n, z2x, result.zs.xt);
+            memcpy_bits_from_numpy_to_simd_bit_table(n, n, z2z, result.zs.zt);
+            if (!x_signs.is_none()) {
+                memcpy_bits_from_numpy_to_simd(n, x_signs, result.xs.signs);
+            }
+            if (!z_signs.is_none()) {
+                memcpy_bits_from_numpy_to_simd(n, z_signs, result.zs.signs);
+            }
+            if (!result.satisfies_invariants()) {
+                throw std::invalid_argument(
+                    "The given tableau data don't describe a valid Clifford operation.\n"
+                    "It doesn't preserve commutativity.\n"
+                    "All generator outputs must commute, except for the output of X_k anticommuting with the output of Z_k for each k.");
+            }
+            return result;
+        },
+        pybind11::kw_only(),
+        pybind11::arg("x2x"),
+        pybind11::arg("x2z"),
+        pybind11::arg("z2x"),
+        pybind11::arg("z2z"),
+        pybind11::arg("x_signs") = pybind11::none(),
+        pybind11::arg("z_signs") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            @signature def from_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+
+            Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
+
+            The x2x, x2z, z2x, z2z arrays are the four quadrants of the table defined in
+            Aaronson and Gottesman's "Improved Simulation of Stabilizer Circuits"
+            ( https://arxiv.org/abs/quant-ph/0406196 ).
+
+            Args:
+                x2x: A 2d numpy array containing the x-to-x coupling bits. The bits can be
+                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    result will satisfy result.x_output_pauli(i, j) in [1, 2] == x2x[i, j].
+                    Bit packing must be in little endian order and only applies to the
+                    second axis.
+                x2z: A 2d numpy array containing the x-to-z coupling bits. The bits can be
+                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    result will satisfy result.x_output_pauli(i, j) in [2, 3] == x2z[i, j].
+                    Bit packing must be in little endian order and only applies to the
+                    second axis.
+                z2x: A 2d numpy array containing the z-to-x coupling bits. The bits can be
+                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    result will satisfy result.z_output_pauli(i, j) in [1, 2] == z2x[i, j].
+                    Bit packing must be in little endian order and only applies to the
+                    second axis.
+                z2z: A 2d numpy array containing the z-to-z coupling bits. The bits can be
+                    bit packed (dtype=uint8) or not (dtype=bool8). When not bit packed, the
+                    result will satisfy result.z_output_pauli(i, j) in [2, 3] == z2z[i, j].
+                    Bit packing must be in little endian order and only applies to the
+                    second axis.
+                x_signs: Defaults to all-positive if not specified. A 1d numpy array
+                    containing the sign bits for the X generator outputs. False means
+                    positive and True means negative. The bits can be bit packed
+                    (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                    order.
+                z_signs: Defaults to all-positive if not specified. A 1d numpy array
+                    containing the sign bits for the Z generator outputs. False means
+                    positive and True means negative. The bits can be bit packed
+                    (dtype=uint8) or not (dtype=bool8). Bit packing must be in little endian
+                    order.
+
+            Returns:
+                The tableau created from the numpy data.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+
+                >>> tableau = stim.Tableau.from_numpy(
+                ...     x2x=np.array([[1, 1], [0, 1]], dtype=np.bool8),
+                ...     z2x=np.array([[0, 0], [0, 0]], dtype=np.bool8),
+                ...     x2z=np.array([[0, 0], [0, 0]], dtype=np.bool8),
+                ...     z2z=np.array([[1, 0], [1, 1]], dtype=np.bool8),
+                ... )
+                >>> print(repr(tableau))
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
+                >>> tableau == stim.Tableau.from_named_gate("CNOT")
+                True
+
+                >>> tableau = stim.Tableau.from_numpy(
+                ...     x2x=np.array([[9], [5], [7], [6]], dtype=np.uint8),
+                ...     x2z=np.array([[13], [13], [0], [3]], dtype=np.uint8),
+                ...     z2x=np.array([[8], [5], [9], [15]], dtype=np.uint8),
+                ...     z2z=np.array([[6], [11], [2], [3]], dtype=np.uint8),
+                ...     x_signs=np.array([7], dtype=np.uint8),
+                ...     z_signs=np.array([9], dtype=np.uint8),
+                ... )
+                >>> print(repr(tableau))
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("-Y_ZY"),
+                        stim.PauliString("-Y_YZ"),
+                        stim.PauliString("-XXX_"),
+                        stim.PauliString("+ZYX_"),
+                    ],
+                    zs=[
+                        stim.PauliString("-_ZZX"),
+                        stim.PauliString("+YZXZ"),
+                        stim.PauliString("+XZ_X"),
+                        stim.PauliString("-YYXX"),
+                    ],
+                )
+        )DOC")
+            .data());
+
+    c.def(
+        "to_pauli_string",
+        [](const Tableau &self) {
+            return PyPauliString(self.to_pauli_string());
+        },
+        clean_doc_string(u8R"DOC(
+            Return a Pauli string equivalent to the tableau.
+
+            If the tableau is equivalent to a pauli product, creates
+            an equivalent pauli string. If not, then an error is raised.
+
+            Returns:
+                The created pauli string
+
+            Raises:
+                ValueError: The Tableau isn't equivalent to a Pauli product.
+
+            Example:
+                >>> import stim
+                >>> t = (stim.Tableau.from_named_gate("Z") +
+                ...      stim.Tableau.from_named_gate("Y") +
+                ...      stim.Tableau.from_named_gate("I") +
+                ...      stim.Tableau.from_named_gate("X"))
+                >>> print(t)
+                +-xz-xz-xz-xz-
+                | -+ -- ++ +-
+                | XZ __ __ __
+                | __ XZ __ __
+                | __ __ XZ __
+                | __ __ __ XZ
+                >>> print(t.to_pauli_string())
+                +ZY_X
+        )DOC").data());
 
     c.def(
         "to_circuit",
@@ -1140,7 +1572,7 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
                 endian:
                     "little": matrix entries are in little endian order, where higher index
                         qubits correspond to larger changes in row/col indices.
-                    "big": matrix entries are in little endian order, where higher index
+                    "big": matrix entries are in big endian order, where higher index
                         qubits correspond to smaller changes in row/col indices.
             Returns:
                 The tableau equivalent to the given unitary matrix (up to global phase).
@@ -1397,4 +1829,266 @@ void stim_pybind::pybind_tableau(pybind11::module &m) {
             }
             return result;
         }));
+
+    c.def_static(
+        "from_stabilizers",
+        [](pybind11::object &stabilizers, bool allow_redundant, bool allow_underconstrained) {
+            std::vector<PauliString> converted_stabilizers;
+            for (const auto &stabilizer : stabilizers) {
+                const PyPauliString &p = pybind11::cast<PyPauliString>(stabilizer);
+                if (p.imag) {
+                    throw std::invalid_argument("Stabilizers can't have imaginary sign.");
+                }
+                converted_stabilizers.push_back(p.value);
+            }
+            return stabilizers_to_tableau(converted_stabilizers, allow_redundant, allow_underconstrained, false);
+        },
+        pybind11::arg("stabilizers"),
+        pybind11::kw_only(),
+        pybind11::arg("allow_redundant") = false,
+        pybind11::arg("allow_underconstrained") = false,
+        clean_doc_string(u8R"DOC(
+            @signature def from_stabilizers(stabilizers: Iterable[stim.PauliString], *, allow_redundant: bool = False, allow_underconstrained: bool = False) -> stim.Tableau:
+            Creates a tableau representing a state with the given stabilizers.
+
+            Args:
+                stabilizers: A list of `stim.PauliString`s specifying the stabilizers that
+                    the state must have. It is permitted for stabilizers to have different
+                    lengths. All stabilizers are padded up to the length of the longest
+                    stabilizer by appending identity terms.
+                allow_redundant: Defaults to False. If set to False, then the given
+                    stabilizers must all be independent. If any one of them is a product of
+                    the others (including the empty product), an exception will be raised.
+                    If set to True, then redundant stabilizers are simply ignored.
+                allow_underconstrained: Defaults to False. If set to False, then the given
+                    stabilizers must form a complete set of generators. They must exactly
+                    specify the desired stabilizer state, with no degrees of freedom left
+                    over. For an n-qubit state there must be n independent stabilizers. If
+                    set to True, then there can be leftover degrees of freedom which can be
+                    set arbitrarily.
+
+            Returns:
+                A tableau which, when applied to the all-zeroes state, produces a state
+                with the given stabilizers.
+
+                Guarantees that result.z_output(k) will be equal to the k'th independent
+                stabilizer from the `stabilizers` argument.
+
+            Raises:
+                ValueError:
+                    A stabilizer is redundant but allow_redundant=True wasn't set.
+                    OR
+                    The given stabilizers are contradictory (e.g. "+Z" and "-Z" both
+                    specified).
+                    OR
+                    The given stabilizers anticommute (e.g. "+Z" and "+X" both specified).
+                    OR
+                    The stabilizers left behind a degree of freedom but
+                    allow_underconstrained=True wasn't set.
+                    OR
+                    A stabilizer has an imaginary sign (i or -i).
+
+            Examples:
+
+                >>> import stim
+                >>> stim.Tableau.from_stabilizers([
+                ...     stim.PauliString("XX"),
+                ...     stim.PauliString("ZZ"),
+                ... ])
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
+
+                >>> stim.Tableau.from_stabilizers([
+                ...     stim.PauliString("XX_"),
+                ...     stim.PauliString("ZZ_"),
+                ...     stim.PauliString("-YY_"),
+                ...     stim.PauliString(""),
+                ... ], allow_underconstrained=True, allow_redundant=True)
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z__"),
+                        stim.PauliString("+_X_"),
+                        stim.PauliString("+__X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX_"),
+                        stim.PauliString("+ZZ_"),
+                        stim.PauliString("+__Z"),
+                    ],
+                )
+        )DOC")
+            .data());
+
+    c.def_static(
+        "from_state_vector",
+        [](pybind11::object &state_vector, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+
+            std::vector<std::complex<float>> v;
+            for (const auto &obj : state_vector) {
+                v.push_back(pybind11::cast<std::complex<float>>(obj));
+            }
+
+            return circuit_to_tableau(stabilizer_state_vector_to_circuit(v, little_endian), false, false, false);
+        },
+        pybind11::arg("state_vector"),
+        pybind11::kw_only(),
+        pybind11::arg("endian"),
+        clean_doc_string(u8R"DOC(
+            @signature def from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
+            Creates a tableau representing the stabilizer state of the given state vector.
+
+            Args:
+                state_vector: A list of complex amplitudes specifying a superposition. The
+                    vector must correspond to a state that is reachable using Clifford
+                    operations, and must be normalized (i.e. it must be a unit vector).
+                endian:
+                    "little": state vector is in little endian order, where higher index
+                        qubits correspond to larger changes in the state index.
+                    "big": state vector is in big endian order, where higher index qubits
+                        correspond to smaller changes in the state index.
+
+            Returns:
+                A tableau which, when applied to the all-zeroes state, produces a state
+                with the given state vector.
+
+            Raises:
+                ValueError:
+                    The given state vector isn't a list of complex values specifying a
+                    stabilizer state.
+                    OR
+                    The given endian value isn't 'little' or 'big'.
+
+            Examples:
+
+                >>> import stim
+                >>> stim.Tableau.from_state_vector([
+                ...     0.5**0.5,
+                ...     0.5**0.5 * 1j,
+                ... ], endian='little')
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z"),
+                    ],
+                    zs=[
+                        stim.PauliString("+Y"),
+                    ],
+                )
+                >>> stim.Tableau.from_state_vector([
+                ...     0.5**0.5,
+                ...     0,
+                ...     0,
+                ...     0.5**0.5,
+                ... ], endian='little')
+                stim.Tableau.from_conjugated_generators(
+                    xs=[
+                        stim.PauliString("+Z_"),
+                        stim.PauliString("+_X"),
+                    ],
+                    zs=[
+                        stim.PauliString("+XX"),
+                        stim.PauliString("+ZZ"),
+                    ],
+                )
+        )DOC")
+            .data());
+
+    c.def(
+        "to_state_vector",
+        [](const Tableau &self, const std::string &endian) {
+            bool little_endian;
+            if (endian == "little") {
+                little_endian = true;
+            } else if (endian == "big") {
+                little_endian = false;
+            } else {
+                throw std::invalid_argument("endian not in ['little', 'big']");
+            }
+            std::mt19937_64 unused_rng{0};
+            TableauSimulator sim(unused_rng, self.num_qubits);
+            sim.inv_state = self.inverse(false);
+            auto complex_vec = sim.to_state_vector(little_endian);
+
+            std::complex<float> *buffer = new std::complex<float>[complex_vec.size()];
+            for (size_t k = 0; k < complex_vec.size(); k++) {
+                buffer[k] = complex_vec[k];
+            }
+
+            pybind11::capsule free_when_done(buffer, [](void *f) {
+                delete[] reinterpret_cast<std::complex<float> *>(f);
+            });
+
+            return pybind11::array_t<std::complex<float>>(
+                {(pybind11::ssize_t)complex_vec.size()},
+                {(pybind11::ssize_t)sizeof(std::complex<float>)},
+                buffer,
+                free_when_done);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("endian") = "little",
+        clean_doc_string(u8R"DOC(
+            @signature def to_state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
+            Returns the state vector produced by applying the tableau to the |0..0> state.
+
+            This function takes O(n * 2**n) time and O(2**n) space, where n is the number of
+            qubits. The computation is done by initialization a random state vector and
+            iteratively projecting it into the +1 eigenspace of each stabilizer of the
+            state. The state is then canonicalized so that zero values are actually exactly
+            0, and so that the first non-zero entry is positive.
+
+            Args:
+                endian:
+                    "little" (default): state vector is in little endian order, where higher
+                        index qubits correspond to larger changes in the state index.
+                    "big": state vector is in big endian order, where higher index qubits
+                        correspond to smaller changes in the state index.
+
+            Returns:
+                A `numpy.ndarray[numpy.complex64]` of computational basis amplitudes.
+
+                If the result is in little endian order then the amplitude at offset
+                b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+                computational basis state where the qubit with index 0 is storing the bit
+                b_0, the qubit with index 1 is storing the bit b_1, etc.
+
+                If the result is in big endian order then the amplitude at offset
+                b_0 + b_1*2 + b_2*4 + ... + b_{n-1}*2^{n-1} is the amplitude for the
+                computational basis state where the qubit with index 0 is storing the bit
+                b_{n-1}, the qubit with index 1 is storing the bit b_{n-2}, etc.
+
+            Examples:
+                >>> import stim
+                >>> import numpy as np
+                >>> i2 = stim.Tableau.from_named_gate('I')
+                >>> x = stim.Tableau.from_named_gate('X')
+                >>> h = stim.Tableau.from_named_gate('H')
+
+                >>> (x + i2).to_state_vector(endian='little')
+                array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j], dtype=complex64)
+
+                >>> (i2 + x).to_state_vector(endian='little')
+                array([0.+0.j, 0.+0.j, 1.+0.j, 0.+0.j], dtype=complex64)
+
+                >>> (i2 + x).to_state_vector(endian='big')
+                array([0.+0.j, 1.+0.j, 0.+0.j, 0.+0.j], dtype=complex64)
+
+                >>> (h + h).to_state_vector(endian='little')
+                array([0.5+0.j, 0.5+0.j, 0.5+0.j, 0.5+0.j], dtype=complex64)
+        )DOC")
+            .data());
 }

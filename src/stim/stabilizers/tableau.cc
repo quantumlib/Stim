@@ -98,6 +98,13 @@ Tableau Tableau::identity(size_t num_qubits) {
     return Tableau(num_qubits);
 }
 
+Tableau Tableau::from_pauli_string(const PauliString &pauli_string) {
+    Tableau tableau = identity(pauli_string.num_qubits);
+    tableau.xs.signs = pauli_string.zs;
+    tableau.zs.signs = pauli_string.xs;
+    return tableau;
+}
+
 Tableau Tableau::gate1(const char *x, const char *z) {
     Tableau result(1);
     result.xs[0] = PauliString::from_str(x);
@@ -377,6 +384,41 @@ bool Tableau::satisfies_invariants() const {
         }
     }
     return true;
+}
+
+bool Tableau::is_pauli_product() const {
+    size_t pop_count =
+        xs.xt.data.popcnt() +
+        xs.zt.data.popcnt() +
+        zs.xt.data.popcnt() +
+        zs.zt.data.popcnt();
+
+    if ( pop_count != 2 * num_qubits ) {
+        return false;
+    }
+
+    for ( size_t q = 0; q < num_qubits; q++ ) {
+        if ( xs.xt[q][q] == false )
+            return false;
+    }
+
+    for ( size_t q = 0; q < num_qubits; q++ ) {
+        if ( zs.zt[q][q] == false )
+            return false;
+    }
+
+    return true;
+}
+
+PauliString Tableau::to_pauli_string() const {
+    if ( ! is_pauli_product() ) {
+        throw std::invalid_argument("The Tableau isn't equivalent to a Pauli product.");
+    }
+
+    PauliString pauli_string(num_qubits);
+    pauli_string.xs = zs.signs;
+    pauli_string.zs = xs.signs;
+    return pauli_string;
 }
 
 Tableau Tableau::inverse(bool skip_signs) const {

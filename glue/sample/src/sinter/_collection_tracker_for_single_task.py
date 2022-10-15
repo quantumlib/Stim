@@ -71,6 +71,7 @@ class CollectionTrackerForSingleTask:
                 decoder=self.task.decoder,
                 detector_error_model=result.filled_in_dem,
                 postselection_mask=self.task.postselection_mask,
+                postselected_observables_mask=self.task.postselected_observables_mask,
                 json_metadata=self.task.json_metadata,
                 collection_options=self.task.collection_options,
                 skip_validation=True,

@@ -16,8 +16,8 @@
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/io/raii_file.h"
-#include "stim/io/read_write.pybind.h"
 #include "stim/py/base.pybind.h"
+#include "stim/py/numpy.pybind.h"
 #include "stim/simulators/detection_simulator.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
@@ -153,7 +153,7 @@ pybind11::object CompiledMeasurementsToDetectionEventsConverter::convert(
 }
 
 pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>
-stim_pybind::pybind_compiled_measurements_to_detection_events_converter_class(pybind11::module &m) {
+stim_pybind::pybind_compiled_measurements_to_detection_events_converter(pybind11::module &m) {
     return pybind11::class_<CompiledMeasurementsToDetectionEventsConverter>(
         m,
         "CompiledMeasurementsToDetectionEventsConverter",
@@ -168,6 +168,7 @@ CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_mea
 }
 
 void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_methods(
+    pybind11::module &m,
     pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
     c.def(
         pybind11::init(&py_init_compiled_measurements_to_detection_events_converter),
@@ -294,6 +295,8 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("bit_pack_result") = false,
         clean_doc_string(u8R"DOC(
             Converts measurement data into detection event data.
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_pack_result: bool = False) -> np.ndarray:
+            @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: Literal[True], append_observables: bool = False, bit_pack_result: bool = False) -> Tuple[np.ndarray, np.ndarray]:
             @signature def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: bool = False, append_observables: bool = False, bit_pack_result: bool = False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
 
             Args:

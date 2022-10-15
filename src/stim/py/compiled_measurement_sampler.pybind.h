@@ -37,14 +37,13 @@ struct CompiledMeasurementSampler {
         stim::Circuit circuit,
         bool skip_reference_sample,
         std::shared_ptr<std::mt19937_64> prng);
-    pybind11::array_t<bool> sample(size_t num_samples);
-    pybind11::array_t<uint8_t> sample_bit_packed(size_t num_samples);
+    pybind11::object sample_to_numpy(size_t num_shots, bool bit_packed);
     void sample_write(size_t num_samples, const std::string &filepath, const std::string &format);
     std::string repr() const;
 };
 
-pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler_class(pybind11::module &m);
-void pybind_compiled_measurement_sampler_methods(pybind11::class_<CompiledMeasurementSampler> &c);
+pybind11::class_<CompiledMeasurementSampler> pybind_compiled_measurement_sampler(pybind11::module &m);
+    void pybind_compiled_measurement_sampler_methods(pybind11::module &m, pybind11::class_<CompiledMeasurementSampler> &c);
 CompiledMeasurementSampler py_init_compiled_sampler(
     const stim::Circuit &circuit, bool skip_reference_sample, const pybind11::object &seed);
 
