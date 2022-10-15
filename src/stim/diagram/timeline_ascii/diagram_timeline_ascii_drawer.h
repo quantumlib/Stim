@@ -57,6 +57,12 @@ struct DiagramTimelineAsciiSizing {
     std::vector<size_t> y_offsets;
 };
 
+struct LoopingIndexMap {
+    std::vector<uint32_t> brute_force_data;
+    void set(uint64_t index, stim::ConstPointerRange<uint64_t> offsets_per_iteration, stim::ConstPointerRange<uint64_t> iteration_counts, uint32_t value);
+    uint32_t get(uint64_t index);
+};
+
 /// A diagram with a table structure where each column and row can have variable sizes.
 ///
 /// The purpose of this struct is to provide a representation of circuits which is easier
@@ -64,12 +70,20 @@ struct DiagramTimelineAsciiSizing {
 /// diagrams.
 struct DiagramTimelineAsciiDrawer {
     size_t cur_moment = 0;
-    size_t cur_moment_num_used = 0;
-    size_t measure_offset = 0;
+    size_t cur_moment_is_used = false;
+    uint64_t measure_offset = 0;
+    uint64_t detector_offset = 0;
     size_t tick_start_moment = 0;
     std::vector<bool> cur_moment_used_flags;
     size_t num_qubits = 0;
     size_t num_ticks = 0;
+    std::vector<std::vector<double>> latest_qubit_coords;
+    std::vector<uint64_t> cur_loop_measurement_periods;
+    std::vector<uint64_t> cur_loop_repeat_counts;
+    std::vector<uint64_t> cur_loop_detector_periods;
+    std::vector<std::vector<double>> cur_loop_shift_periods;
+    std::vector<double> coord_shift;
+    LoopingIndexMap m2q;
 
     /// What to draw in various cells.
     std::map<DiagramTimelineAsciiAlignedPos, DiagramTimelineAsciiCellContents> cells;
@@ -91,14 +105,33 @@ struct DiagramTimelineAsciiDrawer {
     std::string str() const;
 
     void start_next_moment();
-    void draw_tick();
-    void draw_two_qubit_gate(const stim::Operation &op, const stim::GateTarget &target1, const stim::GateTarget &target2);
-    void draw_feedback(const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
-    void draw_single_qubit_gate(const stim::Operation &op, const stim::GateTarget &target);
-    void draw_measurement_gate(const stim::Operation &op, stim::ConstPointerRange<stim::GateTarget> targets);
-    void draw_repeat_block(const stim::Circuit &circuit, const stim::Operation &op);
-    void draw_next_operation(const stim::Circuit &circuit, const stim::Operation &op);
-    void draw_circuit(const stim::Circuit &circuit);
+    void reserve_drawing_room_for_targets(stim::ConstPointerRange<stim::GateTarget> targets);
+    void reserve_drawing_room_for_targets(stim::GateTarget t1, stim::GateTarget t2);
+    void reserve_drawing_room_for_targets(stim::GateTarget t);
+    void write_rec_index(std::ostream &out, int64_t lookback_shift = 0);
+    void write_det_index(std::ostream &out);
+    void write_coord(std::ostream &out, size_t coord_index, double relative_coordinate);
+    void write_coords(std::ostream &out, stim::ConstPointerRange<double> relative_coordinates);
+    stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
+    stim::GateTarget pick_pseudo_target_representing_measurements(const stim::Operation &op);
+
+    void do_tick();
+    void do_two_qubit_gate_instance(const stim::Operation &op, const stim::GateTarget &target1, const stim::GateTarget &target2);
+    void do_feedback(const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
+    void do_single_qubit_gate_instance(const stim::Operation &op, const stim::GateTarget &target);
+    void do_multi_qubit_gate_with_pauli_targets(const stim::Operation &op, stim::ConstPointerRange<stim::GateTarget> targets);
+    void do_repeat_block(const stim::Circuit &circuit, const stim::Operation &op);
+    void do_next_operation(const stim::Circuit &circuit, const stim::Operation &op);
+    void do_circuit(const stim::Circuit &circuit);
+    void do_mpp(const stim::Operation &op);
+    void do_correlated_error(const stim::Operation &op);
+    void do_else_correlated_error(const stim::Operation &op);
+    void do_two_qubit_gate(const stim::Operation &op);
+    void do_single_qubit_gate(const stim::Operation &op);
+    void do_detector(const stim::Operation &op);
+    void do_observable_include(const stim::Operation &op);
+    void do_shift_coords(const stim::Operation &op);
+    void do_qubit_coords(const stim::Operation &op);
 
     DiagramTimelineAsciiDrawer transposed() const;
 };
