@@ -2,6 +2,8 @@ import math
 from typing import Iterator
 from typing import Optional
 
+import stim
+
 from sinter._anon_task_stats import AnonTaskStats
 from sinter._existing_data import ExistingData
 from sinter._task import Task
@@ -17,21 +19,32 @@ class CollectionTrackerForSingleTask:
             self,
             *,
             task: Task,
+            circuit_path: str,
+            dem_path: str,
             existing_data: ExistingData):
-        self.task = task
+        self.unfilled_task = task
+        self.task_strong_id = None
+        self.circuit_path = circuit_path
+        self.dem_path = dem_path
         self.finished_stats = AnonTaskStats()
         self.existing_data = existing_data
         self.deployed_shots = 0
-        self.waiting_for_dem = False
+        self.waiting_for_worker_computing_dem_and_strong_id = False
         self.deployed_processes = 0
-        if self.task.detector_error_model is not None:
-            self.finished_stats += self.existing_data.stats_for(self.task)
+
+        task.circuit.to_file(circuit_path)
+        if task.detector_error_model is not None:
+            task.detector_error_model.to_file(dem_path)
+            self.task_strong_id = task.strong_id()
+            existing = self.existing_data.data.get(self.task_strong_id)
+            if existing is not None:
+                self.finished_stats += existing.to_anon_stats()
         if self.copts.max_shots is None and self.copts.max_errors is None:
             raise ValueError('Neither the task nor the collector specified max_shots or max_errors. Must specify one.')
 
     @property
     def copts(self):
-        return self.task.collection_options
+        return self.unfilled_task.collection_options
 
     def expected_shots_remaining(
             self, *, safety_factor_on_shots_per_error: float = 1) -> float:
@@ -64,28 +77,19 @@ class CollectionTrackerForSingleTask:
         return dt * n
 
     def work_completed(self, result: WorkOut) -> None:
-        if self.waiting_for_dem:
-            assert result.filled_in_dem is not None
-            self.task = Task(
-                circuit=self.task.circuit,
-                decoder=self.task.decoder,
-                detector_error_model=result.filled_in_dem,
-                postselection_mask=self.task.postselection_mask,
-                postselected_observables_mask=self.task.postselected_observables_mask,
-                json_metadata=self.task.json_metadata,
-                collection_options=self.task.collection_options,
-                skip_validation=True,
-                _unvalidated_strong_id=result.filled_in_strong_id,
-            )
-            self.waiting_for_dem = False
-            self.finished_stats += self.existing_data.stats_for(self.task)
+        if self.waiting_for_worker_computing_dem_and_strong_id:
+            self.task_strong_id = result.strong_id
+            existing = self.existing_data.data.get(self.task_strong_id)
+            if existing is not None:
+                self.finished_stats += existing.to_anon_stats()
+            self.waiting_for_worker_computing_dem_and_strong_id = False
         else:
             self.deployed_shots -= result.stats.shots
             self.finished_stats += result.stats
         self.deployed_processes -= 1
 
     def is_done(self) -> bool:
-        if self.task.detector_error_model is None or self.waiting_for_dem:
+        if self.task_strong_id is None or self.waiting_for_worker_computing_dem_and_strong_id:
             return False
         enough_shots = False
         if self.copts.max_shots is not None and self.finished_stats.shots >= self.copts.max_shots:
@@ -141,15 +145,21 @@ class CollectionTrackerForSingleTask:
         return math.ceil(min(self.iter_batch_size_limits(desperate=desperate)))
 
     def provide_more_work(self, *, desperate: bool) -> Optional[WorkIn]:
-        if self.task.detector_error_model is None:
-            if self.waiting_for_dem:
+        if self.task_strong_id is None:
+            if self.waiting_for_worker_computing_dem_and_strong_id:
                 return None
-            self.waiting_for_dem = True
+            self.waiting_for_worker_computing_dem_and_strong_id = True
             self.deployed_processes += 1
             return WorkIn(
                 work_key=None,
-                task=self.task,
-                num_shots=0,
+                circuit_path=self.circuit_path,
+                dem_path=self.dem_path,
+                decoder=self.unfilled_task.decoder,
+                postselection_mask=self.unfilled_task.postselection_mask,
+                postselected_observables_mask=self.unfilled_task.postselected_observables_mask,
+                json_metadata=self.unfilled_task.json_metadata,
+                strong_id=None,
+                num_shots=-1,
             )
 
         # Wait to have *some* data before starting to sample in parallel.
@@ -161,7 +171,13 @@ class CollectionTrackerForSingleTask:
         self.deployed_processes += 1
         return WorkIn(
             work_key=None,
-            task=self.task,
+            strong_id=self.task_strong_id,
+            circuit_path=self.circuit_path,
+            dem_path=self.dem_path,
+            decoder=self.unfilled_task.decoder,
+            postselection_mask=self.unfilled_task.postselection_mask,
+            postselected_observables_mask=self.unfilled_task.postselected_observables_mask,
+            json_metadata=self.unfilled_task.json_metadata,
             num_shots=num_shots,
         )
 
@@ -176,14 +192,14 @@ class CollectionTrackerForSingleTask:
             f'processes={self.deployed_processes}'.ljust(13),
             f'~core_mins_left={t}'.ljust(24),
         ]
-        if self.task.detector_error_model is None:
+        if self.task_strong_id is None:
             terms.append(f'(initializing...) ')
         else:
             if self.copts.max_shots is not None:
                 terms.append(f'shots_left={max(0, self.copts.max_shots - self.finished_stats.shots)}'.ljust(20))
             if self.copts.max_errors is not None:
                 terms.append(f'errors_left={max(0, self.copts.max_errors - self.finished_stats.errors)}'.ljust(20))
-        terms.append(f'{self.task.json_metadata}')
+        terms.append(f'{self.unfilled_task.json_metadata}')
         return ''.join(terms)
 
 

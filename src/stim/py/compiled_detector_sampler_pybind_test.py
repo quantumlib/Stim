@@ -168,3 +168,14 @@ def test_write_obs_file():
             assert f.read() == 'shot D3\n' * 100
         with open(d / 'obs') as f:
             assert f.read() == '1\n' * 100
+
+
+def test_detector_sampler_actually_fills_array():
+    circuit = stim.Circuit('''
+       X_ERROR(1) 0
+       M 0
+       DETECTOR rec[-1]
+    ''')
+    sampler = circuit.compile_detector_sampler()
+    detector_data = sampler.sample(shots=10000)
+    assert np.all(detector_data)

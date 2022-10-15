@@ -135,3 +135,14 @@ def test_repr():
     X 0
     M 0
 '''), skip_reference_sample=True)"""
+
+
+def test_circuit_sampler_actually_fills_array():
+    circuit = stim.Circuit('''
+       X_ERROR(1) 0
+       M 0
+       DETECTOR rec[-1]
+    ''')
+    sampler = circuit.compile_detector_sampler()
+    measure_data = sampler.sample(shots=10000)
+    assert np.all(measure_data)

@@ -88,7 +88,7 @@ def iter_collect(*,
             pass
 
     with CollectionWorkManager(
-            tasks=iter(tasks),
+            tasks_iter=iter(tasks),
             global_collection_options=CollectionOptions(
                 max_shots=max_shots,
                 max_errors=max_errors,

@@ -13,8 +13,10 @@ def test_decode_using_pymatching():
                                      distance=3,
                                      after_clifford_depolarization=0.05)
     result = sample_decode(
-        circuit=circuit,
-        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='pymatching',
     )
@@ -32,8 +34,10 @@ def test_pymatching_works_on_surface_code():
     )
     stats = sample_decode(
         num_shots=1000,
-        circuit=circuit,
-        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         decoder="pymatching",
     )
     assert 0 <= stats.errors <= 50
@@ -47,8 +51,10 @@ def test_decode_using_internal_decoder():
                                      distance=3,
                                      after_clifford_depolarization=0.05)
     result = sample_decode(
-        circuit=circuit,
-        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='internal',
     )
@@ -65,8 +71,10 @@ def test_decode_using_internal_decoder_correlated():
                                      distance=3,
                                      after_clifford_depolarization=0.05)
     result = sample_decode(
-        circuit=circuit,
-        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='internal_correlated',
     )
@@ -78,8 +86,10 @@ def test_decode_using_internal_decoder_correlated():
 def test_empty():
     circuit = stim.Circuit()
     result = sample_decode(
-        circuit=circuit,
-        decoder_error_model=circuit.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='pymatching',
     )
@@ -89,14 +99,16 @@ def test_empty():
 
 
 def test_no_observables():
-    c = stim.Circuit("""
+    circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
         DETECTOR rec[-1]
     """)
     result = sample_decode(
-        circuit=c,
-        decoder_error_model=c.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='pymatching',
     )
@@ -106,15 +118,17 @@ def test_no_observables():
 
 
 def test_invincible_observables():
-    c = stim.Circuit("""
+    circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0 1
         DETECTOR rec[-2]
         OBSERVABLE_INCLUDE(1) rec[-1]
     """)
     result = sample_decode(
-        circuit=c,
-        decoder_error_model=c.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='pymatching',
     )
@@ -125,7 +139,7 @@ def test_invincible_observables():
 
 @pytest.mark.parametrize("offset", range(8))
 def test_observable_offsets_mod8(offset: int):
-    c = stim.Circuit("""
+    circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         MR 0
         DETECTOR rec[-1]
@@ -135,8 +149,10 @@ def test_observable_offsets_mod8(offset: int):
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
     result = sample_decode(
-        circuit=c,
-        decoder_error_model=c.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='pymatching',
     )
@@ -146,14 +162,16 @@ def test_observable_offsets_mod8(offset: int):
 
 
 def test_no_detectors():
-    c = stim.Circuit("""
+    circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
     result = sample_decode(
-        circuit=c,
-        decoder_error_model=c.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         num_shots=1000,
         decoder='pymatching',
     )
@@ -162,14 +180,16 @@ def test_no_detectors():
 
 
 def test_no_detectors_with_post_mask():
-    c = stim.Circuit("""
+    circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
     result = sample_decode(
-        circuit=c,
-        decoder_error_model=c.detector_error_model(decompose_errors=True),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
         post_mask=np.array([], dtype=np.uint8),
         num_shots=1000,
         decoder='pymatching',
@@ -179,7 +199,7 @@ def test_no_detectors_with_post_mask():
 
 
 def test_post_selection():
-    c = stim.Circuit("""
+    circuit = stim.Circuit("""
         X_ERROR(0.6) 0
         M 0
         DETECTOR(2, 0, 0, 1) rec[-1]
@@ -195,9 +215,11 @@ def test_post_selection():
         OBSERVABLE_INCLUDE(0) rec[-1]
     """)
     result = sample_decode(
-        circuit=c,
-        decoder_error_model=c.detector_error_model(decompose_errors=True),
-        post_mask=post_selection_mask_from_4th_coord(c),
+        circuit_obj=circuit,
+        circuit_path=None,
+        dem_obj=circuit.detector_error_model(decompose_errors=True),
+        dem_path=None,
+        post_mask=post_selection_mask_from_4th_coord(circuit),
         num_shots=2000,
         decoder='pymatching',
     )

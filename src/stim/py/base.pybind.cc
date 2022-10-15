@@ -33,7 +33,7 @@ std::shared_ptr<std::mt19937_64> stim_pybind::make_py_seeded_rng(const pybind11:
     }
 }
 
-std::string stim_pybind::clean_doc_string(const char8_t *c) {
+std::string stim_pybind::clean_doc_string(const char *c) {
     // Skip leading empty lines.
     while (*c == '\n') {
         c++;

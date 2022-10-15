@@ -27,8 +27,8 @@
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/draw/3d/timeline_3d.h"
-#include "stim/draw/timeline/timeline_text.h"
+#include "stim/diagram/timeline_3d/timeline_3d.h"
+#include "stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.h"
 
 using namespace stim;
 
@@ -325,8 +325,7 @@ int main_mode_diagram(int argc, const char **argv) {
         auto diagram = circuit_diagram_timeline_3d(circuit);
         fprintf(out.f, "%s", diagram.data());
     } else {
-        auto diagram = circuit_diagram_timeline_text(circuit);
-        fprintf(out.f, "%s", diagram.data());
+        std::cout << stim_draw_internal::DiagramTimelineAsciiDrawer::from_circuit(circuit);
     }
 
     return EXIT_SUCCESS;

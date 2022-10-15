@@ -10,13 +10,14 @@ from sinter._collection_options import CollectionOptions
 from sinter._existing_data import ExistingData
 from sinter._task_stats import TaskStats
 from sinter._task import Task
+from sinter._anon_task_stats import AnonTaskStats
 from sinter._collection_tracker_for_single_task import CollectionTrackerForSingleTask
 from sinter._worker import worker_loop, WorkIn, WorkOut
 
 
 class CollectionWorkManager:
     def __init__(self, *,
-                 tasks: Iterator[Task],
+                 tasks_iter: Iterator[Task],
                  global_collection_options: CollectionOptions,
                  additional_existing_data: Optional[ExistingData],
                  decoders: Optional[Iterable[str]]):
@@ -32,11 +33,15 @@ class CollectionWorkManager:
 
         self.workers: List[multiprocessing.Process] = []
         self.active_collectors: Dict[int, CollectionTrackerForSingleTask] = {}
-        self.tasks: Iterator[Task] = tasks
         self.next_collector_key: int = 0
         self.finished_count = 0
         self.deployed_jobs: Dict[int, WorkIn] = {}
         self.next_job_id = 0
+
+        self.tasks_with_decoder_iter: Iterator[Task] = _iter_tasks_with_assigned_decoders(
+            tasks_iter=tasks_iter,
+            default_decoders=self.decoders,
+            global_collections_options=self.global_collection_options)
 
     def start_workers(self, num_workers: int) -> None:
         assert self.tmp_dir is not None
@@ -64,7 +69,7 @@ class CollectionWorkManager:
 
     def __enter__(self):
         self.exit_stack = contextlib.ExitStack().__enter__()
-        self.tmp_dir = self.exit_stack.enter_context(tempfile.TemporaryDirectory())
+        self.tmp_dir = pathlib.Path(self.exit_stack.enter_context(tempfile.TemporaryDirectory()))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -105,32 +110,30 @@ class CollectionWorkManager:
             if isinstance(error, KeyboardInterrupt):
                 raise KeyboardInterrupt()
             raise RuntimeError(f"Worker failed: {msg}") from error
-        elif result.stats is not None:
+
+        else:
             job_id, sub_key = result.work_key
             stats = result.stats
-            task = self.deployed_jobs[job_id].task
-            strong_id = task.strong_id() if result.filled_in_strong_id is None else result.filled_in_strong_id
+            work_in = self.deployed_jobs[job_id]
 
             self.work_completed(WorkOut(
                 work_key=sub_key,
                 stats=stats,
-                filled_in_strong_id=result.filled_in_strong_id,
-                filled_in_dem=result.filled_in_dem,
+                strong_id=result.strong_id,
                 msg_error=result.msg_error,
             ))
             del self.deployed_jobs[job_id]
+            if stats is None:
+                stats = AnonTaskStats()
             return TaskStats(
-                strong_id=strong_id,
-                decoder=task.decoder,
-                json_metadata=task.json_metadata,
+                strong_id=result.strong_id,
+                decoder=work_in.decoder,
+                json_metadata=work_in.json_metadata,
                 shots=stats.shots,
                 errors=stats.errors,
                 discards=stats.discards,
                 seconds=stats.seconds,
             )
-
-        else:
-            raise NotImplementedError(f'result={result!r}')
 
     def _iter_draw_collectors(self, *, prefer_started: bool) -> Iterator[Tuple[int, CollectionTrackerForSingleTask]]:
         if prefer_started:
@@ -138,39 +141,21 @@ class CollectionWorkManager:
         while True:
             key = self.next_collector_key
             try:
-                task = next(self.tasks)
+                task = next(self.tasks_with_decoder_iter)
             except StopIteration:
                 break
-            if task.decoder is None and self.decoders is None:
-                raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
-
-            task_decoders = []
-            if self.decoders is not None:
-                task_decoders.extend(self.decoders)
-            if task.decoder is not None and task.decoder not in task_decoders:
-                task_decoders.append(task.decoder)
-
-            for decoder in task_decoders:
-                full_task = Task(
-                    circuit=task.circuit,
-                    decoder=decoder,
-                    detector_error_model=task.detector_error_model,
-                    postselection_mask=task.postselection_mask,
-                    postselected_observables_mask=task.postselected_observables_mask,
-                    json_metadata=task.json_metadata,
-                    collection_options=task.collection_options.combine(self.global_collection_options),
-                    skip_validation=True,
-                )
-                collector = CollectionTrackerForSingleTask(
-                    task=full_task,
-                    existing_data=self.additional_existing_data,
-                )
-                if collector.is_done():
-                    self.finished_count += 1
-                    continue
-                self.next_collector_key += 1
-                self.active_collectors[key] = collector
-                yield key, collector
+            collector = CollectionTrackerForSingleTask(
+                task=task,
+                circuit_path=str((self.tmp_dir / f'circuit_{self.next_collector_key}.stim').absolute()),
+                dem_path=str((self.tmp_dir / f'dem_{self.next_collector_key}.dem').absolute()),
+                existing_data=self.additional_existing_data,
+            )
+            if collector.is_done():
+                self.finished_count += 1
+                continue
+            self.next_collector_key += 1
+            self.active_collectors[key] = collector
+            yield key, collector
         if not prefer_started:
             yield from self.active_collectors.items()
 
@@ -211,6 +196,33 @@ class CollectionWorkManager:
             '\n    ' + collector.status()
             for collector in self.active_collectors.values()
         ]
-        if len(collector_statuses) > 10:
-            collector_statuses = collector_statuses[:10] + ['\n...']
+        if len(collector_statuses) > 24:
+            collector_statuses = collector_statuses[:24] + ['\n...']
         return main_status + ''.join(collector_statuses)
+
+
+def _iter_tasks_with_assigned_decoders(
+    *,
+    tasks_iter: Iterator[Task],
+    default_decoders: Optional[Iterable[str]],
+    global_collections_options: CollectionOptions,
+) -> Iterator[Task]:
+    for task in tasks_iter:
+        if task.decoder is None and default_decoders is None:
+            raise ValueError("Decoders to use was not specified. decoders is None and task.decoder is None")
+        task_decoders = []
+        if default_decoders is not None:
+            task_decoders.extend(default_decoders)
+        if task.decoder is not None and task.decoder not in task_decoders:
+            task_decoders.append(task.decoder)
+        for decoder in task_decoders:
+            yield Task(
+                circuit=task.circuit,
+                decoder=decoder,
+                detector_error_model=task.detector_error_model,
+                postselection_mask=task.postselection_mask,
+                postselected_observables_mask=task.postselected_observables_mask,
+                json_metadata=task.json_metadata,
+                collection_options=task.collection_options.combine(global_collections_options),
+                skip_validation=True,
+            )
