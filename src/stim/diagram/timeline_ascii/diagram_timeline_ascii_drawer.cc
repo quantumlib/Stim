@@ -1,4 +1,5 @@
 #include "stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.h"
+#include "stim/diagram/diagram_util.h"
 
 using namespace stim;
 using namespace stim_draw_internal;

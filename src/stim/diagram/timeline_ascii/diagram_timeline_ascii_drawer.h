@@ -23,9 +23,6 @@
 
 namespace stim_draw_internal {
 
-/// Splits a two qubit gate into two end pieces, which can be drawn independently.
-std::pair<std::string, std::string> two_qubit_gate_pieces(const std::string &name, bool keep_it_short);
-
 /// Identifies a location within a cell in a diagram with variable-sized columns and rows.
 struct DiagramTimelineAsciiAlignedPos {
     size_t x;   /// The column that the cell is in.
