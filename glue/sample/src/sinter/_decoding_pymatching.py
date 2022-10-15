@@ -28,7 +28,7 @@ def decode_using_pymatching(*,
 
     global _method_to_use
     if _method_to_use is None:
-        if getattr(getattr(pymatching, '_cpp_pymatching', None), 'main') is not None:
+        if getattr(getattr(pymatching, '_cpp_pymatching', None), 'main', None) is not None:
             _method_to_use = decode_using_pymatching_v2
         else:
             _method_to_use = decode_using_pymatching_v1
