@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/draw/timeline/timeline_layout.h"
+#include "stim/diagram/timeline_3d/diagram_3d.h"
 
 #include "gtest/gtest.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
-TEST(draw, utf8_char_count) {
-    ASSERT_EQ(utf8_char_count("√XX†"), 4);
-    ASSERT_EQ(utf8_char_count("abc"), 3);
+TEST(diagram_3d, min_distance) {
+    EXPECT_EQ(min_distance(std::vector<Coord<2>>{{0, 0}, {2, 0}}), 2);
 }

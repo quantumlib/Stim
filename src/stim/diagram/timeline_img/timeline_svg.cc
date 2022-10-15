@@ -1,5 +1,5 @@
-#include "stim/draw/timeline/timeline_layout.h"
-#include "stim/draw/timeline/timeline_svg.h"
+#include "stim/diagram/timeline_img/timeline_layout.h"
+#include "stim/diagram/timeline_img/timeline_svg.h"
 
 using namespace stim;
 using namespace stim_draw_internal;

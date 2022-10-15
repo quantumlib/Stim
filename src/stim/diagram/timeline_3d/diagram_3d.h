@@ -21,7 +21,7 @@
 
 #include "stim/circuit/gate_data.h"
 #include "stim/circuit/circuit.h"
-#include "stim/draw/3d/gltf.h"
+#include "stim/diagram/timeline_3d/gltf.h"
 #include "stim/mem/pointer_range.h"
 
 namespace stim_draw_internal {

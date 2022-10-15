@@ -1,12 +1,12 @@
-#include "stim/draw/timeline/timeline_layout.h"
-#include "stim/draw/timeline/timeline_text.h"
+#include "stim/diagram/timeline_ascii/timeline_layout.h"
+#include "stim/diagram/timeline_ascii/timeline_text.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
 std::string stim::circuit_diagram_timeline_text(const Circuit &circuit) {
-    CellDiagram diagram = CellDiagram::from_circuit(circuit);
-    CellDiagramSizing layout = diagram.compute_sizing();
+    DiagramTimelineAscii diagram = DiagramTimelineAscii::from_circuit(circuit);
+    DiagramTimelineAsciiSizing layout = diagram.compute_sizing();
 
     std::vector<std::string> lines;
     lines.resize(layout.y_offsets.back());

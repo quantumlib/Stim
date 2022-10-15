@@ -1,48 +1,37 @@
-#include "stim/draw/timeline/timeline_layout.h"
+#include "stim/diagram/timeline_ascii/timeline_layout.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
-size_t stim_draw_internal::utf8_char_count(const std::string &s) {
-    size_t t = 0;
-    for (uint8_t c : s) {
-        // Continuation bytes start with "10" in binary.
-        if ((c & 0xC0) != 0x80) {
-            t++;
-        }
-    }
-    return t;
-}
-
-CellDiagramAlignedPos::CellDiagramAlignedPos(size_t x, size_t y, float align_x, float align_y) :
+DiagramTimelineAsciiAlignedPos::DiagramTimelineAsciiAlignedPos(size_t x, size_t y, float align_x, float align_y) :
     x(x),
     y(y),
     align_x(align_x),
     align_y(align_y) {
 }
 
-bool CellDiagramAlignedPos::operator==(const CellDiagramAlignedPos &other) const {
+bool DiagramTimelineAsciiAlignedPos::operator==(const DiagramTimelineAsciiAlignedPos &other) const {
     return x == other.x && y == other.y;
 }
 
-bool CellDiagramAlignedPos::operator<(const CellDiagramAlignedPos &other) const {
+bool DiagramTimelineAsciiAlignedPos::operator<(const DiagramTimelineAsciiAlignedPos &other) const {
     if (x != other.x) {
         return x < other.x;
     }
     return y < other.y;
 }
 
-CellDiagramCellContents::CellDiagramCellContents(CellDiagramAlignedPos center, std::string label, const char *stroke) :
+DiagramTimelineAsciiCellContents::DiagramTimelineAsciiCellContents(DiagramTimelineAsciiAlignedPos center, std::string label, const char *stroke) :
     center(center),
     label(label),
     stroke(stroke) {
 }
 
-void CellDiagram::add_cell(CellDiagramCellContents cell) {
+void DiagramTimelineAscii::add_cell(DiagramTimelineAsciiCellContents cell) {
     cells.insert({cell.center, cell});
 }
 
-void CellDiagram::for_each_pos(const std::function<void(CellDiagramAlignedPos pos)> &callback) {
+void DiagramTimelineAscii::for_each_pos(const std::function<void(DiagramTimelineAsciiAlignedPos pos)> &callback) {
     for (const auto &item : cells) {
         callback(item.first);
     }
@@ -52,7 +41,7 @@ void CellDiagram::for_each_pos(const std::function<void(CellDiagramAlignedPos po
     }
 }
 
-void CellDiagram::compactify() {
+void DiagramTimelineAscii::compactify() {
     for (auto &item : cells) {
         auto &label = item.second.label;
         if (label.find("SQRT_") == 0) {
@@ -67,9 +56,9 @@ void CellDiagram::compactify() {
     }
 }
 
-CellDiagramSizing CellDiagram::compute_sizing() {
-    CellDiagramSizing layout{0, 0, {}, {}, {}, {}};
-    for_each_pos([&](CellDiagramAlignedPos pos) {
+DiagramTimelineAsciiSizing DiagramTimelineAscii::compute_sizing() {
+    DiagramTimelineAsciiSizing layout{0, 0, {}, {}, {}, {}};
+    for_each_pos([&](DiagramTimelineAsciiAlignedPos pos) {
         layout.num_x = std::max(layout.num_x, pos.x + 1);
         layout.num_y = std::max(layout.num_y, pos.y + 1);
     });
@@ -80,7 +69,7 @@ CellDiagramSizing CellDiagram::compute_sizing() {
         const auto &box = item.second;
         auto &dx = layout.x_spans[box.center.x];
         auto &dy = layout.y_spans[box.center.y];
-        dx = std::max(dx, utf8_char_count(box.label));
+        dx = std::max(dx, box.label.size());
         dy = std::max(dy, (size_t)1);
     }
 
@@ -96,7 +85,7 @@ CellDiagramSizing CellDiagram::compute_sizing() {
     return layout;
 }
 
-CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
+DiagramTimelineAscii DiagramTimelineAscii::from_circuit(const Circuit &circuit) {
     size_t num_qubits = circuit.count_qubits();
     size_t num_ticks = circuit.count_ticks();
 
@@ -107,7 +96,7 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
     std::vector<bool> cur_moment_used_flags;
     cur_moment_used_flags.resize(num_qubits);
 
-    CellDiagram diagram;
+    DiagramTimelineAscii diagram;
 
     auto m2x = [](size_t m) { return m * 2 + 2; };
     auto q2y = [](size_t q) { return q * 2 + 1; };
@@ -152,7 +141,7 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
         if (!op.target_data.args.empty()) {
             ss << "(" << comma_sep(op.target_data.args, ",") << ")";
         }
-        diagram.add_cell(CellDiagramCellContents{
+        diagram.add_cell(DiagramTimelineAsciiCellContents{
             {
                 m2x(cur_moment),
                 q2y(target.qubit_value()),
@@ -180,7 +169,7 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
         } else if (feedback_target.is_measurement_record_target()) {
             ss << "m" << (feedback_target.value() + measure_offset);
         }
-        diagram.add_cell(CellDiagramCellContents{
+        diagram.add_cell(DiagramTimelineAsciiCellContents{
             {
                 m2x(cur_moment),
                 q2y(qubit_target.qubit_value()),
@@ -223,13 +212,13 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
             cur_moment_used_flags[q] = true;
         }
 
-        CellDiagramAlignedPos pos1{
+        DiagramTimelineAsciiAlignedPos pos1{
             m2x(cur_moment),
             q2y(target1.qubit_value()),
             0.5,
             0.5,
         };
-        CellDiagramAlignedPos pos2{
+        DiagramTimelineAsciiAlignedPos pos2{
             m2x(cur_moment),
             q2y(target2.qubit_value()),
             0.5,
@@ -243,12 +232,12 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
             first << "(" << comma_sep(op.target_data.args, ",") << ")";
             second << "(" << comma_sep(op.target_data.args, ",") << ")";
         }
-        diagram.add_cell(CellDiagramCellContents{
+        diagram.add_cell(DiagramTimelineAsciiCellContents{
             pos1,
             first.str(),
             "black",
         });
-        diagram.add_cell(CellDiagramCellContents{
+        diagram.add_cell(DiagramTimelineAsciiCellContents{
             pos2,
             second.str(),
             "black",
@@ -318,7 +307,7 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
             if (!op.target_data.args.empty()) {
                 ss << "(" << comma_sep(op.target_data.args, ",") << ")";
             }
-            diagram.add_cell(CellDiagramCellContents{
+            diagram.add_cell(DiagramTimelineAsciiCellContents{
                 {
                     m2x(cur_moment),
                     q2y(t.qubit_value()),
@@ -399,15 +388,15 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
                 tick_start_moment = cur_moment;
 
                 size_t x2 = m2x(cur_moment);
-                CellDiagramAlignedPos top_left{x1, y1, 0.0, 0.0};
-                CellDiagramAlignedPos top_right{x2, y1, 1.0, 0.0};
-                CellDiagramAlignedPos bottom_left{x1, y2, 0.0, 1.0};
-                CellDiagramAlignedPos bottom_right{x2, y2, 1.0, 1.0};
+                DiagramTimelineAsciiAlignedPos top_left{x1, y1, 0.0, 0.0};
+                DiagramTimelineAsciiAlignedPos top_right{x2, y1, 1.0, 0.0};
+                DiagramTimelineAsciiAlignedPos bottom_left{x1, y2, 0.0, 1.0};
+                DiagramTimelineAsciiAlignedPos bottom_right{x2, y2, 1.0, 1.0};
                 diagram.lines.push_back({top_left, top_right});
                 diagram.lines.push_back({top_right, bottom_right});
                 diagram.lines.push_back({bottom_right, bottom_left});
                 diagram.lines.push_back({bottom_left, top_left});
-                diagram.add_cell(CellDiagramCellContents{
+                diagram.add_cell(DiagramTimelineAsciiCellContents{
                     top_left,
                     "REP " + std::to_string(reps),
                     "none",
@@ -436,7 +425,7 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
             {0, q2y(q), 1.0, 0.5},
             {m2x(cur_moment) + 1, q2y(q), 1.0, 0.5},
         };
-        diagram.add_cell(CellDiagramCellContents{
+        diagram.add_cell(DiagramTimelineAsciiCellContents{
             {0, q2y(q), 1.0, 0.5},
             "q" + std::to_string(q) + ": ",
             "none",
@@ -444,33 +433,4 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
     }
 
     return diagram;
-}
-
-std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(const std::string &name, bool keep_it_short) {
-    std::pair<std::string, std::string> result;
-    if (name == "CX") {
-        result = {"Z_CONTROL", "X_CONTROL"};
-    } else if (name == "CY") {
-        result = {"Z_CONTROL", "Y_CONTROL"};
-    } else if (name == "CZ") {
-        result = {"Z_CONTROL", "Z_CONTROL"};
-    } else if (name == "XCX") {
-        result = {"X_CONTROL", "X_CONTROL"};
-    } else if (name == "XCY") {
-        result = {"X_CONTROL", "Y_CONTROL"};
-    } else if (name == "XCZ") {
-        result = {"X_CONTROL", "Z_CONTROL"};
-    } else if (name == "YCX") {
-        result = {"Y_CONTROL", "X_CONTROL"};
-    } else if (name == "YCY") {
-        result = {"Y_CONTROL", "Y_CONTROL"};
-    } else if (name == "YCZ") {
-        result = {"Y_CONTROL", "Z_CONTROL"};
-    } else {
-        return {name, name};
-    }
-    if (keep_it_short) {
-        return {result.first.substr(0, 1), result.second.substr(0, 1)};
-    }
-    return result;
 }

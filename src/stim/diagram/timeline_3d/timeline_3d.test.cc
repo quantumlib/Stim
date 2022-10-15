@@ -12,7 +12,7 @@
 //// See the License for the specific language governing permissions and
 //// limitations under the License.
 //
-//#include "stim/draw/3d/timeline_3d.h"
+//#include "stim/diagram/timeline_3d/timeline_3d.h"
 //
 //#include "gtest/gtest.h"
 //#include "stim/gen/circuit_gen_params.h"
@@ -20,7 +20,7 @@
 //
 //using namespace stim;
 //
-//TEST(circuit_diagram_timeline_3d, XXXXXXXXXXX) {
+//TEST(circuit_diagram/timeline_3d, XXXXXXXXXXX) {
 //    CircuitGenParameters params(10, 5, "rotated_memory_z");
 ////    params.before_measure_flip_probability = 0.001;
 ////    params.after_reset_flip_probability = 0.001;
@@ -38,7 +38,7 @@
 ////        M 0 1 2 3
 ////    )CIRCUIT");
 //
-//    auto s = circuit_diagram_timeline_3d(circuit);
+//    auto s = circuit_diagram/timeline_3d(circuit);
 //
 //    FILE *f = fopen("/home/craiggidney/tmp/test.gltf", "w");
 //    fprintf(f, "%s", s.data());
