@@ -195,7 +195,7 @@ CellDiagram CellDiagram::from_circuit(const Circuit &circuit) {
     };
 
     auto drawGate2Q = [&](const Operation &op, const GateTarget &target1, const GateTarget &target2) {
-        auto ends = two_qubit_gate_pieces(op.gate->name, true);
+        auto ends = two_qubit_gate_pieces(op.gate->name);
         if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
             drawFeedback(ends.second, target2, target1);
             return;

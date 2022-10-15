@@ -106,7 +106,7 @@ void DiagramTimelineAsciiDrawer::draw_feedback(const std::string &gate, const Ga
 }
 
 void DiagramTimelineAsciiDrawer::draw_two_qubit_gate(const Operation &op, const GateTarget &target1, const GateTarget &target2) {
-    auto ends = two_qubit_gate_pieces(op.gate->name, true);
+    auto ends = two_qubit_gate_pieces(op.gate->name);
     if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
         draw_feedback(ends.second, target2, target1);
         return;

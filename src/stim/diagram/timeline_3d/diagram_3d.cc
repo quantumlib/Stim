@@ -183,13 +183,15 @@ Diagram3D Diagram3D::from_circuit(const stim::Circuit &circuit) {
     };
 
     auto drawGate2Q = [&](const Operation &op, const GateTarget &target1, const GateTarget &target2) {
-        auto pair = two_qubit_gate_pieces(op.gate->name, false);
+        auto pair = two_qubit_gate_pieces(op.gate->name);
+        auto a = pair.first;
+        auto b = pair.second;
         if (target1.is_measurement_record_target() || target1.is_sweep_bit_target()) {
-            drawFeedback(pair.first[0], target2, target1);
+            drawFeedback(a[0], target2, target1);
             return;
         }
         if (target2.is_measurement_record_target() || target2.is_sweep_bit_target()) {
-            drawFeedback(pair.second[0], target1, target2);
+            drawFeedback(b[0], target1, target2);
             return;
         }
 
@@ -204,10 +206,16 @@ Diagram3D Diagram3D::from_circuit(const stim::Circuit &circuit) {
         cur_moment_used_flags[q1] = true;
         cur_moment_used_flags[q2] = true;
 
+        if (a == "X" || a == "Y" || a == "Z") {
+            a.append("_CONTROL");
+        }
+        if (b == "X" || b == "Y" || b == "Z") {
+            b.append("_CONTROL");
+        }
         diagram.line_data.push_back({time, q2y(q1), q2z(q1)});
-        diagram.gates.push_back({pair.first, diagram.line_data.back()});
+        diagram.gates.push_back({a, diagram.line_data.back()});
         diagram.line_data.push_back({time, q2y(q2), q2z(q2)});
-        diagram.gates.push_back({pair.second, diagram.line_data.back()});
+        diagram.gates.push_back({b, diagram.line_data.back()});
         cur_moment_any_used = true;
     };
 
