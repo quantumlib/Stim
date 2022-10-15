@@ -196,8 +196,8 @@ class CollectionWorkManager:
             '\n    ' + collector.status()
             for collector in self.active_collectors.values()
         ]
-        if len(collector_statuses) > 10:
-            collector_statuses = collector_statuses[:10] + ['\n...']
+        if len(collector_statuses) > 24:
+            collector_statuses = collector_statuses[:24] + ['\n...']
         return main_status + ''.join(collector_statuses)
 
 
