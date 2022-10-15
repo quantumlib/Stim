@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_DIAGRAM_TIMELINE_ASCII_TIMELINE_LAYOUT_H
-#define _STIM_DIAGRAM_TIMELINE_ASCII_TIMELINE_LAYOUT_H
+#ifndef _STIM_DIAGRAM_TIMELINE_ASCII_DIAGRAM_TIMELINE_ASCII_DRAWER_H
+#define _STIM_DIAGRAM_TIMELINE_ASCII_DIAGRAM_TIMELINE_ASCII_DRAWER_H
 
 #include <iostream>
 
@@ -44,10 +44,8 @@ struct DiagramTimelineAsciiCellContents {
     DiagramTimelineAsciiAlignedPos center;
     /// The text to write.
     std::string label;
-    /// The color to use for the text.
-    const char *stroke;
 
-    DiagramTimelineAsciiCellContents(DiagramTimelineAsciiAlignedPos center, std::string label, const char *stroke);
+    DiagramTimelineAsciiCellContents(DiagramTimelineAsciiAlignedPos center, std::string label);
 };
 
 /// Describes sizes and offsets within a diagram with variable-sized columns and rows.
@@ -65,7 +63,15 @@ struct DiagramTimelineAsciiSizing {
 /// The purpose of this struct is to provide a representation of circuits which is easier
 /// for drawing code to consume, and to have better consistency between the various
 /// diagrams.
-struct DiagramTimelineAscii {
+struct DiagramTimelineAsciiDrawer {
+    size_t cur_moment = 0;
+    size_t cur_moment_num_used = 0;
+    size_t measure_offset = 0;
+    size_t tick_start_moment = 0;
+    std::vector<bool> cur_moment_used_flags;
+    size_t num_qubits = 0;
+    size_t num_ticks = 0;
+
     /// What to draw in various cells.
     std::map<DiagramTimelineAsciiAlignedPos, DiagramTimelineAsciiCellContents> cells;
     /// Lines to draw in between cells.
@@ -75,15 +81,29 @@ struct DiagramTimelineAscii {
     void add_cell(DiagramTimelineAsciiCellContents cell);
     /// Iterates over non-empty positions in the diagram.
     /// A position is non-empty if it has cell contents or a line end point.
-    void for_each_pos(const std::function<void(DiagramTimelineAsciiAlignedPos pos)> &callback);
-    /// A few random rewrite rules to make the diagrams look better.
-    void compactify();
+    void for_each_pos(const std::function<void(DiagramTimelineAsciiAlignedPos pos)> &callback) const;
     /// Based on the current contents, pick sizes and offsets for rows and columns.
-    DiagramTimelineAsciiSizing compute_sizing();
+    DiagramTimelineAsciiSizing compute_sizing() const;
 
     /// Converts a circuit into a cell diagram.
-    static DiagramTimelineAscii from_circuit(const stim::Circuit &circuit);
+    static DiagramTimelineAsciiDrawer from_circuit(const stim::Circuit &circuit);
+
+    void render(std::ostream &out) const;
+    std::string str() const;
+
+    void start_next_moment();
+    void draw_tick();
+    void draw_two_qubit_gate(const stim::Operation &op, const stim::GateTarget &target1, const stim::GateTarget &target2);
+    void draw_feedback(const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
+    void draw_single_qubit_gate(const stim::Operation &op, const stim::GateTarget &target);
+    void draw_measurement_gate(const stim::Operation &op, stim::ConstPointerRange<stim::GateTarget> targets);
+    void draw_repeat_block(const stim::Circuit &circuit, const stim::Operation &op);
+    void draw_next_operation(const stim::Circuit &circuit, const stim::Operation &op);
+    void draw_circuit(const stim::Circuit &circuit);
 };
+
+std::ostream &operator<<(std::ostream &out, const DiagramTimelineAsciiDrawer &drawer);
+
 
 }
 

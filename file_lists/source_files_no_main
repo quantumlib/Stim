@@ -20,8 +20,7 @@ src/stim/diagram/timeline_3d/gate_data_3d.cc
 src/stim/diagram/timeline_3d/gltf.cc
 src/stim/diagram/timeline_3d/json_obj.cc
 src/stim/diagram/timeline_3d/timeline_3d.cc
-src/stim/diagram/timeline_ascii/timeline_layout.cc
-src/stim/diagram/timeline_ascii/timeline_text.cc
+src/stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.cc
 src/stim/diagram/timeline_img/timeline_layout.cc
 src/stim/diagram/timeline_img/timeline_svg.cc
 src/stim/diagram/timeline_img/timeline_tikz.cc
