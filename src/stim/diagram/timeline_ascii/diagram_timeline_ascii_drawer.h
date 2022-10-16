@@ -76,7 +76,8 @@ struct DiagramTimelineAsciiDrawer {
     size_t tick_start_moment = 0;
     std::vector<bool> cur_moment_used_flags;
     size_t num_qubits = 0;
-    size_t num_ticks = 0;
+    bool has_ticks = false;
+    size_t moment_spacing = 1;
     std::vector<std::vector<double>> latest_qubit_coords;
     std::vector<uint64_t> cur_loop_measurement_periods;
     std::vector<uint64_t> cur_loop_repeat_counts;
@@ -84,6 +85,8 @@ struct DiagramTimelineAsciiDrawer {
     std::vector<std::vector<double>> cur_loop_shift_periods;
     std::vector<double> coord_shift;
     LoopingIndexMap m2q;
+
+    DiagramTimelineAsciiDrawer(size_t num_qubits, bool has_ticks);
 
     /// What to draw in various cells.
     std::map<DiagramTimelineAsciiAlignedPos, DiagramTimelineAsciiCellContents> cells;
@@ -114,6 +117,8 @@ struct DiagramTimelineAsciiDrawer {
     void write_coords(std::ostream &out, stim::ConstPointerRange<double> relative_coordinates);
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
     stim::GateTarget pick_pseudo_target_representing_measurements(const stim::Operation &op);
+    size_t m2x(size_t m) const;
+    size_t q2y(size_t q) const;
 
     void do_tick();
     void do_two_qubit_gate_instance(const stim::Operation &op, const stim::GateTarget &target1, const stim::GateTarget &target2);

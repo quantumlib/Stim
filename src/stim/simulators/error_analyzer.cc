@@ -617,12 +617,9 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
                 throw std::invalid_argument(
                     "ELSE_CORRELATED_ERROR wasn't preceded by ELSE_CORRELATED_ERROR or CORRELATED_ERROR (E)");
             } else if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 3);
-                auto b = op.target_data.targets[0].data;
-                assert(op.target_data.targets[0].data < circuit.blocks.size());
+                const auto &loop_body = op_data_block_body(circuit, op.target_data);
                 uint64_t repeats = op_data_rep_count(op.target_data);
-                const auto &block = circuit.blocks[b];
-                run_loop(block, repeats);
+                run_loop(loop_body, repeats);
             } else {
                 (this->*op.gate->reverse_error_analyzer_function)(op.target_data);
             }
@@ -789,7 +786,9 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::ELSE_CORRELATED_ERROR(const OperationData &dat) {
-    throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR" + dat.str());
+    if (accumulate_errors) {
+        throw std::invalid_argument("Failed to analyze ELSE_CORRELATED_ERROR" + dat.str());
+    }
 }
 
 void ErrorAnalyzer::check_can_approximate_disjoint(const char *op_name) {
@@ -1547,7 +1546,7 @@ void ErrorAnalyzer::add_error_combinations(
 
     for (size_t k = 0; k < s; k++) {
         stored_ids[1 << k] = mono_dedupe_store(basis_errors[k]);
-        
+
         if (decompose_errors) {
             for (const auto &id : basis_errors[k]) {
                 if (id.is_relative_detector_id()) {

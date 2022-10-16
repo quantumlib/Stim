@@ -7,14 +7,6 @@ using namespace stim_draw_internal;
 constexpr double GATE_ALIGNMENT_X = 0;  // Left-justify gates when time moves right.
 constexpr double GATE_ALIGNMENT_Y = 0.5; // Center-justify gates when time moves down.
 
-size_t m2x(size_t m) {
-    return m * 2 + 2;
-}
-
-size_t q2y(size_t q) {
-    return q * 2 + 1;
-}
-
 DiagramTimelineAsciiAlignedPos::DiagramTimelineAsciiAlignedPos(size_t x, size_t y, float align_x, float align_y) :
     x(x),
     y(y),
@@ -79,6 +71,14 @@ DiagramTimelineAsciiSizing DiagramTimelineAsciiDrawer::compute_sizing() const {
     }
 
     return layout;
+}
+
+size_t DiagramTimelineAsciiDrawer::m2x(size_t m) const {
+    return m * (1 + moment_spacing) + 2;
+}
+
+size_t DiagramTimelineAsciiDrawer::q2y(size_t q) const {
+    return q * 2 + 1;
 }
 
 void DiagramTimelineAsciiDrawer::do_feedback(const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
@@ -156,7 +156,7 @@ void DiagramTimelineAsciiDrawer::start_next_moment() {
 }
 
 void DiagramTimelineAsciiDrawer::do_tick() {
-    if (num_ticks > 0 && cur_moment > tick_start_moment) {
+    if (has_ticks && cur_moment > tick_start_moment) {
         size_t x1 = m2x(tick_start_moment);
         size_t x2 = m2x(cur_moment);
         size_t y1 = 0;
@@ -459,7 +459,7 @@ DiagramTimelineAsciiCellContents DiagramTimelineAsciiCellContents::transposed() 
 }
 
 DiagramTimelineAsciiDrawer DiagramTimelineAsciiDrawer::transposed() const {
-    DiagramTimelineAsciiDrawer result;
+    DiagramTimelineAsciiDrawer result(num_qubits, has_ticks);
     for (const auto &e : cells) {
         result.cells.insert({e.first.transposed(), e.second.transposed()});
     }
@@ -693,21 +693,23 @@ void DiagramTimelineAsciiDrawer::do_circuit(const Circuit &circuit) {
     }
 }
 
+DiagramTimelineAsciiDrawer::DiagramTimelineAsciiDrawer(size_t num_qubits, bool has_ticks) : num_qubits(num_qubits), has_ticks(has_ticks) {
+    cur_moment_used_flags.resize(num_qubits);
+}
+
 DiagramTimelineAsciiDrawer DiagramTimelineAsciiDrawer::from_circuit(const Circuit &circuit) {
-    DiagramTimelineAsciiDrawer diagram;
-    diagram.num_qubits = circuit.count_qubits();
-    diagram.num_ticks = circuit.count_ticks();
-    diagram.cur_moment_used_flags.resize(diagram.num_qubits);
+    DiagramTimelineAsciiDrawer diagram(circuit.count_qubits(), circuit.count_ticks() > 0);
     diagram.do_circuit(circuit);
 
+    // Make sure qubit lines are drawn first, so they are in the background.
     diagram.lines.insert(diagram.lines.begin(), diagram.num_qubits, {{0, 0, 0.0, 0.5}, {0, 0, 1.0, 0.5}});
     for (size_t q = 0; q < diagram.num_qubits; q++) {
         diagram.lines[q] = {
-            {0, q2y(q), 1.0, 0.5},
-            {m2x(diagram.cur_moment) + 1, q2y(q), 1.0, 0.5},
+            {0, diagram.q2y(q), 1.0, 0.5},
+            {diagram.m2x(diagram.cur_moment) + 1, diagram.q2y(q), 1.0, 0.5},
         };
         diagram.add_cell(DiagramTimelineAsciiCellContents{
-            {0, q2y(q), 1.0, 0.5},
+            {0, diagram.q2y(q), 1.0, 0.5},
             "q" + std::to_string(q) + ": ",
         });
     }
