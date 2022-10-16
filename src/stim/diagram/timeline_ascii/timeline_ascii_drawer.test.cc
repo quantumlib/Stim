@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.h"
+#include "stim/diagram/timeline_ascii/timeline_ascii_drawer.h"
 
 #include "gtest/gtest.h"
 #include "stim/gen/circuit_gen_params.h"
@@ -258,26 +258,26 @@ TEST(circuit_diagram_timeline_text, lattice_surgery_cnot) {
         CZ rec[-1] 0
     )CIRCUIT");
     ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
-q0: --------------MZZ:rec[1]-Z^rec[0]--Z^rec[2]-
-                  |
-q1: ---MXX:rec[0]-|----------X^rec[1]-----------
-       |          |
-q2: -R-MXX:rec[0]-MZZ:rec[1]-MX:rec[2]----------
+q0: -----------------MPP[Z]:rec[1]-Z^rec[0]--Z^rec[2]-
+                     |
+q1: ---MPP[X]:rec[0]-|-------------X^rec[1]-----------
+       |             |
+q2: -R-MPP[X]:rec[0]-MPP[Z]:rec[1]-MX:rec[2]----------
 )DIAGRAM");
 
     ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).transposed().str(), R"DIAGRAM(
-   q0:        q1:        q2:
-    |          |          |
-    |          |          R
-    |          |          |
-    |      MXX:rec[0]-MXX:rec[0]
-    |          |          |
-MZZ:rec[1]------------MZZ:rec[1]
-    |          |          |
- Z^rec[0]   X^rec[1]  MX:rec[2]
-    |          |          |
- Z^rec[2]      |          |
-    |          |          |
+    q0:           q1:           q2:
+      |             |             |
+      |             |             R
+      |             |             |
+      |       MPP[X]:rec[0]-MPP[X]:rec[0]
+      |             |             |
+MPP[Z]:rec[1]---------------MPP[Z]:rec[1]
+      |             |             |
+  Z^rec[0]      X^rec[1]      MX:rec[2]
+      |             |             |
+  Z^rec[2]          |             |
+      |             |             |
 )DIAGRAM");
 }
 

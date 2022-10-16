@@ -1,6 +1,6 @@
 #include "stim/diagram/detector_slice_img/detector_slice_set.h"
 #include "stim/simulators/error_analyzer.h"
-#include "stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.h"
+#include "stim/diagram/timeline_ascii/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline_3d/gltf.h"
 
 using namespace stim;
@@ -100,8 +100,8 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
             }
             ss << ":";
             ss << s.first;
-            drawer.add_cell(DiagramTimelineAsciiCellContents{
-                DiagramTimelineAsciiAlignedPos{
+            drawer.diagram.add_entry(AsciiDiagramEntry{
+                AsciiDiagramPos{
                     drawer.m2x(drawer.cur_moment),
                     drawer.q2y(t.qubit_value()),
                     0,
@@ -113,9 +113,9 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
     }
 
     // Make sure qubit lines are drawn first, so they are in the background.
-    drawer.lines.insert(drawer.lines.begin(), drawer.num_qubits, {{0, 0, 0.0, 0.5}, {0, 0, 1.0, 0.5}});
+    drawer.diagram.lines.insert(drawer.diagram.lines.begin(), drawer.num_qubits, {{0, 0, 0.0, 0.5}, {0, 0, 1.0, 0.5}});
     for (size_t q = 0; q < drawer.num_qubits; q++) {
-        drawer.lines[q] = {
+        drawer.diagram.lines[q] = {
             {0, drawer.q2y(q), 1.0, 0.5},
             {drawer.m2x(drawer.cur_moment) + 1, drawer.q2y(q), 1.0, 0.5},
         };
@@ -128,13 +128,13 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
             ss << "(" << comma_sep(p->second) << ")";
         }
         ss << " ";
-        drawer.add_cell(DiagramTimelineAsciiCellContents{
+        drawer.diagram.add_entry(AsciiDiagramEntry{
             {0, drawer.q2y(q), 1.0, 0.5},
             ss.str(),
         });
     }
 
-    drawer.render(out);
+    drawer.diagram.render(out);
 }
 
 std::set<uint64_t> DetectorSliceSet::used_qubits() const {
