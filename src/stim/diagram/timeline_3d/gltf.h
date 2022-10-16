@@ -43,6 +43,51 @@ template <size_t DIM>
 struct Coord {
     std::array<float, DIM> xyz;
 
+    Coord<DIM> &operator+=(const Coord<DIM> &other) {
+        for (size_t k = 0; k < DIM; k++) {
+            xyz[k] += other.xyz[k];
+        }
+        return *this;
+    }
+    Coord<DIM> &operator-=(const Coord<DIM> &other) {
+        for (size_t k = 0; k < DIM; k++) {
+            xyz[k] -= other.xyz[k];
+        }
+        return *this;
+    }
+    Coord<DIM> &operator/=(float f) {
+        for (size_t k = 0; k < DIM; k++) {
+            xyz[k] /= f;
+        }
+        return *this;
+    }
+    Coord<DIM> &operator*=(float f) {
+        for (size_t k = 0; k < DIM; k++) {
+            xyz[k] *= f;
+        }
+        return *this;
+    }
+    Coord<DIM> operator+(const Coord<DIM> &other) const {
+        Coord<DIM> result = *this;
+        result += other;
+        return result;
+    }
+    Coord<DIM> operator-(const Coord<DIM> &other) const {
+        Coord<DIM> result = *this;
+        result -= other;
+        return result;
+    }
+    Coord<DIM> operator/(float other) const {
+        Coord<DIM> result = *this;
+        result /= other;
+        return result;
+    }
+    Coord<DIM> operator*(float other) const {
+        Coord<DIM> result = *this;
+        result *= other;
+        return result;
+    }
+
     bool operator<(Coord<DIM> other) const {
         for (size_t k = 0; k < DIM; k++) {
             if (xyz[k] != other.xyz[k]) {
@@ -75,6 +120,17 @@ struct Coord {
         return {v_min, v_max};
     }
 };
+
+template <size_t DIM>
+std::ostream &operator<<(std::ostream &out, const Coord<DIM> &coord) {
+    for (size_t k = 0; k < DIM; k++) {
+        if (k) {
+            out << ',';
+        }
+        out << coord.xyz[k];
+    }
+    return out;
+}
 
 /// A named data buffer. Contains packed coordinate data.
 template <size_t DIM>
@@ -375,65 +431,11 @@ struct GltfScene {
     GltfId id;
     std::vector<std::shared_ptr<GltfNode>> nodes;
 
-    void visit(const gltf_visit_callback &callback) {
-        callback(
-            id,
-            "scenes",
-            [&]() {
-                return _to_json_local();
-            },
-            (uintptr_t)this);
-        for (auto &node : nodes) {
-            node->visit(callback);
-        }
-    }
+    static GltfScene from_circuit(const stim::Circuit &circuit);
 
-    JsonObj _to_json_local() const {
-        std::vector<JsonObj> scene_nodes_json;
-        for (const auto &n : nodes) {
-            scene_nodes_json.push_back(n->id.index);
-        }
-        return std::map<std::string, JsonObj>{
-            {"nodes", std::move(scene_nodes_json)},
-        };
-    }
-
-    JsonObj to_json() {
-        // Clear indices.
-        visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
-            item_id.index = SIZE_MAX;
-        });
-
-        // Re-index.
-        std::map<std::string, size_t> counts;
-        visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
-            auto &c = counts[type];
-            if (item_id.index == SIZE_MAX || item_id.index == c) {
-                item_id.index = c;
-                c++;
-            } else if (item_id.index > c) {
-                throw std::invalid_argument("out of order");
-            }
-        });
-
-        std::map<std::string, JsonObj> result{
-            {"scene", 0},
-            {"asset", std::map<std::string, JsonObj>{
-                 {"version", "2.0"},
-            }},
-        };
-        for (const auto &r : counts) {
-            result.insert({r.first, std::vector<JsonObj>{}});
-        }
-        visit([&](GltfId &item_id, const char *type, const std::function<JsonObj(void)> &to_json, uintptr_t abs_id) {
-            auto &list = result.at(type).arr;
-            if (item_id.index == list.size()) {
-                list.push_back(to_json());
-            }
-        });
-
-        return result;
-    }
+    void visit(const gltf_visit_callback &callback);
+    JsonObj _to_json_local() const;
+    JsonObj to_json();
 };
 
 }

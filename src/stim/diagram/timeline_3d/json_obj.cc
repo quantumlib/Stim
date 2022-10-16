@@ -120,6 +120,14 @@ std::string JsonObj::str(bool indent) const {
     return ss.str();
 }
 
+std::ostream &stim_draw_internal::operator<<(std::ostream &out, const JsonObj &obj) {
+    auto precision = out.precision();
+    out.precision(std::numeric_limits<double>::max_digits10);
+    obj.write(out, INT64_MIN);
+    out.precision(precision);
+    return out;
+}
+
 char u6_to_base64_char(uint8_t v) {
     if (v < 26) {
         return 'A' + v;

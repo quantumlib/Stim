@@ -27,10 +27,18 @@
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/diagram/timeline_3d/timeline_3d.h"
+#include "stim/diagram/timeline_3d/gltf.h"
 #include "stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.h"
+#include "stim/diagram/detector_slice_img/detector_slice_set.h"
 
 using namespace stim;
+
+enum DiagramTypes {
+    TIMELINE_TEXT,
+    TIMELINE_3D,
+    DETECTOR_SLICE_TEXT,
+    DETECTOR_SLICE_SVG,
+};
 
 std::mt19937_64 optionally_seeded_rng(int argc, const char **argv) {
     if (find_argument("--seed", argc, argv) == nullptr) {
@@ -298,7 +306,8 @@ int main_mode_diagram(int argc, const char **argv) {
     check_for_unknown_arguments(
         {
             "--remove_noise",
-            "--3d",
+            "--type",
+            "--tick",
             "--in",
             "--out",
         },
@@ -314,19 +323,38 @@ int main_mode_diagram(int argc, const char **argv) {
     if (in.f == stdin) {
         out.responsible_for_closing = false;
     }
+    int64_t tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
+    std::map<std::string, DiagramTypes> diagram_types{
+        {"timeline-text", TIMELINE_TEXT},
+        {"timeline-3d", TIMELINE_3D},
+        {"detector-slice-text", DETECTOR_SLICE_TEXT},
+        {"detector-slice-svg", DETECTOR_SLICE_SVG},
+    };
+    DiagramTypes type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
 
     auto circuit = Circuit::from_file(in.f);
     in.done();
     if (find_bool_argument("--remove_noise", argc, argv)) {
         circuit = circuit.without_noise();
     }
-
-    if (find_bool_argument("--3d", argc, argv)) {
-        auto diagram = circuit_diagram_timeline_3d(circuit);
-        fprintf(out.f, "%s", diagram.data());
-    } else {
-        std::cout << stim_draw_internal::DiagramTimelineAsciiDrawer::from_circuit(circuit);
+    std::stringstream out_buffer;
+    switch (type) {
+        case TIMELINE_TEXT:
+            out_buffer << stim_draw_internal::DiagramTimelineAsciiDrawer::from_circuit(circuit);
+            break;
+        case TIMELINE_3D: {
+            out_buffer << stim_draw_internal::GltfScene::from_circuit(circuit).to_json();
+            break;
+        } case DETECTOR_SLICE_TEXT:
+            out_buffer << stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);
+            break;
+        case DETECTOR_SLICE_SVG:
+            stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick).write_svg_diagram_to(out_buffer);
+            break;
+        default:
+            throw std::invalid_argument("Unknown type");
     }
+    fprintf(out.f, "%s", out_buffer.str().data());
 
     return EXIT_SUCCESS;
 }

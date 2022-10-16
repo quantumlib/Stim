@@ -15,13 +15,12 @@ src/stim/circuit/gate_data_pp.cc
 src/stim/circuit/gate_data_swaps.cc
 src/stim/circuit/gate_target.cc
 src/stim/dem/detector_error_model.cc
-src/stim/diagram/detector_slice_img/detector_slice_img_drawer.cc
+src/stim/diagram/detector_slice_img/detector_slice_set.cc
 src/stim/diagram/diagram_util.cc
 src/stim/diagram/timeline_3d/diagram_3d.cc
 src/stim/diagram/timeline_3d/gate_data_3d.cc
 src/stim/diagram/timeline_3d/gltf.cc
 src/stim/diagram/timeline_3d/json_obj.cc
-src/stim/diagram/timeline_3d/timeline_3d.cc
 src/stim/diagram/timeline_ascii/diagram_timeline_ascii_drawer.cc
 src/stim/diagram/timeline_img/timeline_layout.cc
 src/stim/diagram/timeline_img/timeline_svg.cc

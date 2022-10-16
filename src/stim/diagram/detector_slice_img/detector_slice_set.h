@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_DIAGRAM_DETECTOR_SLICE_IMG_DETECTOR_SLICE_IMG_DRAWER_H
-#define _STIM_DIAGRAM_DETECTOR_SLICE_IMG_DETECTOR_SLICE_IMG_DRAWER_H
+#ifndef _STIM_DIAGRAM_DETECTOR_SLICE_IMG_DETECTOR_SLICE_SET_H
+#define _STIM_DIAGRAM_DETECTOR_SLICE_IMG_DETECTOR_SLICE_SET_H
 
 #include <iostream>
 
@@ -27,11 +27,15 @@ namespace stim_draw_internal {
 struct DetectorSliceSet {
     uint64_t num_qubits;
     std::map<uint64_t, std::vector<double>> coordinates;
+    std::map<uint64_t, std::vector<double>> detector_coordinates;
     std::map<stim::DemTarget, std::vector<stim::GateTarget>> slices;
 
+    std::set<uint64_t> used_qubits() const;
     static DetectorSliceSet from_circuit_tick(const stim::Circuit &circuit, uint64_t tick_index);
     void write_text_diagram_to(std::ostream &out) const;
     std::string str() const;
+
+    void write_svg_diagram_to(std::ostream &out) const;
 };
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);
 

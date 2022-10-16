@@ -46,6 +46,8 @@ struct JsonObj {
     std::string str(bool indent = false) const;
 };
 
+std::ostream &operator<<(std::ostream &out, const JsonObj &obj);
+
 void write_base64(const char *data, size_t n, std::ostream &out);
 
 }  // namespace stim
