@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <fstream>
-#include "stim/diagram/detector_slice_img/detector_slice_set.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
 
 #include "gtest/gtest.h"
 #include "stim/gen/circuit_gen_params.h"

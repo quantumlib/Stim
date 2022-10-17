@@ -30,7 +30,7 @@
 #include "stim/diagram/gltf.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
-#include "stim/diagram/detector_slice_img/detector_slice_set.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
 
 using namespace stim;
 

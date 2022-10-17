@@ -1,4 +1,4 @@
-#include "stim/diagram/detector_slice_img/detector_slice_set.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/gltf.h"
