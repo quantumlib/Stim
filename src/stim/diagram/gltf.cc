@@ -2,7 +2,7 @@
 
 #include "stim/diagram/gltf.h"
 #include "stim/diagram/timeline_3d/diagram_3d.h"
-#include "stim/diagram/timeline_3d/gate_data_3d.h"
+#include "stim/diagram/gate_data_3d.h"
 
 using namespace stim;
 using namespace stim_draw_internal;

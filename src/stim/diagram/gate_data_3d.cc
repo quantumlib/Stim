@@ -1,5 +1,5 @@
-#include "stim/diagram/timeline_3d/gate_data_3d.h"
-#include "stim/diagram/timeline_3d/gate_data_3d_texture_data.h"
+#include "stim/diagram/gate_data_3d.h"
+#include "stim/diagram/gate_data_3d_texture_data.h"
 
 using namespace stim;
 using namespace stim_draw_internal;

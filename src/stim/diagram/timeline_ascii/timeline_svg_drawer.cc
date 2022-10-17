@@ -33,7 +33,7 @@ void DiagramTimelineSvgDrawer::do_feedback(const std::string &gate, const GateTa
 
     float cx = m2x(cur_moment);
     float cy = q2y(qubit_target.qubit_value());
-    draw_annotated_gate(cx, cy, AnnotatedGate{2, gate, "", exponent.str(), "lightgray"}, {});
+    draw_annotated_gate(cx, cy, SvgGateData{2, gate, "", exponent.str(), "lightgray"}, {});
 }
 
 void DiagramTimelineSvgDrawer::draw_x_control(float cx, float cy) {
@@ -114,85 +114,16 @@ void DiagramTimelineSvgDrawer::draw_iswap_control(float cx, float cy, bool inver
     }
 }
 
-std::map<std::string, AnnotatedGate> AnnotatedGate::make_map() {
-    std::map<std::string, AnnotatedGate> result;
-
-    result.insert({"X", {1, "X", "", "", "white"}});
-    result.insert({"Y", {1, "Y", "", "", "white"}});
-    result.insert({"Z", {1, "Z", "", "", "white"}});
-
-    result.insert({"H_YZ", {1, "H", "YZ", "", "white"}});
-    result.insert({"H", {1, "H", "", "", "white"}});
-    result.insert({"H_XY", {1, "H", "XY", "", "white"}});
-
-    result.insert({"SQRT_X", {1, u8"√X", "", "", "white"}});
-    result.insert({"SQRT_Y", {1, u8"√Y", "", "", "white"}});
-    result.insert({"S", {1, "S", "", "", "white"}});
-
-    result.insert({"SQRT_X_DAG", {1, u8"√X", "", u8"†", "white"}});
-    result.insert({"SQRT_Y_DAG", {1, u8"√Y", "", u8"†", "white"}});
-    result.insert({"S_DAG", {1, "S", "", u8"†", "white"}});
-
-    result.insert({"MX", {1, "M", "X", "", "white"}});
-    result.insert({"MY", {1, "M", "Y", "", "white"}});
-    result.insert({"M", {1, "M", "", "", "white"}});
-
-    result.insert({"RX", {1, "R", "X", "", "white"}});
-    result.insert({"RY", {1, "R", "Y", "", "white"}});
-    result.insert({"R", {1, "R", "", "", "white"}});
-
-    result.insert({"MRX", {1, "MR", "X", "", "white"}});
-    result.insert({"MRY", {1, "MR", "Y", "", "white"}});
-    result.insert({"MR", {1, "MR", "", "", "white"}});
-
-    result.insert({"X_ERROR", {1, "ERR", "X", "", "pink"}});
-    result.insert({"Y_ERROR", {1, "ERR", "Y", "", "pink"}});
-    result.insert({"Z_ERROR", {1, "ERR", "Z", "", "pink"}});
-
-    result.insert({"E[X]", {1, "E", "X", "", "pink"}});
-    result.insert({"E[Y]", {1, "E", "Y", "", "pink"}});
-    result.insert({"E[Z]", {1, "E", "Z", "", "pink"}});
-
-    result.insert({"ELSE_CORRELATED_ERROR[X]", {1, "EE", "X", "", "pink"}});
-    result.insert({"ELSE_CORRELATED_ERROR[Y]", {1, "EE", "Y", "", "pink"}});
-    result.insert({"ELSE_CORRELATED_ERROR[Z]", {1, "EE", "Z", "", "pink"}});
-
-    result.insert({"MPP[X]", {1, "MPP", "X", "", "white"}});
-    result.insert({"MPP[Y]", {1, "MPP", "Y", "", "white"}});
-    result.insert({"MPP[Z]", {1, "MPP", "Z", "", "white"}});
-
-    result.insert({"SQRT_XX", {1, u8"√XX", "", "", "white"}});
-    result.insert({"SQRT_YY", {1, u8"√YY", "", "", "white"}});
-    result.insert({"SQRT_ZZ", {1, u8"√ZZ", "", "", "white"}});
-
-    result.insert({"SQRT_XX_DAG", {1, u8"√XX", "", u8"†", "white"}});
-    result.insert({"SQRT_YY_DAG", {1, u8"√YY", "", u8"†", "white"}});
-    result.insert({"SQRT_ZZ_DAG", {1, u8"√ZZ", "", u8"†", "white"}});
-
-    result.insert({"I", {1, "I", "", "", "white"}});
-    result.insert({"C_XYZ", {1, "C", "XYZ", "", "white"}});
-    result.insert({"C_ZYX", {1, "C", "ZYX", "", "white"}});
-
-    result.insert({"DEPOLARIZE1", {1, "DEP", "1", "", "pink"}});
-    result.insert({"DEPOLARIZE2", {1, "DEP", "2", "", "pink"}});
-
-    result.insert({"PAULI_CHANNEL_1", {4, "PAULI_CHANNEL_1", "", "", "pink"}});
-    result.insert({"PAULI_CHANNEL_2[0]", {16, "PAULI_CHANNEL_2", "0", "", "pink"}});
-    result.insert({"PAULI_CHANNEL_2[1]", {16, "PAULI_CHANNEL_2", "1", "", "pink"}});
-
-    return result;
-}
-
 void DiagramTimelineSvgDrawer::draw_generic_box(float cx, float cy, const std::string &text, ConstPointerRange<double> end_args) {
     auto f = gate_data_map.find(text);
     if (f == gate_data_map.end()) {
         throw std::invalid_argument("Unhandled gate case: " + text);
     }
-    AnnotatedGate data = f->second;
+    SvgGateData data = f->second;
     draw_annotated_gate(cx, cy, data, end_args);
 }
 
-void DiagramTimelineSvgDrawer::draw_annotated_gate(float cx, float cy, const AnnotatedGate &data, ConstPointerRange<double> end_args) {
+void DiagramTimelineSvgDrawer::draw_annotated_gate(float cx, float cy, const SvgGateData &data, ConstPointerRange<double> end_args) {
     cx += (data.span - 1) * GATE_PITCH * 0.5;
     float w = GATE_PITCH * (data.span - 1) + GATE_RADIUS * 2;
     float h = GATE_RADIUS * 2;
@@ -573,8 +504,7 @@ void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &
     write_coords(ss, op.args);
     draw_annotated_gate(
         m2x(cur_moment),
-        q2y(target.qubit_value()),
-        AnnotatedGate{2 + op.args.size(), ss.str(), "", "", "white"},
+        q2y(target.qubit_value()), SvgGateData{2 + op.args.size(), ss.str(), "", "", "white"},
         {});
 }
 
@@ -589,8 +519,7 @@ void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) 
     auto span = 1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2);
     draw_annotated_gate(
         cx,
-        cy,
-        AnnotatedGate{span, "DETECTOR", "", "", "lightgray"},
+        cy, SvgGateData{span, "DETECTOR", "", "", "lightgray"},
         {});
     cx += (span - 1) * GATE_PITCH * 0.5;
 
@@ -641,8 +570,7 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
     ss << "OBS_INCLUDE(" << op.args[0] << ")";
     draw_annotated_gate(
         cx,
-        cy,
-        AnnotatedGate{span, ss.str(), "", "", "lightgray"},
+        cy, SvgGateData{span, ss.str(), "", "", "lightgray"},
         {});
     cx += (span - 1) * GATE_PITCH * 0.5;
 
@@ -688,7 +616,7 @@ void DiagramTimelineSvgDrawer::do_resolved_operation(const ResolvedTimelineOpera
     }
 }
 
-DiagramTimelineSvgDrawer::DiagramTimelineSvgDrawer(std::ostream &svg_out, size_t num_qubits, bool has_ticks) : svg_out(svg_out), num_qubits(num_qubits), has_ticks(has_ticks), gate_data_map(AnnotatedGate::make_map()) {
+DiagramTimelineSvgDrawer::DiagramTimelineSvgDrawer(std::ostream &svg_out, size_t num_qubits, bool has_ticks) : svg_out(svg_out), num_qubits(num_qubits), has_ticks(has_ticks), gate_data_map(SvgGateData::make_gate_data_map()) {
     cur_moment_used_flags.resize(num_qubits);
 }
 

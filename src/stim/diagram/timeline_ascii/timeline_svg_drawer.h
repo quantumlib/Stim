@@ -23,18 +23,9 @@
 #include "stim/diagram/lattice_map.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/ascii_diagram.h"
+#include "stim/diagram/gate_data_svg.h"
 
 namespace stim_draw_internal {
-
-struct AnnotatedGate {
-    size_t span;
-    std::string body;
-    std::string subscript;
-    std::string superscript;
-    std::string fill;
-
-    static std::map<std::string, AnnotatedGate> make_map();
-};
 
 struct DiagramTimelineSvgDrawer {
     std::ostream &svg_out;
@@ -47,7 +38,7 @@ struct DiagramTimelineSvgDrawer {
     std::vector<bool> cur_moment_used_flags;
     size_t num_qubits = 0;
     bool has_ticks = false;
-    std::map<std::string, AnnotatedGate> gate_data_map;
+    std::map<std::string, SvgGateData> gate_data_map;
     size_t moment_spacing = 1;
 
     DiagramTimelineSvgDrawer(std::ostream &out, size_t num_qubits, bool has_ticks);
@@ -65,7 +56,7 @@ struct DiagramTimelineSvgDrawer {
     void write_coords(std::ostream &out, stim::ConstPointerRange<double> relative_coordinates);
     size_t m2x(size_t m) const;
     size_t q2y(size_t q) const;
-    void draw_annotated_gate(float cx, float cy, const AnnotatedGate &data, stim::ConstPointerRange<double> end_args);
+    void draw_annotated_gate(float cx, float cy, const SvgGateData &data, stim::ConstPointerRange<double> end_args);
 
     void draw_x_control(float cx, float cy);
     void draw_y_control(float cx, float cy);
