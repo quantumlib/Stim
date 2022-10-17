@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_HELP_H
-#define _STIM_HELP_H
-
-#include <map>
-#include <string>
+#ifndef _STIM_CMD_COMMAND_ANALYZE_ERRORS_H
+#define _STIM_CMD_COMMAND_ANALYZE_ERRORS_H
 
 namespace stim {
 
-int main_help(int argc, const char **argv);
-std::string help_for(std::string help_key);
+int command_analyze_errors(int argc, const char **argv);
 
 }  // namespace stim
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/help.h"
+#include "stim/cmd/command_help.h"
 
 #include <algorithm>
 #include <cstring>
@@ -1322,7 +1322,7 @@ std::string stim::help_for(std::string help_key) {
     return p->second;
 }
 
-int stim::main_help(int argc, const char **argv) {
+int stim::command_help(int argc, const char **argv) {
     const char *help = find_argument("--help", argc, argv);
     if (help == nullptr) {
         help = "\0";

@@ -24,11 +24,11 @@
 namespace stim_draw_internal {
 
 struct JsonObj {
-    float num;
+    float num = 0;
     std::string text;
     std::map<std::string, JsonObj> map;
     std::vector<JsonObj> arr;
-    bool boolean;
+    bool boolean = false;
     uint8_t type;
 
     JsonObj(bool boolean);
