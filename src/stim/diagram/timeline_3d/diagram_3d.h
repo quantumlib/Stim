@@ -40,6 +40,7 @@ struct Diagram3D {
 };
 
 float min_distance(stim::ConstPointerRange<Coord<2>> points);
+GltfScene scene_from_circuit(const stim::Circuit &circuit);
 
 }
 

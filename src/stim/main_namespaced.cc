@@ -27,10 +27,10 @@
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/diagram/gltf.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/diagram/timeline_3d/diagram_3d.h"
 
 using namespace stim;
 
@@ -349,7 +349,7 @@ int main_mode_diagram(int argc, const char **argv) {
             stim_draw_internal::DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out_buffer);
             break;
         case TIMELINE_3D: {
-            out_buffer << stim_draw_internal::GltfScene::from_circuit(circuit).to_json();
+            out_buffer << stim_draw_internal::scene_from_circuit(circuit).to_json();
             break;
         } case DETECTOR_SLICE_TEXT:
             out_buffer << stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);

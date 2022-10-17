@@ -1,8 +1,6 @@
 #include <iostream>
 
 #include "stim/diagram/gltf.h"
-#include "stim/diagram/timeline_3d/diagram_3d.h"
-#include "stim/diagram/gate_data_3d.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -67,84 +65,172 @@ JsonObj GltfScene::to_json() {
     return result;
 }
 
-GltfScene GltfScene::from_circuit(const stim::Circuit &circuit){
-    GltfScene scene{{"everything"}, {}};
+void GltfSampler::visit(const gltf_visit_callback &callback) {
+    callback(
+        id,
+        "samplers",
+        [&]() {
+            return to_json();
+        },
+        (uintptr_t)this);
+}
 
-    auto black_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
-        {"black"},
-        {0, 0, 0, 1},
-        1,
-        1,
-        true,
-        nullptr,
-    });
-    auto red_material = std::shared_ptr<GltfMaterial>(new GltfMaterial{
-        {"red"},
-        {1, 0, 0, 1},
-        1,
-        1,
-        true,
-        nullptr,
-    });
+JsonObj GltfSampler::to_json() const {
+    return std::map<std::string, JsonObj>{
+        {"magFilter", magFilter},
+        {"minFilter", minFilter},
+        {"wrapS", wrapS},
+        {"wrapT", wrapT},
+    };
+}
 
-    auto diagram = Diagram3D::from_circuit(circuit);
-    auto buf_scattered_lines = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
-        {"buf_scattered_lines"},
-        std::move(diagram.line_data),
-    });
-    auto buf_red_scattered_lines = std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
-        {"buf_red_scattered_lines"},
-        std::move(diagram.red_line_data),
-    });
+void GltfImage::visit(const gltf_visit_callback &callback) {
+    callback(
+        id,
+        "images",
+        [&]() {
+            return to_json();
+        },
+        (uintptr_t)this);
+}
 
-    auto gate_data = make_gate_primitives();
-    for (const auto &g : diagram.gates) {
-        auto p = gate_data.find(g.gate_piece);
-        if (p != gate_data.end()) {
-            scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-                {""},
-                p->second,
-                g.center,
-            }));
-        }
+JsonObj GltfImage::to_json() const {
+    return std::map<std::string, JsonObj>{
+        {"name", id.name},
+        {"uri", uri},
+    };
+}
+
+void GltfTexture::visit(const gltf_visit_callback &callback) {
+    callback(
+        id,
+        "textures",
+        [&]() {
+            return to_json();
+        },
+        (uintptr_t)this);
+    sampler->visit(callback);
+    source->visit(callback);
+}
+
+JsonObj GltfTexture::to_json() const {
+    return std::map<std::string, JsonObj>{
+        {"name", id.name},
+        {"sampler", 0},
+        {"source", 0},
+    };
+}
+
+void GltfMaterial::visit(const gltf_visit_callback &callback) {
+    callback(
+        id,
+        "materials",
+        [&]() {
+            return to_json();
+        },
+        (uintptr_t)this);
+    if (texture) {
+        texture->visit(callback);
     }
+}
 
-    if (!buf_scattered_lines->vertices.empty()) {
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_scattered_lines"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_scattered_lines"},
-                        GL_LINES,
-                        buf_scattered_lines,
-                        nullptr,
-                        black_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
+JsonObj GltfMaterial::to_json() const {
+    JsonObj result = std::map<std::string, JsonObj>{
+        {"name", id.name},
+        {"pbrMetallicRoughness",
+         std::map<std::string, JsonObj>{
+             {"baseColorFactor",
+              std::vector<JsonObj>{
+                  base_color_factor_rgba[0],
+                  base_color_factor_rgba[1],
+                  base_color_factor_rgba[2],
+                  base_color_factor_rgba[3],
+              }},
+             {"metallicFactor", metallic_factor},
+             {"roughnessFactor", roughness_factor}}},
+        {"doubleSided", double_sided},
+    };
+    if (texture) {
+        result.map.at("pbrMetallicRoughness")
+            .map.insert(
+                {"baseColorTexture",
+                 std::map<std::string, JsonObj>{
+                     {"index", texture->id.index},
+                     {"texCoord", 0},
+                 }});
     }
-    if (!buf_red_scattered_lines->vertices.empty()) {
-        scene.nodes.push_back(std::shared_ptr<GltfNode>(new GltfNode{
-            {"node_red_scattered_lines"},
-            std::shared_ptr<GltfMesh>(new GltfMesh{
-                {"mesh_scattered_lines"},
-                {
-                    std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
-                        {"primitive_red_scattered_lines"},
-                        GL_LINES,
-                        buf_red_scattered_lines,
-                        nullptr,
-                        red_material,
-                    }),
-                },
-            }),
-            {0, 0, 0},
-        }));
-    }
+    return result;
+}
 
-    return scene;
+void GltfPrimitive::visit(const gltf_visit_callback &callback) {
+    position_buffer->visit(callback);
+    if (tex_coords_buffer) {
+        tex_coords_buffer->visit(callback);
+    }
+    material->visit(callback);
+}
+
+JsonObj GltfPrimitive::to_json() const {
+    std::map<std::string, JsonObj> attributes;
+    attributes.insert({"POSITION", position_buffer->id.index});
+    if (tex_coords_buffer) {
+        attributes.insert({"TEXCOORD_0", tex_coords_buffer->id.index});
+    }
+    return std::map<std::string, JsonObj>{
+        // Note: validator says "name" not expected for primitives.
+        // {"name", id.name},
+        {"attributes", std::move(attributes)},
+        {"material", material->id.index},
+        {"mode", element_type},
+    };
+}
+
+std::shared_ptr<GltfMesh> GltfMesh::from_singleton_primitive(std::shared_ptr<GltfPrimitive> primitive) {
+    return std::shared_ptr<GltfMesh>(new GltfMesh{
+        {"mesh_" + primitive->id.name},
+        {primitive},
+    });
+}
+
+void GltfMesh::visit(const gltf_visit_callback &callback) {
+    callback(
+        id,
+        "meshes",
+        [&]() {
+            return to_json();
+        },
+        (uintptr_t)this);
+    for (auto &p : primitives) {
+        p->visit(callback);
+    }
+}
+
+JsonObj GltfMesh::to_json() const {
+    std::vector<JsonObj> json_primitives;
+    for (const auto &p : primitives) {
+        json_primitives.push_back(p->to_json());
+    }
+    return std::map<std::string, JsonObj>{
+        {"primitives", std::move(json_primitives)},
+    };
+}
+
+void GltfNode::visit(const gltf_visit_callback &callback) {
+    callback(
+        id,
+        "nodes",
+        [&]() {
+            return to_json();
+        },
+        (uintptr_t)this);
+    if (mesh) {
+        mesh->visit(callback);
+    }
+}
+
+JsonObj GltfNode::to_json() const {
+    return std::map<std::string, JsonObj>{
+        {"mesh", mesh->id.index},
+        {"translation", (std::vector<JsonObj>{translation.xyz[0], translation.xyz[1], translation.xyz[2]})},
+    };
 }
