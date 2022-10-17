@@ -27,14 +27,16 @@
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "stim/diagram/timeline_3d/gltf.h"
+#include "stim/diagram/gltf.h"
 #include "stim/diagram/timeline_ascii/timeline_ascii_drawer.h"
+#include "stim/diagram/timeline_ascii/timeline_svg_drawer.h"
 #include "stim/diagram/detector_slice_img/detector_slice_set.h"
 
 using namespace stim;
 
 enum DiagramTypes {
     TIMELINE_TEXT,
+    TIMELINE_SVG,
     TIMELINE_3D,
     DETECTOR_SLICE_TEXT,
     DETECTOR_SLICE_SVG,
@@ -326,6 +328,7 @@ int main_mode_diagram(int argc, const char **argv) {
     int64_t tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
     std::map<std::string, DiagramTypes> diagram_types{
         {"timeline-text", TIMELINE_TEXT},
+        {"timeline-svg", TIMELINE_SVG},
         {"timeline-3d", TIMELINE_3D},
         {"detector-slice-text", DETECTOR_SLICE_TEXT},
         {"detector-slice-svg", DETECTOR_SLICE_SVG},
@@ -340,7 +343,10 @@ int main_mode_diagram(int argc, const char **argv) {
     std::stringstream out_buffer;
     switch (type) {
         case TIMELINE_TEXT:
-            out_buffer << stim_draw_internal::DiagramTimelineAsciiDrawer::from_circuit(circuit);
+            out_buffer << stim_draw_internal::DiagramTimelineAsciiDrawer::make_diagram(circuit);
+            break;
+        case TIMELINE_SVG:
+            stim_draw_internal::DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out_buffer);
             break;
         case TIMELINE_3D: {
             out_buffer << stim_draw_internal::GltfScene::from_circuit(circuit).to_json();

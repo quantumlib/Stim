@@ -27,3 +27,14 @@ std::pair<std::string, std::string> stim_draw_internal::two_qubit_gate_pieces(co
         return {name, name};
     }
 }
+
+size_t stim_draw_internal::utf8_char_count(const std::string &s) {
+    size_t t = 0;
+    for (uint8_t c : s) {
+        // Continuation bytes start with "10" in binary.
+        if ((c & 0xC0) != 0x80) {
+            t++;
+        }
+    }
+    return t;
+}

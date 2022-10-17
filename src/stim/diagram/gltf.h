@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "stim/mem/pointer_range.h"
-#include "stim/diagram/timeline_3d/json_obj.h"
+#include "stim/diagram/json_obj.h"
 
 namespace stim_draw_internal {
 

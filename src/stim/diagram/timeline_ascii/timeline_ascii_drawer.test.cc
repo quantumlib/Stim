@@ -44,7 +44,7 @@ TEST(circuit_diagram_timeline_text, single_qubit_gates) {
         S_DAG 1
         H 2 0 3
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -I-C_XYZ-H------SQRT_X_DAG-S_DAG-H-
 
 q1: -X-C_ZYX-H_YZ---SQRT_Y-----S_DAG---
@@ -80,7 +80,7 @@ TEST(circuit_diagram_timeline_text, two_qubits_gates) {
         ZCY 4 5
         ZCZ 0 5 2 3 1 4
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -@-@-------------------------SQRT_XX_DAG---------SQRT_YY_DAG-SWAP----------X-Y---@-----
      | |                         |                   |           |             | |   |
 q1: -X-|-ISWAP-------------------|-------------------SQRT_YY_DAG-SWAP----------@-@---|---@-
@@ -103,7 +103,7 @@ TEST(circuit_diagram_timeline_text, noise_gates) {
         Y_ERROR(0.125) 0 1 4
         Z_ERROR(0.125) 2 3 5
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -DEPOLARIZE1(0.125)-DEPOLARIZE2(0.125)-X_ERROR(0.125)-Y_ERROR(0.125)-
                         |
 q1: -DEPOLARIZE1(0.125)-|------------------X_ERROR(0.125)-Y_ERROR(0.125)-
@@ -123,7 +123,7 @@ q5: --------------------DEPOLARIZE2(0.125)----------------Z_ERROR(0.125)-
         ELSE_CORRELATED_ERROR(0.25) X2 Y4 Z3
         ELSE_CORRELATED_ERROR(0.25) X5
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: --------------------------------------------------------------------------------------
 
 q1: -E[X](0.25)-E[X](0.125)---------------------------------------------------------------
@@ -141,7 +141,7 @@ q5: -------------------------------------------------------ELSE_CORRELATED_ERROR
         PAULI_CHANNEL_1(0.125,0.25,0.125) 0 1 2 3
         PAULI_CHANNEL_2(0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01) 0 1 2 4
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -PAULI_CHANNEL_1(0.125,0.25,0.125)-PAULI_CHANNEL_2[0](0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01)-
                                        |
 q1: -PAULI_CHANNEL_1(0.125,0.25,0.125)-PAULI_CHANNEL_2[1](0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01)-
@@ -170,7 +170,7 @@ TEST(circuit_diagram_timeline_text, collapsing) {
         MZ 3
         MPP X0*Y2 Z3 X1 Z2*Y3
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -R--M(0.001):rec[0]-MR:rec[3]-MRY:rec[6]-MR:rec[9]-------------MPP[X]:rec[13]----------------
                                                                    |
 q1: -RX-M(0.001):rec[1]-MR:rec[2]-MRX:rec[4]-MRY:rec[8]-MX:rec[10]-|--------------MPP[X]:rec[15]-
@@ -194,7 +194,7 @@ TEST(circuit_diagram_timeline_text, measurement_looping) {
             }
         }
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
               /REP 100                  /REP 5                        \ /REP 7                             \ \
 q0: -M:rec[0]-|-------------------------|-----------------------------|-|----------------------------------|-|---
               |                         |                             | |                                  | |
@@ -219,7 +219,7 @@ TEST(circuit_diagram_timeline_text, repeat) {
             }
         }
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
        /REP 5    /REP 100     \ \
 q0: -H-|---------|--------H---|-|---
        |         |            | |
@@ -238,7 +238,7 @@ TEST(circuit_diagram_timeline_text, classical_feedback) {
         CX rec[-1] 1
         YCZ 2 sweep[5]
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -M:rec[0]---
 
 q1: -X^rec[0]---
@@ -257,7 +257,7 @@ TEST(circuit_diagram_timeline_text, lattice_surgery_cnot) {
         CX rec[-2] 1
         CZ rec[-1] 0
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
 q0: -----------------MPP[Z]:rec[1]-Z^rec[0]--Z^rec[2]-
                      |
 q1: ---MPP[X]:rec[0]-|-------------X^rec[1]-----------
@@ -265,7 +265,7 @@ q1: ---MPP[X]:rec[0]-|-------------X^rec[1]-----------
 q2: -R-MPP[X]:rec[0]-MPP[Z]:rec[1]-MX:rec[2]----------
 )DIAGRAM");
 
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).transposed().str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).transposed().str(), R"DIAGRAM(
     q0:           q1:           q2:
       |             |             |
       |             |             R
@@ -299,7 +299,7 @@ TEST(circuit_diagram_timeline_text, tick) {
         TICK
         H 0 0
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
      /-\     /REP 1   /-\ \ /--------\
 q0: -H-H-H-H-|------H-H-S-|-H-H-SQRT_X-H-H-
              |            |
@@ -323,7 +323,7 @@ TEST(circuit_diagram_timeline_text, shifted_coords) {
         QUBIT_COORDS(1, 2) 5
         DETECTOR(4, 5, 6)
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
                                                   /REP 100                                                  \
 q0: -DETECTOR(4,5,6):D0=1-DETECTOR(14,25,36):D1=1-|--------DETECTOR(19,30+iter*200,41+iter*300):D[2+iter]=1-|-DETECTOR(14,20025,30036):D102=1-
                                                   |                                                         |
@@ -353,7 +353,7 @@ TEST(circuit_diagram_timeline_text, detector_pseudo_targets) {
         DETECTOR(5) rec[-1] rec[-2]
         OBSERVABLE_INCLUDE(100) rec[-201] rec[-203]
     )CIRCUIT");
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
               /REP 100                 \
 q0: -M:rec[0]-|------------------------|----------------------------------------------------------------------------------------
               |                        |
@@ -373,7 +373,7 @@ q5: -M:rec[5]-|------------------------|----------------------------------------
 TEST(circuit_diagram_timeline_text, surface_code) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
       /-----------------\     /-------\ /-------\     /----------------------------------\ /REP 9       /-------\ /-------\     /-----------------------------------------------------------------------------------\ \
  q0: -QUBIT_COORDS(0,0)-R-----------------@-------X----------------------------------------|------------------------@-------X-----------------------------------------------------------------------------------------|-M:rec[120]---------------------------------------------------------OBSERVABLE_INCLUDE:L0*=rec[122]*rec[121]*rec[120]-
                                           |       |                                        |                        |       |                                                                                         |
@@ -431,7 +431,7 @@ q24: -QUBIT_COORDS(4,4)-R---X---------@-----------------------------------------
 TEST(circuit_diagram_timeline_text, repetition_code) {
     CircuitGenParameters params(10, 9, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).str(), R"DIAGRAM(
             /--------------------------------\ /REP 9       /-----------------------------------------------------------------------------\ \
  q0: -R-@--------------------------------------|--------@-----------------------------------------------------------------------------------|-M:rec[80]-DETECTOR(1,10):D80=rec[81]*rec[80]*rec[72]--
         |                                      |        |                                                                                   |
@@ -473,7 +473,7 @@ q16: -R---@------------------------------------|----------@---------------------
 TEST(circuit_diagram_timeline_text, repetition_code_transposed) {
     CircuitGenParameters params(10, 3, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::from_circuit(circuit).transposed().str(), R"DIAGRAM(
+    ASSERT_EQ("\n" + DiagramTimelineAsciiDrawer::make_diagram(circuit).transposed().str(), R"DIAGRAM(
                          q0:                                                q1:                                                q2:                                                q3:                                          q4:
                           |                                                  |                                                  |                                                  |                                            |
                           R                                                  R                                                  R                                                  R                                            R

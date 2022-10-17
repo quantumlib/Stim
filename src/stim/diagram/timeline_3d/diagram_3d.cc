@@ -1,6 +1,5 @@
 #include "stim/diagram/timeline_3d/diagram_3d.h"
 #include "stim/mem/simd_bits.h"
-#include "stim/diagram/timeline_img/timeline_layout.h"
 #include "stim/diagram/diagram_util.h"
 
 using namespace stim;

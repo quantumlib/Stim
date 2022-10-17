@@ -17,8 +17,6 @@ size_t DiagramTimelineAsciiDrawer::q2y(size_t q) const {
 }
 
 void DiagramTimelineAsciiDrawer::do_feedback(const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
-    reserve_drawing_room_for_targets(qubit_target);
-
     std::stringstream ss;
     ss << gate;
     ss << "^";
@@ -39,6 +37,8 @@ void DiagramTimelineAsciiDrawer::do_feedback(const std::string &gate, const Gate
 }
 
 void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimelineOperation &op) {
+    reserve_drawing_room_for_targets(op.targets);
+
     const GateTarget &target1 = op.targets[0];
     const GateTarget &target2 = op.targets[1];
     auto ends = two_qubit_gate_pieces(op.gate->name);
@@ -64,7 +64,6 @@ void DiagramTimelineAsciiDrawer::do_two_qubit_gate_instance(const ResolvedTimeli
         second << "(" << comma_sep(op.args, ",") << ")";
     }
 
-    reserve_drawing_room_for_targets(target1, target2);
     diagram.add_entry(AsciiDiagramEntry{
         {
             m2x(cur_moment),
@@ -125,8 +124,8 @@ void DiagramTimelineAsciiDrawer::do_tick() {
 }
 
 void DiagramTimelineAsciiDrawer::do_single_qubit_gate_instance(const ResolvedTimelineOperation &op) {
+    reserve_drawing_room_for_targets(op.targets);
     const auto &target = op.targets[0];
-    reserve_drawing_room_for_targets(target);
 
     std::stringstream ss;
     ss << op.gate->name;
@@ -255,14 +254,6 @@ void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(ConstPointerRa
         });
     }
 }
-void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(GateTarget t1, GateTarget t2) {
-    std::array<GateTarget, 2> arr{t1, t2};
-    reserve_drawing_room_for_targets(arr);
-}
-void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(GateTarget t) {
-    reserve_drawing_room_for_targets({&t});
-}
-
 void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op) {
     reserve_drawing_room_for_targets(op.targets);
 
@@ -357,9 +348,9 @@ void DiagramTimelineAsciiDrawer::do_else_correlated_error(const ResolvedTimeline
 }
 
 void DiagramTimelineAsciiDrawer::do_qubit_coords(const ResolvedTimelineOperation &op) {
+    reserve_drawing_room_for_targets(op.targets);
     assert(op.targets.size() == 1);
     const auto &target = op.targets[0];
-    reserve_drawing_room_for_targets(target);
 
     std::stringstream ss;
     ss << op.gate->name;
@@ -463,7 +454,7 @@ DiagramTimelineAsciiDrawer::DiagramTimelineAsciiDrawer(size_t num_qubits, bool h
     cur_moment_used_flags.resize(num_qubits);
 }
 
-AsciiDiagram DiagramTimelineAsciiDrawer::from_circuit(const Circuit &circuit) {
+AsciiDiagram DiagramTimelineAsciiDrawer::make_diagram(const Circuit &circuit) {
     auto num_qubits = circuit.count_qubits();
     auto has_ticks = circuit.count_ticks() > 0;
     DiagramTimelineAsciiDrawer obj(num_qubits, has_ticks);

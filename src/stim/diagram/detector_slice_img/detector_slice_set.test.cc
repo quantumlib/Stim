@@ -172,32 +172,33 @@ TEST(detector_slice_set_svg_diagram, surface_code) {
     auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 7);
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
-    ASSERT_EQ(ss.str(), R"SVG(<svg viewBox="0 0 99.8822 122.51" xmlns="http://www.w3.org/2000/svg">
-<path d="M61.2548,16 83.8822,38.6274 38.6274,38.6274 Z" stroke="none" fill="#808080" />
+    ASSERT_EQ("\n" + ss.str(), u8R"SVG(
+<svg viewBox="0 0 280.902 122.51" xmlns="http://www.w3.org/2000/svg">
+<path d="M61.2548,16 83.8822,38.6274 38.6274,38.6274 Z" stroke="none" fill-opacity="0.75" fill="#AAAAAA" />
 <clipPath id="clip0"><path d="M61.2548,16 83.8822,38.6274 38.6274,38.6274 Z" /></clipPath>
-<circle clip-path="url(#clip0)" cx="38.6274" cy="38.6274" r="16" stroke="none" fill-opacity="0.5" fill="#FFA0A0" />
-<circle clip-path="url(#clip0)" cx="61.2548" cy="16" r="16" stroke="none" fill-opacity="0.5" fill="#8080FF" />
-<circle clip-path="url(#clip0)" cx="83.8822" cy="38.6274" r="16" stroke="none" fill-opacity="0.5" fill="#FFA0A0" />
-<circle clip-path="url(#clip0)" cx="38.6274" cy="38.6274" r="12" stroke="none" fill="#FFA0A0" />
-<circle clip-path="url(#clip0)" cx="61.2548" cy="16" r="12" stroke="none" fill="#8080FF" />
-<circle clip-path="url(#clip0)" cx="83.8822" cy="38.6274" r="12" stroke="none" fill="#FFA0A0" />
-<path d="M38.6274,38.6274 83.8822,38.6274 61.2548,61.2548 83.8822,83.8822 38.6274,83.8822 Z" stroke="none" fill="#8080FF" />
-<path d="M38.6274,83.8822 83.8822,83.8822 61.2548,106.51 Z" stroke="none" fill="#808080" />
-<clipPath id="clip1"><path d="M38.6274,83.8822 83.8822,83.8822 61.2548,106.51 Z" /></clipPath>
-<circle clip-path="url(#clip1)" cx="38.6274" cy="83.8822" r="16" stroke="none" fill-opacity="0.5" fill="#FFA0A0" />
-<circle clip-path="url(#clip1)" cx="83.8822" cy="83.8822" r="16" stroke="none" fill-opacity="0.5" fill="#FFA0A0" />
-<circle clip-path="url(#clip1)" cx="61.2548" cy="106.51" r="16" stroke="none" fill-opacity="0.5" fill="#8080FF" />
-<circle clip-path="url(#clip1)" cx="38.6274" cy="83.8822" r="12" stroke="none" fill="#FFA0A0" />
-<circle clip-path="url(#clip1)" cx="83.8822" cy="83.8822" r="12" stroke="none" fill="#FFA0A0" />
-<circle clip-path="url(#clip1)" cx="61.2548" cy="106.51" r="12" stroke="none" fill="#8080FF" />
+<circle clip-path="url(#clip0)" cx="38.6274" cy="38.6274" r="16" stroke="none" fill-opacity="0.5" fill="#FF4444" />
+<circle clip-path="url(#clip0)" cx="61.2548" cy="16" r="16" stroke="none" fill-opacity="0.5" fill="#4848FF" />
+<circle clip-path="url(#clip0)" cx="83.8822" cy="38.6274" r="16" stroke="none" fill-opacity="0.5" fill="#FF4444" />
+<circle clip-path="url(#clip0)" cx="38.6274" cy="38.6274" r="12" stroke="none" fill-opacity="0.75" fill="#FF4444" />
+<circle clip-path="url(#clip0)" cx="61.2548" cy="16" r="12" stroke="none" fill-opacity="0.75" fill="#4848FF" />
+<circle clip-path="url(#clip0)" cx="83.8822" cy="38.6274" r="12" stroke="none" fill-opacity="0.75" fill="#FF4444" />
 <path d="M61.2548,16 83.8822,38.6274 38.6274,38.6274 Z" stroke="black" fill="none" />
+<path d="M38.6274,38.6274 83.8822,38.6274 61.2548,61.2548 83.8822,83.8822 38.6274,83.8822 Z" stroke="none" fill-opacity="0.75" fill="#4848FF" />
 <path d="M38.6274,38.6274 83.8822,38.6274 61.2548,61.2548 83.8822,83.8822 38.6274,83.8822 Z" stroke="black" fill="none" />
+<path d="M38.6274,83.8822 83.8822,83.8822 61.2548,106.51 Z" stroke="none" fill-opacity="0.75" fill="#AAAAAA" />
+<clipPath id="clip1"><path d="M38.6274,83.8822 83.8822,83.8822 61.2548,106.51 Z" /></clipPath>
+<circle clip-path="url(#clip1)" cx="38.6274" cy="83.8822" r="16" stroke="none" fill-opacity="0.5" fill="#FF4444" />
+<circle clip-path="url(#clip1)" cx="83.8822" cy="83.8822" r="16" stroke="none" fill-opacity="0.5" fill="#FF4444" />
+<circle clip-path="url(#clip1)" cx="61.2548" cy="106.51" r="16" stroke="none" fill-opacity="0.5" fill="#4848FF" />
+<circle clip-path="url(#clip1)" cx="38.6274" cy="83.8822" r="12" stroke="none" fill-opacity="0.75" fill="#FF4444" />
+<circle clip-path="url(#clip1)" cx="83.8822" cy="83.8822" r="12" stroke="none" fill-opacity="0.75" fill="#FF4444" />
+<circle clip-path="url(#clip1)" cx="61.2548" cy="106.51" r="12" stroke="none" fill-opacity="0.75" fill="#4848FF" />
 <path d="M38.6274,83.8822 83.8822,83.8822 61.2548,106.51 Z" stroke="black" fill="none" />
-<path d="M55.2548,16 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill="#8080FF" />
-<path d="M55.2548,61.2548 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill="#8080FF" />
-<path d="M55.2548,106.51 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill="#8080FF" />
+<path d="M55.2548,16 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill-opacity="1" fill="#4848FF" />
 <path d="M55.2548,16 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="black" fill="none" />
+<path d="M55.2548,61.2548 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill-opacity="1" fill="#4848FF" />
 <path d="M55.2548,61.2548 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="black" fill="none" />
+<path d="M55.2548,106.51 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill-opacity="1" fill="#4848FF" />
 <path d="M55.2548,106.51 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="black" fill="none" />
 <circle cx="38.6274" cy="38.6274" r="2" stroke="none" fill="black" />
 <circle cx="61.2548" cy="16" r="2" stroke="none" fill="black" />

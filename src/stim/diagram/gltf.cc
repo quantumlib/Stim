@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "stim/diagram/timeline_3d/gltf.h"
+#include "stim/diagram/gltf.h"
 #include "stim/diagram/timeline_3d/diagram_3d.h"
 #include "stim/diagram/timeline_3d/gate_data_3d.h"
 

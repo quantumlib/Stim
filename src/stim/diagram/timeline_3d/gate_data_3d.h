@@ -1,7 +1,7 @@
 #ifndef _STIM_DRAW_3D_GATE_DATA_3d_H
 #define _STIM_DRAW_3D_GATE_DATA_3d_H
 
-#include "stim/diagram/timeline_3d/gltf.h"
+#include "stim/diagram/gltf.h"
 
 namespace stim_draw_internal {
 
