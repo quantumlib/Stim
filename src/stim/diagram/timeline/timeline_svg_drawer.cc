@@ -1,4 +1,4 @@
-#include "stim/diagram/timeline_ascii/timeline_svg_drawer.h"
+#include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/diagram/diagram_util.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 

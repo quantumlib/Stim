@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/diagram/timeline_ascii/timeline_ascii_drawer.h"
+#include "stim/diagram/timeline/timeline_ascii_drawer.h"
 
 #include "gtest/gtest.h"
 #include "stim/gen/circuit_gen_params.h"

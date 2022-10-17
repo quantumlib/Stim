@@ -28,8 +28,8 @@
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/diagram/gltf.h"
-#include "stim/diagram/timeline_ascii/timeline_ascii_drawer.h"
-#include "stim/diagram/timeline_ascii/timeline_svg_drawer.h"
+#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+#include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/diagram/detector_slice_img/detector_slice_set.h"
 
 using namespace stim;

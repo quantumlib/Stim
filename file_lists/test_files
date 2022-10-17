@@ -6,9 +6,9 @@ src/stim/circuit/gate_target.test.cc
 src/stim/dem/detector_error_model.test.cc
 src/stim/diagram/detector_slice_img/detector_slice_set.test.cc
 src/stim/diagram/json_obj.test.cc
+src/stim/diagram/timeline/timeline_ascii_drawer.test.cc
+src/stim/diagram/timeline/timeline_svg_drawer.test.cc
 src/stim/diagram/timeline_3d/diagram_3d.test.cc
-src/stim/diagram/timeline_ascii/timeline_ascii_drawer.test.cc
-src/stim/diagram/timeline_ascii/timeline_svg_drawer.test.cc
 src/stim/gen/circuit_gen_main.test.cc
 src/stim/gen/circuit_gen_params.test.cc
 src/stim/gen/gen_color_code.test.cc

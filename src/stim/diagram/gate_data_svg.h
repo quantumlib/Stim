@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_DIAGRAM_TIMELINE_IMG_SVG_GATE_DATA_H
-#define _STIM_DIAGRAM_TIMELINE_IMG_SVG_GATE_DATA_H
+#ifndef _STIM_DIAGRAM_GATE_DATA_SVG_H
+#define _STIM_DIAGRAM_GATE_DATA_SVG_H
 
 #include <map>
 #include <string>

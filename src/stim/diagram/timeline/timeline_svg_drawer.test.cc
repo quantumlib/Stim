@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <fstream>
-#include "stim/diagram/timeline_ascii/timeline_svg_drawer.h"
+#include "stim/diagram/timeline/timeline_svg_drawer.h"
 
 #include "gtest/gtest.h"
 #include "stim/gen/circuit_gen_params.h"

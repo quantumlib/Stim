@@ -1,5 +1,5 @@
-#ifndef _STIM_DRAW_3D_GATE_DATA_3d_H
-#define _STIM_DRAW_3D_GATE_DATA_3d_H
+#ifndef _STIM_DIAGRAM_GATE_DATA_3d_H
+#define _STIM_DIAGRAM_GATE_DATA_3d_H
 
 #include "stim/diagram/gltf.h"
 

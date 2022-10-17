@@ -24,9 +24,9 @@ src/stim/diagram/gate_data_svg.cc
 src/stim/diagram/gltf.cc
 src/stim/diagram/json_obj.cc
 src/stim/diagram/lattice_map.cc
+src/stim/diagram/timeline/timeline_ascii_drawer.cc
+src/stim/diagram/timeline/timeline_svg_drawer.cc
 src/stim/diagram/timeline_3d/diagram_3d.cc
-src/stim/diagram/timeline_ascii/timeline_ascii_drawer.cc
-src/stim/diagram/timeline_ascii/timeline_svg_drawer.cc
 src/stim/gen/circuit_gen_main.cc
 src/stim/gen/circuit_gen_params.cc
 src/stim/gen/gen_color_code.cc
