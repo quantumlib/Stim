@@ -18,7 +18,7 @@
 
 using namespace stim;
 
-TEST(main, detect_basic) {
+TEST(command_detect, detect_basic) {
     ASSERT_EQ(
         trim(run_captured_stim_main({"--detect"}, R"input(
 M 0
@@ -182,7 +182,7 @@ OBSERVABLE_INCLUDE(0) rec[-2]
             )output"));
 }
 
-TEST(main, detection_event_simulator_counts_measurements_correctly) {
+TEST(command_detect, detection_event_simulator_counts_measurements_correctly) {
     auto s = run_captured_stim_main({"--detect=1000"}, "MPP Z8*X9\nDETECTOR rec[-1]");
     size_t zeroes = 0;
     size_t ones = 0;
@@ -195,7 +195,7 @@ TEST(main, detection_event_simulator_counts_measurements_correctly) {
     ASSERT_TRUE(400 < zeroes && zeroes < 600);
 }
 
-TEST(main, seeded_detecting) {
+TEST(command_detect, seeded_detecting) {
     ASSERT_EQ(
         run_captured_stim_main({"detect", "--shots=256", "--seed 5"}, R"input(
                 X_ERROR(0.5) 0
