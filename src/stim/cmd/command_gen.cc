@@ -1,4 +1,4 @@
-#include "stim/gen/circuit_gen_main.h"
+#include "stim/cmd/command_gen.h"
 
 #include "stim/arg_parse.h"
 #include "stim/gen/circuit_gen_params.h"
@@ -28,7 +28,7 @@ std::vector<const char *> known_flags_deprecated{
     "--gen",
 };
 
-int stim::main_generate_circuit(int argc, const char **argv) {
+int stim::command_gen(int argc, const char **argv) {
     check_for_unknown_arguments(known_flags, known_flags_deprecated, "gen", argc, argv);
     const char *code_flag_name = find_argument("--gen", argc, argv) ? "--gen" : "--code";
     auto func = find_enum_argument(code_flag_name, nullptr, code_name_to_func_map, argc, argv);
