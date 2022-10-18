@@ -560,6 +560,7 @@ SYNOPSIS
         [--in filepath] \
         [--out filepath] \
         [--remove_noise] \
+        [--tick int] \
         --type name
 
 DESCRIPTION
@@ -593,6 +594,16 @@ OPTIONS
         the noise.
 
 
+    --tick
+        Specifies that the diagram should apply to a specific TICK of the
+        input circuit.
+
+        In detector-slice diagrams, `--tick` identifies which TICK is the
+        instant at which the time slice is taken. Note that TICKs are
+        zero-indexed, meaning `--tick=0` refers to the instant of
+        the first TICK in the circuit.
+
+
     --type
         The type of diagram to make.
 
@@ -607,6 +618,12 @@ OPTIONS
             performed by a circuit over time. The qubits are laid out into
             a line top to bottom, and time advances left to right. The input
             object should be a stim circuit.
+
+        `detector-slice-text`: Produces an ASCII text diagram of the
+            stabilizers that detectors correspond to at a specified TICK.
+
+        `detector-slice-svg`: Produces an SVG image diagram of the
+            stabilizers that detectors correspond to at a specified TICK.
 
 
 EXAMPLES
