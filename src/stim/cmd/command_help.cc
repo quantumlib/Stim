@@ -28,6 +28,7 @@
 #include "stim/cmd/command_analyze_errors.h"
 #include "command_detect.h"
 #include "command_explain_errors.h"
+#include "command_diagram.h"
 
 using namespace stim;
 
@@ -489,6 +490,7 @@ written to stdout (or the file specified by `--out`).
         command_analyze_errors_help(),
         command_detect_help(),
         command_explain_errors_help(),
+        command_diagram_help(),
     };
     for (const auto &sub_command : sub_commands) {
         auto summary = sub_command.description;
