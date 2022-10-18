@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_CMD_COMMAND_M2d_H
-#define _STIM_CMD_COMMAND_M2d_H
+#ifndef _STIM_CMD_COMMAND_M2D_H
+#define _STIM_CMD_COMMAND_M2D_H
+
+#include "stim/arg_parse.h"
 
 namespace stim {
 
 int command_m2d(int argc, const char **argv);
+SubCommandHelp command_m2d_help();
 
 }  // namespace stim
 

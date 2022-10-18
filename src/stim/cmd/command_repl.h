@@ -17,9 +17,12 @@
 #ifndef _STIM_CMD_COMMAND_REPL_H
 #define _STIM_CMD_COMMAND_REPL_H
 
+#include "stim/arg_parse.h"
+
 namespace stim {
 
 int command_repl(int argc, const char **argv);
+SubCommandHelp command_repl_help();
 
 }  // namespace stim
 

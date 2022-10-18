@@ -256,7 +256,7 @@ SubCommandHelp stim::command_detect_help() {
             If this argument isn't specified, the observable flip data isn't
             written to a file.
 
-            The output is in a format specified by `--obs_format`. See:
+            The output is in a format specified by `--obs_out_format`. See:
             https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         )PARAGRAPH"),
     });

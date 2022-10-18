@@ -17,9 +17,12 @@
 #ifndef _STIM_CMD_COMMAND_SAMPLE_DEM_H
 #define _STIM_CMD_COMMAND_SAMPLE_DEM_H
 
+#include "stim/arg_parse.h"
+
 namespace stim {
 
 int command_sample_dem(int argc, const char **argv);
+SubCommandHelp command_sample_dem_help();
 
 }  // namespace stim
 
