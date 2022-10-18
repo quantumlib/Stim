@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_HELP_H
-#define _STIM_HELP_H
+#ifndef _STIM_CMD_COMMAND_HELP_H
+#define _STIM_CMD_COMMAND_HELP_H
 
 #include <map>
 #include <string>
 
 namespace stim {
 
-int main_help(int argc, const char **argv);
+int command_help(int argc, const char **argv);
 std::string help_for(std::string help_key);
+std::string clean_doc_string(const char *c);
 
 }  // namespace stim
 

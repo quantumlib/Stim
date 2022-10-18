@@ -246,6 +246,10 @@ struct ErrorAnalyzer {
     /// Counts the number of tick operations, for better debug messages.
     uint64_t ticks_seen = 0;
 
+    /// Processes the instructions in a circuit multiple times.
+    /// If loop folding is enabled, also uses a tortoise-and-hare algorithm to attempt to solve the loop's period.
+    void run_loop(const Circuit &loop, uint64_t iterations);
+
    private:
     /// When detectors anti-commute with a reset, that set of detectors becomes a degree of freedom.
     /// Use that degree of freedom to delete the largest detector in the set from the system.
@@ -271,9 +275,6 @@ struct ErrorAnalyzer {
     void shift_active_detector_ids(int64_t shift);
     /// Empties error_class_probabilities into flushed_reversed_model.
     void flush();
-    /// Processes the instructions in a circuit multiple times.
-    /// If loop folding is enabled, also uses a tortoise-and-hare algorithm to attempt to solve the loop's period.
-    void run_loop(const Circuit &loop, uint64_t iterations);
     /// Adds (or folds) an error mechanism into error_class_probabilities.
     ConstPointerRange<DemTarget> add_error(double probability, ConstPointerRange<DemTarget> flipped_sorted);
     /// Adds (or folds) an error mechanism equal into error_class_probabilities.

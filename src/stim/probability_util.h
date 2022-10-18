@@ -68,6 +68,7 @@ struct RareErrorIterator {
 std::vector<size_t> sample_hit_indices(float probability, size_t attempts, std::mt19937_64 &rng);
 
 std::mt19937_64 externally_seeded_rng();
+std::mt19937_64 optionally_seeded_rng(int argc, const char **argv);
 
 void biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng);
 

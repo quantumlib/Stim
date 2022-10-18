@@ -144,8 +144,8 @@ bazel run stim
 ```bash
 # from the repository root:
 find src \
-    | grep "\\.cc" \
-    | grep -v "\\.\(test\|perf\|pybind\)\\.cc" \
+    | grep "\\.cc$" \
+    | grep -v "\\.\(test\|perf\|pybind\)\\.cc$" \
     | xargs g++ -I src -pthread -std=c++11 -O3 -march=native
 
 # output binary ends up at:

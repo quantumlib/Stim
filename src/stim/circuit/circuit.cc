@@ -1073,12 +1073,17 @@ Circuit Circuit::without_noise() const {
     for (const auto &op : operations) {
         if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
             // Drop result flip probabilities.
-            result.append_operation(*op.gate, result.target_buf.take_copy(op.target_data.targets), {});
+            auto targets = result.target_buf.take_copy(op.target_data.targets);
+            result.append_operation(*op.gate, targets, {});
         } else if (op.gate->id == gate_name_to_id("REPEAT")) {
-            result.operations.push_back({op.gate, {op.target_data.args, op.target_data.targets}});
+            auto args = result.arg_buf.take_copy(op.target_data.args);
+            auto targets = result.target_buf.take_copy(op.target_data.targets);
+            result.operations.push_back({op.gate, {args, targets}});
         } else if (!(op.gate->flags & GATE_IS_NOISE)) {
             // Keep noiseless operations.
-            result.append_operation(*op.gate, op.target_data.targets, op.target_data.args);
+            auto args = result.arg_buf.take_copy(op.target_data.args);
+            auto targets = result.target_buf.take_copy(op.target_data.targets);
+            result.append_operation(*op.gate, targets, args);
         }
     }
     for (const auto &block : blocks) {
