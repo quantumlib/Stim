@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <pybind11/iostream.h>
 
-#include "stim/circuit/circuit_instruction.pybind.h"
-#include "stim/circuit/circuit_gate_target.pybind.h"
-#include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/circuit/circuit.pybind.h"
+#include "stim/circuit/circuit_gate_target.pybind.h"
+#include "stim/circuit/circuit_instruction.pybind.h"
+#include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
-#include "stim/dem/detector_error_model.pybind.h"
 #include "stim/io/read_write.pybind.h"
 #include "stim/main_namespaced.h"
 #include "stim/py/base.pybind.h"
@@ -71,14 +71,8 @@ GateTarget target_sweep_bit(uint32_t qubit) {
 }
 
 int stim_main(const std::vector<std::string> &args) {
-    pybind11::scoped_ostream_redirect redirect_out(
-        std::cout,
-        pybind11::module_::import("sys").attr("stdout")
-    );
-    pybind11::scoped_ostream_redirect redirect_err(
-        std::cerr,
-        pybind11::module_::import("sys").attr("stderr")
-    );
+    pybind11::scoped_ostream_redirect redirect_out(std::cout, pybind11::module_::import("sys").attr("stdout"));
+    pybind11::scoped_ostream_redirect redirect_err(std::cerr, pybind11::module_::import("sys").attr("stderr"));
     std::vector<const char *> argv;
     argv.push_back("stim.main");
     for (const auto &arg : args) {
@@ -131,7 +125,6 @@ pybind11::dict raw_format_data() {
     }
     return result;
 }
-
 
 void top_level(pybind11::module &m) {
     m.def(
@@ -406,7 +399,6 @@ void top_level(pybind11::module &m) {
     m.def("_UNSTABLE_raw_format_data", &raw_format_data);
 }
 
-
 PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     m.attr("__version__") = xstr(VERSION_INFO);
     m.doc() = R"pbdoc(
@@ -441,7 +433,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
 
     auto c_tableau_simulator = pybind_tableau_simulator(m);
 
-
     auto c_circuit_error_location_stack_frame = pybind_circuit_error_location_stack_frame(m);
     auto c_gate_target_with_coords = pybind_gate_target_with_coords(m);
     auto c_dem_target_with_coords = pybind_dem_target_with_coords(m);
@@ -450,11 +441,9 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_circuit_error_location = pybind_circuit_error_location(m);
     auto c_circuit_error_location_methods = pybind_explained_error(m);
 
-
     /// top level function definitions
     top_level(m);
     pybind_read_write(m);
-
 
     // method definitions
     pybind_circuit_instruction_methods(m, c_circuit_instruction);

@@ -15,8 +15,8 @@
 #include "stim/cmd/command_analyze_errors.h"
 
 #include "stim/arg_parse.h"
-#include "stim/simulators/error_analyzer.h"
 #include "stim/cmd/command_help.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 
@@ -76,8 +76,7 @@ SubCommandHelp stim::command_analyze_errors_help() {
     result.subcommand_name = "analyze_errors";
     result.description = "Converts a circuit into a detector error model.";
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example_circuit.stim
             R 0 1
             X_ERROR(0.125) 0 1
@@ -89,10 +88,8 @@ SubCommandHelp stim::command_analyze_errors_help() {
             >>> stim analyze_errors --in example_circuit.stim
             error(0.125) D0
             error(0.125) D0 D1
-        )PARAGRAPH")
-    );
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+        )PARAGRAPH"));
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> stim gen \
                     --code repetition_code \
                     --task memory \
@@ -123,8 +120,7 @@ SubCommandHelp stim::command_analyze_errors_help() {
             detector(3, 0) D3
             detector(1, 1) D4
             detector(3, 1) D5
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--allow_gauge_detectors",

@@ -1,12 +1,13 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
-#include "stim/diagram/diagram_util.h"
+
 #include "stim/diagram/circuit_timeline_helper.h"
+#include "stim/diagram/diagram_util.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
-constexpr double GATE_ALIGNMENT_X = 0;  // Left-justify gates when time moves right.
-constexpr double GATE_ALIGNMENT_Y = 0.5; // Center-justify gates when time moves down.
+constexpr double GATE_ALIGNMENT_X = 0;    // Left-justify gates when time moves right.
+constexpr double GATE_ALIGNMENT_Y = 0.5;  // Center-justify gates when time moves down.
 
 size_t DiagramTimelineAsciiDrawer::m2x(size_t m) const {
     return m * (1 + moment_spacing) + 2;
@@ -16,7 +17,8 @@ size_t DiagramTimelineAsciiDrawer::q2y(size_t q) const {
     return q * 2 + 1;
 }
 
-void DiagramTimelineAsciiDrawer::do_feedback(const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
+void DiagramTimelineAsciiDrawer::do_feedback(
+    const std::string &gate, const GateTarget &qubit_target, const GateTarget &feedback_target) {
     std::stringstream ss;
     ss << gate;
     ss << "^";
@@ -238,20 +240,19 @@ void DiagramTimelineAsciiDrawer::reserve_drawing_room_for_targets(ConstPointerRa
     }
     cur_moment_is_used = true;
     if (min_q < max_q) {
-        diagram.lines.push_back({
-            {
-                m2x(cur_moment),
-                q2y(min_q),
-                GATE_ALIGNMENT_X,
-                GATE_ALIGNMENT_Y,
-            },
-            {
-                m2x(cur_moment),
-                q2y(max_q),
-                GATE_ALIGNMENT_X,
-                GATE_ALIGNMENT_Y,
-            }
-        });
+        diagram.lines.push_back(
+            {{
+                 m2x(cur_moment),
+                 q2y(min_q),
+                 GATE_ALIGNMENT_X,
+                 GATE_ALIGNMENT_Y,
+             },
+             {
+                 m2x(cur_moment),
+                 q2y(max_q),
+                 GATE_ALIGNMENT_X,
+                 GATE_ALIGNMENT_Y,
+             }});
     }
 }
 void DiagramTimelineAsciiDrawer::do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op) {
@@ -450,7 +451,8 @@ void DiagramTimelineAsciiDrawer::do_resolved_operation(const ResolvedTimelineOpe
     }
 }
 
-DiagramTimelineAsciiDrawer::DiagramTimelineAsciiDrawer(size_t num_qubits, bool has_ticks) : num_qubits(num_qubits), has_ticks(has_ticks) {
+DiagramTimelineAsciiDrawer::DiagramTimelineAsciiDrawer(size_t num_qubits, bool has_ticks)
+    : num_qubits(num_qubits), has_ticks(has_ticks) {
     cur_moment_used_flags.resize(num_qubits);
 }
 

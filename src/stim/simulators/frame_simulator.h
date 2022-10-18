@@ -32,16 +32,18 @@ namespace stim {
 /// Instead of reporting qubit measurements, it reports whether a measurement is inverted or not.
 /// This requires a set of reference measurements to diff against.
 struct FrameSimulator {
-    size_t num_qubits;            // Number of qubits being tracked.
-    size_t batch_size;            // Number of instances being tracked.
-    simd_bit_table<MAX_BITWORD_WIDTH> x_table;       // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
-    simd_bit_table<MAX_BITWORD_WIDTH> z_table;       // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
+    size_t num_qubits;  // Number of qubits being tracked.
+    size_t batch_size;  // Number of instances being tracked.
+    simd_bit_table<MAX_BITWORD_WIDTH>
+        x_table;  // x_table[q][k] is whether or not there's an X error on qubit q in instance k.
+    simd_bit_table<MAX_BITWORD_WIDTH>
+        z_table;                  // z_table[q][k] is whether or not there's a Z error on qubit q in instance k.
     MeasureRecordBatch m_record;  // The measurement record.
-    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;         // Workspace used when sampling error processes.
-    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;        // Workspace used when sampling compound error processes.
+    simd_bits<MAX_BITWORD_WIDTH> rng_buffer;   // Workspace used when sampling error processes.
+    simd_bits<MAX_BITWORD_WIDTH> tmp_storage;  // Workspace used when sampling compound error processes.
     simd_bits<MAX_BITWORD_WIDTH> last_correlated_error_occurred;  // correlated error flag for each instance.
     simd_bit_table<MAX_BITWORD_WIDTH> sweep_table;                // Shot-to-shot configuration data.
-    std::mt19937_64 &rng;                      // Random number generator used for generating entropy.
+    std::mt19937_64 &rng;  // Random number generator used for generating entropy.
 
     // Determines whether e.g. 50% Z errors are multiplied into the frame when measuring in the Z basis.
     // This is necessary for correct sampling.
@@ -61,7 +63,8 @@ struct FrameSimulator {
     /// Returns:
     ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
     ///     Each bit in the table is whether a specific measurement was flipped in a specific shot.
-    static simd_bit_table<MAX_BITWORD_WIDTH> sample_flipped_measurements(const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
+    static simd_bit_table<MAX_BITWORD_WIDTH> sample_flipped_measurements(
+        const Circuit &circuit, size_t num_shots, std::mt19937_64 &rng);
 
     /// Returns a batch of samples from the circuit.
     ///
@@ -75,7 +78,10 @@ struct FrameSimulator {
     ///     A table of results. First index (major) is measurement index, second index (minor) is shot index.
     ///     Each bit in the table is a measurement result.
     static simd_bit_table<MAX_BITWORD_WIDTH> sample(
-        const Circuit &circuit, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample, size_t num_samples, std::mt19937_64 &rng);
+        const Circuit &circuit,
+        const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+        size_t num_samples,
+        std::mt19937_64 &rng);
 
     static void sample_out(
         const Circuit &circuit,

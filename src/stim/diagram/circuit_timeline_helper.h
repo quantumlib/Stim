@@ -19,8 +19,8 @@
 
 #include <iostream>
 
-#include "stim/circuit/circuit.h"
 #include "lattice_map.h"
+#include "stim/circuit/circuit.h"
 
 namespace stim_draw_internal {
 
@@ -58,7 +58,10 @@ struct CircuitTimelineHelper {
     std::vector<CircuitTimelineLoopData> cur_loop_nesting;
     LatticeMap measure_index_to_qubit;
 
-    void do_atomic_operation(const stim::Gate *gate, stim::ConstPointerRange<double> args, stim::ConstPointerRange<stim::GateTarget> targets);
+    void do_atomic_operation(
+        const stim::Gate *gate,
+        stim::ConstPointerRange<double> args,
+        stim::ConstPointerRange<stim::GateTarget> targets);
 
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
     stim::GateTarget pick_pseudo_target_representing_measurements(const stim::Operation &op);
@@ -77,6 +80,6 @@ struct CircuitTimelineHelper {
     stim::ConstPointerRange<double> shifted_coordinates_in_workspace(stim::ConstPointerRange<double> coords);
 };
 
-}
+}  // namespace stim_draw_internal
 
 #endif

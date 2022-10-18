@@ -95,7 +95,6 @@ pybind11::object read_shot_data_file(
     }
 }
 
-
 void write_shot_data_file(
     const pybind11::object &data,
     const char *path,
@@ -116,7 +115,8 @@ void write_shot_data_file(
     }
     size_t num_bits_per_shot = nm + nd + no;
     size_t num_shots;
-    simd_bit_table<MAX_BITWORD_WIDTH> buffer = numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
+    simd_bit_table<MAX_BITWORD_WIDTH> buffer =
+        numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
 
     RaiiFile f(path, "w");
     simd_bits<MAX_BITWORD_WIDTH> unused(0);

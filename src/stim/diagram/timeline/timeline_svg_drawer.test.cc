@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fstream>
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 
+#include <fstream>
+
 #include "gtest/gtest.h"
+
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 
@@ -50,7 +52,9 @@ TEST(circuit_diagram_timeline_svg, single_qubit_gates) {
         S_DAG 1
         H 2 0 3
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="448" height="288" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L448,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -131,7 +135,9 @@ TEST(circuit_diagram_timeline_svg, two_qubits_gates) {
         ZCY 4 5
         ZCZ 0 5 2 3 1 4
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="1088" height="416" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L1088,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -263,7 +269,9 @@ TEST(circuit_diagram_timeline_svg, noise_gates) {
         Y_ERROR(0.125) 0 1 4
         Z_ERROR(0.125) 2 3 5
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="320" height="416" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L320,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -331,7 +339,9 @@ TEST(circuit_diagram_timeline_svg, noise_gates) {
         ELSE_CORRELATED_ERROR(0.25) X2 Y4 Z3
         ELSE_CORRELATED_ERROR(0.25) X5
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="320" height="416" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L320,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -377,7 +387,9 @@ TEST(circuit_diagram_timeline_svg, noise_gates) {
         PAULI_CHANNEL_1(0.125,0.25,0.125) 0 1 2 3
         PAULI_CHANNEL_2(0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01) 0 1 2 4
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="1344" height="352" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L1344,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -433,7 +445,9 @@ TEST(circuit_diagram_timeline_svg, collapsing) {
         MZ 3
         MPP X0*Y2 Z3 X1 Z2*Y3
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="576" height="288" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L576,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -527,7 +541,9 @@ TEST(circuit_diagram_timeline_svg, measurement_looping) {
             }
         }
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="704" height="352" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L704,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -577,7 +593,9 @@ TEST(circuit_diagram_timeline_svg, repeat) {
             }
         }
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="576" height="288" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L576,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -619,7 +637,9 @@ TEST(circuit_diagram_timeline_svg, classical_feedback) {
         CX rec[-1] 1
         YCZ 2 sweep[5]
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="192" height="224" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L192,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -648,7 +668,9 @@ TEST(circuit_diagram_timeline_svg, lattice_surgery_cnot) {
         CX rec[-2] 1
         CZ rec[-1] 0
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="512" height="224" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L512,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -701,7 +723,9 @@ TEST(circuit_diagram_timeline_svg, tick) {
         TICK
         H 0 0
     )CIRCUIT");
-    ASSERT_EQ(u8"\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        u8"\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="960" height="160" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L960,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -763,7 +787,9 @@ TEST(circuit_diagram_timeline_svg, shifted_coords) {
         QUBIT_COORDS(1, 2) 5
         DETECTOR(4, 5, 6)
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="1216" height="416" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L1216,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -823,7 +849,9 @@ TEST(circuit_diagram_timeline_svg, detector_pseudo_targets) {
         DETECTOR(5) rec[-1] rec[-2]
         OBSERVABLE_INCLUDE(100) rec[-201] rec[-203]
     )CIRCUIT");
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="960" height="416" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L960,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>
@@ -894,7 +922,9 @@ TEST(circuit_diagram_timeline_svg, detector_pseudo_targets) {
 TEST(circuit_diagram_timeline_svg, repetition_code) {
     CircuitGenParameters params(10, 3, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    ASSERT_EQ("\n" + svg_diagram(circuit), u8R"DIAGRAM(
+    ASSERT_EQ(
+        "\n" + svg_diagram(circuit),
+        u8R"DIAGRAM(
 <svg width="1536" height="352" version="1.1" xmlns="http://www.w3.org/2000/svg">
 <path d="M32,32 L1536,32 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="32" y="32">q0</text>

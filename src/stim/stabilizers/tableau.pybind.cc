@@ -114,7 +114,6 @@ size_t determine_tableau_shape(const pybind11::object &numpy_array, const char *
     return n;
 }
 
-
 pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
     return pybind11::class_<Tableau>(
         m,
@@ -264,11 +263,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
             pybind11::ssize_t n = 1 << self.num_qubits;
             pybind11::ssize_t itemsize = sizeof(std::complex<float>);
-            return pybind11::array_t<std::complex<float>>(
-                {n, n},
-                {n * itemsize, itemsize},
-                buffer,
-                free_when_done);
+            return pybind11::array_t<std::complex<float>>({n, n}, {n * itemsize, itemsize}, buffer, free_when_done);
         },
         pybind11::kw_only(),
         pybind11::arg("endian"),
@@ -474,7 +469,6 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
            const pybind11::object &z2z,
            const pybind11::object &x_signs,
            const pybind11::object &z_signs) {
-
             size_t n = determine_tableau_shape(x2x, "x2x");
             check_tableau_shape(x2z, n, "x2z");
             check_tableau_shape(z2x, n, "z2x");
@@ -501,7 +495,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 throw std::invalid_argument(
                     "The given tableau data don't describe a valid Clifford operation.\n"
                     "It doesn't preserve commutativity.\n"
-                    "All generator outputs must commute, except for the output of X_k anticommuting with the output of Z_k for each k.");
+                    "All generator outputs must commute, except for the output of X_k anticommuting with the output of "
+                    "Z_k for each k.");
             }
             return result;
         },
@@ -638,7 +633,8 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 | __ __ __ XZ
                 >>> print(t.to_pauli_string())
                 +ZY_X
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(
         "to_circuit",

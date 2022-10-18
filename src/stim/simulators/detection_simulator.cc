@@ -20,7 +20,10 @@ using namespace stim;
 
 template <typename T>
 void xor_measurement_set_into_result(
-    const T &measurement_set, simd_bit_table<MAX_BITWORD_WIDTH> &frame_samples, simd_bit_table<MAX_BITWORD_WIDTH> &output, size_t &output_index_ticker) {
+    const T &measurement_set,
+    simd_bit_table<MAX_BITWORD_WIDTH> &frame_samples,
+    simd_bit_table<MAX_BITWORD_WIDTH> &output,
+    size_t &output_index_ticker) {
     simd_bits_range_ref<MAX_BITWORD_WIDTH> dst = output[output_index_ticker++];
     for (auto i : measurement_set) {
         dst ^= frame_samples[i];
@@ -35,7 +38,8 @@ simd_bit_table<MAX_BITWORD_WIDTH> stim::detector_samples(
     bool append_observables,
     std::mt19937_64 &rng) {
     // Start from measurement samples.
-    simd_bit_table<MAX_BITWORD_WIDTH> frame_samples = FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
+    simd_bit_table<MAX_BITWORD_WIDTH> frame_samples =
+        FrameSimulator::sample_flipped_measurements(circuit, num_shots, rng);
 
     auto num_detectors = det_obs.detectors.size();
     auto num_obs = det_obs.observables.size();
@@ -165,10 +169,12 @@ void detector_samples_out_in_memory(
             obs_data[k] = table[nd + k];
             table[nd + k].clear();
         }
-        write_table_data(obs_out, num_shots, no, simd_bits<MAX_BITWORD_WIDTH>(0), obs_data, obs_out_format, 'L', 'L', no);
+        write_table_data(
+            obs_out, num_shots, no, simd_bits<MAX_BITWORD_WIDTH>(0), obs_data, obs_out_format, 'L', 'L', no);
     }
 
-    write_table_data(out, num_shots, nd + no * obs_in_det_output, simd_bits<MAX_BITWORD_WIDTH>(0), table, format, c1, c2, ct);
+    write_table_data(
+        out, num_shots, nd + no * obs_in_det_output, simd_bits<MAX_BITWORD_WIDTH>(0), table, format, c1, c2, ct);
 }
 
 void detector_sample_out_helper(

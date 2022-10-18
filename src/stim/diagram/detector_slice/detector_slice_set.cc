@@ -1,7 +1,8 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+
 #include "stim/diagram/coord.h"
+#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -53,16 +54,8 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         return false;
     }
 }
-DetectorSliceSetComputer::DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index) :
-      analyzer(
-            circuit.count_detectors(),
-            circuit.count_qubits(),
-            false,
-            true,
-            true,
-            1,
-            false,
-            false) {
+DetectorSliceSetComputer::DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index)
+    : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false) {
     num_ticks_left = circuit.count_ticks();
     if (num_ticks_left == 0) {
         throw std::invalid_argument("Circuit contains no TICK instructions to slice at.");
@@ -239,7 +232,7 @@ float pick_characteristic_distance(const std::set<uint64_t> &used, const std::ve
             continue;
         }
         auto delta = biggest - pt;
-        auto d = delta.xyz[0]*delta.xyz[0] + delta.xyz[1]*delta.xyz[1];
+        auto d = delta.xyz[0] * delta.xyz[0] + delta.xyz[1] * delta.xyz[1];
         if (d < closest_squared_distance) {
             closest_squared_distance = d;
         }
@@ -292,13 +285,13 @@ struct FlattenedCoords {
             offset *= -1;
             offset.xyz[0] += 16;
             offset.xyz[1] += 16;
-            for (auto& c: result.qubit_coords) {
+            for (auto &c : result.qubit_coords) {
                 c += offset;
             }
             for (auto &c : used_coords) {
                 c += offset;
             }
-            for (auto& e: result.det_coords) {
+            for (auto &e : result.det_coords) {
                 e.second += offset;
             }
             result.size = minmax.second - minmax.first;
@@ -336,20 +329,19 @@ const char *pick_color(ConstPointerRange<GateTarget> terms) {
 
 float angle_from_to(Coord<2> origin, Coord<2> dst) {
     auto d = dst - origin;
-    if (d.xyz[0]*d.xyz[0] + d.xyz[1]*d.xyz[1] < 1e-6) {
+    if (d.xyz[0] * d.xyz[0] + d.xyz[1] * d.xyz[1] < 1e-6) {
         return 0;
     }
     return atan2f(d.xyz[1], d.xyz[0]);
 }
 
 void write_terms_svg_path(
-        std::ostream &out,
-        DemTarget src,
-        const FlattenedCoords &coordsys,
-        ConstPointerRange<GateTarget> terms,
-        std::vector<Coord<2>> &pts_workspace) {
+    std::ostream &out,
+    DemTarget src,
+    const FlattenedCoords &coordsys,
+    ConstPointerRange<GateTarget> terms,
+    std::vector<Coord<2>> &pts_workspace) {
     if (terms.size() > 2) {
-
         Coord<2> center{0, 0};
         for (const auto &term : terms) {
             center += coordsys.qubit_coords[term.qubit_value()];

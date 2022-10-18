@@ -32,10 +32,11 @@ CompiledDetectorSampler::CompiledDetectorSampler(Circuit circuit, std::shared_pt
 pybind11::object CompiledDetectorSampler::sample_to_numpy(
     size_t num_shots, bool prepend_observables, bool append_observables, bool separate_observables, bool bit_packed) {
     if (separate_observables && (append_observables || prepend_observables)) {
-        throw std::invalid_argument("Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
+        throw std::invalid_argument(
+            "Can't specify separate_observables=True with append_observables=True or prepend_observables=True");
     }
-    simd_bit_table<MAX_BITWORD_WIDTH> sample =
-        detector_samples(circuit, dets_obs, num_shots, prepend_observables, append_observables || separate_observables, *prng);
+    simd_bit_table<MAX_BITWORD_WIDTH> sample = detector_samples(
+        circuit, dets_obs, num_shots, prepend_observables, append_observables || separate_observables, *prng);
     size_t num_dets = dets_obs.detectors.size();
     size_t num_obs = dets_obs.observables.size();
 
@@ -106,8 +107,7 @@ pybind11::class_<CompiledDetectorSampler> stim_pybind::pybind_compiled_detector_
 }
 
 void stim_pybind::pybind_compiled_detector_sampler_methods(
-    pybind11::module &m,
-    pybind11::class_<CompiledDetectorSampler> &c) {
+    pybind11::module &m, pybind11::class_<CompiledDetectorSampler> &c) {
     c.def(
         pybind11::init(&py_init_compiled_detector_sampler),
         pybind11::arg("circuit"),
@@ -163,7 +163,12 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
 
     c.def(
         "sample",
-        [](CompiledDetectorSampler &self, size_t shots, bool prepend, bool append, bool separate_observables, bool bit_packed) {
+        [](CompiledDetectorSampler &self,
+           size_t shots,
+           bool prepend,
+           bool append,
+           bool separate_observables,
+           bool bit_packed) {
             return self.sample_to_numpy(shots, prepend, append, separate_observables, bit_packed);
         },
         pybind11::arg("shots"),

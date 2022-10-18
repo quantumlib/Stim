@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "stim/main_namespaced.h"
-#include "stim/main_namespaced.test.h"
 
 #include <regex>
 
 #include "gtest/gtest.h"
 
+#include "stim/main_namespaced.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -79,7 +79,8 @@ TEST(main, help_modes) {
     ASSERT_TRUE(matches(run_captured_stim_main({"help"}, ""), ".*Available stim commands.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({}, ""), ".+stderr.+No mode.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--sample", "--repl"}, ""), ".+stderr.+More than one mode.+"));
-    ASSERT_TRUE(matches(run_captured_stim_main({"--sample", "--repl", "--detect"}, ""), ".+stderr.+More than one mode.+"));
+    ASSERT_TRUE(
+        matches(run_captured_stim_main({"--sample", "--repl", "--detect"}, ""), ".+stderr.+More than one mode.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "dhnsahddjoidsa"}, ""), ".*Unrecognized.*"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "H"}, ""), ".+Hadamard.+"));
     ASSERT_TRUE(matches(run_captured_stim_main({"--help", "--sample"}, ""), ".*Samples measurements from a circuit.+"));

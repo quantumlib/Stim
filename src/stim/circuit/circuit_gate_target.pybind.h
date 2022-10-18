@@ -26,7 +26,7 @@ namespace stim_pybind {
 pybind11::class_<stim::GateTarget> pybind_circuit_gate_target(pybind11::module &m);
 void pybind_circuit_gate_target_methods(pybind11::module &m, pybind11::class_<stim::GateTarget> &c);
 
-}
+}  // namespace stim_pybind
 
 stim::GateTarget obj_to_gate_target(const pybind11::object &obj);
 stim::GateTarget handle_to_gate_target(const pybind11::handle &obj);
