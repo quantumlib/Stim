@@ -294,7 +294,7 @@ jobs:
       - run: diff <(python glue/python/generate_stub_file.py -dev) doc/stim.pyi
       - run: diff <(stim help gates_markdown) doc/gates.md
       - run: diff <(stim help formats_markdown) doc/result_formats.md
-      - run: diff <(stim help flags_markdown) doc/usage_command_line.md
+      - run: diff <(stim help commands_markdown) doc/usage_command_line.md
       - run: python doc/stim.pyi
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
