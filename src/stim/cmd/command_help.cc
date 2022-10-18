@@ -25,6 +25,7 @@
 #include "stim/circuit/gate_data.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/cmd/command_analyze_errors.h"
 
 using namespace stim;
 
@@ -38,6 +39,51 @@ struct CommandLineFlagData {
     std::map<std::string, std::string> non_mode_help;
     std::map<std::string, CommandLineSingleModeData> mode_help;
 };
+
+std::string stim::clean_doc_string(const char *c) {
+    // Skip leading empty lines.
+    while (*c == '\n') {
+        c++;
+    }
+
+    // Determine indentation using first non-empty line.
+    size_t indent = 0;
+    while (*c == ' ') {
+        indent++;
+        c++;
+    }
+
+    std::string result;
+    while (*c != '\0') {
+        // Skip indentation.
+        for (size_t j = 0; j < indent && *c == ' '; j++) {
+            c++;
+        }
+
+        // Copy rest of line.
+        size_t line_length = 0;
+        while (*c != '\0') {
+            result.push_back(*c);
+            c++;
+            if (result.back() == '\n') {
+                break;
+            }
+            line_length++;
+        }
+        if (line_length > 80) {
+            const char *start_of_line = result.c_str() + result.size() - line_length - 1;
+            if (memcmp(start_of_line, "@signature", strlen("@signature")) != 0 &&
+                memcmp(start_of_line, "@overload", strlen("@overload")) != 0 &&
+                memcmp(start_of_line, "https://", strlen("https://")) != 0) {
+                std::stringstream ss;
+                ss << "Docstring line has length " << line_length << " > 80:\n" << start_of_line << std::string(80, '^') << "\n";
+                throw std::invalid_argument(ss.str());
+            }
+        }
+    }
+
+    return result;
+}
 
 CommandLineFlagData make_mode_help() {
     std::map<std::string, CommandLineSingleModeData> modes;
@@ -443,159 +489,6 @@ of never mixing the two types of data together.
     flags["--obs_out_format"] = R"PARAGRAPH(The format to use when writing observable flip data (e.g. b8 or 01).
 )PARAGRAPH";
 
-    modes["analyze_errors"] = CommandLineSingleModeData{
-        "Converts a circuit into a detector error model.",
-        R"PARAGRAPH(
-Determines the detectors and logical observables that are flipped by each error channel in the given circuit, and
-summarizes this information as an error model framed entirely in terms of independent error mechanisms that flip sets of
-detectors and observables.
-
-stdin: The circuit to convert into a detector error model.
-
-stdout: The detector error model in [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
-
-stderr:
-    Circuit failed to parse.
-    Failed to produce a graphlike detector error model but `--decompose_errors` was set.
-    Circuit contained gauge detectors but `--allow_gauge_detectors` wasn't set.
-    Circuit contained disjoint error channels but `--approximate_disjoint_errors` wasn't set.
-
-- Example:
-
-    ```
-    >>> stim analyze_errors
-    ... # Single-shot X-basis rep code circuit.
-    ... RX 0 1 2 3 4 5 6
-    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-    ... Z_ERROR(0.125) 0 1 2 3 4 5 6
-    ... MPP X0 X1 X2 X3 X4 X5 X6
-    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-    ... OBSERVABLE_INCLUDE(0) rec[-1]
-    error(0.125) D0 D1
-    error(0.125) D0 L0
-    error(0.125) D1 D2
-    error(0.125) D2 D3
-    error(0.125) D3 D4
-    error(0.125) D4 D5
-    error(0.125) D5
-    ```
-)PARAGRAPH",
-        {
-            "--allow_gauge_detectors",
-            "--approximate_disjoint_errors",
-            "--block_decompose_from_introducing_remnant_edges",
-            "--ignore_decomposition_failures",
-            "--decompose_errors",
-            "--fold_loops",
-            "--out",
-            "--in",
-        },
-    };
-
-    flags["--ignore_decomposition_failures"] = R"PARAGRAPH(
-When this flag is set, circuit errors that fail to decompose into graphlike
-detector error model errors no longer cause the conversion process to abort.
-Instead, the undecomposed error is inserted into the output. Whatever processes
-the detector error model is then responsible for dealing with the undecomposed
-errors (e.g. a tool may choose to simply ignore them).
-
-Irrelevant unless --decompose_errors is specified.
-)PARAGRAPH";
-    flags["--block_decomposition_from_introducing_remnant_edges"] = R"PARAGRAPH(
-Requires that both A B and C D be present elsewhere in the detector error model
-in order to decompose A B C D into A B ^ C D. Normally, only one of A B or C D
-needs to appear to allow this decomposition.
-
-Remnant edges can be a useful feature for ensuring decomposition succeeds, but
-they can also reduce the effective code distance by giving the decoder single
-edges that actually represent multiple errors in the circuit (resulting in the
-decoder making misinformed choices when decoding).
-
-Irrelevant unless --decompose_errors is specified.
-)PARAGRAPH";
-
-    flags["--fold_loops"] = R"PARAGRAPH(
-Allows the output error model to contain `repeat` blocks.
-
-Analyzes `REPEAT` blocks in the input circuit using a procedure that solves the loop in O(period) iterations, instead of
-O(total_repetition_count) iterations, by using ["tortoise and hare"](https://en.wikipedia.org/wiki/Cycle_detection#Floyd's_tortoise_and_hare)
-period finding algorithm. The "period" of a loop is the number of iterations required for the logical observables to end
-up back in the same place and for any errors introduced in the current iteration to not affected any detectors defined
-at least that many iterations later (including detectors after the end of the loop).
-
-This flag substantially improves performance on circuits with `REPEAT` blocks that have large repetition counts. The
-analysis will take less time and the output will be more compact.
-
-Note that, although logical observables can "cross" the loop without preventing loop folding, detectors CANNOT. If there
-is any detector introduced after the loop, whose sensitivity region extends to before the loop, loop folding will fail.
-This is disastrous for loops with repetition counts in the billions, because in that case loop folding is the difference
-between the error analysis finishing in seconds instead of days.
-)PARAGRAPH";
-
-    flags["--decompose_errors"] = R"PARAGRAPH(
-Decomposes errors into components that are guaranteed to be "graphlike" (have at most two detection events).
-
-Stim uses two strategies for decomposing errors: within-channel and other-error.
-
-The *within-channel* strategy is always applied first, and works by looking at the various detector/observable sets
-producing by each case of a single noise channel. If some cases are products of other cases, that product is used as
-the decomposition. For example, suppose that a single qubit depolarizing channel has a `Y5` case that produces four
-detection events `D0 D1 D2 D3`, an `X5` case that produces two detection events `D0 D1`, and a `Z5` case that produces
-two detection events `D2 D3`. Because `D0 D1 D2 D3` is the combination of `D0 D1` and `D2 D3`, the `Y5` case will be
-decomposed into `D0 D1 ^ D2 D3`.
-
-The *other-error* strategy is used (as late as possible) while an error still has a component with more than two
-detection events. It is checked of one or two of those detection events appear as an individual error elsewhere in the
-model. If they do, they are split out of the component (decomposing it). This applies iteratively. For example, if an
-error `D0 ^ D1 D2 D3` appears in the model, then stim will check if there is an error anywhere in the model that has
-exactly `D1 D2`, `D1 D3`, `D2 D3`, `D1`, `D2`, or `D3` as its detection events. Suppose there is an error with `D1 D2`.
-Then the original error will be decomposed into `D0 ^ D1 D2 ^ D3`.
-
-If these strategies fail to decompose error into graphlike pieces, Stim will throw an error saying it failed to find a
-satisfying decomposition.
-)PARAGRAPH";
-
-    flags["--allow_gauge_detectors"] = R"PARAGRAPH(
-Normally, when a detector anti-commutes with a stabilizer of the circuit (forcing the detector
-to have random results instead of deterministic results), error analysis throws an exception.
-
-Specifying `--allow_gauge_detectors` instead allows this behavior and reports it as an `error(0.5)` in the model.
-
-For example, in the following circuit, the two detectors are gauge detectors:
-
-```
-R 0
-H 0
-CNOT 0 1
-M 0 1
-DETECTOR rec[-1]
-DETECTOR rec[-2]
-```
-
-Without `--allow_gauge_detectors`, stim will raise an exception when analyzing this circuit. With
-`--allow_gauge_detectors`, stim will replace this exception with an `error(0.5) D1 D2` error mechanism in the output.
-)PARAGRAPH";
-
-    flags["--approximate_disjoint_errors"] = R"PARAGRAPH(
-Specifies a threshold for allowing error mechanisms with disjoint components
-(such as `PAULI_CHANNEL_1(0.1, 0.2, 0.0)`) to be approximated as having independent components.
-
-Defaults to 0 (false) when not specified.
-Defaults to 1 (true) when specified with an empty argument.
-Must be set to a probability between 0 and 1.
-
-If any of the component error probabilities (that will be approximated as independent) is larger than the given
-threshold, error analysis will fail instead of performing the approximation.
-
-For example, if `--approximate_disjoint_errors` is specified then a `PAULI_CHANNEL_1(0.1, 0.2, 0.0)` is
-approximated as an `X_ERROR(0.1)` followed by a `Z_ERROR(0.2)`.
-)PARAGRAPH";
-
     modes["gen"] = CommandLineSingleModeData{
         "Generates example circuits.",
         R"PARAGRAPH(
@@ -770,6 +663,18 @@ What the output is used for depends on the mode stim is executing in. For exampl
 is written to stdout (or the file specified by `--out`) whereas in `stim sample` mode the sampled measurement data is
 written to stdout (or the file specified by `--out`).
 )PARAGRAPH";
+
+    auto analyze_help = command_analyze_errors_help();
+    modes[analyze_help.subcommand_name] = CommandLineSingleModeData{
+         analyze_help.description,
+         analyze_help.str_help(),
+         analyze_help.flag_set(),
+    };
+    for (const auto &f : analyze_help.flags) {
+        if (flags.find(f.flag_name) == flags.end()) {
+            flags[f.flag_name] = f.description;
+        }
+    }
 
     return {flags, modes};
 }
@@ -1077,6 +982,27 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     return out.settled;
 }
 
+std::string generate_per_mode_help(
+    const std::string &mode_name, const CommandLineSingleModeData &data) {
+    std::stringstream out;
+
+    if (data.mode_description.find("SYNOPSIS\n") != std::string::npos) {
+        return data.mode_description;
+    }
+
+    out << "### stim " << mode_name << "\n\n";
+    out << "*" << data.mode_summary << "*\n";
+    out << data.mode_description;
+    if (!data.flags.empty()) {
+        out << "\nFlags used with this mode:\n";
+        for (const auto &e : data.flags) {
+            out << "    " << e << "\n";
+        }
+    }
+
+    return out.str();
+}
+
 std::string generate_per_mode_markdown(
     const std::string &mode_name, const CommandLineSingleModeData &data, int indent, bool anchor) {
     Acc out;
@@ -1084,6 +1010,16 @@ std::string generate_per_mode_markdown(
     if (anchor) {
         out << "<a name=\"" << mode_name << "\"></a>\n";
     }
+    if (data.mode_description.find("SYNOPSIS\n") != std::string::npos) {
+        out << "### stim " << mode_name << "\n\n";
+        out << "```\n";
+        out << data.mode_description << "\n";
+        out << "```\n";
+
+        out.flush();
+        return out.settled;
+    }
+
     out << "### stim " << mode_name << "\n\n";
     out << "*" << data.mode_summary << "*\n";
     out << data.mode_description;
@@ -1215,7 +1151,7 @@ std::map<std::string, std::string> generate_flag_help_markdown() {
     for (const auto &kv : data.mode_help) {
         std::string key = upper(kv.first);
         while (true) {
-            result[key] = generate_per_mode_markdown(kv.first, kv.second, 0, false);
+            result[key] = generate_per_mode_help(kv.first, kv.second);
             if (key[0] == '-') {
                 key.erase(key.begin());
             } else {

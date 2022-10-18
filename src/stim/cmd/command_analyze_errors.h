@@ -17,9 +17,12 @@
 #ifndef _STIM_CMD_COMMAND_ANALYZE_ERRORS_H
 #define _STIM_CMD_COMMAND_ANALYZE_ERRORS_H
 
+#include "stim/arg_parse.h"
+
 namespace stim {
 
 int command_analyze_errors(int argc, const char **argv);
+SubCommandHelp command_analyze_errors_help();
 
 }  // namespace stim
 

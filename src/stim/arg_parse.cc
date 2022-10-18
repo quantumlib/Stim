@@ -14,6 +14,7 @@
 
 #include "stim/arg_parse.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -21,9 +22,82 @@
 #include <fstream>
 #include <iostream>
 #include <set>
-#include <sstream>
 
 using namespace stim;
+
+std::string SubCommandHelp::str_help() const {
+    std::stringstream ss;
+    write_help(ss);
+    return ss.str();
+}
+
+std::set<std::string> SubCommandHelp::flag_set() const {
+    std::set<std::string> result;
+    for (const auto &f : flags) {
+        result.insert(f.flag_name);
+    }
+    return result;
+}
+
+void SubCommandHelp::write_help(std::ostream &out) const {
+    std::vector<SubCommandHelpFlag> flags_copy = flags;
+    std::sort(flags_copy.begin(), flags_copy.end(), [](const SubCommandHelpFlag &f1, const SubCommandHelpFlag &f2) {
+        return f1.flag_name < f2.flag_name;
+    });
+    out << "NAME\n";
+    out << "    stim " << subcommand_name << "\n\n";
+    out << "SYNOPSIS\n";
+    out << "    stim " << subcommand_name;
+    for (const auto &flag : flags_copy) {
+        out << " \\\n        ";
+        bool allows_none = std::find(flag.allowed_values.begin(), flag.allowed_values.end(), "[none]") != flag.allowed_values.end();
+        bool allows_empty = std::find(flag.allowed_values.begin(), flag.allowed_values.end(), "[switch]") != flag.allowed_values.end();
+        if (allows_none) {
+            out << "[";
+        }
+        out << flag.flag_name;
+        if (flag.type != "bool") {
+            out << " ";
+            if (allows_empty) {
+                out << "[";
+            }
+            out << flag.type;
+            if (allows_empty) {
+                out << "]";
+            }
+        }
+        if (allows_none) {
+            out << "]";
+        }
+    }
+    out << "\n\n";
+    out << "DESCRIPTION\n";
+    out << "    " << description << "\n\n";
+    out << "OPTIONS\n";
+    for (const auto &f : flags_copy) {
+        out << "    " << f.flag_name << "\n        ";
+        for (char c : f.description) {
+            out << c;
+            if (c == '\n') {
+                out << "        ";
+            }
+        }
+        out << "\n\n";
+    }
+    out << "EXAMPLES\n";
+    for (size_t k = 0; k < examples.size(); k++) {
+        if (k) {
+            out << "\n\n";
+        }
+        out << "    Example #" << (k + 1) << "\n        ";
+        for (char c : examples[k]) {
+            out << c;
+            if (c == '\n') {
+                out << "        ";
+            }
+        }
+    }
+}
 
 const char *stim::require_find_argument(const char *name, int argc, const char **argv) {
     const char *result = find_argument(name, argc, argv);

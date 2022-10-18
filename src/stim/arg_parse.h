@@ -22,11 +22,31 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
 namespace stim {
+
+struct SubCommandHelpFlag {
+    std::string flag_name;
+    std::string type;
+    std::string default_value;
+    std::vector<std::string> allowed_values;
+    std::string description;
+};
+
+struct SubCommandHelp {
+    std::string subcommand_name;
+    std::string description;
+    std::vector<std::string> examples;
+    std::vector<SubCommandHelpFlag> flags;
+
+    void write_help(std::ostream &out) const;
+    std::string str_help() const;
+    std::set<std::string> flag_set() const;
+};
 
 /// Searches through command line flags for a particular flag's argument.
 ///

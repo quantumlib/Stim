@@ -24,6 +24,7 @@ namespace stim {
 
 int command_help(int argc, const char **argv);
 std::string help_for(std::string help_key);
+std::string clean_doc_string(const char *c);
 
 }  // namespace stim
 
