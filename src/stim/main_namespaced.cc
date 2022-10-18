@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstring>
-
 #include "stim/main_namespaced.h"
+
+#include <cstring>
 
 #include "stim/arg_parse.h"
 #include "stim/cmd/command_analyze_errors.h"
@@ -22,11 +22,11 @@
 #include "stim/cmd/command_diagram.h"
 #include "stim/cmd/command_explain_errors.h"
 #include "stim/cmd/command_gen.h"
+#include "stim/cmd/command_help.h"
 #include "stim/cmd/command_m2d.h"
+#include "stim/cmd/command_repl.h"
 #include "stim/cmd/command_sample.h"
 #include "stim/cmd/command_sample_dem.h"
-#include "stim/cmd/command_repl.h"
-#include "stim/cmd/command_help.h"
 
 using namespace stim;
 

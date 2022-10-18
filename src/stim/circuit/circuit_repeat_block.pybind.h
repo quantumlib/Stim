@@ -19,8 +19,6 @@
 
 #include "stim/circuit/circuit.h"
 
-
-
 namespace stim_pybind {
 
 struct CircuitRepeatBlock {
@@ -36,6 +34,6 @@ struct CircuitRepeatBlock {
 pybind11::class_<CircuitRepeatBlock> pybind_circuit_repeat_block(pybind11::module &m);
 void pybind_circuit_repeat_block_methods(pybind11::module &m, pybind11::class_<CircuitRepeatBlock> &c);
 
-}
+}  // namespace stim_pybind
 
 #endif

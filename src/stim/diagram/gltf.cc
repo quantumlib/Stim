@@ -1,6 +1,6 @@
-#include <iostream>
-
 #include "stim/diagram/gltf.h"
+
+#include <iostream>
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -48,9 +48,10 @@ JsonObj GltfScene::to_json() {
 
     std::map<std::string, JsonObj> result{
         {"scene", 0},
-        {"asset", std::map<std::string, JsonObj>{
+        {"asset",
+         std::map<std::string, JsonObj>{
              {"version", "2.0"},
-        }},
+         }},
     };
     for (const auto &r : counts) {
         result.insert({r.first, std::vector<JsonObj>{}});

@@ -45,7 +45,8 @@ MeasureRecordReader::MeasureRecordReader(size_t num_measurements, size_t num_det
     : num_measurements(num_measurements), num_detectors(num_detectors), num_observables(num_observables) {
 }
 
-size_t MeasureRecordReader::read_records_into(simd_bit_table<MAX_BITWORD_WIDTH> &out, bool major_index_is_shot_index, size_t max_shots) {
+size_t MeasureRecordReader::read_records_into(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out, bool major_index_is_shot_index, size_t max_shots) {
     if (!major_index_is_shot_index) {
         simd_bit_table<MAX_BITWORD_WIDTH> buf(out.num_minor_bits_padded(), out.num_major_bits_padded());
         size_t r = read_records_into(buf, true, max_shots);
@@ -112,7 +113,8 @@ void MeasureRecordReader::move_obs_in_shots_to_mask_assuming_sorted(SparseShot &
     }
 }
 
-size_t MeasureRecordReader::read_into_table_with_major_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReader::read_into_table_with_major_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t read_shots = 0;
     while (read_shots < max_shots && start_and_read_entire_record(out_table[read_shots])) {
         read_shots++;
@@ -127,7 +129,8 @@ MeasureRecordReaderFormat01::MeasureRecordReaderFormat01(
     : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
-bool MeasureRecordReaderFormat01::start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
+bool MeasureRecordReaderFormat01::start_and_read_entire_record(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
     return start_and_read_entire_record_helper(
         [&](size_t k) {
             dirty_out_buffer[k] = false;
@@ -152,7 +155,8 @@ bool MeasureRecordReaderFormat01::expects_empty_serialized_data_for_each_shot() 
     return false;
 }
 
-size_t MeasureRecordReaderFormat01::read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormat01::read_into_table_with_minor_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t read_shots = 0;
     while (read_shots < max_shots) {
         bool more = start_and_read_entire_record_helper(
@@ -177,7 +181,8 @@ MeasureRecordReaderFormatB8::MeasureRecordReaderFormatB8(
     : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
-bool MeasureRecordReaderFormatB8::start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
+bool MeasureRecordReaderFormatB8::start_and_read_entire_record(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
     size_t n = bits_per_record();
     size_t nb = (n + 7) >> 3;
     size_t nr = fread(dirty_out_buffer.u8, 1, nb, in);
@@ -194,7 +199,8 @@ bool MeasureRecordReaderFormatB8::start_and_read_entire_record(simd_bits_range_r
     return true;
 }
 
-size_t MeasureRecordReaderFormatB8::read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormatB8::read_into_table_with_minor_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t n = bits_per_record();
     if (n == 0) {
         return 0;  // Ambiguous when the data ends. Stop as early as possible.
@@ -257,7 +263,8 @@ MeasureRecordReaderFormatHits::MeasureRecordReaderFormatHits(
     : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
-bool MeasureRecordReaderFormatHits::start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
+bool MeasureRecordReaderFormatHits::start_and_read_entire_record(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
     size_t m = bits_per_record();
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
@@ -287,7 +294,8 @@ bool MeasureRecordReaderFormatHits::expects_empty_serialized_data_for_each_shot(
     return false;
 }
 
-size_t MeasureRecordReaderFormatHits::read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormatHits::read_into_table_with_minor_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t read_shots = 0;
     out_table.clear();
     while (read_shots < max_shots) {
@@ -309,7 +317,8 @@ MeasureRecordReaderFormatR8::MeasureRecordReaderFormatR8(
     : MeasureRecordReader(num_measurements, num_detectors, num_observables), in(in) {
 }
 
-bool MeasureRecordReaderFormatR8::start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
+bool MeasureRecordReaderFormatR8::start_and_read_entire_record(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
         dirty_out_buffer[bit_index] = 1;
@@ -328,7 +337,8 @@ bool MeasureRecordReaderFormatR8::expects_empty_serialized_data_for_each_shot() 
     return false;
 }
 
-size_t MeasureRecordReaderFormatR8::read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormatR8::read_into_table_with_minor_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t read_shots = 0;
     out_table.clear();
     while (read_shots < max_shots) {
@@ -345,7 +355,8 @@ size_t MeasureRecordReaderFormatR8::read_into_table_with_minor_shot_index(simd_b
 
 /// DETS format
 
-bool MeasureRecordReaderFormatDets::start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
+bool MeasureRecordReaderFormatDets::start_and_read_entire_record(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
     dirty_out_buffer.prefix_ref(bits_per_record()).clear();
     return start_and_read_entire_record_helper([&](size_t bit_index) {
         dirty_out_buffer[bit_index] = true;
@@ -372,7 +383,8 @@ bool MeasureRecordReaderFormatDets::expects_empty_serialized_data_for_each_shot(
     return false;
 }
 
-size_t MeasureRecordReaderFormatDets::read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormatDets::read_into_table_with_minor_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t read_shots = 0;
     out_table.clear();
     while (read_shots < max_shots) {
@@ -427,7 +439,8 @@ bool MeasureRecordReaderFormatPTB64::load_cache() {
     return true;
 }
 
-bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
+bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> dirty_out_buffer) {
     if (num_unread_shots_in_buf == 0) {
         load_cache();
     }
@@ -475,7 +488,8 @@ bool MeasureRecordReaderFormatPTB64::expects_empty_serialized_data_for_each_shot
     return bits_per_record() == 0;
 }
 
-size_t MeasureRecordReaderFormatPTB64::read_into_table_with_minor_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormatPTB64::read_into_table_with_minor_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t n = bits_per_record();
     if (n == 0) {
         return 0;  // Ambiguous when the data ends. Stop as early as possible.
@@ -500,7 +514,8 @@ size_t MeasureRecordReaderFormatPTB64::read_into_table_with_minor_shot_index(sim
     return max_shots;
 }
 
-size_t MeasureRecordReaderFormatPTB64::read_into_table_with_major_shot_index(simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
+size_t MeasureRecordReaderFormatPTB64::read_into_table_with_major_shot_index(
+    simd_bit_table<MAX_BITWORD_WIDTH> &out_table, size_t max_shots) {
     size_t n = bits_per_record();
     if (n == 0) {
         return 0;  // Ambiguous when the data ends. Stop as early as possible.

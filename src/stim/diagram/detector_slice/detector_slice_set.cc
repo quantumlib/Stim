@@ -1,10 +1,16 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
-#include "stim/simulators/error_analyzer.h"
-#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+
 #include "stim/diagram/coord.h"
+#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
+
+template <typename T>
+inline void write_key_val(std::ostream &out, const char *key, const T &val) {
+    out << ' ' << key << "=\"" << val << "\"";
+}
 
 struct DetectorSliceSetComputer {
     ErrorAnalyzer analyzer;
@@ -48,16 +54,8 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         return false;
     }
 }
-DetectorSliceSetComputer::DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index) :
-      analyzer(
-            circuit.count_detectors(),
-            circuit.count_qubits(),
-            false,
-            true,
-            true,
-            1,
-            false,
-            false) {
+DetectorSliceSetComputer::DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index)
+    : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false) {
     num_ticks_left = circuit.count_ticks();
     if (num_ticks_left == 0) {
         throw std::invalid_argument("Circuit contains no TICK instructions to slice at.");
@@ -234,7 +232,7 @@ float pick_characteristic_distance(const std::set<uint64_t> &used, const std::ve
             continue;
         }
         auto delta = biggest - pt;
-        auto d = delta.xyz[0]*delta.xyz[0] + delta.xyz[1]*delta.xyz[1];
+        auto d = delta.xyz[0] * delta.xyz[0] + delta.xyz[1] * delta.xyz[1];
         if (d < closest_squared_distance) {
             closest_squared_distance = d;
         }
@@ -277,21 +275,32 @@ struct FlattenedCoords {
         for (auto &e : result.det_coords) {
             e.second *= scale;
         }
-
-        auto minmax = Coord<2>::min_max(result.qubit_coords);
-        auto offset = minmax.first;
-        offset *= -1;
-        offset.xyz[0] += 16;
-        offset.xyz[1] += 16;
-        for (auto &c : result.qubit_coords) {
-            c += offset;
+        if (!used.empty()) {
+            std::vector<Coord<2>> used_coords;
+            for (const auto &u : used) {
+                used_coords.push_back(result.qubit_coords[u]);
+            }
+            auto minmax = Coord<2>::min_max(used_coords);
+            auto offset = minmax.first;
+            offset *= -1;
+            offset.xyz[0] += 16;
+            offset.xyz[1] += 16;
+            for (auto &c : result.qubit_coords) {
+                c += offset;
+            }
+            for (auto &c : used_coords) {
+                c += offset;
+            }
+            for (auto &e : result.det_coords) {
+                e.second += offset;
+            }
+            result.size = minmax.second - minmax.first;
+            result.size.xyz[0] += 32;
+            result.size.xyz[1] += 32;
+        } else {
+            result.size.xyz[0] = 1;
+            result.size.xyz[1] = 1;
         }
-        for (auto &e : result.det_coords) {
-            e.second += offset;
-        }
-        result.size = minmax.second - minmax.first;
-        result.size.xyz[0] += 32;
-        result.size.xyz[1] += 32;
 
         return result;
     }
@@ -320,20 +329,19 @@ const char *pick_color(ConstPointerRange<GateTarget> terms) {
 
 float angle_from_to(Coord<2> origin, Coord<2> dst) {
     auto d = dst - origin;
-    if (d.xyz[0]*d.xyz[0] + d.xyz[1]*d.xyz[1] < 1e-6) {
+    if (d.xyz[0] * d.xyz[0] + d.xyz[1] * d.xyz[1] < 1e-6) {
         return 0;
     }
     return atan2f(d.xyz[1], d.xyz[0]);
 }
 
 void write_terms_svg_path(
-        std::ostream &out,
-        DemTarget src,
-        const FlattenedCoords &coordsys,
-        ConstPointerRange<GateTarget> terms,
-        std::vector<Coord<2>> &pts_workspace) {
+    std::ostream &out,
+    DemTarget src,
+    const FlattenedCoords &coordsys,
+    ConstPointerRange<GateTarget> terms,
+    std::vector<Coord<2>> &pts_workspace) {
     if (terms.size() > 2) {
-
         Coord<2> center{0, 0};
         for (const auto &term : terms) {
             center += coordsys.qubit_coords[term.qubit_value()];
@@ -392,6 +400,8 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
 
     std::vector<Coord<2>> pts_workspace;
 
+    bool haveDrawnCorners = false;
+
     // Draw multi-qubit detector slices.
     for (size_t layer = 0; layer < 3; layer++) {
         for (const auto &e : slices) {
@@ -431,6 +441,15 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             out << " />\n";
 
             if (drawCorners) {
+                if (!haveDrawnCorners) {
+                    out << R"SVG(<defs>
+<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4444" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="ygrad"><stop offset="50%" stop-color="#40FF40" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="zgrad"><stop offset="50%" stop-color="#4848FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+</defs>
+)SVG";
+                    haveDrawnCorners = true;
+                }
                 out << R"SVG(<clipPath id="clip)SVG";
                 out << clip_id;
                 out << R"SVG("><path d=")SVG";
@@ -441,27 +460,19 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                     auto c = coordsys.qubit_coords[t.qubit_value()];
                     out << R"SVG(<circle clip-path="url(#clip)SVG";
                     out << clip_id;
-                    out << R"SVG()" cx=")SVG";
-                    out << c.xyz[0];
-                    out << R"SVG(" cy=")SVG";
-                    out << c.xyz[1];
-                    out << R"SVG(" r="16" stroke="none" fill-opacity="0.5" fill=")SVG";
-                    out << pick_color({&t});
-                    out << R"SVG(" />)SVG";
-                    out << "\n";
-                }
-                for (const auto &t : terms) {
-                    auto c = coordsys.qubit_coords[t.qubit_value()];
-                    out << R"SVG(<circle clip-path="url(#clip)SVG";
-                    out << clip_id;
-                    out << R"SVG()" cx=")SVG";
-                    out << c.xyz[0];
-                    out << R"SVG(" cy=")SVG";
-                    out << c.xyz[1];
-                    out << R"SVG(" r="12" stroke="none" fill-opacity="0.75" fill=")SVG";
-                    out << pick_color({&t});
-                    out << R"SVG(" />)SVG";
-                    out << "\n";
+                    out << ")\"";
+                    write_key_val(out, "cx", c.xyz[0]);
+                    write_key_val(out, "cy", c.xyz[1]);
+                    write_key_val(out, "r", 20);
+                    write_key_val(out, "stroke", "none");
+                    if (t.is_x_target()) {
+                        write_key_val(out, "fill", "url('#xgrad')");
+                    } else if (t.is_y_target()) {
+                        write_key_val(out, "fill", "url('#ygrad')");
+                    } else {
+                        write_key_val(out, "fill", "url('#zgrad')");
+                    }
+                    out << "/>\n";
                 }
 
                 clip_id++;

@@ -3,9 +3,9 @@
 
 #include <iostream>
 
-#include "stim/mem/pointer_range.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/json_obj.h"
+#include "stim/mem/pointer_range.h"
 
 namespace stim_draw_internal {
 
@@ -32,7 +32,8 @@ struct GltfId {
     std::string name;
     size_t index;
 
-    GltfId(std::string name) : name(name), index(SIZE_MAX) {}
+    GltfId(std::string name) : name(name), index(SIZE_MAX) {
+    }
     GltfId() = delete;
 };
 
@@ -190,6 +191,6 @@ struct GltfScene {
     JsonObj to_json();
 };
 
-}
+}  // namespace stim_draw_internal
 
 #endif

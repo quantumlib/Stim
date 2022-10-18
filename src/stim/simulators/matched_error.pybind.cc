@@ -148,9 +148,7 @@ pybind11::class_<CircuitErrorLocationStackFrame> stim_pybind::pybind_circuit_err
             .data());
 }
 void stim_pybind::pybind_circuit_error_location_stack_frame_methods(
-        pybind11::module &m,
-        pybind11::class_<stim::CircuitErrorLocationStackFrame> &c) {
-
+    pybind11::module &m, pybind11::class_<stim::CircuitErrorLocationStackFrame> &c) {
     c.def_readonly(
         "instruction_offset",
         &CircuitErrorLocationStackFrame::instruction_offset,
@@ -231,8 +229,7 @@ pybind11::class_<GateTargetWithCoords> stim_pybind::pybind_gate_target_with_coor
 }
 
 void stim_pybind::pybind_gate_target_with_coords_methods(
-    pybind11::module &m,
-    pybind11::class_<stim::GateTargetWithCoords> &c) {
+    pybind11::module &m, pybind11::class_<stim::GateTargetWithCoords> &c) {
     c.def_readonly(
         "gate_target",
         &GateTargetWithCoords::gate_target,
@@ -295,7 +292,8 @@ pybind11::class_<DemTargetWithCoords> stim_pybind::pybind_dem_target_with_coords
             .data());
 }
 
-void stim_pybind::pybind_dem_target_with_coords_methods(pybind11::module &m, pybind11::class_<stim::DemTargetWithCoords> &c) {
+void stim_pybind::pybind_dem_target_with_coords_methods(
+    pybind11::module &m, pybind11::class_<stim::DemTargetWithCoords> &c) {
     c.def_property_readonly(
         "dem_target",
         [](const DemTargetWithCoords &self) -> ExposedDemTarget {
@@ -350,7 +348,8 @@ pybind11::class_<FlippedMeasurement> stim_pybind::pybind_flipped_measurement(pyb
         )DOC")
             .data());
 }
-void stim_pybind::pybind_flipped_measurement_methods(pybind11::module &m, pybind11::class_<stim::FlippedMeasurement> &c) {
+void stim_pybind::pybind_flipped_measurement_methods(
+    pybind11::module &m, pybind11::class_<stim::FlippedMeasurement> &c) {
     c.def_readonly(
         "record_index",
         &FlippedMeasurement::measurement_record_index,
@@ -397,7 +396,8 @@ void stim_pybind::pybind_flipped_measurement_methods(pybind11::module &m, pybind
     c.def("__str__", &FlippedMeasurement_repr);
 }
 
-pybind11::class_<CircuitTargetsInsideInstruction> stim_pybind::pybind_circuit_targets_inside_instruction(pybind11::module &m) {
+pybind11::class_<CircuitTargetsInsideInstruction> stim_pybind::pybind_circuit_targets_inside_instruction(
+    pybind11::module &m) {
     return pybind11::class_<CircuitTargetsInsideInstruction>(
         m,
         "CircuitTargetsInsideInstruction",
@@ -408,8 +408,7 @@ pybind11::class_<CircuitTargetsInsideInstruction> stim_pybind::pybind_circuit_ta
 }
 
 void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
-    pybind11::module &m,
-    pybind11::class_<stim::CircuitTargetsInsideInstruction> &c) {
+    pybind11::module &m, pybind11::class_<stim::CircuitTargetsInsideInstruction> &c) {
     c.def_property_readonly(
         "gate",
         [](const CircuitTargetsInsideInstruction &self) -> pybind11::object {
@@ -497,7 +496,8 @@ pybind11::class_<CircuitErrorLocation> stim_pybind::pybind_circuit_error_locatio
         )DOC")
             .data());
 }
-void stim_pybind::pybind_circuit_error_location_methods(pybind11::module &m, pybind11::class_<stim::CircuitErrorLocation> &c) {
+void stim_pybind::pybind_circuit_error_location_methods(
+    pybind11::module &m, pybind11::class_<stim::CircuitErrorLocation> &c) {
     c.def_readonly(
         "tick_offset",
         &CircuitErrorLocation::tick_offset,
@@ -649,4 +649,3 @@ void stim_pybind::pybind_explained_error_methods(pybind11::module &m, pybind11::
     c.def("__repr__", &MatchedError_repr);
     c.def("__str__", &ExplainedError::str);
 }
-

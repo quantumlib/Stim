@@ -19,8 +19,8 @@
 
 #include <iostream>
 
-#include "stim/circuit/gate_data.h"
 #include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data.h"
 #include "stim/diagram/gltf.h"
 #include "stim/mem/pointer_range.h"
 
@@ -42,6 +42,6 @@ struct Diagram3D {
 float min_distance(stim::ConstPointerRange<Coord<2>> points);
 GltfScene scene_from_circuit(const stim::Circuit &circuit);
 
-}
+}  // namespace stim_draw_internal
 
 #endif

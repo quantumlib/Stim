@@ -1,7 +1,8 @@
 #include "stim/diagram/timeline_3d/diagram_3d.h"
-#include "stim/mem/simd_bits.h"
+
 #include "stim/diagram/diagram_util.h"
 #include "stim/diagram/gate_data_3d.h"
+#include "stim/mem/simd_bits.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -16,7 +17,8 @@ float get_median(ConstPointerRange<Coord<2>> points, size_t index) {
     return *m;
 }
 
-std::pair<std::vector<Coord<2>>, std::vector<Coord<2>>> split(ConstPointerRange<Coord<2>> points, size_t index, float cut) {
+std::pair<std::vector<Coord<2>>, std::vector<Coord<2>>> split(
+    ConstPointerRange<Coord<2>> points, size_t index, float cut) {
     std::vector<Coord<2>> low;
     std::vector<Coord<2>> high;
     for (const auto &p : points) {
@@ -35,7 +37,7 @@ float brute_min_distance(ConstPointerRange<Coord<2>> &points) {
         for (size_t j = k + 1; j < points.size(); j++) {
             auto dx = points[k].xyz[0] - points[j].xyz[0];
             auto dy = points[k].xyz[1] - points[j].xyz[1];
-            best_dd = std::min(best_dd, dx*dx + dy*dy);
+            best_dd = std::min(best_dd, dx * dx + dy * dy);
         }
     }
     return sqrtf(best_dd);
@@ -49,13 +51,9 @@ float min_distance_unique(ConstPointerRange<Coord<2>> points, size_t axis = 0) {
     auto median = get_median(points, axis);
     auto low_high = split(points, axis, median);
     auto other_axis = 1 - axis;
-    auto min_dist_sides = std::min(
-        min_distance_unique(low_high.first, other_axis),
-        min_distance_unique(low_high.second, other_axis));
-    auto mid_strip = split(
-        split(points, axis, median - min_dist_sides).second,
-        axis,
-        median + min_dist_sides).first;
+    auto min_dist_sides =
+        std::min(min_distance_unique(low_high.first, other_axis), min_distance_unique(low_high.second, other_axis));
+    auto mid_strip = split(split(points, axis, median - min_dist_sides).second, axis, median + min_dist_sides).first;
     auto min_dist_mid = min_distance_unique(mid_strip, other_axis);
 
     return std::min(min_dist_mid, min_dist_sides);
@@ -147,8 +145,12 @@ Diagram3D Diagram3D::from_circuit(const stim::Circuit &circuit) {
     Diagram3D diagram;
 
     float time = 0;
-    auto q2y = [&](size_t q) { return coords[q].xyz[0]; };
-    auto q2z = [&](size_t q) { return coords[q].xyz[1]; };
+    auto q2y = [&](size_t q) {
+        return coords[q].xyz[0];
+    };
+    auto q2z = [&](size_t q) {
+        return coords[q].xyz[1];
+    };
     auto start_next_moment = [&]() {
         if (cur_moment_any_used) {
             time += time_scale;
@@ -327,12 +329,10 @@ Diagram3D Diagram3D::from_circuit(const stim::Circuit &circuit) {
                 }
             } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
                 for (size_t k = 0; k < op.target_data.targets.size(); k += 2) {
-                    drawGate2Q(op,
-                               op.target_data.targets[k],
-                               op.target_data.targets[k + 1]);
+                    drawGate2Q(op, op.target_data.targets[k], op.target_data.targets[k + 1]);
                 }
             } else {
-                for (const auto& t: op.target_data.targets) {
+                for (const auto &t : op.target_data.targets) {
                     drawGate1Q(op, t);
                 }
             }

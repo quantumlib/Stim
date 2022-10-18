@@ -1333,44 +1333,58 @@ TEST(circuit, approx_equals) {
     ASSERT_TRUE(ref.approx_equals(ref, 1e-4));
     ASSERT_TRUE(ref.approx_equals(ref, 0));
 
-    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+    ASSERT_FALSE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 0
         X_ERROR(0.021) 0
         QUBIT_COORDS(0.08, 0.06) 0
-    )CIRCUIT"), 1e-4));
-    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+        1e-4));
+    ASSERT_FALSE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 0
         X_ERROR(0.02) 0
         QUBIT_COORDS(0.081, 0.06) 0
-    )CIRCUIT"), 1e-4));
-    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+        1e-4));
+    ASSERT_FALSE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 0
         X_ERROR(0.02) 0
         QUBIT_COORDS(0.08, 0.06) 0
         TICK
-    )CIRCUIT"), 1e-4));
-    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+        1e-4));
+    ASSERT_FALSE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 0
         X_ERROR(0.02) 0
         REPEAT 1 {
             QUBIT_COORDS(0.08, 0.06) 0
         }
-    )CIRCUIT"), 1e-4));
-    ASSERT_TRUE(ref.approx_equals(Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+        1e-4));
+    ASSERT_TRUE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 0
         X_ERROR(0.021) 0
         QUBIT_COORDS(0.081, 0.06) 0
-    )CIRCUIT"), 1e-2));
-    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+        1e-2));
+    ASSERT_FALSE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 1
         X_ERROR(0.02) 0
         QUBIT_COORDS(0.08, 0.06) 0
-    )CIRCUIT"), 100));
-    ASSERT_FALSE(ref.approx_equals(Circuit(R"CIRCUIT(
+    )CIRCUIT"),
+        100));
+    ASSERT_FALSE(ref.approx_equals(
+        Circuit(R"CIRCUIT(
         H 0
         QUBIT_COORDS(0.08, 0.06) 0
         X_ERROR(0.02) 0
-    )CIRCUIT"), 100));
+    )CIRCUIT"),
+        100));
     Circuit rep2(R"CIRCUIT(
         H 0
         X_ERROR(0.02) 0

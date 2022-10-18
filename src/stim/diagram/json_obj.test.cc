@@ -34,7 +34,7 @@ TEST(json_obj, str) {
 }
 
 TEST(json_obj, write_base64) {
-    auto f = [](const char *c){
+    auto f = [](const char *c) {
         std::stringstream ss;
         write_base64(c, strlen(c), ss);
         return ss.str();

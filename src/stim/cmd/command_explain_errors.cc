@@ -14,9 +14,9 @@
 
 #include "stim/cmd/command_explain_errors.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/simulators/error_matcher.h"
-#include "command_help.h"
 
 using namespace stim;
 
@@ -61,8 +61,7 @@ SubCommandHelp stim::command_explain_errors_help() {
         convert those specific errors into circuit errors.
     )PARAGRAPH");
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> stim gen \
                 --code surface_code \
                 --task rotated_memory_z \
@@ -89,8 +88,7 @@ SubCommandHelp stim::command_explain_errors_help() {
                         resolving to DEPOLARIZE2(0.001) 46[coords 2,8] 36[coords 3,7]
                 }
             }
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--dem_filter",

@@ -1,4 +1,5 @@
 #include "stim/diagram/json_obj.h"
+
 #include <limits>
 
 using namespace stim;

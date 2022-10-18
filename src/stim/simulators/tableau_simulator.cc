@@ -29,7 +29,7 @@ TableauSimulator::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, int8_
       last_correlated_error_occurred(false) {
 }
 
-TableauSimulator::TableauSimulator(const TableauSimulator& other, std::mt19937_64 rng)
+TableauSimulator::TableauSimulator(const TableauSimulator &other, std::mt19937_64 rng)
     : inv_state(other.inv_state),
       rng(std::move(rng)),
       sign_bias(other.sign_bias),
@@ -723,7 +723,8 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
+simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(
+    const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
     TableauSimulator sim(std::move(rng), circuit.count_qubits(), sign_bias);
     sim.expand_do_circuit(circuit);
 

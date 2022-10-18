@@ -425,7 +425,8 @@ TEST(MeasureRecordReader, read_records_into_RoundTrip) {
     size_t n_shots = 100;
     size_t n_results = 512 - 8;
 
-    simd_bit_table<MAX_BITWORD_WIDTH> shot_maj_data = simd_bit_table<MAX_BITWORD_WIDTH>::random(n_shots, n_results, SHARED_TEST_RNG());
+    simd_bit_table<MAX_BITWORD_WIDTH> shot_maj_data =
+        simd_bit_table<MAX_BITWORD_WIDTH>::random(n_shots, n_results, SHARED_TEST_RNG());
     simd_bit_table<MAX_BITWORD_WIDTH> shot_min_data = shot_maj_data.transposed();
     for (const auto &kv : format_name_to_enum_map) {
         SampleFormat format = kv.second.id;
@@ -716,7 +717,8 @@ TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
 
         RaiiTempNamedFile tmp;
         FILE *f = fopen(tmp.path.c_str(), "w");
-        write_table_data(f, num_shots, bits_per_shot, simd_bits<MAX_BITWORD_WIDTH>(0), expected_transposed, format, 'M', 'M', 0);
+        write_table_data(
+            f, num_shots, bits_per_shot, simd_bits<MAX_BITWORD_WIDTH>(0), expected_transposed, format, 'M', 'M', 0);
         fclose(f);
 
         f = fopen(tmp.path.c_str(), "r");

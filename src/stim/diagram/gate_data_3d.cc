@@ -1,4 +1,5 @@
 #include "stim/diagram/gate_data_3d.h"
+
 #include "stim/diagram/gate_data_3d_texture_data.h"
 
 using namespace stim;
@@ -7,10 +8,7 @@ using namespace stim_draw_internal;
 constexpr float CONTROL_RADIUS = 0.4f;
 
 std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_cube(
-        const std::string &name,
-        size_t tex_tile_x,
-        size_t tex_tile_y,
-        bool actually_just_square) {
+    const std::string &name, size_t tex_tile_x, size_t tex_tile_y, bool actually_just_square) {
     constexpr size_t diam = 16;
     float d = (float)1.0 / diam;
     float dx = d * tex_tile_x;
@@ -20,38 +18,45 @@ std::shared_ptr<GltfBuffer<2>> texture_coords_for_showing_on_spacelike_faces_of_
     Coord<2> v10{dx + d, dy + 0};
     Coord<2> v11{dx + d, dy + d};
     if (actually_just_square) {
-        return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>({{name}, {
-            v10, v00, v11, v00, v01, v11,
-            v11, v10, v01, v01, v10, v00,
-        }}));
+        return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>(
+            {{name},
+             {
+                 v10,
+                 v00,
+                 v11,
+                 v00,
+                 v01,
+                 v11,
+                 v11,
+                 v10,
+                 v01,
+                 v01,
+                 v10,
+                 v00,
+             }}));
     }
 
-    return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>({{name}, {
-        v00, v01, v10, v01, v11, v10,
-        v00, v00, v00, v00, v00, v00,
-        v10, v00, v11, v00, v01, v11,
-        v01, v11, v00, v00, v11, v10,
-        v00, v00, v00, v00, v00, v00,
-        v11, v10, v01, v01, v10, v00,
-    }}));
+    return std::shared_ptr<GltfBuffer<2>>(new GltfBuffer<2>(
+        {{name},
+         {
+             v00, v01, v10, v01, v11, v10, v00, v00, v00, v00, v00, v00, v10, v00, v11, v00, v01, v11,
+             v01, v11, v00, v00, v11, v10, v00, v00, v00, v00, v00, v00, v11, v10, v01, v01, v10, v00,
+         }}));
 }
 
 std::shared_ptr<GltfPrimitive> cube_gate(
-        const std::string &gate_canonical_name,
-        size_t tex_tile_x,
-        size_t tex_tile_y,
-        std::shared_ptr<GltfBuffer<3>> cube_position_buffer,
-        std::shared_ptr<GltfMaterial> material,
-        bool actually_just_square) {
+    const std::string &gate_canonical_name,
+    size_t tex_tile_x,
+    size_t tex_tile_y,
+    std::shared_ptr<GltfBuffer<3>> cube_position_buffer,
+    std::shared_ptr<GltfMaterial> material,
+    bool actually_just_square) {
     return std::shared_ptr<GltfPrimitive>(new GltfPrimitive{
         {"primitive_gate_" + gate_canonical_name},
         GL_TRIANGLES,
         cube_position_buffer,
         texture_coords_for_showing_on_spacelike_faces_of_cube(
-            "tex_coords_gate_" + gate_canonical_name,
-            tex_tile_x,
-            tex_tile_y,
-            actually_just_square),
+            "tex_coords_gate_" + gate_canonical_name, tex_tile_x, tex_tile_y, actually_just_square),
         material,
     });
 }
@@ -70,40 +75,46 @@ std::shared_ptr<GltfBuffer<3>> make_cube_triangle_list(bool actually_just_square
         v001.xyz[0] = 0;
         v010.xyz[0] = 0;
         v011.xyz[0] = 0;
-        return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{{"cube"}, {
-            v000, v001, v010,
-            v001, v011, v010,
+        return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+            {"cube"},
+            {
+                v000,
+                v001,
+                v010,
+                v001,
+                v011,
+                v010,
 
-            v011, v001, v010,
-            v010, v001, v000,
-        }});
+                v011,
+                v001,
+                v010,
+                v010,
+                v001,
+                v000,
+            }});
     }
-    return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{{"cube"}, {
-        v000, v010, v100,
-        v010, v110, v100,
+    return std::shared_ptr<GltfBuffer<3>>(new GltfBuffer<3>{
+        {"cube"},
+        {
+            v000, v010, v100, v010, v110, v100,
 
-        v000, v100, v001,
-        v001, v100, v101,
+            v000, v100, v001, v001, v100, v101,
 
-        v000, v001, v010,
-        v001, v011, v010,
+            v000, v001, v010, v001, v011, v010,
 
-        v111, v011, v101,
-        v101, v011, v001,
+            v111, v011, v101, v101, v011, v001,
 
-        v111, v110, v011,
-        v110, v010, v011,
+            v111, v110, v011, v110, v010, v011,
 
-        v111, v101, v110,
-        v110, v101, v100,
-    }});
+            v111, v101, v110, v110, v101, v100,
+        }});
 }
 
 std::shared_ptr<GltfBuffer<3>> make_circle_loop(size_t n, float r, bool repeat_boundary) {
     std::vector<Coord<3>> vertices;
     vertices.push_back({0, r, 0});
     for (size_t k = 1; k < n; k++) {
-        float t = k*M_PI*2/n;
+        float t = k * M_PI * 2 / n;
         vertices.push_back({0, cosf(t) * r, sinf(t) * r});
     }
     if (repeat_boundary) {
@@ -262,7 +273,7 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         texture,
     });
 
-    auto f = [&](const char *s, size_t x, size_t y) -> std::pair<std::string, std::shared_ptr<GltfMesh>>{
+    auto f = [&](const char *s, size_t x, size_t y) -> std::pair<std::string, std::shared_ptr<GltfMesh>> {
         return {s, GltfMesh::from_singleton_primitive(cube_gate(s, x, y, cube, material, actually_square))};
     };
 
