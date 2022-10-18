@@ -17,9 +17,12 @@
 #ifndef _STIM_CMD_COMMAND_DIAGRAM_H
 #define _STIM_CMD_COMMAND_DIAGRAM_H
 
+#include "stim/arg_parse.h"
+
 namespace stim {
 
 int command_diagram(int argc, const char **argv);
+SubCommandHelp command_diagram_help();
 
 }  // namespace stim
 

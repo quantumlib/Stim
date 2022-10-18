@@ -32,7 +32,7 @@ struct DiagramTimelineSvgDrawer {
     CircuitTimelineHelper resolver;
 
     size_t cur_moment = 0;
-    size_t moment_width = 1;
+    uint16_t moment_width = 1;
     size_t cur_moment_is_used = false;
     size_t tick_start_moment = 0;
     std::vector<bool> cur_moment_used_flags;

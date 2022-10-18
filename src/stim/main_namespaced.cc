@@ -18,8 +18,8 @@
 
 #include "stim/arg_parse.h"
 #include "stim/cmd/command_analyze_errors.h"
-#include "stim/cmd/command_diagram.h"
 #include "stim/cmd/command_detect.h"
+#include "stim/cmd/command_diagram.h"
 #include "stim/cmd/command_explain_errors.h"
 #include "stim/cmd/command_gen.h"
 #include "stim/cmd/command_m2d.h"

@@ -5,10 +5,10 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-constexpr float CIRCUIT_START_X = 32;
-constexpr float CIRCUIT_START_Y = 32;
-constexpr float GATE_PITCH = 64;
-constexpr float GATE_RADIUS = 16;
+constexpr uint16_t CIRCUIT_START_X = 32;
+constexpr uint16_t CIRCUIT_START_Y = 32;
+constexpr uint16_t GATE_PITCH = 64;
+constexpr uint16_t GATE_RADIUS = 16;
 
 template <typename T>
 inline void write_key_val(std::ostream &out, const char *key, const T &val) {
@@ -57,8 +57,8 @@ void DiagramTimelineSvgDrawer::draw_x_control(float cx, float cy) {
 
 void DiagramTimelineSvgDrawer::draw_y_control(float cx, float cy) {
     float r = 10;
-    float r_sin = r * sinf(M_PI / 3);
-    float r_cos = r * cosf(M_PI / 3);
+    float r_sin = r * sqrtf(3) * 0.5;
+    float r_cos = r * 0.5;
     svg_out << "<path d=\"";
     svg_out << "M" << cx << "," << cy + r << " ";
     svg_out << "L" << cx - r_sin << "," << cy - r_cos << " ";
@@ -124,9 +124,9 @@ void DiagramTimelineSvgDrawer::draw_generic_box(float cx, float cy, const std::s
 }
 
 void DiagramTimelineSvgDrawer::draw_annotated_gate(float cx, float cy, const SvgGateData &data, ConstPointerRange<double> end_args) {
-    cx += (data.span - 1) * GATE_PITCH * 0.5;
-    float w = GATE_PITCH * (data.span - 1) + GATE_RADIUS * 2;
-    float h = GATE_RADIUS * 2;
+    cx += (data.span - 1) * GATE_PITCH * 0.5f;
+    float w = GATE_PITCH * (data.span - 1) + GATE_RADIUS * 2.0f;
+    float h = GATE_RADIUS * 2.0f;
     svg_out << "<rect";
     write_key_val(svg_out, "x", cx - w * 0.5);
     write_key_val(svg_out, "y", cy - h * 0.5);
@@ -236,25 +236,25 @@ void DiagramTimelineSvgDrawer::start_next_moment() {
 
 void DiagramTimelineSvgDrawer::do_tick() {
     if (has_ticks && cur_moment > tick_start_moment) {
-        size_t x1 = m2x(tick_start_moment);
-        size_t x2 = m2x(cur_moment + moment_width - 1);
-        size_t y1 = 0;
-        size_t y2 = q2y(num_qubits);
-        x1 -= GATE_PITCH * 0.45;
-        x2 += GATE_PITCH * 0.45;
+        float x1 = (float)m2x(tick_start_moment);
+        float x2 = (float)m2x(cur_moment + moment_width - 1);
+        float y1 = 0;
+        float y2 = (float)q2y(num_qubits);
+        x1 -= GATE_PITCH * 0.4375;
+        x2 += GATE_PITCH * 0.4375;
 
         svg_out << "<path d=\"";
-        svg_out << "M" << x1 << "," << y1 + GATE_RADIUS * 0.5 << " ";
+        svg_out << "M" << x1 << "," << y1 + GATE_RADIUS * 0.5f << " ";
         svg_out << "L" << x1 << "," << y1 << " ";
         svg_out << "L" << x2 << "," << y1 << " ";
-        svg_out << "L" << x2 << "," << y1 + GATE_RADIUS * 0.5 << " ";
+        svg_out << "L" << x2 << "," << y1 + GATE_RADIUS * 0.5f << " ";
         svg_out << "\" stroke=\"black\" fill=\"none\"/>\n";
 
         svg_out << "<path d=\"";
-        svg_out << "M" << x1 << "," << y2 - GATE_RADIUS * 0.5 << " ";
+        svg_out << "M" << x1 << "," << y2 - GATE_RADIUS * 0.5f << " ";
         svg_out << "L" << x1 << "," << y2 << " ";
         svg_out << "L" << x2 << "," << y2 << " ";
-        svg_out << "L" << x2 << "," << y2 - GATE_RADIUS * 0.5 << " ";
+        svg_out << "L" << x2 << "," << y2 - GATE_RADIUS * 0.5f << " ";
         svg_out << "\" stroke=\"black\" fill=\"none\"/>\n";
     }
 
@@ -504,7 +504,7 @@ void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &
     write_coords(ss, op.args);
     draw_annotated_gate(
         m2x(cur_moment),
-        q2y(target.qubit_value()), SvgGateData{2 + op.args.size(), ss.str(), "", "", "white"},
+        q2y(target.qubit_value()), SvgGateData{(uint16_t)(2 + op.args.size()), ss.str(), "", "", "white"},
         {});
 }
 
@@ -516,12 +516,12 @@ void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) 
 
     auto cx = m2x(cur_moment);
     auto cy = q2y(pseudo_target.qubit_value());
-    auto span = 1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2);
+    auto span = (uint16_t)(1 +std::max(std::max(op.targets.size(), op.args.size()), (size_t)2));
     draw_annotated_gate(
         cx,
         cy, SvgGateData{span, "DETECTOR", "", "", "lightgray"},
         {});
-    cx += (span - 1) * GATE_PITCH * 0.5;
+    cx += (span - 1) * GATE_PITCH * 0.5f;
 
     if (!op.args.empty()) {
         svg_out << "<text";
@@ -565,14 +565,14 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
 
     auto cx = m2x(cur_moment);
     auto cy = q2y(pseudo_target.qubit_value());
-    auto span = 1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2);
+    auto span = (uint16_t)(1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2));
     std::stringstream ss;
     ss << "OBS_INCLUDE(" << op.args[0] << ")";
     draw_annotated_gate(
         cx,
         cy, SvgGateData{span, ss.str(), "", "", "lightgray"},
         {});
-    cx += (span - 1) * GATE_PITCH * 0.5;
+    cx += (span - 1) * GATE_PITCH * 0.5f;
 
     svg_out << "<text";
     write_key_val(svg_out, "text-anchor", "middle");

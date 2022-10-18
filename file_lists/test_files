@@ -5,6 +5,7 @@ src/stim/circuit/gate_data.test.cc
 src/stim/circuit/gate_target.test.cc
 src/stim/cmd/command_analyze_errors.test.cc
 src/stim/cmd/command_detect.test.cc
+src/stim/cmd/command_diagram.test.cc
 src/stim/cmd/command_explain_errors.test.cc
 src/stim/cmd/command_gen.test.cc
 src/stim/cmd/command_m2d.test.cc

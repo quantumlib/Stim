@@ -20,6 +20,7 @@
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/timeline_3d/diagram_3d.h"
+#include "command_help.h"
 
 using namespace stim;
 
@@ -83,4 +84,94 @@ int stim::command_diagram(int argc, const char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+SubCommandHelp stim::command_diagram_help() {
+    SubCommandHelp result;
+    result.subcommand_name = "diagram";
+    result.description = "Produces various kinds of diagrams.";
+
+    result.examples.push_back(
+        clean_doc_string(R"PARAGRAPH(
+            >>> cat example_circuit.stim
+            H 0
+            CNOT 0 1
+
+            >>> stim diagram \
+                --in example_circuit.stim \
+                --type timeline-text
+            q0: -H-@-
+                   |
+            q1: ---X-
+        )PARAGRAPH")
+    );
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--remove_noise",
+        "bool",
+        "false",
+        {"[none]", "[switch]"},
+        clean_doc_string(R"PARAGRAPH(
+            Removes noise from the input before turning it into a diagram.
+
+            For example, if the input is a noisy circuit and you aren't
+            interested in the details of the noise but rather in the structure
+            of the circuit, you can specify this flag in order to filter out
+            the noise.
+        )PARAGRAPH"),
+    });
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--type",
+        "name",
+        "",
+        {"name"},
+        clean_doc_string(R"PARAGRAPH(
+            The type of diagram to make.
+
+            The available diagram types are:
+
+            `timeline-text`: Produces an ASCII text diagram of the operations
+                performed by a circuit over time. The qubits are laid out into
+                a line top to bottom, and time advances left to right. The input
+                object should be a stim circuit.
+
+            `timeline-svg`: Produces an SVG image diagram of the operations
+                performed by a circuit over time. The qubits are laid out into
+                a line top to bottom, and time advances left to right. The input
+                object should be a stim circuit.
+        )PARAGRAPH"),
+    });
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--in",
+        "filepath",
+        "{stdin}",
+        {"[none]", "filepath"},
+        clean_doc_string(R"PARAGRAPH(
+            Where to read the object to diagram from.
+
+            By default, the object is read from stdin. When `--in $FILEPATH` is
+            specified, the object is instead read from the file at $FILEPATH.
+
+            The expected type of object depends on the type of diagram.
+        )PARAGRAPH"),
+    });
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--out",
+        "filepath",
+        "{stdout}",
+        {"[none]", "filepath"},
+        clean_doc_string(R"PARAGRAPH(
+            Chooses where to write the diagram to.
+
+            By default, the output is written to stdout. When `--out $FILEPATH`
+            is specified, the output is instead written to the file at $FILEPATH.
+
+            The type of output produced depends on the type of diagram.
+        )PARAGRAPH"),
+    });
+
+    return result;
 }

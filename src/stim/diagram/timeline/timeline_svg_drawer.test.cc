@@ -711,8 +711,8 @@ TEST(circuit_diagram_timeline_svg, tick) {
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="64" y="32">H</text>
 <rect x="112" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="128" y="32">H</text>
-<path d="M35,8 L35,0 L156,0 L156,8 " stroke="black" fill="none"/>
-<path d="M35,152 L35,160 L156,160 L156,152 " stroke="black" fill="none"/>
+<path d="M36,8 L36,0 L156,0 L156,8 " stroke="black" fill="none"/>
+<path d="M36,152 L36,160 L156,160 L156,152 " stroke="black" fill="none"/>
 <rect x="176" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="192" y="32">H</text>
 <rect x="176" y="80" width="32" height="32" stroke="black" fill="white"/>
@@ -729,8 +729,8 @@ TEST(circuit_diagram_timeline_svg, tick) {
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="448" y="32">H</text>
 <rect x="496" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="512" y="32">S</text>
-<path d="M419,8 L419,0 L540,0 L540,8 " stroke="black" fill="none"/>
-<path d="M419,152 L419,160 L540,160 L540,152 " stroke="black" fill="none"/>
+<path d="M420,8 L420,0 L540,0 L540,8 " stroke="black" fill="none"/>
+<path d="M420,152 L420,160 L540,160 L540,152 " stroke="black" fill="none"/>
 <path d="M568,0 L576,0 L576,160 L568,160 " stroke="black" fill="none"/>
 <rect x="624" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="640" y="32">H</text>
@@ -738,8 +738,8 @@ TEST(circuit_diagram_timeline_svg, tick) {
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="704" y="32">H</text>
 <rect x="752" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="768" y="32">√X</text>
-<path d="M611,8 L611,0 L796,0 L796,8 " stroke="black" fill="none"/>
-<path d="M611,152 L611,160 L796,160 L796,152 " stroke="black" fill="none"/>
+<path d="M612,8 L612,0 L796,0 L796,8 " stroke="black" fill="none"/>
+<path d="M612,152 L612,160 L796,160 L796,152 " stroke="black" fill="none"/>
 <rect x="816" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="832" y="32">H</text>
 <rect x="880" y="16" width="32" height="32" stroke="black" fill="white"/>
@@ -946,8 +946,8 @@ TEST(circuit_diagram_timeline_svg, repetition_code) {
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="384" y="224">DETECTOR</text>
 <text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="8" x="384" y="244">coords=(3,0)</text>
 <text text-anchor="middle" font-family="monospace" font-size="8" x="384" y="204">D1 = rec[1]</text>
-<path d="M227,8 L227,0 L476,0 L476,8 " stroke="black" fill="none"/>
-<path d="M227,344 L227,352 L476,352 L476,344 " stroke="black" fill="none"/>
+<path d="M228,8 L228,0 L476,0 L476,8 " stroke="black" fill="none"/>
+<path d="M228,344 L228,352 L476,352 L476,344 " stroke="black" fill="none"/>
 <path d="M520,0 L512,0 L512,352 L520,352 " stroke="black" fill="none"/>
 <text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="516" y="348">REP9</text>
 <path d="M640,32 L640,96 " stroke="black"/>
@@ -980,8 +980,8 @@ TEST(circuit_diagram_timeline_svg, repetition_code) {
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="928" y="224">DETECTOR</text>
 <text dominant-baseline="hanging" text-anchor="middle" font-family="monospace" font-size="8" x="928" y="244">coords=(3,1+iter)</text>
 <text text-anchor="middle" font-family="monospace" font-size="8" x="928" y="204">D[3+iter*2] = rec[3+iter*2]*rec[1+iter*2]</text>
-<path d="M739,8 L739,0 L1052,0 L1052,8 " stroke="black" fill="none"/>
-<path d="M739,344 L739,352 L1052,352 L1052,344 " stroke="black" fill="none"/>
+<path d="M740,8 L740,0 L1052,0 L1052,8 " stroke="black" fill="none"/>
+<path d="M740,344 L740,352 L1052,352 L1052,344 " stroke="black" fill="none"/>
 <path d="M1080,0 L1088,0 L1088,352 L1080,352 " stroke="black" fill="none"/>
 <rect x="1136" y="16" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="1152" y="32">M</text>
