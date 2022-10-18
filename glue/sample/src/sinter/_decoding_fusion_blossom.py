@@ -1,39 +1,49 @@
 import math
 import pathlib
 from typing import Callable, List, TYPE_CHECKING
+from typing import Tuple
 
 import numpy as np
 import stim
 
 if TYPE_CHECKING:
-    import networkx as nx
-    import pymatching
+    import fusion_blossom
 
 
-def decode_using_pymatching_v1(*,
-                               num_shots: int,
-                               num_dets: int,
-                               num_obs: int,
-                               dem_path: pathlib.Path,
-                               dets_b8_in_path: pathlib.Path,
-                               obs_predictions_b8_out_path: pathlib.Path,
-                               tmp_dir: pathlib.Path,
-                               ) -> None:
-    """Use pymatching to predict observables from detection events."""
+def decode_using_fusion_blossom(*,
+                                num_shots: int,
+                                num_dets: int,
+                                num_obs: int,
+                                dem_path: pathlib.Path,
+                                dets_b8_in_path: pathlib.Path,
+                                obs_predictions_b8_out_path: pathlib.Path,
+                                tmp_dir: pathlib.Path,
+                                ) -> None:
+    """Use fusion_blossom to predict observables from detection events."""
+
+    try:
+        import fusion_blossom
+    except ImportError as ex:
+        raise ImportError(
+            "The decoder 'fusion_blossom' isn't installed\n"
+            "To fix this, install the python package 'fusion-blossom' into your environment.\n"
+            "For example, if you are using pip, run `pip install fusion-blossom`.\n"
+        ) from ex
 
     error_model = stim.DetectorErrorModel.from_file(dem_path)
-    matching_graph = detector_error_model_to_pymatching_graph(error_model)
+    solver, fault_masks = detector_error_model_to_fusion_blossom_solver_and_fault_masks(error_model)
     num_det_bytes = math.ceil(num_dets / 8)
 
-    # note: extra 2 are the boundary node and the invincible-observable-boundary-edge node
-    det_bits_buffer = np.zeros(num_dets + 2, dtype=np.bool8)
     with open(dets_b8_in_path, 'rb') as dets_in_f:
         with open(obs_predictions_b8_out_path, 'wb') as obs_out_f:
             for _ in range(num_shots):
-                det_bytes = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes)
-                det_bits_buffer[:num_dets] = np.unpackbits(det_bytes, count=num_dets, bitorder='little')
-                prediction_bits = matching_graph.decode(det_bits_buffer)
-                np.packbits(prediction_bits, bitorder='little').tofile(obs_out_f)
+                dets_bit_packed = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes)
+                dets_sparse = np.flatnonzero(np.unpackbits(dets_bit_packed, count=num_dets, bitorder='little'))
+                syndrome = fusion_blossom.SyndromePattern(syndrome_vertices=dets_sparse)
+                solver.solve(syndrome)
+                prediction = int(np.bitwise_xor.reduce(fault_masks[solver.subgraph()]))
+                obs_out_f.write(prediction.to_bytes((num_obs + 7) // 8, byteorder='little'))
+                solver.clear()
 
 
 def iter_flatten_model(model: stim.DetectorErrorModel,
@@ -85,21 +95,10 @@ def iter_flatten_model(model: stim.DetectorErrorModel,
     _helper(model, 1)
 
 
-def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> 'nx.Graph':
+def detector_error_model_to_fusion_blossom_solver_and_fault_masks(model: stim.DetectorErrorModel) -> Tuple['fusion_blossom.SolverSerial', np.ndarray]:
     """Convert a stim error model into a NetworkX graph."""
 
-    # Local import to reduce sinter's startup time.
-    try:
-        import networkx as nx
-    except ImportError as ex:
-        raise ImportError(
-            "pymatching was installed without networkx?"
-            "Run `pip install networkx`.\n"
-        ) from ex
-
-    g = nx.Graph()
-    boundary_node = model.num_detectors
-    g.add_node(boundary_node, is_boundary=True, coords=[-1, -1, -1])
+    import fusion_blossom
 
     def handle_error(p: float, dets: List[int], frame_changes: List[int]):
         if p == 0:
@@ -110,46 +109,37 @@ def detector_error_model_to_nx_graph(model: stim.DetectorErrorModel) -> 'nx.Grap
             # Accept it and keep going, though of course decoding will probably perform terribly.
             return
         if len(dets) == 1:
-            dets = [dets[0], boundary_node]
+            dets = [dets[0], num_detectors]
         if len(dets) > 2:
             raise NotImplementedError(
                 f"Error with more than 2 symptoms can't become an edge or boundary edge: {dets!r}.")
-        if g.has_edge(*dets):
-            edge_data = g.get_edge_data(*dets)
-            old_p = edge_data["error_probability"]
-            old_frame_changes = edge_data["fault_ids"]
-            # If frame changes differ, the code has distance 2; just keep whichever was first.
-            if set(old_frame_changes) == set(frame_changes):
-                p = p * (1 - old_p) + old_p * (1 - p)
-                g.remove_edge(*dets)
         if p > 0.5:
-            p = 1 - p
-        if p > 0:
-            g.add_edge(*dets, weight=math.log((1 - p) / p), fault_ids=frame_changes, error_probability=p)
+            raise NotImplementedError("error probability above 50%")
+        weight = math.log((1 - p) / p)
+        mask = sum(1 << k for k in frame_changes)
+        edges.append((dets[0], dets[1], weight, mask))
 
     def handle_detector_coords(detector: int, coords: np.ndarray):
-        g.add_node(detector, coords=coords)
+        pass
 
-    iter_flatten_model(model, handle_error=handle_error, handle_detector_coords=handle_detector_coords)
-
-    return g
-
-
-def detector_error_model_to_pymatching_graph(model: stim.DetectorErrorModel) -> 'pymatching.Matching':
-    """Convert a stim error model into a pymatching graph."""
-
-    # Local import to reduce sinter's startup time.
-    import pymatching
-
-    g = detector_error_model_to_nx_graph(model)
     num_detectors = model.num_detectors
-    num_observables = model.num_observables
+    edges: List[Tuple[int, int, float, int]] = []
+    iter_flatten_model(
+        model,
+        handle_error=handle_error,
+        handle_detector_coords=handle_detector_coords,
+    )
+    max_weight = max((w for _, _, w, _ in edges), default=1)
+    rescaled_edges = [
+        (a, b, round(w * 2**10 / max_weight) * 2)
+        for a, b, w, _ in edges
+    ]
+    fault_masks = np.array([e[3] for e in edges], dtype=np.uint64)
 
-    # Ensure invincible detectors are seen by explicitly adding a node for each detector.
-    for k in range(num_detectors):
-        g.add_node(k)
-    # Ensure invincible observables are seen by adding a boundary edge with all observables.
-    g.add_node(num_detectors + 1)
-    g.add_edge(num_detectors, num_detectors + 1, weight=1, fault_ids=list(range(num_observables)))
+    initializer = fusion_blossom.SolverInitializer(
+        num_detectors + 1,  # Total number of nodes.
+        rescaled_edges,  # Weighted edges.
+        [num_detectors],  # Boundary node.
+    )
 
-    return pymatching.Matching(g)
+    return fusion_blossom.SolverSerial(initializer), fault_masks

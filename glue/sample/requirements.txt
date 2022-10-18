@@ -1,5 +1,4 @@
 matplotlib ~= 3.5
-networkx ~= 2.6
 numpy ~= 1.22
 stim ~= 1.9
 scipy ~= 1.9

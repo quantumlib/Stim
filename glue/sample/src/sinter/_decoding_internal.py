@@ -13,6 +13,8 @@ def decode_using_internal_decoder(*,
                                   tmp_dir: pathlib.Path,
                                   use_correlated_decoding: bool,
                                   ) -> None:
+    """Use internal decoder to predict observables from detection events."""
+
     try:
         import gqec  # Internal python wheel.
     except ImportError as ex:
