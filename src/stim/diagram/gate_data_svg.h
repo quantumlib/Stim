@@ -23,7 +23,7 @@
 namespace stim_draw_internal {
 
 struct SvgGateData {
-    size_t span;
+    uint16_t span;
     std::string body;
     std::string subscript;
     std::string superscript;
