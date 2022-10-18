@@ -509,7 +509,7 @@ EXAMPLES
         M 0 1
         DETECTOR rec[-1] rec[-2]
         
-        >>> stim detect --shots 5
+        >>> stim detect --shots 5 --in example.stim
         0
         1
         0
@@ -532,17 +532,20 @@ EXAMPLES
         DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
         OBSERVABLE_INCLUDE(0) rec[-1]
         
-        >>> stim detect --shots 10 --append_observables --out_format=dets
+        >>> stim detect \
+            --in example.stim \
+            --out_format dets \
+            --shots 10
+        shot
+        shot
+        shot L0 D0 D5
         shot D1 D2
         shot
-        shot D0 L0
-        shot D1 D2 D5
-        shot D0 D1
+        shot L0 D0
         shot D5
-        shot D0 L0
-        shot D1 D2
         shot
-        shot D2 D3
+        shot D3 D4
+        shot D0 D1
         
 ```
 
