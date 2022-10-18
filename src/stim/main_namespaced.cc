@@ -27,6 +27,7 @@
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/measurements_to_detection_events.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/cmd/command_diagram.h"
 
 using namespace stim;
 
@@ -379,6 +380,7 @@ int stim::main(int argc, const char **argv) {
         bool mode_repl = is_mode("--repl");
         bool mode_sample = is_mode("--sample");
         bool mode_sample_dem = is_mode("sample_dem");
+        bool mode_diagram = is_mode("diagram");
         bool mode_detect = is_mode("--detect");
         bool mode_analyze_errors = is_mode("--analyze_errors");
         bool mode_gen = is_mode("--gen");
@@ -391,7 +393,7 @@ int stim::main(int argc, const char **argv) {
         }
         int modes_picked =
             (mode_repl + mode_sample + mode_sample_dem + mode_detect + mode_analyze_errors + mode_gen + mode_convert +
-             mode_explain_errors);
+             mode_explain_errors + mode_diagram);
         if (modes_picked != 1) {
             std::cerr << "\033[31m";
             if (modes_picked > 1) {
@@ -427,6 +429,9 @@ int stim::main(int argc, const char **argv) {
         }
         if (mode_sample_dem) {
             return main_mode_sample_dem(argc, argv);
+        }
+        if (mode_diagram) {
+            return command_diagram(argc, argv);
         }
 
         throw std::out_of_range("Mode not handled.");

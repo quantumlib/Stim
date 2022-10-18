@@ -995,3 +995,22 @@ TEST(main, sample_dem) {
             )output"));
     ASSERT_EQ(obs_out.read_contents(), "001\n001\n001\n001\n001\n");
 }
+
+TEST(main, diagram) {
+    ASSERT_EQ(
+        trim(execute(
+            {
+                "diagram",
+                "--type",
+                "timeline-text",
+            },
+            R"input(
+                H 0
+                CNOT 0 1
+            )input")),
+        trim(R"output(
+q0: -H-@-
+       |
+q1: ---X-
+            )output"));
+}
