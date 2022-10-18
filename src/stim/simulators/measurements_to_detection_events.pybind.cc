@@ -162,14 +162,14 @@ stim_pybind::pybind_compiled_measurements_to_detection_events_converter(pybind11
 
 CompiledMeasurementsToDetectionEventsConverter stim_pybind::py_init_compiled_measurements_to_detection_events_converter(
     const Circuit &circuit, bool skip_reference_sample) {
-    simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
-                                                 : TableauSimulator::reference_sample_circuit(circuit);
+    simd_bits<MAX_BITWORD_WIDTH> ref_sample = skip_reference_sample
+                                                  ? simd_bits<MAX_BITWORD_WIDTH>(circuit.count_measurements())
+                                                  : TableauSimulator::reference_sample_circuit(circuit);
     return CompiledMeasurementsToDetectionEventsConverter(ref_sample, circuit, skip_reference_sample);
 }
 
 void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_methods(
-    pybind11::module &m,
-    pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
+    pybind11::module &m, pybind11::class_<CompiledMeasurementsToDetectionEventsConverter> &c) {
     c.def(
         pybind11::init(&py_init_compiled_measurements_to_detection_events_converter),
         pybind11::arg("circuit"),

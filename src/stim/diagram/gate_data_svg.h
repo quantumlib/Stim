@@ -32,6 +32,6 @@ struct SvgGateData {
     static std::map<std::string, SvgGateData> make_gate_data_map();
 };
 
-}
+}  // namespace stim_draw_internal
 
 #endif

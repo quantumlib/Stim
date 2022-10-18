@@ -39,7 +39,11 @@ struct PauliStringRef {
     simd_bits_range_ref<MAX_BITWORD_WIDTH> xs, zs;
 
     /// Constructs a PauliStringRef pointing at the given sign, x, and z data.
-    PauliStringRef(size_t num_qubits, bit_ref sign, simd_bits_range_ref<MAX_BITWORD_WIDTH> xs, simd_bits_range_ref<MAX_BITWORD_WIDTH> zs);
+    PauliStringRef(
+        size_t num_qubits,
+        bit_ref sign,
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> xs,
+        simd_bits_range_ref<MAX_BITWORD_WIDTH> zs);
 
     /// Equality.
     bool operator==(const PauliStringRef &other) const;

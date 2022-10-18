@@ -28,6 +28,6 @@ size_t utf8_char_count(const std::string &s);
 /// Splits a two qubit gate into two end pieces, which can be drawn independently.
 std::pair<std::string, std::string> two_qubit_gate_pieces(const std::string &name);
 
-}
+}  // namespace stim_draw_internal
 
 #endif

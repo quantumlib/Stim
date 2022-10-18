@@ -1,11 +1,11 @@
 #include "stim/cmd/command_gen.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
-#include "command_help.h"
 
 using namespace stim;
 
@@ -79,8 +79,7 @@ SubCommandHelp stim::command_gen_help() {
         correction circuit.
     )PARAGRAPH");
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> stim gen \
                 --code repetition_code \
                 --task memory \
@@ -129,8 +128,7 @@ SubCommandHelp stim::command_gen_help() {
             DETECTOR(1, 1) rec[-2] rec[-3] rec[-5]
             DETECTOR(3, 1) rec[-1] rec[-2] rec[-4]
             OBSERVABLE_INCLUDE(0) rec[-1]
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--code",

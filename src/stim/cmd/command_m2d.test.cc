@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/main_namespaced.test.h"
-
 #include "gtest/gtest.h"
+
+#include "stim/main_namespaced.test.h"
 #include "stim/test_util.test.h"
 
 using namespace stim;
@@ -41,7 +41,8 @@ shot D1 L2
             )output"));
 
     ASSERT_EQ(
-        trim(run_captured_stim_main({"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data()}, "00\n01\n10\n11\n")),
+        trim(run_captured_stim_main(
+            {"m2d", "--in_format=01", "--out_format=dets", "--circuit", tmp.path.data()}, "00\n01\n10\n11\n")),
         trim(R"output(
 shot D0
 shot D0 D1

@@ -1,5 +1,7 @@
-#include <cmath>
 #include "stim/diagram/ascii_diagram.h"
+
+#include <cmath>
+
 #include "stim/mem/pointer_range.h"
 
 using namespace stim;
@@ -15,11 +17,8 @@ struct AsciiLayout {
     std::vector<size_t> y_offsets;
 };
 
-AsciiDiagramPos::AsciiDiagramPos(size_t x, size_t y, float align_x, float align_y) :
-    x(x),
-    y(y),
-    align_x(align_x),
-    align_y(align_y) {
+AsciiDiagramPos::AsciiDiagramPos(size_t x, size_t y, float align_x, float align_y)
+    : x(x), y(y), align_x(align_x), align_y(align_y) {
 }
 
 bool AsciiDiagramPos::operator==(const AsciiDiagramPos &other) const {
@@ -33,9 +32,7 @@ bool AsciiDiagramPos::operator<(const AsciiDiagramPos &other) const {
     return y < other.y;
 }
 
-AsciiDiagramEntry::AsciiDiagramEntry(AsciiDiagramPos center, std::string label) :
-    center(center),
-    label(label) {
+AsciiDiagramEntry::AsciiDiagramEntry(AsciiDiagramPos center, std::string label) : center(center), label(label) {
 }
 
 void AsciiDiagram::add_entry(AsciiDiagramEntry entry) {

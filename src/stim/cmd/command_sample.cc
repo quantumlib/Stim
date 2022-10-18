@@ -14,16 +14,16 @@
 
 #include "stim/cmd/command_sample.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "command_help.h"
 
 using namespace stim;
 
-int stim::command_sample(int argc, const char** argv) {
+int stim::command_sample(int argc, const char **argv) {
     check_for_unknown_arguments(
         {"--seed", "--skip_reference_sample", "--out_format", "--out", "--in", "--shots"},
         {"--sample", "--frame0"},
@@ -73,8 +73,7 @@ SubCommandHelp stim::command_sample_help() {
     result.subcommand_name = "sample";
     result.description = "Samples measurements from a circuit.";
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example_circuit.stim
             H 0
             CNOT 0 1
@@ -87,18 +86,15 @@ SubCommandHelp stim::command_sample_help() {
             00
             11
 
-        )PARAGRAPH")
-    );
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+        )PARAGRAPH"));
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example_circuit.stim
             X 2 3 5
             M 0 1 2 3 4 5 6 7 8 9
 
             >>> stim sample --in example_circuit.stim --out_format dets
             shot M2 M3 M5
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--skip_reference_sample",

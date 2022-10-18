@@ -16,8 +16,8 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/test_util.test.h"
 #include "stim/main_namespaced.test.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 

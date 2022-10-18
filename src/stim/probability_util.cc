@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "stim/probability_util.h"
+
 #include "arg_parse.h"
 
 using namespace stim;

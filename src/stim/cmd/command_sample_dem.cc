@@ -14,11 +14,11 @@
 
 #include "stim/cmd/command_sample_dem.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/io/raii_file.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/dem_sampler.h"
-#include "command_help.h"
 
 using namespace stim;
 
@@ -98,9 +98,7 @@ SubCommandHelp stim::command_sample_dem_help() {
         Supports recording and replaying the errors that occurred.
     )PARAGRAPH");
 
-
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example.dem
             error(0) D0
             error(0.5) D1 L0
@@ -127,8 +125,7 @@ SubCommandHelp stim::command_sample_dem_help() {
             0
             1
             1
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--replay_err_in",

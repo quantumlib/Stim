@@ -71,7 +71,6 @@ pybind11::class_<CircuitRepeatBlock> stim_pybind::pybind_circuit_repeat_block(py
 }
 
 void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybind11::class_<CircuitRepeatBlock> &c) {
-
     c.def(
         pybind11::init<uint64_t, Circuit>(),
         pybind11::arg("repeat_count"),

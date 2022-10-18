@@ -114,7 +114,8 @@ pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_mo
     return c;
 }
 
-void stim_pybind::pybind_detector_error_model_methods(pybind11::module &m, pybind11::class_<stim::DetectorErrorModel> &c) {
+void stim_pybind::pybind_detector_error_model_methods(
+    pybind11::module &m, pybind11::class_<stim::DetectorErrorModel> &c) {
     c.def(
         pybind11::init([](const char *detector_error_model_text) {
             DetectorErrorModel self;

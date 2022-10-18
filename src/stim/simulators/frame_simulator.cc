@@ -534,7 +534,10 @@ simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample_flipped_measurements(
 }
 
 simd_bit_table<MAX_BITWORD_WIDTH> FrameSimulator::sample(
-    const Circuit &circuit, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample, size_t num_samples, std::mt19937_64 &rng) {
+    const Circuit &circuit,
+    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample,
+    size_t num_samples,
+    std::mt19937_64 &rng) {
     return transposed_vs_ref(
         num_samples, FrameSimulator::sample_flipped_measurements(circuit, num_samples, rng), reference_sample);
 }
@@ -551,10 +554,11 @@ void FrameSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
         rng_buffer.u64[batch_size >> 6] &= (uint64_t{1} << (batch_size & 63)) - 1;
     }
     // Omit locations blocked by prev error, while updating prev error mask.
-    simd_bits_range_ref<MAX_BITWORD_WIDTH>{rng_buffer}.for_each_word(last_correlated_error_occurred, [](simd_word &buf, simd_word &prev) {
-        buf = prev.andnot(buf);
-        prev |= buf;
-    });
+    simd_bits_range_ref<MAX_BITWORD_WIDTH>{rng_buffer}.for_each_word(
+        last_correlated_error_occurred, [](simd_word &buf, simd_word &prev) {
+            buf = prev.andnot(buf);
+            prev |= buf;
+        });
 
     // Apply error to only the indicated frames.
     for (auto qxz : target_data.targets) {
