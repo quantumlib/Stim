@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "stim/probability_util.h"
+#include "arg_parse.h"
 
 using namespace stim;
 
@@ -48,6 +49,14 @@ std::mt19937_64 stim::externally_seeded_rng() {
     std::seed_seq seq{d(), d(), d(), d(), d(), d(), d(), d()};
     std::mt19937_64 result(seq);
     return result;
+}
+
+std::mt19937_64 stim::optionally_seeded_rng(int argc, const char **argv) {
+    if (find_argument("--seed", argc, argv) == nullptr) {
+        return externally_seeded_rng();
+    }
+    uint64_t seed = (uint64_t)find_int64_argument("--seed", 0, 0, INT64_MAX, argc, argv);
+    return std::mt19937_64(seed ^ INTENTIONAL_VERSION_SEED_INCOMPATIBILITY);
 }
 
 void stim::biased_randomize_bits(float probability, uint64_t *start, uint64_t *end, std::mt19937_64 &rng) {

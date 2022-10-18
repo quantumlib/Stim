@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "stim/main_namespaced.test.h"
+
+#include <regex>
+
 #include "gtest/gtest.h"
 
+#include "stim/test_util.test.h"
+#include "stim/gen/gen_surface_code.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
-#include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/detection_simulator.h"
-#include "stim/test_util.test.h"
 
 using namespace stim;
 
-TEST(circuit_gen_main, no_noise_no_detections) {
+TEST(command_gen, no_noise_no_detections) {
     std::vector<uint32_t> distances{2, 3, 4, 5, 6, 7, 15};
     std::vector<uint32_t> rounds{1, 2, 3, 4, 5, 6, 20};
     std::map<std::string, std::pair<std::string, GeneratedCircuit (*)(const CircuitGenParameters &)>> funcs{
@@ -47,4 +51,22 @@ TEST(circuit_gen_main, no_noise_no_detections) {
             }
         }
     }
+}
+
+TEST(command_gen, execute) {
+    ASSERT_TRUE(matches(
+        trim(run_captured_stim_main({"--gen=repetition_code", "--rounds=3", "--distance=4", "--task=memory"}, "")),
+        ".+Generated repetition_code.+"));
+    ASSERT_TRUE(matches(
+        trim(run_captured_stim_main({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        ".+Generated surface_code.+"));
+    ASSERT_TRUE(matches(
+        trim(run_captured_stim_main({"gen", "--code=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        ".+Generated surface_code.+"));
+    ASSERT_TRUE(matches(
+        trim(run_captured_stim_main({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, "")),
+        ".+Generated surface_code.+"));
+    ASSERT_TRUE(matches(
+        trim(run_captured_stim_main({"--gen=color_code", "--rounds=3", "--distance=3", "--task=memory_xyz"}, "")),
+        ".+Generated color_code.+"));
 }

@@ -33,51 +33,6 @@ std::shared_ptr<std::mt19937_64> stim_pybind::make_py_seeded_rng(const pybind11:
     }
 }
 
-std::string stim_pybind::clean_doc_string(const char *c) {
-    // Skip leading empty lines.
-    while (*c == '\n') {
-        c++;
-    }
-
-    // Determine indentation using first non-empty line.
-    size_t indent = 0;
-    while (*c == ' ') {
-        indent++;
-        c++;
-    }
-
-    std::string result;
-    while (*c != '\0') {
-        // Skip indentation.
-        for (size_t j = 0; j < indent && *c == ' '; j++) {
-            c++;
-        }
-
-        // Copy rest of line.
-        size_t line_length = 0;
-        while (*c != '\0') {
-            result.push_back(*c);
-            c++;
-            if (result.back() == '\n') {
-                break;
-            }
-            line_length++;
-        }
-        if (line_length > 80) {
-            const char *start_of_line = result.c_str() + result.size() - line_length - 1;
-            if (memcmp(start_of_line, "@signature", strlen("@signature")) != 0 &&
-                memcmp(start_of_line, "@overload", strlen("@overload")) != 0 &&
-                memcmp(start_of_line, "https://", strlen("https://")) != 0) {
-                std::stringstream ss;
-                ss << "Docstring line has length " << line_length << " > 80:\n" << start_of_line << std::string(80, '^') << "\n";
-                throw std::invalid_argument(ss.str());
-            }
-        }
-    }
-
-    return result;
-}
-
 bool stim_pybind::normalize_index_or_slice(
     const pybind11::object &index_or_slice,
     size_t length,
