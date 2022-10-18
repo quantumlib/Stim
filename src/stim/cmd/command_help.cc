@@ -28,6 +28,8 @@
 #include "stim/cmd/command_analyze_errors.h"
 #include "command_detect.h"
 #include "command_explain_errors.h"
+#include "command_gen.h"
+#include "command_m2d.h"
 
 using namespace stim;
 
@@ -227,72 +229,6 @@ stdout (or --out): The detection event data is written here.
         },
     };
 
-    modes["m2d"] = CommandLineSingleModeData{
-        "Convert measurement data into detection event data.",
-        R"PARAGRAPH(
-Takes measurement data from stdin, and a circuit from the file given to `--circuit`. Converts the measurement data
-into detection event data based on annotations in the circuit. Outputs detection event data to stdout.
-
-Note that this conversion requires taking a reference sample from the circuit, in order to determine whether the
-measurement sets defining the detectors and observables have an expected parity of 0 or an expected parity of 1.
-To get the reference sample, a noiseless stabilizer simulation of the circuit is performed.
-
-stdin: The measurement data, in the format specified by --in_format.
-
-stdout: The detection event data, in the format specified by --out_format (defaults to '01').
-
-- Examples:
-
-    ```
-    >>> echo -e "X 0\nM 0 1\nDETECTOR rec[-2]\nDETECTOR rec[-1]\nOBSERVABLE_INCLUDE(2) rec[-1]" > tmp.stim
-    >>> stim m2d --in_format 01 --out_format dets --circuit tmp.stim --append_observables
-    ... 00
-    ... 01
-    ... 10
-    ... 11
-    shot D0
-    shot D0 D1 L2
-    shot
-    shot D1 L2
-    ```
-)PARAGRAPH",
-        {"--out_format", "--in", "--out", "--in_format", "--circuit", "--skip_reference_sample"},
-    };
-
-    flags["--circuit"] = R"PARAGRAPH(Specifies the circuit to use when converting measurement data to detector data.
-
-The argument must be a filepath leading to a [stim circuit format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-)PARAGRAPH";
-
-    flags["--in_format"] = R"PARAGRAPH(Specifies a data format to use when reading shot data, e.g. `01` or `r8`.
-
-See `stim help formats` for a list of supported formats.
-)PARAGRAPH";
-
-    flags["--skip_reference_sample"] = R"PARAGRAPH(Instead of computing a reference sample for the given circuit, use
-a vacuous reference sample where where all measurement results are 0.
-
-Skipping the reference sample can significantly improve performance, because acquiring the reference sample requires
-using the tableau simulator. If the vacuous reference sample is actually a result that can be produced by the circuit,
-under noiseless execution, then specifying this flag has no observable outcome other than improving performance.
-
-When the all-zero sample isn't a result that can be produced by the circuit under noiseless execution, the effects of
-skipping the reference sample vary depending on the mode. For example, in measurement sampling mode, the reported
-measurements are not true measurement results but rather reports of which measurement results would have been flipped
-due to errors or Heisenberg uncertainty. They need to be XOR'd against a noiseless reference sample to become true
-measurement results.
-)PARAGRAPH";
-
-    flags["--sweep"] = R"PARAGRAPH(Specifies a per-shot sweep data file.
-
-Sweep bits are used to vary whether certain Pauli gates are included in a circuit, or not, from shot to shot.
-For example, if a circuit contains the instruction "CX sweep[5] 0" then there is an X pauli that is included
-only in shots where the corresponding sweep data has the bit at index 5 set to True.
-)PARAGRAPH";
-
-    flags["--sweep_format"] = R"PARAGRAPH(Specifies the format sweep data is stored in (e.g. b8 or 01).
-)PARAGRAPH";
-
     flags["--err_out"] = R"PARAGRAPH(Specifies a file to write a record of which errors occurred.
 
 This data can then be analyzed, modified, and later given to for example a --replay_err_in argument.
@@ -308,167 +244,6 @@ For example, this file data could come from a previous run that wrote error data
 )PARAGRAPH";
 
     flags["--replay_err_in_format"] = R"PARAGRAPH(The format to use when reading error data to replay. (e.g. b8 or 01).
-)PARAGRAPH";
-
-    modes["gen"] = CommandLineSingleModeData{
-        "Generates example circuits.",
-        R"PARAGRAPH(
-The generated circuits include annotations for noise, detectors, logical observables, the spacetial locations of qubits,
-the spacetime locations of detectors, and the inexorable passage of time steps.
-
-stdout: A circuit in [stim's circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-
-The type of circuit to generate is specified using the `--code` and `--task` flags. Each code supports different tasks.
-Other information that must be specified is the number of `--rounds`, the `--distance`, and any desired noise.
-
-- Example:
-
-    ```
-    >>> stim gen --code repetition_code --task memory --distance 3 --rounds 100 --after_clifford_depolarization 0.001
-    # Generated repetition_code circuit.
-    # task: memory
-    # rounds: 100
-    # distance: 3
-    # before_round_data_depolarization: 0
-    # before_measure_flip_probability: 0
-    # after_reset_flip_probability: 0
-    # after_clifford_depolarization: 0.001
-    # layout:
-    # L0 Z1 d2 Z3 d4
-    # Legend:
-    #     d# = data qubit
-    #     L# = data qubit with logical observable crossing
-    #     Z# = measurement qubit
-    R 0 1 2 3 4
-    TICK
-    CX 0 1 2 3
-    DEPOLARIZE2(0.001) 0 1 2 3
-    TICK
-    CX 2 1 4 3
-    DEPOLARIZE2(0.001) 2 1 4 3
-    TICK
-    MR 1 3
-    DETECTOR(1, 0) rec[-2]
-    DETECTOR(3, 0) rec[-1]
-    REPEAT 99 {
-        TICK
-        CX 0 1 2 3
-        DEPOLARIZE2(0.001) 0 1 2 3
-        TICK
-        CX 2 1 4 3
-        DEPOLARIZE2(0.001) 2 1 4 3
-        TICK
-        MR 1 3
-        SHIFT_COORDS(0, 1)
-        DETECTOR(1, 0) rec[-2] rec[-4]
-        DETECTOR(3, 0) rec[-1] rec[-3]
-    }
-    M 0 2 4
-    DETECTOR(1, 1) rec[-2] rec[-3] rec[-5]
-    DETECTOR(3, 1) rec[-1] rec[-2] rec[-4]
-    OBSERVABLE_INCLUDE(0) rec[-1]
-    ```
-)PARAGRAPH",
-        {"--after_clifford_depolarization",
-         "--after_reset_flip_probability",
-         "--task",
-         "--before_measure_flip_probability",
-         "--before_round_data_depolarization",
-         "--distance",
-         "--out",
-         "--in",
-         "--rounds"}};
-
-    flags["--code"] = R"PARAGRAPH(The error correcting code to use.
-
-Supported codes are:
-
-    `--code surface_code`
-    `--code repetition_code`
-    `--code color_code`
-)PARAGRAPH";
-
-    flags["--task"] = R"PARAGRAPH(What the generated circuit should do; the experiment it should run.
-
-    Different error correcting codes support different tasks.
-
-    `--task=memory` (repetition_code):
-        Initialize a logical `|0>`,
-        preserve it against noise for the given number of rounds,
-        then measure.
-    `--task=rotated_memory_x` (surface_code):
-        Initialize a logical `|+>` in a rotated surface code,
-        preserve it against noise for the given number of rounds,
-        then measure in the X basis.
-    `--task=rotated_memory_z` (surface_code):
-        Initialize a logical `|0>` in a rotated surface code,
-        preserve it against noise for the given number of rounds,
-        then measure in the X basis.
-    `--task=unrotated_memory_x` (surface_code):
-        Initialize a logical `|+>` in an unrotated surface code,
-        preserve it against noise for the given number of rounds,
-        then measure in the Z basis.
-    `--task=unrotated_memory_z` (surface_code):
-        Initialize a logical `|0>` in an unrotated surface code,
-        preserve it against noise for the given number of rounds,
-        then measure in the Z basis.
-    `--task=memory_xyz` (color_code):
-        Initialize a logical `|0>`,
-        preserve it against noise for the given number of rounds,
-        then measure.
-        Use a color code that alternates between measuring X, then Y, then Z stabilizers.
-)PARAGRAPH";
-
-    flags["--distance"] = R"PARAGRAPH(The minimum number of physical errors needed to cause a logical error.
-
-The code distance determines how large the generated circuit has to be. Conventionally, the code distance specifically
-refers to single-qubit errors between rounds instead of circuit errors during rounds.
-
-The distance must always be a positive integer. Different codes/tasks may place additional constraints on the distance
-(e.g. must be larger than 2 or must be odd or etc).
-)PARAGRAPH";
-
-    flags["--rounds"] = R"PARAGRAPH(The number of times the circuit's measurement qubits are measured.
-
-The number of rounds must be an integer between 1 and a quintillion (10^18). Different codes/tasks may place additional
-constraints on the number of rounds (e.g. enough rounds to have measured all the stabilizers at least once).
-)PARAGRAPH";
-
-    flags["--after_clifford_depolarization"] = R"PARAGRAPH(Adds depolarizing noise after Clifford operations.
-
-Must be a probability between 0 and 1.
-Defaults to 0.
-
-Adds a `DEPOLARIZE1(p)` operation after every single-qubit Clifford operation and a `DEPOLARIZE2(p)` noise operation
-after every two-qubit Clifford operation.
-When the probability is set to 0, the noise operations are not inserted.
-)PARAGRAPH";
-
-    flags["--after_reset_flip_probability"] = R"PARAGRAPH(Specifies a reset noise level.
-
-Defaults to 0 when not specified.
-Must be a number between 0 and 1.
-
-Adds an `X_ERROR(p)` after `R` (`RZ`) and `RY` operations, and a `Z_ERROR(p)` after `RX` operations.
-When set to 0, the noise operations are not inserted.
-)PARAGRAPH";
-
-    flags["--before_measure_flip_probability"] = R"PARAGRAPH(Specifies a measurement noise level.
-
-Defaults to 0 when not specified.
-Must be a number between 0 and 1.
-
-Adds an `X_ERROR(p)` before `M` (`MZ`) and `MY` operations, and a `Z_ERROR(p)` before `MX` operations.
-When set to 0, the noise operations are not inserted.
-)PARAGRAPH";
-
-    flags["--before_round_data_depolarization"] = R"PARAGRAPH(Specifies a phenomenological noise level.
-
-Defaults to 0 when not specified.
-Must be a number between 0 and 1.
-
-Adds a `DEPOLARIZE1(p)` operation to each data qubit at the start of each round of stabilizer measurements.
-When set to 0, the noise operations are not inserted.
 )PARAGRAPH";
 
     flags["--in"] = R"PARAGRAPH(Specifies an input file to read from, instead of stdin.
@@ -489,6 +264,8 @@ written to stdout (or the file specified by `--out`).
         command_analyze_errors_help(),
         command_detect_help(),
         command_explain_errors_help(),
+        command_gen_help(),
+        command_m2d_help(),
     };
     for (const auto &sub_command : sub_commands) {
         auto summary = sub_command.description;

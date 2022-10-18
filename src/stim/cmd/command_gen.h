@@ -17,9 +17,12 @@
 #ifndef _STIM_CMD_COMMAND_GEN_H
 #define _STIM_CMD_COMMAND_GEN_H
 
+#include "stim/arg_parse.h"
+
 namespace stim {
 
 int command_gen(int argc, const char **argv);
+SubCommandHelp command_gen_help();
 
 }  // namespace stim
 

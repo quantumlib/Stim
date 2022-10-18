@@ -407,7 +407,7 @@ OPTIONS
         If this argument isn't specified, the observable flip data isn't
         written to a file.
         
-        The output is in a format specified by `--obs_format`. See:
+        The output is in a format specified by `--obs_out_format`. See:
         https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
         
 
@@ -657,46 +657,185 @@ EXAMPLES
 <a name="gen"></a>
 ### stim gen
 
-*Generates example circuits.*
+```
+NAME
+    stim gen
 
-The generated circuits include annotations for noise, detectors, logical observables, the spacetial locations of qubits,
-the spacetime locations of detectors, and the inexorable passage of time steps.
+SYNOPSIS
+    stim gen \
+        [--after_clifford_depolarization probability] \
+        [--after_reset_flip_probability probability] \
+        [--before_measure_flip_probability probability] \
+        [--before_round_data_depolarization probability] \
+        --code surface_code|repetition_code|color_code \
+        --distance int \
+        [--out filepath] \
+        --rounds int \
+        --task name
 
-stdout: A circuit in [stim's circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+DESCRIPTION
+    Generates example circuits.
+    
+    The generated circuits include annotations for noise, detectors, logical
+    observables, the spatial locations of qubits, the spacetime locations
+    of detectors, and the inexorable passage of TICKs.
+    
+    Note that the generated circuits are not intended to be sufficient for
+    research. They are really just examples to make it easier to get started
+    using Stim, so you can try things without having to first go through
+    the entire effort of making a correctly annotated quantum error
+    correction circuit.
+    
 
-The type of circuit to generate is specified using the `--code` and `--task` flags. Each code supports different tasks.
-Other information that must be specified is the number of `--rounds`, the `--distance`, and any desired noise.
+OPTIONS
+    --after_clifford_depolarization
+        Specifies a depolarizing noise level for unitary gates.
+        
+        Defaults to 0 when not specified.
+        Must be a probability (a number between 0 and 1).
+        
+        Adds a `DEPOLARIZE1(p)` operation after every single-qubit Clifford
+        operation, and a `DEPOLARIZE2(p)` noise operation after every
+        two-qubit Clifford operation. When set to 0 or not set, these noise
+        operations are not inserted at all.
+        
 
-- Example:
+    --after_reset_flip_probability
+        Specifies a reset noise level.
+        
+        Defaults to 0 when not specified.
+        Must be a probability (a number between 0 and 1).
+        
+        Adds an `X_ERROR(p)` after `R` and `RY` operations, and a
+        `Z_ERROR(p)` after `RX` operations. When set to 0 or not set,
+        these noise operations are not inserted at all.
+        
 
-    ```
-    >>> stim gen --code repetition_code --task memory --distance 3 --rounds 100 --after_clifford_depolarization 0.001
-    # Generated repetition_code circuit.
-    # task: memory
-    # rounds: 100
-    # distance: 3
-    # before_round_data_depolarization: 0
-    # before_measure_flip_probability: 0
-    # after_reset_flip_probability: 0
-    # after_clifford_depolarization: 0.001
-    # layout:
-    # L0 Z1 d2 Z3 d4
-    # Legend:
-    #     d# = data qubit
-    #     L# = data qubit with logical observable crossing
-    #     Z# = measurement qubit
-    R 0 1 2 3 4
-    TICK
-    CX 0 1 2 3
-    DEPOLARIZE2(0.001) 0 1 2 3
-    TICK
-    CX 2 1 4 3
-    DEPOLARIZE2(0.001) 2 1 4 3
-    TICK
-    MR 1 3
-    DETECTOR(1, 0) rec[-2]
-    DETECTOR(3, 0) rec[-1]
-    REPEAT 99 {
+    --before_measure_flip_probability
+        Specifies a measurement noise level.
+        
+        Defaults to 0 when not specified.
+        Must be a probability (a number between 0 and 1).
+        
+        Adds an `X_ERROR(p)` before `M` and `MY` operations, and a
+        `Z_ERROR(p)` before `MX` operations. When set to 0 or not set,
+        these noise operations are not inserted at all.
+        
+
+    --before_round_data_depolarization
+        Specifies a quantum phenomenological noise level.
+        
+        Defaults to 0 when not specified.
+        Must be a probability (a number between 0 and 1).
+        
+        Adds a `DEPOLARIZE1(p)` operation to each data qubit at the start of
+        each round of stabilizer measurements. When set to 0 or not set,
+        these noise operations are not inserted at all.
+        
+
+    --code
+        The error correcting code to use.
+        
+        The available error correcting codes are:
+        
+        `surface_code`
+            The surface code. A quantum code with a checkerboard pattern of
+            alternating X and Z stabilizers.
+        `repetition_code`
+            The repetition code. The simplest classical code.
+        `color_code`
+            The color code. A quantum code with a hexagonal pattern of
+            overlapping X and Z stabilizers.
+        
+
+    --distance
+        The minimum number of physical errors that cause a logical error.
+        
+        The code distance determines how spatially large the generated
+        circuit has to be. Conventionally, the code distance specifically
+        refers to single-qubit errors between rounds instead of circuit
+        errors during rounds.
+        
+        The distance must always be a positive integer. Different
+        codes/tasks may place additional constraints on the distance (e.g.
+        must be larger than 2 or must be odd or etc).
+        
+
+    --out
+        Chooses where to write the generated circuit to.
+        
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
+        
+        The output is a stim circuit. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+        
+
+    --rounds
+        The number of times the circuit's measurement qubits are measured.
+        
+        The number of rounds must be an integer between 1 and a quintillion
+        (10^18). Different codes/tasks may place additional constraints on
+        the number of rounds (e.g. enough rounds to have measured all the
+        stabilizers at least once).
+        
+
+    --task
+        What the generated circuit should do; the experiment it should run.
+        
+        Different error correcting codes support different tasks. The
+        available tasks are:
+        
+        `memory` (repetition_code):
+            Initialize a logical `|0>`,
+            preserve it against noise for the given number of rounds,
+            then measure.
+        `rotated_memory_x` (surface_code):
+            Initialize a logical `|+>` in a rotated surface code,
+            preserve it against noise for the given number of rounds,
+            then measure in the X basis.
+        `rotated_memory_z` (surface_code):
+            Initialize a logical `|0>` in a rotated surface code,
+            preserve it against noise for the given number of rounds,
+            then measure in the X basis.
+        `unrotated_memory_x` (surface_code):
+            Initialize a logical `|+>` in an unrotated surface code,
+            preserve it against noise for the given number of rounds,
+            then measure in the Z basis.
+        `unrotated_memory_z` (surface_code):
+            Initialize a logical `|0>` in an unrotated surface code,
+            preserve it against noise for the given number of rounds,
+            then measure in the Z basis.
+        `memory_xyz` (color_code):
+            Initialize a logical `|0>`,
+            preserve it against noise for the given number of rounds,
+            then measure. Use a color code that alternates between measuring
+            X, then Y, then Z stabilizers.
+        
+
+EXAMPLES
+    Example #1
+        >>> stim gen \
+            --code repetition_code \
+            --task memory \
+            --distance 3 \
+            --rounds 100 \
+            --after_clifford_depolarization 0.001
+        # Generated repetition_code circuit.
+        # task: memory
+        # rounds: 100
+        # distance: 3
+        # before_round_data_depolarization: 0
+        # before_measure_flip_probability: 0
+        # after_reset_flip_probability: 0
+        # after_clifford_depolarization: 0.001
+        # layout:
+        # L0 Z1 d2 Z3 d4
+        # Legend:
+        #     d# = data qubit
+        #     L# = data qubit with logical observable crossing
+        #     Z# = measurement qubit
+        R 0 1 2 3 4
         TICK
         CX 0 1 2 3
         DEPOLARIZE2(0.001) 0 1 2 3
@@ -705,26 +844,27 @@ Other information that must be specified is the number of `--rounds`, the `--dis
         DEPOLARIZE2(0.001) 2 1 4 3
         TICK
         MR 1 3
-        SHIFT_COORDS(0, 1)
-        DETECTOR(1, 0) rec[-2] rec[-4]
-        DETECTOR(3, 0) rec[-1] rec[-3]
-    }
-    M 0 2 4
-    DETECTOR(1, 1) rec[-2] rec[-3] rec[-5]
-    DETECTOR(3, 1) rec[-1] rec[-2] rec[-4]
-    OBSERVABLE_INCLUDE(0) rec[-1]
-    ```
-
-Flags used with this mode:
-- [--after_clifford_depolarization](#--after_clifford_depolarization)
-- [--after_reset_flip_probability](#--after_reset_flip_probability)
-- [--before_measure_flip_probability](#--before_measure_flip_probability)
-- [--before_round_data_depolarization](#--before_round_data_depolarization)
-- [--distance](#--distance)
-- [--in](#--in)
-- [--out](#--out)
-- [--rounds](#--rounds)
-- [--task](#--task)
+        DETECTOR(1, 0) rec[-2]
+        DETECTOR(3, 0) rec[-1]
+        REPEAT 99 {
+            TICK
+            CX 0 1 2 3
+            DEPOLARIZE2(0.001) 0 1 2 3
+            TICK
+            CX 2 1 4 3
+            DEPOLARIZE2(0.001) 2 1 4 3
+            TICK
+            MR 1 3
+            SHIFT_COORDS(0, 1)
+            DETECTOR(1, 0) rec[-2] rec[-4]
+            DETECTOR(3, 0) rec[-1] rec[-3]
+        }
+        M 0 2 4
+        DETECTOR(1, 1) rec[-2] rec[-3] rec[-5]
+        DETECTOR(3, 1) rec[-1] rec[-2] rec[-4]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        
+```
 
 <a name="help"></a>
 ### stim help
@@ -745,41 +885,238 @@ Use `stim help [topic]` for information about specific topics. Available topics 
 <a name="m2d"></a>
 ### stim m2d
 
-*Convert measurement data into detection event data.*
+```
+NAME
+    stim m2d
 
-Takes measurement data from stdin, and a circuit from the file given to `--circuit`. Converts the measurement data
-into detection event data based on annotations in the circuit. Outputs detection event data to stdout.
+SYNOPSIS
+    stim m2d \
+        [--append_observables] \
+        --circuit filepath \
+        [--in filepath] \
+        [--in_format 01|b8|r8|ptb64|hits|dets] \
+        [--obs_out filepath] \
+        [--obs_out_format 01|b8|r8|ptb64|hits|dets] \
+        [--out filepath] \
+        [--out_format 01|b8|r8|ptb64|hits|dets] \
+        [--skip_reference_sample] \
+        --sweep filepath \
+        [--sweep_format 01|b8|r8|ptb64|hits|dets]
 
-Note that this conversion requires taking a reference sample from the circuit, in order to determine whether the
-measurement sets defining the detectors and observables have an expected parity of 0 or an expected parity of 1.
-To get the reference sample, a noiseless stabilizer simulation of the circuit is performed.
+DESCRIPTION
+    Convert measurement data into detection event data.
+    
+    When sampling data from hardware, instead of from simulators, it's
+    necessary to convert the measurement data into detection event data that
+    can be fed into a decoder. This is necessary both because of
+    complexities in the exact sets of measurements being compared by a
+    circuit to produce detection events and also because the expected parity
+    of a detector's measurement set can vary due to (for example) spin echo
+    operations in the circuit.
+    
+    Stim performs this conversion by simulating taking a reference sample
+    from the circuit, in order to determine the expected parity of the
+    measurements sets defining detectors and observables, and then comparing
+    the sampled measurement data to these expectations.
+    
 
-stdin: The measurement data, in the format specified by --in_format.
+OPTIONS
+    --append_observables
+        Appends observable flips to the end of samples as extra detectors.
+        
+        PREFER --obs_out OVER THIS FLAG. Mixing the observable flip data
+        into detection event data tends to require simply separating them
+        again immediately, creating unnecessary work. For example, when
+        testing a decoder, you do not want to give the observable flips to
+        the decoder because that is the information the decoder is supposed
+        to be predicting from the detection events.
+        
+        This flag causes observable flip data to be appended to each sample,
+        as if the observables were extra detectors at the end of the
+        circuit. For example, if there are 100 detectors and 10 observables
+        in the circuit, then the output will contain 110 detectors and the
+        last 10 are the observables.
+        
 
-stdout: The detection event data, in the format specified by --out_format (defaults to '01').
+    --circuit
+        Specifies where the circuit that generated the measurements is.
+        
+        This argument is required, because the circuit is what specifies how
+        to derive detection event data from measurement data.
+        
+        The circuit file should be a stim circuit. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+        
 
-- Examples:
+    --in
+        Chooses the file to read measurement data from.
+        
+        By default, the circuit is read from stdin. When `--in $FILEPATH` is
+        specified, the circuit is instead read from the file at $FILEPATH.
+        
+        The input's format is specified by `--in_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
 
-    ```
-    >>> echo -e "X 0\nM 0 1\nDETECTOR rec[-2]\nDETECTOR rec[-1]\nOBSERVABLE_INCLUDE(2) rec[-1]" > tmp.stim
-    >>> stim m2d --in_format 01 --out_format dets --circuit tmp.stim --append_observables
-    ... 00
-    ... 01
-    ... 10
-    ... 11
-    shot D0
-    shot D0 D1 L2
-    shot
-    shot D1 L2
-    ```
+    --in_format
+        Specifies the data format to use when reading measurement data.
+        
+        The available formats are:
+        
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+        
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
 
-Flags used with this mode:
-- [--circuit](#--circuit)
-- [--in](#--in)
-- [--in_format](#--in_format)
-- [--out](#--out)
-- [--out_format](#--out_format)
-- [--skip_reference_sample](#--skip_reference_sample)
+    --obs_out
+        Specifies the file to write observable flip data to.
+        
+        When producing detection event data, the goal is typically to
+        predict whether or not the logical observables were flipped by using
+        the detection events. This argument specifies where to write that
+        observable flip data.
+        
+        If this argument isn't specified, the observable flip data isn't
+        written to a file.
+        
+        The output is in a format specified by `--obs_out_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+    --obs_out_format
+        Specifies the data format to use when writing observable flip data.
+        
+        Irrelevant unless `--obs_out` is specified.
+        
+        The available formats are:
+        
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+        
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+    --out
+        Chooses where to write the sampled data to.
+        
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
+        
+        The output's format is specified by `--out_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+    --out_format
+        Specifies the data format to use when writing output detection data.
+        
+        The available formats are:
+        
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+        
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+    --skip_reference_sample
+        Asserts the circuit can produce a noiseless sample that is just 0s.
+        
+        When this argument is specified, the reference sample (that the
+        measurement data will be compared to) is generated by simply setting
+        all measurements to 0 instead of by simulating the circuit without
+        noise.
+        
+        Skipping the reference sample can significantly improve performance,
+        because acquiring the reference sample requires using the tableau
+        simulator. If the vacuous reference sample is actually a result that
+        can be produced by the circuit, under noiseless execution, then
+        specifying this flag has no observable outcome other than improving
+        performance.
+        
+        CAUTION. When the all-zero sample isn't a result that can be
+        produced by the circuit under noiseless execution, specifying this
+        flag will cause incorrect output to be produced.
+        
+
+    --sweep
+        Specifies a file to read sweep configuration data from.
+        
+        Sweep bits are used to vary whether certain Pauli gates are included
+        in a circuit, or not, from shot to shot. For example, if a circuit
+        contains the instruction "CX sweep[5] 0" then there is an X pauli
+        that is included only in shots where the corresponding sweep data
+        has the bit at index 5 set to True.
+        
+        If `--sweep` is not specified, all sweep bits default to OFF. If
+        `--sweep` is specified, each shot's sweep configuratoin data is
+        read from the specified file.
+        
+        The sweep data's format is specified by `--sweep_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+    --sweep_format
+        Specifies the data format to use when reading sweep config data.
+        
+        The available formats are:
+        
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+        
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+EXAMPLES
+    Example #1
+        >>> cat example_circuit.stim
+        X 0
+        M 0 1
+        DETECTOR rec[-2]
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(2) rec[-1]
+        
+        >>> cat example_measure_data.01
+        00
+        01
+        10
+        11
+        
+        >>> stim m2d \
+            --append_observables \
+            --circuit example_circuit.stim \
+            --in example_measure_data.01 \
+            --in_format 01 \
+            --out_format dets
+        shot D0
+        shot D0 D1 L2
+        shot
+        shot D1 L2
+        
+```
 
 <a name="repl"></a>
 ### stim repl
@@ -910,24 +1247,26 @@ Flags used with this mode:
 ## Flags
 
 - <a name="--after_clifford_depolarization"></a>**`--after_clifford_depolarization`**
-    Adds depolarizing noise after Clifford operations.
+    Specifies a depolarizing noise level for unitary gates.
     
-    Must be a probability between 0 and 1.
-    Defaults to 0.
+    Defaults to 0 when not specified.
+    Must be a probability (a number between 0 and 1).
     
-    Adds a `DEPOLARIZE1(p)` operation after every single-qubit Clifford operation and a `DEPOLARIZE2(p)` noise operation
-    after every two-qubit Clifford operation.
-    When the probability is set to 0, the noise operations are not inserted.
+    Adds a `DEPOLARIZE1(p)` operation after every single-qubit Clifford
+    operation, and a `DEPOLARIZE2(p)` noise operation after every
+    two-qubit Clifford operation. When set to 0 or not set, these noise
+    operations are not inserted at all.
     
     
 - <a name="--after_reset_flip_probability"></a>**`--after_reset_flip_probability`**
     Specifies a reset noise level.
     
     Defaults to 0 when not specified.
-    Must be a number between 0 and 1.
+    Must be a probability (a number between 0 and 1).
     
-    Adds an `X_ERROR(p)` after `R` (`RZ`) and `RY` operations, and a `Z_ERROR(p)` after `RX` operations.
-    When set to 0, the noise operations are not inserted.
+    Adds an `X_ERROR(p)` after `R` and `RY` operations, and a
+    `Z_ERROR(p)` after `RX` operations. When set to 0 or not set,
+    these noise operations are not inserted at all.
     
     
 - <a name="--allow_gauge_detectors"></a>**`--allow_gauge_detectors`**
@@ -1039,20 +1378,22 @@ Flags used with this mode:
     Specifies a measurement noise level.
     
     Defaults to 0 when not specified.
-    Must be a number between 0 and 1.
+    Must be a probability (a number between 0 and 1).
     
-    Adds an `X_ERROR(p)` before `M` (`MZ`) and `MY` operations, and a `Z_ERROR(p)` before `MX` operations.
-    When set to 0, the noise operations are not inserted.
+    Adds an `X_ERROR(p)` before `M` and `MY` operations, and a
+    `Z_ERROR(p)` before `MX` operations. When set to 0 or not set,
+    these noise operations are not inserted at all.
     
     
 - <a name="--before_round_data_depolarization"></a>**`--before_round_data_depolarization`**
-    Specifies a phenomenological noise level.
+    Specifies a quantum phenomenological noise level.
     
     Defaults to 0 when not specified.
-    Must be a number between 0 and 1.
+    Must be a probability (a number between 0 and 1).
     
-    Adds a `DEPOLARIZE1(p)` operation to each data qubit at the start of each round of stabilizer measurements.
-    When set to 0, the noise operations are not inserted.
+    Adds a `DEPOLARIZE1(p)` operation to each data qubit at the start of
+    each round of stabilizer measurements. When set to 0 or not set,
+    these noise operations are not inserted at all.
     
     
 - <a name="--block_decompose_from_introducing_remnant_edges"></a>**`--block_decompose_from_introducing_remnant_edges`**
@@ -1093,19 +1434,28 @@ Flags used with this mode:
     
     
 - <a name="--circuit"></a>**`--circuit`**
-    Specifies the circuit to use when converting measurement data to detector data.
+    Specifies where the circuit that generated the measurements is.
     
-    The argument must be a filepath leading to a [stim circuit format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+    This argument is required, because the circuit is what specifies how
+    to derive detection event data from measurement data.
+    
+    The circuit file should be a stim circuit. See:
+    https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
     
     
 - <a name="--code"></a>**`--code`**
     The error correcting code to use.
     
-    Supported codes are:
+    The available error correcting codes are:
     
-        `--code surface_code`
-        `--code repetition_code`
-        `--code color_code`
+    `surface_code`
+        The surface code. A quantum code with a checkerboard pattern of
+        alternating X and Z stabilizers.
+    `repetition_code`
+        The repetition code. The simplest classical code.
+    `color_code`
+        The color code. A quantum code with a hexagonal pattern of
+        overlapping X and Z stabilizers.
     
     
 - <a name="--decompose_errors"></a>**`--decompose_errors`**
@@ -1197,13 +1547,16 @@ Flags used with this mode:
     
     
 - <a name="--distance"></a>**`--distance`**
-    The minimum number of physical errors needed to cause a logical error.
+    The minimum number of physical errors that cause a logical error.
     
-    The code distance determines how large the generated circuit has to be. Conventionally, the code distance specifically
-    refers to single-qubit errors between rounds instead of circuit errors during rounds.
+    The code distance determines how spatially large the generated
+    circuit has to be. Conventionally, the code distance specifically
+    refers to single-qubit errors between rounds instead of circuit
+    errors during rounds.
     
-    The distance must always be a positive integer. Different codes/tasks may place additional constraints on the distance
-    (e.g. must be larger than 2 or must be odd or etc).
+    The distance must always be a positive integer. Different
+    codes/tasks may place additional constraints on the distance (e.g.
+    must be larger than 2 or must be odd or etc).
     
     
 - <a name="--err_out"></a>**`--err_out`**
@@ -1269,9 +1622,20 @@ Flags used with this mode:
     
     
 - <a name="--in_format"></a>**`--in_format`**
-    Specifies a data format to use when reading shot data, e.g. `01` or `r8`.
+    Specifies the data format to use when reading measurement data.
     
-    See `stim help formats` for a list of supported formats.
+    The available formats are:
+    
+        01 (default): dense human readable
+        b8: bit packed binary
+        r8: run length binary
+        ptb64: partially transposed bit packed binary for SIMD
+        hits: sparse human readable
+        dets: sparse human readable with type hints
+    
+    For a detailed description of each result format, see the result
+    format reference:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
 - <a name="--obs_out"></a>**`--obs_out`**
@@ -1285,7 +1649,7 @@ Flags used with this mode:
     If this argument isn't specified, the observable flip data isn't
     written to a file.
     
-    The output is in a format specified by `--obs_format`. See:
+    The output is in a format specified by `--obs_out_format`. See:
     https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
@@ -1347,8 +1711,10 @@ Flags used with this mode:
 - <a name="--rounds"></a>**`--rounds`**
     The number of times the circuit's measurement qubits are measured.
     
-    The number of rounds must be an integer between 1 and a quintillion (10^18). Different codes/tasks may place additional
-    constraints on the number of rounds (e.g. enough rounds to have measured all the stabilizers at least once).
+    The number of rounds must be an integer between 1 and a quintillion
+    (10^18). Different codes/tasks may place additional constraints on
+    the number of rounds (e.g. enough rounds to have measured all the
+    stabilizers at least once).
     
     
 - <a name="--seed"></a>**`--seed`**
@@ -1407,61 +1773,89 @@ Flags used with this mode:
     
     
 - <a name="--skip_reference_sample"></a>**`--skip_reference_sample`**
-    Instead of computing a reference sample for the given circuit, use
-    a vacuous reference sample where where all measurement results are 0.
+    Asserts the circuit can produce a noiseless sample that is just 0s.
     
-    Skipping the reference sample can significantly improve performance, because acquiring the reference sample requires
-    using the tableau simulator. If the vacuous reference sample is actually a result that can be produced by the circuit,
-    under noiseless execution, then specifying this flag has no observable outcome other than improving performance.
+    When this argument is specified, the reference sample (that the
+    measurement data will be compared to) is generated by simply setting
+    all measurements to 0 instead of by simulating the circuit without
+    noise.
     
-    When the all-zero sample isn't a result that can be produced by the circuit under noiseless execution, the effects of
-    skipping the reference sample vary depending on the mode. For example, in measurement sampling mode, the reported
-    measurements are not true measurement results but rather reports of which measurement results would have been flipped
-    due to errors or Heisenberg uncertainty. They need to be XOR'd against a noiseless reference sample to become true
-    measurement results.
+    Skipping the reference sample can significantly improve performance,
+    because acquiring the reference sample requires using the tableau
+    simulator. If the vacuous reference sample is actually a result that
+    can be produced by the circuit, under noiseless execution, then
+    specifying this flag has no observable outcome other than improving
+    performance.
+    
+    CAUTION. When the all-zero sample isn't a result that can be
+    produced by the circuit under noiseless execution, specifying this
+    flag will cause incorrect output to be produced.
     
     
 - <a name="--sweep"></a>**`--sweep`**
-    Specifies a per-shot sweep data file.
+    Specifies a file to read sweep configuration data from.
     
-    Sweep bits are used to vary whether certain Pauli gates are included in a circuit, or not, from shot to shot.
-    For example, if a circuit contains the instruction "CX sweep[5] 0" then there is an X pauli that is included
-    only in shots where the corresponding sweep data has the bit at index 5 set to True.
+    Sweep bits are used to vary whether certain Pauli gates are included
+    in a circuit, or not, from shot to shot. For example, if a circuit
+    contains the instruction "CX sweep[5] 0" then there is an X pauli
+    that is included only in shots where the corresponding sweep data
+    has the bit at index 5 set to True.
+    
+    If `--sweep` is not specified, all sweep bits default to OFF. If
+    `--sweep` is specified, each shot's sweep configuratoin data is
+    read from the specified file.
+    
+    The sweep data's format is specified by `--sweep_format`. See:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
 - <a name="--sweep_format"></a>**`--sweep_format`**
-    Specifies the format sweep data is stored in (e.g. b8 or 01).
+    Specifies the data format to use when reading sweep config data.
+    
+    The available formats are:
+    
+        01 (default): dense human readable
+        b8: bit packed binary
+        r8: run length binary
+        ptb64: partially transposed bit packed binary for SIMD
+        hits: sparse human readable
+        dets: sparse human readable with type hints
+    
+    For a detailed description of each result format, see the result
+    format reference:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
 - <a name="--task"></a>**`--task`**
     What the generated circuit should do; the experiment it should run.
     
-        Different error correcting codes support different tasks.
+    Different error correcting codes support different tasks. The
+    available tasks are:
     
-        `--task=memory` (repetition_code):
-            Initialize a logical `|0>`,
-            preserve it against noise for the given number of rounds,
-            then measure.
-        `--task=rotated_memory_x` (surface_code):
-            Initialize a logical `|+>` in a rotated surface code,
-            preserve it against noise for the given number of rounds,
-            then measure in the X basis.
-        `--task=rotated_memory_z` (surface_code):
-            Initialize a logical `|0>` in a rotated surface code,
-            preserve it against noise for the given number of rounds,
-            then measure in the X basis.
-        `--task=unrotated_memory_x` (surface_code):
-            Initialize a logical `|+>` in an unrotated surface code,
-            preserve it against noise for the given number of rounds,
-            then measure in the Z basis.
-        `--task=unrotated_memory_z` (surface_code):
-            Initialize a logical `|0>` in an unrotated surface code,
-            preserve it against noise for the given number of rounds,
-            then measure in the Z basis.
-        `--task=memory_xyz` (color_code):
-            Initialize a logical `|0>`,
-            preserve it against noise for the given number of rounds,
-            then measure.
-            Use a color code that alternates between measuring X, then Y, then Z stabilizers.
+    `memory` (repetition_code):
+        Initialize a logical `|0>`,
+        preserve it against noise for the given number of rounds,
+        then measure.
+    `rotated_memory_x` (surface_code):
+        Initialize a logical `|+>` in a rotated surface code,
+        preserve it against noise for the given number of rounds,
+        then measure in the X basis.
+    `rotated_memory_z` (surface_code):
+        Initialize a logical `|0>` in a rotated surface code,
+        preserve it against noise for the given number of rounds,
+        then measure in the X basis.
+    `unrotated_memory_x` (surface_code):
+        Initialize a logical `|+>` in an unrotated surface code,
+        preserve it against noise for the given number of rounds,
+        then measure in the Z basis.
+    `unrotated_memory_z` (surface_code):
+        Initialize a logical `|0>` in an unrotated surface code,
+        preserve it against noise for the given number of rounds,
+        then measure in the Z basis.
+    `memory_xyz` (color_code):
+        Initialize a logical `|0>`,
+        preserve it against noise for the given number of rounds,
+        then measure. Use a color code that alternates between measuring
+        X, then Y, then Z stabilizers.
     
     
