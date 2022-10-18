@@ -4,6 +4,7 @@
 
 - [stim analyze_errors](#analyze_errors)
 - [stim detect](#detect)
+- [stim diagram](#diagram)
 - [stim explain_errors](#explain_errors)
 - [stim gen](#gen)
 - [stim help](#help)
@@ -546,6 +547,82 @@ EXAMPLES
         shot
         shot D3 D4
         shot D0 D1
+        
+```
+
+<a name="diagram"></a>
+### stim diagram
+
+```
+NAME
+    stim diagram
+
+SYNOPSIS
+    stim diagram \
+        [--in filepath] \
+        [--out filepath] \
+        [--remove_noise] \
+        --type name
+
+DESCRIPTION
+    Produces various kinds of diagrams.
+
+OPTIONS
+    --in
+        Where to read the object to diagram from.
+        
+        By default, the object is read from stdin. When `--in $FILEPATH` is
+        specified, the object is instead read from the file at $FILEPATH.
+        
+        The expected type of object depends on the type of diagram.
+        
+
+    --out
+        Chooses where to write the diagram to.
+        
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
+        
+        The type of output produced depends on the type of diagram.
+        
+
+    --remove_noise
+        Removes noise from the input before turning it into a diagram.
+        
+        For example, if the input is a noisy circuit and you aren't
+        interested in the details of the noise but rather in the structure
+        of the circuit, you can specify this flag in order to filter out
+        the noise.
+        
+
+    --type
+        The type of diagram to make.
+        
+        The available diagram types are:
+        
+        `timeline-text`: Produces an ASCII text diagram of the operations
+            performed by a circuit over time. The qubits are laid out into
+            a line top to bottom, and time advances left to right. The input
+            object should be a stim circuit.
+        
+        `timeline-svg`: Produces an SVG image diagram of the operations
+            performed by a circuit over time. The qubits are laid out into
+            a line top to bottom, and time advances left to right. The input
+            object should be a stim circuit.
+        
+
+EXAMPLES
+    Example #1
+        >>> cat example_circuit.stim
+        H 0
+        CNOT 0 1
+        
+        >>> stim diagram \
+            --in example_circuit.stim \
+            --type timeline-text
+        q0: -H-@-
+               |
+        q1: ---X-
         
 ```
 
@@ -1333,6 +1410,15 @@ Flags used with this mode:
     https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
+- <a name="--remove_noise"></a>**`--remove_noise`**
+    Removes noise from the input before turning it into a diagram.
+    
+    For example, if the input is a noisy circuit and you aren't
+    interested in the details of the noise but rather in the structure
+    of the circuit, you can specify this flag in order to filter out
+    the noise.
+    
+    
 - <a name="--replay_err_in"></a>**`--replay_err_in`**
     Specifies a file to read error data to replay from.
     
@@ -1463,5 +1549,21 @@ Flags used with this mode:
             preserve it against noise for the given number of rounds,
             then measure.
             Use a color code that alternates between measuring X, then Y, then Z stabilizers.
+    
+    
+- <a name="--type"></a>**`--type`**
+    The type of diagram to make.
+    
+    The available diagram types are:
+    
+    `timeline-text`: Produces an ASCII text diagram of the operations
+        performed by a circuit over time. The qubits are laid out into
+        a line top to bottom, and time advances left to right. The input
+        object should be a stim circuit.
+    
+    `timeline-svg`: Produces an SVG image diagram of the operations
+        performed by a circuit over time. The qubits are laid out into
+        a line top to bottom, and time advances left to right. The input
+        object should be a stim circuit.
     
     
