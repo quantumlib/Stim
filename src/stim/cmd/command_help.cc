@@ -26,6 +26,7 @@
 #include "stim/io/stim_data_formats.h"
 #include "stim/stabilizers/tableau.h"
 #include "stim/cmd/command_analyze_errors.h"
+#include "command_detect.h"
 
 using namespace stim;
 
@@ -311,23 +312,11 @@ The argument must be a filepath leading to a [stim detector error model format f
         R"PARAGRAPH(Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
 )PARAGRAPH";
 
-    flags["--out_format"] = R"PARAGRAPH(Specifies a data format to use when writing shot data, e.g. `01` or `r8`.
-
-Defaults to `01` when not specified.
-
-See `stim help formats` for a list of supported formats.
-)PARAGRAPH";
-
     flags["--in_format"] = R"PARAGRAPH(Specifies a data format to use when reading shot data, e.g. `01` or `r8`.
 
 See `stim help formats` for a list of supported formats.
 )PARAGRAPH";
 
-    flags["--shots"] = R"PARAGRAPH(Specifies the number of times to run a circuit, producing data each time.
-
-Defaults to 1.
-Must be an integer between 0 and a quintillion (10^18).
-)PARAGRAPH";
     flags["--skip_reference_sample"] = R"PARAGRAPH(Instead of computing a reference sample for the given circuit, use
 a vacuous reference sample where where all measurement results are 0.
 
@@ -340,117 +329,6 @@ skipping the reference sample vary depending on the mode. For example, in measur
 measurements are not true measurement results but rather reports of which measurement results would have been flipped
 due to errors or Heisenberg uncertainty. They need to be XOR'd against a noiseless reference sample to become true
 measurement results.
-)PARAGRAPH";
-
-    modes["detect"] = CommandLineSingleModeData{
-        "Samples detection events from a circuit.",
-        R"PARAGRAPH(
-stdin: The circuit, specified using the stim circuit file format, to sample detection events from.
-
-stdout: The sampled detection event data. Each output bit corresponds to a `DETECTOR` instruction or (if
-    `--append_observables` is specified) accumulated results from `OBSERVABLE_INCLUDE` instructions.
-
-See also: `stim help DETECTOR` and `stim help OBSERVABLE_INCLUDE`.
-
-- Examples:
-
-    ```
-    >>> stim detect --shots 5
-    ... H 0
-    ... CNOT 0 1
-    ... X_ERROR(0.1) 0 1
-    ... M 0 1
-    ... DETECTOR rec[-1] rec[-2]
-    0
-    1
-    0
-    0
-    0
-    ```
-
-    ```
-    >>> stim detect --shots 10 --append_observables
-    ... # Single-shot X-basis rep code circuit.
-    ... RX 0 1 2 3 4 5 6
-    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-    ... Z_ERROR(0.1) 0 1 2 3 4 5 6
-    ... MPP X0 X1 X2 X3 X4 X5 X6
-    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-    ... OBSERVABLE_INCLUDE(0) rec[-1]
-    0110000
-    0000000
-    1000001
-    0110010
-    1100000
-    0000010
-    1000001
-    0110000
-    0000000
-    0011000
-    ```
-
-    ```
-    >>> stim detect --shots 10 --append_observables --out_format=dets
-    ... # Single-shot X-basis rep code circuit.
-    ... RX 0 1 2 3 4 5 6
-    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-    ... Z_ERROR(0.1) 0 1 2 3 4 5 6
-    ... MPP X0 X1 X2 X3 X4 X5 X6
-    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-    ... OBSERVABLE_INCLUDE(0) rec[-1]
-    shot D1 D2
-    shot
-    shot D0 L0
-    shot D1 D2 D5
-    shot D0 D1
-    shot D5
-    shot D0 L0
-    shot D1 D2
-    shot
-    shot D2 D3
-    ```
-)PARAGRAPH",
-        {"--out_format", "--seed", "--append_observables", "--in", "--out", "--shots"}};
-
-    flags["--append_observables"] = R"PARAGRAPH(Treat observables as extra detectors at the end of the circuit.
-
-By default, when reporting detection events, observables are not reported. This flag causes the observables to instead
-be reported as if they were detectors. For example, if there are 100 detectors and 10 observables in the circuit, then
-the output will contain 110 detectors and the last 10 are the observables. A notable exception to the "observables are
-just extra detectors" behavior of this flag is that, when using `out_format=dets`, the observables are distinguished
-from detectors by being named e.g. `L0` through `L9` instead of `D100` through `D109`.
-)PARAGRAPH";
-
-    flags["--seed"] = R"PARAGRAPH(Make simulation results PARTIALLY deterministic.
-
-When not set, the random number generator is seeded with external system entropy.
-
-When set to an integer, using the exact same other flags on the exact same machine with the exact
-same version of Stim will produce the exact same simulation results.
-The integer must be a non-negative 64 bit signed integer.
-
-CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-present to make it possible to have future optimizations to the random sampling, and is enforced by
-introducing intentional differences in the seeding strategy from version to version.
-
-CAUTION: simulation results *MAY NOT* be consistent across machines. For example, using the same
-seed on a machine that supports AVX instructions and one that only supports SSE instructions may
-produce different simulation results.
-
-CAUTION: simulation results *MAY NOT* be consistent if you vary other flags and modes. For example,
-`--skip_reference_sample` may result in fewer calls the to the random number generator before reported
-sampling begins. More generally, using the same seed for `stim sample` and `stim detect` will not
-result in detection events corresponding to the measurement results.
 )PARAGRAPH";
 
     flags["--sweep"] = R"PARAGRAPH(Specifies a per-shot sweep data file.
@@ -478,15 +356,6 @@ For example, this file data could come from a previous run that wrote error data
 )PARAGRAPH";
 
     flags["--replay_err_in_format"] = R"PARAGRAPH(The format to use when reading error data to replay. (e.g. b8 or 01).
-)PARAGRAPH";
-
-    flags["--obs_out"] = R"PARAGRAPH(Specifies a file to write observable flip data to.
-
-When sampling detection event data, this is an alternative to --append_observables which has the benefit
-of never mixing the two types of data together.
-)PARAGRAPH";
-
-    flags["--obs_out_format"] = R"PARAGRAPH(The format to use when writing observable flip data (e.g. b8 or 01).
 )PARAGRAPH";
 
     modes["gen"] = CommandLineSingleModeData{
@@ -664,15 +533,20 @@ is written to stdout (or the file specified by `--out`) whereas in `stim sample`
 written to stdout (or the file specified by `--out`).
 )PARAGRAPH";
 
-    auto analyze_help = command_analyze_errors_help();
-    modes[analyze_help.subcommand_name] = CommandLineSingleModeData{
-         analyze_help.description,
-         analyze_help.str_help(),
-         analyze_help.flag_set(),
+    std::vector<SubCommandHelp> sub_commands{
+        command_analyze_errors_help(),
+        command_detect_help()
     };
-    for (const auto &f : analyze_help.flags) {
-        if (flags.find(f.flag_name) == flags.end()) {
-            flags[f.flag_name] = f.description;
+    for (const auto &sub_command : sub_commands) {
+        modes[sub_command.subcommand_name] = CommandLineSingleModeData{
+            sub_command.description,
+            sub_command.str_help(),
+            sub_command.flag_set(),
+        };
+        for (const auto& f: sub_command.flags) {
+            if (flags.find(f.flag_name) == flags.end()) {
+                flags[f.flag_name] = f.description;
+            }
         }
     }
 
@@ -1141,13 +1015,10 @@ std::map<std::string, std::string> generate_flag_help_markdown() {
     markdown << "# Stim command line reference\n\n";
     markdown << "## Index\n\n";
     for (const auto &kv : data.mode_help) {
-        markdown << "- **(mode)** [stim " << kv.first << "](#" << kv.first << ")\n";
-        for (const auto &e : kv.second.flags) {
-            markdown << "    - [" << e << "](#" << e << ")\n";
-        }
+        markdown << "- [stim " << kv.first << "](#" << kv.first << ")\n";
     }
 
-    markdown << "## Modes\n\n";
+    markdown << "## Commands\n\n";
     for (const auto &kv : data.mode_help) {
         std::string key = upper(kv.first);
         while (true) {

@@ -17,9 +17,12 @@
 #ifndef _STIM_CMD_COMMAND_DETECT_H
 #define _STIM_CMD_COMMAND_DETECT_H
 
+#include "stim/arg_parse.h"
+
 namespace stim {
 
 int command_detect(int argc, const char **argv);
+SubCommandHelp command_detect_help();
 
 }  // namespace stim
 

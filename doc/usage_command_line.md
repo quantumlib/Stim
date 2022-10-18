@@ -2,64 +2,15 @@
 
 ## Index
 
-- **(mode)** [stim analyze_errors](#analyze_errors)
-    - [--allow_gauge_detectors](#--allow_gauge_detectors)
-    - [--approximate_disjoint_errors](#--approximate_disjoint_errors)
-    - [--block_decompose_from_introducing_remnant_edges](#--block_decompose_from_introducing_remnant_edges)
-    - [--decompose_errors](#--decompose_errors)
-    - [--fold_loops](#--fold_loops)
-    - [--ignore_decomposition_failures](#--ignore_decomposition_failures)
-    - [--in](#--in)
-    - [--out](#--out)
-- **(mode)** [stim detect](#detect)
-    - [--append_observables](#--append_observables)
-    - [--in](#--in)
-    - [--out](#--out)
-    - [--out_format](#--out_format)
-    - [--seed](#--seed)
-    - [--shots](#--shots)
-- **(mode)** [stim explain_errors](#explain_errors)
-    - [--dem_filter](#--dem_filter)
-    - [--in](#--in)
-    - [--out](#--out)
-- **(mode)** [stim gen](#gen)
-    - [--after_clifford_depolarization](#--after_clifford_depolarization)
-    - [--after_reset_flip_probability](#--after_reset_flip_probability)
-    - [--before_measure_flip_probability](#--before_measure_flip_probability)
-    - [--before_round_data_depolarization](#--before_round_data_depolarization)
-    - [--distance](#--distance)
-    - [--in](#--in)
-    - [--out](#--out)
-    - [--rounds](#--rounds)
-    - [--task](#--task)
-- **(mode)** [stim help](#help)
-- **(mode)** [stim m2d](#m2d)
-    - [--circuit](#--circuit)
-    - [--in](#--in)
-    - [--in_format](#--in_format)
-    - [--out](#--out)
-    - [--out_format](#--out_format)
-    - [--skip_reference_sample](#--skip_reference_sample)
-- **(mode)** [stim repl](#repl)
-- **(mode)** [stim sample](#sample)
-    - [--in](#--in)
-    - [--out](#--out)
-    - [--out_format](#--out_format)
-    - [--seed](#--seed)
-    - [--shots](#--shots)
-    - [--skip_reference_sample](#--skip_reference_sample)
-- **(mode)** [stim sample_dem](#sample_dem)
-    - [--err_out](#--err_out)
-    - [--err_out_format](#--err_out_format)
-    - [--in](#--in)
-    - [--obs_out](#--obs_out)
-    - [--obs_out_format](#--obs_out_format)
-    - [--out](#--out)
-    - [--out_format](#--out_format)
-    - [--replay_err_in](#--replay_err_in)
-    - [--replay_err_in_format](#--replay_err_in_format)
-    - [--seed](#--seed)
-    - [--shots](#--shots)
+- [stim analyze_errors](#analyze_errors)
+- [stim detect](#detect)
+- [stim explain_errors](#explain_errors)
+- [stim gen](#gen)
+- [stim help](#help)
+- [stim m2d](#m2d)
+- [stim repl](#repl)
+- [stim sample](#sample)
+- [stim sample_dem](#sample_dem)
 ## Modes
 
 <a name="analyze_errors"></a>
@@ -96,7 +47,7 @@ OPTIONS
         
         This is potentially useful in situations where the layout of
         detectors is supposed to stay fixed despite variations in the
-        circuit structure. Decoders can interpret the existence of this
+        circuit structure. Decoders can interpret the existence of the 50%
         error as a weight 0 edge saying that the detectors should be fused
         together.
         
@@ -324,10 +275,8 @@ OPTIONS
     --in
         Chooses the stim circuit file to read the circuit to convert from.
         
-        By default, the circuit is read from stdin.
-        
-        When `--in $FILEPATH` is specified, the circuit is instead read from
-        the file at $FILEPATH.
+        By default, the circuit is read from stdin. When `--in $FILEPATH` is
+        specified, the circuit is instead read from the file at $FILEPATH.
         
         The input should be a stim circuit. See:
         https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
@@ -336,10 +285,8 @@ OPTIONS
     --out
         Chooses where to write the output detector error model.
         
-        By default, the output is written to stdout.
-        
-        When `--out $FILEPATH` is specified, the output is instead written
-        to the file at $FILEPATH.
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
         
         The output is a stim detector error model. See:
         https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
@@ -397,90 +344,207 @@ EXAMPLES
 <a name="detect"></a>
 ### stim detect
 
-*Samples detection events from a circuit.*
+```
+NAME
+    stim detect
 
-stdin: The circuit, specified using the stim circuit file format, to sample detection events from.
+SYNOPSIS
+    stim detect \
+        [--append_observables] \
+        [--in filepath] \
+        [--obs_out filepath] \
+        [--obs_out_format 01|b8|r8|ptb64|hits|dets] \
+        [--out filepath] \
+        [--out_format 01|b8|r8|ptb64|hits|dets] \
+        [--seed int] \
+        [--shots int]
 
-stdout: The sampled detection event data. Each output bit corresponds to a `DETECTOR` instruction or (if
-    `--append_observables` is specified) accumulated results from `OBSERVABLE_INCLUDE` instructions.
+DESCRIPTION
+    Sample detection events and observable flips from a circuit.
 
-See also: `stim help DETECTOR` and `stim help OBSERVABLE_INCLUDE`.
+OPTIONS
+    --append_observables
+        Appends observable flips to the end of samples as extra detectors.
+        
+        PREFER --obs_out OVER THIS FLAG. Mixing the observable flip data
+        into detection event data tends to require simply separating them
+        again immediately, creating unnecessary work. For example, when
+        testing a decoder, you do not want to give the observable flips to
+        the decoder because that is the information the decoder is supposed
+        to be predicting from the detection events.
+        
+        This flag causes observable flip data to be appended to each sample,
+        as if the observables were extra detectors at the end of the
+        circuit. For example, if there are 100 detectors and 10 observables
+        in the circuit, then the output will contain 110 detectors and the
+        last 10 are the observables.
+        
+        Note that, when using `--out_format dets`, this option is implicitly
+        activated but observables are not appended as if they were
+        detectors (because `dets` has type hinting information). For
+        example, in the example from the last paragraph, the observables
+        would be named `L0` through `L9` instead of `D100` through `D109`.
+        
 
-- Examples:
+    --in
+        Chooses the stim circuit file to read the circuit to sample from.
+        
+        By default, the circuit is read from stdin. When `--in $FILEPATH` is
+        specified, the circuit is instead read from the file at $FILEPATH.
+        
+        The input should be a stim circuit. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+        
 
-    ```
-    >>> stim detect --shots 5
-    ... H 0
-    ... CNOT 0 1
-    ... X_ERROR(0.1) 0 1
-    ... M 0 1
-    ... DETECTOR rec[-1] rec[-2]
-    0
-    1
-    0
-    0
-    0
-    ```
+    --obs_out
+        Specifies the file to write observable flip data to.
+        
+        When sampling detection event data, the goal is typically to predict
+        whether or not the logical observables were flipped by using the
+        detection events. This argument specifies where to write that
+        observable flip data.
+        
+        If this argument isn't specified, the observable flip data isn't
+        written to a file.
+        
+        The output is in a format specified by `--obs_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
 
-    ```
-    >>> stim detect --shots 10 --append_observables
-    ... # Single-shot X-basis rep code circuit.
-    ... RX 0 1 2 3 4 5 6
-    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-    ... Z_ERROR(0.1) 0 1 2 3 4 5 6
-    ... MPP X0 X1 X2 X3 X4 X5 X6
-    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-    ... OBSERVABLE_INCLUDE(0) rec[-1]
-    0110000
-    0000000
-    1000001
-    0110010
-    1100000
-    0000010
-    1000001
-    0110000
-    0000000
-    0011000
-    ```
+    --obs_out_format
+        Specifies the data format to use when writing observable flip data.
+        
+        Irrelevant unless `--obs_out` is specified.
+        
+        The available formats are:
+        
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+        
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
 
-    ```
-    >>> stim detect --shots 10 --append_observables --out_format=dets
-    ... # Single-shot X-basis rep code circuit.
-    ... RX 0 1 2 3 4 5 6
-    ... MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
-    ... Z_ERROR(0.1) 0 1 2 3 4 5 6
-    ... MPP X0 X1 X2 X3 X4 X5 X6
-    ... DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
-    ... DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
-    ... DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
-    ... DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
-    ... DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
-    ... DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
-    ... OBSERVABLE_INCLUDE(0) rec[-1]
-    shot D1 D2
-    shot
-    shot D0 L0
-    shot D1 D2 D5
-    shot D0 D1
-    shot D5
-    shot D0 L0
-    shot D1 D2
-    shot
-    shot D2 D3
-    ```
+    --out
+        Chooses where to write the sampled data to.
+        
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
+        
+        The output is in a format specified by `--out_format`. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
 
-Flags used with this mode:
-- [--append_observables](#--append_observables)
-- [--in](#--in)
-- [--out](#--out)
-- [--out_format](#--out_format)
-- [--seed](#--seed)
-- [--shots](#--shots)
+    --out_format
+        Specifies the data format to use when writing output data.
+        
+        The available formats are:
+        
+            01 (default): dense human readable
+            b8: bit packed binary
+            r8: run length binary
+            ptb64: partially transposed bit packed binary for SIMD
+            hits: sparse human readable
+            dets: sparse human readable with type hints
+        
+        For a detailed description of each result format, see the result
+        format reference:
+        https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
+        
+
+    --seed
+        Makes simulation results PARTIALLY deterministic.
+        
+        The seed integer must be a non-negative 64 bit signed integer.
+        
+        When `--seed` isn't specified, the random number generator is seeded
+        using fresh entropy requested from the operating system.
+        
+        When `--seed #` is set, the exact same simulation results will be
+        produced every time ASSUMING:
+        
+        - the exact same other flags are specified
+        - the exact same version of Stim is being used
+        - the exact same machine architecture is being used (for example,
+            you're not switching from a machine that has AVX2 instructions
+            to one that doesn't).
+        
+        CAUTION: simulation results *WILL NOT* be consistent between
+        versions of Stim. This restriction is present to make it possible to
+        have future optimizations to the random sampling, and is enforced by
+        introducing intentional differences in the seeding strategy from
+        version to version.
+        
+        CAUTION: simulation results *MAY NOT* be consistent across machines.
+        For example, using the same seed on a machine that supports AVX
+        instructions and one that only supports SSE instructions may produce
+        different simulation results.
+        
+        CAUTION: simulation results *MAY NOT* be consistent if you vary
+        other flags and modes. For example, `--skip_reference_sample` may
+        result in fewer calls the to the random number generator before
+        reported sampling begins. More generally, using the same seed for
+        `stim sample` and `stim detect` will not result in detection events
+        corresponding to the measurement results.
+        
+
+    --shots
+        Specifies the number of samples to take from the circuit.
+        
+        Defaults to 1.
+        Must be an integer between 0 and a quintillion (10^18).
+        
+
+EXAMPLES
+    Example #1
+        >>> cat example.stim
+        H 0
+        CNOT 0 1
+        X_ERROR(0.1) 0 1
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+        
+        >>> stim detect --shots 5
+        0
+        1
+        0
+        0
+        0
+        
+
+    Example #2
+        >>> cat example.stim
+        # Single-shot X-basis rep code circuit.
+        RX 0 1 2 3 4 5 6
+        MPP X0*X1 X1*X2 X2*X3 X3*X4 X4*X5 X5*X6
+        Z_ERROR(0.1) 0 1 2 3 4 5 6
+        MPP X0 X1 X2 X3 X4 X5 X6
+        DETECTOR rec[-1] rec[-2] rec[-8]   # X6 X5 now = X5*X6 before
+        DETECTOR rec[-2] rec[-3] rec[-9]   # X5 X4 now = X4*X5 before
+        DETECTOR rec[-3] rec[-4] rec[-10]  # X4 X3 now = X3*X4 before
+        DETECTOR rec[-4] rec[-5] rec[-11]  # X3 X2 now = X2*X3 before
+        DETECTOR rec[-5] rec[-6] rec[-12]  # X2 X1 now = X1*X2 before
+        DETECTOR rec[-6] rec[-7] rec[-13]  # X1 X0 now = X0*X1 before
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        
+        >>> stim detect --shots 10 --append_observables --out_format=dets
+        shot D1 D2
+        shot
+        shot D0 L0
+        shot D1 D2 D5
+        shot D0 D1
+        shot D5
+        shot D0 L0
+        shot D1 D2
+        shot
+        shot D2 D3
+        
+```
 
 <a name="explain_errors"></a>
 ### stim explain_errors
@@ -812,7 +876,7 @@ Flags used with this mode:
     
     This is potentially useful in situations where the layout of
     detectors is supposed to stay fixed despite variations in the
-    circuit structure. Decoders can interpret the existence of this
+    circuit structure. Decoders can interpret the existence of the 50%
     error as a weight 0 edge saying that the detectors should be fused
     together.
     
@@ -842,13 +906,26 @@ Flags used with this mode:
     
     
 - <a name="--append_observables"></a>**`--append_observables`**
-    Treat observables as extra detectors at the end of the circuit.
+    Appends observable flips to the end of samples as extra detectors.
     
-    By default, when reporting detection events, observables are not reported. This flag causes the observables to instead
-    be reported as if they were detectors. For example, if there are 100 detectors and 10 observables in the circuit, then
-    the output will contain 110 detectors and the last 10 are the observables. A notable exception to the "observables are
-    just extra detectors" behavior of this flag is that, when using `out_format=dets`, the observables are distinguished
-    from detectors by being named e.g. `L0` through `L9` instead of `D100` through `D109`.
+    PREFER --obs_out OVER THIS FLAG. Mixing the observable flip data
+    into detection event data tends to require simply separating them
+    again immediately, creating unnecessary work. For example, when
+    testing a decoder, you do not want to give the observable flips to
+    the decoder because that is the information the decoder is supposed
+    to be predicting from the detection events.
+    
+    This flag causes observable flip data to be appended to each sample,
+    as if the observables were extra detectors at the end of the
+    circuit. For example, if there are 100 detectors and 10 observables
+    in the circuit, then the output will contain 110 detectors and the
+    last 10 are the observables.
+    
+    Note that, when using `--out_format dets`, this option is implicitly
+    activated but observables are not appended as if they were
+    detectors (because `dets` has type hinting information). For
+    example, in the example from the last paragraph, the observables
+    would be named `L0` through `L9` instead of `D100` through `D109`.
     
     
 - <a name="--approximate_disjoint_errors"></a>**`--approximate_disjoint_errors`**
@@ -1126,14 +1203,37 @@ Flags used with this mode:
     
     
 - <a name="--obs_out"></a>**`--obs_out`**
-    Specifies a file to write observable flip data to.
+    Specifies the file to write observable flip data to.
     
-    When sampling detection event data, this is an alternative to --append_observables which has the benefit
-    of never mixing the two types of data together.
+    When sampling detection event data, the goal is typically to predict
+    whether or not the logical observables were flipped by using the
+    detection events. This argument specifies where to write that
+    observable flip data.
+    
+    If this argument isn't specified, the observable flip data isn't
+    written to a file.
+    
+    The output is in a format specified by `--obs_format`. See:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
 - <a name="--obs_out_format"></a>**`--obs_out_format`**
-    The format to use when writing observable flip data (e.g. b8 or 01).
+    Specifies the data format to use when writing observable flip data.
+    
+    Irrelevant unless `--obs_out` is specified.
+    
+    The available formats are:
+    
+        01 (default): dense human readable
+        b8: bit packed binary
+        r8: run length binary
+        ptb64: partially transposed bit packed binary for SIMD
+        hits: sparse human readable
+        dets: sparse human readable with type hints
+    
+    For a detailed description of each result format, see the result
+    format reference:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
 - <a name="--out"></a>**`--out`**
@@ -1145,11 +1245,20 @@ Flags used with this mode:
     
     
 - <a name="--out_format"></a>**`--out_format`**
-    Specifies a data format to use when writing shot data, e.g. `01` or `r8`.
+    Specifies the data format to use when writing output data.
     
-    Defaults to `01` when not specified.
+    The available formats are:
     
-    See `stim help formats` for a list of supported formats.
+        01 (default): dense human readable
+        b8: bit packed binary
+        r8: run length binary
+        ptb64: partially transposed bit packed binary for SIMD
+        hits: sparse human readable
+        dets: sparse human readable with type hints
+    
+    For a detailed description of each result format, see the result
+    format reference:
+    https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
     
     
 - <a name="--replay_err_in"></a>**`--replay_err_in`**
@@ -1171,30 +1280,43 @@ Flags used with this mode:
     
     
 - <a name="--seed"></a>**`--seed`**
-    Make simulation results PARTIALLY deterministic.
+    Makes simulation results PARTIALLY deterministic.
     
-    When not set, the random number generator is seeded with external system entropy.
+    The seed integer must be a non-negative 64 bit signed integer.
     
-    When set to an integer, using the exact same other flags on the exact same machine with the exact
-    same version of Stim will produce the exact same simulation results.
-    The integer must be a non-negative 64 bit signed integer.
+    When `--seed` isn't specified, the random number generator is seeded
+    using fresh entropy requested from the operating system.
     
-    CAUTION: simulation results *WILL NOT* be consistent between versions of Stim. This restriction is
-    present to make it possible to have future optimizations to the random sampling, and is enforced by
-    introducing intentional differences in the seeding strategy from version to version.
+    When `--seed #` is set, the exact same simulation results will be
+    produced every time ASSUMING:
     
-    CAUTION: simulation results *MAY NOT* be consistent across machines. For example, using the same
-    seed on a machine that supports AVX instructions and one that only supports SSE instructions may
-    produce different simulation results.
+    - the exact same other flags are specified
+    - the exact same version of Stim is being used
+    - the exact same machine architecture is being used (for example,
+        you're not switching from a machine that has AVX2 instructions
+        to one that doesn't).
     
-    CAUTION: simulation results *MAY NOT* be consistent if you vary other flags and modes. For example,
-    `--skip_reference_sample` may result in fewer calls the to the random number generator before reported
-    sampling begins. More generally, using the same seed for `stim sample` and `stim detect` will not
-    result in detection events corresponding to the measurement results.
+    CAUTION: simulation results *WILL NOT* be consistent between
+    versions of Stim. This restriction is present to make it possible to
+    have future optimizations to the random sampling, and is enforced by
+    introducing intentional differences in the seeding strategy from
+    version to version.
+    
+    CAUTION: simulation results *MAY NOT* be consistent across machines.
+    For example, using the same seed on a machine that supports AVX
+    instructions and one that only supports SSE instructions may produce
+    different simulation results.
+    
+    CAUTION: simulation results *MAY NOT* be consistent if you vary
+    other flags and modes. For example, `--skip_reference_sample` may
+    result in fewer calls the to the random number generator before
+    reported sampling begins. More generally, using the same seed for
+    `stim sample` and `stim detect` will not result in detection events
+    corresponding to the measurement results.
     
     
 - <a name="--shots"></a>**`--shots`**
-    Specifies the number of times to run a circuit, producing data each time.
+    Specifies the number of samples to take from the circuit.
     
     Defaults to 1.
     Must be an integer between 0 and a quintillion (10^18).

@@ -143,7 +143,7 @@ SubCommandHelp stim::command_analyze_errors_help() {
 
             This is potentially useful in situations where the layout of
             detectors is supposed to stay fixed despite variations in the
-            circuit structure. Decoders can interpret the existence of this
+            circuit structure. Decoders can interpret the existence of the 50%
             error as a weight 0 edge saying that the detectors should be fused
             together.
 
@@ -176,7 +176,7 @@ SubCommandHelp stim::command_analyze_errors_help() {
     result.flags.push_back(SubCommandHelpFlag{
         "--approximate_disjoint_errors",
         "probability",
-        "false",
+        "0.0",
         {"[none]", "[switch]", "probability"},
         clean_doc_string(R"PARAGRAPH(
             Allows disjoint errors to be approximated during the conversion.
@@ -402,15 +402,13 @@ SubCommandHelp stim::command_analyze_errors_help() {
     result.flags.push_back(SubCommandHelpFlag{
         "--in",
         "filepath",
-        "stdin",
+        "{stdin}",
         {"[none]", "filepath"},
         clean_doc_string(R"PARAGRAPH(
             Chooses the stim circuit file to read the circuit to convert from.
 
-            By default, the circuit is read from stdin.
-
-            When `--in $FILEPATH` is specified, the circuit is instead read from
-            the file at $FILEPATH.
+            By default, the circuit is read from stdin. When `--in $FILEPATH` is
+            specified, the circuit is instead read from the file at $FILEPATH.
 
             The input should be a stim circuit. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
@@ -420,15 +418,13 @@ SubCommandHelp stim::command_analyze_errors_help() {
     result.flags.push_back(SubCommandHelpFlag{
         "--out",
         "filepath",
-        "stdout",
+        "{stdout}",
         {"[none]", "filepath"},
         clean_doc_string(R"PARAGRAPH(
             Chooses where to write the output detector error model.
 
-            By default, the output is written to stdout.
-
-            When `--out $FILEPATH` is specified, the output is instead written
-            to the file at $FILEPATH.
+            By default, the output is written to stdout. When `--out $FILEPATH`
+            is specified, the output is instead written to the file at $FILEPATH.
 
             The output is a stim detector error model. See:
             https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
