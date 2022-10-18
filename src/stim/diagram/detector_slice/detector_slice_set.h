@@ -39,7 +39,6 @@ struct DetectorSliceSet {
 };
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);
 
-
-}
+}  // namespace stim_draw_internal
 
 #endif

@@ -21,19 +21,19 @@
 #include <set>
 #include <stim/circuit/circuit.h>
 
-#include "stim/arg_parse.h"
-#include "stim/circuit/gate_data.h"
-#include "stim/io/stim_data_formats.h"
-#include "stim/stabilizers/tableau.h"
-#include "stim/cmd/command_analyze_errors.h"
 #include "command_detect.h"
+#include "command_diagram.h"
 #include "command_explain_errors.h"
 #include "command_gen.h"
 #include "command_m2d.h"
 #include "command_repl.h"
 #include "command_sample.h"
 #include "command_sample_dem.h"
-#include "command_diagram.h"
+#include "stim/arg_parse.h"
+#include "stim/circuit/gate_data.h"
+#include "stim/cmd/command_analyze_errors.h"
+#include "stim/io/stim_data_formats.h"
+#include "stim/stabilizers/tableau.h"
 
 using namespace stim;
 
@@ -73,7 +73,8 @@ std::string stim::clean_doc_string(const char *c) {
                 memcmp(start_of_line, "@overload", strlen("@overload")) != 0 &&
                 memcmp(start_of_line, "https://", strlen("https://")) != 0) {
                 std::stringstream ss;
-                ss << "Docstring line has length " << line_length << " > 80:\n" << start_of_line << std::string(80, '^') << "\n";
+                ss << "Docstring line has length " << line_length << " > 80:\n"
+                   << start_of_line << std::string(80, '^') << "\n";
                 throw std::invalid_argument(ss.str());
             }
         }
@@ -527,10 +528,9 @@ std::map<std::string, std::string> generate_command_help_topics() {
     {
         std::stringstream commands_help;
         commands_help << "Available stim commands:\n\n";
-        for (const auto& subcommand: sub_command_data) {
+        for (const auto &subcommand : sub_command_data) {
             commands_help << "    stim " << subcommand.subcommand_name
-                         << std::string(20 - subcommand.subcommand_name.size(),
-                                        ' ');
+                          << std::string(20 - subcommand.subcommand_name.size(), ' ');
             auto summary = subcommand.description;
             auto n = summary.find('\n');
             if (n != std::string::npos) {

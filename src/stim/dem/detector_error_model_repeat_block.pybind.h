@@ -19,8 +19,6 @@
 
 #include "stim/dem/detector_error_model.h"
 
-
-
 namespace stim_pybind {
 
 struct ExposedDemRepeatBlock {
@@ -36,6 +34,6 @@ struct ExposedDemRepeatBlock {
 pybind11::class_<ExposedDemRepeatBlock> pybind_detector_error_model_repeat_block(pybind11::module &m);
 void pybind_detector_error_model_repeat_block_methods(pybind11::module &m, pybind11::class_<ExposedDemRepeatBlock> &c);
 
-}
+}  // namespace stim_pybind
 
 #endif

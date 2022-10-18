@@ -332,8 +332,10 @@ simd_bit_table<MAX_BITWORD_WIDTH> random_stabilizer_tableau_raw(size_t n, std::m
     inv.do_square_transpose();
     inv_m.do_square_transpose();
 
-    auto fused = simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(n, lower, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod, inv);
-    auto fused_m = simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(n, lower_m, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod_m, inv_m);
+    auto fused =
+        simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(n, lower, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod, inv);
+    auto fused_m = simd_bit_table<MAX_BITWORD_WIDTH>::from_quadrants(
+        n, lower_m, simd_bit_table<MAX_BITWORD_WIDTH>(n, n), prod_m, inv_m);
 
     simd_bit_table<MAX_BITWORD_WIDTH> u(2 * n, 2 * n);
 
@@ -387,23 +389,19 @@ bool Tableau::satisfies_invariants() const {
 }
 
 bool Tableau::is_pauli_product() const {
-    size_t pop_count =
-        xs.xt.data.popcnt() +
-        xs.zt.data.popcnt() +
-        zs.xt.data.popcnt() +
-        zs.zt.data.popcnt();
+    size_t pop_count = xs.xt.data.popcnt() + xs.zt.data.popcnt() + zs.xt.data.popcnt() + zs.zt.data.popcnt();
 
-    if ( pop_count != 2 * num_qubits ) {
+    if (pop_count != 2 * num_qubits) {
         return false;
     }
 
-    for ( size_t q = 0; q < num_qubits; q++ ) {
-        if ( xs.xt[q][q] == false )
+    for (size_t q = 0; q < num_qubits; q++) {
+        if (xs.xt[q][q] == false)
             return false;
     }
 
-    for ( size_t q = 0; q < num_qubits; q++ ) {
-        if ( zs.zt[q][q] == false )
+    for (size_t q = 0; q < num_qubits; q++) {
+        if (zs.zt[q][q] == false)
             return false;
     }
 
@@ -411,7 +409,7 @@ bool Tableau::is_pauli_product() const {
 }
 
 PauliString Tableau::to_pauli_string() const {
-    if ( ! is_pauli_product() ) {
+    if (!is_pauli_product()) {
         throw std::invalid_argument("The Tableau isn't equivalent to a Pauli product.");
     }
 

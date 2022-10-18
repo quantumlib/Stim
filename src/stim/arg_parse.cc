@@ -63,8 +63,10 @@ void SubCommandHelp::write_help(std::ostream &out) const {
     out << "    stim " << subcommand_name;
     for (const auto &flag : flags_copy) {
         out << " \\\n        ";
-        bool allows_none = std::find(flag.allowed_values.begin(), flag.allowed_values.end(), "[none]") != flag.allowed_values.end();
-        bool allows_empty = std::find(flag.allowed_values.begin(), flag.allowed_values.end(), "[switch]") != flag.allowed_values.end();
+        bool allows_none =
+            std::find(flag.allowed_values.begin(), flag.allowed_values.end(), "[none]") != flag.allowed_values.end();
+        bool allows_empty =
+            std::find(flag.allowed_values.begin(), flag.allowed_values.end(), "[switch]") != flag.allowed_values.end();
         if (allows_none) {
             out << "[";
         }
@@ -89,7 +91,7 @@ void SubCommandHelp::write_help(std::ostream &out) const {
     out << "\n\n";
     if (!flags_copy.empty()) {
         out << "OPTIONS\n";
-        for (const auto& f: flags_copy) {
+        for (const auto &f : flags_copy) {
             out << "    " << f.flag_name << "\n";
             write_indented(f.description, out, 8);
             out << "\n\n";

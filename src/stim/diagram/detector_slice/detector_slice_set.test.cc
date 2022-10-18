@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fstream>
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
+#include <fstream>
+
 #include "gtest/gtest.h"
+
 #include "stim/gen/circuit_gen_params.h"
-#include "stim/gen/gen_surface_code.h"
 #include "stim/gen/gen_rep_code.h"
+#include "stim/gen/gen_surface_code.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
 TEST(detector_slice_set, from_circuit) {
-    auto slice_set = DetectorSliceSet::from_circuit_tick(stim::Circuit(R"CIRCUIT(
+    auto slice_set = DetectorSliceSet::from_circuit_tick(
+        stim::Circuit(R"CIRCUIT(
         QUBIT_COORDS(3, 5) 1
         R 0
         M 0
@@ -46,14 +49,15 @@ TEST(detector_slice_set, from_circuit) {
             M 0
             DETECTOR rec[-1]
         }
-)CIRCUIT"), 1);
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{
-        {1, {3, 5}}
-    }));
-    ASSERT_EQ(slice_set.slices, (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
-        {DemTarget::relative_detector_id(1), {GateTarget::x(0), GateTarget::z(1)}},
-        {DemTarget::relative_detector_id(2), {GateTarget::z(1)}},
-    }));
+)CIRCUIT"),
+        1);
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{1, {3, 5}}}));
+    ASSERT_EQ(
+        slice_set.slices,
+        (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
+            {DemTarget::relative_detector_id(1), {GateTarget::x(0), GateTarget::z(1)}},
+            {DemTarget::relative_detector_id(2), {GateTarget::z(1)}},
+        }));
 }
 
 TEST(detector_slice_set, big_loop_seeking) {
@@ -79,19 +83,23 @@ TEST(detector_slice_set, big_loop_seeking) {
         }
     )CIRCUIT");
 
-    uint64_t inner = 10*100*1000 + 1;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner*10000ULL*50ULL + 1ULL);
+    uint64_t inner = 10 * 100 * 1000 + 1;
+    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 50ULL + 1ULL);
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
-    ASSERT_EQ(slice_set.slices, (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
-        {DemTarget::relative_detector_id(inner*10000ULL*50ULL + 1ULL), {GateTarget::y(0)}},
-    }));
+    ASSERT_EQ(
+        slice_set.slices,
+        (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
+            {DemTarget::relative_detector_id(inner * 10000ULL * 50ULL + 1ULL), {GateTarget::y(0)}},
+        }));
 
-    slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner*10000ULL*25ULL + 1000ULL*100ULL*10ULL);
+    slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL);
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
-    ASSERT_EQ(slice_set.slices, (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
-        {DemTarget::relative_detector_id(inner*10000ULL*25ULL + 1000ULL*100ULL*10ULL), {GateTarget::x(1)}},
-        {DemTarget::observable_id(5), {GateTarget::x(1)}},
-    }));
+    ASSERT_EQ(
+        slice_set.slices,
+        (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
+            {DemTarget::relative_detector_id(inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL), {GateTarget::x(1)}},
+            {DemTarget::observable_id(5), {GateTarget::x(1)}},
+        }));
 }
 
 TEST(detector_slice_set_text_diagram, repetition_code) {
@@ -172,7 +180,9 @@ TEST(detector_slice_set_svg_diagram, surface_code) {
     auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 7);
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
-    ASSERT_EQ("\n" + ss.str(), u8R"SVG(
+    ASSERT_EQ(
+        "\n" + ss.str(),
+        u8R"SVG(
 <svg viewBox="0 0 77.2548 122.51" xmlns="http://www.w3.org/2000/svg">
 <path d="M38.6274,16 61.2548,38.6274 16,38.6274 Z" stroke="none" fill-opacity="0.75" fill="#AAAAAA" />
 <defs>

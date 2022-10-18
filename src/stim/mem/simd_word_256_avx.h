@@ -118,8 +118,8 @@ struct bitword<256> {
             if (k & shift) {
                 continue;
             }
-            bitword<256>& x = data[stride * k];
-            bitword<256>& y = data[stride * (k + shift)];
+            bitword<256> &x = data[stride * k];
+            bitword<256> &y = data[stride * (k + shift)];
             bitword<256> a = x & mask;
             bitword<256> b = x & ~mask;
             bitword<256> c = y & mask;

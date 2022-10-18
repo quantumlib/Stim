@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include "stim/dem/detector_error_model_instruction.pybind.h"
-#include "stim/dem/detector_error_model_target.pybind.h"
+
 #include "stim/dem/detector_error_model.pybind.h"
+#include "stim/dem/detector_error_model_target.pybind.h"
 #include "stim/py/base.pybind.h"
 
 using namespace stim;
@@ -106,9 +107,7 @@ pybind11::class_<ExposedDemInstruction> stim_pybind::pybind_detector_error_model
             .data());
 }
 void stim_pybind::pybind_detector_error_model_instruction_methods(
-    pybind11::module &m,
-    pybind11::class_<ExposedDemInstruction> &c) {
-
+    pybind11::module &m, pybind11::class_<ExposedDemInstruction> &c) {
     c.def(
         pybind11::init(
             [](const char *type, const std::vector<double> &arguments, const std::vector<pybind11::object> &targets) {

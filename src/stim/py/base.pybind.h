@@ -23,8 +23,8 @@
 #include <random>
 
 #include "stim/circuit/circuit.h"
-#include "stim/io/stim_data_formats.h"
 #include "stim/cmd/command_help.h"
+#include "stim/io/stim_data_formats.h"
 
 namespace stim_pybind {
 

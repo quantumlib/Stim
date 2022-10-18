@@ -14,12 +14,12 @@
 
 #include "stim/cmd/command_diagram.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
-#include "stim/io/raii_file.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
-#include "command_help.h"
-#include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/io/raii_file.h"
 
 using namespace stim;
 
@@ -61,17 +61,20 @@ int stim::command_diagram(int argc, const char **argv) {
                 throw std::invalid_argument("--tick isn't used by timeline-text");
             }
             break;
-        } case TIMELINE_SVG: {
+        }
+        case TIMELINE_SVG: {
             if (tick != -1) {
                 throw std::invalid_argument("--tick isn't used by timeline-svg");
             }
             break;
-        } case DETECTOR_SLICE_TEXT: {
+        }
+        case DETECTOR_SLICE_TEXT: {
             if (tick == -1) {
                 throw std::invalid_argument("detector-slice-text requires --tick");
             }
             break;
-        } case DETECTOR_SLICE_SVG: {
+        }
+        case DETECTOR_SLICE_SVG: {
             if (tick == -1) {
                 throw std::invalid_argument("detector-slice-text requires --tick");
             }
@@ -88,16 +91,20 @@ int stim::command_diagram(int argc, const char **argv) {
         case TIMELINE_TEXT: {
             out << stim_draw_internal::DiagramTimelineAsciiDrawer::make_diagram(circuit);
             break;
-        } case TIMELINE_SVG: {
+        }
+        case TIMELINE_SVG: {
             stim_draw_internal::DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
             break;
-        } case DETECTOR_SLICE_TEXT: {
+        }
+        case DETECTOR_SLICE_TEXT: {
             out << stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);
             break;
-        } case DETECTOR_SLICE_SVG: {
+        }
+        case DETECTOR_SLICE_SVG: {
             stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick).write_svg_diagram_to(out);
             break;
-        } default: {
+        }
+        default: {
             throw std::invalid_argument("Unknown type");
         }
     }
@@ -110,8 +117,7 @@ SubCommandHelp stim::command_diagram_help() {
     result.subcommand_name = "diagram";
     result.description = "Produces various kinds of diagrams.";
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example_circuit.stim
             H 0
             CNOT 0 1
@@ -122,8 +128,7 @@ SubCommandHelp stim::command_diagram_help() {
             q0: -H-@-
                    |
             q1: ---X-
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--remove_noise",

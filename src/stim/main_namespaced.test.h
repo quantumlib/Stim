@@ -24,6 +24,6 @@ std::string run_captured_stim_main(std::vector<const char*> flags, const char* s
 std::string trim(std::string text);
 bool matches(std::string actual, std::string pattern);
 
-}
+}  // namespace stim
 
 #endif

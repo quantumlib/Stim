@@ -16,8 +16,8 @@
 
 #include "gtest/gtest.h"
 
-#include "stim/test_util.test.h"
 #include "stim/mem/simd_word.test.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 
@@ -206,7 +206,8 @@ TEST_EACH_WORD_SIZE_W(simd_bit_table, random, {
     t = t.transposed();
     ASSERT_NE(t[89], simd_bits<W>(100));
     ASSERT_EQ(t[90], simd_bits<W>(100));
-    ASSERT_NE(simd_bit_table<W>::random(10, 10, SHARED_TEST_RNG()), simd_bit_table<W>::random(10, 10, SHARED_TEST_RNG()));
+    ASSERT_NE(
+        simd_bit_table<W>::random(10, 10, SHARED_TEST_RNG()), simd_bit_table<W>::random(10, 10, SHARED_TEST_RNG()));
 })
 
 TEST_EACH_WORD_SIZE_W(simd_bit_table, slice_maj, {

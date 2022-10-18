@@ -45,6 +45,6 @@ namespace stim_pybind {
 pybind11::class_<CircuitInstruction> pybind_circuit_instruction(pybind11::module &m);
 void pybind_circuit_instruction_methods(pybind11::module &m, pybind11::class_<CircuitInstruction> &c);
 
-}
+}  // namespace stim_pybind
 
 #endif

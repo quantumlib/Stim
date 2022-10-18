@@ -14,10 +14,10 @@
 
 #include "stim/cmd/command_repl.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/tableau_simulator.h"
-#include "command_help.h"
 
 using namespace stim;
 
@@ -38,8 +38,7 @@ SubCommandHelp stim::command_repl_help() {
         results to stdout.
     )PARAGRAPH");
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> stim repl
             ... M 0
             0
@@ -60,8 +59,7 @@ SubCommandHelp stim::command_repl_help() {
             11
             00
             11
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     return result;
 }

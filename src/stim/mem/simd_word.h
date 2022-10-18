@@ -34,10 +34,10 @@ namespace stim {
 template <size_t bit_size>
 struct bitword;
 
-}
+}  // namespace stim
 
-#include "stim/mem/simd_word_256_avx.h"
 #include "stim/mem/simd_word_128_sse.h"
+#include "stim/mem/simd_word_256_avx.h"
 #include "stim/mem/simd_word_64_std.h"
 
 namespace stim {
@@ -49,7 +49,7 @@ constexpr size_t MAX_BITWORD_WIDTH = 128;
 constexpr size_t MAX_BITWORD_WIDTH = 64;
 #endif
 
-    typedef bitword<MAX_BITWORD_WIDTH> simd_word;
-}
+typedef bitword<MAX_BITWORD_WIDTH> simd_word;
+}  // namespace stim
 
 #endif

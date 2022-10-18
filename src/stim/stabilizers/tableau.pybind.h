@@ -16,14 +16,14 @@
 #define _STIM_STABILIZERS_TABLEAU_PYBIND_H
 
 #include <pybind11/pybind11.h>
-#include "stim/stabilizers/tableau.h"
 
+#include "stim/stabilizers/tableau.h"
 
 namespace stim_pybind {
 
 pybind11::class_<stim::Tableau> pybind_tableau(pybind11::module &m);
 void pybind_tableau_methods(pybind11::module &m, pybind11::class_<stim::Tableau> &c);
 
-}
+}  // namespace stim_pybind
 
 #endif

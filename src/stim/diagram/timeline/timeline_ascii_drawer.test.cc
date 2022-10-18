@@ -15,9 +15,10 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 
 #include "gtest/gtest.h"
+
 #include "stim/gen/circuit_gen_params.h"
-#include "stim/gen/gen_surface_code.h"
 #include "stim/gen/gen_rep_code.h"
+#include "stim/gen/gen_surface_code.h"
 
 using namespace stim;
 using namespace stim_draw_internal;

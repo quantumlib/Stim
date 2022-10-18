@@ -39,7 +39,6 @@ RaiiFile optional_py_path_to_raii_file(const pybind11::object &obj, const char *
 
 pybind11::object dem_sampler_py_sample(
     DemSampler &self, size_t shots, bool bit_packed, bool return_errors, pybind11::object &recorded_errors_to_replay) {
-
     self.set_min_stripes(shots);
 
     bool replay = !recorded_errors_to_replay.is_none();
@@ -111,8 +110,7 @@ pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m
             .data());
 }
 
-void stim_pybind::pybind_dem_sampler_methods(
-    pybind11::module &m, pybind11::class_<stim::DemSampler> &c) {
+void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::class_<stim::DemSampler> &c) {
     c.def(
         "sample",
         &dem_sampler_py_sample,

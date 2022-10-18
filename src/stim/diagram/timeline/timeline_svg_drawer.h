@@ -20,10 +20,10 @@
 #include <iostream>
 
 #include "stim/circuit/circuit.h"
-#include "stim/diagram/lattice_map.h"
-#include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/ascii_diagram.h"
+#include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/gate_data_svg.h"
+#include "stim/diagram/lattice_map.h"
 
 namespace stim_draw_internal {
 
@@ -64,13 +64,15 @@ struct DiagramTimelineSvgDrawer {
     void draw_swap_control(float cx, float cy);
     void draw_iswap_control(float cx, float cy, bool inverse);
     void draw_generic_box(float cx, float cy, const std::string &text, stim::ConstPointerRange<double> end_args);
-    void draw_two_qubit_gate_end_point(float cx, float cy, const std::string &type, stim::ConstPointerRange<double> args);
+    void draw_two_qubit_gate_end_point(
+        float cx, float cy, const std::string &type, stim::ConstPointerRange<double> args);
     void draw_rec(float cx, float cy);
 
     void do_resolved_operation(const ResolvedTimelineOperation &op);
     void do_tick();
     void do_two_qubit_gate_instance(const ResolvedTimelineOperation &op);
-    void do_feedback(const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
+    void do_feedback(
+        const std::string &gate, const stim::GateTarget &qubit_target, const stim::GateTarget &feedback_target);
     void do_single_qubit_gate_instance(const ResolvedTimelineOperation &op);
     void do_multi_qubit_gate_with_pauli_targets(const ResolvedTimelineOperation &op);
     void do_mpp(const ResolvedTimelineOperation &op);
@@ -81,8 +83,6 @@ struct DiagramTimelineSvgDrawer {
     void do_observable_include(const ResolvedTimelineOperation &op);
 };
 
-
-
-}
+}  // namespace stim_draw_internal
 
 #endif
