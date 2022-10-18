@@ -72,7 +72,14 @@ void SubCommandHelp::write_help(std::ostream &out) const {
     }
     out << "\n\n";
     out << "DESCRIPTION\n";
-    out << "    " << description << "\n\n";
+    out << "    ";
+    for (char c : description) {
+        out << c;
+        if (c == '\n') {
+            out << "    ";
+        }
+    }
+    out << "\n\n";
     out << "OPTIONS\n";
     for (const auto &f : flags_copy) {
         out << "    " << f.flag_name << "\n        ";

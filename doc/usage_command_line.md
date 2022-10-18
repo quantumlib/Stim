@@ -11,7 +11,7 @@
 - [stim repl](#repl)
 - [stim sample](#sample)
 - [stim sample_dem](#sample_dem)
-## Modes
+## Commands
 
 <a name="analyze_errors"></a>
 ### stim analyze_errors
@@ -549,44 +549,107 @@ EXAMPLES
 <a name="explain_errors"></a>
 ### stim explain_errors
 
-*Describes how detector error model errors correspond to circuit errors.*
+```
+NAME
+    stim explain_errors
 
-Takes a circuit on stdin, and optionally a detector error model file containing the errors to match on `--dem_filter`.
-Iterates over the circuit, recording which circuit noise processes violate which combinations of detectors and
-observables.
-In other words, matches circuit errors to detector error model (dem) errors.
-If a filter is specified, matches to dem errors not in the filter are discarded.
-Then outputs, for each dem error, that dem error and which circuit errors cause it.
+SYNOPSIS
+    stim explain_errors \
+        [--dem_filter filepath] \
+        [--in filepath] \
+        [--out filepath] \
+        [--single]
 
-stdin: The circuit to look for noise processes in, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
+DESCRIPTION
+    Find circuit errors that produce certain detection events.
+    
+    Note that this command does not attempt to explain detection events
+    by using multiple errors. This command can only tell you how to
+    produce a set of detection events if they correspond to a specific
+    single physical error annotated into the circuit.
+    
+    If you need to explain a detection event set using multiple errors,
+    use a decoder such as pymatching to find the set of single detector
+    error model errors that are needed and then use this command to
+    convert those specific errors into circuit errors.
+    
 
-stdout: A human readable description of dem errors that were found, with associated circuit error data.
+OPTIONS
+    --dem_filter
+        Specifies a detector error model to use as a filter.
+        
+        If `--dem_filter` isn't specified, an explanation of every single
+        set of symptoms that can be produced by the circuit.
+        
+        If `--dem_filter` is specified, only explanations of the error
+        mechanisms present in the filter will be output. This is useful when
+        you are interested in a specific set of detection events.
+        
+        The filter is specified as a detector error model file. See
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
+        
 
-- Examples:
+    --in
+        Chooses the stim circuit file to read the explanatory circuit from.
+        
+        By default, the circuit is read from stdin. When `--in $FILEPATH` is
+        specified, the circuit is instead read from the file at $FILEPATH.
+        
+        The input should be a stim circuit. See:
+        https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md
+        
 
-    ```
-    >>> stim gen --code surface_code --task rotated_memory_z --distance 5 --rounds 10 --after_clifford_depolarization 0.001 > tmp.stim
-    >>> echo "error(1) D97 D98 D102 D103" > tmp.dem
-    >>> stim explain_errors --in tmp.stim --dem_filter tmp.dem
-    ExplainedError {
-        dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
-        CircuitErrorLocation {
-            flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
-            Circuit location stack trace:
-                (after 31 TICKs)
-                at instruction #89 (a REPEAT 0 block) in the circuit
-                after 3 completed iterations
-                at instruction #10 (DEPOLARIZE2) in the REPEAT block
-                at targets #9 to #10 of the instruction
-                resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
+    --out
+        Chooses where to write the explanations to.
+        
+        By default, the output is written to stdout. When `--out $FILEPATH`
+        is specified, the output is instead written to the file at $FILEPATH.
+        
+        The output is in an arbitrary semi-human-readable format.
+        
+
+    --single
+        Explain using a single simple error instead of all possible errors.
+        
+        When `--single` isn't specified, every single circuit error that
+        produces a specific detector error model is output as a possible
+        explanation of that error.
+        
+        When `--single` is specified, only the simplest circuit error is
+        output. The "simplest" error is chosen by using heuristics such as
+        "has fewer Pauli terms" and "happens earlier".
+        
+
+EXAMPLES
+    Example #1
+        >>> stim gen \
+            --code surface_code \
+            --task rotated_memory_z \
+            --distance 5 \
+            --rounds 10 \
+            --after_clifford_depolarization 0.001 \
+            > example.stim
+        >>> echo "error(1) D97 D102" > example.dem
+        
+        >>> stim explain_errors \
+            --single \
+            --in example.stim \
+            --dem_filter example.dem
+        ExplainedError {
+            dem_error_terms: D97[coords 4,6,4] D102[coords 2,8,4]
+            CircuitErrorLocation {
+                flipped_pauli_product: Z36[coords 3,7]
+                Circuit location stack trace:
+                    (after 25 TICKs)
+                    at instruction #83 (a REPEAT 9 block) in the circuit
+                    after 2 completed iterations
+                    at instruction #12 (DEPOLARIZE2) in the REPEAT block
+                    at targets #3 to #4 of the instruction
+                    resolving to DEPOLARIZE2(0.001) 46[coords 2,8] 36[coords 3,7]
+            }
         }
-    }
-    ```
-
-Flags used with this mode:
-- [--dem_filter](#--dem_filter)
-- [--in](#--in)
-- [--out](#--out)
+        
+```
 
 <a name="gen"></a>
 ### stim gen
@@ -1119,9 +1182,15 @@ Flags used with this mode:
 - <a name="--dem_filter"></a>**`--dem_filter`**
     Specifies a detector error model to use as a filter.
     
-    Only details relevant to error mechanisms that appear in this model will be included in the output.
+    If `--dem_filter` isn't specified, an explanation of every single
+    set of symptoms that can be produced by the circuit.
     
-    The argument must be a filepath leading to a [stim detector error model format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
+    If `--dem_filter` is specified, only explanations of the error
+    mechanisms present in the filter will be output. This is useful when
+    you are interested in a specific set of detection events.
+    
+    The filter is specified as a detector error model file. See
+    https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md
     
     
 - <a name="--distance"></a>**`--distance`**
@@ -1323,7 +1392,15 @@ Flags used with this mode:
     
     
 - <a name="--single"></a>**`--single`**
-    Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
+    Explain using a single simple error instead of all possible errors.
+    
+    When `--single` isn't specified, every single circuit error that
+    produces a specific detector error model is output as a possible
+    explanation of that error.
+    
+    When `--single` is specified, only the simplest circuit error is
+    output. The "simplest" error is chosen by using heuristics such as
+    "has fewer Pauli terms" and "happens earlier".
     
     
 - <a name="--skip_reference_sample"></a>**`--skip_reference_sample`**

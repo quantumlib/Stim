@@ -27,6 +27,7 @@
 #include "stim/stabilizers/tableau.h"
 #include "stim/cmd/command_analyze_errors.h"
 #include "command_detect.h"
+#include "command_explain_errors.h"
 
 using namespace stim;
 
@@ -226,44 +227,6 @@ stdout (or --out): The detection event data is written here.
         },
     };
 
-    modes["explain_errors"] = CommandLineSingleModeData{
-        "Describes how detector error model errors correspond to circuit errors.",
-        R"PARAGRAPH(
-Takes a circuit on stdin, and optionally a detector error model file containing the errors to match on `--dem_filter`.
-Iterates over the circuit, recording which circuit noise processes violate which combinations of detectors and
-observables.
-In other words, matches circuit errors to detector error model (dem) errors.
-If a filter is specified, matches to dem errors not in the filter are discarded.
-Then outputs, for each dem error, that dem error and which circuit errors cause it.
-
-stdin: The circuit to look for noise processes in, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-
-stdout: A human readable description of dem errors that were found, with associated circuit error data.
-
-- Examples:
-
-    ```
-    >>> stim gen --code surface_code --task rotated_memory_z --distance 5 --rounds 10 --after_clifford_depolarization 0.001 > tmp.stim
-    >>> echo "error(1) D97 D98 D102 D103" > tmp.dem
-    >>> stim explain_errors --in tmp.stim --dem_filter tmp.dem
-    ExplainedError {
-        dem_error_terms: D97[coords 4,6,0] D98[coords 6,6,0] D102[coords 2,8,0] D103[coords 4,8,0]
-        CircuitErrorLocation {
-            flipped_pauli_product: Y37[coords 4,6]*Y36[coords 3,7]
-            Circuit location stack trace:
-                (after 31 TICKs)
-                at instruction #89 (a REPEAT 0 block) in the circuit
-                after 3 completed iterations
-                at instruction #10 (DEPOLARIZE2) in the REPEAT block
-                at targets #9 to #10 of the instruction
-                resolving to DEPOLARIZE2(0.001) 37[coords 4,6] 36[coords 3,7]
-        }
-    }
-    ```
-)PARAGRAPH",
-        {"--dem_filter", "--in", "--out"},
-    };
-
     modes["m2d"] = CommandLineSingleModeData{
         "Convert measurement data into detection event data.",
         R"PARAGRAPH(
@@ -299,17 +262,6 @@ stdout: The detection event data, in the format specified by --out_format (defau
     flags["--circuit"] = R"PARAGRAPH(Specifies the circuit to use when converting measurement data to detector data.
 
 The argument must be a filepath leading to a [stim circuit format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-)PARAGRAPH";
-
-    flags["--dem_filter"] = R"PARAGRAPH(Specifies a detector error model to use as a filter.
-
-Only details relevant to error mechanisms that appear in this model will be included in the output.
-
-The argument must be a filepath leading to a [stim detector error model format file](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
-)PARAGRAPH";
-
-    flags["--single"] =
-        R"PARAGRAPH(Instead of returning every circuit error that corresponds to a dem error, only return one representative circuit error.
 )PARAGRAPH";
 
     flags["--in_format"] = R"PARAGRAPH(Specifies a data format to use when reading shot data, e.g. `01` or `r8`.
@@ -535,11 +487,16 @@ written to stdout (or the file specified by `--out`).
 
     std::vector<SubCommandHelp> sub_commands{
         command_analyze_errors_help(),
-        command_detect_help()
+        command_detect_help(),
+        command_explain_errors_help(),
     };
     for (const auto &sub_command : sub_commands) {
+        auto summary = sub_command.description;
+        if (summary.find("\n") != std::string::npos) {
+            summary = summary.substr(0, summary.find("\n"));
+        }
         modes[sub_command.subcommand_name] = CommandLineSingleModeData{
-            sub_command.description,
+            summary,
             sub_command.str_help(),
             sub_command.flag_set(),
         };
