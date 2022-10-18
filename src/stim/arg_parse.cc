@@ -39,7 +39,7 @@ std::set<std::string> SubCommandHelp::flag_set() const {
     return result;
 }
 
-void write_indented(const std::string &s, std::ostream &out, int indent) {
+void write_indented(const std::string &s, std::ostream &out, size_t indent) {
     bool was_new_line = true;
     for (char c : s) {
         if (was_new_line && c != '\n') {

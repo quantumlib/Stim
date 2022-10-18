@@ -33,6 +33,7 @@
 #include "command_repl.h"
 #include "command_sample.h"
 #include "command_sample_dem.h"
+#include "command_diagram.h"
 
 using namespace stim;
 
@@ -88,6 +89,7 @@ std::vector<SubCommandHelp> make_sub_command_help() {
     auto result = std::vector<SubCommandHelp>{
         command_analyze_errors_help(),
         command_detect_help(),
+        command_diagram_help(),
         command_explain_errors_help(),
         command_gen_help(),
         command_m2d_help(),
