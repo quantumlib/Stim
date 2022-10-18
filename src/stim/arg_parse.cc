@@ -39,6 +39,19 @@ std::set<std::string> SubCommandHelp::flag_set() const {
     return result;
 }
 
+void write_indented(const std::string &s, std::ostream &out, int indent) {
+    bool was_new_line = true;
+    for (char c : s) {
+        if (was_new_line && c != '\n') {
+            for (size_t k = 0; k < indent; k++) {
+                out.put(' ');
+            }
+        }
+        out.put(c);
+        was_new_line = c == '\n';
+    }
+}
+
 void SubCommandHelp::write_help(std::ostream &out) const {
     std::vector<SubCommandHelpFlag> flags_copy = flags;
     std::sort(flags_copy.begin(), flags_copy.end(), [](const SubCommandHelpFlag &f1, const SubCommandHelpFlag &f2) {
@@ -72,36 +85,24 @@ void SubCommandHelp::write_help(std::ostream &out) const {
     }
     out << "\n\n";
     out << "DESCRIPTION\n";
-    out << "    ";
-    for (char c : description) {
-        out << c;
-        if (c == '\n') {
-            out << "    ";
-        }
-    }
+    write_indented(description, out, 4);
     out << "\n\n";
-    out << "OPTIONS\n";
-    for (const auto &f : flags_copy) {
-        out << "    " << f.flag_name << "\n        ";
-        for (char c : f.description) {
-            out << c;
-            if (c == '\n') {
-                out << "        ";
-            }
-        }
-        out << "\n\n";
-    }
-    out << "EXAMPLES\n";
-    for (size_t k = 0; k < examples.size(); k++) {
-        if (k) {
+    if (!flags_copy.empty()) {
+        out << "OPTIONS\n";
+        for (const auto& f: flags_copy) {
+            out << "    " << f.flag_name << "\n";
+            write_indented(f.description, out, 8);
             out << "\n\n";
         }
-        out << "    Example #" << (k + 1) << "\n        ";
-        for (char c : examples[k]) {
-            out << c;
-            if (c == '\n') {
-                out << "        ";
+    }
+    if (!examples.empty()) {
+        out << "EXAMPLES\n";
+        for (size_t k = 0; k < examples.size(); k++) {
+            if (k) {
+                out << "\n\n";
             }
+            out << "    Example #" << (k + 1) << "\n";
+            write_indented(examples[k], out, 8);
         }
     }
 }

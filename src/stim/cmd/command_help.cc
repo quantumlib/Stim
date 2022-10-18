@@ -30,19 +30,11 @@
 #include "command_explain_errors.h"
 #include "command_gen.h"
 #include "command_m2d.h"
+#include "command_repl.h"
+#include "command_sample.h"
+#include "command_sample_dem.h"
 
 using namespace stim;
-
-struct CommandLineSingleModeData {
-    std::string mode_summary;
-    std::string mode_description;
-    std::set<std::string> flags;
-};
-
-struct CommandLineFlagData {
-    std::map<std::string, std::string> non_mode_help;
-    std::map<std::string, CommandLineSingleModeData> mode_help;
-};
 
 std::string stim::clean_doc_string(const char *c) {
     // Skip leading empty lines.
@@ -89,202 +81,25 @@ std::string stim::clean_doc_string(const char *c) {
     return result;
 }
 
-CommandLineFlagData make_mode_help() {
-    std::map<std::string, CommandLineSingleModeData> modes;
-    std::map<std::string, std::string> flags;
-
-    modes["help"] = CommandLineSingleModeData{
-        "Prints helpful information about stim.",
-        R"PARAGRAPH(
-Use `stim help [topic]` for information about specific topics. Available topics include:
-
-    stim help gates    # List all circuit instructions supported by stim.
-    stim help formats  # List all result formats supported by stim.
-    stim help modes    # List all tasks performed by stim.
-    stim help flags    # List all command line flags supported by stim.
-    stim help [mode]   # Print information about a mode, such as `sample` or `analyze_errors`.
-    stim help [flag]   # Print information about a command line flag, such as `--out` or `--in_format`.
-    stim help [gate]   # Print information about a circuit instruction, such as the `CNOT` gate.
-    stim help [format] # Print information about a supported result format, such as the `01` format.
-)PARAGRAPH",
-        {}};
-
-    modes["repl"] = CommandLineSingleModeData{
-        "Read-eval-print-loop mode.",
-        R"PARAGRAPH(
-Reads operations from stdin while immediately writing measurement results to stdout.
-
-stdin: A circuit to execute.
-
-stdout: Measurement results.
-
-stderr: Ignored errors encountered while parsing/simulating the circuit arriving via stdin.
-
-- Example:
-
-    ```
-    >>> stim repl
-    ... M 0
-    0
-    ... X 0
-    ... M 0
-    1
-    ... X 2 3 9
-    ... M 0 1 2 3 4 5 6 7 8 9
-    1 0 1 1 0 0 0 0 0 1
-    ... REPEAT 5 {
-    ...     R 0 1
-    ...     H 0
-    ...     CNOT 0 1
-    ...     M 0 1
-    ... }
-    00
-    11
-    11
-    00
-    11
-    ```
-)PARAGRAPH",
-        {},
-    };
-
-    modes["sample"] = CommandLineSingleModeData{
-        "Samples measurements from a circuit.",
-        R"PARAGRAPH(
-stdin: The circuit to sample from, specified using the [stim circuit file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_stim_circuit.md).
-
-stdout: The sample data.
-
-- Examples:
-
-    ```
-    >>> stim sample --shots 5
-    ... H 0
-    ... CNOT 0 1
-    ... M 0 1
-    00
-    11
-    11
-    00
-    11
-    ```
-
-    ```
-    >>> stim sample --out_format dets
-    ... X 2 3 5
-    ... M 0 1 2 3 4 5 6 7 8 9
-    shot M2 M3 M5
-    ```
-)PARAGRAPH",
-        {"--out_format", "--seed", "--in", "--out", "--skip_reference_sample", "--shots"},
-    };
-
-    modes["sample_dem"] = CommandLineSingleModeData{
-        "Samples detection events and observable flips from a detector error model.",
-        R"PARAGRAPH(
-stdin (or --in): The detector error model to sample from, specified using the [detector error model file format](https://github.com/quantumlib/Stim/blob/main/doc/file_format_dem_detector_error_model.md).
-
-stdout (or --out): The detection event data is written here.
-
-- Example:
-
-    ```bash
-    echo "error(0) D0" > example.dem
-    echo "error(0.5) D1 L0" >> example.dem
-    echo "error(1) D2 D3" >> example.dem
-    stim sample_dem \
-        --shots 5 \
-        --in example.dem \
-        --out dets.01 \
-        --out_format 01 \
-        --obs_out obs_flips.01 \
-        --obs_out_format 01 \
-        --seed 0
-    cat dets.01
-    # 0111
-    # 0011
-    # 0011
-    # 0111
-    # 0111
-    cat obs_flips.01
-    # 1
-    # 0
-    # 0
-    # 1
-    # 1
-    ```
-)PARAGRAPH",
-        {
-            "--in",
-            "--out",
-            "--out_format",
-            "--obs_out",
-            "--obs_out_format",
-            "--seed",
-            "--shots",
-            "--err_out",
-            "--err_out_format",
-            "--replay_err_in",
-            "--replay_err_in_format",
-        },
-    };
-
-    flags["--err_out"] = R"PARAGRAPH(Specifies a file to write a record of which errors occurred.
-
-This data can then be analyzed, modified, and later given to for example a --replay_err_in argument.
-)PARAGRAPH";
-
-    flags["--err_out_format"] = R"PARAGRAPH(The format to use when writing error data (e.g. b8 or 01).
-)PARAGRAPH";
-
-    flags["--replay_err_in"] = R"PARAGRAPH(Specifies a file to read error data to replay from.
-
-When replaying error information, errors are no longer sampled randomly but instead driven by the file data.
-For example, this file data could come from a previous run that wrote error data using --err_out.
-)PARAGRAPH";
-
-    flags["--replay_err_in_format"] = R"PARAGRAPH(The format to use when reading error data to replay. (e.g. b8 or 01).
-)PARAGRAPH";
-
-    flags["--in"] = R"PARAGRAPH(Specifies an input file to read from, instead of stdin.
-
-What the file is used for depends on the mode stim is executing in. For example, in `stim sample` mode the circuit to
-sample from is read from stdin (or the file specified by `--in`) whereas in `--m2d` mode the measurement data to convert
-is read from stdin (or the file specified by `--in`).
-)PARAGRAPH";
-
-    flags["--out"] = R"PARAGRAPH(Specifies an output file to read from, instead of stdout.
-
-What the output is used for depends on the mode stim is executing in. For example, in `stim gen` mode the generated circuit
-is written to stdout (or the file specified by `--out`) whereas in `stim sample` mode the sampled measurement data is
-written to stdout (or the file specified by `--out`).
-)PARAGRAPH";
-
-    std::vector<SubCommandHelp> sub_commands{
+std::vector<SubCommandHelp> make_sub_command_help() {
+    SubCommandHelp help_help;
+    help_help.subcommand_name = "help";
+    help_help.description = "Prints helpful information about using stim.";
+    auto result = std::vector<SubCommandHelp>{
         command_analyze_errors_help(),
         command_detect_help(),
         command_explain_errors_help(),
         command_gen_help(),
         command_m2d_help(),
+        command_repl_help(),
+        command_sample_help(),
+        command_sample_dem_help(),
+        help_help,
     };
-    for (const auto &sub_command : sub_commands) {
-        auto summary = sub_command.description;
-        if (summary.find("\n") != std::string::npos) {
-            summary = summary.substr(0, summary.find("\n"));
-        }
-        modes[sub_command.subcommand_name] = CommandLineSingleModeData{
-            summary,
-            sub_command.str_help(),
-            sub_command.flag_set(),
-        };
-        for (const auto& f: sub_command.flags) {
-            if (flags.find(f.flag_name) == flags.end()) {
-                flags[f.flag_name] = f.description;
-            }
-        }
-    }
-
-    return {flags, modes};
+    std::sort(result.begin(), result.end(), [](const SubCommandHelp &a, const SubCommandHelp &b) {
+        return a.subcommand_name < b.subcommand_name;
+    });
+    return result;
 }
 
 std::string upper(const std::string &val) {
@@ -590,71 +405,16 @@ std::string generate_per_gate_help_markdown(const Gate &alt_gate, int indent, bo
     return out.settled;
 }
 
-std::string generate_per_mode_help(
-    const std::string &mode_name, const CommandLineSingleModeData &data) {
-    std::stringstream out;
-
-    if (data.mode_description.find("SYNOPSIS\n") != std::string::npos) {
-        return data.mode_description;
-    }
-
-    out << "### stim " << mode_name << "\n\n";
-    out << "*" << data.mode_summary << "*\n";
-    out << data.mode_description;
-    if (!data.flags.empty()) {
-        out << "\nFlags used with this mode:\n";
-        for (const auto &e : data.flags) {
-            out << "    " << e << "\n";
-        }
-    }
-
-    return out.str();
-}
-
-std::string generate_per_mode_markdown(
-    const std::string &mode_name, const CommandLineSingleModeData &data, int indent, bool anchor) {
+std::string generate_subcommand_markdown(const SubCommandHelp &data, int indent, bool anchor) {
     Acc out;
     out.indent = indent;
     if (anchor) {
-        out << "<a name=\"" << mode_name << "\"></a>\n";
+        out << "<a name=\"" << data.subcommand_name << "\"></a>\n";
     }
-    if (data.mode_description.find("SYNOPSIS\n") != std::string::npos) {
-        out << "### stim " << mode_name << "\n\n";
-        out << "```\n";
-        out << data.mode_description << "\n";
-        out << "```\n";
-
-        out.flush();
-        return out.settled;
-    }
-
-    out << "### stim " << mode_name << "\n\n";
-    out << "*" << data.mode_summary << "*\n";
-    out << data.mode_description;
-    if (!data.flags.empty()) {
-        out << "\nFlags used with this mode:\n";
-        for (const auto &e : data.flags) {
-            if (anchor) {
-                out << "- [" << e << "](#" << e << ")\n";
-            } else {
-                out << "    " << e << "\n";
-            }
-        }
-    }
-
-    out.flush();
-    return out.settled;
-}
-
-std::string generate_per_flag_markdown(const std::string &flag_name, const std::string &desc, int indent, bool anchor) {
-    Acc out;
-    out.indent = indent;
-    if (anchor) {
-        out << "<a name=\"" << flag_name << "\"></a>";
-    }
-    out << "**`" << flag_name << "`**\n";
-    out << desc;
-    out << "\n";
+    out << "### stim " << data.subcommand_name << "\n\n";
+    out << "```\n";
+    out << data.str_help();
+    out << "```\n";
 
     out.flush();
     return out.settled;
@@ -739,61 +499,56 @@ than 0s, so you use a sparse format.
     return result;
 }
 
-std::map<std::string, std::string> generate_flag_help_markdown() {
+std::map<std::string, std::string> generate_command_help_topics() {
     std::map<std::string, std::string> result;
 
-    CommandLineFlagData data = make_mode_help();
+    auto sub_command_data = make_sub_command_help();
 
-    std::stringstream markdown;
-
-    markdown << "# Stim command line reference\n\n";
-    markdown << "## Index\n\n";
-    for (const auto &kv : data.mode_help) {
-        markdown << "- [stim " << kv.first << "](#" << kv.first << ")\n";
+    for (const auto &subcommand : sub_command_data) {
+        result[upper(subcommand.subcommand_name)] = subcommand.str_help();
     }
 
-    markdown << "## Commands\n\n";
-    for (const auto &kv : data.mode_help) {
-        std::string key = upper(kv.first);
-        while (true) {
-            result[key] = generate_per_mode_help(kv.first, kv.second);
-            if (key[0] == '-') {
-                key.erase(key.begin());
-            } else {
-                break;
-            }
+    {
+        std::stringstream markdown;
+        markdown << "# Stim command line reference\n\n";
+        markdown << "## Index\n\n";
+        for (const auto &subcommand : sub_command_data) {
+            markdown << "- [stim " << subcommand.subcommand_name << "](#" << subcommand.subcommand_name << ")\n";
         }
-        markdown << generate_per_mode_markdown(kv.first, kv.second, 0, true) << "\n";
-    }
-    markdown << "## Flags\n\n";
-    for (const auto &kv : data.non_mode_help) {
-        std::string key = upper(kv.first);
-        while (true) {
-            result[key] = generate_per_flag_markdown(kv.first, kv.second, 0, false);
-            if (key[0] == '-') {
-                key.erase(key.begin());
-            } else {
-                break;
-            }
+        markdown << "## Commands\n\n";
+        for (const auto &subcommand : sub_command_data) {
+            markdown << generate_subcommand_markdown(subcommand, 0, true) << "\n";
         }
-        markdown << "- " << generate_per_flag_markdown(kv.first, kv.second, 4, true) << "\n";
+        result["COMMANDS_MARKDOWN"] = markdown.str();
     }
-    result["FLAGS_MARKDOWN"] = markdown.str();
 
-    std::stringstream flags;
-    flags << "Available stim commands:\n\n";
-    for (const auto &kv : data.mode_help) {
-        flags << "    stim " << kv.first << std::string(20 - kv.first.size(), ' ') << "# " << kv.second.mode_summary
-              << "\n";
+    {
+        std::stringstream commands_help;
+        commands_help << "Available stim commands:\n\n";
+        for (const auto& subcommand: sub_command_data) {
+            commands_help << "    stim " << subcommand.subcommand_name
+                         << std::string(20 - subcommand.subcommand_name.size(),
+                                        ' ');
+            auto summary = subcommand.description;
+            auto n = summary.find('\n');
+            if (n != std::string::npos) {
+                summary = summary.substr(0, n);
+            }
+            commands_help << "# " << summary << "\n";
+        }
+        result["COMMANDS"] = commands_help.str();
     }
-    result["MODES"] = flags.str();
-    flags << "\nOther flags:\n";
-    for (const auto &kv : data.non_mode_help) {
-        flags << "    " << kv.first << "\n";
-    }
-    result["FLAGS"] = flags.str();
 
-    result[""] = result["MODES"] + "\n" + data.mode_help["help"].mode_description;
+    result[""] = result["COMMANDS"] + R"PARAGRAPH(
+Use `stim help [topic]` for help on specific topics. Available topics include:
+
+    stim help commands  # List all tasks performed by stim.
+    stim help gates     # List all circuit instructions supported by stim.
+    stim help formats   # List all result formats supported by stim.
+    stim help [command] # Print information about a command, e.g. "sample".
+    stim help [gate]    # Print information about a gate, e.g. "CNOT".
+    stim help [format]  # Print information about a result format, e.g. "01".
+)PARAGRAPH";
 
     return result;
 }
@@ -847,7 +602,7 @@ std::map<std::string, std::string> generate_gate_help_markdown() {
 std::string stim::help_for(std::string help_key) {
     auto m1 = generate_gate_help_markdown();
     auto m2 = generate_format_help_markdown();
-    auto m3 = generate_flag_help_markdown();
+    auto m3 = generate_command_help_topics();
 
     auto key = upper(help_key);
     auto p = m1.find(key);

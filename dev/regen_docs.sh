@@ -14,4 +14,4 @@ python glue/python/generate_stub_file.py -dev > glue/python/src/stim/__init__.py
 python glue/python/generate_stub_file.py -dev > doc/stim.pyi
 stim help gates_markdown > doc/gates.md
 stim help formats_markdown > doc/result_formats.md
-stim help flags_markdown > doc/usage_command_line.md
+stim help commands_markdown > doc/usage_command_line.md
