@@ -15,12 +15,14 @@ import numpy as np
 import stim
 
 from sinter._anon_task_stats import AnonTaskStats
+from sinter._decoding_fusion_blossom import decode_using_fusion_blossom
 from sinter._decoding_internal import decode_using_internal_decoder
 from sinter._decoding_pymatching import decode_using_pymatching
 
 
 DECODER_METHODS: Dict[str, Callable] = {
     'pymatching': decode_using_pymatching,
+    'fusion_blossom': decode_using_fusion_blossom,
     'internal': functools.partial(decode_using_internal_decoder,
                                   use_correlated_decoding=False),
     'internal_correlated': functools.partial(decode_using_internal_decoder,
