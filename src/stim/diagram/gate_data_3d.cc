@@ -114,7 +114,7 @@ std::shared_ptr<GltfBuffer<3>> make_circle_loop(size_t n, float r, bool repeat_b
     std::vector<Coord<3>> vertices;
     vertices.push_back({0, r, 0});
     for (size_t k = 1; k < n; k++) {
-        float t = k * M_PI * 2 / n;
+        float t = k * 3.14159265359f * 2 / n;
         vertices.push_back({0, cosf(t) * r, sinf(t) * r});
     }
     if (repeat_boundary) {
