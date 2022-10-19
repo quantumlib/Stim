@@ -35,7 +35,8 @@ void DiagramTimeline3DDrawer::do_feedback(
     } else if (feedback_target.is_measurement_record_target()) {
         key = gate + ":REC";
     }
-    diagram_out.elements.push_back({key, mq2xyz(cur_moment, qubit_target.qubit_value())});
+    auto center = mq2xyz(cur_moment, qubit_target.qubit_value());
+    diagram_out.elements.push_back({key, center});
 }
 
 void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, const std::string &type) {
@@ -89,7 +90,7 @@ void DiagramTimeline3DDrawer::start_next_moment() {
     cur_moment += 1;
     cur_moment_is_used = false;
     cur_moment_used_flags.clear();
-    cur_moment_used_flags.resize(num_qubits);
+    cur_moment_used_flags.resize(num_qubits, false);
 }
 
 void DiagramTimeline3DDrawer::do_tick() {
@@ -155,14 +156,18 @@ void DiagramTimeline3DDrawer::do_single_qubit_gate_instance(const ResolvedTimeli
 
 void DiagramTimeline3DDrawer::reserve_drawing_room_for_targets(ConstPointerRange<GateTarget> targets) {
     bool already_used = false;
-    for (auto q : targets) {
-        already_used |= cur_moment_used_flags[q.qubit_value()];
+    for (auto t : targets) {
+        if (t.is_x_target() || t.is_y_target() || t.is_z_target() || t.is_qubit_target()) {
+            already_used |= cur_moment_used_flags[t.qubit_value()];
+        }
     }
     if (already_used) {
         start_next_moment();
     }
-    for (auto q : targets) {
-        cur_moment_used_flags[q.qubit_value()] = true;
+    for (auto t : targets) {
+        if (t.is_x_target() || t.is_y_target() || t.is_z_target() || t.is_qubit_target()) {
+            cur_moment_used_flags[t.qubit_value()] = true;
+        }
     }
 }
 
@@ -322,7 +327,7 @@ void DiagramTimeline3DDrawer::do_resolved_operation(const ResolvedTimelineOperat
 
 DiagramTimeline3DDrawer::DiagramTimeline3DDrawer(size_t num_qubits, bool has_ticks)
     : num_qubits(num_qubits), has_ticks(has_ticks) {
-    cur_moment_used_flags.resize(num_qubits);
+    cur_moment_used_flags.resize(num_qubits, false);
 }
 
 void add_used_qubits(const Circuit &circuit, std::set<uint64_t> &out) {
