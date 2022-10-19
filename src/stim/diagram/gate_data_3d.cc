@@ -330,6 +330,14 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         f("SQRT_YY_DAG", 12, 7),
         f("SQRT_ZZ_DAG", 12, 8),
 
+        f("X:REC", 13, 6),
+        f("Y:REC", 13, 7),
+        f("Z:REC", 13, 8),
+
+        f("X:SWEEP", 14, 6),
+        f("Y:SWEEP", 14, 7),
+        f("Z:SWEEP", 14, 8),
+
         f("I", 0, 6),
         f("C_XYZ", 1, 9),
         f("C_ZYX", 2, 9),
@@ -337,6 +345,9 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         f("DEPOLARIZE2", 4, 9),
         f("ISWAP", 5, 9),
         f("ISWAP_DAG", 6, 9),
+        f("SWAP", 7, 9),
+        f("PAULI_CHANNEL_1", 8, 9),
+        f("PAULI_CHANNEL_2", 9, 9),
 
         make_x_control_mesh(),
         make_y_control_mesh(),

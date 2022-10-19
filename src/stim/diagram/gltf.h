@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "base64.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/json_obj.h"
 #include "stim/mem/pointer_range.h"
@@ -74,7 +75,7 @@ struct GltfBuffer {
         std::stringstream ss;
         ss << "data:application/octet-stream;base64,";
         size_t n = vertices.size() * sizeof(Coord<DIM>);
-        write_base64((const char *)(const void *)vertices.data(), n, ss);
+        write_data_as_base64_to((const char *)(const void *)vertices.data(), n, ss);
         return std::map<std::string, JsonObj>{
             {"name", id.name},
             {"uri", ss.str()},

@@ -27,6 +27,8 @@ std::mt19937_64 &SHARED_TEST_RNG();
 
 std::string rewind_read_close(FILE *f);
 
+std::string resolve_test_file(const std::string &name);
+
 struct RaiiTempNamedFile {
     int descriptor;
     std::string path;

@@ -19,6 +19,7 @@
 #include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model.pybind.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
@@ -37,7 +38,6 @@
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
-#include "stim/cmd/command_diagram.pybind.h"
 
 #define xstr(s) str(s)
 #define str(s) #s

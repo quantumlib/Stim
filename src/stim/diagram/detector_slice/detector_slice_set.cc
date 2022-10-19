@@ -245,66 +245,60 @@ float pick_characteristic_distance(const std::set<uint64_t> &used, const std::ve
     return result;
 }
 
-struct FlattenedCoords {
-    std::vector<Coord<2>> qubit_coords;
-    std::map<uint64_t, Coord<2>> det_coords;
-    Coord<2> size;
+FlattenedCoords FlattenedCoords::from(const DetectorSliceSet &set, float desired_unit_distance) {
+    auto used = set.used_qubits();
+    FlattenedCoords result;
 
-    static FlattenedCoords from(const DetectorSliceSet &set) {
-        auto used = set.used_qubits();
-        FlattenedCoords result;
-
-        for (uint64_t q = 0; q < set.num_qubits; q++) {
-            Coord<2> c{(float)q, 0};
-            auto p = set.coordinates.find(q);
-            if (p != set.coordinates.end() && !p->second.empty()) {
-                c = flattened_2d(p->second);
-            }
-            result.qubit_coords.push_back(c);
+    for (uint64_t q = 0; q < set.num_qubits; q++) {
+        Coord<2> c{(float)q, 0};
+        auto p = set.coordinates.find(q);
+        if (p != set.coordinates.end() && !p->second.empty()) {
+            c = flattened_2d(p->second);
         }
+        result.qubit_coords.push_back(c);
+    }
 
-        for (const auto &e : set.detector_coordinates) {
-            result.det_coords.insert({e.first, flattened_2d(e.second)});
+    for (const auto &e : set.detector_coordinates) {
+        result.det_coords.insert({e.first, flattened_2d(e.second)});
+    }
+
+    float characteristic_distance = pick_characteristic_distance(used, result.qubit_coords);
+    float scale = desired_unit_distance / characteristic_distance;
+    for (auto &c : result.qubit_coords) {
+        c *= scale;
+    }
+    for (auto &e : result.det_coords) {
+        e.second *= scale;
+    }
+    if (!used.empty()) {
+        std::vector<Coord<2>> used_coords;
+        for (const auto &u : used) {
+            used_coords.push_back(result.qubit_coords[u]);
         }
-
-        float characteristic_distance = pick_characteristic_distance(used, result.qubit_coords);
-        float scale = 32 / characteristic_distance;
+        auto minmax = Coord<2>::min_max(used_coords);
+        auto offset = minmax.first;
+        offset *= -1;
+        offset.xyz[0] += 16;
+        offset.xyz[1] += 16;
         for (auto &c : result.qubit_coords) {
-            c *= scale;
+            c += offset;
+        }
+        for (auto &c : used_coords) {
+            c += offset;
         }
         for (auto &e : result.det_coords) {
-            e.second *= scale;
+            e.second += offset;
         }
-        if (!used.empty()) {
-            std::vector<Coord<2>> used_coords;
-            for (const auto &u : used) {
-                used_coords.push_back(result.qubit_coords[u]);
-            }
-            auto minmax = Coord<2>::min_max(used_coords);
-            auto offset = minmax.first;
-            offset *= -1;
-            offset.xyz[0] += 16;
-            offset.xyz[1] += 16;
-            for (auto &c : result.qubit_coords) {
-                c += offset;
-            }
-            for (auto &c : used_coords) {
-                c += offset;
-            }
-            for (auto &e : result.det_coords) {
-                e.second += offset;
-            }
-            result.size = minmax.second - minmax.first;
-            result.size.xyz[0] += 32;
-            result.size.xyz[1] += 32;
-        } else {
-            result.size.xyz[0] = 1;
-            result.size.xyz[1] = 1;
-        }
-
-        return result;
+        result.size = minmax.second - minmax.first;
+        result.size.xyz[0] += 32;
+        result.size.xyz[1] += 32;
+    } else {
+        result.size.xyz[0] = 1;
+        result.size.xyz[1] = 1;
     }
-};
+
+    return result;
+}
 
 const char *pick_color(ConstPointerRange<GateTarget> terms) {
     bool has_x = false;
@@ -388,7 +382,7 @@ void write_terms_svg_path(
 }
 
 void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
-    auto coordsys = FlattenedCoords::from(*this);
+    auto coordsys = FlattenedCoords::from(*this, 32);
 
     out << R"SVG(<svg viewBox="0 0 )SVG";
     out << coordsys.size.xyz[0];

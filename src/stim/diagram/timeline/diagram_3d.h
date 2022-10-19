@@ -26,21 +26,19 @@
 
 namespace stim_draw_internal {
 
-struct DiagramGate3DPiece {
+struct Basic3DElement {
     std::string gate_piece;
     Coord<3> center;
 };
 
-struct Diagram3D {
-    std::vector<DiagramGate3DPiece> gates;
+struct Basic3dDiagram {
+    std::vector<Basic3DElement> elements;
     std::vector<Coord<3>> line_data;
     std::vector<Coord<3>> red_line_data;
+    std::vector<Coord<3>> blue_line_data;
 
-    static Diagram3D from_circuit(const stim::Circuit &circuit);
+    GltfScene to_gltf_scene() const;
 };
-
-float min_distance(stim::ConstPointerRange<Coord<2>> points);
-GltfScene scene_from_circuit(const stim::Circuit &circuit);
 
 }  // namespace stim_draw_internal
 

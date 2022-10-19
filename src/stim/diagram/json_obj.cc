@@ -66,9 +66,13 @@ void indented_new_line(std::ostream &out, int64_t indent) {
     }
 }
 
-void JsonObj::write(std::ostream &out, int64_t indent) const {
+void JsonObj::write(std::ostream &out, bool low_precision, int64_t indent) const {
     if (type == 0) {
-        out << (double)num;
+        if (low_precision) {
+            out << (float)num;
+        } else {
+            out << (double)num;
+        }
     } else if (type == 1) {
         write_str(text, out);
     } else if (type == 2) {
@@ -117,14 +121,14 @@ void JsonObj::write(std::ostream &out, int64_t indent) const {
 std::string JsonObj::str(bool indent) const {
     std::stringstream ss;
     ss.precision(std::numeric_limits<double>::max_digits10);
-    write(ss, indent ? 0 : INT64_MIN);
+    write(ss, false, indent ? 0 : INT64_MIN);
     return ss.str();
 }
 
 std::ostream &stim_draw_internal::operator<<(std::ostream &out, const JsonObj &obj) {
     auto precision = out.precision();
     out.precision(std::numeric_limits<double>::max_digits10);
-    obj.write(out, INT64_MIN);
+    obj.write(out);
     out.precision(precision);
     return out;
 }

@@ -58,6 +58,16 @@ struct Coord {
         result *= other;
         return result;
     }
+    float norm2() const {
+        float t = 0;
+        for (size_t k = 0; k < DIM; k++) {
+            t += xyz[k] * xyz[k];
+        }
+        return t;
+    }
+    float norm() const {
+        return sqrtf(norm2());
+    }
 
     bool operator<(Coord<DIM> other) const {
         for (size_t k = 0; k < DIM; k++) {

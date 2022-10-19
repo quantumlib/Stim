@@ -1,0 +1,36 @@
+<svg viewBox="0 0 768 416"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<path d="M64,64 L736,64 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
+<path d="M64,128 L736,128 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
+<path d="M64,192 L736,192 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="192">q2</text>
+<path d="M64,256 L736,256 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="256">q3</text>
+<path d="M64,320 L736,320 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="320">q4</text>
+<rect x="80" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="96" y="64">M</text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="96" y="44">rec[0]</text>
+<path d="M168,32 L160,32 L160,384 L168,384 " stroke="black" fill="none"/>
+<text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="164" y="380">REP100</text>
+<rect x="208" y="112" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="224" y="128">M</text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="224" y="108">rec[1+iter*13]</text>
+<path d="M296,36 L288,36 L288,380 L296,380 " stroke="black" fill="none"/>
+<text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="292" y="376">REP5</text>
+<rect x="336" y="176" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="352" y="192">M</text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="352" y="172">rec[2+iter*13+iter2]</text>
+<path d="M408,36 L416,36 L416,380 L408,380 " stroke="black" fill="none"/>
+<path d="M488,36 L480,36 L480,380 L488,380 " stroke="black" fill="none"/>
+<text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="484" y="376">REP7</text>
+<path d="M544,256 L544,320 " stroke="black"/>
+<rect x="528" y="240" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="544" y="256">MPP<tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="544" y="236">rec[7+iter*13+iter2]</text>
+<rect x="528" y="304" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="544" y="320">MPP<tspan baseline-shift="sub" font-size="10">Y</tspan></text>
+<path d="M600,36 L608,36 L608,380 L600,380 " stroke="black" fill="none"/>
+<path d="M664,32 L672,32 L672,384 L664,384 " stroke="black" fill="none"/>
+</svg>
