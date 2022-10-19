@@ -2,12 +2,21 @@ import numpy as np
 import pytest
 import stim
 
-import sinter
 from sinter._collection import post_selection_mask_from_4th_coord
 from sinter._decoding import sample_decode
 
+DECODER_PACKAGES = [
+    ('pymatching', 'pymatching'),
+    ('fusion_blossom', 'fusion_blossom'),
+    ('internal', 'gqec'),
+    ('internal_correlated', 'gqec'),
+]
 
-def test_decode_using_pymatching():
+
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_decode_repetition_code(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
+
     circuit = stim.Circuit.generated('repetition_code:memory',
                                      rounds=3,
                                      distance=3,
@@ -18,14 +27,17 @@ def test_decode_using_pymatching():
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert 1 <= result.errors <= 100
     assert result.shots == 1000
 
 
-def test_pymatching_works_on_surface_code():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_decode_surface_code(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
+
     circuit = stim.Circuit.generated(
         "surface_code:rotated_memory_x",
         distance=3,
@@ -38,52 +50,14 @@ def test_pymatching_works_on_surface_code():
         circuit_path=None,
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
-        decoder="pymatching",
+        decoder=decoder,
     )
     assert 0 <= stats.errors <= 50
 
 
-def test_decode_using_internal_decoder():
-    pytest.importorskip('gqec')
-
-    circuit = stim.Circuit.generated('repetition_code:memory',
-                                     rounds=3,
-                                     distance=3,
-                                     after_clifford_depolarization=0.05)
-    result = sample_decode(
-        circuit_obj=circuit,
-        circuit_path=None,
-        dem_obj=circuit.detector_error_model(decompose_errors=True),
-        dem_path=None,
-        num_shots=1000,
-        decoder='internal',
-    )
-    assert result.discards == 0
-    assert 1 <= result.errors <= 100
-    assert result.shots == 1000
-
-
-def test_decode_using_internal_decoder_correlated():
-    pytest.importorskip('gqec')
-
-    circuit = stim.Circuit.generated('repetition_code:memory',
-                                     rounds=3,
-                                     distance=3,
-                                     after_clifford_depolarization=0.05)
-    result = sample_decode(
-        circuit_obj=circuit,
-        circuit_path=None,
-        dem_obj=circuit.detector_error_model(decompose_errors=True),
-        dem_path=None,
-        num_shots=1000,
-        decoder='internal_correlated',
-    )
-    assert result.discards == 0
-    assert 1 <= result.errors <= 100
-    assert result.shots == 1000
-
-
-def test_empty():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_empty(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit()
     result = sample_decode(
         circuit_obj=circuit,
@@ -91,14 +65,16 @@ def test_empty():
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
 
 
-def test_no_observables():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_no_observables(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
@@ -110,14 +86,16 @@ def test_no_observables():
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
 
 
-def test_invincible_observables():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_invincible_observables(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0 1
@@ -130,15 +108,16 @@ def test_invincible_observables():
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert result.errors == 0
 
 
-@pytest.mark.parametrize("offset", range(8))
-def test_observable_offsets_mod8(offset: int):
+@pytest.mark.parametrize('decoder,required_import,offset', [(a, b, c) for a, b in DECODER_PACKAGES for c in range(8)])
+def test_observable_offsets_mod8(decoder: str, required_import: str, offset: int):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         MR 0
@@ -154,14 +133,16 @@ def test_observable_offsets_mod8(offset: int):
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert result.shots == 1000
     assert 50 <= result.errors <= 150
 
 
-def test_no_detectors():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_no_detectors(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
@@ -173,13 +154,15 @@ def test_no_detectors():
         dem_obj=circuit.detector_error_model(decompose_errors=True),
         dem_path=None,
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert 50 <= result.errors <= 150
 
 
-def test_no_detectors_with_post_mask():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_no_detectors_with_post_mask(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.1) 0
         M 0
@@ -192,13 +175,15 @@ def test_no_detectors_with_post_mask():
         dem_path=None,
         post_mask=np.array([], dtype=np.uint8),
         num_shots=1000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert result.discards == 0
     assert 50 <= result.errors <= 150
 
 
-def test_post_selection():
+@pytest.mark.parametrize('decoder,required_import', DECODER_PACKAGES)
+def test_post_selection(decoder: str, required_import: str):
+    pytest.importorskip(required_import)
     circuit = stim.Circuit("""
         X_ERROR(0.6) 0
         M 0
@@ -221,7 +206,7 @@ def test_post_selection():
         dem_path=None,
         post_mask=post_selection_mask_from_4th_coord(circuit),
         num_shots=2000,
-        decoder='pymatching',
+        decoder=decoder,
     )
     assert 1050 <= result.discards <= 1350
     assert 40 <= result.errors <= 160

@@ -15,6 +15,11 @@ def decode_using_internal_decoder(*,
                                   ) -> None:
     """Use internal decoder to predict observables from detection events."""
 
+    if num_dets == 0:
+        with open(obs_predictions_b8_out_path, 'wb') as f:
+            f.write(b'\0' * (num_obs * num_shots))
+        return
+
     try:
         import gqec  # Internal python wheel.
     except ImportError as ex:
