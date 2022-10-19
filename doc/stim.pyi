@@ -1,7 +1,7 @@
 """Stim (Development Version): a fast quantum stabilizer circuit library."""
 # (This a stubs file describing the classes and methods in stim.)
 from __future__ import annotations
-from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable, Literal
+from typing import overload, TYPE_CHECKING, List, Dict, Tuple, Any, Union, Iterable
 if TYPE_CHECKING:
     import io
     import pathlib
@@ -718,14 +718,14 @@ class Circuit:
     def diagram(
         self,
         *,
-        type: Literal["timeline-text"],
+        type: 'Literal["timeline-text"]',
     ) -> Any:
         pass
     @overload
     def diagram(
         self,
         *,
-        type: Literal["detector-slice-text"],
+        type: 'Literal["detector-slice-text"]',
         tick: int,
     ) -> Any:
         pass
@@ -733,21 +733,21 @@ class Circuit:
     def diagram(
         self,
         *,
-        type: Literal["timeline-svg"],
+        type: 'Literal["timeline-svg"]',
     ) -> Any:
         pass
     @overload
     def diagram(
         self,
         *,
-        type: Literal["detector-slice-svg"],
+        type: 'Literal["detector-slice-svg"]',
         tick: int,
     ) -> Any:
         pass
     def diagram(
         self,
         *,
-        type: Union[Literal["timeline-text", "timeline-svg", "detector-slice-text", "detector-slice-svg"], str],
+        type: Union['Literal["timeline-text", "timeline-svg", "detector-slice-text", "detector-slice-svg"]', str],
         tick: Optional[int] = None,
     ) -> Any:
         """Returns a diagram of the circuit, from a variety of options.
@@ -2497,7 +2497,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
         *,
         measurements: np.ndarray,
         sweep_bits: Optional[np.ndarray] = None,
-        separate_observables: Literal[True],
+        separate_observables: 'Literal[True]',
         append_observables: bool = False,
         bit_pack_result: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:

@@ -156,9 +156,9 @@ SubCommandHelp stim::command_diagram_help() {
             input circuit.
 
             In detector-slice diagrams, `--tick` identifies which TICK is the
-            instant at which the time slice is taken. Note that TICKs are
-            zero-indexed, meaning `--tick=0` refers to the instant of
-            the first TICK in the circuit.
+            instant at which the time slice is taken. Note that `--tick=0` is
+            the very beginning of the circuit and `--tick=1` is the instant of
+            the first TICK instruction.
         )PARAGRAPH"),
     });
 
