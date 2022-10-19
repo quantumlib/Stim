@@ -6,6 +6,7 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
+constexpr uint16_t PADDING = 32;
 constexpr uint16_t CIRCUIT_START_X = 32;
 constexpr uint16_t CIRCUIT_START_Y = 32;
 constexpr uint16_t GATE_PITCH = 64;
@@ -17,11 +18,11 @@ inline void write_key_val(std::ostream &out, const char *key, const T &val) {
 }
 
 size_t DiagramTimelineSvgDrawer::m2x(size_t m) const {
-    return GATE_PITCH * m + GATE_RADIUS + GATE_RADIUS + CIRCUIT_START_X;
+    return GATE_PITCH * m + GATE_RADIUS + GATE_RADIUS + CIRCUIT_START_X + PADDING;
 }
 
 size_t DiagramTimelineSvgDrawer::q2y(size_t q) const {
-    return GATE_PITCH * q + CIRCUIT_START_Y;
+    return GATE_PITCH * q + CIRCUIT_START_Y + PADDING;
 }
 
 void DiagramTimelineSvgDrawer::do_feedback(
@@ -243,7 +244,7 @@ void DiagramTimelineSvgDrawer::do_tick() {
     if (has_ticks && cur_moment > tick_start_moment) {
         float x1 = (float)m2x(tick_start_moment);
         float x2 = (float)m2x(cur_moment + moment_width - 1);
-        float y1 = 0;
+        float y1 = PADDING;
         float y2 = (float)q2y(num_qubits);
         x1 -= GATE_PITCH * 0.4375;
         x2 += GATE_PITCH * 0.4375;
@@ -435,7 +436,7 @@ void DiagramTimelineSvgDrawer::do_start_repeat(const CircuitTimelineLoopData &lo
     }
 
     auto x = m2x(cur_moment);
-    auto y1 = 0;
+    auto y1 = PADDING;
     auto y2 = q2y(num_qubits);
     y1 += (resolver.cur_loop_nesting.size() - 1) * 4;
     y2 -= (resolver.cur_loop_nesting.size() - 1) * 4;
@@ -468,7 +469,7 @@ void DiagramTimelineSvgDrawer::do_end_repeat(const CircuitTimelineLoopData &loop
     }
 
     auto x = m2x(cur_moment);
-    auto y1 = 0;
+    auto y1 = PADDING;
     auto y2 = q2y(num_qubits);
     y1 += (resolver.cur_loop_nesting.size() - 1) * 4;
     y2 -= (resolver.cur_loop_nesting.size() - 1) * 4;
@@ -641,16 +642,18 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(const Circuit &circuit, std
     }
 
     auto w = obj.m2x(obj.cur_moment);
-    svg_out << "<svg";
-    write_key_val(svg_out, "width", w);
-    write_key_val(svg_out, "height", obj.q2y(obj.num_qubits));
+    svg_out << R"SVG(<svg viewBox="0 0 )SVG";
+    svg_out << w + PADDING;
+    svg_out << " ";
+    svg_out << obj.q2y(obj.num_qubits) + PADDING;
+    svg_out << '"' << ' ';
     write_key_val(svg_out, "version", "1.1");
     write_key_val(svg_out, "xmlns", "http://www.w3.org/2000/svg");
     svg_out << ">\n";
 
     // Make sure qubit lines are drawn first, so they are in the background.
     for (size_t q = 0; q < obj.num_qubits; q++) {
-        auto x1 = CIRCUIT_START_X;
+        auto x1 = PADDING + CIRCUIT_START_X;
         auto x2 = w;
         auto y = obj.q2y(q);
 
@@ -674,5 +677,5 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(const Circuit &circuit, std
     }
 
     svg_out << buffer.str();
-    svg_out << "</svg>\n";
+    svg_out << "</svg>";
 }

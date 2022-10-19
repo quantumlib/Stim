@@ -83,6 +83,7 @@ int stim::command_diagram(int argc, const char **argv) {
         default:
             throw std::invalid_argument("Unknown type");
     }
+    out << '\n';
 
     return EXIT_SUCCESS;
 }
@@ -117,6 +118,22 @@ SubCommandHelp stim::command_diagram_help() {
             interested in the details of the noise but rather in the structure
             of the circuit, you can specify this flag in order to filter out
             the noise.
+        )PARAGRAPH"),
+    });
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--tick",
+        "int",
+        "none",
+        {"[none]", "int"},
+        clean_doc_string(R"PARAGRAPH(
+            Specifies that the diagram should apply to a specific TICK of the
+            input circuit.
+
+            In detector-slice diagrams, `--tick` identifies which TICK is the
+            instant at which the time slice is taken. Note that `--tick=0` is
+            the very beginning of the circuit and `--tick=1` is the instant of
+            the first TICK instruction.
         )PARAGRAPH"),
     });
 

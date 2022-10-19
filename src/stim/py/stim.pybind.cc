@@ -13,9 +13,7 @@
 // limitations under the License.
 
 #include <pybind11/iostream.h>
-#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 #include "stim/circuit/circuit.pybind.h"
 #include "stim/circuit/circuit_gate_target.pybind.h"
@@ -39,6 +37,7 @@
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
+#include "stim/cmd/command_diagram.pybind.h"
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -441,6 +440,8 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     auto c_circuit_error_location = pybind_circuit_error_location(m);
     auto c_circuit_error_location_methods = pybind_explained_error(m);
 
+    auto c_diagram_helper = pybind_diagram(m);
+
     /// top level function definitions
     top_level(m);
     pybind_read_write(m);
@@ -475,4 +476,6 @@ PYBIND11_MODULE(STIM_PYBIND11_MODULE_NAME, m) {
     pybind_circuit_targets_inside_instruction_methods(m, c_circuit_targets_inside_instruction);
     pybind_circuit_error_location_methods(m, c_circuit_error_location);
     pybind_explained_error_methods(m, c_circuit_error_location_methods);
+
+    pybind_diagram_methods(m, c_diagram_helper);
 }
