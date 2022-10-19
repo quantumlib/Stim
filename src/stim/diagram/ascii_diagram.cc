@@ -124,9 +124,11 @@ void strip_padding_from_lines_and_write_to(PointerRange<std::string> out_lines, 
     }
 
     // Output while stripping empty lines at start of diagram.
-    for (const auto &line : out_lines) {
-        out.write(line.data() + indentation, line.size() - indentation);
-        out.put('\n');
+    for (size_t k = 0; k < out_lines.size(); k++) {
+        if (k) {
+            out.put('\n');
+        }
+        out.write(out_lines[k].data() + indentation, out_lines[k].size() - indentation);
     }
 }
 

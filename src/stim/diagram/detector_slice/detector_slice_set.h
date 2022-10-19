@@ -30,11 +30,17 @@ struct DetectorSliceSet {
     std::map<uint64_t, std::vector<double>> detector_coordinates;
     std::map<stim::DemTarget, std::vector<stim::GateTarget>> slices;
 
-    std::set<uint64_t> used_qubits() const;
+    /// Args:
+    ///     circuit: The circuit to make a detector slice diagram from.
+    ///     tick_index: The tick to target. tick_index=0 is the start of the
+    ///         circuit. tick_index=1 is the first TICK instruction, and so
+    ///         forth.
     static DetectorSliceSet from_circuit_tick(const stim::Circuit &circuit, uint64_t tick_index);
-    void write_text_diagram_to(std::ostream &out) const;
+
+    std::set<uint64_t> used_qubits() const;
     std::string str() const;
 
+    void write_text_diagram_to(std::ostream &out) const;
     void write_svg_diagram_to(std::ostream &out) const;
 };
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);

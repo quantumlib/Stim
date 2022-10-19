@@ -56,7 +56,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
 }
 DetectorSliceSetComputer::DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index)
     : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false) {
-    num_ticks_left = circuit.count_ticks();
+    num_ticks_left = circuit.count_ticks() + 1;  // + 1 because "first tick" is start of circuit.
     if (num_ticks_left == 0) {
         throw std::invalid_argument("Circuit contains no TICK instructions to slice at.");
     }
@@ -496,5 +496,4 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
     }
 
     out << R"SVG(</svg>)SVG";
-    out << "\n";
 }

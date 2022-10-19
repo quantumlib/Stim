@@ -108,6 +108,7 @@ int stim::command_diagram(int argc, const char **argv) {
             throw std::invalid_argument("Unknown type");
         }
     }
+    out << '\n';
 
     return EXIT_SUCCESS;
 }

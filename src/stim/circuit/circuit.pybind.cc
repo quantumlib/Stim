@@ -32,6 +32,10 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
+#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+#include "stim/diagram/timeline/timeline_svg_drawer.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/cmd/command_diagram.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -1795,6 +1799,87 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     DETECTOR(0, 4) rec[-2]
                     DETECTOR(1, 4) rec[-1]
                 ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "diagram",
+        [](const Circuit &self, const std::string &type, const pybind11::object &tick) -> DiagramHelper {
+            return circuit_diagram(self, type, tick);
+        },
+        pybind11::kw_only(),
+        pybind11::arg("type") = "timeline-text",
+        pybind11::arg("tick") = pybind11::none(),
+        clean_doc_string(u8R"DOC(
+            @overload def diagram(self, *, type: Literal["timeline-text"]) -> Any:
+            @overload def diagram(self, *, type: Literal["detector-slice-text"], tick: int) -> Any:
+            @overload def diagram(self, *, type: Literal["timeline-svg"]) -> Any:
+            @overload def diagram(self, *, type: Literal["detector-slice-svg"], tick: int) -> Any:
+            @signature def diagram(self, *, type: Union[Literal["timeline-text", "timeline-svg", "detector-slice-text", "detector-slice-svg"], str], tick: Optional[int] = None) -> Any:
+            Returns a diagram of the circuit, from a variety of options.
+
+            Args:
+                type: The type of diagram. Available types are:
+                    "timeline-text" (default): An ASCII diagram of the
+                        operations applied by the circuit over time. Includes
+                        annotations showing the measurement record index that
+                        each measurement writes to, and the measurements used
+                        by detectors.
+                    "timeline-svg": An SVG image of the operations applied by
+                        the circuit over time. Includes annotations showing the
+                        measurement record index that each measurement writes
+                        to, and the measurements used by detectors.
+                    "detector-slice-text": An ASCII diagram of the stabilizers
+                        that detectors declared by the circuit correspond to
+                        during the TICK instruction identified by the `tick`
+                        argument.
+                    "detector-slice-svg": An SVG image of the stabilizers
+                        that detectors declared by the circuit correspond to
+                        during the TICK instruction identified by the `tick`
+                        argument. For example, a detector slice diagram of a
+                        CSS surface code circuit during the TICK between a
+                        measurement layer and a reset layer will produce the
+                        usual diagram of a surface code.
+
+                        Uses the Pauli color convention XYZ=RGB.
+                tick: Required for detector slice diagrams. Specifies which TICK
+                    instruction to slice at. Note that the first TICK in the
+                    circuit is tick=1. The value tick=0 refers to the very start
+                    of the circuit.
+
+            Returns:
+                An object whose `__str__` method returns the diagram, so that
+                writing the diagram to a file works correctly. The returned
+                object may also define methods such as `_repr_html_`, so that
+                ipython notebooks recognize it can be shown using a specialized
+                viewer instead of as raw text.
+
+            Examples:
+                >>> import stim
+                >>> circuit = stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1 1 2
+                ... ''')
+
+                >>> print(circuit.diagram(type="timeline-text"))
+                q0: -H-@---
+                       |
+                q1: ---X-@-
+                         |
+                q2: -----X-
+
+                >>> circuit = stim.Circuit('''
+                ...     H 0
+                ...     CNOT 0 1
+                ...     TICK
+                ...     M 0 1
+                ...     DETECTOR rec[-1] rec[-2]
+                ... ''')
+
+                >>> print(circuit.diagram(type="detector-slice-text", tick=1))
+                q0: -Z:D0-
+                     |
+                q1: -Z:D0-
         )DOC")
             .data());
 }

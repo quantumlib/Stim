@@ -2,6 +2,7 @@ src/stim/circuit/circuit.pybind.cc
 src/stim/circuit/circuit_gate_target.pybind.cc
 src/stim/circuit/circuit_instruction.pybind.cc
 src/stim/circuit/circuit_repeat_block.pybind.cc
+src/stim/cmd/command_diagram.pybind.cc
 src/stim/dem/detector_error_model.pybind.cc
 src/stim/dem/detector_error_model_instruction.pybind.cc
 src/stim/dem/detector_error_model_repeat_block.pybind.cc

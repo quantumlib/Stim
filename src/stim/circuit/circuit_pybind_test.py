@@ -906,3 +906,29 @@ def test_circuit_to_file():
         c.to_file(object())
     with pytest.raises(ValueError, match="how to write"):
         c.to_file(123)
+
+
+def test_diagram():
+    c = stim.Circuit("""
+        H 0
+        CX 0 1
+    """)
+    assert str(c.diagram()).strip() == """
+q0: -H-@-
+       |
+q1: ---X-
+    """.strip()
+    assert str(c.diagram(type='timeline-text')) == str(c.diagram())
+
+    c = stim.Circuit("""
+        H 0
+        CNOT 0 1
+        TICK
+        M 0 1
+        DETECTOR rec[-1] rec[-2]
+    """)
+    assert str(c.diagram(type='detector-slice-text', tick=1)).strip() == """
+q0: -Z:D0-
+     |
+q1: -Z:D0-
+    """.strip()

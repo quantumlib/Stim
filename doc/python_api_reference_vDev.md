@@ -27,6 +27,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.Circuit.compile_sampler`](#stim.Circuit.compile_sampler)
     - [`stim.Circuit.copy`](#stim.Circuit.copy)
     - [`stim.Circuit.detector_error_model`](#stim.Circuit.detector_error_model)
+    - [`stim.Circuit.diagram`](#stim.Circuit.diagram)
     - [`stim.Circuit.explain_detector_error_model_errors`](#stim.Circuit.explain_detector_error_model_errors)
     - [`stim.Circuit.flattened`](#stim.Circuit.flattened)
     - [`stim.Circuit.from_file`](#stim.Circuit.from_file)
@@ -1184,6 +1185,114 @@ def detector_error_model(
             error(0.375) D0 D1
             error(0.25) D1
         ''')
+    """
+```
+
+<a name="stim.Circuit.diagram"></a>
+```python
+# stim.Circuit.diagram
+
+# (in class stim.Circuit)
+@overload
+def diagram(
+    self,
+    *,
+    type: Literal["timeline-text"],
+) -> Any:
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: Literal["detector-slice-text"],
+    tick: int,
+) -> Any:
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: Literal["timeline-svg"],
+) -> Any:
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: Literal["detector-slice-svg"],
+    tick: int,
+) -> Any:
+    pass
+def diagram(
+    self,
+    *,
+    type: Union[Literal["timeline-text", "timeline-svg", "detector-slice-text", "detector-slice-svg"], str],
+    tick: Optional[int] = None,
+) -> Any:
+    """Returns a diagram of the circuit, from a variety of options.
+
+    Args:
+        type: The type of diagram. Available types are:
+            "timeline-text" (default): An ASCII diagram of the
+                operations applied by the circuit over time. Includes
+                annotations showing the measurement record index that
+                each measurement writes to, and the measurements used
+                by detectors.
+            "timeline-svg": An SVG image of the operations applied by
+                the circuit over time. Includes annotations showing the
+                measurement record index that each measurement writes
+                to, and the measurements used by detectors.
+            "detector-slice-text": An ASCII diagram of the stabilizers
+                that detectors declared by the circuit correspond to
+                during the TICK instruction identified by the `tick`
+                argument.
+            "detector-slice-svg": An SVG image of the stabilizers
+                that detectors declared by the circuit correspond to
+                during the TICK instruction identified by the `tick`
+                argument. For example, a detector slice diagram of a
+                CSS surface code circuit during the TICK between a
+                measurement layer and a reset layer will produce the
+                usual diagram of a surface code.
+
+                Uses the Pauli color convention XYZ=RGB.
+        tick: Required for detector slice diagrams. Specifies which TICK
+            instruction to slice at. Note that the first TICK in the
+            circuit is tick=1. The value tick=0 refers to the very start
+            of the circuit.
+
+    Returns:
+        An object whose `__str__` method returns the diagram, so that
+        writing the diagram to a file works correctly. The returned
+        object may also define methods such as `_repr_html_`, so that
+        ipython notebooks recognize it can be shown using a specialized
+        viewer instead of as raw text.
+
+    Examples:
+        >>> import stim
+        >>> circuit = stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1 1 2
+        ... ''')
+
+        >>> print(circuit.diagram(type="timeline-text"))
+        q0: -H-@---
+               |
+        q1: ---X-@-
+                 |
+        q2: -----X-
+
+        >>> circuit = stim.Circuit('''
+        ...     H 0
+        ...     CNOT 0 1
+        ...     TICK
+        ...     M 0 1
+        ...     DETECTOR rec[-1] rec[-2]
+        ... ''')
+
+        >>> print(circuit.diagram(type="detector-slice-text", tick=1))
+        q0: -Z:D0-
+             |
+        q1: -Z:D0-
     """
 ```
 
