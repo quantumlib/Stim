@@ -10,7 +10,8 @@ def decode_using_pymatching_v2(*,
                                obs_predictions_b8_out_path: pathlib.Path,
                                tmp_dir: pathlib.Path,
                                ) -> None:
-    """Collect statistics on how often logical errors occur when correcting using detections."""
+    """Use pymatching to predict observables from detection events."""
+
     import pymatching
     if num_dets == 0:
         with open(obs_predictions_b8_out_path, 'wb') as f:
