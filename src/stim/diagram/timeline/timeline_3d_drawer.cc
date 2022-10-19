@@ -53,7 +53,7 @@ void DiagramTimeline3DDrawer::draw_two_qubit_gate_end_point(Coord<3> center, con
 void DiagramTimeline3DDrawer::draw_gate_connecting_line(Coord<3> a, Coord<3> b) {
     diagram_out.line_data.push_back(a);
     auto d = b - a;
-    if (d.norm() > 2) {
+    if (d.norm() > 2.2) {
         auto c = (a + b) * 0.5;
         c.xyz[0] -= 0.25;
         diagram_out.line_data.push_back(c);
