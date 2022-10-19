@@ -22,6 +22,7 @@
 namespace stim_pybind {
 
 enum DiagramType {
+    DIAGRAM_TYPE_GLTF,
     DIAGRAM_TYPE_SVG,
     DIAGRAM_TYPE_TEXT,
 };
@@ -33,7 +34,7 @@ struct DiagramHelper {
 
 pybind11::class_<DiagramHelper> pybind_diagram(pybind11::module &m);
 void pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c);
-DiagramHelper circuit_diagram(const stim::Circuit &self, const std::string &type, const pybind11::object &tick);
+DiagramHelper circuit_diagram(const stim::Circuit &circuit, const std::string &type, const pybind11::object &tick);
 
 }  // namespace stim_pybind
 

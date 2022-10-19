@@ -1,0 +1,43 @@
+<svg viewBox="0 0 1024 224"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<path d="M64,64 L992,64 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
+<path d="M64,128 L992,128 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
+<rect x="80" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="96" y="64">H</text>
+<rect x="144" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="160" y="64">H</text>
+<path d="M68,40 L68,32 L188,32 L188,40 " stroke="black" fill="none"/>
+<path d="M68,184 L68,192 L188,192 L188,184 " stroke="black" fill="none"/>
+<rect x="208" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="224" y="64">H</text>
+<rect x="208" y="112" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="224" y="128">H</text>
+<rect x="272" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="288" y="64">H</text>
+<path d="M360,32 L352,32 L352,192 L360,192 " stroke="black" fill="none"/>
+<text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="356" y="188">REP1</text>
+<rect x="400" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="416" y="64">H</text>
+<rect x="400" y="112" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="416" y="128">H</text>
+<rect x="464" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="480" y="64">H</text>
+<rect x="528" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="544" y="64">S</text>
+<path d="M452,40 L452,32 L572,32 L572,40 " stroke="black" fill="none"/>
+<path d="M452,184 L452,192 L572,192 L572,184 " stroke="black" fill="none"/>
+<path d="M600,32 L608,32 L608,192 L600,192 " stroke="black" fill="none"/>
+<rect x="656" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="672" y="64">H</text>
+<rect x="720" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="736" y="64">H</text>
+<rect x="784" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="800" y="64">√X</text>
+<path d="M644,40 L644,32 L828,32 L828,40 " stroke="black" fill="none"/>
+<path d="M644,184 L644,192 L828,192 L828,184 " stroke="black" fill="none"/>
+<rect x="848" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="864" y="64">H</text>
+<rect x="912" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="928" y="64">H</text>
+</svg>

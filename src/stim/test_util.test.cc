@@ -21,6 +21,22 @@ using namespace stim;
 static bool shared_test_rng_initialized;
 static std::mt19937_64 shared_test_rng;
 
+std::string resolve_test_file(const std::string &name) {
+    std::vector<std::string> prefixes{
+        "testdata/",
+        "../testdata/",
+    };
+    for (const auto &prefix : prefixes) {
+        std::string full_path = prefix + name;
+        FILE *f = fopen(full_path.c_str(), "r");
+        if (f != nullptr) {
+            fclose(f);
+            return full_path;
+        }
+    }
+    throw std::invalid_argument("Run tests from the repo root so they can find the testdata/ directory.");
+}
+
 std::mt19937_64 &SHARED_TEST_RNG() {
     if (!shared_test_rng_initialized) {
         shared_test_rng = externally_seeded_rng();

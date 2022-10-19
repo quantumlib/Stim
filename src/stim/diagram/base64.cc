@@ -21,7 +21,7 @@ void stim_draw_internal::write_data_as_base64_to(const char *data, size_t n, std
     size_t bits_in_buf = 0;
     for (size_t k = 0; k < n; k++) {
         buf <<= 8;
-        buf |= (uint8_t) data[k];
+        buf |= (uint8_t)data[k];
         bits_in_buf += 8;
         if (bits_in_buf == 24) {
             out << u6_to_base64_char((buf >> 18) & 0x3F);

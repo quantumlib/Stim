@@ -17,15 +17,18 @@
 #include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/diagram/timeline/timeline_3d_drawer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
 
 using namespace stim;
+using namespace stim_draw_internal;
 
 enum DiagramTypes {
     TIMELINE_TEXT,
     TIMELINE_SVG,
+    TIMELINE_3D,
     DETECTOR_SLICE_TEXT,
     DETECTOR_SLICE_SVG,
 };
@@ -46,41 +49,15 @@ int stim::command_diagram(int argc, const char **argv) {
     RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     auto &out = out_stream.stream();
-    int64_t tick = find_int64_argument("--tick", -1, -1, INT64_MAX, argc, argv);
+    int64_t tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
     std::map<std::string, DiagramTypes> diagram_types{
         {"timeline-text", TIMELINE_TEXT},
         {"timeline-svg", TIMELINE_SVG},
+        {"timeline-3d", TIMELINE_3D},
         {"detector-slice-text", DETECTOR_SLICE_TEXT},
         {"detector-slice-svg", DETECTOR_SLICE_SVG},
     };
     DiagramTypes type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
-
-    switch (type) {
-        case TIMELINE_TEXT: {
-            if (tick != -1) {
-                throw std::invalid_argument("--tick isn't used by timeline-text");
-            }
-            break;
-        }
-        case TIMELINE_SVG: {
-            if (tick != -1) {
-                throw std::invalid_argument("--tick isn't used by timeline-svg");
-            }
-            break;
-        }
-        case DETECTOR_SLICE_TEXT: {
-            if (tick == -1) {
-                throw std::invalid_argument("detector-slice-text requires --tick");
-            }
-            break;
-        }
-        case DETECTOR_SLICE_SVG: {
-            if (tick == -1) {
-                throw std::invalid_argument("detector-slice-text requires --tick");
-            }
-            break;
-        }
-    }
 
     auto circuit = Circuit::from_file(in.f);
     in.done();
@@ -88,25 +65,23 @@ int stim::command_diagram(int argc, const char **argv) {
         circuit = circuit.without_noise();
     }
     switch (type) {
-        case TIMELINE_TEXT: {
-            out << stim_draw_internal::DiagramTimelineAsciiDrawer::make_diagram(circuit);
+        case TIMELINE_TEXT:
+            out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
             break;
-        }
-        case TIMELINE_SVG: {
-            stim_draw_internal::DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
+        case TIMELINE_SVG:
+            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
             break;
-        }
-        case DETECTOR_SLICE_TEXT: {
-            out << stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);
+        case TIMELINE_3D:
+            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out, true);
             break;
-        }
-        case DETECTOR_SLICE_SVG: {
-            stim_draw_internal::DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick).write_svg_diagram_to(out);
+        case DETECTOR_SLICE_TEXT:
+            out << DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);
             break;
-        }
-        default: {
+        case DETECTOR_SLICE_SVG:
+            DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick).write_svg_diagram_to(out);
+            break;
+        default:
             throw std::invalid_argument("Unknown type");
-        }
     }
     out << '\n';
 
@@ -172,21 +147,33 @@ SubCommandHelp stim::command_diagram_help() {
 
             The available diagram types are:
 
-            `timeline-text`: Produces an ASCII text diagram of the operations
+            "timeline-text": Produces an ASCII text diagram of the operations
                 performed by a circuit over time. The qubits are laid out into
                 a line top to bottom, and time advances left to right. The input
                 object should be a stim circuit.
 
-            `timeline-svg`: Produces an SVG image diagram of the operations
+            "timeline-svg": Produces an SVG image diagram of the operations
                 performed by a circuit over time. The qubits are laid out into
                 a line top to bottom, and time advances left to right. The input
                 object should be a stim circuit.
 
-            `detector-slice-text`: Produces an ASCII text diagram of the
-                stabilizers that detectors correspond to at a specified TICK.
+            "timeline-3d": Produces a 3d model, in GLTF format, of the
+                operations applied by the circuit over time.
 
-            `detector-slice-svg`: Produces an SVG image diagram of the
-                stabilizers that detectors correspond to at a specified TICK.
+            "detector-slice-text": An ASCII diagram of the stabilizers
+                that detectors declared by the circuit correspond to
+                during the TICK instruction identified by the `tick`
+                argument.
+
+            "detector-slice-svg": An SVG image of the stabilizers
+                that detectors declared by the circuit correspond to
+                during the TICK instruction identified by the `tick`
+                argument. For example, a detector slice diagram of a
+                CSS surface code circuit during the TICK between a
+                measurement layer and a reset layer will produce the
+                usual diagram of a surface code.
+
+                Uses the Pauli color convention XYZ=RGB.
         )PARAGRAPH"),
     });
 

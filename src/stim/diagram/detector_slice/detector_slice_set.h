@@ -21,6 +21,7 @@
 
 #include "stim/circuit/circuit.h"
 #include "stim/dem/detector_error_model.h"
+#include "stim/diagram/coord.h"
 
 namespace stim_draw_internal {
 
@@ -43,6 +44,15 @@ struct DetectorSliceSet {
     void write_text_diagram_to(std::ostream &out) const;
     void write_svg_diagram_to(std::ostream &out) const;
 };
+
+struct FlattenedCoords {
+    std::vector<Coord<2>> qubit_coords;
+    std::map<uint64_t, Coord<2>> det_coords;
+    Coord<2> size;
+
+    static FlattenedCoords from(const DetectorSliceSet &set, float desired_unit_distance);
+};
+
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);
 
 }  // namespace stim_draw_internal

@@ -19,7 +19,11 @@
 #include "stim/circuit/circuit_gate_target.pybind.h"
 #include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/circuit/circuit_repeat_block.pybind.h"
+#include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/diagram/timeline/timeline_ascii_drawer.h"
+#include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
@@ -32,10 +36,6 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/error_matcher.h"
 #include "stim/simulators/measurements_to_detection_events.pybind.h"
-#include "stim/diagram/timeline/timeline_ascii_drawer.h"
-#include "stim/diagram/timeline/timeline_svg_drawer.h"
-#include "stim/diagram/detector_slice/detector_slice_set.h"
-#include "stim/cmd/command_diagram.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -1829,6 +1829,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                         the circuit over time. Includes annotations showing the
                         measurement record index that each measurement writes
                         to, and the measurements used by detectors.
+                    "timeline-3d": A 3d model, in GLTF format, of the operations
+                        applied by the circuit over time.
                     "detector-slice-text": An ASCII diagram of the stabilizers
                         that detectors declared by the circuit correspond to
                         during the TICK instruction identified by the `tick`

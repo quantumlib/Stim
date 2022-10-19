@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_TEST_UTIL_TEST_H
-#define _STIM_TEST_UTIL_TEST_H
+#ifndef _STIM_DRAW_3D_DIAGRAM_3D_H
+#define _STIM_DRAW_3D_DIAGRAM_3D_H
 
-#include <random>
+#include <iostream>
 
-#include "gtest/gtest.h"
+#include "stim/circuit/circuit.h"
+#include "stim/circuit/gate_data.h"
+#include "stim/diagram/gltf.h"
+#include "stim/mem/pointer_range.h"
 
-#include "stim/stabilizers/pauli_string.h"
+namespace stim_draw_internal {
 
-std::mt19937_64 &SHARED_TEST_RNG();
-
-std::string rewind_read_close(FILE *f);
-
-std::string resolve_test_file(const std::string &name);
-
-struct RaiiTempNamedFile {
-    int descriptor;
-    std::string path;
-    RaiiTempNamedFile();
-    ~RaiiTempNamedFile();
-    std::string read_contents();
-    void write_contents(const std::string &contents);
+struct Basic3DElement {
+    std::string gate_piece;
+    Coord<3> center;
 };
+
+struct Basic3dDiagram {
+    std::vector<Basic3DElement> elements;
+    std::vector<Coord<3>> line_data;
+    std::vector<Coord<3>> red_line_data;
+    std::vector<Coord<3>> blue_line_data;
+
+    GltfScene to_gltf_scene() const;
+};
+
+}  // namespace stim_draw_internal
 
 #endif

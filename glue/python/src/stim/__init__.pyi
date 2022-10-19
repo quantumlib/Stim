@@ -763,6 +763,8 @@ class Circuit:
                     the circuit over time. Includes annotations showing the
                     measurement record index that each measurement writes
                     to, and the measurements used by detectors.
+                "timeline-3d": A 3d model, in GLTF format, of the operations
+                    applied by the circuit over time.
                 "detector-slice-text": An ASCII diagram of the stabilizers
                     that detectors declared by the circuit correspond to
                     during the TICK instruction identified by the `tick`

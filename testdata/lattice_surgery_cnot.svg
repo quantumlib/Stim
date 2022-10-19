@@ -1,0 +1,31 @@
+<svg viewBox="0 0 576 288"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<path d="M64,64 L544,64 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
+<path d="M64,128 L544,128 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
+<path d="M64,192 L544,192 " stroke="black"/>
+<text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="192">q2</text>
+<rect x="80" y="176" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="96" y="192">R</text>
+<path d="M160,128 L160,192 " stroke="black"/>
+<rect x="144" y="112" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="160" y="128">MPP<tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="160" y="108">rec[0]</text>
+<rect x="144" y="176" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="160" y="192">MPP<tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<path d="M224,64 L224,192 " stroke="black"/>
+<rect x="208" y="48" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="224" y="64">MPP<tspan baseline-shift="sub" font-size="10">Z</tspan></text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="224" y="44">rec[1]</text>
+<rect x="208" y="176" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="224" y="192">MPP<tspan baseline-shift="sub" font-size="10">Z</tspan></text>
+<rect x="272" y="176" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="288" y="192">M<tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<text text-anchor="middle" font-family="monospace" font-size="8" x="288" y="172">rec[2]</text>
+<rect x="272" y="48" width="96" height="32" stroke="black" fill="lightgray"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="320" y="64">Z<tspan baseline-shift="super" font-size="10">rec[0]</tspan></text>
+<rect x="272" y="112" width="96" height="32" stroke="black" fill="lightgray"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="320" y="128">X<tspan baseline-shift="super" font-size="10">rec[1]</tspan></text>
+<rect x="400" y="48" width="96" height="32" stroke="black" fill="lightgray"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="448" y="64">Z<tspan baseline-shift="super" font-size="10">rec[2]</tspan></text>
+</svg>
