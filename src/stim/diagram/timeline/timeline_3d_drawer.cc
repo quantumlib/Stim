@@ -364,12 +364,12 @@ std::pair<std::vector<Coord<2>>, std::pair<Coord<2>, Coord<2>>> pick_coords_for_
         used_coords.push_back({0, 0});
     }
     auto bounds = Coord<2>::min_max(used_coords);
-//    auto center = (bounds.first + bounds.second) * 0.5;
-//    for (auto &c : coords) {
-//        c -= center;
-//    }
-//    bounds.first -= center;
-//    bounds.second -= center;
+    //    auto center = (bounds.first + bounds.second) * 0.5;
+    //    for (auto &c : coords) {
+    //        c -= center;
+    //    }
+    //    bounds.first -= center;
+    //    bounds.second -= center;
     return {coords, bounds};
 }
 

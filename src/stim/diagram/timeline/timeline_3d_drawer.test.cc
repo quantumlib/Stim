@@ -20,8 +20,8 @@
 
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
-#include "stim/test_util.test.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -73,9 +73,7 @@ TEST(circuit_diagram_timeline_3d, single_qubit_gates) {
         H 2 0 3
     )CIRCUIT");
 
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "single_qubits_gates.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "single_qubits_gates.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, two_qubits_gates) {
@@ -103,9 +101,7 @@ TEST(circuit_diagram_timeline_3d, two_qubits_gates) {
         ZCY 4 5
         ZCZ 0 5 2 3 1 4
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "two_qubits_gates.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "two_qubits_gates.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, noise_gates) {
@@ -116,9 +112,7 @@ TEST(circuit_diagram_timeline_3d, noise_gates) {
         Y_ERROR(0.125) 0 1 4
         Z_ERROR(0.125) 2 3 5
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "noise_gates_1.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "noise_gates_1.gltf");
 
     circuit = Circuit(R"CIRCUIT(
         E(0.25) X1 X2
@@ -126,17 +120,13 @@ TEST(circuit_diagram_timeline_3d, noise_gates) {
         ELSE_CORRELATED_ERROR(0.25) X2 Y4 Z3
         ELSE_CORRELATED_ERROR(0.25) X5
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "noise_gates_2.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "noise_gates_2.gltf");
 
     circuit = Circuit(R"CIRCUIT(
         PAULI_CHANNEL_1(0.125,0.25,0.125) 0 1 2 3
         PAULI_CHANNEL_2(0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01) 0 1 2 4
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "noise_gates_3.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "noise_gates_3.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, collapsing) {
@@ -155,9 +145,7 @@ TEST(circuit_diagram_timeline_3d, collapsing) {
         MZ 3
         MPP X0*Y2 Z3 X1 Z2*Y3
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "collapsing.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "collapsing.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, measurement_looping) {
@@ -173,9 +161,7 @@ TEST(circuit_diagram_timeline_3d, measurement_looping) {
             }
         }
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "measurement_looping.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "measurement_looping.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, repeat) {
@@ -188,9 +174,7 @@ TEST(circuit_diagram_timeline_3d, repeat) {
             }
         }
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "repeat.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "repeat.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, classical_feedback) {
@@ -199,9 +183,7 @@ TEST(circuit_diagram_timeline_3d, classical_feedback) {
         CX rec[-1] 1
         YCZ 2 sweep[5]
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "classical_feedback.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "classical_feedback.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, lattice_surgery_cnot) {
@@ -214,9 +196,7 @@ TEST(circuit_diagram_timeline_3d, lattice_surgery_cnot) {
         CX rec[-2] 1
         CZ rec[-1] 0
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "lattice_surgery_cnot.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "lattice_surgery_cnot.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, tick) {
@@ -237,9 +217,7 @@ TEST(circuit_diagram_timeline_3d, tick) {
         TICK
         H 0 0
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "tick.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "tick.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, detector_pseudo_targets) {
@@ -255,23 +233,17 @@ TEST(circuit_diagram_timeline_3d, detector_pseudo_targets) {
         DETECTOR(5) rec[-1] rec[-2]
         OBSERVABLE_INCLUDE(100) rec[-201] rec[-203]
     )CIRCUIT");
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "detector_pseudo_targets.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "detector_pseudo_targets.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, repetition_code) {
     CircuitGenParameters params(10, 3, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "repetition_code.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "repetition_code.gltf");
 }
 
 TEST(circuit_diagram_timeline_3d, surface_code) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    expect_diagram_is_identical_to_saved_file(
-        circuit,
-        "surface_code.gltf");
+    expect_diagram_is_identical_to_saved_file(circuit, "surface_code.gltf");
 }

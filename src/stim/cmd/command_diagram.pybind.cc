@@ -17,9 +17,9 @@
 #include "stim/cmd/command_help.h"
 #include "stim/diagram/base64.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/diagram/timeline/timeline_3d_drawer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
-#include "stim/diagram/timeline/timeline_3d_drawer.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -158,7 +158,8 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
     });
 }
 
-DiagramHelper stim_pybind::circuit_diagram(const Circuit &circuit, const std::string &type, const pybind11::object &tick) {
+DiagramHelper stim_pybind::circuit_diagram(
+    const Circuit &circuit, const std::string &type, const pybind11::object &tick) {
     if (type == "timeline-text") {
         if (!tick.is_none()) {
             throw std::invalid_argument("`tick` isn't used with type='timeline-text'");
