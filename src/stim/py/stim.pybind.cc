@@ -38,6 +38,7 @@
 #include "stim/stabilizers/tableau.h"
 #include "stim/stabilizers/tableau.pybind.h"
 #include "stim/stabilizers/tableau_iter.pybind.h"
+#include "stim/cmd/command_diagram.pybind.h"
 
 #define xstr(s) str(s)
 #define str(s) #s
