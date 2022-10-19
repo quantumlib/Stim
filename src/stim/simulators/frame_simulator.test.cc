@@ -90,7 +90,8 @@ TEST(FrameSimulator, bulk_operations_consistent_with_tableau_data) {
     }
 }
 
-bool is_output_possible_promising_no_bare_resets(const Circuit &circuit, const simd_bits_range_ref<MAX_BITWORD_WIDTH> output) {
+bool is_output_possible_promising_no_bare_resets(
+    const Circuit &circuit, const simd_bits_range_ref<MAX_BITWORD_WIDTH> output) {
     auto tableau_sim = TableauSimulator(SHARED_TEST_RNG(), circuit.count_qubits());
     size_t out_p = 0;
     bool pass = true;
@@ -880,7 +881,8 @@ TEST(FrameSimulator, stream_many_shots) {
         M 0 1 2
     )circuit");
     FILE *tmp = tmpfile();
-    FrameSimulator::sample_out(circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
+    FrameSimulator::sample_out(
+        circuit, simd_bits<MAX_BITWORD_WIDTH>(0), 2048, tmp, SAMPLE_FORMAT_01, SHARED_TEST_RNG());
 
     auto result = rewind_read_close(tmp);
     for (size_t k = 0; k < 2048 * 4; k += 4) {

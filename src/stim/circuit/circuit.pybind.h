@@ -24,7 +24,7 @@ namespace stim_pybind {
 pybind11::class_<stim::Circuit> pybind_circuit(pybind11::module &m);
 void pybind_circuit_methods(pybind11::module &m, pybind11::class_<stim::Circuit> &c);
 
-}
+}  // namespace stim_pybind
 
 std::set<uint64_t> obj_to_abs_detector_id_set(
     const pybind11::object &obj, const std::function<size_t(void)> &get_num_detectors);

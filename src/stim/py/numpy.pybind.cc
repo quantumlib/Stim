@@ -19,7 +19,6 @@ using namespace stim_pybind;
 
 pybind11::object transposed_simd_bit_table_to_numpy_uint8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in) {
-
     size_t num_major_bytes_in = (num_major_in + 7) / 8;
     uint8_t *buffer = new uint8_t[num_major_bytes_in * num_minor_in];
     size_t t = 0;
@@ -47,7 +46,6 @@ pybind11::object transposed_simd_bit_table_to_numpy_uint8(
 
 pybind11::object transposed_simd_bit_table_to_numpy_bool8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major_in, size_t num_minor_in) {
-
     bool *buffer = new bool[num_major_in * num_minor_in];
     size_t t = 0;
     for (size_t minor_in = 0; minor_in < num_minor_in; minor_in++) {
@@ -78,7 +76,6 @@ pybind11::object stim_pybind::transposed_simd_bit_table_to_numpy(
 
 pybind11::object simd_bit_table_to_numpy_uint8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor) {
-
     size_t num_minor_bytes = (num_minor + 7) / 8;
     uint8_t *buffer = new uint8_t[num_major * num_minor_bytes];
     for (size_t k = 0; k < num_major; k++) {
@@ -98,7 +95,6 @@ pybind11::object simd_bit_table_to_numpy_uint8(
 
 pybind11::object simd_bit_table_to_numpy_bool8(
     const simd_bit_table<MAX_BITWORD_WIDTH> &table, size_t num_major, size_t num_minor) {
-
     bool *buffer = new bool[num_major * num_minor];
     size_t t = 0;
     for (size_t major = 0; major < num_major; major++) {
@@ -133,7 +129,6 @@ void stim_pybind::memcpy_bits_from_numpy_to_simd_bit_table(
     size_t num_minor,
     const pybind11::object &src,
     stim::simd_bit_table<stim::MAX_BITWORD_WIDTH> &dst) {
-
     if (pybind11::isinstance<pybind11::array_t<uint8_t>>(src)) {
         auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(src);
         size_t num_minor_bytes = (num_minor + 7) / 8;
@@ -249,11 +244,7 @@ pybind11::object bits_to_numpy_bool8(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits
         delete[] reinterpret_cast<bool *>(f);
     });
 
-    return pybind11::array_t<bool>(
-        {(pybind11::ssize_t)num_bits},
-        {(pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
+    return pybind11::array_t<bool>({(pybind11::ssize_t)num_bits}, {(pybind11::ssize_t)1}, buffer, free_when_done);
 }
 
 pybind11::object bits_to_numpy_uint8_packed(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits) {
@@ -265,21 +256,19 @@ pybind11::object bits_to_numpy_uint8_packed(simd_bits_range_ref<MAX_BITWORD_WIDT
         delete[] reinterpret_cast<uint8_t *>(f);
     });
 
-    return pybind11::array_t<uint8_t>(
-        {(pybind11::ssize_t)num_bytes},
-        {(pybind11::ssize_t)1},
-        buffer,
-        free_when_done);
+    return pybind11::array_t<uint8_t>({(pybind11::ssize_t)num_bytes}, {(pybind11::ssize_t)1}, buffer, free_when_done);
 }
 
-pybind11::object stim_pybind::simd_bits_to_numpy(simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits, bool bit_packed) {
+pybind11::object stim_pybind::simd_bits_to_numpy(
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> bits, size_t num_bits, bool bit_packed) {
     if (bit_packed) {
         return bits_to_numpy_uint8_packed(bits, num_bits);
     }
     return bits_to_numpy_bool8(bits, num_bits);
 }
 
-void stim_pybind::memcpy_bits_from_numpy_to_simd(size_t num_bits, const pybind11::object &src, simd_bits_range_ref<MAX_BITWORD_WIDTH> dst) {
+void stim_pybind::memcpy_bits_from_numpy_to_simd(
+    size_t num_bits, const pybind11::object &src, simd_bits_range_ref<MAX_BITWORD_WIDTH> dst) {
     if (pybind11::isinstance<pybind11::array_t<uint8_t>>(src)) {
         auto arr = pybind11::cast<pybind11::array_t<uint8_t>>(src);
         if (arr.ndim() == 1) {

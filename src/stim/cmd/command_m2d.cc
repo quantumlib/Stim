@@ -14,10 +14,10 @@
 
 #include "stim/cmd/command_m2d.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/simulators/measurements_to_detection_events.h"
-#include "command_help.h"
 
 using namespace stim;
 
@@ -110,8 +110,7 @@ SubCommandHelp stim::command_m2d_help() {
         the sampled measurement data to these expectations.
     )PARAGRAPH");
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example_circuit.stim
             X 0
             M 0 1
@@ -135,8 +134,7 @@ SubCommandHelp stim::command_m2d_help() {
             shot D0 D1 L2
             shot
             shot D1 L2
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--out_format",

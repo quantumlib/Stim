@@ -21,7 +21,10 @@
 using namespace stim;
 
 PauliStringRef::PauliStringRef(
-    size_t init_num_qubits, bit_ref init_sign, simd_bits_range_ref<MAX_BITWORD_WIDTH> init_xs, simd_bits_range_ref<MAX_BITWORD_WIDTH> init_zs)
+    size_t init_num_qubits,
+    bit_ref init_sign,
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> init_xs,
+    simd_bits_range_ref<MAX_BITWORD_WIDTH> init_zs)
     : num_qubits(init_num_qubits), sign(init_sign), xs(init_xs), zs(init_zs) {
 }
 

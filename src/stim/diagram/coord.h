@@ -103,6 +103,6 @@ std::ostream &operator<<(std::ostream &out, const Coord<DIM> &coord) {
     return out;
 }
 
-}
+}  // namespace stim_draw_internal
 
 #endif

@@ -317,7 +317,6 @@ struct simd_bits_range_ref {
             }
         }
     }
-
 };
 
 /// Writes a description of the contents of the range to `out`.

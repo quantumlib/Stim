@@ -211,7 +211,9 @@ void MeasureRecordWriterFormatDets::write_end() {
 }
 
 simd_bit_table<MAX_BITWORD_WIDTH> stim::transposed_vs_ref(
-    size_t num_samples_raw, const simd_bit_table<MAX_BITWORD_WIDTH> &table, const simd_bits<MAX_BITWORD_WIDTH> &reference_sample) {
+    size_t num_samples_raw,
+    const simd_bit_table<MAX_BITWORD_WIDTH> &table,
+    const simd_bits<MAX_BITWORD_WIDTH> &reference_sample) {
     auto result = table.transposed();
     for (size_t s = 0; s < num_samples_raw; s++) {
         result[s].word_range_ref(0, reference_sample.num_simd_words) ^= reference_sample;

@@ -1,4 +1,5 @@
 #include "stim/diagram/circuit_timeline_helper.h"
+
 #include "stim/diagram/diagram_util.h"
 
 using namespace stim;
@@ -25,7 +26,8 @@ void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operat
     detector_offset += loop_data.detectors_per_iteration * skipped_reps;
 }
 
-void CircuitTimelineHelper::do_atomic_operation(const Gate *gate, ConstPointerRange<double> args, ConstPointerRange<GateTarget> targets) {
+void CircuitTimelineHelper::do_atomic_operation(
+    const Gate *gate, ConstPointerRange<double> args, ConstPointerRange<GateTarget> targets) {
     resolved_op_callback({gate, args, targets});
 }
 
@@ -40,9 +42,7 @@ void CircuitTimelineHelper::do_operation_with_target_combiners(const Operation &
             do_record_measure_result(op.target_data.targets[start].qubit_value());
         }
         do_atomic_operation(
-            op.gate,
-            op.target_data.args,
-            {&op.target_data.targets[start], &op.target_data.targets[end]});
+            op.gate, op.target_data.args, {&op.target_data.targets[start], &op.target_data.targets[end]});
         start = end;
     }
 }
@@ -54,22 +54,16 @@ void CircuitTimelineHelper::do_multi_qubit_atomic_operation(const Operation &op)
 void CircuitTimelineHelper::do_two_qubit_gate(const Operation &op) {
     for (size_t k = 0; k < op.target_data.targets.size(); k += 2) {
         const GateTarget *p = &op.target_data.targets[k];
-        do_atomic_operation(
-            op.gate,
-            op.target_data.args,
-            {p, p + 2});
+        do_atomic_operation(op.gate, op.target_data.args, {p, p + 2});
     }
 }
 
 void CircuitTimelineHelper::do_single_qubit_gate(const Operation &op) {
-    for (const auto& t: op.target_data.targets) {
+    for (const auto &t : op.target_data.targets) {
         if (op.gate->flags & stim::GATE_PRODUCES_NOISY_RESULTS) {
             do_record_measure_result(t.qubit_value());
         }
-        do_atomic_operation(
-            op.gate,
-            op.target_data.args,
-            {&t});
+        do_atomic_operation(op.gate, op.target_data.args, {&t});
     }
 }
 
@@ -126,10 +120,7 @@ void CircuitTimelineHelper::do_detector(const Operation &op) {
     targets_workspace.clear();
     targets_workspace.push_back(pseudo_target);
     targets_workspace.insert(targets_workspace.end(), op.target_data.targets.begin(), op.target_data.targets.end());
-    do_atomic_operation(
-        op.gate,
-        shifted_coordinates_in_workspace(op.target_data.args),
-        targets_workspace);
+    do_atomic_operation(op.gate, shifted_coordinates_in_workspace(op.target_data.args), targets_workspace);
     detector_offset++;
 }
 
@@ -138,10 +129,7 @@ void CircuitTimelineHelper::do_observable_include(const Operation &op) {
     targets_workspace.clear();
     targets_workspace.push_back(pseudo_target);
     targets_workspace.insert(targets_workspace.end(), op.target_data.targets.begin(), op.target_data.targets.end());
-    do_atomic_operation(
-        op.gate,
-        op.target_data.args,
-        targets_workspace);
+    do_atomic_operation(op.gate, op.target_data.args, targets_workspace);
 }
 
 void CircuitTimelineHelper::do_qubit_coords(const Operation &op) {
@@ -155,10 +143,7 @@ void CircuitTimelineHelper::do_qubit_coords(const Operation &op) {
         store.clear();
         store.insert(store.begin(), shifted.begin(), shifted.end());
 
-        do_atomic_operation(
-            op.gate,
-            shifted,
-            {&target});
+        do_atomic_operation(op.gate, shifted, {&target});
     }
 }
 
@@ -176,11 +161,7 @@ void CircuitTimelineHelper::do_record_measure_result(uint32_t target_qubit) {
     }
     const uint64_t *p = u64_workspace.data();
     auto n = cur_loop_nesting.size();
-    measure_index_to_qubit.set(
-        measure_offset,
-        {p, p + n},
-        {p + n, p + 2*n},
-        target_qubit);
+    measure_index_to_qubit.set(measure_offset, {p, p + n}, {p + n, p + 2 * n}, target_qubit);
     measure_offset++;
 }
 

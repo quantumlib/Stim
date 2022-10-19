@@ -14,12 +14,12 @@
 
 #include "stim/cmd/command_detect.h"
 
+#include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/io/raii_file.h"
 #include "stim/io/stim_data_formats.h"
 #include "stim/probability_util.h"
 #include "stim/simulators/detection_simulator.h"
-#include "command_help.h"
 
 using namespace stim;
 
@@ -83,8 +83,7 @@ SubCommandHelp stim::command_detect_help() {
     result.subcommand_name = "detect";
     result.description = "Sample detection events and observable flips from a circuit.";
 
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example.stim
             H 0
             CNOT 0 1
@@ -98,10 +97,8 @@ SubCommandHelp stim::command_detect_help() {
             0
             0
             0
-        )PARAGRAPH")
-    );
-    result.examples.push_back(
-        clean_doc_string(R"PARAGRAPH(
+        )PARAGRAPH"));
+    result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example.stim
             # Single-shot X-basis rep code circuit.
             RX 0 1 2 3 4 5 6
@@ -130,8 +127,7 @@ SubCommandHelp stim::command_detect_help() {
             shot
             shot D3 D4
             shot D0 D1
-        )PARAGRAPH")
-    );
+        )PARAGRAPH"));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--out_format",

@@ -179,8 +179,10 @@ size_t numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) 
             size_t num_bits = arr.shape(0);
             if (expected_size != SIZE_MAX && num_bits != expected_size) {
                 std::stringstream ss;
-                ss << "Numpy array has dtype=bool8 and shape=" << num_bits << " which is different from the given len=" << expected_size;
-                ss << ".\nEither don't specify len (as it is not needed when using bool8 arrays) or ensure the given len agrees with the given array shapes.";
+                ss << "Numpy array has dtype=bool8 and shape=" << num_bits
+                   << " which is different from the given len=" << expected_size;
+                ss << ".\nEither don't specify len (as it is not needed when using bool8 arrays) or ensure the given "
+                      "len agrees with the given array shapes.";
                 throw std::invalid_argument(ss.str());
             }
             return num_bits;
@@ -189,7 +191,8 @@ size_t numpy_to_size(const pybind11::object &numpy_array, size_t expected_size) 
     throw std::invalid_argument("Bit data must be a 1-dimensional numpy array with dtype=np.uint8 or dtype=np.bool8");
 }
 
-size_t numpy_pair_to_size(const pybind11::object &numpy_array1, const pybind11::object &numpy_array2, const pybind11::object &expected_size) {
+size_t numpy_pair_to_size(
+    const pybind11::object &numpy_array1, const pybind11::object &numpy_array2, const pybind11::object &expected_size) {
     size_t n0 = SIZE_MAX;
     if (!expected_size.is_none()) {
         n0 = pybind11::cast<size_t>(expected_size);
@@ -477,7 +480,8 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         stim.PauliString("+___Z"),
                     ],
                 )
-        )DOC").data());
+        )DOC")
+            .data());
 
     c.def(
         "commutes",
@@ -956,7 +960,10 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
 
     c.def_static(
         "from_numpy",
-        [](const pybind11::object &xs, const pybind11::object &zs, const pybind11::object &sign, const pybind11::object &num_qubits) -> PyPauliString {
+        [](const pybind11::object &xs,
+           const pybind11::object &zs,
+           const pybind11::object &sign,
+           const pybind11::object &num_qubits) -> PyPauliString {
             size_t n = numpy_pair_to_size(xs, zs, num_qubits);
             PyPauliString result{PauliString(n)};
             memcpy_bits_from_numpy_to_simd(n, xs, result.value.xs);

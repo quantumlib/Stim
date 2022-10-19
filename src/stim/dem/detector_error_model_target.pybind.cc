@@ -26,8 +26,7 @@ pybind11::class_<ExposedDemTarget> stim_pybind::pybind_detector_error_model_targ
 }
 
 void stim_pybind::pybind_detector_error_model_target_methods(
-    pybind11::module &m,
-    pybind11::class_<ExposedDemTarget> &c) {
+    pybind11::module &m, pybind11::class_<ExposedDemTarget> &c) {
     m.def(
         "target_relative_detector_id",
         &ExposedDemTarget::relative_detector_id,
@@ -177,9 +176,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
             .data());
 
     c.def(
-        "__repr__",
-        &ExposedDemTarget::repr,
-        "Returns valid python code evaluating to an equivalent `stim.DemTarget`.");
+        "__repr__", &ExposedDemTarget::repr, "Returns valid python code evaluating to an equivalent `stim.DemTarget`.");
 
     c.def("__str__", &ExposedDemTarget::str, "Returns a text description of the detector error model target.");
 

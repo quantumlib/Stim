@@ -27,6 +27,7 @@ src/stim/cmd/command_sample_dem.cc
 src/stim/dem/detector_error_model.cc
 src/stim/diagram/ascii_diagram.cc
 src/stim/diagram/circuit_timeline_helper.cc
+src/stim/diagram/detector_slice/detector_slice_set.cc
 src/stim/diagram/diagram_util.cc
 src/stim/diagram/gate_data_svg.cc
 src/stim/diagram/lattice_map.cc

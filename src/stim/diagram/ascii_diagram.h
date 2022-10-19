@@ -17,19 +17,19 @@
 #ifndef _STIM_DIAGRAM_TIMELINE_ASCII_DIAGRAM_ASCII_DIAGRAM_H
 #define _STIM_DIAGRAM_TIMELINE_ASCII_DIAGRAM_ASCII_DIAGRAM_H
 
+#include <functional>
 #include <iostream>
 #include <map>
 #include <vector>
-#include <functional>
 
 namespace stim_draw_internal {
 
 /// Identifies a location within a cell in a diagram with variable-sized columns and rows.
 struct AsciiDiagramPos {
-    size_t x;   /// The column that the cell is in.
-    size_t y;   /// The row that the cell is in.
-    float align_x;   /// Identifies a pixel column within the cell, proportionally from left to right.
-    float align_y;   /// Identifies a pixel row within the cell, proportionally from top to bottom.
+    size_t x;       /// The column that the cell is in.
+    size_t y;       /// The row that the cell is in.
+    float align_x;  /// Identifies a pixel column within the cell, proportionally from left to right.
+    float align_y;  /// Identifies a pixel row within the cell, proportionally from top to bottom.
 
     AsciiDiagramPos(size_t x, size_t y, float align_x, float align_y);
     bool operator==(const AsciiDiagramPos &other) const;
@@ -62,6 +62,6 @@ struct AsciiDiagram {
 };
 std::ostream &operator<<(std::ostream &out, const AsciiDiagram &drawer);
 
-}
+}  // namespace stim_draw_internal
 
 #endif

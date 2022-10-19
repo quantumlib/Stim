@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/main_namespaced.test.h"
-
 #include "gtest/gtest.h"
+
+#include "stim/main_namespaced.test.h"
 
 using namespace stim;
 

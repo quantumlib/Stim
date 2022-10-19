@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "stim/main_namespaced.test.h"
-
 #include <regex>
 
 #include "gtest/gtest.h"
 
-#include "stim/test_util.test.h"
-#include "stim/gen/gen_surface_code.h"
 #include "stim/gen/gen_color_code.h"
 #include "stim/gen/gen_rep_code.h"
+#include "stim/gen/gen_surface_code.h"
+#include "stim/main_namespaced.test.h"
 #include "stim/simulators/detection_simulator.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 
@@ -58,13 +57,16 @@ TEST(command_gen, execute) {
         trim(run_captured_stim_main({"--gen=repetition_code", "--rounds=3", "--distance=4", "--task=memory"}, "")),
         ".+Generated repetition_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        trim(run_captured_stim_main(
+            {"--gen=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main({"gen", "--code=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
+        trim(run_captured_stim_main(
+            {"gen", "--code=surface_code", "--rounds=3", "--distance=2", "--task=unrotated_memory_z"}, "")),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
-        trim(run_captured_stim_main({"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, "")),
+        trim(run_captured_stim_main(
+            {"--gen=surface_code", "--rounds=3", "--distance=2", "--task=rotated_memory_x"}, "")),
         ".+Generated surface_code.+"));
     ASSERT_TRUE(matches(
         trim(run_captured_stim_main({"--gen=color_code", "--rounds=3", "--distance=3", "--task=memory_xyz"}, "")),
