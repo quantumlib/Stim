@@ -19,6 +19,7 @@
 #include "stim/cmd/command_sample_dem.h"
 #include "stim/dem/detector_error_model.h"
 #include "stim/diagram/ascii_diagram.h"
+#include "stim/diagram/base64.h"
 #include "stim/diagram/circuit_timeline_helper.h"
 #include "stim/diagram/coord.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"

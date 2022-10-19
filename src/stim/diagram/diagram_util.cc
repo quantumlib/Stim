@@ -1,4 +1,4 @@
-#include "diagram_util.h"
+#include "stim/diagram/diagram_util.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
