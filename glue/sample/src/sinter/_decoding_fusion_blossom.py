@@ -114,7 +114,9 @@ def detector_error_model_to_fusion_blossom_solver_and_fault_masks(model: stim.De
             raise NotImplementedError(
                 f"Error with more than 2 symptoms can't become an edge or boundary edge: {dets!r}.")
         if p > 0.5:
-            raise NotImplementedError("error probability above 50%")
+            # fusion_blossom doesn't support negative edge weights.
+            # approximate them as weight 0.
+            p = 0.5
         weight = math.log((1 - p) / p)
         mask = sum(1 << k for k in frame_changes)
         edges.append((dets[0], dets[1], weight, mask))
@@ -129,7 +131,7 @@ def detector_error_model_to_fusion_blossom_solver_and_fault_masks(model: stim.De
         handle_error=handle_error,
         handle_detector_coords=handle_detector_coords,
     )
-    max_weight = max((w for _, _, w, _ in edges), default=1)
+    max_weight = max(1e-4, max((w for _, _, w, _ in edges), default=1))
     rescaled_edges = [
         (a, b, round(w * 2**10 / max_weight) * 2)
         for a, b, w, _ in edges
