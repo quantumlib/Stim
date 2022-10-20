@@ -79,8 +79,13 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                 out: 'multiprocessing.Queue',
                 core_affinity: Optional[int]) -> None:
     try:
-        if core_affinity is not None:
+        if core_affinity is not None and hasattr(os, 'sched_setaffinity'):
             os.sched_setaffinity(0, {core_affinity})
+    except:
+        # If setting the core affinity fails, we keep going regardless.
+        pass
+
+    try:
         with tempfile.TemporaryDirectory(dir=tmp_dir) as child_dir:
             while True:
                 work: Optional[WorkIn] = inp.get()
