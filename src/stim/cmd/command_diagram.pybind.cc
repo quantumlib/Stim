@@ -17,9 +17,12 @@
 #include "stim/cmd/command_help.h"
 #include "stim/diagram/base64.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/simulators/error_analyzer.h"
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
+#include "stim/diagram/graph/match_graph_3d_drawer.h"
+#include "stim/diagram/graph/match_graph_svg_drawer.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -84,7 +87,7 @@ new GLTFLoader().load(url, gltf => {
     scene.add(gltf.scene);
 
     // Point the camera at the center, far enough back to see everything.
-    let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
+    let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
     let controls = new OrbitControls(camera, container);
     let bounds = new Box3().setFromObject(scene);
     controls.target.set(
@@ -158,6 +161,19 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
     });
 }
 
+DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std::string &type) {
+    if (type == "match-graph-svg") {
+        std::stringstream out;
+        dem_match_graph_to_svg_diagram_write_to(dem, out);
+        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "match-graph-3d") {
+        std::stringstream out;
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out, true);
+        return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
+    } else {
+        throw std::invalid_argument("Unrecognized diagram type: " + type);
+    }
+}
 DiagramHelper stim_pybind::circuit_diagram(
     const Circuit &circuit, const std::string &type, const pybind11::object &tick) {
     if (type == "timeline-text") {
@@ -192,6 +208,10 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out;
         DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick)).write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "match-graph-svg" || type == "match-graph-3d") {
+        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
+            circuit, true, true, false, 1, true, false);
+        return dem_diagram(dem, type);
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);
     }

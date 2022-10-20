@@ -14,31 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef _STIM_DRAW_3D_DIAGRAM_3D_H
-#define _STIM_DRAW_3D_DIAGRAM_3D_H
+#ifndef _STIM_DIAGRAM_GRAPH_MATCH_GRAPH_DRAWER_H
+#define _STIM_DIAGRAM_GRAPH_MATCH_GRAPH_DRAWER_H
 
 #include <iostream>
 
-#include "stim/circuit/circuit.h"
-#include "stim/circuit/gate_data.h"
-#include "stim/diagram/gltf.h"
-#include "stim/mem/pointer_range.h"
+#include "stim/diagram/circuit_timeline_helper.h"
+#include "stim/diagram/basic_3d_diagram.h"
+#include "stim/dem/detector_error_model.h"
 
 namespace stim_draw_internal {
 
-struct Basic3DElement {
-    std::string gate_piece;
-    Coord<3> center;
-};
-
-struct Basic3dDiagram {
-    std::vector<Basic3DElement> elements;
-    std::vector<Coord<3>> line_data;
-    std::vector<Coord<3>> red_line_data;
-    std::vector<Coord<3>> blue_line_data;
-
-    GltfScene to_gltf_scene() const;
-};
+Basic3dDiagram dem_match_graph_to_basic_3d_diagram(const stim::DetectorErrorModel &dem);
 
 }  // namespace stim_draw_internal
 

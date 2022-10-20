@@ -21,6 +21,9 @@
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
+#include "stim/diagram/graph/match_graph_3d_drawer.h"
+#include "stim/diagram/graph/match_graph_svg_drawer.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -29,6 +32,8 @@ enum DiagramTypes {
     TIMELINE_TEXT,
     TIMELINE_SVG,
     TIMELINE_3D,
+    MATCH_GRAPH_SVG,
+    MATCH_GRAPH_3D,
     DETECTOR_SLICE_TEXT,
     DETECTOR_SLICE_SVG,
 };
@@ -54,34 +59,82 @@ int stim::command_diagram(int argc, const char **argv) {
         {"timeline-text", TIMELINE_TEXT},
         {"timeline-svg", TIMELINE_SVG},
         {"timeline-3d", TIMELINE_3D},
+        {"match-graph-svg", MATCH_GRAPH_SVG},
+        {"match-graph-3d", MATCH_GRAPH_3D},
         {"detector-slice-text", DETECTOR_SLICE_TEXT},
         {"detector-slice-svg", DETECTOR_SLICE_SVG},
     };
     DiagramTypes type = find_enum_argument("--type", nullptr, diagram_types, argc, argv);
 
-    auto circuit = Circuit::from_file(in.f);
-    in.done();
-    if (find_bool_argument("--remove_noise", argc, argv)) {
-        circuit = circuit.without_noise();
-    }
+    auto read_circuit = [&]() {
+        auto circuit = Circuit::from_file(in.f);
+        in.done();
+        if (find_bool_argument("--remove_noise", argc, argv)) {
+            circuit = circuit.without_noise();
+        }
+        return circuit;
+    };
+    auto read_dem = [&]() {
+        std::string content;
+        while (true) {
+            int c = getc(in.f);
+            if (c == EOF) {
+                break;
+            }
+            content.push_back(c);
+        }
+        in.done();
+
+        try {
+            return DetectorErrorModel(content.data());
+        } catch (const std::exception &_) {
+        }
+
+        auto circuit = Circuit(content.data());
+        if (find_bool_argument("--remove_noise", argc, argv)) {
+            circuit = circuit.without_noise();
+        }
+        return ErrorAnalyzer::circuit_to_detector_error_model(
+            circuit, true, true, false, 1, true, false);
+    };
     switch (type) {
-        case TIMELINE_TEXT:
+        case TIMELINE_TEXT: {
+            auto circuit = read_circuit();
             out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
             break;
-        case TIMELINE_SVG:
+        } case TIMELINE_SVG: {
+            auto circuit = read_circuit();
             DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
             break;
-        case TIMELINE_3D:
+        } case TIMELINE_3D: {
+            auto circuit = read_circuit();
             DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out, true);
             break;
-        case DETECTOR_SLICE_TEXT:
+        } case MATCH_GRAPH_3D: {
+            auto dem = read_dem();
+            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out, true);
+            break;
+        } case MATCH_GRAPH_SVG: {
+            auto dem = read_dem();
+            dem_match_graph_to_svg_diagram_write_to(dem, out);
+            break;
+        } case DETECTOR_SLICE_TEXT: {
+            if (tick == -1) {
+                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
+            }
+            auto circuit = read_circuit();
             out << DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);
             break;
-        case DETECTOR_SLICE_SVG:
+        } case DETECTOR_SLICE_SVG: {
+            if (tick == -1) {
+                throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
+            }
+            auto circuit = read_circuit();
             DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick).write_svg_diagram_to(out);
             break;
-        default:
+        } default: {
             throw std::invalid_argument("Unknown type");
+        }
     }
     out << '\n';
 
@@ -152,18 +205,45 @@ SubCommandHelp stim::command_diagram_help() {
                 a line top to bottom, and time advances left to right. The input
                 object should be a stim circuit.
 
+                INPUT MUST BE A CIRCUIT.
+
             "timeline-svg": Produces an SVG image diagram of the operations
                 performed by a circuit over time. The qubits are laid out into
                 a line top to bottom, and time advances left to right. The input
                 object should be a stim circuit.
 
+                INPUT MUST BE A CIRCUIT.
+
             "timeline-3d": Produces a 3d model, in GLTF format, of the
-                operations applied by the circuit over time.
+                operations applied by a stim circuit over time.
+
+                GLTF files can be opened with a variety of programs, or
+                opened online in viewers such as
+                https://gltf-viewer.donmccurdy.com/ .
+
+                INPUT MUST BE A CIRCUIT.
+
+            "match-graph-svg": An image of the decoding graph of a detector
+                error model. Red lines are errors crossing a logical observable.
+
+                INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
+
+            "match-graph-3d": A 3d model, in GLTF format, of the
+                decoding graph of a detector error model. Red lines are
+                errors crossing a logical observable.
+
+                GLTF files can be opened with a variety of programs, or
+                opened online in viewers such as
+                https://gltf-viewer.donmccurdy.com/ .
+
+                INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
             "detector-slice-text": An ASCII diagram of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
                 argument.
+
+                INPUT MUST BE A CIRCUIT.
 
             "detector-slice-svg": An SVG image of the stabilizers
                 that detectors declared by the circuit correspond to
@@ -171,9 +251,10 @@ SubCommandHelp stim::command_diagram_help() {
                 argument. For example, a detector slice diagram of a
                 CSS surface code circuit during the TICK between a
                 measurement layer and a reset layer will produce the
-                usual diagram of a surface code.
+                usual diagram of a surface code. Uses the Pauli color convention
+                XYZ=RGB.
 
-                Uses the Pauli color convention XYZ=RGB.
+                INPUT MUST BE A CIRCUIT.
         )PARAGRAPH"),
     });
 
