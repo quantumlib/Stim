@@ -146,6 +146,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.DetectorErrorModel.clear`](#stim.DetectorErrorModel.clear)
     - [`stim.DetectorErrorModel.compile_sampler`](#stim.DetectorErrorModel.compile_sampler)
     - [`stim.DetectorErrorModel.copy`](#stim.DetectorErrorModel.copy)
+    - [`stim.DetectorErrorModel.diagram`](#stim.DetectorErrorModel.diagram)
     - [`stim.DetectorErrorModel.flattened`](#stim.DetectorErrorModel.flattened)
     - [`stim.DetectorErrorModel.from_file`](#stim.DetectorErrorModel.from_file)
     - [`stim.DetectorErrorModel.get_detector_coordinates`](#stim.DetectorErrorModel.get_detector_coordinates)
@@ -1198,7 +1199,35 @@ def diagram(
     self,
     *,
     type: 'Literal["timeline-text"]',
-) -> Any:
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["timeline-svg"]',
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["timeline-3d"]',
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["match-graph-svg"]',
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["match-graph-3d"]',
+) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
@@ -1206,14 +1235,7 @@ def diagram(
     *,
     type: 'Literal["detector-slice-text"]',
     tick: int,
-) -> Any:
-    pass
-@overload
-def diagram(
-    self,
-    *,
-    type: 'Literal["timeline-svg"]',
-) -> Any:
+) -> 'stim._DiagramHelper':
     pass
 @overload
 def diagram(
@@ -1221,14 +1243,14 @@ def diagram(
     *,
     type: 'Literal["detector-slice-svg"]',
     tick: int,
-) -> Any:
+) -> 'stim._DiagramHelper':
     pass
 def diagram(
     self,
     *,
-    type: Union['Literal["timeline-text", "timeline-svg", "detector-slice-text", "detector-slice-svg"]', str],
+    type: str,
     tick: Optional[int] = None,
-) -> Any:
+) -> 'stim._DiagramHelper':
     """Returns a diagram of the circuit, from a variety of options.
 
     Args:
@@ -4675,6 +4697,77 @@ def copy(
         False
         >>> c2 == c1
         True
+    """
+```
+
+<a name="stim.DetectorErrorModel.diagram"></a>
+```python
+# stim.DetectorErrorModel.diagram
+
+# (in class stim.DetectorErrorModel)
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["match-graph-svg"]',
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["match-graph-3d"]',
+) -> 'stim._DiagramHelper':
+    pass
+def diagram(
+    self,
+    *,
+    type: str,
+) -> Any:
+    """Returns a diagram of the circuit, from a variety of options.
+
+    Args:
+        type: The type of diagram. Available types are:
+            "match-graph-svg": An image of the decoding graph of the
+                detector error model. Red lines are errors crossing a
+                logical observable. Blue lines are undecomposed hyper
+                errors.
+            "match-graph-3d": A 3d model of the decoding graph of the
+                detector error model. Red lines are errors crossing a
+                logical observable. Blue lines are undecomposed hyper
+                errors.
+
+                GLTF files can be opened with a variety of programs, or
+                opened online in viewers such as
+                https://gltf-viewer.donmccurdy.com/ . Red lines are
+                errors crossing a logical observable.
+
+    Returns:
+        An object whose `__str__` method returns the diagram, so that
+        writing the diagram to a file works correctly. The returned
+        object also defines a `_repr_html_` method, so that ipython
+        notebooks recognize it can be shown using a specialized
+        viewer instead of as raw text.
+
+    Examples:
+        >>> import stim
+        >>> import tempfile
+        >>> circuit = stim.Circuit.generated(
+        ...     "repetition_code:memory",
+        ...     rounds=10,
+        ...     distance=7,
+        ...     after_clifford_depolarization=0.01)
+        >>> dem = circuit.detector_error_model(decompose_errors=True)
+
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     diagram = circuit.diagram(type="match-graph-svg")
+        ...     with open(f"{d}/dem_image.svg", "w") as f:
+        ...         print(diagram, file=f)
+
+        >>> with tempfile.TemporaryDirectory() as d:
+        ...     diagram = circuit.diagram(type="match-graph-3d")
+        ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
+        ...         print(diagram, file=f)
     """
 ```
 

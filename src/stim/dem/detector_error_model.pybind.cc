@@ -24,6 +24,7 @@
 #include "stim/py/base.pybind.h"
 #include "stim/search/search.h"
 #include "stim/simulators/dem_sampler.h"
+#include "stim/cmd/command_diagram.pybind.h"
 
 using namespace stim;
 
@@ -1102,6 +1103,62 @@ void stim_pybind::pybind_detector_error_model_methods(
                     error(0.019) D0
                     error(0) D0 D1
                 ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "diagram",
+        &dem_diagram,
+        pybind11::kw_only(),
+        pybind11::arg("type"),
+        clean_doc_string(u8R"DOC(
+            @overload def diagram(self, *, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
+            @signature def diagram(self, *, type: str) -> Any:
+            Returns a diagram of the circuit, from a variety of options.
+
+            Args:
+                type: The type of diagram. Available types are:
+                    "match-graph-svg": An image of the decoding graph of the
+                        detector error model. Red lines are errors crossing a
+                        logical observable. Blue lines are undecomposed hyper
+                        errors.
+                    "match-graph-3d": A 3d model of the decoding graph of the
+                        detector error model. Red lines are errors crossing a
+                        logical observable. Blue lines are undecomposed hyper
+                        errors.
+
+                        GLTF files can be opened with a variety of programs, or
+                        opened online in viewers such as
+                        https://gltf-viewer.donmccurdy.com/ . Red lines are
+                        errors crossing a logical observable.
+
+            Returns:
+                An object whose `__str__` method returns the diagram, so that
+                writing the diagram to a file works correctly. The returned
+                object also defines a `_repr_html_` method, so that ipython
+                notebooks recognize it can be shown using a specialized
+                viewer instead of as raw text.
+
+            Examples:
+                >>> import stim
+                >>> import tempfile
+                >>> circuit = stim.Circuit.generated(
+                ...     "repetition_code:memory",
+                ...     rounds=10,
+                ...     distance=7,
+                ...     after_clifford_depolarization=0.01)
+                >>> dem = circuit.detector_error_model(decompose_errors=True)
+
+                >>> with tempfile.TemporaryDirectory() as d:
+                ...     diagram = circuit.diagram(type="match-graph-svg")
+                ...     with open(f"{d}/dem_image.svg", "w") as f:
+                ...         print(diagram, file=f)
+
+                >>> with tempfile.TemporaryDirectory() as d:
+                ...     diagram = circuit.diagram(type="match-graph-3d")
+                ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
+                ...         print(diagram, file=f)
         )DOC")
             .data());
 }

@@ -449,3 +449,13 @@ def test_rounded():
     assert dem.rounded(4) == stim.DetectorErrorModel("""
         error(0.0125) D0 D1
     """)
+
+
+def test_diagram():
+    circuit = stim.Circuit.generated("repetition_code:memory",
+                                     rounds=10,
+                                     distance=7,
+                                     before_round_data_depolarization=0.01)
+    dem = circuit.detector_error_model(decompose_errors=True)
+    assert dem.diagram(type="match-graph-svg") is not None
+    assert dem.diagram(type="match-graph-3d") is not None

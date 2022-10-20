@@ -614,18 +614,45 @@ OPTIONS
             a line top to bottom, and time advances left to right. The input
             object should be a stim circuit.
 
+            INPUT MUST BE A CIRCUIT.
+
         "timeline-svg": Produces an SVG image diagram of the operations
             performed by a circuit over time. The qubits are laid out into
             a line top to bottom, and time advances left to right. The input
             object should be a stim circuit.
 
+            INPUT MUST BE A CIRCUIT.
+
         "timeline-3d": Produces a 3d model, in GLTF format, of the
-            operations applied by the circuit over time.
+            operations applied by a stim circuit over time.
+
+            GLTF files can be opened with a variety of programs, or
+            opened online in viewers such as
+            https://gltf-viewer.donmccurdy.com/ .
+
+            INPUT MUST BE A CIRCUIT.
+
+        "match-graph-svg": An image of the decoding graph of a detector
+            error model. Red lines are errors crossing a logical observable.
+
+            INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
+
+        "match-graph-3d": A 3d model, in GLTF format, of the
+            decoding graph of a detector error model. Red lines are
+            errors crossing a logical observable.
+
+            GLTF files can be opened with a variety of programs, or
+            opened online in viewers such as
+            https://gltf-viewer.donmccurdy.com/ .
+
+            INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 
         "detector-slice-text": An ASCII diagram of the stabilizers
             that detectors declared by the circuit correspond to
             during the TICK instruction identified by the `tick`
             argument.
+
+            INPUT MUST BE A CIRCUIT.
 
         "detector-slice-svg": An SVG image of the stabilizers
             that detectors declared by the circuit correspond to
@@ -633,9 +660,10 @@ OPTIONS
             argument. For example, a detector slice diagram of a
             CSS surface code circuit during the TICK between a
             measurement layer and a reset layer will produce the
-            usual diagram of a surface code.
+            usual diagram of a surface code. Uses the Pauli color convention
+            XYZ=RGB.
 
-            Uses the Pauli color convention XYZ=RGB.
+            INPUT MUST BE A CIRCUIT.
 
 
 EXAMPLES

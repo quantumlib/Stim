@@ -1,8 +1,5 @@
-#include "stim/diagram/timeline/diagram_3d.h"
-
-#include "stim/diagram/diagram_util.h"
-#include "stim/diagram/gate_data_3d.h"
-#include "stim/mem/simd_bits.h"
+#include "stim/diagram/basic_3d_diagram.h"
+#include "gate_data_3d.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
