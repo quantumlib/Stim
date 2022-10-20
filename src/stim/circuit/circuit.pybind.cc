@@ -1804,18 +1804,19 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
 
     c.def(
         "diagram",
-        [](const Circuit &self, const std::string &type, const pybind11::object &tick) -> DiagramHelper {
-            return circuit_diagram(self, type, tick);
-        },
+        &circuit_diagram,
         pybind11::kw_only(),
         pybind11::arg("type") = "timeline-text",
         pybind11::arg("tick") = pybind11::none(),
         clean_doc_string(u8R"DOC(
-            @overload def diagram(self, *, type: 'Literal["timeline-text"]') -> Any:
-            @overload def diagram(self, *, type: 'Literal["detector-slice-text"]', tick: int) -> Any:
-            @overload def diagram(self, *, type: 'Literal["timeline-svg"]') -> Any:
-            @overload def diagram(self, *, type: 'Literal["detector-slice-svg"]', tick: int) -> Any:
-            @signature def diagram(self, *, type: Union['Literal["timeline-text", "timeline-svg", "detector-slice-text", "detector-slice-svg"]', str], tick: Optional[int] = None) -> Any:
+            @overload def diagram(self, *, type: 'Literal["timeline-text"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["timeline-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["timeline-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["detector-slice-text"]', tick: int) -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["detector-slice-svg"]', tick: int) -> 'stim._DiagramHelper':
+            @signature def diagram(self, *, type: str, tick: Optional[int] = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:

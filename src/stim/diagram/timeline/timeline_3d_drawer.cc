@@ -7,17 +7,6 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-constexpr uint16_t PADDING = 32;
-constexpr uint16_t CIRCUIT_START_X = 32;
-constexpr uint16_t CIRCUIT_START_Y = 32;
-constexpr uint16_t GATE_PITCH = 64;
-constexpr uint16_t GATE_RADIUS = 16;
-
-template <typename T>
-inline void write_key_val(std::ostream &out, const char *key, const T &val) {
-    out << ' ' << key << "=\"" << val << "\"";
-}
-
 Coord<3> trans(size_t m, Coord<2> xy) {
     return {-(float)m, xy.xyz[0] * -2.0f, xy.xyz[1] * -2.0f};
 }
@@ -387,6 +376,7 @@ Basic3dDiagram DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(const Circui
     obj.coord_bounds = all_used.second;
     auto minmax = obj.coord_bounds;
 
+    // Draw an arrow indicating the time direction.
     auto y = -2 * (minmax.first.xyz[0] - 1);
     auto z = -2 * (minmax.first.xyz[1] * 0.5f + minmax.second.xyz[1] * 0.5f);
     obj.diagram_out.red_line_data.push_back({0, y, z});
