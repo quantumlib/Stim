@@ -91,6 +91,12 @@ jobs:
           {os: macos-latest, dist: cp39-macosx_x86_64},
           {os: macos-latest, dist: cp310-macosx_x86_64},
 
+          {os: macos-latest, dist: cp36-macosx_arm64},
+          {os: macos-latest, dist: cp37-macosx_arm64},
+          {os: macos-latest, dist: cp38-macosx_arm64},
+          {os: macos-latest, dist: cp39-macosx_arm64},
+          {os: macos-latest, dist: cp310-macosx_arm64},
+
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
           # The actual error seen in github actions:
