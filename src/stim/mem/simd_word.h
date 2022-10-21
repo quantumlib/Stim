@@ -37,21 +37,27 @@ struct bitword;
 }  // namespace stim
 
 
-namespace stim {
 #if __AVX2__
 #include "stim/mem/simd_word_256_avx.h"
 #include "stim/mem/simd_word_128_sse.h"
 #include "stim/mem/simd_word_64_std.h"
+namespace stim {
 constexpr size_t MAX_BITWORD_WIDTH = 256;
+}  // namespace stim
 #elif __SSE2__
 #include "stim/mem/simd_word_128_sse.h"
 #include "stim/mem/simd_word_64_std.h"
+namespace stim {
 constexpr size_t MAX_BITWORD_WIDTH = 128;
+}  // namespace stim
 #else
 #include "stim/mem/simd_word_64_std.h"
+namespace stim {
 constexpr size_t MAX_BITWORD_WIDTH = 64;
+}  // namespace stim
 #endif
 
+namespace stim {
 typedef bitword<MAX_BITWORD_WIDTH> simd_word;
 }  // namespace stim
 
