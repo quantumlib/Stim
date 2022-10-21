@@ -29,73 +29,73 @@ jobs:
       fail-fast: false
       matrix:
         os_dist: [
-          {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp37-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp38-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp39-manylinux_x86_64},
-          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
+#          {os: ubuntu-latest, dist: cp36-manylinux_x86_64},
+#          {os: ubuntu-latest, dist: cp37-manylinux_x86_64},
+#          {os: ubuntu-latest, dist: cp38-manylinux_x86_64},
+#          {os: ubuntu-latest, dist: cp39-manylinux_x86_64},
+#          {os: ubuntu-latest, dist: cp310-manylinux_x86_64},
+#          {os: ubuntu-latest, dist: cp311-manylinux_x86_64},
+#
+#          {os: ubuntu-latest, dist: cp36-manylinux_i686},
+#          {os: ubuntu-latest, dist: cp37-manylinux_i686},
+#          # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
+#          # {os: ubuntu-latest, dist: cp38-manylinux_i686},
+#          # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
+#          # {os: ubuntu-latest, dist: cp39-manylinux_i686},
+#          # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
+#          #
+#          # The actual error seen in github actions:
+#          #
+#          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
+#          #     libraries found. To build Scipy from sources, BLAS & LAPACK
+#          #     libraries need to be installed.
+#          #
+#          #{os: ubuntu-latest, dist: cp310-manylinux_i686},
+#
+#          # pypy manylinux builds disabled because scipy isn't prebuilt and fails to build.
+#          #
+#          # The actual error seen in github actions:
+#          #
+#          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
+#          #     libraries found. To build Scipy from sources, BLAS & LAPACK
+#          #     libraries need to be installed.
+#          #
+#          # {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
+#          # {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
+#          # {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
+#          # {os: ubuntu-latest, dist: pp37-manylinux_i686},
+#          # {os: ubuntu-latest, dist: pp38-manylinux_i686},
+#          # {os: ubuntu-latest, dist: pp39-manylinux_i686},
+#
+#          # musllinux builds disabled because scipy isn't prebuilt and fails to build.
+#          #
+#          # The actual error seen in github actions:
+#          #
+#          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
+#          #     libraries found. To build Scipy from sources, BLAS & LAPACK
+#          #     libraries need to be installed.
+#          #
+#          # {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
+#          # {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
+#          # {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
+#          # {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
+#          # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
+#          # {os: ubuntu-latest, dist: cp36-musllinux_i686},
+#          # {os: ubuntu-latest, dist: cp37-musllinux_i686},
+#          # {os: ubuntu-latest, dist: cp38-musllinux_i686},
+#          # {os: ubuntu-latest, dist: cp39-musllinux_i686},
+#          # {os: ubuntu-latest, dist: cp310-musllinux_i686},
+#
+#          {os: macos-latest, dist: cp36-macosx_x86_64},
+#          {os: macos-latest, dist: cp37-macosx_x86_64},
+#          {os: macos-latest, dist: cp38-macosx_x86_64},
+#          {os: macos-latest, dist: cp39-macosx_x86_64},
+#          {os: macos-latest, dist: cp310-macosx_x86_64},
 
-          {os: ubuntu-latest, dist: cp36-manylinux_i686},
-          {os: ubuntu-latest, dist: cp37-manylinux_i686},
-          # cp38-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp38-manylinux_i686},
-          # cp39-manylinux_i686 disabled because pandas isn't prebuilt and takes 20 minutes to build.
-          # {os: ubuntu-latest, dist: cp39-manylinux_i686},
-          # cp310-manylinux_i686 disabled because scipy isn't prebuilt and fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
-          #     libraries found. To build Scipy from sources, BLAS & LAPACK
-          #     libraries need to be installed.
-          #
-          #{os: ubuntu-latest, dist: cp310-manylinux_i686},
-
-          # pypy manylinux builds disabled because scipy isn't prebuilt and fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
-          #     libraries found. To build Scipy from sources, BLAS & LAPACK
-          #     libraries need to be installed.
-          #
-          # {os: ubuntu-latest, dist: pp37-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp38-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp39-manylinux_x86_64},
-          # {os: ubuntu-latest, dist: pp37-manylinux_i686},
-          # {os: ubuntu-latest, dist: pp38-manylinux_i686},
-          # {os: ubuntu-latest, dist: pp39-manylinux_i686},
-
-          # musllinux builds disabled because scipy isn't prebuilt and fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #     numpy.distutils.system_info.NotFoundError: No BLAS/LAPACK
-          #     libraries found. To build Scipy from sources, BLAS & LAPACK
-          #     libraries need to be installed.
-          #
-          # {os: ubuntu-latest, dist: cp36-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp37-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp38-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp39-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp310-musllinux_x86_64},
-          # {os: ubuntu-latest, dist: cp36-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp37-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp38-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp39-musllinux_i686},
-          # {os: ubuntu-latest, dist: cp310-musllinux_i686},
-
-          {os: macos-latest, dist: cp36-macosx_x86_64},
-          {os: macos-latest, dist: cp37-macosx_x86_64},
-          {os: macos-latest, dist: cp38-macosx_x86_64},
-          {os: macos-latest, dist: cp39-macosx_x86_64},
-          {os: macos-latest, dist: cp310-macosx_x86_64},
-
-          {os: macos-latest, dist: cp36-macosx_arm64},
-          {os: macos-latest, dist: cp37-macosx_arm64},
           {os: macos-latest, dist: cp38-macosx_arm64},
           {os: macos-latest, dist: cp39-macosx_arm64},
           {os: macos-latest, dist: cp310-macosx_arm64},
+          {os: macos-latest, dist: cp311-macosx_arm64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
@@ -112,31 +112,32 @@ jobs:
           # {os: macOS-10.15, dist: pp38-macosx_x86_64},
           # {os: macOS-10.15, dist: pp39-macosx_x86_64},
 
-          {os: windows-2019, dist: cp36-win_amd64},
-          {os: windows-2019, dist: cp37-win_amd64},
-          {os: windows-2019, dist: cp38-win_amd64},
-          {os: windows-2019, dist: cp39-win_amd64},
-          {os: windows-2019, dist: cp310-win_amd64},
-
-          {os: windows-2019, dist: cp36-win32},
-          {os: windows-2019, dist: cp37-win32},
-          # cp38-win32 and cp39-win32 disabled because scipy fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #    Need python for 64-bit, but found 32-bit
-          #    ..\..\meson.build:82:0: ERROR: Python dependency not found
-          #
-          #{os: windows-2019, dist: cp38-win32},
-          #{os: windows-2019, dist: cp39-win32},
-
-          # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
-          #
-          # The actual error seen in github actions:
-          #
-          #     CCompiler_spawn() got an unexpected keyword argument 'env'
-          #
-          # {os: windows-2019, dist: cp310-win32},
+#          {os: windows-2019, dist: cp36-win_amd64},
+#          {os: windows-2019, dist: cp37-win_amd64},
+#          {os: windows-2019, dist: cp38-win_amd64},
+#          {os: windows-2019, dist: cp39-win_amd64},
+#          {os: windows-2019, dist: cp310-win_amd64},
+#          {os: windows-2019, dist: cp311-win_amd64},
+#
+#          {os: windows-2019, dist: cp36-win32},
+#          {os: windows-2019, dist: cp37-win32},
+#          # cp38-win32 and cp39-win32 disabled because scipy fails to build.
+#          #
+#          # The actual error seen in github actions:
+#          #
+#          #    Need python for 64-bit, but found 32-bit
+#          #    ..\..\meson.build:82:0: ERROR: Python dependency not found
+#          #
+#          #{os: windows-2019, dist: cp38-win32},
+#          #{os: windows-2019, dist: cp39-win32},
+#
+#          # cp310-win32 disabled because numpy isn't prebuilt and fails to build.
+#          #
+#          # The actual error seen in github actions:
+#          #
+#          #     CCompiler_spawn() got an unexpected keyword argument 'env'
+#          #
+#          # {os: windows-2019, dist: cp310-win32},
         ]
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
@@ -149,7 +150,7 @@ jobs:
       - run: mkdir -p output/stim
       - run: mkdir -p output/stimcirq
       - run: mkdir -p output/sinter
-      - run: python -m pip install pybind11==2.9.2 cibuildwheel==2.4.0
+      - run: python -m pip install pybind11==2.9.2 cibuildwheel==2.11.1
       - run: python -m cibuildwheel --print-build-identifiers
       - run: python -m cibuildwheel --output-dir output/stim
       - run: python setup.py sdist
