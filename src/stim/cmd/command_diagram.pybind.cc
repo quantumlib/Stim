@@ -51,22 +51,22 @@ void write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream 
   <meta charset="UTF-8" />
 </head>
 <body>
-  <a download="model.gltf" id="download-link" href="data:text/plain;base64,)HTML";
+  <a download="model.gltf" id="stim-3d-viewer-download-link" href="data:text/plain;base64,)HTML";
     write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
     out << R"HTML(">Download 3D Model as .GLTF File</a>
   <br>Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
   <div style="border: 1px dashed gray; margin-bottom: 50px; width: 300px; height: 300px; resize: both; overflow: hidden">
-    <div id="scene-container" style="width: 100%; height: 100%;">JavaScript Blocked?</div>
+    <div id="stim-3d-viewer-scene-container" style="width: 100%; height: 100%;">JavaScript Blocked?</div>
   </div>
 
   <script type="module">
     /// BEGIN TERRIBLE HACK.
     /// Get the object by ID then change the ID.
     /// This is a workaround for https://github.com/jupyter/notebook/issues/6598
-    let container = document.getElementById("scene-container");
-    container.id = "scene-container-used";
-    let downloadLink = document.getElementById("download-link");
-    downloadLink.id = "download-link-used";
+    let container = document.getElementById("stim-3d-viewer-scene-container");
+    container.id = "stim-3d-viewer-scene-container-USED";
+    let downloadLink = document.getElementById("stim-3d-viewer-download-link");
+    downloadLink.id = "stim-3d-viewer-download-link-USED";
     /// END TERRIBLE HACK.
 
     container.textContent = "Loading viewer...";
