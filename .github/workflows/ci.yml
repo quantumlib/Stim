@@ -92,10 +92,10 @@ jobs:
 #          {os: macos-latest, dist: cp39-macosx_x86_64},
 #          {os: macos-latest, dist: cp310-macosx_x86_64},
 
-          {os: macos-latest, dist: cp38-macosx_arm64},
-          {os: macos-latest, dist: cp39-macosx_arm64},
-          {os: macos-latest, dist: cp310-macosx_arm64},
-          {os: macos-latest, dist: cp311-macosx_arm64},
+          {os: macos-latest, dist: cp38-macosx_arm64, macosarch: arm64},
+          {os: macos-latest, dist: cp39-macosx_arm64, macosarch: arm64},
+          {os: macos-latest, dist: cp310-macosx_arm64, macosarch: arm64},
+          {os: macos-latest, dist: cp311-macosx_arm64, macosarch: arm64},
 
           # pypy OSX builds disabled because numpy isn't prebuilt and fails to build.
           #
@@ -141,6 +141,7 @@ jobs:
         ]
     env:
       CIBW_BUILD: "${{ matrix.os_dist.dist }}"
+      CIBW_ARCHS_MACOS: "${{ matrix.os_dist.macos }}"
       CIBW_TEST_REQUIRES: cirq-core pytest
       CIBW_TEST_COMMAND: pytest {project}/src {project}/glue/cirq && stim help
     steps:
