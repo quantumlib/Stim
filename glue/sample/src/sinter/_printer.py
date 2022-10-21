@@ -38,6 +38,12 @@ class ThrottledProgressPrinter:
                     self.is_worker_running = True
                     threading.Thread(target=self._print_worker).start()
 
+    def flush(self):
+        with self.lock:
+            if self.latest_msg != "":
+                print('\033[31m' + self.latest_msg + '\033[0m', file=sys.stderr, flush=True)
+            self.latest_msg = ""
+
     def _try_print_else_delay(self) -> float:
         t = time.monotonic()
         dt = self.next_can_print_time - t

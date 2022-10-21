@@ -49,32 +49,67 @@ void write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream 
 <html>
 <head>
   <meta charset="UTF-8" />
-  <script type="importmap">
-      {
-          "imports": {
-              "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
-              "three-orbitcontrols": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js",
-              "three-gltf-loader": "https://unpkg.com/three@0.138.0/examples/jsm/loaders/GLTFLoader.js"
-          }
-      }
-  </script>
 </head>
 <body>
-  Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
+  <a download="model.gltf" id="download-link" href="data:text/plain;base64,)HTML";
+    write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
+    out << R"HTML(">Download 3D Model as .GLTF File</a>
+  <br>Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
   <div style="border: 1px dashed gray; margin-bottom: 50px; width: 300px; height: 300px; resize: both; overflow: hidden">
-    <div id="scene-container" style="width: 100%; height: 100%;">Loading viewer...</div>
+    <div id="scene-container" style="width: 100%; height: 100%;">JavaScript Blocked?</div>
   </div>
 
-<script type="module">
-let url = "data:image/svg+xml;base64,)HTML";
-    write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
-    out << R"HTML(";
-import {Box3, Scene, Color, PerspectiveCamera, WebGLRenderer, DirectionalLight} from "three";
-import {OrbitControls} from "three-orbitcontrols";
-import {GLTFLoader} from "three-gltf-loader";
-new GLTFLoader().load(url, gltf => {
-    let container = /** @type {!HTMLDivElement} */ document.getElementById("scene-container");
-    container.textContent = "";
+  <script type="module">
+    /// BEGIN TERRIBLE HACK.
+    /// Get the object by ID then change the ID.
+    /// This is a workaround for https://github.com/jupyter/notebook/issues/6598
+    let container = document.getElementById("scene-container");
+    container.id = "scene-container-used";
+    let downloadLink = document.getElementById("download-link");
+    downloadLink.id = "download-link-used";
+    /// END TERRIBLE HACK.
+
+    container.textContent = "Loading viewer...";
+
+    /// BEGIN TERRIBLE HACK.
+    /// This a workaround for https://github.com/jupyter/notebook/issues/6597
+    ///
+    /// What this SHOULD be is:
+    ///
+    /// import {Box3, Scene, Color, PerspectiveCamera, WebGLRenderer, DirectionalLight} from "three";
+    /// import {OrbitControls} from "three-orbitcontrols";
+    /// import {GLTFLoader} from "three-gltf-loader";
+    ///
+    /// assuming the following import map exists:
+    ///
+    /// with import map:
+    ///   {
+    ///     "imports": {
+    ///       "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
+    ///       "three-orbitcontrols": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js",
+    ///       "three-gltf-loader": "https://unpkg.com/three@0.138.0/examples/jsm/loaders/GLTFLoader.js"
+    ///     }
+    ///   }
+    import {
+        WebGLRenderer,Scene,EventDispatcher,MOUSE,Quaternion,Spherical,TOUCH,Vector2,Vector3,AnimationClip,Bone,Box3,BufferAttribute,BufferGeometry,ClampToEdgeWrapping,Color,DirectionalLight,DoubleSide,FileLoader,FrontSide,Group,ImageBitmapLoader,InterleavedBuffer,InterleavedBufferAttribute,Interpolant,InterpolateDiscrete,InterpolateLinear,Line,LineBasicMaterial,LineLoop,LineSegments,LinearFilter,LinearMipmapLinearFilter,LinearMipmapNearestFilter,Loader,LoaderUtils,Material,MathUtils,Matrix4,Mesh,MeshBasicMaterial,MeshPhysicalMaterial,MeshStandardMaterial,MirroredRepeatWrapping,NearestFilter,NearestMipmapLinearFilter,NearestMipmapNearestFilter,NumberKeyframeTrack,Object3D,OrthographicCamera,PerspectiveCamera,PointLight,Points,PointsMaterial,PropertyBinding,QuaternionKeyframeTrack,RepeatWrapping,Skeleton,SkinnedMesh,Sphere,SpotLight,TangentSpaceNormalMap,Texture,TextureLoader,TriangleFanDrawMode,TriangleStripDrawMode,VectorKeyframeTrack,sRGBEncoding
+    } from "https://unpkg.com/three@0.138.0/build/three.module.js";
+    async function workaround(result, url) {
+        let fetched = await fetch(url);
+        let content = await (await fetched.blob()).text();
+        let strip_module = content.split("} from 'three';")[1].split("export {")[0];
+        let wrap_function = "(() => {" + strip_module + "\nreturn " + result + ";\n})()";
+        return eval(wrap_function);
+    }
+    let OrbitControls = await workaround("OrbitControls", "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js");
+    let GLTFLoader = await workaround("GLTFLoader", "https://unpkg.com/three@0.138.0/examples/jsm/loaders/GLTFLoader.js");
+    ///
+    /// END TERRIBLE HACK.
+    ///
+
+    container.textContent = "Loading model...";
+    let modelDataUri = downloadLink.href;
+    let gltf = await new GLTFLoader().loadAsync(modelDataUri);
+    container.textContent = "Loading scene...";
 
     // Create the scene, adding lighting for the loaded objects.
     let scene = new Scene();
@@ -104,6 +139,7 @@ new GLTFLoader().load(url, gltf => {
 
     // Set up rendering.
     let renderer = new WebGLRenderer({ antialias: true });
+    container.textContent = "";
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.physicallyCorrectLights = true;
@@ -120,10 +156,8 @@ new GLTFLoader().load(url, gltf => {
     controls.addEventListener("change", () => {
         renderer.render(scene, camera);
     })
-}, () => {});
-</script>
+  </script>
 </body>
-</html>
 )HTML";
 }
 
