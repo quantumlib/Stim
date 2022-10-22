@@ -51,7 +51,7 @@ int stim::command_diagram(int argc, const char **argv) {
         "diagram",
         argc,
         argv);
-    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile in(find_open_file_argument("--in", stdin, "rb", argc, argv));
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     auto &out = out_stream.stream();
     int64_t tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);

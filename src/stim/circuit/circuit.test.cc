@@ -1430,3 +1430,7 @@ TEST(circuit, equality) {
     ASSERT_FALSE(b != Circuit(b));
     ASSERT_FALSE(c != Circuit(c));
 }
+
+TEST(circuit, parse_windows_newlines) {
+    ASSERT_EQ(Circuit("H 0\r\nCX 0 1\r\n"), Circuit("H 0\nCX 0 1\n"));
+}

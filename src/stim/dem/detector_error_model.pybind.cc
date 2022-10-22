@@ -836,7 +836,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         [](pybind11::object &obj) {
             try {
                 auto path = pybind11::cast<std::string>(obj);
-                RaiiFile f(path.data(), "r");
+                RaiiFile f(path.data(), "rb");
                 return DetectorErrorModel::from_file(f.f);
             } catch (pybind11::cast_error &ex) {
             }
@@ -844,7 +844,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             auto py_path = pybind11::module::import("pathlib").attr("Path");
             if (pybind11::isinstance(obj, py_path)) {
                 auto path = pybind11::cast<std::string>(pybind11::str(obj));
-                RaiiFile f(path.data(), "r");
+                RaiiFile f(path.data(), "rb");
                 return DetectorErrorModel::from_file(f.f);
             }
 

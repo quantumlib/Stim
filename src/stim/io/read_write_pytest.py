@@ -172,3 +172,47 @@ def test_write_shot_data_file_01():
         )
         with open(path) as f:
             assert f.read() == '0001110011000\n0000000000000\n'
+
+
+def test_read_data_file_partial_b8():
+    with tempfile.TemporaryDirectory() as d:
+        path = pathlib.Path(d) / 'tmp.b8'
+        with open(path, 'wb') as f:
+            f.write(b'\0' * 273)
+        with pytest.raises(ValueError, match="middle of record"):
+            stim.read_shot_data_file(
+                path=str(path),
+                format="b8",
+                num_detectors=2185,
+                num_observables=0,
+            )
+
+
+def test_read_data_file_big_b8():
+    with tempfile.TemporaryDirectory() as d:
+        path = pathlib.Path(d) / 'tmp.b8'
+        with open(path, 'wb') as f:
+            f.write(b'\0' * 274000)
+        stim.read_shot_data_file(
+            path=str(path),
+            format="b8",
+            num_detectors=2185,
+            num_observables=0,
+        )
+
+
+def test_read_01_shots():
+    with tempfile.TemporaryDirectory() as d:
+        path = pathlib.Path(d) / 'shots'
+        with open(path, 'w') as f:
+            print("0000", file=f)
+            print("0101", file=f)
+
+        read = stim.read_shot_data_file(
+            path=str(path),
+            format='01',
+            num_measurements=4)
+        np.testing.assert_array_equal(
+            read,
+            [[0, 0, 0, 0], [0, 1, 0, 1]]
+        )

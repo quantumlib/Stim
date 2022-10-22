@@ -46,7 +46,7 @@ pybind11::object read_shot_data_file(
     size_t num_bytes_per_shot = (num_bits_per_shot + 7) / 8;
     size_t num_shots = 0;
     {
-        RaiiFile f(path, "r");
+        RaiiFile f(path, "rb");
         auto reader = MeasureRecordReader::make(f.f, parsed_format, nm, nd, no);
 
         simd_bits<MAX_BITWORD_WIDTH> buffer(num_bits_per_shot);
@@ -74,11 +74,11 @@ pybind11::object read_shot_data_file(
             buffer,
             free_when_done);
     } else {
-        bool *buffer = new bool[num_bits_per_shot];
+        bool *buffer = new bool[num_bits_per_shot * num_shots];
         size_t t = 0;
         for (size_t s = 0; s < num_shots; s++) {
             for (size_t k = 0; k < num_bits_per_shot; k++) {
-                auto bi = (s * num_bytes_per_shot + (k / 8));
+                auto bi = s * num_bytes_per_shot + k / 8;
                 buffer[t++] = (full_buffer[bi] >> (k % 8)) & 1;
             }
         }
@@ -118,7 +118,7 @@ void write_shot_data_file(
     simd_bit_table<MAX_BITWORD_WIDTH> buffer =
         numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
 
-    RaiiFile f(path, "w");
+    RaiiFile f(path, "wb");
     simd_bits<MAX_BITWORD_WIDTH> unused(0);
     write_table_data(
         f.f,

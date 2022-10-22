@@ -23,13 +23,13 @@ using namespace stim;
 int stim::command_explain_errors(int argc, const char **argv) {
     check_for_unknown_arguments({"--dem_filter", "--single", "--out", "--in"}, {}, "explain_errors", argc, argv);
 
-    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
+    FILE *in = find_open_file_argument("--in", stdin, "rb", argc, argv);
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     std::unique_ptr<DetectorErrorModel> dem_filter;
     bool single = find_bool_argument("--single", argc, argv);
     bool has_filter = find_argument("--dem_filter", argc, argv) != nullptr;
     if (has_filter) {
-        FILE *filter_file = find_open_file_argument("--dem_filter", stdin, "r", argc, argv);
+        FILE *filter_file = find_open_file_argument("--dem_filter", stdin, "rb", argc, argv);
         dem_filter =
             std::unique_ptr<DetectorErrorModel>(new DetectorErrorModel(DetectorErrorModel::from_file(filter_file)));
         fclose(filter_file);

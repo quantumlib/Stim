@@ -3545,7 +3545,7 @@ def convert_file(
         ...        detection_events_filepath=f"{d}/detections.01",
         ...        append_observables=False,
         ...    )
-        ...    with open(f"{d}/detections.01", "r") as f:
+        ...    with open(f"{d}/detections.01") as f:
         ...        print(f.read(), end="")
         1
         0

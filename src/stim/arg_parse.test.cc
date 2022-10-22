@@ -260,23 +260,23 @@ TEST(arg_parse, find_open_file_argument) {
 
     args = {""};
     ASSERT_THROW_MSG(
-        { find_open_file_argument("-arg", nullptr, "r", args.size(), args.data()); }, std::invalid_argument, "Missing");
+        { find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data()); }, std::invalid_argument, "Missing");
     args = {""};
-    ASSERT_EQ(find_open_file_argument("-arg", tmp, "r", args.size(), args.data()), tmp);
+    ASSERT_EQ(find_open_file_argument("-arg", tmp, "rb", args.size(), args.data()), tmp);
 
     args = {"", "-arg"};
     ASSERT_THROW_MSG(
-        { find_open_file_argument("-arg", nullptr, "r", args.size(), args.data()); }, std::invalid_argument, "empty");
+        { find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data()); }, std::invalid_argument, "empty");
     args = {"", "-arg"};
     ASSERT_THROW_MSG(
-        { find_open_file_argument("-arg", tmp, "r", args.size(), args.data()); }, std::invalid_argument, "empty");
+        { find_open_file_argument("-arg", tmp, "rb", args.size(), args.data()); }, std::invalid_argument, "empty");
 
     RaiiTempNamedFile f;
-    FILE *f2 = fdopen(f.descriptor, "w");
+    FILE *f2 = fdopen(f.descriptor, "wb");
     putc('x', f2);
     fclose(f2);
     args = {"", "-arg", f.path.data()};
-    f2 = find_open_file_argument("-arg", nullptr, "r", args.size(), args.data());
+    f2 = find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data());
     ASSERT_NE(f2, nullptr);
     ASSERT_EQ(getc(f2), 'x');
     fclose(f2);
@@ -284,10 +284,10 @@ TEST(arg_parse, find_open_file_argument) {
     remove(f.path.data());
     args = {"", "-arg", f.path.data()};
     ASSERT_THROW_MSG(
-        { find_open_file_argument("-arg", nullptr, "r", args.size(), args.data()); },
+        { find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data()); },
         std::invalid_argument,
         "Failed to open");
-    f2 = find_open_file_argument("-arg", nullptr, "w", args.size(), args.data());
+    f2 = find_open_file_argument("-arg", nullptr, "wb", args.size(), args.data());
     fclose(f2);
 
     fclose(tmp);
