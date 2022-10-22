@@ -108,11 +108,11 @@ int stim::command_diagram(int argc, const char **argv) {
             break;
         } case TIMELINE_3D: {
             auto circuit = read_circuit();
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out, true);
+            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
             break;
         } case MATCH_GRAPH_3D: {
             auto dem = read_dem();
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out, true);
+            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
             break;
         } case MATCH_GRAPH_SVG: {
             auto dem = read_dem();
