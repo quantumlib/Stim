@@ -3537,7 +3537,7 @@ def convert_file(
         ...    DETECTOR rec[-1]
         ... ''').compile_m2d_converter()
         >>> with tempfile.TemporaryDirectory() as d:
-        ...    with open(f"{d}/measurements.01", "w") as f:
+        ...    with open(f"{d}/measurements.01", "wb") as f:
         ...        print("0", file=f)
         ...        print("1", file=f)
         ...    converter.convert_file(
@@ -3545,7 +3545,7 @@ def convert_file(
         ...        detection_events_filepath=f"{d}/detections.01",
         ...        append_observables=False,
         ...    )
-        ...    with open(f"{d}/detections.01", "r") as f:
+        ...    with open(f"{d}/detections.01") as f:
         ...        print(f.read(), end="")
         1
         0
@@ -4761,12 +4761,12 @@ def diagram(
 
         >>> with tempfile.TemporaryDirectory() as d:
         ...     diagram = circuit.diagram(type="match-graph-svg")
-        ...     with open(f"{d}/dem_image.svg", "w") as f:
+        ...     with open(f"{d}/dem_image.svg", "wb") as f:
         ...         print(diagram, file=f)
 
         >>> with tempfile.TemporaryDirectory() as d:
         ...     diagram = circuit.diagram(type="match-graph-3d")
-        ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
+        ...     with open(f"{d}/dem_3d_model.gltf", "wb") as f:
         ...         print(diagram, file=f)
     """
 ```
