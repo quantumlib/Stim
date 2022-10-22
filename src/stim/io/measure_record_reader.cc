@@ -431,7 +431,7 @@ bool MeasureRecordReaderFormatPTB64::load_cache() {
     }
 
     // Convert from bit interleaving to uint64_t interleaving.
-    for (size_t k = 0; k < n; k += 64) {
+    for (size_t k = 0; k + 64 <= n; k += 64) {
         inplace_transpose_64x64(buf.u64 + k, 1);
     }
 
@@ -449,9 +449,13 @@ bool MeasureRecordReaderFormatPTB64::start_and_read_entire_record(
     }
 
     size_t offset = 64 - num_unread_shots_in_buf;
-    size_t n64 = (bits_per_record() + 63) / 64;
+    size_t n = bits_per_record();
+    size_t n64 = n / 64;
     for (size_t k = 0; k < n64; k++) {
         dirty_out_buffer.u64[k] = buf.u64[k * 64 + offset];
+    }
+    for (size_t k = n64 * 64; k < n; k++) {
+        dirty_out_buffer[k] = buf[k * 64 + offset];
     }
     num_unread_shots_in_buf -= 1;
     return true;

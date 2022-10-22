@@ -182,7 +182,7 @@ def save_ptb64(shots: List[List[bool]]):
             v = 0
             for k in range(64)[::-1]:
                 v <<= 1
-                v += shots[shot_offset + k][measure_index]
+                v += int(shots[shot_offset + k][measure_index])
             output += v.to_bytes(8, 'little')
     return output
 )PYTHON",
@@ -201,7 +201,6 @@ def parse_ptb64(data: bytes, bits_per_shot: int) -> List[List[bool]]:
             m_bit_offset = m * 64
             for shot in range(64):
                 bit_offset = group_bit_offset + m_bit_offset + shot
-                byte_offset = bit_offset // 8
                 bit = data[bit_offset // 8] & (1 << (bit_offset % 8)) != 0
                 s = group_index * 64 + shot
                 result[s][m] = bit

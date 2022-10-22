@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import itertools
+
 import pathlib
-import pytest as pytest
+import pytest
 import tempfile
 
 import numpy as np
@@ -216,3 +218,39 @@ def test_read_01_shots():
             read,
             [[0, 0, 0, 0], [0, 1, 0, 1]]
         )
+
+
+@pytest.mark.parametrize("data_format,bit_packed,path_type", itertools.product(
+    ["01", "b8", "r8", "ptb64", "hits", "dets"],
+    [False, True],
+    ["str", "path"]))
+def test_read_write_shots_fuzzing(data_format: str, bit_packed: bool, path_type: str):
+    with tempfile.TemporaryDirectory() as d:
+        file_path = pathlib.Path(d) / 'shots'
+        num_shots = 320
+        num_measurements = 500
+        data = np.random.randint(2, size=(num_shots, num_measurements), dtype=np.bool8)
+        if bit_packed:
+            packed_data = np.packbits(data, axis=1, bitorder='little')
+        else:
+            packed_data = data
+        if path_type == "path":
+            path_arg = file_path
+        elif path_type == "str":
+            path_arg = str(file_path)
+        else:
+            raise NotImplementedError(f'{path_type=}')
+        stim.write_shot_data_file(
+            data=packed_data,
+            path=path_arg,
+            format=data_format,
+            num_measurements=num_measurements,
+        )
+        round_trip_data = stim.read_shot_data_file(
+            path=path_arg,
+            format=data_format,
+            num_measurements=num_measurements,
+            bit_pack=bit_packed,
+        )
+
+        np.testing.assert_array_equal(packed_data, round_trip_data)
