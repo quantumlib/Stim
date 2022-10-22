@@ -98,8 +98,15 @@ struct GltfBuffer {
         std::vector<JsonObj> min_v;
         std::vector<JsonObj> max_v;
         for (size_t k = 0; k < DIM; k++) {
-            min_v.push_back(mima.first.xyz[k]);
-            max_v.push_back(mima.second.xyz[k]);
+            // Double precision is needed here because serializing a float to
+            // decimal then parsing it as a double can produce a slightly
+            // different value (because when you use the shortest decimal
+            // pattern that is uniquely closest to one float and serialize to
+            // that, there may be a closer double that is then picked when
+            // parsing). We need these values going through JSON land to end up
+            // exactly the same as the buffer floats going through binary land.
+            min_v.push_back((double)mima.first.xyz[k]);
+            max_v.push_back((double)mima.second.xyz[k]);
         }
         return std::map<std::string, JsonObj>{
             {"name", id.name},

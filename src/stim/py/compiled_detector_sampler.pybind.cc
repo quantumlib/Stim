@@ -73,8 +73,8 @@ void CompiledDetectorSampler::sample_write(
     const char *obs_out_filepath,
     const std::string &obs_out_format) {
     auto f = format_to_enum(format);
-    RaiiFile out(filepath.data(), "w");
-    RaiiFile obs_out(obs_out_filepath, "w");
+    RaiiFile out(filepath.data(), "wb");
+    RaiiFile obs_out(obs_out_filepath, "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
     detector_samples_out(
         circuit,

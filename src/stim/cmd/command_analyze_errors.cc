@@ -52,7 +52,7 @@ int stim::command_analyze_errors(int argc, const char **argv) {
             find_float_argument("--approximate_disjoint_errors", 0, 0, 1, argc, argv);
     }
 
-    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
+    FILE *in = find_open_file_argument("--in", stdin, "rb", argc, argv);
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     std::ostream &out = out_stream.stream();
     auto circuit = Circuit::from_file(in);

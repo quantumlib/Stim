@@ -205,6 +205,8 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
                         return false;
                     }
                     // intentional fall through.
+                case '\r':
+                    // intentional fall through.
                 case '\n':
                     throw std::invalid_argument(
                         "01 data ended in middle of record at byte position " + std::to_string(k) +
@@ -216,6 +218,9 @@ struct MeasureRecordReaderFormat01 : MeasureRecordReader {
         int last = getc(in);
         if (n == 0 && last == EOF) {
             return false;
+        }
+        if (last == '\r') {
+            last = getc(in);
         }
         if (last != '\n') {
             throw std::invalid_argument(
@@ -259,6 +264,9 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
                 if (first && next_char == EOF) {
                     return false;
                 }
+                if (first && next_char == '\r') {
+                    next_char = getc(in);
+                }
                 if (first && next_char == '\n') {
                     return true;
                 }
@@ -266,7 +274,12 @@ struct MeasureRecordReaderFormatHits : MeasureRecordReader {
             }
             handle_hit((size_t)value);
             first = false;
-            if (next_char == '\n') {
+            if (next_char == '\r') {
+                next_char = getc(in);
+                if (next_char == '\n') {
+                    return true;
+                }
+            } else if (next_char == '\n') {
                 return true;
             }
             if (next_char != ',') {
@@ -339,7 +352,7 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
         // Read "shot" prefix, or notice end of data. Ignore indentation and spacing.
         while (true) {
             int next_char = getc(in);
-            if (next_char == ' ' || next_char == '\n' || next_char == '\t') {
+            if (next_char == ' ' || next_char == '\n' || next_char == '\r' || next_char == '\t') {
                 continue;
             }
             if (next_char == EOF) {
@@ -354,6 +367,9 @@ struct MeasureRecordReaderFormatDets : MeasureRecordReader {
         // Read prefixed integers until end of line.
         int next_char = getc(in);
         while (true) {
+            if (next_char == '\r') {
+                next_char = getc(in);
+            }
             if (next_char == '\n' || next_char == EOF) {
                 return true;
             }

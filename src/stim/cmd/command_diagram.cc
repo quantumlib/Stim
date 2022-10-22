@@ -51,7 +51,7 @@ int stim::command_diagram(int argc, const char **argv) {
         "diagram",
         argc,
         argv);
-    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile in(find_open_file_argument("--in", stdin, "rb", argc, argv));
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     auto &out = out_stream.stream();
     int64_t tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
@@ -108,11 +108,11 @@ int stim::command_diagram(int argc, const char **argv) {
             break;
         } case TIMELINE_3D: {
             auto circuit = read_circuit();
-            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out, true);
+            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
             break;
         } case MATCH_GRAPH_3D: {
             auto dem = read_dem();
-            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out, true);
+            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
             break;
         } case MATCH_GRAPH_SVG: {
             auto dem = read_dem();

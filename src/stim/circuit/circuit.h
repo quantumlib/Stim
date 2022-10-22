@@ -341,11 +341,11 @@ bool read_until_next_line_arg(int &c, SOURCE read_char, bool space_required = tr
         return true;
     }
     if (space_required) {
-        if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '{' && c != EOF) {
+        if (c != ' ' && c != '#' && c != '\t' && c != '\n' && c != '\r' && c != '{' && c != EOF) {
             throw std::invalid_argument("Targets must be separated by spacing.");
         }
     }
-    while (c == ' ' || c == '\t') {
+    while (c == ' ' || c == '\t' || c == '\r') {
         c = read_char();
     }
     if (c == '#') {

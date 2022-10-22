@@ -48,14 +48,14 @@ int stim::command_m2d(int argc, const char **argv) {
     const auto &obs_out_format = find_enum_argument("--obs_out_format", "01", format_name_to_enum_map, argc, argv);
     bool append_observables = find_bool_argument("--append_observables", argc, argv);
     bool skip_reference_sample = find_bool_argument("--skip_reference_sample", argc, argv);
-    FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "r", argc, argv);
+    FILE *circuit_file = find_open_file_argument("--circuit", nullptr, "rb", argc, argv);
     auto circuit = Circuit::from_file(circuit_file);
     fclose(circuit_file);
 
-    FILE *in = find_open_file_argument("--in", stdin, "r", argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
-    FILE *sweep_in = find_open_file_argument("--sweep", stdin, "r", argc, argv);
-    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "w", argc, argv);
+    FILE *in = find_open_file_argument("--in", stdin, "rb", argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "wb", argc, argv);
+    FILE *sweep_in = find_open_file_argument("--sweep", stdin, "rb", argc, argv);
+    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "wb", argc, argv);
     if (sweep_in == stdin) {
         sweep_in = nullptr;
     }

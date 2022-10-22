@@ -25,14 +25,32 @@
 using namespace stim;
 using namespace stim_pybind;
 
+std::string path_to_string(const pybind11::object &path_obj) {
+    try {
+        return pybind11::cast<std::string>(path_obj);
+    } catch (pybind11::cast_error &ex) {
+    }
+
+    auto py_path = pybind11::module::import("pathlib").attr("Path");
+    if (pybind11::isinstance(path_obj, py_path)) {
+        return pybind11::cast<std::string>(pybind11::str(path_obj));
+    }
+
+    throw std::invalid_argument("Not a str or pathlib.Path: " + pybind11::cast<std::string>(pybind11::str(path_obj)));
+}
+
 pybind11::object read_shot_data_file(
-    const char *path,
+    const pybind11::object &path_obj,
     const char *format,
     const pybind11::handle &num_measurements,
     const pybind11::handle &num_detectors,
     const pybind11::handle &num_observables,
-    bool bit_pack) {
+    bool bit_packed,
+    bool _legacy_bit_pack) {
+
+    auto path = path_to_string(path_obj);
     auto parsed_format = format_to_enum(format);
+    bit_packed |= _legacy_bit_pack;
 
     if (num_measurements.is_none() && num_detectors.is_none() && num_observables.is_none()) {
         throw std::invalid_argument("Must specify num_measurements, num_detectors, num_observables.");
@@ -46,7 +64,7 @@ pybind11::object read_shot_data_file(
     size_t num_bytes_per_shot = (num_bits_per_shot + 7) / 8;
     size_t num_shots = 0;
     {
-        RaiiFile f(path, "r");
+        RaiiFile f(path.c_str(), "rb");
         auto reader = MeasureRecordReader::make(f.f, parsed_format, nm, nd, no);
 
         simd_bits<MAX_BITWORD_WIDTH> buffer(num_bits_per_shot);
@@ -59,7 +77,7 @@ pybind11::object read_shot_data_file(
         }
     }
 
-    if (bit_pack) {
+    if (bit_packed) {
         size_t num_bytes = full_buffer.size();
         uint8_t *buffer = new uint8_t[num_bytes];
         memcpy(buffer, full_buffer.data(), num_bytes);
@@ -74,11 +92,11 @@ pybind11::object read_shot_data_file(
             buffer,
             free_when_done);
     } else {
-        bool *buffer = new bool[num_bits_per_shot];
+        bool *buffer = new bool[num_bits_per_shot * num_shots];
         size_t t = 0;
         for (size_t s = 0; s < num_shots; s++) {
             for (size_t k = 0; k < num_bits_per_shot; k++) {
-                auto bi = (s * num_bytes_per_shot + (k / 8));
+                auto bi = s * num_bytes_per_shot + k / 8;
                 buffer[t++] = (full_buffer[bi] >> (k % 8)) & 1;
             }
         }
@@ -97,12 +115,13 @@ pybind11::object read_shot_data_file(
 
 void write_shot_data_file(
     const pybind11::object &data,
-    const char *path,
+    const pybind11::object &path_obj,
     const char *format,
     const pybind11::handle &num_measurements,
     const pybind11::handle &num_detectors,
     const pybind11::handle &num_observables) {
     auto parsed_format = format_to_enum(format);
+    auto path = path_to_string(path_obj);
 
     if (num_measurements.is_none() && num_detectors.is_none() && num_observables.is_none()) {
         throw std::invalid_argument("Must specify num_measurements, num_detectors, num_observables.");
@@ -118,7 +137,7 @@ void write_shot_data_file(
     simd_bit_table<MAX_BITWORD_WIDTH> buffer =
         numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
 
-    RaiiFile f(path, "w");
+    RaiiFile f(path.c_str(), "wb");
     simd_bits<MAX_BITWORD_WIDTH> unused(0);
     write_table_data(
         f.f,
@@ -142,18 +161,19 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_measurements") = pybind11::none(),
         pybind11::arg("num_detectors") = pybind11::none(),
         pybind11::arg("num_observables") = pybind11::none(),
-        pybind11::arg("bit_pack") = false,
+        pybind11::arg("bit_packed") = false,
+        pybind11::arg("bit_pack") = false,  // Legacy argument for backwards compat.
         clean_doc_string(u8R"DOC(
             Reads shot data, such as measurement samples, from a file.
-            @signature def read_shot_data_file(*, path: str, format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0, bit_pack: bool = False) -> np.ndarray:
+            @signature def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> np.ndarray:
 
             Args:
                 path: The path to the file to read the data from.
                 format: The format that the data is stored in, such as 'b8'.
                     See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-                bit_pack: Defaults to false. Determines whether the result is a bool8 numpy
-                    array with one bit per byte, or a uint8 numpy array with 8 bits per
-                    byte.
+                bit_packed: Defaults to false. Determines whether the result is a bool8
+                    numpy array with one bit per byte, or a uint8 numpy array with 8 bits
+                    per byte.
                 num_measurements: How many measurements there are per shot.
                 num_detectors: How many detectors there are per shot.
                 num_observables: How many observables there are per shot.
@@ -163,11 +183,11 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
             Returns:
                 A numpy array containing the loaded data.
 
-                If bit_pack=False:
+                If bit_packed=False:
                     dtype = np.bool8
                     shape = (num_shots, num_measurements + num_detectors + num_observables)
                     bit b from shot s is at result[s, b]
-                If bit_pack=True:
+                If bit_packed=True:
                     dtype = np.uint8
                     shape = (num_shots, math.ceil(
                         (num_measurements + num_detectors + num_observables) / 8))
@@ -205,6 +225,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_observables") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             Writes shot data, such as measurement samples, to a file.
+            @signature def write_shot_data_file(*, data: np.ndarray, path: Union[str, pathlib.Path], format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> None:
 
             Args:
                 data: The data to write to the file. This must be a numpy array. The dtype

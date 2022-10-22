@@ -28,7 +28,7 @@ std::string resolve_test_file(const std::string &name) {
     };
     for (const auto &prefix : prefixes) {
         std::string full_path = prefix + name;
-        FILE *f = fopen(full_path.c_str(), "r");
+        FILE *f = fopen(full_path.c_str(), "rb");
         if (f != nullptr) {
             fclose(f);
             return full_path;
@@ -75,7 +75,7 @@ RaiiTempNamedFile::~RaiiTempNamedFile() {
 }
 
 std::string RaiiTempNamedFile::read_contents() {
-    FILE *f = fopen(path.c_str(), "r");
+    FILE *f = fopen(path.c_str(), "rb");
     if (f == nullptr) {
         throw std::runtime_error("Failed to open temp named file " + path);
     }
@@ -92,7 +92,7 @@ std::string RaiiTempNamedFile::read_contents() {
 }
 
 void RaiiTempNamedFile::write_contents(const std::string &contents) {
-    FILE *f = fopen(path.c_str(), "w");
+    FILE *f = fopen(path.c_str(), "wb");
     if (f == nullptr) {
         throw std::runtime_error("Failed to open temp named file " + path);
     }

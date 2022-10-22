@@ -202,7 +202,7 @@ DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std:
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "match-graph-3d") {
         std::stringstream out;
-        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out, true);
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
         return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);
@@ -226,7 +226,7 @@ DiagramHelper stim_pybind::circuit_diagram(
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "timeline-3d") {
         std::stringstream out;
-        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out, true);
+        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
         return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
     } else if (type == "detector-slice-text") {
         if (tick.is_none()) {

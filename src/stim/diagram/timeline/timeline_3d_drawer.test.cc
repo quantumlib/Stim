@@ -29,11 +29,11 @@ using namespace stim_draw_internal;
 void expect_diagram_is_identical_to_saved_file(const Circuit &circuit, std::string key) {
     auto diagram = DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit);
     std::stringstream actual_ss;
-    diagram.to_gltf_scene().to_json().write(actual_ss, true);
+    diagram.to_gltf_scene().to_json().write(actual_ss);
     auto actual = actual_ss.str();
 
     auto path = resolve_test_file(key);
-    FILE *f = fopen(path.c_str(), "r");
+    FILE *f = fopen(path.c_str(), "rb");
     auto expected = rewind_read_close(f);
 
     if (expected != actual) {

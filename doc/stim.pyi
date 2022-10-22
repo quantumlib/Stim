@@ -2670,7 +2670,7 @@ class CompiledMeasurementsToDetectionEventsConverter:
             ...        detection_events_filepath=f"{d}/detections.01",
             ...        append_observables=False,
             ...    )
-            ...    with open(f"{d}/detections.01", "r") as f:
+            ...    with open(f"{d}/detections.01") as f:
             ...        print(f.read(), end="")
             1
             0
@@ -7813,12 +7813,12 @@ def main(
     """
 def read_shot_data_file(
     *,
-    path: str,
-    format: str,
+    path: Union[str, pathlib.Path],
+    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
-    bit_pack: bool = False,
 ) -> np.ndarray:
     """Reads shot data, such as measurement samples, from a file.
 
@@ -7826,9 +7826,9 @@ def read_shot_data_file(
         path: The path to the file to read the data from.
         format: The format that the data is stored in, such as 'b8'.
             See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-        bit_pack: Defaults to false. Determines whether the result is a bool8 numpy
-            array with one bit per byte, or a uint8 numpy array with 8 bits per
-            byte.
+        bit_packed: Defaults to false. Determines whether the result is a bool8
+            numpy array with one bit per byte, or a uint8 numpy array with 8 bits
+            per byte.
         num_measurements: How many measurements there are per shot.
         num_detectors: How many detectors there are per shot.
         num_observables: How many observables there are per shot.
@@ -7838,11 +7838,11 @@ def read_shot_data_file(
     Returns:
         A numpy array containing the loaded data.
 
-        If bit_pack=False:
+        If bit_packed=False:
             dtype = np.bool8
             shape = (num_shots, num_measurements + num_detectors + num_observables)
             bit b from shot s is at result[s, b]
-        If bit_pack=True:
+        If bit_packed=True:
             dtype = np.uint8
             shape = (num_shots, math.ceil(
                 (num_measurements + num_detectors + num_observables) / 8))
@@ -8092,12 +8092,12 @@ def target_z(
     """
 def write_shot_data_file(
     *,
-    data: object,
-    path: str,
+    data: np.ndarray,
+    path: Union[str, pathlib.Path],
     format: str,
-    num_measurements: Any = None,
-    num_detectors: Any = None,
-    num_observables: Any = None,
+    num_measurements: int = 0,
+    num_detectors: int = 0,
+    num_observables: int = 0,
 ) -> None:
     """Writes shot data, such as measurement samples, to a file.
 

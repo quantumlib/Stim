@@ -39,7 +39,7 @@ def test_convert_file_without_sweep_bits():
             append_observables=False,
         )
 
-        with open(f"{d}/detections.01", "r") as f:
+        with open(f"{d}/detections.01") as f:
             assert f.read() == "1\n0\n"
 
     with tempfile.TemporaryDirectory() as d:
@@ -64,7 +64,7 @@ def test_convert_file_without_sweep_bits():
             append_observables=True,
         )
 
-        with open(f"{d}/detections.dets", "r") as f:
+        with open(f"{d}/detections.dets") as f:
             assert f.read() == "shot D0 L0\nshot\nshot\nshot D0 L0\n"
 
         converter.convert_file(
@@ -78,9 +78,9 @@ def test_convert_file_without_sweep_bits():
             obs_out_format="hits",
         )
 
-        with open(f"{d}/detections.dets", "r") as f:
+        with open(f"{d}/detections.dets") as f:
             assert f.read() == "shot D0\nshot\nshot\nshot D0\n"
-        with open(f"{d}/obs.hits", "r") as f:
+        with open(f"{d}/obs.hits") as f:
             assert f.read() == "0\n\n\n0\n"
 
 
