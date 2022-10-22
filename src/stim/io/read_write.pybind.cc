@@ -46,7 +46,7 @@ pybind11::object read_shot_data_file(
     size_t num_bytes_per_shot = (num_bits_per_shot + 7) / 8;
     size_t num_shots = 0;
     {
-        RaiiFile f(path, "r");
+        RaiiFile f(path, "rb");
         auto reader = MeasureRecordReader::make(f.f, parsed_format, nm, nd, no);
 
         simd_bits<MAX_BITWORD_WIDTH> buffer(num_bits_per_shot);

@@ -47,11 +47,11 @@ int stim::command_sample_dem(int argc, const char **argv) {
     const auto &err_in_format = find_enum_argument("--replay_err_in_format", "01", format_name_to_enum_map, argc, argv);
     uint64_t num_shots = find_int64_argument("--shots", 1, 0, INT64_MAX, argc, argv);
 
-    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile in(find_open_file_argument("--in", stdin, "rb", argc, argv));
     RaiiFile out(find_open_file_argument("--out", stdout, "w", argc, argv));
     RaiiFile obs_out(find_open_file_argument("--obs_out", stdout, "w", argc, argv));
     RaiiFile err_out(find_open_file_argument("--err_out", stdout, "w", argc, argv));
-    RaiiFile err_in(find_open_file_argument("--replay_err_in", stdin, "r", argc, argv));
+    RaiiFile err_in(find_open_file_argument("--replay_err_in", stdin, "rb", argc, argv));
     if (obs_out.f == stdout) {
         obs_out.f = nullptr;
     }

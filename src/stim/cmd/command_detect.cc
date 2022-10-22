@@ -46,7 +46,7 @@ int stim::command_detect(int argc, const char **argv) {
         prepend_observables = true;
     }
 
-    RaiiFile in(find_open_file_argument("--in", stdin, "r", argc, argv));
+    RaiiFile in(find_open_file_argument("--in", stdin, "rb", argc, argv));
     RaiiFile out(find_open_file_argument("--out", stdout, "w", argc, argv));
     RaiiFile obs_out(find_open_file_argument("--obs_out", stdout, "w", argc, argv));
     if (obs_out.f == stdout) {

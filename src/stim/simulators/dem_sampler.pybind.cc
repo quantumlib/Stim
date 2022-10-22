@@ -280,7 +280,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
             RaiiFile fd = optional_py_path_to_raii_file(det_out_file, "w");
             RaiiFile fo = optional_py_path_to_raii_file(obs_out_file, "w");
             RaiiFile feo = optional_py_path_to_raii_file(err_out_file, "w");
-            RaiiFile fei = optional_py_path_to_raii_file(replay_err_in_file, "r");
+            RaiiFile fei = optional_py_path_to_raii_file(replay_err_in_file, "rb");
             self.sample_write(
                 shots,
                 fd.f,

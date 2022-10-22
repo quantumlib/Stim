@@ -31,7 +31,7 @@ void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, std::
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss);
     auto actual = ss.str();
     auto path = resolve_test_file(key);
-    FILE *f = fopen(path.c_str(), "r");
+    FILE *f = fopen(path.c_str(), "rb");
     auto expected = rewind_read_close(f);
 
     if (expected != actual) {

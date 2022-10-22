@@ -721,14 +721,14 @@ TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
             f, num_shots, bits_per_shot, simd_bits<MAX_BITWORD_WIDTH>(0), expected_transposed, format, 'M', 'M', 0);
         fclose(f);
 
-        f = fopen(tmp.path.c_str(), "r");
+        f = fopen(tmp.path.c_str(), "rb");
         simd_bit_table<MAX_BITWORD_WIDTH> output(num_shots, bits_per_shot);
         read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output, true);
         ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", not transposed";
         fclose(f);
         ASSERT_EQ(output, expected) << format_data.second.name << ", not transposed";
 
-        f = fopen(tmp.path.c_str(), "r");
+        f = fopen(tmp.path.c_str(), "rb");
         simd_bit_table<MAX_BITWORD_WIDTH> output_transposed(bits_per_shot, num_shots);
         read_file_data_into_shot_table(f, num_shots, bits_per_shot, format, 'M', output_transposed, false);
         ASSERT_EQ(getc(f), EOF) << format_data.second.name << ", yes transposed";
