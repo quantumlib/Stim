@@ -21,6 +21,7 @@
 #include "stim/io/measure_record_writer.h"
 #include "stim/probability_util.h"
 #include "stim/test_util.test.h"
+#include "stim/io/measure_record_batch_writer.h"
 
 using namespace stim;
 
@@ -661,35 +662,25 @@ TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_dense) {
 }
 
 TEST(MeasureRecordReader, start_and_read_entire_record_ptb64_sparse) {
-    FILE *f = tmpfile();
-    simd_bits<MAX_BITWORD_WIDTH> saved1 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
-    simd_bits<MAX_BITWORD_WIDTH> saved2 = simd_bits<MAX_BITWORD_WIDTH>::random(64 * 71, SHARED_TEST_RNG());
-    for (size_t k = 0; k < 64 * 71 / 8; k++) {
-        putc(saved1.u8[k], f);
-    }
-    for (size_t k = 0; k < 64 * 71 / 8; k++) {
-        putc(saved2.u8[k], f);
-    }
-    rewind(f);
-
-    auto reader = MeasureRecordReader::make(f, SAMPLE_FORMAT_PTB64, 71, 0, 0);
-    for (size_t shot = 0; shot < 64; shot++) {
-        SparseShot loaded;
-        ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
-        std::vector<uint64_t> expected;
-        for (size_t m = 0; m < 71; m++) {
-            if (saved1[m * 64 + shot]) {
-                expected.push_back(m);
-            }
+    FILE *tmp = tmpfile();
+    simd_bit_table<MAX_BITWORD_WIDTH> ground_truth(71, 64 * 5);
+    {
+        MeasureRecordBatchWriter writer(tmp, 64 * 5, stim::SAMPLE_FORMAT_PTB64);
+        for (size_t k = 0; k < 71; k++) {
+            ground_truth[k].randomize(64 * 5, SHARED_TEST_RNG());
+            writer.batch_write_bit(ground_truth[k]);
         }
-        ASSERT_EQ(loaded.hits, expected);
+        writer.write_end();
     }
-    for (size_t shot = 0; shot < 64; shot++) {
+    rewind(tmp);
+
+    auto reader = MeasureRecordReader::make(tmp, SAMPLE_FORMAT_PTB64, 71, 0, 0);
+    for (size_t shot = 0; shot < 64 * 5; shot++) {
         SparseShot loaded;
         ASSERT_TRUE(reader->start_and_read_entire_record(loaded));
         std::vector<uint64_t> expected;
         for (size_t m = 0; m < 71; m++) {
-            if (saved2[m * 64 + shot]) {
+            if (ground_truth[m][shot]) {
                 expected.push_back(m);
             }
         }
