@@ -78,7 +78,7 @@ pybind11::object read_shot_data_file(
         size_t t = 0;
         for (size_t s = 0; s < num_shots; s++) {
             for (size_t k = 0; k < num_bits_per_shot; k++) {
-                auto bi = (s * num_bytes_per_shot + k) / 8;
+                auto bi = s * num_bytes_per_shot + k / 8;
                 buffer[t++] = (full_buffer[bi] >> (k % 8)) & 1;
             }
         }

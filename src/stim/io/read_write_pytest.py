@@ -199,3 +199,20 @@ def test_read_data_file_big_b8():
             num_detectors=2185,
             num_observables=0,
         )
+
+
+def test_read_01_shots():
+    with tempfile.TemporaryDirectory() as d:
+        path = pathlib.Path(d) / 'shots'
+        with open(path, 'w') as f:
+            print("0000", file=f)
+            print("0101", file=f)
+
+        read = stim.read_shot_data_file(
+            path=str(path),
+            format='01',
+            num_measurements=4)
+        np.testing.assert_array_equal(
+            read,
+            [[0, 0, 0, 0], [0, 1, 0, 1]]
+        )

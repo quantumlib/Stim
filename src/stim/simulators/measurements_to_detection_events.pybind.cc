@@ -269,7 +269,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 ...    DETECTOR rec[-1]
                 ... ''').compile_m2d_converter()
                 >>> with tempfile.TemporaryDirectory() as d:
-                ...    with open(f"{d}/measurements.01", "wb") as f:
+                ...    with open(f"{d}/measurements.01", "w") as f:
                 ...        print("0", file=f)
                 ...        print("1", file=f)
                 ...    converter.convert_file(
