@@ -92,7 +92,7 @@ std::string RaiiTempNamedFile::read_contents() {
 }
 
 void RaiiTempNamedFile::write_contents(const std::string &contents) {
-    FILE *f = fopen(path.c_str(), "w");
+    FILE *f = fopen(path.c_str(), "wb");
     if (f == nullptr) {
         throw std::runtime_error("Failed to open temp named file " + path);
     }

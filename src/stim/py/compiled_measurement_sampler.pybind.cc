@@ -41,7 +41,7 @@ pybind11::object CompiledMeasurementSampler::sample_to_numpy(size_t num_shots, b
 void CompiledMeasurementSampler::sample_write(
     size_t num_samples, const std::string &filepath, const std::string &format) {
     auto f = format_to_enum(format);
-    FILE *out = fopen(filepath.data(), "w");
+    FILE *out = fopen(filepath.data(), "wb");
     if (out == nullptr) {
         throw std::invalid_argument("Failed to open '" + filepath + "' to write.");
     }

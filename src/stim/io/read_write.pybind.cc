@@ -118,7 +118,7 @@ void write_shot_data_file(
     simd_bit_table<MAX_BITWORD_WIDTH> buffer =
         numpy_array_to_transposed_simd_table(data, num_bits_per_shot, &num_shots);
 
-    RaiiFile f(path, "w");
+    RaiiFile f(path, "wb");
     simd_bits<MAX_BITWORD_WIDTH> unused(0);
     write_table_data(
         f.f,

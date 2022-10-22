@@ -53,9 +53,9 @@ int stim::command_m2d(int argc, const char **argv) {
     fclose(circuit_file);
 
     FILE *in = find_open_file_argument("--in", stdin, "rb", argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "wb", argc, argv);
     FILE *sweep_in = find_open_file_argument("--sweep", stdin, "rb", argc, argv);
-    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "w", argc, argv);
+    FILE *obs_out = find_open_file_argument("--obs_out", stdout, "wb", argc, argv);
     if (sweep_in == stdin) {
         sweep_in = nullptr;
     }

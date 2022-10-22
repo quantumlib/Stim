@@ -1152,12 +1152,12 @@ void stim_pybind::pybind_detector_error_model_methods(
 
                 >>> with tempfile.TemporaryDirectory() as d:
                 ...     diagram = circuit.diagram(type="match-graph-svg")
-                ...     with open(f"{d}/dem_image.svg", "w") as f:
+                ...     with open(f"{d}/dem_image.svg", "wb") as f:
                 ...         print(diagram, file=f)
 
                 >>> with tempfile.TemporaryDirectory() as d:
                 ...     diagram = circuit.diagram(type="match-graph-3d")
-                ...     with open(f"{d}/dem_3d_model.gltf", "w") as f:
+                ...     with open(f"{d}/dem_3d_model.gltf", "wb") as f:
                 ...         print(diagram, file=f)
         )DOC")
             .data());

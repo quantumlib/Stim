@@ -40,7 +40,7 @@ int stim::command_sample(int argc, const char **argv) {
         return EXIT_SUCCESS;
     }
     FILE *in = find_open_file_argument("--in", stdin, "rb", argc, argv);
-    FILE *out = find_open_file_argument("--out", stdout, "w", argc, argv);
+    FILE *out = find_open_file_argument("--out", stdout, "wb", argc, argv);
     auto rng = optionally_seeded_rng(argc, argv);
     bool deprecated_frame0 = find_bool_argument("--frame0", argc, argv);
     if (deprecated_frame0) {

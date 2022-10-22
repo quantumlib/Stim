@@ -716,7 +716,7 @@ TEST(MeasureRecordReader, read_file_data_into_shot_table_vs_write_table) {
         simd_bit_table<MAX_BITWORD_WIDTH> expected_transposed = expected.transposed();
 
         RaiiTempNamedFile tmp;
-        FILE *f = fopen(tmp.path.c_str(), "w");
+        FILE *f = fopen(tmp.path.c_str(), "wb");
         write_table_data(
             f, num_shots, bits_per_shot, simd_bits<MAX_BITWORD_WIDTH>(0), expected_transposed, format, 'M', 'M', 0);
         fclose(f);

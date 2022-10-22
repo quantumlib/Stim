@@ -62,9 +62,9 @@ void CompiledMeasurementsToDetectionEventsConverter::convert_file(
     auto format_sweep_bits = format_to_enum(sweep_bits_format);
     auto format_out = format_to_enum(detection_events_format);
     RaiiFile file_in(measurements_filepath.data(), "rb");
-    RaiiFile obs_out(obs_out_filepath, "w");
+    RaiiFile obs_out(obs_out_filepath, "wb");
     RaiiFile sweep_bits_in(sweep_bits_filepath, "rb");
-    RaiiFile detections_out(detection_events_filepath.data(), "w");
+    RaiiFile detections_out(detection_events_filepath.data(), "wb");
     auto parsed_obs_out_format = format_to_enum(obs_out_format);
 
     stim::stream_measurements_to_detection_events_helper(
@@ -269,7 +269,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
                 ...    DETECTOR rec[-1]
                 ... ''').compile_m2d_converter()
                 >>> with tempfile.TemporaryDirectory() as d:
-                ...    with open(f"{d}/measurements.01", "w") as f:
+                ...    with open(f"{d}/measurements.01", "wb") as f:
                 ...        print("0", file=f)
                 ...        print("1", file=f)
                 ...    converter.convert_file(
