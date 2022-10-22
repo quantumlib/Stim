@@ -13,6 +13,8 @@ JsonObj::JsonObj(size_t num) : num(num), type(0) {
 }
 JsonObj::JsonObj(float num) : num(num), type(0) {
 }
+JsonObj::JsonObj(double num) : double_num(num), type(11) {
+}
 
 JsonObj::JsonObj(std::string text) : text(text), type(1) {
 }
@@ -37,6 +39,7 @@ void JsonObj::clear() {
     }
     type = 0;
     num = 0;
+    double_num = 0;
 }
 
 void JsonObj::write_str(const std::string &s, std::ostream &out) {
@@ -66,13 +69,14 @@ void indented_new_line(std::ostream &out, int64_t indent) {
     }
 }
 
-void JsonObj::write(std::ostream &out, bool low_precision, int64_t indent) const {
+void JsonObj::write(std::ostream &out, int64_t indent) const {
     if (type == 0) {
-        if (low_precision) {
-            out << (float)num;
-        } else {
-            out << (double)num;
-        }
+        out << num;
+    } else if (type == 11) {
+        auto p = out.precision();
+        out.precision(std::numeric_limits<double>::digits10);
+        out << double_num;
+        out.precision(p);
     } else if (type == 1) {
         write_str(text, out);
     } else if (type == 2) {
@@ -120,14 +124,14 @@ void JsonObj::write(std::ostream &out, bool low_precision, int64_t indent) const
 
 std::string JsonObj::str(bool indent) const {
     std::stringstream ss;
-    ss.precision(std::numeric_limits<double>::max_digits10);
-    write(ss, false, indent ? 0 : INT64_MIN);
+    ss.precision(std::numeric_limits<float>::max_digits10);
+    write(ss, indent ? 0 : INT64_MIN);
     return ss.str();
 }
 
 std::ostream &stim_draw_internal::operator<<(std::ostream &out, const JsonObj &obj) {
     auto precision = out.precision();
-    out.precision(std::numeric_limits<double>::max_digits10);
+    out.precision(std::numeric_limits<float>::max_digits10);
     obj.write(out);
     out.precision(precision);
     return out;
