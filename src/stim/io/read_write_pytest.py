@@ -254,3 +254,49 @@ def test_read_write_shots_fuzzing(data_format: str, bit_packed: bool, path_type:
         )
 
         np.testing.assert_array_equal(packed_data, round_trip_data)
+
+
+@pytest.mark.parametrize("data_format,num_bits_per_shot", itertools.product(
+    ["01", "b8", "r8", "ptb64", "hits", "dets"],
+    [11, 511, 512, 513],
+))
+def test_read_write_shots_fuzzing_vs_python_references(data_format: str, num_bits_per_shot: int):
+    with tempfile.TemporaryDirectory() as d:
+        path = pathlib.Path(d) / 'shots'
+        num_shots = 320
+        data = np.random.randint(2, size=(num_shots, num_bits_per_shot), dtype=np.bool8)
+        stim.write_shot_data_file(
+            data=data,
+            path=path,
+            format=data_format,
+            num_detectors=num_bits_per_shot,
+        )
+
+        g = {}
+        exec(stim._UNSTABLE_raw_format_data()[data_format]['save_example'], g)
+        save_method = g[f'save_{data_format}']
+        if data_format == 'dets':
+            reference_written_data = save_method(data, num_detectors=num_bits_per_shot, num_observables=0)
+        else:
+            reference_written_data = save_method(data)
+
+        with open(path, 'rb' if isinstance(reference_written_data, bytes) else 'r') as f:
+            actual_written_data = f.read()
+        assert actual_written_data == reference_written_data
+
+        g = {}
+        exec(stim._UNSTABLE_raw_format_data()[data_format]['parse_example'], g)
+        read_method = g[f'parse_{data_format}']
+        if data_format == "01":
+            reference_read_data = read_method(actual_written_data)
+        elif data_format == "dets":
+            reference_read_data = read_method(actual_written_data, num_detectors=num_bits_per_shot, num_observables=0)
+        else:
+            reference_read_data = read_method(actual_written_data, bits_per_shot=num_bits_per_shot)
+        actual_read_data = stim.read_shot_data_file(
+            path=path,
+            format=data_format,
+            num_detectors=num_bits_per_shot,
+        )
+
+        np.testing.assert_array_equal(actual_read_data, reference_read_data)

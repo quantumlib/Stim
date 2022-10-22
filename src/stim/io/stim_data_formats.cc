@@ -109,7 +109,7 @@ def save_b8(shots: List[List[bool]]) -> bytes:
         v = 0
         for b in reversed(shot):
             v <<= 1
-            v += b
+            v += int(b)
         output += v.to_bytes(bytes_per_shot, 'little')
     return output
 )PYTHON",
@@ -175,7 +175,7 @@ def save_ptb64(shots: List[List[bool]]):
     if len(shots) % 64 != 0:
         raise ValueError("Number of shots must be a multiple of 64.")
 
-    output = b""
+    output = []
     for shot_offset in range(0, len(shots), 64):
         bits_per_shot = len(shots[0])
         for measure_index in range(bits_per_shot):
@@ -183,8 +183,8 @@ def save_ptb64(shots: List[List[bool]]):
             for k in range(64)[::-1]:
                 v <<= 1
                 v += int(shots[shot_offset + k][measure_index])
-            output += v.to_bytes(8, 'little')
-    return output
+            output.append(v.to_bytes(8, 'little'))
+    return b''.join(output)
 )PYTHON",
             R"PYTHON(
 from typing import List
@@ -327,19 +327,19 @@ events.
 from typing import List
 
 def save_r8(shots: List[List[bool]]) -> bytes:
-    output = b""
+    output = []
     for shot in shots:
         gap = 0
-        for b in shot + [True]:
+        for b in list(shot) + [True]:
             if b:
                 while gap >= 255:
                     gap -= 255
-                    output += (255).to_bytes(1, 'big')
-                output += gap.to_bytes(1, 'big')
+                    output.append((255).to_bytes(1, 'big'))
+                output.append(gap.to_bytes(1, 'big'))
                 gap = 0
             else:
                 gap += 1
-    return output
+    return b''.join(output)
 )PYTHON",
             R"PYTHON(
 from typing import List
