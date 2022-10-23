@@ -10,6 +10,8 @@ DECODER_PACKAGES = [
     ('fusion_blossom', 'fusion_blossom'),
     ('internal', 'gqec'),
     ('internal_correlated', 'gqec'),
+    ('internal_2', 'gqec'),
+    ('internal_correlated_2', 'gqec'),
 ]
 
 

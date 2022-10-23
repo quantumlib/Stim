@@ -203,10 +203,12 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.PauliString.commutes`](#stim.PauliString.commutes)
     - [`stim.PauliString.copy`](#stim.PauliString.copy)
     - [`stim.PauliString.from_numpy`](#stim.PauliString.from_numpy)
+    - [`stim.PauliString.from_unitary_matrix`](#stim.PauliString.from_unitary_matrix)
     - [`stim.PauliString.random`](#stim.PauliString.random)
     - [`stim.PauliString.sign`](#stim.PauliString.sign)
     - [`stim.PauliString.to_numpy`](#stim.PauliString.to_numpy)
     - [`stim.PauliString.to_tableau`](#stim.PauliString.to_tableau)
+    - [`stim.PauliString.to_unitary_matrix`](#stim.PauliString.to_unitary_matrix)
 - [`stim.Tableau`](#stim.Tableau)
     - [`stim.Tableau.__add__`](#stim.Tableau.__add__)
     - [`stim.Tableau.__call__`](#stim.Tableau.__call__)
@@ -6315,6 +6317,53 @@ def from_numpy(
     """
 ```
 
+<a name="stim.PauliString.from_unitary_matrix"></a>
+```python
+# stim.PauliString.from_unitary_matrix
+
+# (in class stim.PauliString)
+@staticmethod
+def from_unitary_matrix(
+    matrix: Iterable[Iterable[float]],
+    *,
+    endian: str = 'little',
+) -> stim.PauliString:
+    """Creates a stim.PauliString from the unitary matrix of a Pauli group member.
+
+    Args:
+        matrix: A unitary matrix specified as an iterable of rows, with each row is
+            an iterable of amplitudes. The unitary matrix must correspond to a
+            Pauli string, including global phase.
+        endian:
+            "little": matrix entries are in little endian order, where higher index
+                qubits correspond to larger changes in row/col indices.
+            "big": matrix entries are in big endian order, where higher index
+                qubits correspond to smaller changes in row/col indices.
+
+    Returns:
+        The pauli string equal to the given unitary matrix.
+
+    Raises:
+        ValueError: The given matrix isn't the unitary matrix of a Pauli string.
+
+    Examples:
+        >>> import stim
+        >>> stim.PauliString.from_unitary_matrix([
+        ...     [1j, 0],
+        ...     [0, -1j],
+        ... ], endian='little')
+        stim.PauliString("+iZ")
+
+        >>> stim.PauliString.from_unitary_matrix([
+        ...     [0, 1, 0, 0],
+        ...     [1, 0, 0, 0],
+        ...     [0, 0, 0, -1],
+        ...     [0, 0, -1, 0],
+        ... ], endian='little')
+        stim.PauliString("+XZ")
+    """
+```
+
 <a name="stim.PauliString.random"></a>
 ```python
 # stim.PauliString.random
@@ -6486,6 +6535,39 @@ def to_tableau(
                 stim.PauliString("+___Z"),
             ],
         )
+    """
+```
+
+<a name="stim.PauliString.to_unitary_matrix"></a>
+```python
+# stim.PauliString.to_unitary_matrix
+
+# (in class stim.PauliString)
+def to_unitary_matrix(
+    self,
+    *,
+    endian: str,
+) -> np.ndarray[np.complex64]:
+    """Converts the pauli string into a unitary matrix.
+
+    Args:
+        endian:
+            "little": The first qubit is the least significant (corresponds
+                to an offset of 1 in the matrix).
+            "big": The first qubit is the most significant (corresponds
+                to an offset of 2**(n - 1) in the matrix).
+
+    Returns:
+        A numpy array with dtype=np.complex64 and
+        shape=(1 << len(pauli_string), 1 << len(pauli_string)).
+
+    Example:
+        >>> import stim
+        >>> stim.PauliString("-YZ").to_unitary_matrix(endian="little")
+        array([[0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
+               [0.-1.j, 0.+0.j, 0.+0.j, 0.+0.j],
+               [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
+               [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
     """
 ```
 

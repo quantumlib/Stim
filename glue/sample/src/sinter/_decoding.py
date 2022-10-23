@@ -23,10 +23,10 @@ from sinter._decoding_pymatching import decode_using_pymatching
 DECODER_METHODS: Dict[str, Callable] = {
     'pymatching': decode_using_pymatching,
     'fusion_blossom': decode_using_fusion_blossom,
-    'internal': functools.partial(decode_using_internal_decoder,
-                                  use_correlated_decoding=False),
-    'internal_correlated': functools.partial(decode_using_internal_decoder,
-                                             use_correlated_decoding=True),
+    'internal': functools.partial(decode_using_internal_decoder, decoder='internal'),
+    'internal_correlated': functools.partial(decode_using_internal_decoder, decoder='internal_correlated'),
+    'internal_2': functools.partial(decode_using_internal_decoder, decoder='internal_2'),
+    'internal_correlated_2': functools.partial(decode_using_internal_decoder, decoder='internal_correlated_2'),
 }
 
 
