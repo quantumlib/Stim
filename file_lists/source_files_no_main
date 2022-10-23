@@ -32,6 +32,7 @@ src/stim/diagram/circuit_timeline_helper.cc
 src/stim/diagram/detector_slice/detector_slice_set.cc
 src/stim/diagram/diagram_util.cc
 src/stim/diagram/gate_data_3d.cc
+src/stim/diagram/gate_data_3d_texture_data.cc
 src/stim/diagram/gate_data_svg.cc
 src/stim/diagram/gltf.cc
 src/stim/diagram/graph/match_graph_3d_drawer.cc

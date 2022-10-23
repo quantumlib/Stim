@@ -1221,6 +1221,13 @@ def diagram(
 def diagram(
     self,
     *,
+    type: 'Literal["timeline-3d-html"]',
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
     type: 'Literal["match-graph-svg"]',
 ) -> 'stim._DiagramHelper':
     pass
@@ -1229,6 +1236,13 @@ def diagram(
     self,
     *,
     type: 'Literal["match-graph-3d"]',
+) -> 'stim._DiagramHelper':
+    pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["match-graph-3d-html"]',
 ) -> 'stim._DiagramHelper':
     pass
 @overload
@@ -1268,6 +1282,9 @@ def diagram(
                 to, and the measurements used by detectors.
             "timeline-3d": A 3d model, in GLTF format, of the operations
                 applied by the circuit over time.
+            "timeline-3d-html": Same 3d model as 'timeline-3d' but
+                embedded into an HTML web page containing an interactive
+                THREE.js viewer for the 3d model.
             "detector-slice-text": An ASCII diagram of the stabilizers
                 that detectors declared by the circuit correspond to
                 during the TICK instruction identified by the `tick`
@@ -1281,6 +1298,13 @@ def diagram(
                 usual diagram of a surface code.
 
                 Uses the Pauli color convention XYZ=RGB.
+            "match-graph-svg": An SVG image of the match graph extracted
+                from the circuit by stim.Circuit.detector_error_model.
+            "match-graph-3d": An 3D model of the match graph extracted
+                from the circuit by stim.Circuit.detector_error_model.
+            "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+                embedded into an HTML web page containing an interactive
+                THREE.js viewer for the 3d model.
         tick: Required for detector slice diagrams. Specifies which TICK
             instruction to slice at. Note that the first TICK in the
             circuit is tick=1. The value tick=0 refers to the very start
@@ -4721,6 +4745,13 @@ def diagram(
     type: 'Literal["match-graph-3d"]',
 ) -> 'stim._DiagramHelper':
     pass
+@overload
+def diagram(
+    self,
+    *,
+    type: 'Literal["match-graph-3d-html"]',
+) -> 'stim._DiagramHelper':
+    pass
 def diagram(
     self,
     *,
@@ -4743,6 +4774,9 @@ def diagram(
                 opened online in viewers such as
                 https://gltf-viewer.donmccurdy.com/ . Red lines are
                 errors crossing a logical observable.
+            "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+                embedded into an HTML web page containing an interactive
+                THREE.js viewer for the 3d model.
 
     Returns:
         An object whose `__str__` method returns the diagram, so that
@@ -10311,12 +10345,12 @@ def main(
 # (at top-level in the stim module)
 def read_shot_data_file(
     *,
-    path: str,
-    format: str,
+    path: Union[str, pathlib.Path],
+    format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'],
+    bit_packed: bool = False,
     num_measurements: int = 0,
     num_detectors: int = 0,
     num_observables: int = 0,
-    bit_pack: bool = False,
 ) -> np.ndarray:
     """Reads shot data, such as measurement samples, from a file.
 
@@ -10324,9 +10358,9 @@ def read_shot_data_file(
         path: The path to the file to read the data from.
         format: The format that the data is stored in, such as 'b8'.
             See https://github.com/quantumlib/Stim/blob/main/doc/result_formats.md
-        bit_pack: Defaults to false. Determines whether the result is a bool8 numpy
-            array with one bit per byte, or a uint8 numpy array with 8 bits per
-            byte.
+        bit_packed: Defaults to false. Determines whether the result is a bool8
+            numpy array with one bit per byte, or a uint8 numpy array with 8 bits
+            per byte.
         num_measurements: How many measurements there are per shot.
         num_detectors: How many detectors there are per shot.
         num_observables: How many observables there are per shot.
@@ -10336,11 +10370,11 @@ def read_shot_data_file(
     Returns:
         A numpy array containing the loaded data.
 
-        If bit_pack=False:
+        If bit_packed=False:
             dtype = np.bool8
             shape = (num_shots, num_measurements + num_detectors + num_observables)
             bit b from shot s is at result[s, b]
-        If bit_pack=True:
+        If bit_packed=True:
             dtype = np.uint8
             shape = (num_shots, math.ceil(
                 (num_measurements + num_detectors + num_observables) / 8))
@@ -10667,12 +10701,12 @@ def target_z(
 # (at top-level in the stim module)
 def write_shot_data_file(
     *,
-    data: object,
-    path: str,
+    data: np.ndarray,
+    path: Union[str, pathlib.Path],
     format: str,
-    num_measurements: Any = None,
-    num_detectors: Any = None,
-    num_observables: Any = None,
+    num_measurements: int = 0,
+    num_detectors: int = 0,
+    num_observables: int = 0,
 ) -> None:
     """Writes shot data, such as measurement samples, to a file.
 

@@ -632,6 +632,12 @@ OPTIONS
 
             INPUT MUST BE A CIRCUIT.
 
+        "timeline-3d-html": A web page containing a 3d model
+            viewer of the operations applied by a stim circuit
+            over time.
+
+            INPUT MUST BE A CIRCUIT.
+
         "match-graph-svg": An image of the decoding graph of a detector
             error model. Red lines are errors crossing a logical observable.
 
@@ -644,6 +650,12 @@ OPTIONS
             GLTF files can be opened with a variety of programs, or
             opened online in viewers such as
             https://gltf-viewer.donmccurdy.com/ .
+
+            INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
+
+        "match-graph-3d-html": A web page containing a 3d model
+            viewer of the decoding graph of a detector error
+            model or circuit.
 
             INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 

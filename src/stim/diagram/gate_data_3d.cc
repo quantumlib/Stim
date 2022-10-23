@@ -250,7 +250,7 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
     auto cube = make_cube_triangle_list(actually_square);
     auto image = std::shared_ptr<GltfImage>(new GltfImage{
         {"gates_image"},
-        GATE_DATA_3D_TEXTURE_DATA_URI,
+        make_gate_3d_texture_data_uri(),
     });
     auto sampler = std::shared_ptr<GltfSampler>(new GltfSampler{
         {"gates_sampler"},
@@ -353,4 +353,4 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         make_y_control_mesh(),
         make_z_control_mesh(),
     };
-};
+}
