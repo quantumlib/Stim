@@ -34,6 +34,68 @@ PyPauliString PyPauliString::operator+(const PyPauliString &rhs) const {
     return copy;
 }
 
+pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) const {
+    bool little_endian;
+    if (endian == "little") {
+        little_endian = true;
+    } else if (endian == "big") {
+        little_endian = false;
+    } else {
+        throw std::invalid_argument("endian not in ['little', 'big']");
+    }
+    size_t q = value.num_qubits;
+    if (q >= 32) {
+        throw std::invalid_argument("Too many qubits.");
+    }
+    size_t n = 1 << q;
+    std::complex<float> *buffer = new std::complex<float>[n * n];
+    uint64_t x = 0;
+    uint64_t z = 0;
+    for (size_t k = 0; k < q; k++) {
+        x <<= 1;
+        z <<= 1;
+        if (little_endian) {
+            x |= value.xs[q - k - 1];
+            z |= value.zs[q - k - 1];
+        } else {
+            x |= value.xs[k];
+            z |= value.zs[k];
+        }
+
+    }
+    uint8_t start_phase = 0;
+    start_phase += popcnt64(x & z);
+    if (imag) {
+        start_phase += 1;
+    }
+    if (value.sign) {
+        start_phase += 2;
+    }
+    for (size_t col = 0; col < n; col++) {
+        size_t row = col ^ x;
+        uint8_t phase = start_phase;
+        if (popcnt64(col & z) & 1) {
+            phase += 2;
+        }
+        std::complex<float> v{1, 0};
+        if (phase & 2) {
+            v *= -1;
+        }
+        if (phase & 1) {
+            v *= std::complex<float>{0, 1};
+        }
+        buffer[row * n + col] = v;
+    }
+
+    pybind11::capsule free_when_done(buffer, [](void *f) {
+        delete[] reinterpret_cast<std::complex<float> *>(f);
+    });
+
+    pybind11::ssize_t sn = (pybind11::ssize_t)n;
+    pybind11::ssize_t itemsize = sizeof(std::complex<float>);
+    return pybind11::array_t<std::complex<float>>({sn, sn}, {sn * itemsize, itemsize}, buffer, free_when_done);
+}
+
 PyPauliString &PyPauliString::operator+=(const PyPauliString &rhs) {
     if (&rhs == this) {
         *this *= 2;
@@ -265,6 +327,114 @@ PyPauliString PyPauliString::from_text(const char *text) {
     value *= factor;
     return value;
 }
+PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix, const std::string &endian) {
+    bool little_endian;
+    if (endian == "little") {
+        little_endian = true;
+    } else if (endian == "big") {
+        little_endian = false;
+    } else {
+        throw std::invalid_argument("endian not in ['little', 'big']");
+    }
+
+    auto row_index_phase = [&](const pybind11::handle &row) -> std::tuple<uint64_t, uint8_t, uint64_t> {
+        size_t num_cells = 0;
+        size_t non_zero_index = SIZE_MAX;
+        uint8_t phase = 0;
+        for (const auto &cell : row) {
+            auto c = pybind11::cast<std::complex<float>>(cell);
+            if (abs(c) < 1e-2) {
+                num_cells++;
+                continue;
+            }
+            if (abs(c - std::complex<float>{1, 0}) < 1e-2) {
+                phase = 0;
+            } else if (abs(c - std::complex<float>{0, 1}) < 1e-2) {
+                phase = 1;
+            } else if (abs(c - std::complex<float>{-1, 0}) < 1e-2) {
+                phase = 2;
+            } else if (abs(c - std::complex<float>{0, -1}) < 1e-2) {
+                phase = 3;
+            } else {
+                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It has values besides 0, 1, -1, 1j, and -1j.");
+            }
+            if (non_zero_index != SIZE_MAX) {
+                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It has two non-zero entries in the same row.");
+            }
+            non_zero_index = num_cells;
+            num_cells++;
+        }
+        if (non_zero_index == SIZE_MAX) {
+            throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It has a row with no non-zero entries.");
+        }
+        return {non_zero_index, phase, num_cells};
+    };
+
+    uint64_t x = 0;
+    uint64_t n = 0;
+    std::vector<uint8_t> phases;
+    for (const auto &row : matrix) {
+        auto row_data = row_index_phase(row);
+        uint64_t index = std::get<0>(row_data) ^ (uint64_t)phases.size();
+        phases.push_back(std::get<1>(row_data));
+        size_t len = std::get<2>(row_data);
+        if (phases.size() == 1) {
+            x = index;
+            n = len;
+        } else {
+            if (x != index) {
+                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. Rows disagree about which qubits are flipped.");
+            }
+            if (n != len) {
+                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. Rows have different lengths.");
+            }
+        }
+    }
+
+    if (phases.size() != n) {
+        throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It isn't square.");
+    }
+    if (n == 0 || (n & (n - 1))) {
+        throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. Its height isn't a power of 2.");
+    }
+
+    uint64_t z = 0;
+    size_t q = 0;
+    for (size_t p = n >> 1; p > 0; p >>= 1) {
+        z <<= 1;
+        z |= ((phases[p] - phases[0]) & 2) != 0;
+        q++;
+    }
+    for (size_t k = 0; k < n; k++) {
+        uint8_t expected_phase = phases[0];
+        if (popcnt64(k & z) & 1) {
+            expected_phase += 2;
+        }
+        if ((expected_phase & 3) != phases[k]) {
+            throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It doesn't have consistent phase flips.");
+        }
+    }
+
+    uint8_t leftover_phase = phases[0] + popcnt64(x & z);
+    PyPauliString result(PauliString(q), (leftover_phase & 1) != 0);
+    result.value.sign = (leftover_phase & 2) != 0;
+    auto &rx = result.value.xs.u64[0];
+    auto &rz = result.value.zs.u64[0];
+    if (little_endian) {
+        rx = x;
+        rz = z;
+    } else {
+        for (size_t k = 0; k < q; k++) {
+            rx <<= 1;
+            rz <<= 1;
+            rx |= x & 1;
+            rz |= z & 1;
+            x >>= 1;
+            z >>= 1;
+        }
+    }
+    return result;
+}
 
 pybind11::class_<PyPauliString> stim_pybind::pybind_pauli_string(pybind11::module &m) {
     return pybind11::class_<PyPauliString>(
@@ -480,6 +650,80 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                         stim.PauliString("+___Z"),
                     ],
                 )
+        )DOC")
+            .data());
+
+    c.def(
+        "to_unitary_matrix",
+        &PyPauliString::to_unitary_matrix,
+        pybind11::kw_only(),
+        pybind11::arg("endian"),
+        clean_doc_string(u8R"DOC(
+            @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
+            Converts the pauli string into a unitary matrix.
+
+            Args:
+                endian:
+                    "little": The first qubit is the least significant (corresponds
+                        to an offset of 1 in the matrix).
+                    "big": The first qubit is the most significant (corresponds
+                        to an offset of 2**(n - 1) in the matrix).
+
+            Returns:
+                A numpy array with dtype=np.complex64 and
+                shape=(1 << len(pauli_string), 1 << len(pauli_string)).
+
+            Example:
+                >>> import stim
+                >>> stim.PauliString("-YZ").to_unitary_matrix(endian="little")
+                array([[0.+0.j, 0.+1.j, 0.+0.j, 0.+0.j],
+                       [0.-1.j, 0.+0.j, 0.+0.j, 0.+0.j],
+                       [0.+0.j, 0.+0.j, 0.+0.j, 0.-1.j],
+                       [0.+0.j, 0.+0.j, 0.+1.j, 0.+0.j]], dtype=complex64)
+        )DOC")
+            .data());
+
+    c.def_static(
+        "from_unitary_matrix",
+        &PyPauliString::from_unitary_matrix,
+        pybind11::arg("matrix"),
+        pybind11::kw_only(),
+        pybind11::arg("endian") = "little",
+        clean_doc_string(u8R"DOC(
+            @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.PauliString:
+            Creates a stim.PauliString from the unitary matrix of a Pauli group member.
+
+            Args:
+                matrix: A unitary matrix specified as an iterable of rows, with each row is
+                    an iterable of amplitudes. The unitary matrix must correspond to a
+                    Pauli string, including global phase.
+                endian:
+                    "little": matrix entries are in little endian order, where higher index
+                        qubits correspond to larger changes in row/col indices.
+                    "big": matrix entries are in big endian order, where higher index
+                        qubits correspond to smaller changes in row/col indices.
+
+            Returns:
+                The pauli string equal to the given unitary matrix.
+
+            Raises:
+                ValueError: The given matrix isn't the unitary matrix of a Pauli string.
+
+            Examples:
+                >>> import stim
+                >>> stim.PauliString.from_unitary_matrix([
+                ...     [1j, 0],
+                ...     [0, -1j],
+                ... ], endian='little')
+                stim.PauliString("+iZ")
+
+                >>> stim.PauliString.from_unitary_matrix([
+                ...     [0, 1, 0, 0],
+                ...     [1, 0, 0, 0],
+                ...     [0, 0, 0, -1],
+                ...     [0, 0, -1, 0],
+                ... ], endian='little')
+                stim.PauliString("+XZ")
         )DOC")
             .data());
 

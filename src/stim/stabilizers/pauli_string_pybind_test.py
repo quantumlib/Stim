@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import itertools
 import numpy as np
 import stim
 import pytest
@@ -591,3 +592,200 @@ def test_to_from_numpy_round_trip(n: int):
     xs, zs = p.to_numpy(bit_packed=True)
     p2 = stim.PauliString.from_numpy(xs=xs, zs=zs, num_qubits=n, sign=p.sign)
     assert p2 == p
+
+
+def test_to_unitary_matrix():
+    np.testing.assert_array_equal(
+        stim.PauliString("").to_unitary_matrix(endian="little"),
+        [[1]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("-").to_unitary_matrix(endian="big"),
+        [[-1]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("i").to_unitary_matrix(endian="big"),
+        [[1j]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("-i").to_unitary_matrix(endian="big"),
+        [[-1j]],
+    )
+
+    np.testing.assert_array_equal(
+        stim.PauliString("I").to_unitary_matrix(endian="little"),
+        [[1, 0], [0, 1]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("X").to_unitary_matrix(endian="little"),
+        [[0, 1], [1, 0]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("Y").to_unitary_matrix(endian="little"),
+        [[0, -1j], [1j, 0]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("iY").to_unitary_matrix(endian="little"),
+        [[0, 1], [-1, 0]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("Z").to_unitary_matrix(endian="little"),
+        [[1, 0], [0, -1]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("-Z").to_unitary_matrix(endian="little"),
+        [[-1, 0], [0, 1]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("YY").to_unitary_matrix(endian="little"),
+        [[0, 0, 0, -1], [0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, 0]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("-YZ").to_unitary_matrix(endian="little"),
+        [[0, 1j, 0, 0], [-1j, 0, 0, 0], [0, 0, 0, -1j], [0, 0, 1j, 0]],
+    )
+    np.testing.assert_array_equal(
+        stim.PauliString("XYZ").to_unitary_matrix(endian="little"), [
+            [0, 0, 0, -1j, 0, 0, 0, 0],
+            [0, 0, -1j, 0, 0, 0, 0, 0],
+            [0, 1j, 0, 0, 0, 0, 0, 0],
+            [1j, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1j],
+            [0, 0, 0, 0, 0, 0, 1j, 0],
+            [0, 0, 0, 0, 0, -1j, 0, 0],
+            [0, 0, 0, 0, -1j, 0, 0, 0],
+        ])
+    np.testing.assert_array_equal(
+        stim.PauliString("ZYX").to_unitary_matrix(endian="big"), [
+            [0, 0, 0, -1j, 0, 0, 0, 0],
+            [0, 0, -1j, 0, 0, 0, 0, 0],
+            [0, 1j, 0, 0, 0, 0, 0, 0],
+            [1j, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1j],
+            [0, 0, 0, 0, 0, 0, 1j, 0],
+            [0, 0, 0, 0, 0, -1j, 0, 0],
+            [0, 0, 0, 0, -1j, 0, 0, 0],
+        ])
+
+
+def test_from_unitary_matrix():
+    assert stim.PauliString.from_unitary_matrix(
+        [[1]]
+    ) == stim.PauliString("")
+    assert stim.PauliString.from_unitary_matrix(
+        [[-1]]
+    ) == stim.PauliString("-")
+    assert stim.PauliString.from_unitary_matrix(
+        [[1j]]
+    ) == stim.PauliString("i")
+    assert stim.PauliString.from_unitary_matrix(
+        [[-1j]]
+    ) == stim.PauliString("-i")
+
+    assert stim.PauliString.from_unitary_matrix(
+        [[1, 0], [0, 1]]
+    ) == stim.PauliString("I")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, 1], [1, 0]]
+    ) == stim.PauliString("X")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, -1j], [1j, 0]]
+    ) == stim.PauliString("Y")
+    assert stim.PauliString.from_unitary_matrix(
+        [[1, 0], [0, -1]]
+    ) == stim.PauliString("Z")
+
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, 1], [-1, 0]]
+    ) == stim.PauliString("iY")
+    assert stim.PauliString.from_unitary_matrix(
+        [[0, 1j], [-1j, 0]]
+    ) == stim.PauliString("-Y")
+    assert stim.PauliString.from_unitary_matrix(
+        [[1j, 0], [0, -1j]]
+    ) == stim.PauliString("iZ")
+    assert stim.PauliString.from_unitary_matrix(
+        [[-1, 0], [0, 1]]
+    ) == stim.PauliString("-Z")
+
+    assert stim.PauliString.from_unitary_matrix([
+        [0, 0, 0, -1j, 0, 0, 0, 0],
+        [0, 0, -1j, 0, 0, 0, 0, 0],
+        [0, 1j, 0, 0, 0, 0, 0, 0],
+        [1j, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1j],
+        [0, 0, 0, 0, 0, 0, 1j, 0],
+        [0, 0, 0, 0, 0, -1j, 0, 0],
+        [0, 0, 0, 0, -1j, 0, 0, 0],
+    ], endian="little") == stim.PauliString("XYZ")
+    assert stim.PauliString.from_unitary_matrix([
+        [0, 0, 0, -1j, 0, 0, 0, 0],
+        [0, 0, -1j, 0, 0, 0, 0, 0],
+        [0, 1j, 0, 0, 0, 0, 0, 0],
+        [1j, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1j],
+        [0, 0, 0, 0, 0, 0, 1j, 0],
+        [0, 0, 0, 0, 0, -1j, 0, 0],
+        [0, 0, 0, 0, -1j, 0, 0, 0],
+    ], endian="big") == stim.PauliString("ZYX")
+
+
+def test_from_unitary_matrix_detect_bad_matrix():
+    with pytest.raises(ValueError, match="power of 2"):
+        stim.PauliString.from_unitary_matrix([])
+    with pytest.raises(ValueError, match="row with no non-zero"):
+        stim.PauliString.from_unitary_matrix([[]])
+    with pytest.raises(ValueError, match="row with no non-zero"):
+        stim.PauliString.from_unitary_matrix([[0]])
+    with pytest.raises(ValueError, match="values besides 0, 1,"):
+        stim.PauliString.from_unitary_matrix([[0.5]])
+    with pytest.raises(ValueError, match="isn't square"):
+        stim.PauliString.from_unitary_matrix([[1, 0]])
+    with pytest.raises(ValueError, match="no non-zero entries"):
+        stim.PauliString.from_unitary_matrix([[1], [0]])
+    with pytest.raises(ValueError, match="different lengths"):
+        stim.PauliString.from_unitary_matrix([[0, 1], [1]])
+    with pytest.raises(ValueError, match="two non-zero entries"):
+        stim.PauliString.from_unitary_matrix([[1, 1],
+                                              [0, 1]])
+    with pytest.raises(ValueError, match="which qubits are flipped"):
+        stim.PauliString.from_unitary_matrix([[1, 0],
+                                              [1, 0]])
+    with pytest.raises(ValueError, match="isn't square"):
+        stim.PauliString.from_unitary_matrix([[1, 0, 0],
+                                              [0, 1, 0]])
+    with pytest.raises(ValueError, match="consistent phase flips"):
+        stim.PauliString.from_unitary_matrix([[1, 0],
+                                              [0, 1j]])
+
+    with pytest.raises(ValueError, match="power of 2"):
+        stim.PauliString.from_unitary_matrix([[1, 0, 0],
+                                              [0, 1, 0],
+                                              [0, 0, 1]])
+    with pytest.raises(ValueError, match="which qubits are flipped"):
+        stim.PauliString.from_unitary_matrix([[1, 0, 0, 0],
+                                              [0, 1, 0, 0],
+                                              [0, 0, 0, 1],
+                                              [0, 0, 1, 0]])
+    with pytest.raises(ValueError, match="consistent phase flips"):
+        stim.PauliString.from_unitary_matrix([[1, 0, 0, 0],
+                                              [0, 1, 0, 0],
+                                              [0, 0, 1, 0],
+                                              [0, 0, 0, -1]])
+    with pytest.raises(ValueError, match="consistent phase flips"):
+        stim.PauliString.from_unitary_matrix([[1, 0, 0, 0],
+                                              [0, 1, 0, 0],
+                                              [0, 0, -1, 0],
+                                              [0, 0, 0, 1]])
+
+
+@pytest.mark.parametrize("n,endian", itertools.product(range(8), ['little', 'big']))
+def test_fuzz_to_from_unitary_matrix(n: int, endian: str):
+    p = stim.PauliString.random(n, allow_imaginary=True)
+    u = p.to_unitary_matrix(endian=endian)
+    r = stim.PauliString.from_unitary_matrix(u, endian=endian)
+    assert p == r
+
+    via_tableau = stim.Tableau.from_unitary_matrix(u, endian=endian).to_pauli_string()
+    r.sign = +1
+    assert via_tableau == r
