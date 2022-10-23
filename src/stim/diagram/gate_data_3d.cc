@@ -353,4 +353,4 @@ std::map<std::string, std::shared_ptr<GltfMesh>> stim_draw_internal::make_gate_p
         make_y_control_mesh(),
         make_z_control_mesh(),
     };
-};
+}

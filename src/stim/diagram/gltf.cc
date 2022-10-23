@@ -235,3 +235,126 @@ JsonObj GltfNode::to_json() const {
         {"translation", (std::vector<JsonObj>{translation.xyz[0], translation.xyz[1], translation.xyz[2]})},
     };
 }
+
+void stim_draw_internal::write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream &out) {
+    out << R"HTML(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body>
+  <a download="model.gltf" id="stim-3d-viewer-download-link" href="data:text/plain;base64,)HTML";
+    write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
+    out << R"HTML(">Download 3D Model as .GLTF File</a>
+  <br>Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
+  <div style="border: 1px dashed gray; margin-bottom: 50px; width: 300px; height: 300px; resize: both; overflow: hidden">
+    <div id="stim-3d-viewer-scene-container" style="width: 100%; height: 100%;">JavaScript Blocked?</div>
+  </div>
+
+  <script type="module">
+    /// BEGIN TERRIBLE HACK.
+    /// Get the object by ID then change the ID.
+    /// This is a workaround for https://github.com/jupyter/notebook/issues/6598
+    let container = document.getElementById("stim-3d-viewer-scene-container");
+    container.id = "stim-3d-viewer-scene-container-USED";
+    let downloadLink = document.getElementById("stim-3d-viewer-download-link");
+    downloadLink.id = "stim-3d-viewer-download-link-USED";
+    /// END TERRIBLE HACK.
+
+    container.textContent = "Loading viewer...";
+
+    /// BEGIN TERRIBLE HACK.
+    /// This a workaround for https://github.com/jupyter/notebook/issues/6597
+    ///
+    /// What this SHOULD be is:
+    ///
+    /// import {Box3, Scene, Color, PerspectiveCamera, WebGLRenderer, DirectionalLight} from "three";
+    /// import {OrbitControls} from "three-orbitcontrols";
+    /// import {GLTFLoader} from "three-gltf-loader";
+    ///
+    /// assuming the following import map exists:
+    ///
+    /// with import map:
+    ///   {
+    ///     "imports": {
+    ///       "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
+    ///       "three-orbitcontrols": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js",
+    ///       "three-gltf-loader": "https://unpkg.com/three@0.138.0/examples/jsm/loaders/GLTFLoader.js"
+    ///     }
+    ///   }
+    import {
+        WebGLRenderer,Scene,EventDispatcher,MOUSE,Quaternion,Spherical,TOUCH,Vector2,Vector3,AnimationClip,Bone,Box3,BufferAttribute,BufferGeometry,ClampToEdgeWrapping,Color,DirectionalLight,DoubleSide,FileLoader,FrontSide,Group,ImageBitmapLoader,InterleavedBuffer,InterleavedBufferAttribute,Interpolant,InterpolateDiscrete,InterpolateLinear,Line,LineBasicMaterial,LineLoop,LineSegments,LinearFilter,LinearMipmapLinearFilter,LinearMipmapNearestFilter,Loader,LoaderUtils,Material,MathUtils,Matrix4,Mesh,MeshBasicMaterial,MeshPhysicalMaterial,MeshStandardMaterial,MirroredRepeatWrapping,NearestFilter,NearestMipmapLinearFilter,NearestMipmapNearestFilter,NumberKeyframeTrack,Object3D,OrthographicCamera,PerspectiveCamera,PointLight,Points,PointsMaterial,PropertyBinding,QuaternionKeyframeTrack,RepeatWrapping,Skeleton,SkinnedMesh,Sphere,SpotLight,TangentSpaceNormalMap,Texture,TextureLoader,TriangleFanDrawMode,TriangleStripDrawMode,VectorKeyframeTrack,sRGBEncoding
+    } from "https://unpkg.com/three@0.138.0/build/three.module.js";
+    async function workaround(result, url) {
+        let fetched = await fetch(url);
+        let content = await (await fetched.blob()).text();
+        let strip_module = content.split("} from 'three';")[1].split("export {")[0];
+        let wrap_function = "(() => {" + strip_module + "\nreturn " + result + ";\n})()";
+        return eval(wrap_function);
+    }
+    let OrbitControls = await workaround("OrbitControls", "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js");
+    let GLTFLoader = await workaround("GLTFLoader", "https://unpkg.com/three@0.138.0/examples/jsm/loaders/GLTFLoader.js");
+    ///
+    /// END TERRIBLE HACK.
+    ///
+
+    try {
+      container.textContent = "Loading model...";
+      let modelDataUri = downloadLink.href;
+      let gltf = await new GLTFLoader().loadAsync(modelDataUri);
+      container.textContent = "Loading scene...";
+
+      // Create the scene, adding lighting for the loaded objects.
+      let scene = new Scene();
+      scene.background = new Color("white");
+      let mainLight = new DirectionalLight(0xffffff, 5);
+      mainLight.position.set(1, 1, 0);
+      let backLight = new DirectionalLight(0xffffff, 4);
+      backLight.position.set(-1, -1, 0);
+      scene.add(mainLight, backLight);
+      scene.add(gltf.scene);
+
+      // Point the camera at the center, far enough back to see everything.
+      let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
+      let controls = new OrbitControls(camera, container);
+      let bounds = new Box3().setFromObject(scene);
+      controls.target.set(
+          (bounds.min.x + bounds.max.x) * 0.5,
+          (bounds.min.y + bounds.max.y) * 0.5,
+          (bounds.min.z + bounds.max.z) * 0.5,
+      );
+      let dx = bounds.min.x + bounds.max.x;
+      let dy = bounds.min.y + bounds.max.y;
+      let dz = bounds.min.z + bounds.max.z;
+      let diag = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      camera.position.set(diag*0.3, diag*0.4, -diag*1.8);
+      controls.update();
+
+      // Set up rendering.
+      let renderer = new WebGLRenderer({ antialias: true });
+      container.textContent = "";
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.physicallyCorrectLights = true;
+      container.appendChild(renderer.domElement);
+
+      // Render whenever any important changes have occurred.
+      requestAnimationFrame(() => renderer.render(scene, camera));
+      new ResizeObserver(() => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.render(scene, camera);
+      }).observe(container);
+      controls.addEventListener("change", () => {
+          renderer.render(scene, camera);
+      })
+    } catch (ex) {
+      container.textContent = "Failed to show model. " + ex;
+      console.error(ex);
+    }
+  </script>
+</body>
+)HTML";
+}

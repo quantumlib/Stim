@@ -43,90 +43,6 @@ pybind11::class_<DiagramHelper> stim_pybind::pybind_diagram(pybind11::module &m)
     return c;
 }
 
-void write_html_viewer_for_gltf_data(const std::string &gltf_data, std::ostream &out) {
-    out << R"HTML(
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <script type="importmap">
-      {
-          "imports": {
-              "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
-              "three-orbitcontrols": "https://unpkg.com/three@0.138.0/examples/jsm/controls/OrbitControls.js",
-              "three-gltf-loader": "https://unpkg.com/three@0.138.0/examples/jsm/loaders/GLTFLoader.js"
-          }
-      }
-  </script>
-</head>
-<body>
-  Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
-  <div style="border: 1px dashed gray; margin-bottom: 50px; width: 300px; height: 300px; resize: both; overflow: hidden">
-    <div id="scene-container" style="width: 100%; height: 100%;">Loading viewer...</div>
-  </div>
-
-<script type="module">
-let url = "data:image/svg+xml;base64,)HTML";
-    write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
-    out << R"HTML(";
-import {Box3, Scene, Color, PerspectiveCamera, WebGLRenderer, DirectionalLight} from "three";
-import {OrbitControls} from "three-orbitcontrols";
-import {GLTFLoader} from "three-gltf-loader";
-new GLTFLoader().load(url, gltf => {
-    let container = /** @type {!HTMLDivElement} */ document.getElementById("scene-container");
-    container.textContent = "";
-
-    // Create the scene, adding lighting for the loaded objects.
-    let scene = new Scene();
-    scene.background = new Color("white");
-    let mainLight = new DirectionalLight(0xffffff, 5);
-    mainLight.position.set(1, 1, 0);
-    let backLight = new DirectionalLight(0xffffff, 4);
-    backLight.position.set(-1, -1, 0);
-    scene.add(mainLight, backLight);
-    scene.add(gltf.scene);
-
-    // Point the camera at the center, far enough back to see everything.
-    let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
-    let controls = new OrbitControls(camera, container);
-    let bounds = new Box3().setFromObject(scene);
-    controls.target.set(
-        (bounds.min.x + bounds.max.x) * 0.5,
-        (bounds.min.y + bounds.max.y) * 0.5,
-        (bounds.min.z + bounds.max.z) * 0.5,
-    );
-    let dx = bounds.min.x + bounds.max.x;
-    let dy = bounds.min.y + bounds.max.y;
-    let dz = bounds.min.z + bounds.max.z;
-    let diag = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    camera.position.set(diag*0.3, diag*0.4, -diag*1.8);
-    controls.update();
-
-    // Set up rendering.
-    let renderer = new WebGLRenderer({ antialias: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.physicallyCorrectLights = true;
-    container.appendChild(renderer.domElement);
-
-    // Render whenever any important changes have occurred.
-    requestAnimationFrame(() => renderer.render(scene, camera));
-    new ResizeObserver(() => {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.render(scene, camera);
-    }).observe(container);
-    controls.addEventListener("change", () => {
-        renderer.render(scene, camera);
-    })
-}, () => {});
-</script>
-</body>
-</html>
-)HTML";
-}
-
 void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c) {
     c.def("_repr_html_", [](const DiagramHelper &self) -> pybind11::object {
         if (self.type == DIAGRAM_TYPE_TEXT) {
@@ -144,6 +60,9 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
             std::stringstream out;
             write_html_viewer_for_gltf_data(self.content, out);
             return pybind11::cast(out.str());
+        }
+        if (self.type == DIAGRAM_TYPE_HTML) {
+            return pybind11::cast(self.content);
         }
         return pybind11::none();
     });
@@ -170,6 +89,12 @@ DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std:
         std::stringstream out;
         dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
         return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
+    } else if (type == "match-graph-3d-html") {
+        std::stringstream out;
+        dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
+        std::stringstream out_html;
+        write_html_viewer_for_gltf_data(out.str(), out_html);
+        return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);
     }
@@ -194,6 +119,12 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out;
         DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
         return DiagramHelper{DIAGRAM_TYPE_GLTF, out.str()};
+    } else if (type == "timeline-3d-html") {
+        std::stringstream out;
+        DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
+        std::stringstream out_html;
+        write_html_viewer_for_gltf_data(out.str(), out_html);
+        return DiagramHelper{DIAGRAM_TYPE_GLTF, out_html.str()};
     } else if (type == "detector-slice-text") {
         if (tick.is_none()) {
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
@@ -208,7 +139,7 @@ DiagramHelper stim_pybind::circuit_diagram(
         std::stringstream out;
         DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick)).write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
-    } else if (type == "match-graph-svg" || type == "match-graph-3d") {
+    } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
         auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
             circuit, true, true, false, 1, true, false);
         return dem_diagram(dem, type);

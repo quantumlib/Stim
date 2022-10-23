@@ -935,7 +935,9 @@ q1: -Z:D0-
 
     assert c.diagram(type="timeline-svg") is not None
     assert c.diagram(type="timeline-3d") is not None
+    assert c.diagram(type="timeline-3d-html") is not None
     assert c.diagram(type="match-graph-svg") is not None
     assert c.diagram(type="match-graph-3d") is not None
+    assert c.diagram(type="match-graph-3d-html") is not None
     assert c.diagram(type="detector-slice-svg", tick=1) is not None
     assert c.diagram(type="detector-slice-text", tick=1) is not None

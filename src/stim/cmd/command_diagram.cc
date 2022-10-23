@@ -32,8 +32,10 @@ enum DiagramTypes {
     TIMELINE_TEXT,
     TIMELINE_SVG,
     TIMELINE_3D,
+    TIMELINE_3D_HTML,
     MATCH_GRAPH_SVG,
     MATCH_GRAPH_3D,
+    MATCH_GRAPH_3D_HTML,
     DETECTOR_SLICE_TEXT,
     DETECTOR_SLICE_SVG,
 };
@@ -59,8 +61,10 @@ int stim::command_diagram(int argc, const char **argv) {
         {"timeline-text", TIMELINE_TEXT},
         {"timeline-svg", TIMELINE_SVG},
         {"timeline-3d", TIMELINE_3D},
+        {"timeline-3d-html", TIMELINE_3D_HTML},
         {"match-graph-svg", MATCH_GRAPH_SVG},
         {"match-graph-3d", MATCH_GRAPH_3D},
+        {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
         {"detector-slice-text", DETECTOR_SLICE_TEXT},
         {"detector-slice-svg", DETECTOR_SLICE_SVG},
     };
@@ -110,9 +114,21 @@ int stim::command_diagram(int argc, const char **argv) {
             auto circuit = read_circuit();
             DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
             break;
+        } case TIMELINE_3D_HTML: {
+            auto circuit = read_circuit();
+            std::stringstream tmp_out;
+            DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
+            write_html_viewer_for_gltf_data(tmp_out.str(), out);
+            break;
         } case MATCH_GRAPH_3D: {
             auto dem = read_dem();
             dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
+            break;
+        } case MATCH_GRAPH_3D_HTML: {
+            auto dem = read_dem();
+            std::stringstream tmp_out;
+            dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
+            write_html_viewer_for_gltf_data(tmp_out.str(), out);
             break;
         } case MATCH_GRAPH_SVG: {
             auto dem = read_dem();
@@ -223,6 +239,12 @@ SubCommandHelp stim::command_diagram_help() {
 
                 INPUT MUST BE A CIRCUIT.
 
+            "timeline-3d-html": A web page containing a 3d model
+                viewer of the operations applied by a stim circuit
+                over time.
+
+                INPUT MUST BE A CIRCUIT.
+
             "match-graph-svg": An image of the decoding graph of a detector
                 error model. Red lines are errors crossing a logical observable.
 
@@ -235,6 +257,12 @@ SubCommandHelp stim::command_diagram_help() {
                 GLTF files can be opened with a variety of programs, or
                 opened online in viewers such as
                 https://gltf-viewer.donmccurdy.com/ .
+
+                INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
+
+            "match-graph-3d-html": A web page containing a 3d model
+                viewer of the decoding graph of a detector error
+                model or circuit.
 
                 INPUT MUST BE A DETECTOR ERROR MODEL OR A CIRCUIT.
 

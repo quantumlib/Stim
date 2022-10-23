@@ -739,6 +739,13 @@ class Circuit:
     def diagram(
         self,
         *,
+        type: 'Literal["timeline-3d-html"]',
+    ) -> 'stim._DiagramHelper':
+        pass
+    @overload
+    def diagram(
+        self,
+        *,
         type: 'Literal["match-graph-svg"]',
     ) -> 'stim._DiagramHelper':
         pass
@@ -747,6 +754,13 @@ class Circuit:
         self,
         *,
         type: 'Literal["match-graph-3d"]',
+    ) -> 'stim._DiagramHelper':
+        pass
+    @overload
+    def diagram(
+        self,
+        *,
+        type: 'Literal["match-graph-3d-html"]',
     ) -> 'stim._DiagramHelper':
         pass
     @overload
@@ -786,6 +800,9 @@ class Circuit:
                     to, and the measurements used by detectors.
                 "timeline-3d": A 3d model, in GLTF format, of the operations
                     applied by the circuit over time.
+                "timeline-3d-html": Same 3d model as 'timeline-3d' but
+                    embedded into an HTML web page containing an interactive
+                    THREE.js viewer for the 3d model.
                 "detector-slice-text": An ASCII diagram of the stabilizers
                     that detectors declared by the circuit correspond to
                     during the TICK instruction identified by the `tick`
@@ -799,6 +816,13 @@ class Circuit:
                     usual diagram of a surface code.
 
                     Uses the Pauli color convention XYZ=RGB.
+                "match-graph-svg": An SVG image of the match graph extracted
+                    from the circuit by stim.Circuit.detector_error_model.
+                "match-graph-3d": An 3D model of the match graph extracted
+                    from the circuit by stim.Circuit.detector_error_model.
+                "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+                    embedded into an HTML web page containing an interactive
+                    THREE.js viewer for the 3d model.
             tick: Required for detector slice diagrams. Specifies which TICK
                 instruction to slice at. Note that the first TICK in the
                 circuit is tick=1. The value tick=0 refers to the very start
@@ -3487,6 +3511,13 @@ class DetectorErrorModel:
         type: 'Literal["match-graph-3d"]',
     ) -> 'stim._DiagramHelper':
         pass
+    @overload
+    def diagram(
+        self,
+        *,
+        type: 'Literal["match-graph-3d-html"]',
+    ) -> 'stim._DiagramHelper':
+        pass
     def diagram(
         self,
         *,
@@ -3509,6 +3540,9 @@ class DetectorErrorModel:
                     opened online in viewers such as
                     https://gltf-viewer.donmccurdy.com/ . Red lines are
                     errors crossing a logical observable.
+                "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+                    embedded into an HTML web page containing an interactive
+                    THREE.js viewer for the 3d model.
 
         Returns:
             An object whose `__str__` method returns the diagram, so that

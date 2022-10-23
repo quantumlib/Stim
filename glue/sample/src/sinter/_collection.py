@@ -246,7 +246,8 @@ def collect(*,
                 progress_printer.show_latest_progress(progress.status_message)
             if progress_callback is not None:
                 progress_callback(progress)
-
+        if print_progress:
+            progress_printer.flush()
         return list(result.data.values())
 
 
