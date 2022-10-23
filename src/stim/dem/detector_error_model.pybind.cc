@@ -1114,6 +1114,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         clean_doc_string(u8R"DOC(
             @overload def diagram(self, *, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
             @signature def diagram(self, *, type: str) -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
@@ -1132,6 +1133,9 @@ void stim_pybind::pybind_detector_error_model_methods(
                         opened online in viewers such as
                         https://gltf-viewer.donmccurdy.com/ . Red lines are
                         errors crossing a logical observable.
+                    "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
+                        embedded into an HTML web page containing an interactive
+                        THREE.js viewer for the 3d model.
 
             Returns:
                 An object whose `__str__` method returns the diagram, so that

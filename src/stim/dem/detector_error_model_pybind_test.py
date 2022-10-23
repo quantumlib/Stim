@@ -459,3 +459,4 @@ def test_diagram():
     dem = circuit.detector_error_model(decompose_errors=True)
     assert dem.diagram(type="match-graph-svg") is not None
     assert dem.diagram(type="match-graph-3d") is not None
+    assert dem.diagram(type="match-graph-3d-html") is not None

@@ -26,6 +26,7 @@ enum DiagramType {
     DIAGRAM_TYPE_GLTF,
     DIAGRAM_TYPE_SVG,
     DIAGRAM_TYPE_TEXT,
+    DIAGRAM_TYPE_HTML,
 };
 
 struct DiagramHelper {

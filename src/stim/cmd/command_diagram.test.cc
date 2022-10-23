@@ -37,3 +37,33 @@ q0: -H-@-
 q1: ---X-
             )output"));
 }
+
+TEST(command_diagram, run_captured_stim_main_works_various_arguments) {
+    std::vector<std::string> diagram_types{
+        "timeline-text",
+        "timeline-svg",
+        "timeline-3d",
+        "timeline-3d-html",
+        "match-graph-svg",
+        "match-graph-3d",
+        "match-graph-3d-html",
+        "detector-slice-txt",
+        "detector-slice-svg",
+    };
+    ASSERT_NE("", run_captured_stim_main(
+        {
+            "diagram",
+            "--type",
+            "timeline-svg",
+            "--tick",
+            "1",
+        },
+        R"input(
+            H 0
+            CNOT 0 1
+            X_ERROR(0.125) 0
+            TICK
+            M 0 1
+            DETECTOR(1, 2, 3) rec[-1] rec[-2]
+        )input"));
+}
