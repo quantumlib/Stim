@@ -299,56 +299,61 @@ void stim_draw_internal::write_html_viewer_for_gltf_data(const std::string &gltf
     /// END TERRIBLE HACK.
     ///
 
-    container.textContent = "Loading model...";
-    let modelDataUri = downloadLink.href;
-    let gltf = await new GLTFLoader().loadAsync(modelDataUri);
-    container.textContent = "Loading scene...";
+    try {
+      container.textContent = "Loading model...";
+      let modelDataUri = downloadLink.href;
+      let gltf = await new GLTFLoader().loadAsync(modelDataUri);
+      container.textContent = "Loading scene...";
 
-    // Create the scene, adding lighting for the loaded objects.
-    let scene = new Scene();
-    scene.background = new Color("white");
-    let mainLight = new DirectionalLight(0xffffff, 5);
-    mainLight.position.set(1, 1, 0);
-    let backLight = new DirectionalLight(0xffffff, 4);
-    backLight.position.set(-1, -1, 0);
-    scene.add(mainLight, backLight);
-    scene.add(gltf.scene);
+      // Create the scene, adding lighting for the loaded objects.
+      let scene = new Scene();
+      scene.background = new Color("white");
+      let mainLight = new DirectionalLight(0xffffff, 5);
+      mainLight.position.set(1, 1, 0);
+      let backLight = new DirectionalLight(0xffffff, 4);
+      backLight.position.set(-1, -1, 0);
+      scene.add(mainLight, backLight);
+      scene.add(gltf.scene);
 
-    // Point the camera at the center, far enough back to see everything.
-    let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
-    let controls = new OrbitControls(camera, container);
-    let bounds = new Box3().setFromObject(scene);
-    controls.target.set(
-        (bounds.min.x + bounds.max.x) * 0.5,
-        (bounds.min.y + bounds.max.y) * 0.5,
-        (bounds.min.z + bounds.max.z) * 0.5,
-    );
-    let dx = bounds.min.x + bounds.max.x;
-    let dy = bounds.min.y + bounds.max.y;
-    let dz = bounds.min.z + bounds.max.z;
-    let diag = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    camera.position.set(diag*0.3, diag*0.4, -diag*1.8);
-    controls.update();
+      // Point the camera at the center, far enough back to see everything.
+      let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
+      let controls = new OrbitControls(camera, container);
+      let bounds = new Box3().setFromObject(scene);
+      controls.target.set(
+          (bounds.min.x + bounds.max.x) * 0.5,
+          (bounds.min.y + bounds.max.y) * 0.5,
+          (bounds.min.z + bounds.max.z) * 0.5,
+      );
+      let dx = bounds.min.x + bounds.max.x;
+      let dy = bounds.min.y + bounds.max.y;
+      let dz = bounds.min.z + bounds.max.z;
+      let diag = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      camera.position.set(diag*0.3, diag*0.4, -diag*1.8);
+      controls.update();
 
-    // Set up rendering.
-    let renderer = new WebGLRenderer({ antialias: true });
-    container.textContent = "";
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.physicallyCorrectLights = true;
-    container.appendChild(renderer.domElement);
-
-    // Render whenever any important changes have occurred.
-    requestAnimationFrame(() => renderer.render(scene, camera));
-    new ResizeObserver(() => {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
+      // Set up rendering.
+      let renderer = new WebGLRenderer({ antialias: true });
+      container.textContent = "";
       renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.render(scene, camera);
-    }).observe(container);
-    controls.addEventListener("change", () => {
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.physicallyCorrectLights = true;
+      container.appendChild(renderer.domElement);
+
+      // Render whenever any important changes have occurred.
+      requestAnimationFrame(() => renderer.render(scene, camera));
+      new ResizeObserver(() => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.render(scene, camera);
-    })
+      }).observe(container);
+      controls.addEventListener("change", () => {
+          renderer.render(scene, camera);
+      })
+    } catch (ex) {
+      container.textContent = "Failed to show model. " + ex;
+      console.error(ex);
+    }
   </script>
 </body>
 )HTML";
