@@ -19,9 +19,9 @@
 
 #include <iostream>
 
-#include "stim/diagram/circuit_timeline_helper.h"
-#include "stim/diagram/basic_3d_diagram.h"
 #include "stim/dem/detector_error_model.h"
+#include "stim/diagram/basic_3d_diagram.h"
+#include "stim/diagram/circuit_timeline_helper.h"
 
 namespace stim_draw_internal {
 

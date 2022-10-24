@@ -18,12 +18,12 @@
 
 #include "gtest/gtest.h"
 
+#include "match_graph_3d_drawer.h"
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
 #include "stim/simulators/error_analyzer.h"
 #include "stim/test_util.test.h"
-#include "match_graph_3d_drawer.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -58,14 +58,7 @@ TEST(match_graph_drawer_svg, repetition_code) {
     CircuitGenParameters params(10, 7, "memory");
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false);
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
     expect_graph_svg_diagram_is_identical_to_saved_file(dem, "match_graph_repetition_code.svg");
 }
 
@@ -73,13 +66,6 @@ TEST(match_graph_drawer_svg, surface_code) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false);
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
     expect_graph_svg_diagram_is_identical_to_saved_file(dem, "match_graph_surface_code.svg");
 }

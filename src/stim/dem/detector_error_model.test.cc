@@ -875,6 +875,7 @@ TEST(detector_error_model, flattened) {
 }
 
 TEST(detector_error_model, parse_windows_newlines) {
-    ASSERT_EQ(DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"),
-              DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"));
+    ASSERT_EQ(
+        DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"),
+        DetectorErrorModel("error(0.125) D0\r\ndetector(5) D10\r\n"));
 }

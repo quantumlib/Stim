@@ -1,5 +1,6 @@
-#include "stim/diagram/graph/match_graph_3d_drawer.h"
 #include "stim/diagram/graph/match_graph_svg_drawer.h"
+
+#include "stim/diagram/graph/match_graph_3d_drawer.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -13,7 +14,8 @@ inline void write_key_val(std::ostream &out, const char *key, const T &val) {
     out << ' ' << key << "=\"" << val << "\"";
 }
 
-void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(const stim::DetectorErrorModel &dem, std::ostream &svg_out) {
+void stim_draw_internal::dem_match_graph_to_svg_diagram_write_to(
+    const stim::DetectorErrorModel &dem, std::ostream &svg_out) {
     auto diagram = dem_match_graph_to_basic_3d_diagram(dem);
     std::vector<Coord<2>> used_coords;
     for (const auto &e : diagram.line_data) {

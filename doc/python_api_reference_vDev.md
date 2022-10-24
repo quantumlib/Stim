@@ -1251,6 +1251,7 @@ def diagram(
     *,
     type: 'Literal["detector-slice-text"]',
     tick: int,
+    filter_coords: Optional[Iterable[Iterable[float]]] = None,
 ) -> 'stim._DiagramHelper':
     pass
 @overload
@@ -1259,6 +1260,7 @@ def diagram(
     *,
     type: 'Literal["detector-slice-svg"]',
     tick: int,
+    filter_coords: Optional[Iterable[Iterable[float]]] = None,
 ) -> 'stim._DiagramHelper':
     pass
 def diagram(
@@ -1266,6 +1268,7 @@ def diagram(
     *,
     type: str,
     tick: Optional[int] = None,
+    filter_coords: Optional[Iterable[Iterable[float]]] = None,
 ) -> 'stim._DiagramHelper':
     """Returns a diagram of the circuit, from a variety of options.
 
@@ -1309,6 +1312,9 @@ def diagram(
             instruction to slice at. Note that the first TICK in the
             circuit is tick=1. The value tick=0 refers to the very start
             of the circuit.
+        filter_coords: A set of acceptable coordinate prefixes. For
+            detector slice diagrams, only detectors whose coordinates
+            begin with one of these filters will be included.
 
     Returns:
         An object whose `__str__` method returns the diagram, so that

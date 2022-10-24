@@ -37,7 +37,11 @@ struct DiagramHelper {
 pybind11::class_<DiagramHelper> pybind_diagram(pybind11::module &m);
 void pybind_diagram_methods(pybind11::module &m, pybind11::class_<DiagramHelper> &c);
 DiagramHelper dem_diagram(const stim::DetectorErrorModel &dem, const std::string &type);
-DiagramHelper circuit_diagram(const stim::Circuit &circuit, const std::string &type, const pybind11::object &tick);
+DiagramHelper circuit_diagram(
+    const stim::Circuit &circuit,
+    const std::string &type,
+    const pybind11::object &tick,
+    const pybind11::object &filter_coords_obj);
 
 }  // namespace stim_pybind
 

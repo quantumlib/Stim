@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include "stim/circuit/circuit.pybind.h"
+#include "stim/cmd/command_diagram.pybind.h"
 #include "stim/dem/detector_error_model_instruction.pybind.h"
 #include "stim/dem/detector_error_model_repeat_block.pybind.h"
 #include "stim/dem/detector_error_model_target.pybind.h"
@@ -24,7 +25,6 @@
 #include "stim/py/base.pybind.h"
 #include "stim/search/search.h"
 #include "stim/simulators/dem_sampler.h"
-#include "stim/cmd/command_diagram.pybind.h"
 
 using namespace stim;
 

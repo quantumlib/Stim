@@ -1,4 +1,5 @@
 #include "stim/diagram/basic_3d_diagram.h"
+
 #include "gate_data_3d.h"
 
 using namespace stim;

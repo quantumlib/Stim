@@ -37,7 +37,7 @@
 
 using namespace stim;
 
-std::string stim::clean_doc_string(const char *c) {
+std::string stim::clean_doc_string(const char *c, bool allow_too_long) {
     // Skip leading empty lines.
     while (*c == '\n') {
         c++;
@@ -67,7 +67,7 @@ std::string stim::clean_doc_string(const char *c) {
             }
             line_length++;
         }
-        if (line_length > 80) {
+        if (!allow_too_long && line_length > 80) {
             const char *start_of_line = result.c_str() + result.size() - line_length - 1;
             if (memcmp(start_of_line, "@signature", strlen("@signature")) != 0 &&
                 memcmp(start_of_line, "@overload", strlen("@overload")) != 0 &&

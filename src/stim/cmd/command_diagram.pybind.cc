@@ -17,12 +17,12 @@
 #include "stim/cmd/command_help.h"
 #include "stim/diagram/base64.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
-#include "stim/simulators/error_analyzer.h"
+#include "stim/diagram/graph/match_graph_3d_drawer.h"
+#include "stim/diagram/graph/match_graph_svg_drawer.h"
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
-#include "stim/diagram/graph/match_graph_3d_drawer.h"
-#include "stim/diagram/graph/match_graph_svg_drawer.h"
+#include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -100,7 +100,26 @@ DiagramHelper stim_pybind::dem_diagram(const DetectorErrorModel &dem, const std:
     }
 }
 DiagramHelper stim_pybind::circuit_diagram(
-    const Circuit &circuit, const std::string &type, const pybind11::object &tick) {
+    const Circuit &circuit,
+    const std::string &type,
+    const pybind11::object &tick,
+    const pybind11::object &filter_coords_obj) {
+    std::vector<std::vector<double>> filter_coords;
+    try {
+        if (filter_coords_obj.is_none()) {
+            filter_coords.push_back({});
+        } else {
+            for (const auto &e : filter_coords_obj) {
+                filter_coords.push_back({});
+                for (const auto &c : e) {
+                    filter_coords.back().push_back(pybind11::cast<double>(c));
+                }
+            }
+        }
+    } catch (const std::exception &_) {
+        throw std::invalid_argument("filter_coords wasn't a list of list of floats.");
+    }
+
     if (type == "timeline-text") {
         if (!tick.is_none()) {
             throw std::invalid_argument("`tick` isn't used with type='timeline-text'");
@@ -130,18 +149,19 @@ DiagramHelper stim_pybind::circuit_diagram(
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
         }
         std::stringstream out;
-        DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick)).write_text_diagram_to(out);
+        DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick), filter_coords)
+            .write_text_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "detector-slice-svg") {
         if (tick.is_none()) {
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-svg'");
         }
         std::stringstream out;
-        DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick)).write_svg_diagram_to(out);
+        DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick), filter_coords)
+            .write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
-        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
-            circuit, true, true, false, 1, true, false);
+        auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
         return dem_diagram(dem, type);
     } else {
         throw std::invalid_argument("Unrecognized diagram type: " + type);

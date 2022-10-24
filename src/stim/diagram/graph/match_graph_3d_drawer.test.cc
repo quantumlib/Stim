@@ -58,14 +58,7 @@ TEST(match_graph_drawer_3d, repetition_code) {
     CircuitGenParameters params(10, 7, "memory");
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false);
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
     expect_graph_diagram_is_identical_to_saved_file(dem, "match_graph_repetition_code.gltf");
 }
 
@@ -73,13 +66,6 @@ TEST(match_graph_drawer_3d, surface_code) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(
-        circuit,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false);
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
     expect_graph_diagram_is_identical_to_saved_file(dem, "match_graph_surface_code.gltf");
 }

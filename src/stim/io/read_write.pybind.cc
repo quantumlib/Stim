@@ -47,7 +47,6 @@ pybind11::object read_shot_data_file(
     const pybind11::handle &num_observables,
     bool bit_packed,
     bool _legacy_bit_pack) {
-
     auto path = path_to_string(path_obj);
     auto parsed_format = format_to_enum(format);
     bit_packed |= _legacy_bit_pack;
