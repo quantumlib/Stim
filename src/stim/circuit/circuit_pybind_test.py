@@ -933,6 +933,22 @@ q0: -Z:D0-
 q1: -Z:D0-
     """.strip()
 
+    c = stim.Circuit("""
+        H 0
+        CNOT 0 1 0 2
+        TICK
+        M 0 1 2
+        DETECTOR(4,5) rec[-1] rec[-2]
+        DETECTOR(6) rec[-2] rec[-3]
+    """)
+    assert str(c.diagram(type='detector-slice-text', tick=1, filter_coords=[(5, 6, 7), (6,), (7, 8)])).strip() == """
+q0: -Z:D1-
+     |
+q1: -Z:D1-
+
+q2: ------
+    """.strip()
+
     assert c.diagram(type="timeline-svg") is not None
     assert c.diagram(type="timeline-3d") is not None
     assert c.diagram(type="timeline-3d-html") is not None

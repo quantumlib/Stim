@@ -61,7 +61,6 @@ pybind11::object PyPauliString::to_unitary_matrix(const std::string &endian) con
             x |= value.xs[k];
             z |= value.zs[k];
         }
-
     }
     uint8_t start_phase = 0;
     start_phase += popcnt64(x & z);
@@ -356,16 +355,21 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             } else if (abs(c - std::complex<float>{0, -1}) < 1e-2) {
                 phase = 3;
             } else {
-                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It has values besides 0, 1, -1, 1j, and -1j.");
+                throw std::invalid_argument(
+                    "The given unitary matrix isn't a Pauli string matrix. It has values besides 0, 1, -1, 1j, and "
+                    "-1j.");
             }
             if (non_zero_index != SIZE_MAX) {
-                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It has two non-zero entries in the same row.");
+                throw std::invalid_argument(
+                    "The given unitary matrix isn't a Pauli string matrix. It has two non-zero entries in the same "
+                    "row.");
             }
             non_zero_index = num_cells;
             num_cells++;
         }
         if (non_zero_index == SIZE_MAX) {
-            throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It has a row with no non-zero entries.");
+            throw std::invalid_argument(
+                "The given unitary matrix isn't a Pauli string matrix. It has a row with no non-zero entries.");
         }
         return {non_zero_index, phase, num_cells};
     };
@@ -383,10 +387,13 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             n = len;
         } else {
             if (x != index) {
-                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. Rows disagree about which qubits are flipped.");
+                throw std::invalid_argument(
+                    "The given unitary matrix isn't a Pauli string matrix. Rows disagree about which qubits are "
+                    "flipped.");
             }
             if (n != len) {
-                throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. Rows have different lengths.");
+                throw std::invalid_argument(
+                    "The given unitary matrix isn't a Pauli string matrix. Rows have different lengths.");
             }
         }
     }
@@ -395,7 +402,8 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
         throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It isn't square.");
     }
     if (n == 0 || (n & (n - 1))) {
-        throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. Its height isn't a power of 2.");
+        throw std::invalid_argument(
+            "The given unitary matrix isn't a Pauli string matrix. Its height isn't a power of 2.");
     }
 
     uint64_t z = 0;
@@ -411,7 +419,8 @@ PyPauliString PyPauliString::from_unitary_matrix(const pybind11::object &matrix,
             expected_phase += 2;
         }
         if ((expected_phase & 3) != phases[k]) {
-            throw std::invalid_argument("The given unitary matrix isn't a Pauli string matrix. It doesn't have consistent phase flips.");
+            throw std::invalid_argument(
+                "The given unitary matrix isn't a Pauli string matrix. It doesn't have consistent phase flips.");
         }
     }
 

@@ -15,7 +15,6 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
-#include "stim/test_util.test.h"
 
 using namespace stim;
 
@@ -38,6 +37,65 @@ q1: ---X-
             )output"));
 }
 
+TEST(command_diagram, run_captured_stim_main_detector_slice) {
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"diagram", "--type", "detector-slice-text", "--tick", "1"},
+            R"input(
+                H 0
+                CNOT 0 1 0 2
+                TICK
+                M 0 1 2
+                DETECTOR(4,5) rec[-1] rec[-2]
+                DETECTOR(6) rec[-2] rec[-3]
+            )input")),
+        trim(R"output(
+q0: -------Z:D1-
+           |
+q1: -Z:D0--Z:D1-
+     |
+q2: -Z:D0-------
+            )output"));
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"diagram", "--type", "detector-slice-text", "--tick", "1", "--filter_coords", "4"},
+            R"input(
+                H 0
+                CNOT 0 1 0 2
+                TICK
+                M 0 1 2
+                DETECTOR(4,5) rec[-1] rec[-2]
+                DETECTOR(6) rec[-2] rec[-3]
+            )input")),
+        trim(R"output(
+q0: ------
+
+q1: -Z:D0-
+     |
+q2: -Z:D0-
+            )output"));
+
+    ASSERT_EQ(
+        trim(run_captured_stim_main(
+            {"diagram", "--type", "detector-slice-text", "--tick", "1", "--filter_coords", "5,6,7:6:7,8"},
+            R"input(
+                H 0
+                CNOT 0 1 0 2
+                TICK
+                M 0 1 2
+                DETECTOR(4,5) rec[-1] rec[-2]
+                DETECTOR(6) rec[-2] rec[-3]
+            )input")),
+        trim(R"output(
+q0: -Z:D1-
+     |
+q1: -Z:D1-
+
+q2: ------
+            )output"));
+}
+
 TEST(command_diagram, run_captured_stim_main_works_various_arguments) {
     std::vector<std::string> diagram_types{
         "timeline-text",
@@ -50,15 +108,17 @@ TEST(command_diagram, run_captured_stim_main_works_various_arguments) {
         "detector-slice-txt",
         "detector-slice-svg",
     };
-    ASSERT_NE("", run_captured_stim_main(
-        {
-            "diagram",
-            "--type",
-            "timeline-svg",
-            "--tick",
-            "1",
-        },
-        R"input(
+    ASSERT_NE(
+        "",
+        run_captured_stim_main(
+            {
+                "diagram",
+                "--type",
+                "timeline-svg",
+                "--tick",
+                "1",
+            },
+            R"input(
             H 0
             CNOT 0 1
             X_ERROR(0.125) 0

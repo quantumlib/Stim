@@ -557,6 +557,7 @@ NAME
 
 SYNOPSIS
     stim diagram \
+        [--filter_coords float.seperatedby(',').seperatedby(':')] \
         [--in filepath] \
         [--out filepath] \
         [--remove_noise] \
@@ -566,7 +567,25 @@ SYNOPSIS
 DESCRIPTION
     Produces various kinds of diagrams.
 
+
 OPTIONS
+    --filter_coords
+        Specifies coordinate filters that determine what appears in the diagram.
+
+        A coordinate is a double precision floating point number.
+        A point is a tuple of coordinates.
+        The coordinates of a point are separate by commas (',').
+        A filter is a set of points.
+        Points are separated by colons (':').
+
+        For example, in a detector slice diagram, specifying
+        "--filter-coords 2,3:4,5,6" means that only detectors whose
+        first two coordinates are (2,3), or whose first three coordinate
+        are (4,5,6), should be included in the diagram. Note that the
+        filters are always prefix matches, so a detector with coordinates
+        (2,3,4) matches the filter 2,3.
+
+
     --in
         Where to read the object to diagram from.
 
@@ -690,6 +709,44 @@ EXAMPLES
         q0: -H-@-
                |
         q1: ---X-
+
+
+    Example #2
+        >>> # Making a video of detector slices moving around
+
+        >>> # First, make a circuit to animate.
+        >>> stim gen \
+                --code surface_code \
+                --task rotated_memory_x \
+                --distance 5 \
+                --rounds 100 \
+                > surface_code.stim
+
+        >>> # Second, use gnu-parallel and stim diagram to make video frames.
+        >>> parallel stim diagram \
+            --filter_coords 2,2:4,2 \
+            --type detector-slice-svg \
+            --tick {} \
+            --in surface_code.stim \
+            --out video_frame_{}.svg \
+            ::: {50..150}
+
+        >>> # Third, use ffmpeg to turn the frames into a GIF.
+        >>> # (note: the complex filter argument is optional; it turns the background white)
+        >>> ffmpeg output_animation.gif \
+            -framerate 5 \
+            -pattern_type glob -i 'video_frame_*.svg' \
+            -pix_fmt rgb8 \
+            -filter_complex "[0]split=2[bg][fg];[bg]drawbox=c=white@1:t=fill[bg];[bg][fg]overlay=format=auto"
+
+        >>> # Alternatively, make an MP4 video instead of a GIF.
+        >>> ffmpeg output_video.mp4 \
+            -framerate 5 \
+            -pattern_type glob -i 'video_frame_*.svg' \
+            -vf scale=1024:-1 \
+            -c:v libx264 \
+            -vf format=yuv420p \
+            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2"
 ```
 
 <a name="explain_errors"></a>

@@ -18,10 +18,10 @@
 
 #include "gtest/gtest.h"
 
+#include "stim/io/measure_record_batch_writer.h"
 #include "stim/io/measure_record_writer.h"
 #include "stim/probability_util.h"
 #include "stim/test_util.test.h"
-#include "stim/io/measure_record_batch_writer.h"
 
 using namespace stim;
 

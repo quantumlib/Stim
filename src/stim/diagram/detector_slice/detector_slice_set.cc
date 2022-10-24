@@ -15,7 +15,9 @@ inline void write_key_val(std::ostream &out, const char *key, const T &val) {
 struct DetectorSliceSetComputer {
     ErrorAnalyzer analyzer;
     uint64_t num_ticks_left;
-    DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index);
+    ConstPointerRange<std::vector<double>> coord_filter;
+    DetectorSliceSetComputer(
+        const Circuit &circuit, uint64_t tick_index, ConstPointerRange<std::vector<double>> coord_filter);
     bool process_block_rev(const Circuit &block);
     bool process_op_rev(const Circuit &parent, const Operation &op);
 };
@@ -54,8 +56,10 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         return false;
     }
 }
-DetectorSliceSetComputer::DetectorSliceSetComputer(const Circuit &circuit, uint64_t tick_index)
-    : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false) {
+DetectorSliceSetComputer::DetectorSliceSetComputer(
+    const Circuit &circuit, uint64_t tick_index, ConstPointerRange<std::vector<double>> coord_filter)
+    : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false),
+      coord_filter(coord_filter) {
     num_ticks_left = circuit.count_ticks() + 1;  // + 1 because "first tick" is start of circuit.
     if (num_ticks_left == 0) {
         throw std::invalid_argument("Circuit contains no TICK instructions to slice at.");
@@ -148,8 +152,9 @@ std::set<uint64_t> DetectorSliceSet::used_qubits() const {
     return result;
 }
 
-DetectorSliceSet DetectorSliceSet::from_circuit_tick(const stim::Circuit &circuit, uint64_t tick_index) {
-    DetectorSliceSetComputer helper(circuit, tick_index);
+DetectorSliceSet DetectorSliceSet::from_circuit_tick(
+    const stim::Circuit &circuit, uint64_t tick_index, ConstPointerRange<std::vector<double>> coord_filter) {
+    DetectorSliceSetComputer helper(circuit, tick_index, coord_filter);
     size_t num_qubits = helper.analyzer.xs.size();
     helper.process_block_rev(circuit);
 
@@ -193,6 +198,46 @@ DetectorSliceSet DetectorSliceSet::from_circuit_tick(const stim::Circuit &circui
         }
     }
     result.detector_coordinates = circuit.get_detector_coordinates(included_detectors);
+
+    auto matches_filter = [](ConstPointerRange<double> coord, ConstPointerRange<double> filter) {
+        if (coord.size() < filter.size()) {
+            return false;
+        }
+        for (size_t k = 0; k < filter.size(); k++) {
+            if (filter[k] != coord[k]) {
+                return false;
+            }
+        }
+        return true;
+    };
+    auto keep = [&](DemTarget t) {
+        if (!t.is_relative_detector_id()) {
+            return true;
+        }
+        auto coords_ptr = result.detector_coordinates.find(t.data);
+        ConstPointerRange<double> coords;
+        if (coords_ptr == result.detector_coordinates.end()) {
+            coords = {};
+        } else {
+            coords = coords_ptr->second;
+        }
+        for (const auto &filter : coord_filter) {
+            if (matches_filter(coords, filter)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    std::vector<DemTarget> removed;
+    for (const auto &t : result.slices) {
+        if (!keep(t.first)) {
+            removed.push_back(t.first);
+        }
+    }
+    for (auto t : removed) {
+        result.slices.erase(t);
+        result.detector_coordinates.erase(t.raw_id());
+    }
 
     return result;
 }

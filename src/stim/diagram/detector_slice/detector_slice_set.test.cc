@@ -50,7 +50,7 @@ TEST(detector_slice_set, from_circuit) {
             DETECTOR rec[-1]
         }
 )CIRCUIT"),
-        2);
+        2, {{}});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{1, {3, 5}}}));
     ASSERT_EQ(
         slice_set.slices,
@@ -84,7 +84,7 @@ TEST(detector_slice_set, big_loop_seeking) {
     )CIRCUIT");
 
     uint64_t inner = 10 * 100 * 1000 + 1;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 50ULL + 2ULL);
+    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 50ULL + 2ULL, {{}});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
     ASSERT_EQ(
         slice_set.slices,
@@ -93,7 +93,7 @@ TEST(detector_slice_set, big_loop_seeking) {
         }));
 
     slice_set =
-        DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL);
+        DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, {{}});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
     ASSERT_EQ(
         slice_set.slices,
@@ -106,7 +106,7 @@ TEST(detector_slice_set, big_loop_seeking) {
 TEST(detector_slice_set_text_diagram, repetition_code) {
     CircuitGenParameters params(10, 5, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 9);
+    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 9, {{}});
     ASSERT_EQ(slice_set.slices.size(), circuit.count_qubits());
     ASSERT_EQ("\n" + slice_set.str() + "\n", R"DIAGRAM(
 q0: --------Z:D12----------------------------
@@ -128,7 +128,7 @@ q7: -Z:D11-----------------------Z:D15-------
 q8: -----------------------------Z:D15--Z:L0-
 )DIAGRAM");
 
-    ASSERT_EQ("\n" + DetectorSliceSet::from_circuit_tick(circuit, 11).str() + "\n", R"DIAGRAM(
+    ASSERT_EQ("\n" + DetectorSliceSet::from_circuit_tick(circuit, 11, {{}}).str() + "\n", R"DIAGRAM(
 q0: --------Z:D16-
             |
 q1: -Z:D12--Z:D16-
@@ -152,7 +152,7 @@ q8: -Z:D15--Z:L0--
 TEST(detector_slice_set_text_diagram, surface_code) {
     CircuitGenParameters params(10, 2, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 11);
+    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 11, {{}});
     ASSERT_EQ(slice_set.slices.size(), circuit.count_qubits());
     ASSERT_EQ("\n" + slice_set.str() + "\n", R"DIAGRAM(
 q0:(0, 0) -X:D2--Z:D3--------------------------------Z:L0-
@@ -178,7 +178,7 @@ q8:(2, 2) -------------------------------------Z:D8--X:D9-
 TEST(detector_slice_set_svg_diagram, surface_code) {
     CircuitGenParameters params(10, 2, "rotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 8);
+    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 8, {{}});
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
     ASSERT_EQ(

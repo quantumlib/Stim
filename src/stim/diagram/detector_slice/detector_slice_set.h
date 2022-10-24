@@ -36,7 +36,10 @@ struct DetectorSliceSet {
     ///     tick_index: The tick to target. tick_index=0 is the start of the
     ///         circuit. tick_index=1 is the first TICK instruction, and so
     ///         forth.
-    static DetectorSliceSet from_circuit_tick(const stim::Circuit &circuit, uint64_t tick_index);
+    ///     coord_filter: Detectors that fail to match these coordinates
+    ///         are excluded.
+    static DetectorSliceSet from_circuit_tick(
+        const stim::Circuit &circuit, uint64_t tick_index, stim::ConstPointerRange<std::vector<double>> coord_filter);
 
     std::set<uint64_t> used_qubits() const;
     std::string str() const;

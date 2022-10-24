@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -388,4 +389,27 @@ ostream_else_cout stim::find_output_stream_argument(
         throw std::invalid_argument(msg.str());
     }
     return {std::move(f)};
+}
+
+std::vector<std::string> stim::split(char splitter, const std::string &text) {
+    std::vector<std::string> result;
+    size_t start = 0;
+    for (size_t k = 0; k < text.size(); k++) {
+        if (text[k] == splitter) {
+            result.push_back(text.substr(start, k - start));
+            start = k + 1;
+        }
+    }
+    result.push_back(text.substr(start, text.size() - start));
+    return result;
+}
+
+double stim::parse_exact_double_from_string(const std::string &text) {
+    char *end = nullptr;
+    const char *c = text.c_str();
+    double d = strtod(c, &end);
+    if (isspace(*c) || end == c || end != c + text.size() || std::isinf(d) || std::isnan(d)) {
+        throw std::invalid_argument("Not an exact double: '" + text + "'");
+    }
+    return d;
 }

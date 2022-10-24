@@ -1808,6 +1808,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("type") = "timeline-text",
         pybind11::arg("tick") = pybind11::none(),
+        pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(u8R"DOC(
             @overload def diagram(self, *, type: 'Literal["timeline-text"]') -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["timeline-svg"]') -> 'stim._DiagramHelper':
@@ -1816,9 +1817,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             @overload def diagram(self, *, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["detector-slice-text"]', tick: int) -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["detector-slice-svg"]', tick: int) -> 'stim._DiagramHelper':
-            @signature def diagram(self, *, type: str, tick: Optional[int] = None) -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["detector-slice-text"]', tick: int, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
+            @overload def diagram(self, *, type: 'Literal["detector-slice-svg"]', tick: int, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
+            @signature def diagram(self, *, type: str, tick: Optional[int] = None, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:
@@ -1861,6 +1862,9 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     instruction to slice at. Note that the first TICK in the
                     circuit is tick=1. The value tick=0 refers to the very start
                     of the circuit.
+                filter_coords: A set of acceptable coordinate prefixes. For
+                    detector slice diagrams, only detectors whose coordinates
+                    begin with one of these filters will be included.
 
             Returns:
                 An object whose `__str__` method returns the diagram, so that

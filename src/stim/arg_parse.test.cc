@@ -260,7 +260,9 @@ TEST(arg_parse, find_open_file_argument) {
 
     args = {""};
     ASSERT_THROW_MSG(
-        { find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data()); }, std::invalid_argument, "Missing");
+        { find_open_file_argument("-arg", nullptr, "rb", args.size(), args.data()); },
+        std::invalid_argument,
+        "Missing");
     args = {""};
     ASSERT_EQ(find_open_file_argument("-arg", tmp, "rb", args.size(), args.data()), tmp);
 
@@ -291,4 +293,34 @@ TEST(arg_parse, find_open_file_argument) {
     fclose(f2);
 
     fclose(tmp);
+}
+
+TEST(arg_parse, split) {
+    ASSERT_EQ(split(',', ""), (std::vector<std::string>{""}));
+    ASSERT_EQ(split(',', "abc"), (std::vector<std::string>{"abc"}));
+    ASSERT_EQ(split(',', ","), (std::vector<std::string>{"", ""}));
+    ASSERT_EQ(split(',', "abc,"), (std::vector<std::string>{"abc", ""}));
+    ASSERT_EQ(split(',', ",abc"), (std::vector<std::string>{"", "abc"}));
+    ASSERT_EQ(split(',', "abc,def,ghi"), (std::vector<std::string>{"abc", "def", "ghi"}));
+    ASSERT_EQ(split(',', "abc,def,ghi,"), (std::vector<std::string>{"abc", "def", "ghi", ""}));
+}
+
+TEST(arg_parse, parse_exact_double_from_string) {
+    ASSERT_THROW({ parse_exact_double_from_string(""); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("a"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string(" 1"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("\t1"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("1 "); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("banana"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("1.2.3"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("INFINITY"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("inf"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_double_from_string("nan"); }, std::invalid_argument);
+
+    ASSERT_EQ(parse_exact_double_from_string("0"), 0);
+    ASSERT_EQ(parse_exact_double_from_string("1"), 1);
+    ASSERT_EQ(parse_exact_double_from_string("+1"), 1);
+    ASSERT_EQ(parse_exact_double_from_string("1e3"), 1000);
+    ASSERT_EQ(parse_exact_double_from_string("1.5"), 1.5);
+    ASSERT_EQ(parse_exact_double_from_string("-1.5"), -1.5);
 }

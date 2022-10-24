@@ -98,7 +98,7 @@ Basic3dDiagram stim_draw_internal::dem_match_graph_to_basic_3d_diagram(const sti
                 out.line_data.push_back(det_coords[1]);
             }
         } else {
-            Coord<3> c{0, 0 ,0};
+            Coord<3> c{0, 0, 0};
             for (const auto &e : det_coords) {
                 c += e;
             }

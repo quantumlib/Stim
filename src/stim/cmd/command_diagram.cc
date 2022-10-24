@@ -17,12 +17,12 @@
 #include "command_help.h"
 #include "stim/arg_parse.h"
 #include "stim/diagram/detector_slice/detector_slice_set.h"
+#include "stim/diagram/graph/match_graph_3d_drawer.h"
+#include "stim/diagram/graph/match_graph_svg_drawer.h"
 #include "stim/diagram/timeline/timeline_3d_drawer.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/diagram/timeline/timeline_svg_drawer.h"
 #include "stim/io/raii_file.h"
-#include "stim/diagram/graph/match_graph_3d_drawer.h"
-#include "stim/diagram/graph/match_graph_svg_drawer.h"
 #include "stim/simulators/error_analyzer.h"
 
 using namespace stim;
@@ -46,6 +46,7 @@ int stim::command_diagram(int argc, const char **argv) {
             "--remove_noise",
             "--type",
             "--tick",
+            "--filter_coords",
             "--in",
             "--out",
         },
@@ -98,57 +99,82 @@ int stim::command_diagram(int argc, const char **argv) {
         if (find_bool_argument("--remove_noise", argc, argv)) {
             circuit = circuit.without_noise();
         }
-        return ErrorAnalyzer::circuit_to_detector_error_model(
-            circuit, true, true, false, 1, true, false);
+        return ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, 1, true, false);
+    };
+    auto read_coords = [&]() -> std::vector<std::vector<double>> {
+        const char *arg = find_argument("--filter_coords", argc, argv);
+        if (arg == nullptr) {
+            return {{}};
+        }
+
+        std::vector<std::vector<double>> result;
+        for (const auto &term : split(':', arg)) {
+            result.push_back({});
+            for (const auto &v : split(',', term)) {
+                result.back().push_back(parse_exact_double_from_string(v));
+            }
+        }
+        return result;
     };
     switch (type) {
         case TIMELINE_TEXT: {
             auto circuit = read_circuit();
             out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
             break;
-        } case TIMELINE_SVG: {
+        }
+        case TIMELINE_SVG: {
             auto circuit = read_circuit();
             DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
             break;
-        } case TIMELINE_3D: {
+        }
+        case TIMELINE_3D: {
             auto circuit = read_circuit();
             DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(out);
             break;
-        } case TIMELINE_3D_HTML: {
+        }
+        case TIMELINE_3D_HTML: {
             auto circuit = read_circuit();
             std::stringstream tmp_out;
             DiagramTimeline3DDrawer::circuit_to_basic_3d_diagram(circuit).to_gltf_scene().to_json().write(tmp_out);
             write_html_viewer_for_gltf_data(tmp_out.str(), out);
             break;
-        } case MATCH_GRAPH_3D: {
+        }
+        case MATCH_GRAPH_3D: {
             auto dem = read_dem();
             dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(out);
             break;
-        } case MATCH_GRAPH_3D_HTML: {
+        }
+        case MATCH_GRAPH_3D_HTML: {
             auto dem = read_dem();
             std::stringstream tmp_out;
             dem_match_graph_to_basic_3d_diagram(dem).to_gltf_scene().to_json().write(tmp_out);
             write_html_viewer_for_gltf_data(tmp_out.str(), out);
             break;
-        } case MATCH_GRAPH_SVG: {
+        }
+        case MATCH_GRAPH_SVG: {
             auto dem = read_dem();
             dem_match_graph_to_svg_diagram_write_to(dem, out);
             break;
-        } case DETECTOR_SLICE_TEXT: {
+        }
+        case DETECTOR_SLICE_TEXT: {
             if (tick == -1) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
             }
+            auto coord_filter = read_coords();
             auto circuit = read_circuit();
-            out << DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick);
+            out << DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick, coord_filter);
             break;
-        } case DETECTOR_SLICE_SVG: {
+        }
+        case DETECTOR_SLICE_SVG: {
             if (tick == -1) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
             }
+            auto coord_filter = read_coords();
             auto circuit = read_circuit();
-            DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick).write_svg_diagram_to(out);
+            DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick, coord_filter).write_svg_diagram_to(out);
             break;
-        } default: {
+        }
+        default: {
             throw std::invalid_argument("Unknown type");
         }
     }
@@ -160,7 +186,9 @@ int stim::command_diagram(int argc, const char **argv) {
 SubCommandHelp stim::command_diagram_help() {
     SubCommandHelp result;
     result.subcommand_name = "diagram";
-    result.description = "Produces various kinds of diagrams.";
+    result.description = clean_doc_string(R"PARAGRAPH(
+        Produces various kinds of diagrams.
+    )PARAGRAPH");
 
     result.examples.push_back(clean_doc_string(R"PARAGRAPH(
             >>> cat example_circuit.stim
@@ -174,6 +202,46 @@ SubCommandHelp stim::command_diagram_help() {
                    |
             q1: ---X-
         )PARAGRAPH"));
+
+    result.examples.push_back(clean_doc_string(
+        R"PARAGRAPH(
+        >>> # Making a video of detector slices moving around
+
+        >>> # First, make a circuit to animate.
+        >>> stim gen \
+                --code surface_code \
+                --task rotated_memory_x \
+                --distance 5 \
+                --rounds 100 \
+                > surface_code.stim
+
+        >>> # Second, use gnu-parallel and stim diagram to make video frames.
+        >>> parallel stim diagram \
+            --filter_coords 2,2:4,2 \
+            --type detector-slice-svg \
+            --tick {} \
+            --in surface_code.stim \
+            --out video_frame_{}.svg \
+            ::: {50..150}
+
+        >>> # Third, use ffmpeg to turn the frames into a GIF.
+        >>> # (note: the complex filter argument is optional; it turns the background white)
+        >>> ffmpeg output_animation.gif \
+            -framerate 5 \
+            -pattern_type glob -i 'video_frame_*.svg' \
+            -pix_fmt rgb8 \
+            -filter_complex "[0]split=2[bg][fg];[bg]drawbox=c=white@1:t=fill[bg];[bg][fg]overlay=format=auto"
+
+        >>> # Alternatively, make an MP4 video instead of a GIF.
+        >>> ffmpeg output_video.mp4 \
+            -framerate 5 \
+            -pattern_type glob -i 'video_frame_*.svg' \
+            -vf scale=1024:-1 \
+            -c:v libx264 \
+            -vf format=yuv420p \
+            -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2"
+    )PARAGRAPH",
+        true));
 
     result.flags.push_back(SubCommandHelpFlag{
         "--remove_noise",
@@ -203,6 +271,29 @@ SubCommandHelp stim::command_diagram_help() {
             instant at which the time slice is taken. Note that `--tick=0` is
             the very beginning of the circuit and `--tick=1` is the instant of
             the first TICK instruction.
+        )PARAGRAPH"),
+    });
+
+    result.flags.push_back(SubCommandHelpFlag{
+        "--filter_coords",
+        "float.seperatedby(',').seperatedby(':')",
+        "",
+        {"[none]", "float.seperatedby(',').seperatedby(':')"},
+        clean_doc_string(R"PARAGRAPH(
+            Specifies coordinate filters that determine what appears in the diagram.
+
+            A coordinate is a double precision floating point number.
+            A point is a tuple of coordinates.
+            The coordinates of a point are separate by commas (',').
+            A filter is a set of points.
+            Points are separated by colons (':').
+
+            For example, in a detector slice diagram, specifying
+            "--filter-coords 2,3:4,5,6" means that only detectors whose
+            first two coordinates are (2,3), or whose first three coordinate
+            are (4,5,6), should be included in the diagram. Note that the
+            filters are always prefix matches, so a detector with coordinates
+            (2,3,4) matches the filter 2,3.
         )PARAGRAPH"),
     });
 
