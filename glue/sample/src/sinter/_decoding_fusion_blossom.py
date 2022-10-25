@@ -27,7 +27,7 @@ def decode_using_fusion_blossom(*,
         raise ImportError(
             "The decoder 'fusion_blossom' isn't installed\n"
             "To fix this, install the python package 'fusion-blossom' into your environment.\n"
-            "For example, if you are using pip, run `pip install fusion-blossom`.\n"
+            "For example, if you are using pip, run `pip install fusion-blossom~=0.1.4`.\n"
         ) from ex
 
     error_model = stim.DetectorErrorModel.from_file(dem_path)
