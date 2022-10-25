@@ -79,6 +79,9 @@ bool GateTarget::is_inverted_result_target() const {
 bool GateTarget::is_measurement_record_target() const {
     return data & TARGET_RECORD_BIT;
 }
+bool GateTarget::has_qubit_value() const {
+    return !(data & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER));
+}
 bool GateTarget::is_qubit_target() const {
     return !(data & (TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT | TARGET_RECORD_BIT | TARGET_SWEEP_BIT | TARGET_COMBINER));
 }

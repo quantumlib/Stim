@@ -594,3 +594,29 @@ def test_copy_with_explicit_copy_rng_and_seed():
     s = stim.TableauSimulator()
     with pytest.raises(ValueError, match='seed and copy_rng are incompatible'):
         _ = s.copy(copy_rng=True, seed=0)
+
+
+def test_do_circuit_instruction():
+    s = stim.TableauSimulator()
+    assert s.peek_z(0) == +1
+    s.do(stim.Circuit("X 0")[0])
+    assert s.peek_z(0) == -1
+
+    s.do(stim.Circuit("""
+        REPEAT 100 {
+            CNOT 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7 0
+        }
+    """)[0])
+    assert s.peek_z(0) == +1
+    assert s.peek_z(1) == +1
+    assert s.peek_z(2) == +1
+    assert s.peek_z(3) == -1
+    assert s.peek_z(4) == +1
+    assert s.peek_z(5) == -1
+    assert s.peek_z(6) == +1
+    assert s.peek_z(7) == +1
+
+    s.do(stim.Circuit("X 500")[0])
+    assert s.peek_z(499) == +1
+    assert s.peek_z(500) == -1
+    assert s.peek_z(501) == +1

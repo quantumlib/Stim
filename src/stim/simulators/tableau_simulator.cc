@@ -951,11 +951,13 @@ void TableauSimulator::collapse_isolate_qubit_z(size_t target, TableauTransposed
     }
 }
 
-void TableauSimulator::expand_do_circuit(const Circuit &circuit) {
+void TableauSimulator::expand_do_circuit(const Circuit &circuit, uint64_t reps) {
     ensure_large_enough_for_qubits(circuit.count_qubits());
-    circuit.for_each_operation([&](const Operation &op) {
-        ((*this).*op.gate->tableau_simulator_function)(op.target_data);
-    });
+    for (uint64_t k = 0; k < reps; k++) {
+        circuit.for_each_operation([&](const Operation &op) {
+            ((*this).*op.gate->tableau_simulator_function)(op.target_data);
+        });
+    }
 }
 
 simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
@@ -967,6 +969,17 @@ void TableauSimulator::paulis(const PauliString &paulis) {
     auto nw = paulis.xs.num_simd_words;
     inv_state.zs.signs.word_range_ref(0, nw) ^= paulis.xs;
     inv_state.xs.signs.word_range_ref(0, nw) ^= paulis.zs;
+}
+
+void TableauSimulator::do_operation_ensure_size(const Operation &operation) {
+    uint64_t n = 0;
+    for (const auto &t : operation.target_data.targets) {
+        if (t.has_qubit_value()) {
+            n = std::max(n, (uint64_t)t.qubit_value() + 1);
+        }
+    }
+    ensure_large_enough_for_qubits(n);
+    ((*this).*operation.gate->tableau_simulator_function)(operation.target_data);
 }
 
 void TableauSimulator::set_num_qubits(size_t new_num_qubits) {

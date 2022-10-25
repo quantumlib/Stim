@@ -43,6 +43,7 @@ struct GateTarget {
     static GateTarget sweep_bit(uint32_t index);
     static GateTarget combiner();
 
+    bool has_qubit_value() const;
     bool is_combiner() const;
     bool is_x_target() const;
     bool is_y_target() const;
