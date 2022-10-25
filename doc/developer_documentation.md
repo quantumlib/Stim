@@ -66,25 +66,25 @@ A *spandrel* is an implementation detail that has observable effects, but which 
 
 - Create an off-main-branch release commit
     - [ ] `git checkout main -b SOMEBRANCHNAME`
-    - [ ] Update version to `vX.Y.Z` in `setup.py` (at repo root)
-    - [ ] Update version to `vX.Y.Z` in `glue/cirq/setup.py`
-    - [ ] Update version to `vX.Y.Z` in `glue/sinter/setup.py`
-    - [ ] Update version to `vX.Y.Z` in `glue/stimzx/setup.py`
-    - [ ] `git commit -a -m "Bump to vX.Y.Z"`
-    - [ ] `git tag vX.Y.Z`
+    - [ ] Update version to `version = 'X.Y.0'` in `setup.py` (at repo root)
+    - [ ] Update version to `version = 'X.Y.0'` in `glue/cirq/setup.py`
+    - [ ] Update version to `version = 'X.Y.0'` in `glue/sinter/setup.py`
+    - [ ] Update version to `version = 'X.Y.0'` in `glue/stimzx/setup.py`
+    - [ ] `git commit -a -m "Bump to vX.Y.0"`
+    - [ ] `git tag vX.Y.0`
     - [ ] Push tag to github
     - [ ] Check github `Actions` tab and confirm ci is running on the tag
     - [ ] Wait for ci to finish validating and producing artifacts for the tag
-    - [ ] Get `stim` wheels [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
-    - [ ] Build `stimcirq` sdist on this tag [using python setup.py sdist](#pypackage.stimcirq.python)
-    - [ ] Build `sinter` sdist on this tag [using python setup.py sdist](#pypackage.sinter.python)
-    - [ ] Combine `stim`, `stimcirq`, and `sinter` package files into one directory
+    - [ ] Get `stim`, `stimcirq`, and `sinter` wheels/sdists [from cibuildwheels](#pypackage.stim.cibuildwheels) of this tag
 - Bump to next dev version on main branch
-    - [ ] Update version to `vX.(Y+1).dev0` in all setup.py files
+    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `setup.py` (at repo root)
+    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/cirq/setup.py`
+    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/sinter/setup.py`
+    - [ ] Update version to `version = 'X.(Y+1).dev0'` in `glue/stimzx/setup.py`
     - [ ] Update `INTENTIONAL_VERSION_SEED_INCOMPATIBILITY` in `src/stim/circuit/circuit.h`
     - [ ] Push to github as a branch and merge into main using a pull request
 - Write release notes on github
-    - [ ] In title, use two-word themeing of most important changes
+    - [ ] In title, use two-word theming of most important changes
     - [ ] Flagship changes section
     - [ ] Notable changes section
     - [ ] Include wheels/sdists as attachments

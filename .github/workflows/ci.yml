@@ -352,7 +352,7 @@ jobs:
       - run: pip install -e .
       - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
       - run: pip install -e glue/sample
-      - run: pip install pytest pymatching fusion-blossom
+      - run: pip install pytest pymatching fusion-blossom~=0.1.4
       - run: pytest glue/sample
       - run: dev/doctest_proper.py --module sinter
       - run: sinter help
