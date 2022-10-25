@@ -6783,27 +6783,16 @@ class TableauSimulator:
                 Applies the gate to the first two targets, then the next two targets,
                 and so forth. There must be an even number of targets.
         """
-    @overload
     def do(
         self,
-        circuit_or_pauli_string: stim.Circuit,
-    ) -> None:
-        pass
-    @overload
-    def do(
-        self,
-        circuit_or_pauli_string: stim.PauliString,
-    ) -> None:
-        pass
-    def do(
-        self,
-        circuit_or_pauli_string: object,
+        circuit_or_pauli_string: Union[stim.Circuit, stim.PauliString, stim.CircuitInstruction, stim.CircuitRepeatBlock],
     ) -> None:
         """Applies a circuit or pauli string to the simulator's state.
 
         Args:
-            circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing
-                operations to apply to the simulator's state.
+            circuit_or_pauli_string: A stim.Circuit, stim.PauliString,
+                stim.CircuitInstruction, or stim.CircuitRepeatBlock
+                with operations to apply to the simulator's state.
 
         Examples:
             >>> import stim

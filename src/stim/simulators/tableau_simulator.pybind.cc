@@ -19,18 +19,36 @@
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
+#include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/stabilizers/tableau.h"
+#include "stim/circuit/circuit_repeat_block.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
 
+void do_circuit_instruction(TableauSimulator &self, const CircuitInstruction &circuit_instruction) {
+    self.do_operation_ensure_size(Operation{
+        &circuit_instruction.gate,
+        {
+            circuit_instruction.gate_args,
+            circuit_instruction.targets,
+        }
+    });
+}
+
 void do_obj(TableauSimulator &self, const pybind11::object &obj) {
     if (pybind11::isinstance<Circuit>(obj)) {
         self.expand_do_circuit(pybind11::cast<Circuit>(obj));
+    } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
+        const CircuitRepeatBlock &block = pybind11::cast<CircuitRepeatBlock>(obj);
+        self.expand_do_circuit(block.body, block.repeat_count);
     } else if (pybind11::isinstance<PyPauliString>(obj)) {
         const PyPauliString &pauli_string = pybind11::cast<PyPauliString>(obj);
         self.ensure_large_enough_for_qubits(pauli_string.value.num_qubits);
         self.paulis(pauli_string.value);
+    } else if (pybind11::isinstance<CircuitInstruction>(obj)) {
+        const CircuitInstruction &circuit_instruction = pybind11::cast<CircuitInstruction>(obj);
+        do_circuit_instruction(self, circuit_instruction);
     } else {
         std::stringstream ss;
         ss << "Don't know how to handle ";
@@ -413,12 +431,12 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("circuit_or_pauli_string"),
         clean_doc_string(u8R"DOC(
             Applies a circuit or pauli string to the simulator's state.
-            @overload def do(self, circuit_or_pauli_string: stim.Circuit) -> None:
-            @overload def do(self, circuit_or_pauli_string: stim.PauliString) -> None:
+            @signature def do(self, circuit_or_pauli_string: Union[stim.Circuit, stim.PauliString, stim.CircuitInstruction, stim.CircuitRepeatBlock]) -> None:
 
             Args:
-                circuit_or_pauli_string: A stim.Circuit or a stim.PauliString containing
-                    operations to apply to the simulator's state.
+                circuit_or_pauli_string: A stim.Circuit, stim.PauliString,
+                    stim.CircuitInstruction, or stim.CircuitRepeatBlock
+                    with operations to apply to the simulator's state.
 
             Examples:
                 >>> import stim
@@ -461,7 +479,9 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
 
     c.def(
         "do_circuit",
-        &TableauSimulator::expand_do_circuit,
+        [](TableauSimulator &self, const Circuit &circuit) {
+            self.expand_do_circuit(circuit);
+        },
         pybind11::arg("circuit"),
         clean_doc_string(u8R"DOC(
             Applies a circuit to the simulator's state.
