@@ -7029,6 +7029,43 @@ class TableauSimulator:
         Returns:
             The measurement results as a list of bools.
         """
+    def measure_observable(
+        self,
+        observable: stim.PauliString,
+        *,
+        flip_probability: float = 0.0,
+    ) -> bool:
+        """Measures an pauli string observable, as if by an MPP instruction.
+
+        Args:
+            observable: The observable to measure, specified as a stim.PauliString.
+            flip_probability: Probability of the recorded measurement result being
+                flipped.
+
+        Returns:
+            The result of the measurement.
+
+            The result is also recorded into the measurement record.
+
+        Raises:
+            ValueError: The given pauli string isn't Hermitian, or the given probability
+                isn't a valid probability.
+
+        Examples:
+            >>> import stim
+            >>> s = stim.TableauSimulator()
+            >>> s.h(0)
+            >>> s.cnot(0, 1)
+
+            >>> s.measure_observable(stim.PauliString("XX"))
+            False
+
+            >>> s.measure_observable(stim.PauliString("YY"))
+            True
+
+            >>> s.measure_observable(stim.PauliString("-ZZ"))
+            True
+        """
     @property
     def num_qubits(
         self,

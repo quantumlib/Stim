@@ -166,6 +166,42 @@ void TableauSimulator::measure_z(const OperationData &target_data) {
     noisify_new_measurements(target_data);
 }
 
+bool TableauSimulator::measure_pauli_string(const PauliStringRef pauli_string, double flip_probability) {
+    if (!(0 <= flip_probability && flip_probability <= 1)) {
+        throw std::invalid_argument("Need 0 <= flip_probability <= 1");
+    }
+    ensure_large_enough_for_qubits(pauli_string.num_qubits);
+
+    std::vector<GateTarget> targets;
+    targets.reserve(pauli_string.num_qubits * 2);
+    for (size_t k = 0; k < pauli_string.num_qubits; k++) {
+        bool x = pauli_string.xs[k];
+        bool z = pauli_string.zs[k];
+        if (x || z) {
+            GateTarget target{(uint32_t)k};
+            if (x) {
+                target.data |= TARGET_PAULI_X_BIT;
+            }
+            if (z) {
+                target.data |= TARGET_PAULI_Z_BIT;
+            }
+            targets.push_back(target);
+            targets.push_back(GateTarget::combiner());
+        }
+    }
+    double p = flip_probability;
+    if (pauli_string.sign) {
+        p = 1 - p;
+    }
+    if (targets.empty()) {
+        measurement_record.record_result(std::bernoulli_distribution(p)(rng));
+    } else {
+        targets.pop_back();
+        MPP(OperationData{{&p}, targets});
+    }
+    return measurement_record.lookback(1);
+}
+
 void TableauSimulator::measure_reset_x(const OperationData &target_data) {
     // Note: Caution when implementing this. Can't group the resets. because the same qubit target may appear twice.
 

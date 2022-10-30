@@ -1306,6 +1306,52 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             .data());
 
     c.def(
+        "measure_observable",
+        [](TableauSimulator &self, const PyPauliString &observable, double flip_probability) -> bool {
+            if (observable.imag) {
+                throw std::invalid_argument(
+                    "Observable isn't Hermitian; it has imaginary sign. Need observable.sign in [1, -1].");
+            }
+            return self.measure_pauli_string(observable.value, flip_probability);
+        },
+        pybind11::arg("observable"),
+        pybind11::kw_only(),
+        pybind11::arg("flip_probability") = 0.0,
+        clean_doc_string(u8R"DOC(
+            Measures an pauli string observable, as if by an MPP instruction.
+
+            Args:
+                observable: The observable to measure, specified as a stim.PauliString.
+                flip_probability: Probability of the recorded measurement result being
+                    flipped.
+
+            Returns:
+                The result of the measurement.
+
+                The result is also recorded into the measurement record.
+
+            Raises:
+                ValueError: The given pauli string isn't Hermitian, or the given probability
+                    isn't a valid probability.
+
+            Examples:
+                >>> import stim
+                >>> s = stim.TableauSimulator()
+                >>> s.h(0)
+                >>> s.cnot(0, 1)
+
+                >>> s.measure_observable(stim.PauliString("XX"))
+                False
+
+                >>> s.measure_observable(stim.PauliString("YY"))
+                True
+
+                >>> s.measure_observable(stim.PauliString("-ZZ"))
+                True
+        )DOC")
+            .data());
+
+    c.def(
         "measure",
         [](TableauSimulator &self, uint32_t target) {
             self.ensure_large_enough_for_qubits(target + 1);

@@ -2078,3 +2078,53 @@ TEST(TableauSimulator, apply_tableau) {
     ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IZYI")), -1);
     ASSERT_EQ(sim.peek_observable_expectation(PauliString::from_str("IYXI")), +1);
 }
+
+TEST(TableauSimulator, measure_pauli_string) {
+    TableauSimulator sim(SHARED_TEST_RNG(), 4);
+    sim.H_XZ(OpDat(0));
+    sim.ZCX(OpDat({0, 1}));
+    sim.X(OpDat(0));
+
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("XX"), 0.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("XX"), 1.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("-XX"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("-XX"), 1.0));
+
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("ZZ"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("ZZ"), 1.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("-ZZ"), 0.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("-ZZ"), 1.0));
+
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("YY"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("XXZ"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("__Z"), 0.0));
+
+    auto b = sim.measure_pauli_string(PauliString::from_str("XXX"), 0.0);
+    ASSERT_EQ(sim.measure_pauli_string(PauliString::from_str("XXX"), 0.0), b);
+    ASSERT_EQ(sim.measure_pauli_string(PauliString::from_str("-XXX"), 0.0), !b);
+    ASSERT_EQ(sim.measure_pauli_string(PauliString::from_str("XXX"), 1.0), !b);
+
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("XX"), 1.0));
+
+    ASSERT_THROW({sim.measure_pauli_string(PauliString::from_str(""), -0.5);}, std::invalid_argument);
+    ASSERT_THROW({sim.measure_pauli_string(PauliString::from_str(""), 2.5);}, std::invalid_argument);
+    ASSERT_THROW({sim.measure_pauli_string(PauliString::from_str(""), NAN);}, std::invalid_argument);
+
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("+"), 0.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("+"), 1.0));
+    ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("-"), 0.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("-"), 1.0));
+    ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("____________Z"), 0.0));
+    ASSERT_EQ(sim.inv_state.num_qubits, 13);
+
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{
+        0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, b, b, !b, !b, 1, 0, 1, 1, 0, 0
+    }));
+
+    size_t t = 0;
+    for (size_t k = 0; k < 10000; k++) {
+        t += sim.measure_pauli_string(PauliString::from_str("-ZZ"), 0.2);
+    }
+    ASSERT_GT(t / 10000.0, 0.05);
+    ASSERT_LT(t / 10000.0, 0.35);
+}
