@@ -125,25 +125,25 @@ GeneratedCircuit _finish_surface_code_circuit(
     params.append_begin_round_tick(cycle_actions, data_qubits);
     params.append_unitary_1(cycle_actions, "H", x_measurement_qubits);
     for (const auto &targets : cnot_targets) {
-        cycle_actions.append_op("TICK", {});
+        cycle_actions.safe_append_u("TICK", {});
         params.append_unitary_2(cycle_actions, "CNOT", targets);
     }
-    cycle_actions.append_op("TICK", {});
+    cycle_actions.safe_append_u("TICK", {});
     params.append_unitary_1(cycle_actions, "H", x_measurement_qubits);
-    cycle_actions.append_op("TICK", {});
+    cycle_actions.safe_append_u("TICK", {});
     params.append_measure_reset(cycle_actions, measurement_qubits);
 
     // Build the start of the circuit, getting a state that's ready to cycle.
     // In particular, the first cycle has different detectors and so has to be handled special.
     Circuit head;
     for (const auto &kv : q2p) {
-        head.append_op("QUBIT_COORDS", {kv.first}, {kv.second.x, kv.second.y});
+        head.safe_append_u("QUBIT_COORDS", {kv.first}, {kv.second.x, kv.second.y});
     }
     params.append_reset(head, data_qubits, "ZX"[is_memory_x]);
     params.append_reset(head, measurement_qubits);
     head += cycle_actions;
     for (auto measure : chosen_basis_measure_coords) {
-        head.append_op(
+        head.safe_append_u(
             "DETECTOR",
             {(uint32_t)(measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT},
             {measure.x, measure.y, 0});
@@ -152,11 +152,11 @@ GeneratedCircuit _finish_surface_code_circuit(
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
     uint32_t m = measurement_qubits.size();
-    body.append_op("SHIFT_COORDS", {}, {0, 0, 1});
+    body.safe_append_u("SHIFT_COORDS", {}, {0, 0, 1});
     for (auto m_index : measurement_qubits) {
         auto m_coord = q2p[m_index];
         auto k = (uint32_t)measurement_qubits.size() - measure_coord_to_order[m_coord] - 1;
-        body.append_op(
+        body.safe_append_u(
             "DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT}, {m_coord.x, m_coord.y, 0});
     }
 
@@ -177,7 +177,7 @@ GeneratedCircuit _finish_surface_code_circuit(
         detectors.push_back(
             (data_qubits.size() + measurement_qubits.size() - measure_coord_to_order[measure]) | TARGET_RECORD_BIT);
         std::sort(detectors.begin(), detectors.end());
-        tail.append_op("DETECTOR", detectors, {measure.x, measure.y, 1});
+        tail.safe_append_u("DETECTOR", detectors, {measure.x, measure.y, 1});
     }
     // Logical observable.
     std::vector<uint32_t> obs_inc;
@@ -185,7 +185,7 @@ GeneratedCircuit _finish_surface_code_circuit(
         obs_inc.push_back((data_qubits.size() - data_coord_to_order[q]) | TARGET_RECORD_BIT);
     }
     std::sort(obs_inc.begin(), obs_inc.end());
-    tail.append_op("OBSERVABLE_INCLUDE", obs_inc, 0);
+    tail.safe_append_ua("OBSERVABLE_INCLUDE", obs_inc, 0);
 
     // Combine to form final circuit.
     Circuit full_circuit = head + body * (params.rounds - 1) + tail;

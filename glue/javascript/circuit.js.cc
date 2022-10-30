@@ -16,7 +16,7 @@ ExposedCircuit::ExposedCircuit(const std::string &text) : circuit(Circuit(text.d
 
 void ExposedCircuit::append_operation(
     const std::string &name, const emscripten::val &targets, const emscripten::val &args) {
-    circuit.append_op(
+    circuit.safe_append_u(
         name.data(),
         emscripten::convertJSArrayToNumberVector<uint32_t>(targets),
         emscripten::convertJSArrayToNumberVector<double>(args));

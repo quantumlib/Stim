@@ -24,40 +24,40 @@ using namespace stim;
 Circuit make_rep_code(uint32_t distance, uint32_t rounds) {
     Circuit round_ops;
     for (uint32_t k = 0; k < distance - 1; k++) {
-        round_ops.append_op("CNOT", {2 * k, 2 * k + 1});
+        round_ops.safe_append_u("CNOT", {2 * k, 2 * k + 1});
     }
     for (uint32_t k = 0; k < distance - 1; k++) {
-        round_ops.append_op("DEPOLARIZE2", {2 * k, 2 * k + 1}, 0.001);
+        round_ops.safe_append_ua("DEPOLARIZE2", {2 * k, 2 * k + 1}, 0.001);
     }
     for (uint32_t k = 1; k < distance; k++) {
-        round_ops.append_op("CNOT", {2 * k, 2 * k - 1});
+        round_ops.safe_append_u("CNOT", {2 * k, 2 * k - 1});
     }
     for (uint32_t k = 1; k < distance; k++) {
-        round_ops.append_op("DEPOLARIZE2", {2 * k, 2 * k - 1}, 0.001);
+        round_ops.safe_append_ua("DEPOLARIZE2", {2 * k, 2 * k - 1}, 0.001);
     }
     for (uint32_t k = 0; k < distance - 1; k++) {
-        round_ops.append_op("X_ERROR", {2 * k + 1}, 0.001);
+        round_ops.safe_append_ua("X_ERROR", {2 * k + 1}, 0.001);
     }
     for (uint32_t k = 0; k < distance - 1; k++) {
-        round_ops.append_op("MR", {2 * k + 1});
+        round_ops.safe_append_u("MR", {2 * k + 1});
     }
     Circuit detectors;
     for (uint32_t k = 1; k < distance; k++) {
-        detectors.append_op("DETECTOR", {k | TARGET_RECORD_BIT, (k + distance - 1) | TARGET_RECORD_BIT});
+        detectors.safe_append_u("DETECTOR", {k | TARGET_RECORD_BIT, (k + distance - 1) | TARGET_RECORD_BIT});
     }
 
     Circuit result = round_ops + (round_ops + detectors) * (rounds - 1);
     for (uint32_t k = 0; k < distance; k++) {
-        result.append_op("X_ERROR", {2 * k}, 0.001);
+        result.safe_append_ua("X_ERROR", {2 * k}, 0.001);
     }
     for (uint32_t k = 0; k < distance; k++) {
-        result.append_op("M", {2 * k});
+        result.safe_append_u("M", {2 * k});
     }
     for (uint32_t k = 1; k < distance; k++) {
-        result.append_op(
+        result.safe_append_u(
             "DETECTOR", {k | TARGET_RECORD_BIT, (k + 1) | TARGET_RECORD_BIT, (k + distance) | TARGET_RECORD_BIT});
     }
-    result.append_op("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
+    result.safe_append_ua("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
     return result;
 }
 

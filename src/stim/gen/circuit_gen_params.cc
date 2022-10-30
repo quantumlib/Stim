@@ -7,9 +7,9 @@ using namespace stim;
 void append_anti_basis_error(Circuit &circuit, const std::vector<uint32_t> &targets, double p, char basis) {
     if (p > 0) {
         if (basis == 'X') {
-            circuit.append_op("Z_ERROR", targets, p);
+            circuit.safe_append_ua("Z_ERROR", targets, p);
         } else {
-            circuit.append_op("X_ERROR", targets, p);
+            circuit.safe_append_ua("X_ERROR", targets, p);
         }
     }
 }
@@ -34,42 +34,42 @@ CircuitGenParameters::CircuitGenParameters(uint64_t rounds, uint32_t distance, s
 }
 
 void CircuitGenParameters::append_begin_round_tick(Circuit &circuit, const std::vector<uint32_t> &data_qubits) const {
-    circuit.append_op("TICK", {});
+    circuit.safe_append_u("TICK", {});
     if (before_round_data_depolarization > 0) {
-        circuit.append_op("DEPOLARIZE1", data_qubits, before_round_data_depolarization);
+        circuit.safe_append_ua("DEPOLARIZE1", data_qubits, before_round_data_depolarization);
     }
 }
 
 void CircuitGenParameters::append_unitary_1(
     Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
-    circuit.append_op(name, targets);
+    circuit.safe_append_u(name, targets);
     if (after_clifford_depolarization > 0) {
-        circuit.append_op("DEPOLARIZE1", targets, after_clifford_depolarization);
+        circuit.safe_append_ua("DEPOLARIZE1", targets, after_clifford_depolarization);
     }
 }
 
 void CircuitGenParameters::append_unitary_2(
     Circuit &circuit, const std::string &name, const std::vector<uint32_t> targets) const {
-    circuit.append_op(name, targets);
+    circuit.safe_append_u(name, targets);
     if (after_clifford_depolarization > 0) {
-        circuit.append_op("DEPOLARIZE2", targets, after_clifford_depolarization);
+        circuit.safe_append_ua("DEPOLARIZE2", targets, after_clifford_depolarization);
     }
 }
 
 void CircuitGenParameters::append_reset(Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
-    circuit.append_op(std::string("R") + basis, targets);
+    circuit.safe_append_u(std::string("R") + basis, targets);
     append_anti_basis_error(circuit, targets, after_reset_flip_probability, basis);
 }
 
 void CircuitGenParameters::append_measure(Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
     append_anti_basis_error(circuit, targets, before_measure_flip_probability, basis);
-    circuit.append_op(std::string("M") + basis, targets);
+    circuit.safe_append_u(std::string("M") + basis, targets);
 }
 
 void CircuitGenParameters::append_measure_reset(
     Circuit &circuit, const std::vector<uint32_t> targets, char basis) const {
     append_anti_basis_error(circuit, targets, before_measure_flip_probability, basis);
-    circuit.append_op(std::string("MR") + basis, targets);
+    circuit.safe_append_u(std::string("MR") + basis, targets);
     append_anti_basis_error(circuit, targets, after_reset_flip_probability, basis);
 }
 
