@@ -59,13 +59,13 @@ bool is_decomposition_correct(const Gate &gate) {
     }
 
     Circuit epr;
-    epr.append_op("H", qs);
+    epr.safe_append_u("H", qs);
     for (auto q : qs) {
-        epr.append_op("CNOT", {q, q + 2});
+        epr.safe_append_u("CNOT", {q, q + 2});
     }
 
     Circuit circuit1 = epr;
-    circuit1.append_op(gate.name, qs);
+    circuit1.safe_append_u(gate.name, qs);
     auto v1 = circuit_output_eq_val(circuit1);
 
     Circuit circuit2 = epr + Circuit(decomposition);

@@ -106,13 +106,13 @@ void circuit_append(
         // Extract single argument or list of arguments.
         try {
             auto d = pybind11::cast<double>(used_arg);
-            self.append_op(gate_name, raw_targets, d);
+            self.safe_append_ua(gate_name, raw_targets, d);
             return;
         } catch (const pybind11::cast_error &ex) {
         }
         try {
             auto args = pybind11::cast<std::vector<double>>(used_arg);
-            self.append_op(gate_name, raw_targets, args);
+            self.safe_append_u(gate_name, raw_targets, args);
             return;
         } catch (const pybind11::cast_error &ex) {
         }
@@ -123,7 +123,7 @@ void circuit_append(
         }
 
         const CircuitInstruction &instruction = pybind11::cast<CircuitInstruction>(obj);
-        self.append_op(instruction.gate.name, instruction.raw_targets(), instruction.gate_args);
+        self.safe_append(GATE_DATA.at(instruction.gate.name), instruction.targets, instruction.gate_args);
     } else if (pybind11::isinstance<CircuitRepeatBlock>(obj)) {
         if (!raw_targets.empty() || !arg.is_none()) {
             throw std::invalid_argument("Can't specify `targets` or `arg` when appending a stim.CircuitRepeatBlock.");
@@ -1798,6 +1798,60 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                     MR 0 1
                     DETECTOR(0, 4) rec[-2]
                     DETECTOR(1, 4) rec[-1]
+                ''')
+        )DOC")
+            .data());
+
+    c.def(
+        "inverse",
+        &Circuit::inverse,
+        clean_doc_string(u8R"DOC(
+            Returns a circuit that applies the same operations but inverted and in reverse.
+
+            If circuit starts with QUBIT_COORDS instructions, the returned circuit will
+            still have the same QUBIT_COORDS instructions in the same order at the start.
+
+            Returns:
+                A `stim.Circuit` that applies inverted operations in the reverse order.
+
+            Raises:
+                ValueError: The circuit contains operations that don't have an inverse,
+                    such as measurements. There are also some unsupported operations
+                    such as SHIFT_COORDS.
+
+            Examples:
+                >>> import stim
+
+                >>> stim.Circuit('''
+                ...     S 0 1
+                ...     ISWAP 0 1 1 2
+                ... ''').inverse()
+                stim.Circuit('''
+                    ISWAP_DAG 1 2 0 1
+                    S_DAG 1 0
+                ''')
+
+                >>> stim.Circuit('''
+                ...     QUBIT_COORDS(1, 2) 0
+                ...     QUBIT_COORDS(4, 3) 1
+                ...     QUBIT_COORDS(9, 5) 2
+                ...     H 0 1
+                ...     REPEAT 100 {
+                ...         CX 0 1 1 2
+                ...         TICK
+                ...         S 1 2
+                ...     }
+                ... ''').inverse()
+                stim.Circuit('''
+                    QUBIT_COORDS(1, 2) 0
+                    QUBIT_COORDS(4, 3) 1
+                    QUBIT_COORDS(9, 5) 2
+                    REPEAT 100 {
+                        S_DAG 2 1
+                        TICK
+                        CX 1 2 0 1
+                    }
+                    H 1 0
                 ''')
         )DOC")
             .data());

@@ -42,9 +42,9 @@ GeneratedCircuit stim::generate_rep_code_circuit(const CircuitGenParameters &par
     Circuit cycle_actions;
     params.append_begin_round_tick(cycle_actions, data_qubits);
     params.append_unitary_2(cycle_actions, "CNOT", cnot_targets_1);
-    cycle_actions.append_op("TICK", {});
+    cycle_actions.safe_append_u("TICK", {});
     params.append_unitary_2(cycle_actions, "CNOT", cnot_targets_2);
-    cycle_actions.append_op("TICK", {});
+    cycle_actions.safe_append_u("TICK", {});
     params.append_measure_reset(cycle_actions, measurement_qubits);
 
     // Build the start of the circuit, getting a state that's ready to cycle.
@@ -53,14 +53,14 @@ GeneratedCircuit stim::generate_rep_code_circuit(const CircuitGenParameters &par
     params.append_reset(head, all_qubits);
     head += cycle_actions;
     for (uint32_t k = 0; k < m; k++) {
-        head.append_op("DETECTOR", {(m - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
+        head.safe_append_u("DETECTOR", {(m - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
-    body.append_op("SHIFT_COORDS", {}, {0, 1});
+    body.safe_append_u("SHIFT_COORDS", {}, {0, 1});
     for (uint32_t k = 0; k < m; k++) {
-        body.append_op(
+        body.safe_append_u(
             "DETECTOR", {(m - k) | TARGET_RECORD_BIT, (2 * m - k) | TARGET_RECORD_BIT}, {(double)2 * k + 1, 0});
     }
 
@@ -70,12 +70,12 @@ GeneratedCircuit stim::generate_rep_code_circuit(const CircuitGenParameters &par
     Circuit tail;
     params.append_measure(tail, data_qubits);
     for (uint32_t k = 0; k < m; k++) {
-        tail.append_op(
+        tail.safe_append_u(
             "DETECTOR",
             {(m - k) | TARGET_RECORD_BIT, (m - k + 1) | TARGET_RECORD_BIT, (2 * m - k + 1) | TARGET_RECORD_BIT},
             {(double)2 * k + 1, 1});
     }
-    tail.append_op("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
+    tail.safe_append_ua("OBSERVABLE_INCLUDE", {1 | TARGET_RECORD_BIT}, 0);
 
     // Combine to form final circuit.
     Circuit full_circuit = head + body * (params.rounds - 1) + tail;

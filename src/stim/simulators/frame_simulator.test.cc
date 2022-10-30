@@ -315,10 +315,10 @@ TEST(FrameSimulator, sample_out) {
 TEST(FrameSimulator, big_circuit_measurements) {
     Circuit circuit;
     for (uint32_t k = 0; k < 1250; k += 3) {
-        circuit.append_op("X", {k});
+        circuit.safe_append_u("X", {k});
     }
     for (uint32_t k = 0; k < 1250; k++) {
-        circuit.append_op("M", {k});
+        circuit.safe_append_u("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 750, SHARED_TEST_RNG());
@@ -355,9 +355,9 @@ TEST(FrameSimulator, big_circuit_measurements) {
 
 TEST(FrameSimulator, run_length_measurement_formats) {
     Circuit circuit;
-    circuit.append_op("X", {100, 500, 501, 551, 1200});
+    circuit.safe_append_u("X", {100, 500, 501, 551, 1200});
     for (uint32_t k = 0; k < 1250; k++) {
-        circuit.append_op("M", {k});
+        circuit.safe_append_u("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
 
@@ -391,10 +391,10 @@ TEST(FrameSimulator, run_length_measurement_formats) {
 TEST(FrameSimulator, big_circuit_random_measurements) {
     Circuit circuit;
     for (uint32_t k = 0; k < 270; k++) {
-        circuit.append_op("H_XZ", {k});
+        circuit.safe_append_u("H_XZ", {k});
     }
     for (uint32_t k = 0; k < 270; k++) {
-        circuit.append_op("M", {k});
+        circuit.safe_append_u("M", {k});
     }
     auto ref = TableauSimulator::reference_sample_circuit(circuit);
     auto r = FrameSimulator::sample(circuit, ref, 1000, SHARED_TEST_RNG());

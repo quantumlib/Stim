@@ -1181,6 +1181,57 @@ class Circuit:
             >>> circuit.get_final_qubit_coordinates()
             {1: [1.0, 2.0, 3.0]}
         """
+    def inverse(
+        self,
+    ) -> stim.Circuit:
+        """Returns a circuit that applies the same operations but inverted and in reverse.
+
+        If circuit starts with QUBIT_COORDS instructions, the returned circuit will
+        still have the same QUBIT_COORDS instructions in the same order at the start.
+
+        Returns:
+            A `stim.Circuit` that applies inverted operations in the reverse order.
+
+        Raises:
+            ValueError: The circuit contains operations that don't have an inverse,
+                such as measurements. There are also some unsupported operations
+                such as SHIFT_COORDS.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     S 0 1
+            ...     ISWAP 0 1 1 2
+            ... ''').inverse()
+            stim.Circuit('''
+                ISWAP_DAG 1 2 0 1
+                S_DAG 1 0
+            ''')
+
+            >>> stim.Circuit('''
+            ...     QUBIT_COORDS(1, 2) 0
+            ...     QUBIT_COORDS(4, 3) 1
+            ...     QUBIT_COORDS(9, 5) 2
+            ...     H 0 1
+            ...     REPEAT 100 {
+            ...         CX 0 1 1 2
+            ...         TICK
+            ...         S 1 2
+            ...     }
+            ... ''').inverse()
+            stim.Circuit('''
+                QUBIT_COORDS(1, 2) 0
+                QUBIT_COORDS(4, 3) 1
+                QUBIT_COORDS(9, 5) 2
+                REPEAT 100 {
+                    S_DAG 2 1
+                    TICK
+                    CX 1 2 0 1
+                }
+                H 1 0
+            ''')
+        """
     @property
     def num_detectors(
         self,

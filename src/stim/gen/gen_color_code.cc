@@ -116,10 +116,10 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     params.append_begin_round_tick(cycle_actions, data_qubits);
     params.append_unitary_1(cycle_actions, "C_XYZ", data_qubits);
     for (const auto &targets : cnot_targets) {
-        cycle_actions.append_op("TICK", {});
+        cycle_actions.safe_append_u("TICK", {});
         params.append_unitary_2(cycle_actions, "CNOT", targets);
     }
-    cycle_actions.append_op("TICK", {});
+    cycle_actions.safe_append_u("TICK", {});
     params.append_measure_reset(cycle_actions, measurement_qubits);
 
     // Build the start of the circuit, getting a state that's ready to cycle.
@@ -128,21 +128,21 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
     Circuit head;
     for (auto q : all_qubits) {
         color_coord c = q2p[q];
-        head.append_op("QUBIT_COORDS", {q}, {c.x, c.y});
+        head.safe_append_u("QUBIT_COORDS", {q}, {c.x, c.y});
     }
     params.append_reset(head, all_qubits);
     head += cycle_actions * 2;
     for (uint32_t k = m; k-- > 0;) {
         color_coord c = q2p[measurement_qubits[m - k - 1]];
-        head.append_op("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT}, {c.x, c.y, 0});
+        head.safe_append_u("DETECTOR", {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT}, {c.x, c.y, 0});
     }
 
     // Build the repeated body of the circuit, including the detectors comparing to previous cycles.
     Circuit body = cycle_actions;
-    body.append_op("SHIFT_COORDS", {}, {0, 0, 1});
+    body.safe_append_u("SHIFT_COORDS", {}, {0, 0, 1});
     for (uint32_t k = m; k-- > 0;) {
         color_coord c = q2p[measurement_qubits[m - k - 1]];
-        body.append_op(
+        body.safe_append_u(
             "DETECTOR",
             {(k + 1) | TARGET_RECORD_BIT, (k + 1 + m) | TARGET_RECORD_BIT, (k + 1 + 2 * m) | TARGET_RECORD_BIT},
             {c.x, c.y, 0});
@@ -175,7 +175,7 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
             detectors.push_back(p + m);
         }
         std::sort(detectors.begin(), detectors.end());
-        tail.append_op("DETECTOR", detectors, {measure.x, measure.y, 1});
+        tail.safe_append_u("DETECTOR", detectors, {measure.x, measure.y, 1});
     }
     // Logical observable.
     std::vector<uint32_t> obs_inc;
@@ -185,7 +185,7 @@ GeneratedCircuit stim::generate_color_code_circuit(const CircuitGenParameters &p
         }
     }
     std::sort(obs_inc.begin(), obs_inc.end());
-    tail.append_op("OBSERVABLE_INCLUDE", obs_inc, 0);
+    tail.safe_append_ua("OBSERVABLE_INCLUDE", obs_inc, 0);
 
     // Put it all together.
     auto full_circuit = head + body * (params.rounds - 2) + tail;
