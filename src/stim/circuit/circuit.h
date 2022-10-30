@@ -151,14 +151,14 @@ struct Circuit {
     Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    PointerRange<stim::GateTarget> append_operation(const Operation &operation);
+    PointerRange<stim::GateTarget> safe_append(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
+    void safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_op(
+    void safe_append_u(
         const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args = {});
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    void append_operation(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args);
+    void safe_append(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args);
     /// Safely copies a repeat block to the end of the circuit.
     void append_repeat_block(uint64_t repeat_count, const Circuit &body);
     /// Safely moves a repeat block to the end of the circuit.
@@ -190,6 +190,9 @@ struct Circuit {
 
     /// Returns an equivalent circuit without REPEAT or SHIFT_COORDS instructions.
     Circuit flattened() const;
+
+    /// Returns a circuit that implements the inverse Clifford operation.
+    Circuit inverse() const;
 
     /// Helper method for executing the circuit, e.g. repeating REPEAT blocks.
     template <typename CALLBACK>

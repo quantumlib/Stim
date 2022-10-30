@@ -29,7 +29,7 @@ Circuit stim::unitary_circuit_inverse(const Circuit &unitary_circuit) {
         auto s = op.target_data.targets.ptr_start;
         const auto &inv_gate = op.gate->inverse();
         for (size_t k = op.target_data.targets.size(); k > 0; k -= step) {
-            inverted.append_operation(inv_gate, {s + k - step, s + k}, op.target_data.args);
+            inverted.safe_append(inv_gate, {s + k - step, s + k}, op.target_data.args);
         }
     });
     return inverted;
@@ -83,11 +83,11 @@ Circuit stim::stabilizer_state_vector_to_circuit(
     Circuit recorded;
     auto apply = [&](const std::string &name, uint32_t target) {
         sim.apply(name, target);
-        recorded.append_op(name, {little_endian ? target : (num_qubits - target - 1)});
+        recorded.safe_append_u(name, {little_endian ? target : (num_qubits - target - 1)});
     };
     auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
         sim.apply(name, target, target2);
-        recorded.append_op(
+        recorded.safe_append_u(
             name,
             {
                 little_endian ? target : (num_qubits - target - 1),
@@ -151,7 +151,7 @@ Circuit stim::stabilizer_state_vector_to_circuit(
 
     recorded = unitary_circuit_inverse(recorded);
     if (recorded.count_qubits() < num_qubits) {
-        recorded.append_op("I", {(uint32_t)(num_qubits - 1)});
+        recorded.safe_append_u("I", {(uint32_t)(num_qubits - 1)});
     }
 
     return recorded;
@@ -241,11 +241,11 @@ Circuit stim::tableau_to_circuit(const Tableau &tableau, const std::string &meth
     Circuit recorded_circuit;
     auto apply = [&](const std::string &name, uint32_t target) {
         remaining.inplace_scatter_append(GATE_DATA.at(name).tableau(), {target});
-        recorded_circuit.append_op(name, {target});
+        recorded_circuit.safe_append_u(name, {target});
     };
     auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
         remaining.inplace_scatter_append(GATE_DATA.at(name).tableau(), {target, target2});
-        recorded_circuit.append_op(name, {target, target2});
+        recorded_circuit.safe_append_u(name, {target, target2});
     };
     auto x_out = [&](size_t inp, size_t out) {
         const auto &p = remaining.xs[inp];
@@ -406,11 +406,11 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
 
     auto apply = [&](const std::string &name, uint32_t target) {
         sim.apply(name, target);
-        recorded_circuit.append_op(name, {target});
+        recorded_circuit.safe_append_u(name, {target});
     };
     auto apply2 = [&](const std::string &name, uint32_t target, uint32_t target2) {
         sim.apply(name, target, target2);
-        recorded_circuit.append_op(name, {target, target2});
+        recorded_circuit.safe_append_u(name, {target, target2});
     };
 
     // Undo the permutation and also single-qubit phases.
@@ -472,13 +472,13 @@ Tableau stim::unitary_to_tableau(const std::vector<std::vector<std::complex<floa
     // Conjugate by swaps to handle endianness.
     if (!little_endian) {
         for (size_t q = 0; 2 * q + 1 < num_qubits; q++) {
-            recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
+            recorded_circuit.safe_append_u("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
         }
     }
     recorded_circuit = unitary_circuit_inverse(recorded_circuit);
     if (!little_endian) {
         for (size_t q = 0; 2 * q + 1 < num_qubits; q++) {
-            recorded_circuit.append_op("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
+            recorded_circuit.safe_append_u("SWAP", {(uint32_t)q, (uint32_t)(num_qubits - q - 1)});
         }
     }
 

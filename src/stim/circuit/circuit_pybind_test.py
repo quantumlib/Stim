@@ -957,3 +957,13 @@ q2: ------
     assert c.diagram(type="match-graph-3d-html") is not None
     assert c.diagram(type="detector-slice-svg", tick=1) is not None
     assert c.diagram(type="detector-slice-text", tick=1) is not None
+
+
+def test_circuit_inverse():
+    assert stim.Circuit("""
+        S 0 1
+        CX 0 1 0 2
+    """).inverse() == stim.Circuit("""
+        CX 0 2 0 1
+        S_DAG 1 0
+    """)

@@ -14,14 +14,14 @@
 
 #include "stim/simulators/tableau_simulator.pybind.h"
 
+#include "stim/circuit/circuit_instruction.pybind.h"
+#include "stim/circuit/circuit_repeat_block.pybind.h"
 #include "stim/probability_util.h"
 #include "stim/py/base.pybind.h"
 #include "stim/simulators/tableau_simulator.h"
 #include "stim/stabilizers/conversions.h"
 #include "stim/stabilizers/pauli_string.pybind.h"
-#include "stim/circuit/circuit_instruction.pybind.h"
 #include "stim/stabilizers/tableau.h"
-#include "stim/circuit/circuit_repeat_block.pybind.h"
 
 using namespace stim;
 using namespace stim_pybind;
@@ -32,8 +32,7 @@ void do_circuit_instruction(TableauSimulator &self, const CircuitInstruction &ci
         {
             circuit_instruction.gate_args,
             circuit_instruction.targets,
-        }
-    });
+        }});
 }
 
 void do_obj(TableauSimulator &self, const pybind11::object &obj) {

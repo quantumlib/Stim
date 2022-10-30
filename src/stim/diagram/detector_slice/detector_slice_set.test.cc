@@ -51,7 +51,8 @@ TEST(detector_slice_set, from_circuit) {
             DETECTOR rec[-1]
         }
 )CIRCUIT"),
-        2, {&empty_filter});
+        2,
+        {&empty_filter});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{1, {3, 5}}}));
     ASSERT_EQ(
         slice_set.slices,
@@ -94,8 +95,8 @@ TEST(detector_slice_set, big_loop_seeking) {
             {DemTarget::relative_detector_id(inner * 10000ULL * 50ULL + 1ULL), {GateTarget::y(0)}},
         }));
 
-    slice_set =
-        DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, {&empty_filter});
+    slice_set = DetectorSliceSet::from_circuit_tick(
+        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, {&empty_filter});
     ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
     ASSERT_EQ(
         slice_set.slices,

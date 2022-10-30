@@ -625,14 +625,14 @@ void Circuit::append_from_text(const char *text) {
         READ_UNTIL_END_OF_FILE);
 }
 
-PointerRange<stim::GateTarget> Circuit::append_operation(const Operation &operation) {
+PointerRange<stim::GateTarget> Circuit::safe_append(const Operation &operation) {
     PointerRange<stim::GateTarget> target_data = target_buf.take_copy(operation.target_data.targets);
     OperationData op_data{arg_buf.take_copy(operation.target_data.args), target_data};
     operations.push_back({operation.gate, op_data});
     return target_data;
 }
 
-void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
+void Circuit::safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
     const auto &gate = GATE_DATA.at(gate_name);
 
     std::vector<GateTarget> converted;
@@ -641,10 +641,10 @@ void Circuit::append_op(const std::string &gate_name, const std::vector<uint32_t
         converted.push_back({e});
     }
 
-    append_operation(gate, converted, {&singleton_arg});
+    safe_append(gate, converted, {&singleton_arg});
 }
 
-void Circuit::append_op(
+void Circuit::safe_append_u(
     const std::string &gate_name, const std::vector<uint32_t> &targets, const std::vector<double> &args) {
     const auto &gate = GATE_DATA.at(gate_name);
 
@@ -654,11 +654,10 @@ void Circuit::append_op(
         converted.push_back({e});
     }
 
-    append_operation(gate, converted, args);
+    safe_append(gate, converted, args);
 }
 
-void Circuit::append_operation(
-    const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args) {
+void Circuit::safe_append(const Gate &gate, ConstPointerRange<GateTarget> targets, ConstPointerRange<double> args) {
     if (gate.flags & GATE_IS_BLOCK) {
         throw std::invalid_argument("Can't append a block like a normal operation.");
     }
@@ -830,7 +829,7 @@ Circuit &Circuit::operator+=(const Circuit &other) {
     blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
     for (const auto &op : ops_to_add) {
         assert(op.gate != nullptr);
-        auto target_data = append_operation(op);
+        auto target_data = safe_append(op);
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
             target_data[0].data += block_offset;
@@ -1074,7 +1073,7 @@ Circuit Circuit::without_noise() const {
         if (op.gate->flags & GATE_PRODUCES_NOISY_RESULTS) {
             // Drop result flip probabilities.
             auto targets = result.target_buf.take_copy(op.target_data.targets);
-            result.append_operation(*op.gate, targets, {});
+            result.safe_append(*op.gate, targets, {});
         } else if (op.gate->id == gate_name_to_id("REPEAT")) {
             auto args = result.arg_buf.take_copy(op.target_data.args);
             auto targets = result.target_buf.take_copy(op.target_data.targets);
@@ -1083,7 +1082,7 @@ Circuit Circuit::without_noise() const {
             // Keep noiseless operations.
             auto args = result.arg_buf.take_copy(op.target_data.args);
             auto targets = result.target_buf.take_copy(op.target_data.targets);
-            result.append_operation(*op.gate, targets, args);
+            result.safe_append(*op.gate, targets, args);
         }
     }
     for (const auto &block : blocks) {
@@ -1121,7 +1120,7 @@ void flattened_helper(
                     coord_buffer[k] += cur_coordinate_shift[k];
                 }
             }
-            out.append_operation(*op.gate, op.target_data.targets, coord_buffer);
+            out.safe_append(*op.gate, op.target_data.targets, coord_buffer);
         }
     }
 }
@@ -1131,6 +1130,63 @@ Circuit Circuit::flattened() const {
     std::vector<double> shift;
     std::vector<double> coord_buffer;
     flattened_helper(*this, shift, coord_buffer, result);
+    return result;
+}
+
+Circuit Circuit::inverse() const {
+    Circuit result;
+    result.operations.reserve(operations.size());
+    result.target_buf.ensure_available(target_buf.total_allocated());
+    result.arg_buf.ensure_available(arg_buf.total_allocated());
+    size_t skip_reversing = 0;
+
+    std::vector<GateTarget> reversed_targets_buf;
+    for (size_t k = 0; k < operations.size(); k++) {
+        const auto &op = operations[k];
+        if (op.gate->id == gate_name_to_id("REPEAT")) {
+            const auto &block = op_data_block_body(*this, op.target_data);
+            uint64_t reps = op_data_rep_count(op.target_data);
+            result.append_repeat_block(reps, block.inverse());
+        } else if (op.gate->flags & GATE_IS_UNITARY) {
+            reversed_targets_buf.clear();
+            auto src = op.target_data.targets;
+            if (op.gate->flags & GATE_TARGETS_PAIRS) {
+                assert(op.target_data.targets.size() % 2 == 0);
+                for (size_t j = src.size(); j > 0;) {
+                    j -= 2;
+                    reversed_targets_buf.push_back(src[j]);
+                    reversed_targets_buf.push_back(src[j + 1]);
+                }
+            } else {
+                for (size_t j = src.size(); j--;) {
+                    reversed_targets_buf.push_back(src[j]);
+                }
+            }
+            result.safe_append(op.gate->inverse(), reversed_targets_buf, op.target_data.args);
+        } else if (op.gate->id == gate_name_to_id("TICK")) {
+            result.safe_append(*op.gate, op.target_data.targets, op.target_data.args);
+        } else if (op.gate->flags & GATE_IS_NOISE) {
+            throw std::invalid_argument(
+                "The circuit has no well-defined inverse because it contains noise.\n"
+                "For example it contains a '" +
+                op.str() + "' instruction.");
+        } else if (op.gate->flags & (GATE_IS_RESET | GATE_PRODUCES_NOISY_RESULTS)) {
+            throw std::invalid_argument(
+                "The circuit has no well-defined inverse because it contains resets or measurements.\n"
+                "For example it contains a '" +
+                op.str() + "' instruction.");
+        } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
+            if (k > skip_reversing) {
+                throw std::invalid_argument("Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
+            }
+            skip_reversing++;
+            result.safe_append(op);
+        } else {
+            throw std::invalid_argument("Inverse not implemented: " + op.str());
+        }
+    }
+
+    std::reverse(result.operations.begin() + skip_reversing, result.operations.end());
     return result;
 }
 

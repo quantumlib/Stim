@@ -43,7 +43,7 @@ TEST(circuit, from_text) {
     ASSERT_EQ(f("# not an operation"), expected);
 
     expected.clear();
-    expected.append_op("H", {0});
+    expected.safe_append_u("H", {0});
     ASSERT_EQ(f("H 0"), expected);
     ASSERT_EQ(f("h 0"), expected);
     ASSERT_EQ(f("H 0     "), expected);
@@ -52,15 +52,15 @@ TEST(circuit, from_text) {
     ASSERT_EQ(f("H 0  # comment"), expected);
 
     expected.clear();
-    expected.append_op("H", {23});
+    expected.safe_append_u("H", {23});
     ASSERT_EQ(f("H 23"), expected);
 
     expected.clear();
-    expected.append_op("DEPOLARIZE1", {4, 5}, 0.125);
+    expected.safe_append_ua("DEPOLARIZE1", {4, 5}, 0.125);
     ASSERT_EQ(f("DEPOLARIZE1(0.125) 4 5  # comment"), expected);
 
     expected.clear();
-    expected.append_op("ZCX", {5, 6});
+    expected.safe_append_u("ZCX", {5, 6});
     ASSERT_EQ(f("  \t Cnot 5 6  # comment   "), expected);
 
     ASSERT_THROW({ f("H a"); }, std::invalid_argument);
@@ -96,20 +96,20 @@ TEST(circuit, from_text) {
     ASSERT_EQ(f("# Comment\n\n\n# More"), expected);
 
     expected.clear();
-    expected.append_op("H_XZ", {0});
+    expected.safe_append_u("H_XZ", {0});
     ASSERT_EQ(f("H 0"), expected);
 
     expected.clear();
-    expected.append_op("H_XZ", {0, 1});
+    expected.safe_append_u("H_XZ", {0, 1});
     ASSERT_EQ(f("H 0 \n H 1"), expected);
 
     expected.clear();
-    expected.append_op("H_XZ", {1});
+    expected.safe_append_u("H_XZ", {1});
     ASSERT_EQ(f("H 1"), expected);
 
     expected.clear();
-    expected.append_op("H", {0});
-    expected.append_op("ZCX", {0, 1});
+    expected.safe_append_u("H", {0});
+    expected.safe_append_u("ZCX", {0, 1});
     ASSERT_EQ(
         f("# EPR\n"
           "H 0\n"
@@ -117,15 +117,15 @@ TEST(circuit, from_text) {
         expected);
 
     expected.clear();
-    expected.append_op("M", {0, 0 | TARGET_INVERTED_BIT, 1, 1 | TARGET_INVERTED_BIT});
+    expected.safe_append_u("M", {0, 0 | TARGET_INVERTED_BIT, 1, 1 | TARGET_INVERTED_BIT});
     ASSERT_EQ(f("M 0 !0 1 !1"), expected);
 
     // Measurement fusion.
     expected.clear();
-    expected.append_op("H", {0});
-    expected.append_op("M", {0, 1, 2});
-    expected.append_op("SWAP", {0, 1});
-    expected.append_op("M", {0, 10});
+    expected.safe_append_u("H", {0});
+    expected.safe_append_u("M", {0, 1, 2});
+    expected.safe_append_u("SWAP", {0, 1});
+    expected.safe_append_u("M", {0, 10});
     ASSERT_EQ(
         f(R"CIRCUIT(
             H 0
@@ -139,7 +139,7 @@ TEST(circuit, from_text) {
         expected);
 
     expected.clear();
-    expected.append_op("X", {0});
+    expected.safe_append_u("X", {0});
     expected += Circuit("Y 1 2") * 2;
     ASSERT_EQ(
         f(R"CIRCUIT(
@@ -152,10 +152,10 @@ TEST(circuit, from_text) {
         expected);
 
     expected.clear();
-    expected.append_op("DETECTOR", {5 | TARGET_RECORD_BIT});
+    expected.safe_append_u("DETECTOR", {5 | TARGET_RECORD_BIT});
     ASSERT_EQ(f("DETECTOR rec[-5]"), expected);
     expected.clear();
-    expected.append_op("DETECTOR", {6 | TARGET_RECORD_BIT});
+    expected.safe_append_u("DETECTOR", {6 | TARGET_RECORD_BIT});
     ASSERT_EQ(f("DETECTOR rec[-6]"), expected);
 
     Circuit parsed =
@@ -170,7 +170,7 @@ TEST(circuit, from_text) {
     ASSERT_EQ(parsed.blocks[0].operations[0].target_data.targets.size(), 3);
 
     expected.clear();
-    expected.append_op(
+    expected.safe_append_ua(
         "CORRELATED_ERROR",
         {90 | TARGET_PAULI_X_BIT,
          91 | TARGET_PAULI_X_BIT | TARGET_PAULI_Z_BIT,
@@ -231,11 +231,11 @@ TEST(circuit, parse_sweep_bits) {
 
 TEST(circuit, append_circuit) {
     Circuit c1;
-    c1.append_op("X", {0, 1});
-    c1.append_op("M", {0, 1, 2, 4});
+    c1.safe_append_u("X", {0, 1});
+    c1.safe_append_u("M", {0, 1, 2, 4});
 
     Circuit c2;
-    c2.append_op("M", {7});
+    c2.safe_append_u("M", {7});
 
     Circuit actual = c1;
     actual += c2;
@@ -254,47 +254,47 @@ TEST(circuit, append_op_fuse) {
     Circuit actual;
 
     actual.clear();
-    expected.append_op("H", {1, 2, 3});
-    actual.append_op("H", {1});
-    actual.append_op("H", {2, 3});
+    expected.safe_append_u("H", {1, 2, 3});
+    actual.safe_append_u("H", {1});
+    actual.safe_append_u("H", {2, 3});
     ASSERT_EQ(actual, expected);
-    actual.append_op("R", {0});
-    actual.append_op("R", {});
-    expected.append_op("R", {0});
+    actual.safe_append_u("R", {0});
+    actual.safe_append_u("R", {});
+    expected.safe_append_u("R", {0});
     ASSERT_EQ(actual, expected);
 
     actual.clear();
-    actual.append_op("DETECTOR", {2 | TARGET_RECORD_BIT, 2 | TARGET_RECORD_BIT});
-    actual.append_op("DETECTOR", {1 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT});
+    actual.safe_append_u("DETECTOR", {2 | TARGET_RECORD_BIT, 2 | TARGET_RECORD_BIT});
+    actual.safe_append_u("DETECTOR", {1 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT});
     ASSERT_EQ(actual.operations.size(), 2);
 
     actual.clear();
-    actual.append_op("TICK", {});
-    actual.append_op("TICK", {});
+    actual.safe_append_u("TICK", {});
+    actual.safe_append_u("TICK", {});
     ASSERT_EQ(actual.operations.size(), 2);
 
     actual.clear();
     expected.clear();
-    actual.append_op("M", {0, 1});
-    actual.append_op("M", {2, 3});
-    expected.append_op("M", {0, 1, 2, 3});
+    actual.safe_append_u("M", {0, 1});
+    actual.safe_append_u("M", {2, 3});
+    expected.safe_append_u("M", {0, 1, 2, 3});
     ASSERT_EQ(actual, expected);
 
-    ASSERT_THROW({ actual.append_op("CNOT", {0}); }, std::invalid_argument);
-    ASSERT_THROW({ actual.append_op("X", {0}, 0.5); }, std::invalid_argument);
+    ASSERT_THROW({ actual.safe_append_u("CNOT", {0}); }, std::invalid_argument);
+    ASSERT_THROW({ actual.safe_append_ua("X", {0}, 0.5); }, std::invalid_argument);
 }
 
 TEST(circuit, str) {
     Circuit c;
-    c.append_op("tick", {});
-    c.append_op("CNOT", {2, 3});
-    c.append_op("CNOT", {5 | TARGET_RECORD_BIT, 3});
-    c.append_op("CY", {6 | TARGET_SWEEP_BIT, 4});
-    c.append_op("M", {1, 3, 2});
-    c.append_op("DETECTOR", {7 | TARGET_RECORD_BIT});
-    c.append_op("OBSERVABLE_INCLUDE", {11 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT}, 17);
-    c.append_op("X_ERROR", {19}, 0.5);
-    c.append_op(
+    c.safe_append_u("tick", {});
+    c.safe_append_u("CNOT", {2, 3});
+    c.safe_append_u("CNOT", {5 | TARGET_RECORD_BIT, 3});
+    c.safe_append_u("CY", {6 | TARGET_SWEEP_BIT, 4});
+    c.safe_append_u("M", {1, 3, 2});
+    c.safe_append_u("DETECTOR", {7 | TARGET_RECORD_BIT});
+    c.safe_append_ua("OBSERVABLE_INCLUDE", {11 | TARGET_RECORD_BIT, 1 | TARGET_RECORD_BIT}, 17);
+    c.safe_append_ua("X_ERROR", {19}, 0.5);
+    c.safe_append_ua(
         "CORRELATED_ERROR",
         {
             23 | TARGET_PAULI_X_BIT,
@@ -314,32 +314,33 @@ E(0.25) X23 Z27 Y29)circuit");
 
 TEST(circuit, append_op_validation) {
     Circuit c;
-    ASSERT_THROW({ c.append_op("CNOT", {0}); }, std::invalid_argument);
-    c.append_op("CNOT", {0, 1});
+    ASSERT_THROW({ c.safe_append_u("CNOT", {0}); }, std::invalid_argument);
+    c.safe_append_u("CNOT", {0, 1});
 
-    ASSERT_THROW({ c.append_op("REPEAT", {100}); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("X", {0 | TARGET_INVERTED_BIT}); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("X", {0}, 0.5); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("REPEAT", {100}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("X", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("X", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("X", {0 | TARGET_INVERTED_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_ua("X", {0}, 0.5); }, std::invalid_argument);
 
-    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("M", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
-    c.append_op("M", {0 | TARGET_INVERTED_BIT});
-    c.append_op("M", {0 | TARGET_INVERTED_BIT}, 0.125);
-    ASSERT_THROW({ c.append_op("M", {0}, 1.5); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("M", {0}, -1.5); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("M", {0}, {0.125, 0.25}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("M", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("M", {0 | TARGET_PAULI_Z_BIT}); }, std::invalid_argument);
+    c.safe_append_u("M", {0 | TARGET_INVERTED_BIT});
+    c.safe_append_ua("M", {0 | TARGET_INVERTED_BIT}, 0.125);
+    ASSERT_THROW({ c.safe_append_ua("M", {0}, 1.5); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_ua("M", {0}, -1.5); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("M", {0}, {0.125, 0.25}); }, std::invalid_argument);
 
-    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, 0.1);
-    c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_BIT}, 0.1);
-    ASSERT_THROW({ c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
-    ASSERT_THROW({ c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, {0.1, 0.2}); }, std::invalid_argument);
+    c.safe_append_ua("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, 0.1);
+    c.safe_append_ua("CORRELATED_ERROR", {0 | TARGET_PAULI_Z_BIT}, 0.1);
+    ASSERT_THROW({ c.safe_append_u("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT}, {0.1, 0.2}); }, std::invalid_argument);
     ASSERT_THROW(
-        { c.append_op("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT | TARGET_INVERTED_BIT}); }, std::invalid_argument);
-    c.append_op("X_ERROR", {0}, 0.5);
+        { c.safe_append_u("CORRELATED_ERROR", {0 | TARGET_PAULI_X_BIT | TARGET_INVERTED_BIT}); },
+        std::invalid_argument);
+    c.safe_append_ua("X_ERROR", {0}, 0.5);
 
-    ASSERT_THROW({ c.append_op("CNOT", {0, 0}); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_u("CNOT", {0, 0}); }, std::invalid_argument);
 }
 
 TEST(circuit, repeat_validation) {
@@ -354,12 +355,12 @@ TEST(circuit, repeat_validation) {
 
 TEST(circuit, tick_validation) {
     ASSERT_THROW({ Circuit("TICK 1"); }, std::invalid_argument);
-    ASSERT_THROW({ Circuit().append_op("TICK", {1}); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().safe_append_u("TICK", {1}); }, std::invalid_argument);
 }
 
 TEST(circuit, detector_validation) {
     ASSERT_THROW({ Circuit("DETECTOR 1"); }, std::invalid_argument);
-    ASSERT_THROW({ Circuit().append_op("DETECTOR", {1}); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().safe_append_u("DETECTOR", {1}); }, std::invalid_argument);
 }
 
 TEST(circuit, x_error_validation) {
@@ -396,7 +397,7 @@ TEST(circuit, pauli_err_2_validation) {
 
 TEST(circuit, qubit_coords) {
     ASSERT_THROW({ Circuit("TICK 1"); }, std::invalid_argument);
-    ASSERT_THROW({ Circuit().append_op("TICK", {1}); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit().safe_append_u("TICK", {1}); }, std::invalid_argument);
 }
 
 TEST(circuit, classical_controls) {
@@ -410,9 +411,9 @@ TEST(circuit, classical_controls) {
         std::invalid_argument);
 
     Circuit expected;
-    expected.append_op("CX", {0, 1, 1 | TARGET_RECORD_BIT, 1});
-    expected.append_op("CY", {2 | TARGET_RECORD_BIT, 1});
-    expected.append_op("CZ", {4 | TARGET_RECORD_BIT, 1});
+    expected.safe_append_u("CX", {0, 1, 1 | TARGET_RECORD_BIT, 1});
+    expected.safe_append_u("CY", {2 | TARGET_RECORD_BIT, 1});
+    expected.safe_append_u("CZ", {4 | TARGET_RECORD_BIT, 1});
     ASSERT_EQ(
         Circuit(R"circuit(ZCX 0 1
 ZCX rec[-1] 1
@@ -435,14 +436,14 @@ TEST(circuit, for_each_operation) {
     )CIRCUIT");
 
     Circuit flat;
-    flat.append_op("H", {0});
-    flat.append_op("M", {0, 1});
-    flat.append_op("X", {1});
-    flat.append_op("Y", {2});
+    flat.safe_append_u("H", {0});
+    flat.safe_append_u("M", {0, 1});
+    flat.safe_append_u("X", {1});
+    flat.safe_append_u("Y", {2});
     flat.operations.push_back(flat.operations.back());
     flat.operations.push_back(flat.operations.back());
-    flat.append_op("X", {1});
-    flat.append_op("Y", {2});
+    flat.safe_append_u("X", {1});
+    flat.safe_append_u("Y", {2});
     flat.operations.push_back(flat.operations.back());
     flat.operations.push_back(flat.operations.back());
 
@@ -467,16 +468,16 @@ TEST(circuit, for_each_operation_reverse) {
     )CIRCUIT");
 
     Circuit flat;
-    flat.append_op("Y", {2});
+    flat.safe_append_u("Y", {2});
     flat.operations.push_back(flat.operations.back());
     flat.operations.push_back(flat.operations.back());
-    flat.append_op("X", {1});
-    flat.append_op("Y", {2});
+    flat.safe_append_u("X", {1});
+    flat.safe_append_u("Y", {2});
     flat.operations.push_back(flat.operations.back());
     flat.operations.push_back(flat.operations.back());
-    flat.append_op("X", {1});
-    flat.append_op("M", {0, 1});
-    flat.append_op("H", {0});
+    flat.safe_append_u("X", {1});
+    flat.safe_append_u("M", {0, 1});
+    flat.safe_append_u("H", {0});
 
     std::vector<Operation> ops;
     c.for_each_operation_reverse([&](const Operation &op) {
@@ -1101,7 +1102,7 @@ TEST(circuit, aliased_noiseless_circuit) {
 
 TEST(circuit, validate_nan_probability) {
     Circuit c;
-    ASSERT_THROW({ c.append_op("X_ERROR", {0}, NAN); }, std::invalid_argument);
+    ASSERT_THROW({ c.safe_append_ua("X_ERROR", {0}, NAN); }, std::invalid_argument);
 }
 
 TEST(circuit, get_final_qubit_coords) {
@@ -1433,4 +1434,90 @@ TEST(circuit, equality) {
 
 TEST(circuit, parse_windows_newlines) {
     ASSERT_EQ(Circuit("H 0\r\nCX 0 1\r\n"), Circuit("H 0\nCX 0 1\n"));
+}
+
+TEST(circuit, inverse) {
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            H 0
+            CX 0 1
+            S 1
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            S_DAG 1
+            CX 0 1
+            H 0
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            TICK
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            TICK
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            QUBIT_COORDS(1, 2) 0
+            QUBIT_COORDS(1, 3) 1
+            CY 0 1
+            SQRT_X_DAG 1
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            QUBIT_COORDS(1, 2) 0
+            QUBIT_COORDS(1, 3) 1
+            SQRT_X 1
+            CY 0 1
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            CX 0 1 2 3 4 5
+            C_XYZ 6 7 8 9
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            C_ZYX 9 8 7 6
+            CX 4 5 2 3 0 1
+        )CIRCUIT"));
+
+    ASSERT_EQ(
+        Circuit(R"CIRCUIT(
+            S_DAG 0
+            REPEAT 100 {
+                ISWAP 0 1 1 2
+                TICK
+                CZ
+                CX 0 1
+                REPEAT 50 {
+                }
+            }
+            H 1 2
+        )CIRCUIT")
+            .inverse(),
+        Circuit(R"CIRCUIT(
+            H 2 1
+            REPEAT 100 {
+                REPEAT 50 {
+                }
+                CX 0 1
+                CZ
+                TICK
+                ISWAP_DAG 1 2 0 1
+            }
+            S 0
+        )CIRCUIT"));
+
+    ASSERT_THROW({Circuit("X_ERROR(0.125) 0").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("M(0.125) 0").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("M 0").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("R 0").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("MR 0").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("MPP X0*X1").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("DETECTOR").inverse();}, std::invalid_argument);
+    ASSERT_THROW({Circuit("OBSERVABLE_INCLUDE").inverse();}, std::invalid_argument);
 }

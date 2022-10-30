@@ -35,9 +35,9 @@ M 1 2 3 4 5 6 7 8 9 10 11
 BENCHMARK(circuit_parse_sparse) {
     Circuit c;
     for (auto k = 0; k < 1000; k++) {
-        c.append_op("H", {0});
-        c.append_op("CNOT", {1, 2});
-        c.append_op("M", {0});
+        c.safe_append_u("H", {0});
+        c.safe_append_u("CNOT", {1, 2});
+        c.safe_append_u("M", {0});
     }
     auto text = c.str();
     benchmark_go([&]() {
