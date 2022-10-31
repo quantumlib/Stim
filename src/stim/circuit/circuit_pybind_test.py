@@ -967,3 +967,10 @@ def test_circuit_inverse():
         CX 0 2 0 1
         S_DAG 1 0
     """)
+
+
+def test_circuit_slice_reverse():
+    c = stim.Circuit()
+    assert c[::-1] == stim.Circuit()
+    c = stim.Circuit("X 1\nY 2\nZ 3")
+    assert c[::-1] == stim.Circuit("Z 3\nY 2\nX 1")

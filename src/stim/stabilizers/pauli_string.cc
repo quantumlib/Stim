@@ -150,7 +150,8 @@ uint8_t PauliString::py_get_item(int64_t index) const {
 }
 
 PauliString PauliString::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
-    assert(start >= 0);
+    assert(slice_length >= 0);
+    assert(slice_length == 0 || start >= 0);
     return PauliString::from_func(false, slice_length, [&](size_t i) {
         int j = start + i * step;
         return "_XZY"[xs[j] + zs[j] * 2];

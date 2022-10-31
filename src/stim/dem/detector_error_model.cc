@@ -768,8 +768,8 @@ uint64_t DetectorErrorModel::count_observables() const {
 }
 
 DetectorErrorModel DetectorErrorModel::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
-    assert(start >= 0);
     assert(slice_length >= 0);
+    assert(slice_length == 0 || start >= 0);
     DetectorErrorModel result;
     for (size_t k = 0; k < (size_t)slice_length; k++) {
         const auto &op = instructions[start + step * k];

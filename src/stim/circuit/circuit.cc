@@ -1004,8 +1004,8 @@ size_t Circuit::count_sweep_bits() const {
 }
 
 Circuit Circuit::py_get_slice(int64_t start, int64_t step, int64_t slice_length) const {
-    assert(start >= 0);
     assert(slice_length >= 0);
+    assert(slice_length == 0 || start >= 0);
     Circuit result;
     for (size_t k = 0; k < (size_t)slice_length; k++) {
         const auto &op = operations[start + step * k];
