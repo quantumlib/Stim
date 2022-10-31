@@ -620,3 +620,23 @@ def test_do_circuit_instruction():
     assert s.peek_z(499) == +1
     assert s.peek_z(500) == -1
     assert s.peek_z(501) == +1
+
+
+def test_measure_observable():
+    s = stim.TableauSimulator()
+
+    with pytest.raises(ValueError, match="0 <= flip"):
+        s.measure_observable(stim.PauliString("XX"), flip_probability=-0.1)
+    with pytest.raises(ValueError, match="Hermitian"):
+        s.measure_observable(stim.PauliString("iXX"))
+
+    s.h(0)
+    s.cnot(0, 1)
+    assert not s.measure_observable(stim.PauliString("ZZ"))
+    assert s.measure_observable(stim.PauliString("YY"))
+    assert s.measure_observable(stim.PauliString("-"))
+    assert not s.measure_observable(stim.PauliString(0))
+    assert not s.measure_observable(stim.PauliString(2))
+    assert not s.measure_observable(stim.PauliString(5))
+    n = sum(s.measure_observable(stim.PauliString(0), flip_probability=0.1) for _ in range(1000))
+    assert 25 <= n <= 300

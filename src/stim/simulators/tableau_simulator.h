@@ -94,6 +94,12 @@ struct TableauSimulator {
     ///     target_data: The qubits to target, with flag data indicating whether to invert results.
     void measure_z(const OperationData &target_data);
 
+    /// Collapses then records an observable.
+    ///
+    /// Args:
+    ///     pauli_string: The observable to measure.
+    bool measure_pauli_string(const PauliStringRef pauli_string, double flip_probability);
+
     /// Collapses then clears the target qubits to the |+> state.
     ///
     /// Args:

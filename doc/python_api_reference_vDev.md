@@ -281,6 +281,7 @@ API references for stable versions are kept on the [stim github wiki](https://gi
     - [`stim.TableauSimulator.measure`](#stim.TableauSimulator.measure)
     - [`stim.TableauSimulator.measure_kickback`](#stim.TableauSimulator.measure_kickback)
     - [`stim.TableauSimulator.measure_many`](#stim.TableauSimulator.measure_many)
+    - [`stim.TableauSimulator.measure_observable`](#stim.TableauSimulator.measure_observable)
     - [`stim.TableauSimulator.num_qubits`](#stim.TableauSimulator.num_qubits)
     - [`stim.TableauSimulator.peek_bloch`](#stim.TableauSimulator.peek_bloch)
     - [`stim.TableauSimulator.peek_observable_expectation`](#stim.TableauSimulator.peek_observable_expectation)
@@ -9246,6 +9247,50 @@ def measure_many(
 
     Returns:
         The measurement results as a list of bools.
+    """
+```
+
+<a name="stim.TableauSimulator.measure_observable"></a>
+```python
+# stim.TableauSimulator.measure_observable
+
+# (in class stim.TableauSimulator)
+def measure_observable(
+    self,
+    observable: stim.PauliString,
+    *,
+    flip_probability: float = 0.0,
+) -> bool:
+    """Measures an pauli string observable, as if by an MPP instruction.
+
+    Args:
+        observable: The observable to measure, specified as a stim.PauliString.
+        flip_probability: Probability of the recorded measurement result being
+            flipped.
+
+    Returns:
+        The result of the measurement.
+
+        The result is also recorded into the measurement record.
+
+    Raises:
+        ValueError: The given pauli string isn't Hermitian, or the given probability
+            isn't a valid probability.
+
+    Examples:
+        >>> import stim
+        >>> s = stim.TableauSimulator()
+        >>> s.h(0)
+        >>> s.cnot(0, 1)
+
+        >>> s.measure_observable(stim.PauliString("XX"))
+        False
+
+        >>> s.measure_observable(stim.PauliString("YY"))
+        True
+
+        >>> s.measure_observable(stim.PauliString("-ZZ"))
+        True
     """
 ```
 
