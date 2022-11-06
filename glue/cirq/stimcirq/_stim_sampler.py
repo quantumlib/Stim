@@ -1,4 +1,5 @@
-from typing import List
+import collections
+from typing import Dict, List, Sequence
 
 import cirq
 
@@ -24,21 +25,34 @@ class StimSampler(cirq.Sampler):
 
     def run_sweep(
         self, program: cirq.Circuit, params: cirq.Sweepable, repetitions: int = 1
-    ) -> List[cirq.Result]:
-        trial_results: List[cirq.Result] = []
+    ) -> Sequence[cirq.Result]:
+        results: List[cirq.Result] = []
         for param_resolver in cirq.to_resolvers(params):
             # Request samples from stim.
             instance = cirq.resolve_parameters(program, param_resolver)
             converted_circuit, key_ranges = cirq_circuit_to_stim_data(instance, flatten=True)
             samples = converted_circuit.compile_sampler().sample(repetitions)
 
-            # Convert unlabelled samples into keyed results.
+            # Find number of qubits (length), number of instances, and indices for each measurement key.
+            lengths: Dict[str, int] = {}
+            instances: Dict[str, int] = collections.Counter()
+            indices: Dict[str, int] = collections.defaultdict(list)
             k = 0
-            measurements = {}
             for key, length in key_ranges:
-                p = k
+                prev_length = lengths.get(key)
+                if prev_length is None:
+                    lengths[key] = length
+                elif length != prev_length:
+                    raise ValueError(f"different numbers of qubits for key {key}: {prev_length} != {length}")
+                instances[key] += 1
+                indices[key].extend(range(k, k + length))
                 k += length
-                measurements[key] = samples[:, p:k]
-            trial_results.append(ResultImpl(params=param_resolver, measurements=measurements))
 
-        return trial_results
+            # Convert unlabelled samples into keyed results.
+            records = {
+                key: samples[:, indices[key]].reshape((repetitions, instances[key], length))
+                for key, length in lengths.items()
+            }
+            results.append(ResultImpl(params=param_resolver, records=records))
+
+        return results
