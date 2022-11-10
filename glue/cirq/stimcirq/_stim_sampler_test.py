@@ -21,6 +21,33 @@ def test_end_to_end():
     np.testing.assert_array_equal(result.measurements['a'], result.measurements['b'] ^ 1)
 
 
+def test_end_to_end_repeated_keys():
+    sampler = stimcirq.StimSampler()
+    a, b = cirq.LineQubit.range(2)
+    result = sampler.run(
+        cirq.Circuit(
+            cirq.CircuitOperation(
+                cirq.FrozenCircuit(
+                    cirq.H(a),
+                    cirq.CNOT(a, b),
+                    cirq.X(a) ** 0.5,
+                    cirq.X(b) ** 0.5,
+                    cirq.measure(a, b, key='m'),
+                    cirq.reset_each(a, b),
+                ),
+                repetitions=10,
+                use_repetition_ids=False,
+            ),
+        ),
+        repetitions=1000,
+    )
+    with pytest.raises(ValueError, match='Cannot extract 2D measurements for repeated keys'):
+        _ = result.measurements['m']
+    data = result.records['m']
+    assert data.shape == (1000, 10, 2)
+    np.testing.assert_array_equal(data[:,:,0], data[:,:,1] ^ 1)
+
+
 def test_endian():
     a, b = cirq.LineQubit.range(2)
     circuit = cirq.Circuit(cirq.X(a), cirq.measure(a, b, key='out'))
