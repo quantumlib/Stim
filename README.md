@@ -1,4 +1,8 @@
+
+
 # Stim
+
+![Logo](doc/logo_128x128.svg)
 
 - [What is Stim?](#what-is-stim)
 - [How do I use Stim?](#how-use-stim)
