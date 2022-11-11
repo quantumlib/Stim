@@ -21,12 +21,13 @@
 
 using namespace stim;
 
-TableauSimulator::TableauSimulator(std::mt19937_64 rng, size_t num_qubits, int8_t sign_bias, MeasureRecord record)
+TableauSimulator::TableauSimulator(std::mt19937_64 rng, size_t num_qubits)
     : inv_state(Tableau::identity(num_qubits)),
       rng(std::move(rng)),
-      sign_bias(sign_bias),
-      measurement_record(std::move(record)),
-      last_correlated_error_occurred(false) {
+      sign_bias(0),
+      measurement_record(),
+      last_correlated_error_occurred(false),
+      reference_sample_mode(false) {
 }
 
 TableauSimulator::TableauSimulator(const TableauSimulator &other, std::mt19937_64 rng)
@@ -34,7 +35,8 @@ TableauSimulator::TableauSimulator(const TableauSimulator &other, std::mt19937_6
       rng(std::move(rng)),
       sign_bias(other.sign_bias),
       measurement_record(other.measurement_record),
-      last_correlated_error_occurred(other.last_correlated_error_occurred) {
+      last_correlated_error_occurred(other.last_correlated_error_occurred),
+      reference_sample_mode(other.reference_sample_mode) {
 }
 
 bool TableauSimulator::is_deterministic_x(size_t target) const {
@@ -193,6 +195,9 @@ bool TableauSimulator::measure_pauli_string(const PauliStringRef pauli_string, d
     if (pauli_string.sign) {
         p = 1 - p;
     }
+    if (reference_sample_mode) {
+        p = 0;
+    }
     if (targets.empty()) {
         measurement_record.record_result(std::bernoulli_distribution(p)(rng));
     } else {
@@ -257,7 +262,7 @@ void TableauSimulator::measure_reset_z(const OperationData &target_data) {
 }
 
 void TableauSimulator::noisify_new_measurements(const OperationData &target_data) {
-    if (target_data.args.empty()) {
+    if (target_data.args.empty() || reference_sample_mode) {
         return;
     }
     size_t last = measurement_record.storage.size() - 1;
@@ -647,6 +652,9 @@ void TableauSimulator::YCZ(const OperationData &target_data) {
 }
 
 void TableauSimulator::DEPOLARIZE1(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         auto p = 1 + (rng() % 3);
         inv_state.xs.signs[q.data] ^= p & 1;
@@ -655,6 +663,9 @@ void TableauSimulator::DEPOLARIZE1(const OperationData &target_data) {
 }
 
 void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     const auto &targets = target_data.targets;
     assert(!(targets.size() & 1));
     auto n = targets.size() >> 1;
@@ -670,12 +681,18 @@ void TableauSimulator::DEPOLARIZE2(const OperationData &target_data) {
 }
 
 void TableauSimulator::X_ERROR(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.zs.signs[q.data] ^= true;
     });
 }
 
 void TableauSimulator::Y_ERROR(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.xs.signs[q.data] ^= true;
         inv_state.zs.signs[q.data] ^= true;
@@ -683,12 +700,18 @@ void TableauSimulator::Y_ERROR(const OperationData &target_data) {
 }
 
 void TableauSimulator::Z_ERROR(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     RareErrorIterator::for_samples(target_data.args[0], target_data.targets, rng, [&](GateTarget q) {
         inv_state.xs.signs[q.data] ^= true;
     });
 }
 
 void TableauSimulator::PAULI_CHANNEL_1(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     bool tmp = last_correlated_error_occurred;
     perform_pauli_errors_via_correlated_errors<1>(
         target_data,
@@ -702,6 +725,9 @@ void TableauSimulator::PAULI_CHANNEL_1(const OperationData &target_data) {
 }
 
 void TableauSimulator::PAULI_CHANNEL_2(const OperationData &target_data) {
+    if (reference_sample_mode) {
+        return;
+    }
     bool tmp = last_correlated_error_occurred;
     perform_pauli_errors_via_correlated_errors<2>(
         target_data,
@@ -716,11 +742,14 @@ void TableauSimulator::PAULI_CHANNEL_2(const OperationData &target_data) {
 
 void TableauSimulator::CORRELATED_ERROR(const OperationData &target_data) {
     last_correlated_error_occurred = false;
+    if (reference_sample_mode) {
+        return;
+    }
     ELSE_CORRELATED_ERROR(target_data);
 }
 
 void TableauSimulator::ELSE_CORRELATED_ERROR(const OperationData &target_data) {
-    if (last_correlated_error_occurred) {
+    if (last_correlated_error_occurred || reference_sample_mode) {
         return;
     }
     last_correlated_error_occurred = std::bernoulli_distribution(target_data.args[0])(rng);
@@ -759,9 +788,9 @@ void TableauSimulator::Z(const OperationData &target_data) {
     }
 }
 
-simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::sample_circuit(
-    const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias) {
-    TableauSimulator sim(std::move(rng), circuit.count_qubits(), sign_bias);
+simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::noisy_sample_circuit(
+    const Circuit &circuit, std::mt19937_64 &rng) {
+    TableauSimulator sim(std::move(rng), circuit.count_qubits());
     sim.expand_do_circuit(circuit);
 
     const std::vector<bool> &v = sim.measurement_record.storage;
@@ -996,9 +1025,79 @@ void TableauSimulator::expand_do_circuit(const Circuit &circuit, uint64_t reps) 
     }
 }
 
+void TableauSimulator::expand_do_reference_sample_circuit_period_folding(const Circuit &circuit, uint64_t reps) {
+    // Advance a second simulator at half speed, watching for state recurrence.
+    TableauSimulator tortoise(*this);
+    uint64_t tortoise_steps = 0;
+    uint64_t hare_steps = 0;
+    while (true) {
+        if (hare_steps == reps) {
+            return;
+        }
+
+        expand_do_reference_sample_circuit(circuit, 1, false);
+        hare_steps++;
+
+        if (tortoise.inv_state == inv_state) {
+            break;
+        }
+
+        if ((hare_steps & 1) == 1) {
+            tortoise.expand_do_reference_sample_circuit(circuit, 1, false);
+            tortoise_steps++;
+        }
+    }
+
+    // Found a cyclic period. Just repeat the cyclic measurement results.
+    uint64_t period = hare_steps - tortoise_steps;
+    size_t rep_measures_start = tortoise.measurement_record.storage.size();
+    size_t rep_measures_end = measurement_record.storage.size();
+    size_t measurements_per_period = rep_measures_end - rep_measures_start;
+    size_t period_steps_left = (reps - hare_steps) / period;
+    measurement_record.storage.reserve(rep_measures_end + measurements_per_period * period_steps_left);
+    while (hare_steps + period <= reps) {
+        measurement_record.storage.insert(
+            measurement_record.storage.end(),
+            measurement_record.storage.begin() + rep_measures_start,
+            measurement_record.storage.begin() + rep_measures_end);
+        hare_steps += period;
+    }
+
+    // Finish the tail of the loop.
+    expand_do_reference_sample_circuit(circuit, reps - hare_steps, false);
+}
+
+void TableauSimulator::expand_do_reference_sample_circuit(const Circuit &circuit, uint64_t reps, bool allow_top_level_folding) {
+    if (allow_top_level_folding && reps > 4) {
+        expand_do_reference_sample_circuit_period_folding(circuit, reps);
+        return;
+    }
+    for (uint64_t k = 0; k < reps; k++) {
+        for (const auto& op: circuit.operations) {
+            if (op.gate->id == gate_name_to_id("REPEAT")) {
+                uint64_t repeats = op_data_rep_count(op.target_data);
+                const auto& block = op_data_block_body(circuit, op.target_data);
+                expand_do_reference_sample_circuit(block, repeats, true);
+            } else {
+                (this->*op.gate->tableau_simulator_function)(op.target_data);
+            }
+        }
+    }
+}
+
 simd_bits<MAX_BITWORD_WIDTH> TableauSimulator::reference_sample_circuit(const Circuit &circuit) {
-    std::mt19937_64 irrelevant_rng(0);
-    return TableauSimulator::sample_circuit(circuit.aliased_noiseless_circuit(), irrelevant_rng, +1);
+    TableauSimulator sim(std::mt19937_64{0}, circuit.count_qubits());
+    sim.reference_sample_mode = true;
+    sim.sign_bias = +1;
+
+    sim.expand_do_reference_sample_circuit(circuit, 1, true);
+
+    const std::vector<bool> &v = sim.measurement_record.storage;
+    simd_bits<MAX_BITWORD_WIDTH> result(v.size());
+    for (size_t k = 0; k < v.size(); k++) {
+        result[k] ^= v[k];
+    }
+    return result;
 }
 
 void TableauSimulator::paulis(const PauliString &paulis) {

@@ -37,6 +37,9 @@ namespace stim {
 // Change this number from time to time to ensure people don't rely on seeds across versions.
 constexpr uint64_t INTENTIONAL_VERSION_SEED_INCOMPATIBILITY = 0xDEADBEEF1238ULL;
 
+struct Circuit;
+Circuit &op_data_block_body(Circuit &host, const OperationData &data);
+const Circuit &op_data_block_body(const Circuit &host, const OperationData &data);
 uint64_t op_data_rep_count(const OperationData &data);
 
 uint64_t add_saturate(uint64_t a, uint64_t b);
@@ -200,11 +203,8 @@ struct Circuit {
         for (const auto &op : operations) {
             assert(op.gate != nullptr);
             if (op.gate->id == gate_name_to_id("REPEAT")) {
-                assert(op.target_data.targets.size() == 3);
-                auto b = op.target_data.targets[0].data;
-                assert(b < blocks.size());
                 uint64_t repeats = op_data_rep_count(op.target_data);
-                const auto &block = blocks[b];
+                const auto &block = op_data_block_body(*this, op.target_data);
                 for (uint64_t k = 0; k < repeats; k++) {
                     block.for_each_operation(callback);
                 }
@@ -327,9 +327,6 @@ struct DetectorsAndObservables {
     DetectorsAndObservables(const DetectorsAndObservables &other);
     DetectorsAndObservables &operator=(const DetectorsAndObservables &other);
 };
-
-Circuit &op_data_block_body(Circuit &host, const OperationData &data);
-const Circuit &op_data_block_body(const Circuit &host, const OperationData &data);
 
 template <typename SOURCE>
 inline void read_past_within_line_whitespace(int &c, SOURCE read_char) {

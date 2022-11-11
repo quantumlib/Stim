@@ -38,14 +38,12 @@ struct TableauSimulator {
     int8_t sign_bias;
     MeasureRecord measurement_record;
     bool last_correlated_error_occurred;
+    bool reference_sample_mode;
 
     /// Args:
     ///     num_qubits: The initial number of qubits in the simulator state.
     ///     rng: The random number generator to use for random operations.
-    ///     sign_bias: 0 means collapse randomly, -1 means collapse towards True, +1 means collapse towards False.
-    ///     record: Measurement record configuration.
-    explicit TableauSimulator(
-        std::mt19937_64 rng, size_t num_qubits = 0, int8_t sign_bias = 0, MeasureRecord record = MeasureRecord());
+    explicit TableauSimulator(std::mt19937_64 rng, size_t num_qubits = 0);
     /// Args:
     ///     other: TableauSimulator to copy state from.
     ///     rng: The random number generator to use for random operations.
@@ -55,8 +53,9 @@ struct TableauSimulator {
     ///
     /// Discards all noisy operations, and biases all collapse events towards +Z instead of randomly +Z/-Z.
     static simd_bits<MAX_BITWORD_WIDTH> reference_sample_circuit(const Circuit &circuit);
-    static simd_bits<MAX_BITWORD_WIDTH> sample_circuit(
-        const Circuit &circuit, std::mt19937_64 &rng, int8_t sign_bias = 0);
+    static simd_bits<MAX_BITWORD_WIDTH> noisy_sample_circuit(
+        const Circuit &circuit,
+        std::mt19937_64 &rng);
     static void sample_stream(FILE *in, FILE *out, SampleFormat format, bool interactive, std::mt19937_64 &rng);
 
     /// Expands the internal state of the simulator (if needed) to ensure the given qubit exists.
@@ -150,6 +149,8 @@ struct TableauSimulator {
     ///
     /// Automatically expands the tableau simulator's state, if needed.
     void expand_do_circuit(const Circuit &circuit, uint64_t reps = 1);
+    void expand_do_reference_sample_circuit(const Circuit &circuit, uint64_t reps, bool allow_top_level_folding);
+    void expand_do_reference_sample_circuit_period_folding(const Circuit &circuit, uint64_t reps);
     void do_operation_ensure_size(const Operation &operation);
 
     void apply_tableau(const Tableau &tableau, const std::vector<size_t> &targets);

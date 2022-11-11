@@ -71,7 +71,14 @@ std::string targets_str(ConstPointerRange<GateTarget> targets) {
     return out.str();
 }
 
+Circuit &stim::op_data_block_body(Circuit &host, const OperationData &data) {
+    return host.blocks[data.targets[0].data];
+}
+const Circuit &stim::op_data_block_body(const Circuit &host, const OperationData &data) {
+    return host.blocks[data.targets[0].data];
+}
 uint64_t stim::op_data_rep_count(const OperationData &data) {
+    assert(data.targets.size() == 3);
     uint64_t low = data.targets[1].data;
     uint64_t high = data.targets[2].data;
     return low | (high << 32);
@@ -732,14 +739,6 @@ void stim::print_circuit(std::ostream &out, const Circuit &c, const std::string 
 
         out << indentation << op;
     }
-}
-
-Circuit &stim::op_data_block_body(Circuit &host, const OperationData &data) {
-    return host.blocks[data.targets[0].data];
-}
-
-const Circuit &stim::op_data_block_body(const Circuit &host, const OperationData &data) {
-    return host.blocks[data.targets[0].data];
 }
 
 std::ostream &stim::operator<<(std::ostream &out, const Circuit &c) {

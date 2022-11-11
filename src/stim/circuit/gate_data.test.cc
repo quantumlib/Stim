@@ -40,8 +40,11 @@ std::pair<std::vector<PauliString>, std::vector<PauliString>> circuit_output_eq_
     if (circuit.count_measurements() > 1) {
         throw std::invalid_argument("count_measurements > 1");
     }
-    TableauSimulator sim1(SHARED_TEST_RNG(), circuit.count_qubits(), -1);
-    TableauSimulator sim2(SHARED_TEST_RNG(), circuit.count_qubits(), +1);
+    auto nq = circuit.count_qubits();
+    TableauSimulator sim1(SHARED_TEST_RNG(), nq);
+    TableauSimulator sim2(SHARED_TEST_RNG(), nq);
+    sim1.sign_bias = -1;
+    sim2.sign_bias = +1;
     sim1.expand_do_circuit(circuit);
     sim2.expand_do_circuit(circuit);
     return {sim1.canonical_stabilizers(), sim2.canonical_stabilizers()};

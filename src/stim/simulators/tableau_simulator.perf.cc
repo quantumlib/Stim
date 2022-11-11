@@ -15,6 +15,8 @@
 #include "stim/simulators/tableau_simulator.h"
 
 #include "stim/benchmark_util.perf.h"
+#include "stim/gen/circuit_gen_params.h"
+#include "stim/gen/gen_surface_code.h"
 
 using namespace stim;
 
@@ -34,4 +36,20 @@ BENCHMARK(TableauSimulator_CX_10Kqubits) {
     })
         .goal_millis(5)
         .show_rate("OpQubits", targets.size());
+}
+
+BENCHMARK(TableauSimulator_reference_sample_surface_code_d31_r1000) {
+    CircuitGenParameters params(1000, 31, "rotated_memory_x");
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    simd_bits<MAX_BITWORD_WIDTH> ref(0);
+    auto total = 0;
+    benchmark_go([&]() {
+        auto result = TableauSimulator::reference_sample_circuit(circuit);
+        total += result.not_zero();
+    })
+        .goal_millis(25)
+        .show_rate("Samples", circuit.count_measurements());
+    if (total) {
+        std::cerr << "data dependence";
+    }
 }

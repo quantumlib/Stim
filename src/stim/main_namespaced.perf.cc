@@ -78,21 +78,6 @@ BENCHMARK(main_sample1_tableau_rep_d1000_r100) {
         .show_rate("Samples", circuit.count_measurements());
 }
 
-BENCHMARK(main_sample1_pauliframe_b8_rep_d1000_r100) {
-    size_t distance = 1000;
-    size_t rounds = 100;
-    auto circuit = make_rep_code(distance, rounds);
-    FILE *out = tmpfile();
-    std::mt19937_64 rng(0);  // NOLINT(cert-msc51-cpp)
-    simd_bits<MAX_BITWORD_WIDTH> ref(0);
-    benchmark_go([&]() {
-        rewind(out);
-        FrameSimulator::sample_out(circuit, ref, 1, out, SAMPLE_FORMAT_B8, rng);
-    })
-        .goal_millis(16)
-        .show_rate("Samples", circuit.count_measurements());
-}
-
 BENCHMARK(main_sample1_detectors_b8_rep_d1000_r100) {
     size_t distance = 1000;
     size_t rounds = 100;
