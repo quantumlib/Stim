@@ -343,15 +343,36 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 z_signs: A vector of whether tableau(Z_i) is negative.
 
                 If bit_packed=False then:
-                    *.dtype = = np.bool8
-                    *2*.shape = (len(tableau), len(tableau))
-                    *_signs.shape = len(tableau)
+                    x2x.dtype = np.bool8
+                    x2z.dtype = np.bool8
+                    z2x.dtype = np.bool8
+                    z2z.dtype = np.bool8
+                    x_signs.dtype = np.bool8
+                    z_signs.dtype = np.bool8
+                    x2x.shape = (len(tableau), len(tableau))
+                    x2z.shape = (len(tableau), len(tableau))
+                    z2x.shape = (len(tableau), len(tableau))
+                    z2z.shape = (len(tableau), len(tableau))
+                    x_signs.shape = len(tableau)
+                    z_signs.shape = len(tableau)
                     x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
                     x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
                     z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
                     z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
 
                 If bit_packed=True then:
+                    x2x.dtype = np.uint8
+                    x2z.dtype = np.uint8
+                    z2x.dtype = np.uint8
+                    z2z.dtype = np.uint8
+                    x_signs.dtype = np.uint8
+                    z_signs.dtype = np.uint8
+                    x2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    x2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    z2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    x_signs.shape = math.ceil(len(tableau) / 8)
+                    z_signs.shape = math.ceil(len(tableau) / 8)
                     *.dtype = = np.uint8
                     *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
                     *_signs.shape = math.ceil(len(tableau) / 8)
@@ -983,8 +1004,6 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
             Examples:
                 >>> import stim
-                >>> h = stim.Tableau.from_named_gate("H")
-                >>> cnot = stim.Tableau.from_named_gate("CNOT")
                 >>> t = stim.Tableau.from_named_gate("H")
                 >>> t.prepend(stim.Tableau.from_named_gate("X"), [0])
                 >>> t == stim.Tableau.from_named_gate("SQRT_Y_DAG")

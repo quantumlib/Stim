@@ -783,8 +783,8 @@ class Circuit:
         pass
     def diagram(
         self,
+        type: str = 'timeline-text',
         *,
-        type: str,
         tick: Optional[int] = None,
         filter_coords: Optional[Iterable[Iterable[float]]] = None,
     ) -> 'stim._DiagramHelper':
@@ -1910,7 +1910,7 @@ class CompiledDemSampler:
                     each byte.
 
                 Setting this to True is equivalent to running
-                `np.packbits(data, endian='little', axis=1)` on each output value, but
+                `np.packbits(data, bitorder='little', axis=1)` on each output value, but
                 has the performance benefit of the data never being expanded into an
                 unpacked form.
             return_errors: Defaults to False.
@@ -1937,16 +1937,6 @@ class CompiledDemSampler:
 
             The dtype and shape of the data depends on the arguments:
                 if bit_packed:
-                    detector_data.shape == (num_shots, num_detectors)
-                    detector_data.dtype == np.bool8
-                    obs_data.shape == (num_shots, num_observables)
-                    obs_data.dtype == np.bool8
-                    if return_errors:
-                        error_data.shape = (num_shots, num_errors)
-                        error_data.dtype = np.bool8
-                    else:
-                        error_data is None
-                else:
                     detector_data.shape == (num_shots, math.ceil(num_detectors / 8))
                     detector_data.dtype == np.uint8
                     obs_data.shape == (num_shots, math.ceil(num_observables / 8))
@@ -1956,9 +1946,19 @@ class CompiledDemSampler:
                         error_data.dtype = np.uint8
                     else:
                         error_data is None
+                else:
+                    detector_data.shape == (num_shots, num_detectors)
+                    detector_data.dtype == np.bool8
+                    obs_data.shape == (num_shots, num_observables)
+                    obs_data.dtype == np.bool8
+                    if return_errors:
+                        error_data.shape = (num_shots, num_errors)
+                        error_data.dtype = np.bool8
+                    else:
+                        error_data is None
 
             Note that bit packing is done using little endian order on the last axis
-            (i.e. like `np.packbits(data, endian='little', axis=1)`).
+            (i.e. like `np.packbits(data, bitorder='little', axis=1)`).
 
         Examples:
             >>> import stim
@@ -3557,27 +3557,23 @@ class DetectorErrorModel:
     @overload
     def diagram(
         self,
-        *,
         type: 'Literal["match-graph-svg"]',
     ) -> 'stim._DiagramHelper':
         pass
     @overload
     def diagram(
         self,
-        *,
         type: 'Literal["match-graph-3d"]',
     ) -> 'stim._DiagramHelper':
         pass
     @overload
     def diagram(
         self,
-        *,
         type: 'Literal["match-graph-3d-html"]',
     ) -> 'stim._DiagramHelper':
         pass
     def diagram(
         self,
-        *,
         type: str,
     ) -> Any:
         """Returns a diagram of the circuit, from a variety of options.
@@ -5946,8 +5942,6 @@ class Tableau:
 
         Examples:
             >>> import stim
-            >>> h = stim.Tableau.from_named_gate("H")
-            >>> cnot = stim.Tableau.from_named_gate("CNOT")
             >>> t = stim.Tableau.from_named_gate("H")
             >>> t.prepend(stim.Tableau.from_named_gate("X"), [0])
             >>> t == stim.Tableau.from_named_gate("SQRT_Y_DAG")
@@ -6082,15 +6076,36 @@ class Tableau:
             z_signs: A vector of whether tableau(Z_i) is negative.
 
             If bit_packed=False then:
-                *.dtype = = np.bool8
-                *2*.shape = (len(tableau), len(tableau))
-                *_signs.shape = len(tableau)
+                x2x.dtype = np.bool8
+                x2z.dtype = np.bool8
+                z2x.dtype = np.bool8
+                z2z.dtype = np.bool8
+                x_signs.dtype = np.bool8
+                z_signs.dtype = np.bool8
+                x2x.shape = (len(tableau), len(tableau))
+                x2z.shape = (len(tableau), len(tableau))
+                z2x.shape = (len(tableau), len(tableau))
+                z2z.shape = (len(tableau), len(tableau))
+                x_signs.shape = len(tableau)
+                z_signs.shape = len(tableau)
                 x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
                 x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
                 z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
                 z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
 
             If bit_packed=True then:
+                x2x.dtype = np.uint8
+                x2z.dtype = np.uint8
+                z2x.dtype = np.uint8
+                z2z.dtype = np.uint8
+                x_signs.dtype = np.uint8
+                z_signs.dtype = np.uint8
+                x2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                x2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                z2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                x_signs.shape = math.ceil(len(tableau) / 8)
+                z_signs.shape = math.ceil(len(tableau) / 8)
                 *.dtype = = np.uint8
                 *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
                 *_signs.shape = math.ceil(len(tableau) / 8)

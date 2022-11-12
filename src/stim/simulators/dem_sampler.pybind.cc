@@ -131,7 +131,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                         each byte.
 
                     Setting this to True is equivalent to running
-                    `np.packbits(data, endian='little', axis=1)` on each output value, but
+                    `np.packbits(data, bitorder='little', axis=1)` on each output value, but
                     has the performance benefit of the data never being expanded into an
                     unpacked form.
                 return_errors: Defaults to False.
@@ -158,16 +158,6 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
 
                 The dtype and shape of the data depends on the arguments:
                     if bit_packed:
-                        detector_data.shape == (num_shots, num_detectors)
-                        detector_data.dtype == np.bool8
-                        obs_data.shape == (num_shots, num_observables)
-                        obs_data.dtype == np.bool8
-                        if return_errors:
-                            error_data.shape = (num_shots, num_errors)
-                            error_data.dtype = np.bool8
-                        else:
-                            error_data is None
-                    else:
                         detector_data.shape == (num_shots, math.ceil(num_detectors / 8))
                         detector_data.dtype == np.uint8
                         obs_data.shape == (num_shots, math.ceil(num_observables / 8))
@@ -177,9 +167,19 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                             error_data.dtype = np.uint8
                         else:
                             error_data is None
+                    else:
+                        detector_data.shape == (num_shots, num_detectors)
+                        detector_data.dtype == np.bool8
+                        obs_data.shape == (num_shots, num_observables)
+                        obs_data.dtype == np.bool8
+                        if return_errors:
+                            error_data.shape = (num_shots, num_errors)
+                            error_data.dtype = np.bool8
+                        else:
+                            error_data is None
 
                 Note that bit packing is done using little endian order on the last axis
-                (i.e. like `np.packbits(data, endian='little', axis=1)`).
+                (i.e. like `np.packbits(data, bitorder='little', axis=1)`).
 
             Examples:
                 >>> import stim

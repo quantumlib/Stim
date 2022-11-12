@@ -1859,8 +1859,8 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "diagram",
         &circuit_diagram,
-        pybind11::kw_only(),
         pybind11::arg("type") = "timeline-text",
+        pybind11::kw_only(),
         pybind11::arg("tick") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
         clean_doc_string(u8R"DOC(
@@ -1873,7 +1873,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             @overload def diagram(self, *, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["detector-slice-text"]', tick: int, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["detector-slice-svg"]', tick: int, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
-            @signature def diagram(self, *, type: str, tick: Optional[int] = None, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: str = 'timeline-text', *, tick: Optional[int] = None, filter_coords: Optional[Iterable[Iterable[float]]] = None) -> 'stim._DiagramHelper':
             Returns a diagram of the circuit, from a variety of options.
 
             Args:
