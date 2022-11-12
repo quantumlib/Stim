@@ -1177,7 +1177,8 @@ Circuit Circuit::inverse() const {
                 op.str() + "' instruction.");
         } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
             if (k > skip_reversing) {
-                throw std::invalid_argument("Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
+                throw std::invalid_argument(
+                    "Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
             }
             skip_reversing++;
             result.safe_append(op);

@@ -951,6 +951,7 @@ q2: ------
 
     assert c.diagram() is not None
     assert c.diagram("timeline-svg") is not None
+    assert c.diagram("timeline-svg", tick=5) is not None
     assert c.diagram(type="timeline-svg") is not None
     assert c.diagram(type="timeline-3d") is not None
     assert c.diagram(type="timeline-3d-html") is not None
@@ -959,6 +960,13 @@ q2: ------
     assert c.diagram(type="match-graph-3d-html") is not None
     assert c.diagram(type="detector-slice-svg", tick=1) is not None
     assert c.diagram(type="detector-slice-text", tick=1) is not None
+    assert c.diagram(type="time-slice-svg", tick=1) is not None
+    assert c.diagram(type="time+detector-slice-svg", tick=1) is not None
+    assert c.diagram(type="time+detector-slice-svg", tick=range(1, 3)) is not None
+    with pytest.raises(ValueError, match="step"):
+        assert c.diagram(type="time+detector-slice-svg", tick=range(1, 3, 2)) is not None
+    with pytest.raises(ValueError, match="stop"):
+        assert c.diagram(type="time+detector-slice-svg", tick=range(3, 3)) is not None
 
 
 def test_circuit_inverse():

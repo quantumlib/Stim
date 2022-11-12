@@ -2106,9 +2106,9 @@ TEST(TableauSimulator, measure_pauli_string) {
 
     ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("XX"), 1.0));
 
-    ASSERT_THROW({sim.measure_pauli_string(PauliString::from_str(""), -0.5);}, std::invalid_argument);
-    ASSERT_THROW({sim.measure_pauli_string(PauliString::from_str(""), 2.5);}, std::invalid_argument);
-    ASSERT_THROW({sim.measure_pauli_string(PauliString::from_str(""), NAN);}, std::invalid_argument);
+    ASSERT_THROW({ sim.measure_pauli_string(PauliString::from_str(""), -0.5); }, std::invalid_argument);
+    ASSERT_THROW({ sim.measure_pauli_string(PauliString::from_str(""), 2.5); }, std::invalid_argument);
+    ASSERT_THROW({ sim.measure_pauli_string(PauliString::from_str(""), NAN); }, std::invalid_argument);
 
     ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("+"), 0.0));
     ASSERT_TRUE(sim.measure_pauli_string(PauliString::from_str("+"), 1.0));
@@ -2117,9 +2117,8 @@ TEST(TableauSimulator, measure_pauli_string) {
     ASSERT_FALSE(sim.measure_pauli_string(PauliString::from_str("____________Z"), 0.0));
     ASSERT_EQ(sim.inv_state.num_qubits, 13);
 
-    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{
-        0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, b, b, !b, !b, 1, 0, 1, 1, 0, 0
-    }));
+    ASSERT_EQ(sim.measurement_record.storage, (std::vector<bool>{0, 1, 1,  0,  1, 0, 0, 1, 0, 0, 0,
+                                                                 b, b, !b, !b, 1, 0, 1, 1, 0, 0}));
 
     size_t t = 0;
     for (size_t k = 0; k < 10000; k++) {

@@ -324,3 +324,25 @@ TEST(arg_parse, parse_exact_double_from_string) {
     ASSERT_EQ(parse_exact_double_from_string("1.5"), 1.5);
     ASSERT_EQ(parse_exact_double_from_string("-1.5"), -1.5);
 }
+
+TEST(arg_parse, parse_exact_uint64_t_from_string) {
+    ASSERT_THROW({ parse_exact_uint64_t_from_string(""); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("a"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string(" 1"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("\t1"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("1 "); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("banana"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("1.2.3"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("INFINITY"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("inf"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("nan"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("1e3"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("1.5"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("-1"); }, std::invalid_argument);
+    ASSERT_THROW({ parse_exact_uint64_t_from_string("18446744073709551616"); }, std::invalid_argument);
+
+    ASSERT_EQ(parse_exact_uint64_t_from_string("0"), 0);
+    ASSERT_EQ(parse_exact_uint64_t_from_string("1"), 1);
+    ASSERT_EQ(parse_exact_uint64_t_from_string("2"), 2);
+    ASSERT_EQ(parse_exact_uint64_t_from_string("18446744073709551615"), UINT64_MAX);
+}

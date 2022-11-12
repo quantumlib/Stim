@@ -26,29 +26,11 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, std::string key) {
+void expect_svg_diagram_is_identical_to_saved_file(const Circuit &circuit, const std::string &key) {
     std::stringstream ss;
-    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss);
-    auto actual = ss.str();
-    auto path = resolve_test_file(key);
-    FILE *f = fopen(path.c_str(), "rb");
-    auto expected = rewind_read_close(f);
-
-    if (expected != actual) {
-        auto dot = key.rfind('.');
-        std::string new_path;
-        if (dot == std::string::npos) {
-            new_path = path + ".new";
-        } else {
-            dot += path.size() - key.size();
-            new_path = path.substr(0, dot) + ".new" + path.substr(dot);
-        }
-        std::ofstream out;
-        out.open(new_path);
-        out << actual;
-        out.close();
-        EXPECT_TRUE(false) << "Diagram didn't agree. key=" << key;
-    }
+    std::vector<double> filter;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIMELINE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), key);
 }
 
 TEST(circuit_diagram_timeline_svg, single_qubit_gates) {
@@ -265,4 +247,22 @@ TEST(circuit_diagram_timeline_svg, surface_code) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
     expect_svg_diagram_is_identical_to_saved_file(circuit, "surface_code.svg");
+}
+
+TEST(circuit_diagram_time_detector_slice_svg, surface_code) {
+    CircuitGenParameters params(10, 3, "unrotated_memory_z");
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    std::vector<double> filter{1};
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 5, 11, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "surface_code_time_detector_slice.svg");
+}
+
+TEST(circuit_diagram_time_slice_svg, surface_code) {
+    CircuitGenParameters params(10, 3, "rotated_memory_z");
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    std::vector<double> filter{};
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 5, 11, SVG_MODE_TIME_SLICE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "surface_code_time_slice.svg");
 }

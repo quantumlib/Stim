@@ -28,6 +28,7 @@ struct CircuitTimelineLoopData {
     uint64_t num_repetitions;
     uint64_t measurements_per_iteration;
     uint64_t detectors_per_iteration;
+    uint64_t ticks_per_iteration;
     std::vector<double> shift_per_iteration;
 };
 
@@ -51,6 +52,7 @@ struct CircuitTimelineHelper {
     std::vector<double> cur_coord_shift;
     uint64_t measure_offset = 0;
     uint64_t detector_offset = 0;
+    uint64_t num_ticks_seen = 0;
     std::vector<double> coord_workspace;
     std::vector<uint64_t> u64_workspace;
     std::vector<stim::GateTarget> targets_workspace;
@@ -65,6 +67,7 @@ struct CircuitTimelineHelper {
 
     stim::GateTarget rec_to_qubit(const stim::GateTarget &target);
     stim::GateTarget pick_pseudo_target_representing_measurements(const stim::Operation &op);
+    void skip_loop_iterations(CircuitTimelineLoopData loop_data, uint64_t skipped_reps);
     void do_record_measure_result(uint32_t target_qubit);
     void do_repeat_block(const stim::Circuit &circuit, const stim::Operation &op);
     void do_next_operation(const stim::Circuit &circuit, const stim::Operation &op);

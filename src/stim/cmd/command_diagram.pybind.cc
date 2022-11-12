@@ -120,6 +120,27 @@ DiagramHelper stim_pybind::circuit_diagram(
         throw std::invalid_argument("filter_coords wasn't a list of list of floats.");
     }
 
+    uint64_t tick_min;
+    uint64_t num_ticks;
+    if (tick.is_none()) {
+        tick_min = 0;
+        num_ticks = UINT64_MAX;
+    } else if (pybind11::isinstance(tick, pybind11::module::import("builtins").attr("range"))) {
+        tick_min = pybind11::cast<uint64_t>(tick.attr("start"));
+        auto tick_stop = pybind11::cast<uint64_t>(tick.attr("stop"));
+        auto tick_step = pybind11::cast<uint64_t>(tick.attr("step"));
+        if (tick_step != 1) {
+            throw std::invalid_argument("tick.step != 1");
+        }
+        if (tick_stop <= tick_min) {
+            throw std::invalid_argument("tick.stop <= tick.start");
+        }
+        num_ticks = tick_stop - tick_min;
+    } else {
+        tick_min = pybind11::cast<uint64_t>(tick);
+        num_ticks = 1;
+    }
+
     if (type == "timeline-text") {
         if (!tick.is_none()) {
             throw std::invalid_argument("`tick` isn't used with type='timeline-text'");
@@ -128,11 +149,16 @@ DiagramHelper stim_pybind::circuit_diagram(
         out << DiagramTimelineAsciiDrawer::make_diagram(circuit);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "timeline-svg") {
-        if (!tick.is_none()) {
-            throw std::invalid_argument("`tick` isn't used with type='timeline-svg'");
-        }
         std::stringstream out;
-        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
+        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIMELINE, filter_coords);
+        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "time-slice-svg") {
+        std::stringstream out;
+        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_SLICE, filter_coords);
+        return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
+    } else if (type == "time+detector-slice-svg") {
+        std::stringstream out;
+        DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_min, num_ticks, SVG_MODE_TIME_DETECTOR_SLICE, filter_coords);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "timeline-3d") {
         std::stringstream out;
@@ -149,7 +175,7 @@ DiagramHelper stim_pybind::circuit_diagram(
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-text'");
         }
         std::stringstream out;
-        DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick), filter_coords)
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
             .write_text_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_TEXT, out.str()};
     } else if (type == "detector-slice-svg") {
@@ -157,7 +183,7 @@ DiagramHelper stim_pybind::circuit_diagram(
             throw std::invalid_argument("You must specify the tick= argument when using type='detector-slice-svg'");
         }
         std::stringstream out;
-        DetectorSliceSet::from_circuit_tick(circuit, pybind11::cast<uint64_t>(tick), filter_coords)
+        DetectorSliceSet::from_circuit_ticks(circuit, tick_min, num_ticks, filter_coords)
             .write_svg_diagram_to(out);
         return DiagramHelper{DIAGRAM_TYPE_SVG, out.str()};
     } else if (type == "match-graph-svg" || type == "match-graph-3d" || type == "match-graph-3d-html") {
