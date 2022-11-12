@@ -319,6 +319,10 @@ def test_custom_qubit_indexing():
         cirq.Circuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15}
     )
     assert actual == stim.Circuit('CX 10 15\nTICK')
+    actual = stimcirq.cirq_circuit_to_stim_circuit(
+        cirq.FrozenCircuit(cirq.CNOT(a, b)), qubit_to_index_dict={a: 10, b: 15}
+    )
+    assert actual == stim.Circuit('CX 10 15\nTICK')
 
 
 def test_on_loop():

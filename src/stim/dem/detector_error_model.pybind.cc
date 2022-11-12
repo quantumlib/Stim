@@ -1109,13 +1109,12 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "diagram",
         &dem_diagram,
-        pybind11::kw_only(),
         pybind11::arg("type"),
         clean_doc_string(u8R"DOC(
-            @overload def diagram(self, *, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
-            @signature def diagram(self, *, type: str) -> Any:
+            @overload def diagram(self, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: str) -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
             Args:

@@ -50,7 +50,7 @@ void stim_pybind::pybind_diagram_methods(pybind11::module &m, pybind11::class_<D
         }
         if (self.type == DIAGRAM_TYPE_SVG) {
             std::stringstream out;
-            out << R"HTML(<div style="border: 1px dashed gray; margin-bottom: 50px; width: 300px; resize: both; overflow: hidden">)HTML";
+            out << R"HTML(<div style="border: 1px dashed gray; margin-bottom: 50px; height: 512px; resize: both; overflow: hidden">)HTML";
             out << R"HTML(<img style="max-width: 100%; max-height: 100%" src="data:image/svg+xml;base64,)HTML";
             write_data_as_base64_to(self.content.data(), self.content.size(), out);
             out << R"HTML("/></div>)HTML";

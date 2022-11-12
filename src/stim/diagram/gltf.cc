@@ -248,7 +248,7 @@ void stim_draw_internal::write_html_viewer_for_gltf_data(const std::string &gltf
     write_data_as_base64_to(gltf_data.data(), gltf_data.size(), out);
     out << R"HTML(">Download 3D Model as .GLTF File</a>
   <br>Mouse Wheel = Zoom. Left Drag = Orbit. Right Drag = Strafe.
-  <div style="border: 1px dashed gray; margin-bottom: 50px; width: 300px; height: 300px; resize: both; overflow: hidden">
+  <div style="border: 1px dashed gray; margin-bottom: 50px; width: 512px; height: 512px; resize: both; overflow: hidden">
     <div id="stim-3d-viewer-scene-container" style="width: 100%; height: 100%;">JavaScript Blocked?</div>
   </div>
 
@@ -319,17 +319,61 @@ void stim_draw_internal::write_html_viewer_for_gltf_data(const std::string &gltf
       let camera = new PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100000);
       let controls = new OrbitControls(camera, container);
       let bounds = new Box3().setFromObject(scene);
-      controls.target.set(
+      let mid = new Vector3(
           (bounds.min.x + bounds.max.x) * 0.5,
           (bounds.min.y + bounds.max.y) * 0.5,
           (bounds.min.z + bounds.max.z) * 0.5,
       );
-      let dx = bounds.min.x + bounds.max.x;
-      let dy = bounds.min.y + bounds.max.y;
-      let dz = bounds.min.z + bounds.max.z;
-      let diag = Math.sqrt(dx*dx + dy*dy + dz*dz);
-      camera.position.set(diag*0.3, diag*0.4, -diag*1.8);
-      controls.update();
+      let boxPoints = [];
+      for (let dx of [0, 0.5, 1]) {
+          for (let dy of [0, 0.5, 1]) {
+              for (let dz of [0, 0.5, 1]) {
+                  boxPoints.push(new Vector3(
+                      bounds.min.x + (bounds.max.x - bounds.min.x) * dx,
+                      bounds.min.y + (bounds.max.y - bounds.min.y) * dy,
+                      bounds.min.z + (bounds.max.z - bounds.min.z) * dz,
+                  ));
+              }
+          }
+      }
+      let isInView = p => {
+          p = new Vector3(p.x, p.y, p.z);
+          p.project(camera);
+          return Math.abs(p.x) < 1 && Math.abs(p.y) < 1 && p.z >= 0 && p.z < 1;
+      };
+      let unit = new Vector3(0.3, 0.4, -1.8);
+      unit.normalize();
+      let setCameraDistance = d => {
+          controls.target.copy(mid);
+          camera.position.copy(mid);
+          camera.position.addScaledVector(unit, d);
+          controls.update();
+          return boxPoints.every(isInView);
+      };
+
+      let maxDistance = 1;
+      for (let k = 0; k < 20; k++) {
+          if (setCameraDistance(maxDistance)) {
+              break;
+          }
+          maxDistance *= 2;
+      }
+      let minDistance = maxDistance;
+      for (let k = 0; k < 20; k++) {
+          minDistance /= 2;
+          if (!setCameraDistance(minDistance)) {
+              break;
+          }
+      }
+      for (let k = 0; k < 20; k++) {
+          let mid = (minDistance + maxDistance) / 2;
+          if (setCameraDistance(mid)) {
+              maxDistance = mid;
+          } else {
+              minDistance = mid;
+          }
+      }
+      setCameraDistance(maxDistance);
 
       // Set up rendering.
       let renderer = new WebGLRenderer({ antialias: true });

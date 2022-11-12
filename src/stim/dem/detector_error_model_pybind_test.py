@@ -457,6 +457,7 @@ def test_diagram():
                                      distance=7,
                                      before_round_data_depolarization=0.01)
     dem = circuit.detector_error_model(decompose_errors=True)
+    assert dem.diagram("match-graph-svg") is not None
     assert dem.diagram(type="match-graph-svg") is not None
     assert dem.diagram(type="match-graph-3d") is not None
     assert dem.diagram(type="match-graph-3d-html") is not None

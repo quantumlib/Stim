@@ -949,6 +949,8 @@ q1: -Z:D1-
 q2: ------
     """.strip()
 
+    assert c.diagram() is not None
+    assert c.diagram("timeline-svg") is not None
     assert c.diagram(type="timeline-svg") is not None
     assert c.diagram(type="timeline-3d") is not None
     assert c.diagram(type="timeline-3d-html") is not None
