@@ -75,7 +75,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
 DetectorSliceSetComputer::DetectorSliceSetComputer(
     const Circuit &circuit,
     uint64_t first_yield_tick,
-    size_t num_yield_ticks)
+    uint64_t num_yield_ticks)
     : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false),
       first_yield_tick(first_yield_tick),
       num_yield_ticks(num_yield_ticks) {
