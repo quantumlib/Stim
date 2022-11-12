@@ -747,6 +747,18 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="601.6" y="1251.2" fill="white">MR</text>
 <rect x="713.6" y="1235.2" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="729.6" y="1251.2" fill="white">MR</text>
+<rect x="1043.2" y="979.2" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1059.2" y="995.2">H</text>
+<rect x="1171.2" y="979.2" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1187.2" y="995.2">H</text>
+<rect x="1043.2" y="1107.2" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1059.2" y="1123.2">H</text>
+<rect x="1171.2" y="1107.2" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1187.2" y="1123.2">H</text>
+<rect x="1043.2" y="1235.2" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1059.2" y="1251.2">H</text>
+<rect x="1171.2" y="1235.2" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1187.2" y="1251.2">H</text>
 <rect x="0" y="0" width="416" height="416" stroke="black" fill="none"/>
 <rect x="0" y="457.6" width="416" height="416" stroke="black" fill="none"/>
 <rect x="0" y="915.2" width="416" height="416" stroke="black" fill="none"/>

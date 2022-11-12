@@ -43,7 +43,7 @@ struct DetectorSliceSet {
     static DetectorSliceSet from_circuit_ticks(
         const stim::Circuit &circuit,
         uint64_t start_tick,
-        size_t num_ticks,
+        uint64_t num_ticks,
         stim::ConstPointerRange<std::vector<double>> coord_filter);
 
     std::set<uint64_t> used_qubits() const;

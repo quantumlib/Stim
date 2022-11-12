@@ -25,9 +25,15 @@ void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operat
     };
     cur_loop_nesting.push_back(loop_data);
 
-    start_repeat_callback(loop_data);
-    do_circuit(body);
-    end_repeat_callback(loop_data);
+    if (unroll_loops) {
+        for (size_t k = 0; k < loop_data.num_repetitions; k++) {
+            do_circuit(body);
+        }
+    } else {
+        start_repeat_callback(loop_data);
+        do_circuit(body);
+        end_repeat_callback(loop_data);
+    }
 
     cur_loop_nesting.pop_back();
     skip_loop_iterations(loop_data, loop_data.num_repetitions - 1);

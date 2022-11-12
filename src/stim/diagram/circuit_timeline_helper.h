@@ -53,6 +53,7 @@ struct CircuitTimelineHelper {
     uint64_t measure_offset = 0;
     uint64_t detector_offset = 0;
     uint64_t num_ticks_seen = 0;
+    bool unroll_loops = false;
     std::vector<double> coord_workspace;
     std::vector<uint64_t> u64_workspace;
     std::vector<stim::GateTarget> targets_workspace;

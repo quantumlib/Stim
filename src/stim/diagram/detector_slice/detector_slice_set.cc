@@ -18,13 +18,11 @@ struct DetectorSliceSetComputer {
     uint64_t tick_cur;
     uint64_t first_yield_tick;
     uint64_t num_yield_ticks;
-    ConstPointerRange<std::vector<double>> coord_filter;
     std::function<void(void)> on_tick_callback;
     DetectorSliceSetComputer(
         const Circuit &circuit,
         uint64_t first_yield_tick,
-        uint64_t num_yield_ticks,
-        ConstPointerRange<std::vector<double>> coord_filter);
+        uint64_t num_yield_ticks);
     bool process_block_rev(const Circuit &block);
     bool process_op_rev(const Circuit &parent, const Operation &op);
     bool process_tick();
@@ -77,12 +75,10 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
 DetectorSliceSetComputer::DetectorSliceSetComputer(
     const Circuit &circuit,
     uint64_t first_yield_tick,
-    size_t num_yield_ticks,
-    ConstPointerRange<std::vector<double>> coord_filter)
+    size_t num_yield_ticks)
     : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false),
       first_yield_tick(first_yield_tick),
-      num_yield_ticks(num_yield_ticks),
-      coord_filter(coord_filter) {
+      num_yield_ticks(num_yield_ticks) {
     tick_cur = circuit.count_ticks() + 1;  // +1 because of artificial TICKs at start and end.
     analyzer.accumulate_errors = false;
 }
@@ -169,9 +165,9 @@ std::set<uint64_t> DetectorSliceSet::used_qubits() const {
 DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     const stim::Circuit &circuit,
     uint64_t start_tick,
-    size_t num_ticks,
+    uint64_t num_ticks,
     ConstPointerRange<std::vector<double>> coord_filter) {
-    DetectorSliceSetComputer helper(circuit, start_tick, num_ticks, coord_filter);
+    DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);
     size_t num_qubits = helper.analyzer.xs.size();
 
     std::set<DemTarget> xs;

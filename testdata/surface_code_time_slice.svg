@@ -362,6 +362,14 @@
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="735.701" y="1210.38" fill="white">MR</text>
 <rect x="719.701" y="1284.89" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="735.701" y="1300.89" fill="white">MR</text>
+<rect x="1103.87" y="1013.36" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1119.87" y="1029.36">H</text>
+<rect x="1194.38" y="1103.87" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1210.38" y="1119.87">H</text>
+<rect x="1103.87" y="1194.38" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1119.87" y="1210.38">H</text>
+<rect x="1194.38" y="1284.89" width="32" height="32" stroke="black" fill="white"/>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="1210.38" y="1300.89">H</text>
 <rect x="0" y="0" width="431.529" height="431.529" stroke="black" fill="none"/>
 <rect x="0" y="474.682" width="431.529" height="431.529" stroke="black" fill="none"/>
 <rect x="0" y="949.364" width="431.529" height="431.529" stroke="black" fill="none"/>

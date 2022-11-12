@@ -741,6 +741,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     obj.min_tick = tick_slice_start;
     obj.max_tick = tick_slice_start + tick_slice_num - 1;
     obj.mode = mode;
+    obj.resolver.unroll_loops = mode != SVG_MODE_TIMELINE;
     obj.resolver.resolved_op_callback = [&](const ResolvedTimelineOperation &op) {
         obj.do_resolved_operation(op);
     };
