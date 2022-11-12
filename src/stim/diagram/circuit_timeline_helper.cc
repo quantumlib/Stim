@@ -5,25 +5,38 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
+void CircuitTimelineHelper::skip_loop_iterations(CircuitTimelineLoopData loop_data, uint64_t skipped_reps) {
+    if (loop_data.num_repetitions > 0) {
+        vec_pad_add_mul(cur_coord_shift, loop_data.shift_per_iteration, skipped_reps);
+        measure_offset += loop_data.measurements_per_iteration * skipped_reps;
+        detector_offset += loop_data.detectors_per_iteration * skipped_reps;
+        num_ticks_seen += loop_data.ticks_per_iteration * skipped_reps;
+    }
+}
+
 void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operation &op) {
     const auto &body = op_data_block_body(circuit, op.target_data);
     CircuitTimelineLoopData loop_data{
         op_data_rep_count(op.target_data),
         body.count_measurements(),
         body.count_detectors(),
+        body.count_ticks(),
         body.final_coord_shift(),
     };
     cur_loop_nesting.push_back(loop_data);
 
-    start_repeat_callback(loop_data);
-    do_circuit(body);
-    end_repeat_callback(loop_data);
+    if (unroll_loops) {
+        for (size_t k = 0; k < loop_data.num_repetitions; k++) {
+            do_circuit(body);
+        }
+    } else {
+        start_repeat_callback(loop_data);
+        do_circuit(body);
+        end_repeat_callback(loop_data);
+    }
 
     cur_loop_nesting.pop_back();
-    uint64_t skipped_reps = loop_data.num_repetitions - 1;
-    vec_pad_add_mul(cur_coord_shift, loop_data.shift_per_iteration, skipped_reps);
-    measure_offset += loop_data.measurements_per_iteration * skipped_reps;
-    detector_offset += loop_data.detectors_per_iteration * skipped_reps;
+    skip_loop_iterations(loop_data, loop_data.num_repetitions - 1);
 }
 
 void CircuitTimelineHelper::do_atomic_operation(
@@ -181,6 +194,7 @@ void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const Oper
     } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
         do_qubit_coords(op);
     } else if (op.gate->id == gate_name_to_id("TICK")) {
+        num_ticks_seen += 1;
         do_atomic_operation(op.gate, {}, {});
     } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate(op);

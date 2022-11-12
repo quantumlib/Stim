@@ -561,7 +561,7 @@ SYNOPSIS
         [--in filepath] \
         [--out filepath] \
         [--remove_noise] \
-        [--tick int] \
+        [--tick int | int:int] \
         --type name
 
 DESCRIPTION
@@ -614,13 +614,17 @@ OPTIONS
 
 
     --tick
-        Specifies that the diagram should apply to a specific TICK of the
-        input circuit.
+        Specifies that the diagram should apply to a specific TICK or range
+        of TICKS from the input circuit.
 
-        In detector-slice diagrams, `--tick` identifies which TICK is the
-        instant at which the time slice is taken. Note that `--tick=0` is
-        the very beginning of the circuit and `--tick=1` is the instant of
-        the first TICK instruction.
+        To specify a single tick, pass an integer like `--tick=5`.
+        To specify a range, pass two integers separated by a colon like
+        `--tick=start:end`. Note that the range is half open.
+
+        In detector and time slice diagrams, `--tick` identifies which ticks
+        to include in the diagram. Note that `--tick=0` is the very
+        beginning of the circuit and `--tick=1` is the instant of the first
+        TICK instruction.
 
 
     --type
@@ -693,6 +697,18 @@ OPTIONS
             measurement layer and a reset layer will produce the
             usual diagram of a surface code. Uses the Pauli color convention
             XYZ=RGB.
+
+            INPUT MUST BE A CIRCUIT.
+
+        "time-slice-svg": An SVG image of the operations that a circuit
+            applies during the specified tick or range of ticks.
+
+            INPUT MUST BE A CIRCUIT.
+
+        "time+detector-slice-svg": An SVG image of the operations that a
+            circuit applies during the specified tick or range of ticks,
+            combined with the detector slices after those operations are
+            applied.
 
             INPUT MUST BE A CIRCUIT.
 

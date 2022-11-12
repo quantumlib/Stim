@@ -28,30 +28,11 @@
 using namespace stim;
 using namespace stim_draw_internal;
 
-void expect_graph_svg_diagram_is_identical_to_saved_file(const DetectorErrorModel &dem, std::string key) {
+void expect_graph_svg_diagram_is_identical_to_saved_file(const DetectorErrorModel &dem, const std::string &key) {
     std::stringstream actual_ss;
     dem_match_graph_to_svg_diagram_write_to(dem, actual_ss);
     auto actual = actual_ss.str();
-
-    auto path = resolve_test_file(key);
-    FILE *f = fopen(path.c_str(), "rb");
-    auto expected = rewind_read_close(f);
-
-    if (expected != actual) {
-        auto dot = key.rfind('.');
-        std::string new_path;
-        if (dot == std::string::npos) {
-            new_path = path + ".new";
-        } else {
-            dot += path.size() - key.size();
-            new_path = path.substr(0, dot) + ".new" + path.substr(dot);
-        }
-        std::ofstream out;
-        out.open(new_path);
-        out << actual;
-        out.close();
-        EXPECT_TRUE(false) << "Diagram didn't agree. key=" << key;
-    }
+    expect_string_is_identical_to_saved_file(actual_ss.str(), key);
 }
 
 TEST(match_graph_drawer_svg, repetition_code) {
