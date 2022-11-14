@@ -151,7 +151,7 @@ struct Circuit {
     Circuit &operator*=(uint64_t repetitions);
 
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
-    PointerRange<stim::GateTarget> safe_append(const Operation &operation);
+    void safe_append(const Operation &operation);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.
     void safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg);
     /// Safely adds an operation at the end of the circuit, copying its data into the circuit's jagged data as needed.

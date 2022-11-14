@@ -64,6 +64,10 @@ int32_t GateTarget::value() const {
     }
     return result;
 }
+int32_t GateTarget::rec_offset() const {
+    assert(is_measurement_record_target());
+    return -(int32_t)(data & TARGET_VALUE_MASK);
+}
 bool GateTarget::is_x_target() const {
     return (data & TARGET_PAULI_X_BIT) && !(data & TARGET_PAULI_Z_BIT);
 }

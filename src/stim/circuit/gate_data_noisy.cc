@@ -16,6 +16,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
 
@@ -28,6 +29,7 @@ void GateDataMap::add_gate_data_noisy(bool &failed) {
             &TableauSimulator::DEPOLARIZE1,
             &FrameSimulator::DEPOLARIZE1,
             &ErrorAnalyzer::DEPOLARIZE1,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -67,6 +69,7 @@ Pauli Mixture:
             &TableauSimulator::DEPOLARIZE2,
             &FrameSimulator::DEPOLARIZE2,
             &ErrorAnalyzer::DEPOLARIZE2,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -118,6 +121,7 @@ Pauli Mixture:
             &TableauSimulator::X_ERROR,
             &FrameSimulator::X_ERROR,
             &ErrorAnalyzer::X_ERROR,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -153,6 +157,7 @@ Pauli Mixture:
             &TableauSimulator::Y_ERROR,
             &FrameSimulator::Y_ERROR,
             &ErrorAnalyzer::Y_ERROR,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -188,6 +193,7 @@ Pauli Mixture:
             &TableauSimulator::Z_ERROR,
             &FrameSimulator::Z_ERROR,
             &ErrorAnalyzer::Z_ERROR,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -223,6 +229,7 @@ Pauli Mixture:
             &TableauSimulator::PAULI_CHANNEL_1,
             &FrameSimulator::PAULI_CHANNEL_1,
             &ErrorAnalyzer::PAULI_CHANNEL_1,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES),
             []() -> ExtraGateData {
                 return {
@@ -269,6 +276,7 @@ Pauli Mixture:
             &TableauSimulator::PAULI_CHANNEL_2,
             &FrameSimulator::PAULI_CHANNEL_2,
             &ErrorAnalyzer::PAULI_CHANNEL_2,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -343,6 +351,7 @@ Pauli Mixture:
             &TableauSimulator::CORRELATED_ERROR,
             &FrameSimulator::CORRELATED_ERROR,
             &ErrorAnalyzer::CORRELATED_ERROR,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -386,6 +395,7 @@ Targets:
             &TableauSimulator::ELSE_CORRELATED_ERROR,
             &FrameSimulator::ELSE_CORRELATED_ERROR,
             &ErrorAnalyzer::ELSE_CORRELATED_ERROR,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOISE | GATE_ARGS_ARE_DISJOINT_PROBABILITIES | GATE_TARGETS_PAULI_STRING | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {

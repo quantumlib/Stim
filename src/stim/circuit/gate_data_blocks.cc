@@ -16,6 +16,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
 
@@ -28,6 +29,7 @@ void GateDataMap::add_gate_data_blocks(bool &failed) {
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_BLOCK | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
