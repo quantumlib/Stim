@@ -58,12 +58,15 @@ struct Coord {
         result *= other;
         return result;
     }
-    float norm2() const {
+    float dot(const Coord<DIM> &other) const {
         float t = 0;
         for (size_t k = 0; k < DIM; k++) {
-            t += xyz[k] * xyz[k];
+            t += xyz[k] * other.xyz[k];
         }
         return t;
+    }
+    float norm2() const {
+        return dot(*this);
     }
     float norm() const {
         return sqrtf(norm2());

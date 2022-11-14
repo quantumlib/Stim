@@ -62,6 +62,7 @@ struct FlattenedCoords {
 
     static FlattenedCoords from(const DetectorSliceSet &set, float desired_unit_distance);
 };
+Coord<2> pick_polygon_center(stim::ConstPointerRange<Coord<2>> coords);
 
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);
 

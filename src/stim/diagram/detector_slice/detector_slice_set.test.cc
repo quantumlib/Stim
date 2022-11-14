@@ -211,3 +211,20 @@ TEST(detector_slice_set_svg_diagram, surface_code) {
     slice_set.write_svg_diagram_to(ss);
     expect_string_is_identical_to_saved_file(ss.str(), "rotated_memory_z_detector_slice.svg");
 }
+
+TEST(detector_slice_set, pick_polygon_center) {
+    std::vector<Coord<2>> coords;
+    coords.push_back({2, 1});
+    coords.push_back({4.5, 3.5});
+    coords.push_back({6, 0});
+    coords.push_back({1, 5});
+    ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{3.25, 2.25}));
+
+    coords.pop_back();
+    coords.push_back({1, 6});
+    ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{(2 + 4.5 + 6 + 1) / 4, (1 + 3.5 + 0 + 6) / 4}));
+
+    coords.push_back({7, 0});
+    coords.push_back({1, 5});
+    ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{3.25, 2.25}));
+}

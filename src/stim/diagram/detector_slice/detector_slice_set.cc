@@ -395,6 +395,76 @@ float angle_from_to(Coord<2> origin, Coord<2> dst) {
     return atan2f(d.xyz[1], d.xyz[0]);
 }
 
+float _mirror_score(ConstPointerRange<Coord<2>> coords, size_t i, size_t j) {
+    auto para = coords[j] - coords[i];
+    float f = para.norm2();
+    if (f < 1e-4) {
+        return INFINITY;
+    }
+    para /= sqrtf(f);
+
+    Coord<2> perp = {-para.xyz[0], para.xyz[1]};
+    std::vector<Coord<2>> left;
+    std::vector<Coord<2>> right;
+    for (size_t k = 0; k < coords.size(); k++) {
+        if (k == i || k == j) {
+            continue;
+        }
+        auto d = coords[k] - coords[i];
+        float x = d.dot(para);
+        float y = d.dot(perp);
+        if (y < 0) {
+            right.push_back({x, -y});
+        } else {
+            left.push_back({x, y});
+        }
+    }
+    if (left.size() != right.size()) {
+        return INFINITY;
+    }
+    std::sort(left.begin(), left.end());
+    std::sort(right.begin(), right.end());
+    for (size_t k = 0; k < left.size(); k++) {
+        if ((left[k] - right[k]).norm2() > 1e-2) {
+            return INFINITY;
+        }
+    }
+
+    float max_distance = 0;
+    for (size_t k = 0; k < left.size(); k++) {
+        max_distance = std::max(max_distance, left[k].xyz[1]);
+    }
+
+    return max_distance;
+}
+
+bool _pick_center_using_mirror_symmetry(ConstPointerRange<Coord<2>> coords, Coord<2> &out) {
+    float best_score = INFINITY;
+    for (size_t i = 0; i < coords.size(); i++) {
+        for (size_t j = i + 1; j < coords.size(); j++) {
+            float f = _mirror_score(coords, i, j);
+            if (f < best_score) {
+                out = (coords[i] + coords[j]) / 2;
+                best_score = f;
+            }
+        }
+    }
+    return best_score < INFINITY;
+}
+
+Coord<2> stim_draw_internal::pick_polygon_center(ConstPointerRange<Coord<2>> coords) {
+    Coord<2> center{0, 0};
+    if (_pick_center_using_mirror_symmetry(coords, center)) {
+        return center;
+    }
+
+    for (const auto &coord : coords) {
+        center += coord;
+    }
+    center /= coords.size();
+    return center;
+}
+
 void write_terms_svg_path(
     std::ostream &out,
     DemTarget src,
@@ -404,16 +474,11 @@ void write_terms_svg_path(
     std::vector<Coord<2>> &pts_workspace,
     size_t scale) {
     if (terms.size() > 2) {
-        Coord<2> center{0, 0};
-        for (const auto &term : terms) {
-            center += coords(tick, term.qubit_value());
-        }
-        center /= terms.size();
-
         pts_workspace.clear();
         for (const auto &term : terms) {
             pts_workspace.push_back(coords(tick, term.qubit_value()));
         }
+        auto center = pick_polygon_center(pts_workspace);
         std::sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
             return angle_from_to(center, a) < angle_from_to(center, b);
         });
