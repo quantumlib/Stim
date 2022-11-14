@@ -228,3 +228,38 @@ TEST(detector_slice_set, pick_polygon_center) {
     coords.push_back({1, 5});
     ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{3.25, 2.25}));
 }
+
+TEST(detector_slice_set_svg_diagram, is_colinear) {
+    ASSERT_TRUE(is_colinear({0, 0}, {0, 0}, {1, 2}));
+    ASSERT_TRUE(is_colinear({3, 6}, {1, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 7}, {1, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({4, 6}, {1, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 3}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {2, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {1, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {2, -4}));
+}
+
+TEST(detector_slice_set_svg_diagram, colinear_polygon) {
+    Circuit circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 1) 1
+        QUBIT_COORDS(2, 2) 2
+        QUBIT_COORDS(0, 3) 3
+        QUBIT_COORDS(4, 0) 4
+        QUBIT_COORDS(5, 1) 5
+        QUBIT_COORDS(6, 2) 6
+        R 0 1 2 3 4 5 6
+        H 3
+        TICK
+        H 3
+        M 0 1 2 3 4 5 6
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        DETECTOR rec[-4] rec[-5] rec[-6] rec[-7]
+    )CIRCUIT");
+    std::vector<double> empty_filter;
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 1, 1, {&empty_filter});
+    std::stringstream ss;
+    slice_set.write_svg_diagram_to(ss);
+    expect_string_is_identical_to_saved_file(ss.str(), "colinear_detector_slice.svg");
+}
