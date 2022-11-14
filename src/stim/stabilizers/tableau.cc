@@ -688,3 +688,12 @@ std::vector<std::complex<float>> Tableau::to_flat_unitary_matrix(bool little_end
 
     return VectorSimulator::state_vector_from_stabilizers(refs, 1 << num_qubits);
 }
+
+PauliString Tableau::y_output(size_t input_index) const {
+    uint8_t log_i = 1;
+    PauliString result = xs[input_index];
+    log_i += result.ref().inplace_right_mul_returning_log_i_scalar(zs[input_index]);
+    assert((log_i & 1) == 0);
+    result.sign ^= (log_i & 2) != 0;
+    return result;
+}

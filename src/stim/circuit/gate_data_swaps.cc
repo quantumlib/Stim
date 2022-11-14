@@ -18,6 +18,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
 
@@ -32,6 +33,7 @@ void GateDataMap::add_gate_data_swaps(bool &failed) {
             &TableauSimulator::SWAP,
             &FrameSimulator::SWAP,
             &ErrorAnalyzer::SWAP,
+            &SparseUnsignedRevFrameTracker::undo_SWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -66,6 +68,7 @@ CNOT 0 1
             &TableauSimulator::ISWAP,
             &FrameSimulator::ISWAP,
             &ErrorAnalyzer::ISWAP,
+            &SparseUnsignedRevFrameTracker::undo_ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {
@@ -102,6 +105,7 @@ CNOT 0 1
             &TableauSimulator::ISWAP_DAG,
             &FrameSimulator::ISWAP,
             &ErrorAnalyzer::ISWAP,
+            &SparseUnsignedRevFrameTracker::undo_ISWAP,
             (GateFlags)(GATE_IS_UNITARY | GATE_TARGETS_PAIRS),
             []() -> ExtraGateData {
                 return {

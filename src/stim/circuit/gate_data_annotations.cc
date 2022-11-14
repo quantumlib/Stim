@@ -16,6 +16,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
 
@@ -28,6 +29,7 @@ void GateDataMap::add_gate_data_annotations(bool &failed) {
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::DETECTOR,
+            &SparseUnsignedRevFrameTracker::undo_DETECTOR,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE),
             []() -> ExtraGateData {
                 return {
@@ -117,6 +119,7 @@ Example:
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::OBSERVABLE_INCLUDE,
+            &SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE,
             (GateFlags)(GATE_ONLY_TARGETS_MEASUREMENT_RECORD | GATE_IS_NOT_FUSABLE | GATE_ARGS_ARE_UNSIGNED_INTEGERS),
             []() -> ExtraGateData {
                 return {
@@ -192,6 +195,7 @@ Example:
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::TICK,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
             []() -> ExtraGateData {
                 return {
@@ -243,6 +247,7 @@ Example:
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
+            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_NOT_FUSABLE,
             []() -> ExtraGateData {
                 return {
@@ -293,6 +298,7 @@ Example:
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::SHIFT_COORDS,
+            &SparseUnsignedRevFrameTracker::undo_I,
             (GateFlags)(GATE_IS_NOT_FUSABLE | GATE_TAKES_NO_TARGETS),
             []() -> ExtraGateData {
                 return {

@@ -18,6 +18,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
 
@@ -32,6 +33,7 @@ void GateDataMap::add_gate_data_pauli(bool &failed) {
             &TableauSimulator::I,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
+            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -65,6 +67,7 @@ Targets:
             &TableauSimulator::X,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
+            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -101,6 +104,7 @@ H 0
             &TableauSimulator::Y,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
+            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -138,6 +142,7 @@ H 0
             &TableauSimulator::Z,
             &FrameSimulator::I,
             &ErrorAnalyzer::I,
+            &SparseUnsignedRevFrameTracker::undo_I,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {

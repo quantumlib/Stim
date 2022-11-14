@@ -18,6 +18,7 @@
 #include "stim/simulators/error_analyzer.h"
 #include "stim/simulators/frame_simulator.h"
 #include "stim/simulators/tableau_simulator.h"
+#include "stim/simulators/sparse_rev_frame_tracker.h"
 
 using namespace stim;
 
@@ -32,6 +33,7 @@ void GateDataMap::add_gate_data_period_4(bool &failed) {
             &TableauSimulator::SQRT_X,
             &FrameSimulator::H_YZ,
             &ErrorAnalyzer::H_YZ,
+            &SparseUnsignedRevFrameTracker::undo_H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -67,6 +69,7 @@ H 0
             &TableauSimulator::SQRT_X_DAG,
             &FrameSimulator::H_YZ,
             &ErrorAnalyzer::H_YZ,
+            &SparseUnsignedRevFrameTracker::undo_H_YZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -102,6 +105,7 @@ S 0
             &TableauSimulator::SQRT_Y,
             &FrameSimulator::H_XZ,
             &ErrorAnalyzer::H_XZ,
+            &SparseUnsignedRevFrameTracker::undo_H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -137,6 +141,7 @@ H 0
             &TableauSimulator::SQRT_Y_DAG,
             &FrameSimulator::H_XZ,
             &ErrorAnalyzer::H_XZ,
+            &SparseUnsignedRevFrameTracker::undo_H_XZ,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -172,6 +177,7 @@ S 0
             &TableauSimulator::SQRT_Z,
             &FrameSimulator::H_XY,
             &ErrorAnalyzer::H_XY,
+            &SparseUnsignedRevFrameTracker::undo_H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
@@ -206,6 +212,7 @@ S 0
             &TableauSimulator::SQRT_Z_DAG,
             &FrameSimulator::H_XY,
             &ErrorAnalyzer::H_XY,
+            &SparseUnsignedRevFrameTracker::undo_H_XY,
             GATE_IS_UNITARY,
             []() -> ExtraGateData {
                 return {
