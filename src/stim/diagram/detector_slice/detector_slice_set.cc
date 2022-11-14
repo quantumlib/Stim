@@ -464,7 +464,100 @@ Coord<2> stim_draw_internal::pick_polygon_center(ConstPointerRange<Coord<2>> coo
     return center;
 }
 
-void write_terms_svg_path(
+bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
+    auto d1 = a - b;
+    auto d2 = b - c;
+    if (d1.norm2() < 1e-4 || d2.norm2() < 1e-4) {
+        return true;
+    }
+    d1 /= d1.norm();
+    d2 /= d2.norm();
+    return fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < 1e-4;
+}
+
+void _start_many_body_svg_path(
+        std::ostream &out,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t tick,
+        ConstPointerRange<GateTarget> terms,
+        std::vector<Coord<2>> &pts_workspace) {
+    pts_workspace.clear();
+    for (const auto &term : terms) {
+        pts_workspace.push_back(coords(tick, term.qubit_value()));
+    }
+    auto center = pick_polygon_center(pts_workspace);
+    std::sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
+        return angle_from_to(center, a) < angle_from_to(center, b);
+    });
+
+    out << "<path d=\"";
+    out << "M" << pts_workspace[0].xyz[0] << "," << pts_workspace[0].xyz[1];
+    size_t n = pts_workspace.size();
+    for (size_t k = 0; k < n; k++) {
+        const auto &p = pts_workspace[(k + n - 1) % n];
+        const auto &a = pts_workspace[k];
+        const auto &b = pts_workspace[(k + 1) % n];
+        const auto &c = pts_workspace[(k + 2) % n];
+        if (is_colinear(p, a, b) || is_colinear(a, b, c)) {
+            out << " C";
+            auto d = b - a;
+            d = {d.xyz[1], -d.xyz[0]};
+            d *= -0.1;
+            d += (a + b) / 2;
+            out << d.xyz[0] << " " << d.xyz[1] << ",";
+            out << d.xyz[0] << " " << d.xyz[1] << ",";
+            out << b.xyz[0] << " " << b.xyz[1];
+        } else {
+            out << " L" << b.xyz[0] << "," << b.xyz[1];
+        }
+    }
+    out << '"';
+}
+
+void _start_two_body_svg_path(
+        std::ostream &out,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t tick,
+        ConstPointerRange<GateTarget> terms,
+        std::vector<Coord<2>> &pts_workspace) {
+    auto a = coords(tick, terms[0].qubit_value());
+    auto b = coords(tick, terms[1].qubit_value());
+    auto dif = b - a;
+    auto average = (a + b) * 0.5;
+    Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
+    auto ac1 = average + perp * 0.2 - dif * 0.2;
+    auto ac2 = average + perp * 0.2 + dif * 0.2;
+    auto bc1 = average + perp * -0.2 + dif * 0.2;
+    auto bc2 = average + perp * -0.2 - dif * 0.2;
+
+    out << "<path d=\"";
+    out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";
+    out << "C ";
+    out << ac1.xyz[0] << " " << ac1.xyz[1] << ", ";
+    out << ac2.xyz[0] << " " << ac2.xyz[1] << ", ";
+    out << b.xyz[0] << " " << b.xyz[1] << " ";
+    out << "C ";
+    out << bc1.xyz[0] << " " << bc1.xyz[1] << ", ";
+    out << bc2.xyz[0] << " " << bc2.xyz[1] << ", ";
+    out << a.xyz[0] << " " << a.xyz[1];
+    out << '"';
+}
+
+void _start_one_body_svg_path(
+        std::ostream &out,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t tick,
+        ConstPointerRange<GateTarget> terms,
+        std::vector<Coord<2>> &pts_workspace,
+    size_t scale) {
+    auto c = coords(tick, terms[0].qubit_value());
+    out << "<circle";
+    write_key_val(out, "cx", c.xyz[0]);
+    write_key_val(out, "cy", c.xyz[1]);
+    write_key_val(out, "r", scale);
+}
+
+void _start_slice_shape_command(
     std::ostream &out,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
@@ -472,43 +565,11 @@ void write_terms_svg_path(
     std::vector<Coord<2>> &pts_workspace,
     size_t scale) {
     if (terms.size() > 2) {
-        pts_workspace.clear();
-        for (const auto &term : terms) {
-            pts_workspace.push_back(coords(tick, term.qubit_value()));
-        }
-        auto center = pick_polygon_center(pts_workspace);
-        std::sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
-            return angle_from_to(center, a) < angle_from_to(center, b);
-        });
-
-        out << "M";
-        for (const auto &pt : pts_workspace) {
-            out << pt.xyz[0] << "," << pt.xyz[1] << " ";
-        }
-        out << "Z";
+        _start_many_body_svg_path(out, coords, tick, terms, pts_workspace);
     } else if (terms.size() == 2) {
-        auto a = coords(tick, terms[0].qubit_value());
-        auto b = coords(tick, terms[1].qubit_value());
-        auto dif = b - a;
-        auto average = (a + b) * 0.5;
-        Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
-        auto ac1 = average + perp * 0.2 - dif * 0.2;
-        auto ac2 = average + perp * 0.2 + dif * 0.2;
-        auto bc1 = average + perp * -0.2 + dif * 0.2;
-        auto bc2 = average + perp * -0.2 - dif * 0.2;
-
-        out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";
-        out << "C ";
-        out << ac1.xyz[0] << " " << ac1.xyz[1] << ", ";
-        out << ac2.xyz[0] << " " << ac2.xyz[1] << ", ";
-        out << b.xyz[0] << " " << b.xyz[1] << " ";
-        out << "C ";
-        out << bc1.xyz[0] << " " << bc1.xyz[1] << ", ";
-        out << bc2.xyz[0] << " " << bc2.xyz[1] << ", ";
-        out << a.xyz[0] << " " << a.xyz[1];
+        _start_two_body_svg_path(out, coords, tick, terms, pts_workspace);
     } else if (terms.size() == 1) {
-        auto c = coords(tick, terms[0].qubit_value());
-        out << "M" << (c.xyz[0] - scale) << "," << c.xyz[1] << " a " << scale << " " << scale << " 0 0 0 " << (2 * scale) << " 0 a " << scale << " " << scale << " 0 0 0 -" << (2 * scale) << " 0";
+        _start_one_body_svg_path(out, coords, tick, terms, pts_workspace, scale);
     }
 }
 
@@ -544,12 +605,13 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
     for (size_t k = 0; k < num_ticks; k++) {
         for (auto q : used_qubits()) {
             auto c = coords(min_tick + k, q);
-            out << R"SVG(<circle cx=")SVG";
-            out << c.xyz[0];
-            out << R"SVG(" cy=")SVG";
-            out << c.xyz[1];
-            out << R"SVG(" r="2" stroke="none" fill="black" />)SVG";
-            out << "\n";
+            out << "<circle";
+            write_key_val(out, "cx", c.xyz[0]);
+            write_key_val(out, "cy", c.xyz[1]);
+            write_key_val(out, "r", 2);
+            write_key_val(out, "stroke", "none");
+            write_key_val(out, "fill", "black");
+            out << "/>\n";
         }
     }
 
@@ -612,14 +674,18 @@ void DetectorSliceSet::write_svg_contents_to(
                 color = "#AAAAAA";
             }
 
-            out << R"SVG(<path d=")SVG";
-            write_terms_svg_path(out, coords, tick, terms, pts_workspace, scale);
-            out << R"SVG(" stroke="none" fill-opacity=")SVG";
-            out << (terms.size() > 2 ? 0.75 : 1);
-            out << R"SVG(" fill=")SVG";
-            out << color;
-            out << '"';
-            out << " />\n";
+            _start_slice_shape_command(out,
+                                       coords,
+                                       tick,
+                                       terms,
+                                       pts_workspace,
+                                       scale);
+            write_key_val(out, "stroke", "none");
+            if (terms.size() > 2) {
+                write_key_val(out, "fill-opacity", 0.75);
+            }
+            write_key_val(out, "fill", color);
+            out << "/>\n";
 
             if (drawCorners) {
                 if (!haveDrawnCorners) {
@@ -633,9 +699,14 @@ void DetectorSliceSet::write_svg_contents_to(
                 }
                 out << R"SVG(<clipPath id="clip)SVG";
                 out << clip_id;
-                out << R"SVG("><path d=")SVG";
-                write_terms_svg_path(out, coords, tick, terms, pts_workspace, scale);
-                out << "\" /></clipPath>\n";
+                out << "\">";
+                _start_slice_shape_command(out,
+                                           coords,
+                                           tick,
+                                           terms,
+                                           pts_workspace,
+                                           scale);
+                out << "/></clipPath>\n";
 
                 size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
                 for (const auto &t : terms) {
@@ -660,10 +731,15 @@ void DetectorSliceSet::write_svg_contents_to(
                 clip_id++;
             }
 
-            out << R"SVG(<path d=")SVG";
-            write_terms_svg_path(out,coords, tick, terms, pts_workspace, scale);
-            out << R"SVG(" stroke="black" fill="none")SVG";
-            out << " />\n";
+            _start_slice_shape_command(out,
+                                       coords,
+                                       tick,
+                                       terms,
+                                       pts_workspace,
+                                       scale);
+            write_key_val(out, "stroke", "black");
+            write_key_val(out, "fill", "none");
+            out << "/>\n";
         }
     }
 }

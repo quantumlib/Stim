@@ -63,6 +63,7 @@ struct FlattenedCoords {
     static FlattenedCoords from(const DetectorSliceSet &set, float desired_unit_distance);
 };
 Coord<2> pick_polygon_center(stim::ConstPointerRange<Coord<2>> coords);
+bool is_colinear(Coord<2> a, Coord<2> b, Coord<2> c);
 
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);
 

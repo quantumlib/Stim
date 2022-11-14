@@ -64,7 +64,10 @@ void expect_string_is_identical_to_saved_file(const std::string &actual, const s
         out.open(new_path);
         out << actual;
         out.close();
-        EXPECT_TRUE(false) << "Diagram didn't agree. key=" << key;
+        EXPECT_TRUE(false) << "Diagram didn't agree.\n"
+            << "    key=" << key << "\n"
+            << "    expected: file://" << path << "\n"
+            << "    actual: file://" << new_path << "\n";
     }
 }
 
@@ -95,7 +98,7 @@ RaiiTempNamedFile::RaiiTempNamedFile() {
     if (descriptor == -1) {
         throw std::runtime_error("Failed to create temporary file.");
     }
-    path = tmp_stdin_filename;
+    path = std::string(tmp_stdin_filename);
 }
 
 RaiiTempNamedFile::~RaiiTempNamedFile() {
