@@ -1046,14 +1046,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-
-            // Compute Y using Y = i*X*Z.
-            uint8_t log_i = 1;
-            PauliString copy = self.xs[target];
-            log_i += copy.ref().inplace_right_mul_returning_log_i_scalar(self.zs[target]);
-            assert((log_i & 1) == 0);
-            copy.sign ^= (log_i & 2) != 0;
-            return PyPauliString(std::move(copy));
+            return PyPauliString(self.y_output(target));
         },
         pybind11::arg("target"),
         clean_doc_string(u8R"DOC(

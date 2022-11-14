@@ -31,6 +31,7 @@
 #include "stim/mem/monotonic_buffer.h"
 #include "stim/mem/simd_util.h"
 #include "stim/mem/sparse_xor_vec.h"
+#include "sparse_rev_frame_tracker.h"
 
 namespace stim {
 
@@ -62,21 +63,7 @@ namespace stim {
 ///     the bitmasks).
 /// - I guess what I'm saying is... have fun!
 struct ErrorAnalyzer {
-    /// Queued detectors to add into the xs/zs frame lists once the relevant measurement
-    /// is iterated over. When a detector is iterated over, it adds itself to the vector
-    /// of each of the measurements that define it.
-    std::map<uint64_t, std::vector<DemTarget>> measurement_to_detectors;
-    /// Cached value for the number of detectors in the circuit being analyzed.
-    uint64_t total_detectors;
-    /// The number of detectors that have been seen so far.
-    uint64_t used_detectors;
-    /// For each qubit, at the current time, the set of detectors with X dependence on that qubit.
-    std::vector<SparseXorVec<DemTarget>> xs;
-    /// For each qubit, at the current time, the set of detectors with Z dependence on that qubit.
-    std::vector<SparseXorVec<DemTarget>> zs;
-    /// Tracks the number of measurements seen, so that when the next one is encountered the correct
-    /// detectors can be pulled from the measurement_to_detectors collection.
-    size_t scheduled_measurement_time;
+    SparseUnsignedRevFrameTracker tracker;
 
     /// When false, no error decomposition is performed.
     /// When true, must decompose any non-graphlike error into graphlike components or fail.
@@ -130,8 +117,10 @@ struct ErrorAnalyzer {
 
     /// Creates an instance ready to start processing instructions from a circuit of known size.
     ErrorAnalyzer(
+        uint64_t num_measurements,
         uint64_t num_detectors,
         size_t num_qubits,
+        uint64_t num_ticks,
         bool decompose_errors,
         bool fold_loops,
         bool allow_gauge_detectors,
@@ -244,7 +233,7 @@ struct ErrorAnalyzer {
     PauliString current_error_sensitivity_for(DemTarget t) const;
 
     /// Counts the number of tick operations, for better debug messages.
-    uint64_t ticks_seen = 0;
+    uint64_t num_ticks_in_past = 0;
 
     /// Processes the instructions in a circuit multiple times.
     /// If loop folding is enabled, also uses a tortoise-and-hare algorithm to attempt to solve the loop's period.
@@ -255,7 +244,7 @@ struct ErrorAnalyzer {
     /// Use that degree of freedom to delete the largest detector in the set from the system.
     void remove_gauge(ConstPointerRange<DemTarget> sorted);
     /// Sorts the targets coming out of the measurement queue, then optionally inserts a measurement error.
-    void xor_sort_measurement_error(std::vector<DemTarget> &queued, const OperationData &dat);
+    void xor_sorted_measurement_error(ConstPointerRange<DemTarget> targets, const OperationData &dat);
     /// Checks if the given sparse vector is empty. If it isn't, something that was supposed to be
     /// deterministic is actually random. Produces an error message with debug information that can be
     /// used to understand what went wrong.
@@ -270,9 +259,6 @@ struct ErrorAnalyzer {
         const char *context_op,
         uint64_t context_qubit);
 
-    /// Rewrites all stored detectors id. Used when jumping across the rest of a loop when period analysis
-    /// succeeds at folding the loop.
-    void shift_active_detector_ids(int64_t shift);
     /// Empties error_class_probabilities into flushed_reversed_model.
     void flush();
     /// Adds (or folds) an error mechanism into error_class_probabilities.
@@ -285,14 +271,6 @@ struct ErrorAnalyzer {
     /// Adds an error mechanism into error_class_probabilities.
     /// The error mechanism is not passed as an argument but is instead the current tail of `this->mono_buf`.
     ConstPointerRange<DemTarget> add_error_in_sorted_jagged_tail(double probability);
-    /// Processes a single CX operation.
-    void single_cx(uint32_t c, uint32_t t);
-    /// Processes a single CY operation.
-    void single_cy(uint32_t c, uint32_t t);
-    /// Processes a single CZ operation.
-    void single_cz(uint32_t c, uint32_t t);
-    /// Processes a single classically controlled Pauli operation.
-    void feedback(uint32_t record_control, size_t target, bool x, bool z);
     /// Saves the current tail of the monotonic buffer, deduping it to equal already stored data if possible.
     ///
     /// Returns:

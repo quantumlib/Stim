@@ -15,7 +15,6 @@
 #include "stim/simulators/error_matcher.h"
 
 #include <algorithm>
-#include <iomanip>
 #include <queue>
 #include <sstream>
 
@@ -23,7 +22,7 @@ using namespace stim;
 
 ErrorMatcher::ErrorMatcher(
     const Circuit &circuit, const DetectorErrorModel *init_filter, bool reduce_to_one_representative_error)
-    : error_analyzer(circuit.count_detectors(), circuit.count_qubits(), false, false, true, 1, false, false),
+    : error_analyzer(circuit.count_measurements(), circuit.count_detectors(), circuit.count_qubits(), circuit.count_ticks(), false, false, true, 1, false, false),
       cur_loc(),
       output_map(),
       allow_adding_new_dem_errors_to_output_map(init_filter == nullptr),
@@ -31,8 +30,8 @@ ErrorMatcher::ErrorMatcher(
       dem_coords_map(),
       qubit_coords_map(circuit.get_final_qubit_coords()),
       cur_coord_offset(circuit.final_coord_shift()),
-      total_measurements_in_circuit(circuit.count_measurements()),
-      total_ticks_in_circuit(circuit.count_ticks()) {
+      total_measurements_in_circuit(error_analyzer.tracker.num_measurements_in_past),
+      total_ticks_in_circuit(error_analyzer.num_ticks_in_past) {
     // If filtering, get the filter errors into the output map immediately.
     if (!allow_adding_new_dem_errors_to_output_map) {
         SparseXorVec<DemTarget> buf;
@@ -190,8 +189,7 @@ void ErrorMatcher::err_m(const Operation &op, uint32_t obs_mask) {
 
         cur_loc.instruction_targets.target_range_start = start;
         cur_loc.instruction_targets.target_range_end = end;
-        cur_loc.flipped_measurement.measurement_record_index =
-            total_measurements_in_circuit - error_analyzer.scheduled_measurement_time - 1;
+        cur_loc.flipped_measurement.measurement_record_index = error_analyzer.tracker.num_measurements_in_past - 1;
         resolve_paulis_into(slice, obs_mask, cur_loc.flipped_measurement.measured_observable);
         err_atom({op.gate, {a, slice}});
         cur_loc.flipped_measurement.measurement_record_index = UINT64_MAX;
@@ -203,13 +201,13 @@ void ErrorMatcher::err_m(const Operation &op, uint32_t obs_mask) {
 
 void ErrorMatcher::rev_process_instruction(const Operation &op) {
     cur_loc.instruction_targets.gate = op.gate;
-    cur_loc.tick_offset = total_ticks_in_circuit - error_analyzer.ticks_seen;
+    cur_loc.tick_offset = error_analyzer.num_ticks_in_past;
     cur_op = &op;
 
     if (op.gate->id == gate_name_to_id("DETECTOR")) {
         error_analyzer.DETECTOR(op.target_data);
         if (!op.target_data.args.empty()) {
-            auto id = error_analyzer.total_detectors - error_analyzer.used_detectors;
+            auto id = error_analyzer.tracker.num_detectors_in_past;
             auto entry = dem_coords_map.insert({id, {}}).first;
             for (size_t k = 0; k < op.target_data.args.size(); k++) {
                 double d = op.target_data.args[k];

@@ -14,7 +14,7 @@ inline void write_key_val(std::ostream &out, const char *key, const T &val) {
 }
 
 struct DetectorSliceSetComputer {
-    ErrorAnalyzer analyzer;
+    SparseUnsignedRevFrameTracker tracker;
     uint64_t tick_cur;
     uint64_t first_yield_tick;
     uint64_t num_yield_ticks;
@@ -56,7 +56,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         uint64_t skipped_iterations = std::min(reps, max_skip / ticks_per_iteration);
         if (skipped_iterations) {
             // We can allow the analyzer to fold parts of the loop we aren't yielding.
-            analyzer.run_loop(loop_body, skipped_iterations);
+            tracker.undo_loop(loop_body, skipped_iterations);
             reps -= skipped_iterations;
             tick_cur -= ticks_per_iteration * skipped_iterations;
         }
@@ -68,7 +68,7 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         }
         return false;
     } else {
-        (analyzer.*(op.gate->reverse_error_analyzer_function))(op.target_data);
+        (tracker.*(op.gate->sparse_unsigned_rev_frame_tracker_function))(op.target_data);
         return false;
     }
 }
@@ -76,11 +76,10 @@ DetectorSliceSetComputer::DetectorSliceSetComputer(
     const Circuit &circuit,
     uint64_t first_yield_tick,
     uint64_t num_yield_ticks)
-    : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false),
+    : tracker(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors()),
       first_yield_tick(first_yield_tick),
       num_yield_ticks(num_yield_ticks) {
     tick_cur = circuit.count_ticks() + 1;  // +1 because of artificial TICKs at start and end.
-    analyzer.accumulate_errors = false;
 }
 
 std::string DetectorSliceSet::str() const {
@@ -168,7 +167,7 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
     uint64_t num_ticks,
     ConstPointerRange<std::vector<double>> coord_filter) {
     DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);
-    size_t num_qubits = helper.analyzer.xs.size();
+    size_t num_qubits = helper.tracker.xs.size();
 
     std::set<DemTarget> xs;
     std::set<DemTarget> ys;
@@ -183,10 +182,10 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
             xs.clear();
             ys.clear();
             zs.clear();
-            for (auto t : helper.analyzer.xs[q]) {
+            for (auto t : helper.tracker.xs[q]) {
                 xs.insert(t);
             }
-            for (auto t : helper.analyzer.zs[q]) {
+            for (auto t : helper.tracker.zs[q]) {
                 if (xs.find(t) == xs.end()) {
                     zs.insert(t);
                 } else {
@@ -467,7 +466,6 @@ Coord<2> stim_draw_internal::pick_polygon_center(ConstPointerRange<Coord<2>> coo
 
 void write_terms_svg_path(
     std::ostream &out,
-    DemTarget src,
     const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
     uint64_t tick,
     ConstPointerRange<GateTarget> terms,
@@ -615,7 +613,7 @@ void DetectorSliceSet::write_svg_contents_to(
             }
 
             out << R"SVG(<path d=")SVG";
-            write_terms_svg_path(out, e.first.second, coords, tick, terms, pts_workspace, scale);
+            write_terms_svg_path(out, coords, tick, terms, pts_workspace, scale);
             out << R"SVG(" stroke="none" fill-opacity=")SVG";
             out << (terms.size() > 2 ? 0.75 : 1);
             out << R"SVG(" fill=")SVG";
@@ -636,7 +634,7 @@ void DetectorSliceSet::write_svg_contents_to(
                 out << R"SVG(<clipPath id="clip)SVG";
                 out << clip_id;
                 out << R"SVG("><path d=")SVG";
-                write_terms_svg_path(out, e.first.second, coords, tick, terms, pts_workspace, scale);
+                write_terms_svg_path(out, coords, tick, terms, pts_workspace, scale);
                 out << "\" /></clipPath>\n";
 
                 size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
@@ -663,7 +661,7 @@ void DetectorSliceSet::write_svg_contents_to(
             }
 
             out << R"SVG(<path d=")SVG";
-            write_terms_svg_path(out, e.first.second, coords, tick, terms, pts_workspace, scale);
+            write_terms_svg_path(out,coords, tick, terms, pts_workspace, scale);
             out << R"SVG(" stroke="black" fill="none")SVG";
             out << " />\n";
         }
