@@ -3246,3 +3246,19 @@ TEST(ErrorAnalyzer, else_correlated_error_block) {
         { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false); },
         std::invalid_argument);
 }
+
+TEST(ErrorAnalyzer, measurement_before_beginning) {
+    Circuit c(R"CIRCUIT(
+        DETECTOR rec[-1]
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, false, false, false, false, false, false); },
+        std::invalid_argument);
+
+    c = Circuit(R"CIRCUIT(
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, false, false, false, false, false, false); },
+        std::invalid_argument);
+}

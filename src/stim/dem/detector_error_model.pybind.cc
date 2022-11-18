@@ -742,7 +742,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "shortest_graphlike_error",
         &shortest_graphlike_undetectable_logical_error,
-        pybind11::arg("ignore_ungraphlike_errors") = false,
+        pybind11::arg("ignore_ungraphlike_errors") = true,
         clean_doc_string(u8R"DOC(
             Finds a minimum set of graphlike errors to produce an undetected logical error.
 

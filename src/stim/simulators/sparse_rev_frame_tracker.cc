@@ -507,14 +507,22 @@ void SparseUnsignedRevFrameTracker::undo_DETECTOR(const OperationData &dat) {
     num_detectors_in_past--;
     auto det = DemTarget::relative_detector_id(num_detectors_in_past);
     for (auto t : dat.targets) {
-        rec_bits[num_measurements_in_past + t.rec_offset()].xor_item(det);
+        int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
+        if (index < 0) {
+            throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+        }
+        rec_bits[(size_t)index].xor_item(det);
     }
 }
 
 void SparseUnsignedRevFrameTracker::undo_OBSERVABLE_INCLUDE(const OperationData &dat) {
     auto obs = DemTarget::observable_id((int32_t)dat.args[0]);
     for (auto t : dat.targets) {
-        rec_bits[num_measurements_in_past + t.rec_offset()].xor_item(obs);
+        int64_t index = t.rec_offset() + (int64_t)num_measurements_in_past;
+        if (index < 0) {
+            throw std::invalid_argument("Referred to a measurement result before the beginning of time.");
+        }
+        rec_bits[index].xor_item(obs);
     }
 }
 

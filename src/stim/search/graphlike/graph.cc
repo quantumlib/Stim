@@ -82,6 +82,9 @@ void Graph::add_edges_from_separable_targets(ConstPointerRange<DemTarget> target
     const DemTarget *cur = targets.begin();
     while (true) {
         if (cur == targets.end() || cur->is_separator()) {
+            if (ignore_ungraphlike_errors && cur->is_separator()) {
+                return;
+            }
             add_edges_from_targets_with_no_separators({prev, cur}, ignore_ungraphlike_errors);
             prev = cur + 1;
         }

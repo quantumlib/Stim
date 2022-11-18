@@ -71,7 +71,7 @@ std::vector<uint32_t> CircuitInstruction::raw_targets() const {
         result.push_back(t.data);
     }
     return result;
-};
+}
 
 std::vector<GateTarget> CircuitInstruction::targets_copy() const {
     return targets;

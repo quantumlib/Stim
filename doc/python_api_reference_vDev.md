@@ -5236,7 +5236,7 @@ def rounded(
 # (in class stim.DetectorErrorModel)
 def shortest_graphlike_error(
     self,
-    ignore_ungraphlike_errors: bool = False,
+    ignore_ungraphlike_errors: bool = True,
 ) -> stim.DetectorErrorModel:
     """Finds a minimum set of graphlike errors to produce an undetected logical error.
 
