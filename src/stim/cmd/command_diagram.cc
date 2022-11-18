@@ -63,7 +63,7 @@ int stim::command_diagram(int argc, const char **argv) {
     bool has_tick_arg = false;
     uint64_t tick = 0;
     uint64_t tick_start = 0;
-    uint64_t tick_num = 1;
+    uint64_t tick_num = UINT64_MAX;
     if (find_argument("--tick", argc, argv) != nullptr) {
         has_tick_arg = true;
         std::string tick_str = find_argument("--tick", argc, argv);

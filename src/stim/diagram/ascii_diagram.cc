@@ -141,33 +141,50 @@ void AsciiDiagram::render(std::ostream &out) const {
         line.resize(layout.x_offsets.back(), ' ');
     }
 
+    auto p_align = [&](size_t c0, size_t cn, float align) {
+        if (align == 0.5f) {
+            cn--;
+        }
+        return c0 + (int)floor(align * cn);
+    };
+    auto x_align = [&](AsciiDiagramPos pos) {
+        return p_align(
+            layout.x_offsets[pos.x],
+            layout.x_spans[pos.x],
+            pos.align_x);
+    };
+    auto y_align = [&](AsciiDiagramPos pos) {
+        return p_align(
+            layout.y_offsets[pos.y],
+            layout.y_spans[pos.y],
+            pos.align_y);
+    };
+
     for (const auto &line : lines) {
         auto &p1 = line.first;
         auto &p2 = line.second;
-        auto x = layout.x_offsets[p1.x];
-        auto y = layout.y_offsets[p1.y];
-        auto x2 = layout.x_offsets[p2.x];
-        auto y2 = layout.y_offsets[p2.y];
-        x += (int)floor(p1.align_x * (layout.x_spans[p1.x] - 1));
-        y += (int)floor(p1.align_y * (layout.y_spans[p1.y] - 1));
-        x2 += (int)floor(p2.align_x * (layout.x_spans[p2.x] - 1));
-        y2 += (int)floor(p2.align_y * (layout.y_spans[p2.y] - 1));
-        while (x != x2) {
-            out_lines[y][x] = '-';
-            x += x < x2 ? 1 : -1;
+
+        auto x1 = x_align(p1);
+        auto x2 = x_align(p2);
+        auto y1 = y_align(p1);
+        auto y2 = y_align(p2);
+        if (x1 > x2) {
+            std::swap(x1, x2);
         }
-        if (p1.x != p2.x && p1.y != p2.y) {
-            out_lines[y][x] = '.';
-        } else if (p1.x != p2.x) {
-            out_lines[y][x] = '-';
-        } else if (p1.y != p2.y) {
-            out_lines[y][x] = '|';
-        } else {
-            out_lines[y][x] = '.';
+        if (y1 > y2) {
+            std::swap(y1, y2);
         }
-        while (y != y2) {
-            y += y < y2 ? 1 : -1;
-            out_lines[y][x] = '|';
+        bool bx = x1 != x2;
+        while (x1 < x2) {
+            out_lines[y1][x1] = '-';
+            x1++;
+        }
+
+        char next_char = bx ? '.' : '|';
+        while (y1 < y2) {
+            out_lines[y1][x1] = next_char;
+            next_char = '|';
+            y1++;
         }
     }
 
