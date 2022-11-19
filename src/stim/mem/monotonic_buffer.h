@@ -56,46 +56,41 @@ struct MonotonicBuffer {
     std::vector<PointerRange<T>> old_areas;
 
     /// Constructs an empty monotonic buffer.
-    MonotonicBuffer() = default;
+    MonotonicBuffer() : tail(), cur(), old_areas() {
+    }
     /// Constructs an empty monotonic buffer with initial capacity for its current region.
     MonotonicBuffer(size_t reserve) {
         ensure_available(reserve);
     }
-    ~MonotonicBuffer() {
-        std::vector<PointerRange<T>> to_delete_old = std::move(old_areas);
-        T *to_delete_cur = cur.ptr_start;
-
-        old_areas.clear();
+    void _soft_clear() {
         cur.ptr_start = nullptr;
         cur.ptr_end = nullptr;
         tail.ptr_start = nullptr;
         tail.ptr_end = nullptr;
-
-        for (const auto &old : to_delete_old) {
+        old_areas.clear();
+    }
+    void _hard_clear() {
+        for (auto old : old_areas) {
             free(old.ptr_start);
         }
-        if (to_delete_cur != nullptr) {
-            free(to_delete_cur);
+        if (cur.ptr_start != nullptr) {
+            free(cur.ptr_start);
         }
+    }
+    ~MonotonicBuffer() {
+        _hard_clear();
     }
     MonotonicBuffer(MonotonicBuffer &&other) noexcept
         : tail(other.tail), cur(other.cur), old_areas(std::move(other.old_areas)) {
-        other.cur.ptr_start = nullptr;
-        other.cur.ptr_end = nullptr;
-        other.tail.ptr_start = nullptr;
-        other.tail.ptr_end = nullptr;
-        other.old_areas.clear();
+        other._soft_clear();
     }
     MonotonicBuffer(const MonotonicBuffer &other) = delete;
     MonotonicBuffer &operator=(MonotonicBuffer &&other) noexcept {
-        tail = other.tail;
+        _hard_clear();
         cur = other.cur;
+        tail = other.tail;
         old_areas = std::move(other.old_areas);
-        other.cur.ptr_start = nullptr;
-        other.cur.ptr_end = nullptr;
-        other.tail.ptr_start = nullptr;
-        other.tail.ptr_end = nullptr;
-        other.old_areas.clear();
+        other._soft_clear();
         return *this;
     }
 
@@ -103,8 +98,8 @@ struct MonotonicBuffer {
     ///
     /// Happens to keep the current contiguous memory region and free old regions.
     void clear() {
-        for (auto &v : old_areas) {
-            free(v.ptr_start);
+        for (auto old : old_areas) {
+            free(old.ptr_start);
         }
         old_areas.clear();
         tail.ptr_end = tail.ptr_start = cur.ptr_start;
@@ -113,7 +108,7 @@ struct MonotonicBuffer {
     /// Returns the size of memory allocated and held by this monotonic buffer (in units of sizeof(T)).
     size_t total_allocated() const {
         size_t result = cur.size();
-        for (auto &old : old_areas) {
+        for (auto old : old_areas) {
             result += old.size();
         }
         return result;
