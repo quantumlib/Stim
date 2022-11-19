@@ -753,10 +753,10 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     };
     obj.resolver.do_circuit(circuit);
     if (obj.cur_moment_is_used) {
-        obj.start_next_moment();
+        obj.do_tick();
     }
 
-    auto w = obj.m2x(obj.cur_moment);
+    auto w = obj.m2x(obj.cur_moment) - GATE_PITCH * 0.5f;
     svg_out << R"SVG(<svg viewBox="0 0 )SVG";
     if (mode != SVG_MODE_TIMELINE) {
         svg_out << obj.coord_sys.size.xyz[0] * ((obj.num_cols - 1) * SLICE_WINDOW_GAP + 1);
@@ -780,6 +780,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
 
     // Make sure qubit lines are drawn first, so they are in the background.
     if (mode != SVG_MODE_TIMELINE) {
+        // Draw qubit points.
         for (uint64_t col = 0; col < obj.num_cols; col++) {
             for (uint64_t row = 0; row < obj.num_rows && row * obj.num_cols + col < tick_slice_num; row++) {
                 for (auto q : obj.detector_slice_set.used_qubits()) {
@@ -801,6 +802,7 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
             }
         }
     } else {
+        // Draw qubit lines.
         for (size_t q = 0; q < obj.num_qubits; q++) {
             auto x1 = PADDING + CIRCUIT_START_X;
             auto x2 = w;

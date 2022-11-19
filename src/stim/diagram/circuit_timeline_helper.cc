@@ -194,8 +194,8 @@ void CircuitTimelineHelper::do_next_operation(const Circuit &circuit, const Oper
     } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
         do_qubit_coords(op);
     } else if (op.gate->id == gate_name_to_id("TICK")) {
-        num_ticks_seen += 1;
         do_atomic_operation(op.gate, {}, {});
+        num_ticks_seen += 1;
     } else if (op.gate->flags & GATE_TARGETS_PAIRS) {
         do_two_qubit_gate(op);
     } else {
