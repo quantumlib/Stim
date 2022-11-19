@@ -200,7 +200,11 @@ TEST(circuit_diagram_timeline_svg, tick) {
         TICK
         H 0 0
     )CIRCUIT");
-    expect_svg_diagram_is_identical_to_saved_file(circuit, "tick.svg");
+
+    std::stringstream ss;
+    std::vector<double> filter;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIMELINE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "tick.svg");
 }
 
 TEST(circuit_diagram_timeline_svg, shifted_coords) {
@@ -265,4 +269,34 @@ TEST(circuit_diagram_time_slice_svg, surface_code) {
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 5, 11, SVG_MODE_TIME_SLICE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "surface_code_time_slice.svg");
+}
+
+TEST(circuit_diagram_timeline_svg, chained_loops) {
+    auto circuit = Circuit(R"CIRCUIT(
+        REPEAT 2 {
+            H 0
+            TICK
+        }
+        X 0
+        TICK
+        Y 0
+        TICK
+        Z 0
+        TICK
+        REPEAT 3 {
+            C_XYZ 0
+            TICK
+        }
+        X 1
+        TICK
+        Y 1
+        TICK
+        Z 1
+        TICK
+    )CIRCUIT");
+
+    std::vector<double> empty_filter;
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&empty_filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "circuit_diagram_timeline_svg_chained_loops.svg");
 }

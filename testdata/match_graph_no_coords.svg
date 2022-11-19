@@ -1,0 +1,14 @@
+<svg viewBox="0 0 96.6025 112.456"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<path d="M46.6025,32.735 L61.6025,32.735 M61.6025,32.735 L46.6025,47.735 M46.6025,47.735 L46.6025,62.735 M46.6025,62.735 L61.6025,47.735 M61.6025,47.735 L76.6025,32.735 M76.6025,32.735 L91.6025,32.735 M91.6025,32.735 L76.6025,47.735 M76.6025,47.735 L61.6025,62.735 M61.6025,62.735 L39.2418,107.456" stroke="black" fill="none" stroke-width="0.2"/>
+<path d="M46.6025,32.735 L5,5" stroke="red" fill="none" stroke-width="0.2"/>
+<path d="" stroke="blue" fill="none" stroke-width="0.2"/>
+<circle cx="46.6025" cy="32.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="61.6025" cy="32.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="46.6025" cy="47.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="46.6025" cy="62.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="61.6025" cy="47.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="76.6025" cy="32.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="91.6025" cy="32.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="76.6025" cy="47.735" r="0.5" stroke="none" fill="black"/>
+<circle cx="61.6025" cy="62.735" r="0.5" stroke="none" fill="black"/>
+</svg>

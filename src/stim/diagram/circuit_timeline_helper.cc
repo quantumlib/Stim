@@ -33,10 +33,10 @@ void CircuitTimelineHelper::do_repeat_block(const Circuit &circuit, const Operat
         start_repeat_callback(loop_data);
         do_circuit(body);
         end_repeat_callback(loop_data);
+        skip_loop_iterations(loop_data, loop_data.num_repetitions - 1);
     }
 
     cur_loop_nesting.pop_back();
-    skip_loop_iterations(loop_data, loop_data.num_repetitions - 1);
 }
 
 void CircuitTimelineHelper::do_atomic_operation(

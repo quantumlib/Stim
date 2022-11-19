@@ -55,7 +55,7 @@ TEST(detector_slice_set, from_circuit) {
         2,
         1,
         {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{1, {3, 5}}}));
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {3, 5}}}));
     ASSERT_EQ(
         slice_set.slices,
         (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
@@ -90,7 +90,7 @@ TEST(detector_slice_set, big_loop_seeking) {
     uint64_t inner = 10 * 100 * 1000 + 1;
     std::vector<double> empty_filter;
     auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, inner * 10000ULL * 50ULL + 2ULL, 1, {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
         (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
@@ -100,7 +100,7 @@ TEST(detector_slice_set, big_loop_seeking) {
 
     slice_set = DetectorSliceSet::from_circuit_ticks(
         circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 1, {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
         (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
@@ -113,7 +113,7 @@ TEST(detector_slice_set, big_loop_seeking) {
 
     slice_set = DetectorSliceSet::from_circuit_ticks(
         circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 2, {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
         (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
