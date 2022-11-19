@@ -708,6 +708,20 @@ def test_shortest_graphlike_error():
 }"""
 
 
+def test_shortest_graphlike_error_empty():
+    with pytest.raises(ValueError, match="Failed to find"):
+        stim.Circuit().shortest_graphlike_error()
+
+
+def test_search_for_undetectable_logical_errors_empty():
+    with pytest.raises(ValueError, match="Failed to find"):
+        stim.Circuit().search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+
 def test_shortest_graphlike_error_ignore():
     c = stim.Circuit("""
         TICK

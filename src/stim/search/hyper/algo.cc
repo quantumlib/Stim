@@ -101,5 +101,5 @@ DetectorErrorModel stim::find_undetectable_logical_error(
         }
     }
 
-    throw std::invalid_argument("Failed to find any decaying logical errors.");
+    throw std::invalid_argument("Failed to find any logical errors.");
 }

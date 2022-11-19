@@ -461,3 +461,39 @@ def test_diagram():
     assert dem.diagram(type="match-graph-svg") is not None
     assert dem.diagram(type="match-graph-3d") is not None
     assert dem.diagram(type="match-graph-3d-html") is not None
+
+
+def test_shortest_graphlike_error_remnant():
+    c = stim.Circuit("""
+        X_ERROR(0.125) 0 1 2 3 4 5 6 7 10
+        E(0.125) X2 X3 X10
+        M 0 1 2 3 4 5 6 7 10
+        OBSERVABLE_INCLUDE(0) rec[-2]
+        DETECTOR rec[-1]
+        DETECTOR rec[-2] rec[-3]
+        DETECTOR rec[-3] rec[-4]
+        DETECTOR rec[-4] rec[-5]
+        DETECTOR rec[-5] rec[-6]
+        DETECTOR rec[-6] rec[-7]
+        DETECTOR rec[-7] rec[-8]
+        DETECTOR rec[-8] rec[-9]
+    """)
+    d = stim.DetectorErrorModel("""
+        error(0.125) D0
+        error(0.125) D0 ^ D4 D6
+        error(0.125) D1 D2
+        error(0.125) D1 L0
+        error(0.125) D2 D3
+        error(0.125) D3 D4
+        error(0.125) D4 D5
+        error(0.125) D5 D6
+        error(0.125) D6 D7
+        error(0.125) D7
+    """)
+    assert c.detector_error_model(decompose_errors=True) == d
+    assert len(c.shortest_graphlike_error(ignore_ungraphlike_errors=False)) == 7
+    assert len(d.shortest_graphlike_error(ignore_ungraphlike_errors=False)) == 7
+    assert len(c.shortest_graphlike_error(ignore_ungraphlike_errors=True)) == 8
+    assert len(d.shortest_graphlike_error(ignore_ungraphlike_errors=True)) == 8
+    assert len(c.shortest_graphlike_error()) == 8
+    assert len(d.shortest_graphlike_error()) == 8
