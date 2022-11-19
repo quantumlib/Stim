@@ -62,14 +62,21 @@ struct MonotonicBuffer {
         ensure_available(reserve);
     }
     ~MonotonicBuffer() {
-        for (auto &v : old_areas) {
-            free(v.ptr_start);
-        }
-        if (cur.ptr_start) {
-            free(cur.ptr_start);
-        }
+        std::vector<PointerRange<T>> to_delete_old = std::move(old_areas);
+        T *to_delete_cur = cur.ptr_start;
+
         old_areas.clear();
-        cur.ptr_start = cur.ptr_end = tail.ptr_start = tail.ptr_end = nullptr;
+        cur.ptr_start = nullptr;
+        cur.ptr_end = nullptr;
+        tail.ptr_start = nullptr;
+        tail.ptr_end = nullptr;
+
+        for (const auto &old : to_delete_old) {
+            free(old.ptr_start);
+        }
+        if (to_delete_cur != nullptr) {
+            free(to_delete_cur);
+        }
     }
     MonotonicBuffer(MonotonicBuffer &&other) noexcept
         : tail(other.tail), cur(other.cur), old_areas(std::move(other.old_areas)) {
@@ -77,11 +84,18 @@ struct MonotonicBuffer {
         other.cur.ptr_end = nullptr;
         other.tail.ptr_start = nullptr;
         other.tail.ptr_end = nullptr;
+        other.old_areas.clear();
     }
     MonotonicBuffer(const MonotonicBuffer &other) = delete;
     MonotonicBuffer &operator=(MonotonicBuffer &&other) noexcept {
-        (*this).~MonotonicBuffer();
-        new (this) MonotonicBuffer(std::move(other));
+        tail = other.tail;
+        cur = other.cur;
+        old_areas = std::move(other.old_areas);
+        other.cur.ptr_start = nullptr;
+        other.cur.ptr_end = nullptr;
+        other.tail.ptr_start = nullptr;
+        other.tail.ptr_end = nullptr;
+        other.old_areas.clear();
         return *this;
     }
 
