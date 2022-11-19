@@ -100,7 +100,8 @@ setup(
         stim_detect_machine_architecture,
         stim_polyfill,
         stim_sse2,
-        stim_avx2,
+        # NOTE: disabled until https://github.com/quantumlib/Stim/issues/432 is fixed
+        # stim_avx2,
     ],
     python_requires='>=3.6.0',
     packages=['stim'],
