@@ -161,7 +161,7 @@ jobs:
       - run: mv dist/* output/stim
       - run: mv glue/cirq/dist/* output/stimcirq
       - run: mv glue/sample/dist/* output/sinter
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: dist
           path: |
@@ -205,7 +205,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - run: cmake .
-    - run: make stim
+    - run: make stim -j 2
     - run: echo -e "H 0 \n CNOT 0 1 \n M 0 1" | out/stim --sample
   build_bazel:
     runs-on: ubuntu-latest
@@ -235,7 +235,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - run: cmake .
-    - run: make libstim
+    - run: make libstim -j 2
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
     - run: g++ test.cc out/libstim.a -I src
     - run: ./a.out test
@@ -255,7 +255,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_benchmark
+    - run: make stim_benchmark -j 2
     - run: out/stim_benchmark
   test:
     runs-on: ubuntu-latest
@@ -272,7 +272,7 @@ jobs:
         make
         sudo make install
     - run: cmake . -DSIMD_WIDTH=${{ matrix.simd_width }}
-    - run: make stim_test
+    - run: make stim_test -j 2
     - run: out/stim_test
   test_o3:
     runs-on: ubuntu-latest
@@ -286,24 +286,22 @@ jobs:
         make
         sudo make install
     - run: cmake . -DSIMD_WIDTH=256
-    - run: make stim_test_o3
+    - run: make stim_test_o3 -j 2
     - run: out/stim_test_o3
   test_generated_docs_are_fresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-        with:
-          python-version: '3.7'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - uses: bazelbuild/setup-bazelisk@v1
+      - run: bazel build :stim_dev_wheel
+      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: diff <(python glue/python/generate_api_reference.py -dev) doc/python_api_reference_vDev.md
       - run: diff <(python glue/python/generate_stub_file.py -dev) glue/python/src/stim/__init__.pyi
       - run: diff <(python glue/python/generate_stub_file.py -dev) doc/stim.pyi
-      - run: diff <(stim help gates_markdown) doc/gates.md
-      - run: diff <(stim help formats_markdown) doc/result_formats.md
-      - run: diff <(stim help commands_markdown) doc/usage_command_line.md
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'gates_markdown'])") doc/gates.md
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'formats_markdown'])") doc/result_formats.md
+      - run: diff <(python -c "import stim; stim.main(command_line_args=['help', 'commands_markdown'])") doc/usage_command_line.md
       - run: python doc/stim.pyi
   test_generated_file_lists_are_fresh:
     runs-on: ubuntu-latest
@@ -319,11 +317,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - uses: bazelbuild/setup-bazelisk@v1
+      - run: bazel build :stim_dev_wheel
+      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: pip install pytest
       - run: pytest src
       - run: dev/doctest_proper.py --module stim
@@ -332,11 +328,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - uses: bazelbuild/setup-bazelisk@v1
+      - run: bazel build :stim_dev_wheel
+      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: pip install -e glue/cirq
       - run: pip install pytest
       - run: pytest glue/cirq
@@ -346,11 +340,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-        with:
-          python-version: '3.7'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - uses: bazelbuild/setup-bazelisk@v1
+      - run: bazel build :stim_dev_wheel
+      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: pip install -e glue/sample
       - run: pip install pytest pymatching fusion-blossom~=0.1.4
       - run: pytest glue/sample
@@ -361,11 +353,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
-        with:
-          python-version: '3.6'
-          architecture: 'x64'
-      - run: pip install -e .
-      - run: pip install pybind11==2.9.2 && python setup.py install  # Workaround for https://github.com/pypa/setuptools/issues/230
+      - uses: bazelbuild/setup-bazelisk@v1
+      - run: bazel build :stim_dev_wheel
+      - run: pip install bazel-bin/stim-dev-py3-none-any.whl
       - run: pip install -e glue/zx
       - run: pip install pytest
       - run: pytest glue/zx
