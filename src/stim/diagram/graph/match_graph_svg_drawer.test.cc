@@ -50,3 +50,31 @@ TEST(match_graph_drawer_svg, surface_code) {
     auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
     expect_graph_svg_diagram_is_identical_to_saved_file(dem, "match_graph_surface_code.svg");
 }
+
+TEST(match_graph_drawer_svg, missing_coordinates) {
+    Circuit circuit(R"CIRCUIT(
+        R 0 1 2 3 4 5 6 7 8 9 10
+        X_ERROR(0.125) 0 1 2 3 4 5 6 7 8 9 10
+        M 0 1 2 3 4 5 6 7 8 9 10
+        DETECTOR rec[-1] rec[-2]
+        DETECTOR rec[-2] rec[-3]
+        DETECTOR rec[-3] rec[-4]
+        DETECTOR rec[-4] rec[-5]
+        DETECTOR rec[-5] rec[-6]
+        DETECTOR rec[-6] rec[-7]
+        DETECTOR rec[-7] rec[-8]
+        DETECTOR rec[-8] rec[-9]
+        DETECTOR rec[-9] rec[-10]
+        OBSERVABLE_INCLUDE(1) rec[-1]
+    )CIRCUIT");
+
+    auto dem = ErrorAnalyzer::circuit_to_detector_error_model(circuit, true, true, false, false, false, false);
+    std::stringstream ss;
+
+    testing::internal::CaptureStderr();
+    dem_match_graph_to_svg_diagram_write_to(dem, ss);
+    std::string err = testing::internal::GetCapturedStderr();
+    ASSERT_NE(err, "");
+
+    expect_string_is_identical_to_saved_file(ss.str(), "match_graph_no_coords.svg");
+}

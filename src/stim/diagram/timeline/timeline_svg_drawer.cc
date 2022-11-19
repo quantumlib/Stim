@@ -722,6 +722,9 @@ void DiagramTimelineSvgDrawer::make_diagram_write_to(
     std::stringstream buffer;
     DiagramTimelineSvgDrawer obj(buffer, num_qubits, circuit_has_ticks);
     tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start + 1);
+    if (!circuit.operations.empty() && circuit.operations.back().gate->id == gate_name_to_id("TICK")) {
+        tick_slice_num = std::min(tick_slice_num, circuit_num_ticks - tick_slice_start);
+    }
     if (mode != SVG_MODE_TIMELINE) {
         // The +1 is because we're showing the detector slice at the end of each tick region.
         obj.detector_slice_set =

@@ -18,6 +18,7 @@ struct DetectorSliceSetComputer {
     uint64_t tick_cur;
     uint64_t first_yield_tick;
     uint64_t num_yield_ticks;
+    std::set<uint32_t> used_qubits;
     std::function<void(void)> on_tick_callback;
     DetectorSliceSetComputer(
         const Circuit &circuit,
@@ -68,6 +69,11 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         }
         return false;
     } else {
+        for (auto t : op.target_data.targets) {
+            if (t.has_qubit_value()) {
+                used_qubits.insert(t.qubit_value());
+            }
+        }
         (tracker.*(op.gate->sparse_unsigned_rev_frame_tracker_function))(op.target_data);
         return false;
     }
@@ -135,7 +141,7 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
         ss << q;
         ss << ":";
         auto p = coordinates.find(q);
-        if (p != coordinates.end()) {
+        if (p != coordinates.end() && !p->second.empty()) {
             ss << "(" << comma_sep(p->second) << ")";
         }
         ss << " ";
@@ -217,6 +223,9 @@ DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
         }
     }
     result.coordinates = circuit.get_final_qubit_coords();
+    for (const auto &q : helper.used_qubits) {
+        result.coordinates[q];  // Default construct if doesn't exist.
+    }
     result.detector_coordinates = circuit.get_detector_coordinates(included_detectors);
 
     auto matches_filter = [](ConstPointerRange<double> coord, ConstPointerRange<double> filter) {
