@@ -1,15 +1,15 @@
-<svg viewBox="0 0 1152 480"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<path d="M64,64 L1120,64 " stroke="black"/>
+<svg viewBox="0 0 1120 480"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<path d="M64,64 L1088,64 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
-<path d="M64,128 L1120,128 " stroke="black"/>
+<path d="M64,128 L1088,128 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
-<path d="M64,192 L1120,192 " stroke="black"/>
+<path d="M64,192 L1088,192 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="192">q2</text>
-<path d="M64,256 L1120,256 " stroke="black"/>
+<path d="M64,256 L1088,256 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="256">q3</text>
-<path d="M64,320 L1120,320 " stroke="black"/>
+<path d="M64,320 L1088,320 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="320">q4</text>
-<path d="M64,384 L1120,384 " stroke="black"/>
+<path d="M64,384 L1088,384 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="384">q5</text>
 <path d="M96,64 L96,128 " stroke="black"/>
 <circle cx="96" cy="64" r="8" stroke="none" fill="black"/>

@@ -1,15 +1,15 @@
-<svg viewBox="0 0 1024 480"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<path d="M64,64 L992,64 " stroke="black"/>
+<svg viewBox="0 0 992 480"  version="1.1" xmlns="http://www.w3.org/2000/svg">
+<path d="M64,64 L960,64 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
-<path d="M64,128 L992,128 " stroke="black"/>
+<path d="M64,128 L960,128 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
-<path d="M64,192 L992,192 " stroke="black"/>
+<path d="M64,192 L960,192 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="192">q2</text>
-<path d="M64,256 L992,256 " stroke="black"/>
+<path d="M64,256 L960,256 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="256">q3</text>
-<path d="M64,320 L992,320 " stroke="black"/>
+<path d="M64,320 L960,320 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="320">q4</text>
-<path d="M64,384 L992,384 " stroke="black"/>
+<path d="M64,384 L960,384 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="384">q5</text>
 <rect x="80" y="48" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="96" y="64" fill="white">M</text>
