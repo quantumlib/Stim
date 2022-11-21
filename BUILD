@@ -76,6 +76,7 @@ cc_test(
     copts = [
         "-march=native",
     ],
+    data = glob(["testdata/**"]),
     includes = ["src/"],
     linkopts = ["-lpthread"],
     deps = [

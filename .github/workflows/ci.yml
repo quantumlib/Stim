@@ -213,6 +213,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: bazelbuild/setup-bazelisk@v1
     - run: bazel build :all
+    - run: bazel test :stim_test
   build_clang:
     runs-on: ubuntu-latest
     steps:
