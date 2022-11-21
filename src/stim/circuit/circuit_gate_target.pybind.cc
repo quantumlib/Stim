@@ -41,7 +41,7 @@ pybind11::class_<stim::GateTarget> stim_pybind::pybind_circuit_gate_target(pybin
     return pybind11::class_<GateTarget>(
         m,
         "GateTarget",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Represents a gate target, like `0` or `rec[-1]`, from a circuit.
 
             Examples:
@@ -61,7 +61,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def(
         pybind11::init(&obj_to_gate_target),
         pybind11::arg("value"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Initializes a `stim.GateTarget`.
 
             Args:
@@ -72,7 +72,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "value",
         &GateTarget::value,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The numeric part of the target.
 
             This is non-negative integer for qubit targets, and a negative integer for
@@ -83,7 +83,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_qubit_target",
         &GateTarget::is_qubit_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a (possibly inverted) qubit target.
 
             For example, `5` on its own in a stim circuit is a raw qubit target.
@@ -93,7 +93,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_x_target",
         &GateTarget::is_x_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a (possibly inverted) X pauli target.
 
             For example, `X5` in a stim circuit is a X Pauli target. The value returned by
@@ -104,7 +104,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_y_target",
         &GateTarget::is_y_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a (possibly inverted) Y pauli target.
 
             For example, `Y5` in a stim circuit is a Y Pauli target. The value returned by
@@ -115,7 +115,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_z_target",
         &GateTarget::is_z_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a (possibly inverted) Z pauli target.
 
             For example, `Z5` in a stim circuit is a Z Pauli target. The value returned by
@@ -126,7 +126,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_inverted_result_target",
         &GateTarget::is_inverted_result_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is an inverted target.
 
             Inverted targets include inverted qubit targets `stim.target_inv(5)`
@@ -138,7 +138,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_measurement_record_target",
         &GateTarget::is_measurement_record_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a measurement record target.
 
             The value returned by `stim.target_rec(-5)`, which would be `rec[-5]` in a
@@ -149,7 +149,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_combiner",
         &GateTarget::is_combiner,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a `stim.target_combiner()`.
         )DOC")
             .data());
@@ -157,7 +157,7 @@ void stim_pybind::pybind_circuit_gate_target_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "is_sweep_bit_target",
         &GateTarget::is_sweep_bit_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns whether or not this is a sweep bit target.
 
             For example, `sweep[5]` in a circuit file is a sweep target, and the value

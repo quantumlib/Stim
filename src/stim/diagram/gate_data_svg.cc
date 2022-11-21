@@ -13,13 +13,13 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"H", {1, "H", "", "", "white", "black"}});
     result.insert({"H_XY", {1, "H", "XY", "", "white", "black"}});
 
-    result.insert({"SQRT_X", {1, u8"√X", "", "", "white", "black"}});
-    result.insert({"SQRT_Y", {1, u8"√Y", "", "", "white", "black"}});
+    result.insert({"SQRT_X", {1, "√X", "", "", "white", "black"}});
+    result.insert({"SQRT_Y", {1, "√Y", "", "", "white", "black"}});
     result.insert({"S", {1, "S", "", "", "white", "black"}});
 
-    result.insert({"SQRT_X_DAG", {1, u8"√X", "", u8"†", "white", "black"}});
-    result.insert({"SQRT_Y_DAG", {1, u8"√Y", "", u8"†", "white", "black"}});
-    result.insert({"S_DAG", {1, "S", "", u8"†", "white", "black"}});
+    result.insert({"SQRT_X_DAG", {1, "√X", "", "†", "white", "black"}});
+    result.insert({"SQRT_Y_DAG", {1, "√Y", "", "†", "white", "black"}});
+    result.insert({"S_DAG", {1, "S", "", "†", "white", "black"}});
 
     result.insert({"MX", {1, "M", "X", "", "black", "white"}});
     result.insert({"MY", {1, "M", "Y", "", "black", "white"}});
@@ -49,13 +49,13 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"MPP[Y]", {1, "MPP", "Y", "", "black", "white"}});
     result.insert({"MPP[Z]", {1, "MPP", "Z", "", "black", "white"}});
 
-    result.insert({"SQRT_XX", {1, u8"√XX", "", "", "white", "black"}});
-    result.insert({"SQRT_YY", {1, u8"√YY", "", "", "white", "black"}});
-    result.insert({"SQRT_ZZ", {1, u8"√ZZ", "", "", "white", "black"}});
+    result.insert({"SQRT_XX", {1, "√XX", "", "", "white", "black"}});
+    result.insert({"SQRT_YY", {1, "√YY", "", "", "white", "black"}});
+    result.insert({"SQRT_ZZ", {1, "√ZZ", "", "", "white", "black"}});
 
-    result.insert({"SQRT_XX_DAG", {1, u8"√XX", "", u8"†", "white", "black"}});
-    result.insert({"SQRT_YY_DAG", {1, u8"√YY", "", u8"†", "white", "black"}});
-    result.insert({"SQRT_ZZ_DAG", {1, u8"√ZZ", "", u8"†", "white", "black"}});
+    result.insert({"SQRT_XX_DAG", {1, "√XX", "", "†", "white", "black"}});
+    result.insert({"SQRT_YY_DAG", {1, "√YY", "", "†", "white", "black"}});
+    result.insert({"SQRT_ZZ_DAG", {1, "√ZZ", "", "†", "white", "black"}});
 
     result.insert({"I", {1, "I", "", "", "white", "black"}});
     result.insert({"C_XYZ", {1, "C", "XYZ", "", "white", "black"}});

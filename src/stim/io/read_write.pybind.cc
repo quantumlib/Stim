@@ -162,7 +162,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_observables") = pybind11::none(),
         pybind11::arg("bit_packed") = false,
         pybind11::arg("bit_pack") = false,  // Legacy argument for backwards compat.
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Reads shot data, such as measurement samples, from a file.
             @signature def read_shot_data_file(*, path: Union[str, pathlib.Path], format: Union[str, 'Literal["01", "b8", "r8", "ptb64", "hits", "dets"]'], bit_packed: bool = False, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> np.ndarray:
 
@@ -222,7 +222,7 @@ void stim_pybind::pybind_read_write(pybind11::module &m) {
         pybind11::arg("num_measurements") = pybind11::none(),
         pybind11::arg("num_detectors") = pybind11::none(),
         pybind11::arg("num_observables") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Writes shot data, such as measurement samples, to a file.
             @signature def write_shot_data_file(*, data: np.ndarray, path: Union[str, pathlib.Path], format: str, num_measurements: int = 0, num_detectors: int = 0, num_observables: int = 0) -> None:
 

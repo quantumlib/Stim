@@ -152,7 +152,7 @@ pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
     auto c = pybind11::class_<Circuit>(
         m,
         "Circuit",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A mutable stabilizer circuit.
 
             Examples:
@@ -228,7 +228,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             return self;
         }),
         pybind11::arg("stim_program_text") = "",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.Circuit.
 
             Args:
@@ -249,7 +249,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_property_readonly(
         "num_measurements",
         &Circuit::count_measurements,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of bits produced when sampling the circuit's measurements.
 
             Examples:
@@ -268,7 +268,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_property_readonly(
         "num_detectors",
         &Circuit::count_detectors,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of bits produced when sampling the circuit's detectors.
 
             Examples:
@@ -290,7 +290,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_property_readonly(
         "num_observables",
         &Circuit::count_observables,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of logical observables defined by the circuit.
 
             This is one more than the largest index that appears as an argument to an
@@ -311,7 +311,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_property_readonly(
         "num_qubits",
         &Circuit::count_qubits,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of qubits used when simulating the circuit.
 
             This is always one more than the largest qubit index used by the circuit.
@@ -335,7 +335,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def_property_readonly(
         "num_sweep_bits",
         &Circuit::count_sweep_bits,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the number of sweep bits needed to completely configure the circuit.
 
             This is always one more than the largest sweep bit index used by the circuit.
@@ -360,7 +360,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns an object that can quickly batch sample measurements from the circuit.
 
             Args:
@@ -421,7 +421,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         &py_init_compiled_measurements_to_detection_events_converter,
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a measurement-to-detection-event converter for the given circuit.
 
             The converter uses a noiseless reference sample, collected from the circuit
@@ -465,7 +465,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         &py_init_compiled_detector_sampler,
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns an object that can batch sample detection events from the circuit.
 
             Args:
@@ -511,7 +511,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "clear",
         &Circuit::clear,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Clears the contents of the circuit.
 
             Examples:
@@ -568,7 +568,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             });
             return result;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             [DEPRECATED]
 
             Returns a list of tuples encoding the contents of the circuit.
@@ -600,7 +600,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         "__add__",
         &Circuit::operator+,
         pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a circuit by appending two circuits.
 
             Examples:
@@ -625,7 +625,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         "__iadd__",
         &Circuit::operator+=,
         pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Appends a circuit into the receiving circuit (mutating it).
 
             Examples:
@@ -651,7 +651,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         "__imul__",
         &Circuit::operator*=,
         pybind11::arg("repetitions"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Mutates the circuit by putting its contents into a REPEAT block.
 
             Special case: if the repetition count is 0, the circuit is cleared.
@@ -681,7 +681,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         "__mul__",
         &Circuit::operator*,
         pybind11::arg("repetitions"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Repeats the circuit using a REPEAT block.
 
             Has special cases for 0 repetitions and 1 repetitions.
@@ -715,7 +715,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         "__rmul__",
         &Circuit::operator*,
         pybind11::arg("repetitions"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Repeats the circuit using a REPEAT block.
 
             Has special cases for 0 repetitions and 1 repetitions.
@@ -753,7 +753,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             pybind11::arg("targets") = pybind11::make_tuple(),
             pybind11::arg("arg") = pybind11::none(),
             k == 0 ? "[DEPRECATED] use stim.Circuit.append instead"
-                   : clean_doc_string(u8R"DOC(
+                   : clean_doc_string(R"DOC(
                 Appends an operation into the circuit.
                 @overload def append(self, name: str, targets: Union[int, stim.GateTarget, Iterable[Union[int, stim.GateTarget]]], arg: Union[float, Iterable[float]]) -> None:
                 @overload def append(self, name: Union[stim.CircuitOperation, stim.CircuitRepeatBlock]) -> None:
@@ -815,7 +815,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             self.append_from_text(text);
         },
         pybind11::arg("stim_program_text"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Appends operations described by a STIM format program into the circuit.
 
             Examples:
@@ -855,7 +855,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             Circuit copy = self;
             return copy;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the circuit. An independent circuit with the same contents.
 
             Examples:
@@ -917,7 +917,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("before_round_data_depolarization") = 0.0,
         pybind11::arg("before_measure_flip_probability") = 0.0,
         pybind11::arg("after_reset_flip_probability") = 0.0,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Generates common circuits.
 
             The generated circuits can include configurable noise.
@@ -1035,7 +1035,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 "Don't know how to read from " + pybind11::cast<std::string>(pybind11::str(obj)));
         },
         pybind11::arg("file"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.Circuit:
             Reads a stim circuit from a file.
 
@@ -1111,7 +1111,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
                 "Don't know how to write to " + pybind11::cast<std::string>(pybind11::str(obj)));
         },
         pybind11::arg("file"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
             Writes the stim circuit to a file.
 
@@ -1150,7 +1150,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         [](const Circuit &self) {
             return self.operations.size();
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the number of top-level instructions and blocks in the circuit.
 
             Instructions inside of blocks are not included in this count.
@@ -1201,7 +1201,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             return pybind11::cast(CircuitInstruction(*op.gate, targets, args));
         },
         pybind11::arg("index_or_slice"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns copies of instructions from the circuit.
             @overload def __getitem__(self, index_or_slice: int) -> Union[stim.CircuitInstruction, stim.CircuitRepeatBlock]:
             @overload def __getitem__(self, index_or_slice: slice) -> stim.Circuit:
@@ -1269,7 +1269,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("approximate_disjoint_errors") = false,
         pybind11::arg("ignore_decomposition_failures") = false,
         pybind11::arg("block_decomposition_from_introducing_remnant_edges") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a stim.DetectorErrorModel describing the error processes in the circuit.
 
             Args:
@@ -1369,7 +1369,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("other"),
         pybind11::kw_only(),
         pybind11::arg("atol"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Checks if a circuit is approximately equal to another circuit.
 
             Two circuits are approximately equal if they are equal up to slight
@@ -1431,7 +1431,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
             }));
         },
         pybind11::arg("only") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the coordinate metadata of detectors in the circuit.
 
             Args:
@@ -1467,7 +1467,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "get_final_qubit_coordinates",
         &Circuit::get_final_qubit_coords,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the coordinate metadata of qubits in the circuit.
 
             If a qubit's coordinates are specified multiple times, only the last specified
@@ -1502,7 +1502,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("ignore_ungraphlike_errors") = true,
         pybind11::arg("canonicalize_circuit_errors") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Finds a minimum set of graphlike errors to produce an undetected logical error.
 
             A "graphlike error" is an error that creates at most two detection events
@@ -1577,7 +1577,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::arg("dont_explore_edges_with_degree_above"),
         pybind11::arg("dont_explore_edges_increasing_symptom_degree"),
         pybind11::arg("canonicalize_circuit_errors") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Searches for small sets of errors that form an undetectable logical error.
 
             THIS IS A HEURISTIC METHOD. It does not guarantee that it will find errors of
@@ -1679,7 +1679,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("dem_filter") = pybind11::none(),
         pybind11::arg("reduce_to_one_representative_error") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Explains how detector error model errors are produced by circuit errors.
 
             Args:
@@ -1735,7 +1735,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "without_noise",
         &Circuit::without_noise,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the circuit with all noise processes removed.
 
             Pure noise instructions, such as X_ERROR and DEPOLARIZE2, are not
@@ -1765,7 +1765,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "flattened",
         &Circuit::flattened,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates an equivalent circuit without REPEAT or SHIFT_COORDS.
 
             Returns:
@@ -1806,7 +1806,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "with_inlined_feedback",
         &circuit_with_inlined_feedback,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a circuit without feedback with rewritten detectors/observables.
 
             When a feedback operation affects the expected parity of a detector or
@@ -1863,7 +1863,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
     c.def(
         "inverse",
         &Circuit::inverse,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a circuit that applies the same operations but inverted and in reverse.
 
             If circuit starts with QUBIT_COORDS instructions, the returned circuit will
@@ -1921,7 +1921,7 @@ void stim_pybind::pybind_circuit_methods(pybind11::module &, pybind11::class_<Ci
         pybind11::kw_only(),
         pybind11::arg("tick") = pybind11::none(),
         pybind11::arg("filter_coords") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @overload def diagram(self, *, type: 'Literal["timeline-text"]') -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["timeline-svg"]', tick: Union[None, int, range] = None) -> 'stim._DiagramHelper':
             @overload def diagram(self, *, type: 'Literal["timeline-3d"]') -> 'stim._DiagramHelper':

@@ -134,7 +134,7 @@ pybind11::class_<TableauSimulator> stim_pybind::pybind_tableau_simulator(pybind1
     return pybind11::class_<TableauSimulator>(
         m,
         "TableauSimulator",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A stabilizer circuit simulator that tracks an inverse stabilizer tableau.
 
             Supports interactive usage, where gates and measurements are applied on demand.
@@ -172,7 +172,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::init(&create_tableau_simulator),
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def __init__(self, *, seed: Optional[int] = None) -> None:
             Initializes a stim.TableauSimulator.
 
@@ -223,7 +223,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self) {
             return self.inv_state;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the internal state of the simulator as a stim.Tableau.
 
             Returns:
@@ -287,7 +287,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         },
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
             Returns a wavefunction for the simulator's current state.
 
@@ -345,7 +345,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             }
             return result;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a standardized list of the simulator's current stabilizer generators.
 
             Two simulators have the same canonical stabilizers if and only if their current
@@ -399,7 +399,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](const TableauSimulator &self) {
             return self.measurement_record.storage;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the record of all measurements performed by the simulator.
 
             Examples:
@@ -428,7 +428,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         "do",
         &do_obj,
         pybind11::arg("circuit_or_pauli_string"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a circuit or pauli string to the simulator's state.
             @signature def do(self, circuit_or_pauli_string: Union[stim.Circuit, stim.PauliString, stim.CircuitInstruction, stim.CircuitRepeatBlock]) -> None:
 
@@ -461,7 +461,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             self.paulis(pauli_string.value);
         },
         pybind11::arg("pauli_string"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies the paulis from a pauli string to the simulator's state.
 
             Args:
@@ -482,7 +482,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             self.expand_do_circuit(circuit);
         },
         pybind11::arg("circuit"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a circuit to the simulator's state.
 
             Args:
@@ -523,7 +523,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         },
         pybind11::arg("tableau"),
         pybind11::arg("targets"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a custom tableau operation to qubits in the simulator.
 
             Note that this method has to compute the inverse of the tableau, because the
@@ -568,7 +568,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.H_XZ(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Hadamard gate to the simulator's state.
 
             Args:
@@ -581,7 +581,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.H_XZ(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Hadamard gate to the simulator's state.
 
             Args:
@@ -594,7 +594,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.C_XYZ(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a C_XYZ gate to the simulator's state.
 
             Args:
@@ -607,7 +607,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.C_ZYX(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a C_ZYX gate to the simulator's state.
 
             Args:
@@ -620,7 +620,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.H_XY(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an operation that swaps the X and Y axes to the simulator's state.
 
             Args:
@@ -633,7 +633,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.H_YZ(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an operation that swaps the Y and Z axes to the simulator's state.
 
             Args:
@@ -646,7 +646,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.X(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Pauli X gate to the simulator's state.
 
             Args:
@@ -659,7 +659,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.Y(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Pauli Y gate to the simulator's state.
 
             Args:
@@ -672,7 +672,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args targets) {
             self.Z(args_to_targets(self, targets));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Pauli Z gate to the simulator's state.
 
             Args:
@@ -685,7 +685,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Z(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a SQRT_Z gate to the simulator's state.
 
             Args:
@@ -698,7 +698,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Z_DAG(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a SQRT_Z_DAG gate to the simulator's state.
 
             Args:
@@ -711,7 +711,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_X(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a SQRT_X gate to the simulator's state.
 
             Args:
@@ -724,7 +724,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_X_DAG(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a SQRT_X_DAG gate to the simulator's state.
 
             Args:
@@ -737,7 +737,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Y(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a SQRT_Y gate to the simulator's state.
 
             Args:
@@ -750,7 +750,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SQRT_Y_DAG(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a SQRT_Y_DAG gate to the simulator's state.
 
             Args:
@@ -763,7 +763,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.SWAP(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a swap gate to the simulator's state.
 
             Args:
@@ -778,7 +778,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ISWAP(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an ISWAP gate to the simulator's state.
 
             Args:
@@ -793,7 +793,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ISWAP_DAG(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an ISWAP_DAG gate to the simulator's state.
 
             Args:
@@ -808,7 +808,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCX(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled X gate to the simulator's state.
 
             Args:
@@ -823,7 +823,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCX(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled X gate to the simulator's state.
 
             Args:
@@ -838,7 +838,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCX(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled X gate to the simulator's state.
 
             Args:
@@ -853,7 +853,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCZ(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled Z gate to the simulator's state.
 
             Args:
@@ -868,7 +868,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCZ(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled Z gate to the simulator's state.
 
             Args:
@@ -883,7 +883,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCY(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled Y gate to the simulator's state.
 
             Args:
@@ -898,7 +898,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.ZCY(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a controlled Y gate to the simulator's state.
 
             Args:
@@ -913,7 +913,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.XCX(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an X-controlled X gate to the simulator's state.
 
             Args:
@@ -928,7 +928,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.XCY(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an X-controlled Y gate to the simulator's state.
 
             Args:
@@ -943,7 +943,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.XCZ(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies an X-controlled Z gate to the simulator's state.
 
             Args:
@@ -958,7 +958,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.YCX(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Y-controlled X gate to the simulator's state.
 
             Args:
@@ -973,7 +973,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.YCY(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Y-controlled Y gate to the simulator's state.
 
             Args:
@@ -988,7 +988,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.YCZ(args_to_target_pairs(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Applies a Y-controlled Z gate to the simulator's state.
 
             Args:
@@ -1003,7 +1003,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.reset_z(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Resets qubits to the |0> state.
 
             Args:
@@ -1024,7 +1024,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.reset_x(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Resets qubits to the |+> state.
 
             Args:
@@ -1044,7 +1044,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.reset_y(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Resets qubits to the |i> state.
 
             Args:
@@ -1064,7 +1064,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](TableauSimulator &self, pybind11::args args) {
             self.reset_z(args_to_targets(self, args));
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Resets qubits to the |0> state.
 
             Args:
@@ -1087,7 +1087,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return self.peek_x(target);
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the expected value of a qubit's X observable.
 
             Because the simulator's state is always a stabilizer state, the expectation will
@@ -1126,7 +1126,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return self.peek_y(target);
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the expected value of a qubit's Y observable.
 
             Because the simulator's state is always a stabilizer state, the expectation will
@@ -1165,7 +1165,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return self.peek_z(target);
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the expected value of a qubit's Z observable.
 
             Because the simulator's state is always a stabilizer state, the expectation will
@@ -1204,7 +1204,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return PyPauliString(self.peek_bloch(target));
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the state of the qubit as a single-qubit stim.PauliString stabilizer.
 
             This is a non-physical operation. It reports information about the qubit without
@@ -1259,7 +1259,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return self.peek_observable_expectation(observable.value);
         },
         pybind11::arg("observable"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Determines the expected value of an observable.
 
             Because the simulator's state is always a stabilizer state, the expectation will
@@ -1316,7 +1316,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("observable"),
         pybind11::kw_only(),
         pybind11::arg("flip_probability") = 0.0,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Measures an pauli string observable, as if by an MPP instruction.
 
             Args:
@@ -1358,7 +1358,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return (bool)self.measurement_record.storage.back();
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Measures a single qubit.
 
             Unlike the other methods on TableauSimulator, this one does not broadcast
@@ -1383,7 +1383,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             auto e = self.measurement_record.storage.end();
             return std::vector<bool>(e - converted_args.targets.size(), e);
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Measures multiple qubits.
 
             Args:
@@ -1403,7 +1403,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("targets"),
         pybind11::kw_only(),
         pybind11::arg("desired_value"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def postselect_x(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
             Postselects qubits in the X basis, or raises an exception.
 
@@ -1434,7 +1434,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("targets"),
         pybind11::kw_only(),
         pybind11::arg("desired_value"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def postselect_y(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
             Postselects qubits in the Y basis, or raises an exception.
 
@@ -1465,7 +1465,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("targets"),
         pybind11::kw_only(),
         pybind11::arg("desired_value"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def postselect_z(self, targets: Union[int, Iterable[int]], *, desired_value: bool) -> None:
             Postselects qubits in the Z basis, or raises an exception.
 
@@ -1492,7 +1492,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         [](const TableauSimulator &self) -> size_t {
             return self.inv_state.num_qubits;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the number of qubits currently being tracked by the simulator.
 
             Note that the number of qubits being tracked will implicitly increase if qubits
@@ -1516,7 +1516,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             self.set_num_qubits(new_num_qubits);
         },
         pybind11::arg("new_num_qubits"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Resizes the simulator's internal state.
 
             This forces the simulator's internal state to track exactly the qubits whose
@@ -1558,7 +1558,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             self.inv_state = new_inverse_tableau;
         },
         pybind11::arg("new_inverse_tableau"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Overwrites the simulator's internal state with the given inverse tableau.
 
             The inverse tableau specifies how Pauli product observables of qubits at the
@@ -1602,7 +1602,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::kw_only(),
         pybind11::arg("copy_rng") = false,
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def copy(self, *, copy_rng: bool = False, seed: Optional[int] = None) -> stim.TableauSimulator:
             Returns a simulator with the same internal state, except perhaps its prng.
 
@@ -1685,7 +1685,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
             return pybind11::make_tuple(result.first, PyPauliString(result.second));
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Measures a qubit and returns the result as well as its Pauli kickback (if any).
 
             The "Pauli kickback" of a stabilizer circuit measurement is a set of Pauli
@@ -1757,7 +1757,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::kw_only(),
         pybind11::arg("allow_redundant") = false,
         pybind11::arg("allow_underconstrained") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def set_state_from_stabilizers(self, stabilizers: Iterable[stim.PauliString], *, allow_redundant: bool = False, allow_underconstrained: bool = False) -> None:
             Sets the tableau simulator's state to a state satisfying the given stabilizers.
 
@@ -1867,7 +1867,7 @@ void stim_pybind::pybind_tableau_simulator_methods(pybind11::module &m, pybind11
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
         pybind11::arg("endian"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def set_state_from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> None:
             Sets the simulator's state to a superposition specified by an amplitude vector.
 
