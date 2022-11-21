@@ -104,6 +104,80 @@ def test_main_collect():
         assert len(data2) == 0
 
 
+class AlternatingPredictionsDecoder(sinter.Decoder):
+    def decode_via_files(self,
+                         *,
+                         num_shots: int,
+                         num_dets: int,
+                         num_obs: int,
+                         dem_path: pathlib.Path,
+                         dets_b8_in_path: pathlib.Path,
+                         obs_predictions_b8_out_path: pathlib.Path,
+                         tmp_dir: pathlib.Path,
+                       ) -> None:
+        bytes_per_shot = (num_obs + 7) // 8
+        with open(obs_predictions_b8_out_path, 'wb') as f:
+            for k in range(num_shots):
+                f.write((k % 3 == 0).to_bytes(length=bytes_per_shot, byteorder='little'))
+
+
+def _make_custom_decoders():
+    return {'alternate': AlternatingPredictionsDecoder()}
+
+
+def test_main_collect_with_custom_decoder():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'tmp.stim', 'w') as f:
+            print("""
+                M(0.1) 0
+                DETECTOR rec[-1]
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            """, file=f)
+
+        with pytest.raises(ValueError, match="Not a recognized decoder"):
+            main(command_line_args=[
+                "collect",
+                "--circuits",
+                str(d / "tmp.stim"),
+                "--max_shots",
+                "1000",
+                "--decoders",
+                "NOTEXIST",
+                "--custom_decoders_module_function",
+                "sinter._main_test:_make_custom_decoders",
+                "--processes",
+                "2",
+                "--quiet",
+                "--save_resume_filepath",
+                str(d / "out.csv"),
+            ])
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / "tmp.stim"),
+            "--max_shots",
+            "1000",
+            "--decoders",
+            "alternate",
+            "--custom_decoders_module_function",
+            "sinter._main_test:_make_custom_decoders",
+            "--processes",
+            "2",
+            "--quiet",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+        ])
+        data = ExistingData.from_file(d / "out.csv").data
+        assert len(data) == 1
+        v, = data.values()
+        assert v.shots == 1000
+        assert 50 < v.errors < 500
+        assert v.discards == 0
+
+
 def test_main_collect_post_select_observables():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)

@@ -42,3 +42,6 @@ from sinter._predict import (
     predict_on_disk,
     predict_observables,
 )
+from sinter._decoding_decoder_class import (
+    Decoder,
+)
