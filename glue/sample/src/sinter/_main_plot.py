@@ -1,11 +1,11 @@
-from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict
+from typing import Any, Callable, Iterable, List, Optional, TYPE_CHECKING, Tuple, Union, Dict, Sequence
 import argparse
 
 import matplotlib.pyplot as plt
 
 from sinter import shot_error_rate_to_piece_error_rate
 from sinter._main_combine import ExistingData
-from sinter._plotting import plot_discard_rate
+from sinter._plotting import plot_discard_rate, plot_custom
 from sinter._plotting import plot_error_rate
 
 if TYPE_CHECKING:
@@ -19,10 +19,11 @@ def parse_args(args: List[str]) -> Any:
                         type=str,
                         default="True",
                         help='A python expression that determines whether a case is kept or not.\n'
-                             'Available values:\n'
-                             '    metadata: The parsed value from the json_metadata column.\n'
-                             '    decoder: The decoder that decoded the case.\n'
-                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
                              'Expected expression type:\n'
                              '    Something that can be given to `bool` to get True or False.\n'
                              'Examples:\n'
@@ -32,10 +33,28 @@ def parse_args(args: List[str]) -> Any:
                         type=str,
                         default="1",
                         help='A python expression that determines where points go on the x axis.\n'
-                             'Available values:\n'
-                             '    metadata: The parsed value from the json_metadata column.\n'
-                             '    decoder: The decoder that decoded the case.\n'
-                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
+                             'Expected expression type:\n'
+                             '    Something that can be given to `float` to get a float.\n'
+                             'Examples:\n'
+                             '''    --x_func "metadata['p']"\n'''
+                             '''    --x_func "metadata['path'].split('/')[-1].split('.')[0]"\n'''
+                        )
+    parser.add_argument('--y_func',
+                        type=str,
+                        default=None,
+                        help='A python expression that determines where points go on the y axis.\n'
+                             'This argument is not used by error rate or discard rate plots; only\n'
+                             'by the "custom_y" type plot.'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
                              'Expected expression type:\n'
                              '    Something that can be given to `float` to get a float.\n'
                              'Examples:\n'
@@ -55,10 +74,11 @@ def parse_args(args: List[str]) -> Any:
                         type=str,
                         default="'all data (use -group_func and -x_func to group into curves)'",
                         help='A python expression that determines how points are grouped into curves.\n'
-                             'Available values:\n'
-                             '    metadata: The parsed value from the json_metadata column.\n'
-                             '    decoder: The decoder that decoded the case.\n'
-                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
                              'Expected expression type:\n'
                              '    Something that can be given to `str` to get a useful string.\n'
                              'Examples:\n'
@@ -85,10 +105,11 @@ def parse_args(args: List[str]) -> Any:
                              '\n'
                              '    P_unit = 0.5 - 0.5 * (1 - 2 * P_shot)**(1/units_per_shot)\n'
                              '\n'
-                             'Available values:\n'
-                             '    metadata: The parsed value from the json_metadata column.\n'
-                             '    decoder: The decoder that decoded the case.\n'
-                             '    strong_id: The cryptographic hash of the case that was sampled.\n'
+                             'Values available to the python expression:\n'
+                             '    metadata: The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: The decoder that decoded the data for the data point.\n'
+                             '    strong_id: The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: The sinter.TaskStats object for the data point.\n'
                              '\n'
                              'Expected expression type:\n'
                              '    float.\n'
@@ -102,7 +123,7 @@ def parse_args(args: List[str]) -> Any:
                         type=str,
                         default='''{'marker': 'ov*sp^<>8PhH+xXDd|'[index % 18]}''',
                         help='A python expression used to customize the look of curves.\n'
-                             'Available values:\n'
+                             'Values available to the python expression:\n'
                              '    index: A unique integer identifying the curve.\n'
                              '    key: The group key (returned from --group_func) identifying the curve.\n'
                              'Expected expression type:\n'
@@ -117,7 +138,7 @@ def parse_args(args: List[str]) -> Any:
                         required=True,
                         help='Input files to get data from.')
     parser.add_argument('--type',
-                        choices=['error_rate', 'discard_rate'],
+                        choices=['error_rate', 'discard_rate', 'custom_y'],
                         nargs='+',
                         default=(),
                         help='Picks the figures to include.')
@@ -130,7 +151,11 @@ def parse_args(args: List[str]) -> Any:
     parser.add_argument('--xaxis',
                         type=str,
                         default='[log]',
-                        help='Customize the X axis title. Prefix [log] for log scale.')
+                        help='Customize the X axis label. Prefix [log] for log scale.')
+    parser.add_argument('--yaxis',
+                        type=str,
+                        default=None,
+                        help='Customize the Y axis label. Prefix [log] for log scale.')
     parser.add_argument('--show',
                         action='store_true',
                         help='Displays the plot in a window.\n'
@@ -152,6 +177,13 @@ def parse_args(args: List[str]) -> Any:
     a = parser.parse_args(args=args)
     if not a.show and a.out is None:
         raise ValueError("Must specify '--out file' or '--show'.")
+    if 'custom_y' in a.type and a.y_func is None:
+        raise ValueError("--type custom_y requires --y_func.")
+    if a.y_func is not None and a.type and 'custom_y' not in a.type:
+        raise ValueError("--y_func only works with --type custom_y.")
+    if (len(a.type) == 0 and a.y_func is not None) or list(a.type) == 'custom_y':
+        if a.failure_units_per_shot_func is not None:
+            raise ValueError("--failure_units_per_shot_func doesn't affect --type custom_y")
     if (a.failure_units_per_shot_func is not None) != (a.failure_unit_name is not None):
         raise ValueError("--failure_units_per_shot_func and --failure_unit_name can only be specified together.")
     if a.failure_units_per_shot_func is None:
@@ -160,19 +192,24 @@ def parse_args(args: List[str]) -> Any:
         a.failure_unit_name = 'shot'
 
     a.x_func = eval(compile(
-        'lambda *, decoder, metadata, strong_id: ' + a.x_func,
+        'lambda *, stat, decoder, metadata, strong_id: ' + a.x_func,
         filename='x_func:command_line_arg',
         mode='eval'))
+    if a.y_func is not None:
+        a.y_func = eval(compile(
+            'lambda *, stat, decoder, metadata, strong_id: ' + a.y_func,
+            filename='x_func:command_line_arg',
+            mode='eval'))
     a.group_func = eval(compile(
-        'lambda *, decoder, metadata, strong_id: ' + a.group_func,
+        'lambda *, stat, decoder, metadata, strong_id: ' + a.group_func,
         filename='group_func:command_line_arg',
         mode='eval'))
     a.filter_func = eval(compile(
-        'lambda *, decoder, metadata, strong_id: ' + a.filter_func,
+        'lambda *, stat, decoder, metadata, strong_id: ' + a.filter_func,
         filename='filter_func:command_line_arg',
         mode='eval'))
     a.failure_units_per_shot_func = eval(compile(
-        'lambda *, decoder, metadata, strong_id: ' + a.failure_units_per_shot_func,
+        'lambda *, stat, decoder, metadata, strong_id: ' + a.failure_units_per_shot_func,
         filename='failure_units_per_shot_func:command_line_arg',
         mode='eval'))
     a.plot_args_func = eval(compile(
@@ -182,6 +219,17 @@ def parse_args(args: List[str]) -> Any:
     return a
 
 
+def _ax_log_helper(*, ax: Optional[plt.Axes], log_x: bool, log_y: bool):
+    if ax is None:
+        return
+    if log_x and log_y:
+        ax.loglog()
+    elif log_y:
+        ax.semilogy()
+    elif log_x:
+        ax.semilogx()
+
+
 def _plot_helper(
     *,
     samples: Union[Iterable['sinter.TaskStats'], ExistingData],
@@ -189,11 +237,12 @@ def _plot_helper(
     filter_func: Callable[['sinter.TaskStats'], Any],
     failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any],
     x_func: Callable[['sinter.TaskStats'], Any],
+    y_func: Optional[Callable[['sinter.TaskStats'], Any]],
     failure_unit: str,
-    include_discard_rate_plot: bool,
-    include_error_rate_plot: bool,
+    plot_types: Sequence[str],
     highlight_max_likelihood_factor: Optional[float],
     xaxis: str,
+    yaxis: Optional[str],
     min_y: Optional[float],
     title: Optional[str],
     fig_size: Optional[Tuple[int, int]],
@@ -209,23 +258,32 @@ def _plot_helper(
                   for k, v in total.data.items()
                   if bool(filter_func(v))}
 
-    if not include_error_rate_plot and not include_discard_rate_plot:
-        include_error_rate_plot = True
-        include_discard_rate_plot = any(s.discards for s in total.data.values())
+    if not plot_types:
+        if y_func is not None:
+            plot_types = ['custom_y']
+        else:
+            plot_types = ['error_rate']
+            if any(s.discards for s in total.data.values()):
+                plot_types.append('discard_rate')
+    include_error_rate_plot = 'error_rate' in plot_types
+    include_discard_rate_plot = 'discard_rate' in plot_types
+    include_custom_plot = 'custom_y' in plot_types
+    num_plots = include_error_rate_plot + include_discard_rate_plot + include_custom_plot
 
     fig: plt.Figure
-    ax_err: Optional[plt.Axes]
-    ax_dis: Optional[plt.Axes]
-    if include_error_rate_plot and include_discard_rate_plot:
-        fig, (ax_err, ax_dis) = plt.subplots(1, 2)
-    elif include_error_rate_plot:
-        fig, ax_err = plt.subplots(1, 1)
-        ax_dis = None
-    elif include_discard_rate_plot:
-        fig, ax_dis = plt.subplots(1, 1)
-        ax_err = None
-    else:
-        raise NotImplementedError()
+    ax_err: Optional[plt.Axes] = None
+    ax_dis: Optional[plt.Axes] = None
+    ax_cus: Optional[plt.Axes] = None
+    fig, axes = plt.subplots(1, num_plots)
+    if num_plots == 1:
+        axes = [axes]
+    axes = list(axes)
+    if include_custom_plot:
+        ax_cus = axes.pop()
+    if include_discard_rate_plot:
+        ax_dis = axes.pop()
+    if include_error_rate_plot:
+        ax_err = axes.pop()
 
     plotted_stats: List['sinter.TaskStats'] = [
         stat
@@ -233,15 +291,16 @@ def _plot_helper(
         if filter_func(stat)
     ]
 
+    want_log_x = xaxis.startswith('[log]')
+    force_log_y = yaxis is not None and yaxis.startswith('[log]')
+    force_not_log_y = yaxis is not None and not yaxis.startswith('[log]')
+    _ax_log_helper(ax=ax_err, log_x=want_log_x, log_y=not force_not_log_y)
+    _ax_log_helper(ax=ax_dis, log_x=want_log_x, log_y=force_log_y)
+    _ax_log_helper(ax=ax_cus, log_x=want_log_x, log_y=force_log_y)
     if xaxis.startswith('[log]'):
-        if ax_err is not None:
-            ax_err.loglog()
-        if ax_dis is not None:
-            ax_dis.semilogx()
         xaxis = xaxis[5:]
-    else:
-        if ax_err is not None:
-            ax_err.semilogy()
+    if yaxis is not None and yaxis.startswith('[log]'):
+        yaxis = yaxis[5:]
 
     if ax_err is not None:
         plot_error_rate(
@@ -275,10 +334,14 @@ def _plot_helper(
         ax_err.set_yticks([10**-d for d in range(major_tick_steps)])
         ax_err.set_yticks([b*10**-d for d in range(1, major_tick_steps) for b in range(2, 10)], minor=True)
         ax_err.set_ylim(min_y, 1e-0)
-        ax_err.set_ylabel(f"Logical Error Rate (per {failure_unit})")
+        if yaxis is not None and not include_custom_plot:
+            ax_err.set_ylabel(yaxis)
+        else:
+            ax_err.set_ylabel(f"Logical Error Rate (per {failure_unit})")
         ax_err.grid(which='major', color='#000000')
         ax_err.grid(which='minor', color='#DDDDDD')
         ax_err.legend()
+
     if ax_dis is not None:
         plot_discard_rate(
             ax=ax_dis,
@@ -291,14 +354,34 @@ def _plot_helper(
         )
         ax_dis.set_ylim(0, 1)
         ax_err.grid()
-        ax_dis.set_ylabel(f"Discard Rate (per {failure_unit}")
+        if yaxis is not None and not include_custom_plot:
+            ax_err.set_ylabel(yaxis)
+        else:
+            ax_dis.set_ylabel(f"Discard Rate (per {failure_unit}")
         ax_dis.legend()
 
-    if xaxis:
-        if ax_err is not None:
-            ax_err.set_xlabel(xaxis)
-        if ax_dis is not None:
-            ax_dis.set_xlabel(xaxis)
+    if ax_cus is not None:
+        assert y_func is not None
+        plot_custom(
+            ax=ax_cus,
+            stats=plotted_stats,
+            x_func=x_func,
+            y_func=y_func,
+            group_func=group_func,
+            filter_func=filter_func,
+            plot_args_func=plot_args_func,
+        )
+        ax_cus.grid()
+        if yaxis is not None:
+            ax_cus.set_ylabel(yaxis)
+        else:
+            ax_cus.set_ylabel('custom')
+        ax_cus.legend()
+
+    inferred_x_axis = xaxis if xaxis is not None else 'custom'
+    for ax in [ax_err, ax_dis, ax_cus]:
+        if ax is not None:
+            ax.set_xlabel(inferred_x_axis)
 
     vs_suffix = ''
     if xaxis is not None:
@@ -309,9 +392,14 @@ def _plot_helper(
             ax_err.set_title(title)
     if ax_dis is not None:
         ax_dis.set_title(f'Discard Rate per {failure_unit}{vs_suffix}')
+    if ax_cus is not None:
+        if title is not None:
+            ax_cus.set_title(title)
+        else:
+            ax_cus.set_title(f'Custom Plot')
 
     if fig_size is None:
-        fig.set_size_inches(10 * (include_discard_rate_plot + include_error_rate_plot), 10)
+        fig.set_size_inches(10 * num_plots, 10)
         fig.set_dpi(100)
     else:
         w, h = fig_size
@@ -330,26 +418,35 @@ def main_plot(*, command_line_args: List[str]):
 
     fig, _ = _plot_helper(
         samples=total,
-        group_func=lambda summary: args.group_func(
-            decoder=summary.decoder,
-            metadata=summary.json_metadata,
-            strong_id=summary.strong_id),
-        x_func=lambda summary: args.x_func(
-            decoder=summary.decoder,
-            metadata=summary.json_metadata,
-            strong_id=summary.strong_id),
-        filter_func=lambda summary: args.filter_func(
-            decoder=summary.decoder,
-            metadata=summary.json_metadata,
-            strong_id=summary.strong_id),
-        failure_units_per_shot_func=lambda summary: args.failure_units_per_shot_func(
-            decoder=summary.decoder,
-            metadata=summary.json_metadata,
-            strong_id=summary.strong_id),
+        group_func=lambda stat: args.group_func(
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            strong_id=stat.strong_id),
+        x_func=lambda stat: args.x_func(
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            strong_id=stat.strong_id),
+        y_func=None if args.y_func is None else lambda stat: args.y_func(
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            strong_id=stat.strong_id),
+        filter_func=lambda stat: args.filter_func(
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            strong_id=stat.strong_id),
+        failure_units_per_shot_func=lambda stat: args.failure_units_per_shot_func(
+            stat=stat,
+            decoder=stat.decoder,
+            metadata=stat.json_metadata,
+            strong_id=stat.strong_id),
         failure_unit=args.failure_unit_name,
-        include_discard_rate_plot='discard_rate' in args.type,
-        include_error_rate_plot='error_rate' in args.type,
+        plot_types=args.type,
         xaxis=args.xaxis,
+        yaxis=args.yaxis,
         fig_size=args.fig_size,
         min_y=args.ymin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,

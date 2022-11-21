@@ -10,7 +10,7 @@ import sinter
 from sinter._printer import ThrottledProgressPrinter
 from sinter._task import Task
 from sinter._collection import collect, Progress, post_selection_mask_from_4th_coord
-from sinter._decoding import DECODER_METHODS
+from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
 from sinter._main_combine import ExistingData, CSV_HEADER
 
 
@@ -58,10 +58,16 @@ def parse_args(args: List[str]) -> Any:
                         help='Circuit files to sample from and decode.\n'
                              'This parameter can be given multiple arguments.')
     parser.add_argument('--decoders',
-                        choices=sorted(DECODER_METHODS.keys()),
+                        type=str,
                         nargs='+',
                         required=True,
-                        help='How to combine new results with old results.')
+                        help='The decoder to use to predict observables from detection events.')
+    parser.add_argument('--custom_decoders_module_function',
+                        default=None,
+                        help='Use the syntax "module:function" to "import function from module" '
+                             'and use the result of "function()" as the custom_decoders '
+                             'dictionary. The dictionary must map strings to stim.Decoder '
+                             'instances.')
     parser.add_argument('--max_shots',
                         type=int,
                         default=None,
@@ -133,7 +139,8 @@ def parse_args(args: List[str]) -> Any:
                         type=str,
                         default="{'path': path}",
                         help='A python expression that determines whether a case is kept or not.\n'
-                             'Available values:\n'
+                             'Set to "auto" to use "sinter.comma_separated_key_values(path)"\n'
+                             'Values available to the expression:\n'
                              '    path: Relative path to the circuit file, from the command line arguments.\n'
                              '    circuit: The circuit itself, parsed from the file, as a stim.Circuit.\n'
                              'Expected type:\n'
@@ -144,9 +151,12 @@ def parse_args(args: List[str]) -> Any:
                              '    decoder version could be usefully added.\n'
                              'Examples:\n'
                              '''    -metadata_func "{'path': path}"\n'''
+                             '''    -metadata_func "auto"\n'''
                              '''    -metadata_func "{'n': circuit.num_qubits, 'p': float(path.split('/')[-1].split('.')[0])}"\n'''
                         )
     a = parser.parse_args(args=args)
+    if a.metadata_func == 'auto':
+        a.metadata_func = "sinter.comma_separated_key_values(path)"
     a.metadata_func = eval(compile(
         'lambda *, path, circuit: ' + a.metadata_func,
         filename='metadata_func:command_line_arg',
@@ -155,6 +165,28 @@ def parse_args(args: List[str]) -> Any:
         'lambda index, metadata: ' + a.postselected_observables_predicate,
         filename='postselected_observables_predicate:command_line_arg',
         mode='eval'))
+    if a.custom_decoders_module_function is not None:
+        terms = a.custom_decoders_module_function.split(':')
+        if len(terms) != 2:
+            raise ValueError("--custom_decoders_module_function didn't have exactly one colon "
+                             "separating a module name from a function name. Expected an argument "
+                             "of the form --custom_decoders_module_function 'module:function'")
+        module, function = terms
+        vals = {'__name__': '[]'}
+        exec(f"from {module} import {function} as _custom_decoders", vals)
+        a.custom_decoders = vals['_custom_decoders']()
+    else:
+        a.custom_decoders = None
+    for decoder in a.decoders:
+        if decoder not in BUILT_IN_DECODERS and (a.custom_decoders is None or decoder not in a.custom_decoders):
+            message = f"Not a recognized decoder: {decoder=}.\n"
+            message += f"Available built-in decoders: {sorted(e for e in BUILT_IN_DECODERS.keys() if 'internal' not in e)}.\n"
+            if a.custom_decoders is None:
+                message += f"No custom decoders are available. --custom_decoders_module_function wasn't specified."
+            else:
+                message += f"Available custom decoders: {sorted(a.custom_decoders.keys())}."
+            raise ValueError(message)
+
     return a
 
 
@@ -215,6 +247,7 @@ def main_collect(*, command_line_args: List[str]):
             max_batch_seconds=args.max_batch_seconds,
             max_batch_size=args.max_batch_size,
             start_batch_size=args.start_batch_size,
+            custom_decoders=args.custom_decoders,
         )
     except KeyboardInterrupt:
         printer.show_latest_progress('')

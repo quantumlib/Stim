@@ -104,6 +104,80 @@ def test_main_collect():
         assert len(data2) == 0
 
 
+class AlternatingPredictionsDecoder(sinter.Decoder):
+    def decode_via_files(self,
+                         *,
+                         num_shots: int,
+                         num_dets: int,
+                         num_obs: int,
+                         dem_path: pathlib.Path,
+                         dets_b8_in_path: pathlib.Path,
+                         obs_predictions_b8_out_path: pathlib.Path,
+                         tmp_dir: pathlib.Path,
+                       ) -> None:
+        bytes_per_shot = (num_obs + 7) // 8
+        with open(obs_predictions_b8_out_path, 'wb') as f:
+            for k in range(num_shots):
+                f.write((k % 3 == 0).to_bytes(length=bytes_per_shot, byteorder='little'))
+
+
+def _make_custom_decoders():
+    return {'alternate': AlternatingPredictionsDecoder()}
+
+
+def test_main_collect_with_custom_decoder():
+    with tempfile.TemporaryDirectory() as d:
+        d = pathlib.Path(d)
+        with open(d / f'tmp.stim', 'w') as f:
+            print("""
+                M(0.1) 0
+                DETECTOR rec[-1]
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            """, file=f)
+
+        with pytest.raises(ValueError, match="Not a recognized decoder"):
+            main(command_line_args=[
+                "collect",
+                "--circuits",
+                str(d / "tmp.stim"),
+                "--max_shots",
+                "1000",
+                "--decoders",
+                "NOTEXIST",
+                "--custom_decoders_module_function",
+                "sinter._main_test:_make_custom_decoders",
+                "--processes",
+                "2",
+                "--quiet",
+                "--save_resume_filepath",
+                str(d / "out.csv"),
+            ])
+
+        # Collects requested stats.
+        main(command_line_args=[
+            "collect",
+            "--circuits",
+            str(d / "tmp.stim"),
+            "--max_shots",
+            "1000",
+            "--decoders",
+            "alternate",
+            "--custom_decoders_module_function",
+            "sinter._main_test:_make_custom_decoders",
+            "--processes",
+            "2",
+            "--quiet",
+            "--save_resume_filepath",
+            str(d / "out.csv"),
+        ])
+        data = ExistingData.from_file(d / "out.csv").data
+        assert len(data) == 1
+        v, = data.values()
+        assert v.shots == 1000
+        assert 50 < v.errors < 500
+        assert v.discards == 0
+
+
 def test_main_collect_post_select_observables():
     with tempfile.TemporaryDirectory() as d:
         d = pathlib.Path(d)
@@ -217,126 +291,6 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
       1200,       202,       440,    6.00,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
         18,        10,         8,    12.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
 """
-
-
-def test_main_plot():
-    with tempfile.TemporaryDirectory() as d:
-        d = pathlib.Path(d)
-        with open(d / f'input.csv', 'w') as f:
-            print("""
-shots,errors,discards,seconds,decoder,strong_id,json_metadata
-300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
-300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
-9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
-            """.strip(), file=f)
-
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            main(command_line_args=[
-                "plot",
-                "--in",
-                str(d / "input.csv"),
-                "--out",
-                str(d / "output.png"),
-                "--x_func",
-                "int('a' in metadata['path'])",
-                "--group_func",
-                "decoder",
-                "--ymin",
-                "1e-3",
-                "--title",
-                "test_plot",
-            ])
-        assert (d / "output.png").exists()
-
-
-def test_main_plot_2():
-    with tempfile.TemporaryDirectory() as d:
-        d = pathlib.Path(d)
-        with open(d / f'input.csv', 'w') as f:
-            print("""
-shots,errors,discards,seconds,decoder,strong_id,json_metadata
-300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
-300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""path"":""a.stim""}"
-9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""path"":""b.stim""}"
-            """.strip(), file=f)
-
-        out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            main(command_line_args=[
-                "plot",
-                "--in",
-                str(d / "input.csv"),
-                "--out",
-                str(d / "output.png"),
-                "--x_func",
-                "int('a' in metadata['path'])",
-                "--group_func",
-                "decoder",
-                "--plot_args_func",
-                "{'lw': 2}",
-            ])
-        assert (d / "output.png").exists()
-
-
-def test_main_plot_failure_units():
-    with tempfile.TemporaryDirectory() as d:
-        d = pathlib.Path(d)
-        with open(d / f'input.csv', 'w') as f:
-            print("""
-shots,errors,discards,seconds,decoder,strong_id,json_metadata
-300,1,20,1.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf6,"{""r"":15,""d"":5}"
-300,100,200,2.0,pymatching,f256bab362f516ebe4d59a08ae67330ff7771ff738757cd738f4b30605ddccf7,"{""r"":9,""d"":3}"
-9,5,4,6.0,pymatching,5fe5a6cd4226b1a910d57e5479d1ba6572e0b3115983c9516360916d1670000f,"{""r"":6,""d"":2}"
-            """.strip(), file=f)
-
-        out = io.StringIO()
-        with pytest.raises(ValueError,  match="specified together"):
-            main(command_line_args=[
-                "plot",
-                "--in",
-                str(d / "input.csv"),
-                "--out",
-                str(d / "output.png"),
-                "--x_func",
-                "metadata['d']",
-                "--group_func",
-                "decoder",
-                "--failure_units_per_shot_func",
-                "metadata['r']",
-            ])
-        with pytest.raises(ValueError,  match="specified together"):
-            main(command_line_args=[
-                "plot",
-                "--in",
-                str(d / "input.csv"),
-                "--out",
-                str(d / "output.png"),
-                "--x_func",
-                "metadata['d']",
-                "--group_func",
-                "decoder",
-                "--failure_unit_name",
-                "Rounds",
-            ])
-        assert not (d / "output.png").exists()
-        with contextlib.redirect_stdout(out):
-            main(command_line_args=[
-                "plot",
-                "--in",
-                str(d / "input.csv"),
-                "--out",
-                str(d / "output.png"),
-                "--x_func",
-                "metadata['d']",
-                "--group_func",
-                "decoder",
-                "--failure_units_per_shot_func",
-                "metadata['r']",
-                "--failure_unit_name",
-                "Rounds",
-            ])
-        assert (d / "output.png").exists()
 
 
 def test_main_predict():
