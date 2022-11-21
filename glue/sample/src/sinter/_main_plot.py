@@ -277,6 +277,7 @@ def _plot_helper(
     fig, axes = plt.subplots(1, num_plots)
     if num_plots == 1:
         axes = [axes]
+    axes = list(axes)
     if include_custom_plot:
         ax_cus = axes.pop()
     if include_discard_rate_plot:
