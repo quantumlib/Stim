@@ -62,7 +62,7 @@ shots,errors,discards,seconds,decoder,strong_id,json_metadata
                 "--group_func",
                 "decoder",
                 "--plot_args_func",
-                "{'lw': 2}",
+                "{'lw': 2, 'color': 'r' if decoder == 'never' else 'b'}",
             ])
         assert (d / "output.png").exists()
 

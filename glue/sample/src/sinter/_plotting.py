@@ -1,5 +1,6 @@
 import math
 from typing import Callable, TypeVar, List, Any, Iterable, Optional, TYPE_CHECKING, Dict, Union
+from typing import cast
 
 from sinter._probability_util import fit_binomial, shot_error_rate_to_piece_error_rate, Fit
 
@@ -100,7 +101,7 @@ def plot_discard_rate(
         failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _: {},
+        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
     """Plots discard rates in curves with uncertainty highlights.
@@ -173,7 +174,7 @@ def plot_error_rate(
         failure_units_per_shot_func: Callable[['sinter.TaskStats'], Any] = lambda _: 1,
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
+        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
         highlight_max_likelihood_factor: Optional[float] = 1e3,
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
@@ -252,7 +253,7 @@ def plot_custom(
         y_func: Callable[['sinter.TaskStats'], Union['sinter.Fit', float, int]],
         group_func: Callable[['sinter.TaskStats'], TCurveId] = lambda _: None,
         filter_func: Callable[['sinter.TaskStats'], Any] = lambda _: True,
-        plot_args_func: Callable[[int, TCurveId], Dict[str, Any]] = lambda _k, _c: {'marker': MARKERS[_k]},
+        plot_args_func: Callable[[int, TCurveId, List['sinter.TaskStats']], Dict[str, Any]] = lambda index, group_key, group_stats: dict(),
 ) -> None:
     """Plots error rates in curves with uncertainty highlights.
 
@@ -277,11 +278,21 @@ def plot_custom(
             curve_id (these will be 0 and None respectively if group_func is not specified). For example,
             this could be:
 
-                plot_args_func=lambda index, curve_id: {'color': 'red'
-                                                        if curve_id == 'pymatching'
-                                                        else 'blue'}
-
+                plot_args_func=lambda index, group_key, group_stats: {
+                    'color': (
+                        'red'
+                        if group_key == 'decoder=pymatching p=0.001'
+                        else 'blue'
+                    ),
+                }
     """
+
+    # Backwards compatibility to when the group stats argument wasn't present.
+    import inspect
+    if len(inspect.signature(plot_args_func).parameters) == 2:
+        old_plot_args_func = cast(Callable[[int, TCurveId], Any], plot_args_func)
+        plot_args_func = lambda a, b, _: old_plot_args_func(a, b)
+
     filtered_stats: List['sinter.TaskStats'] = [
         stat
         for stat in stats
@@ -314,9 +325,11 @@ def plot_custom(
                 xs.append(x)
                 ys.append(y)
 
-        kwargs = dict(plot_args_func(k, curve_id))
+        kwargs = dict(plot_args_func(k, curve_id, this_group_stats))
         if 'label' not in kwargs and curve_id is not None:
             kwargs['label'] = str(curve_id)
+        if 'marker' not in kwargs:
+            kwargs['marker'] = MARKERS[k]
         ax.plot(xs, ys, **kwargs)
         if saw_fit:
             if 'zorder' not in kwargs:

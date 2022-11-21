@@ -126,6 +126,11 @@ def parse_args(args: List[str]) -> Any:
                              'Values available to the python expression:\n'
                              '    index: A unique integer identifying the curve.\n'
                              '    key: The group key (returned from --group_func) identifying the curve.\n'
+                             '    stats: The list of sinter.TaskStats object in the group.\n'
+                             '    metadata: (From one arbitrary data point in the group.) The parsed value from the json_metadata for the data point.\n'
+                             '    decoder: (From one arbitrary data point in the group.) The decoder that decoded the data for the data point.\n'
+                             '    strong_id: (From one arbitrary data point in the group.) The cryptographic hash of the case that was sampled for the data point.\n'
+                             '    stat: (From one arbitrary data point in the group.) The sinter.TaskStats object for the data point.\n'
                              'Expected expression type:\n'
                              '    A dictionary to give to matplotlib plotting functions as a **kwargs argument.\n'
                              'Examples:\n'
@@ -192,28 +197,28 @@ def parse_args(args: List[str]) -> Any:
         a.failure_unit_name = 'shot'
 
     a.x_func = eval(compile(
-        'lambda *, stat, decoder, metadata, strong_id: ' + a.x_func,
+        f'lambda *, stat, decoder, metadata, strong_id: {a.x_func}',
         filename='x_func:command_line_arg',
         mode='eval'))
     if a.y_func is not None:
         a.y_func = eval(compile(
-            'lambda *, stat, decoder, metadata, strong_id: ' + a.y_func,
+            f'lambda *, stat, decoder, metadata, strong_id: {a.y_func}',
             filename='x_func:command_line_arg',
             mode='eval'))
     a.group_func = eval(compile(
-        'lambda *, stat, decoder, metadata, strong_id: ' + a.group_func,
+        f'lambda *, stat, decoder, metadata, strong_id: {a.group_func}',
         filename='group_func:command_line_arg',
         mode='eval'))
     a.filter_func = eval(compile(
-        'lambda *, stat, decoder, metadata, strong_id: ' + a.filter_func,
+        f'lambda *, stat, decoder, metadata, strong_id: {a.filter_func}',
         filename='filter_func:command_line_arg',
         mode='eval'))
     a.failure_units_per_shot_func = eval(compile(
-        'lambda *, stat, decoder, metadata, strong_id: ' + a.failure_units_per_shot_func,
+        f'lambda *, stat, decoder, metadata, strong_id: {a.failure_units_per_shot_func}',
         filename='failure_units_per_shot_func:command_line_arg',
         mode='eval'))
     a.plot_args_func = eval(compile(
-        'lambda index, key: ' + a.plot_args_func,
+        f'lambda *, index, key, stats, stat, decoder, metadata, strong_id: {a.plot_args_func}',
         filename='plot_args_func:command_line_arg',
         mode='eval'))
     return a
@@ -246,7 +251,7 @@ def _plot_helper(
     min_y: Optional[float],
     title: Optional[str],
     fig_size: Optional[Tuple[int, int]],
-    plot_args_func: Callable[[int, Any], Dict[str, Any]],
+    plot_args_func: Callable[[int, Any, List['sinter.TaskStats']], Dict[str, Any]],
 ) -> Tuple[plt.Figure, List[plt.Axes]]:
     if isinstance(samples, ExistingData):
         total = samples
@@ -443,6 +448,14 @@ def main_plot(*, command_line_args: List[str]):
             decoder=stat.decoder,
             metadata=stat.json_metadata,
             strong_id=stat.strong_id),
+        plot_args_func=lambda index, group_key, stats: args.plot_args_func(
+            index=index,
+            key=group_key,
+            stats=stats,
+            stat=stats[0],
+            decoder=stats[0].decoder,
+            metadata=stats[0].json_metadata,
+            strong_id=stats[0].strong_id),
         failure_unit=args.failure_unit_name,
         plot_types=args.type,
         xaxis=args.xaxis,
@@ -451,7 +464,6 @@ def main_plot(*, command_line_args: List[str]):
         min_y=args.ymin,
         highlight_max_likelihood_factor=args.highlight_max_likelihood_factor,
         title=args.title,
-        plot_args_func=args.plot_args_func,
     )
     if args.out is not None:
         fig.savefig(args.out)
