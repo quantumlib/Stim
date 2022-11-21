@@ -113,7 +113,7 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
         pybind11::arg("circuit"),
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates an object that can sample the detection events from a circuit.
 
             Args:
@@ -177,7 +177,7 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
         pybind11::arg("append_observables") = false,
         pybind11::arg("separate_observables") = false,
         pybind11::arg("bit_packed") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a numpy array containing a batch of detector samples from the circuit.
             @overload def sample(self, shots: int, *, prepend_observables: bool = False, append_observables: bool = False, bit_packed: bool = False) -> np.ndarray:
             @overload def sample(self, shots: int, *, separate_observables: Literal[True], bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
@@ -257,7 +257,7 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
         pybind11::kw_only(),
         pybind11::arg("prepend_observables") = false,
         pybind11::arg("append_observables") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             [DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
 
             Returns a numpy array containing bit packed detector samples from the circuit.
@@ -292,7 +292,7 @@ void stim_pybind::pybind_compiled_detector_sampler_methods(
         pybind11::arg("append_observables") = false,
         pybind11::arg("obs_out_filepath") = nullptr,
         pybind11::arg("obs_out_format") = "01",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Samples detection events from the circuit and writes them to a file.
 
             Args:

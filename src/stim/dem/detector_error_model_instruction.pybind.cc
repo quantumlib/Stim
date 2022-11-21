@@ -88,7 +88,7 @@ pybind11::class_<ExposedDemInstruction> stim_pybind::pybind_detector_error_model
     return pybind11::class_<ExposedDemInstruction>(
         m,
         "DemInstruction",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             An instruction from a detector error model.
 
             Examples:
@@ -158,7 +158,7 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
         pybind11::arg("type"),
         pybind11::arg("args"),
         pybind11::arg("targets"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.DemInstruction.
 
             Args:
@@ -186,7 +186,7 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     c.def(
         "targets_copy",
         &ExposedDemInstruction::targets_copy,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def targets_copy(self) -> List[Union[int, stim.DemTarget]]:
             Returns a copy of the instruction's targets.
 
@@ -197,7 +197,7 @@ void stim_pybind::pybind_detector_error_model_instruction_methods(
     c.def_property_readonly(
         "type",
         &ExposedDemInstruction::type_name,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The name of the instruction type (e.g. "error" or "shift_detectors").
         )DOC")
             .data());

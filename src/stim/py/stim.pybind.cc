@@ -130,7 +130,7 @@ void top_level(pybind11::module &m) {
         "target_rec",
         &target_rec,
         pybind11::arg("lookback_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a measurement record target with the given lookback.
 
             Measurement record targets are used to refer back to the measurement record;
@@ -161,7 +161,7 @@ void top_level(pybind11::module &m) {
         "target_inv",
         &target_inv,
         pybind11::arg("qubit_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a target flagged as inverted.
 
             Inverted targets are used to indicate measurement results should be flipped.
@@ -186,7 +186,7 @@ void top_level(pybind11::module &m) {
     m.def(
         "target_combiner",
         &GateTarget::combiner,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a target combiner that can be used to build Pauli products.
 
             Examples:
@@ -211,7 +211,7 @@ void top_level(pybind11::module &m) {
         &target_x,
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a Pauli X target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -241,7 +241,7 @@ void top_level(pybind11::module &m) {
         &target_y,
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a Pauli Y target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -271,7 +271,7 @@ void top_level(pybind11::module &m) {
         &target_z,
         pybind11::arg("qubit_index"),
         pybind11::arg("invert") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a Pauli Z target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -300,7 +300,7 @@ void top_level(pybind11::module &m) {
         "target_sweep_bit",
         &target_sweep_bit,
         pybind11::arg("sweep_bit_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a sweep bit target that can be passed into `stim.Circuit.append`.
 
             Args:
@@ -322,7 +322,7 @@ void top_level(pybind11::module &m) {
         &stim_main,
         pybind11::kw_only(),
         pybind11::arg("command_line_args"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Runs the command line tool version of stim on the given arguments.
 
             Note that by default any input will be read from stdin, any output

@@ -31,7 +31,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
         "target_relative_detector_id",
         &ExposedDemTarget::relative_detector_id,
         pybind11::arg("index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a relative detector id (e.g. "D5" in a .dem file).
 
             Args:
@@ -56,7 +56,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
         "target_logical_observable_id",
         &ExposedDemTarget::observable_id,
         pybind11::arg("index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a logical observable id identifying a frame change.
 
             Args:
@@ -81,7 +81,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
     m.def(
         "target_separator",
         &ExposedDemTarget::separator,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a target separator (e.g. "^" in a .dem file).
 
             Examples:
@@ -106,7 +106,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
         "relative_detector_id",
         &ExposedDemTarget::relative_detector_id,
         pybind11::arg("index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a relative detector id (e.g. "D5" in a .dem file).
 
             Args:
@@ -132,7 +132,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
         "logical_observable_id",
         &ExposedDemTarget::observable_id,
         pybind11::arg("index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a logical observable id identifying a frame change.
 
             Args:
@@ -157,7 +157,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
     c.def_static(
         "separator",
         &ExposedDemTarget::separator,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a target separator (e.g. "^" in a .dem file).
 
             Examples:
@@ -183,7 +183,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
     c.def(
         "is_relative_detector_id",
         &ExposedDemTarget::is_relative_detector_id,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Determines if the detector error model target is a relative detector id target.
 
             In a detector error model file, detectors are prefixed by `D`. For
@@ -194,7 +194,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
     c.def(
         "is_logical_observable_id",
         &ExposedDemTarget::is_observable_id,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Determines if the detector error model target is a logical observable id target.
 
             In a detector error model file, observable targets are prefixed by `L`. For
@@ -205,7 +205,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
     c.def_property_readonly(
         "val",
         &ExposedDemTarget::val,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the target's integer value.
 
             Example:
@@ -221,7 +221,7 @@ void stim_pybind::pybind_detector_error_model_target_methods(
     c.def(
         "is_separator",
         &ExposedDemTarget::is_separator,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Determines if the detector error model target is a separator.
 
             Separates separate the components of a suggested decompositions within an error.

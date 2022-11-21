@@ -175,7 +175,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("circuit"),
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a measurement-to-detection-events converter for the given circuit.
 
             The converter uses a noiseless reference sample, collected from the circuit
@@ -228,7 +228,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("append_observables") = false,
         pybind11::arg("obs_out_filepath") = nullptr,
         pybind11::arg("obs_out_format") = "01",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Reads measurement data from a file and writes detection events to another file.
 
             Args:
@@ -293,7 +293,7 @@ void stim_pybind::pybind_compiled_measurements_to_detection_events_converter_met
         pybind11::arg("separate_observables") = pybind11::none(),
         pybind11::arg("append_observables") = pybind11::none(),
         pybind11::arg("bit_pack_result") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Converts measurement data into detection event data.
             @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, append_observables: bool = False, bit_pack_result: bool = False) -> np.ndarray:
             @overload def convert(self, *, measurements: np.ndarray, sweep_bits: Optional[np.ndarray] = None, separate_observables: 'Literal[True]', append_observables: bool = False, bit_pack_result: bool = False) -> Tuple[np.ndarray, np.ndarray]:
