@@ -23,7 +23,7 @@ pybind11::class_<TableauIterator> stim_pybind::pybind_tableau_iter(pybind11::mod
     auto c = pybind11::class_<TableauIterator>(
         m,
         "TableauIterator",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Iterates over all stabilizer tableaus of a specified size.
 
             Examples:
@@ -46,7 +46,7 @@ void stim_pybind::pybind_tableau_iter_methods(pybind11::module &m, pybind11::cla
             TableauIterator copy = self;
             return copy;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns an independent copy of the tableau iterator.
 
             Since for-loops and loop-comprehensions call `iter` on things they
@@ -63,7 +63,7 @@ void stim_pybind::pybind_tableau_iter_methods(pybind11::module &m, pybind11::cla
             }
             return self.result;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the next iterated tableau.
         )DOC")
             .data());

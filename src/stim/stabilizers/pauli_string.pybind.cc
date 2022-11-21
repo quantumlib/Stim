@@ -449,7 +449,7 @@ pybind11::class_<PyPauliString> stim_pybind::pybind_pauli_string(pybind11::modul
     return pybind11::class_<PyPauliString>(
         m,
         "PauliString",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A signed Pauli tensor product (e.g. "+X \u2297 X \u2297 X" or "-Y \u2297 Z".
 
             Represents a collection of Pauli operations (I, X, Y, Z) applied pairwise to a
@@ -472,7 +472,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             return result;
         }),
         pybind11::arg("num_qubits"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates an identity Pauli string over the given number of qubits.
 
             Examples:
@@ -489,7 +489,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         pybind11::init(&PyPauliString::from_text),
         pybind11::arg("text"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.PauliString from a text string.
 
             The string can optionally start with a sign ('+', '-', 'i', '+i', or '-i').
@@ -523,7 +523,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             return copy;
         }),
         pybind11::arg("copy"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a copy of a stim.PauliString.
 
             Examples:
@@ -557,7 +557,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 false);
         }),
         pybind11::arg("pauli_indices"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.PauliString from a list of integer pauli indices.
 
             The indexing scheme that is used is:
@@ -586,7 +586,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("num_qubits"),
         pybind11::kw_only(),
         pybind11::arg("allow_imaginary") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Samples a uniformly random Hermitian Pauli string.
 
             Args:
@@ -619,7 +619,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](const PyPauliString &self) {
             return Tableau::from_pauli_string(self.value);
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a Tableau equivalent to this Pauli string.
 
             The tableau represents a Clifford operation that multiplies qubits
@@ -667,7 +667,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         &PyPauliString::to_unitary_matrix,
         pybind11::kw_only(),
         pybind11::arg("endian"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
             Converts the pauli string into a unitary matrix.
 
@@ -698,7 +698,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("matrix"),
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.PauliString:
             Creates a stim.PauliString from the unitary matrix of a Pauli group member.
 
@@ -742,7 +742,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             return self.value.ref().commutes(other.value.ref());
         },
         pybind11::arg("other"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Determines if two Pauli strings commute or not.
 
             Two Pauli strings commute if they have an even number of matched
@@ -803,7 +803,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 throw std::invalid_argument("new_sign not in [1, -1, 1, 1j]");
             }
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The sign of the Pauli string. Can be +1, -1, 1j, or -1j.
 
             Examples:
@@ -827,7 +827,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         [](const PyPauliString &self) {
             return self.value.num_qubits;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the length the pauli string; the number of qubits it operates on.
         )DOC")
             .data());
@@ -838,7 +838,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             return std::make_tuple(std::complex<float>(1, 0), self * other);
         },
         pybind11::arg("other"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
              [DEPRECATED] Use multiplication (__mul__ or *) instead.
         )DOC")
             .data());
@@ -846,7 +846,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         pybind11::self + pybind11::self,
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the tensor product of two Pauli strings.
 
             Concatenates the Pauli strings and multiplies their signs.
@@ -871,7 +871,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         pybind11::self += pybind11::self,
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Performs an inplace tensor product.
 
             Concatenates the given Pauli string onto the receiving string and multiplies
@@ -899,7 +899,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         pybind11::self * pybind11::object(),
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Right-multiplies the Pauli string.
 
             Can multiply by another Pauli string, a complex unit, or a tensor power.
@@ -959,7 +959,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             return self * lhs;
         },
         pybind11::arg("lhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Left-multiplies the Pauli string.
 
             Can multiply by another Pauli string, a complex unit, or a tensor power.
@@ -1012,7 +1012,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
     c.def(
         pybind11::self *= pybind11::object(),
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Inplace right-multiplies the Pauli string.
 
             Can multiply by another Pauli string, a complex unit, or a tensor power.
@@ -1060,7 +1060,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         &PyPauliString::operator/=,
         pybind11::is_operator(),
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Inplace divides the Pauli string by a complex unit.
 
             Args:
@@ -1087,7 +1087,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         &PyPauliString::operator/,
         pybind11::is_operator(),
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Divides the Pauli string by a complex unit.
 
             Args:
@@ -1114,7 +1114,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             result.value.sign ^= 1;
             return result;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the negation of the pauli string.
 
             Examples:
@@ -1134,7 +1134,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             PyPauliString copy = self;
             return copy;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the pauli string.
 
             The copy is an independent pauli string with the same contents.
@@ -1159,7 +1159,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         },
         pybind11::kw_only(),
         pybind11::arg("bit_packed") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray]:
 
             Decomposes the contents of the pauli string into X bit and Z bit numpy arrays.
@@ -1229,7 +1229,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         pybind11::arg("zs"),
         pybind11::arg("sign") = +1,
         pybind11::arg("num_qubits") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_numpy(*, xs: np.ndarray, zs: np.ndarray, sign: Union[int, float, complex] = +1, num_qubits: Optional[int] = None) -> stim.PauliString:
 
             Creates a pauli string from X bit and Z bit numpy arrays, using the encoding:
@@ -1282,7 +1282,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             PyPauliString copy = self;
             return copy;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a pauli string with the same contents.
 
             Examples:
@@ -1336,7 +1336,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
         },
         pybind11::arg("index"),
         pybind11::arg("new_pauli"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
            Mutates an entry in the pauli string using the encoding 0=I, 1=X, 2=Y, 3=Z.
 
            Args:
@@ -1377,7 +1377,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
             }
         },
         pybind11::arg("index_or_slice"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns an individual Pauli or Pauli string slice from the pauli string.
             @overload def __getitem__(self, index_or_slice: int) -> int:
             @overload def __getitem__(self, index_or_slice: slice) -> stim.PauliString:

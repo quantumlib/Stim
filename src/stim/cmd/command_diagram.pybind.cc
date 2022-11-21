@@ -32,7 +32,7 @@ pybind11::class_<DiagramHelper> stim_pybind::pybind_diagram(pybind11::module &m)
     auto c = pybind11::class_<DiagramHelper>(
         m,
         "_DiagramHelper",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A helper class for displaying diagrams in IPython notebooks.
 
             To write the diagram's contents to a file (for example, to write an

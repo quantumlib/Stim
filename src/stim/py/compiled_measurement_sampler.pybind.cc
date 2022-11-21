@@ -81,7 +81,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::kw_only(),
         pybind11::arg("skip_reference_sample") = false,
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a measurement sampler for the given circuit.
 
             The sampler uses a noiseless reference sample, collected from the circuit using
@@ -153,7 +153,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::arg("shots"),
         pybind11::kw_only(),
         pybind11::arg("bit_packed") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Samples a batch of measurement samples from the circuit.
 
             Args:
@@ -193,7 +193,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
             return self.sample_to_numpy(shots, true);
         },
         pybind11::arg("shots"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             [DEPRECATED] Use sampler.sample(..., bit_packed=True) instead.
 
             Samples a bit packed batch of measurement samples from the circuit.
@@ -227,7 +227,7 @@ void stim_pybind::pybind_compiled_measurement_sampler_methods(
         pybind11::kw_only(),
         pybind11::arg("filepath"),
         pybind11::arg("format") = "01",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Samples measurements from the circuit and writes them to a file.
 
             Examples:
