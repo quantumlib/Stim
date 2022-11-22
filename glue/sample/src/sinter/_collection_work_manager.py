@@ -192,11 +192,11 @@ class CollectionWorkManager:
             else:
                 main_status = 'There was nothing additional to collect'
         elif num_circuits is not None:
-            main_status = f'{num_circuits - self.finished_count} cases left'
+            main_status = f'{num_circuits - self.finished_count} cases left:'
         else:
             main_status = "Running..."
         collector_statuses = [
-            '\n    ' + collector.status()
+            '\n' + collector.status()
             for collector in self.active_collectors.values()
         ]
         if len(collector_statuses) > 24:
