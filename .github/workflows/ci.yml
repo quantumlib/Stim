@@ -220,7 +220,7 @@ jobs:
     - uses: actions/checkout@v1
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.10.0
+        git clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make
@@ -267,7 +267,7 @@ jobs:
     - uses: actions/checkout@v1
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.10.0
+        git clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make
@@ -281,7 +281,7 @@ jobs:
     - uses: actions/checkout@v1
     - run: |
         cd ..
-        git clone https://github.com/google/googletest.git -b release-1.10.0
+        git clone https://github.com/google/googletest.git -b release-1.12.1
         mkdir googletest/build && cd googletest/build
         cmake .. -DBUILD_GMOCK=OFF
         make
