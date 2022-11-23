@@ -373,7 +373,7 @@ Targets:
     Note that, for backwards compatibility reasons, the targets are not combined using combiners (`*`).
     They are implicitly all combined.
 
-- Example:
+Example:
 
     # With 60% probability, uniformly pick X1*Y2 or Z2*Z3 or X1*Y2*Z3.
     CORRELATED_ERROR(0.2) X1 Y2
