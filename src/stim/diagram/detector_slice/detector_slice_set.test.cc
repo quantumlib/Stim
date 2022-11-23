@@ -21,13 +21,14 @@
 #include "stim/gen/circuit_gen_params.h"
 #include "stim/gen/gen_rep_code.h"
 #include "stim/gen/gen_surface_code.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 using namespace stim_draw_internal;
 
 TEST(detector_slice_set, from_circuit) {
     std::vector<double> empty_filter;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(
         stim::Circuit(R"CIRCUIT(
         QUBIT_COORDS(3, 5) 1
         R 0
@@ -52,13 +53,14 @@ TEST(detector_slice_set, from_circuit) {
         }
 )CIRCUIT"),
         2,
+        1,
         {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{1, {3, 5}}}));
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {3, 5}}}));
     ASSERT_EQ(
         slice_set.slices,
-        (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
-            {DemTarget::relative_detector_id(1), {GateTarget::x(0), GateTarget::z(1)}},
-            {DemTarget::relative_detector_id(2), {GateTarget::z(1)}},
+        (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
+            {{2, DemTarget::relative_detector_id(1)}, {GateTarget::x(0), GateTarget::z(1)}},
+            {{2, DemTarget::relative_detector_id(2)}, {GateTarget::z(1)}},
         }));
 }
 
@@ -87,22 +89,42 @@ TEST(detector_slice_set, big_loop_seeking) {
 
     uint64_t inner = 10 * 100 * 1000 + 1;
     std::vector<double> empty_filter;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, inner * 10000ULL * 50ULL + 2ULL, {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, inner * 10000ULL * 50ULL + 2ULL, 1, {&empty_filter});
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
-        (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
-            {DemTarget::relative_detector_id(inner * 10000ULL * 50ULL + 1ULL), {GateTarget::y(0)}},
+        (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
+            {{inner * 10000ULL * 50ULL + 2ULL, DemTarget::relative_detector_id(inner * 10000ULL * 50ULL + 1ULL)},
+             {GateTarget::y(0)}},
         }));
 
-    slice_set = DetectorSliceSet::from_circuit_tick(
-        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, {&empty_filter});
-    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{}));
+    slice_set = DetectorSliceSet::from_circuit_ticks(
+        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 1, {&empty_filter});
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
     ASSERT_EQ(
         slice_set.slices,
-        (std::map<stim::DemTarget, std::vector<stim::GateTarget>>{
-            {DemTarget::relative_detector_id(inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL), {GateTarget::x(1)}},
-            {DemTarget::observable_id(5), {GateTarget::x(1)}},
+        (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
+            {{inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL,
+              DemTarget::relative_detector_id(inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL)},
+             {GateTarget::x(1)}},
+            {{inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, DemTarget::observable_id(5)},
+             {GateTarget::x(1)}},
+        }));
+
+    slice_set = DetectorSliceSet::from_circuit_ticks(
+        circuit, inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, 2, {&empty_filter});
+    ASSERT_EQ(slice_set.coordinates, (std::map<uint64_t, std::vector<double>>{{0, {}}, {1, {}}}));
+    ASSERT_EQ(
+        slice_set.slices,
+        (std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>>{
+            {{inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL,
+              DemTarget::relative_detector_id(inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL)},
+             {GateTarget::x(1)}},
+            {{inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL, DemTarget::observable_id(5)},
+             {GateTarget::x(1)}},
+            {{inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 2ULL,
+              DemTarget::relative_detector_id(inner * 10000ULL * 25ULL + 1000ULL * 100ULL * 10ULL + 1ULL)},
+             {GateTarget::y(0)}},
         }));
 }
 
@@ -110,7 +132,7 @@ TEST(detector_slice_set_text_diagram, repetition_code) {
     std::vector<double> empty_filter;
     CircuitGenParameters params(10, 5, "memory");
     auto circuit = generate_rep_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 9, {&empty_filter});
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 9, 1, {&empty_filter});
     ASSERT_EQ(slice_set.slices.size(), circuit.count_qubits());
     ASSERT_EQ("\n" + slice_set.str() + "\n", R"DIAGRAM(
 q0: --------Z:D12----------------------------
@@ -132,7 +154,7 @@ q7: -Z:D11-----------------------Z:D15-------
 q8: -----------------------------Z:D15--Z:L0-
 )DIAGRAM");
 
-    ASSERT_EQ("\n" + DetectorSliceSet::from_circuit_tick(circuit, 11, {&empty_filter}).str() + "\n", R"DIAGRAM(
+    ASSERT_EQ("\n" + DetectorSliceSet::from_circuit_ticks(circuit, 11, 1, {&empty_filter}).str() + "\n", R"DIAGRAM(
 q0: --------Z:D16-
             |
 q1: -Z:D12--Z:D16-
@@ -157,7 +179,7 @@ TEST(detector_slice_set_text_diagram, surface_code) {
     std::vector<double> empty_filter;
     CircuitGenParameters params(10, 2, "unrotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 11, {&empty_filter});
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 11, 1, {&empty_filter});
     ASSERT_EQ(slice_set.slices.size(), circuit.count_qubits());
     ASSERT_EQ("\n" + slice_set.str() + "\n", R"DIAGRAM(
 q0:(0, 0) -X:D2--Z:D3--------------------------------Z:L0-
@@ -184,45 +206,60 @@ TEST(detector_slice_set_svg_diagram, surface_code) {
     std::vector<double> empty_filter;
     CircuitGenParameters params(10, 2, "rotated_memory_z");
     auto circuit = generate_surface_code_circuit(params).circuit;
-    auto slice_set = DetectorSliceSet::from_circuit_tick(circuit, 8, {&empty_filter});
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 8, 1, {&empty_filter});
     std::stringstream ss;
     slice_set.write_svg_diagram_to(ss);
-    ASSERT_EQ(
-        "\n" + ss.str() + "\n",
-        u8R"SVG(
-<svg viewBox="0 0 77.2548 122.51" xmlns="http://www.w3.org/2000/svg">
-<path d="M38.6274,16 61.2548,38.6274 16,38.6274 Z" stroke="none" fill-opacity="0.75" fill="#AAAAAA" />
-<defs>
-<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4444" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="ygrad"><stop offset="50%" stop-color="#40FF40" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="zgrad"><stop offset="50%" stop-color="#4848FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-</defs>
-<clipPath id="clip0"><path d="M38.6274,16 61.2548,38.6274 16,38.6274 Z" /></clipPath>
-<circle clip-path="url(#clip0)" cx="16" cy="38.6274" r="20" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip0)" cx="38.6274" cy="16" r="20" stroke="none" fill="url('#zgrad')"/>
-<circle clip-path="url(#clip0)" cx="61.2548" cy="38.6274" r="20" stroke="none" fill="url('#xgrad')"/>
-<path d="M38.6274,16 61.2548,38.6274 16,38.6274 Z" stroke="black" fill="none" />
-<path d="M16,38.6274 61.2548,38.6274 38.6274,61.2548 61.2548,83.8822 16,83.8822 Z" stroke="none" fill-opacity="0.75" fill="#4848FF" />
-<path d="M16,38.6274 61.2548,38.6274 38.6274,61.2548 61.2548,83.8822 16,83.8822 Z" stroke="black" fill="none" />
-<path d="M16,83.8822 61.2548,83.8822 38.6274,106.51 Z" stroke="none" fill-opacity="0.75" fill="#AAAAAA" />
-<clipPath id="clip1"><path d="M16,83.8822 61.2548,83.8822 38.6274,106.51 Z" /></clipPath>
-<circle clip-path="url(#clip1)" cx="16" cy="83.8822" r="20" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip1)" cx="61.2548" cy="83.8822" r="20" stroke="none" fill="url('#xgrad')"/>
-<circle clip-path="url(#clip1)" cx="38.6274" cy="106.51" r="20" stroke="none" fill="url('#zgrad')"/>
-<path d="M16,83.8822 61.2548,83.8822 38.6274,106.51 Z" stroke="black" fill="none" />
-<path d="M32.6274,16 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill-opacity="1" fill="#4848FF" />
-<path d="M32.6274,16 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="black" fill="none" />
-<path d="M32.6274,61.2548 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill-opacity="1" fill="#4848FF" />
-<path d="M32.6274,61.2548 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="black" fill="none" />
-<path d="M32.6274,106.51 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="none" fill-opacity="1" fill="#4848FF" />
-<path d="M32.6274,106.51 a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0" stroke="black" fill="none" />
-<circle cx="16" cy="38.6274" r="2" stroke="none" fill="black" />
-<circle cx="38.6274" cy="16" r="2" stroke="none" fill="black" />
-<circle cx="61.2548" cy="38.6274" r="2" stroke="none" fill="black" />
-<circle cx="16" cy="83.8822" r="2" stroke="none" fill="black" />
-<circle cx="38.6274" cy="61.2548" r="2" stroke="none" fill="black" />
-<circle cx="61.2548" cy="83.8822" r="2" stroke="none" fill="black" />
-<circle cx="38.6274" cy="106.51" r="2" stroke="none" fill="black" />
-</svg>
-)SVG");
+    expect_string_is_identical_to_saved_file(ss.str(), "rotated_memory_z_detector_slice.svg");
+}
+
+TEST(detector_slice_set, pick_polygon_center) {
+    std::vector<Coord<2>> coords;
+    coords.push_back({2, 1});
+    coords.push_back({4.5, 3.5});
+    coords.push_back({6, 0});
+    coords.push_back({1, 5});
+    ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{3.25, 2.25}));
+
+    coords.pop_back();
+    coords.push_back({1, 6});
+    ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{(2 + 4.5 + 6 + 1) / 4, (1 + 3.5 + 0 + 6) / 4}));
+
+    coords.push_back({7, 0});
+    coords.push_back({1, 5});
+    ASSERT_EQ(pick_polygon_center(coords), (Coord<2>{3.25, 2.25}));
+}
+
+TEST(detector_slice_set_svg_diagram, is_colinear) {
+    ASSERT_TRUE(is_colinear({0, 0}, {0, 0}, {1, 2}));
+    ASSERT_TRUE(is_colinear({3, 6}, {1, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 7}, {1, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({4, 6}, {1, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 3}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {2, 2}, {2, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {1, 4}));
+    ASSERT_FALSE(is_colinear({3, 6}, {1, 2}, {2, -4}));
+}
+
+TEST(detector_slice_set_svg_diagram, colinear_polygon) {
+    Circuit circuit(R"CIRCUIT(
+        QUBIT_COORDS(0, 0) 0
+        QUBIT_COORDS(1, 1) 1
+        QUBIT_COORDS(2, 2) 2
+        QUBIT_COORDS(0, 3) 3
+        QUBIT_COORDS(4, 0) 4
+        QUBIT_COORDS(5, 1) 5
+        QUBIT_COORDS(6, 2) 6
+        R 0 1 2 3 4 5 6
+        H 3
+        TICK
+        H 3
+        M 0 1 2 3 4 5 6
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        DETECTOR rec[-4] rec[-5] rec[-6] rec[-7]
+    )CIRCUIT");
+    std::vector<double> empty_filter;
+    auto slice_set = DetectorSliceSet::from_circuit_ticks(circuit, 1, 1, {&empty_filter});
+    std::stringstream ss;
+    slice_set.write_svg_diagram_to(ss);
+    expect_string_is_identical_to_saved_file(ss.str(), "colinear_detector_slice.svg");
 }

@@ -1,6 +1,6 @@
 import os
 
-from typing import Any, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Optional, Tuple, TYPE_CHECKING, Dict
 import tempfile
 
 if TYPE_CHECKING:
@@ -77,6 +77,7 @@ class WorkOut:
 def worker_loop(tmp_dir: 'pathlib.Path',
                 inp: 'multiprocessing.Queue',
                 out: 'multiprocessing.Queue',
+                custom_decoders: Optional[Dict[str, 'sinter.Decoder']],
                 core_affinity: Optional[int]) -> None:
     try:
         if core_affinity is not None and hasattr(os, 'sched_setaffinity'):
@@ -91,14 +92,14 @@ def worker_loop(tmp_dir: 'pathlib.Path',
                 work: Optional[WorkIn] = inp.get()
                 if work is None:
                     return
-                out.put(do_work_safely(work, child_dir))
+                out.put(do_work_safely(work, child_dir, custom_decoders))
     except KeyboardInterrupt:
         pass
 
 
-def do_work_safely(work: WorkIn, child_dir: str) -> WorkOut:
+def do_work_safely(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Decoder']) -> WorkOut:
     try:
-        return do_work(work, child_dir)
+        return do_work(work, child_dir, custom_decoders)
     except BaseException as ex:
         import traceback
         return WorkOut(
@@ -109,7 +110,7 @@ def do_work_safely(work: WorkIn, child_dir: str) -> WorkOut:
         )
 
 
-def do_work(work: WorkIn, child_dir: str) -> WorkOut:
+def do_work(work: WorkIn, child_dir: str, custom_decoders: Dict[str, 'sinter.Decoder']) -> WorkOut:
     import stim
     from sinter._task import Task
     from sinter._decoding import sample_decode
@@ -145,6 +146,7 @@ def do_work(work: WorkIn, child_dir: str) -> WorkOut:
         postselected_observable_mask=work.postselected_observables_mask,
         decoder=work.decoder,
         tmp_dir=child_dir,
+        custom_decoders=custom_decoders,
     )
 
     return WorkOut(

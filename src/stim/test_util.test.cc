@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
 #include "stim/test_util.test.h"
 
 #include "stim/probability_util.h"
@@ -34,7 +35,40 @@ std::string resolve_test_file(const std::string &name) {
             return full_path;
         }
     }
+    for (const auto &prefix : prefixes) {
+        std::string full_path = prefix + name;
+        FILE *f = fopen(full_path.c_str(), "wb");
+        if (f != nullptr) {
+            fclose(f);
+            return full_path;
+        }
+    }
     throw std::invalid_argument("Run tests from the repo root so they can find the testdata/ directory.");
+}
+
+void expect_string_is_identical_to_saved_file(const std::string &actual, const std::string &key) {
+    auto path = resolve_test_file(key);
+    FILE *f = fopen(path.c_str(), "rb");
+    auto expected = rewind_read_close(f);
+
+    if (expected != actual) {
+        auto dot = key.rfind('.');
+        std::string new_path;
+        if (dot == std::string::npos) {
+            new_path = path + ".new";
+        } else {
+            dot += path.size() - key.size();
+            new_path = path.substr(0, dot) + ".new" + path.substr(dot);
+        }
+        std::ofstream out;
+        out.open(new_path);
+        out << actual;
+        out.close();
+        EXPECT_TRUE(false) << "Diagram didn't agree.\n"
+            << "    key=" << key << "\n"
+            << "    expected: file://" << path << "\n"
+            << "    actual: file://" << new_path << "\n";
+    }
 }
 
 std::mt19937_64 &SHARED_TEST_RNG() {
@@ -64,7 +98,7 @@ RaiiTempNamedFile::RaiiTempNamedFile() {
     if (descriptor == -1) {
         throw std::runtime_error("Failed to create temporary file.");
     }
-    path = tmp_stdin_filename;
+    path = std::string(tmp_stdin_filename);
 }
 
 RaiiTempNamedFile::~RaiiTempNamedFile() {

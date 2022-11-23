@@ -118,7 +118,7 @@ pybind11::class_<Tableau> stim_pybind::pybind_tableau(pybind11::module &m) {
     return pybind11::class_<Tableau>(
         m,
         "Tableau",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A stabilizer tableau.
 
             Represents a Clifford operation by explicitly storing how that operation
@@ -158,7 +158,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         pybind11::init<size_t>(),
         pybind11::arg("num_qubits"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates an identity tableau over the given number of qubits.
 
             Examples:
@@ -182,7 +182,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return Tableau::random(num_qubits, *make_py_seeded_rng(pybind11::none()));
         },
         pybind11::arg("num_qubits"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Samples a uniformly random Clifford operation and returns its tableau.
 
             Args:
@@ -210,7 +210,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("num_qubits"),
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns an iterator that iterates over all Tableaus of a given size.
 
             Args:
@@ -267,7 +267,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::kw_only(),
         pybind11::arg("endian"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_unitary_matrix(self, *, endian: str) -> np.ndarray[np.complex64]:
             Converts the tableau into a unitary matrix.
 
@@ -317,7 +317,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::kw_only(),
         pybind11::arg("bit_packed") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
             Decomposes the contents of the tableau into six numpy arrays.
@@ -343,15 +343,36 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
                 z_signs: A vector of whether tableau(Z_i) is negative.
 
                 If bit_packed=False then:
-                    *.dtype = = np.bool8
-                    *2*.shape = (len(tableau), len(tableau))
-                    *_signs.shape = len(tableau)
+                    x2x.dtype = np.bool8
+                    x2z.dtype = np.bool8
+                    z2x.dtype = np.bool8
+                    z2z.dtype = np.bool8
+                    x_signs.dtype = np.bool8
+                    z_signs.dtype = np.bool8
+                    x2x.shape = (len(tableau), len(tableau))
+                    x2z.shape = (len(tableau), len(tableau))
+                    z2x.shape = (len(tableau), len(tableau))
+                    z2z.shape = (len(tableau), len(tableau))
+                    x_signs.shape = len(tableau)
+                    z_signs.shape = len(tableau)
                     x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
                     x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
                     z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
                     z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
 
                 If bit_packed=True then:
+                    x2x.dtype = np.uint8
+                    x2z.dtype = np.uint8
+                    z2x.dtype = np.uint8
+                    z2z.dtype = np.uint8
+                    x_signs.dtype = np.uint8
+                    z_signs.dtype = np.uint8
+                    x2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    x2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    z2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                    x_signs.shape = math.ceil(len(tableau) / 8)
+                    z_signs.shape = math.ceil(len(tableau) / 8)
                     *.dtype = = np.uint8
                     *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
                     *_signs.shape = math.ceil(len(tableau) / 8)
@@ -507,7 +528,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("z2z"),
         pybind11::arg("x_signs") = pybind11::none(),
         pybind11::arg("z_signs") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_numpy(self, *, bit_packed: bool = False) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
             Creates a tableau from numpy arrays x2x, x2z, z2x, z2z, x_signs, and z_signs.
@@ -606,7 +627,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         [](const Tableau &self) {
             return PyPauliString(self.to_pauli_string());
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Return a Pauli string equivalent to the tableau.
 
             If the tableau is equivalent to a pauli product, creates
@@ -643,7 +664,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::kw_only(),
         pybind11::arg("method"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_circuit(self, *, method: str) -> stim.Circuit:
             Synthesizes a circuit that implements the tableau's Clifford operation.
 
@@ -708,7 +729,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return gate.tableau();
         },
         pybind11::arg("name"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the tableau of a named Clifford gate.
 
             Args:
@@ -751,7 +772,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         "__pow__",
         &Tableau::raised_to,
         pybind11::arg("exponent"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Raises the tableau to an integer power.
 
             Large powers are reached efficiently using repeated squaring.
@@ -785,7 +806,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::inverse,
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Computes the inverse of the tableau.
 
             The inverse T^-1 of a tableau T is the unique tableau with the property that
@@ -869,7 +890,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::arg("gate"),
         pybind11::arg("targets"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Appends an operation's effect into this tableau, mutating this tableau.
 
             Time cost is O(n*m*m) where n=len(self) and m=len(gate).
@@ -899,7 +920,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return self.then(second);
         },
         pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the result of composing two tableaus.
 
             If the tableau T1 represents the Clifford operation with unitary C1,
@@ -931,7 +952,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return rhs.then(self);
         },
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the product of two tableaus.
 
             If the tableau T1 represents the Clifford operation with unitary C1,
@@ -972,7 +993,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::arg("gate"),
         pybind11::arg("targets"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Prepends an operation's effect into this tableau, mutating this tableau.
 
             Time cost is O(n*m*m) where n=len(self) and m=len(gate).
@@ -983,8 +1004,6 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
 
             Examples:
                 >>> import stim
-                >>> h = stim.Tableau.from_named_gate("H")
-                >>> cnot = stim.Tableau.from_named_gate("CNOT")
                 >>> t = stim.Tableau.from_named_gate("H")
                 >>> t.prepend(stim.Tableau.from_named_gate("X"), [0])
                 >>> t == stim.Tableau.from_named_gate("SQRT_Y_DAG")
@@ -1001,7 +1020,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return PyPauliString(self.xs[target]);
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the result of conjugating a Pauli X by the tableau's Clifford operation.
 
             Args:
@@ -1027,17 +1046,10 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             if (target >= self.num_qubits) {
                 throw std::invalid_argument("target >= len(tableau)");
             }
-
-            // Compute Y using Y = i*X*Z.
-            uint8_t log_i = 1;
-            PauliString copy = self.xs[target];
-            log_i += copy.ref().inplace_right_mul_returning_log_i_scalar(self.zs[target]);
-            assert((log_i & 1) == 0);
-            copy.sign ^= (log_i & 2) != 0;
-            return PyPauliString(std::move(copy));
+            return PyPauliString(self.y_output(target));
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the result of conjugating a Pauli Y by the tableau's Clifford operation.
 
             Args:
@@ -1066,7 +1078,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return PyPauliString(self.zs[target]);
         },
         pybind11::arg("target"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the result of conjugating a Pauli Z by the tableau's Clifford operation.
 
             Args:
@@ -1091,7 +1103,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::x_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Constant-time version of `tableau.x_output(input_index)[output_index]`
 
             Args:
@@ -1130,7 +1142,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::y_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Constant-time version of `tableau.y_output(input_index)[output_index]`
 
             Args:
@@ -1169,7 +1181,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::z_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Constant-time version of `tableau.z_output(input_index)[output_index]`
 
             Args:
@@ -1208,7 +1220,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::inverse_x_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Constant-time version of `tableau.inverse().x_output(input_index)[output_index]`
 
             Args:
@@ -1247,7 +1259,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::inverse_y_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Constant-time version of `tableau.inverse().y_output(input_index)[output_index]`
 
             Args:
@@ -1286,7 +1298,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         &Tableau::inverse_z_output_pauli_xyz,
         pybind11::arg("input_index"),
         pybind11::arg("output_index"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Constant-time version of `tableau.inverse().z_output(input_index)[output_index]`
 
             Args:
@@ -1328,7 +1340,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("input_index"),
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Conjugates a single-qubit X Pauli generator by the inverse of the tableau.
 
             A faster version of `tableau.inverse(unsigned).x_output(input_index)`.
@@ -1367,7 +1379,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("input_index"),
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Conjugates a single-qubit Y Pauli generator by the inverse of the tableau.
 
             A faster version of `tableau.inverse(unsigned).y_output(input_index)`.
@@ -1406,7 +1418,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("input_index"),
         pybind11::kw_only(),
         pybind11::arg("unsigned") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Conjugates a single-qubit Z Pauli generator by the inverse of the tableau.
 
             A faster version of `tableau.inverse(unsigned).z_output(input_index)`.
@@ -1445,7 +1457,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             Tableau copy = self;
             return copy;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the tableau. An independent tableau with the same contents.
 
             Examples:
@@ -1498,7 +1510,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("xs"),
         pybind11::arg("zs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a tableau from the given outputs for each generator.
 
             Verifies that the tableau is well formed.
@@ -1557,7 +1569,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("matrix"),
         pybind11::kw_only(),
         pybind11::arg("endian"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_unitary_matrix(matrix: Iterable[Iterable[float]], *, endian: str = 'little') -> stim.Tableau:
             Creates a tableau from the unitary matrix of a Clifford operation.
 
@@ -1621,7 +1633,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("ignore_noise") = false,
         pybind11::arg("ignore_measurement") = false,
         pybind11::arg("ignore_reset") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_circuit(circuit: stim.Circuit, *, ignore_noise: bool = False, ignore_measurement: bool = False, ignore_reset: bool = False) -> stim.Tableau:
             Converts a circuit into an equivalent stabilizer tableau.
 
@@ -1698,7 +1710,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
             return result;
         },
         pybind11::arg("pauli_string"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
              Returns the conjugation of a PauliString by the Tableau's Clifford operation.
 
              The conjugation of P by C is equal to C**-1 * P * C. If P is a Pauli product
@@ -1723,7 +1735,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         pybind11::self + pybind11::self,
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the direct sum (diagonal concatenation) of two Tableaus.
 
             Args:
@@ -1749,7 +1761,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
     c.def(
         pybind11::self += pybind11::self,
         pybind11::arg("rhs"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Performs an inplace direct sum (diagonal concatenation).
 
             Args:
@@ -1843,7 +1855,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::kw_only(),
         pybind11::arg("allow_redundant") = false,
         pybind11::arg("allow_underconstrained") = false,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_stabilizers(stabilizers: Iterable[stim.PauliString], *, allow_redundant: bool = False, allow_underconstrained: bool = False) -> stim.Tableau:
             Creates a tableau representing a state with the given stabilizers.
 
@@ -1945,7 +1957,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         pybind11::arg("state_vector"),
         pybind11::kw_only(),
         pybind11::arg("endian"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_state_vector(self, state_vector: Iterable[float], *, endian: str) -> stim.Tableau:
             Creates a tableau representing the stabilizer state of the given state vector.
 
@@ -2037,7 +2049,7 @@ void stim_pybind::pybind_tableau_methods(pybind11::module &m, pybind11::class_<T
         },
         pybind11::kw_only(),
         pybind11::arg("endian") = "little",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_state_vector(self, *, endian: str = 'little') -> np.ndarray[np.complex64]:
             Returns the state vector produced by applying the tableau to the |0..0> state.
 

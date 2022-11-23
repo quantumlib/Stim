@@ -708,6 +708,20 @@ def test_shortest_graphlike_error():
 }"""
 
 
+def test_shortest_graphlike_error_empty():
+    with pytest.raises(ValueError, match="Failed to find"):
+        stim.Circuit().shortest_graphlike_error()
+
+
+def test_search_for_undetectable_logical_errors_empty():
+    with pytest.raises(ValueError, match="Failed to find"):
+        stim.Circuit().search_for_undetectable_logical_errors(
+            dont_explore_edges_increasing_symptom_degree=True,
+            dont_explore_edges_with_degree_above=4,
+            dont_explore_detection_event_sets_with_size_above=4,
+        )
+
+
 def test_shortest_graphlike_error_ignore():
     c = stim.Circuit("""
         TICK
@@ -949,6 +963,9 @@ q1: -Z:D1-
 q2: ------
     """.strip()
 
+    assert c.diagram() is not None
+    assert c.diagram("timeline-svg") is not None
+    assert c.diagram("timeline-svg", tick=5) is not None
     assert c.diagram(type="timeline-svg") is not None
     assert c.diagram(type="timeline-3d") is not None
     assert c.diagram(type="timeline-3d-html") is not None
@@ -957,6 +974,13 @@ q2: ------
     assert c.diagram(type="match-graph-3d-html") is not None
     assert c.diagram(type="detector-slice-svg", tick=1) is not None
     assert c.diagram(type="detector-slice-text", tick=1) is not None
+    assert c.diagram(type="time-slice-svg", tick=1) is not None
+    assert c.diagram(type="time+detector-slice-svg", tick=1) is not None
+    assert c.diagram(type="time+detector-slice-svg", tick=range(1, 3)) is not None
+    with pytest.raises(ValueError, match="step"):
+        assert c.diagram(type="time+detector-slice-svg", tick=range(1, 3, 2)) is not None
+    with pytest.raises(ValueError, match="stop"):
+        assert c.diagram(type="time+detector-slice-svg", tick=range(3, 3)) is not None
 
 
 def test_circuit_inverse():
@@ -974,3 +998,315 @@ def test_circuit_slice_reverse():
     assert c[::-1] == stim.Circuit()
     c = stim.Circuit("X 1\nY 2\nZ 3")
     assert c[::-1] == stim.Circuit("Z 3\nY 2\nX 1")
+
+
+def test_with_inlined_feedback_bad_end_eats_into_loop():
+    assert stim.Circuit("""
+        CX 0 1
+        M 1
+        CX rec[-1] 1
+        CX 0 1
+        M 1
+        DETECTOR rec[-1] rec[-2]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """).with_inlined_feedback() == stim.Circuit("""
+        CX 0 1
+        M 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        CX 0 1
+        M 1
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+
+    before = stim.Circuit("""
+        R 0 1 2 3 4 5 6
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        CX rec[-1] 5 rec[-2] 3 rec[-3] 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        REPEAT 10 {
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 0 1 2 3 4 5
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 6 5 4 3 2 1
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            M(0.25) 1 3 5
+            CX rec[-1] 5 rec[-2] 3 rec[-3] 1
+            DETECTOR rec[-1] rec[-4]
+            DETECTOR rec[-2] rec[-5]
+            DETECTOR rec[-3] rec[-6]
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+        }
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        CX rec[-1] 5 rec[-2] 3 rec[-3] 1
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        DETECTOR rec[-3] rec[-4] rec[-5]
+        DETECTOR rec[-5] rec[-6] rec[-7]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    after = before.with_inlined_feedback()
+    assert after == stim.Circuit("""
+        R 0 1 2 3 4 5 6
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        REPEAT 8 {
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 0 1 2 3 4 5
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 6 5 4 3 2 1
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            M(0.25) 1 3 5
+            DETECTOR rec[-7] rec[-1]
+            DETECTOR rec[-8] rec[-2]
+            DETECTOR rec[-9] rec[-3]
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+        }
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        DETECTOR rec[-7] rec[-1]
+        DETECTOR rec[-8] rec[-2]
+        DETECTOR rec[-9] rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        DETECTOR rec[-6] rec[-5] rec[-4] rec[-3] rec[-2] rec[-1]
+        DETECTOR rec[-8] rec[-7] rec[-6] rec[-5] rec[-4] rec[-3]
+        DETECTOR rec[-10] rec[-9] rec[-8] rec[-7] rec[-6] rec[-5]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+
+    dem1 = before.flattened().detector_error_model()
+    dem2 = after.flattened().detector_error_model()
+    assert dem1.approx_equals(dem2, atol=1e-5)
+
+
+def test_with_inlined_feedback():
+    assert stim.Circuit("""
+        CX 0 1
+        M 1
+        CX rec[-1] 1
+        CX 0 1
+        M 1
+        DETECTOR rec[-1] rec[-2]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """).with_inlined_feedback() == stim.Circuit("""
+        CX 0 1
+        M 1
+        OBSERVABLE_INCLUDE(0) rec[-1]
+        CX 0 1
+        M 1
+        DETECTOR rec[-1]
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+
+    before = stim.Circuit("""
+        R 0 1 2 3 4 5 6
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        CX rec[-1] 5 rec[-2] 3 rec[-3] 1
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        REPEAT 10 {
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 0 1 2 3 4 5
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 6 5 4 3 2 1
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            M(0.25) 1 3 5
+            CX rec[-1] 5 rec[-2] 3 rec[-3] 1
+            DETECTOR rec[-1] rec[-4]
+            DETECTOR rec[-2] rec[-5]
+            DETECTOR rec[-3] rec[-6]
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+        }
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 0 1 2 3 4 5 6
+        CX rec[-1] 5 rec[-2] 3 rec[-3] 1
+        DETECTOR rec[-1] rec[-2] rec[-3]
+        DETECTOR rec[-3] rec[-4] rec[-5]
+        DETECTOR rec[-5] rec[-6] rec[-7]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """)
+    after = before.with_inlined_feedback()
+    assert str(after) == str(stim.Circuit("""
+        R 0 1 2 3 4 5 6
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 1 3 5
+        DETECTOR rec[-1]
+        DETECTOR rec[-2]
+        DETECTOR rec[-3]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        REPEAT 9 {
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 0 1 2 3 4 5
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            CX 6 5 4 3 2 1
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+            M(0.25) 1 3 5
+            DETECTOR rec[-7] rec[-1]
+            DETECTOR rec[-8] rec[-2]
+            DETECTOR rec[-9] rec[-3]
+            X_ERROR(0.125) 0 1 2 3 4 5 6
+            TICK
+        }
+
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 0 1 2 3 4 5
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        CX 6 5 4 3 2 1
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+        M(0.25) 0 1 2 3 4 5 6
+        DETECTOR rec[-8] rec[-3] rec[-2] rec[-1]
+        DETECTOR rec[-9] rec[-5] rec[-4] rec[-3]
+        DETECTOR rec[-10] rec[-7] rec[-6] rec[-5]
+        X_ERROR(0.125) 0 1 2 3 4 5 6
+        TICK
+
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    """))
+
+    dem1 = before.flattened().detector_error_model()
+    dem2 = after.flattened().detector_error_model()
+    assert dem1.approx_equals(dem2, atol=1e-5)

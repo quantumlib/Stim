@@ -6,6 +6,7 @@ import pathlib
 import tempfile
 from typing import cast, Iterable, Optional, Iterator, Tuple, Dict, List
 
+from sinter._decoding_decoder_class import Decoder
 from sinter._collection_options import CollectionOptions
 from sinter._existing_data import ExistingData
 from sinter._task_stats import TaskStats
@@ -20,7 +21,9 @@ class CollectionWorkManager:
                  tasks_iter: Iterator[Task],
                  global_collection_options: CollectionOptions,
                  additional_existing_data: Optional[ExistingData],
-                 decoders: Optional[Iterable[str]]):
+                 decoders: Optional[Iterable[str]],
+                 custom_decoders: Dict[str, Decoder]):
+        self.custom_decoders = custom_decoders
         self.queue_from_workers: Optional[multiprocessing.Queue] = None
         self.queue_to_workers: Optional[multiprocessing.Queue] = None
         self.additional_existing_data = ExistingData() if additional_existing_data is None else additional_existing_data
@@ -61,7 +64,7 @@ class CollectionWorkManager:
             for index in range(num_workers):
                 w = multiprocessing.Process(
                     target=worker_loop,
-                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers, index % num_cpus))
+                    args=(self.tmp_dir, self.queue_to_workers, self.queue_from_workers, self.custom_decoders, index % num_cpus))
                 w.start()
                 self.workers.append(w)
         finally:
@@ -189,15 +192,23 @@ class CollectionWorkManager:
             else:
                 main_status = 'There was nothing additional to collect'
         elif num_circuits is not None:
-            main_status = f'{num_circuits - self.finished_count} cases left'
+            main_status = f'{num_circuits - self.finished_count} cases left:'
         else:
             main_status = "Running..."
         collector_statuses = [
-            '\n    ' + collector.status()
+            collector.status()
             for collector in self.active_collectors.values()
         ]
         if len(collector_statuses) > 24:
             collector_statuses = collector_statuses[:24] + ['\n...']
+
+        min_indent = 0
+        while collector_statuses and all(min_indent < len(c) and c[min_indent] == ' ' for c in collector_statuses):
+            min_indent += 1
+        if min_indent > 4:
+            collector_statuses = [c[min_indent - 4:] for c in collector_statuses]
+        collector_statuses = ['\n' + c for c in collector_statuses]
+
         return main_status + ''.join(collector_statuses)
 
 

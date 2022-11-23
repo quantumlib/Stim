@@ -408,8 +408,27 @@ double stim::parse_exact_double_from_string(const std::string &text) {
     char *end = nullptr;
     const char *c = text.c_str();
     double d = strtod(c, &end);
-    if (isspace(*c) || end == c || end != c + text.size() || std::isinf(d) || std::isnan(d)) {
-        throw std::invalid_argument("Not an exact double: '" + text + "'");
+    if (text.size() > 0 && !isspace(*c)) {
+        if (end == c + text.size() && !std::isinf(d) && !std::isnan(d)) {
+            return d;
+        }
     }
-    return d;
+    throw std::invalid_argument("Not an exact double: '" + text + "'");
+}
+
+uint64_t stim::parse_exact_uint64_t_from_string(const std::string &text) {
+    char *end = nullptr;
+    const char *c = text.c_str();
+    auto v = strtoull(c, &end, 10);
+    if (end == c + text.size()) {
+        // strtoull silently accepts spaces and negative signs and overflowing
+        // values. The only guaranteed way I've found to ensure it actually
+        // worked is to recreate the string and check that it's the sam.e
+        std::stringstream ss;
+        ss << v;
+        if (ss.str() == text) {
+            return v;
+        }
+    }
+    throw std::invalid_argument("Not an integer that can be stored in a uint64_t: '" + text + "'");
 }

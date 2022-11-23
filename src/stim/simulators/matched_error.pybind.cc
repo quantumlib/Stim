@@ -137,7 +137,7 @@ pybind11::class_<CircuitErrorLocationStackFrame> stim_pybind::pybind_circuit_err
     return pybind11::class_<CircuitErrorLocationStackFrame>(
         m,
         "CircuitErrorLocationStackFrame",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Describes the location of an instruction being executed within a
             circuit or loop, distinguishing between separate loop iterations.
 
@@ -152,7 +152,7 @@ void stim_pybind::pybind_circuit_error_location_stack_frame_methods(
     c.def_readonly(
         "instruction_offset",
         &CircuitErrorLocationStackFrame::instruction_offset,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The index of the instruction within the circuit, or within the
             instruction's parent REPEAT block. This is slightly different
             from the line number, because blank lines and commented lines
@@ -164,7 +164,7 @@ void stim_pybind::pybind_circuit_error_location_stack_frame_methods(
     c.def_readonly(
         "iteration_index",
         &CircuitErrorLocationStackFrame::iteration_index,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Disambiguates which iteration of the loop containing this instruction
             is being referred to. If the instruction isn't in a REPEAT block, this
             field defaults to 0.
@@ -174,7 +174,7 @@ void stim_pybind::pybind_circuit_error_location_stack_frame_methods(
     c.def_readonly(
         "instruction_repetitions_arg",
         &CircuitErrorLocationStackFrame::instruction_repetitions_arg,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             If the instruction being referred to is a REPEAT block,
             this is the repetition count of that REPEAT block. Otherwise
             this field defaults to 0.
@@ -201,7 +201,7 @@ void stim_pybind::pybind_circuit_error_location_stack_frame_methods(
         pybind11::arg("instruction_offset"),
         pybind11::arg("iteration_index"),
         pybind11::arg("instruction_repetitions_arg"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.CircuitErrorLocationStackFrame.
         )DOC")
             .data());
@@ -213,7 +213,7 @@ pybind11::class_<GateTargetWithCoords> stim_pybind::pybind_gate_target_with_coor
     return pybind11::class_<GateTargetWithCoords>(
         m,
         "GateTargetWithCoords",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A gate target with associated coordinate information.
 
             For example, if the gate target is a qubit from a circuit with
@@ -233,7 +233,7 @@ void stim_pybind::pybind_gate_target_with_coords_methods(
     c.def_readonly(
         "gate_target",
         &GateTargetWithCoords::gate_target,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the actual gate target as a `stim.GateTarget`.
         )DOC")
             .data());
@@ -241,7 +241,7 @@ void stim_pybind::pybind_gate_target_with_coords_methods(
     c.def_readonly(
         "coords",
         &GateTargetWithCoords::coords,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the associated coordinate information as a list of flaots.
 
             If there is no coordinate information, returns an empty list.
@@ -262,7 +262,7 @@ void stim_pybind::pybind_gate_target_with_coords_methods(
         pybind11::kw_only(),
         pybind11::arg("gate_target"),
         pybind11::arg("coords"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.GateTargetWithCoords.
         )DOC")
             .data());
@@ -273,7 +273,7 @@ pybind11::class_<DemTargetWithCoords> stim_pybind::pybind_dem_target_with_coords
     return pybind11::class_<DemTargetWithCoords>(
         m,
         "DemTargetWithCoords",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A detector error model instruction target with associated coords.
 
             It is also guaranteed that, if the type of the DEM target is a
@@ -299,7 +299,7 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
         [](const DemTargetWithCoords &self) -> ExposedDemTarget {
             return ExposedDemTarget(self.dem_target);
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the actual DEM target as a `stim.DemTarget`.
         )DOC")
             .data());
@@ -307,7 +307,7 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
     c.def_readonly(
         "coords",
         &DemTargetWithCoords::coords,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the associated coordinate information as a list of flaots.
 
             If there is no coordinate information, returns an empty list.
@@ -329,7 +329,7 @@ void stim_pybind::pybind_dem_target_with_coords_methods(
         pybind11::kw_only(),
         pybind11::arg("dem_target"),
         pybind11::arg("coords"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.DemTargetWithCoords.
         )DOC")
             .data());
@@ -340,7 +340,7 @@ pybind11::class_<FlippedMeasurement> stim_pybind::pybind_flipped_measurement(pyb
     return pybind11::class_<FlippedMeasurement>(
         m,
         "FlippedMeasurement",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Describes a measurement that was flipped.
 
             Gives the measurement's index in the measurement record, and also
@@ -353,7 +353,7 @@ void stim_pybind::pybind_flipped_measurement_methods(
     c.def_readonly(
         "record_index",
         &FlippedMeasurement::measurement_record_index,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The measurement record index of the flipped measurement.
             For example, the fifth measurement in a circuit has a measurement
             record index of 4.
@@ -363,7 +363,7 @@ void stim_pybind::pybind_flipped_measurement_methods(
     c.def_readonly(
         "observable",
         &FlippedMeasurement::measured_observable,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the observable of the flipped measurement.
 
             For example, an `MX 5` measurement will have the observable X5.
@@ -388,7 +388,7 @@ void stim_pybind::pybind_flipped_measurement_methods(
         pybind11::kw_only(),
         pybind11::arg("record_index"),
         pybind11::arg("observable"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.FlippedMeasurement.
         )DOC")
             .data());
@@ -401,7 +401,7 @@ pybind11::class_<CircuitTargetsInsideInstruction> stim_pybind::pybind_circuit_ta
     return pybind11::class_<CircuitTargetsInsideInstruction>(
         m,
         "CircuitTargetsInsideInstruction",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Describes a range of targets within a circuit instruction.
         )DOC")
             .data());
@@ -417,7 +417,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
             }
             return pybind11::str(self.gate->name);
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the name of the gate / instruction that was being executed.
             @signature def gate(self) -> Optional[str]:
         )DOC")
@@ -426,7 +426,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def_readonly(
         "target_range_start",
         &CircuitTargetsInsideInstruction::target_range_start,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the inclusive start of the range of targets that were executing
             within the gate / instruction.
         )DOC")
@@ -435,7 +435,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def_readonly(
         "target_range_end",
         &CircuitTargetsInsideInstruction::target_range_end,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the exclusive end of the range of targets that were executing
             within the gate / instruction.
         )DOC")
@@ -444,7 +444,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def_readonly(
         "args",
         &CircuitTargetsInsideInstruction::args,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns parens arguments of the gate / instruction that was being executed.
         )DOC")
             .data());
@@ -452,7 +452,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
     c.def_readonly(
         "targets_in_range",
         &CircuitTargetsInsideInstruction::targets_in_range,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the subset of targets of the gate/instruction that were being executed.
 
             Includes coordinate data with the targets.
@@ -479,7 +479,7 @@ void stim_pybind::pybind_circuit_targets_inside_instruction_methods(
         pybind11::arg("target_range_start"),
         pybind11::arg("target_range_end"),
         pybind11::arg("targets_in_range"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.CircuitTargetsInsideInstruction.
         )DOC")
             .data());
@@ -491,7 +491,7 @@ pybind11::class_<CircuitErrorLocation> stim_pybind::pybind_circuit_error_locatio
     return pybind11::class_<CircuitErrorLocation>(
         m,
         "CircuitErrorLocation",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Describes the location of an error mechanism from a stim circuit.
         )DOC")
             .data());
@@ -501,7 +501,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
     c.def_readonly(
         "tick_offset",
         &CircuitErrorLocation::tick_offset,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The number of TICKs that executed before the error mechanism being discussed,
             including TICKs that occurred multiple times during loops.
         )DOC")
@@ -510,7 +510,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
     c.def_readonly(
         "flipped_pauli_product",
         &CircuitErrorLocation::flipped_pauli_product,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The Pauli errors that the error mechanism applied to qubits.
             When the error is a measurement error, this will be an empty list.
         )DOC")
@@ -524,7 +524,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
             }
             return pybind11::cast(self.flipped_measurement);
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The measurement that was flipped by the error mechanism.
             If the error isn't a measurement error, this will be None.
             @signature def flipped_measurement(self) -> Optional[stim.FlippedMeasurement]:
@@ -534,7 +534,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
     c.def_readonly(
         "instruction_targets",
         &CircuitErrorLocation::instruction_targets,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Within the error instruction, which may have hundreds of
             targets, which specific targets were being executed to
             produce the error.
@@ -544,7 +544,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
     c.def_readonly(
         "stack_frames",
         &CircuitErrorLocation::stack_frames,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Where in the circuit's execution does the error mechanism occur,
             accounting for things like nested loops that iterate multiple times.
         )DOC")
@@ -581,7 +581,7 @@ void stim_pybind::pybind_circuit_error_location_methods(
         pybind11::arg("flipped_measurement"),
         pybind11::arg("instruction_targets"),
         pybind11::arg("stack_frames"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.CircuitErrorLocation.
         )DOC")
             .data());
@@ -593,7 +593,7 @@ pybind11::class_<ExplainedError> stim_pybind::pybind_explained_error(pybind11::m
     return pybind11::class_<ExplainedError>(
         m,
         "ExplainedError",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Describes the location of an error mechanism from a stim circuit.
         )DOC")
             .data());
@@ -602,7 +602,7 @@ void stim_pybind::pybind_explained_error_methods(pybind11::module &m, pybind11::
     c.def_readonly(
         "dem_error_terms",
         &ExplainedError::dem_error_terms,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The detectors and observables flipped by this error mechanism.
         )DOC")
             .data());
@@ -610,7 +610,7 @@ void stim_pybind::pybind_explained_error_methods(pybind11::module &m, pybind11::
     c.def_readonly(
         "circuit_error_locations",
         &ExplainedError::circuit_error_locations,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The locations of circuit errors that produce the symptoms in dem_error_terms.
 
             Note: if this list contains a single entry, it may be because a result
@@ -642,7 +642,7 @@ void stim_pybind::pybind_explained_error_methods(pybind11::module &m, pybind11::
         pybind11::kw_only(),
         pybind11::arg("dem_error_terms"),
         pybind11::arg("circuit_error_locations"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.ExplainedError.
         )DOC")
             .data());

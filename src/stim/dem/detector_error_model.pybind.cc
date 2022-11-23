@@ -75,7 +75,7 @@ pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_mo
     auto c = pybind11::class_<DetectorErrorModel>(
         m,
         "DetectorErrorModel",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             An error model built out of independent error mechanics.
 
             Error mechanisms are described in terms of the visible detection events and the
@@ -124,7 +124,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             return self;
         }),
         pybind11::arg("detector_error_model_text") = "",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a stim.DetectorErrorModel.
 
             Args:
@@ -143,7 +143,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def_property_readonly(
         "num_detectors",
         &DetectorErrorModel::count_detectors,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of detectors (e.g. `D2`) in the error model.
 
             Detector indices are assumed to be contiguous from 0 up to whatever the maximum
@@ -179,7 +179,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def_property_readonly(
         "num_errors",
         &DetectorErrorModel::count_errors,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of errors (e.g. `error(0.1) D0`) in the error model.
 
             Error instructions inside repeat blocks count once per repetition.
@@ -203,7 +203,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def_property_readonly(
         "num_observables",
         &DetectorErrorModel::count_observables,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Counts the number of frame changes (e.g. `L2`) in the error model.
 
             Observable indices are assumed to be contiguous from 0 up to whatever the
@@ -230,7 +230,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "clear",
         &DetectorErrorModel::clear,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Clears the contents of the detector error model.
 
             Examples:
@@ -250,14 +250,14 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "__str__",
         &DetectorErrorModel::str,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the contents of a detector error model file (.dem) encoding the model.
         )DOC")
             .data());
     c.def(
         "__repr__",
         &detector_error_model_repr,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns valid python code evaluating to an equivalent `stim.DetectorErrorModel`.
         )DOC")
             .data());
@@ -267,7 +267,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         [](DetectorErrorModel &self) -> DetectorErrorModel {
             return self;
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the detector error model.
 
             The copy is an independent detector error model with the same contents.
@@ -289,7 +289,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         [](const DetectorErrorModel &self) -> size_t {
             return self.instructions.size();
         },
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the number of top-level instructions/blocks in the detector error model.
 
             Instructions inside of blocks are not included in this count.
@@ -334,7 +334,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             return pybind11::cast(result);
         },
         pybind11::arg("index_or_slice"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns copies of instructions from the detector error model.
             @overload def __getitem__(self, index_or_slice: int) -> Union[stim.DemInstruction, stim.DemRepeatBlock]:
             @overload def __getitem__(self, index_or_slice: slice) -> stim.DetectorErrorModel:
@@ -385,7 +385,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         pybind11::arg("other"),
         pybind11::kw_only(),
         pybind11::arg("atol"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Checks if detector error models are approximately equal.
 
             Two detector error model are approximately equal if they are equal up to slight
@@ -490,7 +490,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         pybind11::arg("instruction"),
         pybind11::arg("parens_arguments") = pybind11::none(),
         pybind11::arg("targets") = pybind11::make_tuple(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Appends an instruction to the detector error model.
 
             Args:
@@ -556,7 +556,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         "__imul__",
         &DetectorErrorModel::operator*=,
         pybind11::arg("repetitions"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Mutates the detector error model by putting its contents into a repeat block.
 
             Special case: if the repetition count is 0, the model is cleared.
@@ -588,7 +588,7 @@ void stim_pybind::pybind_detector_error_model_methods(
             }));
         },
         pybind11::arg("only") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the coordinate metadata of detectors in the detector error model.
 
             Args:
@@ -620,7 +620,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         "__add__",
         &DetectorErrorModel::operator+,
         pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates a detector error model by appending two models.
 
             Examples:
@@ -643,7 +643,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         "__iadd__",
         &DetectorErrorModel::operator+=,
         pybind11::arg("second"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Appends a detector error model into the receiving model (mutating it).
 
             Examples:
@@ -667,7 +667,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         "__mul__",
         &DetectorErrorModel::operator*,
         pybind11::arg("repetitions"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Repeats the detector error model using a repeat block.
 
             Has special cases for 0 repetitions and 1 repetitions.
@@ -701,7 +701,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         "__rmul__",
         &DetectorErrorModel::operator*,
         pybind11::arg("repetitions"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Repeats the detector error model using a repeat block.
 
             Has special cases for 0 repetitions and 1 repetitions.
@@ -742,8 +742,8 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "shortest_graphlike_error",
         &shortest_graphlike_undetectable_logical_error,
-        pybind11::arg("ignore_ungraphlike_errors") = false,
-        clean_doc_string(u8R"DOC(
+        pybind11::arg("ignore_ungraphlike_errors") = true,
+        clean_doc_string(R"DOC(
             Finds a minimum set of graphlike errors to produce an undetected logical error.
 
             Note that this method does not pay attention to error probabilities (other than
@@ -858,7 +858,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                 "Don't know how to read from " + pybind11::cast<std::string>(pybind11::str(obj)));
         },
         pybind11::arg("file"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def from_file(file: Union[io.TextIOBase, str, pathlib.Path]) -> stim.DetectorErrorModel:
             Reads a detector error model from a file.
 
@@ -934,7 +934,7 @@ void stim_pybind::pybind_detector_error_model_methods(
                 "Don't know how to write to " + pybind11::cast<std::string>(pybind11::str(obj)));
         },
         pybind11::arg("file"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def to_file(self, file: Union[io.TextIOBase, str, pathlib.Path]) -> None:
             Writes the detector error model to a file.
 
@@ -975,7 +975,7 @@ void stim_pybind::pybind_detector_error_model_methods(
         },
         pybind11::kw_only(),
         pybind11::arg("seed") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a CompiledDemSampler that can batch sample from detector error models.
 
             Args:
@@ -1038,7 +1038,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "flattened",
         &DetectorErrorModel::flattened,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the detector error model without repeat or detector_shift instructions.
 
             Returns:
@@ -1071,7 +1071,7 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "rounded",
         &DetectorErrorModel::rounded,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Creates an equivalent detector error model but with rounded error probabilities.
 
             Args:
@@ -1109,13 +1109,12 @@ void stim_pybind::pybind_detector_error_model_methods(
     c.def(
         "diagram",
         &dem_diagram,
-        pybind11::kw_only(),
         pybind11::arg("type"),
-        clean_doc_string(u8R"DOC(
-            @overload def diagram(self, *, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
-            @overload def diagram(self, *, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
-            @signature def diagram(self, *, type: str) -> Any:
+        clean_doc_string(R"DOC(
+            @overload def diagram(self, type: 'Literal["match-graph-svg"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["match-graph-3d"]') -> 'stim._DiagramHelper':
+            @overload def diagram(self, type: 'Literal["match-graph-3d-html"]') -> 'stim._DiagramHelper':
+            @signature def diagram(self, type: str) -> Any:
             Returns a diagram of the circuit, from a variety of options.
 
             Args:

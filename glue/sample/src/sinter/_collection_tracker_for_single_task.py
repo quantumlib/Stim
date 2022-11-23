@@ -188,7 +188,7 @@ class CollectionTrackerForSingleTask:
             t = math.ceil(t)
             t = f'{t}'
         terms = [
-            'case: ',
+            f'{self.unfilled_task.decoder} '.rjust(22),
             f'processes={self.deployed_processes}'.ljust(13),
             f'~core_mins_left={t}'.ljust(24),
         ]
@@ -199,7 +199,17 @@ class CollectionTrackerForSingleTask:
                 terms.append(f'shots_left={max(0, self.copts.max_shots - self.finished_stats.shots)}'.ljust(20))
             if self.copts.max_errors is not None:
                 terms.append(f'errors_left={max(0, self.copts.max_errors - self.finished_stats.errors)}'.ljust(20))
-        terms.append(f'{self.unfilled_task.json_metadata}')
+        if isinstance(self.unfilled_task.json_metadata, dict):
+            keys = self.unfilled_task.json_metadata.keys()
+            try:
+                keys = sorted(keys)
+            except:
+                keys = list(keys)
+            meta_desc = '{' + ','.join(f'{k}={self.unfilled_task.json_metadata[k]}' for k in keys) + '}'
+        else:
+            meta_desc = f'{self.unfilled_task.json_metadata}'
+        terms.append(meta_desc)
+
         return ''.join(terms)
 
 

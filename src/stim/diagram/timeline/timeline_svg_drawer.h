@@ -22,10 +22,17 @@
 #include "stim/circuit/circuit.h"
 #include "stim/diagram/ascii_diagram.h"
 #include "stim/diagram/circuit_timeline_helper.h"
+#include "stim/diagram/detector_slice/detector_slice_set.h"
 #include "stim/diagram/gate_data_svg.h"
 #include "stim/diagram/lattice_map.h"
 
 namespace stim_draw_internal {
+
+enum DiagramTimelineSvgDrawerMode {
+    SVG_MODE_TIMELINE = 0,
+    SVG_MODE_TIME_SLICE = 1,
+    SVG_MODE_TIME_DETECTOR_SLICE = 2,
+};
 
 struct DiagramTimelineSvgDrawer {
     std::ostream &svg_out;
@@ -38,13 +45,25 @@ struct DiagramTimelineSvgDrawer {
     std::vector<bool> cur_moment_used_flags;
     size_t num_qubits = 0;
     bool has_ticks = false;
+    uint64_t min_tick = 0;
+    uint64_t max_tick = UINT64_MAX;
+    uint64_t num_cols = UINT64_MAX;
+    uint64_t num_rows = 1;
+    DiagramTimelineSvgDrawerMode mode;
+    DetectorSliceSet detector_slice_set;
+    FlattenedCoords coord_sys;
     std::map<std::string, SvgGateData> gate_data_map;
-    size_t moment_spacing = 1;
 
     DiagramTimelineSvgDrawer(std::ostream &out, size_t num_qubits, bool has_ticks);
 
     /// Converts a circuit into a cell diagram.
-    static void make_diagram_write_to(const stim::Circuit &circuit, std::ostream &svg_out);
+    static void make_diagram_write_to(
+        const stim::Circuit &circuit,
+        std::ostream &svg_out,
+        uint64_t tick_slice_start,
+        uint64_t tick_slice_num,
+        DiagramTimelineSvgDrawerMode mode,
+        stim::ConstPointerRange<std::vector<double>> det_coord_filter);
 
     void do_start_repeat(const CircuitTimelineLoopData &loop_data);
     void do_end_repeat(const CircuitTimelineLoopData &loop_data);
@@ -56,6 +75,8 @@ struct DiagramTimelineSvgDrawer {
     void write_coords(std::ostream &out, stim::ConstPointerRange<double> relative_coordinates);
     size_t m2x(size_t m) const;
     size_t q2y(size_t q) const;
+    Coord<2> q2xy(size_t q) const;
+    Coord<2> qt2xy(uint64_t tick, uint64_t moment_delta, size_t q) const;
     void draw_annotated_gate(float cx, float cy, const SvgGateData &data, stim::ConstPointerRange<double> end_args);
 
     void draw_x_control(float cx, float cy);

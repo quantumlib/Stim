@@ -625,11 +625,8 @@ void Circuit::append_from_text(const char *text) {
         READ_UNTIL_END_OF_FILE);
 }
 
-PointerRange<stim::GateTarget> Circuit::safe_append(const Operation &operation) {
-    PointerRange<stim::GateTarget> target_data = target_buf.take_copy(operation.target_data.targets);
-    OperationData op_data{arg_buf.take_copy(operation.target_data.args), target_data};
-    operations.push_back({operation.gate, op_data});
-    return target_data;
+void Circuit::safe_append(const Operation &operation) {
+    safe_append(*operation.gate, operation.target_data.targets, operation.target_data.args);
 }
 
 void Circuit::safe_append_ua(const std::string &gate_name, const std::vector<uint32_t> &targets, double singleton_arg) {
@@ -828,8 +825,9 @@ Circuit &Circuit::operator+=(const Circuit &other) {
     uint32_t block_offset = (uint32_t)blocks.size();
     blocks.insert(blocks.end(), other.blocks.begin(), other.blocks.end());
     for (const auto &op : ops_to_add) {
-        assert(op.gate != nullptr);
-        auto target_data = safe_append(op);
+        PointerRange<stim::GateTarget> target_data = target_buf.take_copy(op.target_data.targets);
+        OperationData op_data{arg_buf.take_copy(op.target_data.args), target_data};
+        operations.push_back({op.gate, op_data});
         if (op.gate->id == gate_name_to_id("REPEAT")) {
             assert(op.target_data.targets.size() == 3);
             target_data[0].data += block_offset;
@@ -1177,7 +1175,8 @@ Circuit Circuit::inverse() const {
                 op.str() + "' instruction.");
         } else if (op.gate->id == gate_name_to_id("QUBIT_COORDS")) {
             if (k > skip_reversing) {
-                throw std::invalid_argument("Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
+                throw std::invalid_argument(
+                    "Inverting QUBIT_COORDS is not implemented except at the start of the circuit.");
             }
             skip_reversing++;
             result.safe_append(op);

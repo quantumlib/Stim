@@ -15,7 +15,6 @@
 #include "stim/simulators/error_analyzer.h"
 
 #include <algorithm>
-#include <iomanip>
 #include <queue>
 #include <sstream>
 
@@ -29,12 +28,12 @@ void ErrorAnalyzer::remove_gauge(ConstPointerRange<DemTarget> sorted) {
     }
     const auto &max = sorted.back();
     // HACK: linear overhead due to not keeping an index of which detectors used where.
-    for (auto &x : xs) {
+    for (auto &x : tracker.xs) {
         if (x.contains(max)) {
             x.xor_sorted_items(sorted);
         }
     }
-    for (auto &z : zs) {
+    for (auto &z : tracker.zs) {
         if (z.contains(max)) {
             z.xor_sorted_items(sorted);
         }
@@ -54,68 +53,67 @@ void ErrorAnalyzer::RZ(const OperationData &dat) {
 void ErrorAnalyzer::RX_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        check_for_gauge(zs[q], context_op, q);
-        xs[q].clear();
-        zs[q].clear();
+        check_for_gauge(tracker.zs[q], context_op, q);
+        tracker.xs[q].clear();
+        tracker.zs[q].clear();
     }
 }
 
 void ErrorAnalyzer::RY_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        check_for_gauge(xs[q], zs[q], context_op, q);
-        xs[q].clear();
-        zs[q].clear();
+        check_for_gauge(tracker.xs[q], tracker.zs[q], context_op, q);
+        tracker.xs[q].clear();
+        tracker.zs[q].clear();
     }
 }
 
 void ErrorAnalyzer::RZ_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        check_for_gauge(xs[q], context_op, q);
-        xs[q].clear();
-        zs[q].clear();
+        check_for_gauge(tracker.xs[q], context_op, q);
+        tracker.xs[q].clear();
+        tracker.zs[q].clear();
     }
 }
 
-void ErrorAnalyzer::MX_with_context(const OperationData &dat, const char *op) {
+void ErrorAnalyzer::MX_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        scheduled_measurement_time++;
+        tracker.num_measurements_in_past--;
 
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort_measurement_error(d, dat);
-        xs[q].xor_sorted_items(d);
-        check_for_gauge(zs[q], op, q);
-        measurement_to_detectors.erase(scheduled_measurement_time);
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        xor_sorted_measurement_error(d.range(), dat);
+        tracker.xs[q].xor_sorted_items(d.range());
+        check_for_gauge(tracker.zs[q], context_op, q);
+        tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
-void ErrorAnalyzer::MY_with_context(const OperationData &dat, const char *op) {
+void ErrorAnalyzer::MY_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        scheduled_measurement_time++;
+        tracker.num_measurements_in_past--;
 
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort_measurement_error(d, dat);
-        xs[q].xor_sorted_items(d);
-        zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q], zs[q], op, q);
-        measurement_to_detectors.erase(scheduled_measurement_time);
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        xor_sorted_measurement_error(d.range(), dat);
+        tracker.xs[q].xor_sorted_items(d.range());
+        tracker.zs[q].xor_sorted_items(d.range());
+        check_for_gauge(tracker.xs[q], tracker.zs[q], context_op, q);
+        tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
 void ErrorAnalyzer::MZ_with_context(const OperationData &dat, const char *context_op) {
     for (size_t k = dat.targets.size(); k-- > 0;) {
         auto q = dat.targets[k].qubit_value();
-        scheduled_measurement_time++;
+        tracker.num_measurements_in_past--;
 
-        std::vector<DemTarget> &d = measurement_to_detectors[scheduled_measurement_time];
-        xor_sort_measurement_error(d, dat);
-
-        zs[q].xor_sorted_items(d);
-        check_for_gauge(xs[q], context_op, q);
-        measurement_to_detectors.erase(scheduled_measurement_time);
+        SparseXorVec<DemTarget> &d = tracker.rec_bits[tracker.num_measurements_in_past];
+        xor_sorted_measurement_error(d.range(), dat);
+        tracker.zs[q].xor_sorted_items(d.range());
+        check_for_gauge(tracker.xs[q], context_op, q);
+        tracker.rec_bits.erase(tracker.num_measurements_in_past);
     }
 }
 
@@ -239,32 +237,18 @@ void ErrorAnalyzer::check_for_gauge(
 }
 
 PauliString ErrorAnalyzer::current_error_sensitivity_for(DemTarget t) const {
-    PauliString result(xs.size());
-    for (size_t q = 0; q < xs.size(); q++) {
-        result.xs[q] = std::find(xs[q].begin(), xs[q].end(), t) != xs[q].end();
-        result.zs[q] = std::find(zs[q].begin(), zs[q].end(), t) != zs[q].end();
+    PauliString result(tracker.xs.size());
+    for (size_t q = 0; q < tracker.xs.size(); q++) {
+        result.xs[q] = std::find(tracker.xs[q].begin(), tracker.xs[q].end(), t) != tracker.xs[q].end();
+        result.zs[q] = std::find(tracker.zs[q].begin(), tracker.zs[q].end(), t) != tracker.zs[q].end();
     }
     return result;
 }
 
-void ErrorAnalyzer::xor_sort_measurement_error(std::vector<DemTarget> &d, const OperationData &dat) {
-    std::sort(d.begin(), d.end());
-
-    // Cancel duplicate pairs.
-    size_t skip = 0;
-    for (size_t k2 = 0; k2 < d.size(); k2++) {
-        if (k2 + 1 < d.size() && d[k2] == d[k2 + 1]) {
-            skip += 2;
-            k2 += 1;
-        } else if (skip) {
-            d[k2 - skip] = d[k2];
-        }
-    }
-    d.resize(d.size() - skip);
-
+void ErrorAnalyzer::xor_sorted_measurement_error(ConstPointerRange<DemTarget> targets, const OperationData &dat) {
     // Measurement error.
     if (!dat.args.empty() && dat.args[0] > 0) {
-        add_error(dat.args[0], d);
+        add_error(dat.args[0], targets);
     }
 }
 
@@ -306,299 +290,99 @@ void ErrorAnalyzer::MRZ(const OperationData &dat) {
 }
 
 void ErrorAnalyzer::H_XZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].data;
-        std::swap(xs[q], zs[q]);
-    }
+    tracker.undo_H_XZ(dat);
 }
-
 void ErrorAnalyzer::H_XY(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].data;
-        zs[q] ^= xs[q];
-    }
+    tracker.undo_H_XY(dat);
 }
-
 void ErrorAnalyzer::H_YZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].data;
-        xs[q] ^= zs[q];
-    }
+    tracker.undo_H_YZ(dat);
 }
-
 void ErrorAnalyzer::C_XYZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].data;
-        zs[q] ^= xs[q];
-        xs[q] ^= zs[q];
-    }
+    tracker.undo_C_XYZ(dat);
 }
-
 void ErrorAnalyzer::C_ZYX(const OperationData &dat) {
-    for (size_t k = dat.targets.size(); k-- > 0;) {
-        auto q = dat.targets[k].data;
-        xs[q] ^= zs[q];
-        zs[q] ^= xs[q];
-    }
+    tracker.undo_C_ZYX(dat);
 }
-
 void ErrorAnalyzer::XCX(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto q1 = dat.targets[k].data;
-        auto q2 = dat.targets[k + 1].data;
-        xs[q1] ^= zs[q2];
-        xs[q2] ^= zs[q1];
-    }
+    tracker.undo_XCX(dat);
 }
-
 void ErrorAnalyzer::XCY(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto tx = dat.targets[k].data;
-        auto ty = dat.targets[k + 1].data;
-        xs[tx] ^= xs[ty];
-        xs[tx] ^= zs[ty];
-        xs[ty] ^= zs[tx];
-        zs[ty] ^= zs[tx];
-    }
+    tracker.undo_XCY(dat);
 }
-
 void ErrorAnalyzer::YCX(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto tx = dat.targets[k + 1].data;
-        auto ty = dat.targets[k].data;
-        xs[tx] ^= xs[ty];
-        xs[tx] ^= zs[ty];
-        xs[ty] ^= zs[tx];
-        zs[ty] ^= zs[tx];
-    }
+    tracker.undo_YCX(dat);
 }
-
-void ErrorAnalyzer::TICK(const OperationData &dat) {
-    ticks_seen += 1;
-}
-
 void ErrorAnalyzer::ZCY(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto c = dat.targets[k].data;
-        auto t = dat.targets[k + 1].data;
-        single_cy(c, t);
-    }
+    tracker.undo_ZCY(dat);
 }
-
 void ErrorAnalyzer::YCZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto t = dat.targets[k].data;
-        auto c = dat.targets[k + 1].data;
-        single_cy(c, t);
-    }
+    tracker.undo_YCZ(dat);
 }
-
 void ErrorAnalyzer::YCY(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k].data;
-        auto b = dat.targets[k + 1].data;
-        zs[a] ^= xs[b];
-        zs[a] ^= zs[b];
-        xs[a] ^= xs[b];
-        xs[a] ^= zs[b];
-
-        zs[b] ^= xs[a];
-        zs[b] ^= zs[a];
-        xs[b] ^= xs[a];
-        xs[b] ^= zs[a];
-    }
+    tracker.undo_YCY(dat);
 }
-
 void ErrorAnalyzer::ZCX(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto c = dat.targets[k].data;
-        auto t = dat.targets[k + 1].data;
-        single_cx(c, t);
-    }
+    tracker.undo_ZCX(dat);
 }
-
-void ErrorAnalyzer::SQRT_XX(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k].data;
-        auto b = dat.targets[k + 1].data;
-        xs[a] ^= zs[a];
-        xs[a] ^= zs[b];
-        xs[b] ^= zs[a];
-        xs[b] ^= zs[b];
-    }
-}
-
-void ErrorAnalyzer::SQRT_YY(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k].data;
-        auto b = dat.targets[k + 1].data;
-        zs[a] ^= xs[a];
-        zs[b] ^= xs[b];
-        xs[a] ^= zs[a];
-        xs[a] ^= zs[b];
-        xs[b] ^= zs[a];
-        xs[b] ^= zs[b];
-        zs[a] ^= xs[a];
-        zs[b] ^= xs[b];
-    }
-}
-
-void ErrorAnalyzer::SQRT_ZZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k].data;
-        auto b = dat.targets[k + 1].data;
-        zs[a] ^= xs[a];
-        zs[a] ^= xs[b];
-        zs[b] ^= xs[a];
-        zs[b] ^= xs[b];
-    }
-}
-
-void ErrorAnalyzer::feedback(uint32_t record_control, size_t target, bool x, bool z) {
-    if (record_control & TARGET_SWEEP_BIT) {
-        // Sweep bits have no effect on error propagation.
-        return;
-    }
-    assert(record_control & TARGET_RECORD_BIT);
-
-    uint64_t time = scheduled_measurement_time + (record_control & ~TARGET_RECORD_BIT);
-    std::vector<DemTarget> &dst = measurement_to_detectors[time];
-
-    // Temporarily move map's vector data into a SparseXorVec for manipulation.
-    std::sort(dst.begin(), dst.end());
-    SparseXorVec<DemTarget> tmp(std::move(dst));
-
-    if (x) {
-        tmp ^= xs[target];
-    }
-    if (z) {
-        tmp ^= zs[target];
-    }
-
-    // Move data back into the map.
-    dst = std::move(tmp.sorted_items);
-}
-
-void ErrorAnalyzer::single_cx(uint32_t c, uint32_t t) {
-    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-        zs[c] ^= zs[t];
-        xs[t] ^= xs[c];
-    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
-        throw std::invalid_argument(
-            "Controlled X had a bit (" + GateTarget{t}.str() + ") as its target, instead of its control.");
-    } else {
-        feedback(c, t, false, true);
-    }
-}
-
-void ErrorAnalyzer::single_cy(uint32_t c, uint32_t t) {
-    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-        zs[c] ^= zs[t];
-        zs[c] ^= xs[t];
-        xs[t] ^= xs[c];
-        zs[t] ^= xs[c];
-    } else if (t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT)) {
-        throw std::invalid_argument(
-            "Controlled Y had a bit (" + GateTarget{t}.str() + ") as its target, instead of its control.");
-    } else {
-        feedback(c, t, true, true);
-    }
-}
-
-void ErrorAnalyzer::single_cz(uint32_t c, uint32_t t) {
-    if (!((c | t) & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-        zs[c] ^= xs[t];
-        zs[t] ^= xs[c];
-    } else if (!(t & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-        feedback(c, t, true, false);
-    } else if (!(c & (TARGET_RECORD_BIT | TARGET_SWEEP_BIT))) {
-        feedback(t, c, true, false);
-    } else {
-        // Both targets are classical. No effect.
-    }
-}
-
 void ErrorAnalyzer::XCZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto t = dat.targets[k].data;
-        auto c = dat.targets[k + 1].data;
-        single_cx(c, t);
-    }
+    tracker.undo_XCZ(dat);
 }
-
 void ErrorAnalyzer::ZCZ(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto q1 = dat.targets[k].data;
-        auto q2 = dat.targets[k + 1].data;
-        single_cz(q1, q2);
-    }
+    tracker.undo_ZCZ(dat);
 }
-
+void ErrorAnalyzer::TICK(const OperationData &dat) {
+    num_ticks_in_past--;
+}
+void ErrorAnalyzer::SQRT_XX(const OperationData &dat) {
+    tracker.undo_SQRT_XX(dat);
+}
+void ErrorAnalyzer::SQRT_YY(const OperationData &dat) {
+    tracker.undo_SQRT_YY(dat);
+}
+void ErrorAnalyzer::SQRT_ZZ(const OperationData &dat) {
+    tracker.undo_SQRT_ZZ(dat);
+}
 void ErrorAnalyzer::I(const OperationData &dat) {
 }
-
 void ErrorAnalyzer::SWAP(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k].data;
-        auto b = dat.targets[k + 1].data;
-        std::swap(xs[a], xs[b]);
-        std::swap(zs[a], zs[b]);
-    }
+    tracker.undo_SWAP(dat);
 }
-
 void ErrorAnalyzer::ISWAP(const OperationData &dat) {
-    for (size_t k = dat.targets.size() - 2; k + 2 != 0; k -= 2) {
-        auto a = dat.targets[k].data;
-        auto b = dat.targets[k + 1].data;
-        zs[a] ^= xs[a];
-        zs[a] ^= xs[b];
-        zs[b] ^= xs[a];
-        zs[b] ^= xs[b];
-        std::swap(xs[a], xs[b]);
-        std::swap(zs[a], zs[b]);
-    }
+    tracker.undo_ISWAP(dat);
 }
-
 void ErrorAnalyzer::DETECTOR(const OperationData &dat) {
-    used_detectors++;
-    auto id = DemTarget::relative_detector_id(total_detectors - used_detectors);
-    for (auto t : dat.targets) {
-        auto delay = t.qubit_value();
-        measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
-    }
+    tracker.undo_DETECTOR(dat);
+    auto id = DemTarget::relative_detector_id(tracker.num_detectors_in_past);
     flushed_reversed_model.append_detector_instruction(dat.args, id);
 }
 
 void ErrorAnalyzer::OBSERVABLE_INCLUDE(const OperationData &dat) {
+    tracker.undo_OBSERVABLE_INCLUDE(dat);
     auto id = DemTarget::observable_id((int32_t)dat.args[0]);
-    for (auto t : dat.targets) {
-        auto delay = t.qubit_value();
-        measurement_to_detectors[scheduled_measurement_time + delay].push_back(id);
-    }
     flushed_reversed_model.append_logical_observable_instruction(id);
 }
 
 ErrorAnalyzer::ErrorAnalyzer(
+    uint64_t num_measurements,
     uint64_t num_detectors,
     size_t num_qubits,
+    uint64_t num_ticks,
     bool decompose_errors,
     bool fold_loops,
     bool allow_gauge_detectors,
     double approximate_disjoint_errors_threshold,
     bool ignore_decomposition_failures,
     bool block_decomposition_from_introducing_remnant_edges)
-    : total_detectors(num_detectors),
-      used_detectors(0),
-      xs(num_qubits),
-      zs(num_qubits),
-      scheduled_measurement_time(0),
+    : tracker(num_qubits, num_measurements, num_detectors),
       decompose_errors(decompose_errors),
       accumulate_errors(true),
       fold_loops(fold_loops),
       allow_gauge_detectors(allow_gauge_detectors),
       approximate_disjoint_errors_threshold(approximate_disjoint_errors_threshold),
       ignore_decomposition_failures(ignore_decomposition_failures),
-      block_decomposition_from_introducing_remnant_edges(block_decomposition_from_introducing_remnant_edges) {
+      block_decomposition_from_introducing_remnant_edges(block_decomposition_from_introducing_remnant_edges),
+      num_ticks_in_past(num_ticks) {
 }
 
 void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
@@ -637,7 +421,7 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
             if (&circuit == current_circuit_being_analyzed) {
                 auto total_ticks = circuit.count_ticks();
                 if (total_ticks) {
-                    uint64_t current_tick = total_ticks - ticks_seen;
+                    uint64_t current_tick = num_ticks_in_past;
                     error_msg << "\n    during TICK layer #" << (current_tick + 1) << " of " << (total_ticks + 1);
                 }
             }
@@ -656,8 +440,8 @@ void ErrorAnalyzer::run_circuit(const Circuit &circuit) {
 }
 
 void ErrorAnalyzer::post_check_initialization() {
-    for (uint32_t q = 0; q < xs.size(); q++) {
-        check_for_gauge(xs[q], "qubit initialization into |0> at the start of the circuit", q);
+    for (uint32_t q = 0; q < tracker.xs.size(); q++) {
+        check_for_gauge(tracker.xs[q], "qubit initialization into |0> at the start of the circuit", q);
     }
 }
 
@@ -666,7 +450,7 @@ void ErrorAnalyzer::X_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.args[0], zs[q.data].range());
+        add_error(dat.args[0], tracker.zs[q.data].range());
     }
 }
 
@@ -675,7 +459,7 @@ void ErrorAnalyzer::Y_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_xored_error(dat.args[0], xs[q.data].range(), zs[q.data].range());
+        add_xored_error(dat.args[0], tracker.xs[q.data].range(), tracker.zs[q.data].range());
     }
 }
 
@@ -684,7 +468,7 @@ void ErrorAnalyzer::Z_ERROR(const OperationData &dat) {
         return;
     }
     for (auto q : dat.targets) {
-        add_error(dat.args[0], xs[q.data].range());
+        add_error(dat.args[0], tracker.xs[q.data].range());
     }
 }
 
@@ -705,10 +489,10 @@ void ErrorAnalyzer::add_composite_error(double probability, ConstPointerRange<Ga
     for (auto qp : targets) {
         auto q = qp.qubit_value();
         if (qp.data & TARGET_PAULI_Z_BIT) {
-            inplace_xor_tail(mono_buf, xs[q]);
+            inplace_xor_tail(mono_buf, tracker.xs[q]);
         }
         if (qp.data & TARGET_PAULI_X_BIT) {
-            inplace_xor_tail(mono_buf, zs[q]);
+            inplace_xor_tail(mono_buf, tracker.zs[q]);
         }
     }
     add_error_in_sorted_jagged_tail(probability);
@@ -757,8 +541,8 @@ void ErrorAnalyzer::DEPOLARIZE1(const OperationData &dat) {
         add_error_combinations<2>(
             {0, p, p, p},
             {
-                xs[q.data].range(),
-                zs[q.data].range(),
+                tracker.xs[q.data].range(),
+                tracker.zs[q.data].range(),
             });
     }
 }
@@ -777,10 +561,10 @@ void ErrorAnalyzer::DEPOLARIZE2(const OperationData &dat) {
         add_error_combinations<4>(
             {0, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p},
             {
-                xs[a.data].range(),
-                zs[a.data].range(),
-                xs[b.data].range(),
-                zs[b.data].range(),
+                tracker.xs[a.data].range(),
+                tracker.zs[a.data].range(),
+                tracker.xs[b.data].range(),
+                tracker.zs[b.data].range(),
             });
     }
 }
@@ -825,8 +609,8 @@ void ErrorAnalyzer::PAULI_CHANNEL_1(const OperationData &dat) {
         add_error_combinations<2>(
             probabilities,
             {
-                zs[q.data].range(),
-                xs[q.data].range(),
+                tracker.zs[q.data].range(),
+                tracker.xs[q.data].range(),
             });
     }
 }
@@ -856,10 +640,10 @@ void ErrorAnalyzer::PAULI_CHANNEL_2(const OperationData &dat) {
         add_error_combinations<4>(
             probabilities,
             {
-                zs[b.data].range(),
-                xs[b.data].range(),
-                zs[a.data].range(),
-                xs[a.data].range(),
+                tracker.zs[b.data].range(),
+                tracker.xs[b.data].range(),
+                tracker.zs[a.data].range(),
+                tracker.xs[a.data].range(),
             });
     }
 }
@@ -920,8 +704,10 @@ DetectorErrorModel ErrorAnalyzer::circuit_to_detector_error_model(
     bool ignore_decomposition_failures,
     bool block_decomposition_from_introducing_remnant_edges) {
     ErrorAnalyzer analyzer(
+        circuit.count_measurements(),
         circuit.count_detectors(),
         circuit.count_qubits(),
+        circuit.count_ticks(),
         decompose_errors,
         fold_loops,
         allow_gauge_detectors,
@@ -991,41 +777,6 @@ ConstPointerRange<DemTarget> ErrorAnalyzer::add_error_in_sorted_jagged_tail(doub
     return key;
 }
 
-bool shifted_equals(int64_t shift, ConstPointerRange<DemTarget> unshifted, ConstPointerRange<DemTarget> expected) {
-    if (unshifted.size() != expected.size()) {
-        return false;
-    }
-    for (size_t k = 0; k < unshifted.size(); k++) {
-        DemTarget a = unshifted[k];
-        DemTarget e = expected[k];
-        a.shift_if_detector_id(shift);
-        if (a != e) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool shifted_equals(
-    int64_t m_shift,
-    int64_t d_shift,
-    const std::map<uint64_t, std::vector<DemTarget>> &unshifted,
-    const std::map<uint64_t, std::vector<DemTarget>> &expected) {
-    if (unshifted.size() != expected.size()) {
-        return false;
-    }
-    for (const auto &unshifted_entry : unshifted) {
-        const auto &shifted_entry = expected.find(unshifted_entry.first + m_shift);
-        if (shifted_entry == expected.end()) {
-            return false;
-        }
-        if (!shifted_equals(d_shift, unshifted_entry.second, shifted_entry->second)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     if (!fold_loops) {
         // If loop folding is disabled, just manually run each iteration.
@@ -1035,43 +786,21 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
         return;
     }
 
-    uint64_t num_loop_detectors = loop.count_detectors();
     uint64_t hare_iter = 0;
     uint64_t tortoise_iter = 0;
     ErrorAnalyzer hare(
-        total_detectors - used_detectors,
-        xs.size(),
+        tracker.num_measurements_in_past,
+        tracker.num_detectors_in_past,
+        tracker.xs.size(),
+        num_ticks_in_past,
         false,
         true,
         allow_gauge_detectors,
         approximate_disjoint_errors_threshold,
         false,
         false);
-    hare.xs = xs;
-    hare.zs = zs;
-    hare.ticks_seen = ticks_seen;
-    hare.measurement_to_detectors = measurement_to_detectors;
-    hare.scheduled_measurement_time = scheduled_measurement_time;
+    hare.tracker = tracker;
     hare.accumulate_errors = false;
-
-    auto hare_is_colliding_with_tortoise = [&]() -> bool {
-        // When comparing different loop iterations, shift detector ids to account for
-        // detectors being introduced during each iteration.
-        int64_t dt = -(int64_t)((hare_iter - tortoise_iter) * num_loop_detectors);
-        int64_t mt = hare.scheduled_measurement_time - scheduled_measurement_time;
-        for (size_t k = 0; k < hare.xs.size(); k++) {
-            if (!shifted_equals(dt, xs[k].range(), hare.xs[k].range())) {
-                return false;
-            }
-            if (!shifted_equals(dt, zs[k].range(), hare.zs[k].range())) {
-                return false;
-            }
-        }
-        if (!shifted_equals(mt, dt, measurement_to_detectors, hare.measurement_to_detectors)) {
-            return false;
-        }
-        return true;
-    };
 
     // Perform tortoise-and-hare cycle finding.
     while (hare_iter < iterations) {
@@ -1083,14 +812,14 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
             break;
         }
         hare_iter++;
-        if (hare_is_colliding_with_tortoise()) {
+        if (hare.tracker.is_shifted_copy(tracker)) {
             break;
         }
 
         if (hare_iter % 2 == 0) {
             run_circuit(loop);
             tortoise_iter++;
-            if (hare_is_colliding_with_tortoise()) {
+            if (hare.tracker.is_shifted_copy(tracker)) {
                 break;
             }
         }
@@ -1100,19 +829,20 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
         // Don't bother folding a single iteration into a repeated block.
         uint64_t period = hare_iter - tortoise_iter;
         uint64_t period_iterations = (iterations - tortoise_iter) / period;
-        uint64_t ticks_per_circuit_loop_iteration = (hare.ticks_seen - ticks_seen) / period;
+        uint64_t ticks_per_period = num_ticks_in_past - hare.num_ticks_in_past;
+        uint64_t detectors_per_period = tracker.num_detectors_in_past - hare.tracker.num_detectors_in_past;
+        uint64_t measurements_per_period = tracker.num_measurements_in_past - hare.tracker.num_measurements_in_past;
         if (period_iterations > 1) {
             // Stash error model build up so far.
             flush();
             DetectorErrorModel tmp = std::move(flushed_reversed_model);
 
             // Rewrite state to look like it would if loop had executed all but the last iteration.
-            uint64_t shift_per_iteration = period * num_loop_detectors;
-            int64_t detector_shift = (int64_t)((period_iterations - 1) * shift_per_iteration);
-            shift_active_detector_ids(-detector_shift);
-            used_detectors += detector_shift;
-            ticks_seen += (period_iterations - 1) * period * ticks_per_circuit_loop_iteration;
-            tortoise_iter += (period_iterations - 1) * period;
+            uint64_t skipped_periods = period_iterations - 1;
+            tracker.shift(-(int64_t)(skipped_periods * measurements_per_period),
+                          -(int64_t)(skipped_periods * detectors_per_period));
+            num_ticks_in_past -= skipped_periods * ticks_per_period;
+            tortoise_iter += skipped_periods * period;
 
             // Compute the loop's error model.
             for (size_t k = 0; k < period; k++) {
@@ -1124,7 +854,7 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
 
             // The loop ends (well, starts because everything is reversed) by shifting the detector coordinates.
             uint64_t lower_level_shifts = body.total_detector_shift();
-            DemTarget remaining_shift = {shift_per_iteration - lower_level_shifts};
+            DemTarget remaining_shift = {detectors_per_period - lower_level_shifts};
             if (remaining_shift.data > 0) {
                 if (body.instructions.empty() || body.instructions.front().type != DEM_SHIFT_DETECTORS) {
                     auto shift_targets = body.target_buf.take_copy({&remaining_shift});
@@ -1147,24 +877,6 @@ void ErrorAnalyzer::run_loop(const Circuit &loop, uint64_t iterations) {
     while (tortoise_iter < iterations) {
         run_circuit(loop);
         tortoise_iter++;
-    }
-}
-
-void ErrorAnalyzer::shift_active_detector_ids(int64_t shift) {
-    for (auto &e : measurement_to_detectors) {
-        for (auto &v : e.second) {
-            v.shift_if_detector_id(shift);
-        }
-    }
-    for (auto &x : xs) {
-        for (auto &v : x) {
-            v.shift_if_detector_id(shift);
-        }
-    }
-    for (auto &x : zs) {
-        for (auto &v : x) {
-            v.shift_if_detector_id(shift);
-        }
     }
 }
 
@@ -1606,7 +1318,7 @@ void ErrorAnalyzer::MPP(const OperationData &target_data) {
     }
     decompose_mpp_operation(
         OperationData{target_data.args, reversed_targets},
-        xs.size(),
+        tracker.xs.size(),
         [&](const OperationData &h_xz,
             const OperationData &h_yz,
             const OperationData &cnot,

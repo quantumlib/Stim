@@ -3,6 +3,7 @@
 #include "stim/diagram/coord.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/simulators/error_analyzer.h"
+constexpr float SLICE_WINDOW_GAP = 1.1f;
 
 using namespace stim;
 using namespace stim_draw_internal;
@@ -13,13 +14,19 @@ inline void write_key_val(std::ostream &out, const char *key, const T &val) {
 }
 
 struct DetectorSliceSetComputer {
-    ErrorAnalyzer analyzer;
-    uint64_t num_ticks_left;
-    ConstPointerRange<std::vector<double>> coord_filter;
+    SparseUnsignedRevFrameTracker tracker;
+    uint64_t tick_cur;
+    uint64_t first_yield_tick;
+    uint64_t num_yield_ticks;
+    std::set<uint32_t> used_qubits;
+    std::function<void(void)> on_tick_callback;
     DetectorSliceSetComputer(
-        const Circuit &circuit, uint64_t tick_index, ConstPointerRange<std::vector<double>> coord_filter);
+        const Circuit &circuit,
+        uint64_t first_yield_tick,
+        uint64_t num_yield_ticks);
     bool process_block_rev(const Circuit &block);
     bool process_op_rev(const Circuit &parent, const Operation &op);
+    bool process_tick();
 };
 
 bool DetectorSliceSetComputer::process_block_rev(const Circuit &block) {
@@ -31,46 +38,54 @@ bool DetectorSliceSetComputer::process_block_rev(const Circuit &block) {
     return false;
 }
 
+bool DetectorSliceSetComputer::process_tick() {
+    if (tick_cur >= first_yield_tick && tick_cur < first_yield_tick + num_yield_ticks) {
+        on_tick_callback();
+    }
+    tick_cur--;
+    return tick_cur < first_yield_tick;
+}
+
 bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Operation &op) {
     if (op.gate->id == gate_name_to_id("TICK")) {
-        num_ticks_left--;
-        return num_ticks_left == 0;
+        return process_tick();
     } else if (op.gate->id == gate_name_to_id("REPEAT")) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
+        uint64_t max_skip = tick_cur - (first_yield_tick + num_yield_ticks);
         uint64_t reps = op_data_rep_count(op.target_data);
-        uint64_t num_loop_ticks = loop_body.count_ticks();
-        if (num_loop_ticks * reps < num_ticks_left) {
-            analyzer.run_loop(loop_body, reps);
-            num_ticks_left -= num_loop_ticks * reps;
-            return false;
+        uint64_t ticks_per_iteration = loop_body.count_ticks();
+        uint64_t skipped_iterations = std::min(reps, max_skip / ticks_per_iteration);
+        if (skipped_iterations) {
+            // We can allow the analyzer to fold parts of the loop we aren't yielding.
+            tracker.undo_loop(loop_body, skipped_iterations);
+            reps -= skipped_iterations;
+            tick_cur -= ticks_per_iteration * skipped_iterations;
         }
-
-        uint64_t iterations = (num_ticks_left - 1) / num_loop_ticks;
-        analyzer.run_loop(loop_body, iterations);
-        num_ticks_left -= iterations * num_loop_ticks;
-        while (!process_block_rev(loop_body)) {
+        while (reps > 0) {
+            if (process_block_rev(loop_body)) {
+                return true;
+            }
+            reps--;
         }
-        return true;
+        return false;
     } else {
-        (analyzer.*(op.gate->reverse_error_analyzer_function))(op.target_data);
+        for (auto t : op.target_data.targets) {
+            if (t.has_qubit_value()) {
+                used_qubits.insert(t.qubit_value());
+            }
+        }
+        (tracker.*(op.gate->sparse_unsigned_rev_frame_tracker_function))(op.target_data);
         return false;
     }
 }
 DetectorSliceSetComputer::DetectorSliceSetComputer(
-    const Circuit &circuit, uint64_t tick_index, ConstPointerRange<std::vector<double>> coord_filter)
-    : analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, true, 1, false, false),
-      coord_filter(coord_filter) {
-    num_ticks_left = circuit.count_ticks() + 1;  // + 1 because "first tick" is start of circuit.
-    if (num_ticks_left == 0) {
-        throw std::invalid_argument("Circuit contains no TICK instructions to slice at.");
-    }
-    if (tick_index >= num_ticks_left) {
-        std::stringstream ss;
-        ss << "tick_index=" << tick_index << " >= circuit.num_ticks=" << num_ticks_left;
-        throw std::invalid_argument(ss.str());
-    }
-    num_ticks_left -= tick_index;
-    analyzer.accumulate_errors = false;
+    const Circuit &circuit,
+    uint64_t first_yield_tick,
+    uint64_t num_yield_ticks)
+    : tracker(circuit.count_qubits(), circuit.count_measurements(), circuit.count_detectors()),
+      first_yield_tick(first_yield_tick),
+      num_yield_ticks(num_yield_ticks) {
+    tick_cur = circuit.count_ticks() + 1;  // +1 because of artificial TICKs at start and end.
 }
 
 std::string DetectorSliceSet::str() const {
@@ -101,7 +116,7 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
                 ss << "?";
             }
             ss << ":";
-            ss << s.first;
+            ss << s.first.second;
             drawer.diagram.add_entry(AsciiDiagramEntry{
                 AsciiDiagramPos{
                     drawer.m2x(drawer.cur_moment),
@@ -126,7 +141,7 @@ void DetectorSliceSet::write_text_diagram_to(std::ostream &out) const {
         ss << q;
         ss << ":";
         auto p = coordinates.find(q);
-        if (p != coordinates.end()) {
+        if (p != coordinates.end() && !p->second.empty()) {
             ss << "(" << comma_sep(p->second) << ")";
         }
         ss << " ";
@@ -152,50 +167,64 @@ std::set<uint64_t> DetectorSliceSet::used_qubits() const {
     return result;
 }
 
-DetectorSliceSet DetectorSliceSet::from_circuit_tick(
-    const stim::Circuit &circuit, uint64_t tick_index, ConstPointerRange<std::vector<double>> coord_filter) {
-    DetectorSliceSetComputer helper(circuit, tick_index, coord_filter);
-    size_t num_qubits = helper.analyzer.xs.size();
-    helper.process_block_rev(circuit);
+DetectorSliceSet DetectorSliceSet::from_circuit_ticks(
+    const stim::Circuit &circuit,
+    uint64_t start_tick,
+    uint64_t num_ticks,
+    ConstPointerRange<std::vector<double>> coord_filter) {
+    DetectorSliceSetComputer helper(circuit, start_tick, num_ticks);
+    size_t num_qubits = helper.tracker.xs.size();
 
     std::set<DemTarget> xs;
     std::set<DemTarget> ys;
     std::set<DemTarget> zs;
     DetectorSliceSet result;
     result.num_qubits = num_qubits;
-    for (size_t q = 0; q < num_qubits; q++) {
-        xs.clear();
-        ys.clear();
-        zs.clear();
-        for (auto t : helper.analyzer.xs[q]) {
-            xs.insert(t);
-        }
-        for (auto t : helper.analyzer.zs[q]) {
-            if (xs.find(t) == xs.end()) {
-                zs.insert(t);
-            } else {
-                xs.erase(t);
-                ys.insert(t);
+    result.min_tick = start_tick;
+    result.num_ticks = num_ticks;
+
+    helper.on_tick_callback = [&]() {
+        for (size_t q = 0; q < num_qubits; q++) {
+            xs.clear();
+            ys.clear();
+            zs.clear();
+            for (auto t : helper.tracker.xs[q]) {
+                xs.insert(t);
+            }
+            for (auto t : helper.tracker.zs[q]) {
+                if (xs.find(t) == xs.end()) {
+                    zs.insert(t);
+                } else {
+                    xs.erase(t);
+                    ys.insert(t);
+                }
+            }
+
+            for (const auto &t : xs) {
+                result.slices[{helper.tick_cur, t}].push_back(GateTarget::x(q));
+            }
+            for (const auto &t : ys) {
+                result.slices[{helper.tick_cur, t}].push_back(GateTarget::y(q));
+            }
+            for (const auto &t : zs) {
+                result.slices[{helper.tick_cur, t}].push_back(GateTarget::z(q));
             }
         }
+    };
 
-        for (const auto &t : xs) {
-            result.slices[t].push_back(GateTarget::x(q));
-        }
-        for (const auto &t : ys) {
-            result.slices[t].push_back(GateTarget::y(q));
-        }
-        for (const auto &t : zs) {
-            result.slices[t].push_back(GateTarget::z(q));
-        }
+    if (!helper.process_tick()) {
+        helper.process_block_rev(circuit);
     }
 
-    result.coordinates = circuit.get_final_qubit_coords();
     std::set<uint64_t> included_detectors;
     for (const auto &t : result.slices) {
-        if (t.first.is_relative_detector_id()) {
-            included_detectors.insert(t.first.data);
+        if (t.first.second.is_relative_detector_id()) {
+            included_detectors.insert(t.first.second.data);
         }
+    }
+    result.coordinates = circuit.get_final_qubit_coords();
+    for (const auto &q : helper.used_qubits) {
+        result.coordinates[q];  // Default construct if doesn't exist.
     }
     result.detector_coordinates = circuit.get_detector_coordinates(included_detectors);
 
@@ -228,15 +257,15 @@ DetectorSliceSet DetectorSliceSet::from_circuit_tick(
         }
         return false;
     };
-    std::vector<DemTarget> removed;
+    std::vector<std::pair<uint64_t, DemTarget>> removed;
     for (const auto &t : result.slices) {
-        if (!keep(t.first)) {
+        if (!keep(t.first.second)) {
             removed.push_back(t.first);
         }
     }
     for (auto t : removed) {
         result.slices.erase(t);
-        result.detector_coordinates.erase(t.raw_id());
+        result.detector_coordinates.erase(t.second.raw_id());
     }
 
     return result;
@@ -374,67 +403,250 @@ float angle_from_to(Coord<2> origin, Coord<2> dst) {
     return atan2f(d.xyz[1], d.xyz[0]);
 }
 
-void write_terms_svg_path(
+float _mirror_score(ConstPointerRange<Coord<2>> coords, size_t i, size_t j) {
+    auto para = coords[j] - coords[i];
+    float f = para.norm2();
+    if (f < 1e-4) {
+        return INFINITY;
+    }
+    para /= sqrtf(f);
+
+    Coord<2> perp = {-para.xyz[0], para.xyz[1]};
+    std::vector<Coord<2>> left;
+    std::vector<Coord<2>> right;
+    for (size_t k = 0; k < coords.size(); k++) {
+        if (k == i || k == j) {
+            continue;
+        }
+        auto d = coords[k] - coords[i];
+        float x = d.dot(para);
+        float y = d.dot(perp);
+        if (y < 0) {
+            right.push_back({x, -y});
+        } else {
+            left.push_back({x, y});
+        }
+    }
+    if (left.size() != right.size()) {
+        return INFINITY;
+    }
+    std::sort(left.begin(), left.end());
+    std::sort(right.begin(), right.end());
+    for (size_t k = 0; k < left.size(); k++) {
+        if ((left[k] - right[k]).norm2() > 1e-2) {
+            return INFINITY;
+        }
+    }
+
+    float max_distance = 0;
+    for (size_t k = 0; k < left.size(); k++) {
+        max_distance = std::max(max_distance, left[k].xyz[1]);
+    }
+
+    return max_distance;
+}
+
+bool _pick_center_using_mirror_symmetry(ConstPointerRange<Coord<2>> coords, Coord<2> &out) {
+    float best_score = INFINITY;
+    for (size_t i = 0; i < coords.size(); i++) {
+        for (size_t j = i + 1; j < coords.size(); j++) {
+            float f = _mirror_score(coords, i, j);
+            if (f < best_score) {
+                out = (coords[i] + coords[j]) / 2;
+                best_score = f;
+            }
+        }
+    }
+    return best_score < INFINITY;
+}
+
+Coord<2> stim_draw_internal::pick_polygon_center(ConstPointerRange<Coord<2>> coords) {
+    Coord<2> center{0, 0};
+    if (_pick_center_using_mirror_symmetry(coords, center)) {
+        return center;
+    }
+
+    for (const auto &coord : coords) {
+        center += coord;
+    }
+    center /= coords.size();
+    return center;
+}
+
+bool stim_draw_internal::is_colinear(Coord<2> a, Coord<2> b, Coord<2> c) {
+    auto d1 = a - b;
+    auto d2 = b - c;
+    if (d1.norm2() < 1e-4 || d2.norm2() < 1e-4) {
+        return true;
+    }
+    d1 /= d1.norm();
+    d2 /= d2.norm();
+    return fabs(d1.dot({d2.xyz[1], -d2.xyz[0]})) < 1e-4;
+}
+
+void _start_many_body_svg_path(
+        std::ostream &out,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t tick,
+        ConstPointerRange<GateTarget> terms,
+        std::vector<Coord<2>> &pts_workspace) {
+    pts_workspace.clear();
+    for (const auto &term : terms) {
+        pts_workspace.push_back(coords(tick, term.qubit_value()));
+    }
+    auto center = pick_polygon_center(pts_workspace);
+    std::sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
+        return angle_from_to(center, a) < angle_from_to(center, b);
+    });
+
+    out << "<path d=\"";
+    out << "M" << pts_workspace[0].xyz[0] << "," << pts_workspace[0].xyz[1];
+    size_t n = pts_workspace.size();
+    for (size_t k = 0; k < n; k++) {
+        const auto &p = pts_workspace[(k + n - 1) % n];
+        const auto &a = pts_workspace[k];
+        const auto &b = pts_workspace[(k + 1) % n];
+        const auto &c = pts_workspace[(k + 2) % n];
+        if (is_colinear(p, a, b) || is_colinear(a, b, c)) {
+            out << " C";
+            auto d = b - a;
+            d = {d.xyz[1], -d.xyz[0]};
+            d *= -0.1;
+            d += (a + b) / 2;
+            out << d.xyz[0] << " " << d.xyz[1] << ",";
+            out << d.xyz[0] << " " << d.xyz[1] << ",";
+            out << b.xyz[0] << " " << b.xyz[1];
+        } else {
+            out << " L" << b.xyz[0] << "," << b.xyz[1];
+        }
+    }
+    out << '"';
+}
+
+void _start_two_body_svg_path(
+        std::ostream &out,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t tick,
+        ConstPointerRange<GateTarget> terms,
+        std::vector<Coord<2>> &pts_workspace) {
+    auto a = coords(tick, terms[0].qubit_value());
+    auto b = coords(tick, terms[1].qubit_value());
+    auto dif = b - a;
+    auto average = (a + b) * 0.5;
+    Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
+    auto ac1 = average + perp * 0.2 - dif * 0.2;
+    auto ac2 = average + perp * 0.2 + dif * 0.2;
+    auto bc1 = average + perp * -0.2 + dif * 0.2;
+    auto bc2 = average + perp * -0.2 - dif * 0.2;
+
+    out << "<path d=\"";
+    out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";
+    out << "C ";
+    out << ac1.xyz[0] << " " << ac1.xyz[1] << ", ";
+    out << ac2.xyz[0] << " " << ac2.xyz[1] << ", ";
+    out << b.xyz[0] << " " << b.xyz[1] << " ";
+    out << "C ";
+    out << bc1.xyz[0] << " " << bc1.xyz[1] << ", ";
+    out << bc2.xyz[0] << " " << bc2.xyz[1] << ", ";
+    out << a.xyz[0] << " " << a.xyz[1];
+    out << '"';
+}
+
+void _start_one_body_svg_path(
+        std::ostream &out,
+        const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+        uint64_t tick,
+        ConstPointerRange<GateTarget> terms,
+        std::vector<Coord<2>> &pts_workspace,
+    size_t scale) {
+    auto c = coords(tick, terms[0].qubit_value());
+    out << "<circle";
+    write_key_val(out, "cx", c.xyz[0]);
+    write_key_val(out, "cy", c.xyz[1]);
+    write_key_val(out, "r", scale);
+}
+
+void _start_slice_shape_command(
     std::ostream &out,
-    DemTarget src,
-    const FlattenedCoords &coordsys,
+    const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords,
+    uint64_t tick,
     ConstPointerRange<GateTarget> terms,
-    std::vector<Coord<2>> &pts_workspace) {
+    std::vector<Coord<2>> &pts_workspace,
+    size_t scale) {
     if (terms.size() > 2) {
-        Coord<2> center{0, 0};
-        for (const auto &term : terms) {
-            center += coordsys.qubit_coords[term.qubit_value()];
-        }
-        center /= terms.size();
-
-        pts_workspace.clear();
-        for (const auto &term : terms) {
-            pts_workspace.push_back(coordsys.qubit_coords[term.qubit_value()]);
-        }
-        std::sort(pts_workspace.begin(), pts_workspace.end(), [&](Coord<2> a, Coord<2> b) {
-            return angle_from_to(center, a) < angle_from_to(center, b);
-        });
-
-        out << "M";
-        for (const auto &pt : pts_workspace) {
-            out << pt.xyz[0] << "," << pt.xyz[1] << " ";
-        }
-        out << "Z";
+        _start_many_body_svg_path(out, coords, tick, terms, pts_workspace);
     } else if (terms.size() == 2) {
-        auto a = coordsys.qubit_coords[terms[0].qubit_value()];
-        auto b = coordsys.qubit_coords[terms[1].qubit_value()];
-        auto dif = b - a;
-        auto average = (a + b) * 0.5;
-        Coord<2> perp{-dif.xyz[1], dif.xyz[0]};
-        auto ac1 = average + perp * 0.2 - dif * 0.2;
-        auto ac2 = average + perp * 0.2 + dif * 0.2;
-        auto bc1 = average + perp * -0.2 + dif * 0.2;
-        auto bc2 = average + perp * -0.2 - dif * 0.2;
-
-        out << "M" << a.xyz[0] << "," << a.xyz[1] << " ";
-        out << "C ";
-        out << ac1.xyz[0] << " " << ac1.xyz[1] << ", ";
-        out << ac2.xyz[0] << " " << ac2.xyz[1] << ", ";
-        out << b.xyz[0] << " " << b.xyz[1] << " ";
-        out << "C ";
-        out << bc1.xyz[0] << " " << bc1.xyz[1] << ", ";
-        out << bc2.xyz[0] << " " << bc2.xyz[1] << ", ";
-        out << a.xyz[0] << " " << a.xyz[1];
+        _start_two_body_svg_path(out, coords, tick, terms, pts_workspace);
     } else if (terms.size() == 1) {
-        auto c = coordsys.qubit_coords[terms[0].qubit_value()];
-        out << "M" << (c.xyz[0] - 6) << "," << c.xyz[1] << " a 6 6 0 0 0 12 0 a 6 6 0 0 0 -12 0";
+        _start_one_body_svg_path(out, coords, tick, terms, pts_workspace, scale);
     }
 }
 
 void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
-    auto coordsys = FlattenedCoords::from(*this, 32);
+    size_t num_cols = (uint64_t)ceil(sqrt((double)num_ticks));
+    size_t num_rows = num_ticks / num_cols;
+    while (num_cols * num_rows < num_ticks) {
+        num_rows++;
+    }
+    while (num_cols * num_rows >= num_ticks + num_rows) {
+        num_cols--;
+    }
 
+    auto coordsys = FlattenedCoords::from(*this, 32);
     out << R"SVG(<svg viewBox="0 0 )SVG";
-    out << coordsys.size.xyz[0];
+    out << coordsys.size.xyz[0] * ((num_cols - 1) * SLICE_WINDOW_GAP + 1);
     out << " ";
-    out << coordsys.size.xyz[1];
+    out << coordsys.size.xyz[1] * ((num_rows - 1) * SLICE_WINDOW_GAP + 1);
     out << R"SVG(" xmlns="http://www.w3.org/2000/svg">)SVG";
     out << "\n";
+
+    auto coords = [&](uint64_t tick, uint32_t qubit) {
+        auto result = coordsys.qubit_coords[qubit];
+        uint64_t s = tick - min_tick;
+        uint64_t sx = s % num_cols;
+        uint64_t sy = s / num_cols;
+        result.xyz[0] += coordsys.size.xyz[0] * sx * SLICE_WINDOW_GAP;
+        result.xyz[1] += coordsys.size.xyz[1] * sy * SLICE_WINDOW_GAP;
+        return result;
+    };
+    write_svg_contents_to(out, coords, 6);
+
+    for (size_t k = 0; k < num_ticks; k++) {
+        for (auto q : used_qubits()) {
+            auto c = coords(min_tick + k, q);
+            out << "<circle";
+            write_key_val(out, "cx", c.xyz[0]);
+            write_key_val(out, "cy", c.xyz[1]);
+            write_key_val(out, "r", 2);
+            write_key_val(out, "stroke", "none");
+            write_key_val(out, "fill", "black");
+            out << "/>\n";
+        }
+    }
+
+    // Boundaries around different slices.
+    if (num_ticks > 1) {
+        for (uint64_t col = 0; col < num_cols; col++) {
+            for (uint64_t row = 0; row < num_rows && row * num_cols + col < num_ticks; row++) {
+                auto sw = coordsys.size.xyz[0];
+                auto sh = coordsys.size.xyz[1];
+                out << "<rect";
+                write_key_val(out, "x", sw * col * SLICE_WINDOW_GAP);
+                write_key_val(out, "y", sh * row * SLICE_WINDOW_GAP);
+                write_key_val(out, "width", sw);
+                write_key_val(out, "height", sh);
+                write_key_val(out, "stroke", "black");
+                write_key_val(out, "fill", "none");
+                out << "/>\n";
+            }
+        }
+    }
+
+    out << R"SVG(</svg>)SVG";
+}
+
+void DetectorSliceSet::write_svg_contents_to(
+    std::ostream &out, const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords, size_t scale) const {
     size_t clip_id = 0;
 
     std::vector<Coord<2>> pts_workspace;
@@ -444,7 +656,8 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
     // Draw multi-qubit detector slices.
     for (size_t layer = 0; layer < 3; layer++) {
         for (const auto &e : slices) {
-            if (e.first.is_observable_id()) {
+            uint64_t tick = e.first.first;
+            if (e.first.second.is_observable_id()) {
                 continue;
             }
 
@@ -470,14 +683,18 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                 color = "#AAAAAA";
             }
 
-            out << R"SVG(<path d=")SVG";
-            write_terms_svg_path(out, e.first, coordsys, terms, pts_workspace);
-            out << R"SVG(" stroke="none" fill-opacity=")SVG";
-            out << (terms.size() > 2 ? 0.75 : 1);
-            out << R"SVG(" fill=")SVG";
-            out << color;
-            out << '"';
-            out << " />\n";
+            _start_slice_shape_command(out,
+                                       coords,
+                                       tick,
+                                       terms,
+                                       pts_workspace,
+                                       scale);
+            write_key_val(out, "stroke", "none");
+            if (terms.size() > 2) {
+                write_key_val(out, "fill-opacity", 0.75);
+            }
+            write_key_val(out, "fill", color);
+            out << "/>\n";
 
             if (drawCorners) {
                 if (!haveDrawnCorners) {
@@ -491,18 +708,24 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                 }
                 out << R"SVG(<clipPath id="clip)SVG";
                 out << clip_id;
-                out << R"SVG("><path d=")SVG";
-                write_terms_svg_path(out, e.first, coordsys, terms, pts_workspace);
-                out << "\" /></clipPath>\n";
+                out << "\">";
+                _start_slice_shape_command(out,
+                                           coords,
+                                           tick,
+                                           terms,
+                                           pts_workspace,
+                                           scale);
+                out << "/></clipPath>\n";
 
+                size_t blur_radius = scale == 6 ? 20 : scale * 1.8f;
                 for (const auto &t : terms) {
-                    auto c = coordsys.qubit_coords[t.qubit_value()];
+                    auto c = coords(tick, t.qubit_value());
                     out << R"SVG(<circle clip-path="url(#clip)SVG";
                     out << clip_id;
                     out << ")\"";
                     write_key_val(out, "cx", c.xyz[0]);
                     write_key_val(out, "cy", c.xyz[1]);
-                    write_key_val(out, "r", 20);
+                    write_key_val(out, "r", blur_radius);
                     write_key_val(out, "stroke", "none");
                     if (t.is_x_target()) {
                         write_key_val(out, "fill", "url('#xgrad')");
@@ -517,22 +740,15 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                 clip_id++;
             }
 
-            out << R"SVG(<path d=")SVG";
-            write_terms_svg_path(out, e.first, coordsys, terms, pts_workspace);
-            out << R"SVG(" stroke="black" fill="none")SVG";
-            out << " />\n";
+            _start_slice_shape_command(out,
+                                       coords,
+                                       tick,
+                                       terms,
+                                       pts_workspace,
+                                       scale);
+            write_key_val(out, "stroke", "black");
+            write_key_val(out, "fill", "none");
+            out << "/>\n";
         }
     }
-
-    for (auto q : used_qubits()) {
-        auto c = coordsys.qubit_coords[q];
-        out << R"SVG(<circle cx=")SVG";
-        out << c.xyz[0];
-        out << R"SVG(" cy=")SVG";
-        out << c.xyz[1];
-        out << R"SVG(" r="2" stroke="none" fill="black" />)SVG";
-        out << "\n";
-    }
-
-    out << R"SVG(</svg>)SVG";
 }

@@ -12,6 +12,7 @@ src/stim/cmd/command_m2d.test.cc
 src/stim/cmd/command_sample.test.cc
 src/stim/cmd/command_sample_dem.test.cc
 src/stim/dem/detector_error_model.test.cc
+src/stim/diagram/ascii_diagram.test.cc
 src/stim/diagram/base64.test.cc
 src/stim/diagram/detector_slice/detector_slice_set.test.cc
 src/stim/diagram/graph/match_graph_3d_drawer.test.cc
@@ -58,7 +59,9 @@ src/stim/simulators/error_matcher.test.cc
 src/stim/simulators/frame_simulator.test.cc
 src/stim/simulators/matched_error.test.cc
 src/stim/simulators/measurements_to_detection_events.test.cc
+src/stim/simulators/sparse_rev_frame_tracker.test.cc
 src/stim/simulators/tableau_simulator.test.cc
+src/stim/simulators/transform_without_feedback.test.cc
 src/stim/simulators/vector_simulator.test.cc
 src/stim/stabilizers/conversions.test.cc
 src/stim/stabilizers/pauli_string.test.cc

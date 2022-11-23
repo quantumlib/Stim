@@ -71,7 +71,7 @@ std::vector<uint32_t> CircuitInstruction::raw_targets() const {
         result.push_back(t.data);
     }
     return result;
-};
+}
 
 std::vector<GateTarget> CircuitInstruction::targets_copy() const {
     return targets;
@@ -84,7 +84,7 @@ pybind11::class_<CircuitInstruction> stim_pybind::pybind_circuit_instruction(pyb
     return pybind11::class_<CircuitInstruction>(
         m,
         "CircuitInstruction",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             An instruction, like `H 0 1` or `CNOT rec[-1] 5`, from a circuit.
 
             Examples:
@@ -109,7 +109,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
         pybind11::arg("name"),
         pybind11::arg("targets"),
         pybind11::arg("gate_args") = std::make_tuple(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Initializes a `stim.CircuitInstruction`.
 
             Args:
@@ -126,7 +126,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
     c.def_property_readonly(
         "name",
         &CircuitInstruction::name,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The name of the instruction (e.g. `H` or `X_ERROR` or `DETECTOR`).
         )DOC")
             .data());
@@ -134,7 +134,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
     c.def(
         "targets_copy",
         &CircuitInstruction::targets_copy,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the targets of the instruction.
         )DOC")
             .data());
@@ -142,7 +142,7 @@ void stim_pybind::pybind_circuit_instruction_methods(pybind11::module &m, pybind
     c.def(
         "gate_args_copy",
         &CircuitInstruction::gate_args_copy,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns the gate's arguments (numbers parameterizing the instruction).
 
             For noisy gates this typically a list of probabilities.

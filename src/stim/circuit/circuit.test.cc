@@ -1512,12 +1512,12 @@ TEST(circuit, inverse) {
             S 0
         )CIRCUIT"));
 
-    ASSERT_THROW({Circuit("X_ERROR(0.125) 0").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("M(0.125) 0").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("M 0").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("R 0").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("MR 0").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("MPP X0*X1").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("DETECTOR").inverse();}, std::invalid_argument);
-    ASSERT_THROW({Circuit("OBSERVABLE_INCLUDE").inverse();}, std::invalid_argument);
+    ASSERT_THROW({ Circuit("X_ERROR(0.125) 0").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("M(0.125) 0").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("M 0").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("R 0").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MR 0").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("MPP X0*X1").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("DETECTOR").inverse(); }, std::invalid_argument);
+    ASSERT_THROW({ Circuit("OBSERVABLE_INCLUDE").inverse(); }, std::invalid_argument);
 }

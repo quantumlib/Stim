@@ -6,44 +6,47 @@ from typing import Tuple
 import numpy as np
 import stim
 
+from sinter._decoding_decoder_class import Decoder
+
 if TYPE_CHECKING:
     import fusion_blossom
 
 
-def decode_using_fusion_blossom(*,
-                                num_shots: int,
-                                num_dets: int,
-                                num_obs: int,
-                                dem_path: pathlib.Path,
-                                dets_b8_in_path: pathlib.Path,
-                                obs_predictions_b8_out_path: pathlib.Path,
-                                tmp_dir: pathlib.Path,
-                                ) -> None:
-    """Use fusion_blossom to predict observables from detection events."""
+class FusionBlossomDecoder(Decoder):
+    """Use fusion blossom to predict observables from detection events."""
+    def decode_via_files(self,
+                         *,
+                         num_shots: int,
+                         num_dets: int,
+                         num_obs: int,
+                         dem_path: pathlib.Path,
+                         dets_b8_in_path: pathlib.Path,
+                         obs_predictions_b8_out_path: pathlib.Path,
+                         tmp_dir: pathlib.Path,
+                       ) -> None:
+        try:
+            import fusion_blossom
+        except ImportError as ex:
+            raise ImportError(
+                "The decoder 'fusion_blossom' isn't installed\n"
+                "To fix this, install the python package 'fusion-blossom' into your environment.\n"
+                "For example, if you are using pip, run `pip install fusion-blossom~=0.1.4`.\n"
+            ) from ex
 
-    try:
-        import fusion_blossom
-    except ImportError as ex:
-        raise ImportError(
-            "The decoder 'fusion_blossom' isn't installed\n"
-            "To fix this, install the python package 'fusion-blossom' into your environment.\n"
-            "For example, if you are using pip, run `pip install fusion-blossom~=0.1.4`.\n"
-        ) from ex
+        error_model = stim.DetectorErrorModel.from_file(dem_path)
+        solver, fault_masks = detector_error_model_to_fusion_blossom_solver_and_fault_masks(error_model)
+        num_det_bytes = math.ceil(num_dets / 8)
 
-    error_model = stim.DetectorErrorModel.from_file(dem_path)
-    solver, fault_masks = detector_error_model_to_fusion_blossom_solver_and_fault_masks(error_model)
-    num_det_bytes = math.ceil(num_dets / 8)
-
-    with open(dets_b8_in_path, 'rb') as dets_in_f:
-        with open(obs_predictions_b8_out_path, 'wb') as obs_out_f:
-            for _ in range(num_shots):
-                dets_bit_packed = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes)
-                dets_sparse = np.flatnonzero(np.unpackbits(dets_bit_packed, count=num_dets, bitorder='little'))
-                syndrome = fusion_blossom.SyndromePattern(syndrome_vertices=dets_sparse)
-                solver.solve(syndrome)
-                prediction = int(np.bitwise_xor.reduce(fault_masks[solver.subgraph()]))
-                obs_out_f.write(prediction.to_bytes((num_obs + 7) // 8, byteorder='little'))
-                solver.clear()
+        with open(dets_b8_in_path, 'rb') as dets_in_f:
+            with open(obs_predictions_b8_out_path, 'wb') as obs_out_f:
+                for _ in range(num_shots):
+                    dets_bit_packed = np.fromfile(dets_in_f, dtype=np.uint8, count=num_det_bytes)
+                    dets_sparse = np.flatnonzero(np.unpackbits(dets_bit_packed, count=num_dets, bitorder='little'))
+                    syndrome = fusion_blossom.SyndromePattern(syndrome_vertices=dets_sparse)
+                    solver.solve(syndrome)
+                    prediction = int(np.bitwise_xor.reduce(fault_masks[solver.subgraph()]))
+                    obs_out_f.write(prediction.to_bytes((num_obs + 7) // 8, byteorder='little'))
+                    solver.clear()
 
 
 def iter_flatten_model(model: stim.DetectorErrorModel,

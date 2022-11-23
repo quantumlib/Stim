@@ -1,7 +1,7 @@
 import contextlib
 import dataclasses
 import pathlib
-from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple
+from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
 
 import math
 import numpy as np
@@ -36,6 +36,7 @@ def iter_collect(*,
                  max_batch_seconds: Optional[int] = None,
                  max_batch_size: Optional[int] = None,
                  start_batch_size: Optional[int] = None,
+                 custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
                  ) -> Iterator['sinter.Progress']:
     """Collects error correction statistics using multiple worker processes.
 
@@ -75,6 +76,9 @@ def iter_collect(*,
             taken per shot. This information is then used to predict the
             biggest batch size that can finish in under the given number of
             seconds. Limits each batch to be no larger than that.
+        custom_decoders: Custom decoders that can be used if requested by name.
+            If not specified, only decoders built into sinter, such as
+            'pymatching' and 'fusion_blossom', can be used.
 
     Yields:
         sinter.SamplerStats values recording incremental statistical data
@@ -97,7 +101,8 @@ def iter_collect(*,
                 max_batch_size=max_batch_size,
             ),
             decoders=decoders,
-            additional_existing_data=additional_existing_data) as manager:
+            additional_existing_data=additional_existing_data,
+            custom_decoders=custom_decoders) as manager:
         yield Progress(
             new_stats=(),
             status_message="Starting workers..."
@@ -140,6 +145,7 @@ def collect(*,
             start_batch_size: Optional[int] = None,
             print_progress: bool = False,
             hint_num_tasks: Optional[int] = None,
+            custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
             ) -> List['sinter.TaskStats']:
     """
     Args:
@@ -187,6 +193,9 @@ def collect(*,
             taken per shot. This information is then used to predict the
             biggest batch size that can finish in under the given number of
             seconds. Limits each batch to be no larger than that.
+        custom_decoders: Custom decoders that can be used if requested by name.
+            If not specified, only decoders built into sinter, such as
+            'pymatching' and 'fusion_blossom', can be used.
 
     Returns:
         A list of sample statistics, one from each problem. The list is not in
@@ -237,6 +246,7 @@ def collect(*,
             tasks=tasks,
             hint_num_tasks=hint_num_tasks,
             additional_existing_data=additional_existing_data,
+            custom_decoders=custom_decoders,
         ):
             for stats in progress.new_stats:
                 result.add_sample(stats)

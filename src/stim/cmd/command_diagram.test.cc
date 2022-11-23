@@ -15,6 +15,7 @@
 #include "gtest/gtest.h"
 
 #include "stim/main_namespaced.test.h"
+#include "stim/test_util.test.h"
 
 using namespace stim;
 
@@ -96,6 +97,65 @@ q2: ------
             )output"));
 }
 
+TEST(command_diagram, run_captured_stim_main_timeline_ticking) {
+    auto circuit = R"input(
+        R 0 1
+        TICK
+        H 0
+        CNOT 0 1
+        TICK
+        S 0
+        TICK
+        H 0
+        M 0 1
+    )input";
+    auto result_txt = run_captured_stim_main(
+        {"diagram", "--type", "timeline-text"},
+        circuit);
+    ASSERT_EQ("\n" + result_txt, R"DIAGRAM(
+       /-\   /--------\
+q0: -R-H-@-S-H-M:rec[0]-
+         |
+q1: -R---X-----M:rec[1]-
+       \-/   \--------/
+)DIAGRAM");
+
+    auto result = run_captured_stim_main(
+        {"diagram", "--type", "timeline-svg"},
+        circuit);
+    expect_string_is_identical_to_saved_file(
+        result,
+        "command_diagram_timeline.svg");
+
+    result = run_captured_stim_main(
+        {"diagram", "--type", "timeline-svg", "--tick", "0"},
+        circuit);
+    expect_string_is_identical_to_saved_file(
+        result,
+        "command_diagram_timeline_tick0.svg");
+
+    result = run_captured_stim_main(
+        {"diagram", "--type", "timeline-svg", "--tick", "1"},
+        circuit);
+    expect_string_is_identical_to_saved_file(
+        result,
+        "command_diagram_timeline_tick1.svg");
+
+    result = run_captured_stim_main(
+        {"diagram", "--type", "timeline-svg", "--tick", "2"},
+        circuit);
+    expect_string_is_identical_to_saved_file(
+        result,
+        "command_diagram_timeline_tick2.svg");
+
+    result = run_captured_stim_main(
+        {"diagram", "--type", "timeline-svg", "--tick", "1:3"},
+        circuit);
+    expect_string_is_identical_to_saved_file(
+        result,
+        "command_diagram_timeline_tick1_3.svg");
+}
+
 TEST(command_diagram, run_captured_stim_main_works_various_arguments) {
     std::vector<std::string> diagram_types{
         "timeline-text",
@@ -105,25 +165,31 @@ TEST(command_diagram, run_captured_stim_main_works_various_arguments) {
         "match-graph-svg",
         "match-graph-3d",
         "match-graph-3d-html",
-        "detector-slice-txt",
+        "detector-slice-text",
         "detector-slice-svg",
+        "time-slice-svg",
+        "time+detector-slice-svg",
     };
-    ASSERT_NE(
-        "",
-        run_captured_stim_main(
-            {
-                "diagram",
-                "--type",
-                "timeline-svg",
-                "--tick",
-                "1",
-            },
-            R"input(
+    for (const auto &type : diagram_types) {
+        auto actual = run_captured_stim_main(
+                {
+                    "diagram",
+                    "--type",
+                    type.c_str(),
+                    "--tick",
+                    "1:2",
+                },
+                R"input(
             H 0
             CNOT 0 1
             X_ERROR(0.125) 0
             TICK
             M 0 1
             DETECTOR(1, 2, 3) rec[-1] rec[-2]
-        )input"));
+        )input");
+        if (actual.find("[stderr") != std::string::npos) {
+            EXPECT_TRUE(false) << actual;
+        }
+        EXPECT_NE(actual, "") << type;
+    }
 }

@@ -27,7 +27,11 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100) {
     auto circuit = generate_surface_code_circuit(params).circuit;
     benchmark_go([&]() {
         ErrorAnalyzer analyzer(
-            circuit.count_detectors(), circuit.count_qubits(), false, false, false, 0.0, false, true);
+            circuit.count_measurements(),
+            circuit.count_detectors(),
+            circuit.count_qubits(),
+            circuit.count_ticks(),
+            false, false, false, 0.0, false, true);
         analyzer.run_circuit(circuit);
     }).goal_millis(320);
 }
@@ -39,7 +43,11 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100_find_reducible_er
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
     benchmark_go([&]() {
-        ErrorAnalyzer analyzer(circuit.count_detectors(), circuit.count_qubits(), true, false, false, 0.0, false, true);
+        ErrorAnalyzer analyzer(
+            circuit.count_measurements(),
+            circuit.count_detectors(),
+            circuit.count_qubits(),
+            circuit.count_ticks(), true, false, false, 0.0, false, true);
         analyzer.run_circuit(circuit);
     }).goal_millis(450);
 }
@@ -51,7 +59,11 @@ BENCHMARK(ErrorAnalyzer_surface_code_rotated_memory_z_d11_r100000000_find_loops)
     params.after_clifford_depolarization = 0.001;
     auto circuit = generate_surface_code_circuit(params).circuit;
     benchmark_go([&]() {
-        ErrorAnalyzer analyzer(circuit.count_detectors(), circuit.count_qubits(), false, true, false, 0.0, false, true);
+        ErrorAnalyzer analyzer(
+            circuit.count_measurements(),
+            circuit.count_detectors(),
+            circuit.count_qubits(),
+            circuit.count_ticks(), false, true, false, 0.0, false, true);
         analyzer.run_circuit(circuit);
     }).goal_millis(15);
 }

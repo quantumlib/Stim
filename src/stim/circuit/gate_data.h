@@ -34,6 +34,7 @@
 namespace stim {
 
 struct TableauSimulator;
+struct SparseUnsignedRevFrameTracker;
 struct FrameSimulator;
 struct OperationData;
 struct Tableau;
@@ -137,6 +138,7 @@ struct Gate {
     void (TableauSimulator::*tableau_simulator_function)(const OperationData &);
     void (FrameSimulator::*frame_simulator_function)(const OperationData &);
     void (ErrorAnalyzer::*reverse_error_analyzer_function)(const OperationData &);
+    void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &);
     ExtraGateData (*extra_data_func)(void);
     GateFlags flags;
     uint8_t arg_count;
@@ -150,6 +152,7 @@ struct Gate {
         void (TableauSimulator::*tableau_simulator_function)(const OperationData &),
         void (FrameSimulator::*frame_simulator_function)(const OperationData &),
         void (ErrorAnalyzer::*hit_simulator_function)(const OperationData &),
+        void (SparseUnsignedRevFrameTracker::*sparse_unsigned_rev_frame_tracker_function)(const OperationData &),
         GateFlags flags,
         ExtraGateData (*extra_data_func)(void));
 

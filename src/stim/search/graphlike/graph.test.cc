@@ -229,3 +229,19 @@ TEST(search_graphlike, DemAdjGraph_from_dem) {
             },
             0));
 }
+
+TEST(search_graphlike, add_edges_from_separable_targets_ignore) {
+    Graph actual(10);
+    Graph expected(10);
+    DetectorErrorModel d(R"DEM(
+        error(0.125) D0 ^ D4 D6
+    )DEM");
+    ASSERT_EQ(actual, expected);
+    actual.add_edges_from_separable_targets(d.instructions[0].target_data, true);
+    ASSERT_EQ(actual, expected);
+    actual.add_edges_from_separable_targets(d.instructions[0].target_data, false);
+    expected.add_outward_edge(4, 6, 0);
+    expected.add_outward_edge(6, 4, 0);
+    expected.add_outward_edge(0, NO_NODE_INDEX, 0);
+    ASSERT_EQ(actual, expected);
+}

@@ -290,22 +290,22 @@ TEST(ErrorAnalyzer, circuit_to_detector_error_model) {
 
 TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
     FrameSimulator f(16, 16, SIZE_MAX, SHARED_TEST_RNG());
-    ErrorAnalyzer e(1, 16, false, false, false, 0.0, false, true);
+    ErrorAnalyzer e(100, 1, 16, 100, false, false, false, 0.0, false, true);
     for (size_t q = 0; q < 16; q++) {
         if (q & 1) {
-            e.xs[q].xor_item({0});
+            e.tracker.xs[q].xor_item({0});
             f.x_table[q][0] = true;
         }
         if (q & 2) {
-            e.xs[q].xor_item({1});
+            e.tracker.xs[q].xor_item({1});
             f.x_table[q][1] = true;
         }
         if (q & 4) {
-            e.zs[q].xor_item({0});
+            e.tracker.zs[q].xor_item({0});
             f.z_table[q][0] = true;
         }
         if (q & 8) {
-            e.zs[q].xor_item({1});
+            e.tracker.zs[q].xor_item({1});
             f.z_table[q][1] = true;
         }
     }
@@ -322,11 +322,11 @@ TEST(ErrorAnalyzer, unitary_gates_match_frame_simulator) {
             for (size_t q = 0; q < 16; q++) {
                 bool xs[2]{};
                 bool zs[2]{};
-                for (auto x : e.xs[q]) {
+                for (auto x : e.tracker.xs[q]) {
                     ASSERT_TRUE(x.data < 2) << gate.name;
                     xs[x.data] = true;
                 }
-                for (auto z : e.zs[q]) {
+                for (auto z : e.tracker.zs[q]) {
                     ASSERT_TRUE(z.data < 2) << gate.name;
                     zs[z.data] = true;
                 }
@@ -3244,5 +3244,21 @@ TEST(ErrorAnalyzer, else_correlated_error_block) {
     )CIRCUIT");
     ASSERT_THROW(
         { ErrorAnalyzer::circuit_to_detector_error_model(c, true, true, false, 1, false, false); },
+        std::invalid_argument);
+}
+
+TEST(ErrorAnalyzer, measurement_before_beginning) {
+    Circuit c(R"CIRCUIT(
+        DETECTOR rec[-1]
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, false, false, false, false, false, false); },
+        std::invalid_argument);
+
+    c = Circuit(R"CIRCUIT(
+        OBSERVABLE_INCLUDE(0) rec[-1]
+    )CIRCUIT");
+    ASSERT_THROW(
+        { ErrorAnalyzer::circuit_to_detector_error_model(c, false, false, false, false, false, false); },
         std::invalid_argument);
 }

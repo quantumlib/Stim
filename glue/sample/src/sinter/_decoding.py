@@ -1,31 +1,20 @@
+from typing import Optional, Dict, Tuple, TYPE_CHECKING, Union
 
 import contextlib
-import functools
 import pathlib
 import tempfile
-
 import math
 import time
-from typing import Optional, Dict, Callable, Tuple
-from typing import Union
 
 import numpy as np
 import stim
 
 from sinter._anon_task_stats import AnonTaskStats
-from sinter._decoding_fusion_blossom import decode_using_fusion_blossom
-from sinter._decoding_internal import decode_using_internal_decoder
-from sinter._decoding_pymatching import decode_using_pymatching
+from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._decoding_decoder_class import Decoder
 
-
-DECODER_METHODS: Dict[str, Callable] = {
-    'pymatching': decode_using_pymatching,
-    'fusion_blossom': decode_using_fusion_blossom,
-    'internal': functools.partial(decode_using_internal_decoder, decoder='internal'),
-    'internal_correlated': functools.partial(decode_using_internal_decoder, decoder='internal_correlated'),
-    'internal_2': functools.partial(decode_using_internal_decoder, decoder='internal_2'),
-    'internal_correlated_2': functools.partial(decode_using_internal_decoder, decoder='internal_correlated_2'),
-}
+if TYPE_CHECKING:
+    import sinter
 
 
 def streaming_post_select(*,
@@ -129,7 +118,9 @@ def sample_decode(*,
                   postselected_observable_mask: Optional[np.ndarray] = None,
                   num_shots: int,
                   decoder: str,
-                  tmp_dir: Union[str, pathlib.Path, None] = None) -> AnonTaskStats:
+                  tmp_dir: Union[str, pathlib.Path, None] = None,
+                  custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
+                  ) -> AnonTaskStats:
     """Samples how many times a decoder correctly predicts the logical frame.
 
     Args:
@@ -158,6 +149,9 @@ def sample_decode(*,
         tmp_dir: An existing directory that is currently empty where temporary
             files can be written as part of performing decoding. If set to
             None, one is created using the tempfile package.
+        custom_decoders: Custom decoders that can be used if requested by name.
+            If not specified, only decoders built into sinter, such as
+            'pymatching' and 'fusion_blossom', can be used.
     """
     if (circuit_obj is None) == (circuit_path is None):
         raise ValueError('(circuit_obj is None) == (circuit_path is None)')
@@ -222,10 +216,14 @@ def sample_decode(*,
         num_kept_shots = num_shots - num_det_discards
 
         # Perform syndrome decoding to predict observables from detection events.
-        decode_method = DECODER_METHODS.get(decoder)
-        if decode_method is None:
+        decoder_obj: Optional[Decoder] = None
+        if custom_decoders is not None:
+            decoder_obj = custom_decoders.get(decoder)
+        if decoder_obj is None:
+            decoder_obj = BUILT_IN_DECODERS.get(decoder)
+        if decoder_obj is None:
             raise NotImplementedError(f"Unrecognized decoder: {decoder!r}")
-        decode_method(
+        decoder_obj.decode_via_files(
             num_shots=num_kept_shots,
             num_dets=num_dets,
             num_obs=num_obs,

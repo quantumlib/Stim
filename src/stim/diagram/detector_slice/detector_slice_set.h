@@ -27,9 +27,11 @@ namespace stim_draw_internal {
 
 struct DetectorSliceSet {
     uint64_t num_qubits;
+    uint64_t min_tick;
+    uint64_t num_ticks;
     std::map<uint64_t, std::vector<double>> coordinates;
     std::map<uint64_t, std::vector<double>> detector_coordinates;
-    std::map<stim::DemTarget, std::vector<stim::GateTarget>> slices;
+    std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>> slices;
 
     /// Args:
     ///     circuit: The circuit to make a detector slice diagram from.
@@ -38,14 +40,19 @@ struct DetectorSliceSet {
     ///         forth.
     ///     coord_filter: Detectors that fail to match these coordinates
     ///         are excluded.
-    static DetectorSliceSet from_circuit_tick(
-        const stim::Circuit &circuit, uint64_t tick_index, stim::ConstPointerRange<std::vector<double>> coord_filter);
+    static DetectorSliceSet from_circuit_ticks(
+        const stim::Circuit &circuit,
+        uint64_t start_tick,
+        uint64_t num_ticks,
+        stim::ConstPointerRange<std::vector<double>> coord_filter);
 
     std::set<uint64_t> used_qubits() const;
     std::string str() const;
 
     void write_text_diagram_to(std::ostream &out) const;
     void write_svg_diagram_to(std::ostream &out) const;
+    void write_svg_contents_to(
+        std::ostream &out, const std::function<Coord<2>(uint64_t tick, uint32_t qubit)> &coords, size_t scale) const;
 };
 
 struct FlattenedCoords {
@@ -55,6 +62,8 @@ struct FlattenedCoords {
 
     static FlattenedCoords from(const DetectorSliceSet &set, float desired_unit_distance);
 };
+Coord<2> pick_polygon_center(stim::ConstPointerRange<Coord<2>> coords);
+bool is_colinear(Coord<2> a, Coord<2> b, Coord<2> c);
 
 std::ostream &operator<<(std::ostream &out, const DetectorSliceSet &slice);
 

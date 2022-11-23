@@ -46,7 +46,7 @@ pybind11::class_<CircuitRepeatBlock> stim_pybind::pybind_circuit_repeat_block(py
     return pybind11::class_<CircuitRepeatBlock>(
         m,
         "CircuitRepeatBlock",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A REPEAT block from a circuit.
 
             Examples:
@@ -75,7 +75,7 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
         pybind11::init<uint64_t, Circuit>(),
         pybind11::arg("repeat_count"),
         pybind11::arg("body"),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Initializes a `stim.CircuitRepeatBlock`.
 
             Args:
@@ -87,7 +87,7 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
     c.def_readonly(
         "repeat_count",
         &CircuitRepeatBlock::repeat_count,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             The repetition count of the repeat block.
 
             Examples:
@@ -108,7 +108,7 @@ void stim_pybind::pybind_circuit_repeat_block_methods(pybind11::module &m, pybin
     c.def(
         "body_copy",
         &CircuitRepeatBlock::body_copy,
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             Returns a copy of the body of the repeat block.
 
             (Making a copy is enforced to make it clear that editing the result won't change

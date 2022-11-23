@@ -8,7 +8,7 @@ import stim
 
 
 def cirq_circuit_to_stim_circuit(
-    circuit: cirq.Circuit, *, qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None
+    circuit: cirq.AbstractCircuit, *, qubit_to_index_dict: Optional[Dict[cirq.Qid, int]] = None
 ) -> stim.Circuit:
     """Converts a cirq circuit into an equivalent stim circuit.
 
@@ -94,7 +94,7 @@ def cirq_circuit_to_stim_circuit(
 
 
 def cirq_circuit_to_stim_data(
-    circuit: cirq.Circuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool = False,
+    circuit: cirq.AbstractCircuit, *, q2i: Optional[Dict[cirq.Qid, int]] = None, flatten: bool = False,
 ) -> Tuple[stim.Circuit, List[Tuple[str, int]]]:
     """Converts a Cirq circuit into a Stim circuit and also metadata about where measurements go."""
     if q2i is None:

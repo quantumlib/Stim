@@ -29,31 +29,45 @@ Coord<3> flattened_3d(ConstPointerRange<double> c) {
 
 std::vector<Coord<3>> pick_coordinates(const DetectorErrorModel &dem) {
     Basic3dDiagram out;
-    std::set<uint64_t> dets_left;
+    std::set<uint64_t> det_set;
     uint64_t n = dem.count_detectors();
-    for (uint64_t k = 0; k < n; k++) {
-        dets_left.insert(k);
-    }
     std::set<Coord<3>> used_coords;
     std::vector<Coord<3>> coords;
     coords.resize(n);
-    float def_x = 0;
-    for (auto &kv : dem.get_detector_coordinates(dets_left)) {
-        dets_left.erase(kv.first);
+    float min_z = 0;
+    for (uint64_t k = 0; k < n; k++) {
+        det_set.insert(k);
+    }
+    auto dem_coords = dem.get_detector_coordinates(det_set);
+    for (auto &kv : dem_coords) {
+        if (kv.second.size() == 0) {
+            continue;
+        }
         coords[kv.first] = flattened_3d(kv.second);
         used_coords.insert(coords[kv.first]);
-        def_x = std::min(def_x, coords[kv.first].xyz[0] - 1);
+        min_z = std::min(min_z, coords[kv.first].xyz[2]);
     }
-    float def_y = 0;
-    float def_z = 0;
-    for (auto u : dets_left) {
-        def_y += 1.0f;
-        def_z -= 1.0f;
-        if (def_z < 0) {
-            def_z = def_y;
-            def_y = 0;
+
+    float next_x = 0;
+    float next_y = 0;
+    float dx = 1;
+    float dy = -1;
+    for (size_t d = 0; d < n; d++) {
+        auto p = dem_coords.find(d);
+        if (p == dem_coords.end() || p->second.size() == 0) {
+            coords[d] = {next_x * 3, next_y * 3, min_z - 1};
+            next_x += dx;
+            next_y += dy;
+            if (next_y < 0 || next_x < 0) {
+                next_x = std::max(next_x, 0.0f);
+                next_y = std::max(next_y, 0.0f);
+                dx *= -1;
+                dy *= -1;
+            }
         }
-        coords[u] = {def_x, def_y, def_z};
+    }
+    if (next_x || next_y) {
+        std::cerr << "Warning: not all detectors had coordinates. Placed them arbitrarily.\n";
     }
     return coords;
 }

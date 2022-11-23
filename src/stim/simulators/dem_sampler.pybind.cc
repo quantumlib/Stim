@@ -78,7 +78,7 @@ pybind11::class_<DemSampler> stim_pybind::pybind_dem_sampler(pybind11::module &m
     return pybind11::class_<DemSampler>(
         m,
         "CompiledDemSampler",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             A helper class for efficiently sampler from a detector error model.
 
             Examples:
@@ -119,7 +119,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
         pybind11::arg("bit_packed") = false,
         pybind11::arg("return_errors") = false,
         pybind11::arg("recorded_errors_to_replay") = pybind11::none(),
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def sample(self, shots: int, *, bit_packed: bool = False, return_errors: bool = False, recorded_errors_to_replay: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
             Samples the detector error model's error mechanisms to produce sample data.
 
@@ -131,7 +131,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                         each byte.
 
                     Setting this to True is equivalent to running
-                    `np.packbits(data, endian='little', axis=1)` on each output value, but
+                    `np.packbits(data, bitorder='little', axis=1)` on each output value, but
                     has the performance benefit of the data never being expanded into an
                     unpacked form.
                 return_errors: Defaults to False.
@@ -158,16 +158,6 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
 
                 The dtype and shape of the data depends on the arguments:
                     if bit_packed:
-                        detector_data.shape == (num_shots, num_detectors)
-                        detector_data.dtype == np.bool8
-                        obs_data.shape == (num_shots, num_observables)
-                        obs_data.dtype == np.bool8
-                        if return_errors:
-                            error_data.shape = (num_shots, num_errors)
-                            error_data.dtype = np.bool8
-                        else:
-                            error_data is None
-                    else:
                         detector_data.shape == (num_shots, math.ceil(num_detectors / 8))
                         detector_data.dtype == np.uint8
                         obs_data.shape == (num_shots, math.ceil(num_observables / 8))
@@ -177,9 +167,19 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
                             error_data.dtype = np.uint8
                         else:
                             error_data is None
+                    else:
+                        detector_data.shape == (num_shots, num_detectors)
+                        detector_data.dtype == np.bool8
+                        obs_data.shape == (num_shots, num_observables)
+                        obs_data.dtype == np.bool8
+                        if return_errors:
+                            error_data.shape = (num_shots, num_errors)
+                            error_data.dtype = np.bool8
+                        else:
+                            error_data is None
 
                 Note that bit packing is done using little endian order on the last axis
-                (i.e. like `np.packbits(data, endian='little', axis=1)`).
+                (i.e. like `np.packbits(data, bitorder='little', axis=1)`).
 
             Examples:
                 >>> import stim
@@ -302,7 +302,7 @@ void stim_pybind::pybind_dem_sampler_methods(pybind11::module &m, pybind11::clas
         pybind11::arg("err_out_format") = "01",
         pybind11::arg("replay_err_in_file") = pybind11::none(),
         pybind11::arg("replay_err_in_format") = "01",
-        clean_doc_string(u8R"DOC(
+        clean_doc_string(R"DOC(
             @signature def sample_write(self, shots: int, *, det_out_file: Union[None, str, pathlib.Path], det_out_format: str = "01", obs_out_file: Union[None, str, pathlib.Path], obs_out_format: str = "01", err_out_file: Union[None, str, pathlib.Path] = None, err_out_format: str = "01", replay_err_in_file: Union[None, str, pathlib.Path] = None, replay_err_in_format: str = "01") -> None:
             Samples the detector error model and writes the results to disk.
 

@@ -726,6 +726,7 @@ class Circuit:
         self,
         *,
         type: 'Literal["timeline-svg"]',
+        tick: Union[None, int, range] = None,
     ) -> 'stim._DiagramHelper':
         pass
     @overload
@@ -777,15 +778,33 @@ class Circuit:
         self,
         *,
         type: 'Literal["detector-slice-svg"]',
-        tick: int,
+        tick: Union[int, range],
+        filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    ) -> 'stim._DiagramHelper':
+        pass
+    @overload
+    def diagram(
+        self,
+        *,
+        type: 'Literal["time-slice-svg"]',
+        tick: Union[int, range],
+        filter_coords: Optional[Iterable[Iterable[float]]] = None,
+    ) -> 'stim._DiagramHelper':
+        pass
+    @overload
+    def diagram(
+        self,
+        *,
+        type: 'Literal["time+detector-slice-svg"]',
+        tick: Union[int, range],
         filter_coords: Optional[Iterable[Iterable[float]]] = None,
     ) -> 'stim._DiagramHelper':
         pass
     def diagram(
         self,
+        type: str = 'timeline-text',
         *,
-        type: str,
-        tick: Optional[int] = None,
+        tick: Union[None, int, range] = None,
         filter_coords: Optional[Iterable[Iterable[float]]] = None,
     ) -> 'stim._DiagramHelper':
         """Returns a diagram of the circuit, from a variety of options.
@@ -826,10 +845,24 @@ class Circuit:
                 "match-graph-3d-html": Same 3d model as 'match-graph-3d' but
                     embedded into an HTML web page containing an interactive
                     THREE.js viewer for the 3d model.
-            tick: Required for detector slice diagrams. Specifies which TICK
-                instruction to slice at. Note that the first TICK in the
-                circuit is tick=1. The value tick=0 refers to the very start
-                of the circuit.
+                "time-slice-svg": An SVG image of the operations applied
+                    between two TICK instructions in the circuit, with the
+                    operations laid out in 2d.
+                "time+detector-slice-svg": A combination of time-slice-svg
+                    and detector-slice-svg, with the operations overlaid
+                    over the detector slices taken from the TICK after the
+                    operations were applied.
+            tick: Required for detector and time slice diagrams. Specifies
+                which TICK instruction, or range of TICK instructions, to
+                slice at. Note that the first TICK instruction in the
+                circuit corresponds tick=1. The value tick=0 refers to the
+                very start of the circuit.
+
+                Passing `range(A, B)` for a detector slice will show the
+                slices for ticks A through B including A but excluding B.
+
+                Passing `range(A, B)` for a time slice will show the
+                operations between tick A and tick B.
             filter_coords: A set of acceptable coordinate prefixes. For
                 detector slice diagrams, only detectors whose coordinates
                 begin with one of these filters will be included.
@@ -848,7 +881,7 @@ class Circuit:
             ...     CNOT 0 1 1 2
             ... ''')
 
-            >>> print(circuit.diagram(type="timeline-text"))
+            >>> print(circuit.diagram())
             q0: -H-@---
                    |
             q1: ---X-@-
@@ -863,7 +896,7 @@ class Circuit:
             ...     DETECTOR rec[-1] rec[-2]
             ... ''')
 
-            >>> print(circuit.diagram(type="detector-slice-text", tick=1))
+            >>> print(circuit.diagram("detector-slice-text", tick=1))
             q0: -Z:D0-
                  |
             q1: -Z:D0-
@@ -1527,6 +1560,60 @@ class Circuit:
             >>> contents
             'H 5\nX 0\n'
         """
+    def with_inlined_feedback(
+        self,
+    ) -> stim.Circuit:
+        """Returns a circuit without feedback with rewritten detectors/observables.
+
+        When a feedback operation affects the expected parity of a detector or
+        observable, the measurement controlling that feedback operation is implicitly
+        part of the measurement set that defines the detector or observable. This
+        method removes all feedback, but avoids changing the meaning of detectors or
+        observables by turning these implicit measurement dependencies into explicit
+        measurement dependencies added to the observable or detector.
+
+        This method guarantees that the detector error model derived from the original
+        circuit, and the transformed circuit, will be equivalent (modulo floating point
+        rounding errors and variations in where loops are placed). Specifically, the
+        following should be true for any circuit:
+
+            dem1 = circuit.flattened().detector_error_model()
+            dem2 = circuit.with_inlined_feedback().flattened().detector_error_model()
+            assert dem1.approx_equals(dem2, 1e-5)
+
+        Returns:
+            A `stim.Circuit` with feedback operations removed, with rewritten DETECTOR
+            instructions (as needed to avoid changing the meaning of each detector, and
+            with additional OBSERVABLE_INCLUDE instructions (as needed to avoid changing
+            the meaning of each observable).
+
+            The circuit's function is permitted to differ from the original in that
+            any feedback operation can be pushed to the end of the circuit and
+            discarded. All non-feedback operations must stay where they are, preserving
+            the structure of the circuit.
+
+        Examples:
+            >>> import stim
+
+            >>> stim.Circuit('''
+            ...     CX 0 1        # copy to measure qubit
+            ...     M 1           # measure first time
+            ...     CX rec[-1] 1  # use feedback to reset measurement qubit
+            ...     CX 0 1        # copy to measure qubit
+            ...     M 1           # measure second time
+            ...     DETECTOR rec[-1] rec[-2]
+            ...     OBSERVABLE_INCLUDE(0) rec[-1]
+            ... ''').with_inlined_feedback()
+            stim.Circuit('''
+                CX 0 1
+                M 1
+                OBSERVABLE_INCLUDE(0) rec[-1]
+                CX 0 1
+                M 1
+                DETECTOR rec[-1]
+                OBSERVABLE_INCLUDE(0) rec[-1]
+            ''')
+        """
     def without_noise(
         self,
     ) -> stim.Circuit:
@@ -1910,7 +1997,7 @@ class CompiledDemSampler:
                     each byte.
 
                 Setting this to True is equivalent to running
-                `np.packbits(data, endian='little', axis=1)` on each output value, but
+                `np.packbits(data, bitorder='little', axis=1)` on each output value, but
                 has the performance benefit of the data never being expanded into an
                 unpacked form.
             return_errors: Defaults to False.
@@ -1937,16 +2024,6 @@ class CompiledDemSampler:
 
             The dtype and shape of the data depends on the arguments:
                 if bit_packed:
-                    detector_data.shape == (num_shots, num_detectors)
-                    detector_data.dtype == np.bool8
-                    obs_data.shape == (num_shots, num_observables)
-                    obs_data.dtype == np.bool8
-                    if return_errors:
-                        error_data.shape = (num_shots, num_errors)
-                        error_data.dtype = np.bool8
-                    else:
-                        error_data is None
-                else:
                     detector_data.shape == (num_shots, math.ceil(num_detectors / 8))
                     detector_data.dtype == np.uint8
                     obs_data.shape == (num_shots, math.ceil(num_observables / 8))
@@ -1956,9 +2033,19 @@ class CompiledDemSampler:
                         error_data.dtype = np.uint8
                     else:
                         error_data is None
+                else:
+                    detector_data.shape == (num_shots, num_detectors)
+                    detector_data.dtype == np.bool8
+                    obs_data.shape == (num_shots, num_observables)
+                    obs_data.dtype == np.bool8
+                    if return_errors:
+                        error_data.shape = (num_shots, num_errors)
+                        error_data.dtype = np.bool8
+                    else:
+                        error_data is None
 
             Note that bit packing is done using little endian order on the last axis
-            (i.e. like `np.packbits(data, endian='little', axis=1)`).
+            (i.e. like `np.packbits(data, bitorder='little', axis=1)`).
 
         Examples:
             >>> import stim
@@ -3557,27 +3644,23 @@ class DetectorErrorModel:
     @overload
     def diagram(
         self,
-        *,
         type: 'Literal["match-graph-svg"]',
     ) -> 'stim._DiagramHelper':
         pass
     @overload
     def diagram(
         self,
-        *,
         type: 'Literal["match-graph-3d"]',
     ) -> 'stim._DiagramHelper':
         pass
     @overload
     def diagram(
         self,
-        *,
         type: 'Literal["match-graph-3d-html"]',
     ) -> 'stim._DiagramHelper':
         pass
     def diagram(
         self,
-        *,
         type: str,
     ) -> Any:
         """Returns a diagram of the circuit, from a variety of options.
@@ -3846,7 +3929,7 @@ class DetectorErrorModel:
         """
     def shortest_graphlike_error(
         self,
-        ignore_ungraphlike_errors: bool = False,
+        ignore_ungraphlike_errors: bool = True,
     ) -> stim.DetectorErrorModel:
         """Finds a minimum set of graphlike errors to produce an undetected logical error.
 
@@ -5946,8 +6029,6 @@ class Tableau:
 
         Examples:
             >>> import stim
-            >>> h = stim.Tableau.from_named_gate("H")
-            >>> cnot = stim.Tableau.from_named_gate("CNOT")
             >>> t = stim.Tableau.from_named_gate("H")
             >>> t.prepend(stim.Tableau.from_named_gate("X"), [0])
             >>> t == stim.Tableau.from_named_gate("SQRT_Y_DAG")
@@ -6082,15 +6163,36 @@ class Tableau:
             z_signs: A vector of whether tableau(Z_i) is negative.
 
             If bit_packed=False then:
-                *.dtype = = np.bool8
-                *2*.shape = (len(tableau), len(tableau))
-                *_signs.shape = len(tableau)
+                x2x.dtype = np.bool8
+                x2z.dtype = np.bool8
+                z2x.dtype = np.bool8
+                z2z.dtype = np.bool8
+                x_signs.dtype = np.bool8
+                z_signs.dtype = np.bool8
+                x2x.shape = (len(tableau), len(tableau))
+                x2z.shape = (len(tableau), len(tableau))
+                z2x.shape = (len(tableau), len(tableau))
+                z2z.shape = (len(tableau), len(tableau))
+                x_signs.shape = len(tableau)
+                z_signs.shape = len(tableau)
                 x2x[i, j] = tableau.x_output_pauli(i, j) in [1, 2]
                 x2z[i, j] = tableau.x_output_pauli(i, j) in [2, 3]
                 z2x[i, j] = tableau.z_output_pauli(i, j) in [1, 2]
                 z2z[i, j] = tableau.z_output_pauli(i, j) in [2, 3]
 
             If bit_packed=True then:
+                x2x.dtype = np.uint8
+                x2z.dtype = np.uint8
+                z2x.dtype = np.uint8
+                z2z.dtype = np.uint8
+                x_signs.dtype = np.uint8
+                z_signs.dtype = np.uint8
+                x2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                x2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                z2x.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                z2z.shape = (len(tableau), math.ceil(len(tableau) / 8))
+                x_signs.shape = math.ceil(len(tableau) / 8)
+                z_signs.shape = math.ceil(len(tableau) / 8)
                 *.dtype = = np.uint8
                 *2*.shape = (len(tableau), math.ceil(len(tableau) / 8))
                 *_signs.shape = math.ceil(len(tableau) / 8)

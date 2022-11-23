@@ -186,14 +186,26 @@ struct Tableau {
     void prepend_YCZ(size_t control, size_t target);
     void prepend_pauli_product(const PauliStringRef &op);
 
+    /// Builds the Y output by using Y = iXZ.
+    PauliString y_output(size_t input_index) const;
+
+    /// Constant-time version of tableau.xs[input_index][output_index].
     uint8_t x_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    /// Constant-time version of tableau.y_output(input_index)[output_index].
     uint8_t y_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    /// Constant-time version of tableau.zs[input_index][output_index].
     uint8_t z_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    /// Constant-time version of tableau.inverse().xs[input_index][output_index].
     uint8_t inverse_x_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    /// Constant-time version of tableau.inverse().y_output(input_index)[output_index].
     uint8_t inverse_y_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    /// Constant-time version of tableau.inverse().zs[input_index][output_index].
     uint8_t inverse_z_output_pauli_xyz(size_t input_index, size_t output_index) const;
+    /// Faster version of tableau.inverse().xs[input_index].
     PauliString inverse_x_output(size_t input_index, bool skip_sign = false) const;
+    /// Faster version of tableau.inverse().y_output(input_index).
     PauliString inverse_y_output(size_t input_index, bool skip_sign = false) const;
+    /// Faster version of tableau.inverse().zs[input_index].
     PauliString inverse_z_output(size_t input_index, bool skip_sign = false) const;
 };
 

@@ -5,10 +5,15 @@ import math
 import numpy as np
 import stim
 import tempfile
-from typing import Optional, Union
+from typing import Optional, Union, Dict, TYPE_CHECKING
 
-from sinter import post_selection_mask_from_4th_coord
-from sinter._decoding import DECODER_METHODS, streaming_post_select
+from sinter._collection import post_selection_mask_from_4th_coord
+from sinter._decoding_decoder_class import Decoder
+from sinter._decoding_all_built_in_decoders import BUILT_IN_DECODERS
+from sinter._decoding import streaming_post_select
+
+if TYPE_CHECKING:
+    import sinter
 
 
 def _converted_on_disk(
@@ -48,6 +53,7 @@ def predict_on_disk(
     postselect_detectors_with_non_zero_4th_coord: bool = False,
     discards_out_path: Optional[Union[str, pathlib.Path]] = None,
     discards_out_format: Optional[str] = None,
+    custom_decoders: Dict[str, 'sinter.Decoder'] = None,
 ) -> None:
     """Performs decoding and postselection on disk.
 
@@ -65,6 +71,7 @@ def predict_on_disk(
             Requires specifying discards_out_path, for indicating which shots were discarded.
         discards_out_path: Only used if postselection is being used. Where to write discard data on disk.
         discards_out_format: The format to write discard data in (e.g. '01' or 'b8').
+        custom_decoders: Custom decoders that can be used if requested by name.
     """
     if (discards_out_path is not None) != (discards_out_format is not None):
         raise ValueError('(discards_out_path is not None) != (discards_out_format is not None)')
@@ -79,8 +86,12 @@ def predict_on_disk(
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir = pathlib.Path(tmp_dir)
-        decode_method = DECODER_METHODS.get(decoder)
-        if decode_method is None:
+        decode_obj: Optional[Decoder] = None
+        if custom_decoders is not None:
+            decode_obj = custom_decoders.get(decoder)
+        if decode_obj is None:
+            decode_obj = BUILT_IN_DECODERS.get(decoder)
+        if decode_obj is None:
             raise NotImplementedError(f"Unrecognized decoder: {decoder!r}")
 
         with open(dem_path) as f:
@@ -141,7 +152,7 @@ def predict_on_disk(
             obs_inter = tmp_dir / 'sinter_obs_inter.b8'
         else:
             obs_inter = obs_out_path
-        decode_method(
+        decode_obj.decode_via_files(
             num_shots=num_kept_shots,
             num_dets=num_dets,
             num_obs=num_obs,
@@ -245,6 +256,7 @@ def predict_observables_bit_packed(
     dem: stim.DetectorErrorModel,
     dets_bit_packed: np.ndarray,
     decoder: str,
+    custom_decoders: Optional[Dict[str, 'sinter.Decoder']] = None,
 ) -> np.ndarray:
     """Predicts which observables were flipped based on detection event data by using a decoder.
 
@@ -257,14 +269,21 @@ def predict_observables_bit_packed(
         dets_bit_packed: A uint8 numpy array with shape (num_shots, math.ceil(num_dets / 8)).
             Contains bit packed detection event data.
         decoder: The decoder to use for decoding, e.g. "pymatching".
+        custom_decoders: Custom decoders that can be used if requested by name.
+            If not specified, only decoders built into sinter, such as
+            'pymatching' and 'fusion_blossom', can be used.
 
     Returns:
         A numpy uint8 array with shape (num_shots, math.ceil(num_obs / 8)).
         Contains bit packed observable prediction data.
     """
 
-    decode_method = DECODER_METHODS.get(decoder)
-    if decode_method is None:
+    decode_obj: Optional[Decoder] = None
+    if custom_decoders is not None:
+        decode_obj = custom_decoders.get(decoder)
+    if decode_obj is None:
+        decode_obj = BUILT_IN_DECODERS.get(decoder)
+    if decode_obj is None:
         raise NotImplementedError(f"Unrecognized decoder: {decoder!r}")
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -284,7 +303,7 @@ def predict_observables_bit_packed(
             num_observables=0,
         )
 
-        decode_method(
+        decode_obj.decode_via_files(
             num_shots=dets_bit_packed.shape[0],
             num_dets=num_dets,
             num_obs=num_obs,

@@ -11,8 +11,6 @@ else
     FOLDER=$1
 fi
 
-echo "generating file lists in $FOLDER"
-
 # Get to this script's git repo root.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 cd "$(git rev-parse --show-toplevel)"

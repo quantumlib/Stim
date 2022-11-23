@@ -33,6 +33,8 @@ enum DiagramTypes {
     TIMELINE_SVG,
     TIMELINE_3D,
     TIMELINE_3D_HTML,
+    TIME_SLICE_SVG,
+    TIME_SLICE_PLUS_DETECTOR_SLICE_SVG,
     MATCH_GRAPH_SVG,
     MATCH_GRAPH_3D,
     MATCH_GRAPH_3D_HTML,
@@ -57,12 +59,36 @@ int stim::command_diagram(int argc, const char **argv) {
     RaiiFile in(find_open_file_argument("--in", stdin, "rb", argc, argv));
     auto out_stream = find_output_stream_argument("--out", true, argc, argv);
     auto &out = out_stream.stream();
-    int64_t tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
+
+    bool has_tick_arg = false;
+    uint64_t tick = 0;
+    uint64_t tick_start = 0;
+    uint64_t tick_num = UINT64_MAX;
+    if (find_argument("--tick", argc, argv) != nullptr) {
+        has_tick_arg = true;
+        std::string tick_str = find_argument("--tick", argc, argv);
+        auto t = tick_str.find(':');
+        if (t != 0 && t != std::string::npos) {
+            tick_start = parse_exact_uint64_t_from_string(tick_str.substr(0, t));
+            uint64_t tick_end = parse_exact_uint64_t_from_string(tick_str.substr(t + 1));
+            if (tick_end <= tick_start) {
+                throw std::invalid_argument("tick_end <= tick_start");
+            }
+            tick_num = tick_end - tick_start;
+            tick = tick_start;
+        } else {
+            tick = find_int64_argument("--tick", 0, 0, INT64_MAX, argc, argv);
+            tick_num = 1;
+            tick_start = tick;
+        }
+    }
     std::map<std::string, DiagramTypes> diagram_types{
         {"timeline-text", TIMELINE_TEXT},
         {"timeline-svg", TIMELINE_SVG},
         {"timeline-3d", TIMELINE_3D},
         {"timeline-3d-html", TIMELINE_3D_HTML},
+        {"time-slice-svg", TIME_SLICE_SVG},
+        {"time+detector-slice-svg", TIME_SLICE_PLUS_DETECTOR_SLICE_SVG},
         {"match-graph-svg", MATCH_GRAPH_SVG},
         {"match-graph-3d", MATCH_GRAPH_3D},
         {"match-graph-3d-html", MATCH_GRAPH_3D_HTML},
@@ -124,7 +150,20 @@ int stim::command_diagram(int argc, const char **argv) {
         }
         case TIMELINE_SVG: {
             auto circuit = read_circuit();
-            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out);
+            auto coord_filter = read_coords();
+            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIMELINE, coord_filter);
+            break;
+        }
+        case TIME_SLICE_SVG: {
+            auto circuit = read_circuit();
+            auto coord_filter = read_coords();
+            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_SLICE, coord_filter);
+            break;
+        }
+        case TIME_SLICE_PLUS_DETECTOR_SLICE_SVG: {
+            auto circuit = read_circuit();
+            auto coord_filter = read_coords();
+            DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, out, tick_start, tick_num, SVG_MODE_TIME_DETECTOR_SLICE, coord_filter);
             break;
         }
         case TIMELINE_3D: {
@@ -157,21 +196,21 @@ int stim::command_diagram(int argc, const char **argv) {
             break;
         }
         case DETECTOR_SLICE_TEXT: {
-            if (tick == -1) {
+            if (!has_tick_arg) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-text");
             }
             auto coord_filter = read_coords();
             auto circuit = read_circuit();
-            out << DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick, coord_filter);
+            out << DetectorSliceSet::from_circuit_ticks(circuit, (uint64_t)tick, 1, coord_filter);
             break;
         }
         case DETECTOR_SLICE_SVG: {
-            if (tick == -1) {
+            if (!has_tick_arg) {
                 throw std::invalid_argument("Must specify --tick=# with --type=detector-slice-svg");
             }
             auto coord_filter = read_coords();
             auto circuit = read_circuit();
-            DetectorSliceSet::from_circuit_tick(circuit, (uint64_t)tick, coord_filter).write_svg_diagram_to(out);
+            DetectorSliceSet::from_circuit_ticks(circuit, tick_start, tick_num, coord_filter).write_svg_diagram_to(out);
             break;
         }
         default: {
@@ -260,17 +299,21 @@ SubCommandHelp stim::command_diagram_help() {
 
     result.flags.push_back(SubCommandHelpFlag{
         "--tick",
-        "int",
+        "int | int:int",
         "none",
-        {"[none]", "int"},
+        {"[none]", "int", "int-int"},
         clean_doc_string(R"PARAGRAPH(
-            Specifies that the diagram should apply to a specific TICK of the
-            input circuit.
+            Specifies that the diagram should apply to a specific TICK or range
+            of TICKS from the input circuit.
 
-            In detector-slice diagrams, `--tick` identifies which TICK is the
-            instant at which the time slice is taken. Note that `--tick=0` is
-            the very beginning of the circuit and `--tick=1` is the instant of
-            the first TICK instruction.
+            To specify a single tick, pass an integer like `--tick=5`.
+            To specify a range, pass two integers separated by a colon like
+            `--tick=start:end`. Note that the range is half open.
+
+            In detector and time slice diagrams, `--tick` identifies which ticks
+            to include in the diagram. Note that `--tick=0` is the very
+            beginning of the circuit and `--tick=1` is the instant of the first
+            TICK instruction.
         )PARAGRAPH"),
     });
 
@@ -372,6 +415,18 @@ SubCommandHelp stim::command_diagram_help() {
                 measurement layer and a reset layer will produce the
                 usual diagram of a surface code. Uses the Pauli color convention
                 XYZ=RGB.
+
+                INPUT MUST BE A CIRCUIT.
+
+            "time-slice-svg": An SVG image of the operations that a circuit
+                applies during the specified tick or range of ticks.
+
+                INPUT MUST BE A CIRCUIT.
+
+            "time+detector-slice-svg": An SVG image of the operations that a
+                circuit applies during the specified tick or range of ticks,
+                combined with the detector slices after those operations are
+                applied.
 
                 INPUT MUST BE A CIRCUIT.
         )PARAGRAPH"),

@@ -316,8 +316,8 @@ void DiagramTimelineAsciiDrawer::do_end_repeat(const CircuitTimelineLoopData &lo
         do_tick();
     }
 
-    AsciiDiagramPos top{m2x(cur_moment), 0, 1.0, 0.0};
-    AsciiDiagramPos bot{m2x(cur_moment), q2y(num_qubits - 1) + 1, 1.0, 1.0};
+    AsciiDiagramPos top{m2x(cur_moment), 0, 0.5, 0.0};
+    AsciiDiagramPos bot{m2x(cur_moment), q2y(num_qubits - 1) + 1, 0.5, 1.0};
 
     diagram.lines.push_back({top, bot});
     diagram.add_entry(AsciiDiagramEntry{
@@ -470,13 +470,17 @@ AsciiDiagram DiagramTimelineAsciiDrawer::make_diagram(const Circuit &circuit) {
         obj.do_end_repeat(loop_data);
     };
     obj.resolver.do_circuit(circuit);
+    if (obj.cur_moment_is_used) {
+        obj.do_tick();
+    }
 
-    // Make sure qubit lines are drawn first, so they are in the background.
+    // Make space for the qubit lines to be drawn before other things.
     obj.diagram.lines.insert(obj.diagram.lines.begin(), obj.num_qubits, {{0, 0, 0.0, 0.5}, {0, 0, 1.0, 0.5}});
+    // Overwrite the reserved space with the actual qubit lines.
     for (size_t q = 0; q < obj.num_qubits; q++) {
         obj.diagram.lines[q] = {
             {0, obj.q2y(q), 1.0, 0.5},
-            {obj.m2x(obj.cur_moment) + 1, obj.q2y(q), 1.0, 0.5},
+            {obj.m2x(obj.cur_moment), obj.q2y(q), 0.0, 0.5},
         };
         obj.diagram.add_entry(AsciiDiagramEntry{
             {0, obj.q2y(q), 1.0, 0.5},
