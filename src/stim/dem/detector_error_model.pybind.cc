@@ -99,6 +99,9 @@ pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_mo
                 4. Get samples using circuit.compile_detector_sampler(), feed them to
                     the decoder, and compare its observable flip predictions to the
                     actual flips recorded in the samples.
+                4a. Actually, sinter will basically handle steps 2 through 4 for you.
+                    So you should probably have just generated your circuits, called
+                    `sinter collect` on them, then `sinter plot` on the results.
                 5. Write the paper.
 
             Error mechanisms are described in terms of the visible detection events and the
