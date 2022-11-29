@@ -78,6 +78,32 @@ pybind11::class_<stim::DetectorErrorModel> stim_pybind::pybind_detector_error_mo
         clean_doc_string(R"DOC(
             An error model built out of independent error mechanics.
 
+            This class is one of the most important classes in Stim, because it is the
+            mechanism used to explain circuits to decoders. A typical workflow would
+            look something like:
+
+                1. Create a quantum error correction circuit annotated with detectors
+                    and observables.
+                2. Fail at configuring your favorite decoder using the circuit, because
+                    it's a pain to convert circuit error mechanisms into a format
+                    understood by the decoder.
+                2a. Call circuit.detector_error_model(), with decompose_errors=True
+                    if working with a matching-based code. This converts the circuit
+                    errors into a straightforward list of independent "with
+                    probability p these detectors and observables get flipped" terms.
+                3. Write tedious but straightforward glue code to create whatever
+                    graph-like object the decoder needs from the detector error model.
+                3a. Actually, ideally, someone has already done that for you. For
+                    example, pymatching can take detector error models directly and
+                    sinter knows how to explain a detector error model to fusion_blossom.
+                4. Get samples using circuit.compile_detector_sampler(), feed them to
+                    the decoder, and compare its observable flip predictions to the
+                    actual flips recorded in the samples.
+                4a. Actually, sinter will basically handle steps 2 through 4 for you.
+                    So you should probably have just generated your circuits, called
+                    `sinter collect` on them, then `sinter plot` on the results.
+                5. Write the paper.
+
             Error mechanisms are described in terms of the visible detection events and the
             hidden observable frame changes that they causes. Error mechanisms can also
             suggest decompositions of their effects into components, which can be helpful

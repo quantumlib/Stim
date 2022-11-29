@@ -155,6 +155,21 @@ pybind11::class_<Circuit> stim_pybind::pybind_circuit(pybind11::module &m) {
         clean_doc_string(R"DOC(
             A mutable stabilizer circuit.
 
+            The stim.Circuit class is arguably the most important object in the
+            entire library. It is the interface through which you explain a
+            noisy quantum computation to Stim, in order to do fast bulk sampling
+            or fast error analysis.
+
+            For example, suppose you want to use a matching-based decoder on a
+            new quantum error correction construction. Stim can help you do this
+            but the very first step is to create a circuit implementing the
+            construction. Once you have the circuit you can then use methods like
+            stim.Circuit.detector_error_model() to create an object that can be
+            used to configure the decoder, or like
+            stim.Circuit.compile_detector_sampler() to produce problems for the
+            decoder to solve, or like stim.Circuit.shortest_graphlike_error() to
+            check for mistakes in the implementation of the code.
+
             Examples:
                 >>> import stim
                 >>> c = stim.Circuit()
