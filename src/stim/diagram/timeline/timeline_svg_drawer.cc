@@ -584,6 +584,9 @@ void DiagramTimelineSvgDrawer::do_else_correlated_error(const ResolvedTimelineOp
 }
 
 void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &op) {
+    if (mode != SVG_MODE_TIMELINE) {
+        return;
+    }
     reserve_drawing_room_for_targets(op.targets);
     assert(op.targets.size() == 1);
     const auto &target = op.targets[0];

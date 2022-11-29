@@ -253,13 +253,22 @@ TEST(circuit_diagram_timeline_svg, surface_code) {
     expect_svg_diagram_is_identical_to_saved_file(circuit, "surface_code.svg");
 }
 
-TEST(circuit_diagram_time_detector_slice_svg, surface_code) {
+TEST(circuit_diagram_time_detector_slice_svg, surface_code_partial) {
     CircuitGenParameters params(10, 3, "unrotated_memory_z");
-    auto circuit = generate_surface_code_circuit(params).circuit;
-    std::vector<double> filter{1};
+    auto circuit = generate_surface_code_circuit(params).circuit.flattened();
+    std::vector<double> filter{2};
     std::stringstream ss;
     DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 5, 11, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
     expect_string_is_identical_to_saved_file(ss.str(), "surface_code_time_detector_slice.svg");
+}
+
+TEST(circuit_diagram_time_detector_slice_svg, surface_code_full) {
+    CircuitGenParameters params(5, 3, "unrotated_memory_z");
+    auto circuit = generate_surface_code_circuit(params).circuit;
+    std::vector<double> filter{1};
+    std::stringstream ss;
+    DiagramTimelineSvgDrawer::make_diagram_write_to(circuit, ss, 0, UINT64_MAX, SVG_MODE_TIME_DETECTOR_SLICE, {&filter});
+    expect_string_is_identical_to_saved_file(ss.str(), "surface_code_full_time_detector_slice.svg");
 }
 
 TEST(circuit_diagram_time_slice_svg, surface_code) {

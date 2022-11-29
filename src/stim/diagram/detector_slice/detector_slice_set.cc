@@ -51,7 +51,8 @@ bool DetectorSliceSetComputer::process_op_rev(const Circuit &parent, const Opera
         return process_tick();
     } else if (op.gate->id == gate_name_to_id("REPEAT")) {
         const auto &loop_body = op_data_block_body(parent, op.target_data);
-        uint64_t max_skip = tick_cur - (first_yield_tick + num_yield_ticks);
+        uint64_t stop_iter = first_yield_tick + num_yield_ticks;
+        uint64_t max_skip = std::max(tick_cur, stop_iter) - stop_iter;
         uint64_t reps = op_data_rep_count(op.target_data);
         uint64_t ticks_per_iteration = loop_body.count_ticks();
         uint64_t skipped_iterations = std::min(reps, max_skip / ticks_per_iteration);
