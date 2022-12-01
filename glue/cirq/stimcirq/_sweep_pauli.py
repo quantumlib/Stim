@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import AbstractSet, Any, Dict, List, Optional, Union
 
 import cirq
 import stim
@@ -38,12 +38,15 @@ class SweepPauli(cirq.Gate):
 
     def _resolve_parameters_(self, resolver: cirq.ParamResolver, recursive: bool) -> cirq.Gate:
         new_value = resolver.value_of(self.cirq_sweep_symbol, recursive=recursive)
-        if new_value == self.cirq_sweep_symbol:
+        if str(new_value) == str(self.cirq_sweep_symbol):
             return self
         return self.pauli ** new_value
 
     def _is_parameterized_(self) -> bool:
         return True
+
+    def _parameter_names_(self) -> AbstractSet[str]:
+        return {str(self.cirq_sweep_symbol)}
 
     def _decompose_(self, qubits) -> cirq.OP_TREE:
         return self.pauli.on(*qubits) ** self.cirq_sweep_symbol
