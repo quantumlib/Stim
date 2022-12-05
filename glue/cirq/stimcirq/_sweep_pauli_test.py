@@ -41,6 +41,35 @@ def test_stim_conversion():
     """
     )
 
+def test_resolving_without_sweep_resolver():
+    cirq_circuit = cirq.Circuit(
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=0, pauli=cirq.X, cirq_sweep_symbol="init_0"
+        ).on(cirq.LineQubit(0)),
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=1, pauli=cirq.X, cirq_sweep_symbol="init_1"
+        ).on(cirq.LineQubit(1)),
+    )
+    # Resolve the cirq circuit without specifying the sweep_symbol (this should leave the op 
+    # unchanged).
+    resolved_circuit = cirq.resolve_parameters(cirq_circuit, {"init_1":1})
+    op0, op1, = resolved_circuit.all_operations()
+    assert isinstance(op0.gate, stimcirq.SweepPauli) # Operation should still be a SweepPauli
+    assert isinstance(op1.gate, type(cirq.X)) # Operation should be converted to a cirq.X
+    # Conversion to stim still possible
+    assert stimcirq.cirq_circuit_to_stim_circuit(resolved_circuit) 
+
+def test_parameter_names():
+    cirq_circuit = cirq.Circuit(
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=0, pauli=cirq.X, cirq_sweep_symbol="init_0"
+        ).on(cirq.LineQubit(0)),
+        stimcirq.SweepPauli(
+            stim_sweep_bit_index=1, pauli=cirq.X, cirq_sweep_symbol="init_1"
+        ).on(cirq.LineQubit(1)),
+    )
+    assert cirq.parameter_names(cirq_circuit) == {'init_0', 'init_1'} 
+
 
 def test_cirq_compatibility():
     circuit = cirq.Circuit(
