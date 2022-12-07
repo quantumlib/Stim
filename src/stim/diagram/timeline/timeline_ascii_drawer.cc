@@ -482,9 +482,11 @@ AsciiDiagram DiagramTimelineAsciiDrawer::make_diagram(const Circuit &circuit) {
             {0, obj.q2y(q), 1.0, 0.5},
             {obj.m2x(obj.cur_moment), obj.q2y(q), 0.0, 0.5},
         };
+        std::stringstream qubit;
+        qubit << 'q' << q << ": ";
         obj.diagram.add_entry(AsciiDiagramEntry{
             {0, obj.q2y(q), 1.0, 0.5},
-            "q" + std::to_string(q) + ": ",
+            qubit.str(),
         });
     }
 

@@ -37,16 +37,6 @@ inline uint64_t spread_bytes_32_to_64(uint32_t v) {
 
 void inplace_transpose_64x64(uint64_t *data, size_t stride);
 
-inline uint8_t popcnt64(uint64_t val) {
-    val -= (val >> 1) & 0x5555555555555555ULL;
-    val = (val & 0x3333333333333333ULL) + ((val >> 2) & 0x3333333333333333ULL);
-    val += val >> 4;
-    val &= 0xF0F0F0F0F0F0F0FULL;
-    val *= 0x101010101010101ULL;
-    val >>= 56;
-    return (uint8_t)val;
-}
-
 }  // namespace stim
 
 #endif

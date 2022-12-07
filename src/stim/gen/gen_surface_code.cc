@@ -191,19 +191,19 @@ GeneratedCircuit _finish_surface_code_circuit(
     Circuit full_circuit = head + body * (params.rounds - 1) + tail;
 
     // Produce a 2d layout.
-    std::map<std::pair<uint32_t, uint32_t>, std::pair<std::string, uint32_t>> layout;
+    std::map<std::pair<uint32_t, uint32_t>, std::pair<char, uint32_t>> layout;
     float scale = x_order[0].x == 0.5 ? 2 : 1;
     for (auto q : data_coords) {
-        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}] = {"d", p2q[q]};
+        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}] = {'d', p2q[q]};
     }
     for (auto q : x_measure_coords) {
-        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}] = {"X", p2q[q]};
+        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}] = {'X', p2q[q]};
     }
     for (auto q : z_measure_coords) {
-        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}] = {"Z", p2q[q]};
+        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}] = {'Z', p2q[q]};
     }
     for (auto q : chosen_basis_observable) {
-        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}].first = "L";
+        layout[{(uint32_t)(q.x * scale), (uint32_t)(q.y * scale)}].first = 'L';
     }
 
     return {

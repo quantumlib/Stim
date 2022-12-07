@@ -17,6 +17,7 @@
 #ifndef _STIM_MEM_SIMD_WORD_64_STD_H
 #define _STIM_MEM_SIMD_WORD_64_STD_H
 
+#include <bit>
 #include <stdlib.h>
 
 #include "stim/mem/simd_util.h"
@@ -93,7 +94,7 @@ struct bitword<64> {
     }
 
     inline uint16_t popcount() const {
-        return popcnt64(u64[0]);
+        return std::popcount(u64[0]);
     }
 
     static void inplace_transpose_square(bitword<64> *data_block, size_t stride) {

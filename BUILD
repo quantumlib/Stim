@@ -90,10 +90,11 @@ cc_binary(
     srcs = SOURCE_FILES_NO_MAIN + PYBIND_FILES,
     copts = [
         "-O3",
+        "-std=c++20",
         "-fvisibility=hidden",
         "-march=native",
         "-DSTIM_PYBIND11_MODULE_NAME=stim",
-        "-DVERSION_INFO=0.0.dev"
+        "-DVERSION_INFO=0.0.dev",
     ],
     includes = ["src/"],
     linkopts = ["-lpthread"],

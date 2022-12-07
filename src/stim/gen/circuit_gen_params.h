@@ -30,7 +30,7 @@ struct CircuitGenParameters {
 
 struct GeneratedCircuit {
     Circuit circuit;
-    std::map<std::pair<uint32_t, uint32_t>, std::pair<std::string, uint32_t>> layout;
+    std::map<std::pair<uint32_t, uint32_t>, std::pair<char, uint32_t>> layout;
     std::string hint_str;
     std::string layout_str() const;
 };

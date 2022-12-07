@@ -21,6 +21,7 @@
 /// For example, `_mm_set1_epi8` is SSE2.
 
 #include <algorithm>
+#include <bit>
 #include <immintrin.h>
 
 #include "stim/mem/simd_util.h"
@@ -108,7 +109,7 @@ struct bitword<128> {
     }
 
     inline uint16_t popcount() const {
-        return popcnt64(u64[0]) + popcnt64(u64[1]);
+        return std::popcount(u64[0]) + std::popcount(u64[1]);
     }
 
     template <uint64_t shift>
