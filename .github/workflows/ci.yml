@@ -238,7 +238,7 @@ jobs:
     - run: cmake .
     - run: make libstim -j 2
     - run: echo -e '#include "stim.h"\nint main(int argc,const char **argv) {return !stim::find_bool_argument("test", argc, argv);}' > test.cc
-    - run: g++ test.cc out/libstim.a -I src
+    - run: g++ -std=c++20 test.cc out/libstim.a -I src
     - run: ./a.out test
   benchmark_windows:
     runs-on: windows-latest

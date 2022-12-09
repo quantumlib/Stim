@@ -29,6 +29,7 @@ echo '</script>' >> out/all_stim_tests.html
 
 # Build web assembly module using emscripten.
 emcc \
+    -std=c++20 \
     -s NO_DISABLE_EXCEPTION_CATCHING \
     -s EXPORT_NAME="load_stim_module"  \
     -s MODULARIZE=1  \
