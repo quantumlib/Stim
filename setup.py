@@ -55,7 +55,7 @@ stim_detect_machine_architecture = Extension(
     language='c++',
     extra_compile_args=[
         *common_compile_args,
-        arch_basic,
+        *arch_basic,
     ],
 )
 stim_polyfill = Extension(
