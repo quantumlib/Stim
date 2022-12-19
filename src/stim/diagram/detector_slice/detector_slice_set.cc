@@ -711,7 +711,7 @@ void DetectorSliceSet::write_svg_contents_to(
                         write_key_val(out, "stop-color", colors[i]);
                         write_key_val(out, "stop-opacity", "1");
                         out << R"SVG(/><stop)SVG";
-                        write_key_val(out, "opacity", "100%");
+                        write_key_val(out, "offset", "100%");
                         write_key_val(out, "stop-color", "#AAAAAA");
                         write_key_val(out, "stop-opacity", "0");
                         out << R"SVG(/></radialGradient>)SVG";
