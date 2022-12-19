@@ -23,6 +23,10 @@
 
 namespace stim_draw_internal {
 
+const char * Z_BLUE = "#4848FF";
+const char * X_RED = "#FF4444";
+const char * Y_GREEN = "#40FF40";
+
 size_t utf8_char_count(const std::string &s);
 
 /// Splits a two qubit gate into two end pieces, which can be drawn independently.

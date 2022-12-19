@@ -1,6 +1,7 @@
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
 #include "stim/diagram/coord.h"
+#include "stim/diagram/diagram_util.h"
 #include "stim/diagram/timeline/timeline_ascii_drawer.h"
 #include "stim/simulators/error_analyzer.h"
 constexpr float SLICE_WINDOW_GAP = 1.1f;
@@ -387,12 +388,12 @@ const char *pick_color(ConstPointerRange<GateTarget> terms) {
     if (has_x + has_y + has_z != 1) {
         return nullptr;
     } else if (has_x) {
-        return "#FF4444";
+        return X_RED;
     } else if (has_y) {
-        return "#40FF40";
+        return Y_GREEN;
     } else {
         assert(has_z);
-        return "#4848FF";
+        return Z_BLUE;
     }
 }
 
@@ -699,12 +700,23 @@ void DetectorSliceSet::write_svg_contents_to(
 
             if (drawCorners) {
                 if (!haveDrawnCorners) {
-                    out << R"SVG(<defs>
-<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4444" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="ygrad"><stop offset="50%" stop-color="#40FF40" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="zgrad"><stop offset="50%" stop-color="#4848FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-</defs>
-)SVG";
+                    out << R"SVG(<defs>)SVG";
+                    static const char* const names[] = {"xgrad", "ygrad", "zgrad"};
+                    static const char* const colors[] = {X_RED, Y_GREEN, Z_BLUE};
+                    for (int i = 0; i < 3; ++i) {
+                        out << R"SVG(<radialGradient)SVG";
+                        write_key_val(out, "id", names[i]);
+                        out << R"SVG(<stop)SVG";
+                        write_key_val(out, "offset", "50%");
+                        write_key_val(out, "stop-color", colors[i]);
+                        write_key_val(out, "stop-opacity", "1");
+                        out << R"SVG(/><stop)SVG";
+                        write_key_val(out, "opacity", "100%");
+                        write_key_val(out, "stop-color", "#AAAAAA");
+                        write_key_val(out, "stop-opacity", "0");
+                        out << R"SVG(/></radialGradient>)SVG";
+                    }
+                    out << "SVG(</defs>)SVG";
                     haveDrawnCorners = true;
                 }
                 out << R"SVG(<clipPath id="clip)SVG";
