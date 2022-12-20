@@ -800,7 +800,7 @@ void stim_pybind::pybind_pauli_string_methods(pybind11::module &m, pybind11::cla
                 self.value.sign = true;
                 self.imag = true;
             } else {
-                throw std::invalid_argument("new_sign not in [1, -1, 1, 1j]");
+                throw std::invalid_argument("new_sign not in [1, -1, 1j, -1j]");
             }
         },
         clean_doc_string(R"DOC(
