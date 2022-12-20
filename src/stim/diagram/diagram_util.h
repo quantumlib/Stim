@@ -23,12 +23,13 @@
 
 namespace stim_draw_internal {
 
-constexpr char * Z_BLUE = "#4DA6FF";
+
 constexpr char * X_RED = "#FF4040";
 constexpr char * Y_GREEN = "#59FF7A";
-constexpr char * EZ_ORANGE = "#FF9500";
+constexpr char * Z_BLUE = "#4DA6FF";
 constexpr char * EX_PURPLE = "#FF4DDB";
 constexpr char * EY_YELLOW = "#F1FF59";
+constexpr char * EZ_ORANGE = "#FF9500";
 
 size_t utf8_char_count(const std::string &s);
 
