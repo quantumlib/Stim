@@ -1,9 +1,9 @@
 <svg viewBox="0 0 77.2548 122.51" xmlns="http://www.w3.org/2000/svg">
 <path d="M38.6274,16 L61.2548,38.6274 L16,38.6274 L38.6274,16" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
 <defs>
-<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4444" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="ygrad"><stop offset="50%" stop-color="#40FF40" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="zgrad"><stop offset="50%" stop-color="#4848FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4040" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="ygrad"><stop offset="50%" stop-color="#59FF7A" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
+<radialGradient id="zgrad"><stop offset="50%" stop-color="#4DA6FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
 </defs>
 <clipPath id="clip0"><path d="M38.6274,16 L61.2548,38.6274 L16,38.6274 L38.6274,16"/></clipPath>
 <circle clip-path="url(#clip0)" cx="16" cy="38.6274" r="20" stroke="none" fill="url('#xgrad')"/>
