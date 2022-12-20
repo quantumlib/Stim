@@ -700,23 +700,23 @@ void DetectorSliceSet::write_svg_contents_to(
 
             if (drawCorners) {
                 if (!haveDrawnCorners) {
-                    out << R"SVG(<defs>)SVG";
+                    out << "<defs>";
                     static const char* const names[] = {"xgrad", "ygrad", "zgrad"};
                     static const char* const colors[] = {X_RED, Y_GREEN, Z_BLUE};
                     for (int i = 0; i < 3; ++i) {
-                        out << R"SVG(<radialGradient)SVG";
+                        out << "<radialGradient";
                         write_key_val(out, "id", names[i]);
-                        out << R"SVG(<stop)SVG";
+                        out << "<stop";
                         write_key_val(out, "offset", "50%");
                         write_key_val(out, "stop-color", colors[i]);
                         write_key_val(out, "stop-opacity", "1");
-                        out << R"SVG(/><stop)SVG";
+                        out << "/><stop";
                         write_key_val(out, "offset", "100%");
                         write_key_val(out, "stop-color", "#AAAAAA");
                         write_key_val(out, "stop-opacity", "0");
-                        out << R"SVG(/></radialGradient>)SVG";
+                        out << "/></radialGradient>";
                     }
-                    out << "SVG(</defs>)SVG";
+                    out << "</defs>";
                     haveDrawnCorners = true;
                 }
                 out << R"SVG(<clipPath id="clip)SVG";
