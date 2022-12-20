@@ -18,12 +18,7 @@
 <path d="M2432,272 L2496,336 C2464 329.6,2464 329.6,2432 336 C2400 329.6,2400 329.6,2368 336 L2432,272" stroke="none" fill-opacity="0.75" fill="#FF4040"/>
 <path d="M2432,272 L2496,336 C2464 329.6,2464 329.6,2432 336 C2400 329.6,2400 329.6,2368 336 L2432,272" stroke="black" fill="none"/>
 <path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6" stroke="none" fill-opacity="0.75" fill="#AAAAAA"/>
-<defs>
-<radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4040" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="ygrad"><stop offset="50%" stop-color="#59FF7A" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-<radialGradient id="zgrad"><stop offset="50%" stop-color="#4DA6FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient>
-</defs>
-<clipPath id="clip0"><path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6"/></clipPath>
+<defs><radialGradient id="xgrad"><stop offset="50%" stop-color="#FF4040" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient><radialGradient id="ygrad"><stop offset="50%" stop-color="#59FF7A" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient><radialGradient id="zgrad"><stop offset="50%" stop-color="#4DA6FF" stop-opacity="1"/><stop offset="100%" stop-color="#AAAAAA" stop-opacity="0"/></radialGradient></defs><clipPath id="clip0"><path d="M80,537.6 C112 544,112 544,144 537.6 C176 544,176 544,208 537.6 L144,601.6 L80,537.6"/></clipPath>
 <circle clip-path="url(#clip0)" cx="80" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
 <circle clip-path="url(#clip0)" cx="144" cy="537.6" r="43" stroke="none" fill="url('#zgrad')"/>
 <circle clip-path="url(#clip0)" cx="208" cy="537.6" r="43" stroke="none" fill="url('#xgrad')"/>
