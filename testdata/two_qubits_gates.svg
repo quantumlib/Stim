@@ -12,34 +12,34 @@
 <path d="M64,384 L1088,384 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="384">q5</text>
 <path d="M96,64 L96,128 " stroke="black"/>
-<circle cx="96" cy="64" r="8" stroke="none" fill="black"/>
-<circle cx="96" cy="128" r="8" stroke="black" fill="white"/>
-<path d="M88,128 L104,128 M96,120 L96,136 " stroke="black"/>
+<circle cx="96" cy="64" r="12" stroke="none" fill="black"/>
+<circle cx="96" cy="128" r="12" stroke="black" fill="white"/>
+<path d="M84,128 L108,128 M96,116 L96,140 " stroke="black"/>
 <path d="M96,192 L96,256 " stroke="black"/>
-<circle cx="96" cy="192" r="8" stroke="none" fill="black"/>
-<circle cx="96" cy="256" r="8" stroke="black" fill="white"/>
-<path d="M88,256 L104,256 M96,248 L96,264 " stroke="black"/>
+<circle cx="96" cy="192" r="12" stroke="none" fill="black"/>
+<circle cx="96" cy="256" r="12" stroke="black" fill="white"/>
+<path d="M84,256 L108,256 M96,244 L96,268 " stroke="black"/>
 <path d="M96,320 L96,384 " stroke="black"/>
-<circle cx="96" cy="320" r="8" stroke="none" fill="black"/>
-<path d="M96,394 L87.3397,379 L104.66,379 Z" stroke="black" fill="gray"/>
+<circle cx="96" cy="320" r="12" stroke="none" fill="black"/>
+<path d="M96,400.8 L81.4508,375.6 L110.549,375.6 Z" stroke="black" fill="gray"/>
 <path d="M160,320 L160,384 " stroke="black"/>
-<circle cx="160" cy="384" r="8" stroke="none" fill="black"/>
-<path d="M160,330 L151.34,315 L168.66,315 Z" stroke="black" fill="gray"/>
+<circle cx="160" cy="384" r="12" stroke="none" fill="black"/>
+<path d="M160,336.8 L145.451,311.6 L174.549,311.6 Z" stroke="black" fill="gray"/>
 <path d="M160,64 L160,192 " stroke="black"/>
-<circle cx="160" cy="64" r="8" stroke="none" fill="black"/>
-<circle cx="160" cy="192" r="8" stroke="none" fill="black"/>
+<circle cx="160" cy="64" r="12" stroke="none" fill="black"/>
+<circle cx="160" cy="192" r="12" stroke="none" fill="black"/>
 <path d="M224,128 L224,256 " stroke="black"/>
-<circle cx="224" cy="128" r="8" stroke="none" fill="gray"/>
-<path d="M220,124 L228,132 M228,124 L220,132 " stroke="black"/>
-<circle cx="224" cy="256" r="8" stroke="none" fill="gray"/>
-<path d="M220,252 L228,260 M228,252 L220,260 " stroke="black"/>
+<circle cx="224" cy="128" r="12" stroke="none" fill="gray"/>
+<path d="M218,122 L230,134 M230,122 L218,134 " stroke="black"/>
+<circle cx="224" cy="256" r="12" stroke="none" fill="gray"/>
+<path d="M218,250 L230,262 M230,250 L218,262 " stroke="black"/>
 <path d="M288,192 L288,320 " stroke="black"/>
-<circle cx="288" cy="192" r="8" stroke="none" fill="gray"/>
-<path d="M284,188 L292,196 M292,188 L284,196 " stroke="black"/>
-<path d="M292,182 L300,182 M296,178 L296,190 " stroke="black"/>
-<circle cx="288" cy="320" r="8" stroke="none" fill="gray"/>
-<path d="M284,316 L292,324 M292,316 L284,324 " stroke="black"/>
-<path d="M292,310 L300,310 M296,306 L296,318 " stroke="black"/>
+<circle cx="288" cy="192" r="12" stroke="none" fill="gray"/>
+<path d="M282,186 L294,198 M294,186 L282,198 " stroke="black"/>
+<path d="M296,178 L304,178 M300,174 L300,190 " stroke="black"/>
+<circle cx="288" cy="320" r="12" stroke="none" fill="gray"/>
+<path d="M282,314 L294,326 M294,314 L282,326 " stroke="black"/>
+<path d="M296,306 L304,306 M300,302 L300,318 " stroke="black"/>
 <path d="M352,256 L352,384 " stroke="black"/>
 <rect x="336" y="240" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="352" y="256">√XX</text>
@@ -76,45 +76,45 @@
 <rect x="592" y="368" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="12" x="608" y="384">√ZZ<tspan baseline-shift="super" font-size="10">†</tspan></text>
 <path d="M608,64 L608,128 " stroke="black"/>
-<path d="M604,60 L612,68 M612,60 L604,68 " stroke="black"/>
-<path d="M604,124 L612,132 M612,124 L604,132 " stroke="black"/>
+<path d="M602,58 L614,70 M614,58 L602,70 " stroke="black"/>
+<path d="M602,122 L614,134 M614,122 L602,134 " stroke="black"/>
 <path d="M672,192 L672,256 " stroke="black"/>
-<circle cx="672" cy="192" r="8" stroke="black" fill="white"/>
-<path d="M664,192 L680,192 M672,184 L672,200 " stroke="black"/>
-<circle cx="672" cy="256" r="8" stroke="black" fill="white"/>
-<path d="M664,256 L680,256 M672,248 L672,264 " stroke="black"/>
+<circle cx="672" cy="192" r="12" stroke="black" fill="white"/>
+<path d="M660,192 L684,192 M672,180 L672,204 " stroke="black"/>
+<circle cx="672" cy="256" r="12" stroke="black" fill="white"/>
+<path d="M660,256 L684,256 M672,244 L672,268 " stroke="black"/>
 <path d="M736,256 L736,320 " stroke="black"/>
-<circle cx="736" cy="256" r="8" stroke="black" fill="white"/>
-<path d="M728,256 L744,256 M736,248 L736,264 " stroke="black"/>
-<path d="M736,330 L727.34,315 L744.66,315 Z" stroke="black" fill="gray"/>
+<circle cx="736" cy="256" r="12" stroke="black" fill="white"/>
+<path d="M724,256 L748,256 M736,244 L736,268 " stroke="black"/>
+<path d="M736,336.8 L721.451,311.6 L750.549,311.6 Z" stroke="black" fill="gray"/>
 <path d="M736,64 L736,128 " stroke="black"/>
-<circle cx="736" cy="64" r="8" stroke="black" fill="white"/>
-<path d="M728,64 L744,64 M736,56 L736,72 " stroke="black"/>
-<circle cx="736" cy="128" r="8" stroke="none" fill="black"/>
+<circle cx="736" cy="64" r="12" stroke="black" fill="white"/>
+<path d="M724,64 L748,64 M736,52 L736,76 " stroke="black"/>
+<circle cx="736" cy="128" r="12" stroke="none" fill="black"/>
 <path d="M800,192 L800,256 " stroke="black"/>
-<path d="M800,202 L791.34,187 L808.66,187 Z" stroke="black" fill="gray"/>
-<circle cx="800" cy="256" r="8" stroke="black" fill="white"/>
-<path d="M792,256 L808,256 M800,248 L800,264 " stroke="black"/>
+<path d="M800,208.8 L785.451,183.6 L814.549,183.6 Z" stroke="black" fill="gray"/>
+<circle cx="800" cy="256" r="12" stroke="black" fill="white"/>
+<path d="M788,256 L812,256 M800,244 L800,268 " stroke="black"/>
 <path d="M800,320 L800,384 " stroke="black"/>
-<path d="M800,330 L791.34,315 L808.66,315 Z" stroke="black" fill="gray"/>
-<path d="M800,394 L791.34,379 L808.66,379 Z" stroke="black" fill="gray"/>
+<path d="M800,336.8 L785.451,311.6 L814.549,311.6 Z" stroke="black" fill="gray"/>
+<path d="M800,400.8 L785.451,375.6 L814.549,375.6 Z" stroke="black" fill="gray"/>
 <path d="M800,64 L800,128 " stroke="black"/>
-<path d="M800,74 L791.34,59 L808.66,59 Z" stroke="black" fill="gray"/>
-<circle cx="800" cy="128" r="8" stroke="none" fill="black"/>
+<path d="M800,80.8 L785.451,55.6 L814.549,55.6 Z" stroke="black" fill="gray"/>
+<circle cx="800" cy="128" r="12" stroke="none" fill="black"/>
 <path d="M864,192 L864,256 " stroke="black"/>
-<circle cx="864" cy="192" r="8" stroke="none" fill="black"/>
-<circle cx="864" cy="256" r="8" stroke="black" fill="white"/>
-<path d="M856,256 L872,256 M864,248 L864,264 " stroke="black"/>
+<circle cx="864" cy="192" r="12" stroke="none" fill="black"/>
+<circle cx="864" cy="256" r="12" stroke="black" fill="white"/>
+<path d="M852,256 L876,256 M864,244 L864,268 " stroke="black"/>
 <path d="M864,320 L864,384 " stroke="black"/>
-<circle cx="864" cy="320" r="8" stroke="none" fill="black"/>
-<path d="M864,394 L855.34,379 L872.66,379 Z" stroke="black" fill="gray"/>
+<circle cx="864" cy="320" r="12" stroke="none" fill="black"/>
+<path d="M864,400.8 L849.451,375.6 L878.549,375.6 Z" stroke="black" fill="gray"/>
 <path d="M928,64 L928,384 " stroke="black"/>
-<circle cx="928" cy="64" r="8" stroke="none" fill="black"/>
-<circle cx="928" cy="384" r="8" stroke="none" fill="black"/>
+<circle cx="928" cy="64" r="12" stroke="none" fill="black"/>
+<circle cx="928" cy="384" r="12" stroke="none" fill="black"/>
 <path d="M992,192 L992,256 " stroke="black"/>
-<circle cx="992" cy="192" r="8" stroke="none" fill="black"/>
-<circle cx="992" cy="256" r="8" stroke="none" fill="black"/>
+<circle cx="992" cy="192" r="12" stroke="none" fill="black"/>
+<circle cx="992" cy="256" r="12" stroke="none" fill="black"/>
 <path d="M1056,128 L1056,320 " stroke="black"/>
-<circle cx="1056" cy="128" r="8" stroke="none" fill="black"/>
-<circle cx="1056" cy="320" r="8" stroke="none" fill="black"/>
+<circle cx="1056" cy="128" r="12" stroke="none" fill="black"/>
+<circle cx="1056" cy="320" r="12" stroke="none" fill="black"/>
 </svg>

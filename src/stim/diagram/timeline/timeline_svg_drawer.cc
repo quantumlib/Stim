@@ -70,7 +70,7 @@ void DiagramTimelineSvgDrawer::do_feedback(
     draw_annotated_gate(
         c.xyz[0],
         c.xyz[1],
-        SvgGateData{(uint16_t)(mode == SVG_MODE_TIMELINE ? 2 : 1), gate, "", exponent.str(), "lightgray", "black"},
+        SvgGateData{(uint16_t)(mode == SVG_MODE_TIMELINE ? 2 : 1), gate, "", exponent.str(), "lightgray", "black", 0, 10},
         {});
 }
 
@@ -597,7 +597,7 @@ void DiagramTimelineSvgDrawer::do_qubit_coords(const ResolvedTimelineOperation &
     ss << "COORDS";
     write_coords(ss, op.args);
     auto c = q2xy(target.qubit_value());
-    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{(uint16_t)(2 + op.args.size()), ss.str(), "", "", "white", "black"}, {});
+    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{(uint16_t)(2 + op.args.size()), ss.str(), "", "", "white", "black", 0, 10}, {});
 }
 
 void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) {
@@ -611,7 +611,7 @@ void DiagramTimelineSvgDrawer::do_detector(const ResolvedTimelineOperation &op) 
 
     auto c = q2xy(pseudo_target.qubit_value());
     auto span = (uint16_t)(1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2));
-    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, "DETECTOR", "", "", "lightgray", "black"}, {});
+    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, "DETECTOR", "", "", "lightgray", "black", 0, 10}, {});
     c.xyz[0] += (span - 1) * GATE_PITCH * 0.5f;
 
     if (!op.args.empty()) {
@@ -661,7 +661,7 @@ void DiagramTimelineSvgDrawer::do_observable_include(const ResolvedTimelineOpera
     auto span = (uint16_t)(1 + std::max(std::max(op.targets.size(), op.args.size()), (size_t)2));
     std::stringstream ss;
     ss << "OBS_INCLUDE(" << op.args[0] << ")";
-    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, ss.str(), "", "", "lightgray", "black"}, {});
+    draw_annotated_gate(c.xyz[0], c.xyz[1], SvgGateData{span, ss.str(), "", "", "lightgray", "black", 0, 10}, {});
     c.xyz[0] += (span - 1) * GATE_PITCH * 0.5f;
 
     svg_out << "<text";
