@@ -13,20 +13,20 @@ std::map<std::string, SvgGateData> SvgGateData::make_gate_data_map() {
     result.insert({"H", {1, "H", "", "", "white", "black"}});
     result.insert({"H_XY", {1, "H", "XY", "", "white", "black"}});
 
-    result.insert({"SQRT_X", {1, "√X", "", "", "white", "black"}});
-    result.insert({"SQRT_Y", {1, "√Y", "", "", "white", "black"}});
+    result.insert({"SQRT_X", {1, "√X", "", "", "white", "black", 24}});
+    result.insert({"SQRT_Y", {1, "√Y", "", "", "white", "black", 24}});
     result.insert({"S", {1, "S", "", "", "white", "black"}});
 
     result.insert({"SQRT_X_DAG", {1, "√X", "", "†", "white", "black"}});
     result.insert({"SQRT_Y_DAG", {1, "√Y", "", "†", "white", "black"}});
     result.insert({"S_DAG", {1, "S", "", "†", "white", "black"}});
 
-    result.insert({"MX", {1, "M", "X", "", "black", "white"}});
-    result.insert({"MY", {1, "M", "Y", "", "black", "white"}});
+    result.insert({"MX", {1, "M", "X", "", "black", "white", 26, 16}});
+    result.insert({"MY", {1, "M", "Y", "", "black", "white", 26, 16}});
     result.insert({"M", {1, "M", "", "", "black", "white"}});
 
-    result.insert({"RX", {1, "R", "X", "", "black", "white"}});
-    result.insert({"RY", {1, "R", "Y", "", "black", "white"}});
+    result.insert({"RX", {1, "R", "X", "", "black", "white", 26, 16}});
+    result.insert({"RY", {1, "R", "Y", "", "black", "white", 26, 16}});
     result.insert({"R", {1, "R", "", "", "black", "white"}});
 
     result.insert({"MRX", {1, "MR", "X", "", "black", "white"}});

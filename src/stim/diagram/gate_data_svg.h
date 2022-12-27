@@ -29,6 +29,8 @@ struct SvgGateData {
     std::string superscript;
     std::string fill;
     std::string text_color;
+    size_t font_size = 0;
+    size_t sub_font_size = 10;
 
     static std::map<std::string, SvgGateData> make_gate_data_map();
 };
