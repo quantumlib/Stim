@@ -1,3 +1,7 @@
+#include <format>
+
+#include "stim/dem/detector_error_model.h"
+
 #include "stim/diagram/detector_slice/detector_slice_set.h"
 
 #include "stim/diagram/coord.h"
@@ -615,10 +619,13 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
 
     for (size_t k = 0; k < num_ticks; k++) {
         for (auto q : used_qubits()) {
-            auto c = coords(min_tick + k, q);
+            auto t = min_tick + k;
+            auto qc = coordsys.qubit_coords[q]; // the raw qubit coordinates
+            auto sc = coords(t, q); // the svg coordinates, offset to the correct slice plot
             out << "<circle";
-            write_key_val(out, "cx", c.xyz[0]);
-            write_key_val(out, "cy", c.xyz[1]);
+            write_key_val(out, "id", std::format("qubitdot_{}_{}_{}", qc.xyz[0], qc.xyz[1], t))
+            write_key_val(out, "cx", sc.xyz[0]);
+            write_key_val(out, "cy", sc.xyz[1]);
             write_key_val(out, "r", 2);
             write_key_val(out, "stroke", "none");
             write_key_val(out, "fill", "black");
@@ -626,13 +633,15 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
         }
     }
 
-    // Boundaries around different slices.
+    // Border around different slices.
     if (num_ticks > 1) {
+        size_t k = 0;
         for (uint64_t col = 0; col < num_cols; col++) {
             for (uint64_t row = 0; row < num_rows && row * num_cols + col < num_ticks; row++) {
                 auto sw = coordsys.size.xyz[0];
                 auto sh = coordsys.size.xyz[1];
                 out << "<rect";
+                write_key_val(out, "id", std::format("border_{}_{}_{}", row, col, k))
                 write_key_val(out, "x", sw * col * SLICE_WINDOW_GAP);
                 write_key_val(out, "y", sh * row * SLICE_WINDOW_GAP);
                 write_key_val(out, "width", sw);
@@ -640,6 +649,7 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                 write_key_val(out, "stroke", "black");
                 write_key_val(out, "fill", "none");
                 out << "/>\n";
+                k++;
             }
         }
     }
@@ -655,11 +665,12 @@ void DetectorSliceSet::write_svg_contents_to(
 
     bool haveDrawnCorners = false;
 
-    // Draw multi-qubit detector slices.
+    // Draw detector slices.
     for (size_t layer = 0; layer < 3; layer++) {
         for (const auto &e : slices) {
             uint64_t tick = e.first.first;
-            if (e.first.second.is_observable_id()) {
+            DemTarget target = e.first.second;
+            if (target.is_observable_id()) {
                 continue;
             }
 
@@ -685,6 +696,11 @@ void DetectorSliceSet::write_svg_contents_to(
                 color = "#AAAAAA";
             }
 
+            // Open the group element for this slice
+            out << "<g";
+            write_key_val(out, "id", std::format("slice_{}_{}", target.val();, tick));
+            out << ">\n";
+
             _start_slice_shape_command(out,
                                        coords,
                                        tick,
@@ -700,6 +716,7 @@ void DetectorSliceSet::write_svg_contents_to(
 
             if (drawCorners) {
                 if (!haveDrawnCorners) {
+                    // write out the universal radialGradients that all corners will reference
                     out << "<defs>\n";
                     static const char* const names[] = {"xgrad", "ygrad", "zgrad"};
                     static const char* const colors[] = {X_RED, Y_GREEN, Z_BLUE};
@@ -753,6 +770,7 @@ void DetectorSliceSet::write_svg_contents_to(
                 clip_id++;
             }
 
+            // Draw outline
             _start_slice_shape_command(out,
                                        coords,
                                        tick,
@@ -762,6 +780,9 @@ void DetectorSliceSet::write_svg_contents_to(
             write_key_val(out, "stroke", "black");
             write_key_val(out, "fill", "none");
             out << "/>\n";
+
+            // Close the group element for this slice
+            out << "</g>\n";
         }
     }
 }
