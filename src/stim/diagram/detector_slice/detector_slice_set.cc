@@ -641,7 +641,7 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
                 auto sw = coordsys.size.xyz[0];
                 auto sh = coordsys.size.xyz[1];
                 out << "<rect";
-                write_key_val(out, "id", std::format("border_{}_{}_{}", row, col, k))
+                write_key_val(out, "id", std::format("border_{}_{}_{}", row, col, k + min_tick))
                 write_key_val(out, "x", sw * col * SLICE_WINDOW_GAP);
                 write_key_val(out, "y", sh * row * SLICE_WINDOW_GAP);
                 write_key_val(out, "width", sw);
