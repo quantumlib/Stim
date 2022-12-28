@@ -1,7 +1,7 @@
 <svg viewBox="0 0 480 224"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<path d="M64,64 L448,64 " stroke="black"/>
+<path id="qubitline:0" d="M64,64 L448,64 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
-<path d="M64,128 L448,128 " stroke="black"/>
+<path id="qubitline:1" d="M64,128 L448,128 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
 <rect x="80" y="48" width="32" height="32" stroke="black" fill="black"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="96" y="64" fill="white">R</text>

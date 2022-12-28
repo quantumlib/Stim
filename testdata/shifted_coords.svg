@@ -1,15 +1,15 @@
 <svg viewBox="0 0 1248 480"  version="1.1" xmlns="http://www.w3.org/2000/svg">
-<path d="M64,64 L1216,64 " stroke="black"/>
+<path id="qubitline:0" d="M64,64 L1216,64 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="64">q0</text>
-<path d="M64,128 L1216,128 " stroke="black"/>
+<path id="qubitline:1" d="M64,128 L1216,128 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="128">q1</text>
-<path d="M64,192 L1216,192 " stroke="black"/>
+<path id="qubitline:2" d="M64,192 L1216,192 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="192">q2</text>
-<path d="M64,256 L1216,256 " stroke="black"/>
+<path id="qubitline:3" d="M64,256 L1216,256 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="256">q3</text>
-<path d="M64,320 L1216,320 " stroke="black"/>
+<path id="qubitline:4" d="M64,320 L1216,320 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="320">q4</text>
-<path d="M64,384 L1216,384 " stroke="black"/>
+<path id="qubitline:5" d="M64,384 L1216,384 " stroke="black"/>
 <text dominant-baseline="central" text-anchor="end" font-family="monospace" font-size="12" x="64" y="384">q5</text>
 <rect x="80" y="112" width="224" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="192" y="128">COORDS(1,2)</text>
