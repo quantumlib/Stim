@@ -1,5 +1,3 @@
-#include <format>
-
 #include "stim/dem/detector_error_model.h"
 
 #include "stim/diagram/detector_slice/detector_slice_set.h"
@@ -622,8 +620,15 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             auto t = min_tick + k;
             auto qc = coordsys.qubit_coords[q]; // the raw qubit coordinates
             auto sc = coords(t, q); // the svg coordinates, offset to the correct slice plot
+            
+            std::stringstream id_ss;
+            id_ss << "qubitdot_";
+            id_ss << qc.xyz[0] << "_";
+            id_ss << qc.xyz[1] << "_";
+            id_ss << qc.xyz[1];
+            
             out << "<circle";
-            write_key_val(out, "id", std::format("qubitdot_{}_{}_{}", qc.xyz[0], qc.xyz[1], t))
+            write_key_val(out, "id", id_ss.str());
             write_key_val(out, "cx", sc.xyz[0]);
             write_key_val(out, "cy", sc.xyz[1]);
             write_key_val(out, "r", 2);
@@ -640,8 +645,16 @@ void DetectorSliceSet::write_svg_diagram_to(std::ostream &out) const {
             for (uint64_t row = 0; row < num_rows && row * num_cols + col < num_ticks; row++) {
                 auto sw = coordsys.size.xyz[0];
                 auto sh = coordsys.size.xyz[1];
+                
+                            
+                std::stringstream id_ss;
+                id_ss << "border_";
+                id_ss << row << "_";
+                id_ss << col << "_";
+                id_ss << k+min_tick;
+                
                 out << "<rect";
-                write_key_val(out, "id", std::format("border_{}_{}_{}", row, col, k + min_tick))
+                write_key_val(out, "id", id_ss.str());
                 write_key_val(out, "x", sw * col * SLICE_WINDOW_GAP);
                 write_key_val(out, "y", sh * row * SLICE_WINDOW_GAP);
                 write_key_val(out, "width", sw);
@@ -697,9 +710,7 @@ void DetectorSliceSet::write_svg_contents_to(
             }
 
             // Open the group element for this slice
-            out << "<g";
-            write_key_val(out, "id", std::format("slice_{}_{}", target.val();, tick));
-            out << ">\n";
+            out << "<g id=\"slice_" << target.val() << "_" << tick << "\">\n";
 
             _start_slice_shape_command(out,
                                        coords,
