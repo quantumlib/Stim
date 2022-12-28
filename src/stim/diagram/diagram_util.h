@@ -30,6 +30,7 @@ constexpr const char * Z_BLUE = "#4DA6FF";
 constexpr const char * EX_PURPLE = "#FF4DDB";
 constexpr const char * EY_YELLOW = "#F1FF59";
 constexpr const char * EZ_ORANGE = "#FF9500";
+constexpr const char * BG_GREY = "#AAAAAA";
 
 size_t utf8_char_count(const std::string &s);
 

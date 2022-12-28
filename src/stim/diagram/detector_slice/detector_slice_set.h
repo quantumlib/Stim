@@ -29,8 +29,11 @@ struct DetectorSliceSet {
     uint64_t num_qubits;
     uint64_t min_tick;
     uint64_t num_ticks;
+    /// Qubit ID -> qubit coordinates
     std::map<uint64_t, std::vector<double>> coordinates;
+    /// DemTarget value -> detector coordinates
     std::map<uint64_t, std::vector<double>> detector_coordinates;
+    /// (tick, DemTarget) -> terms in the slice
     std::map<std::pair<uint64_t, stim::DemTarget>, std::vector<stim::GateTarget>> slices;
 
     /// Args:
