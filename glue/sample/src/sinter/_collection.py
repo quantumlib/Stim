@@ -1,6 +1,7 @@
 import contextlib
 import dataclasses
 import pathlib
+from typing import Any
 from typing import Callable, Iterator, Optional, Union, Iterable, List, TYPE_CHECKING, Tuple, Dict
 
 import math
@@ -259,6 +260,20 @@ def collect(*,
         if print_progress:
             progress_printer.flush()
         return list(result.data.values())
+
+
+def post_selection_mask_from_predicate(
+    circuit_or_dem: Union[stim.Circuit, stim.DetectorErrorModel],
+    *,
+    postselected_detectors_predicate: Callable[[int, Any, Tuple[float, ...]], bool],
+    metadata: Any,
+) -> np.ndarray:
+    num_dets = circuit_or_dem.num_detectors
+    post_selection_mask = np.zeros(dtype=np.uint8, shape=math.ceil(num_dets / 8))
+    for k, coord in circuit_or_dem.get_detector_coordinates().items():
+        if postselected_detectors_predicate(k, metadata, coord):
+            post_selection_mask[k // 8] |= 1 << (k % 8)
+    return post_selection_mask
 
 
 def post_selection_mask_from_4th_coord(dem: Union[stim.Circuit, stim.DetectorErrorModel]) -> np.ndarray:

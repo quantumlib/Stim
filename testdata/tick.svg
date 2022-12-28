@@ -33,7 +33,7 @@
 <rect x="720" y="48" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="736" y="64">H</text>
 <rect x="784" y="48" width="32" height="32" stroke="black" fill="white"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="800" y="64">√X</text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="24" x="800" y="64">√X</text>
 <path d="M644,40 L644,32 L828,32 L828,40 " stroke="black" fill="none"/>
 <path d="M644,184 L644,192 L828,192 L828,184 " stroke="black" fill="none"/>
 <rect x="848" y="48" width="32" height="32" stroke="black" fill="white"/>

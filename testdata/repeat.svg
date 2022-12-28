@@ -16,7 +16,7 @@
 <path d="M168,32 L160,32 L160,320 L168,320 " stroke="black" fill="none"/>
 <text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="164" y="316">REP5</text>
 <rect x="208" y="176" width="32" height="32" stroke="black" fill="black"/>
-<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="16" x="224" y="192" fill="white">R<tspan baseline-shift="sub" font-size="10">X</tspan></text>
+<text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="26" x="224" y="192" fill="white">R<tspan baseline-shift="sub" font-size="16">X</tspan></text>
 <path d="M296,36 L288,36 L288,316 L296,316 " stroke="black" fill="none"/>
 <text dominant-baseline="auto" text-anchor="start" font-family="monospace" font-size="12" x="292" y="312">REP100</text>
 <rect x="336" y="48" width="32" height="32" stroke="black" fill="white"/>

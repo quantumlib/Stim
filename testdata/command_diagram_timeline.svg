@@ -10,9 +10,9 @@
 <rect x="144" y="48" width="32" height="32" stroke="black" fill="white"/>
 <text dominant-baseline="central" text-anchor="middle" font-family="monospace" font-size="30" x="160" y="64">H</text>
 <path d="M224,64 L224,128 " stroke="black"/>
-<circle cx="224" cy="64" r="8" stroke="none" fill="black"/>
-<circle cx="224" cy="128" r="8" stroke="black" fill="white"/>
-<path d="M216,128 L232,128 M224,120 L224,136 " stroke="black"/>
+<circle cx="224" cy="64" r="12" stroke="none" fill="black"/>
+<circle cx="224" cy="128" r="12" stroke="black" fill="white"/>
+<path d="M212,128 L236,128 M224,116 L224,140 " stroke="black"/>
 <path d="M132,40 L132,32 L252,32 L252,40 " stroke="black" fill="none"/>
 <path d="M132,184 L132,192 L252,192 L252,184 " stroke="black" fill="none"/>
 <rect x="272" y="48" width="32" height="32" stroke="black" fill="white"/>
